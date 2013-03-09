@@ -148,6 +148,12 @@ class LiaisonDetailProxy(LiaisonStatement):
         # we don't have a request so just pass None for the time being
         return send_liaison_by_email(None, self, fake)
 
+    def notify_pending_by_email(self, fake=False):
+        # grab this from module instead of stuffing in on the model
+        from ietf.liaisons.mails import notify_pending_by_email
+        # we don't have a request so just pass None for the time being
+        return notify_pending_by_email(None, self, fake)
+
     def is_pending(self):
         return not self.approved
 

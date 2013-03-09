@@ -30,14 +30,19 @@ def send_liaison_by_email(request, liaison, fake=False):
     send_mail_text(request, to_email, from_email, subject, body, cc=", ".join(cc), bcc=", ".join(bcc))
 
 def notify_pending_by_email(request, liaison, fake):
-    from ietf.liaisons.utils import IETFHM
 
-    from_entity = IETFHM.get_entity_by_key(liaison.from_raw_code)
-    if not from_entity:
-        return None
-    to_email = []
-    for person in from_entity.can_approve():
-        to_email.append('%s <%s>' % person.email())
+    # Broken: this does not find the list of approvers for the sending body
+    # For now, we are sending to statements@ietf.org so the Secretariat can nudge
+    # Bug 880: http://trac.tools.ietf.org/tools/ietfdb/ticket/880
+    #
+    # from ietf.liaisons.utils import IETFHM
+    #
+    # from_entity = IETFHM.get_entity_by_key(liaison.from_raw_code)
+    # if not from_entity:
+    #    return None
+    # to_email = []
+    # for person in from_entity.can_approve():
+    #     to_email.append('%s <%s>' % person.email())
     subject = u'New Liaison Statement, "%s" needs your approval' % (liaison.title)
     from_email = settings.LIAISON_UNIVERSAL_FROM
     body = render_to_string('liaisons/pending_liaison_mail.txt', dict(
@@ -45,7 +50,8 @@ def notify_pending_by_email(request, liaison, fake):
             url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=liaison.pk)),
             referenced_url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.related_to.pk)) if liaison.related_to else None,
             ))
-    send_mail_text(request, to_email, from_email, subject, body)
+    # send_mail_text(request, to_email, from_email, subject, body)
+    send_mail_text(request, ['statements@ietf.org'], from_email, subject, body)
 
 def send_sdo_reminder(sdo):
     roles = Role.objects.filter(name="liaiman", group=sdo)

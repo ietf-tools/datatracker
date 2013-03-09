@@ -33,7 +33,10 @@ def add_liaison(request, liaison=None):
         if form.is_valid():
             liaison = form.save()
             if request.POST.get('send', None):
-                liaison.send_by_email()
+                if liaison.is_pending():
+                    liaison.notify_pending_by_email()
+                else:
+                    liaison.send_by_email()
             return HttpResponseRedirect(reverse('liaison_list'))
     else:
         form = liaison_form_factory(request, liaison=liaison)
