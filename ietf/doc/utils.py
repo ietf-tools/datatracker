@@ -59,14 +59,17 @@ def needed_ballot_positions(doc, active_positions):
         # For standards-track, need positions from 2/3 of the
         # non-recused current IESG.
         needed = (len(active_positions) - len(recuse)) * 2 // 3
+    else:
+        if len(yes) < 1:
+            return " ".join(answer)
 
-    have = len(yes) + len(noobj) + len(blocking)
+    have = len(yes) + len(noobj)
     if have < needed:
         more = needed - have
         if more == 1:
-            answer.append("Needs %d more position." % more)
+            answer.append("Needs one more YES or NO OBJECTION position to pass.")
         else:
-            answer.append("Needs %d more positions." % more)
+            answer.append("Needs %d more YES or NO OBJECTION positions to pass." % more)
     else:
         if blocking:
             answer.append("Has enough positions to pass once %s positions are resolved." % blocking[0].pos.name.upper())

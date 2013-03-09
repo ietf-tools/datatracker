@@ -592,18 +592,32 @@ class InternetDraft(Document):
 	    needed = int((len(ads) - recuse) * 2 / 3)
 	else:
 	    # Info and experimental only need one position.
-	    needed = 1
-	have = yes + noobj + discuss
+            # Info and experimental without Yes have their full spec now.
+            if yes < 1:
+                return answer.rstrip()
+            else:
+                needed = 1
+	have = yes + noobj
 	if have < needed:
             more = needed - have
             if more == 1:
-                answer += "Needs %d more position. " % more
+                answer += "Needs one more YES or NO OBJECTION position "
             else:
-                answer += "Needs %d more positions. " % more
+                answer += "Needs %d more YES or NO OBJECTION positions " % more
+            if discuss:
+                if discuss == 1:
+                    answer += "once the DISCUSS is resolved."
+                else:
+                    answer += "once %d DISCUSSes are resolved." % discuss 
+            else:
+                answer += ". "
 	else:
 	    answer += "Has enough positions to pass"
 	    if discuss:
-		answer += " once DISCUSSes are resolved"
+                if discuss == 1:
+                    answer += "once the DISCUSS is resolved"
+                else:
+                    answer += "once %d DISCUSSes are resolved" % discuss 
 	    answer += ". "
 
 	return answer.rstrip()
