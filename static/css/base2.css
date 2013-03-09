@@ -201,4 +201,6 @@ li.info		{ margin: 0.5em; background-color: #ff8; }
 li.success	{ margin: 0.5em; background-color: #4f4; }
 li.warning	{ margin: 0.5em; background-color: #fc8; color: black;}
 li.error	{ margin: 0.5em; background-color: #f44; }
+
+.errorlist	{ background: red; color: white; padding: 0.2ex 0.2ex 0.2ex 0.5ex; border: 0px; margin: 0px; font-family: Arial, sans-serif; }
 	
