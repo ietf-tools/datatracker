@@ -52,8 +52,8 @@ class ChangeStateFormREDESIGN(forms.Form):
 
     def clean(self):
         retclean = self.cleaned_data
-        state = self.cleaned_data['state']
-        tag = self.cleaned_data['substate']
+        state = self.cleaned_data.get('state', '(None)')
+        tag = self.cleaned_data.get('substate','')
         comment = self.cleaned_data['comment'].strip()
         doc = get_object_or_404(Document, docalias__name=self.docname)
         prev = doc.get_state("draft-iesg")
