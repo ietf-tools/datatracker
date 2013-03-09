@@ -46,6 +46,36 @@ BALLOT_CHOICES = (("yes", "Yes"),
                   ("", "No Record"),
                   )
 
+# -------------------------------------------------
+# Helper Functions
+# -------------------------------------------------
+def do_undefer_ballot(request, doc):
+    '''
+    Helper function to perform undefer of ballot.  Takes the Request object, for use in 
+    logging, and the Document object.
+    '''
+    login = request.user.get_profile()
+    telechat_date = TelechatDates.objects.all()[0].date1
+    save_document_in_history(doc)
+
+    prev_state = doc.friendly_state()
+    if doc.type_id == 'draft':
+        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='iesg-eva'))
+        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        prev_tag = prev_tag[0] if prev_tag else None
+        if prev_tag:
+            doc.tags.remove(prev_tag)
+    elif doc.type_id == 'conflrev':
+        doc.set_state(State.objects.get(used=True, type='conflrev',slug='iesgeval'))
+
+    e = docutil_log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
+    
+    doc.time = e.time
+    doc.save()
+
+    update_telechat(request, doc, login, telechat_date)
+    email_state_changed(request, doc, e.desc)
+    
 def position_to_ballot_choice(position):
     for v, label in BALLOT_CHOICES:
         if v and getattr(position, v):
@@ -70,6 +100,7 @@ def get_ballot_info(ballot, area_director):
 class EditPositionForm(forms.Form):
     pass
 
+# -------------------------------------------------
 @group_required('Area_Director','Secretariat')
 def edit_position(request, name):
     pass
@@ -392,6 +423,8 @@ def clear_ballot(request, name):
         for t in BallotType.objects.filter(doc_type=doc.type_id):
             close_ballot(doc, by, t.slug)
             create_ballot_if_not_open(doc, by, t.slug)
+        if doc.get_state('draft-iesg').slug == 'defer':
+            do_undefer_ballot(request,doc)
         return HttpResponseRedirect(urlreverse("doc_view", kwargs=dict(name=doc.name)))
 
     return render_to_response('idrfc/clear_ballot.html',
@@ -462,30 +495,10 @@ def undefer_ballotREDESIGN(request, name):
     if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
         raise Http404()
 
-    login = request.user.get_profile()
     telechat_date = TelechatDates.objects.all()[0].date1
     
     if request.method == 'POST':
-        save_document_in_history(doc)
-
-        prev_state = doc.friendly_state()
-        if doc.type_id == 'draft':
-            doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='iesg-eva'))
-            prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
-            prev_tag = prev_tag[0] if prev_tag else None
-            if prev_tag:
-                doc.tags.remove(prev_tag)
-        elif doc.type_id == 'conflrev':
-            doc.set_state(State.objects.get(used=True, type='conflrev',slug='iesgeval'))
-
-        e = docutil_log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
-        
-        doc.time = e.time
-        doc.save()
-
-        update_telechat(request, doc, login, telechat_date)
-        email_state_changed(request, doc, e.desc)
-        
+        do_undefer_ballot(request,doc)
         return HttpResponseRedirect(doc.get_absolute_url())
   
     return render_to_response('idrfc/undefer_ballot.html',
@@ -496,7 +509,6 @@ def undefer_ballotREDESIGN(request, name):
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     undefer_ballot = undefer_ballotREDESIGN
-
 
 class LastCallTextForm(forms.ModelForm):
     def clean_last_call_text(self):
