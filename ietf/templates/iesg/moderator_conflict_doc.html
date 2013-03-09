@@ -76,7 +76,7 @@ Last call ends: {{ doc.obj.most_recent_ietflc.expires.date|default:"(none)" }}
 <p>Does anyone have an[y further] objection to this document being published as an {{ doc.obj.intended_std_level }} RFC?</p>
 {% endif %}
 {% if title3|startswith:"3.3.1" or title3|startswith:"3.3.2" %}
-<p>Does anyone have an objection to the RFC Editor publishing this document as an {{ doc.obj.intended_std_level }} RFC?</p>
+<p>Does anyone have an objection to the this conflict review response being sent to the {{doc.obj.conflictdoc.stream}}?</p>
 {% endif %}
 {% if title3|startswith:"3.3.3" %}
 <p>Who will do the review of this document?</p>
