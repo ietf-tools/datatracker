@@ -146,8 +146,8 @@ class EditModelForm(forms.ModelForm):
         self.fields['title'].widget=forms.Textarea()
         self.fields['rev'].widget.attrs['size'] = 2
         self.fields['abstract'].widget.attrs['cols'] = 72
-        self.initial['state'] = self.instance.get_state()
-        self.initial['iesg_state'] = self.instance.get_state('draft-iesg')
+        self.initial['state'] = self.instance.get_state().pk
+        self.initial['iesg_state'] = self.instance.get_state('draft-iesg').pk
         if self.instance.shepherd:
             self.initial['shepherd'] = "%s - (%s)" % (self.instance.shepherd.name, self.instance.shepherd.id)
         

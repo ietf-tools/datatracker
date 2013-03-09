@@ -797,7 +797,8 @@ def edit(request, id):
                 save_document_in_history(draft)
                 DocEvent.objects.create(type='changed_document',
                                         by=request.user.get_profile(),
-                                        doc=draft)
+                                        doc=draft,
+                                        desc='Changed field(s): %s' % ','.join(form.changed_data))
                 # see EditModelForm.save() for detailed logic
                 form.save()
                 
