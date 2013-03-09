@@ -498,9 +498,9 @@ def _get_history(doc, versions):
                 e.desc = multiset_ballot_text + ", ".join(u'<a href="%s">%s</a>' % (urlreverse("doc_view", kwargs={'name': n }), n) for n in names)
                 info["dontmolest"] = True
                     
-            info['text'] = e.desc
+            info['text'] = e.desc.replace("''","'")
             info['by'] = e.by.plain_name()
-            info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
+            info['textSnippet'] = truncatewords_html(info['text'], 25).replace('<br>',' ')
             info['snipped'] = info['textSnippet'][-3:] == "..." and e.type != "new_revision"
             results.append({'comment':e, 'info':info, 'date':e.time, 'is_com':True})
 
