@@ -21,7 +21,7 @@ from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
                                Position, Feedback
 from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE, \
                               INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE, \
-                              get_user_email
+                              NOMINATION_RECEIPT_TEMPLATE, get_user_email
 from ietf.nomcom.decorators import member_required
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -284,10 +284,15 @@ class MergeForm(BaseNomcomForm, forms.Form):
 
 
 class NominateForm(BaseNomcomForm, forms.ModelForm):
-    comments = forms.CharField(label='Comments', widget=forms.Textarea())
+    comments = forms.CharField(label="Candidate's Qualifications for the Position:",
+                               widget=forms.Textarea())
+    confirmation = forms.BooleanField(label='Email comments back to me as confirmation',
+                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, \
+                                                 please check the 'email comments back to me as confirmation' box below.",
+                                      required=False)
 
     fieldsets = [('Candidate Nomination', ('position', 'candidate_name',
-                  'candidate_email', 'candidate_phone', 'comments'))]
+                  'candidate_email', 'candidate_phone', 'comments', 'confirmation'))]
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
@@ -301,8 +306,13 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
             author = get_user_email(self.user)
             if author:
                 self.fields['nominator_email'].initial = author.address
-            self.fieldsets = [('Candidate Nomination', ('position',
-                              'nominator_email', 'candidate_name',
+                help_text = """(Nomcom Chair/Member: please fill this in. Use your own email address if the person making the
+                               nomination wishes to be anonymous. The confirmation email will be sent to the address given here,
+                               and the address will also be captured as part of the registered nomination.)"""
+                self.fields['nominator_email'].help_text = help_text
+            self.fieldsets = [('Candidate Nomination', ('nominator_email',
+                              'position',
+                              'candidate_name',
                               'candidate_email', 'candidate_phone',
                               'comments'))]
 
@@ -314,6 +324,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         candidate_name = self.cleaned_data['candidate_name']
         position = self.cleaned_data['position']
         comments = self.cleaned_data['comments']
+        confirmation = self.cleaned_data['confirmation']
         nomcom_template_path = '/nomcom/%s/' % self.nomcom.group.acronym
         nomcom_chair = self.nomcom.group.get_chair()
         nomcom_chair_mail = nomcom_chair and nomcom_chair.email.address or None
@@ -373,7 +384,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
             from_email = settings.NOMCOM_FROM_EMAIL
             to_email = email.address
             context = {'nominee': email.person.name,
-                      'position': position}
+                      'position': position.name}
             path = nomcom_template_path + NOMINEE_EMAIL_TEMPLATE
             send_mail(None, to_email, from_email, subject, path, context)
 
@@ -384,7 +395,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                 from_email = settings.NOMCOM_FROM_EMAIL
                 to_email = email.address
                 context = {'nominee': email.person.name,
-                          'position': position}
+                          'position': position.name}
                 path = '%s%d/%s' % (nomcom_template_path,
                                     position.id, QUESTIONNAIRE_TEMPLATE)
                 send_mail(None, to_email, from_email, subject, path, context)
@@ -395,12 +406,23 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         to_email = nomcom_chair_mail
         context = {'nominee': email.person.name,
                    'nominee_email': email.address,
-                   'position': position}
+                   'position': position.name}
         if author:
             context.update({'nominator': author.person.name,
                             'nominator_email': author.address})
         path = nomcom_template_path + NOMINATION_EMAIL_TEMPLATE
         send_mail(None, to_email, from_email, subject, path, context)
+
+        if confirmation or not self.public:
+            if author:
+                subject = 'Nomination Receipt'
+                from_email = settings.NOMCOM_FROM_EMAIL
+                to_email = author.address
+                context = {'nominee': email.person.name,
+                          'comments': comments,
+                          'position': position.name}
+                path = nomcom_template_path + NOMINATION_RECEIPT_TEMPLATE
+                send_mail(None, to_email, from_email, subject, path, context)
 
         return nomination
 
