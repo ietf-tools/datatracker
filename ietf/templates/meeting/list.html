@@ -14,8 +14,10 @@ table.ietf-materials td { padding:0.5em 0; }
 <p>Submission cutoff date: {{ cut_off_date|date:"F j, Y" }}<br/>
 Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 {% endif %}
-
-<p><a href="https://datatracker.ietf.org/cgi-bin/wg/wg_proceedings.cgi">Meeting Materials Manager</a> (for session chairs only; password required)</p>
+<ul>
+<li><a href="https://datatracker.ietf.org/cgi-bin/wg/wg_proceedings.cgi">Meeting Materials Manager</a> (for session chairs only; password required)</li>
+<li><a href="/meeting/{{meeting_num}}/requests">Meeting Request/Conflict Table</a></li>
+</ul>
 
 {# cache for 15 minutes, as long as there's no proceedings activity. takes 4-8 seconds to generate. #}
 {% load cache %}
