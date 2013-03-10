@@ -151,6 +151,7 @@ G=$(svn st | cut -c 1-7 | grep -oh 'G' | head -n 1)
 
 
 date +"%Y-%m-%d %H:%M:%S	$G$C$M	@$rev $branch" >> mergelog
+date +"%Y-%m-%d %H:%M:%S Merged $branch@$rev" >> testresult
 
 cd ../
 rsync -a $cwd/ merged@$rev/
