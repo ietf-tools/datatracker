@@ -140,8 +140,7 @@ def send_reminder_mail(request, year):
             from_email = settings.NOMCOM_FROM_EMAIL
             for nominee in nominees:
                 to_email = nominee.email.address
-                positions = ', '.join([nominee_position.position.name for nominee_position in nominee.nomineeposition_set.all()
-                                      if nominee_position.state.slug == "pending"])
+                positions = ', '.join([nominee_position.position.name for nominee_position in nominee.nomineeposition_set.pending()])
                 context = {'positions': positions}
                 send_mail(None, to_email, from_email, subject, mail_path, context)
             message = ('success', 'An query has been sent to each person, asking them to accept (or decline) the nominations')

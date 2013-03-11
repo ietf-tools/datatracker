@@ -12,6 +12,7 @@ from ietf.group.models import Group
 from ietf.name.models import NomineePositionState, FeedbackType
 from ietf.dbtemplate.models import DBTemplate
 
+from ietf.nomcom.managers import NomineePositionManager, NomineeManager
 from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_questionnaire_for_position,
                                initialize_requirements_for_position)
@@ -59,11 +60,6 @@ class Nomination(models.Model):
         return u"%s (%s)" % (self.candidate_name, self.candidate_email)
 
 
-class NomineeManager(models.Manager):
-    def get_by_nomcom(self, nomcom):
-        return self.filter(nominee_position__nomcom=nomcom)
-
-
 class Nominee(models.Model):
 
     email = models.ForeignKey(Email)
@@ -77,11 +73,6 @@ class Nominee(models.Model):
 
     def __unicode__(self):
         return u'%s' % self.email
-
-
-class NomineePositionManager(models.Manager):
-    def get_by_nomcom(self, nomcom):
-        return self.filter(position__nomcom=nomcom)
 
 
 class NomineePosition(models.Model):
