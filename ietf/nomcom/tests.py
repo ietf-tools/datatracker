@@ -42,12 +42,13 @@ class NomcomViewsTest(TestCase):
         self.edit_chair_url = reverse('nomcom_edit_chair', kwargs={'year': self.year})
         self.public_key_url = reverse('nomcom_edit_publickey', kwargs={'year': self.year})
         self.private_nominate_url = reverse('nomcom_private_nominate', kwargs={'year': self.year})
+        self.private_feedback_url = reverse('nomcom_private_feedback', kwargs={'year': self.year})
 
         # public urls
         self.index_url = reverse('nomcom_index', kwargs={'year': self.year})
         self.requirements_url = reverse('nomcom_requirements', kwargs={'year': self.year})
         self.questionnaires_url = reverse('nomcom_questionnaires', kwargs={'year': self.year})
-        self.comments_url = reverse('nomcom_comments', kwargs={'year': self.year})
+        self.public_feedback_url = reverse('nomcom_public_feedback', kwargs={'year': self.year})
         self.public_nominate_url = reverse('nomcom_public_nominate', kwargs={'year': self.year})
 
     def access_member_url(self, url):
@@ -244,12 +245,18 @@ class NomcomViewsTest(TestCase):
         """Verify questionnaires view"""
         self.check_url_status(self.questionnaires_url, 200)
 
-    def test_comments_view(self):
-        """Verify comments view"""
-        # TODO: comments view
-        login_testing_unauthorized(self, COMMUNITY_USER, self.comments_url)
-        self.check_url_status(self.comments_url, 200)
+    def test_public_feedback(self):
+        login_testing_unauthorized(self, COMMUNITY_USER, self.public_feedback_url)
+        return self.feedback_view(public=True)
         self.client.logout()
+
+    def test_private_feedback(self):
+        self.access_member_url(self.private_feedback_url)
+        return self.feedback_view(public=False)
+        self.client.logout()
+
+    def feedback_view(self, *args, **kwargs):
+        pass
 
     def test_public_nominate(self):
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
