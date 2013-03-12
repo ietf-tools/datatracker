@@ -128,4 +128,25 @@ $comments
 Thank you,</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
+    <object p="10" model="dbtemplate.dbtemplate">
+        <field type="CharField" name="path">/nomcom/defaults/email/feedback_receipt.txt</field>
+        <field type="CharField" name="title">Email sent to feedback author to get a confirmation mail containing feedback in cleartext</field>
+        <field type="TextField" name="variables">$nominee: Full name of the nominee
+$position: Nomination position
+$comments: Comments on this candidate</field>
+        <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
+        <field type="TextField" name="content">Hi,
+
+Your input regarding $nominee for the position of
+$position has been received and registered.
+
+The following comments have been registered:
+
+--------------------------------------------------------------------------
+$comments
+--------------------------------------------------------------------------
+
+Thank you,</field>
+        <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
+    </object>
 </django-objects>

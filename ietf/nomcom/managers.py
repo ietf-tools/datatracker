@@ -37,3 +37,28 @@ class NomineePositionManager(models.Manager):
 class NomineeManager(models.Manager):
     def get_by_nomcom(self, nomcom):
         return self.filter(nominee_position__nomcom=nomcom)
+
+
+class PositionQuerySet(QuerySet):
+
+    def get_by_nomcom(self, nomcom):
+        return self.filter(nomcom=nomcom)
+
+    def opened(self):
+        """ only opened positions """
+        return self.filter(is_open=True)
+
+    def closed(self):
+        """ only closed positions """
+        return self.filter(is_open=False)
+
+
+class PositionManager(models.Manager):
+    def get_query_set(self):
+        return PositionQuerySet(self.model)
+
+    def __getattr__(self, attr, *args):
+        try:
+            return getattr(self.__class__, attr, *args)
+        except AttributeError:
+            return getattr(self.get_query_set(), attr, *args)

@@ -8,6 +8,7 @@
 
     {% for field in fieldset.fields %}
       <div id="baseform-fieldname-{{ field.html_name }}"
+          {% if field.field.widget.is_hidden %}style="display: none;"{% endif %}
           class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
         <label for="id_{{ field.html_name }}">{{ field.label }}
         {% if field.field.required %}

@@ -12,7 +12,7 @@ from ietf.group.models import Group
 from ietf.name.models import NomineePositionState, FeedbackType
 from ietf.dbtemplate.models import DBTemplate
 
-from ietf.nomcom.managers import NomineePositionManager, NomineeManager
+from ietf.nomcom.managers import NomineePositionManager, NomineeManager, PositionManager
 from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_questionnaire_for_position,
                                initialize_requirements_for_position)
@@ -113,6 +113,8 @@ class Position(models.Model):
     questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True, editable=False)
     is_open = models.BooleanField(verbose_name='Is open')
     incumbent = models.ForeignKey(Email)
+
+    objects = PositionManager()
 
     class Meta:
         verbose_name_plural = 'Positions'

@@ -14,6 +14,7 @@ from ietf.utils.mail import send_mail
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
 from ietf.name.models import NomineePositionState
+
 from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, FeedbackForm, MergeForm,
                                NomComTemplateForm, PositionForm, PrivateKeyForm)
@@ -252,6 +253,18 @@ def private_feedback(request, year):
 def feedback(request, year, public):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
+    submit_disabled = True
+    nominee = None
+    position = None
+    selected_nominee = request.GET.get('nominee')
+    selected_position = request.GET.get('position')
+    if selected_nominee and selected_position:
+        nominee = Nominee.objects.get(id=selected_nominee)
+        position = Position.objects.get(id=selected_position)
+        submit_disabled = False
+
+    positions = Position.objects.get_by_nomcom(nomcom=nomcom).opened()
+
     if public:
         template = 'nomcom/public_feedback.html'
     else:
@@ -268,12 +281,14 @@ def feedback(request, year, public):
 
     message = None
     if request.method == 'POST':
-        form = FeedbackForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
+        form = FeedbackForm(data=request.POST, nomcom=nomcom, user=request.user,
+                            public=public, position=position, nominee=nominee)
         if form.is_valid():
             form.save()
-            message = ('success', 'Your nomination has been registered. Thank you for the nomination.')
+            message = ('success', 'Your feedback has been registered.')
     else:
-        form = FeedbackForm(nomcom=nomcom, user=request.user, public=public)
+        form = FeedbackForm(nomcom=nomcom, user=request.user, public=public,
+                            position=position, nominee=nominee)
 
     return render_to_response(template,
                               {'has_publickey': has_publickey,
@@ -281,6 +296,8 @@ def feedback(request, year, public):
                                'message': message,
                                'nomcom': nomcom,
                                'year': year,
+                               'positions': positions,
+                               'submit_disabled': submit_disabled,
                                'selected': 'feedback'}, RequestContext(request))
 
 

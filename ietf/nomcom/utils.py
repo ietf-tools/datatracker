@@ -16,12 +16,15 @@ NOMINEE_EMAIL_TEMPLATE = 'email/new_nominee.txt'
 NOMINATION_EMAIL_TEMPLATE = 'email/new_nomination.txt'
 NOMINEE_REMINDER_TEMPLATE = 'email/nomination_reminder.txt'
 NOMINATION_RECEIPT_TEMPLATE = 'email/nomination_receipt.txt'
+FEEDBACK_RECEIPT_TEMPLATE = 'email/feedback_receipt.txt'
+
 DEFAULT_NOMCOM_TEMPLATES = [HOME_TEMPLATE,
                             INEXISTENT_PERSON_TEMPLATE,
                             NOMINEE_EMAIL_TEMPLATE,
                             NOMINATION_EMAIL_TEMPLATE,
                             NOMINEE_REMINDER_TEMPLATE,
-                            NOMINATION_RECEIPT_TEMPLATE]
+                            NOMINATION_RECEIPT_TEMPLATE,
+                            FEEDBACK_RECEIPT_TEMPLATE]
 
 
 def get_nomcom_by_year(year):

@@ -21,7 +21,8 @@ from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
                                Position, Feedback
 from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE, \
                               INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE, \
-                              NOMINATION_RECEIPT_TEMPLATE, get_user_email
+                              NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE, \
+                              get_user_email
 from ietf.nomcom.decorators import member_required
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -288,7 +289,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                                widget=forms.Textarea())
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation',
                                       help_text="If you want to get a confirmation mail containing your feedback in cleartext, \
-                                                 please check the 'email comments back to me as confirmation' box below.",
+                                                 please check the 'email comments back to me as confirmation'",
                                       required=False)
 
     fieldsets = [('Candidate Nomination', ('position', 'candidate_name',
@@ -300,8 +301,16 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         self.public = kwargs.pop('public', None)
 
         super(NominateForm, self).__init__(*args, **kwargs)
+
+        fieldset = ['nominator_email',
+                    'position',
+                    'candidate_name',
+                    'candidate_email', 'candidate_phone',
+                    'comments']
+
         if self.nomcom:
-            self.fields['position'].queryset = Position.objects.filter(nomcom=self.nomcom)
+            self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).opened()
+
         if not self.public:
             author = get_user_email(self.user)
             if author:
@@ -310,11 +319,10 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                                nomination wishes to be anonymous. The confirmation email will be sent to the address given here,
                                and the address will also be captured as part of the registered nomination.)"""
                 self.fields['nominator_email'].help_text = help_text
-            self.fieldsets = [('Candidate Nomination', ('nominator_email',
-                              'position',
-                              'candidate_name',
-                              'candidate_email', 'candidate_phone',
-                              'comments'))]
+        else:
+            fieldset.append('confirmation')
+
+        self.fieldsets = [('Candidate Nomination', fieldset)]
 
     def save(self, commit=True):
         # Create nomination
@@ -413,6 +421,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         path = nomcom_template_path + NOMINATION_EMAIL_TEMPLATE
         send_mail(None, to_email, from_email, subject, path, context)
 
+        # send receipt email to nominator
         if confirmation or not self.public:
             if author:
                 subject = 'Nomination Receipt'
@@ -437,39 +446,130 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
 
 class FeedbackForm(BaseNomcomForm, forms.ModelForm):
-    position = forms.CharField(label='position')
-    nominee_name = forms.CharField(label='nominee name')
-    nominee_email = forms.CharField(label='nominee email')
+    position_name = forms.CharField(label='position',
+                                    widget=forms.TextInput(attrs={'size': '40'}))
+    nominee_name = forms.CharField(label='your name',
+                                   widget=forms.TextInput(attrs={'size': '40'}))
+    nominee_email = forms.CharField(label='your email',
+                                    widget=forms.TextInput(attrs={'size': '40'}))
     nominator_name = forms.CharField(label='nominator name')
     nominator_email = forms.CharField(label='nominator email')
 
-    comments = forms.CharField(label='Comments on this candidate', widget=forms.Textarea())
-
-    fieldsets = [('Provide comments', ('position',
-                                       'nominee_name',
-                                       'nominee_email',
-                                       'nominator_name',
-                                       'nominator_email',
-                                       'comments'))]
+    comments = forms.CharField(label='Comments on this candidate',
+                               widget=forms.Textarea())
+    confirmation = forms.BooleanField(label='Email comments back to me as confirmation',
+                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, \
+                                                 please check the 'email comments back to me as confirmation'",
+                                      required=False)
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
         self.user = kwargs.pop('user', None)
         self.public = kwargs.pop('public', None)
+        self.position = kwargs.pop('position', None)
+        self.nominee = kwargs.pop('nominee', None)
 
         super(FeedbackForm, self).__init__(*args, **kwargs)
 
+        readonly_fields = ['position_name',
+                           'nominee_name',
+                           'nominee_email']
+
+        fieldset = ['position_name',
+                    'nominee_name',
+                    'nominee_email',
+                    'nominator_name',
+                    'nominator_email',
+                    'comments',
+                    'position',
+                    'type',
+                    'nominee']
+
+        if self.public:
+            readonly_fields += ['nominator_name', 'nominator_email']
+            fieldset.append('confirmation')
+        else:
+            help_text = """(Nomcom Chair/Member: please fill this in. Use your own email address if the person making the
+                            comments wishes to be anonymous. The confirmation email will be sent to the address given here,
+                            and the address will also be captured as part of the registered nomination.)"""
+            self.fields['nominator_email'].help_text = help_text
+
+        hidden_fields = ['position', 'type', 'nominee']
+
+        author = get_user_email(self.user)
+        if author:
+            self.fields['nominator_email'].initial = author.address
+            self.fields['nominator_name'].initial = author.person.name
+
+        if self.position and self.nominee:
+            self.fields['type'].initial = "comment"
+            self.fields['position'].initial = self.position
+            self.fields['position_name'].initial = self.position.name
+            self.fields['nominee'].initial = self.nominee
+            self.fields['nominee_name'].initial = self.nominee.email.person.name
+            self.fields['nominee_email'].initial = self.nominee.email.address
+        else:
+            help_text = "Please pick a name on the nominees list"
+            self.fields['position_name'].initial = help_text
+            self.fields['nominee_name'].initial = help_text
+            self.fields['nominee_email'].initial = help_text
+            self.fields['comments'].initial = help_text
+            readonly_fields += ['comments']
+            self.fields['confirmation'].widget.attrs['disabled'] = "disabled"
+
+        for field in readonly_fields:
+            self.fields[field].widget.attrs['readonly'] = True
+
+        for field in hidden_fields:
+            self.fields[field].widget = forms.HiddenInput()
+
+        self.fieldsets = [('Provide comments', fieldset)]
+
     def save(self, commit=True):
-        pass
+        feedback = super(FeedbackForm, self).save(commit=False)
+        confirmation = self.cleaned_data['confirmation']
+        nominee = self.cleaned_data['nominee']
+        position = self.cleaned_data['position']
+        comments = self.cleaned_data['comments']
+        nominator_email = self.cleaned_data['nominator_email']
+        nomcom_template_path = '/nomcom/%s/' % self.nomcom.group.acronym
+
+        author = None
+        if self.public:
+            author = get_user_email(self.user)
+        else:
+            if nominator_email:
+                emails = Email.objects.filter(address=nominator_email)
+                author = emails and emails[0] or None
+
+        if author:
+            feedback.author = author
+            feedback.save()
+
+        # send receipt email to feedback author
+        if confirmation or not self.public:
+            if author:
+                subject = "NomCom comment confirmation"
+                from_email = settings.NOMCOM_FROM_EMAIL
+                to_email = author.address
+                context = {'nominee': nominee.email.person.name,
+                           'comments': comments,
+                           'position': position.name}
+                path = nomcom_template_path + FEEDBACK_RECEIPT_TEMPLATE
+                send_mail(None, to_email, from_email, subject, path, context)
 
     class Meta:
         model = Feedback
-        fields = ('position',
+        fields = ('author',
+                  'position',
+                  'nominee',
                   'nominee_name',
                   'nominee_email',
                   'nominator_name',
                   'nominator_email',
-                  'comments')
+                  'confirmation',
+                  'comments',
+                  'type')
 
     class Media:
         js = ("/js/jquery-1.5.1.min.js",
