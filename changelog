@@ -1,3 +1,87 @@
+ietfdb (4.43) ietf; urgency=high
+
+  From Jim Schaad <ietf@augustcellars.com>: 
+
+  * Working Group document page now allows for addition of documents to 
+    community lists. 
+
+  * Added new rules to the atom tracker for picking up documents in specific 
+    states
+
+  * Added new rules to the atom tracker for picking up RFCs
+
+  * Changed the header fields on the RFC table so that they reflect RFC 
+    descriptions rather than I-D descriptions. 
+
+  * Increased the set of information being returned on the atom viewer to 
+    reflect IETF specific information. 
+
+  From housley@vigilsec.com: 
+
+  * Send email to statements@ietf.org when a pending liaison statement gets 
+    queued. 
+
+  From jmh@joelhalpern.com: 
+
+  * Fixed the moderator package Conflict review text. 
+
+  * Added the document notification list to the destination email addresses
+    when the document leaves IETF LC.
+
+  * Repaired the ballot requirements string
+
+  * Removed the \'Set all to not on agenda\' button, as it is never used. 
+
+  From adam@nostrum.com:
+
+  * Fixed formatting for history page.  Relates to issue #210.
+
+  * Added links to the session request page
+
+  * Two changes: (1) searches by substring rather than \'begins with\' (to
+    allow, e.g., searching by last name); and (2) limits results to 10 entries
+    (to limit server load and limit effectiveness of email-scraping attacks) 
+
+  * Fixed agenda oscillation problem (removed scrollbars from iframe)
+
+  From cabo@tzi.org: 
+
+  * Added javascript functionality to make the UTC agenda convert it's UTC
+    times to Browser local time.
+
+  From rcross@amsl.com: 
+
+  * Ticket #673: Add the ability for the secretariat to clear a ballot to 
+    the tracker 
+
+  From suresh.krishnan@ericsson.com: 
+
+  * Checking for loss of comments when AD enters comments without changing 
+    state. Also modified the base css to have an unified errorlist format. 
+
+  From henrik@levkowetz.com
+
+  * Some additional tweaks to the INSTALL text.
+
+  * Added a note on secretariat releases.  Reformatted to resolve rst 
+    markup mistakes -- '$ rst2pdf INSTALL' now works.
+
+  * Ask people to use their account profile management form to add email 
+    addresses, instead of creating new accounts, on the create-account form.
+
+  * Tweaked mergedevbranch to make the sprint merge/test cycle a little bit 
+    easier.
+
+  * Tweaked the code from [5518] to handle the case where a document 
+    doesn't have any state set yet.
+
+  * Changed the community tool email notification code to not try to send 
+    to nobody, and to use individual To: addressing rather bulk Bcc: addressing.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Mar 2013 19:26:54 +0100
+
+
 ietfdb (4.42) ietf; urgency=high
 
   This release brings only minor new functionality to the datatracker
