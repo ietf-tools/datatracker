@@ -191,14 +191,20 @@ Some one-time actions that need to be taken are as follows::
       PYTHONPATH=$PWD ietf/manage.py migrate --fake doc 0001
       PYTHONPATH=$PWD ietf/manage.py migrate --fake name 0001
 
-      PYTHONPATH=$PWD ietf/manage.py dbshell <<< "delete from django_content_type where app_label='doc' and model='groupballotpositiondocevent';"
+      PYTHONPATH=$PWD ietf/manage.py dbshell <<< "delete from django_content_type where app_label='doc'
+		and model='groupballotpositiondocevent';"
 
       PYTHONPATH=$PWD ietf/manage.py migrate doc || { \
-	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'CREATE TABLE `doc_groupballotpositiondocevent` (`block_comment` longtext NOT NULL, `comment` longtext NOT NULL, `ad_id` integer NOT NULL, `comment_time` datetime NULL, `block_comment_time` datetime NULL, `pos_id` varchar(8) NOT NULL DEFAULT "norecord", `docevent_ptr_id` integer NOT NULL PRIMARY KEY);'
+	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'CREATE TABLE `doc_groupballotpositiondocevent`
+		(`block_comment` longtext NOT NULL, `comment` longtext NOT NULL,
+		`ad_id` integer NOT NULL, `comment_time` datetime NULL,
+		`block_comment_time` datetime NULL, `pos_id` varchar(8) NOT NULL DEFAULT "norecord",
+		`docevent_ptr_id` integer NOT NULL PRIMARY KEY);'
 	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'DROP TABLE `doc_ballottype` CASCADE;'
 	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'DROP TABLE `doc_ballottype_positions` CASCADE;'
 	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'DROP TABLE `doc_ballotdocevent` CASCADE;'
-	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'ALTER TABLE `doc_ballotpositiondocevent` DROP COLUMN `ballot_id` CASCADE;'
+	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'ALTER TABLE `doc_ballotpositiondocevent`
+		DROP COLUMN `ballot_id` CASCADE;'
       }
 
       PYTHONPATH=$PWD ietf/manage.py migrate doc
