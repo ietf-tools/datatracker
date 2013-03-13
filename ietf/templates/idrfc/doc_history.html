@@ -59,7 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 [Ballot {{ c.comment.get_ballot_display }}]<br /> 
 {% endif %} 
 {% if c.info.snipped %}
-<div id="commentS{{c.comment.id}}">{{ c.info.textSnippet|safe }}</div>
+<div id="commentS{{c.comment.id}}">{{ c.info.textSnippet|safe|sanitize_html|safe }}</div>
 <span class="comment_toggle" onclick="toggleComment({{c.comment.id}})" id="commentT{{c.comment.id}}">[show all]</span>
 <div id="commentF{{c.comment.id}}" style="display:none;">
 {{ c.info.text|safe|urlize|linebreaksbr|keep_spacing|sanitize_html|safe }}
