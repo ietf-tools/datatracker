@@ -32,7 +32,7 @@ and finally restart apache::
 
   sudo /etc/init.d/apache2 restart
 
-It's now also a good idea to go to the datatracker front page:
+It's now also a good idea to go to the datatracker front page::
 
   http://datatracker.ietf.org/
 
@@ -51,88 +51,109 @@ datatracker is only intended to be deployed from scratch once, these instruction
 don't cover this.  The general Django depoloyment instructions are relevant, however.
 
 
+Installing a Secretariat Release
+================================
+
+Secretariat releases are based on a regular tagged release, but contain
+updated code in the ietf/secr/ tree.  They are named with a trailing
+'.secr<N>' version number.  If the tagged release is for instance 4.42, the
+first secretariat release based on that would have release number 4.42.secr1,
+and the second secretariat release based on it would be numbered 4.42.secr2.
+
+Secretariat releases are deployed in the same manner as regular releases, with
+the addition that patches made to the regular release needs to be picked up
+and applied.  Assuming we'releasing 4.42.secr2, then after we've cd'd into
+the release diretory to run migrations, we'd also run a patch step to pick
+up the current patches to the current production release, which is pointed
+to by ../web::
+
+  /a/www/ietf-datatracker/4.42.secr2 $ svn diff ../web/ | patch -p2
+
+Assuming that runs without error messages, the deployment is continued as
+usual, with re-pointing the symlink and restarting apache.
+
 Additional Version-Specific Instructions
 ========================================
 
 Version 4.42
 ------------
 
-- In order to serve the secretariat tools static pages (such as image, css and js
-  files) the exceptions to which urls need to be handled by the python-handler
-  must be updated.
+ - In order to serve the secretariat tools static pages (such as image, css and js
+   files) the exceptions to which urls need to be handled by the python-handler
+   must be updated.
 
-  In the datatracker test server, the following configuration has been used to
-  make apache handle the static files, and Django the dynamic pages.  The new
-  part is the <LocationMatch/> which mentions /secr/.  Adapt as needed for ietfa.
+   In the datatracker test server, the following configuration has been used to
+   make apache handle the static files, and Django the dynamic pages.  The new
+   part is the <LocationMatch/> which mentions /secr/.  Adapt as needed for ietfa::
 
-  ----------------
-  # Logging and document root settings omitted
+       ----------------
+       # Logging and document root settings omitted
 
-      <Location "/">
-	  PythonPath "['/srv/www/ietfdb'] + sys.path"
-	  SetHandler python-program
-	  PythonHandler django.core.handlers.modpython
-	  SetEnv DJANGO_SETTINGS_MODULE ietf.settings 
-	  PythonDebug On
-      </Location>
+	   <Location "/">
+	       PythonPath "['/srv/www/ietfdb'] + sys.path"
+	       SetHandler python-program
+	       PythonHandler django.core.handlers.modpython
+	       SetEnv DJANGO_SETTINGS_MODULE ietf.settings 
+	       PythonDebug On
+	   </Location>
 
-      <LocationMatch "^/(robots.txt|favicon.ico|images|css|js|media|error)(/|$)"> 
-	  SetHandler None
-      </LocationMatch> 
+	   <LocationMatch "^/(robots.txt|favicon.ico|images|css|js|media|error)(/|$)"> 
+	       SetHandler None
+	   </LocationMatch> 
 
-      # New for secretariat tools:
-      <LocationMatch "^/secr/(img|css|js|error)"> 
-	  SetHandler None
-      </LocationMatch> 
+	   # New for secretariat tools:
+	   <LocationMatch "^/secr/(img|css|js|error)"> 
+	       SetHandler None
+	   </LocationMatch> 
 
-      <Location "/accounts/login/">
-	  AuthType Digest
-	  AuthName "IETF"
-	  AuthUserFile /var/local/loginmgr/digest
-	  AuthGroupFile /var/local/loginmgr/groups
-	  AuthDigestDomain http://tools.ietf.org/
-	  Require valid-user
-      </Location>
+	   <Location "/accounts/login/">
+	       AuthType Digest
+	       AuthName "IETF"
+	       AuthUserFile /var/local/loginmgr/digest
+	       AuthGroupFile /var/local/loginmgr/groups
+	       AuthDigestDomain http://tools.ietf.org/
+	       Require valid-user
+	   </Location>
 
-  # Caching and compression settings omitted
-  ----------------
+       # Caching and compression settings omitted
+       ----------------
 
 Version 4.40
 ------------
 
-- (DONE) Add ianasync user with an auth role in the "iana" group and an
-  rfceditorsync user with an auth role in the "rfceditor" group (don't
-  think Group(acronym="rfceditor") exists yet); IANA and RFC Editor need
-  to know the passwords for the poke mechanism
-  
-
-- (DONE) Make sure mailing list for iab-stream@iab.org is up (since we're now
-  emailing that)
-
-- (DONE) Set rfc_must_published_later_than date in bin/iana-protocols-updates to today
-
-- (DONE) Run the 3 new doc South migrations
-
-- (DONE) New polling scripts, to be run every hour::
-
-    web/ietf/bin/iana-changes-updates
-    web/ietf/bin/iana-protocols-updates
-    web/ietf/bin/rfc-editor-index-updates (replaces mirror_rfc_index)
-    web/ietf/bin/rfc-editor-queue-updates (replaces mirror_rfc_queue)
-
-- (DONE) Import old events from IANA::
-
-    bin/iana-changes-updates --from="2005-01-01 00:00:00" --to="2013-01-31 00:00:00" --no-email
-
-- (DONE) Pipe IANA review emails to the datatracker.  There used to be an action to pipe
-  such mails to henrik@levkowetz.com, for testing this feature, but I haven't seen
-  any in a little while, so I don't know if this has broken.  Anyway, the iana review
-  emails should be piped into::
-
-    /www/ietf-datatracker/web/ietf/bin/iana-review-email
+ - (DONE) Add ianasync user with an auth role in the "iana" group and an
+   rfceditorsync user with an auth role in the "rfceditor" group (don't
+   think Group(acronym="rfceditor") exists yet); IANA and RFC Editor need
+   to know the passwords for the poke mechanism
 
 
-- (DONE) Tell IANA we're doing this for real now.
+ - (DONE) Make sure mailing list for iab-stream@iab.org is up (since we're now
+   emailing that)
+
+ - (DONE) Set rfc_must_published_later_than date in bin/iana-protocols-updates to today
+
+ - (DONE) Run the 3 new doc South migrations
+
+ - (DONE) New polling scripts, to be run every hour::
+
+     web/ietf/bin/iana-changes-updates
+     web/ietf/bin/iana-protocols-updates
+     web/ietf/bin/rfc-editor-index-updates (replaces mirror_rfc_index)
+     web/ietf/bin/rfc-editor-queue-updates (replaces mirror_rfc_queue)
+
+ - (DONE) Import old events from IANA::
+
+     bin/iana-changes-updates --from="2005-01-01 00:00:00" --to="2013-01-31 00:00:00" --no-email
+
+ - (DONE) Pipe IANA review emails to the datatracker.  There used to be an action to pipe
+   such mails to henrik@levkowetz.com, for testing this feature, but I haven't seen
+   any in a little while, so I don't know if this has broken.  Anyway, the iana review
+   emails should be piped into::
+
+     /www/ietf-datatracker/web/ietf/bin/iana-review-email
+
+
+ - (DONE) Tell IANA we're doing this for real now.
 
 
 Version 4.34
