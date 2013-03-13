@@ -124,7 +124,7 @@ else
     die "Could not find a branch matching '$branch'"
 fi
 
-if grep "@$rev $branch" mergelog; then note "Changeset $branch@$rev is already in the merge log.  Skipping it."; exit 0; fi
+if grep "@$rev $branch" mergelog; then die "Changeset $branch@$rev is already in the merge log.  Skipping it."; exit 0; fi
 
 note "Will attempt merge from $branch@$rev"
 

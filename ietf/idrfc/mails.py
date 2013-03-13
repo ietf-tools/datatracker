@@ -510,8 +510,11 @@ def email_last_call_expired(doc):
 def email_last_call_expiredREDESIGN(doc):
     text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.get_state("draft-iesg").name
     
+    to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
+    to.insert(0, "iesg@ietf.org")
+
     send_mail(None,
-              "iesg@ietf.org",
+              to,
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
               "Last Call Expired: %s" % doc.file_tag(),
               "idrfc/change_notice.txt",
