@@ -11,6 +11,7 @@ class DisplayField(object):
 
     codename = ''
     description = ''
+    rfcDescription = ''
 
     def get_value(self, document, raw=False):
         return None
@@ -19,6 +20,7 @@ class DisplayField(object):
 class FilenameField(DisplayField):
     codename = 'filename'
     description = 'I-D filename'
+    rfcDescription = 'RFC Number'
 
     def get_value(self, document, raw=False):
         if not raw:
@@ -30,6 +32,7 @@ class FilenameField(DisplayField):
 class TitleField(DisplayField):
     codename = 'title'
     description = 'I-D title'
+    rfcDescription = 'RFC Title'
 
     def get_value(self, document, raw=False):
         return document.title
@@ -38,6 +41,7 @@ class TitleField(DisplayField):
 class DateField(DisplayField):
     codename = 'date'
     description = 'Date of current I-D'
+    rfcDescription = 'Date of RFC'
 
     def get_value(self, document, raw=False):
         date = document.latest_event(type='new_revision')
@@ -49,6 +53,7 @@ class DateField(DisplayField):
 class StatusField(DisplayField):
     codename = 'status'
     description = 'Status in the IETF process'
+    rfcDescription = description
 
     def get_value(self, document, raw=False):
         draft_state = document.get_state('draft')
@@ -79,6 +84,7 @@ class StatusField(DisplayField):
 class WGField(DisplayField):
     codename = 'wg_rg'
     description = 'Associated WG or RG'
+    rfcDescription = description
 
     def get_value(self, document, raw=False):
         if raw:
@@ -90,6 +96,7 @@ class WGField(DisplayField):
 class ADField(DisplayField):
     codename = 'ad'
     description = 'Associated AD, if any'
+    rfcDescription = description
 
     def get_value(self, document, raw=False):
         return document.ad or ''
@@ -98,6 +105,7 @@ class ADField(DisplayField):
 class OneDayField(DisplayField):
     codename = '1_day'
     description = 'Changed within the last 1 day'
+    rfcDescription = description
 
     def get_value(self, document, raw=False):
         now = datetime.datetime.now()
@@ -110,6 +118,7 @@ class OneDayField(DisplayField):
 class TwoDaysField(DisplayField):
     codename = '2_days'
     description = 'Changed within the last 2 days'
+    rfcDescription = description
 
     def get_value(self, document, raw=False):
         now = datetime.datetime.now()
@@ -122,6 +131,7 @@ class TwoDaysField(DisplayField):
 class SevenDaysField(DisplayField):
     codename = '7_days'
     description = 'Changed within the last 7 days'
+    rfcDescription = description
 
     def get_value(self, document, raw=False):
         now = datetime.datetime.now()
