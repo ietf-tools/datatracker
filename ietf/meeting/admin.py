@@ -6,7 +6,7 @@ class RoomInline(admin.TabularInline):
     model = Room
 
 class MeetingAdmin(admin.ModelAdmin):
-    list_display = ["number", "type", "date", "location"]
+    list_display = ["number", "type", "date", "location", "time_zone"]
     list_filter = ["type"]
     search_fields = ["number"]
     ordering = ["-date"]

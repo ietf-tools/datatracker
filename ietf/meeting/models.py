@@ -47,7 +47,10 @@ class Meeting(models.Model):
     def time_zone_offset(self):
         # Look at the time of 8 o'clock sunday, rather than 0h sunday, to get
         # the right time after a possible summer/winter time change.
-        return pytz.timezone(self.time_zone).localize(datetime.datetime.combine(self.date, datetime.time(8, 0))).strftime("%z")
+        if self.time_zone:
+            return pytz.timezone(self.time_zone).localize(datetime.datetime.combine(self.date, datetime.time(8, 0))).strftime("%z")
+        else:
+            return ""
 
     def get_meeting_date (self,offset):
         return self.date + datetime.timedelta(days=offset)
@@ -126,15 +129,27 @@ class TimeSlot(models.Model):
         return location
     @property
     def tz(self):
-        return pytz.timezone(self.meeting.time_zone)        
+        if self.meeting.time_zone:
+            return pytz.timezone(self.meeting.time_zone)
+        else:
+            return None
     def tzname(self):
-        return self.tz.tzname(self.time)
+        if self.tz:
+            return self.tz.tzname(self.time)
+        else:
+            return ""
     def utc_start_time(self):
-        local_start_time = self.tz.localize(self.time)
-        return local_start_time.astimezone(pytz.utc)
+        if self.tz:
+            local_start_time = self.tz.localize(self.time)
+            return local_start_time.astimezone(pytz.utc)
+        else:
+            return None
     def utc_end_time(self):
-        local_end_time = self.tz.localize(self.end_time())
-        return local_end_time.astimezone(pytz.utc)
+        if self.tz:
+            local_end_time = self.tz.localize(self.end_time())
+            return local_end_time.astimezone(pytz.utc)
+        else:
+            return None
 
 class Constraint(models.Model):
     """Specifies a constraint on the scheduling between source and
