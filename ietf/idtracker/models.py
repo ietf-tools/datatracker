@@ -3,6 +3,7 @@
 import os.path
 import datetime
 import re
+import math
 
 from django.conf import settings
 from django.db import models
@@ -513,7 +514,7 @@ class BallotInfo(models.Model):   # Added by Michael Lee
 	if standardsTrack:
 	    # For standards-track, need positions from 2/3 of the
 	    # non-recused current IESG.
-	    needed = ( active_iesg.count() - recuse ) * 2 / 3
+	    needed = int(math.ceil(( active_iesg.count() - recuse ) * 2.0 /3.0))
 	else:
 	    # Info and experimental only need one position.
             # Info and experimental without Yes have their full spec now.
