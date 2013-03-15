@@ -18,7 +18,7 @@ from ietf.name.models import NomineePositionState
 from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, FeedbackForm, MergeForm,
                                NomComTemplateForm, PositionForm, PrivateKeyForm)
-from ietf.nomcom.models import Position, NomineePosition, Nominee
+from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
                                retrieve_nomcom_private_key,
                                store_nomcom_private_key, NOMINEE_REMINDER_TEMPLATE)
@@ -81,30 +81,30 @@ def private_index(request, year):
             message = ('warning', "Please, select some nominations to work with")
 
     filters = {}
+    questionnaire_state = "questionnaire"
     selected_state = request.GET.get('state')
     selected_position = request.GET.get('position')
 
-    if selected_state:
-        if selected_state == 'questionnaire':
-            filters['questionnaires__isnull'] = False
-        else:
-            filters['state__slug'] = selected_state
+    if selected_state and not selected_state == questionnaire_state:
+        filters['state__slug'] = selected_state
 
     if selected_position:
-            filters['position__id'] = selected_position
+        filters['position__id'] = selected_position
 
     nominee_positions = all_nominee_positions
     if filters:
         nominee_positions = nominee_positions.filter(**filters)
 
-    stats = all_nominee_positions.values('position__name').annotate(total=Count('position'))
-    states = list(NomineePositionState.objects.values('slug', 'name')) + [{'slug': u'questionnaire', 'name': u'Questionnaire'}]
+    if selected_state == questionnaire_state:
+        nominee_positions = [np for np in nominee_positions if np.questionnaires]
+
+    stats = all_nominee_positions.values('position__name', 'position__id').annotate(total=Count('position'))
+    states = list(NomineePositionState.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': u'Questionnaire'}]
     positions = all_nominee_positions.values('position__name', 'position__id').distinct()
     for s in stats:
         for state in states:
-            if state['slug'] == 'questionnaire':
-                s[state['slug']] = all_nominee_positions.filter(position__name=s['position__name'],
-                                                                questionnaires__isnull=False).count()
+            if state['slug'] == questionnaire_state:
+                s[state['slug']] = Feedback.objects.filter(positions__id=s['position__id'], type='questio').count()
             else:
                 s[state['slug']] = all_nominee_positions.filter(position__name=s['position__name'],
                                                                 state=state['slug']).count()
@@ -281,7 +281,8 @@ def feedback(request, year, public):
 
     message = None
     if request.method == 'POST':
-        form = FeedbackForm(data=request.POST, nomcom=nomcom, user=request.user,
+        form = FeedbackForm(data=request.POST,
+                            nomcom=nomcom, user=request.user,
                             public=public, position=position, nominee=nominee)
         if form.is_valid():
             form.save()
@@ -299,6 +300,17 @@ def feedback(request, year, public):
                                'positions': positions,
                                'submit_disabled': submit_disabled,
                                'selected': 'feedback'}, RequestContext(request))
+
+
+@member_required(role='member')
+@private_key_required
+def view_feedback(request, year):
+    nomcom = get_nomcom_by_year(year)
+
+    return render_to_response('nomcom/view_feedback.html',
+                              {'year': year,
+                               'selected': 'view_feedback',
+                               'nomcom': nomcom}, RequestContext(request))
 
 
 @member_required(role='chair')

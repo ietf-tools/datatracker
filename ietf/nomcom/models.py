@@ -3,6 +3,7 @@ import os
 from django.db import models
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
+from django.contrib.auth.models import User
 
 from south.modelsinspector import add_introspection_rules
 
@@ -52,6 +53,8 @@ class Nomination(models.Model):
     nominee = models.ForeignKey('Nominee')
     comments = models.ForeignKey('Feedback')
     nominator_email = models.EmailField(verbose_name='Nominator Email', blank=True)
+    user = models.ForeignKey(User)
+    time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name_plural = 'Nominations'
@@ -80,10 +83,6 @@ class NomineePosition(models.Model):
     position = models.ForeignKey('Position')
     nominee = models.ForeignKey('Nominee')
     state = models.ForeignKey(NomineePositionState)
-    questionnaires = models.ManyToManyField('Feedback',
-                                           related_name='questionnaires',
-                                           blank=True, null=True)
-    feedback = models.ManyToManyField('Feedback', blank=True, null=True)
     time = models.DateTimeField(auto_now_add=True)
 
     objects = NomineePositionManager()
@@ -101,6 +100,12 @@ class NomineePosition(models.Model):
 
     def __unicode__(self):
         return u"%s - %s" % (self.nominee, self.position)
+
+    @property
+    def questionnaires(self):
+        return Feedback.objects.filter(type='questio',
+                                       positions=self.position,
+                                       nominee=self.nominee)
 
 
 class Position(models.Model):
@@ -144,11 +149,13 @@ class Position(models.Model):
 
 
 class Feedback(models.Model):
+    nomcom = models.ForeignKey('NomCom')
     author = models.EmailField(verbose_name='Author', blank=True)
-    position = models.ForeignKey('Position')
+    positions = models.ManyToManyField('Position', blank=True, null=True)
     nominee = models.ForeignKey('Nominee')
     comments = EncryptedTextField(verbose_name='Comments')
     type = models.ForeignKey(FeedbackType)
+    user = models.ForeignKey(User, blank=True, null=True)
     time = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):

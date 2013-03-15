@@ -27,6 +27,8 @@ class Migration(SchemaMigration):
             ('nominee', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.Nominee'])),
             ('comments', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.Feedback'])),
             ('nominator_email', self.gf('django.db.models.fields.EmailField')(max_length=75, blank=True)),
+            ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
+            ('time', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
         ))
         db.send_create_signal('nomcom', ['Nomination'])
 
@@ -51,22 +53,6 @@ class Migration(SchemaMigration):
         # Adding unique constraint on 'NomineePosition', fields ['position', 'nominee']
         db.create_unique('nomcom_nomineeposition', ['position_id', 'nominee_id'])
 
-        # Adding M2M table for field questionnaires on 'NomineePosition'
-        db.create_table('nomcom_nomineeposition_questionnaires', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('nomineeposition', models.ForeignKey(orm['nomcom.nomineeposition'], null=False)),
-            ('feedback', models.ForeignKey(orm['nomcom.feedback'], null=False))
-        ))
-        db.create_unique('nomcom_nomineeposition_questionnaires', ['nomineeposition_id', 'feedback_id'])
-
-        # Adding M2M table for field feedback on 'NomineePosition'
-        db.create_table('nomcom_nomineeposition_feedback', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('nomineeposition', models.ForeignKey(orm['nomcom.nomineeposition'], null=False)),
-            ('feedback', models.ForeignKey(orm['nomcom.feedback'], null=False))
-        ))
-        db.create_unique('nomcom_nomineeposition_feedback', ['nomineeposition_id', 'feedback_id'])
-
         # Adding model 'Position'
         db.create_table('nomcom_position', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -84,14 +70,23 @@ class Migration(SchemaMigration):
         # Adding model 'Feedback'
         db.create_table('nomcom_feedback', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('nomcom', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.NomCom'])),
             ('author', self.gf('django.db.models.fields.EmailField')(max_length=75, blank=True)),
-            ('position', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.Position'])),
             ('nominee', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.Nominee'])),
             ('comments', self.gf('ietf.nomcom.fields.EncryptedTextField')()),
             ('type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.FeedbackType'])),
+            ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], null=True, blank=True)),
             ('time', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
         ))
         db.send_create_signal('nomcom', ['Feedback'])
+
+        # Adding M2M table for field positions on 'Feedback'
+        db.create_table('nomcom_feedback_positions', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('feedback', models.ForeignKey(orm['nomcom.feedback'], null=False)),
+            ('position', models.ForeignKey(orm['nomcom.position'], null=False))
+        ))
+        db.create_unique('nomcom_feedback_positions', ['feedback_id', 'position_id'])
 
 
     def backwards(self, orm):
@@ -111,17 +106,14 @@ class Migration(SchemaMigration):
         # Deleting model 'NomineePosition'
         db.delete_table('nomcom_nomineeposition')
 
-        # Removing M2M table for field questionnaires on 'NomineePosition'
-        db.delete_table('nomcom_nomineeposition_questionnaires')
-
-        # Removing M2M table for field feedback on 'NomineePosition'
-        db.delete_table('nomcom_nomineeposition_feedback')
-
         # Deleting model 'Position'
         db.delete_table('nomcom_position')
 
         # Deleting model 'Feedback'
         db.delete_table('nomcom_feedback')
+
+        # Removing M2M table for field positions on 'Feedback'
+        db.delete_table('nomcom_feedback_positions')
 
 
     models = {
@@ -344,10 +336,12 @@ class Migration(SchemaMigration):
             'author': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'comments': ('ietf.nomcom.fields.EncryptedTextField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'nomcom': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.NomCom']"}),
             'nominee': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Nominee']"}),
-            'position': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Position']"}),
+            'positions': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['nomcom.Position']", 'null': 'True', 'blank': 'True'}),
             'time': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.FeedbackType']"})
+            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.FeedbackType']"}),
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True', 'blank': 'True'})
         },
         'nomcom.nomcom': {
             'Meta': {'object_name': 'NomCom'},
@@ -365,7 +359,9 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'nominator_email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'nominee': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Nominee']"}),
-            'position': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Position']"})
+            'position': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Position']"}),
+            'time': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"})
         },
         'nomcom.nominee': {
             'Meta': {'object_name': 'Nominee'},
@@ -375,12 +371,10 @@ class Migration(SchemaMigration):
             'nominee_position': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['nomcom.Position']", 'through': "orm['nomcom.NomineePosition']", 'symmetrical': 'False'})
         },
         'nomcom.nomineeposition': {
-            'Meta': {'unique_together': "(('position', 'nominee'),)", 'object_name': 'NomineePosition'},
-            'feedback': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['nomcom.Feedback']", 'null': 'True', 'blank': 'True'}),
+            'Meta': {'ordering': "['nominee']", 'unique_together': "(('position', 'nominee'),)", 'object_name': 'NomineePosition'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'nominee': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Nominee']"}),
             'position': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Position']"}),
-            'questionnaires': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'questionnaires'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['nomcom.Feedback']"}),
             'state': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.NomineePositionState']"}),
             'time': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'})
         },

@@ -219,10 +219,12 @@ class NomcomViewsTest(TestCase):
         position = Position.objects.get(name='OAM')
 
         comments = 'plain text'
-        feedback = Feedback.objects.create(position=position,
+        nomcom = get_nomcom_by_year(self.year)
+        feedback = Feedback.objects.create(nomcom=nomcom,
                                            nominee=nominee,
                                            comments=comments,
                                            type=FeedbackType.objects.get(slug='nomina'))
+        feedback.positions.add(position)
 
         # to check feedback comments are saved like enrypted data
         self.assertNotEqual(feedback.comments, comments)
@@ -308,13 +310,14 @@ class NomcomViewsTest(TestCase):
 
         response = self.client.post(nominate_url, test_data)
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "info-message-success")
 
         # check objects
         email = Email.objects.get(address=candidate_email)
         Person.objects.get(name=candidate_name, address=candidate_email)
         nominee = Nominee.objects.get(email=email)
         NomineePosition.objects.get(position=position, nominee=nominee)
-        feedback = Feedback.objects.get(position=position,
+        feedback = Feedback.objects.get(positions__in=[position],
                                         nominee=nominee,
                                         type=FeedbackType.objects.get(slug='nomina'),
                                         author="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
@@ -383,10 +386,11 @@ class FeedbackTest(TestCase):
         nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         comments = 'plain text'
-        feedback = Feedback.objects.create(position=position,
+        feedback = Feedback.objects.create(nomcom=nomcom,
                                            nominee=nominee,
                                            comments=comments,
                                            type=FeedbackType.objects.get(slug='nomina'))
+        feedback.positions.add(position)
 
         # to check feedback comments are saved like enrypted data
         self.assertNotEqual(feedback.comments, comments)

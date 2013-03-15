@@ -302,8 +302,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
         super(NominateForm, self).__init__(*args, **kwargs)
 
-        fieldset = ['nominator_email',
-                    'position',
+        fieldset = ['position',
                     'candidate_name',
                     'candidate_email', 'candidate_phone',
                     'comments']
@@ -312,6 +311,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
             self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).opened()
 
         if not self.public:
+            fieldset = ['nominator_email'] + fieldset
             author = get_user_email(self.user)
             if author:
                 self.fields['nominator_email'].initial = author.address
@@ -350,10 +350,11 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         nominee_position, nominee_position_created = NomineePosition.objects.get_or_create(position=position, nominee=nominee)
 
         # Complete nomination data
-        feedback = Feedback.objects.create(position=position,
+        feedback = Feedback.objects.create(nomcom=self.nomcom,
                                            nominee=nominee,
                                            comments=comments,
                                            type=FeedbackType.objects.get(slug='nomina'))
+        feedback.positions.add(position)
         author = None
         if self.public:
             author = get_user_email(self.user)
@@ -369,6 +370,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
         nomination.nominee = nominee
         nomination.comments = feedback
+        nomination.user = self.user
 
         if commit:
             nomination.save()
@@ -480,10 +482,7 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                     'nominee_email',
                     'nominator_name',
                     'nominator_email',
-                    'comments',
-                    'position',
-                    'type',
-                    'nominee']
+                    'comments']
 
         if self.public:
             readonly_fields += ['nominator_name', 'nominator_email']
@@ -494,18 +493,13 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                             and the address will also be captured as part of the registered nomination.)"""
             self.fields['nominator_email'].help_text = help_text
 
-        hidden_fields = ['position', 'type', 'nominee']
-
         author = get_user_email(self.user)
         if author:
             self.fields['nominator_email'].initial = author.address
             self.fields['nominator_name'].initial = author.person.name
 
         if self.position and self.nominee:
-            self.fields['type'].initial = "comment"
-            self.fields['position'].initial = self.position
             self.fields['position_name'].initial = self.position.name
-            self.fields['nominee'].initial = self.nominee
             self.fields['nominee_name'].initial = self.nominee.email.person.name
             self.fields['nominee_email'].initial = self.nominee.email.address
         else:
@@ -520,16 +514,11 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
         for field in readonly_fields:
             self.fields[field].widget.attrs['readonly'] = True
 
-        for field in hidden_fields:
-            self.fields[field].widget = forms.HiddenInput()
-
         self.fieldsets = [('Provide comments', fieldset)]
 
     def save(self, commit=True):
         feedback = super(FeedbackForm, self).save(commit=False)
         confirmation = self.cleaned_data['confirmation']
-        nominee = self.cleaned_data['nominee']
-        position = self.cleaned_data['position']
         comments = self.cleaned_data['comments']
         nominator_email = self.cleaned_data['nominator_email']
         nomcom_template_path = '/nomcom/%s/' % self.nomcom.group.acronym
@@ -544,7 +533,13 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
 
         if author:
             feedback.author = author
-            feedback.save()
+
+        feedback.nomcom = self.nomcom
+        feedback.nominee = self.nominee
+        feedback.user = self.user
+        feedback.type = FeedbackType.objects.get(slug='comment')
+        feedback.save()
+        feedback.positions.add(self.position)
 
         # send receipt email to feedback author
         if confirmation or not self.public:
@@ -552,24 +547,21 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                 subject = "NomCom comment confirmation"
                 from_email = settings.NOMCOM_FROM_EMAIL
                 to_email = author.address
-                context = {'nominee': nominee.email.person.name,
+                context = {'nominee': self.nominee.email.person.name,
                            'comments': comments,
-                           'position': position.name}
+                           'position': self.position.name}
                 path = nomcom_template_path + FEEDBACK_RECEIPT_TEMPLATE
                 send_mail(None, to_email, from_email, subject, path, context)
 
     class Meta:
         model = Feedback
         fields = ('author',
-                  'position',
-                  'nominee',
                   'nominee_name',
                   'nominee_email',
                   'nominator_name',
                   'nominator_email',
                   'confirmation',
-                  'comments',
-                  'type')
+                  'comments')
 
     class Media:
         js = ("/js/jquery-1.5.1.min.js",

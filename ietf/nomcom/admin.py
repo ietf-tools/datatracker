@@ -28,7 +28,7 @@ class PositionAdmin(admin.ModelAdmin):
 
 
 class FeedbackAdmin(admin.ModelAdmin):
-    list_display = ('nominee', 'author', 'position', 'type')
+    list_display = ('nominee', 'author', 'type')
     list_filter = ('type',)
 
 admin.site.register(NomCom, NomComAdmin)

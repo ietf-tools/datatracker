@@ -8,7 +8,7 @@ from ietf.utils.pipe import pipe
 from ietf.ietfauth.decorators import has_role
 
 from ietf.nomcom.models import Feedback
-from ietf.nomcom.utils import get_nomcom_by_year, get_user_email
+from ietf.nomcom.utils import get_nomcom_by_year, get_user_email, retrieve_nomcom_private_key
 
 
 register = template.Library()
@@ -27,7 +27,8 @@ def is_chair(user, year):
 @register.simple_tag
 def add_num_nominations(user, position, nominee):
     author = get_user_email(user)
-    count = Feedback.objects.filter(position=position,
+
+    count = Feedback.objects.filter(positions__in=[position],
                                     nominee=nominee,
                                     author=author,
                                     type='comment').count()
@@ -39,8 +40,10 @@ def add_num_nominations(user, position, nominee):
     return '<span title="%d earlier comments from you on %s as %s">%s</span>&nbsp;' % (count, nominee, position, mark)
 
 
-@register.filter
-def decrypt(string, key=None):
+@register.simple_tag
+def decrypt(string, request, year):
+    key = retrieve_nomcom_private_key(request, year)
+
     if not key:
         return '<-Encripted text [No private key provided]->'
 

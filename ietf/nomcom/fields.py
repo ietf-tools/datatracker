@@ -15,8 +15,8 @@ class EncryptedTextField(models.TextField):
     def pre_save(self, instance, add):
         if add:
             comments = getattr(instance, 'comments')
-            position = getattr(instance, 'position')
-            cert_file = position.nomcom.public_key.path
+            nomcom = getattr(instance, 'nomcom')
+            cert_file = nomcom.public_key.path
             comments_file = tempfile.NamedTemporaryFile(delete=False)
             comments_file.write(comments)
             comments_file.close()
