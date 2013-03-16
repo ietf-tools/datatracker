@@ -424,7 +424,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         send_mail(None, to_email, from_email, subject, path, context)
 
         # send receipt email to nominator
-        if confirmation or not self.public:
+        if confirmation:
             if author:
                 subject = 'Nomination Receipt'
                 from_email = settings.NOMCOM_FROM_EMAIL
@@ -542,7 +542,7 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
         feedback.positions.add(self.position)
 
         # send receipt email to feedback author
-        if confirmation or not self.public:
+        if confirmation:
             if author:
                 subject = "NomCom comment confirmation"
                 from_email = settings.NOMCOM_FROM_EMAIL
