@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils import simplejson
@@ -13,7 +13,7 @@ from ietf.utils.mail import send_mail
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
-from ietf.name.models import NomineePositionState
+from ietf.name.models import NomineePositionState, FeedbackType
 
 from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, FeedbackForm, MergeForm,
@@ -306,10 +306,27 @@ def feedback(request, year, public):
 @private_key_required
 def view_feedback(request, year):
     nomcom = get_nomcom_by_year(year)
+    nominees = Nominee.objects.get_by_nomcom(nomcom).distinct()
 
     return render_to_response('nomcom/view_feedback.html',
                               {'year': year,
                                'selected': 'view_feedback',
+                               'nominees': nominees,
+                               'nomcom': nomcom}, RequestContext(request))
+
+
+@member_required(role='member')
+@private_key_required
+def view_feedback_nominee(request, year, nominee_id):
+    nomcom = get_nomcom_by_year(year)
+    nominee = get_object_or_404(Nominee, id=nominee_id)
+    feedback_types = FeedbackType.objects.all()
+
+    return render_to_response('nomcom/view_feedback_nominee.html',
+                              {'year': year,
+                               'selected': 'view_feedback',
+                               'nominee': nominee,
+                               'feedback_types': feedback_types,
                                'nomcom': nomcom}, RequestContext(request))
 
 

@@ -13,7 +13,8 @@ from ietf.group.models import Group
 from ietf.name.models import NomineePositionState, FeedbackType
 from ietf.dbtemplate.models import DBTemplate
 
-from ietf.nomcom.managers import NomineePositionManager, NomineeManager, PositionManager
+from ietf.nomcom.managers import NomineePositionManager, NomineeManager, \
+                                 PositionManager, FeedbackManager
 from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_questionnaire_for_position,
                                initialize_requirements_for_position)
@@ -125,7 +126,7 @@ class Position(models.Model):
         verbose_name_plural = 'Positions'
 
     def __unicode__(self):
-        return u"%s: %s" % (self.nomcom, self.name)
+        return self.name
 
     def save(self, *args, **kwargs):
         created = not self.id
@@ -158,8 +159,13 @@ class Feedback(models.Model):
     user = models.ForeignKey(User, blank=True, null=True)
     time = models.DateTimeField(auto_now_add=True)
 
+    objects = FeedbackManager()
+
     def __unicode__(self):
         return u"%s - %s" % (self.author, self.nominee)
+
+    class Meta:
+        ordering = ['time']
 
 # ----- adding south rules to help introspection -----
 

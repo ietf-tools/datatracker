@@ -8,4 +8,21 @@
 
 <h2>List of Nominees</h2>
 
+<table class="ietf-table ietf-doctable">
+<tr>
+  <th>Nominee</th>
+  <th>Nominations</th>
+  <th>Comments</th>
+  <th>Questionnaires</th>
+</tr>
+{% for nominee in nominees %}
+<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+  <td><a href="{% url nomcom_view_feedback_nominee year nominee.id %}">{{ nominee.email.person.name }}</td>
+  <td>{{ nominee.feedback_set.nominations.count }}</td>
+  <td>{{ nominee.feedback_set.comments.count }}</td>
+  <td>{{ nominee.feedback_set.questionnaires.count }}</td>
+</tr>
+{% endfor %}
+</table>
+
 {% endblock %}

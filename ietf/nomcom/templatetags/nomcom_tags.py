@@ -3,10 +3,12 @@ import tempfile
 
 from django import template
 from django.conf import settings
+from django.template.defaultfilters import linebreaksbr
 
 from ietf.utils.pipe import pipe
 from ietf.ietfauth.decorators import has_role
 
+from ietf.person.models import Person
 from ietf.nomcom.models import Feedback
 from ietf.nomcom.utils import get_nomcom_by_year, get_user_email, retrieve_nomcom_private_key
 
@@ -40,6 +42,15 @@ def add_num_nominations(user, position, nominee):
     return '<span title="%d earlier comments from you on %s as %s">%s</span>&nbsp;' % (count, nominee, position, mark)
 
 
+@register.filter
+def get_person(email):
+    person = email
+    if email:
+        persons = Person.objects.filter(email__address__in=[email])
+        person = persons and persons[0].name or person
+    return person
+
+
 @register.simple_tag
 def decrypt(string, request, year):
     key = retrieve_nomcom_private_key(request, year)
@@ -60,4 +71,4 @@ def decrypt(string, request, year):
     if error:
         return '<-Encripted text [Your private key is invalid]->'
 
-    return out
+    return linebreaksbr(out)

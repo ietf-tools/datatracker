@@ -2,6 +2,14 @@ from django.db import models
 from django.db.models.query import QuerySet
 
 
+class MixinManager(object):
+    def __getattr__(self, attr, *args):
+        try:
+            return getattr(self.__class__, attr, *args)
+        except AttributeError:
+            return getattr(self.get_query_set(), attr, *args)
+
+
 class NomineePositionQuerySet(QuerySet):
 
     def get_by_nomcom(self, nomcom):
@@ -23,15 +31,9 @@ class NomineePositionQuerySet(QuerySet):
         return self.by_state('declined')
 
 
-class NomineePositionManager(models.Manager):
+class NomineePositionManager(models.Manager, MixinManager):
     def get_query_set(self):
         return NomineePositionQuerySet(self.model)
-
-    def __getattr__(self, attr, *args):
-        try:
-            return getattr(self.__class__, attr, *args)
-        except AttributeError:
-            return getattr(self.get_query_set(), attr, *args)
 
 
 class NomineeManager(models.Manager):
@@ -53,12 +55,29 @@ class PositionQuerySet(QuerySet):
         return self.filter(is_open=False)
 
 
-class PositionManager(models.Manager):
+class PositionManager(models.Manager, MixinManager):
     def get_query_set(self):
         return PositionQuerySet(self.model)
 
-    def __getattr__(self, attr, *args):
-        try:
-            return getattr(self.__class__, attr, *args)
-        except AttributeError:
-            return getattr(self.get_query_set(), attr, *args)
+
+class FeedbackQuerySet(QuerySet):
+
+    def get_by_nomcom(self, nomcom):
+        return self.filter(nomcom=nomcom)
+
+    def by_type(self, type):
+        return self.filter(type=type)
+
+    def comments(self):
+        return self.by_type('comment')
+
+    def questionnaires(self):
+        return self.by_type('questio')
+
+    def nominations(self):
+        return self.by_type('nomina')
+
+
+class FeedbackManager(models.Manager, MixinManager):
+    def get_query_set(self):
+        return FeedbackQuerySet(self.model)

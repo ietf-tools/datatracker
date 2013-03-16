@@ -1,0 +1,64 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+
+{% load nomcom_tags %}
+
+{% block pagehead %}
+  {{ block.super }}
+  <script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
+  <script type="text/javascript" src="/js/yui/yui-20100305.js"></script>
+  <script type="text/javascript" src="/js/base.js"></script>
+{% endblock pagehead %}
+
+{% block subtitle %} - View comments of {{ nominee.email.person.name }}{% endblock %}
+
+{% block nomcom_content %}
+
+<p>Back to list of <a href="{% url nomcom_view_feedback year %}">nominees</a></p>
+
+<h2>Feedback of {{ nominee.email.person.name }} </h2>
+
+  <div id="mytabs" class="yui-navset">
+  <ul class="yui-nav">
+    {% for ft in feedback_types %}
+      <li><a href="#{{ ft.name }}"><em>{{ ft.name }}</em></a></li>
+    {% endfor %}
+  </ul>
+  Pick the feedback type to view from the list immediately above
+  <div class="yui-content">
+    {% for ft in feedback_types %}
+      <div id="{{ ft.name }}">
+            {% for feedback in nominee.feedback_set.all %}
+              {% ifequal feedback.type.slug ft.slug %}
+                <div>
+                  <h3 class="ietf-divider">From {{ feedback.author|get_person|default:"Anonymous" }} ({{ feedback.time|date:"Y-m-d" }})</h3>
+                  <b>Positions:</b> {{ feedback.positions.all|join:"," }}
+                  <p>
+                    {% decrypt feedback.comments request year %}
+                  </p>
+                </div>
+              {% endifequal %}
+            {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <script type="text/javascript">
+  //<![CDATA[
+  var tabView = new YAHOO.widget.TabView('mytabs');
+  var url = location.href.split('#');
+  if (url[1]) {
+    url[1] = "#"+url[1];
+    var tabs = tabView.get('tabs');
+    for (var i = 0; i < tabs.length; i++) {
+      if (url[1].indexOf(tabs[i].get('href')) == 0) {
+        tabView.set('activeIndex', i);
+        break;
+      }
+    }
+  }
+  //]]>
+  </script>
+
+
+
+{% endblock %}
