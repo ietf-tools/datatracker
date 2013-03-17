@@ -1,0 +1,37 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+
+{% load nomcom_tags %}
+
+
+{% block subtitle %} - Feeback pending{% endblock %}
+
+{% block nomcom_content %}
+
+<p>Back to <a href="{% url nomcom_view_feedback year %}">feedback index</a></p>
+
+<h2>Feedback pending from email list</h2>
+
+{% if message %}
+  <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+{% endif %}
+
+<div>
+  <form id="feedbackformset" action="" method="post">{% csrf_token %}
+    {{ formset.management_form }}
+    {% for form in formset.forms %}
+     <div class="ietf-divider"></div>
+     <div>
+        {% for field in form %}
+          <div>
+            {{ field.label_tag }}: {{ field }}
+          </div>
+        {% endfor %}
+        {% decrypt form.instance.comments request year %}
+    </div>
+    {% endfor %}
+    <div class="ietf-divider"></div>
+    <input type="submit" value="Submit" />
+  </form>
+</div>
+
+{% endblock %}

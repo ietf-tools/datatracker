@@ -6,6 +6,8 @@
 
 {% block nomcom_content %}
 
+<p><a href="{% url nomcom_view_feedback_pending year %}">Feedbak pending</a></p>
+
 <h2>List of Nominees</h2>
 
 <table class="ietf-table ietf-doctable">
@@ -17,7 +19,7 @@
 </tr>
 {% for nominee in nominees %}
 <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-  <td><a href="{% url nomcom_view_feedback_nominee year nominee.id %}">{{ nominee.email.person.name }}</td>
+  <td><a href="{% url nomcom_view_feedback_nominee year nominee.id %}#comment">{{ nominee.email.person.name }}</td>
   <td>{{ nominee.feedback_set.nominations.count }}</td>
   <td>{{ nominee.feedback_set.comments.count }}</td>
   <td>{{ nominee.feedback_set.questionnaires.count }}</td>

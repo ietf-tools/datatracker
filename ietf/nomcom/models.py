@@ -54,7 +54,7 @@ class Nomination(models.Model):
     nominee = models.ForeignKey('Nominee')
     comments = models.ForeignKey('Feedback')
     nominator_email = models.EmailField(verbose_name='Nominator Email', blank=True)
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, editable=False)
     time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -153,16 +153,16 @@ class Feedback(models.Model):
     nomcom = models.ForeignKey('NomCom')
     author = models.EmailField(verbose_name='Author', blank=True)
     positions = models.ManyToManyField('Position', blank=True, null=True)
-    nominee = models.ForeignKey('Nominee')
+    nominee = models.ForeignKey('Nominee', blank=True, null=True)
     comments = EncryptedTextField(verbose_name='Comments')
-    type = models.ForeignKey(FeedbackType)
-    user = models.ForeignKey(User, blank=True, null=True)
+    type = models.ForeignKey(FeedbackType, blank=True, null=True)
+    user = models.ForeignKey(User, editable=False, blank=True, null=True)
     time = models.DateTimeField(auto_now_add=True)
 
     objects = FeedbackManager()
 
     def __unicode__(self):
-        return u"%s - %s" % (self.author, self.nominee)
+        return u"from %s to %s" % (self.author, self.nominee)
 
     class Meta:
         ordering = ['time']

@@ -20,24 +20,33 @@
   <div id="mytabs" class="yui-navset">
   <ul class="yui-nav">
     {% for ft in feedback_types %}
-      <li><a href="#{{ ft.name }}"><em>{{ ft.name }}</em></a></li>
+      <li><a href="#{{ ft.slug }}"><em>{{ ft.name }}</em></a></li>
     {% endfor %}
   </ul>
   Pick the feedback type to view from the list immediately above
   <div class="yui-content">
     {% for ft in feedback_types %}
-      <div id="{{ ft.name }}">
-            {% for feedback in nominee.feedback_set.all %}
-              {% ifequal feedback.type.slug ft.slug %}
-                <div>
-                  <h3 class="ietf-divider">From {{ feedback.author|get_person|default:"Anonymous" }} ({{ feedback.time|date:"Y-m-d" }})</h3>
-                  <b>Positions:</b> {{ feedback.positions.all|join:"," }}
-                  <p>
-                    {% decrypt feedback.comments request year %}
-                  </p>
-                </div>
-              {% endifequal %}
-            {% endfor %}
+      <div id="#{{ ft.slug }}">
+        {% ifequal ft.slug "comment" %}
+          <b>Number of comments: {{ nominee.feedback_set.comments.count|default:"0" }}</b>
+        {% endifequal %}
+        {% ifequal ft.slug "questio" %}
+          <b>Number of questionnaires: {{ nominee.feedback_set.questionaires.count|default:"0" }}</b>
+        {% endifequal %}
+        {% ifequal ft.slug "nomina" %}
+          <b>Number of nominations: {{ nominee.feedback_set.nominations.count|default:"0" }}</b>
+        {% endifequal %}
+        {% for feedback in nominee.feedback_set.all %}
+          {% ifequal feedback.type.slug ft.slug %}
+            <div>
+              <h3 class="ietf-divider">From {{ feedback.author|get_person|default:"Anonymous" }} ({{ feedback.time|date:"Y-m-d" }})</h3>
+              <b>Positions:</b> {{ feedback.positions.all|join:"," }}
+              <p>
+                {% decrypt feedback.comments request year %}
+              </p>
+            </div>
+          {% endifequal %}
+        {% endfor %}
       </div>
     {% endfor %}
   </div>

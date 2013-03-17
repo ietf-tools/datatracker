@@ -258,7 +258,29 @@ class NomcomViewsTest(TestCase):
         self.client.logout()
 
     def feedback_view(self, *args, **kwargs):
-        pass
+        public = kwargs.pop('public', True)
+        nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
+        position_name = kwargs.pop('position', 'IAOC')
+
+        if public:
+            nominate_url = self.public_feedback_url
+        else:
+            nominate_url = self.private_feedback_url
+
+        response = self.client.get(nominate_url)
+        self.assertEqual(response.status_code, 200)
+
+        nomcom = get_nomcom_by_year(self.year)
+        if not nomcom.public_key:
+            self.assertNotContains(response, "feedbackform")
+
+        # save the cert file in tmp
+        nomcom.public_key.storage.location = tempfile.gettempdir()
+        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+
+        response = self.client.get(nominate_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "feedbackform")
 
     def test_public_nominate(self):
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)

@@ -8,6 +8,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils import simplejson
 from django.db.models import Count
+from django.forms.models import modelformset_factory
 
 from ietf.utils.mail import send_mail
 
@@ -17,7 +18,8 @@ from ietf.name.models import NomineePositionState, FeedbackType
 
 from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, FeedbackForm, MergeForm,
-                               NomComTemplateForm, PositionForm, PrivateKeyForm)
+                               NomComTemplateForm, PositionForm, PrivateKeyForm,
+                               BaseFeedbackFormSet)
 from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
                                retrieve_nomcom_private_key,
@@ -312,6 +314,30 @@ def view_feedback(request, year):
                               {'year': year,
                                'selected': 'view_feedback',
                                'nominees': nominees,
+                               'nomcom': nomcom}, RequestContext(request))
+
+
+@member_required(role='chair')
+@private_key_required
+def view_feedback_pending(request, year):
+    nomcom = get_nomcom_by_year(year)
+    message = None
+    FeedbackFormSet = modelformset_factory(Feedback,
+                                           formset=BaseFeedbackFormSet,
+                                           exclude=('nomcom', 'comments'),
+                                           extra=0)
+    if request.method == 'POST':
+        formset = FeedbackFormSet(request.POST)
+        if formset.is_valid():
+            formset.save()
+            message = ('success', 'The feedbacks has been saved.')
+    else:
+        formset = FeedbackFormSet()
+    return render_to_response('nomcom/view_feedback_pending.html',
+                              {'year': year,
+                               'selected': 'view_feedback',
+                               'formset': formset,
+                               'message': message,
                                'nomcom': nomcom}, RequestContext(request))
 
 

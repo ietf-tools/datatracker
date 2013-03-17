@@ -72,9 +72,9 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('nomcom', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.NomCom'])),
             ('author', self.gf('django.db.models.fields.EmailField')(max_length=75, blank=True)),
-            ('nominee', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.Nominee'])),
+            ('nominee', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.Nominee'], null=True, blank=True)),
             ('comments', self.gf('ietf.nomcom.fields.EncryptedTextField')()),
-            ('type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.FeedbackType'])),
+            ('type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.FeedbackType'], null=True, blank=True)),
             ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], null=True, blank=True)),
             ('time', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
         ))
@@ -332,15 +332,15 @@ class Migration(SchemaMigration):
             'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
         'nomcom.feedback': {
-            'Meta': {'object_name': 'Feedback'},
+            'Meta': {'ordering': "['time']", 'object_name': 'Feedback'},
             'author': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'comments': ('ietf.nomcom.fields.EncryptedTextField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'nomcom': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.NomCom']"}),
-            'nominee': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Nominee']"}),
+            'nominee': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Nominee']", 'null': 'True', 'blank': 'True'}),
             'positions': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['nomcom.Position']", 'null': 'True', 'blank': 'True'}),
             'time': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.FeedbackType']"}),
+            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.FeedbackType']", 'null': 'True', 'blank': 'True'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True', 'blank': 'True'})
         },
         'nomcom.nomcom': {

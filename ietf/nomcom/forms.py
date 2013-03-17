@@ -1,5 +1,6 @@
 from django.conf import settings
 from django import forms
+from django.forms.models import BaseModelFormSet
 from django.contrib.formtools.preview import FormPreview, AUTO_ID
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -8,6 +9,7 @@ from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
+from django.db.models import Q
 
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.utils import unaccent
@@ -566,6 +568,14 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
     class Media:
         js = ("/js/jquery-1.5.1.min.js",
               "/js/nomcom.js", )
+
+
+class BaseFeedbackFormSet(BaseModelFormSet):
+    def __init__(self, *args, **kwargs):
+        super(BaseFeedbackFormSet, self).__init__(*args, **kwargs)
+        self.queryset = Feedback.objects.filter(Q(type__isnull=True) |
+                                                Q(nominee__isnull=True) |
+                                                Q(positions=True))
 
 
 class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
