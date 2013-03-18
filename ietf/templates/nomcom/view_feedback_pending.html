@@ -19,11 +19,11 @@
   <form id="feedbackformset" action="" method="post">{% csrf_token %}
     {{ formset.management_form }}
     {% for form in formset.forms %}
-     <div class="ietf-divider"></div>
+     <h3 class="ietf-divider">{{ form.instance.time|date:"Y-m-d" }}</h3>
      <div>
         {% for field in form %}
           <div>
-            {{ field.label_tag }}: {{ field }}
+            {% if not field.field.widget.is_hidden %}{{ field.label_tag }}:{% endif %} {{ field }}
           </div>
         {% endfor %}
         {% decrypt form.instance.comments request year %}
