@@ -30,13 +30,18 @@ Please, check if there is some more action nedeed.</field>
         <field type="CharField" name="path">/nomcom/defaults/email/new_nominee.txt</field>
         <field type="CharField" name="title">Email sent to nominees when they are nominated</field>
         <field type="TextField" name="variables">$nominee: Full name of the nominee
-$position: Name of the position</field>
+$position: Name of the position
+$domain: Server domain
+$accept_url: Url hash to accept nominations
+$decline_url: Url hash to decline nominations</field>
         <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
         <field type="TextField" name="content">Hi,
 
 You have been nominated for the position of $position.
 
 The NomCom would appreciate receiving an indication of whether or not you accept this nomination to stand for consideration as a candidate for this position.
+
+You can accept the nomination via web going to the following link http://$domain$accept_url or decline the nomination going the following link http://$domain$decline_url
 
 If you accept, you will need to fill out a questionnaire.  You will receive the questionnaire by email.
 
