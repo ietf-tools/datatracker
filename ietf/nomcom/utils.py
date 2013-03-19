@@ -1,3 +1,6 @@
+import hashlib
+import re
+
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
@@ -34,6 +37,12 @@ def get_nomcom_by_year(year):
                              group__state__slug='active')
 
 
+def get_year_by_nomcom(nomcom):
+    acronym = nomcom.group.acronym
+    m = re.search('(?P<year>\d\d\d\d)', acronym)
+    return m.group(0)
+
+
 def get_user_email(user):
     emails = Email.objects.filter(person__user=user)
     email = emails and emails[0] or None
@@ -50,6 +59,10 @@ def is_nomcom_chair(user, nomcom):
     is_group_chair = nomcom.group.is_chair(user)
     if not is_group_chair:
         raise PermissionDenied("Must be nomcom chair")
+
+
+def get_hash_nominee_position(date, nominee_position_id):
+    return hashlib.md5('%s%s%s' % (settings.SECRET_KEY, date, nominee_position_id)).hexdigest()
 
 
 def initialize_templates_for_group(group):

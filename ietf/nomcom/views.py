@@ -1,8 +1,11 @@
  # -*- coding: utf-8 -*-
+import datetime
+
+from django.views.generic.create_update import delete_object
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.http import HttpResponse, Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
@@ -17,12 +20,14 @@ from ietf.dbtemplate.views import template_edit
 from ietf.name.models import NomineePositionState, FeedbackType
 
 from ietf.nomcom.decorators import member_required, private_key_required
-from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, FeedbackForm, MergeForm,
-                               NomComTemplateForm, PositionForm, PrivateKeyForm)
-from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback
+from ietf.nomcom.forms import (NominateForm, FeedbackForm, MergeForm,
+                               NomComTemplateForm, PositionForm, PrivateKeyForm,
+                               EditNomcomForm)
+from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
                                retrieve_nomcom_private_key,
-                               store_nomcom_private_key, NOMINEE_REMINDER_TEMPLATE)
+                               store_nomcom_private_key, get_hash_nominee_position,
+                               NOMINEE_REMINDER_TEMPLATE)
 
 
 def index(request, year):
@@ -71,13 +76,13 @@ def private_index(request, year):
             nominations = all_nominee_positions.filter(id__in=nominations_to_modify)
             if action == "set_as_accepted":
                 nominations.update(state='accepted')
-                message = ('success', 'The selected nominations has been set as accepted')
+                message = ('success', 'The selected nominations have been set as accepted')
             elif action == "set_as_declined":
                 nominations.update(state='declined')
-                message = ('success', 'The selected nominations has been set as declined')
+                message = ('success', 'The selected nominations have been set as declined')
             elif action == "set_as_pending":
                 nominations.update(state='pending')
-                message = ('success', 'The selected nominations has been set as pending')
+                message = ('success', 'The selected nominations have been set as pending')
         else:
             message = ('warning', "Please, select some nominations to work with")
 
@@ -164,7 +169,7 @@ def private_merge(request, year):
         form = MergeForm(request.POST, nomcom=nomcom)
         if form.is_valid():
             form.save()
-            message = ('success', 'The emails has been unified')
+            message = ('success', 'The emails have been unified')
     else:
         form = MergeForm(nomcom=nomcom)
 
@@ -249,6 +254,42 @@ def public_feedback(request, year):
 @member_required(role='member')
 def private_feedback(request, year):
     return feedback(request, year, False)
+
+
+def process_nomination_status(request, year, nominee_position_id, state, date, hash):
+    valid = get_hash_nominee_position(date, nominee_position_id) == hash
+    if not valid:
+        return HttpResponseForbidden("Bad hash!")
+    expiration_days = getattr(settings, 'DAYS_TO_EXPIRE_NOMINATION_LINK', None)
+    if expiration_days:
+        request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
+        if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK)):
+            return HttpResponseForbidden("Link expired")
+
+    need_confirmation = True
+    nomcom = get_nomcom_by_year(year)
+    nominee_position = get_object_or_404(NomineePosition, id=nominee_position_id)
+    if nominee_position.state.slug != "pending":
+        return HttpResponseForbidden("The nomination already was %s" % nominee_position.state)
+
+    state = get_object_or_404(NomineePositionState, slug=state)
+    message = ('warning', "Are you sure to change the nomination on %s as %s?" % (nominee_position.position.name,
+                                                                                  state.name))
+    if request.method == 'POST':
+        nominee_position.state = state
+        nominee_position.save()
+        need_confirmation = False
+        message = message = ('success', 'Your nomination on %s has been set as %s' % (nominee_position.position.name,
+                                                                                      state.name))
+
+    return render_to_response('nomcom/process_nomination_status.html',
+                              {'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'nominee_position': nominee_position,
+                               'state': state,
+                               'need_confirmation': need_confirmation,
+                               'selected': 'feedback'}, RequestContext(request))
 
 
 def feedback(request, year, public):
@@ -358,27 +399,42 @@ def view_feedback_nominee(request, year, nominee_id):
 
 
 @member_required(role='chair')
-def edit_publickey(request, year):
+def edit_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
 
     message = ('warning', 'Previous data will remain encrypted with the old key')
     if request.method == 'POST':
-        form = EditPublicKeyForm(request.POST,
-                                 request.FILES,
-                                 instance=nomcom,
-                                 initial={'public_key': None})
+        form = EditNomcomForm(request.POST,
+                              request.FILES,
+                              instance=nomcom)
         if form.is_valid():
             form.save()
-            message = ('success', 'The public key has been changed')
+            message = ('success', 'The nomcom has been changed')
     else:
-        form = EditPublicKeyForm()
+        form = EditNomcomForm(instance=nomcom)
 
-    return render_to_response('nomcom/edit_publickey.html',
+    return render_to_response('nomcom/edit_nomcom.html',
                               {'form': form,
-                               'group': nomcom.group,
+                               'nomcom': nomcom,
                                'message': message,
                                'year': year,
-                               'selected': 'edit_publickey'}, RequestContext(request))
+                               'selected': 'edit_nomcom'}, RequestContext(request))
+
+
+@member_required(role='chair')
+def delete_nomcom(request, year):
+    nomcom = get_nomcom_by_year(year)
+    post_delete_redirect = reverse('nomcom_deleted')
+    extra_context = {'year': year,
+                     'selected': 'edit_nomcom',
+                     'nomcom': nomcom}
+
+    return delete_object(request,
+                         model=NomCom,
+                         object_id=nomcom.id,
+                         post_delete_redirect=post_delete_redirect,
+                         template_name='nomcom/delete_nomcom.html',
+                         extra_context=extra_context)
 
 
 @member_required(role='chair')

@@ -1,3 +1,5 @@
+import datetime
+
 from django.conf import settings
 from django import forms
 from django.contrib.formtools.preview import FormPreview, AUTO_ID
@@ -8,6 +10,7 @@ from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
+from django.contrib.sites.models import Site
 
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.utils import unaccent
@@ -22,7 +25,7 @@ from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
 from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE, \
                               INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE, \
                               NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE, \
-                              get_user_email
+                              get_user_email, get_hash_nominee_position, get_year_by_nomcom
 from ietf.nomcom.decorators import member_required
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -190,17 +193,13 @@ class EditChairFormPreview(FormPreview):
         return HttpResponseRedirect(reverse('nomcom_edit_chair', kwargs={'year': self.year}))
 
 
-class EditPublicKeyForm(BaseNomcomForm, forms.ModelForm):
+class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
 
-    fieldsets = [('Public Key', ('public_key',))]
+    fieldsets = [('Edit nomcom', ('public_key', 'send_questionnaire'))]
 
     class Meta:
         model = NomCom
-        fields = ('public_key',)
-
-    def __init__(self, *args, **kwargs):
-        super(EditPublicKeyForm, self).__init__(*args, **kwargs)
-        self.fields['public_key'].required = True
+        fields = ('public_key', 'send_questionnaire')
 
 
 class MergeForm(BaseNomcomForm, forms.Form):
@@ -393,8 +392,30 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
             subject = 'IETF Nomination Information'
             from_email = settings.NOMCOM_FROM_EMAIL
             to_email = email.address
+            domain = Site.objects.get_current().domain
+            today = datetime.date.today().strftime('%Y%m%d')
+            hash = get_hash_nominee_position(today, nominee_position.id)
+            accept_url = reverse('nomcom_process_nomination_status',
+                                  None,
+                                  args=(get_year_by_nomcom(self.nomcom),
+                                  nominee_position.id,
+                                  'accepted',
+                                  today,
+                                  hash))
+            decline_url = reverse('nomcom_process_nomination_status',
+                                  None,
+                                  args=(get_year_by_nomcom(self.nomcom),
+                                  nominee_position.id,
+                                  'declined',
+                                  today,
+                                  hash))
+
             context = {'nominee': email.person.name,
-                      'position': position.name}
+                       'position': position.name,
+                       'domain': domain,
+                       'accept_url': accept_url,
+                       'decline_url': decline_url}
+
             path = nomcom_template_path + NOMINEE_EMAIL_TEMPLATE
             send_mail(None, to_email, from_email, subject, path, context)
 

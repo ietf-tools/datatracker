@@ -1,0 +1,15 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+
+{% block subtitle %}- Delete Nomcom{% endblock %}
+
+{% block nomcom_content %}
+
+<p>Are you sure you want to delete all data about {{ nomcom.group.name }}?</p>
+<form action="" method="post">{% csrf_token %}
+<div>
+<input type="hidden" name="post" value="yes" />
+<input type="submit" value="Yes, I'm sure" />
+</div>
+</form>
+
+{% endblock %}

@@ -1,9 +1,9 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
-{% block subtitle %}- Edit public key{% endblock %}
+{% block subtitle %}- Edit Nomcom{% endblock %}
 
 {% block nomcom_content %}
-<h2>Edit public key</h2>
+<h2>Edit Nomcom</h2>
 
 {% if message %}
 <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
@@ -17,5 +17,9 @@
 </table>
 <p><input type="submit" value="Save" /></p>
 </form>
+
+<h2>Delete Nomcom</h2>
+
+<p>To delete all data about {{ nomcom.group.name }}, <a href="{% url nomcom_delete_nomcom year %}" class="deletelink">click here</a></p>
 
 {% endblock %}
