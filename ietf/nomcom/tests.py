@@ -40,7 +40,7 @@ class NomcomViewsTest(TestCase):
         self.private_merge_url = reverse('nomcom_private_merge', kwargs={'year': self.year})
         self.edit_members_url = reverse('nomcom_edit_members', kwargs={'year': self.year})
         self.edit_chair_url = reverse('nomcom_edit_chair', kwargs={'year': self.year})
-        self.public_key_url = reverse('nomcom_edit_publickey', kwargs={'year': self.year})
+        self.edit_nomcom_url = reverse('nomcom_edit_nomcom', kwargs={'year': self.year})
         self.private_nominate_url = reverse('nomcom_private_nominate', kwargs={'year': self.year})
         self.private_feedback_url = reverse('nomcom_private_feedback', kwargs={'year': self.year})
 
@@ -198,20 +198,20 @@ class NomcomViewsTest(TestCase):
         # check chair actions
         self.client.login(remote_user=COMMUNITY_USER)
         self.check_url_status(self.edit_members_url, 200)
-        self.check_url_status(self.public_key_url, 200)
+        self.check_url_status(self.edit_nomcom_url, 200)
 
         # revert edit nomcom chair
         login_testing_unauthorized(self, SECRETARIAT_USER, self.edit_chair_url)
         self.change_chair(CHAIR_USER)
         self.client.logout()
 
-    def test_edit_publickey_view(self):
-        """Verify edit publickey view"""
-        login_testing_unauthorized(self, COMMUNITY_USER, self.public_key_url)
-        login_testing_unauthorized(self, CHAIR_USER, self.public_key_url)
-        self.check_url_status(self.public_key_url, 200)
+    def test_edit_nomcom_view(self):
+        """Verify edit nomcom view"""
+        login_testing_unauthorized(self, COMMUNITY_USER, self.edit_nomcom_url)
+        login_testing_unauthorized(self, CHAIR_USER, self.edit_nomcom_url)
+        self.check_url_status(self.edit_nomcom_url, 200)
         f = open(self.cert_file.name)
-        response = self.client.post(self.public_key_url, {'public_key': f})
+        response = self.client.post(self.edit_nomcom_url, {'public_key': f})
         f.close()
         self.assertEqual(response.status_code, 200)
 
