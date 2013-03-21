@@ -37,8 +37,12 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('email', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Email'])),
             ('duplicated', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.Nominee'], null=True, blank=True)),
+            ('nomcom', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.NomCom'])),
         ))
         db.send_create_signal('nomcom', ['Nominee'])
+
+        # Adding unique constraint on 'Nominee', fields ['email', 'nomcom']
+        db.create_unique('nomcom_nominee', ['email_id', 'nomcom_id'])
 
         # Adding model 'NomineePosition'
         db.create_table('nomcom_nomineeposition', (
@@ -93,6 +97,9 @@ class Migration(SchemaMigration):
         
         # Removing unique constraint on 'NomineePosition', fields ['position', 'nominee']
         db.delete_unique('nomcom_nomineeposition', ['position_id', 'nominee_id'])
+
+        # Removing unique constraint on 'Nominee', fields ['email', 'nomcom']
+        db.delete_unique('nomcom_nominee', ['email_id', 'nomcom_id'])
 
         # Deleting model 'NomCom'
         db.delete_table('nomcom_nomcom')
@@ -364,10 +371,11 @@ class Migration(SchemaMigration):
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"})
         },
         'nomcom.nominee': {
-            'Meta': {'object_name': 'Nominee'},
+            'Meta': {'unique_together': "(('email', 'nomcom'),)", 'object_name': 'Nominee'},
             'duplicated': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Nominee']", 'null': 'True', 'blank': 'True'}),
             'email': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Email']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'nomcom': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.NomCom']"}),
             'nominee_position': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['nomcom.Position']", 'through': "orm['nomcom.NomineePosition']", 'symmetrical': 'False'})
         },
         'nomcom.nomineeposition': {

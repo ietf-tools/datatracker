@@ -112,6 +112,11 @@ def initialize_requirements_for_position(position):
             content=template.content)
 
 
+def delete_nomcom_templates(nomcom):
+    nomcom_template_path = '/nomcom/' + nomcom.group.acronym
+    DBTemplate.objects.filter(path__contains=nomcom_template_path).delete()
+
+
 def retrieve_nomcom_private_key(request, year):
     private_key = request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None)
 

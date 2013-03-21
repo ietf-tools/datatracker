@@ -345,7 +345,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
             email.save()
 
         # Add the nomination for a particular position
-        nominee, created = Nominee.objects.get_or_create(email=email)
+        nominee, created = Nominee.objects.get_or_create(email=email, nomcom=self.nomcom)
         nominee_position, nominee_position_created = NomineePosition.objects.get_or_create(position=position, nominee=nominee)
 
         # Complete nomination data

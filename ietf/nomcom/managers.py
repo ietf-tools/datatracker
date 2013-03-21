@@ -38,7 +38,7 @@ class NomineePositionManager(models.Manager, MixinManager):
 
 class NomineeManager(models.Manager):
     def get_by_nomcom(self, nomcom):
-        return self.filter(nominee_position__nomcom=nomcom)
+        return self.filter(nomcom=nomcom)
 
 
 class PositionQuerySet(QuerySet):

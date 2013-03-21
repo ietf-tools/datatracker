@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 import os
 
 from django.db import models
+from django.db.models.signals import post_delete
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.models import User
@@ -17,7 +19,8 @@ from ietf.nomcom.managers import NomineePositionManager, NomineeManager, \
                                  PositionManager, FeedbackManager
 from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_questionnaire_for_position,
-                               initialize_requirements_for_position)
+                               initialize_requirements_for_position,
+                               delete_nomcom_templates)
 
 
 def upload_path_handler(instance, filename):
@@ -46,6 +49,14 @@ class NomCom(models.Model):
             initialize_templates_for_group(self)
 
 
+def delete_nomcom(sender, **kwargs):
+    nomcom = kwargs.get('instance', None)
+    delete_nomcom_templates(nomcom)
+    storage, path = nomcom.public_key.storage, nomcom.public_key.path
+    storage.delete(path)
+post_delete.connect(delete_nomcom, sender=NomCom)
+
+
 class Nomination(models.Model):
     position = models.ForeignKey('Position')
     candidate_name = models.CharField(verbose_name='Candidate name', max_length=255)
@@ -69,11 +80,13 @@ class Nominee(models.Model):
     email = models.ForeignKey(Email)
     nominee_position = models.ManyToManyField('Position', through='NomineePosition')
     duplicated = models.ForeignKey('Nominee', blank=True, null=True)
+    nomcom = models.ForeignKey('NomCom')
 
     objects = NomineeManager()
 
     class Meta:
         verbose_name_plural = 'Nominees'
+        unique_together = ('email', 'nomcom')
 
     def __unicode__(self):
         return u'%s' % self.email

@@ -150,7 +150,7 @@ def nomcom_test_data():
                                 email=email)
     # nominee
     email = Email.objects.get(person__name=COMMUNITY_USER)
-    nominee, created = Nominee.objects.get_or_create(email=email)
+    nominee, created = Nominee.objects.get_or_create(email=email, nomcom=nomcom)
 
     # positions
     for name, description in POSITIONS.iteritems():
