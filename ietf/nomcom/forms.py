@@ -471,12 +471,12 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 class FeedbackForm(BaseNomcomForm, forms.ModelForm):
     position_name = forms.CharField(label='position',
                                     widget=forms.TextInput(attrs={'size': '40'}))
-    nominee_name = forms.CharField(label='your name',
+    nominee_name = forms.CharField(label='nominee name',
                                    widget=forms.TextInput(attrs={'size': '40'}))
-    nominee_email = forms.CharField(label='your email',
+    nominee_email = forms.CharField(label='nominee email',
                                     widget=forms.TextInput(attrs={'size': '40'}))
-    nominator_name = forms.CharField(label='nominator name')
-    nominator_email = forms.CharField(label='nominator email')
+    nominator_name = forms.CharField(label='your name')
+    nominator_email = forms.CharField(label='your email')
 
     comments = forms.CharField(label='Comments on this candidate',
                                widget=forms.Textarea())
@@ -513,6 +513,8 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                             comments wishes to be anonymous. The confirmation email will be sent to the address given here,
                             and the address will also be captured as part of the registered nomination.)"""
             self.fields['nominator_email'].help_text = help_text
+            self.fields['nominator_name'].required = False
+            self.fields['nominator_email'].required = False
 
         author = get_user_email(self.user)
         if author:
@@ -582,6 +584,49 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                   'nominator_name',
                   'nominator_email',
                   'confirmation',
+                  'comments')
+
+    class Media:
+        js = ("/js/jquery-1.5.1.min.js",
+              "/js/nomcom.js", )
+
+
+class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
+
+    comments = forms.CharField(label='Comments on this candidate',
+                               widget=forms.Textarea())
+    fieldsets = [('Provide questionnaires', ('nominee',
+                                             'positions',
+                                             'comments'))]
+
+    def __init__(self, *args, **kwargs):
+        self.nomcom = kwargs.pop('nomcom', None)
+        self.user = kwargs.pop('user', None)
+
+        super(QuestionnaireForm, self).__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        feedback = super(QuestionnaireForm, self).save(commit=False)
+
+        nominee = self.cleaned_data.get("nominee")
+        positions = self.cleaned_data.get("positions")
+
+        author = get_user_email(self.user)
+
+        if author:
+            feedback.author = author
+
+        feedback.nomcom = self.nomcom
+        feedback.nominee = nominee
+        feedback.user = self.user
+        feedback.type = FeedbackType.objects.get(slug='questio')
+        feedback.save()
+        feedback.positions = positions
+
+    class Meta:
+        model = Feedback
+        fields = ('nominee',
+                  'positions',
                   'comments')
 
     class Media:

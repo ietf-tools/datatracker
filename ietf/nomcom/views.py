@@ -20,9 +20,9 @@ from ietf.dbtemplate.views import template_edit
 from ietf.name.models import NomineePositionState, FeedbackType
 
 from ietf.nomcom.decorators import member_required, private_key_required
-from ietf.nomcom.forms import (NominateForm, FeedbackForm, MergeForm,
-                               NomComTemplateForm, PositionForm, PrivateKeyForm,
-                               EditNomcomForm)
+from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
+                               MergeForm, NomComTemplateForm, PositionForm,
+                               PrivateKeyForm, EditNomcomForm)
 from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
                                retrieve_nomcom_private_key,
@@ -256,42 +256,6 @@ def private_feedback(request, year):
     return feedback(request, year, False)
 
 
-def process_nomination_status(request, year, nominee_position_id, state, date, hash):
-    valid = get_hash_nominee_position(date, nominee_position_id) == hash
-    if not valid:
-        return HttpResponseForbidden("Bad hash!")
-    expiration_days = getattr(settings, 'DAYS_TO_EXPIRE_NOMINATION_LINK', None)
-    if expiration_days:
-        request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
-        if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK)):
-            return HttpResponseForbidden("Link expired")
-
-    need_confirmation = True
-    nomcom = get_nomcom_by_year(year)
-    nominee_position = get_object_or_404(NomineePosition, id=nominee_position_id)
-    if nominee_position.state.slug != "pending":
-        return HttpResponseForbidden("The nomination already was %s" % nominee_position.state)
-
-    state = get_object_or_404(NomineePositionState, slug=state)
-    message = ('warning', "Are you sure to change the nomination on %s as %s?" % (nominee_position.position.name,
-                                                                                  state.name))
-    if request.method == 'POST':
-        nominee_position.state = state
-        nominee_position.save()
-        need_confirmation = False
-        message = message = ('success', 'Your nomination on %s has been set as %s' % (nominee_position.position.name,
-                                                                                      state.name))
-
-    return render_to_response('nomcom/process_nomination_status.html',
-                              {'message': message,
-                               'nomcom': nomcom,
-                               'year': year,
-                               'nominee_position': nominee_position,
-                               'state': state,
-                               'need_confirmation': need_confirmation,
-                               'selected': 'feedback'}, RequestContext(request))
-
-
 def feedback(request, year, public):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
@@ -341,6 +305,75 @@ def feedback(request, year, public):
                                'year': year,
                                'positions': positions,
                                'submit_disabled': submit_disabled,
+                               'selected': 'feedback'}, RequestContext(request))
+
+
+def private_questionnaire(request, year):
+    nomcom = get_nomcom_by_year(year)
+    has_publickey = nomcom.public_key and True or False
+    message = None
+    template = 'nomcom/private_questionnaire.html'
+
+    if not has_publickey:
+            message = ('warning', "Nomcom don't have public key to ecrypt data, please contact with nomcom chair")
+            return render_to_response(template,
+                              {'has_publickey': has_publickey,
+                               'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'selected': 'questionnaire'}, RequestContext(request))
+
+    if request.method == 'POST':
+        form = QuestionnaireForm(data=request.POST,
+                                 nomcom=nomcom, user=request.user)
+        if form.is_valid():
+            form.save()
+            message = ('success', 'The questionnaire has been registered.')
+    else:
+        form = QuestionnaireForm(nomcom=nomcom, user=request.user)
+
+    return render_to_response(template,
+                              {'has_publickey': has_publickey,
+                               'form': form,
+                               'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'selected': 'questionnaire'}, RequestContext(request))
+
+
+def process_nomination_status(request, year, nominee_position_id, state, date, hash):
+    valid = get_hash_nominee_position(date, nominee_position_id) == hash
+    if not valid:
+        return HttpResponseForbidden("Bad hash!")
+    expiration_days = getattr(settings, 'DAYS_TO_EXPIRE_NOMINATION_LINK', None)
+    if expiration_days:
+        request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
+        if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK)):
+            return HttpResponseForbidden("Link expired")
+
+    need_confirmation = True
+    nomcom = get_nomcom_by_year(year)
+    nominee_position = get_object_or_404(NomineePosition, id=nominee_position_id)
+    if nominee_position.state.slug != "pending":
+        return HttpResponseForbidden("The nomination already was %s" % nominee_position.state)
+
+    state = get_object_or_404(NomineePositionState, slug=state)
+    message = ('warning', "Are you sure to change the nomination on %s as %s?" % (nominee_position.position.name,
+                                                                                  state.name))
+    if request.method == 'POST':
+        nominee_position.state = state
+        nominee_position.save()
+        need_confirmation = False
+        message = message = ('success', 'Your nomination on %s has been set as %s' % (nominee_position.position.name,
+                                                                                      state.name))
+
+    return render_to_response('nomcom/process_nomination_status.html',
+                              {'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'nominee_position': nominee_position,
+                               'state': state,
+                               'need_confirmation': need_confirmation,
                                'selected': 'feedback'}, RequestContext(request))
 
 

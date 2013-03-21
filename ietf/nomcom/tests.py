@@ -260,14 +260,19 @@ class NomcomViewsTest(TestCase):
     def feedback_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
         nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
+        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
         position_name = kwargs.pop('position', 'IAOC')
 
-        if public:
-            nominate_url = self.public_feedback_url
-        else:
-            nominate_url = self.private_feedback_url
+        self.nominate_view(public=public,
+                           nominee_email=nominee_email,
+                           position=position_name,
+                           nominator_email=nominator_email)
 
-        response = self.client.get(nominate_url)
+        feedback_url = self.public_feedback_url
+        if not public:
+            feedback_url = self.private_feedback_url
+
+        response = self.client.get(feedback_url)
         self.assertEqual(response.status_code, 200)
 
         nomcom = get_nomcom_by_year(self.year)
@@ -278,9 +283,42 @@ class NomcomViewsTest(TestCase):
         nomcom.public_key.storage.location = tempfile.gettempdir()
         nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
-        response = self.client.get(nominate_url)
+        response = self.client.get(feedback_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "feedbackform")
+
+        position = Position.objects.get(name=position_name)
+        nominee = Nominee.objects.get(email__address=nominee_email)
+
+        comments = 'test feedback view'
+
+        test_data = {'comments': comments,
+                     'position_name': position.name,
+                     'nominee_name': nominee.email.person.name,
+                     'nominee_email': nominee.email.address}
+
+        if public:
+            test_data['nominator_email'] = nominator_email
+            test_data['nominator_name'] = nominator_email
+
+        feedback_url += "?nominee=%d&position=%d" % (nominee.id, position.id)
+
+        response = self.client.post(feedback_url, test_data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "info-message-success")
+
+        ## check objects
+        feedback = Feedback.objects.get(positions__in=[position],
+                                        nominee=nominee,
+                                        type=FeedbackType.objects.get(slug='comment'))
+        if public:
+            self.assertEqual(feedback.author, nominator_email)
+
+        ## to check feedback comments are saved like enrypted data
+        self.assertNotEqual(feedback.comments, comments)
+
+        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
 
     def test_public_nominate(self):
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
@@ -295,6 +333,7 @@ class NomcomViewsTest(TestCase):
     def nominate_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
         nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
+        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
         position_name = kwargs.pop('position', 'IAOC')
 
         if public:
@@ -328,7 +367,7 @@ class NomcomViewsTest(TestCase):
                      'position': position.id,
                      'comments': comments}
         if not public:
-            test_data['nominator_email'] = "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN)
+            test_data['nominator_email'] = nominator_email
 
         response = self.client.post(nominate_url, test_data)
         self.assertEqual(response.status_code, 200)
@@ -342,7 +381,7 @@ class NomcomViewsTest(TestCase):
         feedback = Feedback.objects.get(positions__in=[position],
                                         nominee=nominee,
                                         type=FeedbackType.objects.get(slug='nomina'),
-                                        author="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+                                        author=nominator_email)
 
         # to check feedback comments are saved like enrypted data
         self.assertNotEqual(feedback.comments, comments)
