@@ -19,11 +19,12 @@
   <form id="feedbackformset" action="" method="post">{% csrf_token %}
     {{ formset.management_form }}
     {% for form in formset.forms %}
-     <h3 class="ietf-divider">{{ form.instance.time|date:"Y-m-d" }}</h3>
+     <h3 class="ietf-divider">{{ form.instance.time|date:"Y-m-d" }} id:{{ form.instance.id }}</h3>
+     {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
      <div>
         {% for field in form %}
           <div>
-            {% if not field.field.widget.is_hidden %}{{ field.label_tag }}:{% endif %} {{ field }}
+            {% if not field.field.widget.is_hidden %}{{ field.label_tag }}:{% endif %} {{ field }}{{ field.errors }}
           </div>
         {% endfor %}
         {% decrypt form.instance.comments request year %}

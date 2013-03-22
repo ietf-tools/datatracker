@@ -400,8 +400,8 @@ def view_feedback_pending(request, year):
                                            exclude=('nomcom', 'comments'),
                                            extra=0)
     feedbacks = Feedback.objects.filter(Q(type__isnull=True) |
-                                            Q(nominee__isnull=True) |
-                                            Q(positions__isnull=True))
+                                        Q(nominee__isnull=True) |
+                                        Q(positions__isnull=True))
     if request.method == 'POST':
         formset = FeedbackFormSet(request.POST)
         if formset.is_valid():
