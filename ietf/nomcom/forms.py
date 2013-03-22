@@ -608,20 +608,16 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
     def save(self, commit=True):
         feedback = super(QuestionnaireForm, self).save(commit=False)
 
-        nominee = self.cleaned_data.get("nominee")
-        positions = self.cleaned_data.get("positions")
-
         author = get_user_email(self.user)
 
         if author:
             feedback.author = author
 
         feedback.nomcom = self.nomcom
-        feedback.nominee = nominee
         feedback.user = self.user
         feedback.type = FeedbackType.objects.get(slug='questio')
         feedback.save()
-        feedback.positions = positions
+        self.save_m2m()
 
     class Meta:
         model = Feedback

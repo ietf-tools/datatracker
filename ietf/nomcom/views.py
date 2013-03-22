@@ -308,6 +308,7 @@ def feedback(request, year, public):
                                'selected': 'feedback'}, RequestContext(request))
 
 
+@member_required(role='chair')
 def private_questionnaire(request, year):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
