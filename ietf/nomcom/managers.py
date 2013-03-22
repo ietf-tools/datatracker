@@ -27,8 +27,11 @@ class NomineePositionQuerySet(QuerySet):
         return self.by_state('pending')
 
     def declined(self):
-        """ only draft objects """
+        """ only declined objects """
         return self.by_state('declined')
+
+    def not_duplicated(self):
+        return self.filter(nominee__duplicated__isnull=True)
 
 
 class NomineePositionManager(models.Manager, MixinManager):
@@ -36,9 +39,18 @@ class NomineePositionManager(models.Manager, MixinManager):
         return NomineePositionQuerySet(self.model)
 
 
-class NomineeManager(models.Manager):
+class NomineeManagerQuerySet(QuerySet):
+
     def get_by_nomcom(self, nomcom):
         return self.filter(nomcom=nomcom)
+
+    def not_duplicated(self):
+        return self.filter(duplicated__isnull=True)
+
+
+class NomineeManager(models.Manager, MixinManager):
+    def get_query_set(self):
+        return NomineeManagerQuerySet(self.model)
 
 
 class PositionQuerySet(QuerySet):

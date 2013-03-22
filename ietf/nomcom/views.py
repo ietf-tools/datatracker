@@ -66,7 +66,7 @@ def private_key(request, year):
 @member_required(role='member')
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
-    all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom)
+    all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom).not_duplicated()
     is_chair = nomcom.group.is_chair(request.user)
     message = None
     if is_chair and request.method == 'POST':
@@ -382,7 +382,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
 @private_key_required
 def view_feedback(request, year):
     nomcom = get_nomcom_by_year(year)
-    nominees = Nominee.objects.get_by_nomcom(nomcom).distinct()
+    nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().distinct()
 
     return render_to_response('nomcom/view_feedback.html',
                               {'year': year,
