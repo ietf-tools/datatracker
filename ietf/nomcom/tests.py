@@ -42,6 +42,7 @@ class NomcomViewsTest(TestCase):
         self.edit_chair_url = reverse('nomcom_edit_chair', kwargs={'year': self.year})
         self.edit_nomcom_url = reverse('nomcom_edit_nomcom', kwargs={'year': self.year})
         self.private_nominate_url = reverse('nomcom_private_nominate', kwargs={'year': self.year})
+        self.add_questionnaire_url = reverse('nomcom_private_questionnaire', kwargs={'year': self.year})
         self.private_feedback_url = reverse('nomcom_private_feedback', kwargs={'year': self.year})
 
         # public urls
@@ -207,9 +208,8 @@ class NomcomViewsTest(TestCase):
 
     def test_edit_nomcom_view(self):
         """Verify edit nomcom view"""
-        login_testing_unauthorized(self, COMMUNITY_USER, self.edit_nomcom_url)
-        login_testing_unauthorized(self, CHAIR_USER, self.edit_nomcom_url)
-        self.check_url_status(self.edit_nomcom_url, 200)
+        self.access_chair_url(self.edit_nomcom_url)
+
         f = open(self.cert_file.name)
         response = self.client.post(self.edit_nomcom_url, {'public_key': f})
         f.close()
@@ -246,6 +246,137 @@ class NomcomViewsTest(TestCase):
     def test_questionnaires_view(self):
         """Verify questionnaires view"""
         self.check_url_status(self.questionnaires_url, 200)
+
+    def test_public_nominate(self):
+        login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
+        return self.nominate_view(public=True)
+        self.client.logout()
+
+    def test_private_nominate(self):
+        self.access_member_url(self.private_nominate_url)
+        return self.nominate_view(public=False)
+        self.client.logout()
+
+    def nominate_view(self, *args, **kwargs):
+        public = kwargs.pop('public', True)
+        nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
+        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+        position_name = kwargs.pop('position', 'IAOC')
+
+        if public:
+            nominate_url = self.public_nominate_url
+        else:
+            nominate_url = self.private_nominate_url
+        response = self.client.get(nominate_url)
+        self.assertEqual(response.status_code, 200)
+
+        nomcom = get_nomcom_by_year(self.year)
+        if not nomcom.public_key:
+            self.assertNotContains(response, "nominateform")
+
+        # save the cert file in tmp
+        nomcom.public_key.storage.location = tempfile.gettempdir()
+        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+
+        response = self.client.get(nominate_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "nominateform")
+
+        position = Position.objects.get(name=position_name)
+        candidate_email = nominee_email
+        candidate_name = u'nominee'
+        comments = 'test nominate view'
+        candidate_phone = u'123456'
+
+        test_data = {'candidate_name': candidate_name,
+                     'candidate_email': candidate_email,
+                     'candidate_phone': candidate_phone,
+                     'position': position.id,
+                     'comments': comments}
+        if not public:
+            test_data['nominator_email'] = nominator_email
+
+        response = self.client.post(nominate_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "info-message-success")
+
+        # check objects
+        email = Email.objects.get(address=candidate_email)
+        Person.objects.get(name=candidate_name, address=candidate_email)
+        nominee = Nominee.objects.get(email=email)
+        NomineePosition.objects.get(position=position, nominee=nominee)
+        feedback = Feedback.objects.get(positions__in=[position],
+                                        nominee=nominee,
+                                        type=FeedbackType.objects.get(slug='nomina'))
+        if public:
+            self.assertEqual(feedback.author, nominator_email)
+
+        # to check feedback comments are saved like enrypted data
+        self.assertNotEqual(feedback.comments, comments)
+
+        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
+        Nomination.objects.get(position=position,
+                               candidate_name=candidate_name,
+                               candidate_email=candidate_email,
+                               candidate_phone=candidate_phone,
+                               nominee=nominee,
+                               comments=feedback,
+                               nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+
+    def test_add_questionnaire(self):
+        self.access_chair_url(self.private_merge_url)
+        return self.add_questionnaire()
+        self.client.logout()
+
+    def add_questionnaire(self, *args, **kwargs):
+        public = kwargs.pop('public', False)
+        nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
+        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+        position_name = kwargs.pop('position', 'IAOC')
+
+        self.nominate_view(public=public,
+                           nominee_email=nominee_email,
+                           position=position_name,
+                           nominator_email=nominator_email)
+
+        response = self.client.get(self.add_questionnaire_url)
+        self.assertEqual(response.status_code, 200)
+
+        nomcom = get_nomcom_by_year(self.year)
+        if not nomcom.public_key:
+            self.assertNotContains(response, "questionnnaireform")
+
+        # save the cert file in tmp
+        nomcom.public_key.storage.location = tempfile.gettempdir()
+        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+
+        response = self.client.get(self.add_questionnaire_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "questionnnaireform")
+
+        position = Position.objects.get(name=position_name)
+        nominee = Nominee.objects.get(email__address=nominee_email)
+
+        comments = 'test add questionnaire view'
+
+        test_data = {'comments': comments,
+                     'positions': [position.id],
+                     'nominee': nominee.id}
+
+        response = self.client.post(self.add_questionnaire_url, test_data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "info-message-success")
+
+        ## check objects
+        feedback = Feedback.objects.get(positions__in=[position],
+                                        nominee=nominee,
+                                        type=FeedbackType.objects.get(slug='questio'))
+
+        ## to check feedback comments are saved like enrypted data
+        self.assertNotEqual(feedback.comments, comments)
+
+        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
 
     def test_public_feedback(self):
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_feedback_url)
@@ -319,81 +450,6 @@ class NomcomViewsTest(TestCase):
         self.assertNotEqual(feedback.comments, comments)
 
         self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
-
-    def test_public_nominate(self):
-        login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
-        return self.nominate_view(public=True)
-        self.client.logout()
-
-    def test_private_nominate(self):
-        self.access_member_url(self.private_nominate_url)
-        return self.nominate_view(public=False)
-        self.client.logout()
-
-    def nominate_view(self, *args, **kwargs):
-        public = kwargs.pop('public', True)
-        nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
-        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
-        position_name = kwargs.pop('position', 'IAOC')
-
-        if public:
-            nominate_url = self.public_nominate_url
-        else:
-            nominate_url = self.private_nominate_url
-        response = self.client.get(nominate_url)
-        self.assertEqual(response.status_code, 200)
-
-        nomcom = get_nomcom_by_year(self.year)
-        if not nomcom.public_key:
-            self.assertNotContains(response, "nominateform")
-
-        # save the cert file in tmp
-        nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
-
-        response = self.client.get(nominate_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "nominateform")
-
-        position = Position.objects.get(name=position_name)
-        candidate_email = nominee_email
-        candidate_name = u'nominee'
-        comments = 'test nominate view'
-        candidate_phone = u'123456'
-
-        test_data = {'candidate_name': candidate_name,
-                     'candidate_email': candidate_email,
-                     'candidate_phone': candidate_phone,
-                     'position': position.id,
-                     'comments': comments}
-        if not public:
-            test_data['nominator_email'] = nominator_email
-
-        response = self.client.post(nominate_url, test_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "info-message-success")
-
-        # check objects
-        email = Email.objects.get(address=candidate_email)
-        Person.objects.get(name=candidate_name, address=candidate_email)
-        nominee = Nominee.objects.get(email=email)
-        NomineePosition.objects.get(position=position, nominee=nominee)
-        feedback = Feedback.objects.get(positions__in=[position],
-                                        nominee=nominee,
-                                        type=FeedbackType.objects.get(slug='nomina'),
-                                        author=nominator_email)
-
-        # to check feedback comments are saved like enrypted data
-        self.assertNotEqual(feedback.comments, comments)
-
-        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
-        Nomination.objects.get(position=position,
-                               candidate_name=candidate_name,
-                               candidate_email=candidate_email,
-                               candidate_phone=candidate_phone,
-                               nominee=nominee,
-                               comments=feedback,
-                               nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
 
 
 class NomineePositionStateSaveTest(TestCase):
