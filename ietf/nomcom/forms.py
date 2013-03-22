@@ -352,7 +352,8 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         feedback = Feedback.objects.create(nomcom=self.nomcom,
                                            nominee=nominee,
                                            comments=comments,
-                                           type=FeedbackType.objects.get(slug='nomina'))
+                                           type=FeedbackType.objects.get(slug='nomina'),
+                                           user=self.user)
         feedback.positions.add(position)
         author = None
         if self.public:
