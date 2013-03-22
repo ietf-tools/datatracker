@@ -267,10 +267,6 @@ class MergeForm(BaseNomcomForm, forms.Form):
                     if nominee_position.time > primary_nominee_position.time:
                         primary_nominee_position.state = nominee_position.state
                         primary_nominee_position.save()
-                    questionnaires = nominee_position.questionnaires.all()
-                    if questionnaires:
-                        primary_nominee_position.questionnaires.add(*questionnaires)
-
                 else:
                     # It is not allowed two or more nomineeposition objects with same position and nominee
                     # move nominee_position object to primary nominee

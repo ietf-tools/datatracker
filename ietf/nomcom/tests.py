@@ -80,72 +80,180 @@ class NomcomViewsTest(TestCase):
     def test_private_merge_view(self):
         """Verify private merge view"""
 
+        nominees = [u'nominee0@example.com',
+                    u'nominee1@example.com',
+                    u'nominee2@example.com',
+                    u'nominee3@example.com']
+
         # do nominations
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
-        self.nominate_view(public=True, nominee_email=u'nominee@example.com',
+        self.nominate_view(public=True,
+                           nominee_email=nominees[0],
                            position='IAOC')
-        self.nominate_view(public=True, nominee_email=u'nominee2@example.com',
+        self.nominate_view(public=True,
+                           nominee_email=nominees[0],
                            position='IAOC')
-        self.nominate_view(public=True, nominee_email=u'nominee3@example.com',
+        self.nominate_view(public=True,
+                           nominee_email=nominees[1],
+                           position='IAOC')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[1],
+                           position='IAOC')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[2],
                            position='IAB')
-        self.nominate_view(public=True, nominee_email=u'nominee4@example.com',
+        self.nominate_view(public=True,
+                           nominee_email=nominees[2],
+                           position='IAB')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[3],
                            position='TSV')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[3],
+                           position='TSV')
+        # Check nominee positions
+        self.assertEqual(NomineePosition.objects.count(), 4)
+        self.assertEqual(Feedback.objects.nominations().count(), 8)
+
+        # Accept and declined nominations
+        nominee_position = NomineePosition.objects.get(position__name='TSV',
+                                                       nominee__email__address=nominees[3])
+        nominee_position.state = NomineePositionState.objects.get(slug='accepted')
+        nominee_position.save()
+
+        nominee_position = NomineePosition.objects.get(position__name='IAOC',
+                                                       nominee__email__address=nominees[0])
+        nominee_position.state = NomineePositionState.objects.get(slug='accepted')
+        nominee_position.save()
+
+        nominee_position = NomineePosition.objects.get(position__name='IAOC',
+                                                       nominee__email__address=nominees[1])
+        nominee_position.state = NomineePositionState.objects.get(slug='declined')
+        nominee_position.save()
 
         self.client.logout()
 
-        # merge nominations
+        # fill questionnaires (internally the function does new nominations)
+        self.access_chair_url(self.add_questionnaire_url)
+
+        self.add_questionnaire(public=False,
+                               nominee_email=nominees[0],
+                               position='IAOC')
+        self.add_questionnaire(public=False,
+                               nominee_email=nominees[1],
+                               position='IAOC')
+        self.add_questionnaire(public=False,
+                               nominee_email=nominees[2],
+                               position='IAB')
+        self.add_questionnaire(public=False,
+                               nominee_email=nominees[3],
+                               position='TSV')
+        self.assertEqual(Feedback.objects.questionnaires().count(), 4)
+
+        self.client.logout()
+
+        ## Add feedbacks (internally the function does new nominations)
+        self.access_member_url(self.private_feedback_url)
+
+        self.feedback_view(public=False,
+                           nominee_email=nominees[0],
+                           position='IAOC')
+        self.feedback_view(public=False,
+                           nominee_email=nominees[1],
+                           position='IAOC')
+        self.feedback_view(public=False,
+                           nominee_email=nominees[2],
+                           position='IAB')
+        self.feedback_view(public=False,
+                           nominee_email=nominees[03],
+                           position='TSV')
+
+        self.assertEqual(Feedback.objects.comments().count(), 4)
+        self.assertEqual(Feedback.objects.nominations().count(), 16)
+        for nominee in nominees:
+            self.assertEqual(Feedback.objects.nominations().filter(nominee__email__address=nominee).count(),
+                         4)
+            self.assertEqual(Feedback.objects.comments().filter(nominee__email__address=nominee).count(),
+                         1)
+            self.assertEqual(Feedback.objects.questionnaires().filter(nominee__email__address=nominee).count(),
+                         1)
+
+        self.client.logout()
+
+        ## merge nominations
         self.access_chair_url(self.private_merge_url)
 
-        test_data = {"secondary_emails": "nominee@example.com, nominee2@example.com",
-                     "primary_email": "nominee@example.com"}
+        test_data = {"secondary_emails": "%s, %s" % (nominees[0], nominees[1]),
+                     "primary_email": nominees[0]}
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "info-message-error")
 
-        test_data = {"primary_email": "nominee@example.com",
+        test_data = {"primary_email": nominees[0],
                      "secondary_emails": ""}
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "info-message-error")
 
         test_data = {"primary_email": "",
-                     "secondary_emails": "nominee@example.com"}
+                     "secondary_emails": nominees[0]}
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "info-message-error")
 
         test_data = {"primary_email": "unknown@example.com",
-                     "secondary_emails": "nominee@example.com"}
+                     "secondary_emails": nominees[0]}
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "info-message-error")
 
-        test_data = {"primary_email": "nominee@example.com",
+        test_data = {"primary_email": nominees[0],
                      "secondary_emails": "unknown@example.com"}
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "info-message-error")
 
-        test_data = {"secondary_emails": """nominee2@example.com,
-                                            nominee3@example.com,
-                                            nominee4@example.com""",
-                     "primary_email": "nominee@example.com"}
+        test_data = {"secondary_emails": """%s,
+                                            %s,
+                                            %s""" % (nominees[1], nominees[2], nominees[3]),
+                     "primary_email": nominees[0]}
 
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "info-message-success")
 
-        self.assertEqual(Nominee.objects.filter(email__address='nominee2@example.com',
+        self.assertEqual(Nominee.objects.filter(email__address=nominees[1],
                                                 duplicated__isnull=False).count(), 1)
-        self.assertEqual(Nominee.objects.filter(email__address='nominee3@example.com',
+        self.assertEqual(Nominee.objects.filter(email__address=nominees[2],
                                                 duplicated__isnull=False).count(), 1)
-        self.assertEqual(Nominee.objects.filter(email__address='nominee4@example.com',
+        self.assertEqual(Nominee.objects.filter(email__address=nominees[3],
                                                 duplicated__isnull=False).count(), 1)
 
-        nominee = Nominee.objects.get(email__address='nominee@example.com')
-        self.assertEqual(Nomination.objects.filter(nominee=nominee).count(), 4)
-        self.assertEqual(Feedback.objects.filter(nominee=nominee).count(), 4)
+        nominee = Nominee.objects.get(email__address=nominees[0])
+
+        self.assertEqual(Nomination.objects.filter(nominee=nominee).count(), 16)
+        self.assertEqual(Feedback.objects.nominations().filter(nominee=nominee).count(),
+                         16)
+        self.assertEqual(Feedback.objects.comments().filter(nominee=nominee).count(),
+                         4)
+        self.assertEqual(Feedback.objects.questionnaires().filter(nominee=nominee).count(),
+                         4)
+
+        for nominee_email in nominees[1:]:
+            self.assertEqual(Feedback.objects.nominations().filter(nominee__email__address=nominee_email).count(),
+                         0)
+            self.assertEqual(Feedback.objects.comments().filter(nominee__email__address=nominee_email).count(),
+                         0)
+            self.assertEqual(Feedback.objects.questionnaires().filter(nominee__email__address=nominee_email).count(),
+                         0)
+
         self.assertEqual(NomineePosition.objects.filter(nominee=nominee).count(), 3)
+
+        # Check nominations state
+        self.assertEqual(NomineePosition.objects.get(position__name='TSV',
+                                                        nominee=nominee).state.slug, u'accepted')
+        self.assertEqual(NomineePosition.objects.get(position__name='IAOC',
+                                                        nominee=nominee).state.slug, u'declined')
 
         self.client.logout()
 
@@ -305,9 +413,9 @@ class NomcomViewsTest(TestCase):
         Person.objects.get(name=candidate_name, address=candidate_email)
         nominee = Nominee.objects.get(email=email)
         NomineePosition.objects.get(position=position, nominee=nominee)
-        feedback = Feedback.objects.get(positions__in=[position],
-                                        nominee=nominee,
-                                        type=FeedbackType.objects.get(slug='nomina'))
+        feedback = Feedback.objects.filter(positions__in=[position],
+                                           nominee=nominee,
+                                           type=FeedbackType.objects.get(slug='nomina')).latest('id')
         if public:
             self.assertEqual(feedback.author, nominator_email)
 
@@ -369,9 +477,9 @@ class NomcomViewsTest(TestCase):
         self.assertContains(response, "info-message-success")
 
         ## check objects
-        feedback = Feedback.objects.get(positions__in=[position],
-                                        nominee=nominee,
-                                        type=FeedbackType.objects.get(slug='questio'))
+        feedback = Feedback.objects.filter(positions__in=[position],
+                                           nominee=nominee,
+                                           type=FeedbackType.objects.get(slug='questio')).latest('id')
 
         ## to check feedback comments are saved like enrypted data
         self.assertNotEqual(feedback.comments, comments)
@@ -440,9 +548,9 @@ class NomcomViewsTest(TestCase):
         self.assertContains(response, "info-message-success")
 
         ## check objects
-        feedback = Feedback.objects.get(positions__in=[position],
-                                        nominee=nominee,
-                                        type=FeedbackType.objects.get(slug='comment'))
+        feedback = Feedback.objects.filter(positions__in=[position],
+                                           nominee=nominee,
+                                           type=FeedbackType.objects.get(slug='comment')).latest('id')
         if public:
             self.assertEqual(feedback.author, nominator_email)
 

@@ -117,9 +117,8 @@ class NomineePosition(models.Model):
 
     @property
     def questionnaires(self):
-        return Feedback.objects.filter(type='questio',
-                                       positions=self.position,
-                                       nominee=self.nominee)
+        return Feedback.objects.questionnaires().filter(positions__in=[self.position],
+                                                        nominee=self.nominee)
 
 
 class Position(models.Model):
