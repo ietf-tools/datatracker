@@ -324,7 +324,7 @@ class NomcomViewsTest(TestCase):
                                nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
 
     def test_add_questionnaire(self):
-        self.access_chair_url(self.private_merge_url)
+        self.access_chair_url(self.add_questionnaire_url)
         return self.add_questionnaire()
         self.client.logout()
 
