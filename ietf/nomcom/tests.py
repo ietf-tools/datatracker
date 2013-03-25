@@ -154,7 +154,6 @@ class NomcomViewsTest(TestCase):
 
         ## Add feedbacks (internally the function does new nominations)
         self.access_member_url(self.private_feedback_url)
-
         self.feedback_view(public=False,
                            nominee_email=nominees[0],
                            position='IAOC')
@@ -251,9 +250,9 @@ class NomcomViewsTest(TestCase):
 
         # Check nominations state
         self.assertEqual(NomineePosition.objects.get(position__name='TSV',
-                                                        nominee=nominee).state.slug, u'accepted')
+                                                     nominee=nominee).state.slug, u'accepted')
         self.assertEqual(NomineePosition.objects.get(position__name='IAOC',
-                                                        nominee=nominee).state.slug, u'declined')
+                                                     nominee=nominee).state.slug, u'declined')
 
         self.client.logout()
 
@@ -542,8 +541,18 @@ class NomcomViewsTest(TestCase):
 
         feedback_url += "?nominee=%d&position=%d" % (nominee.id, position.id)
 
-        response = self.client.post(feedback_url, test_data)
+        nominee_position = NomineePosition.objects.get(nominee=nominee,
+                                                       position=position)
+        state = nominee_position.state
+        if not state.slug == 'accepted':
+            response = self.client.post(feedback_url, test_data)
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "info-message-error")
+            # accept nomination
+            nominee_position.state = NomineePositionState.objects.get(slug='accepted')
+            nominee_position.save()
 
+        response = self.client.post(feedback_url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "info-message-success")
 
@@ -558,6 +567,11 @@ class NomcomViewsTest(TestCase):
         self.assertNotEqual(feedback.comments, comments)
 
         self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
+
+        # recovery state
+        if state != nominee_position.state:
+            nominee_position.state = state
+            nominee_position.save()
 
 
 class NomineePositionStateSaveTest(TestCase):

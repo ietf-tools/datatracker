@@ -265,8 +265,8 @@ def feedback(request, year, public):
     selected_nominee = request.GET.get('nominee')
     selected_position = request.GET.get('position')
     if selected_nominee and selected_position:
-        nominee = Nominee.objects.get(id=selected_nominee)
-        position = Position.objects.get(id=selected_position)
+        nominee = get_object_or_404(Nominee, id=selected_nominee)
+        position = get_object_or_404(Position, id=selected_position)
         submit_disabled = False
 
     positions = Position.objects.get_by_nomcom(nomcom=nomcom).opened()

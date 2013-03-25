@@ -536,6 +536,13 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
 
         self.fieldsets = [('Provide comments', fieldset)]
 
+    def clean(self):
+        if not NomineePosition.objects.accepted().filter(nominee=self.nominee,
+                                                    position=self.position):
+            msg = "There isn't a accepted nomination for %s on the %s position" % (self.nominee, self.position)
+            self._errors["nominee_email"] = self.error_class([msg])
+        return self.cleaned_data
+
     def save(self, commit=True):
         feedback = super(FeedbackForm, self).save(commit=False)
         confirmation = self.cleaned_data['confirmation']
