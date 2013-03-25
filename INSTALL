@@ -7,48 +7,88 @@ General Instructions for Deployment of a New Release
 ====================================================
 
 
-In order to fetch a new release of the django datatracker code, simply
-check out the appropriate tag from svn::
+ 1. In order to fetch a new release of the django datatracker code, simply
+    check out the appropriate tag from svn::
 
-  svn co http://svn.tools.ietf.org/svn/tools/ietfdb/tags/$releasenumber
+      svn co http://svn.tools.ietf.org/svn/tools/ietfdb/tags/$releasenumber
 
-Don't forget to copy $releasenumber/ietf/settings_local.py from the
-old release to the new one; otherwise things won't work!
-::
+ 2. Don't forget to copy $releasenumber/ietf/settings_local.py from the
+    old release to the new one; otherwise things won't work!
+    ::
 
-  cp $oldreleasenumber/ietf/settings_local.py $releasenumber/ietf/
+      cp $oldreleasenumber/ietf/settings_local.py $releasenumber/ietf/
 
-Change into the directory of the new release and run migrations::
+ 3. Change into the directory of the new release and run migrations::
 
-  cd $releasenumber
-  PYTHONPATH=$PWD ietf/manage.py migrate
-  cd ..
+      cd $releasenumber
+      PYTHONPATH=$PWD ietf/manage.py migrate
+      cd ..
 
-and then re-point the 'web' symlink::
+ 4. Then re-point the 'web' symlink::
 
-  rm ./web; ln -s $releasenumber web
+      rm ./web; ln -s $releasenumber web
 
-and finally restart apache::
+ 5. Restart apache::
 
-  sudo /etc/init.d/apache2 restart
+      sudo /etc/init.d/apache2 restart
 
-It's now also a good idea to go to the datatracker front page::
+ 6. It's now also a good idea to go to the datatracker front page:
 
-  http://datatracker.ietf.org/
+      http://datatracker.ietf.org/
 
-to check that it's alive and kicking, and displaying the new release
-number at the bottom of the left-side menubar :-) -- if not, revert the
-symlink step, re-pointing the symlink to the release that was running
-before the new release, and restart apache again to roll back to that.
+    to check that it's alive and kicking, and displaying the new release
+    number at the bottom of the left-side menubar :-)
+
+ 7. If things **aren't** cool, revert the symlink step, re-pointing the
+    symlink to the release that was running before the new release, and restart
+    apache again to roll back to that.
 
 
 Installing from Scratch
 =======================
 
-In addition to the new release deployment instructions above, the settings_local.py
-file has to be set up properly, and Apache has to be configured.  Since the IETF
-datatracker is only intended to be deployed from scratch once, these instructions
-don't cover this.  The general Django depoloyment instructions are relevant, however.
+In addition to the new release deployment instructions above, the
+settings_local.py file has to be set up properly, and Apache has to be
+configured.  Since the IETF datatracker is only intended to be deployed from
+scratch once, these instructions don't cover this scenario in any more detail.
+The general Django depoloyment instructions are relevant, however.
+
+
+Patching a Production Release
+=============================
+
+Sometimes it can prove necessary to patch an existing release.  The following
+process should be used:
+
+ 1. Code and test the patch on a development system copy of the production
+    release which has no other code changes (or on trunk, with no uncommitted
+    code changes, if it's sufficiently close).
+
+ 2. Produce a patch file, named with date and subject::
+
+      ~/src/ietfdb/working $ svn diff > 2013-03-25-ballot-calculation.patch
+
+ 3. Move the patch file to the production server, and place it in 
+    '/a/www/ietf-datatracker/patches/'
+
+ 4. Make a recursive copy of the production code to a new directory, named
+    with a patch number.  Assuming the production code is in 4.43/, and we
+    have web -> 4.43/::
+
+      /a/www/ietf-datatracker $ rsync -a web/ 4.43.p1/
+
+    (you could use 'cp -rp' instead, but rsync seems to do this faster).
+
+ 5. Apply the patch::
+
+      /a/www/ietf-datatracker $ cd 4.43.p1/      
+      /a/www/ietf-datatracker/4.43.p1 $ patch -p0 < ../patches/2013-03-25-ballot-calculation.patch
+
+    This should not produce any messages about failing to apply any chunks;
+    if it does, you probably should go back to 1. and figure out why ...
+
+ 6. Change the 'web' symlink, reload etc. as described in
+    `General Instructions for Deployment of a New Release`_ .
 
 
 Installing a Secretariat Release
