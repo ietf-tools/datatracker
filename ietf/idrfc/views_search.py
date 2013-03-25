@@ -657,7 +657,7 @@ def ad_dashboard_sort_key(doc):
         changetime= doc.latest_event(type='changed_document')
         if changetime:
            ageseconds = (datetime.datetime.now()-doc.latest_event(type='changed_document').time).total_seconds()
-        return "1%d%s%010d" % (state[0].order,seed,ageseconds)
+        return "1%d%s%s%010d" % (state[0].order,seed,doc.type.slug,ageseconds)
 
     return "3%s" % seed
     
