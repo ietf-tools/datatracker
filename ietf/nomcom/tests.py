@@ -170,11 +170,11 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(Feedback.objects.comments().count(), 4)
         self.assertEqual(Feedback.objects.nominations().count(), 16)
         for nominee in nominees:
-            self.assertEqual(Feedback.objects.nominations().filter(nominee__email__address=nominee).count(),
+            self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominee).count(),
                          4)
-            self.assertEqual(Feedback.objects.comments().filter(nominee__email__address=nominee).count(),
+            self.assertEqual(Feedback.objects.comments().filter(nominees__email__address=nominee).count(),
                          1)
-            self.assertEqual(Feedback.objects.questionnaires().filter(nominee__email__address=nominee).count(),
+            self.assertEqual(Feedback.objects.questionnaires().filter(nominees__email__address=nominee).count(),
                          1)
 
         self.client.logout()
@@ -231,19 +231,19 @@ class NomcomViewsTest(TestCase):
         nominee = Nominee.objects.get(email__address=nominees[0])
 
         self.assertEqual(Nomination.objects.filter(nominee=nominee).count(), 16)
-        self.assertEqual(Feedback.objects.nominations().filter(nominee=nominee).count(),
+        self.assertEqual(Feedback.objects.nominations().filter(nominees__in=[nominee]).count(),
                          16)
-        self.assertEqual(Feedback.objects.comments().filter(nominee=nominee).count(),
+        self.assertEqual(Feedback.objects.comments().filter(nominees__in=[nominee]).count(),
                          4)
-        self.assertEqual(Feedback.objects.questionnaires().filter(nominee=nominee).count(),
+        self.assertEqual(Feedback.objects.questionnaires().filter(nominees__in=[nominee]).count(),
                          4)
 
         for nominee_email in nominees[1:]:
-            self.assertEqual(Feedback.objects.nominations().filter(nominee__email__address=nominee_email).count(),
+            self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominee_email).count(),
                          0)
-            self.assertEqual(Feedback.objects.comments().filter(nominee__email__address=nominee_email).count(),
+            self.assertEqual(Feedback.objects.comments().filter(nominees__email__address=nominee_email).count(),
                          0)
-            self.assertEqual(Feedback.objects.questionnaires().filter(nominee__email__address=nominee_email).count(),
+            self.assertEqual(Feedback.objects.questionnaires().filter(nominees__email__address=nominee_email).count(),
                          0)
 
         self.assertEqual(NomineePosition.objects.filter(nominee=nominee).count(), 3)
@@ -328,10 +328,10 @@ class NomcomViewsTest(TestCase):
         comments = 'plain text'
         nomcom = get_nomcom_by_year(self.year)
         feedback = Feedback.objects.create(nomcom=nomcom,
-                                           nominee=nominee,
                                            comments=comments,
                                            type=FeedbackType.objects.get(slug='nomina'))
         feedback.positions.add(position)
+        feedback.nominees.add(nominee)
 
         # to check feedback comments are saved like enrypted data
         self.assertNotEqual(feedback.comments, comments)
@@ -413,7 +413,7 @@ class NomcomViewsTest(TestCase):
         nominee = Nominee.objects.get(email=email)
         NomineePosition.objects.get(position=position, nominee=nominee)
         feedback = Feedback.objects.filter(positions__in=[position],
-                                           nominee=nominee,
+                                           nominees__in=[nominee],
                                            type=FeedbackType.objects.get(slug='nomina')).latest('id')
         if public:
             self.assertEqual(feedback.author, nominator_email)
@@ -468,7 +468,7 @@ class NomcomViewsTest(TestCase):
 
         test_data = {'comments': comments,
                      'positions': [position.id],
-                     'nominee': nominee.id}
+                     'nominees': [nominee.id]}
 
         response = self.client.post(self.add_questionnaire_url, test_data)
 
@@ -477,7 +477,7 @@ class NomcomViewsTest(TestCase):
 
         ## check objects
         feedback = Feedback.objects.filter(positions__in=[position],
-                                           nominee=nominee,
+                                           nominees__in=[nominee],
                                            type=FeedbackType.objects.get(slug='questio')).latest('id')
 
         ## to check feedback comments are saved like enrypted data
@@ -558,7 +558,7 @@ class NomcomViewsTest(TestCase):
 
         ## check objects
         feedback = Feedback.objects.filter(positions__in=[position],
-                                           nominee=nominee,
+                                           nominees__in=[nominee],
                                            type=FeedbackType.objects.get(slug='comment')).latest('id')
         if public:
             self.assertEqual(feedback.author, nominator_email)
@@ -626,10 +626,10 @@ class FeedbackTest(TestCase):
 
         comments = 'plain text'
         feedback = Feedback.objects.create(nomcom=nomcom,
-                                           nominee=nominee,
                                            comments=comments,
                                            type=FeedbackType.objects.get(slug='nomina'))
         feedback.positions.add(position)
+        feedback.nominees.add(nominee)
 
         # to check feedback comments are saved like enrypted data
         self.assertNotEqual(feedback.comments, comments)

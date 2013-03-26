@@ -31,7 +31,7 @@ def add_num_nominations(user, position, nominee):
     author = get_user_email(user)
 
     count = Feedback.objects.filter(positions__in=[position],
-                                    nominee=nominee,
+                                    nominees__in=[nominee],
                                     author=author,
                                     type='comment').count()
     if count:

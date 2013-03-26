@@ -254,7 +254,9 @@ class MergeForm(BaseNomcomForm, forms.Form):
             # move nominations
             nominee.nomination_set.all().update(nominee=primary_nominee)
             # move feedback
-            nominee.feedback_set.all().update(nominee=primary_nominee)
+            for fb in nominee.feedback_set.all():
+                fb.nominees.remove(nominee)
+                fb.nominees.add(primary_nominee)
             # move nomineepositions
             for nominee_position in nominee.nomineeposition_set.all():
                 primary_nominee_positions = NomineePosition.objects.filter(position=nominee_position.position,
@@ -346,11 +348,11 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
         # Complete nomination data
         feedback = Feedback.objects.create(nomcom=self.nomcom,
-                                           nominee=nominee,
                                            comments=comments,
                                            type=FeedbackType.objects.get(slug='nomina'),
                                            user=self.user)
         feedback.positions.add(position)
+        feedback.nominees.add(nominee)
         author = None
         if self.public:
             author = get_user_email(self.user)
@@ -562,11 +564,11 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
             feedback.author = author
 
         feedback.nomcom = self.nomcom
-        feedback.nominee = self.nominee
         feedback.user = self.user
         feedback.type = FeedbackType.objects.get(slug='comment')
         feedback.save()
         feedback.positions.add(self.position)
+        feedback.nominees.add(self.nominee)
 
         # send receipt email to feedback author
         if confirmation:
@@ -599,7 +601,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
     comments = forms.CharField(label='Comments on this candidate',
                                widget=forms.Textarea())
-    fieldsets = [('Provide questionnaires', ('nominee',
+    fieldsets = [('Provide questionnaires', ('nominees',
                                              'positions',
                                              'comments'))]
 
@@ -625,7 +627,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
     class Meta:
         model = Feedback
-        fields = ('nominee',
+        fields = ('nominees',
                   'positions',
                   'comments')
 

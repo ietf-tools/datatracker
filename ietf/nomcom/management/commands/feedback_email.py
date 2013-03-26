@@ -46,7 +46,8 @@ class Command(BaseCommand):
 
         feedback = Feedback(nomcom=nomcom,
                             comments=body)
-        if nominee:
-            feedback.nominee = nominee
         feedback.save()
+        if nominee:
+            feedback.nominees.add(nominee)
+
         syslog.syslog(u"Read feedback email by %s" % by)

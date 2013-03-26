@@ -118,7 +118,7 @@ class NomineePosition(models.Model):
     @property
     def questionnaires(self):
         return Feedback.objects.questionnaires().filter(positions__in=[self.position],
-                                                        nominee=self.nominee)
+                                                        nominees__in=[self.nominee])
 
 
 class Position(models.Model):
@@ -165,7 +165,7 @@ class Feedback(models.Model):
     nomcom = models.ForeignKey('NomCom')
     author = models.EmailField(verbose_name='Author', blank=True)
     positions = models.ManyToManyField('Position', blank=True, null=True)
-    nominee = models.ForeignKey('Nominee', blank=True, null=True)
+    nominees = models.ManyToManyField('Nominee', blank=True, null=True)
     comments = EncryptedTextField(verbose_name='Comments')
     type = models.ForeignKey(FeedbackType, blank=True, null=True)
     user = models.ForeignKey(User, editable=False, blank=True, null=True)
@@ -174,7 +174,7 @@ class Feedback(models.Model):
     objects = FeedbackManager()
 
     def __unicode__(self):
-        return u"from %s to %s" % (self.author, self.nominee)
+        return u"from %s" % self.author
 
     class Meta:
         ordering = ['time']
