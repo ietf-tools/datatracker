@@ -1,5 +1,6 @@
 import hashlib
 import re
+import email
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -45,8 +46,8 @@ def get_year_by_nomcom(nomcom):
 
 def get_user_email(user):
     emails = Email.objects.filter(person__user=user)
-    email = emails and emails[0] or None
-    return email
+    mail = emails and emails[0] or None
+    return mail
 
 
 def is_nomcom_member(user, nomcom):
@@ -139,3 +140,19 @@ def store_nomcom_private_key(request, year, private_key):
         if error:
             out = ''
         request.session['NOMCOM_PRIVATE_KEY_%s' % year] = out
+
+
+def extract_body(payload):
+    if isinstance(payload, str):
+        return payload
+    else:
+        return '\n'.join([extract_body(part.get_payload()) for part in payload])
+
+
+def parse_email(text):
+    msg = email.message_from_string(text.encode("utf-8"))
+
+    # comment
+    body = extract_body(msg.get_payload())
+
+    return msg['From'], msg['Subject'], body
