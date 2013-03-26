@@ -25,7 +25,6 @@ from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
                                PrivateKeyForm, EditNomcomForm)
 from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
-                               retrieve_nomcom_private_key,
                                store_nomcom_private_key, get_hash_nominee_position,
                                NOMINEE_REMINDER_TEMPLATE)
 
@@ -44,7 +43,6 @@ def index(request, year):
 @member_required(role='member')
 def private_key(request, year):
     nomcom = get_nomcom_by_year(year)
-    private_key = retrieve_nomcom_private_key(request, year)
 
     back_url = request.GET.get('back_to', reverse('nomcom_private_index', None, args=(year, )))
     if request.method == 'POST':
@@ -53,13 +51,12 @@ def private_key(request, year):
             store_nomcom_private_key(request, year, form.cleaned_data.get('key', ''))
             return HttpResponseRedirect(back_url)
     else:
-        form = PrivateKeyForm(initial={'key': private_key})
+        form = PrivateKeyForm()
     return render_to_response('nomcom/private_key.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'back_url': back_url,
                                'form': form,
-                               'private_key': private_key,
                                'selected': 'private_key'}, RequestContext(request))
 
 
