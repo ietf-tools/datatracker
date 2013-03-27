@@ -12,8 +12,6 @@ def member_required(role=None):
         year = kwargs.get('year', None)
         if year:
             nomcom = get_nomcom_by_year(year=year)
-            if has_role(user, "Secretariat"):
-                return True
             if role == 'chair':
                 return nomcom.group.is_chair(user)
             else:

@@ -14,7 +14,7 @@ from django.contrib.sites.models import Site
 
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.utils import unaccent
-from ietf.utils.mail import send_mail
+from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ietfauth.decorators import role_required
 from ietf.utils import fields as custom_fields
 from ietf.group.models import Group, Role
@@ -25,7 +25,8 @@ from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
 from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE, \
                               INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE, \
                               NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE, \
-                              get_user_email, get_hash_nominee_position, get_year_by_nomcom
+                              get_user_email, get_hash_nominee_position, get_year_by_nomcom, \
+                              HEADER_QUESTIONNAIRE_TEMPLATE 
 from ietf.nomcom.decorators import member_required
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -427,8 +428,12 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                 context = {'nominee': email.person.name,
                           'position': position.name}
                 path = '%s%d/%s' % (nomcom_template_path,
+                                    position.id, HEADER_QUESTIONNAIRE_TEMPLATE)
+                body = render_to_string(path, context)
+                path = '%s%d/%s' % (nomcom_template_path,
                                     position.id, QUESTIONNAIRE_TEMPLATE)
-                send_mail(None, to_email, from_email, subject, path, context)
+                body += '\n\n%s' % render_to_string(path, context)
+                send_mail_text(None, to_email, from_email, subject, body)
 
         # send emails to nomcom chair
         subject = 'Nomination Information'
