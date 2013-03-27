@@ -820,7 +820,7 @@ def ballot_writeupnotesREDESIGN(request, name):
                 msg = generate_issue_ballot_mail(request, doc, ballot)
                 send_mail_preformatted(request, msg)
                 send_mail_preformatted(request, msg, extra=extra_automation_headers(doc),
-                                       override={ "To": "IANA <drafts-eval@icann.org>" })
+                                       override={ "To": "IANA <drafts-eval@icann.org>", "CC": None, "Bcc": None , "Reply-To": None})
 
                 e = DocEvent(doc=doc, by=login)
                 e.by = login
@@ -1056,7 +1056,7 @@ def approve_ballotREDESIGN(request, name):
 
         if action == "to_announcement_list":
             send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                   override={ "To": "IANA <drafts-approval@icann.org>" })
+                                   override={ "To": "IANA <drafts-approval@icann.org>", "CC": None, "Bcc": None, "Reply-To": None})
 
         msg = infer_message(announcement)
         msg.by = login
@@ -1098,7 +1098,7 @@ def make_last_call(request, name):
         if form.is_valid():
             send_mail_preformatted(request, announcement)
             send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                   override={ "To": "IANA <drafts-lastcall@icann.org>" })
+                                   override={ "To": "IANA <drafts-lastcall@icann.org>", "CC": None, "Bcc": None, "Reply-To": None})
 
             msg = infer_message(announcement)
             msg.by = login
