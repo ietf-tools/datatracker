@@ -34,6 +34,10 @@ def check_access(user):
                            group__type="ietf",
                            person=person):
         return True
+    if Role.objects.filter(person=person,
+                           group__acronym='iab',
+                           name='execdir'):
+        return True
     
     return False
     
