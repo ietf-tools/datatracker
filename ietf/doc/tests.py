@@ -134,7 +134,7 @@ class DocTestCase(django.test.TestCase):
         self.assertEqual(r.status_code, 200)
 
         # test popup too while we're at it
-        r = self.client.get(urlreverse("ietf.doc.views_doc.ballot_for_popup", kwargs=dict(name=doc.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
         self.assertEqual(r.status_code, 200)
         
     def test_document_json(self):
