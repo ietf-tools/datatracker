@@ -11,10 +11,11 @@ syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
 
 from ietf.idrfc.expire import *
 
-if not in_id_expire_freeze():
-    for doc in get_expired_ids():
-        send_expire_notice_for_id(doc)
-        expire_id(doc)
-        syslog.syslog("Expired %s (id=%s)%s" % (doc.file_tag(), doc.pk, " in the ID Tracker" if doc.latest_event(type="started_iesg_process") else ""))
+if not in_draft_expire_freeze():
+    for doc in get_expired_drafts():
+        send_expire_notice_for_draft(doc)
+        expire_draft(doc)
+        syslog.syslog("Expired draft %s-%s" % (doc.name, doc.rev))
 
-clean_up_id_files()
+syslog.syslog("Cleaning up draft files")
+clean_up_draft_files()
