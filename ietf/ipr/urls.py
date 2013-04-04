@@ -15,7 +15,7 @@ urlpatterns = patterns('',
      (r'^new-(?P<type>specific)/$', new.new),
      (r'^new-(?P<type>generic)/$', new.new),
      (r'^new-(?P<type>third-party)/$', new.new),
-     (r'^search/$', search.search),     
+     url(r'^search/$', search.search, name="ipr_search"),
 )
 
 
