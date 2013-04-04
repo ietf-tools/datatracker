@@ -24,6 +24,12 @@ connection.queries = DontSaveQueries()
 MAX_URL_LENGTH = 500
 SLOW_THRESHOLD = 1.0
 
+initial = ["/doc/all/"]
+
+visited = set()
+urls = {} # url -> referrer
+
+
 def strip_url(url):
     if url.startswith("http://testserver"):
         url = url[len("http://testserver"):]
@@ -40,15 +46,13 @@ def extract_html_urls(content):
 
         yield url
 
-
-visited = set()
-blacklist = set()
-urls = set(["/doc/all/"])
-
 client = django.test.Client()
 
+for url in initial:
+    urls[url] = "[initial]"
+
 while urls:
-    url = urls.pop()
+    url, referrer = urls.popitem()
 
     visited.add(url)
 
@@ -62,7 +66,7 @@ while urls:
     except:
         print "FAIL", url
         print "============="
-        traceback.print_exc()
+        print traceback.format_exc()
         print "============="
     else:
         tags = []
@@ -70,7 +74,7 @@ while urls:
         if r.status_code in (301, 302):
             u = strip_url(r["Location"])
             if u not in visited and u not in urls:
-                urls.add(u)
+                urls[u] = url
 
         elif r.status_code == 200:
             ctype = r["Content-Type"]
@@ -80,9 +84,9 @@ while urls:
             if ctype == "text/html":
                 for u in extract_html_urls(r.content):
                     if u not in visited and u not in urls:
-                        urls.add(u)
+                        urls[u] = url
         else:
-            tags.append("FAIL")
+            tags.append(u"FAIL (from %s)" % referrer)
 
         if elapsed.total_seconds() > SLOW_THRESHOLD:
             tags.append("SLOW")
