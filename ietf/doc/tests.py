@@ -21,6 +21,108 @@ from ietf.iesg.models import TelechatDate
 from ietf.doc.tests_conflict_review import *
 
 
+class SearchTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_search(self):
+        draft = make_test_data()
+
+        base_url = urlreverse("doc_search")
+
+        # only show form, no search yet
+        r = self.client.get(base_url)
+        self.assertEqual(r.status_code, 200)
+
+        # no match
+        r = self.client.get(base_url + "?activedrafts=on&name=thisisnotadocumentname")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("no documents match" in r.content.lower())
+
+        r = self.client.get(base_url + "?rfcs=on&name=")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("no documents match" in r.content.lower())
+
+        r = self.client.get(base_url + "?olddrafts=on&name=")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("no documents match" in r.content.lower())
+
+        # find by rfc/active/inactive
+        draft.set_state(State.objects.get(type="draft", slug="rfc"))
+        r = self.client.get(base_url + "?rfcs=on&name=%s" % draft.name)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+
+        draft.set_state(State.objects.get(type="draft", slug="active"))
+        r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.name)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+
+        draft.set_state(State.objects.get(type="draft", slug="expired"))
+        r = self.client.get(base_url + "?olddrafts=on&name=%s" % draft.name)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+        
+        draft.set_state(State.objects.get(type="draft", slug="active"))
+
+        # find by title
+        r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.title.split()[0])
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+
+        # find by author
+        r = self.client.get(base_url + "?activedrafts=on&by=author&author=%s" % draft.authors.all()[0].person.name_parts()[1])
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+
+        # find by group
+        r = self.client.get(base_url + "?activedrafts=on&by=group&group=%s" % draft.group.acronym)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+
+        # find by area
+        r = self.client.get(base_url + "?activedrafts=on&by=area&area=%s" % draft.group.parent_id)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+
+        # find by area
+        r = self.client.get(base_url + "?activedrafts=on&by=area&area=%s" % draft.group.parent_id)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+
+        # find by AD
+        r = self.client.get(base_url + "?activedrafts=on&by=ad&ad=%s" % draft.ad_id)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+
+        # find by IESG state
+        r = self.client.get(base_url + "?activedrafts=on&by=state&state=%s&substate=" % draft.get_state("draft-iesg").pk)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+
+    def test_drafts_pages(self):
+        draft = make_test_data()
+
+        r = self.client.get(urlreverse("drafts_for_ad", kwargs=dict(name=draft.ad.full_name_as_key())))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+
+        draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
+        r = self.client.get(urlreverse("drafts_in_last_call"))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+        
+    def test_indexes(self):
+        draft = make_test_data()
+
+        r = self.client.get(urlreverse("index_all_drafts"))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.name in r.content)
+
+        r = self.client.get(urlreverse("index_active_drafts"))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.title in r.content)
+        
+
 class DocTestCase(django.test.TestCase):
     fixtures = ['names']
 

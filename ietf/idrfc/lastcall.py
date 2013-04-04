@@ -8,7 +8,7 @@ from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 
-from ietf.doc.models import Document, DocEvent, LastCallDocEvent, WriteupDocEvent, save_document_in_history, State
+from ietf.doc.models import *
 from ietf.person.models import Person
 
 def request_last_call(request, doc):
@@ -83,7 +83,7 @@ def expire_last_callREDESIGN(doc):
     prev = doc.get_state("draft-iesg")
     doc.set_state(state)
 
-    prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+    prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
     prev_tag = prev_tag[0] if prev_tag else None
     if prev_tag:
         doc.tags.remove(prev_tag)

@@ -64,12 +64,12 @@ def log_state_changed(request, doc, by, email_watch_list=True, note=''):
     return change
 
 def log_state_changedREDESIGN(request, doc, by, prev_iesg_state, prev_iesg_tag):
-    from ietf.doc.models import DocEvent
+    from ietf.doc.models import DocEvent, IESG_SUBSTATE_TAGS
 
     state = doc.get_state("draft-iesg")
 
     state_name = state.name
-    tags = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+    tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
     if tags:
         state_name += "::" + tags[0].name
 

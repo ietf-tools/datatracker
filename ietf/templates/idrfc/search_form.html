@@ -32,7 +32,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
-<form id="search_form" class="search_form" action="/doc/search/" method="get">
+<form id="search_form" class="search_form" action="{% url doc_search %}" method="get">
 
 <div class="search_field">
 <label>Name/number/title:</label> {{ form.name }}
@@ -42,10 +42,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <label>Types:</label>
   <table id="search_types">
     <tr><td><label>{{ form.rfcs }} RFCs</label></td></tr>
-    <tr><td><label>{{ form.activeDrafts }} Internet-Drafts (active)</label></td></tr>
-    <tr><td><label>{{ form.oldDrafts }} Internet-Drafts (expired/replaced/withdrawn)</label></td></tr>
+    <tr><td><label>{{ form.activedrafts }} Internet-Drafts (active)</label></td></tr>
+    <tr><td><label>{{ form.olddrafts }} Internet-Drafts (expired/replaced/withdrawn)</label></td></tr>
   </table>
 </div>
+
+{{ form.sort }} {# hidden field #}
 
 <b class="toggle_advanced"><img src="/images/{% if meta.advanced %}minus{% else %}plus{% endif %}.png" alt="" /> Advanced</b>
 
@@ -53,7 +55,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Additional search criteria:
 
 <div class="search_field">
-  <label><input type="radio" class="radio" name="by" value="author" {% if meta.by == "author" %}checked="checked"{% endif %}/> Author (last name):</label> {{ form.author }}
+  <label><input type="radio" class="radio" name="by" value="author" {% if meta.by == "author" %}checked="checked"{% endif %}/> Author:</label> {{ form.author }}
 </div>
 <div class="search_field">
   <label><input type="radio" class="radio" name="by" value="group" {% if meta.by == "group" %}checked="checked"{% endif %}/> WG:</label> {{ form.group }}
@@ -65,7 +67,7 @@ Additional search criteria:
   <label><input type="radio" class="radio" name="by" value="ad" {% if meta.by == "ad" %}checked="checked"{% endif %}/> Responsible AD:</label> {{ form.ad }}
 </div>
 <div class="search_field">
-  <label><input type="radio" class="radio" name="by" value="state" {% if meta.by == "state" %}checked="checked"{% endif %}/> IESG State:</label> {{ form.state }} :: {{ form.subState }}
+  <label><input type="radio" class="radio" name="by" value="state" {% if meta.by == "state" %}checked="checked"{% endif %}/> IESG State:</label> {{ form.state }} :: {{ form.substate }}
 </div>
 
 </div><!-- end of advanced -->

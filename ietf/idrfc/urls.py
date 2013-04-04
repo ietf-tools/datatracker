@@ -36,12 +36,13 @@ from ietf.doc.models import State
 from ietf.doc import views_doc
 
 urlpatterns = patterns('',
-    (r'^/?$', views_search.search_main),
-    (r'^search/$', views_search.search_results),
-    (r'^all/$', views_search.all),
-    (r'^active/$', views_search.active),
-    (r'^in-last-call/$', views_search.in_last_call),
-    url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad, name="doc_search_by_ad"),
+    (r'^/?$', views_search.search),
+    url(r'^search/$', views_search.search, name="doc_search"),
+    url(r'^in-last-call/$', views_search.drafts_in_last_call, name="drafts_in_last_call"),
+    url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.drafts_for_ad, name="drafts_for_ad"),
+
+    url(r'^all/$', views_search.index_all_drafts, name="index_all_drafts"),
+    url(r'^active/$', views_search.index_active_drafts, name="index_active_drafts"),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/((?P<rev>[0-9-]+)/)?$', views_doc.document_main, name="doc_view"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/history/$', views_doc.document_history, name="doc_history"),
@@ -51,7 +52,7 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot/(?P<ballot_id>[0-9]+)/$', views_doc.document_ballot, name="doc_ballot"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot/$', views_doc.document_ballot, name="doc_ballot"),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/doc.json$', views_doc.document_json),
-    (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/$', views_doc.ballot_for_popup),
+    (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/(?P<ballot_id>[0-9]+)/$', views_doc.ballot_popup),
     #(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot.json$', views_doc.ballot_json), # legacy view
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_edit.change_state, name='doc_change_state'), # IESG state

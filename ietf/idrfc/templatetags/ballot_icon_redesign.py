@@ -30,42 +30,31 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import datetime
+
 from django import template
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django.db.models import Q
-from ietf.idtracker.models import IDInternal, BallotInfo
-from ietf.idrfc.idrfc_wrapper import position_to_string, BALLOT_ACTIVE_STATES
-from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
-from ietf.ietfauth.decorators import has_role
-from ietf.doc.models import BallotDocEvent, BallotPositionDocEvent
+from django.utils.safestring import mark_safe
 
-from datetime import date
+from ietf.ietfauth.utils import user_is_person, has_role
+from ietf.doc.models import BallotDocEvent, BallotPositionDocEvent, IESG_BALLOT_ACTIVE_STATES, IESG_SUBSTATE_TAGS
 
 
 register = template.Library()
-
-def get_user_name(context):
-    if 'user' in context and context['user'].is_authenticated():
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from ietf.person.models import Person
-            try:
-                return context['user'].get_profile().plain_name()
-            except Person.DoesNotExist:
-                return None
-
-        person = context['user'].get_profile().person()
-        if person:
-            return str(person)
-    return None
 
 def render_ballot_icon(user, doc):
     if not doc:
         return ""
 
+    # FIXME: temporary backwards-compatibility hack
+    from ietf.doc.models import Document
+    if not isinstance(doc, Document):
+        doc = doc._draft
+
     if doc.type_id == "draft":
-        s = doc.get_state("draft-iesg")
-        if s and s.name not in BALLOT_ACTIVE_STATES:
+        if doc.get_state_slug("draft-iesg") not in IESG_BALLOT_ACTIVE_STATES:
             return ""
     elif doc.type_id == "charter":
         if doc.get_state_slug() not in ("intrev", "iesgrev"):
@@ -74,11 +63,9 @@ def render_ballot_icon(user, doc):
        if doc.get_state_slug() not in ("iesgeval","defer"):
            return ""
 
-    ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
+    ballot = doc.active_ballot()
     if not ballot:
         return ""
-
-    edit_position_url = urlreverse('ietf.idrfc.views_ballot.edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk))
 
     def sort_key(t):
         _, pos = t
@@ -92,11 +79,18 @@ def render_ballot_icon(user, doc):
     positions = list(doc.active_ballot().active_ad_positions().items())
     positions.sort(key=sort_key)
 
-    cm = ""
+    edit_position_url = ""
     if has_role(user, "Area Director"):
-        cm = ' oncontextmenu="editBallot(\''+str(edit_position_url)+'\');return false;"'
+        edit_position_url = urlreverse('ietf.idrfc.views_ballot.edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk))
 
-    res = ['<table class="ballot_icon" title="IESG Evaluation Record (click to show more, right-click to edit position)" onclick="showBallot(\'' + doc.name + '\',\'' + str(edit_position_url) + '\')"' + cm + '>']
+    title = "IESG positions (click to show more%s)" % (", right-click to edit position" if edit_position_url else "")
+
+    res = ['<a href="%s" data-popup="%s" data-edit="%s" title="%s" class="ballot-icon"><table>' % (
+            urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
+            urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
+            edit_position_url,
+            title
+            )]
 
     res.append("<tr>")
 
@@ -107,13 +101,13 @@ def render_ballot_icon(user, doc):
 
         c = "position-%s" % (pos.pos.slug if pos else "norecord")
 
-        if hasattr(user, "get_profile") and ad == user.get_profile():
+        if user_is_person(user, ad):
             c += " my"
 
         res.append('<td class="%s" />' % c)
 
     res.append("</tr>")
-    res.append("</table>")
+    res.append("</table></a>")
 
     return "".join(res)
 
@@ -122,48 +116,51 @@ class BallotIconNode(template.Node):
         self.doc_var = doc_var
     def render(self, context):
         doc = template.resolve_variable(self.doc_var, context)
-        #if hasattr(doc, "_idinternal"):
-        #    # hack for old schema
-        #    doc = doc._idinternal
         return render_ballot_icon(context.get("user"), doc)
 
 def do_ballot_icon(parser, token):
     try:
-        tagName, docName = token.split_contents()
+        tag_name, doc_name = token.split_contents()
     except ValueError:
         raise template.TemplateSyntaxError, "%r tag requires exactly two arguments" % token.contents.split()[0]
-    return BallotIconNode(docName)
+    return BallotIconNode(doc_name)
 
 register.tag('ballot_icon', do_ballot_icon)
 
+
 @register.filter
 def my_position(doc, user):
-    user_name = get_user_name({'user':user})
-    if not user_name:
+    if not has_role(user, "Area Director"):
         return None
-    if not in_group(user, "Area_Director"):
-        return None
+    # FIXME: temporary backwards-compatibility hack
+    from ietf.doc.models import Document
+    if not isinstance(doc, Document):
+        doc = doc._draft
+
     ballot = doc.active_ballot()
     pos = "No Record"
     if ballot:
-      changed_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad__name=user_name, ballot=ballot)
-      if changed_pos:
-        pos = changed_pos.pos.name;
+        changed_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad__user=user, ballot=ballot)
+        if changed_pos:
+            pos = changed_pos.pos.name;
     return pos
 
-@register.filter
+@register.filter()
 def state_age_colored(doc):
-    if doc.type.slug == 'draft':
-        if not doc.latest_event(type='started_iesg_process'):
-            return ""
+    # FIXME: temporary backwards-compatibility hack
+    from ietf.doc.models import Document
+    if not isinstance(doc, Document):
+        doc = doc._draft
+
+    if doc.type_id == 'draft':
         if not doc.get_state_slug() in ["active", "rfc"]:
             # Don't show anything for expired/withdrawn/replaced drafts
             return ""
-        main_state = doc.get_state('draft-iesg')
-        IESG_SUBSTATE_TAGS = ('point', 'ad-f-up', 'need-rev', 'extpty')
-        sub_states = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+        main_state = doc.get_state_slug('draft-iesg')
+        if not main_state:
+            return ""
 
-        if main_state.slug in ["dead","watching","pub"]:
+        if main_state in ["dead", "watching", "pub"]:
             return ""
         try:
             state_date = doc.docevent_set.filter(
@@ -178,26 +175,26 @@ def state_age_colored(doc):
                               Q(desc__istartswith="IESG process started in state")
                           ).order_by('-time')[0].time.date() 
         except IndexError:
-            state_date = date(1990,1,1)
-        days = timesince_days(state_date)
+            state_date = datetime.date(1990,1,1)
+        days = (datetime.date.today() - state_date).days
         # loosely based on 
         # http://trac.tools.ietf.org/group/iesg/trac/wiki/PublishPath
-        if main_state.slug == "lc":
+        if main_state == "lc":
             goal1 = 30
             goal2 = 30
-        elif main_state.slug == "rfcqueue":
+        elif main_state == "rfcqueue":
             goal1 = 60
             goal2 = 120
-        elif main_state.slug in ["lc-req", "ann"]:
+        elif main_state in ["lc-req", "ann"]:
             goal1 = 4
             goal2 = 7
-        elif 'need-rev' in [x.slug for x in sub_states]:
+        elif 'need-rev' in [x.slug for x in doc.tags.all()]:
             goal1 = 14
             goal2 = 28
-        elif main_state.slug == "pub-req":
+        elif main_state == "pub-req":
             goal1 = 7
             goal2 = 14
-        elif main_state.slug == "ad-eval":
+        elif main_state == "ad-eval":
             goal1 = 14
             goal2 = 28
         else:
@@ -213,6 +210,7 @@ def state_age_colored(doc):
             title = ' title="Goal is &lt;%d days"' % (goal1,)
         else:
             title = ''
-        return '<span class="%s"%s>(for&nbsp;%d&nbsp;day%s)</span>' % (class_name,title,days,('','s')[days != 1])
+        return mark_safe('<span class="%s"%s>(for&nbsp;%d&nbsp;day%s)</span>' % (
+                class_name, title, days, 's' if days != 1 else ''))
     else:
         return ""

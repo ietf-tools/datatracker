@@ -1,21 +1,23 @@
 $(function () {
+    // search form
     var form = jQuery("#search_form");
 
-    // we want to disable our submit button if we have no search text,
-    // and we have no advanced options selected
-    function toggleSubmit() {
-        var nameSearch = $.trim($("#id_name").val());
-
-        var noAdvanced = true;
+    function anyAdvancedActive() {
+        var advanced = false;
 
         var by = form.find("input[name=by]:checked");
         if (by.length > 0)
             by.closest(".search_field").find("input,select").not("input[name=by]").each(function () {
                 if ($.trim(this.value))
-                    noAdvanced = false;
+                    advanced = true;
             });
 
-        form.find("input[type=submit]").get(0).disabled = !nameSearch && noAdvanced;
+        return advanced;
+    }
+
+    function toggleSubmit() {
+        var nameSearch = $.trim($("#id_name").val());
+        form.find("input[type=submit]").get(0).disabled = !nameSearch && !anyAdvancedActive();
     }
 
     function togglePlusMinus(toggler, toggled) {
@@ -29,7 +31,7 @@ $(function () {
         }
     }
 
-    function updateBy() {
+    function updateAdvanced() {
         form.find("input[name=by]:checked").closest(".search_field").find("input,select").not("input[name=by]").each(function () {
             this.disabled = false;
         });
@@ -41,25 +43,24 @@ $(function () {
         toggleSubmit();
     }
 
-    form.find(".search_field input[name=by]").closest("label").click(updateBy);
+    if (form.length > 0) {
+        form.find(".search_field input[name=by]").closest("label").click(updateAdvanced);
 
-    form.find(".search_field input,select")
-        .change(toggleSubmit).click(toggleSubmit).keyup(toggleSubmit);
+        form.find(".search_field input,select")
+            .change(toggleSubmit).click(toggleSubmit).keyup(toggleSubmit);
 
-    form.find(".toggle_advanced").click(function () {
-        var advanced = $(this).next();
-        advanced.find('.search_field input[type="radio"]').attr("checked", false);
-        togglePlusMinus($(this), advanced);
-        updateBy();
-    });
+        form.find(".toggle_advanced").click(function () {
+            var advanced = $(this).next();
+            advanced.find('.search_field input[type="radio"]').attr("checked", false);
+            togglePlusMinus($(this), advanced);
+            updateAdvanced();
+        });
 
-    updateBy();
+        updateAdvanced();
+    }
 
-    $("#search_results th").click(function (e) {
-        window.location = $(this).find("a").attr("href");
-    })
-
-    $('#search_results .addtolist a').click(function(e) {
+    // search results
+    $('.search-results .addtolist a').click(function(e) {
         e.preventDefault();
         var trigger = $(this);
         $.ajax({
@@ -73,5 +74,28 @@ $(function () {
                 }
             }
         });
+    });
+
+    $("a.ballot-icon").click(function (e) {
+        e.preventDefault();
+
+        $.ajax({
+            url: $(this).data("popup"),
+            success: function (data) {
+                showModalBox(data);
+            },
+            error: function () {
+                showModalBox("<div>Error retrieving popup content</div>");
+            }
+        });
+    }).each(function () {
+        // bind right-click shortcut
+        var editPositionUrl = $(this).data("edit");
+        if (editPositionUrl) {
+            $(this).bind("contextmenu", function (e) {
+                e.preventDefault();
+                window.location = editPositionUrl;
+            });
+        }
     });
 });

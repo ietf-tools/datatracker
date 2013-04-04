@@ -36,6 +36,9 @@ class State(models.Model):
     class Meta:
         ordering = ["type", "order"]
 
+IESG_BALLOT_ACTIVE_STATES = ("lc", "writeupw", "goaheadw", "iesg-eva", "defer")
+IESG_SUBSTATE_TAGS = ('point', 'ad-f-up', 'need-rev', 'extpty')
+
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
     time = models.DateTimeField(default=datetime.datetime.now) # should probably have auto_now=True
@@ -186,9 +189,7 @@ class Document(DocumentInfo):
     def get_absolute_url(self):
         name = self.name
         if self.type_id == "draft" and self.get_state_slug() == "rfc":
-            aliases = self.docalias_set.filter(name__startswith="rfc")
-            if aliases:
-                name = aliases[0].name
+            name = self.canonical_name()
         elif self.type_id in ('slides','agenda','minutes'):
             session = self.session_set.all()[0]
             meeting = session.meeting
@@ -248,11 +249,10 @@ class Document(DocumentInfo):
         """Return the doc aliases that are target of relationship originating from self."""
         return DocAlias.objects.filter(relateddocument__source=self, relateddocument__relationship=relationship)
 
-    #TODO can/should this be a function instead of a property? Currently a view uses it as a property
-    @property
-    def telechat_date(self):
-        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-        return e.telechat_date if e else None
+    def telechat_date(self, e=None):
+        if not e:
+            e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+        return e.telechat_date if e and e.telechat_date and e.telechat_date >= datetime.date.today() else None
 
     def area_acronym(self):
         g = self.group
@@ -270,10 +270,6 @@ class Document(DocumentInfo):
             return g.acronym
         else:
             return "none"
-
-    def on_upcoming_agenda(self):
-        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-        return bool(e and e.telechat_date and e.telechat_date >= datetime.date.today())
 
     def returning_item(self):
         e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
@@ -299,56 +295,56 @@ class Document(DocumentInfo):
         return '<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev)
 
     def rfc_number(self):
-        qs = self.docalias_set.filter(name__startswith='rfc')
-        return qs[0].name[3:] if qs else None
+        n = self.canonical_name()
+        return n[3:] if n.startswith("rfc") else None
 
     def friendly_state(self):
-        """ Return a concise text description of the document's current state """
-        if self.type_id=='draft':
-            # started_iesg_process is is how the redesigned database schema (as of May2012) captured what 
-            # used to be "has an IDInternal", aka *Wrapper.in_ietf_process()=True
-            in_iesg_process = self.latest_event(type='started_iesg_process')
-            iesg_state_summary=None
-            if in_iesg_process:
-                iesg_state = self.states.get(type='draft-iesg')
+        """ Return a concise text description of the document's current state."""
+        state = self.get_state()
+        if not state:
+            return "Unknown state"
+
+        if self.type_id == 'draft':
+            iesg_state = self.get_state("draft-iesg")
+            iesg_state_summary = None
+            if iesg_state:
                 # This knowledge about which tags are reportable IESG substate tags is duplicated in idrfc
-                IESG_SUBSTATE_TAGS = ('point', 'ad-f-up', 'need-rev', 'extpty')
                 iesg_substate = self.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
                 # There really shouldn't be more than one tag in iesg_substate, but this will do something sort-of-sensible if there is
                 iesg_state_summary = iesg_state.name
                 if iesg_substate:
                      iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
              
-            if self.get_state_slug() == "rfc":
-                n = self.rfc_number()
-                return "<a href=\"%s\">RFC %s</a>" % (urlreverse('doc_view', kwargs=dict(name='rfc%s' % n)), n)
-            elif self.get_state_slug() == "repl":
+            if state.slug == "rfc":
+                return "RFC %s (%s)" % (self.rfc_number(), self.std_level)
+            elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
-                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('doc_view', args=[name]), name) for name in rs))
+                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('doc_view', kwargs=dict(name=name)), name) for name in rs))
                 else:
                     return "Replaced"
-            elif self.get_state_slug() == "active":
-                if in_iesg_process:
+            elif state.slug == "active":
+                if iesg_state:
                     if iesg_state.slug == "dead":
                         # Many drafts in the draft-iesg "Dead" state are not dead
                         # in other state machines; they're just not currently under 
                         # IESG processing. Show them as "I-D Exists (IESG: Dead)" instead...
-                        return "I-D Exists (IESG: "+iesg_state_summary+")"
+                        return "I-D Exists (IESG: %s)" % iesg_state_summary
                     elif iesg_state.slug == "lc":
-                        expiration_date = str(self.latest_event(LastCallDocEvent,type="sent_last_call").expires.date())
-                        return iesg_state_summary + " (ends "+expiration_date+")"
-                    else:
-                        return iesg_state_summary
+                        e = self.latest_event(LastCallDocEvent, type="sent_last_call")
+                        if e:
+                            return iesg_state_summary + " (ends %s)" % e.expires.date().isoformat()
+
+                    return iesg_state_summary
                 else:
                     return "I-D Exists"
             else:
-                if in_iesg_process  and iesg_state.slug == "dead":
-                    return self.get_state().name +" (IESG: "+iesg_state_summary+")"
+                if iesg_state and iesg_state.slug == "dead":
+                    return state.name + " (IESG: %s)" % iesg_state_summary
                 # Expired/Withdrawn by Submitter/IETF
-                return self.get_state().name
+                return state.name
         else:
-           return self.get_state().name
+           return state.name
 
     def ipr(self):
         """Returns the IPR disclosures against this document (as a queryset over IprDocAlias)."""

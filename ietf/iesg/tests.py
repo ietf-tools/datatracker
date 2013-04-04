@@ -505,11 +505,11 @@ class DeferUndeferTestCase(django.test.TestCase):
         self.assertEquals(len(q('form.defer')),1)
 
         # defer
-        self.assertEquals(doc.telechat_date,first_date)
+        self.assertEquals(doc.telechat_date(), first_date)
         r = self.client.post(url,dict())
         self.assertEquals(r.status_code, 302)
         doc = Document.objects.get(name=name)
-        self.assertEquals(doc.telechat_date,second_date)
+        self.assertEquals(doc.telechat_date(), second_date)
         self.assertTrue(doc.returning_item())
         defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'])
         if doc.type_id in defer_states:
@@ -547,11 +547,11 @@ class DeferUndeferTestCase(django.test.TestCase):
         self.assertEquals(len(q('form.undefer')),1)
 
         # undefer
-        self.assertEquals(doc.telechat_date,second_date)
+        self.assertEquals(doc.telechat_date(), second_date)
         r = self.client.post(url,dict())
         self.assertEquals(r.status_code, 302)
         doc = Document.objects.get(name=name)
-        self.assertEquals(doc.telechat_date,first_date)
+        self.assertEquals(doc.telechat_date(), first_date)
         self.assertTrue(doc.returning_item()) 
         undefer_states = dict(draft=['draft-iesg','iesg-eva'],conflrev=['conflrev','iesgeval'])
         if doc.type_id in undefer_states:

@@ -407,14 +407,6 @@ def expires_soon(x,request):
         days = 14
     return x > -days
 
-@register.filter(name='greater_than')
-def greater_than(x, y):
-    return x > int(y)
-
-@register.filter(name='less_than')
-def less_than(x, y):
-    return x < int(y)
-
 @register.filter(name='equal')
 def equal(x, y):
     return str(x)==str(y)
@@ -469,24 +461,8 @@ def format_history_text(text):
     full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(full)))))
     snippet = truncate_html_words(full, 25)
     if snippet != full:
-        return mark_safe(u'<div class="snippet">%s<span class="showAll">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
+        return mark_safe(u'<div class="snippet">%s<span class="show-all">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
     return full
-
-@register.filter
-def user_roles_json(user):
-    roles = {}
-    if not isinstance(user, basestring) and user.is_authenticated():
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from ietf.group.models import Role
-            for r in Role.objects.filter(person__user=user).select_related(depth=1):
-                if r.name_id == "secr" and r.group.acronym == "secretariat":
-                    roles["Secretariat"] = True
-                elif r.name_id == "ad" and r.group.type_id == "area" and r.group.state_id == "active":
-                    roles["Area Director"] = roles["Area_Director"] = True
-        else:
-            for g in user.groups.all():
-                roles[g.name] = True
-    return mark_safe(simplejson.dumps(roles))
 
 @register.filter
 def textify(text):
@@ -494,7 +470,13 @@ def textify(text):
     text = re.sub("</?i>", "/", text)
     # There are probably additional conversions we should apply here
     return text
-    
+
+@register.filter
+def state(doc, slug):
+    if slug == "stream": # convenient shorthand
+        slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
+    return doc.get_state(slug)
+
 def _test():
     import doctest
     doctest.testmod()

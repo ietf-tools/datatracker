@@ -38,7 +38,7 @@ from django.http import HttpResponse
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from ietf.idtracker.models import Area, IETFWG
-from ietf.idrfc.views_search import SearchForm, search_query
+from ietf.idrfc.views_search import SearchForm, retrieve_search_results
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
 from ietf.ipr.models import IprDetail
 from ietf.group.models import Group
@@ -145,39 +145,34 @@ def wg_documents(request, acronym):
     concluded = wg.status_id in [ 2, 3, ]
     proposed = (wg.status_id == 4)
     form = SearchForm({'by':'group', 'group':str(wg.group_acronym.acronym),
-                       'rfcs':'on', 'activeDrafts':'on'})
-    if not form.is_valid():
-        raise ValueError("form did not validate")
-    (docs,meta) = search_query(form.cleaned_data)
+                       'rfcs':'on', 'activedrafts':'on'})
+    docs, meta = retrieve_search_results(form)
 
     # get the related docs
-    form_related = SearchForm({'by':'group', 'name':'-'+str(wg.group_acronym.acronym)+'-', 'activeDrafts':'on'})
-    if not form_related.is_valid():
-        raise ValueError("form_related did not validate")
-    (docs_related,meta_related) = search_query(form_related.cleaned_data)
+    form_related = SearchForm({'by':'group', 'name':'-'+str(wg.group_acronym.acronym)+'-', 'activedrafts':'on'})
+    docs_related, meta_related = retrieve_search_results(form_related)
     docs_related_pruned = []
     for d in docs_related:
-        parts = d.id.draft_name.split("-", 2);
+        parts = d.name.split("-", 2);
         # canonical form draft-<name|ietf>-wg-etc
-        if ( len(parts) >= 3):
-            if parts[1] != "ietf" and parts[2].startswith(wg.group_acronym.acronym+"-"):
+        if len(parts) >= 3 and parts[1] != "ietf" and parts[2].startswith(wg.group_acronym.acronym + "-"):
                 docs_related_pruned.append(d)
 
     docs_related = docs_related_pruned
 
     # move call for WG adoption to related
     cleaned_docs = []
-    related_doc_names = set(d.id.draft_name for d in docs_related)
+    docs_related_names = set(d.name for d in docs_related)
     for d in docs:
-        if d.id and d.id._draft and d.id._draft.stream_id == "ietf" and d.id._draft.get_state_slug("draft-stream-ietf") == "c-adopt":
-            if d.id.draft_name not in related_doc_names:
+        if d.stream_id == "ietf" and d.get_state_slug("draft-stream-ietf") == "c-adopt":
+            if d.name not in docs_related_names:
                 docs_related.append(d)
         else:
             cleaned_docs.append(d)
 
     docs = cleaned_docs
 
-    docs_related.sort(key=lambda d: d.id.draft_name)
+    docs_related.sort(key=lambda d: d.name)
 
     return wg, concluded, proposed, docs, meta, docs_related, meta_related
 

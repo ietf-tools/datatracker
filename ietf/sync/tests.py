@@ -441,7 +441,7 @@ class RFCEditorUndoTestCase(django.test.TestCase):
         self.assertEquals(draft.get_state("draft-rfceditor"), None)
 
         # let's just test we can recover
-        e = DeletedEvent.objects.all().order_by("-time")[0]
+        e = DeletedEvent.objects.all().order_by("-time", "-id")[0]
 
         e.content_type.model_class().objects.create(**json.loads(e.json))
         self.assertTrue(StateDocEvent.objects.filter(desc="First", doc=draft))

@@ -45,10 +45,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block morecss %}{% endblock %}
 </style>
 {% block pagehead %}{% endblock %}
-<script type="text/javascript">
-IETF = {};
-IETF.user_groups = {{ user|user_roles_json }};
-</script>
 {% ifnotequal server_mode "production" %}
 <link rel="icon" href="/images/ietf-dev-icon.bmp" />
 {% else %}
@@ -107,7 +103,6 @@ YAHOO.util.Event.onContentReady("wgs", function () {
 {% endblock %}
 //]]>
 </script>
-<script type="text/javascript" src="/js/base.js"></script>
 {% block js %}{% endblock %}
 
 {% block content_end %}

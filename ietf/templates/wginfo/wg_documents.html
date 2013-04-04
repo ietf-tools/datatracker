@@ -35,34 +35,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block wg_titledetail %}Documents{% endblock %}
 
 {% block wg_content %}
+<div class="group-documents">
 
-{% regroup docs by view_sort_group as grouped_docs %}
+{% include "idrfc/search_results.html" %}
 
-<table class="ietf-table ietf-doctable" style="margin-top:16px;">
-<tr><th class="doc">Document</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th><th class="ad">Area Director</th></tr> 
-{% for doc_group in grouped_docs %} 
-<tr class="header"><td colspan="7">{{doc_group.grouper}}s</td></tr>
+{% with docs_related as docs %}{% include "idrfc/search_results.html" %}{% endwith %}
 
-{% for doc in doc_group.list %}
-{% include "idrfc/search_result_row.html" %}
-{% endfor %}
-
-{% endfor %}
-</table>
-
-{% regroup docs_related by view_sort_group as grouped_docs_related %}
-
-<table class="ietf-table ietf-doctable" style="margin-top:16px;">
-<tr><th class="doc">Related Documents</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th><th class="ad">Area Director</th></tr> 
-{% for doc_group in grouped_docs_related %} 
-<tr class="header"><td colspan="7">{{doc_group.grouper}}s</td></tr>
-
-{% for doc in doc_group.list %}
-  {% include "idrfc/search_result_row.html" %}
-{% endfor %}
-
-{% endfor %}
-</table>
-
+</div>
 {% endblock wg_content %}
 
+{% block js %}
+<script type="text/javascript" src="/js/utils.js"></script>
+<script type="text/javascript" src="/js/doc-search.js"></script>
+{% endblock %}

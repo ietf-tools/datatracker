@@ -489,8 +489,7 @@ class RescheduleForm(forms.Form):
         self.fields['telechat_date'].choices = choices
 
 def handle_reschedule_form(request, doc, dates):
-    initial = dict(
-        telechat_date=doc.telechat_date if doc.on_upcoming_agenda() else None)
+    initial = dict(telechat_date=doc.telechat_date())
 
     formargs = dict(telechat_dates=dates,
                     prefix="%s" % doc.name,
@@ -525,11 +524,11 @@ def agenda_documents(request):
         i.reschedule_form = handle_reschedule_form(request, i, dates)
 
     # some may have been taken off the schedule by the reschedule form
-    docs = filter(lambda x: x.on_upcoming_agenda(), docs)
-        
+    docs = [d for d in docs if d.telechat_date()]
+
     telechats = []
     for date in dates:
-        matches = filter(lambda x: x.telechat_date == date, docs)
+        matches = filter(lambda x: x.telechat_date() == date, docs)
         res = {}
         for i in matches:
             section_key = "s" + get_doc_section(i)
