@@ -613,8 +613,8 @@ def approve(request, name):
             e = ChangeStateGroupEvent(group=wg, type="changed_state")
             e.time = wg.time
             e.by = login
-            e.state_id = "proposed"
-            e.desc = "Proposed group"
+            e.state_id = "active"
+            e.desc = "Charter approved, group active"
             e.save()
             # update the change description for the email
             change_description += " and WG state has been changed to %s" % new_state.name
