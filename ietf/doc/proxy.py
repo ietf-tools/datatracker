@@ -589,7 +589,7 @@ class InternetDraft(Document):
 	if standardsTrack:
 	    # For standards-track, need positions from 2/3 of the
 	    # non-recused current IESG.
-	    needed = int((len(ads) - recuse) * 2 / 3)
+	    needed = int(math.ceil((len(ads) - recuse) * 2.0/3.0))
 	else:
 	    # Info and experimental only need one position.
             # Info and experimental without Yes have their full spec now.
