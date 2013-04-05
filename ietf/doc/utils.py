@@ -27,7 +27,7 @@ def get_state_types(doc):
 
 def get_tags_for_stream_id(stream_id):
     if stream_id == "ietf":
-        return ["w-expert", "w-extern", "w-merge", "need-aut", "w-refdoc", "w-refing", "rev-wglc", "rev-ad", "rev-iesg", "sheph-u", "other"]
+        return ["w-expert", "w-extern", "w-merge", "need-aut", "w-refdoc", "w-refing", "rev-wg", "rev-wglc", "rev-ad", "rev-iesg", "sheph-u", "other"]
     elif stream_id == "iab":
         return ["need-ed", "w-part", "w-review", "need-rev", "sh-f-up"]
     elif stream_id == "irtf":
