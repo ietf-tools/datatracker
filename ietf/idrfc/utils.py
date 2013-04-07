@@ -177,16 +177,20 @@ def update_telechatREDESIGN(request, doc, by, new_telechat_date, new_returning_i
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     update_telechat = update_telechatREDESIGN
 
-def can_edit_intended_std_level(doc, user):
+def can_edit_base(doc, user):
     return user.is_authenticated() and (
         has_role(user, ["Secretariat", "Area Director"]) or
         doc.group.role_set.filter(name__in=("chair", "auth", "delegate"), person__user=user)
         )
 
-def can_edit_consensus(doc, user):
+can_edit_intended_std_level = can_edit_base
+can_edit_consensus = can_edit_base
+can_edit_shepherd = can_edit_base
+
+def can_edit_shepherd_writeup(doc, user):
     return user.is_authenticated() and (
-        has_role(user, ["Secretariat", "Area Director"]) or
-        doc.group.role_set.filter(name__in=("chair", "auth", "delegate"), person__user=user)
+        can_edit_base(doc,user) or
+        (doc.shepherd==user.person)
         )
 
 def nice_consensus(consensus):

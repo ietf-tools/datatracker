@@ -317,6 +317,21 @@ def document_writeup(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
+def document_shepherd_writeup(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    lastwriteup = doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup")
+    if lastwriteup:
+         writeup_text = lastwriteup.text
+    else:
+         writeup_text = "(There is no shepherd's writeup available for this document)"
+    return render_to_response("idrfc/shepherd_writeup.html",
+                               dict(doc=doc,
+                                    writeup=writeup_text,
+                                    can_edit=can_edit_shepherd_writeup(doc,request.user)
+                                   ),
+                              context_instance=RequestContext(request))
+ 
+
 def document_ballot_content(request, doc, ballot_id, editable=True):
     """Render HTML string with content of ballot page."""
     all_ballots = list(BallotDocEvent.objects.filter(doc=doc, type="created_ballot").order_by("time"))
@@ -501,6 +516,7 @@ def document_main_idrfc(request, name, tab):
         info["consensus"] = nice_consensus(e and e.consensus)
         info["can_edit_consensus"] = can_edit_consensus(id, request.user)
     info["can_edit_intended_std_level"] = can_edit_intended_std_level(id, request.user)
+    info["can_edit_shepherd"] = can_edit_shepherd(id, request.user)
 
     (content1, content2) = _get_html(
         str(name)+","+str(id.revision)+",html",

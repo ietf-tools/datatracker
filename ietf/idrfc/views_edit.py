@@ -23,6 +23,9 @@ from ietf.iesg.models import *
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
+from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.person.forms import EmailsField
+
 
 from ietf.ietfworkflows.models import Stream
 from ietf.ietfworkflows.utils import update_stream
@@ -865,6 +868,122 @@ def edit_iesg_note(request, name):
                                    form=form,
                                    ),
                               context_instance=RequestContext(request))
+
+class ShepherdWriteupUploadForm(forms.Form):
+    content = forms.CharField(widget=forms.Textarea, label="Shepherd writeup", help_text="Edit the shepherd writeup", required=False)
+    txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file", required=False)
+
+    def clean_content(self):
+        return self.cleaned_data["content"].replace("\r", "")
+
+    def clean_txt(self):
+        return get_cleaned_text_file_content(self.cleaned_data["txt"])
+
+def edit_shepherd_writeup(request, name):
+    """Change this document's shepherd writeup"""
+    doc = get_object_or_404(Document, type="draft", name=name)
+
+    if not can_edit_shepherd_writeup(doc, request.user):
+        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+
+    login = request.user.get_profile()
+
+    if request.method == 'POST':
+        if "submit_response" in request.POST:
+            form = ShepherdWriteupUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                
+                from_file = form.cleaned_data['txt']
+                if from_file:
+                     writeup = from_file
+                else:
+                     writeup = form.cleaned_data['content']
+
+                e = WriteupDocEvent(doc=doc, by=login, type="changed_protocol_writeup")
+                e.desc = "Changed document writeup"
+                e.text = writeup
+                e.save()
+            
+                return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+
+        elif "reset_text" in request.POST:
+
+            init = { "content": render_to_string("doc/shepherd_writeup.txt",dict(doc=doc))}
+            form = ShepherdWriteupUploadForm(initial=init)
+
+        # Protect against handcrufted malicious posts
+        else:
+            form = None
+
+    else:
+        form = None
+
+    if not form:
+        init = { "content": ""}
+
+        previous_writeup = doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup")
+        if previous_writeup:
+            init["content"] = previous_writeup.text
+        else:
+            init["content"] = render_to_string("doc/shepherd_writeup.txt",
+                                                dict(doc=doc),
+                                              )
+        form = ShepherdWriteupUploadForm(initial=init)
+
+    return render_to_response('idrfc/change_shepherd_writeup.html',
+                              {'form': form,
+                               'doc' : doc,
+                              },
+                              context_instance=RequestContext(request))
+
+class ShepherdForm(forms.Form):
+    shepherd = EmailsField(label="Shepherd", required=False)
+
+    def clean_shepherd(self):
+        data = self.cleaned_data['shepherd']
+        if len(data)>1:
+            raise forms.ValidationError("Please choose at most one shepherd.")
+        return data
+
+def edit_shepherd(request, name):
+    """Change the shepherd for a Document"""
+    # TODO - this shouldn't be type="draft" specific
+    doc = get_object_or_404(Document, type="draft", name=name)
+
+    if not can_edit_shepherd(doc, request.user):
+        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+
+    if request.method == 'POST':
+        form = ShepherdForm(request.POST)
+        if form.is_valid():
+
+            if form.cleaned_data['shepherd']:
+                doc.shepherd = form.cleaned_data['shepherd'][0].person
+            else:
+                doc.shepherd = None
+            doc.save()
+   
+            login = request.user.get_profile()
+            c = DocEvent(type="added_comment", doc=doc, by=login)
+            c.desc = "Document shepherd changed to "+doc.shepherd.name
+            c.save()
+
+            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+
+    else:
+        current_shepherd = None
+        if doc.shepherd:
+            e = doc.shepherd.email_set.order_by("-active", "-time")
+            if e:
+                current_shepherd=e[0].pk
+        init = { "shepherd": current_shepherd}
+        form = ShepherdForm(initial=init)
+
+    return render_to_response('idrfc/change_shepherd.html',
+                              {'form':   form,
+                               'doc': doc,
+                              },
+                              context_instance = RequestContext(request))
 
 class AdForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), 

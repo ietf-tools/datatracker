@@ -1366,6 +1366,89 @@ class IndividualInfoFormsTestCase(django.test.TestCase):
         self.assertEquals(self.doc.ad,ad2)
         self.assertTrue(self.doc.latest_event(DocEvent,type="added_comment").desc.startswith('Shepherding AD changed'))
 
+    def test_doc_change_shepherd(self):
+        url = urlreverse('doc_edit_shepherd',kwargs=dict(name=self.docname))
+        
+        login_testing_unauthorized(self, "plain", url)
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,403)
+
+        # get as the secretariat (and remain secretariat)
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form input[id=id_shepherd]')),1)
+
+        # change the shepherd
+        plain = Person.objects.get(name='Plain Man')
+        plain_email = plain.email_set.all()[0]
+        r = self.client.post(url,dict(shepherd=plain_email))
+        self.assertEquals(r.status_code,302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertEquals(self.doc.shepherd,plain)
+        self.assertTrue(self.doc.latest_event(DocEvent,type="added_comment").desc.startswith('Document shepherd changed to Plain Man'))
+
+        ad = Person.objects.get(name='Aread Irector')
+        two_answers = "%s,%s" % (plain_email, ad.email_set.all()[0])
+        r = self.client.post(url,(dict(shepherd=two_answers)))
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form ul.errorlist')) > 0)
+
+    def test_doc_view_shepherd_writeup(self):
+        url = urlreverse('doc_shepherd_writeup',kwargs=dict(name=self.docname))
+  
+        # get as a shepherd
+        self.client.login(remote_user="plain")
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('span[id=doc_edit_shepherd_writeup]')),1)
+
+        # Try again when no longer a shepherd.
+
+        self.doc.shepherd = None
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('span[id=doc_edit_shepherd_writeup]')),1)
+
+    def test_doc_change_shepherd_writeup(self):
+        url = urlreverse('doc_edit_shepherd_writeup',kwargs=dict(name=self.docname))
+  
+        # get
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form textarea[id=id_content]')),1)
+
+        # direct edit
+        r = self.client.post(url,dict(content='here is a new writeup',submit_response="1"))
+        print r.content
+        self.assertEquals(r.status_code,302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertTrue(self.doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup").text.startswith('here is a new writeup'))
+
+        # file upload
+        test_file = StringIO.StringIO("This is a different writeup.")
+        test_file.name = "unnamed"
+        r = self.client.post(url,dict(txt=test_file,submit_response="1"))
+        self.assertEquals(r.status_code, 302)
+        doc = Document.objects.get(name=self.docname)
+        self.assertTrue(self.doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup").text.startswith('This is a different writeup.'))
+
+        # template reset
+        r = self.client.post(url,dict(txt=test_file,reset_text="1"))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('textarea')[0].text.startswith("As required by RFC 4858"))
+
     def setUp(self):
         make_test_data()
         self.docname='draft-ietf-mars-test'
