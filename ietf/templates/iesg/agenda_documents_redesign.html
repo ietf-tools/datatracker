@@ -104,6 +104,14 @@ font-size:80%; font-style:italic;
     {% if t.docs.s223 %}<tr class="header"><td colspan="6">2.2.3 For Action</td></tr>{% endif %}
     {% for doc in t.docs.s223 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
 
+<tr class="header"><td colspan="6">2.3 Status Changes</td></tr>
+
+    {% for doc in t.docs.s231 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% if t.docs.s222 %}<tr class="header"><td colspan="6">2.3.2 Returning Item</td></tr>{% endif %}
+    {% for doc in t.docs.s232 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% if t.docs.s223 %}<tr class="header"><td colspan="6">2.3.3 For Action</td></tr>{% endif %}
+    {% for doc in t.docs.s233 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+
 <tr class="header"><td colspan="6">3. Document Actions</td></tr>
 
 <tr class="header"><td colspan="6">3.1 WG Submissions</td></tr>
@@ -122,13 +130,21 @@ font-size:80%; font-style:italic;
     {% if t.docs.s323 %}<tr class="header"><td colspan="6">3.2.3 For Action</td></tr>{% endif %}
     {% for doc in t.docs.s323 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
 
-<tr class="header"><td colspan="6">3.3 IRTF and Independent Submission Stream Documents</td></tr>
+<tr class="header"><td colspan="6">3.3 Status Changes</td></tr>
 
     {% for doc in t.docs.s331 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
     {% if t.docs.s332 %}<tr class="header"><td colspan="6">3.3.2 Returning Item</td></tr>{% endif %}
     {% for doc in t.docs.s332 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
     {% if t.docs.s333 %}<tr class="header"><td colspan="6">3.3.3 For Action</td></tr>{% endif %}
     {% for doc in t.docs.s333 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+
+<tr class="header"><td colspan="6">3.4 IRTF and Independent Submission Stream Documents</td></tr>
+
+    {% for doc in t.docs.s341 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% if t.docs.s342 %}<tr class="header"><td colspan="6">3.4.2 Returning Item</td></tr>{% endif %}
+    {% for doc in t.docs.s342 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% if t.docs.s343 %}<tr class="header"><td colspan="6">3.4.3 For Action</td></tr>{% endif %}
+    {% for doc in t.docs.s343 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
 
 <tr class="header"><td colspan="6">4. Working Group Actions</td></tr>
 

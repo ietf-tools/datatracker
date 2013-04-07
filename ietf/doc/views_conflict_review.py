@@ -25,20 +25,15 @@ from ietf.person.models import Person
 from ietf.iesg.models import TelechatDate
 from ietf.group.models import Role, Group
 
+from ietf.doc.forms import TelechatForm, AdForm, NotifyForm
+
 class ChangeStateForm(forms.Form):
     review_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev"), label="Conflict review state", empty_label=None, required=True)
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history", required=False)
-    def __init__(self, *args, **kwargs):
-        self.hide = kwargs.pop('hide', None)
-        super(ChangeStateForm, self).__init__(*args, **kwargs)
-        # hide requested fields
-        if self.hide:
-            for f in self.hide:
-                self.fields[f].widget = forms.HiddenInput
 
 @role_required("Area Director", "Secretariat")
 def change_state(request, name, option=None):
-    """Change state of and IESG review for IETF conflicts in other stream's documents, notifying parties as necessary
+    """Change state of an IESG review for IETF conflicts in other stream's documents, notifying parties as necessary
     and logging the change as a comment."""
     review = get_object_or_404(Document, type="conflrev", name=name)
 
@@ -86,22 +81,22 @@ def change_state(request, name, option=None):
 
             return redirect('doc_view', name=review.name)
     else:
-        hide = []
         s = review.get_state()
         init = dict(review_state=s.pk if s else None)
-        form = ChangeStateForm(hide=hide, initial=init)
+        form = ChangeStateForm(initial=init)
 
-    return render_to_response('doc/conflict_review/change_state.html',
+    return render_to_response('doc/change_state.html',
                               dict(form=form,
                                    doc=review,
                                    login=login,
+                                   help_url=reverse('help_conflict_review_states'),
                                    ),
                               context_instance=RequestContext(request))
 
 def send_conflict_eval_email(request,review):
-    msg = render_to_string("doc/conflict_review/eval_email.txt",
-                            dict(review=review,
-                                 review_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
+    msg = render_to_string("doc/eval_email.txt",
+                            dict(doc=review,
+                                 doc_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
                                  )
                            )
     send_mail_preformatted(request,msg)
@@ -202,9 +197,6 @@ def submit(request, name):
                               },
                               context_instance=RequestContext(request))
 
-class NotifyForm(forms.Form):
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
-
 
 @role_required("Area Director", "Secretariat")
 def edit_notices(request, name):
@@ -231,27 +223,14 @@ def edit_notices(request, name):
         init = { "notify" : review.notify }
         form = NotifyForm(initial=init)
 
-    return render_to_response('doc/conflict_review/notify.html',
-                              {'form':   form,
-                               'review': review,
-                               'conflictdoc' : review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
+    titletext = 'the conflict review of %s-%s' % (conflictdoc.canonical_name(),conflictdoc.rev)
+    return render_to_response('doc/notify.html',
+                              {'form': form,
+                               'doc': review,
+                               'titletext' : titletext
                               },
                               context_instance = RequestContext(request))
-
-class AdForm(forms.Form):
-    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), 
-                                label="Shepherding AD", empty_label="(None)", required=True)
-
-    def __init__(self, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
-
-        # if previous AD is now ex-AD, append that person to the list
-        ad_pk = self.initial.get('ad')
-        choices = self.fields['ad'].choices
-        if ad_pk and ad_pk not in [pk for pk, name in choices]:
-            self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
-
- 
 
 @role_required("Area Director", "Secretariat")
 def edit_ad(request, name):
@@ -277,10 +256,13 @@ def edit_ad(request, name):
         init = { "ad" : review.ad_id }
         form = AdForm(initial=init)
 
-    return render_to_response('doc/conflict_review/change_ad.html',
-                              {'form':   form,
-                               'review': review,
-                               'conflictdoc' : review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+    
+    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
+    titletext = 'the conflict review of %s-%s' % (conflictdoc.canonical_name(),conflictdoc.rev)
+    return render_to_response('doc/change_ad.html',
+                              {'form': form,
+                               'doc': review,
+                               'titletext': titletext
                               },
                               context_instance = RequestContext(request))
 
@@ -318,7 +300,7 @@ def approve(request, name):
     review = get_object_or_404(Document, type="conflrev", name=name)
 
     if review.get_state('conflrev').slug not in ('appr-reqnopub-pend','appr-noprob-pend'):
-      return Http404()
+      raise Http404
 
     login = request.user.get_profile()
 
@@ -465,22 +447,6 @@ def start_review(request, name):
                               context_instance = RequestContext(request))
 
 
-# There should really only be one of these living in Doc instead of it being spread between idrfc,charter, and here
-class TelechatForm(forms.Form):
-    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
-    returning_item = forms.BooleanField(required=False)
-
-    def __init__(self, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
-
-        dates = [d.date for d in TelechatDate.objects.active().order_by('date')]
-        init = kwargs['initial'].get("telechat_date")
-        if init and init not in dates:
-            dates.insert(0, init)
-
-        self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, d.strftime("%Y-%m-%d")) for d in dates]
-        
-
 @role_required("Area Director", "Secretariat")
 def telechat_date(request, name):
     doc = get_object_or_404(Document, type="conflrev", name=name)
@@ -501,7 +467,7 @@ def telechat_date(request, name):
     else:
         form = TelechatForm(initial=initial)
 
-    return render_to_response('doc/conflict_review/edit_telechat_date.html',
+    return render_to_response('doc/edit_telechat_date.html',
                               dict(doc=doc,
                                    form=form,
                                    user=request.user,

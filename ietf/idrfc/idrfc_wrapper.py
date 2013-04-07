@@ -405,6 +405,16 @@ class RfcWrapper:
             result['ietf_process'] = self.ietf_process.dict()
         return json.dumps(result, indent=2)
 
+    def underlying_document(self):
+        """ Expose the Document object underneath the proxy """
+        # Things like RFC500 are special - there may not _be_ a docalias for them
+        from ietf.doc.models import Document
+        q = Document.objects.filter(docalias__name='rfc%04d'%self.rfc_number)
+        if q:
+            return q[0]
+        else:
+            return None
+
 # ---------------------------------------------------------------------------
 
 class IetfProcessData:

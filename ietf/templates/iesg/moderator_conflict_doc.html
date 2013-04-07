@@ -60,11 +60,6 @@ Last call ends: {{ doc.obj.most_recent_ietflc.expires.date|default:"(none)" }}
 {% endfor %}
 </pre></small>
 
-{% if title1|startswith:"2." %}
-<p>____ open positions<br>
-[ &nbsp; ] would you like to record a position?</p>
-{% endif %}
-
 <p>____ active discusses<br>
 [ &nbsp; ] there are [#] discusses in the tracker on this document.  Do we need to talk about them now?</p>
 
@@ -72,13 +67,10 @@ Last call ends: {{ doc.obj.most_recent_ietflc.expires.date|default:"(none)" }}
 <p>(Ballot not issued)</p>
 {% endif %}
 
-{% if title2|startswith:"3.1" or title2|startswith:"3.2" %}
-<p>Does anyone have an[y further] objection to this document being published as an {{ doc.obj.intended_std_level }} RFC?</p>
-{% endif %}
-{% if title3|startswith:"3.3.1" or title3|startswith:"3.3.2" %}
+{% if title3|startswith:"3.4.1" or title3|startswith:"3.4.2" %}
 <p>Does anyone have an objection to the this conflict review response being sent to the {{doc.obj.conflictdoc.stream}}?</p>
 {% endif %}
-{% if title3|startswith:"3.3.3" %}
+{% if title3|startswith:"3.4.3" %}
 <p>Who will do the review of this document?</p>
 {% endif %}
 
@@ -86,45 +78,7 @@ Last call ends: {{ doc.obj.most_recent_ietflc.expires.date|default:"(none)" }}
 Next State:<br>
 Sub State: </p>
 
-{% if title3|startswith:"2.1.1" or title3|startswith:"2.1.2" %}
-  <p>If APPROVED - The Secretariat will send a working group
-  submission, Protocol Action Announcement.</p>
-
-  <p>If APPROVED with caveats - The Secretariat will send a working
-  group submission, Protocol Action Announcement that includes the
-  [RFC Editor Note, IESG Note, etc.] to be drafted by [Name that
-  AD].</p>
-{% endif %}
-
-{% if title3|startswith:"2.2.1" or title3|startswith:"2.2.2" %}
-  <p>If APPROVED - The Secretariat will send an individual submission,
-  Protocol Action Announcement.</p>
-
-  <p>If APPROVED with caveats - The Secretariat will send an
-  individual submission, Protocol Action Announcement that includes
-  the [RFC Editor Note, IESG Note, etc.] to be drafted by [Name that
-  AD].</p>
-{% endif %}
-
-{% if title3|startswith:"3.1.1" or title3|startswith:"3.1.2" %}
-  <p>If APPROVED - The Secretariat will send a working group submission
-  Document Action Announcement.</p>
-
-  <p>If APPROVED with caveats - The Secretariat will send a working
-  group submission Document Action announcement that includes the [RFC
-  Ed. Note, IESG, note, etc.] from [Name that AD].</p>
-{% endif %}
-
-{% if title3|startswith:"3.2.1" or title3|startswith:"3.2.2" %}
-  <p>If APPROVED - The Secretariat will send an individual submission
-  Document Action Announcement.</p>
-
-  <p>If APPROVED with caveats - The Secretariat will send an
-  individual submission Document Action announcement that includes the
-  [RFC Ed. Note, IESG, note, etc.] from [Name that AD].</p>
-{% endif %}
-
-{% if title3|startswith:"3.3.1" or title3|startswith:"3.3.2" %}
+{% if title3|startswith:"3.4.1" or title3|startswith:"3.4.2" %}
   <p>If APPROVED - The Secretariat will send a standard no problem
   message to the RFC Editor. [Name of AD] will you supply the text for
   the IESG Note?</p>

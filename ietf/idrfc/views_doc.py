@@ -54,20 +54,21 @@ from ietf.doc.models import *
 from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
+from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
 
 def render_document_top(request, doc, tab, name):
     tabs = []
     tabs.append(("Document", "document", urlreverse("ietf.idrfc.views_doc.document_main", kwargs=dict(name=name)), True))
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    if doc.type_id in ("draft","conflrev"):
+    if doc.type_id in ("draft","conflrev","statchg"):
         # if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
         tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=name)), ballot))
     elif doc.type_id == "charter":
         tabs.append(("IESG Review", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=name)), ballot))
 
     # FIXME: if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
-    if doc.type_id != "conflrev":
+    if doc.type_id not in ("conflrev","statchg"):
         tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=doc.name)), True))
 
     tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=doc.name)), True))
@@ -190,6 +191,40 @@ def document_main(request, name, rev=None):
                                        ),
                                   context_instance=RequestContext(request))
 
+    if doc.type_id == "statchg":
+        filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
+        pathname = os.path.join(settings.STATUS_CHANGE_PATH,filename)
+
+        if doc.rev == "00" and not os.path.isfile(pathname):
+            # This could move to a template
+            content = "Status change text has not yet been proposed."
+        else:     
+            content = _get_html(filename, pathname, split=False)
+
+        ballot_summary = None
+        if doc.get_state_slug() in ("iesgeval"):
+            ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
+     
+        if isinstance(doc,Document):
+            sorted_relations=doc.relateddocument_set.all().order_by('relationship__name')
+        elif isinstance(doc,DocHistory):
+            sorted_relations=doc.relateddochistory_set.all().order_by('relationship__name')
+        else:
+            sorted_relations=None
+
+        return render_to_response("idrfc/document_status_change.html",
+                                  dict(doc=doc,
+                                       top=top,
+                                       content=content,
+                                       revisions=revisions,
+                                       snapshot=snapshot,
+                                       telechat=telechat,
+                                       ballot_summary=ballot_summary,
+                                       approved_states=('appr-pend','appr-sent'),
+                                       sorted_relations=sorted_relations,
+                                       ),
+                                  context_instance=RequestContext(request))
+
     raise Http404()
 
 
@@ -209,7 +244,7 @@ def document_history(request, name):
     diff_revisions = []
     seen = set()
 
-    diffable = name.startswith("draft") or name.startswith("charter") or name.startswith("conflict-review")
+    diffable = name.startswith("draft") or name.startswith("charter") or name.startswith("conflict-review") or name.startswith("status-change")
 
     if diffable:
         for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents).select_related('doc').order_by("-time", "-id"):
@@ -223,6 +258,9 @@ def document_history(request, name):
                 elif name.startswith("conflict-review"):
                     h = find_history_active_at(e.doc, e.time)
                     url = settings.CONFLICT_REVIEW_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
+                elif name.startswith("status-change"):
+                    h = find_history_active_at(e.doc, e.time)
+                    url = settings.STATUS_CHANGE_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
                 elif name.startswith("draft"):
                     # rfcdiff tool has special support for IDs
                     url = e.doc.name + "-" + e.rev
@@ -422,6 +460,11 @@ def document_main_rfc(request, rfc_number, tab):
     else:
         content1 = ""
         content2 = ""
+
+    underlying_document = doc.underlying_document()
+    if underlying_document:
+        info['status_changes'] = ', '.join([ rel.source.canonical_name() for rel in RelatedDocument.objects.filter(relationship__in=status_change_relationships,target__document=underlying_document) if rel.source.get_state_slug() in ('appr-sent','appr-pend')])
+        info['proposed_status_changes'] = ', '.join([ rel.source.canonical_name() for rel in RelatedDocument.objects.filter(relationship__in=status_change_relationships,target__document=underlying_document) if rel.source.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')])
 
     history = _get_history(doc, None)
             

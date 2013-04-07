@@ -33,6 +33,7 @@
 from django.conf.urls.defaults import patterns, url, include
 from ietf.idrfc import views_doc, views_search, views_edit, views_ballot, views
 from ietf.doc.models import State
+from ietf.doc import views_status_change
 
 urlpatterns = patterns('',
     (r'^/?$', views_search.search_main),
@@ -40,7 +41,10 @@ urlpatterns = patterns('',
     (r'^all/$', views_search.all),
     (r'^active/$', views_search.active),
     (r'^in-last-call/$', views_search.in_last_call),
+    url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'),
+    url(r'^start-rfc-status-change/(?P<name>[A-Za-z0-9._+-]*)$', views_status_change.start_rfc_status_change, name='start_rfc_status_change'),
     url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad, name="doc_search_by_ad"),
+    url(r'^ad2/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad2, name="doc_search_by_ad2"),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/((?P<rev>[0-9-]+)/)?$', views_doc.document_main, name="doc_view"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/history/$', views_doc.document_history, name="doc_history"),
@@ -81,11 +85,13 @@ urlpatterns = patterns('',
 
     (r'^(?P<name>charter-[A-Za-z0-9._+-]+)/', include('ietf.wgcharter.urls')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/conflict-review/', include('ietf.doc.urls_conflict_review')),
+    (r'^(?P<name>[A-Za-z0-9._+-]+)/status-change/', include('ietf.doc.urls_status_change')),
 )
 
 urlpatterns += patterns('django.views.generic.simple',
     url(r'^help/state/charter/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(used=True, type="charter"),'title':"Charter" } }, name='help_charter_states'),
     url(r'^help/state/conflict-review/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(used=True, type="conflrev").order_by("order"),'title':"Conflict Review" } }, name='help_conflict_review_states'),
+    url(r'^help/state/status-change/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(type="statchg").order_by("order"),'title':"RFC Status Change" } }, name='help_status_change_states'),
 )
 
 

@@ -400,4 +400,22 @@ def make_test_data():
     crdoc.save()
     crdoc.relateddocument_set.create(target=docalias,relationship_id='conflrev')
     
+    # A status change mid review
+    doc = Document.objects.create(name='status-change-imaginary-mid-review',type_id='statchg', rev='00', notify="fsm@ietf.org")
+    doc.set_state(State.objects.get(slug='needshep',type__slug='statchg'))
+    doc.save()
+    docalias = DocAlias.objects.create(name='status-change-imaginary-mid-review',document=doc)
+
+    # Some things for a status change to affect
+    target_rfc = Document.objects.create(name='draft-ietf-random-thing', type_id='draft', std_level_id='ps')
+    target_rfc.set_state(State.objects.get(slug='rfc',type__slug='draft'))
+    target_rfc.save()
+    docalias = DocAlias.objects.create(name='draft-ietf-random-thing',document=target_rfc)
+    docalias = DocAlias.objects.create(name='rfc9999',document=target_rfc)
+    target_rfc = Document.objects.create(name='draft-ietf-random-otherthing', type_id='draft', std_level_id='inf')
+    target_rfc.set_state(State.objects.get(slug='rfc',type__slug='draft'))
+    target_rfc.save()
+    docalias = DocAlias.objects.create(name='draft-ietf-random-otherthing',document=target_rfc)
+    docalias = DocAlias.objects.create(name='rfc9998',document=target_rfc)
+
     return draft
