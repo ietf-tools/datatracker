@@ -1,12 +1,13 @@
+import glob
+import os
+import math
+
 from ietf.doc.models import *
 from ietf.person.models import Email 
 from ietf.utils.proxy import TranslatingManager
 from ietf.name.proxy import *
 
 from django.conf import settings
-
-import glob, os
-
 
 class InternetDraft(Document):
     objects = TranslatingManager(dict(filename="name",
