@@ -52,10 +52,13 @@ def needed_ballot_positions(doc, active_positions):
     if len(yes) < 1:
         answer.append("Needs a YES.")
     if blocking:
-        if blocking == 1:
+        if len(blocking) == 1:
             answer.append("Has a %s." % blocking[0].pos.name.upper())
         else:
-            answer.append("Has %d %s." % (len(blocking), blocking[0].name.upper()))
+            if blocking[0].pos.name.upper().endswith('S'):
+                answer.append("Has %d %ses." % (len(blocking), blocking[0].pos.name.upper()))
+            else:
+                answer.append("Has %d %ss." % (len(blocking), blocking[0].pos.name.upper()))
     needed = 1
     if doc.type_id == "draft" and doc.intended_std_level_id in ("bcp", "ps", "ds", "std"):
         # For standards-track, need positions from 2/3 of the
