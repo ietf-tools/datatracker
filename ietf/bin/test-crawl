@@ -24,7 +24,7 @@ connection.queries = DontSaveQueries()
 MAX_URL_LENGTH = 500
 SLOW_THRESHOLD = 1.0
 
-initial = ["/doc/all/"]
+initial = ["/doc/all/", "/doc/in-last-call/"]
 
 visited = set()
 urls = {} # url -> referrer
@@ -74,7 +74,7 @@ while urls:
         if r.status_code in (301, 302):
             u = strip_url(r["Location"])
             if u not in visited and u not in urls:
-                urls[u] = url
+                urls[u] = referrer # referrer is original referrer, not redirected url
 
         elif r.status_code == 200:
             ctype = r["Content-Type"]
