@@ -80,13 +80,8 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/approveballot/$', views_ballot.approve_ballot, name='doc_approve_ballot'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/makelastcall/$', views_ballot.make_last_call, name='doc_make_last_call'),
 
+    url(r'^help/state/(?P<type>[\w-]+)/$', 'ietf.doc.views_help.state_help', name="state_help"),
+
     (r'^(?P<name>charter-[A-Za-z0-9._+-]+)/', include('ietf.wgcharter.urls')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/conflict-review/', include('ietf.doc.urls_conflict_review')),
 )
-
-urlpatterns += patterns('django.views.generic.simple',
-    url(r'^help/state/charter/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(type="charter"),'title':"Charter" } }, name='help_charter_states'),
-    url(r'^help/state/conflict-review/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(type="conflrev").order_by("order"),'title':"Conflict Review" } }, name='help_conflict_review_states'),
-)
-
-

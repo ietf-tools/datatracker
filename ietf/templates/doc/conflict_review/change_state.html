@@ -20,7 +20,7 @@ form.change-state .actions {
 {% block content %}
 <h1>Change State: {{doc.title}}</h1>
 
-<p class="helptext">For help on the states, see the <a href="{% url help_conflict_review_states %}">state table</a>.</p>
+<p class="helptext">For help on the states, see the <a href="{% url state_help type="conflict-review" %}">state table</a>.</p>
 
 <form class="change-state" action="" method="post">
   <table>
