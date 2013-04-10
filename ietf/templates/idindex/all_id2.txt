@@ -4,8 +4,7 @@
 #
 # Description of fields:
 # 0   draft name and latest revision
-# 1   id_document_tag (internal database identifier; avoid using
-#     unless you really need it)
+# 1   always -1 (was internal numeric database id in earlier schema)
 # 2   one of "Active", "Expired", "RFC", "Withdrawn by Submitter",
 #     "Replaced", or "Withdrawn by IETF"
 # 3   if #2 is "Active", the IESG state for the document (such as

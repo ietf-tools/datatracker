@@ -399,6 +399,7 @@ def make_test_data():
     docalias = DocAlias.objects.create(name=doc.name, document=doc)
     doc.stream = StreamName.objects.get(slug='irtf')
     doc.save()
+    doc.set_state(State.objects.get(type="draft", slug="active"))
     crdoc = Document.objects.create(name='conflict-review-imaginary-irtf-submission', type_id='conflrev', rev='00', notify="fsm@ietf.org")
     DocAlias.objects.create(name=crdoc.name, document=crdoc)
     crdoc.set_state(State.objects.get(name='Needs Shepherd', type__slug='conflrev'))

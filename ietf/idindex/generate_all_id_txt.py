@@ -34,5 +34,5 @@ from ietf import settings
 from django.core import management
 management.setup_environ(settings)
 
-from ietf.idindex.views import all_id_txt
-print all_id_txt(),
+from ietf.idindex.index import all_id_txt
+print all_id_txt().encode("utf-8"),

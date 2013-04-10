@@ -1,72 +1,146 @@
-# Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
-# All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#
-#  * Redistributions in binary form must reproduce the above
-#    copyright notice, this list of conditions and the following
-#    disclaimer in the documentation and/or other materials provided
-#    with the distribution.
-#
-#  * Neither the name of the Nokia Corporation and/or its
-#    subsidiary(-ies) nor the names of its contributors may be used
-#    to endorse or promote products derived from this software
-#    without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import datetime, shutil
 
-import unittest
-import re
-from django.test.client import Client
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
+import django.test
+from django.core.urlresolvers import reverse as urlreverse
 
-class IdIndexUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
+from ietf.utils.test_data import make_test_data
 
-# class IndexTestCase(unittest.TestCase, RealDatabaseTest):
-#     def setUp(self):
-#         self.setUpRealDatabase()
-#     def tearDown(self):
-#         self.tearDownRealDatabase()
+from ietf.doc.models import *
+from ietf.idindex.index import *
 
-#     def testAllId(self):
-#         print "     Testing all_id.txt generation"
-#         c = Client()
-#         response = c.get('/drafts/_test/all_id.txt')
-#         self.assertEquals(response.status_code, 200)
-#         content = response.content
-#         # Test that correct version number is shown for couple of old drafts
-#         self.assert_(content.find("draft-ietf-tls-psk-09") >= 0)
-#         self.assert_(content.find("draft-eronen-eap-sim-aka-80211-00") >= 0)
-#         # Since all_id.txt contains all old drafts, it should never shrink
-#         lines = content.split("\n")
-#         self.assert_(len(lines) > 18000)
-#         # Test that the lines look OK and have correct number of tabs
-#         r = re.compile(r'^(draft-\S*-\d\d)\t(\d\d\d\d-\d\d-\d\d)\t([^\t]+)\t([^\t]*)$')
-#         for line in lines:
-#             if ((line == "") or 
-#                 (line == "Internet-Drafts Status Summary") or
-#                 (line == "Web version is available at") or 
-#                 (line == "https://datatracker.ietf.org/public/idindex.cgi")):
-#                 pass
-#             elif r.match(line):
-#                 pass
-#             else:
-#                 self.fail("Unexpected line \""+line+"\"")
-#         print "OK   (all_id.txt)"
+
+class IndexTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def setUp(self):
+        self.id_dir = os.path.abspath("tmp-id-dir")
+        os.mkdir(self.id_dir)
+        settings.INTERNET_DRAFT_PATH = self.id_dir
+
+    def tearDown(self):
+        shutil.rmtree(self.id_dir)
+        
+    def write_draft_file(self, name, size):
+        with open(os.path.join(self.id_dir, name), 'w') as f:
+            f.write("a" * size)
+
+    def test_all_id_txt(self):
+        draft = make_test_data()
+
+        # active in IESG process
+        draft.set_state(State.objects.get(type="draft", slug="active"))
+        draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
+
+        txt = all_id_txt()
+
+        self.assertTrue(draft.name + "-" + draft.rev in txt)
+        self.assertTrue(draft.get_state("draft-iesg").name in txt)
+
+        # not active in IESG process
+        draft.unset_state("draft-iesg")
+
+        txt = all_id_txt()
+        self.assertTrue(draft.name + "-" + draft.rev in txt)
+        self.assertTrue("Active" in txt)
+
+        # published
+        draft.set_state(State.objects.get(type="draft", slug="rfc"))
+        DocAlias.objects.create(name="rfc1234", document=draft)
+
+        txt = all_id_txt()
+        self.assertTrue(draft.name + "-" + draft.rev in txt)
+        self.assertTrue("RFC\t1234" in txt)
+
+        # replaced
+        draft.set_state(State.objects.get(type="draft", slug="repl"))
+
+        RelatedDocument.objects.create(
+            relationship=DocRelationshipName.objects.get(slug="replaces"),
+            source=Document.objects.create(type_id="draft", rev="00", name="draft-test-replacement"),
+            target=draft.docalias_set.get(name__startswith="draft"))
+
+        txt = all_id_txt()
+        self.assertTrue(draft.name + "-" + draft.rev in txt)
+        self.assertTrue("Replaced replaced by draft-test-replacement" in txt)
+
+    def test_all_id2_txt(self):
+        draft = make_test_data()
+
+        def get_fields(content):
+            self.assertTrue(draft.name + "-" + draft.rev in content)
+
+            for line in content.splitlines():
+                if line.startswith(draft.name + "-" + draft.rev):
+                    return line.split("\t")
+        # test Active
+        draft.set_state(State.objects.get(type="draft", slug="active"))
+        draft.set_state(State.objects.get(type="draft-iesg", slug="review-e"))
+
+        NewRevisionDocEvent.objects.create(doc=draft, type="new_revision", rev=draft.rev, by=draft.ad)
+
+        self.write_draft_file("%s-%s.txt" % (draft.name, draft.rev), 5000)
+        self.write_draft_file("%s-%s.pdf" % (draft.name, draft.rev), 5000)
+
+        t = get_fields(all_id2_txt())
+        self.assertEqual(t[0], draft.name + "-" + draft.rev)
+        self.assertEqual(t[1], "-1")
+        self.assertEqual(t[2], "Active")
+        self.assertEqual(t[3], "Expert Review")
+        self.assertEqual(t[4], "")
+        self.assertEqual(t[5], "")
+        self.assertEqual(t[6], draft.latest_event(type="new_revision").time.strftime("%Y-%m-%d"))
+        self.assertEqual(t[7], draft.group.acronym)
+        self.assertEqual(t[8], draft.group.parent.acronym)
+        self.assertEqual(t[9], unicode(draft.ad))
+        self.assertEqual(t[10], draft.intended_std_level.name)
+        self.assertEqual(t[11], "")
+        self.assertEqual(t[12], ".txt,.pdf")
+        self.assertEqual(t[13], draft.title)
+        author = draft.documentauthor_set.order_by("order").get()
+        self.assertEqual(t[14], "%s <%s>" % (author.author.person.name, author.author.address))
+        self.assertEqual(t[15], "%s <%s>" % (draft.shepherd, draft.shepherd.email_address()))
+        self.assertEqual(t[16], "%s <%s>" % (draft.ad, draft.ad.email_address()))
+
+
+        # test RFC
+        draft.set_state(State.objects.get(type="draft", slug="rfc"))
+        DocAlias.objects.create(name="rfc1234", document=draft)
+        t = get_fields(all_id2_txt())
+        self.assertEqual(t[4], "1234")
+
+        # test Replaced
+        draft.set_state(State.objects.get(type="draft", slug="repl"))
+        RelatedDocument.objects.create(
+            relationship=DocRelationshipName.objects.get(slug="replaces"),
+            source=Document.objects.create(type_id="draft", rev="00", name="draft-test-replacement"),
+            target=draft.docalias_set.get(name__startswith="draft"))
+
+        t = get_fields(all_id2_txt())
+        self.assertEqual(t[5], "draft-test-replacement")
+
+        # test Last Call
+        draft.set_state(State.objects.get(type="draft", slug="active"))
+        draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
+
+        e = LastCallDocEvent.objects.create(doc=draft, type="sent_last_call", expires=datetime.datetime.now() + datetime.timedelta(days=14), by=draft.ad)
+
+        DocAlias.objects.create(name="rfc1234", document=draft)
+        t = get_fields(all_id2_txt())
+        self.assertEqual(t[11], e.expires.strftime("%Y-%m-%d"))
+
+
+    def test_id_index_txt(self):
+        draft = make_test_data()
+
+        draft.set_state(State.objects.get(type="draft", slug="active"))
+
+        txt = id_index_txt()
+
+        self.assertTrue(draft.name + "-" + draft.rev in txt)
+        self.assertTrue(draft.title in txt)
+
+        self.assertTrue(draft.abstract[:20] not in txt)
+
+        txt = id_index_txt(with_abstracts=True)
+
+        self.assertTrue(draft.abstract[:20] in txt)

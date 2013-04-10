@@ -46,6 +46,7 @@ from ietf.doc.models import *
 from ietf.person.models import *
 from ietf.group.models import *
 from ietf.ipr.models import IprDocAlias
+from ietf.idindex.index import active_drafts_index_by_group
 
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
@@ -416,7 +417,8 @@ def index_all_drafts(request):
 
         names.sort(key=lambda t: t[1])
 
-        names = ['<a href="/doc/' + name + ' %s/">' + name +'</a>' for name, _ in names if name not in names_to_skip]
+        names = ['<a href="/doc/' + name + '/">' + name +'</a>'
+                 for name, _ in names if name not in names_to_skip]
 
         categories.append((state,
                       heading,
@@ -427,45 +429,6 @@ def index_all_drafts(request):
                               context_instance=RequestContext(request))
 
 def index_active_drafts(request):
-    # try to be efficient since this view returns a lot of data
-
-    active_state = State.objects.get(type="draft", slug="active")
-
-    groups_dict = dict((g.id, g) for g in Group.objects.all())
-
-    docs_dict = dict((d["name"], d)
-                     for d in Document.objects.filter(states=active_state).values("name", "rev", "title", "group_id"))
-
-    # add latest revision time
-    for time, doc_id in NewRevisionDocEvent.objects.filter(type="new_revision", doc__states=active_state).order_by('-time').values_list("time", "doc_id"):
-        d = docs_dict.get(doc_id)
-        if d and "rev_time" not in d:
-            d["rev_time"] = time
-
-    # add authors
-    for a in DocumentAuthor.objects.filter(document__states=active_state).order_by("order").select_related("author__person"):
-        d = docs_dict.get(a.document_id)
-        if d:
-            if "authors" not in d:
-                d["authors"] = []
-            d["authors"].append(unicode(a.author.person))
-
-    # put docs into groups
-    for d in docs_dict.itervalues():
-        g = groups_dict.get(d["group_id"])
-        if not g:
-            continue
-
-        if not hasattr(g, "active_drafts"):
-            g.active_drafts = []
-
-        g.active_drafts.append(d)
-
-    groups = [g for g in groups_dict.itervalues() if hasattr(g, "active_drafts")]
-    groups.sort(key=lambda g: g.acronym)
-
-    fallback_time = datetime.datetime(1990, 1, 1)
-    for g in groups:
-        g.active_drafts.sort(key=lambda d: d.get("rev_time", fallback_time))
+    groups = active_drafts_index_by_group()
 
     return render_to_response("doc/index_active_drafts.html", { 'groups': groups }, context_instance=RequestContext(request))

@@ -31,9 +31,18 @@ def expand_comma(value):
 def format_charter(value):
     return value.replace("\n\n", "</p><p>").replace("\n","<br/>\n")
 
-@register.filter(name='indent')
-def indent(value,numspaces=2):
-    return value.replace("\n", "\n"+" "*int(numspaces));
+@register.filter
+def indent(value, numspaces=2):
+    replacement = "\n" + " " * int(numspaces)
+    res = value.replace("\n", replacement)
+    if res.endswith(replacement):
+        res = res[:-int(numspaces)] # fix up superfluous spaces
+    return res
+
+@register.filter
+def unindent(value):
+    """Remove indentation from string."""
+    return re.sub("\n +", "\n", value)
 
 @register.filter(name='parse_email_list')
 def parse_email_list(value):
@@ -240,6 +249,11 @@ def dashify(string):
     """
     return re.sub('.', '-', string)
 
+@register.filter
+def underline(string):
+    """Return string with an extra line underneath of dashes, for plain text underlining."""
+    return string + "\n" + ("-" * len(string))
+
 @register.filter(name='lstrip')
 def lstripw(string, chars):
     """Strip matching leading characters from words in string"""
@@ -318,23 +332,6 @@ def wrap_text(text, width=72):
         filled += [ line.rstrip() ]
         prev_indent = indent
     return "\n".join(filled)
-
-@register.filter(name="id_index_file_types")
-def id_index_file_types(text):
-    r = ".txt"
-    if text.find("txt") < 0:
-        return r
-    if text.find("ps") >= 0:
-        r = r + ",.ps"
-    if text.find("pdf") >= 0:
-        r = r + ",.pdf"
-    return r
-
-@register.filter(name="id_index_wrap")
-def id_index_wrap(text):
-    x = wordwrap(text, 72)
-    x = x.replace("\n", "\n  ")
-    return "  "+x.strip()
 
 @register.filter(name="compress_empty_lines")
 def compress_empty_lines(text):

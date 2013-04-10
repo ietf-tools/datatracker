@@ -2,7 +2,6 @@ import os, shutil, datetime
 
 import django.test
 from django.core.urlresolvers import reverse as urlreverse
-from django.conf import settings
 
 from pyquery import PyQuery
 
