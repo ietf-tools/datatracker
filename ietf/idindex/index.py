@@ -1,3 +1,6 @@
+# code to generate plain-text index files that are placed on
+# www.ietf.org in the same directory as the I-Ds
+
 import datetime, os
 
 import pytz
