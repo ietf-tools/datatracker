@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+
+{% load ietf_filters %}
+
+{% block pagehead %}
+{% if last_call_only %}<link rel="alternate" type="application/atom+xml" href="/feed/last-call/">{% endif %}
+{% endblock %}
+
+{% block morecss %}
+th.area, td.area { text-align: left; padding-right: 0.5em; }
+th.date, td.date { text-align: left; padding-right: 0.5em; white-space: nowrap; }
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+{% for state, docs in grouped_docs %}
+<h2 id="{{ state.slug }}">{{ state.name }}</h2>
+
+<table>
+  <tr>
+    <th class="area">Area</th>
+    <th class="date">{% if state.slug == "lc" %}Expires at{% else %}Date{% endif %}</th>
+  </tr>
+
+  {% for doc in docs %}
+  <tr class="doc">
+    <td class="area">{% if doc.area_acronym %}{{ doc.area_acronym.upper }}{% endif %}</td>
+    <td class="date">
+      {% if state.slug == "lc" %}
+        {% if doc.lc_expires %}{{ doc.lc_expires|date:"M j, Y" }}{% endif %}
+      {% else %}
+        {{ doc.time|date:"M j, Y" }}
+      {% endif %}
+    </td>
+
+    <td>{{ doc.title }} ({{ doc.intended_std_level.name }})</td>
+  </tr>
+
+  <tr>
+    <td></td>
+    <td></td>
+    <td><a href="{% url doc_view doc.name %}">{{ doc.name }}</a></td>
+  </tr>
+
+  <tr>
+    <td></td>
+    <td>AD:</td>
+    <td><a href="mailto:{{ doc.ad.email_address|urlencode }}">{{ doc.ad.plain_name }}</a></td>
+  </tr>
+
+  {% if doc.note %}
+  <tr>
+    <td></td>
+    <td>Note:</td>
+    <td>{{ doc.note|linebreaksbr|urlize }}</td>
+  </tr>
+  {% endif %}
+
+  {% endfor %}
+</table>
+{% endfor %}
+
+{% endblock %}

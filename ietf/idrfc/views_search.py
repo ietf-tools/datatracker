@@ -36,9 +36,7 @@ from django import forms
 from django.shortcuts import render_to_response
 from django.db.models import Q
 from django.template import RequestContext
-from django.views.decorators.cache import cache_page
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
-from django.conf import settings
 
 from ietf.idrfc.expire import expirable_draft
 from ietf.utils import normalize_draftname
@@ -383,6 +381,35 @@ def drafts_in_last_call(request):
                               { 'form':form, 'docs':results, 'meta':meta },
                               context_instance=RequestContext(request))
 
+def drafts_in_iesg_process(request, last_call_only=None):
+    if last_call_only:
+        states = State.objects.filter(type="draft-iesg", slug__in=("lc", "writeupw", "goaheadw"))
+        title = "Documents in Last Call"
+    else:
+        states = State.objects.filter(type="draft-iesg").exclude(slug__in=('pub', 'dead', 'watching', 'rfcqueue'))
+        title = "Documents in IESG process"
+
+    grouped_docs = []
+
+    for s in states.order_by("order"):
+        docs = Document.objects.filter(type="draft", states=s).distinct().order_by("time").select_related("ad", "group", "group__parent")
+        if docs:
+            if s.slug == "lc":
+                for d in docs:
+                    e = d.latest_event(LastCallDocEvent, type="sent_last_call")
+                    d.lc_expires = e.expires if e else datetime.datetime.min
+                docs = list(docs)
+                docs.sort(key=lambda d: d.lc_expires)
+
+            grouped_docs.append((s, docs))
+
+    #drafts.sort(key=lambda d: (d.cur_state_id, d.status_date or datetime.date.min, d.b_sent_date or datetime.date.min))
+
+    return render_to_response('doc/drafts_in_iesg_process.html', {
+            "grouped_docs": grouped_docs,
+            "title": title,
+            "last_call_only": last_call_only,
+            }, context_instance=RequestContext(request))
 
 def index_all_drafts(request):
     # try to be efficient since this view returns a lot of data

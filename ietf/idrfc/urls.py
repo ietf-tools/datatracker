@@ -40,6 +40,7 @@ urlpatterns = patterns('',
     url(r'^search/$', views_search.search, name="doc_search"),
     url(r'^in-last-call/$', views_search.drafts_in_last_call, name="drafts_in_last_call"),
     url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.drafts_for_ad, name="drafts_for_ad"),
+    url(r'^iesg/(?P<last_call_only>[A-Za-z0-9.-]+/)?$', views_search.drafts_in_iesg_process, name="drafts_in_iesg_process"),
 
     url(r'^all/$', views_search.index_all_drafts, name="index_all_drafts"),
     url(r'^active/$', views_search.index_active_drafts, name="index_active_drafts"),
