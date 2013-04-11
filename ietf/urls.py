@@ -11,7 +11,6 @@ from ietf.proceedings.feeds import LatestWgProceedingsActivity
 from ietf.liaisons.feeds import Liaisons
 from ietf.wgcharter.feeds import GroupChanges
 
-from ietf.idtracker.sitemaps import IDTrackerMap, DraftMap
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
 from ietf.announcements.sitemaps import NOMCOMAnnouncementsMap
@@ -32,15 +31,10 @@ feeds = {
 }
 
 sitemaps = {
-    'idtracker': IDTrackerMap,
-    'drafts': DraftMap,
     'liaison': LiaisonMap,
     'ipr': IPRMap,
     'nomcom-announcements': NOMCOMAnnouncementsMap,
 }
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    del sitemaps['drafts'] # not needed, overlaps sitemaps['idtracker']
 
 urlpatterns = patterns('',
     (r'^$', 'ietf.idrfc.views.main'),
