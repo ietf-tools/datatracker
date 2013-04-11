@@ -6,7 +6,7 @@ from django.views.generic.simple import redirect_to
 from ietf.meeting import views
 
 urlpatterns = patterns('',
-    (r'^(?P<meeting_num>\d+)/materials.html$', views.show_html_materials),
+    (r'^(?P<meeting_num>\d+)/materials.html$', views.materials),
     (r'^agenda/$', views.html_agenda),
     (r'^agenda(?:.html)?$', views.html_agenda),
     (r'^agenda-utc(?:.html)?$', views.html_agenda_utc),

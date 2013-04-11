@@ -19,47 +19,89 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 <li><a href="/meeting/{{meeting_num}}/requests">Meeting Request/Conflict Table</a></li>
 </ul>
 
+<div class="ietf-divider"></div>
+<div style="padding: 1em 3em 0 3em;;">
+ {% if plenaries %}
+ <a href="#plenaries"><b>Plenaries</b></a> &nbsp;|&nbsp;
+ {% endif %}
+ {% if ietf %}
+    {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.acronym as areas %}
+    {% for area in areas %}
+       {% if not forloop.first %}&nbsp;|&nbsp;{% endif %}
+       <a href="#{{area.grouper}}"><b>{{ area.grouper.upper }}</b></a>
+    {% endfor %}
+ {% endif %}
+ {% if training %}
+    &nbsp;|&nbsp; <a href="#training"><b>Training</b></a>
+ {% endif %}
+ {% if iab %}
+    &nbsp;|&nbsp; <a href="#iab-sessions"><b>IAB</b></a>
+ {% endif %}
+ {% if irtf %}
+    &nbsp;|&nbsp; <a href="#irtf"><b>IRTF</b></a>
+ {% endif %}
+
+
+
+
+
+</div>
 {# cache for 15 minutes, as long as there's no proceedings activity. takes 4-8 seconds to generate. #}
 {% load cache %}
 {% cache 900 ietf_meeting_materials meeting_num cache_version %}
 
 <!-- Plenaries -->
 {% if plenaries %}
+    <a name="plenaries"></a>
     <h2 class="ietf-divider">Plenaries</h2>
     {% for session in plenaries %}
-       {% include "meeting/list_group.html" %}
+       {% include "meeting/group_materials.html" %}
     {% endfor %}
 {% endif %}
 
 <!-- Working groups -->
 {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
 {% for sessions in areas %}
+   <a name="{{sessions.list.0.group.parent.acronym}}"></a>
    <h2 class="ietf-divider">{{ sessions.grouper }}</h2>
    {% for session in sessions.list|dictsort:"group.acronym" %}
       {% ifchanged %}
-	 {% include "meeting/list_group.html" %}
+	 {% include "meeting/group_materials.html" %}
       {% endifchanged %}
    {% endfor %}
 {% endfor %}
 
 <!-- Training Sessions -->
 {% if training %}
+    <a name="training"></a>
     <h2 class="ietf-divider">Training</h2>
     {% for session in training %}
       {% ifchanged %}
-	 {% include "meeting/list_group.html" %}
+	 {% include "meeting/group_materials.html" %}
       {% endifchanged %}
     {% endfor %}
 {% endif %}
 <!-- End of Training Sessions -->
 
+<!-- IAB Sessions -->
+{% if iab %}
+    <a name="iab-sessions"></a>
+    <h2 class="ietf-divider">IAB</h2>
+    {% for session in iab %}
+      {% ifchanged %}
+	 {% include "meeting/group_materials.html" %}
+      {% endifchanged %}
+    {% endfor %}
+{% endif %}
+<!-- End of IAB Sessions -->
 
 <!-- IRTF Sessions -->
 {% if irtf %}
-<h2 class="ietf-divider">IRTF</h2>
+   <a name="irtf"></a>
+   <h2 class="ietf-divider">IRTF</h2>
     {% for session in irtf|dictsort:"group.acronym" %}
       {% ifchanged %}
-	 {% include "meeting/list_group.html" %}
+	 {% include "meeting/group_materials.html" %}
       {% endifchanged %}
     {% endfor %}
 {% endif %}

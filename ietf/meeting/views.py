@@ -37,7 +37,7 @@ from ietf.group.models import Group
 
 
 @decorator_from_middleware(GZipMiddleware)
-def show_html_materials(request, meeting_num=None):
+def materials(request, meeting_num=None):
     proceeding = get_object_or_404(Proceeding, meeting_num=meeting_num)
     begin_date = proceeding.sub_begin_date
     cut_off_date = proceeding.sub_cut_off_date
@@ -46,7 +46,7 @@ def show_html_materials(request, meeting_num=None):
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.REQUEST:
         pass
     elif now > cor_cut_off_date:
-        return render_to_response("meeting/list_closed.html",{'meeting_num':meeting_num,'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date}, context_instance=RequestContext(request))
+        return render_to_response("meeting/materials_upload_closed.html",{'meeting_num':meeting_num,'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date}, context_instance=RequestContext(request))
     sub_began = 0
     if now > begin_date:
         sub_began = 1
@@ -55,12 +55,13 @@ def show_html_materials(request, meeting_num=None):
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
     training  = sessions.filter(group__acronym='edu')
+    iab       = sessions.filter(group__parent__acronym = 'iab')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
     #
-    return render_to_response("meeting/list.html",
+    return render_to_response("meeting/materials.html",
                               {'meeting_num':meeting_num,
-                               'plenaries': plenaries, 'ietf':ietf, 'training':training, 'irtf': irtf,
+                               'plenaries': plenaries, 'ietf':ietf, 'training':training, 'irtf': irtf, 'iab':iab,
                                'begin_date':begin_date, 'cut_off_date':cut_off_date,
                                'cor_cut_off_date':cor_cut_off_date,'sub_began':sub_began,
                                'cache_version':cache_version},
@@ -68,7 +69,7 @@ def show_html_materials(request, meeting_num=None):
 
 def current_materials(request):
     meeting = OldMeeting.objects.exclude(number__startswith='interim-').order_by('-meeting_num')[0]
-    return HttpResponseRedirect( reverse(show_html_materials, args=[meeting.meeting_num]) )
+    return HttpResponseRedirect( reverse(materials, args=[meeting.meeting_num]) )
 
 def get_plenary_agenda(meeting_num, id):
     try:
