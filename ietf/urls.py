@@ -5,7 +5,7 @@ from django.conf.urls.defaults import patterns, include, handler404, handler500
 from django.contrib import admin
 
 from ietf.iesg.feeds import IESGAgenda
-from ietf.idtracker.feeds import DocumentComments, InLastCall
+from ietf.doc.feeds import DocumentChanges, InLastCall
 from ietf.ipr.feeds import LatestIprDisclosures
 from ietf.proceedings.feeds import LatestWgProceedingsActivity
 from ietf.liaisons.feeds import Liaisons
@@ -23,7 +23,7 @@ admin.site.disable_action('delete_selected')
 feeds = {
     'iesg-agenda': IESGAgenda,
     'last-call': InLastCall,
-    'comments': DocumentComments,
+    'document-changes': DocumentChanges,
     'group-changes': GroupChanges,
     'ipr': LatestIprDisclosures,
     'liaison': Liaisons,
@@ -46,6 +46,7 @@ urlpatterns = patterns('',
     (r'^cookies/', include('ietf.cookies.urls')),
     (r'^doc/', include('ietf.idrfc.urls')),
     (r'^drafts/', include('ietf.doc.redirect_drafts_urls')),
+    (r'^feed/comments/(?P<remainder>.*)/$', 'django.views.generic.simple.redirect_to', { 'url': '/feed/document-changes/%(remainder)s/'}),
     (r'^feed/(?P<url>.*)/$', 'django.contrib.syndication.views.feed', { 'feed_dict': feeds}),
     (r'^idtracker/', include('ietf.doc.redirect_idtracker_urls')),
     (r'^iesg/', include('ietf.iesg.urls')),

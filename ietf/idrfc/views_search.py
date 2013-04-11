@@ -403,8 +403,6 @@ def drafts_in_iesg_process(request, last_call_only=None):
 
             grouped_docs.append((s, docs))
 
-    #drafts.sort(key=lambda d: (d.cur_state_id, d.status_date or datetime.date.min, d.b_sent_date or datetime.date.min))
-
     return render_to_response('doc/drafts_in_iesg_process.html', {
             "grouped_docs": grouped_docs,
             "title": title,
