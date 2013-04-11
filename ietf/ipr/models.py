@@ -2,9 +2,6 @@
 
 from django.db import models
 from django.conf import settings
-#from django import newforms as forms
-from ietf.idtracker.views import InternetDraft
-from ietf.idtracker.models import Rfc
 from ietf.utils.lazy import reverse_lazy
 
 # ------------------------------------------------------------------------
