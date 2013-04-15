@@ -41,7 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <table class="ietf-table ietf-doctable" style="margin-top:16px;">
 <tr>
    {% if user.is_authenticated %}<th></th>{% endif %}
-   <th class="doc">Document</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th><th class="ad">Area Director</th>
+   <th class="doc">Document</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th><th class="ad">AD / Shepherd</th>
 </tr> 
 {% for doc_group in grouped_docs %} 
 <tr class="header"><td colspan="7">{{doc_group.grouper}}s</td></tr>
@@ -60,7 +60,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <table class="ietf-table ietf-doctable" style="margin-top:16px;">
 <tr>
    {% if user.is_authenticated %}<th></th>{% endif %}
-   <th class="doc">Related Documents</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th><th class="ad">Area Director</th>
+   <th class="doc">Related Documents</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th><th class="ad">AD / Shepherd</th>
 </tr>
 {% for doc_group in grouped_docs_related %} 
 <tr class="header"><td colspan="7">{{doc_group.grouper}}s</td></tr>

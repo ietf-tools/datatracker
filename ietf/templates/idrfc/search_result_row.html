@@ -55,5 +55,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% include "idrfc/status_columns.html" %}
 {% include "idrfc/ipr_column.html" %}
 {# <td class="ad">{% if doc.ad_name %}{{ doc.ad_name }}{% else %}&nbsp;{% endif %}</td> #}
-<td class="ad">{{ doc.ad_name|default:"" }}</td>
+<td class="ad">{{ doc.ad_name|default:"" }}
+{% if doc.id.underlying_document.shepherd %}<br/>{{ doc.id.underlying_document.shepherd.plain_name|default:""}}{% endif %}
+</td>
 </tr>

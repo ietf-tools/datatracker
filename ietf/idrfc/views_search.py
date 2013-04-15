@@ -526,7 +526,7 @@ def search_results(request):
                     {'htitle': 'Date', 'htype':'date'},
                     {'htitle': 'Status', 'htype':'status', 'colspan':'2'},
                     {'htitle': 'IPR', 'htype':'ipr'},
-                    {'htitle': 'Ad', 'htype':'ad'}]
+                    {'htitle': 'Ad/Shepherd', 'htype':'ad'}]
 
     # Make sure we know which one is selected (for visibility later)
     if sort_by:
