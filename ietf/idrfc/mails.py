@@ -488,7 +488,6 @@ def email_iana(request, doc, to, msg):
 
 def extra_automation_headers(doc):
     extra = {}
-    extra["Reply-To"] = "noreply@ietf.org"
     extra["X-IETF-Draft-string"] = doc.name
     extra["X-IETF-Draft-revision"] = doc.rev
 
