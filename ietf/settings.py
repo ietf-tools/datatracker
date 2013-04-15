@@ -273,6 +273,8 @@ DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
+IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
+IANA_SYNC_PROTOCOLS_URL = "http://www.iana.org/protocols/"
 
 # Liaison Statement Tool settings
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
