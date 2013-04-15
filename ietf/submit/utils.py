@@ -37,7 +37,7 @@ NONE_WG = 1027
 def request_full_url(request, submission):
     subject = 'Full URL for managing submission of draft %s' % submission.filename
     from_email = settings.IDSUBMIT_FROM_EMAIL
-    to_email = list(set(u'%s <%s>' % i.email() for i in submission.tempidauthors_set.all()))
+    to_email = submission.confirmation_email_list()
     url = settings.IDTRACKER_BASE_URL + urlreverse('draft_status_by_hash',
                                                    kwargs=dict(submission_id=submission.submission_id,
                                                                submission_hash=submission.get_hash()))
@@ -295,9 +295,8 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     announce_new_version = announce_new_versionREDESIGN
 
 def announce_to_authors(request, submission):
-    authors = submission.tempidauthors_set.order_by('author_order')
-    cc = list(set(i.email()[1] for i in authors if i.email() != authors[0].email()))
-    to_email = [authors[0].email()[1]]  # First TempIdAuthor is submitter
+    authors = submission.tempidauthors_set.all()
+    to_email = list(set(submission.confirmation_email_list() + [u'%s <%s>' % i.email() for i in authors]))
     from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     subject = 'New Version Notification for %s-%s.txt' % (submission.filename, submission.revision)
     if submission.group_acronym:
@@ -309,7 +308,7 @@ def announce_to_authors(request, submission):
     send_mail(request, to_email, from_email, subject, 'submit/announce_to_authors.txt',
               {'submission': submission,
                'submitter': authors[0].get_full_name(),
-               'wg': wg}, cc=cc)
+               'wg': wg})
 
 
 def find_person(first_name, last_name, middle_initial, name_suffix, email):

@@ -354,7 +354,7 @@ class AutoPostForm(forms.Form):
     def send_confirmation_mail(self, request):
         subject = 'Confirmation for Auto-Post of I-D %s' % self.draft.filename
         from_email = settings.IDSUBMIT_FROM_EMAIL
-        to_email = self.cleaned_data['email']
+        to_email = self.draft.confirmation_email_list()
 
         confirm_url = settings.IDTRACKER_BASE_URL + urlreverse('draft_confirm', kwargs=dict(submission_id=self.draft.submission_id, auth_key=self.draft.auth_key))
         status_url = settings.IDTRACKER_BASE_URL + urlreverse('draft_status_by_hash', kwargs=dict(submission_id=self.draft.submission_id, submission_hash=self.draft.get_hash()))

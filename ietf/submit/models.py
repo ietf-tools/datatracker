@@ -1,10 +1,10 @@
-import re, datetime
+import re, datetime                     # 
 
 from django.conf import settings
 from django.db import models
 from django.utils.hashcompat import md5_constructor
 
-from ietf.idtracker.models import IETFWG
+from ietf.idtracker.models import InternetDraft, IETFWG
 from ietf.person.models import Person
 
 
@@ -68,6 +68,15 @@ class IdSubmissionDetail(models.Model):
         return '<a href="http://datatracker.ietf.org/submit/status/%s/%s/">%s</a>' % (self.submission_id, self.submission_hash, self.status)
     status_link.allow_tags = True
 
+    def confirmation_email_list(self):
+        try:
+            draft = InternetDraft.objects.get(filename=self.filename)
+            email_list = list(set(u'%s <%s>' % (i.person.name, i.email()) for i in draft.authors))
+            import debug
+            debug.show('email_list')
+        except InternetDraft.DoesNotExist:
+            email_list = list(set(u'%s <%s>' % i.email() for i in self.tempidauthors_set.all()))
+        return email_list
 
 def create_submission_hash(sender, instance, **kwargs):
     instance.create_hash()
