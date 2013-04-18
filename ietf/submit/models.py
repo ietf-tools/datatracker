@@ -72,8 +72,6 @@ class IdSubmissionDetail(models.Model):
         try:
             draft = InternetDraft.objects.get(filename=self.filename)
             email_list = list(set(u'%s <%s>' % (i.person.name, i.email()) for i in draft.authors))
-            import debug
-            debug.show('email_list')
         except InternetDraft.DoesNotExist:
             email_list = list(set(u'%s <%s>' % i.email() for i in self.tempidauthors_set.all()))
         return email_list
