@@ -89,8 +89,8 @@ process should be used:
     if it does, you probably should go back to 1. and figure
     out why.
 
- 6. Edit .../ietf/__init__.py in the new patched release to indicate the patch
-    version in the __version__ string and current date and time in the __date__
+ 6. Edit ``.../ietf/__init__.py`` in the new patched release to indicate the patch
+    version in the ``__version__`` string and current date and time in the ``__date__``
     string.
 
  7. Change the 'web' symlink, reload etc. as described in
