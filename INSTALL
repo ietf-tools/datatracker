@@ -108,12 +108,12 @@ and the second secretariat release based on it would be numbered 4.42.secr2.
 
 Secretariat releases are deployed in the same manner as regular releases, with
 the addition that patches made to the regular release needs to be picked up
-and applied.  Assuming we'releasing 4.42.secr2, then after we've cd'd into
+and applied.  Assuming we'releasing 4.42.p1.secr2, then after we've cd'd into
 the release diretory to run migrations, we'd also run a patch step to pick
 up the current patches to the current production release, which is pointed
 to by ../web::
 
-  /a/www/ietf-datatracker/4.42.secr2 $ svn diff ../web/ | patch -p2
+  /a/www/ietf-datatracker/4.42.p1.secr2 $ svn diff ../web/ | patch -p2
 
 Assuming that runs without error messages, the deployment is continued as
 usual, with re-pointing the symlink and restarting apache.
