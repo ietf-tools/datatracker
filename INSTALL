@@ -82,11 +82,12 @@ process should be used:
  5. Apply the patch::
 
       /a/www/ietf-datatracker $ cd 4.43.p1/      
-      /a/www/ietf-datatracker/4.43.p1 $ patch -p0 < ../patches/2013-03-25-ballot-calculation.patch
+      /a/www/ietf-datatracker/4.43.p1 $ patch -p0 \
+			< ../patches/2013-03-25-ballot-calculation.patch
 
-    This should not produce any messages about failing to apply any
-    chunks; if it does, you probably should go back to 1. and figure
-    out why 
+    This should not produce any messages about failing to apply any chunks;
+    if it does, you probably should go back to 1. and figure
+    out why.
 
  6. Edit .../ietf/__init__.py in the new patched release to indicate the patch
     version in the __version__ string and current date and time in the __date__
