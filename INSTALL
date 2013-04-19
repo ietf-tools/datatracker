@@ -87,7 +87,11 @@ process should be used:
     This should not produce any messages about failing to apply any chunks;
     if it does, you probably should go back to 1. and figure out why ...
 
- 6. Change the 'web' symlink, reload etc. as described in
+ 6. Edit .../ietf/__init__.py in the new patched release to indicate the patch
+    version in the __version__ string and current date and time in the __date__
+    string.
+
+ 7. Change the 'web' symlink, reload etc. as described in
     `General Instructions for Deployment of a New Release`_ .
 
 
