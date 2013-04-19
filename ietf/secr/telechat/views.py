@@ -95,7 +95,7 @@ def get_section_header(file,agenda):
     '''
     h1 = {'2':'Protocol Actions','3':'Document Actions','4':'Working Group Actions'}
     h2a = {'1':'WG Submissions','2':'Individual Submissions'}
-    h2b = {'1':'WG Submissions','2':'Individual Submissions via AD','3':'IRTF and Independent Submission Stream Documents'}
+    h2b = {'1':'WG Submissions','2':'Individual Submissions via AD','3':'Status Changes','4':'IRTF and Independent Submission Stream Documents'}
     h2c = {'1':'WG Creation','2':'WG Chartering'}
     h3a = {'1':'New Item','2':'Returning Item','3':'For Action'}
     h3b = {'1':'Proposed for IETF Review','2':'Proposed for Approval'}
