@@ -31,7 +31,7 @@
           <b>Number of comments: {{ nominee.feedback_set.comments.count|default:"0" }}</b>
         {% endifequal %}
         {% ifequal ft.slug "questio" %}
-          <b>Number of questionnaires: {{ nominee.feedback_set.questionaires.count|default:"0" }}</b>
+          <b>Number of questionnaires: {{ nominee.feedback_set.questionnaires.count|default:"0" }}</b>
         {% endifequal %}
         {% ifequal ft.slug "nomina" %}
           <b>Number of nominations: {{ nominee.feedback_set.nominations.count|default:"0" }}</b>
