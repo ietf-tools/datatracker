@@ -89,7 +89,7 @@ class Nominee(models.Model):
         unique_together = ('email', 'nomcom')
 
     def __unicode__(self):
-        return u'%s' % self.email
+        return u'%s' % self.email.get_name()
 
 
 class NomineePosition(models.Model):

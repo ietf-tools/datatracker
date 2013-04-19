@@ -11,6 +11,7 @@ from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from django.contrib.sites.models import Site
+from django.contrib.admin.widgets import FilteredSelectMultiple
 
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.utils import unaccent
@@ -41,6 +42,35 @@ def get_group_or_404(year):
 
 def get_list(string):
         return map(unicode.strip, string.replace('\r\n', '').split(','))
+
+
+class PositionNomineeField(forms.ChoiceField):
+
+    def __init__(self, *args, **kwargs):
+        self.nomcom = kwargs.pop('nomcom')
+        positions = Position.objects.get_by_nomcom(self.nomcom).opened().order_by('name')
+        results = []
+        for position in positions:
+            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in Nominee.objects.get_by_nomcom(self.nomcom).filter(nominee_position=position)]
+            if nominees:
+                results.append((position.name, nominees))
+        kwargs['choices'] = results
+        super(PositionNomineeField, self).__init__(*args, **kwargs)
+
+    def clean(self, value):
+        nominee = super(PositionNomineeField, self).clean(value)
+        if not nominee:
+            return nominee
+        (position_id, nominee_id) = nominee.split('_')
+        try:
+            position = Position.objects.get_by_nomcom(self.nomcom).opened().get(id=position_id)
+        except Position.DoesNotExist:
+            raise forms.ValidationError('Invalid nominee')
+        try:
+            nominee = position.nominee_set.get_by_nomcom(self.nomcom).get(id=nominee_id)
+        except Nominee.DoesNotExist:
+            raise forms.ValidationError('Invalid nominee')
+        return (position, nominee)
 
 
 class BaseNomcomForm(object):
@@ -604,10 +634,9 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
 
 class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
-    comments = forms.CharField(label='Comments on this candidate',
+    comments = forms.CharField(label='Questionnaire on this candidate',
                                widget=forms.Textarea())
-    fieldsets = [('Provide questionnaires', ('nominees',
-                                             'positions',
+    fieldsets = [('Provide questionnaires', ('nominee',
                                              'comments'))]
 
     def __init__(self, *args, **kwargs):
@@ -615,9 +644,12 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
         self.user = kwargs.pop('user', None)
 
         super(QuestionnaireForm, self).__init__(*args, **kwargs)
+        self.fields['nominee'] = PositionNomineeField(nomcom=self.nomcom, required=True)
+        
 
     def save(self, commit=True):
         feedback = super(QuestionnaireForm, self).save(commit=False)
+        (position, nominee) = self.cleaned_data['nominee']
 
         author = get_user_email(self.user)
 
@@ -629,16 +661,26 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
         feedback.type = FeedbackType.objects.get(slug='questio')
         feedback.save()
         self.save_m2m()
+        feedback.nominees.add(nominee)
+        feedback.positions.add(position)
 
     class Meta:
         model = Feedback
-        fields = ('nominees',
+        fields = ('nominee',
                   'positions',
                   'comments')
 
     class Media:
-        js = ("/js/jquery-1.5.1.min.js",
-              "/js/nomcom.js", )
+        admin_js = ['js/core.js',
+                    "js/jquery.js",
+                    "js/jquery.init.js",
+                    'js/admin/RelatedObjectLookups.js',
+                    "js/getElementsBySelector.js",
+                    'js/SelectBox.js',
+                    'js/SelectFilter2.js',
+                    ]
+        admin_js = ['%s%s' % (settings.ADMIN_MEDIA_PREFIX, url) for url in admin_js]
+        js = ["/js/jquery-1.5.1.min.js", "/js/nomcom.js"] + admin_js
 
 
 class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
