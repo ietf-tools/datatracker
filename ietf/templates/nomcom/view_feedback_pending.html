@@ -19,16 +19,39 @@
   <form id="feedbackformset" action="" method="post">{% csrf_token %}
     {{ formset.management_form }}
     {% for form in formset.forms %}
-     <h3 class="ietf-divider">{{ form.instance.time|date:"Y-m-d" }} id:{{ form.instance.id }}</h3>
+     <h3 class="ietf-divider" style="margin-bottom: 0px;">{{ form.instance.time|date:"Y-m-d" }} id:{{ form.instance.id }}</h3>
      {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
-     <div>
+     <table style="width: 100%;"><tr><td>
+     <div class="baseform">
+        <div class="fieldset">
+        <h2>Comment meta data</h2>
         {% for field in form %}
-          <div>
-            {% if not field.field.widget.is_hidden %}{{ field.label_tag }}:{% endif %} {{ field }}{{ field.errors }}
-          </div>
+      <div id="baseform-fieldname-{{ field.html_name }}"
+          {% if field.field.widget.is_hidden %}style="display: none;"{% endif %}
+          class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
+        <label for="id_{{ field.html_name }}">{{ field.label }}
+        {% if field.field.required %}
+          <span class="fieldRequired" title="Required">*</span>
+        {% endif %}
+        </label>
+        <div class="fieldWidget">
+        <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
+        {{ field }}
+        {{ field.errors }}
+        </div>
+        <div class="endfield"></div>
+      </div>
         {% endfor %}
-        {% decrypt form.instance.comments request year %}
+        </div>
     </div>
+    </td><td style="width: 50%; vertical-align: top;">
+       <div class="baseform">
+         <div class="fieldset">
+           <h2>Comment body</h2>
+           <pre style="padding: 1em;">{% decrypt form.instance.comments request year %}</pre>
+         </div>
+       </div>
+    </td></tr></table>
     {% endfor %}
     <div class="ietf-divider"></div>
     <input type="submit" value="Submit" />

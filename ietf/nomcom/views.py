@@ -22,7 +22,7 @@ from ietf.name.models import NomineePositionState, FeedbackType
 from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
                                MergeForm, NomComTemplateForm, PositionForm,
-                               PrivateKeyForm, EditNomcomForm)
+                               PrivateKeyForm, EditNomcomForm, PendingFeedbackForm)
 from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
                                store_nomcom_private_key, get_hash_nominee_position,
@@ -394,6 +394,7 @@ def view_feedback_pending(request, year):
     nomcom = get_nomcom_by_year(year)
     message = None
     FeedbackFormSet = modelformset_factory(Feedback,
+                                           form=PendingFeedbackForm,
                                            exclude=('nomcom', 'comments'),
                                            extra=0)
     feedbacks = Feedback.objects.filter(Q(type__isnull=True) |
@@ -401,11 +402,18 @@ def view_feedback_pending(request, year):
                                         Q(positions__isnull=True))
     if request.method == 'POST':
         formset = FeedbackFormSet(request.POST)
+        for form in formset.forms:
+            form.set_nomcom(nomcom, request.user)
         if formset.is_valid():
             formset.save()
             message = ('success', 'The feedbacks has been saved.')
+            formset = FeedbackFormSet(queryset=feedbacks)
+            for form in formset.forms:
+                form.set_nomcom(nomcom, request.user)
     else:
         formset = FeedbackFormSet(queryset=feedbacks)
+        for form in formset.forms:
+            form.set_nomcom(nomcom, request.user)
     return render_to_response('nomcom/view_feedback_pending.html',
                               {'year': year,
                                'selected': 'view_feedback',

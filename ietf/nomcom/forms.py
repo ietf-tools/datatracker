@@ -73,6 +73,27 @@ class PositionNomineeField(forms.ChoiceField):
         return (position, nominee)
 
 
+class MultiplePositionNomineeField(forms.MultipleChoiceField, PositionNomineeField):
+
+    def clean(self, value):
+        nominees = super(PositionNomineeField, self).clean(value)
+        result = []
+        for nominee in nominees:
+            if not nominee:
+                return nominee
+            (position_id, nominee_id) = nominee.split('_')
+            try:
+                position = Position.objects.get_by_nomcom(self.nomcom).opened().get(id=position_id)
+            except Position.DoesNotExist:
+                raise forms.ValidationError('Invalid nominee')
+            try:
+                nominee = position.nominee_set.get_by_nomcom(self.nomcom).get(id=nominee_id)
+            except Nominee.DoesNotExist:
+                raise forms.ValidationError('Invalid nominee')
+            result.append((position, nominee))
+        return result
+
+
 class BaseNomcomForm(object):
     def __unicode__(self):
         return self.as_div()
@@ -712,3 +733,31 @@ class PrivateKeyForm(BaseNomcomForm, forms.Form):
     key = forms.CharField(label='Private key', widget=forms.Textarea(), required=False)
 
     fieldsets = [('Private key', ('key',))]
+
+
+class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):
+    
+    class Meta:
+        model = Feedback
+        fields = ('author', 'type', 'nominee')
+
+    def set_nomcom(self, nomcom, user):
+        self.nomcom = nomcom
+        self.user = user
+        self.fields['nominee'] = MultiplePositionNomineeField(nomcom=self.nomcom, required=True, widget=forms.SelectMultiple)
+
+    def save(self, commit=True):
+        feedback = super(PendingFeedbackForm, self).save(commit=False)
+
+        author = get_user_email(self.user)
+
+        if author:
+            feedback.author = author
+
+        feedback.nomcom = self.nomcom
+        feedback.user = self.user
+        feedback.save()
+        self.save_m2m()
+        for (position, nominee) in self.cleaned_data['nominee']:
+            feedback.nominees.add(nominee)
+            feedback.positions.add(position)
