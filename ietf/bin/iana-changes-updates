@@ -46,7 +46,7 @@ syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
 from ietf.sync.iana import *
 
-syslog.syslog("Updating history log with new changes from IANA from %s, period %s - %s" % (CHANGES_URL, start, end))
+syslog.syslog("Updating history log with new changes from IANA from %s, period %s - %s" % (settings.IANA_SYNC_CHANGES_URL, start, end))
 
 t = start
 while t < end:
@@ -54,7 +54,7 @@ while t < end:
     # period, so loop over the requested period and make multiple
     # requests if necessary
 
-    text = fetch_changes_json(CHANGES_URL, t, min(end, t + MAX_INTERVAL_ACCEPTED_BY_IANA))
+    text = fetch_changes_json(settings.IANA_SYNC_CHANGES_URL, t, min(end, t + MAX_INTERVAL_ACCEPTED_BY_IANA))
     changes = parse_changes_json(text)
     added_events, warnings = update_history_with_changes(changes, send_email=options.send_email)
 

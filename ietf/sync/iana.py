@@ -9,11 +9,11 @@ from ietf.person.models import *
 from ietf.idrfc.mails import email_owner, email_state_changed, email_authors
 from ietf.utils.timezone import *
 
-PROTOCOLS_URL = "http://www.iana.org/protocols/"
-CHANGES_URL = "http://datatracker.dev.icann.org:8080/data-tracker/changes"
+#PROTOCOLS_URL = "http://www.iana.org/protocols/"
+#CHANGES_URL = "http://datatracker.dev.icann.org:8080/data-tracker/changes"
 
 def fetch_protocol_page(url):
-    f = urllib2.urlopen(PROTOCOLS_URL)
+    f = urllib2.urlopen(settings.IANA_SYNC_PROTOCOLS_URL)
     text = f.read()
     f.close()
     return text
