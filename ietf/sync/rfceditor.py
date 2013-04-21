@@ -1,4 +1,4 @@
-import re, urllib2, json, email, socket
+import re, urllib, urllib2, json, email, socket, base64
 from xml.dom import pulldom, Node
 
 from django.utils.http import urlquote
@@ -12,6 +12,7 @@ from ietf.doc.utils import add_state_change_event
 
 QUEUE_URL = "http://www.rfc-editor.org/queue2.xml"
 INDEX_URL = "http://www.rfc-editor.org/rfc/rfc-index.xml"
+POST_APPROVED_DRAFT_URL = "https://www.rfc-editor.org/sdev/jsonexp/jsonparser.php"
 
 MIN_QUEUE_RESULTS = 10
 MIN_INDEX_RESULTS = 5000
@@ -445,3 +446,37 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
             doc.save()
 
     return results
+
+
+def post_approved_draft(url, name):
+    """Post an approved draft to the RFC Editor so they can retrieve
+    the data from the Datatracker and start processing it. Returns
+    response and error (empty string if no error)."""
+
+    request = urllib2.Request(url)
+    request.add_header("Content-type", "application/x-www-form-urlencoded")
+    request.add_header("Accept", "text/plain")
+    # HTTP basic auth
+    username = "dtracksync"
+    password = settings.RFC_EDITOR_SYNC_PASSWORD
+    request.add_header("Authorization", "Basic %s" % base64.encodestring("%s:%s" % (username, password)).replace("\n", ""))
+
+    text = error = ""
+    try:
+        f = urllib2.urlopen(request, data=urllib.urlencode({ 'approved_draft_name': name }), timeout=20)
+        text = f.read()
+        status_code = f.getcode()
+        f.close()
+
+        if status_code != 200:
+            raise Exception("Status code is not 200 OK (it's %s)." % status_code)
+
+        if text != "OK":
+            raise Exception("Response is not \"OK\".")
+
+    except Exception as e:
+        # catch everything so we don't leak exceptions, convert them
+        # into string instead
+        error = unicode(e)
+
+    return text, error

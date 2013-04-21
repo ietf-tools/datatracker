@@ -1008,7 +1008,7 @@ def approve_ballotREDESIGN(request, name):
     # NOTE: according to Michelle Cotton <michelle.cotton@icann.org>
     # (as per 2011-10-24) IANA is scraping these messages for
     # information so would like to know beforehand if the format
-    # changes (perhaps RFC 6359 will change that)
+    # changes
     announcement = approval_text + "\n\n" + ballot_writeup
         
     if request.method == 'POST':
@@ -1016,6 +1016,17 @@ def approve_ballotREDESIGN(request, name):
             new_state = State.objects.get(used=True, type="draft-iesg", slug="dead")
         else:
             new_state = State.objects.get(used=True, type="draft-iesg", slug="ann")
+
+        if new_state.slug == "ann" and not request.REQUEST.get("skiprfceditorpost"):
+            # start by notifying the RFC Editor
+            import ietf.sync.rfceditor
+            response, error = ietf.sync.rfceditor.post_approved_draft(ietf.sync.rfceditor.POST_APPROVED_DRAFT_URL, doc.name)
+            if error:
+                return render_to_response('doc/rfceditor_post_approved_draft_failed.html',
+                                  dict(name=doc.name,
+                                       response=response,
+                                       error=error),
+                                  context_instance=RequestContext(request))
 
         # fixup document
         close_open_ballots(doc, login)
@@ -1064,7 +1075,7 @@ def approve_ballotREDESIGN(request, name):
         msg.related_docs.add(doc)
 
         return HttpResponseRedirect(doc.get_absolute_url())
-  
+
     return render_to_response('idrfc/approve_ballot.html',
                               dict(doc=doc,
                                    action=action,

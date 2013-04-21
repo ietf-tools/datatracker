@@ -882,13 +882,13 @@ class ApproveBallotTestCase(django.test.TestCase):
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue("Send out the announcement" in q('.actions input[type=submit]')[0].get('value'))
+        self.assertTrue("send out the announcement" in q('.actions input[type=submit]')[0].get('value').lower())
         self.assertEquals(len(q('.announcement pre:contains("Subject: Protocol Action")')), 1)
 
         # approve
         mailbox_before = len(outbox)
 
-        r = self.client.post(url, dict())
+        r = self.client.post(url, dict(skiprfceditorpost="1"))
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
@@ -897,6 +897,7 @@ class ApproveBallotTestCase(django.test.TestCase):
         self.assertTrue("Protocol Action" in outbox[-2]['Subject'])
         # the IANA copy
         self.assertTrue("Protocol Action" in outbox[-1]['Subject'])
+        self.assertTrue(not outbox[-1]['CC'])
         self.assertTrue("Protocol Action" in draft.message_set.order_by("-time")[0].subject)
 
     def test_disapprove_ballot(self):
@@ -981,7 +982,7 @@ class RequestPublicationTestCase(django.test.TestCase):
         # approve
         mailbox_before = len(outbox)
 
-        r = self.client.post(url, dict(subject=subject, body=body))
+        r = self.client.post(url, dict(subject=subject, body=body, skiprfceditorpost="1"))
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
@@ -991,6 +992,7 @@ class RequestPublicationTestCase(django.test.TestCase):
         self.assertTrue("Document Action" in draft.message_set.order_by("-time")[0].subject)
         # the IANA copy
         self.assertTrue("Document Action" in outbox[-1]['Subject'])
+        self.assertTrue(not outbox[-1]['CC'])
 
 class ExpireIDsTestCase(django.test.TestCase):
     fixtures = ['names']

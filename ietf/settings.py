@@ -277,6 +277,8 @@ IANA_SYNC_PASSWORD = "secret"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "http://www.iana.org/protocols/"
 
+RFC_EDITOR_SYNC_PASSWORD="secret"
+
 # Liaison Statement Tool settings
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
 LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'

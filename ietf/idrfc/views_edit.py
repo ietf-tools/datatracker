@@ -1088,6 +1088,17 @@ def request_publication(request, name):
     if request.method == 'POST' and not request.POST.get("reset"):
         form = PublicationForm(request.POST)
         if form.is_valid():
+            if not request.REQUEST.get("skiprfceditorpost"):
+                # start by notifying the RFC Editor
+                import ietf.sync.rfceditor
+                response, error = ietf.sync.rfceditor.post_approved_draft(ietf.sync.rfceditor.POST_APPROVED_DRAFT_URL, doc.name)
+                if error:
+                    return render_to_response('doc/rfceditor_post_approved_draft_failed.html',
+                                      dict(name=doc.name,
+                                           response=response,
+                                           error=error),
+                                      context_instance=RequestContext(request))
+
             m.subject = form.cleaned_data["subject"]
             m.body = form.cleaned_data["body"]
             m.save()
