@@ -142,8 +142,13 @@ echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'
 chmod +x ../cicmd/commit-${rev}-merge.sh
 
 note "Do the merge:"
-svn merge -c $rev ${repo}/$branch . || die "Merge of $branch @$rev failed.  The merge command was:
- svn merge -c $rev ${repo}/$branch ."
+if [[ $rev =~ : ]]; then
+    svn merge -r $rev ${repo}/$branch . || die "Merge of $branch @$rev failed.  The merge command was:
+  svn merge -r $rev ${repo}/$branch ."
+else
+    svn merge -c $rev ${repo}/$branch . || die "Merge of $branch @$rev failed.  The merge command was:
+  svn merge -c $rev ${repo}/$branch ."
+fi
 
 M=$(svn st | cut -c 1-7 | grep -oh 'M' | head -n 1)
 C=$(svn st | cut -c 1-7 | grep -oh 'C' | head -n 1)
