@@ -1,39 +1,21 @@
 # encoding: utf-8
 import datetime
 from south.db import db
-from south.v2 import DataMigration
+from south.v2 import SchemaMigration
 from django.db import models
 
-class Migration(DataMigration):
+class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # some ids were lost in the 2012 database migration (because
-        # of duplicate entries), so pre-fill the mapping
-        mapping = {
-            104942: orm['person.Person'].objects.get(name="Lars Eggert"),
-            106659: orm['person.Person'].objects.get(name="Wesley Eddy"),
-            108317: orm['person.Person'].objects.get(name="Vijay K. Gurbani"),
-            107767: orm['person.Person'].objects.get(name="Behcet Sarikaya"),
-            }
+        
+        # Adding field 'IdSubmissionDetail.replaces'
+        db.add_column('submit_idsubmissiondetail', 'replaces', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True), keep_default=False)
 
-        for d in orm.IdApprovedDetail.objects.all().iterator():
-            try:
-                p = orm.Preapproval.objects.get(id=d.id)
-            except orm.Preapproval.DoesNotExist:
-                p = orm.Preapproval(id=d.id)
-            p.name = d.filename
-            if d.approved_person_tag not in mapping:
-                try:
-                    mapping[d.approved_person_tag] = orm['person.Person'].objects.get(id=d.approved_person_tag)
-                except orm['person.Person'].DoesNotExist:
-                    print "FAIL missing person id", d.approved_person_tag
-
-            p.by = mapping[d.approved_person_tag]
-            p.time = datetime.datetime.combine(d.approved_date, datetime.time(0, 0, 0))
-            p.save()
 
     def backwards(self, orm):
-        "Write your backwards methods here."
+        
+        # Deleting field 'IdSubmissionDetail.replaces'
+        db.delete_column('submit_idsubmissiondetail', 'replaces')
 
 
     models = {
@@ -81,7 +63,7 @@ class Migration(DataMigration):
         },
         'doc.document': {
             'Meta': {'object_name': 'Document'},
-            'abstract': ('django.db.models.fields.TextField', [], {}),
+            'abstract': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'ad': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'ad_document_set'", 'null': 'True', 'to': "orm['person.Person']"}),
             'authors': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['person.Email']", 'symmetrical': 'False', 'through': "orm['doc.DocumentAuthor']", 'blank': 'True'}),
             'expires': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
@@ -92,7 +74,7 @@ class Migration(DataMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'primary_key': 'True'}),
             'note': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'notify': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '1'}),
+            'order': ('django.db.models.fields.IntegerField', [], {'default': '1', 'blank': 'True'}),
             'pages': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'related': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "'reversely_related_document_set'", 'blank': 'True', 'through': "orm['doc.RelatedDocument']", 'to': "orm['doc.DocAlias']"}),
             'rev': ('django.db.models.fields.CharField', [], {'max_length': '16', 'blank': 'True'}),
@@ -124,7 +106,7 @@ class Migration(DataMigration):
             'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'next_states': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'previous_states'", 'symmetrical': 'False', 'to': "orm['doc.State']"}),
+            'next_states': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "'previous_states'", 'blank': 'True', 'to': "orm['doc.State']"}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'slug': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
             'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['doc.StateType']"}),
@@ -161,6 +143,7 @@ class Migration(DataMigration):
             'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'revname': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
             'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
@@ -238,15 +221,6 @@ class Migration(DataMigration):
             'time': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'user': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.User']", 'unique': 'True', 'null': 'True', 'blank': 'True'})
         },
-        'submit.idapproveddetail': {
-            'Meta': {'object_name': 'IdApprovedDetail'},
-            'approved_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'approved_person_tag': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'approved_status': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'filename': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '255', 'null': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'recorded_by': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'})
-        },
         'submit.idsubmissiondetail': {
             'Meta': {'object_name': 'IdSubmissionDetail'},
             'abstract': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
@@ -268,6 +242,7 @@ class Migration(DataMigration):
             'man_posted_by': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'man_posted_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'remote_ip': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'replaces': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'revision': ('django.db.models.fields.CharField', [], {'max_length': '3', 'null': 'True', 'blank': 'True'}),
             'status': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['submit.IdSubmissionStatus']", 'null': 'True', 'db_column': "'status_id'", 'blank': 'True'}),
             'sub_email_priority': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -290,7 +265,7 @@ class Migration(DataMigration):
             'by': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
-            'time': ('django.db.models.fields.DateTimeField', [], {})
+            'time': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'})
         },
         'submit.tempidauthors': {
             'Meta': {'object_name': 'TempIdAuthors'},

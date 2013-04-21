@@ -50,16 +50,14 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('submit', ['IdSubmissionDetail'])
 
-        # Adding model 'IdApprovedDetail'
-        db.create_table('submit_idapproveddetail', (
+        # Adding model 'Preapproval'
+        db.create_table('submit_preapproval', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('filename', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=255, null=True, blank=True)),
-            ('approved_status', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('approved_person_tag', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('approved_date', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
-            ('recorded_by', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=255, db_index=True)),
+            ('by', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Person'])),
+            ('time', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
         ))
-        db.send_create_signal('submit', ['IdApprovedDetail'])
+        db.send_create_signal('submit', ['Preapproval'])
 
         # Adding model 'TempIdAuthors'
         db.create_table('submit_tempidauthors', (
@@ -86,8 +84,8 @@ class Migration(SchemaMigration):
         # Deleting model 'IdSubmissionDetail'
         db.delete_table('submit_idsubmissiondetail')
 
-        # Deleting model 'IdApprovedDetail'
-        db.delete_table('submit_idapproveddetail')
+        # Deleting model 'Preapproval'
+        db.delete_table('submit_preapproval')
 
         # Deleting model 'TempIdAuthors'
         db.delete_table('submit_tempidauthors')
@@ -138,7 +136,7 @@ class Migration(SchemaMigration):
         },
         'doc.document': {
             'Meta': {'object_name': 'Document'},
-            'abstract': ('django.db.models.fields.TextField', [], {}),
+            'abstract': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'ad': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'ad_document_set'", 'null': 'True', 'to': "orm['person.Person']"}),
             'authors': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['person.Email']", 'symmetrical': 'False', 'through': "orm['doc.DocumentAuthor']", 'blank': 'True'}),
             'expires': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
@@ -149,7 +147,7 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'primary_key': 'True'}),
             'note': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'notify': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '1'}),
+            'order': ('django.db.models.fields.IntegerField', [], {'default': '1', 'blank': 'True'}),
             'pages': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'related': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "'reversely_related_document_set'", 'blank': 'True', 'through': "orm['doc.RelatedDocument']", 'to': "orm['doc.DocAlias']"}),
             'rev': ('django.db.models.fields.CharField', [], {'max_length': '16', 'blank': 'True'}),
@@ -181,7 +179,7 @@ class Migration(SchemaMigration):
             'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'next_states': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'previous_states'", 'symmetrical': 'False', 'to': "orm['doc.State']"}),
+            'next_states': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "'previous_states'", 'blank': 'True', 'to': "orm['doc.State']"}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'slug': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
             'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['doc.StateType']"}),
@@ -218,6 +216,7 @@ class Migration(SchemaMigration):
             'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'revname': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
             'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
@@ -295,15 +294,6 @@ class Migration(SchemaMigration):
             'time': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'user': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.User']", 'unique': 'True', 'null': 'True', 'blank': 'True'})
         },
-        'submit.idapproveddetail': {
-            'Meta': {'object_name': 'IdApprovedDetail'},
-            'approved_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'approved_person_tag': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'approved_status': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'filename': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '255', 'null': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'recorded_by': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'})
-        },
         'submit.idsubmissiondetail': {
             'Meta': {'object_name': 'IdSubmissionDetail'},
             'abstract': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
@@ -341,6 +331,13 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'IdSubmissionStatus'},
             'status_id': ('django.db.models.fields.IntegerField', [], {'primary_key': 'True'}),
             'status_value': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'})
+        },
+        'submit.preapproval': {
+            'Meta': {'object_name': 'Preapproval'},
+            'by': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']"}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
+            'time': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'})
         },
         'submit.tempidauthors': {
             'Meta': {'object_name': 'TempIdAuthors'},
