@@ -18,3 +18,7 @@
 /.project
 /.pydevproject
 /.settings
+/unix.tag
+/testresult
+/mergelog
+/mergequeue
