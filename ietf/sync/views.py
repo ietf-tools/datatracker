@@ -62,8 +62,8 @@ def notify(request, org, notification):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     known_notifications = {
-        "protocols": "an added reference to an RFC at <a href=\"%s\">the IANA protocols page</a>" % iana.PROTOCOLS_URL,
-        "changes": "new changes at <a href=\"%s\">the changes JSON dump</a>" % iana.CHANGES_URL,
+        "protocols": "an added reference to an RFC at <a href=\"%s\">the IANA protocols page</a>" % settings.IANA_SYNC_PROTOCOLS_URL,
+        "changes": "new changes at <a href=\"%s\">the changes JSON dump</a>" % settings.IANA_SYNC_CHANGES_URL,
         "queue": "new changes to <a href=\"%s\">queue2.xml</a>" % rfceditor.QUEUE_URL,
         "index": "new changes to <a href=\"%s\">rfc-index.xml</a>" % rfceditor.INDEX_URL,
         }
