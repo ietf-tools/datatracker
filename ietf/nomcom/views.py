@@ -11,7 +11,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils import simplejson
 from django.db.models import Count, Q
-from django.forms.models import modelformset_factory
+from django.forms.models import modelformset_factory, inlineformset_factory
 
 from ietf.utils.mail import send_mail
 
@@ -23,7 +23,7 @@ from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
                                MergeForm, NomComTemplateForm, PositionForm,
                                PrivateKeyForm, EditNomcomForm, PendingFeedbackForm)
-from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom
+from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
                                store_nomcom_private_key, get_hash_nominee_position,
                                NOMINEE_REMINDER_TEMPLATE)
@@ -129,7 +129,7 @@ def private_index(request, year):
 @member_required(role='chair')
 def send_reminder_mail(request, year):
     nomcom = get_nomcom_by_year(year)
-    nominees = Nominee.objects.get_by_nomcom(nomcom).filter(nomineeposition__state='pending').distinct()
+    nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().filter(nomineeposition__state='pending').distinct()
     nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
     mail_path = nomcom_template_path + NOMINEE_REMINDER_TEMPLATE
     mail_template = DBTemplate.objects.filter(group=nomcom.group, path=mail_path)
@@ -442,18 +442,25 @@ def edit_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
 
     message = ('warning', 'Previous data will remain encrypted with the old key')
+
+    ReminderDateInlineFormSet = inlineformset_factory(NomCom, ReminderDates)
     if request.method == 'POST':
+        formset = ReminderDateInlineFormSet(request.POST, instance=nomcom)
         form = EditNomcomForm(request.POST,
                               request.FILES,
                               instance=nomcom)
-        if form.is_valid():
+        if form.is_valid() and formset.is_valid():
             form.save()
+            formset.save()
+            formset = ReminderDateInlineFormSet(instance=nomcom)
             message = ('success', 'The nomcom has been changed')
     else:
+        formset = ReminderDateInlineFormSet(instance=nomcom)
         form = EditNomcomForm(instance=nomcom)
 
     return render_to_response('nomcom/edit_nomcom.html',
                               {'form': form,
+                               'formset': formset,
                                'nomcom': nomcom,
                                'message': message,
                                'year': year,

@@ -9,7 +9,7 @@ from ietf.nomcom.models import Nominee, NomCom, Feedback
 
 
 class Command(BaseCommand):
-    help = (u"Send a remind to each SDO Liaison Manager to update the list of persons authorized to send liaison statements on behalf of his SDO")
+    help = (u"Registry feedback from email. Usage: feeback_email --nomcom-year <nomcom-year> --email-file <email-file>")
     option_list = BaseCommand.option_list + (
          make_option('--nomcom-year', dest='year', help='NomCom year'),
          make_option('--email-file', dest='email', help='Feedback email'),
@@ -35,7 +35,7 @@ class Command(BaseCommand):
             nomcom = NomCom.objects.get(group__acronym__icontains=year,
                                         group__state__slug='active')
         except NomCom.DoesNotExist:
-            raise CommandError('NomCom %s does not exist' % year)
+            raise CommandError("NomCom %s does not exist or it isn't active" % year)
 
         by, subject, body = parse_email(msg)
         name, addr = parseaddr(by)

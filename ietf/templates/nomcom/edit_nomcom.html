@@ -15,6 +15,42 @@
 <table>
 {{ form }}
 </table>
+
+<h3>Reminder Dates</h3>
+
+<p>If the "reminder interval" field of nomcom isn't filled, the following dates will be used to send reminders.</p>
+
+<p>The valid format: <strong>YYYY-MM-DD</strong></p>
+
+    {{ formset.management_form }}
+    {% for form in formset.forms %}
+     {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
+     <table style="width: 100%;"><tr><td>
+     <div class="baseform">
+        <div class="fieldset">
+        {% for field in form %}
+      <div id="baseform-fieldname-{{ field.html_name }}"
+          {% if field.field.widget.is_hidden %}style="display: none;"{% endif %}
+          class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
+        <label for="id_{{ field.html_name }}">{{ field.label }}
+        {% if field.field.required %}
+          <span class="fieldRequired" title="Required">*</span>
+        {% endif %}
+        </label>
+        <div class="fieldWidget">
+        <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
+        {{ field }}
+        {{ field.errors }}
+        </div>
+        <div class="endfield"></div>
+      </div>
+        {% endfor %}
+        </div>
+    </div>
+    </td><td style="width: 50%; vertical-align: top;">
+    </td></tr></table>
+    {% endfor %}
+
 <p><input type="submit" value="Save" /></p>
 </form>
 

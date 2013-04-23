@@ -8,12 +8,21 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
+        # Adding model 'ReminderDates'
+        db.create_table('nomcom_reminderdates', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('date', self.gf('django.db.models.fields.DateField')()),
+            ('nomcom', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.NomCom'])),
+        ))
+        db.send_create_signal('nomcom', ['ReminderDates'])
+
         # Adding model 'NomCom'
         db.create_table('nomcom_nomcom', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('public_key', self.gf('django.db.models.fields.files.FileField')(max_length=100, null=True, blank=True)),
             ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'])),
             ('send_questionnaire', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('reminder_interval', self.gf('django.db.models.fields.PositiveIntegerField')(null=True, blank=True)),
         ))
         db.send_create_signal('nomcom', ['NomCom'])
 
@@ -107,6 +116,9 @@ class Migration(SchemaMigration):
 
         # Removing unique constraint on 'Nominee', fields ['email', 'nomcom']
         db.delete_unique('nomcom_nominee', ['email_id', 'nomcom_id'])
+
+        # Deleting model 'ReminderDates'
+        db.delete_table('nomcom_reminderdates')
 
         # Deleting model 'NomCom'
         db.delete_table('nomcom_nomcom')
@@ -365,6 +377,7 @@ class Migration(SchemaMigration):
             'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'public_key': ('django.db.models.fields.files.FileField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'reminder_interval': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'send_questionnaire': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
         },
         'nomcom.nomination': {
@@ -407,6 +420,12 @@ class Migration(SchemaMigration):
             'nomcom': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.NomCom']"}),
             'questionnaire': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'questionnaire'", 'null': 'True', 'to': "orm['dbtemplate.DBTemplate']"}),
             'requirement': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'requirement'", 'null': 'True', 'to': "orm['dbtemplate.DBTemplate']"})
+        },
+        'nomcom.reminderdates': {
+            'Meta': {'object_name': 'ReminderDates'},
+            'date': ('django.db.models.fields.DateField', [], {}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'nomcom': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.NomCom']"})
         },
         'person.email': {
             'Meta': {'object_name': 'Email'},

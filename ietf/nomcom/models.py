@@ -27,6 +27,11 @@ def upload_path_handler(instance, filename):
     return os.path.join(instance.group.acronym, 'public.cert')
 
 
+class ReminderDates(models.Model):
+    date = models.DateField()
+    nomcom = models.ForeignKey('NomCom')
+
+
 class NomCom(models.Model):
     public_key = models.FileField(storage=FileSystemStorage(location=settings.PUBLIC_KEYS_URL),
                                   upload_to=upload_path_handler, blank=True, null=True)
@@ -34,6 +39,10 @@ class NomCom(models.Model):
     group = models.ForeignKey(Group)
     send_questionnaire = models.BooleanField(verbose_name='Send automatically questionnaires"',
                                             help_text='If you check this box, questionnaires are sent automatically after nominations')
+    reminder_interval = models.PositiveIntegerField(help_text='If the nomcom user the interval field then a cron command will \
+                                                               send reminders to the nominees who have not responded using \
+                                                               the following formula: (today - nomination_date) % interval == 0',
+                                                               blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'NomComs'

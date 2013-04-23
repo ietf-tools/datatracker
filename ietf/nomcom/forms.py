@@ -51,7 +51,7 @@ class PositionNomineeField(forms.ChoiceField):
         positions = Position.objects.get_by_nomcom(self.nomcom).opened().order_by('name')
         results = []
         for position in positions:
-            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in Nominee.objects.get_by_nomcom(self.nomcom).filter(nominee_position=position)]
+            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(nominee_position=position)]
             if nominees:
                 results.append((position.name, nominees))
         kwargs['choices'] = results
@@ -247,11 +247,11 @@ class EditChairFormPreview(FormPreview):
 
 class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
 
-    fieldsets = [('Edit nomcom', ('public_key', 'send_questionnaire'))]
+    fieldsets = [('Edit nomcom', ('public_key', 'send_questionnaire', 'reminder_interval'))]
 
     class Meta:
         model = NomCom
-        fields = ('public_key', 'send_questionnaire')
+        fields = ('public_key', 'send_questionnaire', 'reminder_interval')
 
 
 class MergeForm(BaseNomcomForm, forms.Form):
@@ -268,7 +268,7 @@ class MergeForm(BaseNomcomForm, forms.Form):
 
     def clean_primary_email(self):
         email = self.cleaned_data['primary_email']
-        nominees = Nominee.objects.get_by_nomcom(self.nomcom).filter(email__address=email)
+        nominees = Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(email__address=email)
         if not nominees:
             msg = "Does not exist a nomiee with this email"
             self._errors["primary_email"] = self.error_class([msg])
@@ -279,7 +279,7 @@ class MergeForm(BaseNomcomForm, forms.Form):
         data = self.cleaned_data['secondary_emails']
         emails = get_list(data)
         for email in emails:
-            nominees = Nominee.objects.get_by_nomcom(self.nomcom).filter(email__address=email)
+            nominees = Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(email__address=email)
             if not nominees:
                 msg = "Does not exist a nomiee with email %s" % email
                 self._errors["primary_email"] = self.error_class([msg])
@@ -736,15 +736,23 @@ class PrivateKeyForm(BaseNomcomForm, forms.Form):
 
 
 class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):
-    
+
     class Meta:
         model = Feedback
         fields = ('author', 'type', 'nominee')
 
+    def __init__(self, *args, **kwargs):
+        super(PendingFeedbackForm, self).__init__(*args, **kwargs)
+        self.fields['type'].queryset = FeedbackType.objects.exclude(slug='nomina')
+
+
     def set_nomcom(self, nomcom, user):
         self.nomcom = nomcom
         self.user = user
-        self.fields['nominee'] = MultiplePositionNomineeField(nomcom=self.nomcom, required=True, widget=forms.SelectMultiple)
+        self.fields['nominee'] = MultiplePositionNomineeField(nomcom=self.nomcom,
+                                                              required=True,
+                                                              widget=forms.SelectMultiple,
+                                                              help_text='Hold down "Control", or "Command" on a Mac, to select more than one.')
 
     def save(self, commit=True):
         feedback = super(PendingFeedbackForm, self).save(commit=False)
