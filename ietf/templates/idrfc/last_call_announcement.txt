@@ -1,7 +1,6 @@
 {% load ietf_filters %}{% load mail_filters %}{% autoescape off %}From: The IESG <noreply@ietf.org>
-To: IETF-Announce:; {% if cc %}
+To: IETF-Announce <ietf-announce@ietf.org> {% if cc %}
 CC: {{ cc }}{% endif %}
-Bcc: <ietf-announce@ietf.org>
 Reply-To: IETF Discussion List <ietf@ietf.org>
 Sender: <iesg-secretary@ietf.org>
 Subject: Last Call: {{ doc.file_tag }} ({{ doc.title|clean_whitespace }}) to {{ doc|std_level_prompt }}
