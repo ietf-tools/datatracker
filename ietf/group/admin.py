@@ -21,9 +21,9 @@ class GroupURLInline(admin.TabularInline):
     model = GroupURL
 
 class GroupAdmin(admin.ModelAdmin):
-    list_display = ["acronym", "name", "type", "role_list"]
+    list_display = ["acronym", "name", "type", "state", "time", "role_list"]
     list_display_links = ["acronym", "name"]
-    list_filter = ["type"]
+    list_filter = ["type", "state", "time"]
     search_fields = ["acronym", "name"]
     ordering = ["name"]
     raw_id_fields = ["charter", "parent", "ad"]
@@ -139,6 +139,7 @@ admin.site.register(GroupEvent, GroupEventAdmin)
 
 class ChangeStateGroupEventAdmin(admin.ModelAdmin):
     list_display = ["id", "group", "state", "time", "type", "by", ]
+    list_filter = ["state", "time", ]
     search_fields = ["group__name", "group__acronym"]
 admin.site.register(ChangeStateGroupEvent, ChangeStateGroupEventAdmin)
 
