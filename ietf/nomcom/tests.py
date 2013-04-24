@@ -467,8 +467,7 @@ class NomcomViewsTest(TestCase):
         comments = 'test add questionnaire view'
 
         test_data = {'comments': comments,
-                     'positions': [position.id],
-                     'nominees': [nominee.id]}
+                     'nominee': '%s_%s' % (position.id, nominee.id)}
 
         response = self.client.post(self.add_questionnaire_url, test_data)
 
