@@ -310,6 +310,7 @@ def private_questionnaire(request, year):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
     message = None
+    questionnaire_response = None
     template = 'nomcom/private_questionnaire.html'
 
     if not has_publickey:
@@ -327,12 +328,15 @@ def private_questionnaire(request, year):
         if form.is_valid():
             form.save()
             message = ('success', 'The questionnaire response has been registered.')
+            questionnaire_response = form.cleaned_data['comments']
+            form = QuestionnaireForm(nomcom=nomcom, user=request.user)
     else:
         form = QuestionnaireForm(nomcom=nomcom, user=request.user)
 
     return render_to_response(template,
                               {'has_publickey': has_publickey,
                                'form': form,
+                               'questionnaire_response': questionnaire_response,
                                'message': message,
                                'nomcom': nomcom,
                                'year': year,

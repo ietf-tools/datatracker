@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.encoding import smart_str
 
 from ietf.utils.pipe import pipe
 
@@ -11,7 +12,7 @@ class EncryptedException(Exception):
 class EncryptedTextField(models.TextField):
     def pre_save(self, instance, add):
         if add:
-            comments = getattr(instance, 'comments')
+            comments = smart_str(getattr(instance, 'comments'))
             nomcom = getattr(instance, 'nomcom')
             cert_file = nomcom.public_key.path
 

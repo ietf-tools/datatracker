@@ -26,6 +26,11 @@
   </div>
 
 <div class="content">
+{% if questionnaire_response %}
+<h3>Questionnaire response:</h3>
+{{ questionnaire_response }}
+
+{% endif %}
   <div class="primary">
     {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
 

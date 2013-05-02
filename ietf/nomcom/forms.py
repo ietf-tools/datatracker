@@ -11,7 +11,6 @@ from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from django.contrib.sites.models import Site
-from django.contrib.admin.widgets import FilteredSelectMultiple
 
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.utils import unaccent
@@ -27,7 +26,7 @@ from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE,
                               INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE, \
                               NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE, \
                               get_user_email, get_hash_nominee_position, get_year_by_nomcom, \
-                              HEADER_QUESTIONNAIRE_TEMPLATE 
+                              HEADER_QUESTIONNAIRE_TEMPLATE
 from ietf.nomcom.decorators import member_required
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -194,7 +193,7 @@ class EditMembersFormPreview(FormPreview):
         f = self.form(request.POST, auto_id=AUTO_ID)
         if f.is_valid():
             if self.security_hash(request, f) != request.POST.get(self.unused_name('hash')):
-                return self.failed_hash(request) # Security hash failed.
+                return self.failed_hash(request)  # Security hash failed.
             return self.done(request, f.cleaned_data)
         else:
             return render_to_response(self.form_template,
@@ -683,7 +682,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
     comments = forms.CharField(label='Questionnaire response from this candidate',
                                widget=forms.Textarea())
-    fieldsets = [('Questionnaire response', ('nominee',
+    fieldsets = [('New questionnaire response', ('nominee',
                                              'comments'))]
 
     def __init__(self, *args, **kwargs):
@@ -692,7 +691,6 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
         super(QuestionnaireForm, self).__init__(*args, **kwargs)
         self.fields['nominee'] = PositionNomineeField(nomcom=self.nomcom, required=True)
-
 
     def save(self, commit=True):
         feedback = super(QuestionnaireForm, self).save(commit=False)
@@ -732,8 +730,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
 class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
 
-    fieldsets = [('Template content', ('content', )),
-                ]
+    fieldsets = [('Template content', ('content', )), ]
 
 
 class PositionForm(BaseNomcomForm, forms.ModelForm):
@@ -770,7 +767,6 @@ class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(PendingFeedbackForm, self).__init__(*args, **kwargs)
         self.fields['type'].queryset = FeedbackType.objects.exclude(slug='nomina')
-
 
     def set_nomcom(self, nomcom, user):
         self.nomcom = nomcom

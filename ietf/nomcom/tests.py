@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import tempfile
 
@@ -325,7 +326,7 @@ class NomcomViewsTest(TestCase):
         nominee = Nominee.objects.get(email__person__name=COMMUNITY_USER)
         position = Position.objects.get(name='OAM')
 
-        comments = 'plain text'
+        comments = 'plain text. comments with acents ááááá'
         nomcom = get_nomcom_by_year(self.year)
         feedback = Feedback.objects.create(nomcom=nomcom,
                                            comments=comments,
@@ -392,7 +393,7 @@ class NomcomViewsTest(TestCase):
         position = Position.objects.get(name=position_name)
         candidate_email = nominee_email
         candidate_name = u'nominee'
-        comments = 'test nominate view'
+        comments = 'test nominate view. comments with acents ááááá'
         candidate_phone = u'123456'
 
         test_data = {'candidate_name': candidate_name,
@@ -464,7 +465,7 @@ class NomcomViewsTest(TestCase):
         position = Position.objects.get(name=position_name)
         nominee = Nominee.objects.get(email__address=nominee_email)
 
-        comments = 'test add questionnaire view'
+        comments = 'test add questionnaire view. Comments with acents ááááá'
 
         test_data = {'comments': comments,
                      'nominee': '%s_%s' % (position.id, nominee.id)}
@@ -527,7 +528,7 @@ class NomcomViewsTest(TestCase):
         position = Position.objects.get(name=position_name)
         nominee = Nominee.objects.get(email__address=nominee_email)
 
-        comments = 'test feedback view'
+        comments = 'test feedback view. Comments with acents ááááá'
 
         test_data = {'comments': comments,
                      'position_name': position.name,
@@ -623,7 +624,7 @@ class FeedbackTest(TestCase):
         nomcom.public_key.storage.location = tempfile.gettempdir()
         nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
-        comments = 'plain text'
+        comments = 'plain text. Comments with acents ááááá'
         feedback = Feedback.objects.create(nomcom=nomcom,
                                            comments=comments,
                                            type=FeedbackType.objects.get(slug='nomina'))
