@@ -176,6 +176,32 @@ class EditMembersFormPreview(FormPreview):
         self.state.update({'members_info': members_info,
                            'emails_not_found': emails_not_found})
 
+    def preview_post(self, request):
+        "Validates the POST data. If valid, displays the preview page. Else, redisplays form."
+        f = self.form(request.POST, auto_id=AUTO_ID)
+        context = {'form': f, 'stage_field': self.unused_name('stage'), 'state': self.state,
+                   'year': self.year}
+        if f.is_valid():
+            self.process_preview(request, f, context)
+            context['hash_field'] = self.unused_name('hash')
+            context['hash_value'] = self.security_hash(request, f)
+            return render_to_response(self.preview_template, context, context_instance=RequestContext(request))
+        else:
+            return render_to_response(self.form_template, context, context_instance=RequestContext(request))
+
+    def post_post(self, request):
+        "Validates the POST data. If valid, calls done(). Else, redisplays form."
+        f = self.form(request.POST, auto_id=AUTO_ID)
+        if f.is_valid():
+            if self.security_hash(request, f) != request.POST.get(self.unused_name('hash')):
+                return self.failed_hash(request) # Security hash failed.
+            return self.done(request, f.cleaned_data)
+        else:
+            return render_to_response(self.form_template,
+                {'form': f, 'stage_field': self.unused_name('stage'), 'state': self.state,
+                 'year': self.year},
+                context_instance=RequestContext(request))
+
     def done(self, request, cleaned_data):
         members_info = self.state['members_info']
         members_email = [member['email'] for member in self.state['members_info']]
