@@ -736,11 +736,12 @@ class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
 class PositionForm(BaseNomcomForm, forms.ModelForm):
 
     fieldsets = [('Position', ('name', 'description',
+                               'initial_text',
                                'is_open', 'incumbent'))]
 
     class Meta:
         model = Position
-        fields = ('name', 'description', 'is_open', 'incumbent')
+        fields = ('name', 'description', 'initial_text', 'is_open', 'incumbent')
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
