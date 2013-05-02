@@ -272,7 +272,7 @@ class EditChairFormPreview(FormPreview):
 
 class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
 
-    fieldsets = [('Edit nomcom', ('public_key', 'send_questionnaire', 'reminder_interval'))]
+    fieldsets = [('Edit nomcom settings', ('public_key', 'send_questionnaire', 'reminder_interval'))]
 
     class Meta:
         model = NomCom
