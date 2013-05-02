@@ -8,7 +8,7 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         types = {'nomina': 'Nomination',
-                 'questio': 'Questionnaire',
+                 'questio': 'Questionnaire response',
                  'comment': 'Comment'}
         for slug, name in types.iteritems():
             FeedbackType.objects.get_or_create(slug=slug, name=name, used=True)

@@ -12,7 +12,7 @@
   <th>Accepted</th>
   <th>Declined</th>
   <th>Pending</th>
-  <th>Questionnaire</th>
+  <th>Questionnaire response</th>
   <th>Total</th>
 </tr>
 {% for item in stats %}
@@ -101,7 +101,7 @@ replied to the nomination notification they have received.){% endif %}</p>
       <th>Nominees</th>
       <th>Position</th>
       <th>State</th>
-      <th>Questionnaire</th>
+      <th>Questionnaire response</th>
     </tr>
     {% for np in nominee_positions.not_duplicated %}
         <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">

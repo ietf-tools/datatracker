@@ -326,7 +326,7 @@ def private_questionnaire(request, year):
                                  nomcom=nomcom, user=request.user)
         if form.is_valid():
             form.save()
-            message = ('success', 'The questionnaire has been registered.')
+            message = ('success', 'The questionnaire response has been registered.')
     else:
         form = QuestionnaireForm(nomcom=nomcom, user=request.user)
 

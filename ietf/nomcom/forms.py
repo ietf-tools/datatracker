@@ -655,9 +655,9 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
 
 class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
-    comments = forms.CharField(label='Questionnaire on this candidate',
+    comments = forms.CharField(label='Questionnaire response from this candidate',
                                widget=forms.Textarea())
-    fieldsets = [('Provide questionnaires', ('nominee',
+    fieldsets = [('Questionnaire response', ('nominee',
                                              'comments'))]
 
     def __init__(self, *args, **kwargs):
@@ -666,7 +666,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
         super(QuestionnaireForm, self).__init__(*args, **kwargs)
         self.fields['nominee'] = PositionNomineeField(nomcom=self.nomcom, required=True)
-        
+
 
     def save(self, commit=True):
         feedback = super(QuestionnaireForm, self).save(commit=False)

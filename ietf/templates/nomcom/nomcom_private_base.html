@@ -10,7 +10,7 @@
     {% if selected == "index" %}<span class="selected">List of nominees</span>{% else %}<a href="{% url nomcom_private_index year %}">List of nominees</a>{% endif %} |
     {% if selected == "nominate" %}<span class="selected">Nominate</span>{% else %}<a href="{% url nomcom_private_nominate year %}">Nominate</a>{% endif %} |
     {% if selected == "feedback" %}<span class="selected">Provide comments</span>{% else %}<a href="{% url nomcom_private_feedback year %}">Provide comments</a>{% endif %} |
-    {% if selected == "questionnaire" %}<span class="selected">Provide questionnaires</span>{% else %}<a href="{% url nomcom_private_questionnaire year %}">Provide questionnaires</a>{% endif %} |
+    {% if selected == "questionnaire" %}<span class="selected">Questionnaire response</span>{% else %}<a href="{% url nomcom_private_questionnaire year %}">Questionnaire response</a>{% endif %} |
     {% if selected == "view_feedback" %}<span class="selected">View comments</span>{% else %}<a href="{% url nomcom_view_feedback year %}">View comments</a>{% endif %} |
     {% if selected == "private_key" %}<span class="selected">Private key</span>{% else %}<a href="{% url nomcom_private_key year %}">Private key</a>{% endif %}
     {% if user|is_chair:year %} |

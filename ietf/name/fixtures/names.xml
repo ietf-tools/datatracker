@@ -542,7 +542,7 @@
         <field type="IntegerField" name="order">0</field>
     </object>
     <object pk="questio" model="name.feedbacktype">
-        <field type="CharField" name="name">Questionnaire</field>
+        <field type="CharField" name="name">Questionnaire response</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
