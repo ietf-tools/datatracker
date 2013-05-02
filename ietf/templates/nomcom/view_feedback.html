@@ -6,7 +6,9 @@
 
 {% block nomcom_content %}
 
-<p><a href="{% url nomcom_view_feedback_pending year %}">Feedbak pending</a></p>
+{% if user|is_chair:year %}
+  <p><a href="{% url nomcom_view_feedback_pending year %}">Feedback pending</a></p>
+{% endif %}
 
 <h2>List of Nominees</h2>
 
