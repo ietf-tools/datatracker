@@ -6,6 +6,7 @@ from django.db.models.signals import post_delete
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.models import User
+from django.template.loader import render_to_string
 
 from south.modelsinspector import add_introspection_rules
 
@@ -168,6 +169,12 @@ class Position(models.Model):
         from ietf.dbtemplate.models import DBTemplate
         self._templates = DBTemplate.objects.filter(group=self.nomcom.group).filter(path__contains='/%s/position/' % self.id).order_by('title')
         return self._templates
+
+    def get_questionnaire(self):
+        return render_to_string(self.questionnaire.path, {'position': self})
+
+    def get_requirement(self):
+        return render_to_string(self.requirement.path, {'position': self})
 
 
 class Feedback(models.Model):
