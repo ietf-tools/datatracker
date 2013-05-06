@@ -259,7 +259,7 @@ def get_notification_receivers(doc, extra_notify):
     return res
 
 def get_pubreq_receivers(doc, extra_notify):
-    res = []
+    res = [u'"IESG Secretary" <iesg-secretary@ietf.org>', ]
 
     for r in Role.objects.filter(person=doc.group.ad,name__slug='ad'):
         res.append(u'"%s" <%s>' % (r.person.plain_name(), r.email.address))
