@@ -71,7 +71,7 @@ class IdSubmissionDetail(models.Model):
     def confirmation_email_list(self):
         try:
             draft = InternetDraft.objects.get(filename=self.filename)
-            email_list = list(set(u'%s <%s>' % (i.person.name, i.email()) for i in draft.authors))
+            email_list = list(set(u'%s <%s>' % (i.person.ascii, i.email()) for i in draft.authors))
         except InternetDraft.DoesNotExist:
             email_list = list(set(u'%s <%s>' % i.email() for i in self.tempidauthors_set.all()))
         return email_list
