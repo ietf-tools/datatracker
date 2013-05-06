@@ -26,7 +26,7 @@ from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE,
                               INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE, \
                               NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE, \
                               get_user_email, get_hash_nominee_position, get_year_by_nomcom, \
-                              HEADER_QUESTIONNAIRE_TEMPLATE
+                              HEADER_QUESTIONNAIRE_TEMPLATE, validate_private_key
 from ietf.nomcom.decorators import member_required
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -757,6 +757,15 @@ class PrivateKeyForm(BaseNomcomForm, forms.Form):
     key = forms.CharField(label='Private key', widget=forms.Textarea(), required=False)
 
     fieldsets = [('Private key', ('key',))]
+
+    def clean_key(self):
+        key = self.cleaned_data.get('key', None)
+        if not key:
+            return
+        (validation, error) = validate_private_key(key)
+        if validation:
+            return key
+        raise forms.ValidationError('Invalid private key. Error was: %s' % error)
 
 
 class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):

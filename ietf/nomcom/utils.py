@@ -1,6 +1,8 @@
-import hashlib
-import re
 import email
+import hashlib
+import os
+import re
+import tempfile
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -156,3 +158,16 @@ def parse_email(text):
     body = extract_body(msg.get_payload())
 
     return msg['From'], msg['Subject'], body
+
+
+def validate_private_key(key):
+    key_file = tempfile.NamedTemporaryFile(delete=False)
+    key_file.write(key)
+    key_file.close()
+
+    command = "%s rsa -in %s -check -noout"
+    code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
+                                       key_file.name))
+
+    os.unlink(key_file.name)
+    return (not error, error)
