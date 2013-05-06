@@ -187,16 +187,11 @@ can_edit_intended_std_level = can_edit_base
 can_edit_consensus = can_edit_base
 can_edit_shepherd = can_edit_base
 
-import debug
-@debug.trace
 def can_edit_shepherd_writeup(doc, user):
-    try:
-        person = user.person
-    except Person.DoesNotExist:
-        person = None
-    return user.is_authenticated() and (
-        (person and doc.shepherd==person)
-        )
+     if user.is_authenticated():
+         if Person.objects.filter(user=user).count():
+             return can_edit_base(doc,user) or (doc.shepherd==user.person)
+     return False
 
 def nice_consensus(consensus):
     mapping = {
