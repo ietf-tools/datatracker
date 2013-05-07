@@ -44,6 +44,8 @@ class NomCom(models.Model):
                                                                send reminders to the nominees who have not responded using \
                                                                the following formula: (today - nomination_date) % interval == 0',
                                                                blank=True, null=True)
+    initial_text = models.TextField(verbose_name='Help text for nomination form',
+                                    blank=True)
 
     class Meta:
         verbose_name_plural = 'NomComs'
@@ -135,8 +137,6 @@ class Position(models.Model):
     nomcom = models.ForeignKey('NomCom')
     name = models.CharField(verbose_name='Name', max_length=255)
     description = models.TextField(verbose_name='Description')
-    initial_text = models.TextField(verbose_name='Initial text for nominations',
-                                    blank=True)
     requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True, editable=False)
     questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True, editable=False)
     is_open = models.BooleanField(verbose_name='Is open')

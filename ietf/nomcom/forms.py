@@ -273,11 +273,13 @@ class EditChairFormPreview(FormPreview):
 
 class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
 
-    fieldsets = [('Edit nomcom settings', ('public_key', 'send_questionnaire', 'reminder_interval'))]
+    fieldsets = [('Edit nomcom settings', ('public_key', 'initial_text',
+                                           'send_questionnaire', 'reminder_interval'))]
 
     class Meta:
         model = NomCom
-        fields = ('public_key', 'send_questionnaire', 'reminder_interval')
+        fields = ('public_key', 'initial_text',
+                  'send_questionnaire', 'reminder_interval')
 
 
 class MergeForm(BaseNomcomForm, forms.Form):
@@ -387,6 +389,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
         if self.nomcom:
             self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).opened()
+            self.fields['comments'].help_text = self.nomcom.initial_text
 
         if not self.public:
             fieldset = ['nominator_email'] + fieldset
@@ -546,10 +549,6 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         model = Nomination
         fields = ('position', 'nominator_email', 'candidate_name',
                   'candidate_email', 'candidate_phone')
-
-    class Media:
-        js = ("/js/jquery-1.5.1.min.js",
-              "/js/nomcom.js", )
 
 
 class FeedbackForm(BaseNomcomForm, forms.ModelForm):
@@ -740,12 +739,11 @@ class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
 class PositionForm(BaseNomcomForm, forms.ModelForm):
 
     fieldsets = [('Position', ('name', 'description',
-                               'initial_text',
                                'is_open', 'incumbent'))]
 
     class Meta:
         model = Position
-        fields = ('name', 'description', 'initial_text', 'is_open', 'incumbent')
+        fields = ('name', 'description', 'is_open', 'incumbent')
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
