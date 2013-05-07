@@ -15,7 +15,7 @@
 
 <p>Back to list of <a href="{% url nomcom_view_feedback year %}">nominees</a></p>
 
-<h2>Feedback of {{ nominee.email.person.name }} </h2>
+<h2>Feedback of {{ nominee }} </h2>
 
   <div id="mytabs" class="yui-navset">
   <ul class="yui-nav">
@@ -40,6 +40,16 @@
           {% ifequal feedback.type.slug ft.slug %}
             <div>
               <h3 class="ietf-divider">From {{ feedback.author|get_person|default:"Anonymous" }} ({{ feedback.time|date:"Y-m-d" }})</h3>
+              {% ifequal ft.slug "nomina" %}
+                {% for fn in feedback.nomination_set.all %}
+                  {% if fn.candidate_name %}
+                    <p><b>Candidate name:</b> {{ fn.candidate_name }}</p>
+                  {% endif %}
+                  {% if fn.candidate_phone %}
+                    <p><b>Candidate phone:</b> {{ fn.candidate_phone }}</p>
+                  {% endif %}
+                {% endfor %}
+              {% endifequal %}
               <b>Positions:</b> {{ feedback.positions.all|join:"," }}
               <p>
                 {% decrypt feedback.comments request year %}

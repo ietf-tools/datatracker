@@ -39,7 +39,7 @@ def add_num_nominations(user, position, nominee):
     else:
         mark = """<span style="white-space: pre;"> </span> """
 
-    return '<span title="%d earlier comments from you on %s as %s">%s</span>&nbsp;' % (count, nominee, position, mark)
+    return '<span title="%d earlier comments from you on %s as %s">%s</span>&nbsp;' % (count, nominee.email.address, position, mark)
 
 
 @register.filter

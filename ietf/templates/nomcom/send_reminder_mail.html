@@ -30,7 +30,7 @@ The message that will be sent is shown below the address entry form.
   {% for nominee in nominees %}
   <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
     <td><input class="batch-select" type="checkbox" value="{{ nominee.id }}" name="selected" checked="checked"/></td>
-    <td>{{ nominee.email }}</td>
+    <td>{{ nominee }}</td>
     <td>{% for nominee_position in nominee.nomineeposition_set.all %}{% ifequal nominee_position.state.slug "pending" %} {{ nominee_position.position.name }}, {% endifequal %}{% endfor %}</td>
   </tr>
   {% endfor %}

@@ -61,10 +61,11 @@ table.nominees tr td {
     <table class="nominees">
       {% for p in positions %}
         {% if p.nomineeposition_set.accepted.not_duplicated %}
-          <tr><th>{{ p.name }}:</th></tr>
+          <tr>
+            <th>{{ p.name }}:</th></tr>
             {% for np in p.nomineeposition_set.accepted.not_duplicated %}
               <tr>
-                <td>{% add_num_nominations user np.position np.nominee %}<a href="{% url nomcom_public_feedback year %}?nominee={{np.nominee.id}}&position={{ np.position.id}}">{{ np.nominee.email.person.name }}</td>
+                <td>{% add_num_nominations user np.position np.nominee %}<a href="{% url nomcom_public_feedback year %}?nominee={{np.nominee.id}}&position={{ np.position.id}}">{{ np.nominee }}</td>
               </tr>
             {% endfor %}
           {% endif %}
