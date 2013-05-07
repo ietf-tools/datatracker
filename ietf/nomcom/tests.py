@@ -95,6 +95,12 @@ class NomcomViewsTest(TestCase):
                            nominee_email=nominees[0],
                            position='IAOC')
         self.nominate_view(public=True,
+                           nominee_email=nominees[0],
+                           position='IAB')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[0],
+                           position='TSV')
+        self.nominate_view(public=True,
                            nominee_email=nominees[1],
                            position='IAOC')
         self.nominate_view(public=True,
@@ -113,15 +119,10 @@ class NomcomViewsTest(TestCase):
                            nominee_email=nominees[3],
                            position='TSV')
         # Check nominee positions
-        self.assertEqual(NomineePosition.objects.count(), 4)
-        self.assertEqual(Feedback.objects.nominations().count(), 8)
+        self.assertEqual(NomineePosition.objects.count(), 6)
+        self.assertEqual(Feedback.objects.nominations().count(), 10)
 
         # Accept and declined nominations
-        nominee_position = NomineePosition.objects.get(position__name='TSV',
-                                                       nominee__email__address=nominees[3])
-        nominee_position.state = NomineePositionState.objects.get(slug='accepted')
-        nominee_position.save()
-
         nominee_position = NomineePosition.objects.get(position__name='IAOC',
                                                        nominee__email__address=nominees[0])
         nominee_position.state = NomineePositionState.objects.get(slug='accepted')
@@ -130,6 +131,16 @@ class NomcomViewsTest(TestCase):
         nominee_position = NomineePosition.objects.get(position__name='IAOC',
                                                        nominee__email__address=nominees[1])
         nominee_position.state = NomineePositionState.objects.get(slug='declined')
+        nominee_position.save()
+
+        nominee_position = NomineePosition.objects.get(position__name='IAB',
+                                                       nominee__email__address=nominees[2])
+        nominee_position.state = NomineePositionState.objects.get(slug='declined')
+        nominee_position.save()
+
+        nominee_position = NomineePosition.objects.get(position__name='TSV',
+                                                       nominee__email__address=nominees[3])
+        nominee_position.state = NomineePositionState.objects.get(slug='accepted')
         nominee_position.save()
 
         self.client.logout()
@@ -165,14 +176,16 @@ class NomcomViewsTest(TestCase):
                            nominee_email=nominees[2],
                            position='IAB')
         self.feedback_view(public=False,
-                           nominee_email=nominees[03],
+                           nominee_email=nominees[3],
                            position='TSV')
 
         self.assertEqual(Feedback.objects.comments().count(), 4)
-        self.assertEqual(Feedback.objects.nominations().count(), 16)
+        self.assertEqual(Feedback.objects.nominations().count(), 18)
+        self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominees[0]).count(), 6)
+        self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominees[1]).count(), 4)
+        self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominees[2]).count(), 4)
+        self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominees[3]).count(), 4)
         for nominee in nominees:
-            self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominee).count(),
-                         4)
             self.assertEqual(Feedback.objects.comments().filter(nominees__email__address=nominee).count(),
                          1)
             self.assertEqual(Feedback.objects.questionnaires().filter(nominees__email__address=nominee).count(),
@@ -231,9 +244,9 @@ class NomcomViewsTest(TestCase):
 
         nominee = Nominee.objects.get(email__address=nominees[0])
 
-        self.assertEqual(Nomination.objects.filter(nominee=nominee).count(), 16)
+        self.assertEqual(Nomination.objects.filter(nominee=nominee).count(), 18)
         self.assertEqual(Feedback.objects.nominations().filter(nominees__in=[nominee]).count(),
-                         16)
+                         18)
         self.assertEqual(Feedback.objects.comments().filter(nominees__in=[nominee]).count(),
                          4)
         self.assertEqual(Feedback.objects.questionnaires().filter(nominees__in=[nominee]).count(),
@@ -253,6 +266,8 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(NomineePosition.objects.get(position__name='TSV',
                                                      nominee=nominee).state.slug, u'accepted')
         self.assertEqual(NomineePosition.objects.get(position__name='IAOC',
+                                                     nominee=nominee).state.slug, u'accepted')
+        self.assertEqual(NomineePosition.objects.get(position__name='IAB',
                                                      nominee=nominee).state.slug, u'declined')
 
         self.client.logout()

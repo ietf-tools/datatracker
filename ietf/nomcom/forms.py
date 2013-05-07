@@ -18,7 +18,7 @@ from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ietfauth.decorators import role_required
 from ietf.utils import fields as custom_fields
 from ietf.group.models import Group, Role
-from ietf.name.models import RoleName, FeedbackType
+from ietf.name.models import RoleName, FeedbackType, NomineePositionState
 from ietf.person.models import Email, Person
 from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
                                Position, Feedback
@@ -28,6 +28,7 @@ from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE,
                               get_user_email, get_hash_nominee_position, get_year_by_nomcom, \
                               HEADER_QUESTIONNAIRE_TEMPLATE, validate_private_key
 from ietf.nomcom.decorators import member_required
+
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
 
@@ -342,9 +343,12 @@ class MergeForm(BaseNomcomForm, forms.Form):
 
                 if primary_nominee_position:
                     # if already a nomineeposition object for a position and nominee,
-                    # update the nomineepostion of primary nominee with the state and questionnaire
-                    if nominee_position.time > primary_nominee_position.time:
-                        primary_nominee_position.state = nominee_position.state
+                    # update the nomineepostion of primary nominee with the state
+                    if nominee_position.state.slug == 'accepted' or primary_nominee_position.state.slug == 'accepted':
+                        primary_nominee_position.state = NomineePositionState.objects.get(slug='accepted')
+                        primary_nominee_position.save()
+                    if nominee_position.state.slug == 'declined' and primary_nominee_position.state.slug == 'pending':
+                        primary_nominee_position.state = NomineePositionState.objects.get(slug='declined')
                         primary_nominee_position.save()
                 else:
                     # It is not allowed two or more nomineeposition objects with same position and nominee
