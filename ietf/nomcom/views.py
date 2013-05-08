@@ -22,7 +22,8 @@ from ietf.name.models import NomineePositionState, FeedbackType
 from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
                                MergeForm, NomComTemplateForm, PositionForm,
-                               PrivateKeyForm, EditNomcomForm, PendingFeedbackForm)
+                               PrivateKeyForm, EditNomcomForm, PendingFeedbackForm,
+                               ReminderDatesForm)
 from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
                                store_nomcom_private_key, get_hash_nominee_position,
@@ -447,7 +448,9 @@ def edit_nomcom(request, year):
 
     message = ('warning', 'Previous data will remain encrypted with the old key')
 
-    ReminderDateInlineFormSet = inlineformset_factory(NomCom, ReminderDates)
+    ReminderDateInlineFormSet = inlineformset_factory(parent_model=NomCom,
+                                                      model=ReminderDates,
+                                                      form=ReminderDatesForm)
     if request.method == 'POST':
         formset = ReminderDateInlineFormSet(request.POST, instance=nomcom)
         form = EditNomcomForm(request.POST,

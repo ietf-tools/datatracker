@@ -21,7 +21,7 @@ from ietf.group.models import Group, Role
 from ietf.name.models import RoleName, FeedbackType, NomineePositionState
 from ietf.person.models import Email, Person
 from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
-                               Position, Feedback
+                               Position, Feedback, ReminderDates
 from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE, \
                               INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE, \
                               NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE, \
@@ -803,3 +803,14 @@ class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):
         for (position, nominee) in self.cleaned_data['nominee']:
             feedback.nominees.add(nominee)
             feedback.positions.add(position)
+
+
+class ReminderDatesForm(forms.ModelForm):
+
+    class Meta:
+        model = ReminderDates
+        fields = ('date',)
+
+    def __init__(self, *args, **kwargs):
+        super(ReminderDatesForm, self).__init__(*args, **kwargs)
+        self.fields['date'].required = False
