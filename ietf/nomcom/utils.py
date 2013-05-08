@@ -171,3 +171,17 @@ def validate_private_key(key):
 
     os.unlink(key_file.name)
     return (not error, error)
+
+
+def validate_public_key(public_key):
+    key_file = tempfile.NamedTemporaryFile(delete=False)
+    for chunk in public_key.chunks():
+        key_file.write(chunk)
+    key_file.close()
+
+    command = "%s x509 -in %s -noout"
+    code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
+                                       key_file.name))
+
+    os.unlink(key_file.name)
+    return (not error, error)

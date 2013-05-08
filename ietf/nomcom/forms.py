@@ -26,7 +26,8 @@ from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE,
                               INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE, \
                               NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE, \
                               get_user_email, get_hash_nominee_position, get_year_by_nomcom, \
-                              HEADER_QUESTIONNAIRE_TEMPLATE, validate_private_key
+                              HEADER_QUESTIONNAIRE_TEMPLATE, validate_private_key, \
+                              validate_public_key
 from ietf.nomcom.decorators import member_required
 
 
@@ -283,6 +284,15 @@ class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
         model = NomCom
         fields = ('public_key', 'initial_text',
                   'send_questionnaire', 'reminder_interval')
+
+    def clean_public_key(self):
+        public_key = self.cleaned_data.get('public_key', None)
+        if not public_key:
+            return
+        (validation, error) = validate_public_key(public_key)
+        if validation:
+            return public_key
+        raise forms.ValidationError('Invalid public key. Error was: %s' % error)
 
 
 class MergeForm(BaseNomcomForm, forms.Form):
