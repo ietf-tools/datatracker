@@ -5,6 +5,11 @@
 {% block nomcom_content %}
 <h2>Enter private key</h2>
 
+{% if message %}
+<div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+{% endif %}
+
+
 <p>In order to access the {{ nomcom.group }} data you have to enter your private key. Please paste it in the text area below. The key must be in the following format:</p>
 
 <pre>
