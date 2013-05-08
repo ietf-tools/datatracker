@@ -280,6 +280,16 @@ class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
     fieldsets = [('Edit nomcom settings', ('public_key', 'initial_text',
                                            'send_questionnaire', 'reminder_interval'))]
 
+    def __init__(self, *args, **kwargs):
+        super(EditNomcomForm, self).__init__(*args, **kwargs)
+
+        if self.instance:
+            if self.instance.public_key:
+                help_text = "The nomcom already has a public key. Previous data will remain encrypted with the old key"
+            else:
+                help_text = "The nomcom has not a public key yet"
+            self.fields['public_key'].help_text = help_text
+
     class Meta:
         model = NomCom
         fields = ('public_key', 'initial_text',

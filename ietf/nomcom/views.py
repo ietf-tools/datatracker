@@ -440,8 +440,12 @@ def view_feedback_nominee(request, year, nominee_id):
 @member_required(role='chair')
 def edit_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
+    has_publickey = nomcom.public_key and True or False
 
-    message = ('warning', 'Previous data will remain encrypted with the old key')
+    if has_publickey:
+        message = ('warning', 'Previous data will remain encrypted with the old key')
+    else:
+        message = ('warning', 'The nomcom has not a public key yet')
 
     ReminderDateInlineFormSet = inlineformset_factory(parent_model=NomCom,
                                                       model=ReminderDates,
