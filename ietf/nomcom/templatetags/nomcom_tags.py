@@ -43,12 +43,15 @@ def add_num_nominations(user, position, nominee):
 
 
 @register.filter
-def get_person(email):
-    person = email
-    if email:
-        persons = Person.objects.filter(email__address__in=[email])
-        person = persons and persons[0].name or person
-    return person
+def formatted_email(address):
+    person = None
+    if address:
+        persons = Person.objects.filter(email__address__in=[address])
+        person = persons and persons[0] or None
+    if person and person.name:
+        return u'"%s" <%s>' % (person.plain_name(), address)
+    else:
+        return address
 
 
 @register.simple_tag

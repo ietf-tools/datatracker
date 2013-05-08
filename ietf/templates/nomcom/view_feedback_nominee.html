@@ -39,7 +39,7 @@
         {% for feedback in nominee.feedback_set.all %}
           {% ifequal feedback.type.slug ft.slug %}
             <div>
-              <h3 class="ietf-divider">From {{ feedback.author|get_person|default:"Anonymous" }} ({{ feedback.time|date:"Y-m-d" }})</h3>
+              <h3 class="ietf-divider">From {{ feedback.author|formatted_email|default:"Anonymous" }} ({{ feedback.time|date:"Y-m-d" }})</h3>
               {% ifequal ft.slug "nomina" %}
                 {% for fn in feedback.nomination_set.all %}
                   {% if fn.candidate_name %}
