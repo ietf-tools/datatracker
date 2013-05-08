@@ -133,6 +133,8 @@ class EditMembersFormPreview(FormPreview):
         group = get_group_or_404(year)
         self.state['group'] = group
         self.state['rolodex_url'] = ROLODEX_URL
+        groups = group.nomcom_set.all()
+        self.nomcom = groups and groups[0] or None
         self.group = group
         self.year = year
 
@@ -146,6 +148,7 @@ class EditMembersFormPreview(FormPreview):
                                   'stage_field': self.unused_name('stage'),
                                   'state': self.state,
                                   'year': self.year,
+                                  'nomcom': self.nomcom,
                                   'selected': 'edit_members'},
                                   context_instance=RequestContext(request))
 

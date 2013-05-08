@@ -1,5 +1,7 @@
 {% extends "nomcom/nomcom_public_base.html" %}
 
+{% load nomcom_tags %}
+
 {% block subtitle %} - Nominate{% endblock %}
 
 {% block pagehead %}
@@ -13,7 +15,7 @@
   <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
 {% endif %}
 
-{% if has_publickey %}
+{% if nomcom|has_publickey %}
   {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
 
   <form id="nominateform" action="" method="post">{% csrf_token %}

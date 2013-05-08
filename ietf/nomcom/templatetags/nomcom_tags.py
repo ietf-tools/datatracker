@@ -26,6 +26,11 @@ def is_chair(user, year):
     return nomcom.group.is_chair(user)
 
 
+@register.filter
+def has_publickey(nomcom):
+    return nomcom and nomcom.public_key and True or False
+
+
 @register.simple_tag
 def add_num_nominations(user, position, nominee):
     author = get_user_email(user)

@@ -156,6 +156,7 @@ def send_reminder_mail(request, year):
                                'year': year,
                                'nominees': nominees,
                                'mail_template': mail_template,
+                               'selected': 'send_reminder_mail',
                                'message': message}, RequestContext(request))
 
 
@@ -218,10 +219,9 @@ def nominate(request, year, public):
         template = 'nomcom/private_nominate.html'
 
     if not has_publickey:
-            message = ('warning', "Nomcom don't have public key to ecrypt data, please contact with nomcom chair")
+            message = ('warning', "This Nomcom is not yet accepting nominations")
             return render_to_response(template,
-                              {'has_publickey': has_publickey,
-                               'message': message,
+                              {'message': message,
                                'nomcom': nomcom,
                                'year': year,
                                'selected': 'nominate'}, RequestContext(request))
@@ -236,8 +236,7 @@ def nominate(request, year, public):
         form = NominateForm(nomcom=nomcom, user=request.user, public=public)
 
     return render_to_response(template,
-                              {'has_publickey': has_publickey,
-                               'form': form,
+                              {'form': form,
                                'message': message,
                                'nomcom': nomcom,
                                'year': year,
@@ -275,10 +274,9 @@ def feedback(request, year, public):
         template = 'nomcom/private_feedback.html'
 
     if not has_publickey:
-            message = ('warning', "Nomcom don't have public key to ecrypt data, please contact with nomcom chair")
+            message = ('warning', "This Nomcom is not yet accepting comments")
             return render_to_response(template,
-                              {'has_publickey': has_publickey,
-                               'message': message,
+                              {'message': message,
                                'nomcom': nomcom,
                                'year': year,
                                'selected': 'feedback'}, RequestContext(request))
@@ -296,8 +294,7 @@ def feedback(request, year, public):
                             position=position, nominee=nominee)
 
     return render_to_response(template,
-                              {'has_publickey': has_publickey,
-                               'form': form,
+                              {'form': form,
                                'message': message,
                                'nomcom': nomcom,
                                'year': year,
@@ -315,10 +312,9 @@ def private_questionnaire(request, year):
     template = 'nomcom/private_questionnaire.html'
 
     if not has_publickey:
-            message = ('warning', "Nomcom don't have public key to ecrypt data, please contact with nomcom chair")
+            message = ('warning', "This Nomcom is not yet accepting questionnaires")
             return render_to_response(template,
-                              {'has_publickey': has_publickey,
-                               'message': message,
+                              {'message': message,
                                'nomcom': nomcom,
                                'year': year,
                                'selected': 'questionnaire'}, RequestContext(request))
@@ -335,8 +331,7 @@ def private_questionnaire(request, year):
         form = QuestionnaireForm(nomcom=nomcom, user=request.user)
 
     return render_to_response(template,
-                              {'has_publickey': has_publickey,
-                               'form': form,
+                              {'form': form,
                                'questionnaire_response': questionnaire_response,
                                'message': message,
                                'nomcom': nomcom,

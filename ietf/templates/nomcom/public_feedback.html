@@ -31,7 +31,7 @@ table.nominees tr td {
   <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
 {% endif %}
 
-{% if has_publickey %}
+{% if nomcom|has_publickey %}
 
   <div class="js-info">
     Your browser has Javascript disabled. Please enable javascript and reload the page.
