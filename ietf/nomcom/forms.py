@@ -319,7 +319,7 @@ class MergeForm(BaseNomcomForm, forms.Form):
 
     def clean_primary_email(self):
         email = self.cleaned_data['primary_email']
-        nominees = Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(email__address=email)
+        nominees = Nominee.objects.get_by_nomcom(self.nomcom).filter(email__address=email)
         if not nominees:
             msg = "Does not exist a nomiee with this email"
             self._errors["primary_email"] = self.error_class([msg])
@@ -352,6 +352,8 @@ class MergeForm(BaseNomcomForm, forms.Form):
         secondary_emails = get_list(self.cleaned_data.get("secondary_emails"))
 
         primary_nominee = Nominee.objects.get_by_nomcom(self.nomcom).get(email__address=primary_email)
+        while primary_nominee.duplicated:
+            primary_nominee = primary_nominee.duplicated
         secondary_nominees = Nominee.objects.get_by_nomcom(self.nomcom).filter(email__address__in=secondary_emails)
         for nominee in secondary_nominees:
             # move nominations
@@ -451,6 +453,8 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
         # Add the nomination for a particular position
         nominee, created = Nominee.objects.get_or_create(email=email, nomcom=self.nomcom)
+        while nominee.duplicated:
+            nominee = nominee.duplicated
         nominee_position, nominee_position_created = NomineePosition.objects.get_or_create(position=position, nominee=nominee)
 
         # Complete nomination data
