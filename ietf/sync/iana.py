@@ -127,9 +127,11 @@ def update_history_with_changes(changes, send_email=True):
                   for s in State.objects.filter(used=True, type=StateType.objects.get(slug="draft-iana-review")))
     states["review"] = {
         "IANA Review Needed": slookup["need-rev"],
+        "IANA - Review Needed": slookup["need-rev"],
         "IANA OK - Actions Needed": slookup["ok-act"],
         "IANA OK - No Actions Needed": slookup["ok-noact"],
         "IANA Not OK": slookup["not-ok"],
+        "IANA - Not OK": slookup["not-ok"],
         "Version Changed - Review Needed": slookup["changed"],
         }
 
@@ -189,7 +191,7 @@ def update_history_with_changes(changes, send_email=True):
                     save_document_in_history(doc)
                     doc.set_state(state)
 
-                    if send_email:
+                    if send_email and (state != prev_state):
                         email_state_changed(None, doc, "IANA %s state changed to %s" % (kind, state.name))
                         email_owner(None, doc, doc.ad, system, "IANA %s state changed to %s" % (kind, state.name))
 
