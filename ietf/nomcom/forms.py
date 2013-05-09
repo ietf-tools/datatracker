@@ -307,7 +307,8 @@ class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
 
 class MergeForm(BaseNomcomForm, forms.Form):
 
-    secondary_emails = custom_fields.MultiEmailField(label="Secondary email address (remove this):")
+    secondary_emails = custom_fields.MultiEmailField(label="Secondary email addresses",
+        help_text="Provide a comma separated list of email addresses. Nominations already received with any of these email address will be moved to show under the primary address")
     primary_email = forms.EmailField(label="Primary email address",
                                      widget=forms.TextInput(attrs={'size': '40'}))
 
