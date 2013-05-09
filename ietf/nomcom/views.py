@@ -19,7 +19,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
 from ietf.name.models import NomineePositionState, FeedbackType
 
-from ietf.nomcom.decorators import member_required, private_key_required
+from ietf.nomcom.decorators import nomcom_member_required, nomcom_private_key_required
 from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
                                MergeForm, NomComTemplateForm, PositionForm,
                                PrivateKeyForm, EditNomcomForm, PendingFeedbackForm,
@@ -41,7 +41,7 @@ def index(request, year):
                                'template': template}, RequestContext(request))
 
 
-@member_required(role='member')
+@nomcom_member_required(role='member')
 def private_key(request, year):
     nomcom = get_nomcom_by_year(year)
     message = None
@@ -67,7 +67,7 @@ def private_key(request, year):
                                'selected': 'private_key'}, RequestContext(request))
 
 
-@member_required(role='member')
+@nomcom_member_required(role='member')
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
     all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom).not_duplicated()
@@ -133,7 +133,7 @@ def private_index(request, year):
                                'message': message}, RequestContext(request))
 
 
-@member_required(role='chair')
+@nomcom_member_required(role='chair')
 def send_reminder_mail(request, year):
     nomcom = get_nomcom_by_year(year)
     nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().filter(nomineeposition__state='pending').distinct()
@@ -166,7 +166,7 @@ def send_reminder_mail(request, year):
                                'message': message}, RequestContext(request))
 
 
-@member_required(role='chair')
+@nomcom_member_required(role='chair')
 def private_merge(request, year):
     nomcom = get_nomcom_by_year(year)
     message = None
@@ -211,7 +211,7 @@ def public_nominate(request, year):
     return nominate(request, year, True)
 
 
-@member_required(role='member')
+@nomcom_member_required(role='member')
 def private_nominate(request, year):
     return nominate(request, year, False)
 
@@ -254,7 +254,7 @@ def public_feedback(request, year):
     return feedback(request, year, True)
 
 
-@member_required(role='member')
+@nomcom_member_required(role='member')
 def private_feedback(request, year):
     return feedback(request, year, False)
 
@@ -309,7 +309,7 @@ def feedback(request, year, public):
                                'selected': 'feedback'}, RequestContext(request))
 
 
-@member_required(role='chair')
+@nomcom_member_required(role='chair')
 def private_questionnaire(request, year):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
@@ -381,8 +381,8 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
                                'selected': 'feedback'}, RequestContext(request))
 
 
-@member_required(role='member')
-@private_key_required
+@nomcom_member_required(role='member')
+@nomcom_private_key_required
 def view_feedback(request, year):
     nomcom = get_nomcom_by_year(year)
     nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().distinct()
@@ -394,8 +394,8 @@ def view_feedback(request, year):
                                'nomcom': nomcom}, RequestContext(request))
 
 
-@member_required(role='chair')
-@private_key_required
+@nomcom_member_required(role='chair')
+@nomcom_private_key_required
 def view_feedback_pending(request, year):
     nomcom = get_nomcom_by_year(year)
     message = None
@@ -428,8 +428,8 @@ def view_feedback_pending(request, year):
                                'nomcom': nomcom}, RequestContext(request))
 
 
-@member_required(role='member')
-@private_key_required
+@nomcom_member_required(role='member')
+@nomcom_private_key_required
 def view_feedback_nominee(request, year, nominee_id):
     nomcom = get_nomcom_by_year(year)
     nominee = get_object_or_404(Nominee, id=nominee_id)
@@ -443,7 +443,7 @@ def view_feedback_nominee(request, year, nominee_id):
                                'nomcom': nomcom}, RequestContext(request))
 
 
-@member_required(role='chair')
+@nomcom_member_required(role='chair')
 def edit_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
@@ -479,7 +479,7 @@ def edit_nomcom(request, year):
                                'selected': 'edit_nomcom'}, RequestContext(request))
 
 
-@member_required(role='chair')
+@nomcom_member_required(role='chair')
 def delete_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
     post_delete_redirect = reverse('nomcom_deleted')
@@ -495,7 +495,7 @@ def delete_nomcom(request, year):
                          extra_context=extra_context)
 
 
-@member_required(role='chair')
+@nomcom_member_required(role='chair')
 def list_templates(request, year):
     nomcom = get_nomcom_by_year(year)
     positions = nomcom.position_set.all()
@@ -509,7 +509,7 @@ def list_templates(request, year):
                                'nomcom': nomcom}, RequestContext(request))
 
 
-@member_required(role='chair')
+@nomcom_member_required(role='chair')
 def edit_template(request, year, template_id):
     nomcom = get_nomcom_by_year(year)
     return_url = request.META.get('HTTP_REFERER', None)
@@ -522,7 +522,7 @@ def edit_template(request, year, template_id):
                                         'nomcom': nomcom})
 
 
-@member_required(role='chair')
+@nomcom_member_required(role='chair')
 def list_positions(request, year):
     nomcom = get_nomcom_by_year(year)
     positions = nomcom.position_set.all()
@@ -534,7 +534,7 @@ def list_positions(request, year):
                                'nomcom': nomcom}, RequestContext(request))
 
 
-@member_required(role='chair')
+@nomcom_member_required(role='chair')
 def remove_position(request, year, position_id):
     nomcom = get_nomcom_by_year(year)
     try:
@@ -551,7 +551,7 @@ def remove_position(request, year, position_id):
                                'nomcom': nomcom}, RequestContext(request))
 
 
-@member_required(role='chair')
+@nomcom_member_required(role='chair')
 def edit_position(request, year, position_id=None):
     nomcom = get_nomcom_by_year(year)
     if position_id:
