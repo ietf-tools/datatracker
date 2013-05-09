@@ -107,10 +107,14 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
             message = ('error', 'This submission has been cancelled, modification is no longer possible')
         status = detail.status
         allow_edit = None
+    if detail.group_acronym and detail.revision == '00':
+        replaces = "Replaces draft"
+    else:
+        replaces = None
 
     if request.method == 'POST' and allow_edit:
         if request.POST.get('autopost', False):
-            auto_post_form = AutoPostForm(draft=detail, validation=validation, data=request.POST)
+            auto_post_form = AutoPostForm(draft=detail, validation=validation, replaces=replaces, data=request.POST)
             if auto_post_form.is_valid():
                 try:
                     preapproval = Preapproval.objects.get(name=detail.filename)
@@ -149,7 +153,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
             else:
                 return HttpResponseRedirect(urlreverse(draft_edit, None, kwargs={'submission_id': detail.submission_id }))
     else:
-        auto_post_form = AutoPostForm(draft=detail, validation=validation)
+        auto_post_form = AutoPostForm(draft=detail, validation=validation, replaces=replaces)
 
     show_notify_button = False
     if allow_edit == False or can_cancel == False:

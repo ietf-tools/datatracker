@@ -322,6 +322,7 @@ class AutoPostForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.draft = kwargs.pop('draft', None)
         self.validation = kwargs.pop('validation', None)
+        self.replaces = kwargs.pop('replaces', None)
         super(AutoPostForm, self).__init__(*args, **kwargs)
 
     def get_author_buttons(self):
