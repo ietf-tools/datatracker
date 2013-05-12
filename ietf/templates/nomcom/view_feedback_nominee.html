@@ -27,15 +27,6 @@
   <div class="yui-content">
     {% for ft in feedback_types %}
       <div id="#{{ ft.slug }}">
-        {% ifequal ft.slug "comment" %}
-          <b>Number of comments: {{ nominee.feedback_set.comments.count|default:"0" }}</b>
-        {% endifequal %}
-        {% ifequal ft.slug "questio" %}
-          <b>Number of questionnaires: {{ nominee.feedback_set.questionnaires.count|default:"0" }}</b>
-        {% endifequal %}
-        {% ifequal ft.slug "nomina" %}
-          <b>Number of nominations: {{ nominee.feedback_set.nominations.count|default:"0" }}</b>
-        {% endifequal %}
         {% for feedback in nominee.feedback_set.all %}
           {% ifequal feedback.type.slug ft.slug %}
             <div>

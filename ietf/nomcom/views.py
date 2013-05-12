@@ -386,11 +386,18 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
 def view_feedback(request, year):
     nomcom = get_nomcom_by_year(year)
     nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().distinct()
+    feedback_types = FeedbackType.objects.all()
+    nominees_feedback = {}
+    for nominee in nominees:
+        nominee_feedback = [(ft.name, nominee.feedback_set.by_type(ft.slug).count()) for ft in feedback_types]
+        nominees_feedback.update({nominee: nominee_feedback})
 
     return render_to_response('nomcom/view_feedback.html',
                               {'year': year,
                                'selected': 'view_feedback',
                                'nominees': nominees,
+                               'feedback_types': feedback_types,
+                               'nominees_feedback': nominees_feedback,
                                'nomcom': nomcom}, RequestContext(request))
 
 

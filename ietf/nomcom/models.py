@@ -101,7 +101,10 @@ class Nominee(models.Model):
         unique_together = ('email', 'nomcom')
 
     def __unicode__(self):
-        return u'%s' % self.email.formatted_email()
+        if self.email.person and self.email.person.name:
+            return u'%s <%s>' % (self.email.person.plain_name(), self.email.address)
+        else:
+            return self.email.address
 
 
 class NomineePosition(models.Model):
