@@ -188,10 +188,10 @@ can_edit_consensus = can_edit_base
 can_edit_shepherd = can_edit_base
 
 def can_edit_shepherd_writeup(doc, user):
-     if user.is_authenticated():
-         if Person.objects.filter(user=user).count():
-             return can_edit_base(doc,user) or (doc.shepherd==user.person)
-     return False
+    if user.is_authenticated():
+        if Person.objects.filter(user=user).count():
+            return can_edit_base(doc,user) or (doc.shepherd==user.person)
+    return False
 
 def nice_consensus(consensus):
     mapping = {
