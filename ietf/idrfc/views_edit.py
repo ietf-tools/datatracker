@@ -965,7 +965,7 @@ def edit_shepherd(request, name):
    
             login = request.user.get_profile()
             c = DocEvent(type="added_comment", doc=doc, by=login)
-            c.desc = "Document shepherd changed to "+doc.shepherd.name
+            c.desc = "Document shepherd changed to "+ (doc.shepherd.name if doc.shepherd else "(None)")
             c.save()
 
             return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
