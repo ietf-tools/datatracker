@@ -96,7 +96,7 @@ div.agenda-wg { margin-left: 30px; margin-top:0.5em; margin-bottom: 0.5em; width
 <div id="section6">
 {% for m in mgmt %}
 <h3>6.{{forloop.counter}} {{m.title|escape}}</h3>
-{% if user|in_group:"Area_Director,Secretariat" %}
+{% if user|in_group:"Area Director,IAB Chair,Secretariat" %}
 <pre>
 {{m.text|wordwrap:"76"}}
 </pre>
