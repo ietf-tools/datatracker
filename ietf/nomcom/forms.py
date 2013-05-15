@@ -586,8 +586,7 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                                    widget=forms.TextInput(attrs={'size': '40'}))
     nominee_email = forms.CharField(label='nominee email',
                                     widget=forms.TextInput(attrs={'size': '40'}))
-    nominator_name = forms.CharField(label='your name')
-    nominator_email = forms.CharField(label='your email')
+    nominator_email = forms.CharField(label='commenter email')
 
     comments = forms.CharField(label='Comments on this candidate',
                                widget=forms.Textarea())
@@ -612,25 +611,22 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
         fieldset = ['position_name',
                     'nominee_name',
                     'nominee_email',
-                    'nominator_name',
                     'nominator_email',
                     'comments']
 
         if self.public:
-            readonly_fields += ['nominator_name', 'nominator_email']
+            readonly_fields += ['nominator_email']
             fieldset.append('confirmation')
         else:
             help_text = """(Nomcom Chair/Member: please fill this in. Use your own email address if the person making the
                             comments wishes to be anonymous. The confirmation email will be sent to the address given here,
                             and the address will also be captured as part of the registered nomination.)"""
             self.fields['nominator_email'].help_text = help_text
-            self.fields['nominator_name'].required = False
             self.fields['nominator_email'].required = False
 
         author = get_user_email(self.user)
         if author:
             self.fields['nominator_email'].initial = author.address
-            self.fields['nominator_name'].initial = author.person.name
 
         if self.position and self.nominee:
             self.fields['position_name'].initial = self.position.name
@@ -699,7 +695,6 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
         fields = ('author',
                   'nominee_name',
                   'nominee_email',
-                  'nominator_name',
                   'nominator_email',
                   'confirmation',
                   'comments')
