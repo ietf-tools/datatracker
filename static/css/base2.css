@@ -249,6 +249,37 @@ div.info-message-error { border: 1px solid red; background-color: #ffeebb; paddi
     margin-left: 150px;
 }
 
+#feedbackformset .fieldWidget {
+    margin-left: 0px;
+}
+
+#feedbackformset .fieldWidget.defaultPos {
+    margin-left: 150px;
+}
+
+#feedbackformset ul {
+    padding: 0px;
+}
+
+#feedbackformset ul li {
+    display: inline;
+}
+
+#feedbackformset ul li label {
+    display: inline;
+    float: none;
+}
+
+#feedbackformset .baseform h3 {
+    margin-left: 12px;
+    margin-top: 24px;
+    margin-bottom: 0px;
+}
+
+#feedbackformset pre {
+    margin: 12px;
+}
+
 .baseform select,
 .baseform textarea,
 .baseform input {

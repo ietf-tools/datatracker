@@ -13,9 +13,11 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.person.models import Email
+from ietf.person.models import Email, Person
 from ietf.utils.pipe import pipe
-from ietf.utils.mail import send_mail_text
+from ietf.utils import unaccent
+from ietf.utils.mail import send_mail_text, send_mail
+
 
 MAIN_NOMCOM_TEMPLATE_PATH = '/nomcom/defaults/'
 QUESTIONNAIRE_TEMPLATE = 'position/questionnaire.txt'
@@ -157,10 +159,14 @@ def extract_body(payload):
 
 
 def parse_email(text):
-    msg = email.message_from_string(text.encode("utf-8"))
+    msg = email.message_from_string(text)
 
     # comment
-    body = extract_body(msg.get_payload())
+    #body = quopri.decodestring(extract_body(msg.get_payload()))
+    charset = msg.get_content_charset()
+    body = extract_body(msg.get_payload(decode=True))
+    if charset:
+        body = body.decode(charset)
 
     return msg['From'], msg['Subject'], body
 
@@ -235,3 +241,101 @@ def send_reminder_to_nominees(nominees):
     for nominee in nominees:
         for nominee_position in nominee.nomineeposition_set.pending():
             send_reminder_to_nominee(nominee_position)
+
+
+def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, author):
+    from ietf.nomcom.models import Nominee, NomineePosition
+
+    nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
+    nomcom_chair = nomcom.group.get_chair()
+    nomcom_chair_mail = nomcom_chair and nomcom_chair.email.address or None
+
+    # Create person and email if candidate email does't exist and send email
+    email, created_email = Email.objects.get_or_create(address=candidate_email)
+    if created_email:
+        email.person = Person.objects.create(name=candidate_name,
+                                             ascii=unaccent.asciify(candidate_name),
+                                             address=candidate_email)
+        email.save()
+
+    # Add the nomination for a particular position
+    nominee, created = Nominee.objects.get_or_create(email=email, nomcom=nomcom)
+    while nominee.duplicated:
+        nominee = nominee.duplicated
+    nominee_position, nominee_position_created = NomineePosition.objects.get_or_create(position=position, nominee=nominee)
+
+    if created_email:
+        # send email to secretariat and nomcomchair to warn about the new person
+        subject = 'New person is created'
+        from_email = settings.NOMCOM_FROM_EMAIL
+        to_email = [settings.NOMCOM_ADMIN_EMAIL]
+        context = {'email': email.address,
+                   'fullname': email.person.name,
+                   'person_id': email.person.id}
+        path = nomcom_template_path + INEXISTENT_PERSON_TEMPLATE
+        if nomcom_chair_mail:
+            to_email.append(nomcom_chair_mail)
+        send_mail(None, to_email, from_email, subject, path, context)
+
+    if nominee_position_created:
+        # send email to nominee
+        subject = 'IETF Nomination Information'
+        from_email = settings.NOMCOM_FROM_EMAIL
+        to_email = email.address
+        domain = Site.objects.get_current().domain
+        today = datetime.date.today().strftime('%Y%m%d')
+        hash = get_hash_nominee_position(today, nominee_position.id)
+        accept_url = reverse('nomcom_process_nomination_status',
+                              None,
+                              args=(get_year_by_nomcom(nomcom),
+                              nominee_position.id,
+                              'accepted',
+                              today,
+                              hash))
+        decline_url = reverse('nomcom_process_nomination_status',
+                              None,
+                              args=(get_year_by_nomcom(nomcom),
+                              nominee_position.id,
+                              'declined',
+                              today,
+                              hash))
+
+        context = {'nominee': email.person.name,
+                   'position': position.name,
+                   'domain': domain,
+                   'accept_url': accept_url,
+                   'decline_url': decline_url}
+
+        path = nomcom_template_path + NOMINEE_EMAIL_TEMPLATE
+        send_mail(None, to_email, from_email, subject, path, context)
+
+        # send email to nominee with questionnaire
+        if nomcom.send_questionnaire:
+            subject = '%s Questionnaire' % position
+            from_email = settings.NOMCOM_FROM_EMAIL
+            to_email = email.address
+            context = {'nominee': email.person.name,
+                      'position': position.name}
+            path = '%s%d/%s' % (nomcom_template_path,
+                                position.id, HEADER_QUESTIONNAIRE_TEMPLATE)
+            body = render_to_string(path, context)
+            path = '%s%d/%s' % (nomcom_template_path,
+                                position.id, QUESTIONNAIRE_TEMPLATE)
+            body += '\n\n%s' % render_to_string(path, context)
+            send_mail_text(None, to_email, from_email, subject, body)
+
+    # send emails to nomcom chair
+    subject = 'Nomination Information'
+    from_email = settings.NOMCOM_FROM_EMAIL
+    to_email = nomcom_chair_mail
+    context = {'nominee': email.person.name,
+               'nominee_email': email.address,
+               'position': position.name}
+
+    if author:
+        context.update({'nominator': author.person.name,
+                        'nominator_email': author.address})
+    path = nomcom_template_path + NOMINATION_EMAIL_TEMPLATE
+    send_mail(None, to_email, from_email, subject, path, context)
+
+    return nominee

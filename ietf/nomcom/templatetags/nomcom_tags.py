@@ -60,7 +60,7 @@ def formatted_email(address):
 
 
 @register.simple_tag
-def decrypt(string, request, year):
+def decrypt(string, request, year, plain=False):
     key = retrieve_nomcom_private_key(request, year)
 
     if not key:
@@ -79,4 +79,6 @@ def decrypt(string, request, year):
     if error:
         return '<-Encripted text [Your private key is invalid]->'
 
-    return linebreaksbr(out)
+    if not plain:
+        return linebreaksbr(out)
+    return out

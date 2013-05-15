@@ -5,7 +5,7 @@ import syslog
 from django.core.management.base import BaseCommand, CommandError
 
 from ietf.nomcom.utils import parse_email
-from ietf.nomcom.models import Nominee, NomCom, Feedback
+from ietf.nomcom.models import NomCom, Feedback
 
 
 class Command(BaseCommand):
@@ -19,7 +19,6 @@ class Command(BaseCommand):
         email = options.get('email', None)
         year = options.get('year', None)
         msg = None
-        nominee = None
         nomcom = None
         help_message = 'Usage: feeback_email --nomcom-year <nomcom-year> --email-file <email-file>'
 
@@ -38,16 +37,12 @@ class Command(BaseCommand):
             raise CommandError("NomCom %s does not exist or it isn't active" % year)
 
         by, subject, body = parse_email(msg)
+        body = 'Subject: %s\n\n%s' % (subject, body)
         name, addr = parseaddr(by)
-        try:
-            nominee = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().get(email__address__icontains=addr)
-        except Nominee.DoesNotExist:
-            pass
 
         feedback = Feedback(nomcom=nomcom,
+                            author=addr,
                             comments=body)
         feedback.save()
-        if nominee:
-            feedback.nominees.add(nominee)
 
         syslog.syslog(u"Read feedback email by %s" % by)

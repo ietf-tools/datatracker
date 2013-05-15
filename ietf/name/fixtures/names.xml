@@ -553,6 +553,12 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="offtopic" model="name.feedbacktype">
+        <field type="CharField" name="name">Offtopic</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="rst" model="name.dbtemplatetypename">
         <field type="CharField" name="name">reStructuredText</field>
         <field type="TextField" name="desc"></field>

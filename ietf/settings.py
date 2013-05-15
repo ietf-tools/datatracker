@@ -102,6 +102,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.RemoteUserMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.doc.XViewMiddleware',
     'ietf.middleware.SQLLogMiddleware',
     'ietf.middleware.SMTPExceptionMiddleware',
@@ -135,6 +136,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.admindocs',
     'django.contrib.humanize',
+    'django.contrib.messages',
     'south',
     'workflows',
     'permissions',
@@ -266,6 +268,8 @@ NOMCOM_FROM_EMAIL = DEFAULT_FROM_EMAIL
 NOMCOM_ADMIN_EMAIL = DEFAULT_FROM_EMAIL
 OPENSSL_COMMAND = '/usr/bin/openssl'
 DAYS_TO_EXPIRE_NOMINATION_LINK = ''
+DEFAULT_FEEDBACK_TYPE = 'offtopic'
+NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina']
 
 # Days from meeting to cut off dates on submit
 FIRST_CUTOFF_DAYS = 19

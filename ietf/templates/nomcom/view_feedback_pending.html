@@ -15,26 +15,40 @@
   <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
 {% endif %}
 
+{% if formset.forms %}
+{% if extra_step %}
+<p>Please, provide the following information about nominees to complete the classification of this feedback.</p>
+{% endif %}
+
 <div>
   <form id="feedbackformset" action="" method="post">{% csrf_token %}
+    <div class="sumit-row">
+    {% if extra_step %}
+    <input type="submit" value="Save feedback" name="end" />
+    <a href="{% url nomcom_view_feedback_pending year %}">Cancel and leave the following feedback unclassified</a>
+    {% else %}
+    <input type="submit" value="Classify" />
+    {% if default_type %}<input type="submit" name="move_to_default" value="Move all unclassified feedback to {{ default_type }}" />{% endif %}
+    {% endif %}
+    </div>
     {{ formset.management_form }}
     {% for form in formset.forms %}
-     <h3 class="ietf-divider" style="margin-bottom: 0px;">{{ form.instance.time|date:"Y-m-d" }} id:{{ form.instance.id }}</h3>
      {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
-     <table style="width: 100%;"><tr><td>
      <div class="baseform">
         <div class="fieldset">
-        <h2>Comment meta data</h2>
+        <h2>{{ form.instance.time|date:"Y-m-d" }} id:{{ form.instance.id }}</h2>
         {% for field in form %}
-      <div id="baseform-fieldname-{{ field.html_name }}"
+        <div id="baseform-fieldname-{{ field.html_name }}"
           {% if field.field.widget.is_hidden %}style="display: none;"{% endif %}
           class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
+        {% if extra_step %}
         <label for="id_{{ field.html_name }}">{{ field.label }}
         {% if field.field.required %}
           <span class="fieldRequired" title="Required">*</span>
         {% endif %}
         </label>
-        <div class="fieldWidget">
+        {% endif %}
+        <div class="fieldWidget{% if extra_step %} defaultPos{% endif %}">
         <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
         {{ field }}
         {{ field.errors }}
@@ -42,20 +56,27 @@
         <div class="endfield"></div>
       </div>
         {% endfor %}
+           <h3>Type</h3>
+           <pre>{{ form.feedback_type }}</pre>
+           <h3>Author</h3>
+           <pre>{{ form.instance.author }}</pre>
+           <h3>Feedback body</h3>
+           <pre>{% decrypt form.instance.comments request year 1 %}</pre>
         </div>
     </div>
-    </td><td style="width: 50%; vertical-align: top;">
-       <div class="baseform">
-         <div class="fieldset">
-           <h2>Comment body</h2>
-           <pre style="padding: 1em;">{% decrypt form.instance.comments request year %}</pre>
-         </div>
-       </div>
-    </td></tr></table>
     {% endfor %}
-    <div class="ietf-divider"></div>
-    <input type="submit" value="Submit" />
+    <div class="sumit-row">
+    {% if extra_step %}
+    <input type="submit" value="Save feedback" name="end" />
+    <a href="{% url nomcom_view_feedback_pending year %}">Cancel and leave the following feedback unclassified</a>
+    {% else %}
+    <input type="submit" value="Classify" />
+    {% if default_type %}<input type="submit" name="move_to_default" value="Move all unclassified feedback to {{ default_type }}" />{% endif %}
+    {% endif %}
+    </div>
   </form>
 </div>
-
+{% else %}
+<p>There is no pending feedback.</p>
+{% endif %}
 {% endblock %}

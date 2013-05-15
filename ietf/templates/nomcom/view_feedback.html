@@ -10,7 +10,7 @@
   <p><a href="{% url nomcom_view_feedback_pending year %}">Feedback pending</a></p>
 {% endif %}
 
-<h2>List of Nominees</h2>
+<h2>Feedback related to Nominees</h2>
 
 <table class="ietf-table ietf-doctable">
 <tr>
@@ -29,4 +29,21 @@
 {% endfor %}
 </table>
 
+{% if independent_feedback_types %}
+<h2>Feedback not related to Nominees</h2>
+<table class="ietf-table ietf-doctable">
+<tr>
+  <th></th>
+  {% for ft in independent_feedback_types %}
+      <th>{{ ft.name }}</th>
+  {% endfor %}
+</tr>
+<tr class="evenrow">
+  <td><a href="{% url nomcom_view_feedback_unrelated year %}">View feedback not related to nominees</td>
+  {% for count in independent_feedback %}
+    <td>{{ count }}</td>
+  {% endfor %}
+</tr>
+</table>
+{% endif %}
 {% endblock %}
