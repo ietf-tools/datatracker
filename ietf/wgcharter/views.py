@@ -1,6 +1,6 @@
-import re, os, string, datetime, shutil
+import re, os, string, datetime, shutil, textwrap
 
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
@@ -14,8 +14,9 @@ from django.utils.safestring import mark_safe
 from django.conf import settings
 from django.contrib import messages
 
-from ietf.utils.mail import send_mail_text, send_mail_preformatted
+from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role, role_required
 from ietf.iesg.models import TelechatDate
 from ietf.doc.models import *
@@ -23,7 +24,7 @@ from ietf.doc.utils import *
 from ietf.name.models import *
 from ietf.person.models import *
 from ietf.group.models import *
-from ietf.group.utils import save_group_in_history
+from ietf.group.utils import save_group_in_history, save_milestone_in_history
 from ietf.wgcharter.mails import *
 from ietf.wgcharter.utils import *
 
@@ -44,10 +45,10 @@ class ChangeStateForm(forms.Form):
 
 @role_required("Area Director", "Secretariat")
 def change_state(request, name, option=None):
-    """Change state of WG and charter, notifying parties as necessary
-    and logging the change as a comment."""
+    """Change state of charter, notifying parties as necessary and
+    logging the change as a comment."""
     charter = get_object_or_404(Document, type="charter", name=name)
-    wg = charter.group
+    group = charter.group
 
     chartering_type = get_chartering_type(charter)
 
@@ -75,17 +76,17 @@ def change_state(request, name, option=None):
                 if "-" not in charter_rev:
                     charter_rev = charter_rev + "-00"
             elif option == "abandon":
-                oldstate = wg.state_id
-                if oldstate in ("proposed","bof","unknown"):
+                oldstate = group.state
+                if oldstate.slug in ("proposed", "bof", "unknown"):
                     charter_state = State.objects.get(used=True, type="charter", slug="notrev")
                     #TODO : set an abandoned state and leave some comments here
-                    wg.state=GroupStateName.objects.get(slug='abandon')
-                    wg.save()
-                    e = ChangeStateGroupEvent(group=wg, type="changed_state")
-                    e.time = wg.time
+                    group.state = GroupStateName.objects.get(slug='abandon')
+                    group.save()
+                    e = ChangeStateGroupEvent(group=group, type="changed_state")
+                    e.time = group.time
                     e.by = login
-                    e.state_id = clean["state"].slug
-                    e.desc = "Group state changed to %s from %s" % clean["state"].name,oldstate
+                    e.state_id = group.state.slug
+                    e.desc = "Group state changed to %s from %s" % (group.state, oldstate)
                     e.save()
                     
                 else:
@@ -125,7 +126,7 @@ def change_state(request, name, option=None):
                 charter.save()
 
                 if message:
-                    email_secretariat(request, wg, "state-%s" % charter_state.slug, message)
+                    email_secretariat(request, group, "state-%s" % charter_state.slug, message)
 
                 email_state_changed(request, charter, "State changed to %s." % charter_state)
 
@@ -134,8 +135,8 @@ def change_state(request, name, option=None):
                         create_ballot_if_not_open(charter, login, "r-wo-ext")
                     else:
                         create_ballot_if_not_open(charter, login, "r-extrev")
-                    default_review_text(wg, charter, login)
-                    default_action_text(wg, charter, login)
+                    default_review_text(group, charter, login)
+                    default_action_text(group, charter, login)
                 elif charter_state.slug == "iesgrev":
                     create_ballot_if_not_open(charter, login, "approve")
 
@@ -152,10 +153,10 @@ def change_state(request, name, option=None):
             init = dict()
         elif option == "initcharter":
             hide = ['charter_state']
-            init = dict(initial_time=1, message='%s has initiated chartering of the proposed WG:\n "%s" (%s).' % (login.plain_name(), wg.name, wg.acronym))
+            init = dict(initial_time=1, message='%s has initiated chartering of the proposed %s:\n "%s" (%s).' % (login.plain_name(), group.type.name, group.name, group.acronym))
         elif option == "abandon":
             hide = ['initial_time', 'charter_state']
-            init = dict(message='%s has abandoned the chartering effort on the WG:\n "%s" (%s).' % (login.plain_name(), wg.name, wg.acronym))
+            init = dict(message='%s has abandoned the chartering effort on the %s:\n "%s" (%s).' % (login.plain_name(), group.type.name, group.name, group.acronym))
         else:
             hide = ['initial_time']
             s = charter.get_state()
@@ -168,27 +169,27 @@ def change_state(request, name, option=None):
         prev_charter_state = charter_hists[0].get_state()
 
     title = {
-        "initcharter": "Initiate chartering of WG %s" % wg.acronym,
-        "recharter": "Recharter WG %s" % wg.acronym,
-        "abandon": "Abandon effort on WG %s" % wg.acronym,
+        "initcharter": "Initiate chartering of %s %s" % (group.acronym, group.type.name),
+        "recharter": "Recharter %s %s" % (group.acronym, group.type.name),
+        "abandon": "Abandon effort on %s %s" % (group.acronym, group.type.name),
         }.get(option)
     if not title:
-        title = "Change chartering state of WG %s" % wg.acronym
+        title = "Change chartering state of %s %s" % (group.acronym, group.type.name)
 
     def state_pk(slug):
         return State.objects.get(used=True, type="charter", slug=slug).pk
 
     info_msg = {
-        state_pk("infrev"): 'The WG "%s" (%s) has been set to Informal IESG review by %s.' % (wg.name, wg.acronym, login.plain_name()),
-        state_pk("intrev"): 'The WG "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat and inform the IAB.' % (wg.name, wg.acronym, login.plain_name()),
-        state_pk("extrev"): 'The WG "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (wg.name, wg.acronym, login.plain_name()),
+        state_pk("infrev"): 'The %s "%s" (%s) has been set to Informal IESG review by %s.' % (group.type.name, group.name, group.acronym, login.plain_name()),
+        state_pk("intrev"): 'The %s "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat and inform the IAB.' % (group.type.name, group.name, group.acronym, login.plain_name()),
+        state_pk("extrev"): 'The %s "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (group.type.name, group.name, group.acronym, login.plain_name()),
         }
 
     states_for_ballot_wo_extern = State.objects.filter(used=True, type="charter", slug="intrev").values_list("pk", flat=True)
 
     return render_to_response('wgcharter/change_state.html',
                               dict(form=form,
-                                   doc=wg.charter,
+                                   doc=group.charter,
                                    login=login,
                                    option=option,
                                    prev_charter_state=prev_charter_state,
@@ -340,8 +341,8 @@ class UploadForm(forms.Form):
     def clean_txt(self):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
-    def save(self, wg, rev):
-        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (wg.charter.canonical_name(), rev))
+    def save(self, group, rev):
+        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (group.charter.canonical_name(), rev))
         with open(filename, 'wb') as destination:
             if self.cleaned_data['txt']:
                 destination.write(self.cleaned_data['txt'])
@@ -356,7 +357,7 @@ def submit(request, name=None, acronym=None, option=None):
     elif acronym:
         name = "charter-ietf-" + acronym
     charter = get_object_or_404(Document, type="charter", name=name)
-    wg = charter.group
+    group = charter.group
 
     login = request.user.get_profile()
 
@@ -378,7 +379,7 @@ def submit(request, name=None, acronym=None, option=None):
         if form.is_valid():
             save_document_in_history(charter)
             # Also save group history so we can search for it
-            save_group_in_history(wg)
+            save_group_in_history(group)
 
             charter.rev = next_rev
 
@@ -388,7 +389,7 @@ def submit(request, name=None, acronym=None, option=None):
             e.save()
             
             # Save file on disk
-            form.save(wg, charter.rev)
+            form.save(group, charter.rev)
 
             charter.time = datetime.datetime.now()
             charter.save()
@@ -419,7 +420,7 @@ def submit(request, name=None, acronym=None, option=None):
     return render_to_response('wgcharter/submit.html',
                               {'form': form,
                                'next_rev': next_rev,
-                               'wg': wg },
+                               'group': group },
                               context_instance=RequestContext(request))
 
 class AnnouncementTextForm(forms.Form):
@@ -432,19 +433,20 @@ class AnnouncementTextForm(forms.Form):
 def announcement_text(request, name, ann):
     """Editing of announcement text"""
     charter = get_object_or_404(Document, type="charter", name=name)
-    wg = charter.group
+    group = charter.group
 
     login = request.user.get_profile()
 
-    if ann == "action":
-        existing = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
-    elif ann == "review":
-        existing = charter.latest_event(WriteupDocEvent, type="changed_review_announcement")
+    if ann in ("action", "review"):
+        existing = charter.latest_event(WriteupDocEvent, type="changed_%s_announcement" % ann)
     if not existing:
         if ann == "action":
-            existing = default_action_text(wg, charter, login)
+            existing = default_action_text(group, charter, login)
         elif ann == "review":
-            existing = default_review_text(wg, charter, login)
+            existing = default_review_text(group, charter, login)
+
+    if not existing:
+        raise Http404
 
     form = AnnouncementTextForm(initial=dict(announcement_text=existing.text))
 
@@ -456,7 +458,7 @@ def announcement_text(request, name, ann):
                 e = WriteupDocEvent(doc=charter, by=login)
                 e.by = login
                 e.type = "changed_%s_announcement" % ann
-                e.desc = "WG %s text was changed" % ann
+                e.desc = "%s %s text was changed" % (group.type.name, ann)
                 e.text = t
                 e.save()
                 
@@ -470,20 +472,14 @@ def announcement_text(request, name, ann):
 
         if "regenerate_text" in request.POST:
             if ann == "action":
-                e = default_action_text(wg, charter, login)
+                e = default_action_text(group, charter, login)
             elif ann == "review":
-                e = default_review_text(wg, charter, login)
+                e = default_review_text(group, charter, login)
             # make sure form has the updated text
             form = AnnouncementTextForm(initial=dict(announcement_text=e.text))
 
         if "send_text" in request.POST and form.is_valid():
-            msg = form.cleaned_data['announcement_text']
-            import email
-            parsed_msg = email.message_from_string(msg.encode("utf-8"))
-
-            send_mail_text(request, parsed_msg["To"],
-                           parsed_msg["From"], parsed_msg["Subject"],
-                           parsed_msg.get_payload())
+            send_mail_preformatted(request, form.cleaned_data['announcement_text'])
             messages.success(request, "The email To: '%s' with Subjet: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
             return redirect('doc_writeup', name=charter.name)
 
@@ -505,7 +501,6 @@ class BallotWriteupForm(forms.Form):
 def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
     charter = get_object_or_404(Document, type="charter", name=name)
-    wg = charter.group
 
     ballot = charter.latest_event(BallotDocEvent, type="created_ballot")
     if not ballot:
@@ -573,13 +568,13 @@ def ballot_writeupnotes(request, name):
 def approve(request, name):
     """Approve charter, changing state, fixing revision, copying file to final location."""
     charter = get_object_or_404(Document, type="charter", name=name)
-    wg = charter.group
+    group = charter.group
 
     login = request.user.get_profile()
 
     e = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     if not e:
-        announcement = default_action_text(wg, charter, login).text
+        announcement = default_action_text(group, charter, login).text
     else:
         announcement = e.text
 
@@ -601,23 +596,22 @@ def approve(request, name):
         change_description = e.desc
 
         new_state = GroupStateName.objects.get(slug="active")
-        if wg.state != new_state:
-            # update history with current state
-            save_group_in_history(wg)
-            # change wg state and save the wg
-            prev_state = wg.state
-            wg.state = new_state
-            wg.time = e.time
-            wg.save()
+        if group.state != new_state:
+            save_group_in_history(group)
+            prev_state = group.state
+            group.state = new_state
+            group.time = e.time
+            group.save()
+
             # create an event for the wg state change, too
-            e = ChangeStateGroupEvent(group=wg, type="changed_state")
-            e.time = wg.time
+            e = ChangeStateGroupEvent(group=group, type="changed_state")
+            e.time = group.time
             e.by = login
             e.state_id = "active"
             e.desc = "Charter approved, group active"
             e.save()
-            # update the change description for the email
-            change_description += " and WG state has been changed to %s" % new_state.name
+
+            change_description += " and %s state has been changed to %s" % (group.type.name, new_state.name)
 
         e = log_state_changed(request, charter, login, prev_charter_state)
 
@@ -627,7 +621,9 @@ def approve(request, name):
             new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
             shutil.copy(old, new)
         except IOError:
-            raise Http404("Charter text %s" % filename)
+            return HttpResponse("There was an error copying %s to %s" %
+                                ('%s-%s.txt' % (charter.canonical_name(), charter.rev),
+                                 '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev))))
 
         e = NewRevisionDocEvent(doc=charter, by=login, type="new_revision")
         e.rev = next_approved_revision(charter.rev)
@@ -638,7 +634,57 @@ def approve(request, name):
         charter.time = e.time
         charter.save()
 
-        email_secretariat(request, wg, "state-%s" % new_charter_state.slug, change_description)
+        email_secretariat(request, group, "state-%s" % new_charter_state.slug, change_description)
+
+        # move milestones over
+        milestones_to_delete = list(group.groupmilestone_set.filter(state__in=("active", "review")))
+
+        for m in group.groupmilestone_set.filter(state="charter"):
+            # see if we got this milestone already (i.e. it was copied
+            # verbatim to the charter)
+            found = False
+            for i, o in enumerate(milestones_to_delete):
+                if o.desc == m.desc and o.due == m.due and set(o.docs.all()) == set(m.docs.all()):
+                    found = True
+                    break
+
+            if found:
+                # keep existing, whack charter milestone
+                if not o.state_id == "active":
+                    save_milestone_in_history(o)
+                    o.state_id = "active"
+                    o.save()
+                    MilestoneGroupEvent.objects.create(
+                        group=group, type="changed_milestone", by=login,
+                        desc="Changed milestone \"%s\", set state to active from review" % o.desc,
+                        milestone=o)
+
+                del milestones_to_delete[i]
+
+                # don't generate a DocEvent for this, it's implicit in the approval event
+                save_milestone_in_history(m)
+                m.state_id = "deleted"
+                m.save()
+            else:
+                # move charter milestone
+                save_milestone_in_history(m)
+                m.state_id = "active"
+                m.save()
+
+                MilestoneGroupEvent.objects.create(
+                    group=group, type="changed_milestone", by=login,
+                    desc="Added milestone \"%s\", due %s, from approved charter" % (m.desc, m.due),
+                    milestone=m)
+
+        for m in milestones_to_delete:
+            save_milestone_in_history(m)
+            m.state_id = "deleted"
+            m.save()
+
+            MilestoneGroupEvent.objects.create(
+                group=group, type="changed_milestone", by=login,
+                desc="Deleted milestone \"%s\", not present in approved charter" % m.desc,
+                milestone=m)
 
         # send announcement
         send_mail_preformatted(request, announcement)
@@ -647,7 +693,61 @@ def approve(request, name):
     
     return render_to_response('wgcharter/approve.html',
                               dict(charter=charter,
-                                   announcement=announcement,
-                                   wg=wg),
+                                   announcement=announcement),
                               context_instance=RequestContext(request))
 
+def charter_with_milestones_txt(request, name, rev):
+    charter = get_object_or_404(Document, type="charter", docalias__name=name)
+
+    revision_event = charter.latest_event(NewRevisionDocEvent, type="new_revision", rev=rev)
+    if not revision_event:
+        return HttpResponseNotFound("Revision %s not found in database" % rev)
+
+    # read charter text
+    c = find_history_active_at(charter, revision_event.time) or charter
+    filename = '%s-%s.txt' % (c.canonical_name(), rev)
+
+    charter_text = ""
+
+    try:
+        with open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
+            charter_text = f.read()
+    except IOError:
+        charter_text = "Error reading charter text %s" % filename
+
+
+    # find milestones
+
+    chartering = "-" in rev
+    if chartering:
+        need_state = "charter"
+    else:
+        need_state = "active"
+
+    # slight complication - we can assign milestones to a revision up
+    # until the point where the next superseding revision is
+    # published, so that time shall be our limit
+    e = charter.docevent_set.filter(time__gt=revision_event.time, type="new_revision").order_by("time")
+    if not chartering:
+        e = e.exclude(newrevisiondocevent__rev__contains="-")
+
+    if e:
+        # subtract a margen of error
+        just_before_next_rev = e[0].time - datetime.timedelta(seconds=5)
+    else:
+        just_before_next_rev = datetime.datetime.now()
+
+    wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent=" " * 11, width=80, break_long_words=False)
+
+    milestones = []
+    for m in charter.chartered_group.groupmilestone_set.all():
+        mh = find_history_active_at(m, just_before_next_rev)
+        if mh and mh.state_id == need_state:
+            mh.desc_filled = wrapper.fill(mh.desc)
+            milestones.append(mh)
+
+    return render_to_response('wgcharter/charter_with_milestones.txt',
+                              dict(charter_text=charter_text,
+                                   milestones=milestones),
+                              context_instance=RequestContext(request),
+                              mimetype="text/plain")

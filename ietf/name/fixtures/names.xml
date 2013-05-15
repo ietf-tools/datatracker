@@ -411,35 +411,29 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="no" model="name.groupballotpositionname">
-        <field type="CharField" name="name">No</field>
+    <object pk="active" model="name.groupmilestonestatename">
+        <field type="CharField" name="name">Active</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">1</field>
     </object>
-    <object pk="yes" model="name.groupballotpositionname">
-        <field type="CharField" name="name">Yes</field>
+    <object pk="deleted" model="name.groupmilestonestatename">
+        <field type="CharField" name="name">Deleted</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">2</field>
     </object>
-    <object pk="abstain" model="name.groupballotpositionname">
-        <field type="CharField" name="name">Abstain</field>
+    <object pk="review" model="name.groupmilestonestatename">
+        <field type="CharField" name="name">For review</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">3</field>
     </object>
-    <object pk="block" model="name.groupballotpositionname">
-        <field type="CharField" name="name">Block</field>
+    <object pk="charter" model="name.groupmilestonestatename">
+        <field type="CharField" name="name">Chartering/rechartering</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="norecord" model="name.groupballotpositionname">
-        <field type="CharField" name="name">No record</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">4</field>
     </object>
     <object pk="bof" model="name.groupstatename">
         <field type="CharField" name="name">BOF</field>

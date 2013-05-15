@@ -99,9 +99,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% ifequal stream_info.stream.name "IETF" %}
   <tr>
      <td>IETF State:</td>
-     <td>{{ stream_info.state.name }} ({{ stream_info.streamed.get_group }}) 
-	{% if stream_info.tags %}<br /><i>{% for tag in stream_info.tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
-     </td>
+     <td class="stream-state">{{ stream_info.state.name }} ({{ stream_info.streamed.get_group }})
+	{% if stream_info.tags %}<br /><i>{% for tag in stream_info.tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</i>{% endif %}
+        {% if milestones %}{% for m in milestones %}<span title="In {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>{% endfor %}{% endif %}
+      </td>
   </tr>
 {% else %}
    {% if stream_info.stream %}
@@ -109,7 +110,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <td>{{ stream_info.stream.name }} status:</td>
       <td>
 	 {{ stream_info.state.name }} {% if stream_info.streamed.get_group %}({{ stream_info.streamed.get_group }}) {% endif %}
-	 {% if stream_info.tags %}<br /><i>{% for tag in stream_info.tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+	 {% if stream_info.tags %}<br /><i>{% for tag in stream_info.tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</i>{% endif %}
       </td>
    </tr>
    {% endif %}

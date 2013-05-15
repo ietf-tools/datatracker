@@ -40,7 +40,9 @@ def stream_state(context, doc):
 
     data.update({'workflow': workflow,
                  'draft': draft,
-                 'state': state})
+                 'state': state,
+                 'milestones': draft.groupmilestone_set.filter(state="active")
+                 })
 
     return data
 

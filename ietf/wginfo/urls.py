@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2008, All Rights Reserved
 
 from django.conf.urls.defaults import patterns, include
-from ietf.wginfo import views, edit
+from ietf.wginfo import views, edit, milestones
 from django.views.generic.simple import redirect_to
 
 
@@ -21,11 +21,14 @@ urlpatterns = patterns('',
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/documents/txt/$', views.wg_documents_txt),
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/$', views.wg_documents_html, None, "wg_docs"),
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/charter/$', views.wg_charter, None, 'wg_charter'),
-     (r'^(?P<acronym>[A-Za-z0-9-]+)/charter/', include('ietf.wgcharter.urls')),
-     (r'^(?P<acronym>[a-zA-Z0-9-]+)/history/', views.history),
-     (r'^(?P<acronym>[a-zA-Z0-9-]+)/edit/', edit.edit, {'action': "edit"}, "wg_edit"),
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/init-charter/', edit.submit_initial_charter, None, "wg_init_charter"),
-     (r'^(?P<acronym>[a-zA-Z0-9-]+)/conclude/', edit.conclude, None, "wg_conclude"),
+     (r'^(?P<acronym>[a-zA-Z0-9-]+)/history/$', views.history),
+     (r'^(?P<acronym>[a-zA-Z0-9-]+)/edit/$', edit.edit, {'action': "edit"}, "wg_edit"),
+     (r'^(?P<acronym>[a-zA-Z0-9-]+)/conclude/$', edit.conclude, None, "wg_conclude"),
+     (r'^(?P<acronym>[a-zA-Z0-9-]+)/milestones/$', milestones.edit_milestones, {'milestone_set': "current"}, "wg_edit_milestones"),
+     (r'^(?P<acronym>[a-zA-Z0-9-]+)/milestones/charter/$', milestones.edit_milestones, {'milestone_set': "charter"}, "wg_edit_charter_milestones"),
+     (r'^(?P<acronym>[a-zA-Z0-9-]+)/milestones/charter/reset/$', milestones.reset_charter_milestones, None, "wg_reset_charter_milestones"),
+     (r'^(?P<acronym>[a-zA-Z0-9-]+)/ajax/searchdocs/$', milestones.ajax_search_docs, None, "wg_ajax_search_docs"),
      (r'^(?P<acronym>[^/]+)/management/', include('ietf.wgchairs.urls')),
 
 )

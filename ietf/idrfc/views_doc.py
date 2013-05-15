@@ -150,10 +150,17 @@ def document_main(request, name, rev=None):
             else:
                 ballot_summary = "No active ballot found."
 
+        chartering = get_chartering_type(doc)
+
+        # inject milestones from group
+        milestones = None
+        if chartering and not snapshot:
+            milestones = doc.group.groupmilestone_set.filter(state="charter")
+
         return render_to_response("idrfc/document_charter.html",
                                   dict(doc=doc,
                                        top=top,
-                                       chartering=get_chartering_type(doc),
+                                       chartering=chartering,
                                        content=content,
                                        txt_url=settings.CHARTER_TXT_URL + filename,
                                        revisions=revisions,
@@ -161,6 +168,7 @@ def document_main(request, name, rev=None):
                                        telechat=telechat,
                                        ballot_summary=ballot_summary,
                                        group=group,
+                                       milestones=milestones,
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -237,35 +245,36 @@ def document_history(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
     top = render_document_top(request, doc, "history", name)
 
-    diff_documents = [ doc ]
-    diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
-
     # pick up revisions from events
     diff_revisions = []
-    seen = set()
 
     diffable = name.startswith("draft") or name.startswith("charter") or name.startswith("conflict-review") or name.startswith("status-change")
-
     if diffable:
+        diff_documents = [ doc ]
+        diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
+
+        seen = set()
         for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents).select_related('doc').order_by("-time", "-id"):
-            if not (e.doc.name, e.rev) in seen:
-                seen.add((e.doc.name, e.rev))
+            if (e.doc.name, e.rev) in seen:
+                continue
 
-                url = ""
-                if name.startswith("charter"):
-                    h = find_history_active_at(e.doc, e.time)
-                    url = settings.CHARTER_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
-                elif name.startswith("conflict-review"):
-                    h = find_history_active_at(e.doc, e.time)
-                    url = settings.CONFLICT_REVIEW_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
-                elif name.startswith("status-change"):
-                    h = find_history_active_at(e.doc, e.time)
-                    url = settings.STATUS_CHANGE_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
-                elif name.startswith("draft"):
-                    # rfcdiff tool has special support for IDs
-                    url = e.doc.name + "-" + e.rev
+            seen.add((e.doc.name, e.rev))
 
-                diff_revisions.append((e.doc.name, e.rev, e.time, url))
+	    url = ""
+	    if name.startswith("charter"):
+		h = find_history_active_at(e.doc, e.time)
+		url = settings.CHARTER_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
+	    elif name.startswith("conflict-review"):
+		h = find_history_active_at(e.doc, e.time)
+		url = settings.CONFLICT_REVIEW_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
+	    elif name.startswith("status-change"):
+		h = find_history_active_at(e.doc, e.time)
+		url = settings.STATUS_CHANGE_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
+	    elif name.startswith("draft"):
+		# rfcdiff tool has special support for IDs
+		url = e.doc.name + "-" + e.rev
+
+            diff_revisions.append((e.doc.name, e.rev, e.time, url))
 
     # grab event history
     events = doc.docevent_set.all().order_by("-time", "-id").select_related("by")
@@ -533,6 +542,7 @@ def document_main_idrfc(request, name, tab):
                                'doc':doc, 'info':info, 'tab':tab,
 			       'include_text':include_text(request),
                                'stream_info': get_full_info_for_draft(id),
+                               'milestones': id.groupmilestone_set.filter(state="active"),
                                'versions':versions, 'history':history},
                               context_instance=RequestContext(request));
 

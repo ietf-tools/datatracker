@@ -1,3 +1,14 @@
+ietfdb (4.46) ietf; urgency=medium
+
+    This is a major feature release, which introduces datatracker support
+    for milestone management.  WG Chairs will, if they are logged in, see
+    an 'Add or edit milestones' button on the WG's Charter page in the
+    datatracker, just below the charter text, and Area Directors and
+    Secretariat staff will see a new link 'Milestones' in the left-hand
+    menu-bar, leading to a page which lists Milestones Needing Review.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 May 2013 21:50:09 +0200
+
 ietfdb (4.45) ietf; urgency=medium
 
   This release contains bugfixes and some minor features.

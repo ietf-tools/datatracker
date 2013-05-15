@@ -121,6 +121,17 @@ usual, with re-pointing the symlink and restarting apache.
 Additional Version-Specific Instructions
 ========================================
 
+Version 4.46
+------------
+
+Before you run step 3 (migration) of the general instructions, please run some specific
+initial migrations with the a --fake argument:
+
+      cd $releasenumber
+      PYTHONPATH=$PWD ietf/manage.py migrate group 0001 --fake
+      cd ..
+
+
 Version 4.42
 ------------
 

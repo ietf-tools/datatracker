@@ -20,7 +20,7 @@ from workflows.models import Transition
 
 from ietf.doc.models import WriteupDocEvent
 from ietf.person.models import Person, Email
-from ietf.group.models import Role, RoleName
+from ietf.group.models import Group, Role, RoleName
 from ietf.group.utils import save_group_in_history
 from ietf.name.models import DocTagName
 
@@ -183,7 +183,7 @@ class RemoveDelegateForm(RelatedWGForm):
 
     def save(self):
         delegates = self.cleaned_data.get('delete')
-        save_group_in_history(self.wg)
+        save_group_in_history(Group.objects.get(pk=self.wg.pk))
         WGDelegate.objects.filter(pk__in=delegates).delete()
         self.set_message('success', 'Delegates removed')
 
@@ -284,7 +284,7 @@ class AddDelegateForm(RelatedWGForm):
             e = Email.objects.get(address=self.cleaned_data.get('email'))
             if not Role.objects.filter(name="delegate", group=self.wg, person=person, email=e):
                 created = True
-                save_group_in_history(self.wg)
+                save_group_in_history(Group.objects.get(pk=self.wg.pk))
                 delegate, _ = Role.objects.get_or_create(
                     name=RoleName.objects.get(slug="delegate"), group=self.wg, person=e.person, email=e)
         else:
