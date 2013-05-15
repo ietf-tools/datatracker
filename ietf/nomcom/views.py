@@ -12,8 +12,9 @@ from django.template.loader import render_to_string
 from django.utils import simplejson
 from django.db.models import Count, Q
 from django.forms.models import modelformset_factory, inlineformset_factory
+from django.contrib.sites.models import Site
 
-from ietf.utils.mail import send_mail
+from ietf.utils.mail import send_mail_text
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
@@ -25,9 +26,9 @@ from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
                                PrivateKeyForm, EditNomcomForm, PendingFeedbackForm,
                                ReminderDatesForm)
 from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates
-from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
+from ietf.nomcom.utils import (get_nomcom_by_year, get_year_by_nomcom, HOME_TEMPLATE,
                                store_nomcom_private_key, get_hash_nominee_position,
-                               NOMINEE_REMINDER_TEMPLATE)
+                               NOMINEE_REMINDER_TEMPLATE, QUESTIONNAIRE_TEMPLATE)
 
 
 def index(request, year):
@@ -149,11 +150,37 @@ def send_reminder_mail(request, year):
         if selected_nominees:
             subject = 'IETF Nomination Information'
             from_email = settings.NOMCOM_FROM_EMAIL
+            domain = Site.objects.get_current().domain
+            today = datetime.date.today().strftime('%Y%m%d')
             for nominee in nominees:
                 to_email = nominee.email.address
-                positions = ', '.join([nominee_position.position.name for nominee_position in nominee.nomineeposition_set.pending()])
-                context = {'positions': positions}
-                send_mail(None, to_email, from_email, subject, mail_path, context)
+                for nominee_position in nominee.nomineeposition_set.pending():
+                    hash = get_hash_nominee_position(today, nominee_position.id)
+                    accept_url = reverse('nomcom_process_nomination_status',
+                                          None,
+                                          args=(get_year_by_nomcom(nomcom),
+                                          nominee_position.id,
+                                          'accepted',
+                                          today,
+                                          hash))
+                    decline_url = reverse('nomcom_process_nomination_status',
+                                          None,
+                                          args=(get_year_by_nomcom(nomcom),
+                                          nominee_position.id,
+                                          'declined',
+                                          today,
+                                          hash))
+
+                    context = {'nominee': nominee,
+                               'position': nominee_position.position,
+                               'domain': domain,
+                               'accept_url': accept_url,
+                               'decline_url': decline_url}
+                    body = render_to_string(mail_path, context)
+                    path = '%s%d/%s' % (nomcom_template_path, nominee_position.position.id, QUESTIONNAIRE_TEMPLATE)
+                    body += '\n\n%s' % render_to_string(path, context)
+                    send_mail_text(None, to_email, from_email, subject, body)
+
             message = ('success', 'An query has been sent to each person, asking them to accept (or decline) the nominations')
         else:
             message = ('warning', "Please, select some nominee")

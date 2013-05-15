@@ -103,11 +103,13 @@ $position: Position</field>
         <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
         <field type="TextField" name="content">Hi,
 
-You have been nominated for the positions: $positions
+You have been nominated for the position of $position.
 
-The NomCom would appreciate receiving an indication of whether or not you accept this nomination to stand for consideration as a candidate for these positions.
+The NomCom would appreciate receiving an indication of whether or not you accept this nomination to stand for consideration as a candidate for this position.
 
-If you accept, you will need to fill out a questionnaire.  You will receive the questionnaire by email
+You can accept the nomination via web going to the following link http://$domain$accept_url or decline the nomination going the following link http://$domain$decline_url
+
+If you accept, you will need to fill out a questionnaire.
 
 Best regards,</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
@@ -116,8 +118,10 @@ Best regards,</field>
         <field type="CharField" name="path">/nomcom/defaults/email/nomination_receipt.txt</field>
         <field type="CharField" name="title">Email sent to nominator to get a confirmation mail containing feedback in cleartext</field>
         <field type="TextField" name="variables">$nominee: Full name of the nominee
-$position: Nomination position
-$comments: Candidate's Qualifications for the Position</field>
+$position: Name of the position
+$domain: Server domain
+$accept_url: Url hash to accept nominations
+$decline_url: Url hash to decline nominations</field>
         <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
         <field type="TextField" name="content">Hi,
 
