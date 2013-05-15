@@ -121,7 +121,7 @@ usual, with re-pointing the symlink and restarting apache.
 Additional Version-Specific Instructions
 ========================================
 
-Version 4.46
+Version 4.50
 ------------
 
 Before you run step 3 (migration) of the general instructions, please run some specific
