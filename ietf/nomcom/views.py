@@ -23,8 +23,8 @@ from ietf.name.models import NomineePositionState, FeedbackType
 from ietf.nomcom.decorators import nomcom_member_required, nomcom_private_key_required
 from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
                                MergeForm, NomComTemplateForm, PositionForm,
-                               PrivateKeyForm, EditNomcomForm, PendingFeedbackForm,
-                               ReminderDatesForm, FullFeedbackFormSet)
+                               PrivateKeyForm, EditNomcomForm, EditNomineeForm,
+                               PendingFeedbackForm, ReminderDatesForm, FullFeedbackFormSet)
 from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates
 from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
                                get_hash_nominee_position, send_reminder_to_nominees,
@@ -509,6 +509,30 @@ def view_feedback_nominee(request, year, nominee_id):
                                'selected': 'view_feedback',
                                'nominee': nominee,
                                'feedback_types': feedback_types,
+                               'nomcom': nomcom}, RequestContext(request))
+
+
+@nomcom_member_required(role='chair')
+def edit_nominee(request, year, nominee_id):
+    nomcom = get_nomcom_by_year(year)
+    nominee = get_object_or_404(Nominee, id=nominee_id)
+    message = None
+
+    if request.method == 'POST':
+        form = EditNomineeForm(request.POST,
+                               instance=nominee)
+        if form.is_valid():
+            form.save()
+            message = ('success', 'The nominee has been changed')
+    else:
+        form = EditNomineeForm(instance=nominee)
+
+    return render_to_response('nomcom/edit_nominee.html',
+                              {'year': year,
+                               'selected': 'index',
+                               'nominee': nominee,
+                               'form': form,
+                               'message': message,
                                'nomcom': nomcom}, RequestContext(request))
 
 

@@ -108,7 +108,7 @@ replied to the nomination notification they have received.){% endif %}</p>
           {% if is_chair %}
             <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"/></td>
           {% endif %}
-          <td>{{ np.nominee }}</td>
+          <td>{{ np.nominee }}{% if is_chair %} <a href="{% url nomcom_edit_nominee year np.nominee.id %}">(edit)</a>{% endif %}</td>
           <td>{{ np.position.name }}</td>
           <td>{{ np.state }}</td>
           <td>{{ np.questionnaires|yesno:"Yes,No,No" }}

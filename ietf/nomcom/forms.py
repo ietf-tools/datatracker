@@ -313,7 +313,7 @@ class MergeForm(BaseNomcomForm, forms.Form):
 
     def clean_primary_email(self):
         email = self.cleaned_data['primary_email']
-        nominees = Nominee.objects.get_by_nomcom(self.nomcom).filter(email__address=email)
+        nominees = Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(email__address=email)
         if not nominees:
             msg = "Does not exist a nomiee with this email"
             self._errors["primary_email"] = self.error_class([msg])
@@ -807,8 +807,7 @@ class MutableFeedbackForm(forms.ModelForm):
                 nominee=nominee,
                 comments=feedback,
                 nominator_email=nominator_email,
-                user=self.user,
-                )
+                user=self.user)
             return feedback
         else:
             feedback.save()
@@ -827,3 +826,45 @@ class FullFeedbackFormSet(forms.models.BaseModelFormSet):
     form = MutableFeedbackForm
     can_order = False
     can_delete = False
+
+
+class EditNomineeForm(forms.ModelForm):
+
+    nominee_email = forms.EmailField(label="Nominee email",
+                                     widget=forms.TextInput(attrs={'size': '40'}))
+
+    def __init__(self, *args, **kwargs):
+        super(EditNomineeForm, self).__init__(*args, **kwargs)
+        self.fields['nominee_email'].initial = self.instance.email.address
+
+    def save(self, commit=True):
+        nominee = super(EditNomineeForm, self).save(commit=False)
+        nominee_email = self.cleaned_data.get("nominee_email")
+        if nominee_email != nominee.email.address:
+            # create a new nominee with the new email
+            new_email, created_email = Email.objects.get_or_create(address=nominee_email)
+            new_email.person = nominee.email.person
+            new_email.save()
+
+            # Chage emails between nominees
+            old_email = nominee.email
+            nominee.email = new_email
+            nominee.save()
+            new_nominee = Nominee.objects.create(email=old_email, nomcom=nominee.nomcom)
+
+            # new nominees point to old nominee
+            new_nominee.duplicated = nominee
+            new_nominee.save()
+
+        return nominee
+
+    class Meta:
+        model = Nominee
+        fields = ('nominee_email',)
+
+    def clean_nominee_email(self):
+        nominee_email = self.cleaned_data['nominee_email']
+        nominees = Nominee.objects.exclude(email__address=self.instance.email.address).filter(email__address=nominee_email)
+        if nominees:
+            raise forms.ValidationError('This emails already does exists in another nominee, please go to merge form')
+        return nominee_email
