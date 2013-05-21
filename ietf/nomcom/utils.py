@@ -5,6 +5,8 @@ import os
 import re
 import tempfile
 
+from email.utils import parseaddr
+
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.exceptions import PermissionDenied
@@ -155,7 +157,8 @@ def extract_body(payload):
     if isinstance(payload, str):
         return payload
     else:
-        return '\n'.join([extract_body(part.get_payload()) for part in payload])
+        if payload:
+            return '\n'.join([extract_body(part.get_payload()) for part in payload])
 
 
 def parse_email(text):
@@ -164,7 +167,7 @@ def parse_email(text):
     # comment
     #body = quopri.decodestring(extract_body(msg.get_payload()))
     charset = msg.get_content_charset()
-    body = extract_body(msg.get_payload(decode=True))
+    body = extract_body(msg.get_payload())
     if charset:
         body = body.decode(charset)
 
@@ -339,3 +342,16 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
     send_mail(None, to_email, from_email, subject, path, context)
 
     return nominee
+
+
+def create_feedback_email(nomcom, msg):
+    from ietf.nomcom.models import Feedback
+    by, subject, body = parse_email(msg)
+    name, addr = parseaddr(by)
+
+    feedback = Feedback(nomcom=nomcom,
+                        author=addr,
+                        subject=subject,
+                        comments=body)
+    feedback.save()
+    return feedback

@@ -34,17 +34,19 @@
               {% ifequal ft.slug "nomina" %}
                 {% for fn in feedback.nomination_set.all %}
                   {% if fn.candidate_name %}
-                    <p><b>Candidate name:</b> {{ fn.candidate_name }}</p>
+                    <h3>Candidate name:</h3> <pre>{{ fn.candidate_name }}</pre>
                   {% endif %}
                   {% if fn.candidate_phone %}
-                    <p><b>Candidate phone:</b> {{ fn.candidate_phone }}</p>
+                    <h3>Candidate phone:</h3> <pre>{{ fn.candidate_phone }}</pre>
                   {% endif %}
                 {% endfor %}
               {% endifequal %}
-              <b>Positions:</b> {{ feedback.positions.all|join:"," }}
-              <p>
-                {% decrypt feedback.comments request year %}
-              </p>
+              <h3>Positions:</h3> <pre>{{ feedback.positions.all|join:"," }}</pre>
+              {% if feedback.subject %}
+                <h3>Subject:</h3> <pre>{{ feedback.subject }}</pre>
+              {% endif %}
+              <h3>Body</h3>
+                <pre>{% decrypt feedback.comments request year %}</pre>
             </div>
           {% endifequal %}
         {% endfor %}

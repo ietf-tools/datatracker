@@ -185,6 +185,7 @@ class Feedback(models.Model):
     author = models.EmailField(verbose_name='Author', blank=True)
     positions = models.ManyToManyField('Position', blank=True, null=True)
     nominees = models.ManyToManyField('Nominee', blank=True, null=True)
+    subject = models.TextField(verbose_name='Subject', blank=True)
     comments = EncryptedTextField(verbose_name='Comments')
     type = models.ForeignKey(FeedbackType, blank=True, null=True)
     user = models.ForeignKey(User, editable=False, blank=True, null=True)

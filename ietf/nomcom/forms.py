@@ -20,7 +20,7 @@ from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
                                Position, Feedback, ReminderDates
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
                                get_user_email, validate_private_key, validate_public_key,
-                               get_or_create_nominee)
+                               get_or_create_nominee, create_feedback_email)
 from ietf.nomcom.decorators import nomcom_member_required
 
 
@@ -603,6 +603,24 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                   'nominator_email',
                   'confirmation',
                   'comments')
+
+    class Media:
+        js = ("/js/jquery-1.5.1.min.js",
+              "/js/nomcom.js", )
+
+
+class FeedbackEmailForm(BaseNomcomForm, forms.Form):
+
+    email_text = forms.CharField(label='Email text', widget=forms.Textarea())
+
+    fieldsets = [('Feedback email', ('email_text',))]
+
+    def __init__(self, *args, **kwargs):
+        self.nomcom = kwargs.pop('nomcom', None)
+        super(FeedbackEmailForm, self).__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        create_feedback_email(self.nomcom, self.cleaned_data['email_text'])
 
     class Media:
         js = ("/js/jquery-1.5.1.min.js",

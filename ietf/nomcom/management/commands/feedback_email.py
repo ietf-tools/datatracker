@@ -1,19 +1,17 @@
 from optparse import make_option
-from email.utils import parseaddr
 import syslog
 
 from django.core.management.base import BaseCommand, CommandError
 
-from ietf.nomcom.utils import parse_email
-from ietf.nomcom.models import NomCom, Feedback
+from ietf.nomcom.models import NomCom
+from ietf.nomcom.utils import create_feedback_email
 
 
 class Command(BaseCommand):
     help = (u"Registry feedback from email. Usage: feeback_email --nomcom-year <nomcom-year> --email-file <email-file>")
     option_list = BaseCommand.option_list + (
          make_option('--nomcom-year', dest='year', help='NomCom year'),
-         make_option('--email-file', dest='email', help='Feedback email'),
-        )
+         make_option('--email-file', dest='email', help='Feedback email'),)
 
     def handle(self, *args, **options):
         email = options.get('email', None)
@@ -36,13 +34,5 @@ class Command(BaseCommand):
         except NomCom.DoesNotExist:
             raise CommandError("NomCom %s does not exist or it isn't active" % year)
 
-        by, subject, body = parse_email(msg)
-        body = 'Subject: %s\n\n%s' % (subject, body)
-        name, addr = parseaddr(by)
-
-        feedback = Feedback(nomcom=nomcom,
-                            author=addr,
-                            comments=body)
-        feedback.save()
-
-        syslog.syslog(u"Read feedback email by %s" % by)
+        feedback = create_feedback_email(nomcom, msg)
+        syslog.syslog(u"Read feedback email by %s" % feedback.author)

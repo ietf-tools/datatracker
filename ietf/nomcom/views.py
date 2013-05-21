@@ -24,7 +24,8 @@ from ietf.nomcom.decorators import nomcom_member_required, nomcom_private_key_re
 from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
                                MergeForm, NomComTemplateForm, PositionForm,
                                PrivateKeyForm, EditNomcomForm, EditNomineeForm,
-                               PendingFeedbackForm, ReminderDatesForm, FullFeedbackFormSet)
+                               PendingFeedbackForm, ReminderDatesForm, FullFeedbackFormSet,
+                               FeedbackEmailForm)
 from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates
 from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
                                get_hash_nominee_position, send_reminder_to_nominees,
@@ -302,6 +303,38 @@ def feedback(request, year, public):
                                'positions': positions,
                                'submit_disabled': submit_disabled,
                                'selected': 'feedback'}, RequestContext(request))
+
+
+@nomcom_member_required(role='chair')
+def private_feedback_email(request, year):
+    nomcom = get_nomcom_by_year(year)
+    has_publickey = nomcom.public_key and True or False
+    message = None
+    template = 'nomcom/private_feedback_email.html'
+
+    if not has_publickey:
+            message = ('warning', "This Nomcom is not yet accepting feedback email")
+            return render_to_response(template,
+                              {'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'selected': 'feedback_email'}, RequestContext(request))
+
+    form = FeedbackEmailForm(nomcom=nomcom)
+
+    if request.method == 'POST':
+        form = FeedbackEmailForm(data=request.POST,
+                                 nomcom=nomcom)
+        if form.is_valid():
+            form.save()
+            message = ('success', 'The feedback email has been registered.')
+
+    return render_to_response(template,
+                              {'form': form,
+                               'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'selected': 'feedback_email'}, RequestContext(request))
 
 
 @nomcom_member_required(role='chair')

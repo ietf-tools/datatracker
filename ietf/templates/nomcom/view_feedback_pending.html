@@ -60,6 +60,8 @@
            <pre>{{ form.feedback_type }}</pre>
            <h3>Author</h3>
            <pre>{{ form.instance.author }}</pre>
+           <h3>Subject</h3>
+           <pre>{{ form.instance.subject }}</pre>
            <h3>Feedback body</h3>
            <pre>{% decrypt form.instance.comments request year 1 %}</pre>
         </div>
