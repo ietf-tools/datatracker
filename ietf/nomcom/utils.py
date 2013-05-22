@@ -372,6 +372,8 @@ def get_body(message):
 
 
 def parse_email(text):
+    if isinstance(text, unicode):
+        text = str(text)
     msg = message_from_string(text)
 
     body = get_body(msg)
