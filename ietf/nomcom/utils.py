@@ -162,6 +162,8 @@ def extract_body(payload):
 
 
 def parse_email(text):
+    if isinstance(text, unicode):
+        text = str(text)
     msg = email.message_from_string(text)
 
     # comment
@@ -351,7 +353,7 @@ def create_feedback_email(nomcom, msg):
 
     feedback = Feedback(nomcom=nomcom,
                         author=addr,
-                        subject=subject,
+                        subject=subject or '',
                         comments=body)
     feedback.save()
     return feedback
