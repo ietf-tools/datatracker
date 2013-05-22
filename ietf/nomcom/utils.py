@@ -1,11 +1,13 @@
 import datetime
-import email
 import hashlib
 import os
 import re
 import tempfile
 
+from email.header import decode_header
 from email.utils import parseaddr
+from email.Iterators import typed_subpart_iterator
+from email import message_from_string
 
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -151,29 +153,6 @@ def store_nomcom_private_key(request, year, private_key):
         if error:
             out = ''
         request.session['NOMCOM_PRIVATE_KEY_%s' % year] = out
-
-
-def extract_body(payload):
-    if isinstance(payload, str):
-        return payload
-    else:
-        if payload:
-            return '\n'.join([extract_body(part.get_payload()) for part in payload])
-
-
-def parse_email(text):
-    if isinstance(text, unicode):
-        text = str(text)
-    msg = email.message_from_string(text)
-
-    # comment
-    #body = quopri.decodestring(extract_body(msg.get_payload()))
-    charset = msg.get_content_charset()
-    body = extract_body(msg.get_payload())
-    if charset:
-        body = body.decode(charset)
-
-    return msg['From'], msg['Subject'], body
 
 
 def validate_private_key(key):
@@ -344,6 +323,60 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
     send_mail(None, to_email, from_email, subject, path, context)
 
     return nominee
+
+
+def getheader(header_text, default="ascii"):
+    """Decode the specified header"""
+
+    headers = decode_header(header_text)
+    header_sections = [unicode(text, charset or default)
+                       for text, charset in headers]
+    return u"".join(header_sections)
+
+
+def get_charset(message, default="ascii"):
+    """Get the message charset"""
+
+    if message.get_content_charset():
+        return message.get_content_charset()
+
+    if message.get_charset():
+        return message.get_charset()
+
+    return default
+
+
+def get_body(message):
+    """Get the body of the email message"""
+
+    if message.is_multipart():
+        # get the plain text version only
+        text_parts = [part for part in typed_subpart_iterator(message,
+                                                             'text',
+                                                             'plain')]
+        body = []
+        for part in text_parts:
+            charset = get_charset(part, get_charset(message))
+            body.append(unicode(part.get_payload(decode=True),
+                                charset,
+                                "replace"))
+
+        return u"\n".join(body).strip()
+
+    else:  # if it is not multipart, the payload will be a string
+           # representing the message body
+        body = unicode(message.get_payload(decode=True),
+                       get_charset(message),
+                       "replace")
+        return body.strip()
+
+
+def parse_email(text):
+    msg = message_from_string(text)
+
+    body = get_body(msg)
+    subject = getheader(msg['Subject'])
+    return msg['From'], subject, body
 
 
 def create_feedback_email(nomcom, msg):
