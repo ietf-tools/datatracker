@@ -15,6 +15,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
+from django.utils.encoding import smart_str
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person
@@ -373,7 +374,7 @@ def get_body(message):
 
 def parse_email(text):
     if isinstance(text, unicode):
-        text = str(text)
+        text = smart_str(text)
     msg = message_from_string(text)
 
     body = get_body(msg)
