@@ -218,7 +218,7 @@ def agenda_docs(date, next_agenda):
 
         if doc.type_id == "draft":
             s = doc.get_state("draft-iana-review")
-            if s and s.slug in ("not-ok", "changed", "need-rev"):
+            if s: # and s.slug in ("not-ok", "changed", "need-rev"):
                 doc.iana_review_state = str(s)
 
             if doc.get_state_slug("draft-iesg") == "lc":
