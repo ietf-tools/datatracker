@@ -473,7 +473,7 @@ def move_docs(submission):
             os.rename(source, dest)
         else:
             if os.path.exists(dest):
-                log("Intended to move '%s' to '%s', but found source missing while destination exists.", send_mail=True)
+                log("Intended to move '%s' to '%s', but found source missing while destination exists.")
             else:
                 raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
