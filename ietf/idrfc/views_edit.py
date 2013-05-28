@@ -1119,13 +1119,11 @@ def request_publication(request, name):
 
             # change state
             prev_state = doc.get_state(next_state.type)
-
-            doc.set_state(next_state)
-
-            e = add_state_change_event(doc, request.user.get_profile(), prev_state, next_state)
-
-            doc.time = e.time
-            doc.save()
+            if next_state != prev_state:
+                doc.set_state(next_state)
+                e = add_state_change_event(doc, request.user.get_profile(), prev_state, next_state)
+                doc.time = e.time
+                doc.save()
 
             return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
 
