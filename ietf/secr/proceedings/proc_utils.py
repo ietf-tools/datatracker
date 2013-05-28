@@ -14,7 +14,7 @@ from itertools import chain
 from ietf.secr.proceedings.models import Registration
 from ietf.secr.utils.document import get_rfc_num
 from ietf.secr.utils.group import groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_material
+from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_material, get_session, get_timeslot
 from models import InterimMeeting    # proxy model
 
 from urllib2 import urlopen
@@ -32,7 +32,7 @@ def mycomp(timeslot):
     This takes a timeslot object and returns a key to sort by the area acronym or None
     '''
     try:
-        group = timeslot.session.group
+        group = get_session(timeslot).group
         key = '%s:%s' % (group.parent.acronym, group.acronym)
     except AttributeError:
         key = None
