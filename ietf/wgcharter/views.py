@@ -479,7 +479,7 @@ def announcement_text(request, name, ann):
             form = AnnouncementTextForm(initial=dict(announcement_text=e.text))
 
         if "send_text" in request.POST and form.is_valid():
-            send_mail_preformatted(request, form.cleaned_data['announcement_text'])
+            parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
             messages.success(request, "The email To: '%s' with Subjet: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
             return redirect('doc_writeup', name=charter.name)
 

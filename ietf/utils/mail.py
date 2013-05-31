@@ -214,6 +214,7 @@ def send_mail_preformatted(request, preformatted, extra={}, override={}):
     del msg['Bcc']
     
     send_mail_text(request, msg['To'], msg["From"], msg["Subject"], msg.get_payload(), extra=headers, bcc=bcc)
+    return msg
 
 def send_mail_message(request, message, extra={}):
     """Send a Message object."""
