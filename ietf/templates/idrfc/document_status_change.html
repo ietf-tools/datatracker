@@ -102,9 +102,14 @@
     <tr><td>Last updated:</td><td> {{ doc.time|date:"Y-m-d" }}</td></tr>
     {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
     <tr><td colspan="2">
-       <span id="doc_request_resurrect_button" class="yui-button yui-link-button" style="margin-left:2px;">
+       <span id="doc_edit_affected_rfc_list_button" class="yui-button yui-link-button" style="margin-left:2px;">
           <span class="first-child">
             <a href="{% url status_change_relations name=doc.name %}">Edit Affected RFC List</a>
+          </span>
+       </span>
+       <span id="doc_edit_last_call_text" class="yui-button yui-link-button" style="margin-left:2px;">
+          <span class="first-child"> 
+            <a href="{% url status_change_last_call  name=doc.name %}">Edit Last Call Text</a>
           </span>
        </span>
     </td><tr/>

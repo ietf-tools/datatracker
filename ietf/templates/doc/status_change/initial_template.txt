@@ -1,4 +1,4 @@
-Provide a description of what RFCs status are changed and any necessary rational for the change.
+Provide a description of what RFCs status are changed and any necessary rationale for the change.
 
 This is a good place to document how the RFC6410 criteria for advancing to Internet Standard are met:
 

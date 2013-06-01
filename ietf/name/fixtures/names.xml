@@ -2053,7 +2053,7 @@
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">An RFC status change has been requested, but a shepherding AD has not yet been assigned</field>
         <field type="IntegerField" name="order">1</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="122"></object><object pk="128"></object><object pk="129"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="122"></object><object pk="129"></object></field>
     </object>
     <object pk="122" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
@@ -2062,7 +2062,34 @@
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">The sponsoring AD is preparing an RFC status change document</field>
         <field type="IntegerField" name="order">2</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="123"></object><object pk="128"></object><object pk="129"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="130"></object><object pk="123"></object><object pk="129"></object></field>
+    </object>
+    <object pk="130" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
+        <field type="SlugField" name="slug">lc-req</field>
+        <field type="CharField" name="name">Last Call Requested</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">Last Call has been requested for this proposed status change</field>
+        <field type="IntegerField" name="order">3</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="131"></object></field>
+    </object>
+    <object pk="131" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
+        <field type="SlugField" name="slug">in-lc</field>
+        <field type="CharField" name="name">In Last Call</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">This proposed status change is in IETF Last Call</field>
+        <field type="IntegerField" name="order">4</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="132"></object></field>
+    </object>
+    <object pk="132" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
+        <field type="SlugField" name="slug">goahead</field>
+        <field type="CharField" name="name">Waiting for AD Go-Ahead</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">The AD is following up on IETF LC comments</field>
+        <field type="IntegerField" name="order">5</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="123"></object><object pk="129"></object></field>
     </object>
     <object pk="123" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
@@ -2070,8 +2097,8 @@
         <field type="CharField" name="name">IESG Evaluation</field>
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">The IESG is considering the proposed RFC status changes</field>
-        <field type="IntegerField" name="order">3</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="124"></object><object pk="125"></object><object pk="126"></object><object pk="128"></object><object pk="129"></object></field>
+        <field type="IntegerField" name="order">6</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="124"></object><object pk="125"></object><object pk="126"></object><object pk="129"></object></field>
     </object>
     <object pk="124" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
@@ -2079,8 +2106,8 @@
         <field type="CharField" name="name">IESG Evaluation - Defer</field>
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">The evaluation of the proposed RFC status changes have been deferred to the next telechat</field>
-        <field type="IntegerField" name="order">4</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="123"></object><object pk="125"></object><object pk="126"></object><object pk="128"></object><object pk="129"></object></field>
+        <field type="IntegerField" name="order">7</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="123"></object><object pk="125"></object><object pk="126"></object><object pk="129"></object></field>
     </object>
     <object pk="125" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
@@ -2088,8 +2115,8 @@
         <field type="CharField" name="name">Approved - point raised</field>
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">The IESG has approved the RFC status changes, but a point has been raised that should be cleared before proceeding to announcement to be sent</field>
-        <field type="IntegerField" name="order">5</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+        <field type="IntegerField" name="order">8</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="126"></object><object pk="127"></object></field>
     </object>
     <object pk="126" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
@@ -2097,8 +2124,8 @@
         <field type="CharField" name="name">Approved - announcement to be sent</field>
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">The IESG has approved the RFC status changes, but the secretariat has not yet sent the announcement</field>
-        <field type="IntegerField" name="order">6</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="127"></object><object pk="128"></object></field>
+        <field type="IntegerField" name="order">9</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="127"></object></field>
     </object>
     <object pk="127" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
@@ -2106,17 +2133,8 @@
         <field type="CharField" name="name">Approved - announcement sent</field>
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">The secretariat has announced the IESG's approved RFC status changes</field>
-        <field type="IntegerField" name="order">7</field>
+        <field type="IntegerField" name="order">10</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
-    </object>
-    <object pk="128" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
-        <field type="SlugField" name="slug">withdraw</field>
-        <field type="CharField" name="name">Withdrawn</field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="TextField" name="desc">The request for RFC status changes was withdrawn</field>
-        <field type="IntegerField" name="order">8</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="121"></object></field>
     </object>
     <object pk="129" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">statchg</field>
@@ -2124,7 +2142,7 @@
         <field type="CharField" name="name">Dead</field>
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">The RFC status changes have been abandoned</field>
-        <field type="IntegerField" name="order">9</field>
+        <field type="IntegerField" name="order">11</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="121"></object></field>
     </object>
     <object pk="5" model="doc.ballottype">
