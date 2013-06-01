@@ -8,5 +8,6 @@ urlpatterns = patterns('ietf.doc.views_status_change',
     url(r'^approve/$',               "approve",        name='status_change_approve'),
     url(r'^telechat/$',              "telechat_date",  name='status_change_telechat_date'),
     url(r'^relations/$',             "edit_relations", name='status_change_relations'),
+    url(r'^last-call/$',             "last_call",      name='status_change_last_call'),
 )
 

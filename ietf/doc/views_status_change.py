@@ -25,6 +25,9 @@ from ietf.name.models import DocRelationshipName, StdLevelName
 
 from ietf.doc.forms import TelechatForm, AdForm, NotifyForm
 
+from ietf.idrfc.views_ballot import LastCallTextForm
+from ietf.idrfc.lastcall import request_last_call
+
 class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history", required=False)
@@ -588,8 +591,8 @@ def edit_relations(request, name):
 
     if request.method == 'POST':
         form = EditStatusChangeForm(request.POST)
-        if form.is_valid():
-
+        if 'Submit' in request.POST and form.is_valid():
+    
             old_relations={}
             for rel in status_change.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS):
                 old_relations[rel.target.document.canonical_name()]=rel.relationship.slug
@@ -605,11 +608,12 @@ def edit_relations(request, name):
             c.desc += "\nNEW:"
             for relname,relslug in (set(new_relations.items())-set(old_relations.items())):
                 c.desc += "\n  "+relname+": "+DocRelationshipName.objects.get(slug=relslug).name
-            #for rel in status_change.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS):
-            #    c.desc +="\n"+rel.relationship.name+": "+rel.target.document.canonical_name()
             c.desc += "\n"
             c.save()
 
+            return HttpResponseRedirect(status_change.get_absolute_url())
+
+        elif 'Cancel' in request.POST:
             return HttpResponseRedirect(status_change.get_absolute_url())
 
     else: 
@@ -627,3 +631,93 @@ def edit_relations(request, name):
                                'relation_slugs': relation_slugs,
                               },
                               context_instance = RequestContext(request))
+
+def generate_last_call_text(request, doc):
+
+    # requester should be set based on doc.group once the group for a status change can be set to something other than the IESG
+    # and when groups are set, vary the expiration time accordingly
+
+    requester = "an individual participant"
+    expiration_date = datetime.date.today() + datetime.timedelta(days=28)
+    cc = []
+    
+    new_text = render_to_string("doc/status_change/last_call_announcement.txt",
+                                dict(doc=doc,
+                                     settings=settings,
+                                     requester=requester,
+                                     expiration_date=expiration_date.strftime("%Y-%m-%d"),
+                                     changes=['%s from %s to %s'%(rel.target.name.upper(),rel.target.document.std_level.name,newstatus(rel)) for rel in doc.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS)],
+                                     urls=[rel.target.document.get_absolute_url() for rel in doc.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS)],
+                                     cc=cc
+                                    )
+                               )
+
+    e = WriteupDocEvent()
+    e.type = 'changed_last_call_text'
+    e.by = request.user.get_profile()
+    e.doc = doc
+    e.desc = 'Last call announcement was generated'
+    e.text = unicode(new_text)
+    e.save()
+
+    return e 
+
+@role_required("Area Director", "Secretariat")
+def last_call(request, name):
+    """Edit the Last Call Text for this status change and possibly request IETF LC"""
+
+    status_change = get_object_or_404(Document, type="statchg", name=name)
+
+    login = request.user.get_profile()
+
+    last_call_event = status_change.latest_event(WriteupDocEvent, type="changed_last_call_text")
+    if not last_call_event:
+        last_call_event = generate_last_call_text(request, status_change)
+
+    form = LastCallTextForm(initial=dict(last_call_text=last_call_event.text))
+
+    if request.method == 'POST':
+        if "save_last_call_text" in request.POST or "send_last_call_request" in request.POST:
+            form = LastCallTextForm(request.POST)
+            if form.is_valid():
+                t = form.cleaned_data['last_call_text']
+                if t != last_call_event.text:
+                    e = WriteupDocEvent(doc=status_change, by=login)
+                    e.by = login
+                    e.type = "changed_last_call_text"
+                    e.desc = "Last call announcement was changed"
+                    e.text = t
+                    e.save()
+
+                if "send_last_call_request" in request.POST:
+                    save_document_in_history(status_change)
+
+                    old_description = status_change.friendly_state()
+                    status_change.set_state(State.objects.get(type='statchg', slug='lc-req'))
+                    new_description = status_change.friendly_state()
+
+                    e = log_state_changed(request, status_change, login, new_description, old_description)
+
+                    status_change.time = e.time
+                    status_change.save()
+
+                    request_last_call(request, status_change)
+
+                    return render_to_response('idrfc/last_call_requested.html',
+                                              dict(doc=status_change,
+                                                   url = status_change.get_absolute_url(),
+                                                  ),
+                                              context_instance=RequestContext(request))
+
+        if "regenerate_last_call_text" in request.POST:
+            e = generate_last_call_text(request,status_change)
+            form = LastCallTextForm(initial=dict(last_call_text=e.text))
+            
+    return render_to_response('doc/status_change/last_call.html',
+                               dict(doc=status_change,
+                                    back_url = status_change.get_absolute_url(),
+                                    last_call_event = last_call_event,
+                                    last_call_form  = form,
+                                   ),
+                               context_instance = RequestContext(request))
+               

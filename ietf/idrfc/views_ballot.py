@@ -1094,13 +1094,15 @@ class MakeLastCallForm(forms.Form):
 def make_last_call(request, name):
     """Make last call for Internet Draft, sending out announcement."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.get_state("draft-iesg"):
+    if not (doc.get_state("draft-iesg") or doc.get_state("statchg")):
         raise Http404
 
     login = request.user.get_profile()
 
     e = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
     if not e:
+        if doc.type.slug != 'draft':
+            raise Http404
         e = generate_last_call_announcement(request, doc)
     announcement = e.text
 
@@ -1108,8 +1110,9 @@ def make_last_call(request, name):
         form = MakeLastCallForm(request.POST)
         if form.is_valid():
             send_mail_preformatted(request, announcement)
-            send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                   override={ "To": "IANA <drafts-lastcall@icann.org>", "CC": None, "Bcc": None, "Reply-To": None})
+            if doc.type.slug == 'draft':
+                send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
+                                       override={ "To": "IANA <drafts-lastcall@icann.org>", "CC": None, "Bcc": None, "Reply-To": None})
 
             msg = infer_message(announcement)
             msg.by = login
@@ -1118,20 +1121,29 @@ def make_last_call(request, name):
 
             save_document_in_history(doc)
 
-            prev = doc.get_state("draft-iesg")
-            doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='lc'))
+            if doc.type.slug == 'draft':
 
-            prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
-            prev_tag = prev_tag[0] if prev_tag else None
-            if prev_tag:
-                doc.tags.remove(prev_tag)
+                prev = doc.get_state("draft-iesg")
+                doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='lc'))
 
-            e = idrfcutil_log_state_changed(request, doc, login, prev, prev_tag)
+                prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+                prev_tag = prev_tag[0] if prev_tag else None
+                if prev_tag:
+                    doc.tags.remove(prev_tag)
+
+                e = idrfcutil_log_state_changed(request, doc, login, prev, prev_tag)
+                change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, doc.get_state("draft-iesg").name)
+
+            elif doc.type.slug == 'statchg':
+
+                prev = doc.friendly_state()
+                doc.set_state(State.objects.get(used=True, type="statchg", slug='in-lc'))
+                e = docutil_log_state_changed(request, doc, login, doc.friendly_state(), prev)
+                change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, doc.friendly_state())
                     
             doc.time = e.time
             doc.save()
 
-            change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, doc.get_state("draft-iesg").name)
             email_state_changed(request, doc, change_description)
             email_owner(request, doc, doc.ad, login, change_description)
             
@@ -1146,25 +1158,34 @@ def make_last_call(request, name):
             e.save()
 
             # update IANA Review state
-            prev_state = doc.get_state("draft-iana-review")
-            if not prev_state:
-                next_state = State.objects.get(used=True, type="draft-iana-review", slug="need-rev")
-                doc.set_state(next_state)
-                add_state_change_event(doc, login, prev_state, next_state)
+            if doc.type.slug == 'draft':
+                prev_state = doc.get_state("draft-iana-review")
+                if not prev_state:
+                    next_state = State.objects.get(used=True, type="draft-iana-review", slug="need-rev")
+                    doc.set_state(next_state)
+                    add_state_change_event(doc, login, prev_state, next_state)
 
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
         initial = {}
         initial["last_call_sent_date"] = date.today()
-        expire_days = 14
-        if doc.group.type_id in ("individ", "area"):
-            expire_days = 28
+        if doc.type.slug == 'draft':
+            # This logic is repeated in the code that edits last call text - why?
+            expire_days = 14
+            if doc.group.type_id in ("individ", "area"):
+                expire_days = 28
+            templ = 'idrfc/make_last_callREDESIGN.html'
+        else:
+            expire_days=28
+            templ = 'doc/status_change/make_last_call.html'
 
         initial["last_call_expiration_date"] = date.today() + timedelta(days=expire_days)
         
         form = MakeLastCallForm(initial=initial)
   
-    return render_to_response('idrfc/make_last_callREDESIGN.html',
+    return render_to_response(templ,
                               dict(doc=doc,
-                                   form=form),
+                                   form=form,
+                                   announcement=announcement,
+                                  ),
                               context_instance=RequestContext(request))

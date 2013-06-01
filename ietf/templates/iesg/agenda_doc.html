@@ -53,6 +53,14 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
     which it covers? If not, what changes would make it so?"
     </blockquote>
 {% endif %}
+{% if title2|startswith:"3.3" %}
+    <blockquote>
+    Reviews should focus on these questions: "Are the proposed 
+    changes to document status appropriate? Have all requirements 
+    for such a change been met? If not, what changes to the proposal 
+    would make it appropriate?" 
+    </blockquote>
+{% endif %}
 {% endif %}<h4>{{ title3 }}</h4>
 
 {% for doc in section_docs %}

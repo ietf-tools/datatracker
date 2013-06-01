@@ -406,7 +406,8 @@ def make_test_data():
     crdoc.relateddocument_set.create(target=docalias,relationship_id='conflrev')
     
     # A status change mid review
-    doc = Document.objects.create(name='status-change-imaginary-mid-review',type_id='statchg', rev='00', notify="fsm@ietf.org")
+    iesg = Group.objects.get(acronym='iesg')
+    doc = Document.objects.create(name='status-change-imaginary-mid-review',type_id='statchg', rev='00', notify="fsm@ietf.org",group=iesg)
     doc.set_state(State.objects.get(slug='needshep',type__slug='statchg'))
     doc.save()
     docalias = DocAlias.objects.create(name='status-change-imaginary-mid-review',document=doc)

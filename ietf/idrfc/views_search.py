@@ -640,6 +640,10 @@ def ad_dashboard_sort_key(doc):
         elif  doc.get_state_slug('charter') == 'iesgrev':
             state = State.objects.get(type__slug='draft-iesg',slug='iesg-eva')        
             return "1%d%s" % (state.order,seed)
+
+    if doc.type.slug=='statchg' and  doc.get_state_slug('statchg') == 'adrev':
+        state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')        
+        return "1%d%s" % (state.order,seed)
     
     if seed.startswith('Needs Shepherd'):
         return "100%s" % seed
@@ -664,6 +668,7 @@ def ad_dashboard_sort_key(doc):
     
 def by_ad2(request, name):
     responsible = Document.objects.values_list('ad', flat=True).distinct()
+    ad_id = None
     for p in Person.objects.filter(Q(role__name__in=("pre-ad", "ad"),
                                      role__group__type="area",
                                      role__group__state="active")
@@ -672,6 +677,10 @@ def by_ad2(request, name):
             ad_id = p.id
             ad_name = p.plain_name()
             break
+
+    if not ad_id:
+        raise Http404
+
     docqueryset = Document.objects.filter(ad__id=ad_id)
     docs=[]
     for doc in docqueryset:
