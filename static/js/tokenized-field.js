@@ -8,7 +8,7 @@ function setupTokenizedField(field) {
     else if (field.data("pre"))
         pre = JSON.parse((field.attr("data-pre") || "").replace(/&quot;/g, '"'));
 
-    field.tokenInput(field.data("ajaxurl"), {
+    field.tokenInput(field.attr("data-ajax-url"), {
         hintText: "",
         preventDuplicates: true,
         prePopulate: pre
