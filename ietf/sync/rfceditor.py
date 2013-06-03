@@ -461,6 +461,9 @@ def post_approved_draft(url, name):
     password = settings.RFC_EDITOR_SYNC_PASSWORD
     request.add_header("Authorization", "Basic %s" % base64.encodestring("%s:%s" % (username, password)).replace("\n", ""))
 
+    if settings.SERVER_MODE != "production":
+        return ("OK", "")
+
     text = error = ""
     try:
         f = urllib2.urlopen(request, data=urllib.urlencode({ 'approved_draft_name': name }), timeout=20)
