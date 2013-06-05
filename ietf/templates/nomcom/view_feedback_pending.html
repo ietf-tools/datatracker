@@ -5,6 +5,24 @@
 
 {% block subtitle %} - Feeback pending{% endblock %}
 
+{% block scripts %}
+{{ block.super }}
+(function($) {
+    $(document).ready(function() {
+        $('.toggle .trigger').click(function() {
+            if ($(this).hasClass('closed')) {
+                $(this).removeClass('closed').addClass('open');
+                $(this).parent().parent().next().show();
+            } else {
+                $(this).removeClass('open').addClass('closed');
+                $(this).parent().parent().next().hide();
+            }
+            return false;
+        });
+    });
+})(jQuery);
+{% endblock %}
+
 {% block nomcom_content %}
 
 <p>Back to <a href="{% url nomcom_view_feedback year %}">feedback index</a></p>
@@ -32,11 +50,27 @@
     {% endif %}
     </div>
     {{ formset.management_form }}
+    <table class="ietf-table">
+    {% include "nomcom/inc.feedback_pending_header.html" %}
     {% for form in formset.forms %}
-     {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
-     <div class="baseform">
-        <div class="fieldset">
-        <h2>{{ form.instance.time|date:"Y-m-d" }} id:{{ form.instance.id }}</h2>
+     {% if forloop.counter|divisibleby:"20" %}{% include "nomcom/inc.feedback_pending_header.html" %}{% endif %}
+     {% if form.errors %}<tr><td colspan="5" class="info-message-error">Please correct the following errors</td></tr>{% endif %}
+        <tr class="{% cycle "evenrow" "oddrow" %}">
+        {% if not extra_step %}<td class="toggle"><a href="#" class="trigger closed"></a></td>{% endif %}
+        <td>{{ form.instance.time|date:"Y-m-d" }} id:{{ form.instance.id }}</td>
+        {% if extra_step %}
+          <td>{{ form.feedback_type }}</td>
+        {% else %}
+          {{ form.id }}
+          {% for choice in form.type.field.choices %}
+            <td class="{% cycle "evenradio" "oddradio" %}"><input type="radio" name="{{ form.type.html_name }}" value="{{ choice.0 }}" {% if not choice.0 %}checked="checked"{% endif %} title="{{ choice.1 }}" /></td>
+          {% endfor %}
+        {% endif %}
+        <td>{{ form.instance.author }}</th>
+        <td>{{ form.instance.subject }}</td>
+        </tr>
+        {% if extra_step %}
+        <tr class="body bodyform"><td colspan="2" class="baseform">
         {% for field in form %}
         <div id="baseform-fieldname-{{ field.html_name }}"
           {% if field.field.widget.is_hidden %}style="display: none;"{% endif %}
@@ -54,19 +88,20 @@
         {{ field.errors }}
         </div>
         <div class="endfield"></div>
-      </div>
-        {% endfor %}
-           <h3>Type</h3>
-           <pre>{{ form.feedback_type }}</pre>
-           <h3>Author</h3>
-           <pre>{{ form.instance.author }}</pre>
-           <h3>Subject</h3>
-           <pre>{{ form.instance.subject }}</pre>
-           <h3>Feedback body</h3>
-           <pre>{% decrypt form.instance.comments request year 1 %}</pre>
         </div>
-    </div>
+        {% endfor %}
+        </td>
+        <td colspan="3">
+           <pre>{% decrypt form.instance.comments request year 1 %}</pre>
+        </td></tr>
+        {% else %}
+        <tr class="body" style="display: none;"><td colspan="{{ types.count|add:"5" }}">
+           <pre>{% decrypt form.instance.comments request year 1 %}</pre>
+        </td></tr>
+        {% endif %}
+        </tr>
     {% endfor %}
+    </table>
     <div class="sumit-row">
     {% if extra_step %}
     <input type="submit" value="Save feedback" name="end" />

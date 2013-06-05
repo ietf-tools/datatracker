@@ -718,7 +718,7 @@ class PrivateKeyForm(BaseNomcomForm, forms.Form):
 
 class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):
 
-    type = forms.ModelChoiceField(queryset=FeedbackType.objects.all(), widget=forms.RadioSelect, empty_label='Unclassified', required=False)
+    type = forms.ModelChoiceField(queryset=FeedbackType.objects.all().order_by('pk'), widget=forms.RadioSelect, empty_label='Unclassified', required=False)
 
     class Meta:
         model = Feedback

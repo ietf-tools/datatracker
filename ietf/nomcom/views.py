@@ -511,6 +511,7 @@ def view_feedback_pending(request, year):
                                'message': message,
                                'extra_step': extra_step,
                                'default_type': default_type,
+                               'types': FeedbackType.objects.all().order_by('pk'),
                                'nomcom': nomcom}, RequestContext(request))
 
 

@@ -280,6 +280,17 @@ div.info-message-error { border: 1px solid red; background-color: #ffeebb; paddi
     margin: 12px;
 }
 
+#feedbackformset table {width: 100%;}
+#feedbackformset .oddradio { background-color: white; text-align: center;}
+#feedbackformset .evenradio { background-color: #EDF5FF; text-align: center;}
+#feedbackformset .toggle { padding: 0px; }
+#feedbackformset .toggle a.trigger { display: block; width: 22px; height: 22px;}
+#feedbackformset .toggle a.closed { background: url(../images/plus.png) no-repeat center center;}
+#feedbackformset .toggle a.open { background: url(../images/minus.png) no-repeat center center;}
+#feedbackformset tr.body td { border-bottom: 1px solid #cbcbcb;}
+#feedbackformset tr.bodyform td { border-top: 1px solid #cbcbcb;}
+
+
 .baseform select,
 .baseform textarea,
 .baseform input {

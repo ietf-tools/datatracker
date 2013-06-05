@@ -1,0 +1,11 @@
+<tr>
+  {% if not extra_step %}<th></th>{% endif %}
+  <th>Date</th>
+  {% if extra_step %}
+    <th>Type</th>
+  {% else %}
+    <th>Unclassified</th>{% for t in types %}<th>{{ t }}</th>{% endfor %}
+  {% endif %}
+  <th>Author</th>
+  <th>Subject</th>
+</tr>
