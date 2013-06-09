@@ -278,6 +278,9 @@ IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "http://www.iana.org/protocols/"
 
 RFC_EDITOR_SYNC_PASSWORD="secret"
+RFC_EDITOR_SYNC_NOTIFICATION_URL = "http://www.rfc-editor.org/parser/parser.php"
+RFC_EDITOR_QUEUE_URL = "http://www.rfc-editor.org/queue2.xml"
+RFC_EDITOR_INDEX_URL = "http://www.rfc-editor.org/rfc/rfc-index.xml"
 
 # Liaison Statement Tool settings
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'

@@ -10,9 +10,9 @@ from ietf.person.models import *
 from ietf.name.models import *
 from ietf.doc.utils import add_state_change_event
 
-QUEUE_URL = "http://www.rfc-editor.org/queue2.xml"
-INDEX_URL = "http://www.rfc-editor.org/rfc/rfc-index.xml"
-POST_APPROVED_DRAFT_URL = "https://www.rfc-editor.org/sdev/jsonexp/jsonparser.php"
+#QUEUE_URL = "http://www.rfc-editor.org/queue2.xml"
+#INDEX_URL = "http://www.rfc-editor.org/rfc/rfc-index.xml"
+#POST_APPROVED_DRAFT_URL = "https://www.rfc-editor.org/sdev/jsonexp/jsonparser.php"
 
 MIN_QUEUE_RESULTS = 10
 MIN_INDEX_RESULTS = 5000

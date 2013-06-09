@@ -64,8 +64,8 @@ def notify(request, org, notification):
     known_notifications = {
         "protocols": "an added reference to an RFC at <a href=\"%s\">the IANA protocols page</a>" % settings.IANA_SYNC_PROTOCOLS_URL,
         "changes": "new changes at <a href=\"%s\">the changes JSON dump</a>" % settings.IANA_SYNC_CHANGES_URL,
-        "queue": "new changes to <a href=\"%s\">queue2.xml</a>" % rfceditor.QUEUE_URL,
-        "index": "new changes to <a href=\"%s\">rfc-index.xml</a>" % rfceditor.INDEX_URL,
+        "queue": "new changes to <a href=\"%s\">queue2.xml</a>" % settings.RFC_EDITOR_QUEUE_URL,
+        "index": "new changes to <a href=\"%s\">rfc-index.xml</a>" % settings.RFC_EDITOR_INDEX_URL,
         }
 
     if notification not in known_notifications:

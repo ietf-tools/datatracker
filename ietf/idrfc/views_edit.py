@@ -1091,7 +1091,7 @@ def request_publication(request, name):
             if not request.REQUEST.get("skiprfceditorpost"):
                 # start by notifying the RFC Editor
                 import ietf.sync.rfceditor
-                response, error = ietf.sync.rfceditor.post_approved_draft(ietf.sync.rfceditor.POST_APPROVED_DRAFT_URL, doc.name)
+                response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
                 if error:
                     return render_to_response('doc/rfceditor_post_approved_draft_failed.html',
                                       dict(name=doc.name,
