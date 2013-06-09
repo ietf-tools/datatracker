@@ -466,7 +466,7 @@ def post_approved_draft(url, name):
 
     text = error = ""
     try:
-        f = urllib2.urlopen(request, data=urllib.urlencode({ 'approved_draft_name': name }), timeout=20)
+        f = urllib2.urlopen(request, data=urllib.urlencode({ 'draft': name }), timeout=20)
         text = f.read()
         status_code = f.getcode()
         f.close()
