@@ -54,6 +54,8 @@ class DjangoJSONEncoder(simplejson.JSONEncoder):
             return o.strftime(self.TIME_FORMAT)
         elif isinstance(o, decimal.Decimal):
             return str(o)
+        elif isinstance(o, datetime.timedelta):
+            return o.days * 24*60*60 + o.seconds
         else:
             return super(DjangoJSONEncoder, self).default(o)
 
