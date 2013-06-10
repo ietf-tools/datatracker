@@ -70,7 +70,7 @@
      {% if form.errors %}<tr><td colspan="5" class="info-message-error">Please correct the following errors</td></tr>{% endif %}
         <tr class="{% cycle "evenrow" "oddrow" %}">
         {% if not extra_step %}<td class="toggle"><a href="#" class="trigger closed"></a></td>{% endif %}
-        <td>{{ form.instance.time|date:"Y-m-d" }} id:{{ form.instance.id }}</td>
+        <td>{{ form.instance.time|date:"r" }}</td>
         {% if extra_step %}
           <td>{{ form.feedback_type }}</td>
         {% else %}
