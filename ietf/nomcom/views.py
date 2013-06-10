@@ -12,6 +12,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils import simplejson
+from django.utils.datastructures import SortedDict
 from django.db.models import Count
 from django.forms.models import modelformset_factory, inlineformset_factory
 
@@ -327,6 +328,7 @@ def private_feedback_email(request, year):
                                  nomcom=nomcom)
         if form.is_valid():
             form.save()
+            form = FeedbackEmailForm(nomcom=nomcom)
             message = ('success', 'The feedback email has been registered.')
 
     return render_to_response(template,
@@ -442,6 +444,7 @@ def view_feedback(request, year):
 @nomcom_private_key_required
 def view_feedback_pending(request, year):
     nomcom = get_nomcom_by_year(year)
+    extra_ids = None
     message = None
     for message in get_messages(request):
         message = ('success', message.message)
@@ -468,33 +471,56 @@ def view_feedback_pending(request, year):
             success(request, 'Feedback saved')
             return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
     elif request.method == 'POST' and request.POST.get('end'):
+        extra_ids = request.POST.get('extra_ids', None)
         extra_step = True
         formset = FullFeedbackFormSet(request.POST)
         for form in formset.forms:
             form.set_nomcom(nomcom, request.user)
         if formset.is_valid():
             formset.save()
-            success(request, 'Feedback saved')
-            return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
+            if extra_ids:
+                extra = []
+                for key in extra_ids.split(','):
+                    id, pk_type = key.split(':')
+                    feedback = Feedback.objects.get(id=id)
+                    feedback.type_id = pk_type
+                    extra.append(feedback)
+                formset = FullFeedbackFormSet(queryset=Feedback.objects.filter(id__in=[i.id for i in extra]))
+                for form in formset.forms:
+                    form.set_nomcom(nomcom, request.user, extra)
+                extra_ids = None
+            else:
+                success(request, 'Feedback saved')
+                return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
     elif request.method == 'POST':
         formset = FeedbackFormSet(request.POST)
         for form in formset.forms:
             form.set_nomcom(nomcom, request.user)
         if formset.is_valid():
             extra = []
+            nominations = []
             moved = 0
             for form in formset.forms:
                 if form.instance.type and form.instance.type.slug in settings.NOMINEE_FEEDBACK_TYPES:
-                    extra.append(form.instance)
+                    if form.instance.type.slug == 'nomina':
+                        nominations.append(form.instance)
+                    else:
+                        extra.append(form.instance)
                 else:
                     if form.instance.type:
                         moved += 1
                     form.save()
-            if extra:
+            if extra or nominations:
                 extra_step = True
-                formset = FullFeedbackFormSet(queryset=Feedback.objects.filter(id__in=[i.id for i in extra]))
-                for form in formset.forms:
-                    form.set_nomcom(nomcom, request.user, extra)
+                if nominations:
+                    formset = FullFeedbackFormSet(queryset=Feedback.objects.filter(id__in=[i.id for i in nominations]))
+                    for form in formset.forms:
+                        form.set_nomcom(nomcom, request.user, nominations)
+                    extra_ids = ','.join(['%s:%s' % (i.id, i.type.pk) for i in extra])
+                else:
+                    formset = FullFeedbackFormSet(queryset=Feedback.objects.filter(id__in=[i.id for i in extra]))
+                    for form in formset.forms:
+                        form.set_nomcom(nomcom, request.user, extra)
                 if moved:
                     message = ('success', '%s messages classified. You must enter more information for the following feedback.' % moved)
             else:
@@ -504,13 +530,24 @@ def view_feedback_pending(request, year):
         formset = FeedbackFormSet(queryset=feedbacks)
         for form in formset.forms:
             form.set_nomcom(nomcom, request.user)
+    type_dict = SortedDict({})
+    for t in FeedbackType.objects.all().order_by('pk'):
+        rest = t.name
+        slug = rest[0]
+        rest = rest[1:]
+        while slug in type_dict and rest:
+            slug = rest[0]
+            rest = rest[1]
+        type_dict[slug] = t
     return render_to_response('nomcom/view_feedback_pending.html',
                               {'year': year,
-                               'selected': 'view_feedback',
+                               'selected': 'feedback_pending',
                                'formset': formset,
                                'message': message,
                                'extra_step': extra_step,
                                'default_type': default_type,
+                               'type_dict': type_dict,
+                               'extra_ids': extra_ids,
                                'types': FeedbackType.objects.all().order_by('pk'),
                                'nomcom': nomcom}, RequestContext(request))
 

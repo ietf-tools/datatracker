@@ -785,6 +785,9 @@ class MutableFeedbackForm(forms.ModelForm):
             if i.id == self.instance.id:
                 self.feedback_type = i.type
                 break
+        a = self.fields['type']
+        b = self.data
+        c = self.add_prefix('type')
         self.feedback_type = self.feedback_type or self.fields['type'].clean(self.fields['type'].widget.value_from_datadict(self.data, self.files, self.add_prefix('type')))
 
         self.initial['type'] = self.feedback_type

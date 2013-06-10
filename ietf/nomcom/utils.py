@@ -385,10 +385,10 @@ def parse_email(text):
 def create_feedback_email(nomcom, msg):
     from ietf.nomcom.models import Feedback
     by, subject, body = parse_email(msg)
-    name, addr = parseaddr(by)
+    #name, addr = parseaddr(by)
 
     feedback = Feedback(nomcom=nomcom,
-                        author=addr,
+                        author=by,
                         subject=subject or '',
                         comments=body)
     feedback.save()

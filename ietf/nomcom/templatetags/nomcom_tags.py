@@ -3,7 +3,7 @@ import tempfile
 
 from django import template
 from django.conf import settings
-from django.template.defaultfilters import linebreaksbr
+from django.template.defaultfilters import linebreaksbr, force_escape
 
 from ietf.utils.pipe import pipe
 from ietf.ietfauth.decorators import has_role
@@ -80,5 +80,5 @@ def decrypt(string, request, year, plain=False):
         return '<-Encripted text [Your private key is invalid]->'
 
     if not plain:
-        return linebreaksbr(out)
-    return out
+        return force_escape(linebreaksbr(out))
+    return force_escape(out)

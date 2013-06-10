@@ -5,8 +5,14 @@
 
 {% block subtitle %} - Feeback pending{% endblock %}
 
-{% block scripts %}
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css"></link>
+{% endblock %}
+
+{% block js %}
 {{ block.super }}
+<script type="text/javascript" src="/js/jquery-ui-1.8.11.custom.min.js"></script>
+<script type="text/javascript">
 (function($) {
     $(document).ready(function() {
         $('.toggle .trigger').click(function() {
@@ -19,13 +25,13 @@
             }
             return false;
         });
+        $('#feedbackformset select[multiple=multiple]').resizable();
     });
 })(jQuery);
+</script>
 {% endblock %}
 
 {% block nomcom_content %}
-
-<p>Back to <a href="{% url nomcom_view_feedback year %}">feedback index</a></p>
 
 <h2>Feedback pending from email list</h2>
 
@@ -40,6 +46,7 @@
 
 <div>
   <form id="feedbackformset" action="" method="post">{% csrf_token %}
+    {% if extra_ids %}<input type="hidden" name="extra_ids" value="{{ extra_ids }}" />{% endif %}
     <div class="sumit-row">
     {% if extra_step %}
     <input type="submit" value="Save feedback" name="end" />
@@ -49,6 +56,12 @@
     {% if default_type %}<input type="submit" name="move_to_default" value="Move all unclassified feedback to {{ default_type }}" />{% endif %}
     {% endif %}
     </div>
+    {% if not extra_step %}
+    <div class="legend" style="margin-bottom: 1em;">
+    <h4 style="margin-bottom: 0px;">Feedback types</h4>
+    (U) Unclassified, {% for legend, t in type_dict.items %}({{ legend }}) {{ t.name }}{% if not forloop.last %},{% endif %} {% endfor %}
+    </div>
+    {% endif %}
     {{ formset.management_form }}
     <table class="ietf-table">
     {% include "nomcom/inc.feedback_pending_header.html" %}
