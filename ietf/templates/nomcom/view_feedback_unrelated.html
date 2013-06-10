@@ -41,9 +41,7 @@
                 {% endfor %}
               {% endifequal %}
               <b>Positions:</b> {{ feedback.positions.all|join:"," }}
-              <p>
-                {% decrypt feedback.comments request year %}
-              </p>
+              <pre>{% decrypt feedback.comments request year 1 %}</pre>
             </div>
         {% endfor %}
       </div>

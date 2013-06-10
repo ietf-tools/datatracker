@@ -46,7 +46,7 @@
                 <h3>Subject:</h3> <pre>{{ feedback.subject }}</pre>
               {% endif %}
               <h3>Body</h3>
-                <pre>{% decrypt feedback.comments request year %}</pre>
+                <pre>{% decrypt feedback.comments request year 1 %}</pre>
             </div>
           {% endifequal %}
         {% endfor %}
