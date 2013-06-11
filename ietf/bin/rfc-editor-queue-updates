@@ -16,9 +16,9 @@ management.setup_environ(settings)
 
 from ietf.sync.rfceditor import *
 
-syslog.syslog("Updating RFC Editor queue states from %s" % QUEUE_URL)
+syslog.syslog("Updating RFC Editor queue states from %s" % settings.RFC_EDITOR_QUEUE_URL)
 
-response = fetch_queue_xml(QUEUE_URL)
+response = fetch_queue_xml(settings.RFC_EDITOR_QUEUE_URL)
 drafts, warnings = parse_queue(response)
 for w in warnings:
     syslog.syslog(u"WARNING: %s" % w)

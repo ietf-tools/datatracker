@@ -28,9 +28,9 @@ if options.skip_date:
 
 from ietf.sync.rfceditor import *
 
-syslog.syslog("Updating document metadata from RFC index from %s" % QUEUE_URL)
+syslog.syslog("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_QUEUE_URL)
 
-response = fetch_index_xml(INDEX_URL)
+response = fetch_index_xml(settings.RFC_EDITOR_INDEX_URL)
 data = parse_index(response)
 
 if len(data) < MIN_INDEX_RESULTS:
