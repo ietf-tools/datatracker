@@ -89,14 +89,6 @@ span.fieldRequired {
     background-color: #ffcc66;
 }
 
-.errorlist li,
-.errorlist {
-    padding: 0px; 
-    margin: 0px;
-    list-style: none;
-    color: red;
-}
-
 .js-info {
     border: 1px dashed red;
     padding: 1em 2em;
