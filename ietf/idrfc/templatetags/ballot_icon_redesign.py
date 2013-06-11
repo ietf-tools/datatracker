@@ -73,6 +73,9 @@ def render_ballot_icon(user, doc):
     elif doc.type_id == "conflrev":
        if doc.get_state_slug() not in ("iesgeval","defer"):
            return ""
+    elif doc.type_id == "statchg":
+       if doc.get_state_slug() not in ("iesgeval","defer"):
+           return ""
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if not ballot:
