@@ -55,7 +55,8 @@ def fill_in_charter_info(wg, include_drafts=False):
     wg.techadvisors = Email.objects.filter(role__group=wg, role__name="techadv")
     wg.editors = Email.objects.filter(role__group=wg, role__name="editor")
     wg.secretaries = Email.objects.filter(role__group=wg, role__name="secr")
-    wg.milestones = wg.groupmilestone_set.filter(state="active").order_by('due')
+    milestone_state = "charter" if wg.state_id == "proposed" else "active"
+    wg.milestones = wg.groupmilestone_set.filter(state=milestone_state).order_by('due')
 
     if include_drafts:
         aliases = DocAlias.objects.filter(document__type="draft", document__group=wg).select_related('document').order_by("name")

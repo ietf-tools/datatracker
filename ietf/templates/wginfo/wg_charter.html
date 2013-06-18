@@ -162,12 +162,14 @@ is occasionally incorrect.</span>
 </p>
 {% endif %}
 
-<h2>Charter for Working Group</h2>
+<h2>Charter for {% if wg.state_id == "proposed" %}Proposed{% endif %} Working Group</h2>
 <p>{{ wg.charter_text|escape|format_charter|safe }}</p>
 
-<h2>Milestones
+<h2>{% if wg.state_id == "proposed" %}Proposed{% endif %} Milestones
+{% if wg.state_id != "proposed" %}
 {% if user|has_role:"Area Director,Secretariat" or is_chair %}
 <a class="button" href="{% url wg_edit_milestones acronym=wg.acronym %}">Add or edit milestones</a>
+{% endif %}
 {% endif %}
 </h2>
 
