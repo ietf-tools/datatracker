@@ -3,7 +3,8 @@ import re, datetime, os
 from django.conf import settings
 
 from ietf.group.models import GroupEvent, ChangeStateGroupEvent
-from ietf.doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor, DocEvent
+from ietf.doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor, DocEvent, NewRevisionDocEvent
+from ietf.utils.history import find_history_active_at
 
 def log_state_changed(request, doc, by, prev_state):
     e = DocEvent(doc=doc, by=by)
@@ -42,6 +43,44 @@ def read_charter_text(doc):
             return f.read()
     except IOError:
         return "Error: couldn't read charter text"
+
+def historic_milestones_for_charter(charter, rev):
+    """Return GroupMilestone/GroupMilestoneHistory objects for charter
+    document at rev by looking through the history."""
+
+    chartering = "-" in rev
+    if chartering:
+        need_state = "charter"
+    else:
+        need_state = "active"
+
+    # slight complication - we can assign milestones to a revision up
+    # until the point where the next superseding revision is
+    # published, so that time shall be our limit
+    revision_event = charter.latest_event(NewRevisionDocEvent, type="new_revision", rev=rev)
+    if not revision_event:
+        return []
+
+    e = charter.docevent_set.filter(time__gt=revision_event.time, type="new_revision").order_by("time")
+    if not chartering:
+        e = e.exclude(newrevisiondocevent__rev__contains="-")
+
+    if e:
+        # subtract a margen of error to avoid collisions with
+        # milestones being published at the same time as the new
+        # revision (when approving a charter)
+        just_before_next_rev = e[0].time - datetime.timedelta(seconds=5)
+    else:
+        just_before_next_rev = datetime.datetime.now()
+
+    res = []
+    for m in charter.chartered_group.groupmilestone_set.all():
+        mh = find_history_active_at(m, just_before_next_rev)
+        if mh and mh.state_id == need_state:
+            res.append(mh)
+
+    return res
+    
 
 def update_telechat(request, doc, by, new_telechat_date):
     # FIXME: reuse function in idrfc/utils.py instead of this one

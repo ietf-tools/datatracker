@@ -55,6 +55,7 @@ from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
 from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
+from ietf.wgcharter.utils import historic_milestones_for_charter
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -92,7 +93,7 @@ def document_main(request, name, rev=None):
             raise Http404()
         return document_main_idrfc(request, name, tab="document")
 
-    doc = get_object_or_404(Document, docalias__name=name)
+    orig_doc = doc = get_object_or_404(Document, docalias__name=name)
     group = doc.group
     if doc.type_id == 'conflrev':
         conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
@@ -153,9 +154,7 @@ def document_main(request, name, rev=None):
         chartering = get_chartering_type(doc)
 
         # inject milestones from group
-        milestones = None
-        if chartering and not snapshot:
-            milestones = doc.group.groupmilestone_set.filter(state="charter")
+        milestones = historic_milestones_for_charter(orig_doc, doc.rev)
 
         return render_to_response("idrfc/document_charter.html",
                                   dict(doc=doc,
