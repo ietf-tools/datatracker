@@ -41,6 +41,12 @@ tr.milestone.add { font-style: italic; }
 
 <noscript>This page depends on Javascript being enabled to work properly.</noscript>
 
+<p>Links:
+  <a href="{% url wg_charter acronym=group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>
+  - <a href="{% url doc_view name=group.charter.canonical_name %}">{{ group.charter.canonical_name }}</a>
+</p>
+
+
 <p class="help">{% if forms %}Click a milestone to edit it.{% endif %}
 
 {% if needs_review %}
@@ -53,7 +59,7 @@ Director.
 {% if can_reset %}
 <p>
 You can <a href="{% url wg_reset_charter_milestones acronym=group.acronym %}">reset
-this list</a> to the currently in-use milestones for the {{ group.acronym }} {{ group.type.name }}.
+this list</a> to the milestones currently in use for the {{ group.acronym }} {{ group.type.name }}.
 </p>
 {% endif %}
 
