@@ -169,6 +169,11 @@ def update_history_with_changes(changes, send_email=True):
             state = states[kind][c["state"]]
             state_type = "draft-iana-%s" % kind
 
+            if state.slug in ("need-rev", "changed"):
+                # the Datatracker is the ultimate source of these
+                # states, so skip them
+                continue
+
             e = StateDocEvent.objects.filter(type="changed_state", time=timestamp,
                                              state_type=state_type, state=state)
             if not e:
@@ -185,6 +190,8 @@ def update_history_with_changes(changes, send_email=True):
                 e = add_state_change_event(doc, system, prev_state, state, timestamp)
 
                 if e:
+                    # for logging purposes
+                    e.json = c
                     added_events.append(e)
 
                 if not StateDocEvent.objects.filter(doc=doc, time__gt=timestamp, state_type=state_type):

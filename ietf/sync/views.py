@@ -78,6 +78,9 @@ def notify(request, org, notification):
             out, _ = p.communicate()
             return (p.returncode, out)
 
+        import syslog
+        syslog.syslog("Running sync script from notify view POST")
+
         if notification == "protocols":
             failed, out = runscript("iana-protocols-updates")
 
