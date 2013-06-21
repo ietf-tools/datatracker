@@ -69,14 +69,6 @@
       </td>
     </tr>
 
-    {% if chartering and group.comments %}
-    <tr>
-      {% if chartering == "initial" %}<td>Reason for chartering:</td>{% endif %}
-      {% if chartering == "rechartering" %}<td>Reason for rechartering:</td>{% endif %}
-      <td>{{ group.comments }}</td>
-    </tr>
-    {% endif %}
-
    <tr>
     <td>Responsible AD:</td>
     <td><a {% if request.user|has_role:"Area Director,Secretariat" %}class="editlink" href="{% url charter_edit_ad name=doc.name %}"{% endif %}>{{ doc.ad|default:"none" }}</a> </td>
