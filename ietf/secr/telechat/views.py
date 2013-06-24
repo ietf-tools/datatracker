@@ -180,14 +180,11 @@ def doc_detail(request, date, name):
     doc = get_object_or_404(Document, docalias__name=name)
     
     # As of Datatracker v4.32, Conflict Review (conflrev) Document Types can 
-    # be added to the Telechat agenda.  We need to check the document type here
-    # and set the state_type for use later in the view
+    # be added to the Telechat agenda.  If Document.type_id == draft use draft-iesg
+    # for state type
+    state_type = doc.type_id
     if doc.type_id == 'draft':
         state_type = 'draft-iesg'
-    elif doc.type_id == 'conflrev':
-        state_type = 'conflrev'
-    elif doc.type_id == 'charter':
-        state_type = 'charter'
         
     started_process = doc.latest_event(type="started_iesg_process")
     login = request.user.get_profile()
