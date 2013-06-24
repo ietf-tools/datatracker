@@ -6,7 +6,7 @@
   <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
 {% endblock %}
 
-{% block breadcrumbs %}{{ block.super }} 
+{% block breadcrumbs %}{{ block.super }}
   &raquo; <a href="../">Drafts</a>
   &raquo; {{ draft.name }}
 {% endblock %}
@@ -51,6 +51,7 @@
         <tr><td>Abstract:</td><td><a href="{% url drafts_abstract id=draft.name %}">Click here to view the abstract</td></tr>
         <tr><td>Expiration Date:</td><td>{{ draft.expires|date:"M. d, Y" }}</td></tr>
         <tr><td>Intended Status:</td><td>{{ draft.intended_std_level|default_if_none:"" }}</td></tr>
+        <tr><td>Standardization Level:</td><td>{{ draft.std_level|default_if_none:"" }}</td></tr>
         <tr><td>RFC Number:</td><td>{{ draft.rfc_number|default_if_none:"" }}</td></tr>
         <tr><td>Comments:</td><td>{{ draft.internal_comments|default_if_none:"" }}</td></tr>
         <tr><td>Last Modified Date:</td><td>{{ draft.time }}</td></tr>

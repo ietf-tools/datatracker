@@ -13,16 +13,16 @@ import re
 from os.path import splitext
 
 # ---------------------------------------------
-# Select Choices 
+# Select Choices
 # ---------------------------------------------
 WITHDRAW_CHOICES = (('ietf','Withdraw by IETF'),('author','Withdraw by Author'))
 
 # ---------------------------------------------
-# Custom Fields 
+# Custom Fields
 # ---------------------------------------------
 class DocumentField(forms.FileField):
     '''A validating document upload field'''
-    
+
     def __init__(self, unique=False, *args, **kwargs):
         self.extension = kwargs.pop('extension')
         self.filename = kwargs.pop('filename')
@@ -36,7 +36,7 @@ class DocumentField(forms.FileField):
             m = re.search(r'.*-\d{2}\.(txt|pdf|ps|xml)', file.name)
             if not m:
                 raise forms.ValidationError('File name must be in the form base-NN.[txt|pdf|ps|xml]')
-                
+
             # ensure file extension is correct
             base,ext = os.path.splitext(file.name)
             if ext != self.extension:
@@ -51,44 +51,44 @@ class DocumentField(forms.FileField):
                 next_revision = str(int(self.rev)+1).zfill(2)
                 if base[-2:] != next_revision:
                     raise forms.ValidationError, "Expected revision # %s" % (next_revision)
-                
+
         return file
 
 class GroupModelChoiceField(forms.ModelChoiceField):
     '''
-    Custom ModelChoiceField sets queryset to include all active workgroups and the 
+    Custom ModelChoiceField sets queryset to include all active workgroups and the
     individual submission group, none.  Displays group acronyms as choices.  Call it without the
     queryset argument, for example:
-    
+
     group = GroupModelChoiceField(required=True)
     '''
     def __init__(self, *args, **kwargs):
         kwargs['queryset'] = Group.objects.filter(type__in=('wg','individ'),state__in=('bof','proposed','active')).order_by('acronym')
         super(GroupModelChoiceField, self).__init__(*args, **kwargs)
-    
+
     def label_from_instance(self, obj):
         return obj.acronym
 
 class AliasModelChoiceField(forms.ModelChoiceField):
     '''
-    Custom ModelChoiceField, just uses Alias name in the select choices as opposed to the 
+    Custom ModelChoiceField, just uses Alias name in the select choices as opposed to the
     more confusing alias -> doc format used by DocAlias.__unicode__
-    '''    
+    '''
     def label_from_instance(self, obj):
         return obj.name
-        
+
 # ---------------------------------------------
-# Forms 
+# Forms
 # ---------------------------------------------
 class AddModelForm(forms.ModelForm):
     start_date = forms.DateField()
     group = GroupModelChoiceField(required=True,help_text='Use group "none" for Individual Submissions')
-    
+
     class Meta:
         model = Document
         fields = ('title','group','stream','start_date','pages','abstract','internal_comments')
-       
-    # use this method to set attrs which keeps other meta info from model.  
+
+    # use this method to set attrs which keeps other meta info from model.
     def __init__(self, *args, **kwargs):
         super(AddModelForm, self).__init__(*args, **kwargs)
         self.fields['title'].label='Document Name'
@@ -104,17 +104,17 @@ class AuthorForm(forms.Form):
     '''
     person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")
     email = forms.CharField(widget=forms.Select(),help_text="Select an email")
-        
-    # check for id within parenthesis to ensure name was selected from the list 
+
+    # check for id within parenthesis to ensure name was selected from the list
     def clean_person(self):
         person = self.cleaned_data.get('person', '')
         m = re.search(r'(\d+)', person)
         if person and not m:
-            raise forms.ValidationError("You must select an entry from the list!") 
-        
+            raise forms.ValidationError("You must select an entry from the list!")
+
         # return person object
         return get_person(person)
-    
+
     # check that email exists and return the Email object
     def clean_email(self):
         email = self.cleaned_data['email']
@@ -122,7 +122,7 @@ class AuthorForm(forms.Form):
             obj = Email.objects.get(address=email)
         except Email.ObjectDoesNoExist:
             raise forms.ValidationError("Email address not found!")
-        
+
         # return email object
         return obj
 
@@ -133,12 +133,12 @@ class EditModelForm(forms.ModelForm):
     group = GroupModelChoiceField(required=True)
     review_by_rfc_editor = forms.BooleanField(required=False)
     shepherd = forms.CharField(max_length=100,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.",required=False)
-    
+
     class Meta:
         model = Document
-        fields = ('title','group','ad','shepherd','notify','stream','review_by_rfc_editor','name','rev','pages','intended_std_level','abstract','internal_comments')
-                 
-    # use this method to set attrs which keeps other meta info from model.  
+        fields = ('title','group','ad','shepherd','notify','stream','review_by_rfc_editor','name','rev','pages','intended_std_level','std_level','abstract','internal_comments')
+
+    # use this method to set attrs which keeps other meta info from model.
     def __init__(self, *args, **kwargs):
         super(EditModelForm, self).__init__(*args, **kwargs)
         self.fields['ad'].queryset = Person.objects.filter(role__name='ad')
@@ -151,36 +151,36 @@ class EditModelForm(forms.ModelForm):
             self.initial['iesg_state'] = self.instance.get_state('draft-iesg').pk
         if self.instance.shepherd:
             self.initial['shepherd'] = "%s - (%s)" % (self.instance.shepherd.name, self.instance.shepherd.id)
-        
+
         # setup special fields
         if self.instance:
             # setup replaced
             self.fields['review_by_rfc_editor'].initial = bool(self.instance.tags.filter(slug='rfc-rev'))
-            
+
     def save(self, force_insert=False, force_update=False, commit=True):
         m = super(EditModelForm, self).save(commit=False)
         state = self.cleaned_data['state']
         iesg_state = self.cleaned_data['iesg_state']
-        
+
         if 'state' in self.changed_data:
             m.set_state(state)
-        
+
         # note we're not sending notices here, is this desired
         if 'iesg_state' in self.changed_data:
             if iesg_state == None:
                 m.unset_state('draft-iesg')
             else:
                 m.set_state(iesg_state)
-            
+
         if 'review_by_rfc_editor' in self.changed_data:
             if self.cleaned_data.get('review_by_rfc_editor',''):
                 m.tags.add('rfc-rev')
             else:
                 m.tags.remove('rfc-rev')
-        
+
         m.time = datetime.datetime.now()
         # handle replaced by
-        
+
         if commit:
             m.save()
         return m
@@ -189,19 +189,19 @@ class EditModelForm(forms.ModelForm):
     def clean_replaced_by(self):
         name = self.cleaned_data.get('replaced_by', '')
         if name and not InternetDraft.objects.filter(filename=name):
-            raise forms.ValidationError("ERROR: Draft does not exist") 
+            raise forms.ValidationError("ERROR: Draft does not exist")
         return name
-        
-    # check for id within parenthesis to ensure name was selected from the list 
+
+    # check for id within parenthesis to ensure name was selected from the list
     def clean_shepherd(self):
         person = self.cleaned_data.get('shepherd', '')
         m = re.search(r'(\d+)', person)
         if person and not m:
-            raise forms.ValidationError("You must select an entry from the list!") 
-        
+            raise forms.ValidationError("You must select an entry from the list!")
+
         # return person object
         return get_person(person)
-        
+
     def clean(self):
         super(EditModelForm, self).clean()
         cleaned_data = self.cleaned_data
@@ -233,7 +233,7 @@ class EmailForm(forms.Form):
 
 class ExtendForm(forms.Form):
     expiration_date = forms.DateField()
-    
+
 class ReplaceForm(forms.Form):
     replaced = AliasModelChoiceField(DocAlias.objects.none(),empty_label=None,help_text='This document may have more than one alias.  Be sure to select the correct alias to replace.')
     replaced_by = forms.CharField(max_length=100,help_text='Enter the filename of the Draft which replaces this one.')
@@ -242,7 +242,7 @@ class ReplaceForm(forms.Form):
         self.draft = kwargs.pop('draft')
         super(ReplaceForm, self).__init__(*args, **kwargs)
         self.fields['replaced'].queryset = DocAlias.objects.filter(document=self.draft)
-        
+
     # field must contain filename of existing draft
     def clean_replaced_by(self):
         name = self.cleaned_data.get('replaced_by', '')
@@ -263,49 +263,49 @@ class RevisionModelForm(forms.ModelForm):
     class Meta:
         model = Document
         fields = ('title','pages','abstract')
-    
-    # use this method to set attrs which keeps other meta info from model.  
+
+    # use this method to set attrs which keeps other meta info from model.
     def __init__(self, *args, **kwargs):
         super(RevisionModelForm, self).__init__(*args, **kwargs)
         self.fields['title'].label='Document Name'
         self.fields['title'].widget=forms.Textarea()
         self.fields['pages'].label='Number of Pages'
-        
+
 class RfcModelForm(forms.ModelForm):
     rfc_number = forms.IntegerField()
     rfc_published_date = forms.DateField(initial=datetime.datetime.now)
     group = GroupModelChoiceField(required=True)
-    
+
     class Meta:
         model = Document
         fields = ('title','group','pages','std_level','internal_comments')
-    
-    # use this method to set attrs which keeps other meta info from model.  
+
+    # use this method to set attrs which keeps other meta info from model.
     def __init__(self, *args, **kwargs):
         super(RfcModelForm, self).__init__(*args, **kwargs)
         self.fields['title'].widget = forms.Textarea()
         self.fields['std_level'].required = True
-    
+
     def save(self, force_insert=False, force_update=False, commit=True):
         obj = super(RfcModelForm, self).save(commit=False)
-        
+
         # create DocAlias
         DocAlias.objects.create(document=self.instance,name="rfc%d" % self.cleaned_data['rfc_number'])
-        
+
         if commit:
             obj.save()
         return obj
-        
+
     def clean_rfc_number(self):
         rfc_number = self.cleaned_data['rfc_number']
         if DocAlias.objects.filter(name='rfc' + str(rfc_number)):
             raise forms.ValidationError("RFC %d already exists" % rfc_number)
         return rfc_number
-        
+
 class RfcObsoletesForm(forms.Form):
     relation = forms.ModelChoiceField(queryset=DocRelationshipName.objects.filter(slug__in=('updates','obs')),required=False)
     rfc = forms.IntegerField(required=False)
-    
+
     # ensure that RFC exists
     def clean_rfc(self):
         rfc = self.cleaned_data.get('rfc','')
@@ -313,7 +313,7 @@ class RfcObsoletesForm(forms.Form):
             if not Document.objects.filter(docalias__name="rfc%s" % rfc):
                 raise forms.ValidationError("RFC does not exist")
         return rfc
-    
+
     def clean(self):
         super(RfcObsoletesForm, self).clean()
         cleaned_data = self.cleaned_data
@@ -348,8 +348,8 @@ class UploadForm(forms.Form):
             for field in self.fields.itervalues():
                 field.filename = self.draft.name
                 field.rev = self.draft.rev
-                
-        
+
+
     def clean(self):
         # Checks that all files have the same base
         if any(self.errors):
@@ -359,7 +359,7 @@ class UploadForm(forms.Form):
         xml = self.cleaned_data['xml']
         pdf = self.cleaned_data['pdf']
         ps = self.cleaned_data['ps']
-        
+
         # we only need to do these validations for new drafts
         if not self.draft:
             names = []
@@ -368,19 +368,19 @@ class UploadForm(forms.Form):
                     base = splitext(file.name)[0]
                     if base not in names:
                         names.append(base)
-                    
+
             if len(names) > 1:
                 raise forms.ValidationError, "All files must have the same base name"
-        
+
             # ensure that the basename is unique
             base = splitext(txt.name)[0]
             if Document.objects.filter(name=base[:-3]):
                 raise forms.ValidationError, "This doucment filename already exists: %s" % base[:-3]
-            
+
             # ensure that rev is 00
             if base[-2:] != '00':
                 raise forms.ValidationError, "New Drafts must start with 00 revision number."
-        
+
         return self.cleaned_data
 
 class WithdrawForm(forms.Form):
