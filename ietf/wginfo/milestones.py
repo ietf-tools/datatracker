@@ -93,7 +93,7 @@ class MilestoneForm(forms.Form):
         self.docs_prepopulate = json_doc_names(self.docs_names)
 
         # calculate whether we've changed
-        self.changed = self.is_bound and (not self.milestone or any(str(self[f].data) != str(self.initial[f]) for f in self.fields.iterkeys()))
+        self.changed = self.is_bound and (not self.milestone or any(unicode(self[f].data) != unicode(self.initial[f]) for f in self.fields.iterkeys()))
 
     def clean_docs(self):
         s = self.cleaned_data["docs"]
