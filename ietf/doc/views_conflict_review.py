@@ -406,8 +406,8 @@ def start_review(request, name):
 			              stream_id = 'ietf',
                                       group = iesg_group,
                                     )
-            conflict_review.set_state(form.cleaned_data['create_in_state'])
             conflict_review.save()
+            conflict_review.set_state(form.cleaned_data['create_in_state'])
 
             DocAlias.objects.create( name=review_name , document=conflict_review )
             
