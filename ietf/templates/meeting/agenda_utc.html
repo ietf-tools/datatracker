@@ -79,6 +79,9 @@ img.hidden { display: none; }
 <script type="text/javascript" src='/js/jquery-1.5.1.min.js'></script>
 <script type="text/javascript" src='/js/browsertime.js'></script>
 <script type="text/javascript" src='/js/weekview.js'></script>
+<script type="text/javascript" >
+   var lastfrag;
+</script>
 
 {% endblock pagehead %}
 {% block bodyAttrs %}onload='setGroupState();updateAgendaColors()'{% endblock %}
@@ -104,7 +107,7 @@ Updated {{ modified|date:"Y-m-d H:i:s T" }}</p>
 <p><strong>IETF agendas are subject to change, up to and during the meeting.</strong></p>
 
 {# cache this part for 15 minutes -- it takes 3-6 seconds to generate #}
-{% load cache %}{% cache 900 ietf_meeting_agenda meeting.number %}
+{% load cache %}{% cache 900 ietf_meeting_agenda_utc meeting.number %}
 
 You can customize the agenda below to show only selected working group sessions.  To be able to return to the customized view later, bookmark the resulting URL.
 <div class="noprint" onclick="toggle_wg_selector()">
