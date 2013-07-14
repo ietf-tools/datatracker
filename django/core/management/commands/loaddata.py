@@ -81,6 +81,10 @@ class Command(BaseCommand):
         if has_bz2:
             compression_types['bz2'] = bz2.BZ2File
 
+        # from https://code.djangoproject.com/attachment/ticket/3615/defer_constraint_checks.diff
+        connection.begin_defer_constraint_checks()
+	         
+
         app_module_paths = []
         for app in get_apps():
             if hasattr(app, '__path__'):
@@ -118,6 +122,9 @@ class Command(BaseCommand):
                 self.stderr.write(
                     self.style.ERROR("Problem installing fixture '%s': %s is not a known serialization format.\n" %
                         (fixture_name, format)))
+                # from https://code.djangoproject.com/attachment/ticket/3615/defer_constraint_checks.diff
+                connection.end_defer_constraint_checks()
+
                 if commit:
                     transaction.rollback(using=using)
                     transaction.leave_transaction_management(using=using)
@@ -153,6 +160,9 @@ class Command(BaseCommand):
                             fixture.close()
                             self.stderr.write(self.style.ERROR("Multiple fixtures named '%s' in %s. Aborting.\n" %
                                 (fixture_name, humanize(fixture_dir))))
+                            # from https://code.djangoproject.com/attachment/ticket/3615/defer_constraint_checks.diff
+                            connection.end_defer_constraint_checks()
+
                             if commit:
                                 transaction.rollback(using=using)
                                 transaction.leave_transaction_management(using=using)
@@ -180,6 +190,10 @@ class Command(BaseCommand):
                             except Exception:
                                 import traceback
                                 fixture.close()
+
+                                # from https://code.djangoproject.com/attachment/ticket/3615/defer_constraint_checks.diff
+                                connection.end_defer_constraint_checks()
+
                                 if commit:
                                     transaction.rollback(using=using)
                                     transaction.leave_transaction_management(using=using)
@@ -199,6 +213,9 @@ class Command(BaseCommand):
                                 self.stderr.write(
                                     self.style.ERROR("No fixture data found for '%s'. (File format may be invalid.)\n" %
                                         (fixture_name)))
+                                # from https://code.djangoproject.com/attachment/ticket/3615/defer_constraint_checks.diff
+                                connection.end_defer_constraint_checks()
+
                                 if commit:
                                     transaction.rollback(using=using)
                                     transaction.leave_transaction_management(using=using)
@@ -218,6 +235,9 @@ class Command(BaseCommand):
                     self.stdout.write("Resetting sequences\n")
                 for line in sequence_sql:
                     cursor.execute(line)
+
+        # from https://code.djangoproject.com/attachment/ticket/3615/defer_constraint_checks.diff
+        connection.end_defer_constraint_checks()
 
         if commit:
             transaction.commit(using=using)
