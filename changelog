@@ -1,6 +1,6 @@
 ietfdb (4.52) ietf; urgency=medium
 
-  This is a minor bugfix release, in preparation for the next major merge.
+  This is a minor bugfix release, in preparation for the next major  merge.  
 
   * Fixed problem with caching of utc agenda -- use a separate cache name for
     this.
@@ -52,6 +52,7 @@ ietfdb (4.52) ietf; urgency=medium
   * Show approved milestones on /doc/charter-xyz/ page if the charter is
     approved instead of only showing proposed milestones for proposed charters
 
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jul 2013 16:05:36 +0200
 
 ietfdb (4.51) ietf; urgency=low
 
@@ -75,7 +76,7 @@ ietfdb (4.51) ietf; urgency=low
     This adds states to status-change- documents and has a migration that 
     must be applied.  Fixes bug #1039
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jul 2013 16:04:20 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Jun 2013 22:03:29 +0200
 
 ietfdb (4.50) ietf; urgency=medium
 
