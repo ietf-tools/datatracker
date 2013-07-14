@@ -1,3 +1,58 @@
+ietfdb (4.52) ietf; urgency=medium
+
+  This is a minor bugfix release, in preparation for the next major merge.
+
+  * Fixed problem with caching of utc agenda -- use a separate cache name for
+    this.
+
+  * Permit unicode milestone text (using unicode() instead of str() in
+    comparison when looking for milestone changes).  Fixes issue #1065.
+
+  * Added a list of releases below the release notes at /releases/*
+
+  * From RjS: Added a case in the render_ballot_icon() filter for statchg
+    documents.
+
+  * Removed duplicate '.errorlist' style.
+
+  * Fixed missing name change when moving settings from rfceditor module to
+    settings.py.
+
+  * Merged [5613] from mcr@sandelman.ca: include a way to dump timedeltafields
+    so that it is possible to save data to fixtures.
+
+  From olau@iola.dk:
+
+  * Skip IANA - Review Needed and Version Changed - Review Needed changes from
+    IANA as it turns out that the Datatracker is the authoritative source on
+    these states. Also improve logging so that the raw JSON from IANA is
+    dumped, the parsed JSON on imported changes is dumped and we write to
+    syslog before starting a sync script in the notification view.
+
+  * Only add charter state change link when chartering, it doesn't make sense
+    for an approved charter. Fixes #861.
+
+  * Don't display group.comments on the charter document page. Apparently
+    group.comments have been used by the Secretariat in the past for
+    chartering comments, but it's not possible to edit the field and the whole
+    thing doesn't make sense from a modelling perspective - a feature like
+    this should probably use the note field on the charter.  Fixes issue
+    #1048.
+
+  * Don't crash if an attachment has been created already, just reuse it -
+    this case shouldn't actually happen, but apparently sometimes does,
+    probably due to a concurrency issue
+
+  * Add link to charter pages from the milestones editing page (besides the
+    cancel button), fixes #1044.
+
+  * Special-case proposed working groups with respect to milestones, they get
+    the charter milestones on the WG charter page rather than the current set
+
+  * Show approved milestones on /doc/charter-xyz/ page if the charter is
+    approved instead of only showing proposed milestones for proposed charters
+
+
 ietfdb (4.51) ietf; urgency=low
 
   This is a minor bugfix release, in preparation for the next major
@@ -20,7 +75,7 @@ ietfdb (4.51) ietf; urgency=low
     This adds states to status-change- documents and has a migration that 
     must be applied.  Fixes bug #1039
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  09 Jun 2013 22:03:29 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jul 2013 16:04:20 +0200
 
 ietfdb (4.50) ietf; urgency=medium
 
