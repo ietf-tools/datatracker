@@ -519,9 +519,8 @@ def start_rfc_status_change(request,name):
                                     stream_id = 'ietf',
                                     group = iesg_group,
                                   )
-            status_change.set_state(form.cleaned_data['create_in_state'])
-               
             status_change.save()
+            status_change.set_state(form.cleaned_data['create_in_state'])
 
             DocAlias.objects.create( name= 'status-change-'+form.cleaned_data['document_name'], document=status_change )
             
