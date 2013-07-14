@@ -22,9 +22,6 @@ admin.autodiscover()
 admin.site.disable_action('delete_selected')
 
 
-from dajaxice.core import dajaxice_autodiscover
-dajaxice_autodiscover()
-
 feeds = {
     'iesg-agenda': IESGAgenda,
     'last-call': InLastCall,
@@ -80,7 +77,6 @@ urlpatterns = patterns('',
 
     # Google webmaster tools verification url
     (r'^googlea30ad1dacffb5e5b.html', 'django.views.generic.simple.direct_to_template', { 'template': 'googlea30ad1dacffb5e5b.html' }),
-    (r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
 )
 
 if settings.SERVER_MODE in ('development', 'test'):

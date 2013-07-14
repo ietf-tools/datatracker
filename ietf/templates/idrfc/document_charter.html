@@ -40,7 +40,7 @@
       <td>
         <div>
         <a title="{{ doc.get_state.desc }}"
-            {% if not snapshot and user|has_role:"Area Director,Secretariat" %} 
+            {% if not snapshot and chartering and user|has_role:"Area Director,Secretariat" %}
                class="editlink" href="{% url charter_change_state name=doc.name %}"
             {% endif %}>
             {{ doc.get_state.name }}
@@ -68,14 +68,6 @@
         {% endif %}
       </td>
     </tr>
-
-    {% if chartering and group.comments %}
-    <tr>
-      {% if chartering == "initial" %}<td>Reason for chartering:</td>{% endif %}
-      {% if chartering == "rechartering" %}<td>Reason for rechartering:</td>{% endif %}
-      <td>{{ group.comments }}</td>
-    </tr>
-    {% endif %}
 
    <tr>
     <td>Responsible AD:</td>
@@ -139,9 +131,8 @@
 </div>
 {% endif %}
 
-{% if not snapshot and chartering %}
-<h3>Proposed Milestones
-{% if user|has_role:"Area Director,Secretariat" %}
+<h3>{% if chartering %}Proposed{% endif %} Milestones
+{% if not snapshot and user|has_role:"Area Director,Secretariat" %}
 <a class="edit" href="{% url wg_edit_charter_milestones acronym=doc.group.acronym %}">Edit charter milestones</a>
 {% endif %}
 </h3>
@@ -150,7 +141,6 @@
 {% include "wginfo/milestones.html" %}
 {% else %}
 <p>No milestones for charter found.</p>
-{% endif %}
 {% endif %}
 
 {% endblock %}

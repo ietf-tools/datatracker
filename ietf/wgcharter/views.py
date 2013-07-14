@@ -716,35 +716,12 @@ def charter_with_milestones_txt(request, name, rev):
         charter_text = "Error reading charter text %s" % filename
 
 
-    # find milestones
+    milestones = historic_milestones_for_charter(charter, rev)
 
-    chartering = "-" in rev
-    if chartering:
-        need_state = "charter"
-    else:
-        need_state = "active"
-
-    # slight complication - we can assign milestones to a revision up
-    # until the point where the next superseding revision is
-    # published, so that time shall be our limit
-    e = charter.docevent_set.filter(time__gt=revision_event.time, type="new_revision").order_by("time")
-    if not chartering:
-        e = e.exclude(newrevisiondocevent__rev__contains="-")
-
-    if e:
-        # subtract a margen of error
-        just_before_next_rev = e[0].time - datetime.timedelta(seconds=5)
-    else:
-        just_before_next_rev = datetime.datetime.now()
-
+    # wrap the output nicely
     wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent=" " * 11, width=80, break_long_words=False)
-
-    milestones = []
-    for m in charter.chartered_group.groupmilestone_set.all():
-        mh = find_history_active_at(m, just_before_next_rev)
-        if mh and mh.state_id == need_state:
-            mh.desc_filled = wrapper.fill(mh.desc)
-            milestones.append(mh)
+    for m in milestones:
+        m.desc_filled = wrapper.fill(m.desc)
 
     return render_to_response('wgcharter/charter_with_milestones.txt',
                               dict(charter_text=charter_text,

@@ -46,6 +46,12 @@ class IANASyncTestCase(django.test.TestCase):
                         "type": "iana_review",
                     },
                     {
+                        "time": "2011-10-09 12:00:02",
+                        "doc": draft.name,
+                        "state": "IANA - Review Needed", # this should be skipped
+                        "type": "iana_review",
+                    },
+                    {
                         "time": "2011-10-09 12:00:00",
                         "doc": draft.name,
                         "state": "Waiting on RFC-Editor",

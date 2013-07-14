@@ -280,11 +280,13 @@ class LiaisonForm(forms.Form):
                 extension = ''
             written += 1
             name = instance.name() + ("-attachment-%s" % written)
-            attach = Document.objects.create(
-                title = self.data.get(title_key),
-                type_id = "liaison",
+            attach, _ = Document.objects.get_or_create(
                 name = name,
-                external_url = name + extension, # strictly speaking not necessary, but just for the time being ...
+                defaults=dict(
+                    title = self.data.get(title_key),
+                    type_id = "liaison",
+                    external_url = name + extension, # strictly speaking not necessary, but just for the time being ...
+                    )
                 )
             instance.attachments.add(attach)
             attach_file = open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'w')
