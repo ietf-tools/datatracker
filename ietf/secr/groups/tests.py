@@ -3,6 +3,7 @@ from django.test import TestCase
 from ietf.group.models import Group
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
+import debug
 
 SECR_USER='secretary'
 
@@ -98,6 +99,7 @@ class GroupsTest(TestCase):
         draft = make_test_data()
         group = Group.objects.filter(type='wg')[0]
         area = Group.objects.filter(type='area')[0]
+        ad = Person.objects.get(name='Aread Irector')        
         url = reverse('groups_edit', kwargs={'acronym':group.acronym})
         target = reverse('groups_view', kwargs={'acronym':group.acronym})
         post_data = {'acronym':group.acronym,
@@ -105,7 +107,7 @@ class GroupsTest(TestCase):
                      'type':'wg',
                      'state':group.state_id,
                      'parent':area.id,
-                     'ad':3,
+                     'ad':ad.id,
                      'groupurl_set-TOTAL_FORMS':'2',
                      'groupurl_set-INITIAL_FORMS':'0',
                      'submit':'Save'}

@@ -272,14 +272,16 @@ class MilestoneTestCase(django.test.TestCase):
 
         group = Group.objects.get(acronym="mars")
 
-        m1 = GroupMilestone.objects.create(group=group,
+        m1 = GroupMilestone.objects.create(id=1,
+                                           group=group,
                                            desc="Test 1",
                                            due=datetime.date.today(),
                                            resolved="",
                                            state_id="active")
         m1.docs = [draft]
 
-        m2 = GroupMilestone.objects.create(group=group,
+        m2 = GroupMilestone.objects.create(id=2,
+                                           group=group,
                                            desc="Test 2",
                                            due=datetime.date.today(),
                                            resolved="",
