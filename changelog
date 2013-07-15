@@ -78,11 +78,15 @@ ietfdb (4.51) ietf; urgency=low
     publication request when not in production mode.
 
   * Merged [5770] from rjsparks@nostrum.com: 
+
     - Added editing last call messages, requesting, issuing and tracking IETF 
       LCs to status-change documents
+
     - Added a Cancel button to the form that allows editing the relations for 
       status-change documents
+
     - Added instructions to the agenda section 3.3
+
     This adds states to status-change- documents and has a migration that 
     must be applied.  Fixes bug #1039
 
@@ -127,8 +131,11 @@ ietfdb (4.45) ietf; urgency=medium
   * Changed additional places to use IANA sync settings from settings.py
 
   * Merged [5645],[5646] and [5647] from olau@iola.dk:
+
     - Added support for notifying the RFC Editor upon draft approval
+
     - Added action to post to RFC Editor on non-IESG publication requests too
+
     - Fixed a bug that the CC on the announcement copy sent to IANA wasn't
       cleared causing people on the CC to get duplicate emails
 
@@ -161,7 +168,7 @@ ietfdb (4.44) ietf; urgency=medium
 
   * Merged [5570]: Moves the interface to edit shepherds and sheperd writeups
     out of the wgtracker interface and into the doc views (via idrfc).  Added a
-    little to the simple authorization code (can_edit_) in idrfc.  Added a way
+    little to the simple authorization code (can_edit) in idrfc.  Added a way
     to reset the writeup to the current templates (leaving extension points to
     take templates for non-ietf stream documents).  Fixes bug #967. (This also
     fixes tickets #834 and #691 (which were effectively duplicates of #967)
@@ -170,17 +177,23 @@ ietfdb (4.44) ietf; urgency=medium
     same type up 
 
   * Merged [5476]:
-    * Added a document type for changing the publication status of other 
+
+    - Added a document type for changing the publication status of other 
       documents, and the UI for manipulating them.
-    * Added charters, conflict reviews, and status changes to the AD's \'My 
+
+    - Added charters, conflict reviews, and status changes to the AD's \'My 
       Documents\' page
-    * Improved the presentation of all document types on the Agenda, Future 
+
+    - Improved the presentation of all document types on the Agenda, Future 
       Telechats, Scribe and Moderator package pages
-    * Made the reverse name for document relationships explicit rather than 
+
+    - Made the reverse name for document relationships explicit rather than 
       deriving them from forward names
-    * Added a way to get to the underlying Document (when it exists) from 
+
+    - Added a way to get to the underlying Document (when it exists) from 
       an RfcWrapper
-    * Unified several common forms used by different document types 
+
+    - Unified several common forms used by different document types 
 
   From henrik@levkowetz.com:
 
@@ -456,6 +469,7 @@ ietfdb (4.36) ietf; urgency=medium
   Sparks, Joel Halpern, Ryan Cross, Adam Roach, and Henrik Levkowetz.  
 
   From rjsparks@nostrum.com:
+
   * Enabled diff on the conflict review history tab.  Fixes bug #882 
 
   * Made it more obvious when an intended status or shepherding AD is not set
@@ -463,6 +477,7 @@ ietfdb (4.36) ietf; urgency=medium
     bug #900 
 
   From jmh@joelhalpern.com:
+
   * Moved the Replaced By: line in docent headers up to main header with
     Replaces: 
 
@@ -477,12 +492,14 @@ ietfdb (4.36) ietf; urgency=medium
   * Changed CONFLICT_REVIEW_PATH from conflict_reviews to conflict-reviews 
 
   From adam@nostrum.com: 
+
   * Fixed '%2C' bug introducted (exposed?) by Apple's iCloud handling of 
     URLs 
 
   * Fixed time column wrapping problem that exhibits in (at least) Safari. 
 
   From henrik@levkowetz.com:
+
   * Tweaked the changelog presentation to work irrespective of current 
     directory, and give a sensible 404 if the changelog can't be found.
 
@@ -695,38 +712,53 @@ ietfdb (4.34) ietf; urgency=medium
     combines a number of separate fixes: 
 
     Liasion Manager:
+
     * Patch from Yaco to avoid resetting the From field when changing other 
       items on the form
+
     * Gave the secretariat the ability to find/approve any unapproved 
       liaisons
+
     * Changed all the email code to use ietf.mail.utils (and removed the 
       fake-mail concept)
 
     Charter documents and the Agenda pages:
+
     * Added charter documents to iesg/agenda and iesg/agenda/documents
+
     * Synced the ordering of drafts on iesg/agenda and iesg/agenda/documents
+
     * Allow setting a responsible AD for charter documents
+
     * Changed the UI of the charter page to use editlink for changing 
       attributes and buttons for actions (to align with drafts and 
       conflict-reviews)
 
     Moderator package:
+
     * Refactor: Simplified access to the current BallotDocEvent from a 
       Document
+
     * Added functions to BallotDocEvents? to faciliate access to 
       BallotPositionDocEvents?, both for all positions, and current AD postions.
+
     * Updated the moderator package to use the Documents from _agenda_data.
+
     * Added a filter to assist with rendering the moderator package.
+
     * Fixed a bug where different functions in idrfc/views_ballot were 
       using log_state_changed expecting different implementations (a cleanup task 
       should reconcile the _three_ implementations in the codebase of that 
       function).
 
     Cleanup from codesprint:
+
     * Removed some duplication between doc/util and doc/models by moving 
       things into doc/models
+
     * Do not show non-empty discuss text when the ballot position is not 
       blocking
+
     * Added a migration to update non-blocking ballot positions that have 
       non-empty discuss text
 
@@ -802,10 +834,13 @@ ietfdb (4.33) ietf; urgency=medium
     Adding self-management page for user profile information 
 
   * Changeset [4704] from suresh.krishnan@ericsson.com: 
+
     - When the state changes from whatever to Publication Requested, the 
       regular state change mail will go out.
+
     - The regular state change mail will be sent to the authors and the wg 
       chairs (this is the current behavior).
+
     - Now, in addition to this regular state change mail, another mail will 
       be sent with the title 'Publication has been requested for draft 
       <draft-name>' and this mail will be sent to the AD responsible for the WG. 
@@ -821,7 +856,7 @@ ietfdb (4.33) ietf; urgency=medium
 ietfdb (4.32) ietf; urgency=medium
 
   This is a feature release that provides support for a new document type,
-  Conflict Review documents (conflrev-*.txt).
+  Conflict Review documents (conflrev-\*.txt).
 
   From rjsparks@nostrum.com:
 
@@ -855,9 +890,13 @@ ietfdb (4.32) ietf; urgency=medium
   * Added many helpers to Document to assist with migrating off IdWrapper
 
   * Minor fixes and other changes
+
     - Fixes to document main view to avoid (silent) template failures. 
+
     - Began removing some of the code that is no longer reachable post-migration
+
     - Corrected the behavior of the undefer code and added test cases for it
+
     - Improved initial population of notification lists and added the ability
       to regenerate the initial list
 
@@ -1125,7 +1164,7 @@ ietfdb (4.21) ietf; urgency=medium
   * Expose how many pages each document contains on the docs on future
     telechats page.  Fixes bug #828
 
-  *  Replaced the concept of a tag (via-rfc) identifying ise or irtf document
+  * Replaced the concept of a tag (via-rfc) identifying ise or irtf document
     (previously the idinternal.via_rfc_editor boolean) with looking at the
     document's stream.  Removed the stream editing form - that functionality
     is on the edit info form.  Put the old-ADs back into the list of choices
@@ -1270,7 +1309,7 @@ ietfdb (4.20) ietf; urgency=medium
     for a recharter submit form.
 
   * Reverse direction of revisions on charter /doc/ page to match 
-    tools.ietf.org/html/draft-*.
+    tools.ietf.org/html/draft-\*.
 
   * Change max acronym length to 10 instead of 8
 
@@ -1379,7 +1418,7 @@ ietfdb (4.00) ietf; urgency=medium
 
     For a full changelog, please go tot he commit log for the iola/conversion
     branch, web accessible at:
-       http://trac.tools.ietf.org/tools/ietfdb/log/branch/iola/conversion/
+    http://trac.tools.ietf.org/tools/ietfdb/log/branch/iola/conversion/
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2012 10:33:43 +0100
 
@@ -1589,13 +1628,19 @@ ietfdb (3.57) ietf; urgency=medium
     Simple changes to EditInfoForm field initialization 
 
   * Various bugfixes and admin enhancements from henrik@levkowetz.com:
+
     - Some enhancements to the admin for IDInternal
+
     - Fix a bug where the wrong text was shown for IPR declarations which 
       specified that licensing terms would be announced later (option d).
+
     - Fix a bug where the plenary entries in the html agenda didn't have 
       links to the room map.
+
     - Enhance the admin list page for Stream a bit.
+
     - Add some debug output utility functions.
+
     - Tweak the admin list for WgMeetingSession to show wg acronym instead of 
       group id.
 
@@ -1814,7 +1859,7 @@ ietfdb (3.50) ietf; urgency=medium
 
         $ PYTHONPATH=$PWD ietf/manage.py migrate
 
-    The output should be as follows:
+    The output should be as follows::
 
 	Running migrations for liaisons:
 	- Nothing to migrate.
@@ -2216,7 +2261,7 @@ ietfdb (3.07) ietf; urgency=medium
   is done as South migrations (see http://south.aeracode.org/ for more
   info on the South app).  More extensiive documentation about the actions
   needed are provided in the user manual (doc/LSMT_user_manual.pdf in
-  the release).  The brief version follows:
+  the release).  The brief version follows::
 
     # 8<----------
     # First the regular checkout and prepare:
@@ -2538,7 +2583,7 @@ ietfdb (2.48) ietf; urgency=medium
   * Replaced most of /idtracker/ (search, document page, ballot page, 
     comment page) with redirects to /doc/
 
-  * /doc/*: Show information about ballot sets
+  * /doc/\*: Show information about ballot sets
 
   * Refactoring /wg/: use redirects instead of redundant URLs; removed old 
     charter pages (not used/linked to); misc. cleaning
@@ -2575,7 +2620,7 @@ ietfdb (2.47) ietf; urgency=medium
 
   * New script for finding database tables with non-ASCII data
 
-  * /doc/*: allow direct links to tabs/individual comments
+  * /doc/\*: allow direct links to tabs/individual comments
 
   * /iesg/agenda/: show management item text if logged in as AD
 
@@ -2591,10 +2636,10 @@ ietfdb (2.46) ietf; urgency=medium
 
   * Add the I-D expiration notification script.
 
-  *** Please add the following cron entry:
+  \*\*\* Please add the following cron entry::
 
-  # Send notifications about pending I-D expirations.
-  42 4 * * 1 /a/www/ietf-datatracker/web/ietf/bin/notify-expirations
+    # Send notifications about pending I-D expirations.
+    42 4 \* \* 1 /a/www/ietf-datatracker/web/ietf/bin/notify-expirations
 
   From Henrik:
 
@@ -2613,7 +2658,7 @@ ietfdb (2.46) ietf; urgency=medium
 
   * /ipr/: remove separate list for updating
 
-  * /wg/acronym/*: clearer warning about concluded WGs
+  * /wg/acronym/\*: clearer warning about concluded WGs
 
   * A lot of various code and deployment cleanup
 
@@ -2951,12 +2996,19 @@ ietfdb (2.38) ietf; urgency=medium
   Miscellaneous minor fixes:
 
   * Added differentiating colours for BOF sessions in iPhone agenda
+
   From Pasi:
+
   * Fix bug in urlize (http://code.djangoproject.com/ticket/12183)
+
   * Added missing safe tags
+
   * Fixed Russ' email address in mkrelease
+
   * Updated account information template (fixes exception)
+
   * Show action items in IESG agenda; updated some links in IESG agenda
+
   * Fixed a bug in idtracker search (probably introduced by changeset 
     1842); new test case for that
   
@@ -2981,7 +3033,8 @@ ietfdb (2.37) ietf; urgency=medium
 
   * Lots of escape and safe filters added to the templates, to handle the
     transition from 0.96 to 1.1.  This work was contributed by a number of
-    people durint the IETF 76 code sprint:
+    people durint the IETF 76 code sprint::
+
 	Pasi Eronen (also leading up to the IETF 76 code sprint)
 	Tony Hansen
 	Ben Campbell
