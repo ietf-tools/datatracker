@@ -1,3 +1,13 @@
+ietfdb (4.53) ietf; urgency=low
+
+  This release provides improvements in the test suite, which nows runs
+  cleanly with test database rollbacks (using InnoDB) in less than half he
+  time it takes to run with a MyISAM test database without rollback support.
+  Most of the time is now spent on the page load tests, not on fixture
+  re-loading.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Jul 2013 09:32:18 +0200
+
 ietfdb (4.52) ietf; urgency=medium
 
   This is a minor bugfix release, in preparation for the next major  merge.  
