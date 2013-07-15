@@ -1,4 +1,144 @@
+import os, shutil, datetime
 
+import django.test
+from django.core.urlresolvers import reverse as urlreverse
+from django.conf import settings
 
+from pyquery import PyQuery
+
+from ietf.utils.mail import outbox
+from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.test_data import make_test_data
+
+from ietf.doc.models import *
+from ietf.name.models import *
+from ietf.group.models import *
+from ietf.person.models import *
+from ietf.meeting.models import Meeting, MeetingTypeName
+from ietf.iesg.models import TelechatDate
+
+# extra tests
 from ietf.doc.tests_conflict_review import *
-from ietf.doc.tests_status_change import *
+
+
+class DocTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_document_draft(self):
+        draft = make_test_data()
+
+        # these tests aren't testing all attributes yet, feel free to
+        # expand them
+
+
+        # active draft
+        draft.set_state(State.objects.get(type="draft", slug="active"))
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+
+        # expired draft
+        draft.set_state(State.objects.get(type="draft", slug="expired"))
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Expired Internet-Draft" in r.content)
+
+        # replaced draft
+        draft.set_state(State.objects.get(type="draft", slug="repl"))
+
+        replacement = Document.objects.create(
+            name="draft-ietf-replacement",
+            time=datetime.datetime.now(),
+            type_id="draft",
+            title="Replacement Draft",
+            stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.stream, rev=draft.rev,
+            pages=draft.pages, intended_std_level_id=draft.intended_std_level_id,
+            shepherd_id=draft.shepherd_id, ad_id=draft.ad_id, expires=draft.expires,
+            notify=draft.notify, note=draft.note)
+        DocAlias.objects.create(name=replacement.name, document=replacement)
+        rel = RelatedDocument.objects.create(source=replacement,
+                                             target=draft.docalias_set.get(name__startswith="draft"),
+                                             relationship_id="replaces")
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Replaced Internet-Draft" in r.content)
+        self.assertTrue(replacement.name in r.content)
+        rel.delete()
+
+        # draft published as RFC
+        draft.set_state(State.objects.get(type="draft", slug="rfc"))
+        draft.std_level_id = "bcp"
+        draft.save()
+
+        DocEvent.objects.create(doc=draft, type="published_rfc", by=Person.objects.get(name="(System)"))
+
+        rfc_alias = DocAlias.objects.create(name="rfc123456", document=draft)
+        bcp_alias = DocAlias.objects.create(name="bcp123456", document=draft)
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 302)
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=bcp_alias.name)))
+        self.assertEqual(r.status_code, 302)
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=rfc_alias.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("RFC 123456" in r.content)
+        self.assertTrue(draft.name in r.content)
+
+        # naked RFC
+        rfc = Document.objects.create(
+            name="rfc1234567",
+            type_id="draft",
+            title="RFC without a Draft",
+            stream_id="ise",
+            group=Group.objects.get(type="individ"),
+            std_level_id="ps")
+        DocAlias.objects.create(name=rfc.name, document=rfc)
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=rfc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("RFC 1234567" in r.content)
+
+        # unknown draft
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name="draft-xyz123")))
+        self.assertEqual(r.status_code, 404)
+
+    def test_document_charter(self):
+        make_test_data()
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name="charter-ietf-mars")))
+        self.assertEqual(r.status_code, 200)
+
+    def test_document_conflict_review(self):
+        make_test_data()
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name='conflict-review-imaginary-irtf-submission')))
+        self.assertEqual(r.status_code, 200)
+
+    def test_document_ballot(self):
+        doc = make_test_data()
+        ballot = doc.active_ballot()
+
+        BallotPositionDocEvent.objects.create(
+            doc=doc,
+            type="changed_ballot_position",
+            pos_id="yes",
+            comment="Looks fine to me",
+            comment_time=datetime.datetime.now(),
+            ad=Person.objects.get(user__username="ad"),
+            by=Person.objects.get(name="(System)"))
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+
+        # test popup too while we're at it
+        r = self.client.get(urlreverse("ietf.doc.views_doc.ballot_for_popup", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+        
+    def test_document_json(self):
+        doc = make_test_data()
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)

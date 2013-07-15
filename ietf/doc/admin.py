@@ -93,7 +93,7 @@ class DocumentAdmin(admin.ModelAdmin):
     list_display = ['name', 'rev', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
     search_fields = ['name']
     list_filter = ['type']
-    raw_id_fields = ['authors', 'related', 'group', 'shepherd', 'ad']
+    raw_id_fields = ['authors', 'group', 'shepherd', 'ad']
     inlines = [DocAliasInline, DocAuthorInline, RelatedDocumentInline, ]
     form = DocumentForm
 

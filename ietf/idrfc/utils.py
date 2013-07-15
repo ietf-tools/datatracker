@@ -2,7 +2,7 @@ from django.conf import settings
 
 from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo, IESGLogin
 from ietf.idrfc.mails import *
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 
 def add_document_comment(request, doc, text, ballot=None):
     if request:
@@ -177,27 +177,3 @@ def update_telechatREDESIGN(request, doc, by, new_telechat_date, new_returning_i
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     update_telechat = update_telechatREDESIGN
 
-def can_edit_base(doc, user):
-    return user.is_authenticated() and (
-        has_role(user, ["Secretariat", "Area Director"]) or
-        doc.group.role_set.filter(name__in=("chair", "auth", "delegate"), person__user=user)
-        )
-
-can_edit_intended_std_level = can_edit_base
-can_edit_consensus = can_edit_base
-can_edit_shepherd = can_edit_base
-
-def can_edit_shepherd_writeup(doc, user):
-    if user.is_authenticated():
-        if Person.objects.filter(user=user).count():
-            return can_edit_base(doc,user) or (doc.shepherd==user.person)
-    return False
-
-def nice_consensus(consensus):
-    mapping = {
-        None: "Unknown",
-        True: "Yes",
-        False: "No"
-        }
-    return mapping[consensus]
-    

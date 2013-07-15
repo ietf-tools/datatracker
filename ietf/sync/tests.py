@@ -269,7 +269,7 @@ class RFCSyncTestCase(django.test.TestCase):
         self.assertEqual(rfc_published_date.month, today.month)
         self.assertEqual(current_status, "Proposed Standard")
         self.assertEqual(updates, ["RFC123"])
-        self.assertEqual(set(also), set(["BCP0001", "FYI0001", "STD0001"]))
+        self.assertEqual(set(also), set(["BCP1", "FYI1", "STD1"]))
         self.assertEqual(draft, doc.name)
         self.assertEqual(wg, doc.group.acronym)
         self.assertEqual(has_errata, True)
@@ -288,9 +288,9 @@ class RFCSyncTestCase(django.test.TestCase):
         self.assertEqual(doc.docevent_set.all()[0].time.date(), today)
         self.assertTrue("errata" in doc.tags.all().values_list("slug", flat=True))
         self.assertTrue(DocAlias.objects.filter(name="rfc1234", document=doc))
-        self.assertTrue(DocAlias.objects.filter(name="bcp0001", document=doc))
-        self.assertTrue(DocAlias.objects.filter(name="fyi0001", document=doc))
-        self.assertTrue(DocAlias.objects.filter(name="std0001", document=doc))
+        self.assertTrue(DocAlias.objects.filter(name="bcp1", document=doc))
+        self.assertTrue(DocAlias.objects.filter(name="fyi1", document=doc))
+        self.assertTrue(DocAlias.objects.filter(name="std1", document=doc))
         self.assertTrue(RelatedDocument.objects.filter(source=doc, target__name="rfc123", relationship="updates"))
         self.assertEqual(doc.title, "A Testing RFC")
         self.assertEqual(doc.abstract, "This is some interesting text.")
@@ -443,6 +443,7 @@ class RFCEditorUndoTestCase(django.test.TestCase):
         self.assertEquals(DeletedEvent.objects.count(), deleted_before + 1)
 
         # delete e1
+        draft.state_cache = None
         r = self.client.post(url, dict(event=e1.id))
         self.assertEquals(draft.get_state("draft-rfceditor"), None)
 

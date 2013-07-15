@@ -395,7 +395,7 @@ class RfcWrapper:
 
     @models.permalink
     def get_absolute_url(self):
-        return ('ietf.idrfc.views_doc.document_main', ['rfc%s' % (str(self.rfc_number))])
+        return ('ietf.doc.views_doc.document_main', ['rfc%s' % (str(self.rfc_number))])
     def displayname_with_link(self):
         return '<a href="%s">RFC %d</a>' % (self.get_absolute_url(), self.rfc_number)
 

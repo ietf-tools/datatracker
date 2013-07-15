@@ -9,16 +9,20 @@
 {% block content %}
 {{ top|safe }}
 
-{% for title, text, url in writeups %}
-<div class="writeup">
+{% for title, subtitle, writeups in sections %}
 <h2>{{ title }}</h2>
 
-{% if can_edit %}<a href="{{ url }}" class="edit">{% if text %}Edit{% else %}Generate{% endif %} {{ title }}</a>{% endif %}
+{% if subtitle %}<p>{{ subtitle|safe }}</p>{% endif %}
+
+{% for name, text, url in writeups %}
+<div class="writeup">
+{% if can_edit %}<a href="{{ url }}" class="edit button">{% if text %}Edit{% else %}Generate{% endif %} {{ name }}</a>{% endif %}
 
 <pre {% if can_edit %}class="editable"{% endif %}>
 {{ text }}
 </pre>
 </div>
-{% endfor%}
+{% endfor %}
+{% endfor %}
 
 {% endblock content %}

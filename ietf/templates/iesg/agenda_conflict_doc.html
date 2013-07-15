@@ -83,7 +83,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <a href="http://www.ietf.org/id/{{doc.obj.conflictdoc.name}}-{{doc.obj.conflictdoc.rev}}.txt">[txt]</a>
 <br/>{{ doc.obj.conflictdoc.title|escape }} ({{doc.obj.conflictdoc.stream}}: {{ doc.obj.conflictdoc.intended_std_level }})
 {% if doc.obj.conflictdoc.note %}
-<br/>Note: {{ doc.obj.conflictdoc.note|unescape }}
+<br/>Note: {{ doc.obj.conflictdoc.note|linebreaksbr }}
 {% endif %}
 
 {% if doc.obj.conflictdoc.ipr %}

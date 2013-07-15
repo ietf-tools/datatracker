@@ -195,11 +195,21 @@ def fetch_index_xml(url):
     return urllib2.urlopen(url)
 
 def parse_index(response):
-    def getDocList(parentNode, tagName):
+    def normalize_std_name(std_name):
+        # remove zero padding
+        prefix = std_name[:3]
+        if prefix in ("RFC", "FYI", "BCP", "STD"):
+            try:
+                return prefix + str(int(std_name[3:]))
+            except ValueError:
+                pass
+        return std_name
+
+    def extract_doc_list(parentNode, tagName):
         l = []
         for u in parentNode.getElementsByTagName(tagName):
             for d in u.getElementsByTagName("doc-id"):
-                l.append(d.firstChild.data)
+                l.append(normalize_std_name(d.firstChild.data))
         return l
 
     also_list = {}
@@ -209,8 +219,8 @@ def parse_index(response):
         if event == pulldom.START_ELEMENT and node.tagName in ["bcp-entry", "fyi-entry", "std-entry"]:
             events.expandNode(node)
             node.normalize()
-            bcpid = get_child_text(node, "doc-id")
-            doclist = getDocList(node, "is-also")
+            bcpid = normalize_std_name(get_child_text(node, "doc-id"))
+            doclist = extract_doc_list(node, "is-also")
             for docid in doclist:
                 if docid in also_list:
                     also_list[docid].append(bcpid)
@@ -235,10 +245,10 @@ def parse_index(response):
 
             current_status = get_child_text(node, "current-status").title()
 
-            updates = getDocList(node, "updates") 
-            updated_by = getDocList(node, "updated-by")
-            obsoletes = getDocList(node, "obsoletes") 
-            obsoleted_by = getDocList(node, "obsoleted-by")
+            updates = extract_doc_list(node, "updates") 
+            updated_by = extract_doc_list(node, "updated-by")
+            obsoletes = extract_doc_list(node, "obsoletes") 
+            obsoleted_by = extract_doc_list(node, "obsoleted-by")
             stream = get_child_text(node, "stream")
             wg = get_child_text(node, "wg_acronym")
             if wg and ((wg == "NON WORKING GROUP") or len(wg) > 15):
@@ -329,7 +339,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
 
             if not doc:
                 results.append("created document %s" % name)
-                doc = Document.objects.get_or_create(name=name)[0]
+                doc = Document.objects.create(name=name, type=DocTypeName.objects.get(slug="draft"))
 
             # add alias
             DocAlias.objects.get_or_create(name=name, document=doc)
@@ -360,8 +370,11 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
         if doc.stream != stream_mapping[stream]:
             changed_attributes["stream"] = stream_mapping[stream]
 
-        if not doc.group and wg:
-            changed_attributes["group"] = Group.objects.get(acronym=wg)
+        if not doc.group: # if we have no group assigned, check if RFC Editor has a suggestion
+            if wg:
+                changed_attributes["group"] = Group.objects.get(acronym=wg)
+            else:
+                changed_attributes["group"] = Group.objects.get(type="individ")
 
         if not doc.latest_event(type="published_rfc"):
             e = DocEvent(doc=doc, type="published_rfc")

@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+
+import os, sys, re, datetime, optparse, traceback
+import syslog
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+
+from ietf import settings
+from django.core import management
+management.setup_environ(settings)
+
+import django.test
+from django.conf import settings
+
+# prevent memory from leaking when settings.DEBUG=True
+from django.db import connection
+class DontSaveQueries(object):
+    def append(self, x):
+        pass
+connection.queries = DontSaveQueries()
+
+MAX_URL_LENGTH = 500
+SLOW_THRESHOLD = 1.0
+
+def strip_url(url):
+    if url.startswith("http://testserver"):
+        url = url[len("http://testserver"):]
+    return url
+
+def extract_html_urls(content):
+    for m in re.finditer(r'<a.*href="([^"]+)">', content):
+        url = strip_url(m.group(1))
+        if len(url) > MAX_URL_LENGTH:
+            continue # avoid infinite GET parameter appendages
+
+        if not url.startswith("/"):
+            continue
+
+        yield url
+
+
+visited = set()
+blacklist = set()
+urls = set(["/doc/all/"])
+
+client = django.test.Client()
+
+while urls:
+    url = urls.pop()
+
+    visited.add(url)
+
+    try:
+        timestamp = datetime.datetime.now()
+        r = client.get(url)
+        elapsed = datetime.datetime.now() - timestamp
+    except KeyboardInterrupt:
+        print "was fetching", url
+        sys.exit(1)
+    except:
+        print "FAIL", url
+        print "============="
+        traceback.print_exc()
+        print "============="
+    else:
+        tags = []
+
+        if r.status_code in (301, 302):
+            u = strip_url(r["Location"])
+            if u not in visited and u not in urls:
+                urls.add(u)
+
+        elif r.status_code == 200:
+            ctype = r["Content-Type"]
+            if ";" in ctype:
+                ctype = ctype[:ctype.index(";")]
+
+            if ctype == "text/html":
+                for u in extract_html_urls(r.content):
+                    if u not in visited and u not in urls:
+                        urls.add(u)
+        else:
+            tags.append("FAIL")
+
+        if elapsed.total_seconds() > SLOW_THRESHOLD:
+            tags.append("SLOW")
+
+        print r.status_code, "%.3fs" % elapsed.total_seconds(), url, " ".join(tags)
+

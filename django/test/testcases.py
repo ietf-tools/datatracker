@@ -494,6 +494,19 @@ class TransactionTestCase(unittest.TestCase):
     def assertQuerysetEqual(self, qs, values, transform=repr):
         return self.assertEqual(map(transform, qs), values)
 
+    # some things from newer (python 2.7) unittests
+    def assertIsNone(self, obj, msg=None):
+        """Same as self.assertTrue(obj is None), with a nicer default message."""
+        if obj is not None:
+            standardMsg = '%s is not None' % (safe_repr(obj),)
+            self.fail(self._formatMessage(msg, standardMsg))
+
+    def assertIsNotNone(self, obj, msg=None):
+        """Included for symmetry with assertIsNone."""
+        if obj is None:
+            standardMsg = 'unexpectedly None'
+            self.fail(self._formatMessage(msg, standardMsg))
+
 def connections_support_transactions():
     """
     Returns True if all connections support transactions.  This is messy

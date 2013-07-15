@@ -10,13 +10,10 @@
 {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
 <div class="action">
 {% if deferred %}
-  <div><a href="{% url doc_undefer_ballot name=doc.name %}">Undefer ballot</a></div>
+  <a href="{% url doc_undefer_ballot name=doc.name %}">Undefer ballot</a>
   <div>Ballot deferred by {{ deferred.by }} on {{ deferred.time|date:"Y-m-d" }}.</div>
 {% else %}
-  <div><a href="{% url doc_defer_ballot name=doc.name %}">Defer ballot</a></div>
-{% endif %}
-{% if user|has_role:"Secretariat" %}
-  <div><a href="{% url doc_clear_ballot name=doc.name %}">Clear ballot</a></div>
+  <a href="{% url doc_defer_ballot name=doc.name %}">Defer ballot</a>
 {% endif %}
 </div>
 {% endif %}

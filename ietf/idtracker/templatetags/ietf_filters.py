@@ -4,7 +4,8 @@ import textwrap
 from django import template
 from django.conf import settings
 from django.utils.html import escape, fix_ampersands
-from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter, urlize, truncatewords_html
+from django.utils.text import truncate_html_words
+from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter, urlize
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 from django.utils import simplejson
@@ -221,9 +222,9 @@ def urlize_ietf_docs(string, autoescape=None):
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
     string = re.sub("(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"http://tools.ietf.org/html/bcp\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"http://tools.ietf.org/html/std\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"http://tools.ietf.org/html/fyi\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string)
     string = re.sub("(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     string = re.sub("(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     string = re.sub("(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
@@ -461,9 +462,14 @@ def ad_area(user):
 @register.filter
 def format_history_text(text):
     """Run history text through some cleaning and add ellipsis if it's too long."""
-    full = mark_safe(sanitize_html(keep_spacing(linebreaksbr(urlize(mark_safe(text))))))
-    snippet = truncatewords_html(format_textarea(text), 25)
-    if snippet[-3:] == "...":
+    full = mark_safe(text)
+
+    if text.startswith("This was part of a ballot set with:"):
+        full = urlize_ietf_docs(full)
+
+    full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(full)))))
+    snippet = truncate_html_words(full, 25)
+    if snippet != full:
         return mark_safe(u'<div class="snippet">%s<span class="showAll">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
     return full
 

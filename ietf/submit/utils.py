@@ -148,7 +148,7 @@ def perform_postREDESIGN(request, submission):
     e = NewRevisionDocEvent(type="new_revision", doc=draft, rev=draft.rev)
     e.time = draft.time #submission.submission_date
     e.by = submitter
-    e.desc = "New revision available"
+    e.desc = "New version available: <b>%s-%s.txt</b>" % (draft.name, draft.rev)
     e.save()
 
     if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":

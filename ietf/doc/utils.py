@@ -1,4 +1,4 @@
-import os
+import os, re, urllib
 import math
 
 from django.conf import settings
@@ -138,9 +138,12 @@ def augment_events_with_revision(doc, events):
 
     event_revisions = list(NewRevisionDocEvent.objects.filter(doc=doc).order_by('time', 'id').values('id', 'rev', 'time'))
 
-    cur_rev = doc.rev
-    if doc.get_state_slug() == "rfc":
-        cur_rev = "RFC"
+    if doc.type_id == "draft" and doc.get_state_slug() == "rfc":
+        # add fake "RFC" revision
+        e = doc.latest_event(type="published_rfc")
+        if e:
+            event_revisions.append(dict(id=e.id, time=e.time, rev="RFC"))
+            event_revisions.sort(key=lambda x: (x["time"], x["id"]))
 
     for e in sorted(events, key=lambda e: (e.time, e.id), reverse=True):
         while event_revisions and (e.time, e.id) < (event_revisions[-1]["time"], event_revisions[-1]["id"]):
@@ -153,6 +156,37 @@ def augment_events_with_revision(doc, events):
 
         e.rev = cur_rev
 
+def add_links_in_new_revision_events(doc, events, diff_revisions):
+    """Add direct .txt links and diff links to new_revision events."""
+    prev = None
+
+    diff_urls = dict(((name, revision), url) for name, revision, time, url in diff_revisions)
+
+    for e in sorted(events, key=lambda e: (e.time, e.id)):
+        if not e.type == "new_revision":
+            continue
+
+        if not (e.doc.name, e.rev) in diff_urls:
+            continue
+
+        full_url = diff_url = diff_urls[(e.doc.name, e.rev)]
+
+        if doc.type_id in "draft": # work around special diff url for drafts
+            full_url = "http://tools.ietf.org/id/" + diff_url + ".txt"
+
+        # build links
+        links = r'<a href="%s">\1</a>' % full_url
+        if prev:
+            links += ""
+
+        if prev != None:
+            links += ' (<a href="http:%s?url1=%s&url2=%s">diff from previous</a>)' % (settings.RFCDIFF_PREFIX, urllib.quote(diff_url, safe="~"), urllib.quote(prev, safe="~"))
+
+        # replace the bold filename part
+        e.desc = re.sub(r"<b>(.+-[0-9][0-9].txt)</b>", links, e.desc)
+
+        prev = diff_url
+
 
 def get_document_content(key, filename, split=True, markup=True):
     f = None
@@ -161,15 +195,12 @@ def get_document_content(key, filename, split=True, markup=True):
         raw_content = f.read()
     except IOError:
         error = "Error; cannot read ("+key+")"
-        if split:
-            return (error, "")
-        else:
-            return error
+        return error
     finally:
         if f:
             f.close()
     if markup:
-        return markup_txt.markup(raw_content,split)
+        return markup_txt.markup(raw_content, split)
     else:
         return raw_content
 
@@ -197,3 +228,16 @@ def add_state_change_event(doc, by, prev_state, new_state, timestamp=None):
     e.save()
     return e
     
+def prettify_std_name(n):
+    if re.match(r"(rfc|bcp|fyi|std)[0-9]+", n):
+        return n[:3].upper() + " " + n[3:]
+    else:
+        return n
+
+def nice_consensus(consensus):
+    mapping = {
+        None: "Unknown",
+        True: "Yes",
+        False: "No"
+        }
+    return mapping[consensus]

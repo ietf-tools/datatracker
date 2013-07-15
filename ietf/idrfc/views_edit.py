@@ -13,11 +13,12 @@ from django.utils.html import strip_tags
 from django.db.models import Max
 from django.conf import settings
 from django.forms.util import ErrorList
+from django.contrib.auth.decorators import login_required
 
 from ietf.utils.mail import send_mail_text, send_mail_message
-from ietf.ietfauth.decorators import group_required
+from ietf.ietfauth.decorators import group_required, has_role, role_required
+from ietf.ietfauth.utils import user_is_person
 from ietf.idtracker.templatetags.ietf_filters import in_group
-from ietf.ietfauth.decorators import has_role, role_required
 from ietf.idtracker.models import *
 from ietf.iesg.models import *
 from ietf.idrfc.mails import *
@@ -225,13 +226,20 @@ class ChangeStreamForm(forms.Form):
     stream = forms.ModelChoiceField(StreamName.objects.exclude(slug="legacy"), required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
-@group_required('Area_Director','Secretariat')
+@login_required
 def change_stream(request, name):
-    """Change the stream of a Document of type 'draft' , notifying parties as necessary
+    """Change the stream of a Document of type 'draft', notifying parties as necessary
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
     if not doc.type_id=='draft':
         raise Http404()
+
+    if not (has_role(request.user, ("Area Director", "Secretariat")) or
+            (request.user.is_authenticated() and
+             Role.objects.filter(name="chair",
+                                 group__acronym__in=StreamName.objects.values_list("slug", flat=True),
+                                 person__user=request.user))):
+        return HttpResponseForbidden("You do not have permission to view this page")
 
     login = request.user.get_profile()
 
@@ -248,7 +256,7 @@ def change_stream(request, name):
                 doc.stream = new_stream
 
                 e = DocEvent(doc=doc,by=login,type='changed_document')
-                e.desc = u"Stream changed to <b>%s</b> from %s"% (new_stream,old_stream) 
+                e.desc = u"Stream changed to <b>%s</b> from %s"% (new_stream, old_stream or "None")
                 e.save()
 
                 email_desc = e.desc
@@ -287,7 +295,8 @@ def change_intention(request, name):
     if doc.type_id != 'draft':
         raise Http404
 
-    if not can_edit_intended_std_level(doc, request.user):
+    if not (has_role(request.user, ("Secretariat", "Area Director"))
+            or is_authorized_in_doc_stream(request.user, doc)):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     login = request.user.get_profile()
@@ -396,8 +405,7 @@ class EditInfoFormREDESIGN(forms.Form):
         self.standard_fields = [x for x in self.visible_fields() if x.name not in ('returning_item',)]
 
     def clean_note(self):
-        # note is stored munged in the database
-        return self.cleaned_data['note'].replace('\n', '<br>').replace('\r', '').replace('  ', '&nbsp; ')
+        return self.cleaned_data['note'].replace('\r', '').strip()
 
 
 def get_initial_notify(doc):
@@ -532,7 +540,7 @@ def edit_infoREDESIGN(request, name):
                     area=doc.group_id,
                     ad=doc.ad_id,
                     notify=doc.notify,
-                    note=dehtmlify_textarea_text(doc.note),
+                    note=doc.note,
                     telechat_date=initial_telechat_date,
                     returning_item=initial_returning_item,
                     )
@@ -827,15 +835,16 @@ class IESGNoteForm(forms.Form):
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
 
     def clean_note(self):
-        # note is stored munged in the database
-        return self.cleaned_data['note'].replace('\n', '<br>').replace('\r', '').replace('  ', '&nbsp; ')
+        # not muning the database content to use html line breaks --
+        # that has caused a lot of pain in the past.
+        return self.cleaned_data['note'].replace('\r', '').strip()
 
 @group_required("Area Director", "Secretariat")
 def edit_iesg_note(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
     login = request.user.get_profile()
 
-    initial = dict(note=dehtmlify_textarea_text(doc.note))
+    initial = dict(note=doc.note)
 
     if request.method == "POST":
         form = IESGNoteForm(request.POST, initial=initial)
@@ -883,7 +892,10 @@ def edit_shepherd_writeup(request, name):
     """Change this document's shepherd writeup"""
     doc = get_object_or_404(Document, type="draft", name=name)
 
-    if not can_edit_shepherd_writeup(doc, request.user):
+    can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
+    can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd) or has_role(request.user, ["Area Director"])
+
+    if not can_edit_shepherd_writeup:
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     login = request.user.get_profile()
@@ -950,7 +962,9 @@ def edit_shepherd(request, name):
     # TODO - this shouldn't be type="draft" specific
     doc = get_object_or_404(Document, type="draft", name=name)
 
-    if not can_edit_shepherd(doc, request.user):
+    can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
+
+    if not can_edit_stream_info:
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     if request.method == 'POST':
@@ -1036,7 +1050,8 @@ def edit_consensus(request, name):
 
     doc = get_object_or_404(Document, type="draft", name=name)
 
-    if not can_edit_consensus(doc, request.user):
+    if not (has_role(request.user, ("Secretariat", "Area Director"))
+            or is_authorized_in_doc_stream(request.user, doc)):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")

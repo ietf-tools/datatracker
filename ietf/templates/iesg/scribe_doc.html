@@ -55,7 +55,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
         {% endwith %}
         <br>Token: {{ doc.obj.ad.plain_name|escape }} ({{doc.obj.area_acronym}} area)   
         {% if doc.obj.note %}
-            <br>Note: {{ doc.obj.note }}
+            <br>Note: {{ doc.obj.note|linebreaksbr }}
         {% endif %}
         {% for ipr in doc.obj.ipr %}
             {% ifequal ipr.ipr.status 1 %}

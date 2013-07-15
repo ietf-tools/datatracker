@@ -4,7 +4,6 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.http import HttpResponseForbidden, Http404
 
-from ietf.idrfc.views_search import SearchForm, search_query
 from ietf.wgchairs.forms import (RemoveDelegateForm, add_form_factory,
                                  workflow_form_factory, TransitionFormSet,
                                  WriteUpEditForm, assign_shepherd)
@@ -186,15 +185,7 @@ def wg_shepherd_documents(request, acronym):
         return HttpResponseForbidden('You have no permission to access this view')
     current_person = get_person_for_user(user)
 
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        base_qs = InternetDraft.objects.filter(group=wg, states__type="draft", states__slug="active").select_related("status").order_by('title')
-    else:
-        form = SearchForm({'by': 'group', 'group': str(wg.group_acronym.acronym),
-                           'activeDrafts': 'on'})
-        if not form.is_valid():
-            raise ValueError("form did not validate")
-        (docs, meta) = search_query(form.cleaned_data)
-        base_qs = InternetDraft.objects.filter(pk__in=[i.id._draft.pk for i in docs if i.id]).select_related('status')
+    base_qs = InternetDraft.objects.filter(group=wg, states__type="draft", states__slug="active").select_related("status").order_by('title')
     documents_no_shepherd = base_qs.filter(shepherd=None)
     documents_my = base_qs.filter(shepherd=current_person)
     documents_other = base_qs.exclude(shepherd=None).exclude(shepherd__pk__in=[current_person.pk, 0])

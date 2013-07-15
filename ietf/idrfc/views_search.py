@@ -44,6 +44,10 @@ from ietf.idrfc.idrfc_wrapper import IdWrapper,RfcWrapper,IdRfcWrapper
 from ietf.utils import normalize_draftname
 from django.conf import settings
 
+from ietf.doc.models import *
+from ietf.person.models import *
+from ietf.group.models import *
+
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
     rfcs = forms.BooleanField(required=False,initial=True)
@@ -54,15 +58,27 @@ class SearchForm(forms.Form):
     by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state')], required=False, initial='wg', label='Foobar')
     author = forms.CharField(required=False)
     group = forms.CharField(required=False)
-    area = forms.ModelChoiceField(Area.active_areas(), empty_label="any area", required=False)
+    area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), empty_label="any area", required=False)
     ad = forms.ChoiceField(choices=(), required=False)
-    state = forms.ModelChoiceField(IDState.objects.all(), empty_label="any state", required=False)
+    state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label="any state", required=False)
     subState = forms.ChoiceField(choices=(), required=False)
 
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
-        self.fields['ad'].choices = [('', 'any AD')] + [(ad.id, "%s %s" % (ad.first_name, ad.last_name)) for ad in IESGLogin.objects.filter(user_level=1).order_by('last_name')] + [('-99', '------------------')] + [(ad.id, "%s %s" % (ad.first_name, ad.last_name)) for ad in IESGLogin.objects.filter(user_level=2).order_by('last_name')]
-        self.fields['subState'].choices = [('', 'any substate'), ('0', 'no substate')] + [(state.sub_state_id, state.sub_state) for state in IDSubState.objects.all()]
+        responsible = Document.objects.values_list('ad', flat=True).distinct()
+        active_ads = list(Person.objects.filter(role__name="ad",
+                                                role__group__type="area",
+                                                role__group__state="active").distinct())
+        inactive_ads = list(((Person.objects.filter(pk__in=responsible) | Person.objects.filter(role__name="pre-ad",
+                                                                                              role__group__type="area",
+                                                                                              role__group__state="active")).distinct())
+                            .exclude(pk__in=[x.pk for x in active_ads]))
+        extract_last_name = lambda x: x.name_parts()[3]
+        active_ads.sort(key=extract_last_name)
+        inactive_ads.sort(key=extract_last_name)
+
+        self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.plain_name()) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
+        self.fields['subState'].choices = [('', 'any substate'), ('0', 'no substate')] + [(n.slug, n.name) for n in DocTagName.objects.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))]
     def clean_name(self):
         value = self.cleaned_data.get('name','')
         return normalize_draftname(value)
@@ -73,9 +89,9 @@ class SearchForm(forms.Form):
             q['by'] = None            
         else:
             for k in ('author','group','area','ad'):
-                if (q['by'] == k) and not q[k]:
+                if (q['by'] == k) and (k not in q or not q[k]):
                     q['by'] = None
-            if (q['by'] == 'state') and not (q['state'] or q['subState']):
+            if (q['by'] == 'state') and (not 'state' in q or not 'subState' in q or not (q['state'] or q['subState'])):
                 q['by'] = None
         # Reset other fields
         for k in ('author','group','area','ad'):
@@ -88,7 +104,7 @@ class SearchForm(forms.Form):
             q['state'] = ""
             q['subState'] = ""
         return q
-                                                                        
+
 def search_query(query_original, sort_by=None):
     query = dict(query_original.items())
     drafts = query['activeDrafts'] or query['oldDrafts']
@@ -97,6 +113,7 @@ def search_query(query_original, sort_by=None):
 
     # Non-ASCII strings don't match anything; this check
     # is currently needed to avoid complaints from MySQL.
+    # FIXME: this should be fixed with MySQL if it's still a problem?
     for k in ['name','author','group']:
         try:
             tmp = str(query.get(k, ''))
@@ -107,388 +124,156 @@ def search_query(query_original, sort_by=None):
     idresults = []
     rfcresults = []
     MAX = 500
-    maxReached = False
 
-    prefix = ""
-    q_objs = []
-    if query['by'] in ('ad','state'):
-        prefix = "draft__"
-    if query['name']:
-        q_objs.append(Q(**{prefix+"filename__icontains":query['name']})|Q(**{prefix+"title__icontains":query['name']}))
+    docs = InternetDraft.objects.all()
 
-    if query['by'] == 'author':
-        q_objs.append(Q(**{prefix+"authors__person__last_name__icontains":query['author']}))
-    elif query['by'] == 'group':
-        q_objs.append(Q(**{prefix+"group__acronym":query['group']}))
-    elif query['by'] == 'area':
-        q_objs.append(Q(**{prefix+"group__ietfwg__areagroup__area":query['area']}))
-    elif query['by'] == 'ad':
-        q_objs.append(Q(job_owner=query['ad']))
-    elif query['by'] == 'state':
-        if query['state']:
-            q_objs.append(Q(cur_state=query['state']))
-        if query['subState']:
-            q_objs.append(Q(cur_sub_state=query['subState']))
-    if (not query['rfcs']) and query['activeDrafts'] and (not query['oldDrafts']):
-        q_objs.append(Q(**{prefix+"status":1}))
-    elif query['rfcs'] and query['activeDrafts'] and (not query['oldDrafts']):
-        q_objs.append(Q(**{prefix+"status":1})|Q(**{prefix+"status":3}))
-    elif query['rfcs'] and (not drafts):
-        q_objs.append(Q(**{prefix+"status":3}))
-    if prefix:
-        q_objs.append(Q(rfc_flag=0))
-        matches = IDInternal.objects.filter(*q_objs)
-    else:
-        matches = InternetDraft.objects.filter(*q_objs)
-    if not query['activeDrafts']:
-        matches = matches.exclude(Q(**{prefix+"status":1}))
-    if not query['rfcs']:
-        matches = matches.exclude(Q(**{prefix+"status":3}))
-    if prefix:
-        matches = [id.draft for id in matches[:MAX]]
-    else:
-        matches = matches[:MAX]
-    if len(matches) == MAX:
-        maxReached = True
-    for id in matches:
-        if id.status.status == 'RFC':
-            rfcresults.append([id.rfc_number, id, None, None])
+    # name
+    if query["name"]:
+        docs = docs.filter(Q(docalias__name__icontains=query["name"]) |
+                           Q(title__icontains=query["name"])).distinct()
+
+    # rfc/active/old check buttons
+    allowed_states = []
+    if query["rfcs"]:
+        allowed_states.append("rfc")
+    if query["activeDrafts"]:
+        allowed_states.append("active")
+    if query["oldDrafts"]:
+        allowed_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
+
+    docs = docs.filter(states__type="draft", states__slug__in=allowed_states)
+
+    # radio choices
+    by = query["by"]
+    if by == "author":
+        # FIXME: this is full name, not last name as hinted in the HTML
+        docs = docs.filter(authors__person__name__icontains=query["author"])
+    elif by == "group":
+        docs = docs.filter(group__acronym=query["group"])
+    elif by == "area":
+        docs = docs.filter(Q(group__type="wg", group__parent=query["area"]) |
+                           Q(group=query["area"])).distinct()
+    elif by == "ad":
+        docs = docs.filter(ad=query["ad"])
+    elif by == "state":
+        if query["state"]:
+            docs = docs.filter(states=query["state"])
+        if query["subState"]:
+            docs = docs.filter(tags=query["subState"])
+
+    # evaluate and fill in values with aggregate queries to avoid
+    # too many individual queries
+    results = list(docs.select_related("states", "ad", "ad__person", "std_level", "intended_std_level", "group", "stream")[:MAX])
+
+    rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=[r.pk for r in results]).values_list("document_id", "name"))
+    # canonical name
+    for r in results:
+        if r.pk in rfc_aliases:
+            # lambda weirdness works around lambda binding in local for loop scope 
+            r.canonical_name = (lambda x: lambda: x)(rfc_aliases[r.pk])
         else:
-            idresults.append([id])
+            r.canonical_name = (lambda x: lambda: x)(r.name)
 
-    # Next, search RFCs
-    if query['rfcs']:
-        q_objs = []
-        searchRfcIndex = True
-        if query['name']:
-            r = re.compile("^\s*(?:RFC)?\s*(\d+)\s*$", re.IGNORECASE)
-            m = r.match(query['name'])
-            if m:
-                q_objs.append(Q(rfc_number__contains=m.group(1))|Q(title__icontains=query['name']))
+    result_map = dict((r.pk, r) for r in results)
+
+    # events
+    event_types = ("published_rfc",
+                   "changed_ballot_position",
+                   "started_iesg_process",
+                   "new_revision")
+    for d in rfc_aliases.keys():
+        for e in event_types:
+            setattr(result_map[d], e, None)
+
+    for e in DocEvent.objects.filter(doc__in=rfc_aliases.keys(), type__in=event_types).order_by('-time'):
+        r = result_map[e.doc_id]
+        if not getattr(r, e.type):
+            # sets e.g. r.published_date = e for use in proxy wrapper
+            setattr(r, e.type, e)
+
+    # obsoleted/updated by
+    for d in rfc_aliases:
+        r = result_map[d]
+        r.obsoleted_by_list = []
+        r.updated_by_list = []
+
+    xed_by = RelatedDocument.objects.filter(target__name__in=rfc_aliases.values(), relationship__in=("obs", "updates")).select_related('target__document_id')
+    rel_rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=[rel.source_id for rel in xed_by]).values_list('document_id', 'name'))
+    for rel in xed_by:
+        r = result_map[rel.target.document_id]
+        if rel.relationship_id == "obs":
+            attr = "obsoleted_by_list"
+        else:
+            attr = "updated_by_list"
+
+        getattr(r, attr).append(int(rel_rfc_aliases[rel.source_id][3:]))
+
+
+    # sort
+    def sort_key(d):
+        res = []
+
+        canonical = d.canonical_name()
+        if canonical.startswith('rfc'):
+            rfc_num = int(canonical[3:])
+        else:
+            rfc_num = None
+
+        if rfc_num != None:
+            res.append(2)
+        elif d.get_state_slug() == "active":
+            res.append(1)
+        else:
+            res.append(3)
+
+        if sort_by == "title":
+            res.append(d.title)
+        elif sort_by == "date":
+            res.append(str(d.revision_date or datetime.date(1990, 1, 1)))
+        elif sort_by == "status":
+            if rfc_num != None:
+                res.append(rfc_num)
             else:
-                q_objs.append(Q(title__icontains=query['name']))
-        if query['by'] == 'author':
-            q_objs.append(Q(authors__icontains=query['author']))
-        elif query['by'] == 'group':
-            # We prefer searching RfcIndex, but it doesn't have group info
-            searchRfcIndex = False
-            q_objs.append(Q(group_acronym=query['group']))
-        elif query['by'] == 'area':
-            # Ditto for area
-            searchRfcIndex = False
-            q_objs.append(Q(area_acronym=query['area']))
-        elif query['by'] == 'ad':
-            numbers = IDInternal.objects.filter(rfc_flag=1,job_owner=query['ad']).values_list('draft_id',flat=True)
-            q_objs.append(Q(rfc_number__in=numbers))
-        elif query['by'] == 'state':
-            numbers_q = [Q(rfc_flag=1)]
-            if query['state']:
-                numbers_q.append(Q(cur_state=query['state']))
-            if query['subState']:
-                numbers_q.append(Q(cur_state=query['subState']))
-            numbers = IDInternal.objects.filter(*numbers_q).values_list('draft_id',flat=True)
-            q_objs.append(Q(rfc_number__in=numbers))
-
-        if searchRfcIndex:
-            matches = RfcIndex.objects.filter(*q_objs)[:MAX]
-        else:
-            matches = Rfc.objects.filter(*q_objs)[:MAX]
-        if len(matches) == MAX:
-            maxReached = True
-        for rfc in matches:
-            found = False
-            for r2 in rfcresults:
-                if r2[0] == rfc.rfc_number:
-                    if searchRfcIndex:
-                        r2[3] = rfc
-                    else:
-                        r2[2] = rfc
-                    found = True
-            if not found:
-                if searchRfcIndex:
-                    rfcresults.append([rfc.rfc_number, None, None, rfc])
+                res.append(d.get_state().order)
+        elif sort_by == "ipr":
+            res.append(d.name)
+        elif sort_by == "ad":
+            if rfc_num != None:
+                res.append(rfc_num)
+            elif d.get_state_slug() == "active":
+                if d.get_state("draft-iesg"):
+                    res.append(d.get_state("draft-iesg").order)
                 else:
-                    rfcresults.append([rfc.rfc_number, None, rfc, None])
-                    
-    # Find missing InternetDraft objects
-    for r in rfcresults:
-        if not r[1]:
-            ids = InternetDraft.objects.filter(rfc_number=r[0])
-            if len(ids) >= 1:
-                r[1] = ids[0]
-        if not r[1] and r[3] and r[3].draft:
-            ids = InternetDraft.objects.filter(filename=r[3].draft)
-            if len(ids) >= 1:
-                r[1] = ids[0]
-
-    # Finally, find missing RFC objects
-    for r in rfcresults:
-        if not r[2]:
-            rfcs = Rfc.objects.filter(rfc_number=r[0])
-            if len(rfcs) >= 1:
-                r[2] = rfcs[0]
-        if not r[3]:
-            rfcs = RfcIndex.objects.filter(rfc_number=r[0])
-            if len(rfcs) >= 1:
-                r[3] = rfcs[0]
-
-    # TODO: require that RfcIndex is present?
-
-    results = []
-    for res in idresults+rfcresults:
-        if len(res)==1:
-            doc = IdRfcWrapper(IdWrapper(res[0]), None)
-            results.append(doc)
+                    res.append(0)
         else:
-            d = None
-            r = None
-            if res[1]:
-                d = IdWrapper(res[1])
-            if res[3]:
-                r = RfcWrapper(res[3])
-            if d or r:
-                doc = IdRfcWrapper(d, r)
-                results.append(doc)
-    results.sort(key=lambda obj: obj.view_sort_key(sort_by))
-    
+            if rfc_num != None:
+                res.append(rfc_num)
+            else:
+                res.append(canonical)
+
+        return res
+
+    results.sort(key=sort_key)
+
     meta = {}
-    if maxReached:
+    if len(docs) == MAX:
         meta['max'] = MAX
     if query['by']:
         meta['advanced'] = True
-    return (results,meta)
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from ietf.doc.models import *
-    from ietf.person.models import *
-    from ietf.group.models import *
+    # finally wrap in old wrappers
 
-    class SearchForm(forms.Form):
-        name = forms.CharField(required=False)
-        rfcs = forms.BooleanField(required=False,initial=True)
-        activeDrafts = forms.BooleanField(required=False,initial=True)
-        oldDrafts = forms.BooleanField(required=False,initial=False)
-        lucky = forms.BooleanField(required=False,initial=False)
+    wrapped_results = []
+    for r in results:
+        draft = None
+        rfc = None
+        if not r.name.startswith('rfc'):
+            draft = IdWrapper(r)
+        if r.name.startswith('rfc') or r.pk in rfc_aliases:
+            rfc = RfcWrapper(r)
+        wrapped_results.append(IdRfcWrapper(draft, rfc))
 
-        by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state')], required=False, initial='wg', label='Foobar')
-        author = forms.CharField(required=False)
-        group = forms.CharField(required=False)
-        area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), empty_label="any area", required=False)
-        ad = forms.ChoiceField(choices=(), required=False)
-        state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label="any state", required=False)
-        subState = forms.ChoiceField(choices=(), required=False)
-
-        def __init__(self, *args, **kwargs):
-            super(SearchForm, self).__init__(*args, **kwargs)
-            responsible = Document.objects.values_list('ad', flat=True).distinct()
-            active_ads = list(Person.objects.filter(role__name="ad",
-                                                    role__group__type="area",
-                                                    role__group__state="active").distinct())
-            inactive_ads = list(((Person.objects.filter(pk__in=responsible) | Person.objects.filter(role__name="pre-ad",
-                                                                                                  role__group__type="area",
-                                                                                                  role__group__state="active")).distinct())
-                                .exclude(pk__in=[x.pk for x in active_ads]))
-            extract_last_name = lambda x: x.name_parts()[3]
-            active_ads.sort(key=extract_last_name)
-            inactive_ads.sort(key=extract_last_name)
-
-            self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.plain_name()) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
-            self.fields['subState'].choices = [('', 'any substate'), ('0', 'no substate')] + [(n.slug, n.name) for n in DocTagName.objects.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))]
-        def clean_name(self):
-            value = self.cleaned_data.get('name','')
-            return normalize_draftname(value)
-        def clean(self):
-            q = self.cleaned_data
-            # Reset query['by'] if needed
-            if 'by' not in q:
-                q['by'] = None            
-            else:
-                for k in ('author','group','area','ad'):
-                    if (q['by'] == k) and (k not in q or not q[k]):
-                        q['by'] = None
-                if (q['by'] == 'state') and (not 'state' in q or not 'subState' in q or not (q['state'] or q['subState'])):
-                    q['by'] = None
-            # Reset other fields
-            for k in ('author','group','area','ad'):
-                if q['by'] != k:
-                    self.data[k] = ""
-                    q[k] = ""
-            if q['by'] != 'state':
-                self.data['state'] = ""
-                self.data['subState'] = ""
-                q['state'] = ""
-                q['subState'] = ""
-            return q
-
-    def search_query(query_original, sort_by=None):
-        query = dict(query_original.items())
-        drafts = query['activeDrafts'] or query['oldDrafts']
-        if (not drafts) and (not query['rfcs']):
-            return ([], {})
-
-        # Non-ASCII strings don't match anything; this check
-        # is currently needed to avoid complaints from MySQL.
-        # FIXME: this should be fixed with MySQL if it's still a problem?
-        for k in ['name','author','group']:
-            try:
-                tmp = str(query.get(k, ''))
-            except:
-                query[k] = '*NOSUCH*'
-
-        # Start by search InternetDrafts
-        idresults = []
-        rfcresults = []
-        MAX = 500
-
-        docs = InternetDraft.objects.all()
-
-        # name
-        if query["name"]:
-            docs = docs.filter(Q(docalias__name__icontains=query["name"]) |
-                               Q(title__icontains=query["name"])).distinct()
-
-        # rfc/active/old check buttons
-        allowed_states = []
-        if query["rfcs"]:
-            allowed_states.append("rfc")
-        if query["activeDrafts"]:
-            allowed_states.append("active")
-        if query["oldDrafts"]:
-            allowed_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
-
-        docs = docs.filter(states__type="draft", states__slug__in=allowed_states)
-
-        # radio choices
-        by = query["by"]
-        if by == "author":
-            # FIXME: this is full name, not last name as hinted in the HTML
-            docs = docs.filter(authors__person__name__icontains=query["author"])
-        elif by == "group":
-            docs = docs.filter(group__acronym=query["group"])
-        elif by == "area":
-            docs = docs.filter(Q(group__type="wg", group__parent=query["area"]) |
-                               Q(group=query["area"])).distinct()
-        elif by == "ad":
-            docs = docs.filter(ad=query["ad"])
-        elif by == "state":
-            if query["state"]:
-                docs = docs.filter(states=query["state"])
-            if query["subState"]:
-                docs = docs.filter(tags=query["subState"])
-
-        # evaluate and fill in values with aggregate queries to avoid
-        # too many individual queries
-        results = list(docs.select_related("states", "ad", "ad__person", "std_level", "intended_std_level", "group", "stream")[:MAX])
-
-        rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=[r.pk for r in results]).values_list("document_id", "name"))
-        # canonical name
-        for r in results:
-            if r.pk in rfc_aliases:
-                # lambda weirdness works around lambda binding in local for loop scope 
-                r.canonical_name = (lambda x: lambda: x)(rfc_aliases[r.pk])
-            else:
-                r.canonical_name = (lambda x: lambda: x)(r.name)
-
-        result_map = dict((r.pk, r) for r in results)
-
-        # events
-        event_types = ("published_rfc",
-                       "changed_ballot_position",
-                       "started_iesg_process",
-                       "new_revision")
-        for d in rfc_aliases.keys():
-            for e in event_types:
-                setattr(result_map[d], e, None)
-        
-        for e in DocEvent.objects.filter(doc__in=rfc_aliases.keys(), type__in=event_types).order_by('-time'):
-            r = result_map[e.doc_id]
-            if not getattr(r, e.type):
-                # sets e.g. r.published_date = e for use in proxy wrapper
-                setattr(r, e.type, e)
-
-        # obsoleted/updated by
-        for d in rfc_aliases:
-            r = result_map[d]
-            r.obsoleted_by_list = []
-            r.updated_by_list = []
-            
-        xed_by = RelatedDocument.objects.filter(target__name__in=rfc_aliases.values(), relationship__in=("obs", "updates")).select_related('target__document_id')
-        rel_rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=[rel.source_id for rel in xed_by]).values_list('document_id', 'name'))
-        for rel in xed_by:
-            r = result_map[rel.target.document_id]
-            if rel.relationship_id == "obs":
-                attr = "obsoleted_by_list"
-            else:
-                attr = "updated_by_list"
-                
-            getattr(r, attr).append(int(rel_rfc_aliases[rel.source_id][3:]))
-
-        
-        # sort
-        def sort_key(d):
-            res = []
-            
-            canonical = d.canonical_name()
-            if canonical.startswith('rfc'):
-                rfc_num = int(canonical[3:])
-            else:
-                rfc_num = None
-
-            if rfc_num != None:
-                res.append(2)
-            elif d.get_state_slug() == "active":
-                res.append(1)
-            else:
-                res.append(3)
-
-            if sort_by == "title":
-                res.append(d.title)
-            elif sort_by == "date":
-                res.append(str(d.revision_date or datetime.date(1990, 1, 1)))
-            elif sort_by == "status":
-                if rfc_num != None:
-                    res.append(rfc_num)
-                else:
-                    res.append(d.get_state().order)
-            elif sort_by == "ipr":
-                res.append(d.name)
-            elif sort_by == "ad":
-                if rfc_num != None:
-                    res.append(rfc_num)
-                elif d.get_state_slug() == "active":
-                    if d.get_state("draft-iesg"):
-                        res.append(d.get_state("draft-iesg").order)
-                    else:
-                        res.append(0)
-            else:
-                if rfc_num != None:
-                    res.append(rfc_num)
-                else:
-                    res.append(canonical)
-                    
-            return res
-                
-        results.sort(key=sort_key)
-
-        meta = {}
-        if len(docs) == MAX:
-            meta['max'] = MAX
-        if query['by']:
-            meta['advanced'] = True
-
-        # finally wrap in old wrappers
-
-        wrapped_results = []
-        for r in results:
-            draft = None
-            rfc = None
-            if not r.name.startswith('rfc'):
-                draft = IdWrapper(r)
-            if r.name.startswith('rfc') or r.pk in rfc_aliases:
-                rfc = RfcWrapper(r)
-            wrapped_results.append(IdRfcWrapper(draft, rfc))
-
-        return (wrapped_results, meta)
+    return (wrapped_results, meta)
     
 
 def generate_query_string(request, ignore_list):

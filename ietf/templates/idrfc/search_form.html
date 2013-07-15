@@ -32,54 +32,46 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
-<form name="search_form" id="search_form" class="search_form" action="/doc/search/" method="get" {# onsubmit="submitSearch();return false;" #}>
+<form id="search_form" class="search_form" action="/doc/search/" method="get">
 
 <div class="search_field">
 <label>Name/number/title:</label> {{ form.name }}
 </div>
 
 <div class="search_field">
-<label>Types:</label>
-<table id="search_types">
-<tr><td>{{ form.rfcs }} RFCs</td></tr>
-<tr><td>{{ form.activeDrafts }} Internet-Drafts (active)</td></tr>
-<tr><td>{{ form.oldDrafts }} Internet-Drafts (expired/replaced/withdrawn)</td></tr>
-</table>
+  <label>Types:</label>
+  <table id="search_types">
+    <tr><td><label>{{ form.rfcs }} RFCs</label></td></tr>
+    <tr><td><label>{{ form.activeDrafts }} Internet-Drafts (active)</label></td></tr>
+    <tr><td><label>{{ form.oldDrafts }} Internet-Drafts (expired/replaced/withdrawn)</label></td></tr>
+  </table>
 </div>
 
-<span class="toggle_advanced"><b><img src="/images/{% if meta.advanced %}minus{% else %}plus{% endif %}.png" alt="" id="search_advanced-img" /> Advanced</b></span>
+<b class="toggle_advanced"><img src="/images/{% if meta.advanced %}minus{% else %}plus{% endif %}.png" alt="" /> Advanced</b>
 
-<div id="search_advanced" style="{% if not meta.advanced %}display:none;{%endif%}margin-top:1em;">
+<div id="search_advanced" style="{% if not meta.advanced %}display:none;{%endif%}">
 Additional search criteria:
 
 <div class="search_field">
-<label><input type="radio" class="radio" name="by" value="author" {% ifequal meta.by "author" %}checked="checked"{% endifequal %}/> Author (last name):</label> {{ form.author }}
+  <label><input type="radio" class="radio" name="by" value="author" {% if meta.by == "author" %}checked="checked"{% endif %}/> Author (last name):</label> {{ form.author }}
 </div>
 <div class="search_field">
-<label><input type="radio" class="radio" name="by" value="group" {% ifequal meta.by "group" %}checked="checked"{% endifequal %}/> WG:</label> {{ form.group }}
+  <label><input type="radio" class="radio" name="by" value="group" {% if meta.by == "group" %}checked="checked"{% endif %}/> WG:</label> {{ form.group }}
 </div>
 <div class="search_field">
-<label><input type="radio" class="radio" name="by" value="area" {% ifequal meta.by "area" %}checked="checked"{% endifequal %}/> Area:</label> {{ form.area }}
+  <label><input type="radio" class="radio" name="by" value="area" {% if meta.by == "area" %}checked="checked"{% endif %}/> Area:</label> {{ form.area }}
 </div>
 <div class="search_field">
-<label><input type="radio" class="radio" name="by" value="ad" {% ifequal meta.by "ad" %}checked="checked"{% endifequal %}/> Responsible AD:</label> {{ form.ad }} 
+  <label><input type="radio" class="radio" name="by" value="ad" {% if meta.by == "ad" %}checked="checked"{% endif %}/> Responsible AD:</label> {{ form.ad }}
 </div>
 <div class="search_field">
-<label><input type="radio" class="radio" name="by" value="state" {% ifequal meta.by "state" %}checked="checked"{% endifequal %}/> IESG State:</label> {{ form.state }} :: {{ form.subState }}
+  <label><input type="radio" class="radio" name="by" value="state" {% if meta.by == "state" %}checked="checked"{% endif %}/> IESG State:</label> {{ form.state }} :: {{ form.subState }}
 </div>
-{% comment %}
-<div class="search_field" style="text-decoration:line-through;color:#808080;">
-<label>Ballot position:</label> {{ form.positionAd }} has position  {{ form.positionValue }}
-</div>
-{% endcomment %}
 
 </div><!-- end of advanced -->
 
-<div style="padding-top:0.5em;">
-{# <input type="hidden" name="ajax" value="" /> #}
-<span class="first-child">
-<button type="submit" name="search_submit" id="id_search_submit">Search</button>
-</span>
+<div class="submit">
+  <input type="submit" class="button" value="Search"/>
 </div>
 
 </form>
