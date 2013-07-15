@@ -284,7 +284,7 @@ class LiaisonForm(forms.Form):
                 name = name,
                 defaults=dict(
                     title = self.data.get(title_key),
-                    type_id = "liaison",
+                    type_id = "liai-att",
                     external_url = name + extension, # strictly speaking not necessary, but just for the time being ...
                     )
                 )
