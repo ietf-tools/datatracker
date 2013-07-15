@@ -20,39 +20,39 @@ def make_test_data():
     date4 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 3)).date
 
     # groups
-    secretariat = Group.objects.create(
+    secretariat, created = Group.objects.get_or_create(
         name="Secretariat",
         acronym="secretariat",
         state_id="active",
         type_id="ietf",
         parent=None)
-    ietf = Group.objects.create(
+    ietf, created = Group.objects.get_or_create(
         name="IETF",
         acronym="ietf",
         state_id="active",
         type_id="ietf",
         parent=None)
     for x in ["irtf", "iab", "ise", "iesg"]:
-        Group.objects.create(
+        Group.objects.get_or_create(
             name=x.upper(),
             acronym=x,
             state_id="active",
             type_id="ietf",
             parent=None)
-    area = Group.objects.create(
+    area, created = Group.objects.get_or_create(
         name="Far Future",
         acronym="farfut",
         state_id="active",
         type_id="area",
         parent=ietf)
-    individ = Group.objects.create(
+    individ, created = Group.objects.get_or_create(
         name="Individual submissions",
         acronym="none",
         state_id="active",
         type_id="individ",
         parent=None)
     # mars WG
-    mars_wg = group = Group.objects.create(
+    group, created = Group.objects.get_or_create(
         name="Martian Special Interest Group",
         acronym="mars",
         state_id="active",
@@ -60,7 +60,8 @@ def make_test_data():
         parent=area,
         list_email="mars-wg@ietf.org",
         )
-    charter = Document.objects.create(
+    mars_wg = group
+    charter, created = Document.objects.get_or_create(
         name="charter-ietf-" + group.acronym,
         type_id="charter",
         title=group.name,
@@ -111,11 +112,12 @@ def make_test_data():
 
     # system
     system_person = Person.objects.create(
-        id=0, # special value
+#        id=0, # special value
         name="(System)",
         ascii="(System)",
         address="",
         )
+    system_person.save()
 
     # IANA and RFC Editor groups
     iana = Group.objects.create(
@@ -137,7 +139,8 @@ def make_test_data():
         Person.objects.filter(id=system_person.id).update(id=0)
         system_person = Person.objects.get(id=0)
 
-    Alias.objects.get_or_create(person=system_person, name=system_person.name)
+    alias = Alias(person=system_person, name=system_person.name)
+    alias.save()
     Email.objects.get_or_create(address="", person=system_person)
 
     # plain IETF'er
@@ -304,6 +307,21 @@ def make_test_data():
         person=p,
         )
 
+    # Secretariat user
+    u = User.objects.create(id=509, username="wnl")
+    p = Person.objects.create(
+        name="Wanda Lo",
+        ascii="Wanda Lo",
+        user=u)
+    email = Email.objects.create(
+        address="wnl@amsl.com",
+        person=p)
+    Role.objects.create(
+        name_id="auth",
+        group=secretariat,
+        email=email,
+        person=p,
+        )
     
     # draft
     draft = Document.objects.create(
@@ -392,6 +410,7 @@ def make_test_data():
 
     # an independent submission before review
     doc = Document.objects.create(name='draft-imaginary-independent-submission',type_id='draft')
+    doc.set_state(State.objects.get(used=True, type="draft", slug="active"))    
     DocAlias.objects.create(      name='draft-imaginary-independent-submission',document=doc)
 
     # an irtf submission mid review

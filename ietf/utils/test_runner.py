@@ -50,6 +50,8 @@ old_create = None
 def safe_create_1(self, verbosity, *args, **kwargs):
     global test_database_name, old_create
     print "     Creating test database..."
+    settings.DATABASES["default"]["OPTIONS"] = settings.DATABASE_TEST_OPTIONS
+    print "     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"]
     x = old_create(self, 0, *args, **kwargs)
     print "     Saving test database name "+settings.DATABASES["default"]["NAME"]+"..."
     test_database_name = settings.DATABASES["default"]["NAME"]

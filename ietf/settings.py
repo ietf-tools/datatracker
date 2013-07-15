@@ -47,6 +47,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'USER': 'ietf',
         #'PASSWORD': 'ietf',
+        #'OPTIONS': {},
     },
 #    'legacy': {
 #        'NAME': 'ietf',
@@ -55,6 +56,11 @@ DATABASES = {
 #        #'PASSWORD': 'ietf',
 #    },
 }
+
+DATABASE_TEST_OPTIONS = {
+        # Uncomment this to speed up testing if your database supports InnoDB:
+        # 'init_command': 'SET storage_engine=InnoDB',
+    }
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -86,9 +92,6 @@ MEDIA_URL = ''
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/media/'
-
-#DAJAXICE_MEDIA_PREFIX="dajaxice"
-DAJAXICE_MEDIA_PREFIX=""
 
 AUTH_PROFILE_MODULE = 'person.Person'
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
