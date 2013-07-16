@@ -12,6 +12,7 @@ from ietf.person.models import Email, Person
 from ietf.utils.admin import admin_link
 
 import datetime, os
+import debug
 
 class StateType(models.Model):
     slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
@@ -241,11 +242,23 @@ class Document(DocumentInfo):
 
     def related_that(self, relationship):
         """Return the documents that are source of relationship targeting self."""
-        return Document.objects.filter(relateddocument__target__document=self, relateddocument__relationship=relationship)
+        if isinstance(relationship, str):
+            relationship = [ relationship ]
+        if isinstance(relationship, tuple):
+            relationship = list(relationship)
+        if not isinstance(relationship, list):
+            raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
+        return Document.objects.filter(relateddocument__target__document=self, relateddocument__relationship__in=relationship)
 
     def related_that_doc(self, relationship):
         """Return the doc aliases that are target of relationship originating from self."""
-        return DocAlias.objects.filter(relateddocument__source=self, relateddocument__relationship=relationship)
+        if isinstance(relationship, str):
+            relationship = [ relationship ]
+        if isinstance(relationship, tuple):
+            relationship = list(relationship)
+        if not isinstance(relationship, list):
+            raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
+        return DocAlias.objects.filter(relateddocument__source=self, relateddocument__relationship__in=relationship)
 
     #TODO can/should this be a function instead of a property? Currently a view uses it as a property
     @property

@@ -217,8 +217,6 @@ class WgEditTestCase(django.test.TestCase):
                 if "label" in line:
                     label = line
                 if 'class="errorlist"' in line:
-                    debug.show('label')
-                    debug.show('line')
                     label = ""
         self.assertEquals(r.status_code, 302)
 

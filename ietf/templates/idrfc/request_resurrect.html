@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Request resurrect of {{ doc }}{% endblock %}
+{% block title %}Request resurrection of {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Request resurrect of {{ doc }}</h1>
+<h1>Request resurrection of {{ doc }}</h1>
 
 <form action="" method="POST">
   <p>Request resurrection of the Internet Draft {{ doc.file_tag }}?</p>
@@ -13,7 +13,7 @@
 
   <div class="actions">
     <a href="{{ back_url }}">Back</a>
-    <input type="submit" value="Request resurrect"/>
+    <input type="submit" value="Request resurrection"/>
   </div>
 </form>
 {% endblock %}

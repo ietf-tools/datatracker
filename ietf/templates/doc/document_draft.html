@@ -25,6 +25,8 @@
           {% if updated_by %}<div>Updated by {{ updated_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
           {% if obsoletes %}<div>Obsoletes {{ obsoletes|join:", "|urlize_ietf_docs }}</div>{% endif %}
           {% if updates %}<div>Updates {{ updates|join:", "|urlize_ietf_docs }}</div>{% endif %}
+          {% if status_changes %}<div>Status changed by {{ status_changes|join:", "|urlize_ietf_docs }}</div>{% endif %}
+          {% if proposed_status_changes %}<div>Proposed status changed by {{ proposed_status_changes|join:", "|urlize_ietf_docs }}</div>{% endif %}
           {% if rfc_aliases %}<div>Also Known As {{ rfc_aliases|join:", "|urlize_ietf_docs }}</div>{% endif %}
           {% if draft_name %}<div>Was <a href="/doc/{{ draft_name}}/">{{ draft_name }}</a> {% if submission %}({{ submission|safe }}){% endif %}</div>{% endif %}
         {% else %}
@@ -133,7 +135,7 @@
     <tr>
       <td>Shepherd Write-Up:</td>
       <td>
-        <a {% if can_edit_shepherd_writeup %}class="editlink"{% endif %} href="{% url doc_managing_writeup acronym=group.acronym,name=doc.name %}">
+        <a {% if can_edit_shepherd_writeup %}class="editlink"{% endif %} href="{% url doc_shepherd_writeup name=doc.name %}">
         {% if shepherd_writeup %}Last changed {{ shepherd_writeup.time|date:"Y-m-d"}}{% else %}(None){% endif %}
         </a>
       </td>

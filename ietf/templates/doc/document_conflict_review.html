@@ -2,7 +2,7 @@
 
 {% load ietf_filters %}
 
-{% block title %}{{ doc.canonical_name }}-{{ doc.rev }}{% endblock %}
+{% block title %}{{ doc.name }}-{{ doc.rev }}{% endblock %}
 
 {% block pagehead %}
 <link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
@@ -24,7 +24,7 @@
   <div>
     {% if snapshot %}Snapshot of{% endif %}
     {% if doc.get_state_slug not in approved_states %}Proposed{% endif %}
-    IESG Conflict Review for the {{conflictdoc.stream}} document: <a href="{% url doc_view name=conflictdoc.canonical_name %}">{{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}</a>
+    IESG Conflict Review for the {{conflictdoc.stream}} document: <a href="{% url doc_view name=conflictdoc.canonical_name %}">{{ conflictdoc.canonical_name }}{% if conflictdoc.get_state_slug != 'rfc' %}-{{ conflictdoc.rev }}{% endif %}</a>
   </div>
 
   <table id="metatable" width="100%">
@@ -42,25 +42,26 @@
 
         {% endif %}
         </div>
-
+      </td>
+    </tr>
         {% if not snapshot %}
-        <div class="telechat">
+    <tr>
+      <td>Telechat Date:</td>
+      <td>
           <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
                 class="editlink" href="{% url conflict_review_telechat_date name=doc.name %}"
              {%endif%} >
           {% if not telechat %}Not on agenda of an IESG telechat{% else %}On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat{% if doc.returning_item %} (returning item){% endif %}{% endif %}
           </a>
-        </div>
-
         {% if ballot_summary %}
         <div class="ballot-summary">
           ({{ ballot_summary }})
         </div>
         {% endif %}
 
-        {% endif %}
       </td>
     </tr>
+    {% endif %}
 
     <tr>
        <td>Shepherding AD:</td>
@@ -99,7 +100,7 @@
 
 </div>
 
-<h3>Conflict Review for {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}
+<h3>Conflict Review for {{ conflictdoc.name }}-{{ conflictdoc.rev }}
 
 {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug != 'apprsent' %}
 <a class="edit" href="{% url conflict_review_submit name=doc.name %}">Change conflict review text</a>
