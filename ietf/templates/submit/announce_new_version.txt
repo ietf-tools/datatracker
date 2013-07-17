@@ -11,5 +11,8 @@ https://datatracker.ietf.org/doc/{{ submission.filename }}/
 Diff from previous version:
 http:{{rfcdiff_prefix}}?url2={{ submission.filename }}-{{ submission.revision }}
 
+Please note that it may take a couple of minutes from the time of submission
+until the htmlized version and diff are available at tools.ietf.org.
+
 IETF Secretariat.
 {% endautoescape %}

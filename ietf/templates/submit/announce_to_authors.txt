@@ -19,5 +19,8 @@ Abstract:
                                                                                   
 {{ submission.comment_to_sec|default:"" }}
 
+Please note that it may take a couple of minutes from the time of submission
+until the htmlized version and diff are available at tools.ietf.org.
+
 The IETF Secretariat
 {% endautoescape %}

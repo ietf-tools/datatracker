@@ -22,6 +22,9 @@ A diff from the previous version is available at:
 http:{{settings.RFCDIFF_PREFIX}}?url2={{ submission.filename }}-{{ submission.revision }}
 {% endif %}
 
+Please note that it may take a couple of minutes from the time of submission
+until the htmlized version and diff are available at tools.ietf.org.
+
 Internet-Drafts are also available by anonymous FTP at:
 ftp://ftp.ietf.org/internet-drafts/
 {% endautoescape %}
