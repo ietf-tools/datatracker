@@ -102,6 +102,8 @@ def is_authorized_in_doc_stream(user, doc):
     group_req = None
 
     if doc.stream.slug == "ietf":
+        if has_role(user, ["Area Director"]):
+            return True
         if not doc.group.type == "individ":
             group_req = Q(group=doc.group)
     elif doc.stream.slug == "irtf":
