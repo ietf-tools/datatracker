@@ -181,12 +181,12 @@ form table .help {
 .warning { color: #a00; }
 
 .position-discuss,
-.position-block    { background-color: #c00;}
-.position-yes      { background-color: #0d0;}
-.position-noobj    { background-color: #0d0;}
-.position-abstain  { background-color: #ff0;}
-.position-recuse   { background-color: #bbb;}
-.position-norecord { background-color: #fff;}
+.position-block    { background-color: #c00000;}
+.position-yes      { background-color: #80ff80;}
+.position-noobj    { background-color: #80ff80;}
+.position-abstain  { background-color: #ffff00;}
+.position-recuse   { background-color: #c0c0c0;}
+.position-norecord { background-color: #ffffff;}
 
 .ballot-icon table { empty-cells: show; padding: 0; border-spacing: 0; border: 1px solid #666; border-collapse: collapse; table-layout: fixed; min-width: 35px; background: #fff; }
 .ballot-icon table td { border: 1px solid #666; height: 7px; width: 6px; padding: 0;}
