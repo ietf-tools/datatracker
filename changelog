@@ -1,3 +1,169 @@
+ietfdb (4.60) ietf; urgency=medium
+
+  * Added an index page at /help/state, listing the document states that
+    have help information.
+
+  * On request form the secretariat, added a note to the new I-D announcement
+    messages about there being a couple of minutes delay between submission
+    and the appearance of htmlized document and diff on the tools servers.
+
+  * Merged in two huge chunks of shim-layer removals from olau@iola.dk,
+    comprising:
+
+     - Deleted dead code in many places.
+
+     - Renamed id-something to draft-something, make the "is
+       this eligible for expiration" logic clearer
+
+     - Added a name for IPR search URL
+
+     - Revamped the ballot popup view
+
+     - URL reversed the IPR search link instead of hardcoding it
+
+     - Cleaned up search views and remove dead code, port them to the new DB
+       schema, hack related views in iesg/ and wginfo/ to use the new search
+       interfaces, avoid camelCase in search GET parameters (with
+       backwards-compat fallback), add some simple search unit tests, remove
+       caching from views_search.py index pages as they're now pretty fast to
+       generate, rewrite ballot popup JS, regularize some CSS classes to use
+       hyphen-notation rather than camelCase, move some of the search
+       templates to doc/.  idrfc/ now mostly contains some wrapper code still
+       in use by other subdirs, some ported code not yet moved, and dead code.
+
+     - Fixed output bug in test crawler and print referrer upon errors so it's
+       easier to figure out where a link came from
+
+     - Added /doc/in-last-call/ to crawler, report original page as referrer in
+       a redirect chain rather than intermediate URL
+
+     - Ported idindex to new schema, speed them up, add tests, refactor index
+       page in views_search to share code with the text index file, get rid
+       of some special-case idindex filters from ietf_filters, move
+       "/drafts/" redirects to a file in /doc/
+
+     - Ported /idtracker/status/ and /idtracker/status/last-call/ overview of
+       drafts in IESG process to new schema in /doc/iesg/ and
+       /doc/iesg/last-call/
+
+     - Added redirects for all of /idtracker/*, removed all view code and other
+       dead code from idtracker/
+
+     - Removed the idtracker sitemap indexing drafts - in its current form,
+       it adds nothing of value to the HTML-based /doc/all/ view, and it's
+       pretty slow
+
+     - Ported idtracker feeds to new schema, move them to doc/, cleaned up
+       idtracker/ - only templatetags/ietf_filters and proxy code is left
+
+     - Removed .related many to many relationship, it's not really useful
+       since we always have to restrict on the relationship type anyway,
+       instead add two helpers for doing the necessary queries (in both
+       directions)
+
+     - Added migration for transforming the .desc on the new_revision events
+       into something more akin to what is actually shown in the history page
+
+     - Added migration for blanking IESG notes that just consist of "RFC
+       XXXX", these have been superfluous for some time
+
+     - Grant stream chairs access to changing the stream on a draft
+
+     - Hacked the format_history_text filter to be less weird, using the same
+       formatting for snippets and full text, also link up legacy ballot set
+       events
+
+     - Moved the decoraters + utilities to new ietfauth/utils.py file
+
+     - Added simple helper to Email to identify invalid email addresses (from
+       legacy author entries)
+
+     - Used new new_revision .desc format for when drafts are submitted
+
+     - Improved the looks of the button class by adding extra contrast and a
+       linear gradient. Currently the gradient is only visible in fairly
+       recent browsers.
+
+     - Rewrote draft and RFC tabs in terms of the new schema, porting
+       write-up and history tabs as well
+
+     - Fixed two bugs in RFC Editor syncing: make sure documents we don't know
+       beforehand get a "draft" type and make sure individually submitted
+       drafts get the type="individ" group instead of NULL
+
+     - Made the CSS-styled button feel a bit nicer to use by flattening the
+       active state, also introduce some temporary styles until browsers
+       catch up with the standard syntax
+
+     - Added migrations for fixing 1) a dummy RFC entry, 2) three stand-alone
+       RFCs that didn't get their doc.type set, 3) a big bunch of historic
+       stand-alone RFCs that have doc.group=None - set these to the individual
+       submission "none" group for the time being so the view code doesn't
+       have to deal with a special case.  In some cases this is wrong since
+       there actually was a WG associated but unfortunately fixing them
+       properly requires detective work (probably parsing the RFCs) and in at
+       least some cases recreating historic WGs. In case someone ends up doing
+       this, the documents to check can still be found with
+       Document.objects.filter(name__startswith="rfc", group__type="individ")
+       since there are almost no new RFCs that didn't went through the I-D
+       process.
+
+     - Merged the I-D and RFC views by showing I-D information on RFCs too.
+       I-Ds that have been published as RFCs redirect to the RFC URL. Also
+       support alias URLs so e.g. /doc/bcpXXXX redirects to /doc/rfcXXXX.
+
+     - Fixed revision augmentation so events after RFC publication gets a "RFC"
+       designation
+
+     - Fixed a bug with tabs not using provided name but rather doc.name
+
+     - Displaying draft-iesg state rather than doc.friendly_state as IESG state,
+       also show a notice that the IESG state refers to post-RFC processing
+       if it does, like the old separate RFC page did
+
+     - Fixed the RFC number doc.note migration to catch combined "RFC XXX; BCP
+       XXX" notes too, use the opportunity to remove inserted HTML tags from
+       notes and rely on linebreaksbr filter instead (the other thing was a
+       left-over from the Perl days), update the various uses of the note to
+       reflect that
+
+     - Refactored slightly to make views_doc.py independent of other idrfc code
+
+     - Moveed idrfc/views_doc.py to doc/ with associated templates, replace the
+       somewhat fragile simple URL tests for views_doc.py with ordinary unit
+       tests. The new tests are still fairly basic but at least test more
+       than the URL tests did.
+
+     - Made sure RFC's (and BCP/STD/FYI) are stored as RFC123 instead of
+       RFC0123 in the alias table with a new migration and a change to the
+       RFC Editor sync, this in turn makes /doc/std1/ do the right thing
+
+     - Now /doc/std1/ works, we can actually do a local link in
+       urlize_ietf_docs rather than linking to the tools.ietf.org server
+
+     - Fixed history text formatter: sanitize HTML before adding linebreaks and
+       non-breaking spaces, this cuts the time to render a history page with
+       long comments in half
+
+     - Added a test crawler that walks through the crawlable part of the site,
+       reporting errors and slow pages
+
+     - Got rid of initial "No record" positions when showing old positions,
+       it's just noise
+
+     - Added a .select_related() to the document main tab to reduce the number
+       of DB queries, unfortunately it seems it doesn't really help with
+       Django 1.2.x due to a bug (Document inherits from DocumentInfo which
+       makes things a bit more complicated)
+
+     - Introduced a simple cache in doc.get_state so repeated reads don't
+       cause a DB query
+
+     - Cleaned up the search code in preparation for removal of the shim-layer;
+       use a static button and don't send extraneous GET parameters
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Jul 2013 09:32:18 +0200
+
 ietfdb (4.53) ietf; urgency=low
 
   This release provides improvements in the test suite, which nows runs
@@ -1176,9 +1342,12 @@ ietfdb (4.21) ietf; urgency=medium
   From adam@nostrum.com:
 
   * Fix to the requests data page:
+
      - uses native schema for much greater efficiency
+
      - Uses meeting ID properly, so it can find future meetings
        even if their ID does not match the meeting number
+
      - Dramatic improvements to layout
 
   From henrik@levkowetz.com:
