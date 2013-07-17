@@ -47,8 +47,6 @@ class ChangeStateForm(forms.Form):
 def change_state(request, name):
     pass
 
-IESG_SUBSTATE_TAGS = ('point', 'ad-f-up', 'need-rev', 'extpty')
-
 class ChangeStateFormREDESIGN(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
     substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=IESG_SUBSTATE_TAGS), required=False)
@@ -93,7 +91,7 @@ def change_stateREDESIGN(request, name):
 
             # tag handling is a bit awkward since the UI still works
             # as if IESG tags are a substate
-            prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+            prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
             prev_tag = prev_tag[0] if prev_tag else None
 
             if next_state != prev_state or tag != prev_tag:
@@ -144,7 +142,7 @@ def change_stateREDESIGN(request, name):
 
     else:
         state = doc.get_state("draft-iesg")
-        t = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        t = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
         form = ChangeStateForm(initial=dict(state=state.pk if state else None,
                                             substate=t[0].pk if t else None))
         form.docname=name

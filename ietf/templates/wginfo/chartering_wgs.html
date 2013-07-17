@@ -4,7 +4,7 @@
 
 {% block content %}
 {% load ietf_filters %}
-{% load ballot_icon %}
+{% load ballot_icon_redesign %}
 
 <h1>Chartering or Re-Chartering Working Groups</h1>
 
@@ -50,4 +50,9 @@
 </table>
 {% endif %}
 
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="/js/utils.js"></script>
+<script type="text/javascript" src="/js/doc-search.js"></script>
 {% endblock %}

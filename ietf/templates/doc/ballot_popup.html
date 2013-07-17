@@ -1,0 +1,14 @@
+{% load ietf_filters %}
+<div class="ballot-popup">
+  <div class="content">
+    {{ ballot_content }}
+  </div>
+  <div class="actions">
+
+    {% if request.user|has_role:"Area Director" %}
+    <a href="{% url ietf.idrfc.views_ballot.edit_position name=doc.name ballot_id=ballot_id %}" class="button" style="margin-right: 1em;">Edit Position</a>
+    {% endif %}
+
+    <a href="" class="button close">Close</a>
+  </div>
+</div>

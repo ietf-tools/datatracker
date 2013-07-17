@@ -453,7 +453,7 @@ def defer_ballotREDESIGN(request, name):
         prev_state = doc.friendly_state()
         if doc.type_id == 'draft':
             doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='defer'))
-            prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+            prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
             prev_tag = prev_tag[0] if prev_tag else None
             if prev_tag:
                 doc.tags.remove(prev_tag)
@@ -641,7 +641,7 @@ def lastcalltextREDESIGN(request, name):
                     prev = doc.get_state("draft-iesg")
                     doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='lc-req'))
 
-                    prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+                    prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
                     prev_tag = prev_tag[0] if prev_tag else None
                     if prev_tag:
                         doc.tags.remove(prev_tag)
@@ -1035,7 +1035,7 @@ def approve_ballotREDESIGN(request, name):
         prev = doc.get_state("draft-iesg")
         doc.set_state(new_state)
 
-        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
         prev_tag = prev_tag[0] if prev_tag else None
         if prev_tag:
             doc.tags.remove(prev_tag)

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Internet-Drafts and RFCs for {{ ad_name }}{% endblock %}
+
+{% block content %}
+<h1>Internet-Drafts and RFCs for {{ ad_name }}</h1>
+
+{% include "idrfc/search_results.html" %}
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="/js/utils.js"></script>
+<script type="text/javascript" src="/js/doc-search.js"></script>
+{% endblock %}

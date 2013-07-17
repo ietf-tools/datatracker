@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block morecss %}
+.ietf-table .name { white-space: nowrap; padding-right: 1em; }
+.ietf-table .desc { max-width: 35em; }
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+{% if state_type.slug == "draft-iesg" %}
+<p><a href="/images/iesg_draft_state_diagram.png">View Diagram</a></p>
+{% endif %}
+
+<table class="ietf-table">
+  <tr>
+    <th>State</th>
+    <th>Description</th>
+    {% if has_next_states %}<th>Next State</th>{% endif %}
+  </tr>
+
+  {% for state in states %}
+  <tr id="{{ state.slug }}" class="{{ forloop.counter|divisibleby:2|yesno:"evenrow,oddrow" }}">
+    <td class="name">{{ state.name }}</td>
+    <td class="desc">{{ state.desc|linebreaksbr }}</td>
+    {% if has_next_states %}
+    <td class="name">
+      {% for s in state.next_states.all %}
+      {{ s.name }}<br/>
+      {% endfor %}
+    </td>
+    {% endif %}
+  </tr>
+  {% endfor %}
+</table>
+
+{% if tags %}
+<h2>Tags</h2>
+
+<table class="ietf-table">
+  <tr>
+    <th>Tag</th>
+    <th>Description</th>
+  </tr>
+
+  {% for tag in tags %}
+  <tr id="{{ tag.slug }}" class="{{ forloop.counter|divisibleby:2|yesno:"evenrow,oddrow" }}">
+    <td class="name">{{ tag.name }}</td>
+    <td class="desc">{{ tag.desc|linebreaksbr }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}

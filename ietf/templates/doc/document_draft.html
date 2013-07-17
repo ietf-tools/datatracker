@@ -226,10 +226,10 @@
 
   <div class="links">
     <a href="mailto:{{ doc.name }}@tools.ietf.org?subject=Mail%20regarding%20{{ doc.name }}" rel="nofollow">Email Authors</a>
-  | <a href="/ipr/search/?option=document_search&amp;id={{ doc.name }}" rel="nofollow">IPR Disclosures</a>
+  | <a href="{% url ipr_search %}?option=document_search&amp;id={{ doc.name }}" rel="nofollow">IPR Disclosures</a>
   | <a href="http://www.fenron.net/~fenner/ietf/deps/index.cgi?dep={{ name }}" rel="nofollow">Dependencies to this document</a>
   | <a href="http://tools.ietf.org/idnits?url=http://tools.ietf.org/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank">Check nits</a>
-  | <a href="/feed/comments/{{ name }}/">History feed</a>
+  | <a href="/feed/document-changes/{{ name }}/">History feed</a>
   | <a href="http://www.google.com/search?as_q={{ doc.name }}&as_sitesearch={{ search_archive }}" rel="nofollow" target="_blank">Search Mailing Lists</a>
   {% if user|has_role:"Area Director" %}
   | <a href="https://www.iesg.org/bin/c5i?mid=6&rid=77&target={{ doc.name }}" rel="nofollow" target="_blank">Search Mailing Lists (ARO)</a>

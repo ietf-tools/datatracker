@@ -222,7 +222,7 @@ def document_main(request, name, rev=None):
 
         # ballot
         ballot_summary = None
-        if iesg_state and iesg_state.slug in ("lc", "writeupw", "goaheadw", "iesg-eva", "defer"):
+        if iesg_state and iesg_state.slug in IESG_BALLOT_ACTIVE_STATES:
             active_ballot = doc.active_ballot()
             if active_ballot:
                 ballot_summary = needed_ballot_positions(doc, active_ballot.active_ad_positions().values())
@@ -653,6 +653,17 @@ def document_ballot(request, name, ballot_id=None):
                                    ),
                               context_instance=RequestContext(request))
 
+def ballot_popup(request, name, ballot_id):
+    doc = get_object_or_404(Document, docalias__name=name)
+    c = document_ballot_content(request, doc, ballot_id=ballot_id, editable=False)
+    return render_to_response("doc/ballot_popup.html",
+                              dict(doc=doc,
+                                   ballot_content=c,
+                                   ballot_id=ballot_id,
+                                   ),
+                              context_instance=RequestContext(request))
+
+
 def document_json(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
 
@@ -698,11 +709,6 @@ def document_json(request, name):
         data["stream"] = extract_name(doc.stream)
 
     return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
-
-def ballot_for_popup(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
-    return HttpResponse(document_ballot_content(request, doc, ballot_id=None, editable=False))
-
 
 def ballot_json(request, name):
     # REDESIGN: this view needs to be deleted or updated

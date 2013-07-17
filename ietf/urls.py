@@ -5,13 +5,12 @@ from django.conf.urls.defaults import patterns, include, handler404, handler500
 from django.contrib import admin
 
 from ietf.iesg.feeds import IESGAgenda
-from ietf.idtracker.feeds import DocumentComments, InLastCall
+from ietf.doc.feeds import DocumentChanges, InLastCall
 from ietf.ipr.feeds import LatestIprDisclosures
 from ietf.proceedings.feeds import LatestWgProceedingsActivity
 from ietf.liaisons.feeds import Liaisons
 from ietf.wgcharter.feeds import GroupChanges
 
-from ietf.idtracker.sitemaps import IDTrackerMap, DraftMap
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
 from ietf.announcements.sitemaps import NOMCOMAnnouncementsMap
@@ -25,7 +24,7 @@ admin.site.disable_action('delete_selected')
 feeds = {
     'iesg-agenda': IESGAgenda,
     'last-call': InLastCall,
-    'comments': DocumentComments,
+    'document-changes': DocumentChanges,
     'group-changes': GroupChanges,
     'ipr': LatestIprDisclosures,
     'liaison': Liaisons,
@@ -33,15 +32,10 @@ feeds = {
 }
 
 sitemaps = {
-    'idtracker': IDTrackerMap,
-    'drafts': DraftMap,
     'liaison': LiaisonMap,
     'ipr': IPRMap,
     'nomcom-announcements': NOMCOMAnnouncementsMap,
 }
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    del sitemaps['drafts'] # not needed, overlaps sitemaps['idtracker']
 
 urlpatterns = patterns('',
     (r'^$', 'ietf.idrfc.views.main'),
@@ -52,10 +46,11 @@ urlpatterns = patterns('',
     (r'^community/', include('ietf.community.urls')),
     (r'^cookies/', include('ietf.cookies.urls')),
     (r'^doc/', include('ietf.idrfc.urls')),
-    (r'^drafts/', include('ietf.idindex.urls')),
+    (r'^drafts/', include('ietf.doc.redirect_drafts_urls')),
+    (r'^feed/comments/(?P<remainder>.*)/$', 'django.views.generic.simple.redirect_to', { 'url': '/feed/document-changes/%(remainder)s/'}),
     (r'^feed/(?P<url>.*)/$', 'django.contrib.syndication.views.feed', { 'feed_dict': feeds}),
     (r'^help/', include('ietf.help.urls')),
-    (r'^idtracker/', include('ietf.idtracker.urls')),
+    (r'^idtracker/', include('ietf.doc.redirect_idtracker_urls')),
     (r'^iesg/', include('ietf.iesg.urls')),
     (r'^ipr/', include('ietf.ipr.urls')),
     (r'^liaison/', include('ietf.liaisons.urls')),

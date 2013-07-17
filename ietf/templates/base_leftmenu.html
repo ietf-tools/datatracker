@@ -38,17 +38,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <ul>
 <li class="sect first">Accounts</li>
   <li><a href="{% url account_index %}">{% if request.user.is_authenticated %}Manage Account{% else %}New Account{% endif %}</a></li>
-{% if user|in_group:"Area_Director" %}
+{% if user|has_role:"Area Director" %}
 <li class="sect first">AD Dashboard</li>
-  <li><a href="{% url doc_search_by_ad name=user.get_profile.person.full_name_as_key %}">My Documents (old)</a></li>
-  <li><a href="{% url doc_search_by_ad2 name=user.get_profile.person.full_name_as_key %}">My Documents (new)</a></li>
+  <li><a href="{% url drafts_for_ad name=user.get_profile.full_name_as_key %}">My Documents</a></li>
   <li><a href="{% url ietf.iesg.views.agenda_documents %}">Next Telechat</a></li>
   <li><a href="{% url ietf.iesg.views.discusses %}">Discusses</a></li>
   <li><a href="{% url ietf.iesg.views.milestones_needing_review %}">Milestones</a></li>
   {# FIXME: this link should be removed when the old WG Actions are completely dead #}
   <li><a href="{% url ietf.iesg.views.working_group_actions %}">Working Groups</a></li>
 {% endif %}
-{% if user|in_group:"Secretariat" %}
+{% if user|has_role:"Secretariat" %}
 <li class="sect first">Secretariat</li>
   <li><a href="/admin/iesg/telechatdate/">Telechat Dates</a></li>
   <li><a href="/admin/iesg/telechatagendaitem/">Management Items</a></li>
@@ -74,7 +73,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <li class="sect first">RFC Editor</li>
   <li><a href="{% url ietf.sync.views.discrepancies %}">Sync discrepancies</a></li>
 {% endif %}
-<li class="sect{% if not user|in_group:"Area_Director,Secretariat" %} first{% endif %}">Working Groups</li>
+<li class="sect{% if not user|has_role:"Area Director,Secretariat" %} first{% endif %}">Working Groups</li>
 
   <li style="padding-bottom:0;"><div id="wgs" class="yuimenu"><div class="bd" style="border:0;">
   <ul class="first-of-type" style="padding:0;">
@@ -93,7 +92,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <li class="sect">Drafts&nbsp;&amp;&nbsp;RFCs</li>
   <li><a href="/doc/">Document search:</a></li>
-  <li><form action="/doc/search/" method="get" style="padding-bottom:0;margin-bottom:0;"><input type="text" style="margin-left:10px; width:100px; border:1px solid #89d;" name="name" /><input type="hidden" name="activeDrafts" value="on"/><input type="hidden" name="rfcs" value="on"/></form></li>
+  <li><form action="/doc/search/" method="get" style="padding-bottom:0;margin-bottom:0;"><input type="text" style="margin-left:10px; width:100px; border:1px solid #89d;" name="name" /><input type="hidden" name="activedrafts" value="on"/><input type="hidden" name="rfcs" value="on"/></form></li>
   <li><a href="{% url submit_index %}">Submit a draft</a></li> 
 {% if user|in_group:"WG Chair" %}
   <li><a href="{% url submit_approvals %}">Approve a draft</a></li> 

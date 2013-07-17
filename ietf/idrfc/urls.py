@@ -37,15 +37,20 @@ from ietf.doc import views_status_change
 from ietf.doc import views_doc
 
 urlpatterns = patterns('',
-    (r'^/?$', views_search.search_main),
-    (r'^search/$', views_search.search_results),
-    (r'^all/$', views_search.all),
-    (r'^active/$', views_search.active),
-    (r'^in-last-call/$', views_search.in_last_call),
-    url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'),
-    url(r'^start-rfc-status-change/(?P<name>[A-Za-z0-9._+-]*)$', views_status_change.start_rfc_status_change, name='start_rfc_status_change'),
-    url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad, name="doc_search_by_ad"),
-    url(r'^ad2/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad2, name="doc_search_by_ad2"),
+    (r'^/?$', views_search.search),
+    url(r'^search/$', views_search.search, name="doc_search"),
+    url(r'^in-last-call/$', views_search.drafts_in_last_call, name="drafts_in_last_call"),
+    url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.drafts_for_ad, name="drafts_for_ad"),
+#    (r'^all/$', views_search.all), # XXX CHECK MERGE
+#    (r'^active/$', views_search.active), # XXX CHECK MERGE
+    url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'), 
+    url(r'^start-rfc-status-change/(?P<name>[A-Za-z0-9._+-]*)$', views_status_change.start_rfc_status_change, name='start_rfc_status_change'), 
+    url(r'^iesg/(?P<last_call_only>[A-Za-z0-9.-]+/)?$', views_search.drafts_in_iesg_process, name="drafts_in_iesg_process"),
+
+#    url(r'^ad2/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad2, name="doc_search_by_ad2"),
+
+    url(r'^all/$', views_search.index_all_drafts, name="index_all_drafts"),
+    url(r'^active/$', views_search.index_active_drafts, name="index_active_drafts"),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/((?P<rev>[0-9-]+)/)?$', views_doc.document_main, name="doc_view"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/history/$', views_doc.document_history, name="doc_history"),
@@ -56,7 +61,7 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot/(?P<ballot_id>[0-9]+)/$', views_doc.document_ballot, name="doc_ballot"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot/$', views_doc.document_ballot, name="doc_ballot"),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/doc.json$', views_doc.document_json),
-    (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/$', views_doc.ballot_for_popup),
+    (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/(?P<ballot_id>[0-9]+)/$', views_doc.ballot_popup),
     #(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot.json$', views_doc.ballot_json), # legacy view
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_edit.change_state, name='doc_change_state'), # IESG state
@@ -86,6 +91,8 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/approveballot/$', views_ballot.approve_ballot, name='doc_approve_ballot'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/makelastcall/$', views_ballot.make_last_call, name='doc_make_last_call'),
 
+    url(r'^help/state/(?P<type>[\w-]+)/$', 'ietf.doc.views_help.state_help', name="state_help"),
+
     (r'^(?P<name>charter-[A-Za-z0-9._+-]+)/', include('ietf.wgcharter.urls')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/conflict-review/', include('ietf.doc.urls_conflict_review')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/status-change/', include('ietf.doc.urls_status_change')),
@@ -96,5 +103,4 @@ urlpatterns += patterns('django.views.generic.simple',
     url(r'^help/state/conflict-review/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(used=True, type="conflrev").order_by("order"),'title':"Conflict Review" } }, name='help_conflict_review_states'),
     url(r'^help/state/status-change/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(type="statchg").order_by("order"),'title':"RFC Status Change" } }, name='help_status_change_states'),
 )
-
 

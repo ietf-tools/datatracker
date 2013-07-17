@@ -37,30 +37,39 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
 {% if show_add_to_list and user.is_authenticated %}
 <td class="addtolist">
-{% if doc.id %}
-    <a href="{% url community_add_document doc.id.draft_name %}" title="Add to your personal ID list"><img src="/images/add_to_list.png" alt="Add to your personal ID list" /></a>
-{% else %}
-    <a href="{% url community_add_document doc.rfc.filename %}" title="Add to your personal ID list"><img src="/images/add_to_list.png" alt="Add to your personal ID list" /></a>
-{% endif %}
+  <a href="{% url community_add_document doc.name %}" title="Add to your personal ID list"><img src="/images/add_to_list.png" alt="Add to your personal ID list" /></a>
 </td>
 {% endif %}
 <td class="doc">
-{% if doc.rfc %}{{ doc.rfc.displayname_with_link|safe }}
-{% if doc.id %}<br />(<a href="{{ doc.id.get_absolute_url }}">{{doc.id.draft_name}}</a>){%endif%}
-{% else %}{{ doc.id.displayname_with_link|safe }}
-{% endif %}
+  <a href="{{ doc.get_absolute_url }}">{% if doc.get_state_slug == "rfc" %}RFC {{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}</a>
+
+  {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}
+  <br/><i>(was {{ doc.name }})</i>
+  {% endif %}
 </td>
+
 <td class="title">{{ doc.title }}</td>
 
-<td class="date">{% if not doc.rfc %}{{ doc.publication_date }}{% else %}{{ doc.publication_date|date:"Y-m" }}{% endif %}
-{% if doc.publication_date|timesince_days|new_enough:request %}<br/><span class="ietf-small ietf-highlight-y">{% if not doc.rfc%}<a href="http:{{rfcdiff_prefix}}?url2={{doc.id.draft_name_and_revision}}">new</a>{%else%}new{%endif%}</span>{%endif%}
-{% if doc.id and doc.id.expected_expiration_date and doc.id.expected_expiration_date|timesince_days|expires_soon:request %}<br/><span class="ietf-small ietf-highlight-y">expires soon</span>{%endif%}
+<td class="date">
+  {% if doc.get_state_slug == "rfc" %}{{ doc.latest_revision_date|date:"Y-m" }}{% else %}{{ doc.latest_revision_date|date:"Y-m-d" }}{% endif %}
+
+  {% if doc.latest_revision_date|timesince_days|new_enough:request %}
+  <div class="ietf-small ietf-highlight-y"><a{% if doc.get_state_slug != "rfc" %} href="http:{{ rfcdiff_prefix }}?url2={{ doc.name }}-{{ doc.rev }}"{% endif %}>new</a></div>
+  {% endif %}
+
+  {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
+  <div class="ietf-small ietf-highlight-y">expires soon</div>
+  {% endif %}
 </td>
 
-{% include "idrfc/status_columns.html" %}
-{% include "idrfc/ipr_column.html" %}
-{# <td class="ad">{% if doc.ad_name %}{{ doc.ad_name }}{% else %}&nbsp;{% endif %}</td> #}
-<td class="ad">{{ doc.ad_name|default:"" }}
-{% if doc.id.underlying_document.shepherd %}<br/>{{ doc.id.underlying_document.shepherd.plain_name|default:""}}{% endif %}
+{% include "doc/status_columns.html" %}
+
+<td class="ipr">
+  {% if doc.iprs %}
+    <a href="{% url ipr_search %}?option=document_search&amp;id={{ doc.name }}">{{ doc.iprs|length }}</a>
+  {% endif %}
 </td>
+
+<td class="ad">{{ doc.ad|default:"" }}</td>
+
 </tr>

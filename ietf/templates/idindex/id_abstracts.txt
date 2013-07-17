@@ -1,9 +1,0 @@
-{% extends "idindex/id_index.txt" %}{% load ietf_filters %} {% block intro %}              Current Internet-Drafts
-
-     This summary sheet provides a short synopsis of each Internet-Draft
-available within the "internet-drafts" directory at the shadow
-sites directory.  These drafts are listed alphabetically by working
-group acronym and start date.  Generated {{ time }}
-{% endblock %}{% block abstract %}
-
-    {{ draft.clean_abstract|indent|indent|safe }}{% endblock %}

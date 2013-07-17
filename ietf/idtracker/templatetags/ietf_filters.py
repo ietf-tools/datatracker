@@ -31,9 +31,18 @@ def expand_comma(value):
 def format_charter(value):
     return value.replace("\n\n", "</p><p>").replace("\n","<br/>\n")
 
-@register.filter(name='indent')
-def indent(value,numspaces=2):
-    return value.replace("\n", "\n"+" "*int(numspaces));
+@register.filter
+def indent(value, numspaces=2):
+    replacement = "\n" + " " * int(numspaces)
+    res = value.replace("\n", replacement)
+    if res.endswith(replacement):
+        res = res[:-int(numspaces)] # fix up superfluous spaces
+    return res
+
+@register.filter
+def unindent(value):
+    """Remove indentation from string."""
+    return re.sub("\n +", "\n", value)
 
 @register.filter(name='parse_email_list')
 def parse_email_list(value):
@@ -241,6 +250,11 @@ def dashify(string):
     """
     return re.sub('.', '-', string)
 
+@register.filter
+def underline(string):
+    """Return string with an extra line underneath of dashes, for plain text underlining."""
+    return string + "\n" + ("-" * len(string))
+
 @register.filter(name='lstrip')
 def lstripw(string, chars):
     """Strip matching leading characters from words in string"""
@@ -320,23 +334,6 @@ def wrap_text(text, width=72):
         prev_indent = indent
     return "\n".join(filled)
 
-@register.filter(name="id_index_file_types")
-def id_index_file_types(text):
-    r = ".txt"
-    if text.find("txt") < 0:
-        return r
-    if text.find("ps") >= 0:
-        r = r + ",.ps"
-    if text.find("pdf") >= 0:
-        r = r + ",.pdf"
-    return r
-
-@register.filter(name="id_index_wrap")
-def id_index_wrap(text):
-    x = wordwrap(text, 72)
-    x = x.replace("\n", "\n  ")
-    return "  "+x.strip()
-
 @register.filter(name="compress_empty_lines")
 def compress_empty_lines(text):
     text = re.sub("( *\n){3,}", "\n\n", text)
@@ -408,14 +405,6 @@ def expires_soon(x,request):
         days = 14
     return x > -days
 
-@register.filter(name='greater_than')
-def greater_than(x, y):
-    return x > int(y)
-
-@register.filter(name='less_than')
-def less_than(x, y):
-    return x < int(y)
-
 @register.filter(name='equal')
 def equal(x, y):
     return str(x)==str(y)
@@ -470,24 +459,8 @@ def format_history_text(text):
     full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(full)))))
     snippet = truncate_html_words(full, 25)
     if snippet != full:
-        return mark_safe(u'<div class="snippet">%s<span class="showAll">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
+        return mark_safe(u'<div class="snippet">%s<span class="show-all">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
     return full
-
-@register.filter
-def user_roles_json(user):
-    roles = {}
-    if not isinstance(user, basestring) and user.is_authenticated():
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from ietf.group.models import Role
-            for r in Role.objects.filter(person__user=user).select_related(depth=1):
-                if r.name_id == "secr" and r.group.acronym == "secretariat":
-                    roles["Secretariat"] = True
-                elif r.name_id == "ad" and r.group.type_id == "area" and r.group.state_id == "active":
-                    roles["Area Director"] = roles["Area_Director"] = True
-        else:
-            for g in user.groups.all():
-                roles[g.name] = True
-    return mark_safe(simplejson.dumps(roles))
 
 @register.filter
 def textify(text):
@@ -495,7 +468,13 @@ def textify(text):
     text = re.sub("</?i>", "/", text)
     # There are probably additional conversions we should apply here
     return text
-    
+
+@register.filter
+def state(doc, slug):
+    if slug == "stream": # convenient shorthand
+        slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
+    return doc.get_state(slug)
+
 def _test():
     import doctest
     doctest.testmod()

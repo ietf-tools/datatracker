@@ -1013,13 +1013,13 @@ class ExpireIDsTestCase(django.test.TestCase):
         shutil.rmtree(self.id_dir)
         shutil.rmtree(self.archive_dir)
 
-    def write_id_file(self, name, size):
+    def write_draft_file(self, name, size):
         f = open(os.path.join(self.id_dir, name), 'w')
         f.write("a" * size)
         f.close()
         
-    def test_in_id_expire_freeze(self):
-        from ietf.idrfc.expire import in_id_expire_freeze
+    def test_in_draft_expire_freeze(self):
+        from ietf.idrfc.expire import in_draft_expire_freeze
 
         Meeting.objects.create(number="123",
                                type=MeetingTypeName.objects.get(slug="ietf"),
@@ -1027,70 +1027,70 @@ class ExpireIDsTestCase(django.test.TestCase):
         second_cut_off = Meeting.get_second_cut_off()
         ietf_monday = Meeting.get_ietf_monday()
 
-        self.assertTrue(not in_id_expire_freeze(datetime.datetime.combine(second_cut_off - datetime.timedelta(days=7), time(0, 0, 0))))
-        self.assertTrue(not in_id_expire_freeze(datetime.datetime.combine(second_cut_off, time(0, 0, 0))))
-        self.assertTrue(in_id_expire_freeze(datetime.datetime.combine(second_cut_off + datetime.timedelta(days=7), time(0, 0, 0))))
-        self.assertTrue(in_id_expire_freeze(datetime.datetime.combine(ietf_monday - datetime.timedelta(days=1), time(0, 0, 0))))
-        self.assertTrue(not in_id_expire_freeze(datetime.datetime.combine(ietf_monday, time(0, 0, 0))))
+        self.assertTrue(not in_draft_expire_freeze(datetime.datetime.combine(second_cut_off - datetime.timedelta(days=7), time(0, 0, 0))))
+        self.assertTrue(not in_draft_expire_freeze(datetime.datetime.combine(second_cut_off, time(0, 0, 0))))
+        self.assertTrue(in_draft_expire_freeze(datetime.datetime.combine(second_cut_off + datetime.timedelta(days=7), time(0, 0, 0))))
+        self.assertTrue(in_draft_expire_freeze(datetime.datetime.combine(ietf_monday - datetime.timedelta(days=1), time(0, 0, 0))))
+        self.assertTrue(not in_draft_expire_freeze(datetime.datetime.combine(ietf_monday, time(0, 0, 0))))
         
-    def test_warn_expirable_ids(self):
-        from ietf.idrfc.expire import get_soon_to_expire_ids, send_expire_warning_for_id
+    def test_warn_expirable_drafts(self):
+        from ietf.idrfc.expire import get_soon_to_expire_drafts, send_expire_warning_for_draft
 
         draft = make_test_data()
 
-        self.assertEquals(len(list(get_soon_to_expire_ids(14))), 0)
+        self.assertEquals(len(list(get_soon_to_expire_drafts(14))), 0)
 
         # hack into expirable state
         draft.unset_state("draft-iesg")
         draft.expires = datetime.datetime.now() + datetime.timedelta(days=10)
         draft.save()
 
-        self.assertEquals(len(list(get_soon_to_expire_ids(14))), 1)
+        self.assertEquals(len(list(get_soon_to_expire_drafts(14))), 1)
         
         # test send warning
         mailbox_before = len(outbox)
 
-        send_expire_warning_for_id(draft)
+        send_expire_warning_for_draft(draft)
 
         self.assertEquals(len(outbox), mailbox_before + 1)
         self.assertTrue("aread@ietf.org" in str(outbox[-1])) # author
         self.assertTrue("wgchairman@ietf.org" in str(outbox[-1]))
         
-    def test_expire_ids(self):
-        from ietf.idrfc.expire import get_expired_ids, send_expire_notice_for_id, expire_id
+    def test_expire_drafts(self):
+        from ietf.idrfc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
 
         draft = make_test_data()
         
-        self.assertEquals(len(list(get_expired_ids())), 0)
+        self.assertEquals(len(list(get_expired_drafts())), 0)
         
         # hack into expirable state
         draft.unset_state("draft-iesg")
         draft.expires = datetime.datetime.now()
         draft.save()
 
-        self.assertEquals(len(list(get_expired_ids())), 1)
+        self.assertEquals(len(list(get_expired_drafts())), 1)
 
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="watching"))
 
-        self.assertEquals(len(list(get_expired_ids())), 1)
+        self.assertEquals(len(list(get_expired_drafts())), 1)
 
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
 
-        self.assertEquals(len(list(get_expired_ids())), 0)
+        self.assertEquals(len(list(get_expired_drafts())), 0)
         
         # test notice
         mailbox_before = len(outbox)
 
-        send_expire_notice_for_id(draft)
+        send_expire_notice_for_draft(draft)
 
         self.assertEquals(len(outbox), mailbox_before + 1)
         self.assertTrue("expired" in outbox[-1]["Subject"])
 
         # test expiry
         txt = "%s-%s.txt" % (draft.name, draft.rev)
-        self.write_id_file(txt, 5000)
+        self.write_draft_file(txt, 5000)
 
-        expire_id(draft)
+        expire_draft(draft)
 
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.get_state_slug(), "expired")
@@ -1099,16 +1099,16 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
 
-    def test_clean_up_id_files(self):
+    def test_clean_up_draft_files(self):
         draft = make_test_data()
         
-        from ietf.idrfc.expire import clean_up_id_files
+        from ietf.idrfc.expire import clean_up_draft_files
 
         # put unknown file
         unknown = "draft-i-am-unknown-01.txt"
-        self.write_id_file(unknown, 5000)
+        self.write_draft_file(unknown, 5000)
 
-        clean_up_id_files()
+        clean_up_draft_files()
         
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, unknown)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "unknown_ids", unknown)))
@@ -1116,9 +1116,9 @@ class ExpireIDsTestCase(django.test.TestCase):
         
         # put file with malformed name (no revision)
         malformed = draft.name + ".txt"
-        self.write_id_file(malformed, 5000)
+        self.write_draft_file(malformed, 5000)
 
-        clean_up_id_files()
+        clean_up_draft_files()
         
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, malformed)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "unknown_ids", malformed)))
@@ -1129,11 +1129,11 @@ class ExpireIDsTestCase(django.test.TestCase):
         draft.save()
 
         txt = "%s-%s.txt" % (draft.name, draft.rev)
-        self.write_id_file(txt, 5000)
+        self.write_draft_file(txt, 5000)
         pdf = "%s-%s.pdf" % (draft.name, draft.rev)
-        self.write_id_file(pdf, 5000)
+        self.write_draft_file(pdf, 5000)
 
-        clean_up_id_files()
+        clean_up_draft_files()
         
         # txt files shouldn't be moved (for some reason)
         self.assertTrue(os.path.exists(os.path.join(self.id_dir, txt)))
@@ -1157,9 +1157,9 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         # expired without tombstone
         txt = "%s-%s.txt" % (draft.name, draft.rev)
-        self.write_id_file(txt, 5000)
+        self.write_draft_file(txt, 5000)
 
-        clean_up_id_files()
+        clean_up_draft_files()
         
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "expired_without_tombstone", txt)))
@@ -1169,9 +1169,9 @@ class ExpireIDsTestCase(django.test.TestCase):
         revision_before = draft.rev
 
         txt = "%s-%s.txt" % (draft.name, draft.rev)
-        self.write_id_file(txt, 1000) # < 1500 means tombstone
+        self.write_draft_file(txt, 1000) # < 1500 means tombstone
 
-        clean_up_id_files()
+        clean_up_draft_files()
         
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "deleted_tombstones", txt)))
