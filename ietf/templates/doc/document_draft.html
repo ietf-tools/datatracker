@@ -122,8 +122,7 @@
     <tr>
       <td>Document shepherd:</td>
       <td>
-        {# the shepherd edit page only works for WGs at the moment ... #}
-        <a {% if can_edit_stream_info and group.type_id == "wg" %}class="editlink" href="{% url doc_managing_shepherd acronym=group.acronym,name=doc.name %}"{% endif %}>
+        <a {% if can_edit_stream_info %}class="editlink" href="{% url doc_edit_shepherd name=doc.name %}"{% endif %}>
         {{ doc.shepherd|default:"No shepherd assigned" }}
         </a>
       </td>
