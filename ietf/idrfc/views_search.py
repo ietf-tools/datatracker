@@ -303,7 +303,7 @@ def retrieve_search_results(form):
                        {'title': 'Date', 'key':'date'},
                        {'title': 'Status', 'key':'status', 'colspan':'2'},
                        {'title': 'IPR', 'key':'ipr'},
-                       {'title': 'Area Director', 'key':'ad'}]
+                       {'title': 'AD / Shepherd', 'key':'ad'}]
 
     if hasattr(form.data, "urlencode"): # form was fed a Django QueryDict, not local plain dict
         d = form.data.copy()

@@ -107,6 +107,7 @@ form#search_form { padding-top: 4px; padding-bottom: 4px; }
 #search_form #id_positionAd { width:248px; }
 #search_form #id_group {width: 120px; margin-right:4px; }
 #search_form #id_area {width:120px; }
+.search-text-shepherd { color: #808080; }
 
 table.ietf-table { border-collapse:collapse; border:1px solid #7f7f7f; }
 .ietf-table tr.evenrow { background-color: #EDF5FF; }
