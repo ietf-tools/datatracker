@@ -41,13 +41,13 @@ urlpatterns = patterns('',
     url(r'^search/$', views_search.search, name="doc_search"),
     url(r'^in-last-call/$', views_search.drafts_in_last_call, name="drafts_in_last_call"),
     url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.drafts_for_ad, name="drafts_for_ad"),
+    url(r'^ad2/(?P<name>[A-Za-z0-9.-]+)/$', views_search.docs_for_ad, name="docs_for_ad"),
+
 #    (r'^all/$', views_search.all), # XXX CHECK MERGE
 #    (r'^active/$', views_search.active), # XXX CHECK MERGE
     url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'), 
     url(r'^start-rfc-status-change/(?P<name>[A-Za-z0-9._+-]*)$', views_status_change.start_rfc_status_change, name='start_rfc_status_change'), 
     url(r'^iesg/(?P<last_call_only>[A-Za-z0-9.-]+/)?$', views_search.drafts_in_iesg_process, name="drafts_in_iesg_process"),
-
-#    url(r'^ad2/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad2, name="doc_search_by_ad2"),
 
     url(r'^all/$', views_search.index_all_drafts, name="index_all_drafts"),
     url(r'^active/$', views_search.index_active_drafts, name="index_active_drafts"),

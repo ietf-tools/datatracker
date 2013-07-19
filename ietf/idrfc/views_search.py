@@ -372,6 +372,136 @@ def drafts_for_ad(request, name):
                               { 'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name() },
                               context_instance=RequestContext(request))
 
+def ad_dashboard_group(doc):
+
+    if doc.type.slug=='draft':
+        if doc.get_state_slug('draft') == 'rfc':
+            return 'RFC'
+        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg'):
+            return '%s Internet-Draft' % doc.get_state('draft-iesg').name
+        else:
+            return '%s Internet-Draft' % doc.get_state('draft').name
+    elif doc.type.slug=='conflrev':
+        if doc.get_state_slug('conflrev') in ('appr-reqnopub-sent','appr-noprob-sent'):
+            return 'Approved Conflict Review' 
+        elif doc.get_state_slug('conflrev') in ('appr-reqnopub-pend','appr-noprob-pend','appr-reqnopub-pr','appr-noprob-pr'):
+            return "%s Conflict Review" % State.objects.get(type__slug='draft-iesg',slug='approved')
+        else:
+          return '%s Conflict Review' % doc.get_state('conflrev')
+    elif doc.type.slug=='statchg':
+        if doc.get_state_slug('statchg') in ('appr-sent',):
+            return 'Approved Status Change' 
+        if doc.get_state_slug('statchg') in ('appr-pend','appr-pr'):
+            return '%s Status Change' % State.objects.get(type__slug='draft-iesg',slug='approved')
+        else:
+            return '%s Status Change' % doc.get_state('statchg')
+    elif doc.type.slug=='charter':
+        if doc.get_state_slug('charter') == 'approved':
+            return "Approved Charter"
+        else:
+            return '%s Charter' % doc.get_state('charter')
+    else:
+        return "Document"
+
+def ad_dashboard_sort_key(doc):
+    
+    if doc.type.slug=='draft' and doc.get_state_slug('draft') == 'rfc':
+        return "21%04d" % int(doc.rfc_number())
+    if doc.type.slug=='statchg' and doc.get_state_slug('statchg') == 'appr-sent':
+        return "22%d" % 0 # TODO - get the date of the transition into this state here
+    if doc.type.slug=='conflrev' and doc.get_state_slug('conflrev') in ('appr-reqnopub-sent','appr-noprob-sent'):
+        return "23%d" % 0 # TODO - get the date of the transition into this state here
+    if doc.type.slug=='charter' and doc.get_state_slug('charter') == 'approved':
+        return "24%d" % 0 # TODO - get the date of the transition into this state here
+
+    seed = ad_dashboard_group(doc)
+
+    if doc.type.slug=='conflrev' and doc.get_state_slug('conflrev') == 'adrev':
+        state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')        
+        return "1%d%s" % (state.order,seed)
+
+    if doc.type.slug=='charter':
+        if doc.get_state_slug('charter') in ('notrev','infrev'):
+            return "100%s" % seed
+        elif  doc.get_state_slug('charter') == 'intrev':
+            state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')        
+            return "1%d%s" % (state.order,seed)
+        elif  doc.get_state_slug('charter') == 'extrev':
+            state = State.objects.get(type__slug='draft-iesg',slug='lc')        
+            return "1%d%s" % (state.order,seed)
+        elif  doc.get_state_slug('charter') == 'iesgrev':
+            state = State.objects.get(type__slug='draft-iesg',slug='iesg-eva')        
+            return "1%d%s" % (state.order,seed)
+
+    if doc.type.slug=='statchg' and  doc.get_state_slug('statchg') == 'adrev':
+        state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')        
+        return "1%d%s" % (state.order,seed)
+    
+    if seed.startswith('Needs Shepherd'):
+        return "100%s" % seed
+    if seed.endswith(' Document'):
+        seed = seed[:-9]
+    elif seed.endswith(' Internet-Draft'):
+        seed = seed[:-15]
+    elif seed.endswith(' Conflict Review'):
+        seed = seed[:-16]
+    elif seed.endswith(' Status Change'):
+        seed = seed[:-14]
+    state = State.objects.filter(type__slug='draft-iesg',name=seed)
+    if state:
+        ageseconds = 0
+        changetime= doc.latest_event(type='changed_document')
+        if changetime:
+            ad = (datetime.datetime.now()-doc.latest_event(type='changed_document').time)
+            ageseconds = (ad.microseconds + (ad.seconds + ad.days * 24 * 3600) * 10**6) / 10**6
+        return "1%d%s%s%010d" % (state[0].order,seed,doc.type.slug,ageseconds)
+
+    return "3%s" % seed
+    
+def docs_for_ad(request, name):
+    ad = None
+    responsible = Document.objects.values_list('ad', flat=True).distinct()
+    for p in Person.objects.filter(Q(role__name__in=("pre-ad", "ad"),
+                                     role__group__type="area",
+                                     role__group__state="active")
+                                   | Q(pk__in=responsible)).distinct():
+        if name == p.full_name_as_key():
+            ad = p
+            break
+    if not ad:
+        raise Http404
+
+    docqueryset = Document.objects.filter(ad__id=ad.id)
+    docs=[]
+    for doc in docqueryset:
+        doc.ad_dashboard_sort_key = ad_dashboard_sort_key(doc)
+        doc.ad_dashboard_group = ad_dashboard_group(doc)
+        if doc.get_state_slug() == 'rfc':
+            doc.display_date = doc.latest_event(type='published_rfc').time
+        else:
+            revision = doc.latest_event(type='new_revision')
+            if revision:
+              doc.display_date = revision.time
+        # This might be better handled as something Documents know about themselves
+        now = datetime.datetime.now()
+        doc.can_expire = (doc.type.slug=='draft' and doc.get_state_slug('draft')=='active' and ( not doc.get_state('draft-iesg') or doc.get_state('draft-iesg').order >= 42) and doc.expires>now)
+        if doc.get_state_slug('draft') == 'rfc':
+            doc.obsoleted_by = ", ".join([ 'RFC %04d' % int(rel.source.rfc_number()) for alias in doc.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='obsoletes') ] )
+            doc.updated_by = ", ".join([ 'RFC %04d' % int(rel.source.rfc_number())  for alias in doc.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='updates') ] )
+            doc.has_errata = bool(doc.tags.filter(slug="errata"))
+        else: 
+            s = doc.get_state("draft-rfceditor")
+            if s:
+                # extract possible extra annotations
+                tags = doc.tags.filter(slug__in=("iana", "ref"))
+                doc.rfc_editor_state = "*".join([s.name] + [t.slug.upper() for t in tags])
+        if doc.type.slug == 'draft':
+            doc.iprCount = IprDocAlias.objects.filter(doc_alias__document=doc, ipr__status__in=[1,3]).count()
+            doc.iprUrl = "/ipr/search?option=document_search&id_document_tag=%s" % doc.name
+        docs.append(doc)
+    docs.sort(key=ad_dashboard_sort_key)
+    return render_to_response('doc/by_ad2.html',{'docs':docs,'ad_name':ad.plain_name()}, context_instance=RequestContext(request))
+
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
     form = SearchForm({'by':'state','state': lc_state, 'rfcs':'on', 'activedrafts':'on'})
