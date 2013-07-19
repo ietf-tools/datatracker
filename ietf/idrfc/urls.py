@@ -41,6 +41,7 @@ urlpatterns = patterns('',
     url(r'^search/$', views_search.search, name="doc_search"),
     url(r'^in-last-call/$', views_search.drafts_in_last_call, name="drafts_in_last_call"),
     url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.drafts_for_ad, name="drafts_for_ad"),
+#    url(r'^ad2/(?P<name>[A-Za-z0-9.-]+)/$', views_search.docs_for_ad, name="docs_for_ad"),
     url(r'^ad2/(?P<name>[A-Za-z0-9.-]+)/$', views_search.docs_for_ad, name="docs_for_ad"),
 
 #    (r'^all/$', views_search.all), # XXX CHECK MERGE

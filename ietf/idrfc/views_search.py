@@ -196,7 +196,7 @@ def fill_in_search_attributes(docs):
         l.sort()
 
 
-def retrieve_search_results(form):
+def retrieve_search_results(form, types=['draft']):
     """Takes a validated SearchForm and return the results."""
     if not form.is_valid():
         raise ValueError("SearchForm doesn't validate: %s" % form.errors)
@@ -208,7 +208,10 @@ def retrieve_search_results(form):
 
     MAX = 500
 
-    docs = Document.objects.filter(type="draft")
+    if types and len(types) > 0:
+        docs = Document.objects.filter(type__in=types)
+    else:
+        docs = Document.objects.all()
 
     # name
     if query["name"]:
@@ -216,15 +219,16 @@ def retrieve_search_results(form):
                            Q(title__icontains=query["name"])).distinct()
 
     # rfc/active/old check buttons
-    allowed_states = []
-    if query["rfcs"]:
-        allowed_states.append("rfc")
-    if query["activedrafts"]:
-        allowed_states.append("active")
-    if query["olddrafts"]:
-        allowed_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
+    if types == ['draft']:
+        allowed_states = []
+        if query["rfcs"]:
+            allowed_states.append("rfc")
+        if query["activedrafts"]:
+            allowed_states.append("active")
+        if query["olddrafts"]:
+            allowed_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
 
-    docs = docs.filter(states__type="draft", states__slug__in=allowed_states)
+        docs = docs.filter(states__type="draft", states__slug__in=allowed_states)
 
     # radio choices
     by = query["by"]
@@ -342,36 +346,6 @@ def search(request):
                               {'form':form, 'docs':results, 'meta':meta, 'show_add_to_list': True },
                               context_instance=RequestContext(request))
 
-def drafts_for_ad(request, name):
-    ad = None
-    responsible = Document.objects.values_list('ad', flat=True).distinct()
-    for p in Person.objects.filter(Q(role__name__in=("pre-ad", "ad"),
-                                     role__group__type="area",
-                                     role__group__state="active")
-                                   | Q(pk__in=responsible)).distinct():
-        if name == p.full_name_as_key():
-            ad = p
-            break
-    if not ad:
-        raise Http404
-    form = SearchForm({'by':'ad','ad': ad.id,
-                       'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
-                       'sort': 'status'})
-    results, meta = retrieve_search_results(form)
-
-    for d in results:
-        if d.get_state_slug() == "active":
-            iesg_state = d.get_state("draft-iesg")
-            if iesg_state:
-                if iesg_state.slug == "dead":
-                    d.search_heading = "IESG Dead Internet-Drafts"
-                else:
-                    d.search_heading = "%s Internet-Drafts" % iesg_state.name
-
-    return render_to_response('doc/drafts_for_ad.html',
-                              { 'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name() },
-                              context_instance=RequestContext(request))
-
 def ad_dashboard_group(doc):
 
     if doc.type.slug=='draft':
@@ -457,7 +431,37 @@ def ad_dashboard_sort_key(doc):
         return "1%d%s%s%010d" % (state[0].order,seed,doc.type.slug,ageseconds)
 
     return "3%s" % seed
-    
+
+def drafts_for_ad(request, name):
+    ad = None
+    responsible = Document.objects.values_list('ad', flat=True).distinct()
+    for p in Person.objects.filter(Q(role__name__in=("pre-ad", "ad"),
+                                     role__group__type="area",
+                                     role__group__state="active")
+                                   | Q(pk__in=responsible)).distinct():
+        if name == p.full_name_as_key():
+            ad = p
+            break
+    if not ad:
+        raise Http404
+    form = SearchForm({'by':'ad','ad': ad.id,
+                       'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
+                       'sort': 'status'})
+    results, meta = retrieve_search_results(form)
+    del meta["headers"][-1]
+    # 
+    for d in results:
+        if d.get_state_slug() == "active":
+            iesg_state = d.get_state("draft-iesg")
+            if iesg_state:
+                if iesg_state.slug == "dead":
+                    d.search_heading = "IESG Dead Internet-Drafts"
+                else:
+                    d.search_heading = "%s Internet-Drafts" % iesg_state.name
+    return render_to_response('doc/drafts_for_ad.html',
+                              { 'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name() },
+                              context_instance=RequestContext(request))
+
 def docs_for_ad(request, name):
     ad = None
     responsible = Document.objects.values_list('ad', flat=True).distinct()
@@ -470,37 +474,19 @@ def docs_for_ad(request, name):
             break
     if not ad:
         raise Http404
-
-    docqueryset = Document.objects.filter(ad__id=ad.id)
-    docs=[]
-    for doc in docqueryset:
-        doc.ad_dashboard_sort_key = ad_dashboard_sort_key(doc)
-        doc.ad_dashboard_group = ad_dashboard_group(doc)
-        if doc.get_state_slug() == 'rfc':
-            doc.display_date = doc.latest_event(type='published_rfc').time
-        else:
-            revision = doc.latest_event(type='new_revision')
-            if revision:
-              doc.display_date = revision.time
-        # This might be better handled as something Documents know about themselves
-        now = datetime.datetime.now()
-        doc.can_expire = (doc.type.slug=='draft' and doc.get_state_slug('draft')=='active' and ( not doc.get_state('draft-iesg') or doc.get_state('draft-iesg').order >= 42) and doc.expires>now)
-        if doc.get_state_slug('draft') == 'rfc':
-            doc.obsoleted_by = ", ".join([ 'RFC %04d' % int(rel.source.rfc_number()) for alias in doc.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='obsoletes') ] )
-            doc.updated_by = ", ".join([ 'RFC %04d' % int(rel.source.rfc_number())  for alias in doc.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='updates') ] )
-            doc.has_errata = bool(doc.tags.filter(slug="errata"))
-        else: 
-            s = doc.get_state("draft-rfceditor")
-            if s:
-                # extract possible extra annotations
-                tags = doc.tags.filter(slug__in=("iana", "ref"))
-                doc.rfc_editor_state = "*".join([s.name] + [t.slug.upper() for t in tags])
-        if doc.type.slug == 'draft':
-            doc.iprCount = IprDocAlias.objects.filter(doc_alias__document=doc, ipr__status__in=[1,3]).count()
-            doc.iprUrl = "/ipr/search?option=document_search&id_document_tag=%s" % doc.name
-        docs.append(doc)
-    docs.sort(key=ad_dashboard_sort_key)
-    return render_to_response('doc/by_ad2.html',{'docs':docs,'ad_name':ad.plain_name()}, context_instance=RequestContext(request))
+    form = SearchForm({'by':'ad','ad': ad.id,
+                       'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
+                       'sort': 'status'})
+    results, meta = retrieve_search_results(form, types=None)
+    results.sort(key=ad_dashboard_sort_key)
+    del meta["headers"][-1]
+    #
+    for d in results:
+        d.search_heading = ad_dashboard_group(d)
+    #
+    return render_to_response('doc/drafts_for_ad.html',
+                              { 'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name() },
+                              context_instance=RequestContext(request))
 
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
