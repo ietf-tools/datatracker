@@ -4,6 +4,7 @@ from xml.dom import pulldom, Node
 from django.utils.http import urlquote
 
 from ietf.utils.mail import send_mail_text
+from ietf.utils import log
 
 from ietf.doc.models import *
 from ietf.person.models import *
@@ -477,12 +478,14 @@ def post_approved_draft(url, name):
     if settings.SERVER_MODE != "production":
         return ("OK", "")
 
+    log("Posting RFC-Editor notifcation of approved draft '%s' to '%s'" % (name, url))
     text = error = ""
     try:
         f = urllib2.urlopen(request, data=urllib.urlencode({ 'draft': name }), timeout=20)
         text = f.read()
         status_code = f.getcode()
         f.close()
+        log("RFC-Editor notification result for draft '%s': %s:'%s'" % (name, status_code, text))
 
         if status_code != 200:
             raise Exception("Status code is not 200 OK (it's %s)." % status_code)
@@ -493,6 +496,7 @@ def post_approved_draft(url, name):
     except Exception as e:
         # catch everything so we don't leak exceptions, convert them
         # into string instead
+        log("Exception on RFC-Editor notification for draft '%s': '%s'" % (name, e))
         error = unicode(e)
 
     return text, error

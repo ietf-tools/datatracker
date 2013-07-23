@@ -1016,7 +1016,8 @@ def approve_ballotREDESIGN(request, name):
         else:
             new_state = State.objects.get(used=True, type="draft-iesg", slug="ann")
 
-        if new_state.slug == "ann" and not request.REQUEST.get("skiprfceditorpost"):
+        prev_state = doc.get_state("draft-iesg")
+        if new_state.slug == "ann" and new_state.slug != prev_state.slug and not request.REQUEST.get("skiprfceditorpost"):
             # start by notifying the RFC Editor
             import ietf.sync.rfceditor
             response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
@@ -1032,7 +1033,6 @@ def approve_ballotREDESIGN(request, name):
 
         save_document_in_history(doc)
 
-        prev = doc.get_state("draft-iesg")
         doc.set_state(new_state)
 
         prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
@@ -1052,7 +1052,7 @@ def approve_ballotREDESIGN(request, name):
         
         change_description = e.desc + " and state has been changed to %s" % doc.get_state("draft-iesg").name
         
-        e = idrfcutil_log_state_changed(request, doc, login, prev, prev_tag)
+        e = idrfcutil_log_state_changed(request, doc, login, prev_state, prev_tag)
                     
         doc.time = e.time
         doc.save()
