@@ -51,7 +51,7 @@ ietfdb (4.60) ietf; urgency=high
        drafts in IESG process to new schema in /doc/iesg/ and
        /doc/iesg/last-call/
 
-     - Added redirects for all of /idtracker/*, removed all view code and other
+     - Added redirects for all of /idtracker/\*, removed all view code and other
        dead code from idtracker/
 
      - Removed the idtracker sitemap indexing drafts - in its current form,
