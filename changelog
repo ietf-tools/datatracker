@@ -1,4 +1,9 @@
-ietfdb (4.60) ietf; urgency=medium
+ietfdb (4.60) ietf; urgency=high
+
+  This release provides new shimfree code in /doc/ which replaces code mainly
+  from /idrfc/ and /idindex/.  It comprises the first two code drops from the
+  shimfree project.  There are also some additional functionality, as detailed
+  below.
 
   * Added an index page at /help/state, listing the document states that
     have help information.
@@ -162,7 +167,7 @@ ietfdb (4.60) ietf; urgency=medium
      - Cleaned up the search code in preparation for removal of the shim-layer;
        use a static button and don't send extraneous GET parameters
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  15 Jul 2013 09:32:18 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jul 2013 18:32:52 +0200
 
 ietfdb (4.53) ietf; urgency=low
 
