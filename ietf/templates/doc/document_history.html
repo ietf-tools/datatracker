@@ -23,7 +23,7 @@
           <label>From:</label>
           <select name="url1">
             {% for name, rev, time, url in diff_revisions %}
-            <option value="{{ url }}" {% if forloop.counter == 2 %} selected="selected" {% endif %}>{{ name }}-{{ rev }} ({{ time|date:"Y-m-d" }})</option>
+            <option value="{{ url }}" {% if forloop.counter == 2 %} selected="selected" {% endif %}>{{ name }}{% if rev %}-{{ rev }}{% endif %} ({{ time|date:"Y-m-d" }})</option>
             {% endfor %}
           </select>
         </td>
@@ -43,7 +43,7 @@
           <label>To:</label>
           <select name="url2">
             {% for name, rev, time, url in diff_revisions %}
-            <option value="{{ url }}" {% if forloop.counter == 1 %} selected="selected" {% endif %}>{{ name }}-{{ rev }} ({{ time|date:"Y-m-d" }})</option>
+            <option value="{{ url }}" {% if forloop.counter == 1 %} selected="selected" {% endif %}>{{ name }}{% if rev %}-{{ rev }}{% endif %} ({{ time|date:"Y-m-d" }})</option>
             {% endfor %}
           </select>
         </td>
