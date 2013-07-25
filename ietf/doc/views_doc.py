@@ -461,6 +461,7 @@ def document_history(request, name):
 
     # pick up revisions from events
     diff_revisions = []
+
     diffable = [ name.startswith(prefix) for prefix in ["rfc", "draft", "charter", "conflict-review", "status-change", ]]
     if diffable:
         diff_documents = [ doc ]
