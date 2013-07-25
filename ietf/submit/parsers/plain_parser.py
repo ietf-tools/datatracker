@@ -32,9 +32,15 @@ class PlainParser(FileParser):
     def parse_file_charset(self):
         import magic
         self.fd.file.seek(0)
-        m = magic.open(magic.MAGIC_MIME)
-        m.load()
-        filetype = m.buffer(self.fd.file.read())
+        if hasattr(magic, "open"):
+            m = magic.open(magic.MAGIC_MIME)
+            m.load()
+            filetype = m.buffer(content)
+        else:
+            m = magic.Magic()
+            m.cookie = magic.magic_open(magic.MAGIC_NONE | magic.MAGIC_MIME | magic.MAGIC_MIME_ENCODING)
+            magic.magic_load(m.cookie, None)
+            filetype = m.from_buffer(content)
         if not 'ascii' in filetype:
             self.parsed_info.add_error('A plain text document must be submitted.')
 

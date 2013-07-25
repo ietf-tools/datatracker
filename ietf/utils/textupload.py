@@ -18,10 +18,15 @@ def get_cleaned_text_file_content(uploaded_file):
 
     # try to fixup encoding
     import magic
-    m = magic.open(magic.MAGIC_MIME)
-    m.load()
-
-    filetype = m.buffer(content) # should look like "text/plain; charset=us-ascii"
+    if hasattr(magic, "open"):
+        m = magic.open(magic.MAGIC_MIME)
+        m.load()
+        filetype = m.buffer(content)
+    else:
+        m = magic.Magic()
+        m.cookie = magic.magic_open(magic.MAGIC_NONE | magic.MAGIC_MIME | magic.MAGIC_MIME_ENCODING)
+        magic.magic_load(m.cookie, None)
+        filetype = m.from_buffer(content)
 
     if not filetype.startswith("text"):
         raise django.forms.ValidationError("Uploaded file does not appear to be a text file.")
