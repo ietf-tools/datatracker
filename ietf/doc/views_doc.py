@@ -455,20 +455,25 @@ def document_main(request, name, rev=None):
     raise Http404
 
 
-@debug.trace
 def document_history(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
     top = render_document_top(request, doc, "history", name)
 
     # pick up revisions from events
     diff_revisions = []
-
     diffable = [ name.startswith(prefix) for prefix in ["rfc", "draft", "charter", "conflict-review", "status-change", ]]
     if diffable:
         diff_documents = [ doc ]
         diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
-
+        debug.pprint('diff_documents')
         seen = set()
+        
+        if doc.get_state_slug() == "rfc":
+            e = doc.latest_event(type="published_rfc")
+            aliases = doc.docalias_set.filter(name__startswith="rfc")
+            if aliases:
+                name = aliases[0].name
+            diff_revisions.append((name, "", e.time if e else doc.time, name))
         for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents).select_related('doc').order_by("-time", "-id"):
             if (e.doc.name, e.rev) in seen:
                 continue
@@ -484,7 +489,7 @@ def document_history(request, name):
             elif name.startswith("status-change"):
                 h = find_history_active_at(e.doc, e.time)
                 url = settings.STATUS_CHANGE_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
-            elif name.startswith("draft"):
+            elif name.startswith("draft") or name.startswith("rfc"):
                 # rfcdiff tool has special support for IDs
                 url = e.doc.name + "-" + e.rev
 
