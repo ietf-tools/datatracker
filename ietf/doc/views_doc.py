@@ -466,7 +466,6 @@ def document_history(request, name):
     if diffable:
         diff_documents = [ doc ]
         diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
-        debug.pprint('diff_documents')
         seen = set()
         
         if doc.get_state_slug() == "rfc":
