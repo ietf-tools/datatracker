@@ -32,6 +32,7 @@ class PlainParser(FileParser):
     def parse_file_charset(self):
         import magic
         self.fd.file.seek(0)
+        content = self.fd.file.read()
         if hasattr(magic, "open"):
             m = magic.open(magic.MAGIC_MIME)
             m.load()
