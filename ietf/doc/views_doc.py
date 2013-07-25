@@ -455,6 +455,7 @@ def document_main(request, name, rev=None):
     raise Http404
 
 
+@debug.trace
 def document_history(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
     top = render_document_top(request, doc, "history", name)
@@ -462,7 +463,7 @@ def document_history(request, name):
     # pick up revisions from events
     diff_revisions = []
 
-    diffable = name.startswith("draft") or name.startswith("charter") or name.startswith("conflict-review") or name.startswith("status-change")
+    diffable = [ name.startswith(prefix) for prefix in ["rfc", "draft", "charter", "conflict-review", "status-change", ]]
     if diffable:
         diff_documents = [ doc ]
         diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
