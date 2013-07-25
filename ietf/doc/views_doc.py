@@ -466,14 +466,15 @@ def document_history(request, name):
     if diffable:
         diff_documents = [ doc ]
         diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
-        seen = set()
-        
+
         if doc.get_state_slug() == "rfc":
             e = doc.latest_event(type="published_rfc")
             aliases = doc.docalias_set.filter(name__startswith="rfc")
             if aliases:
                 name = aliases[0].name
             diff_revisions.append((name, "", e.time if e else doc.time, name))
+
+        seen = set()
         for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents).select_related('doc').order_by("-time", "-id"):
             if (e.doc.name, e.rev) in seen:
                 continue
