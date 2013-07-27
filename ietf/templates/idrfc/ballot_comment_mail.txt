@@ -10,6 +10,9 @@ Please refer to http://www.ietf.org/iesg/statement/discuss-criteria.html
 for more information about IESG DISCUSS and COMMENT positions.
 {% endif %}
 
+The document, along with other ballot positions, can be found here:
+{{ settings.IDTRACKER_BASE_URL }}{{ doc.get_absolute_url }}
+
 {% if not discuss and not comment %}
 There are no remarks associated with this position.
 {% endif %}

@@ -309,7 +309,7 @@ def send_ballot_comment(request, name):
       subject += ": (with "+" and ".join(subj)+")"
  
     body = render_to_string("idrfc/ballot_comment_mail.txt",
-                            dict(discuss=d, comment=c, ad=ad, doc=doc, pos=pos))
+                            dict(discuss=d, comment=c, ad=ad, doc=doc, pos=pos, settings=settings))
     frm = u"%s <%s>" % ad.person.email()
     to = "The IESG <iesg@ietf.org>"
         
@@ -385,7 +385,8 @@ def send_ballot_commentREDESIGN(request, name, ballot_id):
                                  ad=ad.plain_name(),
                                  doc=doc,
                                  pos=pos.pos,
-                                 blocking_name=blocking_name,))
+                                 blocking_name=blocking_name,
+                                 settings=settings))
     frm = ad.role_email("ad").formatted_email()
     to = "The IESG <iesg@ietf.org>"
         
