@@ -37,12 +37,17 @@ from django.core import management
 management.setup_environ(settings)
 
 from ietf.doc.models import Document
-from ietf.group.utils import get_group_chairs_emails
+from ietf.group.utils import get_group_chairs_emails, get_group_ads_emails
 from aliasutil import *
 import time
 
 def get_draft_ad_emails(draft):
     " Get AD email for the given draft, if any. "
+    # If working group document, return current WG ADs
+    wg = draft.group
+    if wg and wg.acronym != 'none' and wg.parent and wg.parent.acronym != 'none':
+        return get_group_ads_emails(wg)
+    # If not, return explicit AD set (whether up to date or not)
     ad = draft.ad
     #return [ad and ad.user and ad.user.email]
     return [ad and ad.email_address()]
@@ -123,11 +128,12 @@ if __name__ == '__main__':
             continue
         handle_sublist('%s%s' % (name, '.authors'), get_draft_authors_emails, draft)
         wg = draft.group
+
         if wg:
             # .chairs = WG chairs
             handle_sublist('%s%s' % (name, '.chairs'), get_group_chairs_emails, wg)
 
-        # .ad = sponsoring AD
+        # .ad = sponsoring AD / WG AD (WG document)
         handle_sublist('%s%s' % (name, '.ad'), get_draft_ad_emails, draft, True)
 
         # .notify = notify email list from the Document

@@ -50,13 +50,18 @@ def get_charter_text(group):
         return desc
 
 def get_area_ads_emails(area):
+    if area.acronym == 'none':
+        return []
     emails = [r.email.email_address()
               for r in area.role_set.filter(name__in=('ad', 'chair'))]
     return filter(None, emails)
 
 def get_group_ads_emails(wg):
     " Get list of area directors' emails for a given WG "
-    if wg.parent:
+    if wg.acronym == 'none':
+        return []
+
+    if wg.parent and wg.parent.acronym != 'none':
         # By default, we should use _current_ list of ads!
         return get_area_ads_emails(wg.parent)
 
@@ -65,6 +70,8 @@ def get_group_ads_emails(wg):
 
 def get_group_chairs_emails(wg):
     " Get list of area chairs' emails for a given WG "
+    if wg.acronym == 'none':
+        return []
     emails = Email.objects.filter(role__group=wg,
                                   role__name='chair')
     if not emails:
