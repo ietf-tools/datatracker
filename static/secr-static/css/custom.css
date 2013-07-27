@@ -12,7 +12,7 @@
 }
 
 #footer {
-    /* background-color: #DDDDDD; 
+    /* background-color: #DDDDDD;
     background-color: #EEEEFF; */
     color: #888888;
     margin-top: 8px;
@@ -69,7 +69,7 @@
     border-bottom: none;
 }
 
-.internal-form { 
+.internal-form {
     padding: 1em;
 }
 
@@ -91,7 +91,7 @@
     color: Blue;
     text-decoration: underline;
 }
-    
+
 .unlocked {
     float: right;
 }
@@ -178,7 +178,7 @@ table.center {
     background: none;
 }
 
-.button-group { 
+.button-group {
     clear: both;
     width: auto;
     height: 2.5em;
@@ -203,7 +203,7 @@ table.center {
 }
 
 button.fancy:hover {
-    background-color: #ffc; 
+    background-color: #ffc;
 }
 
 /* Navigation Bar
@@ -256,13 +256,13 @@ ul#list-nav a.current {
 /* ==========================================================================
    Announcement Tool
    ========================================================================== */
-   
+
 #announce-table input[type="text"] {
-    width: 40em;
+    width: 52em;
 }
 
 #announce-table #id_body {
-    width: 40em;
+    width: 52em;
 }
 
 #announce-table td {
@@ -276,6 +276,11 @@ ul#list-nav a.current {
 #announce-confirm {
     color: black;
     font-family: "Courier New",Courier,monospace;
+    white-space: pre-wrap;       /* css-3 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
 
 /* ==========================================================================
@@ -302,7 +307,7 @@ ul#list-nav a.current {
 /* ==========================================================================
    Draft Tool
    ========================================================================== */
-   
+
 input.draft-file-input {
     width: 40em;
 }
@@ -411,7 +416,7 @@ input.draft-file-input {
 /* ==========================================================================
    Group Tool
    ========================================================================== */
-   
+
 .awp-form input {
     width: 30em;
 }
@@ -540,11 +545,11 @@ div.interim-scroll {
 }
 
 #proceedings-add-table th {
-    width: 25%; 
+    width: 25%;
 }
 
 #proceedings-edit-table th {
-    width: 25%; 
+    width: 25%;
 }
 
 #proceedings-upload-table th {
@@ -558,14 +563,14 @@ div.interim-scroll {
 
 #proceedings-left-col {
     float: left;
-    width: 378px; 
+    width: 378px;
     margin: 0;
     border-right: 1px solid #CCCCCC;
 }
 
 #proceedings-right-col {
     float: left;
-    width: 377px; 
+    width: 377px;
     margin: 0;
     border-right: 1px solid #CCCCCC;
     border-left: 1px solid #CCCCCC;
@@ -611,7 +616,7 @@ tr.bg2 {
 /*
 table#sessions-new-table td {
     padding: 2px;
-    border-spacing: 2px; 
+    border-spacing: 2px;
     border: 1;
 
 }
@@ -644,7 +649,7 @@ ul.session-buttons {
     width: 294px;
     background: url("../img/admin/default-bg.gif") repeat-x scroll left top #7CA0C7;
     color: white;
-    min-height: 500px; 
+    min-height: 500px;
     padding: 0 0 0 6px;
 }
 
@@ -689,7 +694,7 @@ ul.doc-list li {
     text-align: center;
 }
 
-/* 
+/*
 #telechat-sidebar ol {
     list-style-position: outside;
     counter-reset: item;
@@ -719,7 +724,7 @@ ul.doc-list li {
     float: right;
 }
 
-.telechat-warn h3 { 
+.telechat-warn h3 {
     color: white;
     text-align: center;
     background-color: #FF66FF;
@@ -747,7 +752,7 @@ ul.doc-list li {
 /* ==========================================================================
    Redesign Section
    ========================================================================== */
-   
+
 table.amstable {
     background-color: #F2F2E6;
 }
@@ -776,7 +781,7 @@ table.amsview td {
     padding: 4px 10px 4px 4px;
 }
 
-.button-group { 
+.button-group {
     background: #F2F2E6;
 }
 
