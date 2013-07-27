@@ -57,9 +57,9 @@ def render_document_top(request, doc, tab, name):
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id in ("draft","conflrev", "statchg"):
         # if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
-        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot))
+        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot,  None if ballot else "IESG Evaluation Ballot has not been created yet"))
     elif doc.type_id == "charter":
-        tabs.append(("IESG Review", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot))
+        tabs.append(("IESG Review", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot, None if ballot else "IEST Review Ballot has not been created yet"))
 
     # FIXME: if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
     if doc.type_id not in ["conflrev", "statchg"]:
