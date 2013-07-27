@@ -294,7 +294,7 @@ class DraftTagsStateForm(StreamDraftForm):
             comment = self.cleaned_data.get('comment').strip()
             if comment:
                 e = DocEvent(type="added_comment")
-                e.time = self.draft.time
+                e.time = datetime.datetime.now()
                 e.by = self.person
                 e.doc_id = self.draft.pk
                 e.desc = comment
