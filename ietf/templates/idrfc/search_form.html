@@ -52,6 +52,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <b class="toggle_advanced"><img src="/images/{% if meta.advanced %}minus{% else %}plus{% endif %}.png" alt="" /> Advanced</b>
 
 <div id="search_advanced" style="{% if not meta.advanced %}display:none;{%endif%}">
+
+<div class="search_field">
+  <label>Additional Document Types:</label>
+  <table id="search_types">
+{% for doc_type in form.doctypes %}
+    <tr><td><label><input type="checkbox" {% if doc_type.slug in meta.checked %}checked="checked"{% endif %}name="include-{{doc_type.slug}}"/>{{doc_type}}</label></td></tr>
+{% endfor %}
+  </table>
+</div>
+
 Additional search criteria:
 
 <div class="search_field">

@@ -61,7 +61,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% regroup docs by search_heading as grouped_docs %}
 
 {% for doc_group in grouped_docs %}
-  <tr class="header"><td colspan="10">{{ doc_group.grouper }}{{doc_group.list|length|pluralize}}</td></tr>
+  <tr class="header"><td colspan="10">{{ doc_group.grouper }}</td></tr>
 
   {% for doc in doc_group.list %}
     {% include "idrfc/search_result_row.html" %}
