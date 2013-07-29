@@ -11,7 +11,7 @@ def state_help(request, type):
         "draft-iana-action": ("draft-iana-action", "IANA Action States For Internet-Drafts"),
         "charter": ("charter", "Charter States"),
         "conflict-review": ("conflrev", "Conflict Review States")
-        }.get(type, "")
+        }.get(type, (None, None))
     state_type = get_object_or_404(StateType, slug=slug)
 
     states = State.objects.filter(type=state_type).order_by("order")
