@@ -261,6 +261,26 @@ class Document(DocumentInfo):
             raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
         return DocAlias.objects.filter(relateddocument__source=self, relateddocument__relationship__in=relationship)
 
+    def all_related_that(self, relationship, related=None):
+        if related is None:
+            related = []
+        rel = self.related_that(relationship)
+        for doc in rel:
+            if not doc in related:
+                related += [ doc ]
+                related = doc.document.all_related_that(relationship, related)
+        return related
+
+    def all_related_that_doc(self, relationship, related=None):
+        if related is None:
+            related = []
+        rel = self.related_that_doc(relationship)
+        for alias in rel:
+            if not alias in related:
+                related += [ alias ]
+                related = alias.document.all_related_that_doc(relationship, related)
+        return related
+
     def telechat_date(self, e=None):
         if not e:
             e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
