@@ -214,12 +214,15 @@ $(document).ready(function() {
   // validate form upload form before uploading file
   if ($('#upload_materials_form').length) {
     $('#upload_materials_form').submit(function() {
-        var x=$('#id_slide_name').val();
-        if (x==null || x=="")
+        var name=$('#id_slide_name').val();
+        var type=$('#id_material_type').val();
+        if (type=="slides" && (name==null || name==""))
         {
             $('#id_slide_name').before('<ul class="errorlist"><li>This field is required.</li></ul>');
             return false;
+        } else {
+        return true;
         }
     });
-  }   
+  }
 });
