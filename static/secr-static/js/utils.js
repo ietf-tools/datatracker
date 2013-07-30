@@ -211,4 +211,15 @@ $(document).ready(function() {
       init_proceedings_upload();
   }
 
+  // validate form upload form before uploading file
+  if ($('#upload_materials_form').length) {
+    $('#upload_materials_form').submit(function() {
+        var x=$('#id_slide_name').val();
+        if (x==null || x=="")
+        {
+            $('#id_slide_name').before('<ul class="errorlist"><li>This field is required.</li></ul>');
+            return false;
+        }
+    });
+  }   
 });
