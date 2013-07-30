@@ -156,11 +156,11 @@ def fill_in_search_attributes(docs):
             d.latest_revision_date = d.time
 
         if d.get_state_slug() == "rfc":
-            d.search_heading = "RFCs"
+            d.search_heading = "RFC"
         elif d.get_state_slug() == "active":
-            d.search_heading = "Active Internet-Drafts"
+            d.search_heading = "Active Internet-Draft"
         else:
-            d.search_heading = "Old Internet-Drafts"
+            d.search_heading = "Old Internet-Draft"
 
         d.expirable = expirable_draft(d)
 
