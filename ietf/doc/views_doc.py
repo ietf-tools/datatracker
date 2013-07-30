@@ -301,6 +301,13 @@ def document_main(request, name, rev=None):
                 label += " (note that intended status is not set)"
             actions.append((label, urlreverse('conflict_review_start', kwargs=dict(name=doc.name))))
 
+        if (doc.get_state_slug() != "expired" and doc.stream_id in ("iab", "ise", "irtf")
+            and can_edit_stream_info and not iesg_state):
+            label = "Request Publication"
+            if not doc.intended_std_level:
+                label += " (note that intended status is not set)"
+            actions.append((label, urlreverse('doc_request_publication', kwargs=dict(name=doc.name))))
+
         if doc.get_state_slug() != "expired" and doc.stream_id in ("ietf",) and can_edit and not iesg_state:
             actions.append(("Begin IESG Processing", urlreverse('doc_edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
 
