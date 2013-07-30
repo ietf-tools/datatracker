@@ -252,6 +252,7 @@ def change_stream(request, name):
                 save_document_in_history(doc)
                 
                 doc.stream = new_stream
+                doc.group = None
 
                 e = DocEvent(doc=doc,by=login,type='changed_document')
                 e.desc = u"Stream changed to <b>%s</b> from %s"% (new_stream, old_stream or "None")
