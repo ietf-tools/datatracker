@@ -51,6 +51,8 @@ def has_role(user, role_names):
 	    "IAB Chair": Q(person=person, name="chair", group__acronym="iab"),
 	    "WG Chair": Q(person=person,name="chair", group__type="wg", group__state="active"),
 	    "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state="active"),
+	    "RG Chair": Q(person=person,name="chair", group__type="rg", group__state="active"),
+	    "RG Secretary": Q(person=person,name="secr", group__type="rg", group__state="active"),
             }
 
         filter_expr = Q()

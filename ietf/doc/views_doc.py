@@ -141,7 +141,7 @@ def document_main(request, name, rev=None):
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
         can_change_stream = bool(can_edit or (
                 request.user.is_authenticated() and
-                Role.objects.filter(name__in=("chair", "secr", "auth"),
+                Role.objects.filter(name__in=("chair", "secr", "auth", "delegate"),
                                     group__acronym__in=stream_slugs,
                                     person__user=request.user)))
         can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
@@ -282,8 +282,8 @@ def document_main(request, name, rev=None):
 
         if ((not doc.stream_id or doc.stream_id in ("ietf", "irtf")) and group.type_id == "individ" and
             (request.user.is_authenticated() and
-             Role.objects.filter(person__user=request.user, name__in=("chair", "delegate"),
-                                 group__type__in=("wg",),
+             Role.objects.filter(person__user=request.user, name__in=("chair", "secr", "delegate"),
+                                 group__type__in=("wg","rg"),
                                  group__state="active")
              or has_role(request.user, "Secretariat"))):
             actions.append(("Adopt in Group", urlreverse('edit_adopt', kwargs=dict(name=doc.name))))
