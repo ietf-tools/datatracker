@@ -88,7 +88,7 @@ def profile(request):
     try:
         person = request.user.get_profile()
     except Person.DoesNotExist:
-        pass
+        return render_to_response('registration/missing_person.html', context_instance=RequestContext(request))
 
     if request.method == 'POST':
         form = PersonForm(request.POST, instance=person)
