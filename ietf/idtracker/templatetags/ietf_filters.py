@@ -482,3 +482,12 @@ def _test():
 if __name__ == "__main__":
     _test()
 
+@register.filter
+def plural(text, list, arg=u's'):
+    "Similar to pluralize, but looks at the text, too"
+    from django.template.defaultfilters import pluralize
+    if text.endswith('s'):
+        return text
+    else:
+        return text + pluralize(len(list), arg)
+        

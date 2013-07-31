@@ -12,6 +12,10 @@ $(function () {
                     advanced = true;
             });
 
+	var additional_doctypes = form.find("input[advdoctype=true]:checked");
+	if (additional_doctypes.length > 0)
+	    advanced = true; 
+
         return advanced;
     }
 

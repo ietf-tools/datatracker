@@ -62,6 +62,8 @@ class SearchForm(forms.Form):
 
     sort = forms.ChoiceField(choices=(("document", "Document"), ("title", "Title"), ("date", "Date"), ("status", "Status"), ("ipr", "Ipr"), ("ad", "AD")), required=False, widget=forms.HiddenInput)
 
+    doctypes = DocTypeName.objects.exclude(slug='draft').order_by('name');
+
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
         responsible = Document.objects.values_list('ad', flat=True).distinct()
@@ -155,12 +157,15 @@ def fill_in_search_attributes(docs):
         else:
             d.latest_revision_date = d.time
 
-        if d.get_state_slug() == "rfc":
-            d.search_heading = "RFC"
-        elif d.get_state_slug() == "active":
-            d.search_heading = "Active Internet-Draft"
+        if d.type_id == "draft":
+            if d.get_state_slug() == "rfc":
+                d.search_heading = "RFC"
+            elif d.get_state_slug() in ("ietf-rm", "auth-rm"):
+                d.search_heading = "Withdrawn Internet-Draft"
+            else:
+                d.search_heading = "%s Internet-Draft" % d.get_state()
         else:
-            d.search_heading = "Old Internet-Draft"
+            d.search_heading = "%s" % (d.type,);
 
         d.expirable = expirable_draft(d)
 
@@ -196,22 +201,38 @@ def fill_in_search_attributes(docs):
         l.sort()
 
 
-def retrieve_search_results(form, types=['draft']):
+def retrieve_search_results(form, all_types=False):
+
     """Takes a validated SearchForm and return the results."""
     if not form.is_valid():
         raise ValueError("SearchForm doesn't validate: %s" % form.errors)
         
     query = form.cleaned_data
 
-    if not (query['activedrafts'] or query['olddrafts'] or query['rfcs']):
+    types=[];
+    meta = {}
+
+    if (query['activedrafts'] or query['olddrafts'] or query['rfcs']):
+        types.append('draft')
+
+    # Advanced document types are data-driven, so we need to read them from the
+    # raw form.data field (and track their checked/unchecked state ourselves)
+    meta['checked'] = {}
+    alltypes = DocTypeName.objects.exclude(slug='draft').order_by('name');
+    for doctype in alltypes:
+        if form.data.__contains__('include-' + doctype.slug):
+            types.append(doctype.slug)
+            meta['checked'][doctype.slug] = True
+
+    if len(types) == 0 and not all_types:
         return ([], {})
 
     MAX = 500
 
-    if types and len(types) > 0:
-        docs = Document.objects.filter(type__in=types)
-    else:
+    if all_types:
         docs = Document.objects.all()
+    else:
+        docs = Document.objects.filter(type__in=types)
 
     # name
     if query["name"]:
@@ -219,16 +240,16 @@ def retrieve_search_results(form, types=['draft']):
                            Q(title__icontains=query["name"])).distinct()
 
     # rfc/active/old check buttons
-    if types == ['draft']:
-        allowed_states = []
-        if query["rfcs"]:
-            allowed_states.append("rfc")
-        if query["activedrafts"]:
-            allowed_states.append("active")
-        if query["olddrafts"]:
-            allowed_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
+    allowed_draft_states = []
+    if query["rfcs"]:
+        allowed_draft_states.append("rfc")
+    if query["activedrafts"]:
+        allowed_draft_states.append("active")
+    if query["olddrafts"]:
+        allowed_draft_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
 
-        docs = docs.filter(states__type="draft", states__slug__in=allowed_states)
+    docs = docs.filter(Q(states__slug__in=allowed_draft_states) | 
+                       ~Q(type__slug='draft')).distinct()
 
     # radio choices
     by = query["by"]
@@ -259,12 +280,14 @@ def retrieve_search_results(form, types=['draft']):
 
         rfc_num = d.rfc_number()
 
-        if rfc_num != None:
-            res.append(2)
-        elif d.get_state_slug() == "active":
-            res.append(1)
+
+        if d.type_id == "draft":
+            res.append(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0] ))
         else:
-            res.append(3)
+            res.append(d.type_id);
+            res.append("-");
+            res.append(d.get_state_slug());
+            res.append("-");
 
         if query["sort"] == "title":
             res.append(d.title)
@@ -296,11 +319,10 @@ def retrieve_search_results(form, types=['draft']):
     results.sort(key=sort_key)
 
     # fill in a meta dict with some information for rendering the result table
-    meta = {}
     if len(results) == MAX:
         meta['max'] = MAX
     meta['by'] = query['by']
-    meta['advanced'] = bool(query['by'])
+    meta['advanced'] = bool(query['by'] or len(meta['checked']))
 
     meta['headers'] = [{'title': 'Document', 'key':'document'},
                        {'title': 'Title', 'key':'title'},
@@ -316,7 +338,6 @@ def retrieve_search_results(form, types=['draft']):
             h["sort_url"] = "?" + d.urlencode()
             if h['key'] == query.get('sort'):
                 h['sorted'] = True
-
     return (results, meta)
 
 
@@ -477,7 +498,7 @@ def docs_for_ad(request, name):
     form = SearchForm({'by':'ad','ad': ad.id,
                        'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
                        'sort': 'status'})
-    results, meta = retrieve_search_results(form, types=None)
+    results, meta = retrieve_search_results(form, all_types=True)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
     #
