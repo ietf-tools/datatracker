@@ -141,7 +141,7 @@ def document_main(request, name, rev=None):
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
         can_change_stream = bool(can_edit or (
                 request.user.is_authenticated() and
-                Role.objects.filter(name__in=("chair", "auth"),
+                Role.objects.filter(name__in=("chair", "secr", "auth"),
                                     group__acronym__in=stream_slugs,
                                     person__user=request.user)))
         can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
