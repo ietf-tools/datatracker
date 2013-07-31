@@ -26,7 +26,7 @@ from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.person.forms import EmailsField
-
+from ietf.group.models import Group
 
 from ietf.ietfworkflows.models import Stream
 from ietf.ietfworkflows.utils import update_stream
@@ -252,7 +252,7 @@ def change_stream(request, name):
                 save_document_in_history(doc)
                 
                 doc.stream = new_stream
-                doc.group = None
+                doc.group = Group.objects.get(type="individ")
 
                 e = DocEvent(doc=doc,by=login,type='changed_document')
                 e.desc = u"Stream changed to <b>%s</b> from %s"% (new_stream, old_stream or "None")
