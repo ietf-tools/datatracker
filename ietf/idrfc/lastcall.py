@@ -56,7 +56,7 @@ def expire_last_call(doc):
 
     try:
         ballot = doc.idinternal.ballot
-        if ballot.ballot_writeup and "What does this protocol do and why" not in ballot.ballot_writeup:
+        if ballot.ballot_writeup and "Relevant content can frequently be found in the abstract" not in ballot.ballot_writeup:
             state = IDState.WAITING_FOR_AD_GO_AHEAD
     except BallotInfo.DoesNotExist:
         pass
@@ -73,7 +73,7 @@ def expire_last_callREDESIGN(doc):
     state = State.objects.get(used=True, type="draft-iesg", slug="writeupw")
 
     e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
-    if e and "What does this protocol do and why" not in e.text:
+    if e and "Relevant content can frequently be found in the abstract" not in e.text:
         # if boiler-plate text has been removed, we assume the
         # write-up has been written
         state = State.objects.get(used=True, type="draft-iesg", slug="goaheadw")
