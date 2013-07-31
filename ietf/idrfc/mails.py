@@ -10,7 +10,7 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
-from ietf.ipr.search import iprs_from_docs
+from ietf.ipr.search import iprs_from_docs, related_docs
 #from ietf.doc.models import *
 from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.person.models import Person
@@ -147,7 +147,7 @@ def generate_last_call_announcementREDESIGN(request, doc):
 
     doc.filled_title = textwrap.fill(doc.title, width=70, subsequent_indent=" " * 3)
     
-    iprs, _ = iprs_from_docs([ DocAlias.objects.get(name=doc.canonical_name()) ])
+    iprs, _ = iprs_from_docs(related_docs(DocAlias.objects.get(name=doc.canonical_name()),[]))
     if iprs:
         ipr_links = [ urlreverse("ietf.ipr.views.show", kwargs=dict(ipr_id=i.ipr_id)) for i in iprs]
         ipr_links = [ settings.IDTRACKER_BASE_URL+url if not url.startswith("http") else url for url in ipr_links ]
