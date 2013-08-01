@@ -36,14 +36,14 @@ class EditStreamInfoTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEquals(len(q('form input[type=submit][value*=adopt]')), 1)
-        self.assertEquals(len(q('form select[name="wg"] option')), 1) # we can only select "mars"
+        self.assertEquals(len(q('form select[name="group"] option')), 1) # we can only select "mars"
 
         # adopt in mars WG
         mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
         r = self.client.post(url,
                              dict(comment="some comment",
-                                  wg=Group.objects.get(acronym="mars").pk,
+                                  group=Group.objects.get(acronym="mars").pk,
                                   weeks="10"))
         self.assertEquals(r.status_code, 302)
 

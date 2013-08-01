@@ -53,32 +53,32 @@ class StreamDraftForm(forms.Form):
 class NoWorkflowStateForm(StreamDraftForm):
     comment = forms.CharField(widget=forms.Textarea, required=False)
     weeks = forms.IntegerField(required=False)
-    wg = forms.ChoiceField(required=False)
+    group = forms.ChoiceField(required=False)
 
     template = 'ietfworkflows/noworkflow_state_form.html'
 
     def __init__(self, *args, **kwargs):
         super(NoWorkflowStateForm, self).__init__(*args, **kwargs)
-        self.wgs = None
+        self.groups = None
         if is_secretariat(self.user):
-            wgs = IETFWG.objects.all().order_by('group_acronym__acronym')
+            groups = IETFWG.objects.all().order_by('group_acronym__acronym')
         else:
             if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                wgs = IETFWG.objects.filter(type="wg", state="active", role__name__in=("chair", "delegate"), role__person__user=self.user).order_by('acronym').distinct()
+                groups = IETFWG.objects.filter(type__in=["wg", "rg"], state="active", role__name__in=("chair", "secr", "delegate"), role__person__user=self.user).order_by('acronym').distinct()
             else:
-                wgs = set([i.group_acronym for i in self.person.wgchair_set.all()]).union(set([i.wg for i in self.person.wgdelegate_set.all()]))
-                wgs = list(wgs)
-                wgs.sort(lambda x, y: cmp(x.group_acronym.acronym, y.group_acronym.acronym))
-        self.wgs = wgs
+                groups = set([i.group_acronym for i in self.person.wgchair_set.all()]).union(set([i.wg for i in self.person.wgdelegate_set.all()]))
+                groups = list(groups)
+                groups.sort(lambda x, y: cmp(x.group_acronym.acronym, y.group_acronym.acronym))
+        self.groups = groups
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            self.fields['wg'].choices = [(i.pk, '%s - %s' % (i.acronym, i.name)) for i in self.wgs]
+            self.fields['group'].choices = [(i.pk, '%s - %s' % (i.acronym, i.name)) for i in self.groups]
         else:
-            self.fields['wg'].choices = [(i.pk, '%s - %s' % (i.group_acronym.acronym, i.group_acronym.name)) for i in self.wgs]
+            self.fields['group'].choices = [(i.pk, '%s - %s' % (i.group_acronym.acronym, i.group_acronym.name)) for i in self.groups]
 
     def save(self):
         comment = self.cleaned_data.get('comment').strip()
         weeks = self.cleaned_data.get('weeks')
-        wg = IETFWG.objects.get(pk=self.cleaned_data.get('wg'))
+        group = IETFWG.objects.get(pk=self.cleaned_data.get('group'))
         estimated_date = None
         if weeks:
             now = datetime.date.today()
@@ -90,7 +90,10 @@ class NoWorkflowStateForm(StreamDraftForm):
 
             doc.time = datetime.datetime.now()
 
-            new_stream = StreamName.objects.get(slug="ietf")
+            if group.type.slug == "rg":
+                new_stream = StreamName.objects.get(slug="irtf")                
+            else:
+                new_stream = StreamName.objects.get(slug="ietf")                
 
             if doc.stream != new_stream:
                 e = DocEvent(type="changed_stream")
@@ -103,16 +106,16 @@ class NoWorkflowStateForm(StreamDraftForm):
                 e.save()
                 doc.stream = new_stream
 
-            if doc.group.pk != wg.pk:
+            if doc.group.pk != group.pk:
                 e = DocEvent(type="changed_group")
                 e.time = doc.time
                 e.by = self.user.get_profile()
                 e.doc = doc
-                e.desc = u"Changed group to <b>%s (%s)</b>" % (wg.name, wg.acronym.upper())
+                e.desc = u"Changed group to <b>%s (%s)</b>" % (group.name, group.acronym.upper())
                 if doc.group.type_id != "individ":
                     e.desc += " from %s (%s)" % (doc.group.name, doc.group.acronym)
                 e.save()
-                doc.group_id = wg.pk
+                doc.group_id = group.pk
 
             doc.save()
             self.draft = InternetDraft.objects.get(pk=doc.pk) # make sure proxy object is updated
@@ -130,7 +133,10 @@ class NoWorkflowStateForm(StreamDraftForm):
 
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             from ietf.doc.models import State
-            to_state = State.objects.get(used=True, slug="c-adopt", type="draft-stream-%s" % self.draft.stream_id)
+            if self.draft.stream_id == "irtf":
+                to_state = State.objects.get(used=True, slug="active", type="draft-stream-irtf")
+            else:
+                to_state = State.objects.get(used=True, slug="c-adopt", type="draft-stream-%s" % self.draft.stream_id)
         else:
             to_state = get_state_by_name(CALL_FOR_ADOPTION)
         update_state(self.request, self.draft,

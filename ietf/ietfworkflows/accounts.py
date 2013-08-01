@@ -25,12 +25,17 @@ def is_wgchair(person):
 def is_wgchairREDESIGN(person):
     return bool(Role.objects.filter(name="chair", group__type="wg", group__state="active", person=person))
 
+def is_rgchairREDESIGN(person):
+    return bool(Role.objects.filter(name="chair", group__type="rg", group__state="active", person=person))
 
 def is_wgdelegate(person):
     return bool(person.wgdelegate_set.all())
 
 def is_wgdelegateREDESIGN(person):
     return bool(Role.objects.filter(name="delegate", group__type="wg", group__state="active", person=person))
+
+def is_rgdelegateREDESIGN(person):
+    return bool(Role.objects.filter(name="delegate", group__type="rg", group__state="active", person=person))
 
 def is_delegate_of_stream(user, stream):
     if is_secretariat(user):
@@ -56,7 +61,6 @@ def is_chair_of_streamREDESIGN(user, stream):
     if isinstance(user, basestring):
         return False
     return user.is_authenticated() and bool(Role.objects.filter(group__acronym=stream.slug, name="chair", person__user=user))
-
 
 def is_authorized_in_draft_stream(user, draft):
     if is_secretariat(user):
@@ -92,16 +96,18 @@ def is_authorized_in_draft_streamREDESIGN(user, draft):
 
     # must be a chair or delegate of the stream group (or draft group)
     group_req = Q(group__acronym=super(Document, draft).stream.slug)
-    if draft.group and super(Document, draft).stream.slug == "ietf":
+    if draft.group and super(Document, draft).stream.slug in ["ietf", "irtf"]:
         group_req |= Q(group=draft.group)
 
-    return user.is_authenticated() and bool(Role.objects.filter(name__in=("chair", "delegate"), person__user=user).filter(group_req))
+    return user.is_authenticated() and bool(Role.objects.filter(name__in=("chair", "secr", "delegate"), person__user=user).filter(group_req))
 
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from ietf.liaisons.accounts import is_secretariat, get_person_for_user
     is_wgdelegate = is_wgdelegateREDESIGN
     is_wgchair = is_wgchairREDESIGN
+    is_rgdelegate = is_rgdelegateREDESIGN
+    is_rgchair = is_rgchairREDESIGN
     is_chair_of_stream = is_chair_of_streamREDESIGN
     is_delegate_of_stream = is_delegate_of_streamREDESIGN
     is_authorized_in_draft_stream = is_authorized_in_draft_streamREDESIGN
@@ -116,11 +122,11 @@ def can_edit_stream(user, draft):
     return is_secretariat(user)
 
 def can_adopt(user, draft):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES and (not draft.stream_id or draft.stream_id == "ietf") and draft.group.type_id == "individ":
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES and (not draft.stream_id or draft.stream_id in ["ietf", "irtf"]) and draft.group.type_id == "individ":
         person = get_person_for_user(user)
         if not person:
             return False
-        return is_wgchair(person) or is_wgdelegate(person) or is_secretariat(user)
+        return is_wgchair(person) or is_rgchair(person) or is_wgdelegate(person) or is_rgdelegate() or is_secretariat(user)
     else:
         return is_secretariat(user)
     
