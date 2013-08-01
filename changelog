@@ -1,3 +1,100 @@
+ietfdb (4.61) ietf; urgency=medium
+
+  This release provides the code from the IETF-87 code sprint, and also
+  a number of fixes to things reported during the IETF, and some enhancements
+  requested.
+
+  Noticeable enhancements are that document search now permits you to search
+  for all kind of documents, not only for drafts and RFCs (you can searc for
+  charters, slides and whatnot); that Research Group chairs now have the
+  ability to manage their documents in the tracker; and that the tracker now
+  has the ability to generate WG and draft email aliases, which permits us to
+  plan a transition of the email aliases to the main ietf mail server.
+
+  There are however many other much requested fixes and enhancements :-)
+
+  From markus.stenberg@iki.fi:
+
+  * Added support and scripts for generation of wg- and draft-aliases.  
+    Fixes issue #713.
+
+  From adam@nostrum.com: 
+
+  * Added the capability to search for all kinds of documents in the main
+    datatracker search page.  Fixes bug #838.
+
+  * Added tooltip capability to document tabs, and tooltips for disabled 
+    IESG Evaluation/Review tab.  Fixes bug #448.
+
+  * Added a document link to the emails sent on discuss/comment changes.  
+    Fixes bug #916 
+
+  From rjsparks@nostrum.com: 
+
+  * Added related documents to the set of documents checked for IPR 
+    declarations when building last call text. Partially addresses #1071.
+
+  From suresh.krishnan@ericsson.com: 
+
+  * When working group chairs added an annotation to a document, the date 
+    on the history entry was wrong. It has now been fixed. Fixes issue #1046.
+
+  * Fixed the last call processing code to identify the new placeholder 
+    writeup. Fixes issue #884.
+
+  Other fixes:
+
+  * Added group secretaries to those authorise to edit group document 
+    meta-information.
+
+  * Added RG chairs and secretaries to those authorized to edit group document
+    meta-information.
+
+  * Added a landing page for missing associations between login and Person record.
+
+  * Tweaked the charter-and-milestones presentation in order to not blow up on
+    bad character encodings in charter file.
+
+  * Added back the 'Request Publication' action (regression loss) on draft 
+    pages for the non-ietf streams.
+
+  * Fixed a bug in rendering the AD/Shepherd column in document list pages, 
+    when no AD is associated with a document.  Fixes issue #1079.
+
+  * Modified the doc stream-change edit form to reset doc.group to None on 
+    stream changes.  Fixes issue #1078.
+
+  * Fixed double plural 's' caused by the use of 'pluralize' in the 
+    template *and* plural forms for the group headers returned by 
+    fill_in_search_attributes().  Fixes issue #1077.
+
+  * Fixed the incorrect blankline placemnt in the refactored template for 
+    id-index and id-abstracts, when generating abstracts.  Fixes issue #1076.
+
+  * Added convenience methods to the Document class to recursively retrieve 
+    all forward / reverse relationship of a kind or set of kinds.
+
+  * Fixed the handling of help pages for doc states.
+
+  * Added a direct link to the cookie options in use by the datatracker to 
+    the lefthand menubar.  Fixes issue #1075.
+
+  * Fixed a regression: restore diff pane in history page for RFCs.
+
+  * Fixed a regression: display of full draft/rfc text now again obeys the 
+    full_draft cookie setting.
+
+  * Changed the mimetype detection code to only read first 4k block of 
+    file, not the whole file.
+
+  * Made the code which uses the 'magic' module to determine file type and 
+    encoding work with both the old and new interface to python-magic.
+
+  * Added a guard to prevent duplicate RFC-Editor notifications for 
+    approved documents, and added logging to the notification routine.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Aug 2013 18:26:21 +0200
+
 ietfdb (4.60) ietf; urgency=high
 
   This release provides new shimfree code in /doc/ which replaces code mainly
