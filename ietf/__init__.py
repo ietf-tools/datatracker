@@ -1,10 +1,10 @@
 # -*- coding: utf-8-no-bom -*-
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-__version__ = "4.61"
+__version__ = "4.62-dev"
 
 __date__    = "$Date$"
 
-__rev__     = "$Rev$"
+__rev__     = "$Rev$ (dev) Latest release: Rev. 5943 "
 
 __id__      = "$Id$"
