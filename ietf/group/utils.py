@@ -45,9 +45,49 @@ def get_charter_text(group):
             filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, group.acronym) + ".desc.txt"
             desc_file = open(filename)
             desc = desc_file.read()
-        except BaseException:    
+        except BaseException:
             desc = 'Error Loading Work Group Description'
         return desc
+
+def get_area_ads_emails(area):
+    if area.acronym == 'none':
+        return []
+    emails = [r.email.email_address()
+              for r in area.role_set.filter(name__in=('ad', 'chair'))]
+    return filter(None, emails)
+
+def get_group_ads_emails(wg):
+    " Get list of area directors' emails for a given WG "
+    if wg.acronym == 'none':
+        return []
+
+    if wg.parent and wg.parent.acronym != 'none':
+        # By default, we should use _current_ list of ads!
+        return get_area_ads_emails(wg.parent)
+
+    # As fallback, just return the single ad within the wg
+    return [wg.ad and wg.ad.email_address()]
+
+def get_group_chairs_emails(wg):
+    " Get list of area chairs' emails for a given WG "
+    if wg.acronym == 'none':
+        return []
+    emails = Email.objects.filter(role__group=wg,
+                                  role__name='chair')
+    if not emails:
+        return
+    emails = [e.email_address() for e in emails]
+    emails = filter(None, emails)
+    return emails
+
+def get_area_chairs_emails(area):
+    emails = {}
+    # XXX - should we filter these by validity? Or not?
+    wgs = Group.objects.filter(parent=area, type="wg", state="active")
+    for wg in wgs:
+        for e in get_group_chairs_emails(wg):
+            emails[e] = True
+    return emails.keys()
 
 def save_milestone_in_history(milestone):
     h = get_history_object_for(milestone)

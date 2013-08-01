@@ -73,14 +73,14 @@ class PersonInfo(models.Model):
 
 class Person(PersonInfo):
     user = models.OneToOneField(User, blank=True, null=True)
-    
+
     def person(self): # little temporary wrapper to help porting to new schema
         return self
 
 class PersonHistory(PersonInfo):
     person = models.ForeignKey(Person, related_name="history_set")
     user = models.ForeignKey(User, blank=True, null=True)
-    
+
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
     primary lookup point for names, and should always contain the
@@ -115,3 +115,14 @@ class Email(models.Model):
     def invalid_address(self):
         # we have some legacy authors with unknown email addresses
         return self.address.startswith("unknown-email") and "@" not in self.address
+
+    def email_address(self):
+        """Get valid, current email address; in practise, for active,
+        non-invalid addresses it is just the address field. In other
+        cases, we default to person's email address."""
+        if self.invalid_address() or not self.active:
+            if self.person:
+                return self.person.email_address()
+            return
+        return self.address
+
