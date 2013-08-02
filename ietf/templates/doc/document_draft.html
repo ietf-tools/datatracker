@@ -128,8 +128,6 @@
       </td>
     </tr>
 
-    {# the shepherd write up page only works for WGs at the moment ... #}
-    {% if group.type_id == "wg" %}
     {% if shepherd_writeup or can_edit_shepherd_writeup %}
     <tr>
       <td>Shepherd Write-Up:</td>
@@ -139,7 +137,6 @@
         </a>
       </td>
     </tr>
-    {% endif %}
     {% endif %}
 
     <tr><td colspan='2'><hr size='1' noshade /></td></tr>
