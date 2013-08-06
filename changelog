@@ -1,3 +1,14 @@
+ietfdb (4.70) ietf; urgency=high
+
+  This release provides a datatracker nomcom app, ported from the earlier
+  standalone nomcom app written by henrik.  It includes public nomcom
+  pages which provides an interface for members of the community to
+  propose and comment on nominees for the positions the nomcom is filling,
+  and private nomcom pages for secure management and browsing of positions,
+  nominees, and comments.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Aug 2013 12:05:22 +0200
+
 ietfdb (4.61) ietf; urgency=medium
 
   This release provides the code from the IETF-87 code sprint, and also
