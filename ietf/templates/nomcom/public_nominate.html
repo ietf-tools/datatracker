@@ -1,0 +1,31 @@
+{% extends "nomcom/nomcom_public_base.html" %}
+
+{% load nomcom_tags %}
+
+{% block subtitle %} - Nominate{% endblock %}
+
+{% block pagehead %}
+{{ form.media }}
+{% endblock %}
+
+{% block nomcom_content %}
+
+
+{% if message %}
+  <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+{% endif %}
+
+{% if nomcom|has_publickey %}
+  {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
+
+  <form id="nominateform" action="" method="post">{% csrf_token %}
+    {{ form }}
+
+  <div class="submitrow">
+    <input type="submit" value="Save" name="save" />
+  </div>
+
+  </form>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ state.group.acronym }} members{% endblock %}
+
+{% block content %}
+<h1>Edit {{ state.group.acronym }} members</h1>
+
+{% if state.members_info %}
+  <h2>Members info </h2>
+  <ul>
+  {% for member in state.members_info %}
+    <li><strong>Email:</strong> {{ member.email }}. <strong>Person Name</strong>: {{ member.person.name }}</li>
+  {% endfor %}
+  </ul>
+{% endif %}
+
+{% if state.emails_not_found %}
+  <h2>Members not found </h2>
+  <ul>
+  {% for email in state.emails_not_found %}
+    <li>{{ email }}</li>
+  {% endfor %}
+  </ul>
+  {% if state.rolodex_url %}Please go to <a href="{{ state.rolodex_url }}">{{ state.rolodex_url }}</a> to add these people.{% endif %}
+{% endif %}
+
+
+<table>
+<form action="" method="post">{% csrf_token %}
+{% for field in form %}{{ field.as_hidden }}
+{% endfor %}
+<input type="hidden" name="{{ stage_field }}" value="2" />
+<input type="hidden" name="{{ hash_field }}" value="{{ hash_value }}" />
+<p><input type="submit" value="Submit" /></p>
+</form>
+
+<h1>Or edit it again</h1>
+
+<form action="" method="post">{% csrf_token %}
+<table>
+{{ form }}
+</table>
+<input type="hidden" name="{{ stage_field }}" value="1" />
+<p><input type="submit" value="Preview" /></p>
+</form>
+
+
+{% endblock %}

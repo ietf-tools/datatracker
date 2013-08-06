@@ -104,6 +104,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.load_template_source',
     'django.template.loaders.app_directories.load_template_source',
+    'ietf.dbtemplate.template.load_template_source',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -192,6 +193,8 @@ INSTALLED_APPS = (
     'ietf.secr.rolodex',
     'ietf.secr.telechat',
     'ietf.secr.sreq',
+    'ietf.nomcom',
+    'ietf.dbtemplate',
 )
 
 INTERNAL_IPS = (
@@ -298,6 +301,16 @@ IDSUBMIT_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
 IDSUBMIT_TO_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
+
+# NomCom Tool settings
+ROLODEX_URL = ""
+PUBLIC_KEYS_URL = BASE_DIR + '/nomcom/public_keys/'
+NOMCOM_FROM_EMAIL = DEFAULT_FROM_EMAIL
+NOMCOM_ADMIN_EMAIL = DEFAULT_FROM_EMAIL
+OPENSSL_COMMAND = '/usr/bin/openssl'
+DAYS_TO_EXPIRE_NOMINATION_LINK = ''
+DEFAULT_FEEDBACK_TYPE = 'offtopic'
+NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina']
 
 # Days from meeting to cut off dates on submit
 FIRST_CUTOFF_DAYS = 19

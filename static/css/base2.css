@@ -67,6 +67,16 @@ a img { border: 0; }
 .ietf-navbar #wgs .bd { background-color: #edf5ff; }
 .ietf-navbar #wgs > .bd { border: 0;}
 
+.ietf-navset {
+    background:#214197 url(/images/yui/sprite.png) repeat-x left -1400px;
+    color:white;
+    border:1px solid black;
+    padding:4px;
+}
+.ietf-navset .selected { font-weight:bold; padding: 0 3px; }
+.ietf-navset a, .ietf-navset a:visited { color: white; padding:0 3px; }
+
+
 .ietf-ballot .left { background: #edf5ff; width:160px; padding-left: 10px; }
 .ietf-ballot .right { padding-left: 15px; padding-right:15px; width:610px;padding-top:0px;}
 .ietf-ballot h2.ballot_ad { background: #2647A0; color:white; padding: 2px 4px; font-size: 108%; margin-top: 0;}
@@ -238,3 +248,126 @@ table.milestones .doc { display: block; padding-left: 1em; }
 .button:hover { color: #111; background: #ddd; background: linear-gradient(#eee, #ccc); background: -webkit-linear-gradient(#eee, #ccc); background: -moz-linear-gradient(#eee, #ccc); }
 .button:active { color: #000; background: #ccc; }
 .button:disabled, .button:hover:disabled { color: #999; cursor: default; background: #eee; background: linear-gradient(#fff, #e0e0e0); background: -webkit-linear-gradient(#fff, #e0e0e0); background: -moz-linear-gradient(#fff, #e0e0e0); }
+
+
+/* Message types */
+div.info-message-success { border: 1px solid green; background-color: #eeffbb; padding: 5px 10px; margin: 1em 0px; color: green; }
+div.info-message-warning { border: 1px dashed red; background-color: #ffeeaa; padding: 1em 2em; margin: 1em 0px; }
+div.info-message-error { border: 1px solid red; background-color: #ffeebb; padding: 5px 10px; margin: 1em 0px; color: red; }
+
+
+/* Form styles */
+.baseform {
+    font-size: 12px;
+}
+
+.baseform .fieldset {
+    margin: 1em 0px;
+    border: none;
+    border: 1px solid #8899dd;
+    background-color: #edf5ff;
+}
+
+.baseform .fieldset h2 {
+    background-color: #2647a0;
+    color: white;
+    font-size: 14px;
+    padding: 5px 10px;
+    margin: 0px;
+}
+
+.baseform .field {
+    padding: 0.5em 10px;
+}
+
+.baseform .field label {
+    display: block;
+    width: 150px;
+    float: left;
+    clear: left;
+}
+
+.baseform .field .endfield {
+    clear: left;
+}
+
+.baseform .fieldWidget {
+    margin-left: 150px;
+}
+
+#feedbackformset .fieldWidget {
+    margin-left: 0px;
+}
+
+#feedbackformset .fieldWidget.defaultPos {
+    margin-left: 150px;
+}
+
+#feedbackformset ul {
+    padding: 0px;
+}
+
+#feedbackformset ul li {
+    display: inline;
+}
+
+#feedbackformset ul li label {
+    display: inline;
+    float: none;
+}
+
+#feedbackformset .baseform h3 {
+    margin-left: 12px;
+    margin-top: 24px;
+    margin-bottom: 0px;
+}
+
+#feedbackformset pre {
+    margin: 12px;
+}
+
+#feedbackformset table {width: 100%;}
+#feedbackformset .oddradio { background-color: white; text-align: center;}
+#feedbackformset .evenradio { background-color: #EDF5FF; text-align: center;}
+#feedbackformset .toggle { padding: 0px; }
+#feedbackformset .toggle a.trigger { display: block; width: 22px; height: 22px;}
+#feedbackformset .toggle a.closed { background: url(../images/plus.png) no-repeat center center;}
+#feedbackformset .toggle a.open { background: url(../images/minus.png) no-repeat center center;}
+#feedbackformset tr.body td { border-bottom: 1px solid #cbcbcb;}
+#feedbackformset tr.bodyform td { border-top: 1px solid #cbcbcb;}
+
+
+.baseform select,
+.baseform textarea,
+.baseform input {
+    border: 1px solid #cccccc;
+}
+
+.baseform input {
+    font-size: 12px;
+}
+
+span.fieldRequired {
+    color: red;
+}
+
+.fieldError {
+    background-color: #ffcc66;
+}
+
+.errorlist li,
+.errorlist {
+    padding: 0px;
+    margin: 0px;
+    list-style: none;
+    color: red;
+}
+
+/* js styles */
+.js-info {
+    background-color: #FFDD88;
+    border: 1px dashed red;
+    font-size: 1.2em;
+    padding: 1em 2em;
+}
+

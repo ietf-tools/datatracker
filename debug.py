@@ -63,11 +63,13 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
             ["%s = %s" % (a, fix(repr(b))) for a,b in kwargs.items()]
         ))
 
-        sys.stderr.write("%s* %s [#%s]\n" % (indent, fc, call))
+        if debug:
+            sys.stderr.write("%s* %s [#%s]\n" % (indent, fc, call))
         _report_indent[0] += increment
         ret = fn(*params,**kwargs)
         _report_indent[0] -= increment
-        sys.stderr.write("%s  %s [#%s] ==> %s\n" % (indent, fc, call, repr(ret)))
+        if debug:
+            sys.stderr.write("%s  %s [#%s] ==> %s\n" % (indent, fc, call, repr(ret)))
 
         return ret
     wrap.callcount = 0
@@ -113,7 +115,7 @@ def show(name):
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("%s%s: %s\n" % (indent, name, value))
+        sys.stderr.write("%s%s: '%s'\n" % (indent, name, value))
 
 def log(name):
     if debug:
@@ -132,6 +134,25 @@ def pprint(name):
         for line in lines:
             sys.stderr.write("%s %s\n"%(indent, line))
 
+def dir(name):
+    if debug:
+        name = "dir(%s)" % name
+        frame = inspect.stack()[1][0]
+        value = eval(name, frame.f_globals, frame.f_locals)
+        indent = ' ' * (_report_indent[0])
+        sys.stderr.write("%s%s:\n" % (indent, name))
+        lines = pformat(value).split('\n')
+        for line in lines:
+            sys.stderr.write("%s %s\n"%(indent, line))
+
+def type(name):
+    if debug:
+        name = "type(%s)" % name
+        frame = inspect.stack()[1][0]
+        value = eval(name, frame.f_globals, frame.f_locals)
+        indent = ' ' * (_report_indent[0])
+        sys.stderr.write("%s%s: %s\n" % (indent, name, value))
+            
 def say(s):
     if debug:
         indent = ' ' * (_report_indent[0])

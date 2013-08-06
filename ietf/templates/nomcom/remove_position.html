@@ -1,0 +1,19 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+
+{% block nomcom_content %}
+<h2>Position: {{ position }}</h2>
+<dl>
+  <dt>Description:</dt>
+  <dd>{{ position.description }}</dd>
+  <dt>Incumbent:</dt>
+  <dd>{{ position.incumbent }}</dd>
+  <dt>Is open:</dt>
+  <dd>{{ position.is_open }}</dd>
+</dl>
+
+<h3>Do you want to remove it?</h3>
+<form method="post" action="">
+<p><input type="submit" name="remove" value="Yes, remove it" /> <a href="../">No, get me out of here</a></p>
+</form>
+
+{% endblock nomcom_content %}

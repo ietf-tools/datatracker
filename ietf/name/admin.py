@@ -1,6 +1,7 @@
 from django.contrib import admin
 from models import *
 
+
 class NameAdmin(admin.ModelAdmin):
     list_display = ["slug", "name", "desc", "used"]
     prepopulate_from = { "slug": ("name",) }
@@ -22,3 +23,6 @@ admin.site.register(BallotPositionName, NameAdmin)
 admin.site.register(SessionStatusName, NameAdmin)
 admin.site.register(TimeSlotTypeName, NameAdmin)
 admin.site.register(ConstraintName, NameAdmin)
+admin.site.register(NomineePositionState, NameAdmin)
+admin.site.register(FeedbackType, NameAdmin)
+admin.site.register(DBTemplateTypeName, NameAdmin)

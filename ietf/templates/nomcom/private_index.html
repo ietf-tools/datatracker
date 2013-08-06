@@ -1,0 +1,126 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+
+{% block subtitle %} - Administration {% endblock %}
+
+{% block nomcom_content %}
+
+<h2>Nominations stats</h2>
+
+<table class="ietf-table ietf-doctable">
+<tr>
+  <th>Position</th>
+  <th>Accepted</th>
+  <th>Declined</th>
+  <th>Pending</th>
+  <th>Questionnaire response</th>
+  <th>Total</th>
+</tr>
+{% for item in stats %}
+<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+  <td>{{ item.position__name }}</td>
+  <td>{{ item.accepted }}</td>
+  <td>{{ item.declined }}</td>
+  <td>{{ item.pending }}</td>
+  <td>{{ item.questionnaire }}</td>
+  <td>{{ item.total }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<div style="padding: 8px 0 8px 0;"></div>
+
+
+<h2>List of nominees by position</h2>
+
+<p>The following is a list of registered nominees.
+{% if is_chair %}(You can <a href="{% url nomcom_send_reminder_mail year %}">request confirmation</a> from nominees if they haven't
+replied to the nomination notification they have received.){% endif %}</p>
+
+<div class="content">
+
+  <div>
+    <h3>Select Filters</h3>
+
+    <form action="" method="get">
+      <table>
+        <tr>
+          <td>
+            <label>State</label>
+            <select name="state">
+              <option value="">All</option>
+              {% for state in states %}
+                <option value="{{ state.slug }}"
+                  {% ifequal state.slug  selected_state %}selected="selected"{% endifequal%}>
+                  {{ state.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </td>
+          <td rowspan="2" valign="top">
+            <label>Position:</label>
+            <select name="position">
+              <option value="">All</option>
+              {% for position in positions %}
+                  <option value="{{ position.position__id }}"
+                    {% ifequal position.position__id  selected_position %}selected="selected"{% endifequal%}>
+                    {{ position.position__name }}
+                  </option>
+              {% endfor %}
+            </select>
+            <input name="submit" value="Go!" type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+  </div>
+
+
+    {% if is_chair %}
+    <form id="batch-action-form" method="post" action="">{% csrf_token %}
+      {% if message %}
+        <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+      {% endif %}
+      <div class="actions">
+        <label>Action:
+          <select name="action">
+            <option value="" selected="selected">---------</option>
+            <option value="set_as_accepted">Set as accepted</option>
+            <option value="set_as_pending">Set as pending</option>
+            <option value="set_as_declined">Set as declined</option>
+          </select>
+        </label>
+        <button type="submit" title="Run action">Go</button>
+      </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <table class="ietf-table ietf-doctable">
+    <tr>
+      {% if is_chair %}<th>&#x2713;</th>{% endif %}
+      <th>Nominees</th>
+      <th>Position</th>
+      <th>State</th>
+      <th>Questionnaire response</th>
+    </tr>
+    {% for np in nominee_positions.not_duplicated %}
+        <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+          {% if is_chair %}
+            <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"/></td>
+          {% endif %}
+          <td>{{ np.nominee }}{% if is_chair %} <a href="{% url nomcom_edit_nominee year np.nominee.id %}">(edit)</a>{% endif %}</td>
+          <td>{{ np.position.name }}</td>
+          <td>{{ np.state }}</td>
+          <td>{{ np.questionnaires|yesno:"Yes,No,No" }}
+        </tr>
+    {% endfor %}
+    </table>
+  </div>
+
+
+{% if is_chair %}
+  </form>
+{% endif %}
+</div
+
+{% endblock %}

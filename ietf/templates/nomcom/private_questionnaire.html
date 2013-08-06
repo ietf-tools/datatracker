@@ -1,0 +1,49 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+
+{% load nomcom_tags %}
+
+{% block subtitle %} - Quesionnaire Response{% endblock %}
+
+{% block pagehead %}
+{{ form.media }}
+{% endblock %}
+
+{% block nomcom_content %}
+
+
+{% if message %}
+  <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+{% endif %}
+
+{% if nomcom|has_publickey %}
+
+  <div class="js-info">
+    Your browser has Javascript disabled. Please enable javascript and reload the page.
+    <script type="text/javascript">
+      (function ($) {
+        $(".js-info").hide();
+      })(jQuery);
+    </script>
+  </div>
+
+<div class="content">
+{% if questionnaire_response %}
+<h3>Questionnaire response:</h3>
+{{ questionnaire_response }}
+
+{% endif %}
+  <div class="primary">
+    {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
+
+    <form id="questionnnaireform" action="" method="post">{% csrf_token %}
+      {{ form }}
+
+    <div class="submitrow">
+      <input type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}/>
+    </div>
+
+    </form>
+  </div>
+{% endif %}
+
+{% endblock %}

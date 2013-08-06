@@ -1,0 +1,51 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+
+{% block subtitle %} - Send reminder emails {% endblock %}
+
+{% block nomcom_content %}
+
+<h2>Request nomination acceptance from the listed nominees</h2>
+
+<p>
+An query will be sent to each person, asking them to accept (or decline) the nomination.
+
+The list has been pre-populated with the selected list of nominees
+
+The message that will be sent is shown below the address entry form.
+</p>
+
+<form method="post" action="">
+  <h3>Nominees who have not responded</h2>
+
+  {% if message %}
+    <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+  {% endif %}
+
+  <table class="ietf-table ietf-doctable">
+  <tr>
+    <th>&#x2713;</th>
+    <th>Nominees</th>
+    <th>Positions</th>
+  </tr>
+  {% for nominee in nominees %}
+  <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+    <td><input class="batch-select" type="checkbox" value="{{ nominee.id }}" name="selected" checked="checked"/></td>
+    <td>{{ nominee }}</td>
+    <td>{% for nominee_position in nominee.nomineeposition_set.all %}{% ifequal nominee_position.state.slug "pending" %} {{ nominee_position.position.name }}, {% endifequal %}{% endfor %}</td>
+  </tr>
+  {% endfor %}
+  </table>
+
+  <div style="padding: 8px 0 8px 0;"></div>
+
+  <div class="submitrow">
+    <input type="submit" name="submit" value="Submit request"/>
+  </div>
+
+</form>
+
+<p>The message that will be sent is as follows: {% if mail_template %}<a href="{% url nomcom_edit_template year mail_template.id %}">(Edit the message)</a>{% endif %}</p>
+
+{% include mail_template.path %}
+
+{% endblock %}

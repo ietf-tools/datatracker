@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
+from django.db.models import Q
+
 from ietf.name.models import *
 from ietf.person.models import Email, Person
 
@@ -42,7 +44,7 @@ class Group(GroupInfo):
 
     acronym = models.SlugField(max_length=40, unique=True, db_index=True)
     charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
-    
+
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter
         arguments, e.g. g.latest_event(type="xyz") returns a GroupEvent
@@ -51,6 +53,26 @@ class Group(GroupInfo):
         model = args[0] if args else GroupEvent
         e = model.objects.filter(group=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
+
+    def is_chair(self, user):
+        chair = self.get_chair()
+        if chair:
+            return self.get_chair().person.user == user
+        else:
+            return False
+
+    def is_member(self, user):
+        members = self.get_members()
+        users = [member.person.user for member in members]
+        return user in users
+
+    def get_chair(self):
+        chair = self.role_set.filter(name__slug='chair')[:1]
+        return chair and chair[0] or None
+
+    def get_members(self):
+        members = self.role_set.filter(Q(name__slug='member') | Q(name__slug='chair'))
+        return members
 
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')
@@ -63,8 +85,9 @@ class GroupURL(models.Model):
     group = models.ForeignKey(Group)
     name = models.CharField(max_length=255)
     url = models.URLField(verify_exists=False)
+
     def __unicode__(self):
-	return u"%s (%s)" % (self.url, self.name)
+        return u"%s (%s)" % (self.url, self.name)
 
 class GroupMilestoneInfo(models.Model):
     group = models.ForeignKey(Group)

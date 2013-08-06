@@ -1,0 +1,12 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+
+{% block nomcom_content %}
+<h3>{% if position %}Edit{% else %}Add{% endif %} position</h3>
+
+{% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
+
+<form action="" method="post">
+{{ form }}
+<p><input type="submit" value="{% if position %}Save{% else %}Add{% endif %}" /> <a href="../">Cancel</a></p>
+</form>
+{% endblock nomcom_content %}

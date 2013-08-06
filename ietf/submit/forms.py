@@ -25,6 +25,8 @@ from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils.mail import send_mail
 from ietf.utils.draft import Draft
+from ietf.utils.pipe import pipe
+from ietf.utils.log import log
 
 
 class UploadForm(forms.Form):
@@ -223,8 +225,12 @@ class UploadForm(forms.Form):
 
     def check_idnits(self):
         filepath = os.path.join(self.staging_path, '%s-%s.txt' % (self.draft.filename, self.draft.revision))
-        p = subprocess.Popen([self.idnits, '--submitcheck', '--nitcount', filepath], stdout=subprocess.PIPE)
-        self.idnits_message = p.stdout.read()
+        #p = subprocess.Popen([self.idnits, '--submitcheck', '--nitcount', filepath], stdout=subprocess.PIPE)
+        cmd = "%s --submitcheck --nitcount %s" % (self.idnits, filepath)
+        code, out, err = pipe(cmd)
+        if code != 0:
+            log("idnits error: %s:\n  Error %s: %s" %(cmd, code, err))
+        self.idnits_message = out
 
     def get_working_group(self):
         name = self.draft.filename

@@ -34,6 +34,7 @@
 
 import os
 import re
+import sys
 import django
 from django.db import connection
 from django.test import TestCase
@@ -52,12 +53,12 @@ class RealDatabaseTest:
     def setUpRealDatabase(self):
         self._original_testdb = self._getDatabaseName()
         newdb = real_database_name
-        print "     Switching database from "+self._original_testdb+" to "+newdb
+        #print "     Switching database from "+self._original_testdb+" to "+newdb
         self._setDatabaseName(newdb)
 
     def tearDownRealDatabase(self):
         curdb = self._getDatabaseName()
-        print "     Switching database from "+curdb+" to "+self._original_testdb
+        #print "     Switching database from "+curdb+" to "+self._original_testdb
         self._setDatabaseName(self._original_testdb)
 
     def _getDatabaseName(self):
@@ -113,6 +114,7 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
         if self.ref_prefix.endswith("/"):
             self.ref_prefix = self.ref_prefix[:-1]
         self.skip_heavy_tests = os.environ.get("IETFDB_SKIP_HEAVY", True)
+        self.verbosity = os.environ.get("IETFDB_TESTURL_VERBOSITY", 1)
 
     def tearDown(self):
         self.tearDownRealDatabase()
@@ -122,7 +124,8 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
             filename = test_filename
         else:
             filename = os.path.dirname(os.path.abspath(test_filename))+"/testurl.list"
-        print "     Reading "+filename
+        if self.verbosity > 1:
+            print "     Reading "+filename
         tuples = read_testurls(filename)
         failures = 0
         for tuple in tuples:
@@ -140,7 +143,10 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
         #settings.DEBUG = True
         try:
             if "heavy" in codes and self.skip_heavy_tests:
-                print "     Skipping heavy test %s" % (url,)
+                if self.verbosity > 1:
+                    print "     Skipping heavy test %s" % (url,)
+                else:
+                    sys.stdout.write('-')
                 return
             now = datetime.utcnow()
             response = self.client.get(baseurl, args)
@@ -148,15 +154,21 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
             elapsed = elapsed_dt.seconds + elapsed_dt.microseconds/1e6
             code = str(response.status_code)
             queries = len(connection.queries)
-            if code in codes:
-                print "OK   %s %s" % (code, url)
-            else:
-                print "Fail %s %s" % (code, url)
-                failed = True
-            if queries > 0:
-                print "    (%.1f s, %d kB, %d queries)" % (elapsed, len(response.content)/1000, queries)
-            else:
-                print "    (%.1f s, %d kB)" % (elapsed, len(response.content)/1000)
+            if self.verbosity == 1:
+                if code in codes:
+                    sys.stdout.write(".")
+                else:
+                    sys.stdout.write("E")
+            elif self.verbosity > 1:
+                if code in codes:
+                    print "OK   %s %s" % (code, url)
+                else:
+                    print "Fail %s %s" % (code, url)
+                    failed = True
+                if queries > 0:
+                    print "    (%.1f s, %d kB, %d queries)" % (elapsed, len(response.content)/1000, queries)
+                else:
+                    print "    (%.1f s, %d kB)" % (elapsed, len(response.content)/1000)
             if code in codes and code == "200":
                 self.doDiff(tuple, response)
         except:

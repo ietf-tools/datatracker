@@ -1,0 +1,22 @@
+{% extends "nomcom/nomcom_base.html" %}
+
+{% load nomcom_tags %}
+
+{% block content %}
+
+  <h1>Nomcom {{ year }} Pages</h1>
+
+  <div class="ietf-navset">
+    {% if selected == "index" %}<span class="selected">Home</span>{% else %}<a href="{% url nomcom_year_index year %}">Home</a>{% endif %} |
+    {% if nomcom|has_publickey %}
+      {% if selected == "nominate" %}<span class="selected">Nominate</span>{% else %}<a href="{% url nomcom_public_nominate year %}">Nominate</a>{% endif %} |
+      {% if selected == "feedback" %}<span class="selected">Provide Comments</span>{% else %}<a href="{% url nomcom_public_feedback year %}">Provide Comments</a>{% endif %} |
+    {% endif %}
+    {% if selected == "requirements" %}<span class="selected">Requirements</span>{% else %}<a href="{% url nomcom_requirements year %}">Requirements</a>{% endif %} |
+    {% if selected == "questionnaires" %}<span class="selected">Questionnaires</span>{% else %}<a href="{% url nomcom_questionnaires year %}">Questionnaires</a>{% endif %} |
+  </div>
+
+  {% block nomcom_content %}
+  {% endblock %}
+
+{% endblock %}
