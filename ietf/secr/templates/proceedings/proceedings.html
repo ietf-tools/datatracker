@@ -42,7 +42,9 @@ and end with
 {% endif %}
 </h3>
 
+{% if group.type.slug == "wg" %}
 <p>Additional information is available at <a href="http://tools.ietf.org/wg/{{ group.acronym }}">tools.ietf.org/wg/{{ group.acronym }}</a>
+{% endif %}
 
 <table width="60%" border="0" cellspacing="2" cellpadding="2">
   <tr><td bgcolor="#EEEEFF">
