@@ -37,7 +37,7 @@ def add_legacy_fields(group):
     query = GroupEvent.objects.filter(group=group, type="changed_state").order_by('time')
     proposed = query.filter(changestategroupevent__state="proposed")
     meeting = get_current_meeting()
-    
+
     if proposed:
         group.proposed_date = proposed[0].time
     active = query.filter(changestategroupevent__state="active")
@@ -46,27 +46,27 @@ def add_legacy_fields(group):
     concluded = query.filter(changestategroupevent__state="conclude")
     if concluded:
         group.concluded_date = concluded[0].time
-    
+
     if group.session_set.filter(meeting__number=meeting.number):
         group.meeting_scheduled = 'YES'
     else:
         group.meeting_scheduled = 'NO'
-        
+
     group.chairs = group.role_set.filter(name="chair")
     group.techadvisors = group.role_set.filter(name="techadv")
     group.editors = group.role_set.filter(name="editor")
     group.secretaries = group.role_set.filter(name="secretaries")
-    
+
     #fill_in_charter_info(group)
-    
+
 #--------------------------------------------------
 # AJAX Functions
 # -------------------------------------------------
 '''
 def get_ads(request):
     """ AJAX function which takes a URL parameter, "area" and returns the area directors
-    in the form of a list of dictionaries with "id" and "value" keys(in json format).  
-    Used to populate select options. 
+    in the form of a list of dictionaries with "id" and "value" keys(in json format).
+    Used to populate select options.
     """
 
     results=[]
@@ -83,7 +83,7 @@ def get_ads(request):
 # -------------------------------------------------
 
 def add(request):
-    ''' 
+    '''
     Add a new IETF or IRTF Group
 
     **Templates:**
@@ -119,11 +119,11 @@ def add(request):
                                                  by=request.user.get_profile(),
                                                  state=group.state,
                                                  desc='Started group')
-            
+
             messages.success(request, 'The Group was created successfully!')
             url = reverse('groups_view', kwargs={'acronym':group.acronym})
             return HttpResponseRedirect(url)
-            
+
     else:
         form = GroupModelForm(initial={'state':'active','type':'wg'})
         awp_formset = AWPFormSet(prefix='awp')
@@ -150,17 +150,17 @@ def blue_dot(request):
         entry = {'name':'%s, %s' % (parts[3], parts[1]),
                  'groups': ', '.join(groups)}
         chairs.append(entry)
-    
+
     # sort the list
     sorted_chairs = sorted(chairs, key = lambda a: a['name'])
-    
+
     return render_to_response('groups/blue_dot_report.txt', {
         'chairs':sorted_chairs},
         RequestContext(request, {}), mimetype="text/plain",
     )
-    
+
 def charter(request, acronym):
-    """ 
+    """
     View Group Charter
 
     **Templates:**
@@ -179,7 +179,7 @@ def charter(request, acronym):
         charter_text = get_charter_text(group)
     else:
         charter_text = ''
-        
+
     return render_to_response('groups/charter.html', {
         'group': group,
         'charter_text': charter_text},
@@ -187,7 +187,7 @@ def charter(request, acronym):
     )
 
 def delete_role(request, acronym, id):
-    """ 
+    """
     Handle deleting roles for groups (chair, editor, advisor, secretary)
 
     **Templates:**
@@ -199,18 +199,18 @@ def delete_role(request, acronym, id):
     """
     group = get_object_or_404(Group, acronym=acronym)
     role = get_object_or_404(Role, id=id)
-    
+
     # save group
     save_group_in_history(group)
-                
+
     role.delete()
-    
+
     messages.success(request, 'The entry was deleted successfully')
     url = reverse('groups_people', kwargs={'acronym':acronym})
     return HttpResponseRedirect(url)
 
 def edit(request, acronym):
-    """ 
+    """
     Edit Group details
 
     **Templates:**
@@ -235,16 +235,16 @@ def edit(request, acronym):
         form = GroupModelForm(request.POST, instance=group)
         awp_formset = AWPFormSet(request.POST, instance=group)
         if form.is_valid() and awp_formset.is_valid():
-            
+
             awp_formset.save()
             if form.changed_data:
                 state = form.cleaned_data['state']
-                
+
                 # save group
                 save_group_in_history(group)
-                
+
                 form.save()
-                
+
                 # create appropriate GroupEvent
                 if 'state' in form.changed_data:
                     if state.name == 'Active':
@@ -257,26 +257,28 @@ def edit(request, acronym):
                                                          state=state,
                                                          desc=desc)
                     form.changed_data.remove('state')
-                    
+
                 # if anything else was changed
                 if form.changed_data:
                     GroupEvent.objects.create(group=group,
                                               type='info_changed',
                                               by=request.user.get_profile(),
                                               desc='Info Changed')
-                
+
                 # if the acronym was changed we'll want to redirect using the new acronym below
                 if 'acronym' in form.changed_data:
                     acronym = form.cleaned_data['acronym']
-                
+
                 messages.success(request, 'The Group was changed successfully')
-            
+
             url = reverse('groups_view', kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
-            
+
     else:
         form = GroupModelForm(instance=group)
         awp_formset = AWPFormSet(instance=group)
+
+    messages.warning(request, "WARNING: don't use this tool to change group names.  Use Datatracker when possible.")
 
     return render_to_response('groups/edit.html', {
         'group': group,
@@ -286,7 +288,7 @@ def edit(request, acronym):
     )
 
 def edit_gm(request, acronym):
-    """ 
+    """
     Edit IETF Group Goal and Milestone details
 
     **Templates:**
@@ -295,7 +297,7 @@ def edit_gm(request, acronym):
 
     **Template Variables:**
 
-    * group, formset 
+    * group, formset
 
     """
 
@@ -316,7 +318,7 @@ def edit_gm(request, acronym):
             return HttpResponseRedirect(url)
     else:
         formset = GMFormset(instance=group, prefix='goalmilestone')
-        
+
     return render_to_response('groups/edit_gm.html', {
         'group': group,
         'formset': formset},
@@ -324,7 +326,7 @@ def edit_gm(request, acronym):
     )
 
 def people(request, acronym):
-    """ 
+    """
     Edit Group Roles (Chairs, Secretary, etc)
 
     **Templates:**
@@ -338,7 +340,7 @@ def people(request, acronym):
     """
 
     group = get_object_or_404(Group, acronym=acronym)
-    
+
     if request.method == 'POST':
         # we need to pass group for form validation
         form = RoleForm(request.POST,group=group)
@@ -346,10 +348,10 @@ def people(request, acronym):
             name = form.cleaned_data['name']
             person = form.cleaned_data['person']
             email = form.cleaned_data['email']
-            
+
             # save group
             save_group_in_history(group)
-                
+
             Role.objects.create(name=name,
                                 person=person,
                                 email=email,
@@ -368,7 +370,7 @@ def people(request, acronym):
     )
 
 def search(request):
-    """ 
+    """
     Search IETF Groups
 
     **Templates:**
@@ -386,9 +388,9 @@ def search(request):
         if request.POST['submit'] == 'Add':
             url = reverse('groups_add')
             return HttpResponseRedirect(url)
-        
+
         if form.is_valid():
-            kwargs = {} 
+            kwargs = {}
             group_acronym = form.cleaned_data['group_acronym']
             group_name = form.cleaned_data['group_name']
             primary_area = form.cleaned_data['primary_area']
@@ -396,7 +398,7 @@ def search(request):
             state = form.cleaned_data['state']
             type = form.cleaned_data['type']
             meeting = get_current_meeting()
-            
+
             # construct seach query
             if group_acronym:
                 kwargs['acronym__istartswith'] = group_acronym
@@ -410,7 +412,7 @@ def search(request):
                 kwargs['type'] = type
             #else:
             #    kwargs['type__in'] = ('wg','rg','ietf','ag','sdo','team')
-            
+
             if meeting_scheduled == 'YES':
                 kwargs['session__meeting__number'] = meeting.number
             # perform query
@@ -422,13 +424,13 @@ def search(request):
             else:
                 qs = Group.objects.all()
             results = qs.order_by('acronym')
-            
+
             # if there's just one result go straight to view
             if len(results) == 1:
                 url = reverse('groups_view', kwargs={'acronym':results[0].acronym})
                 return HttpResponseRedirect(url)
-            
-    # process GET argument to support link from area app 
+
+    # process GET argument to support link from area app
     elif 'primary_area' in request.GET:
         area = request.GET.get('primary_area','')
         results = Group.objects.filter(parent__id=area,type='wg',state__in=('bof','active','proposed')).order_by('name')
@@ -440,7 +442,7 @@ def search(request):
     # attribute of the meeting model
     for result in results:
         add_legacy_fields(result)
-            
+
     return render_to_response('groups/search.html', {
         'results': results,
         'form': form},
@@ -448,7 +450,7 @@ def search(request):
     )
 
 def view(request, acronym):
-    """ 
+    """
     View IETF Group details
 
     **Templates:**
@@ -462,16 +464,16 @@ def view(request, acronym):
     """
 
     group = get_object_or_404(Group, acronym=acronym)
-    
+
     add_legacy_fields(group)
-    
+
     return render_to_response('groups/view.html', {
         'group': group},
         RequestContext(request, {}),
     )
 
 def view_gm(request, acronym):
-    """ 
+    """
     View IETF Group Goals and Milestones details
 
     **Templates:**
