@@ -100,12 +100,14 @@ class WgEditTestCase(django.test.TestCase):
 
         num_wgs = len(Group.objects.filter(type="wg"))
 
+        bof_state = GroupStateName.objects.get(slug="bof")
+
         # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEquals(len(q('form input[name=acronym]')), 1)
-        
+
         # faulty post
         r = self.client.post(url, dict(acronym="foobarbaz")) # No name
         self.assertEquals(r.status_code, 200)
@@ -113,9 +115,24 @@ class WgEditTestCase(django.test.TestCase):
         self.assertTrue(len(q('form ul.errorlist')) > 0)
         self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs)
 
+        # acronym contains non-alphanumeric
+        r = self.client.post(url, dict(acronym="test...", name="Testing WG", state=bof_state.pk))
+        self.assertEquals(r.status_code, 200)
+
+        # acronym contains hyphen
+        r = self.client.post(url, dict(acronym="test-wg", name="Testing WG", state=bof_state.pk))
+        self.assertEquals(r.status_code, 200)
+
+        # acronym too short
+        r = self.client.post(url, dict(acronym="t", name="Testing WG", state=bof_state.pk))
+        self.assertEquals(r.status_code, 200)
+
+        # acronym doesn't start with an alpha character
+        r = self.client.post(url, dict(acronym="1startwithalpha", name="Testing WG", state=bof_state.pk))
+        self.assertEquals(r.status_code, 200)
+
         # creation
-        state = GroupStateName.objects.get(slug="bof")
-        r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state=state.pk))
+        r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state=bof_state.pk))
         self.assertEquals(r.status_code, 302)
         self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs + 1)
         group = Group.objects.get(acronym="testwg")
