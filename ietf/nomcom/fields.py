@@ -14,7 +14,10 @@ class EncryptedTextField(models.TextField):
         if add:
             comments = smart_str(getattr(instance, 'comments'))
             nomcom = getattr(instance, 'nomcom')
-            cert_file = nomcom.public_key.path
+            try:
+                cert_file = nomcom.public_key.path
+            except ValueError as e:
+                raise ValueError("Trying to read the NomCom public key: " + str(e))
 
             code, out, error = pipe("%s smime -encrypt -in /dev/stdin %s" % (settings.OPENSSL_COMMAND,
                                     cert_file), comments)

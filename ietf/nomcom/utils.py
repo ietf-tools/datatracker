@@ -22,7 +22,7 @@ from ietf.person.models import Email, Person
 from ietf.utils.pipe import pipe
 from ietf.utils import unaccent
 from ietf.utils.mail import send_mail_text, send_mail
-
+from ietf.utils.log import log
 
 MAIN_NOMCOM_TEMPLATE_PATH = '/nomcom/defaults/'
 QUESTIONNAIRE_TEMPLATE = 'position/questionnaire.txt'
