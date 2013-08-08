@@ -226,7 +226,14 @@ li.success	{ margin: 0.5em; background-color: #4f4; }
 li.warning	{ margin: 0.5em; background-color: #fc8; color: black;}
 li.error	{ margin: 0.5em; background-color: #f44; }
 
-.errorlist	{ background: red; color: white; padding: 0.2ex 0.2ex 0.2ex 0.5ex; border: 0px; margin: 0px; font-family: Arial, sans-serif; }
+.errorlist, errorlist li {
+	background: red;
+	color: white;
+	padding: 0.2ex 0.2ex 0.2ex 0.5ex;
+	border: 0px;
+	margin: 0px;
+	font-family: Arial, sans-serif;
+}
 
 .group-documents .search-results { margin-top: 1.5em; }
 
@@ -353,14 +360,6 @@ span.fieldRequired {
 
 .fieldError {
     background-color: #ffcc66;
-}
-
-.errorlist li,
-.errorlist {
-    padding: 0px;
-    margin: 0px;
-    list-style: none;
-    color: red;
 }
 
 /* js styles */
