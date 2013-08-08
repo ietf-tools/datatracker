@@ -71,7 +71,7 @@ class Group(GroupInfo):
         return chair and chair[0] or None
 
     def get_members(self):
-        members = self.role_set.filter(Q(name__slug='member') | Q(name__slug='chair'))
+        members = self.role_set.filter(name__slug__in=["chair", "member", "advisor", "liaison"])
         return members
 
 class GroupHistory(GroupInfo):
