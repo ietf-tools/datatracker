@@ -437,7 +437,6 @@ class MilestoneTestCase(django.test.TestCase):
                                     'm1-accept': "accept",
                                     'action': "save",
                                     })
-        print r.content
         self.assertEquals(r.status_code, 302)
 
         m = GroupMilestone.objects.get(pk=m1.pk)
