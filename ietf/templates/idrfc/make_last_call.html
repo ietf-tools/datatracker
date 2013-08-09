@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Make Last Call for Internet Draft{{ docs|pluralize }}{% endblock %}
+{% block title %}Make Last Call for {{ doc.name }}{% endblock %}
 
 {% block morecss %}
 form.approve-ballot pre {
@@ -19,13 +19,11 @@ form.approve-ballot .announcement {
 {% endblock %}
 
 {% block content %}
-<h1>Make Last Call for Internet Draft{{ docs|pluralize }}</h1>
+<h1>Make Last Call for {{ doc.name }}</h1>
 
-<p>Make last call for following draft{{ docs|pluralize }}:</p>
+<p>Make last call for following draft:</p>
 
-{% for d in docs %}
-<div>{{ d.file_tag }} ({{ d.group.acronym }}) - {{ d.intended_status.intended_status }}</div>
-{% endfor %}
+<div>{{ doc.file_tag }} ({{ doc.group.acronym }}) - {{ doc.intended_std_level.name }}</div>
 
 <form style="margin-top:20px" action="" method="POST">
   <table>
@@ -33,7 +31,7 @@ form.approve-ballot .announcement {
   </table>
 
   <div class="actions">
-    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <a href="{{ doc.get_absolute_url }}">Back</a>
     <input type="reset" value="Reset">
     <input type="submit" value="Make Last Call"/>
   </div>

@@ -4,7 +4,6 @@ import datetime
 
 from django.conf import settings
 
-from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 
@@ -12,15 +11,6 @@ from ietf.doc.models import *
 from ietf.person.models import Person
 
 def request_last_call(request, doc):
-    try:
-        ballot = doc.idinternal.ballot
-    except BallotInfo.DoesNotExist:
-        ballot = generate_ballot(request, doc)
-
-    send_last_call_request(request, doc, ballot)
-    add_document_comment(request, doc, "Last Call was requested")
-
-def request_last_callREDESIGN(request, doc):
     if not doc.latest_event(type="changed_ballot_writeup_text"):
         generate_ballot_writeup(request, doc)
     if not doc.latest_event(type="changed_ballot_approval_text"):
@@ -37,14 +27,7 @@ def request_last_callREDESIGN(request, doc):
     e.desc = "Last call was requested"
     e.save()
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    request_last_call = request_last_callREDESIGN
-
 def get_expired_last_calls():
-    return InternetDraft.objects.filter(lc_expiration_date__lte=datetime.date.today(),
-                                        idinternal__cur_state__document_state_id=IDState.IN_LAST_CALL)
-
-def get_expired_last_callsREDESIGN():
     today = datetime.date.today()
     for d in Document.objects.filter(states__type="draft-iesg", states__slug="lc"):
         e = d.latest_event(LastCallDocEvent, type="sent_last_call")
@@ -52,24 +35,6 @@ def get_expired_last_callsREDESIGN():
             yield d
 
 def expire_last_call(doc):
-    state = IDState.WAITING_FOR_WRITEUP
-
-    try:
-        ballot = doc.idinternal.ballot
-        if ballot.ballot_writeup and "Relevant content can frequently be found in the abstract" not in ballot.ballot_writeup:
-            state = IDState.WAITING_FOR_AD_GO_AHEAD
-    except BallotInfo.DoesNotExist:
-        pass
-
-    doc.idinternal.change_state(IDState.objects.get(document_state_id=state), None)
-    doc.idinternal.event_date = datetime.date.today()
-    doc.idinternal.save()
-
-    log_state_changed(None, doc, by="system", email_watch_list=False)
-
-    email_last_call_expired(doc)
-
-def expire_last_callREDESIGN(doc):
     state = State.objects.get(used=True, type="draft-iesg", slug="writeupw")
 
     e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
@@ -94,8 +59,3 @@ def expire_last_callREDESIGN(doc):
     doc.save()
 
     email_last_call_expired(doc)
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    get_expired_last_calls = get_expired_last_callsREDESIGN
-    expire_last_call = expire_last_callREDESIGN
-

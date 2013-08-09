@@ -6,7 +6,7 @@ from django.conf import settings
 from ietf.doc.models import *
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import *
-from ietf.idrfc.mails import email_owner, email_state_changed, email_authors
+from ietf.idrfc.mails import email_ad, email_state_changed, email_authors
 from ietf.utils.timezone import *
 
 #PROTOCOLS_URL = "http://www.iana.org/protocols/"
@@ -200,7 +200,7 @@ def update_history_with_changes(changes, send_email=True):
 
                     if send_email and (state != prev_state):
                         email_state_changed(None, doc, "IANA %s state changed to %s" % (kind, state.name))
-                        email_owner(None, doc, doc.ad, system, "IANA %s state changed to %s" % (kind, state.name))
+                        email_ad(None, doc, doc.ad, system, "IANA %s state changed to %s" % (kind, state.name))
 
                 if doc.time < timestamp:
                     doc.time = timestamp

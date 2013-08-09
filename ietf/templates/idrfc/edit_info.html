@@ -3,17 +3,15 @@
 {% block title %}Edit info on {{ doc }}{% endblock %}
 
 {% block scripts %}
-
 function make_bold()
 {
   var e = document.getElementById("ballotwarn");
   e.setAttribute("class","warning");
 }
-
 {% endblock %}
 
 {% block morecss %}
-form.edit-info #id_state_change_notice_to {
+form.edit-info #id_notify {
   width: 600px;
 }
 form.edit-info #id_note {
@@ -24,8 +22,8 @@ form.edit-info .actions {
   padding-top: 20px;
 }
 .warning {
-  font-weight:bold;
-  color:red;
+  font-weight: bold;
+  color: #a00;
 }
 {% endblock %}
 
@@ -41,13 +39,13 @@ form.edit-info .actions {
       <td>{{ field }}
       {% ifequal field.name "telechat_date" %}
         {% if not ballot_issued %}
-         <span id="ballotwarn"> A ballot for this document has not been issued: <a href="{% url doc_ballot_writeupnotes name=doc.filename %}">Edit Ballot Text</a></span>
+         <span id="ballotwarn"> A ballot for this document has not been issued: <a href="{% url doc_ballot_writeupnotes name=doc.name %}">Edit Ballot Text</a></span>
         {% endif %}
         {{ form.returning_item }} {{ form.returning_item.label_tag }} {{ form.returning_item.errors }}
       {% endifequal %}
-      {% ifequal field.name "job_owner" %}
+      {% ifequal field.name "ad" %}
       {% if user|in_group:"Area_Director" %}
-      <label><input type="checkbox" name="job_owner" value="{{ login.id }}" /> Assign to me</label>
+      <label><input type="checkbox" name="ad" value="{{ login.pk }}" /> Assign to me</label>
       {% endif %}
       {% endifequal %}      
       {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
@@ -57,7 +55,7 @@ form.edit-info .actions {
     <tr>
       <td></td>
       <td class="actions">
-        <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+        <a href="{{ doc.get_absolute_url }}">Back</a>
         <input type="submit" value="Save"/>
       </td>
     </tr>

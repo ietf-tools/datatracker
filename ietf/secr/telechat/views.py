@@ -14,7 +14,7 @@ from ietf.group.models import Group
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.idrfc.lastcall import request_last_call
-from ietf.idrfc.mails import email_owner, email_state_changed
+from ietf.idrfc.mails import email_ad, email_state_changed
 from ietf.idrfc.utils import add_document_comment
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem, WGAction
 from ietf.iesg.views import _agenda_data
@@ -291,7 +291,7 @@ def doc_detail(request, date, name):
                     doc.save()
                     
                     email_state_changed(request, doc, e.desc)
-                    email_owner(request, doc, doc.ad, login, e.desc)
+                    email_ad(request, doc, doc.ad, login, e.desc)
     
                     if state.slug == "lc-req":
                         request_last_call(request, doc)

@@ -9,23 +9,12 @@ from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
-from ietf.idtracker.models import *
 from ietf.ipr.search import iprs_from_docs, related_docs
-#from ietf.doc.models import *
 from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.person.models import Person
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 
 def email_state_changed(request, doc, text):
-    to = [x.strip() for x in doc.idinternal.state_change_notice_to.replace(';', ',').split(',')]
-    if to:
-        send_mail(request, to, None,
-              "ID Tracker State Update Notice: %s" % doc.file_tag(),
-              "idrfc/state_changed_email.txt",
-              dict(text=text,
-                   url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
-
-def email_state_changedREDESIGN(request, doc, text):
     to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
     if not to:
         return
@@ -37,25 +26,21 @@ def email_state_changedREDESIGN(request, doc, text):
               dict(text=text,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    email_state_changed = email_state_changedREDESIGN
-
 def email_stream_changed(request, doc, old_stream, new_stream, text=""):
     """Email the change text to the notify group and to the stream chairs"""
     to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
-    from ietf.group.models import Role as RedesignRole
 
     # These use comprehension to deal with conditions when there might be more than one chair listed for a stream
     if old_stream:
-        to.extend([x.person.formatted_email() for x in RedesignRole.objects.filter(group__acronym=old_stream.slug,name='chair')])
+        to.extend([x.person.formatted_email() for x in Role.objects.filter(group__acronym=old_stream.slug,name='chair')])
     if new_stream:
-        to.extend([x.person.formatted_email() for x in RedesignRole.objects.filter(group__acronym=new_stream.slug,name='chair')])
+        to.extend([x.person.formatted_email() for x in Role.objects.filter(group__acronym=new_stream.slug,name='chair')])
 
     if not to:
         return
     
     if not text:
-        text = u"Stream changed to <b>%s</b> from %s"% (new_stream,old_stream)
+        text = u"Stream changed to <b>%s</b> from %s" % (new_stream, old_stream)
     text = strip_tags(text)
 
     send_mail(request, to, None,
@@ -86,20 +71,7 @@ def email_authors(request, doc, subject, text):
 def html_to_text(html):
     return strip_tags(html.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("<br>", "\n"))
     
-def email_owner(request, doc, owner, changed_by, text, subject=None):
-    if not owner or not changed_by or owner == changed_by:
-        return
-
-    to = u"%s <%s>" % owner.person.email()
-    send_mail(request, to,
-              "DraftTracker Mail System <iesg-secretary@ietf.org>",
-              "%s updated by %s" % (doc.file_tag(), changed_by),
-              "idrfc/change_notice.txt",
-              dict(text=html_to_text(text),
-                   doc=doc,
-                   url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
-
-def email_adREDESIGN(request, doc, ad, changed_by, text, subject=None):
+def email_ad(request, doc, ad, changed_by, text, subject=None):
     if not ad or not changed_by or ad == changed_by:
         return
 
@@ -111,9 +83,6 @@ def email_adREDESIGN(request, doc, ad, changed_by, text, subject=None):
               dict(text=html_to_text(text),
                    doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    email_owner = email_adREDESIGN
 
 
 def generate_ballot_writeup(request, doc):
@@ -131,10 +100,6 @@ def generate_ballot_writeup(request, doc):
     return e
     
 def generate_last_call_announcement(request, doc):
-    pass
-
-def generate_last_call_announcementREDESIGN(request, doc):
-    
     expiration_date = date.today() + timedelta(days=14)
     cc = []
     if doc.group.type_id in ("individ", "area"):
@@ -177,18 +142,9 @@ def generate_last_call_announcementREDESIGN(request, doc):
     return e
     
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    generate_last_call_announcement = generate_last_call_announcementREDESIGN
-
-def generate_approval_mail(request, doc):
-    pass
-
-def generate_approval_mail_rfc_editor(request, doc):
-    pass
-
 DO_NOT_PUBLISH_IESG_STATES = ("nopubadw", "nopubanw")
 
-def generate_approval_mailREDESIGN(request, doc):
+def generate_approval_mail(request, doc):
     if doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES or doc.stream_id in ('ise','irtf'):
         mail = generate_approval_mail_rfc_editor(request, doc)
     else:
@@ -253,7 +209,7 @@ def generate_approval_mail_approved(request, doc):
                                  )
                             )
 
-def generate_approval_mail_rfc_editorREDESIGN(request, doc):
+def generate_approval_mail_rfc_editor(request, doc):
     disapproved = doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
 
@@ -281,10 +237,6 @@ def generate_approval_mail_rfc_editorREDESIGN(request, doc):
                                  )
                             )
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    generate_approval_mail = generate_approval_mailREDESIGN
-    generate_approval_mail_rfc_editor = generate_approval_mail_rfc_editorREDESIGN
-
 def generate_publication_request(request, doc):
     group_description = ""
     if doc.group and doc.group.acronym != "none":
@@ -310,18 +262,7 @@ def generate_publication_request(request, doc):
                                  )
                             )
 
-def send_last_call_request(request, doc, ballot):
-    to = "iesg-secretary@ietf.org"
-    frm = '"DraftTracker Mail System" <iesg-secretary@ietf.org>'
-    docs = [d.document() for d in doc.idinternal.ballot_set()]
-    
-    send_mail(request, to, frm,
-              "Last Call: %s" % doc.file_tag(),
-              "idrfc/last_call_request.txt",
-              dict(docs=docs,
-                   doc_url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
-
-def send_last_call_requestREDESIGN(request, doc):
+def send_last_call_request(request, doc):
     to = "iesg-secretary@ietf.org"
     frm = '"DraftTracker Mail System" <iesg-secretary@ietf.org>'
     
@@ -331,20 +272,7 @@ def send_last_call_requestREDESIGN(request, doc):
               dict(docs=[doc],
                    doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    send_last_call_request = send_last_call_requestREDESIGN
-
 def email_resurrect_requested(request, doc, by):
-    to = "I-D Administrator <internet-drafts@ietf.org>"
-    frm = u"%s <%s>" % by.person.email()
-    send_mail(request, to, frm,
-              "I-D Resurrection Request",
-              "idrfc/resurrect_request_email.txt",
-              dict(doc=doc,
-                   by=frm,
-                   url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
-
-def email_resurrect_requestedREDESIGN(request, doc, by):
     to = "I-D Administrator <internet-drafts@ietf.org>"
 
     if by.role_set.filter(name="secr", group__acronym="secretariat"):
@@ -360,20 +288,7 @@ def email_resurrect_requestedREDESIGN(request, doc, by):
                    by=frm,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    email_resurrect_requested = email_resurrect_requestedREDESIGN
-
-def email_resurrection_completed(request, doc):
-    to = u"%s <%s>" % doc.idinternal.resurrect_requested_by.person.email()
-    frm = "I-D Administrator <internet-drafts-reply@ietf.org>"
-    send_mail(request, to, frm,
-              "I-D Resurrection Completed - %s" % doc.file_tag(),
-              "idrfc/resurrect_completed_email.txt",
-              dict(doc=doc,
-                   by=frm,
-                   url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
-
-def email_resurrection_completedREDESIGN(request, doc, requester):
+def email_resurrection_completed(request, doc, requester):
     if requester.role_set.filter(name="secr", group__acronym="secretariat"):
         e = requester.role_email("secr", group="secretariat")
     else:
@@ -388,9 +303,6 @@ def email_resurrection_completedREDESIGN(request, doc, requester):
                    by=frm,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    email_resurrection_completed = email_resurrection_completedREDESIGN
-
 def email_ballot_deferred(request, doc, by, telechat_date):
     to = "iesg@ietf.org"
     frm = "DraftTracker Mail System <iesg-secretary@ietf.org>"
@@ -401,10 +313,7 @@ def email_ballot_deferred(request, doc, by, telechat_date):
                    by=by,
                    telechat_date=telechat_date))
 
-def generate_issue_ballot_mail(request, doc):
-    pass
-
-def generate_issue_ballot_mailREDESIGN(request, doc, ballot):
+def generate_issue_ballot_mail(request, doc, ballot):
     active_ads = Person.objects.filter(role__name="ad", role__group__state="active").distinct()
     
     positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ballot=ballot).order_by("-time", '-id').select_related('ad')
@@ -456,7 +365,7 @@ def generate_issue_ballot_mailREDESIGN(request, doc, ballot):
     e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     ballot_writeup = e.text if e else ""
 
-    return render_to_string("idrfc/issue_ballot_mailREDESIGN.txt",
+    return render_to_string("idrfc/issue_ballot_mail.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  active_ad_positions=active_ad_positions,
@@ -467,9 +376,6 @@ def generate_issue_ballot_mailREDESIGN(request, doc, ballot):
                                  ballot_writeup=ballot_writeup,
                                  )
                             )
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    generate_issue_ballot_mail = generate_issue_ballot_mailREDESIGN
 
 def email_iana(request, doc, to, msg):
     # fix up message and send it with extra info on doc in headers
@@ -494,19 +400,6 @@ def extra_automation_headers(doc):
     return extra
 
 def email_last_call_expired(doc):
-    text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.idinternal.cur_state.state
-    
-    send_mail(None,
-              "iesg@ietf.org",
-              "DraftTracker Mail System <iesg-secretary@ietf.org>",
-              "Last Call Expired: %s" % doc.file_tag(),
-              "idrfc/change_notice.txt",
-              dict(text=text,
-                   doc=doc,
-                   url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()),
-              cc="iesg-secretary@ietf.org")
-
-def email_last_call_expiredREDESIGN(doc):
     text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.get_state("draft-iesg").name
     
     to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
@@ -521,7 +414,3 @@ def email_last_call_expiredREDESIGN(doc):
                    doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc="iesg-secretary@ietf.org")
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    email_last_call_expired = email_last_call_expiredREDESIGN
-

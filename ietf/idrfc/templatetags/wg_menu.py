@@ -33,7 +33,8 @@
 from django import template
 from django.core.cache import cache
 from django.template import loader
-from ietf.idtracker.models import Area
+
+from ietf.group.models import Group
 
 register = template.Library()
 
@@ -42,26 +43,27 @@ area_short_names = {
     'rai':'RAI'
     }
 
-def get_short_name(area):
-    if area.area_acronym.acronym in area_short_names:
-        return area_short_names[area.area_acronym.acronym]
-    else:
-        area_name = area.area_acronym.name
-        if area_name.endswith(" Area"):
-            area_name = area_name[:-5]
-        return area_name
-
 class WgMenuNode(template.Node):
-    def __init__(self):
-        pass
     def render(self, context):
         x = cache.get('idrfc_wgmenu')
         if x:
             return x
-        areas = [{'area':x, 'short_name':get_short_name(x)} for x in Area.active_areas()]
-        x = loader.render_to_string('base_wgmenu.html', {'areas':areas})
+
+        areas = Group.objects.filter(type="area", state="active").order_by('acronym')
+        groups = Group.objects.filter(type="wg", state="active", parent__in=areas).order_by("acronym")
+
+        for a in areas:
+            a.short_area_name = area_short_names.get(a.acronym) or a.name
+            if a.short_area_name.endswith(" Area"):
+                a.short_area_name = a.short_area_name[:-len(" Area")]
+
+            a.active_groups = [g for g in groups if g.parent_id == a.id]
+
+        areas = [a for a in areas if a.active_groups]
+
+        res = loader.render_to_string('base_wgmenu.html', {'areas':areas})
         cache.set('idrfc_wgmenu', x, 30*60)
-        return x
+        return res
     
 def do_wg_menu(parser, token):
     return WgMenuNode()

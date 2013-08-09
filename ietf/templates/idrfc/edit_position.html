@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Change position for {{ ad }} on {{ doc }}{% endblock %}
+{% block title %}Change position for {{ ad.plain_name }} on {{ doc }}{% endblock %}
 
 {% block morecss %}
+div.ballot-deferred {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
 form.position-form .position ul {
   padding: 0;
   margin: 0;
@@ -18,60 +22,71 @@ form.position-form .last-edited {
 form.position-form .discuss-text {
   padding-top: 20px
 }
-form.position-form #id_discuss_text,
-form.position-form #id_comment_text {
+form.position-form #id_discuss,
+form.position-form #id_comment {
   width: 700px;
   height: 250px;
 }
 form.position-form .comment-text {
   margin-top: 20px;
 }
+div.question {
+   font-size: 173%;
+   padding-left: 5px;
+   padding-bottom: 10px;
+}
 {% endblock %}
 
 {% block content %}
-<h1>Change position for {{ ad }} on {{ doc }}</h1>
+<h1>Change position for {{ ad.plain_name }} on {{ doc }}</h1>
 
-    {% if ballot.was_deferred %}
-      <div style="margin-top:8px; margin-bottom:8px;">Ballot deferred by {{ ballot.deferred_by }} on {{ ballot.deferred_date }}.</div>
-    {% endif %}
+<div class="question">{{ ballot.ballot_type.question }}</div>
+
+{% if ballot_deferred %}
+<div class="ballot-deferred">Ballot deferred by {{ ballot_deferred.by }} on {{ ballot_deferred.time|date:"Y-m-d" }}.</div>
+{% endif %}
 
 <form class="position-form" action="" method="POST">
-
-<div>
+  <div>
   <span class="position">{{ form.position }}</span>
   <span class="actions">
     <input type="submit" name="send_mail" value="Save and send email"/>
     <input type="submit" value="Save"/>
-    {% if ballot.was_deferred %}<input type="submit" name="Undefer" value="Undefer"/>{% else %}<input type="submit" name="Defer" value="Defer"/>{% endif %}
+    {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
+    {% if ballot_deferred %}<input type="submit" name="Undefer" value="Undefer"/>{% else %}<input type="submit" name="Defer" value="Defer"/>{% endif %}
+    {% endif %}
   </span>
-</div>
+  </div>
 
   <div style="clear:left"></div>
-
-  <div class="discuss-widgets">
+  
+  <div class="discuss-widgets"{% if not show_discuss_text %} style="display:none"{% endif %}>
   <div class="discuss-text">
-    {{ form.discuss_text.label_tag }}:
-    {% if discuss %}<span class="last-edited">(last edited {{ discuss.date }})</span>{% endif %}
+    {{ form.discuss.label_tag }}:
+    {% if old_pos and old_pos.discuss_time %}<span class="last-edited">(last edited {{ old_pos.discuss_time }})</span>{% endif %}
   </div>
-  {{ form.discuss_text.errors }}
-  {{ form.discuss_text }}
+  {{ form.discuss.errors }}
+  {{ form.discuss }}
   </div>
   
   <div class="comment-text">
-    {{ form.comment_text.label_tag }}:
-    {% if comment %}<span class="last-edited">(last edited {{ comment.date }}){% endif %}</span>
+    {{ form.comment.label_tag }}:
+    {% if old_pos and old_pos.comment_time %}<span class="last-edited">(last edited {{ old_pos.comment_time }}){% endif %}</span>
   </div>
-  {{ form.comment_text }}
+  {{ form.comment }}
 
   <div class="actions">
     <a href="{{ return_to_url }}">Back</a>
   </div>
-
-   {{ form.return_to_url }}
   
+  {{ form.return_to_url }}
+
 </form>
 {% endblock %}
 
 {% block content_end %}
+<script>
+  var blockingPositions = {{ blocking_positions|safe }};
+</script>
 <script type="text/javascript" src="/js/doc-edit-position.js"></script>
 {% endblock %}

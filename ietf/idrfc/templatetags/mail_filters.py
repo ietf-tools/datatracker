@@ -1,7 +1,6 @@
 from django import template
 from django.core.cache import cache
 from django.template import loader
-from ietf.idtracker.models import Area
 
 register = template.Library()
 
