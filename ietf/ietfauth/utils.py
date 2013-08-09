@@ -116,5 +116,5 @@ def is_authorized_in_doc_stream(user, doc):
     if not group_req:
         return False
 
-    return bool(Role.objects.filter(Q(name__in=("chair", "delegate", "auth"), person__user=user) & group_req))
+    return bool(Role.objects.filter(Q(name__in=("chair", "secr", "delegate", "auth"), person__user=user) & group_req))
 
