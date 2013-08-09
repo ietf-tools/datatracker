@@ -48,14 +48,9 @@ from ietf.group.models import *
 from ietf.person.models import *
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, login_testing_unauthorized
+from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
-
-class IdRfcUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        #self.doTestUrls(__file__)
-        self.doTestUrls(os.path.join(os.path.dirname(os.path.abspath(__file__)), "testurlREDESIGN.list"))
 
 
 class ChangeStateTestCase(django.test.TestCase):
