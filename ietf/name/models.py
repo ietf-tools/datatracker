@@ -57,6 +57,7 @@ class TimeSlotTypeName(NameModel):
     """Session, Break, Registration"""
 class ConstraintName(NameModel):
     """Conflict"""
+    penalty = models.IntegerField(default=0, help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)")
 class LiaisonStatementPurposeName(NameModel):
     """For action, For comment, For information, In response, Other"""
 class NomineePositionState(NameModel):
