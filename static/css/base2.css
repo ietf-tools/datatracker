@@ -354,6 +354,16 @@ div.info-message-error { border: 1px solid red; background-color: #ffeebb; paddi
     font-size: 12px;
 }
 
+.nomcom-menu {
+	text-align: center;
+}
+.nomcom-edit {
+	font-style: italic;
+	font-size: 90%;
+	text-align: center;
+	margin-top: 0.5em;
+}
+
 span.fieldRequired {
     color: red;
 }
