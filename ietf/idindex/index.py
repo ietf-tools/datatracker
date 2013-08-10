@@ -207,7 +207,7 @@ def active_drafts_index_by_group(extra_values=()):
 
     active_state = State.objects.get(type="draft", slug="active")
 
-    groups_dict = dict((g.id, g) for g in Group.objects.all())
+    groups_dict = dict((g.id, g) for g in Group.objects.filter(type__slug="wg"))
 
     extracted_values = ("name", "rev", "title", "group_id") + extra_values
 
