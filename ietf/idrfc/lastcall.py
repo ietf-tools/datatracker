@@ -3,13 +3,15 @@
 import datetime
 
 from django.conf import settings
+from django.db.models import Q
 
 from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
-
 from ietf.doc.models import *
 from ietf.person.models import Person
+
+import debug
 
 def request_last_call(request, doc):
     try:
@@ -46,7 +48,8 @@ def get_expired_last_calls():
 
 def get_expired_last_callsREDESIGN():
     today = datetime.date.today()
-    for d in Document.objects.filter(states__type="draft-iesg", states__slug="lc"):
+    for d in Document.objects.filter(Q(states__type="draft-iesg", states__slug="lc")
+                                    | Q(states__type="statchg", states__slug="in-lc")):
         e = d.latest_event(LastCallDocEvent, type="sent_last_call")
         if e and e.expires.date() <= today:
             yield d
@@ -70,17 +73,22 @@ def expire_last_call(doc):
     email_last_call_expired(doc)
 
 def expire_last_callREDESIGN(doc):
-    state = State.objects.get(used=True, type="draft-iesg", slug="writeupw")
-
-    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
-    if e and "Relevant content can frequently be found in the abstract" not in e.text:
-        # if boiler-plate text has been removed, we assume the
-        # write-up has been written
-        state = State.objects.get(used=True, type="draft-iesg", slug="goaheadw")
+    if doc.type_id == 'draft':
+        state = State.objects.get(used=True, type="draft-iesg", slug="writeupw")
+        e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
+        if e and "Relevant content can frequently be found in the abstract" not in e.text:
+            # if boiler-plate text has been removed, we assume the
+            # write-up has been written
+            state = State.objects.get(used=True, type="draft-iesg", slug="goaheadw")
+        prev = doc.get_state("draft-iesg")
+    elif doc.type_id == 'statchg':
+        state = State.objects.get(used=True, type="statchg", slug="goahead")
+        prev = doc.get_state("statchg")
+    else:
+        raise ValueError("Unexpected document type to expire_last_call(): %s" % doc.type)
 
     save_document_in_history(doc)
 
-    prev = doc.get_state("draft-iesg")
     doc.set_state(state)
 
     prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
@@ -89,7 +97,7 @@ def expire_last_callREDESIGN(doc):
         doc.tags.remove(prev_tag)
 
     e = log_state_changed(None, doc, Person.objects.get(name="(System)"), prev, prev_tag)
-                    
+
     doc.time = e.time
     doc.save()
 
