@@ -5,7 +5,7 @@
 	    <table cellpadding="1" cellspacing="0" border="0">
 
 		  <tr><td colspan="3">Total number of IPR disclosures found: {{ iprs|length }} </td></tr>
-		  {% for ipr in iprs|dictsort:"submitted_date" %}
+		  {% for ipr in iprs %}
 		  <tr valign="top" bgcolor="#dadada">
 		     <td width="100">{{ ipr.submitted_date }}</td>
 		     <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
@@ -18,7 +18,7 @@
 		  <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
 		     <tr >
 			<td colspan="3">
-			   Search result on {{ doc|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.title|escape }}"{% ifnotequal doc first %}{% if doc.related %}, {{ doc.relation }} {{ doc.related|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.title }}"{% endif %}
+			   Search result on {{ doc.name|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.document.title|escape }}"{% ifnotequal doc first %}{% if doc.related %}, that was {{ doc.relation|lower }} {{ doc.related.source|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.source.title }}"{% endif %}
 			   {% endifnotequal %}
 			</td>
 		     </tr>
@@ -34,7 +34,7 @@
 		     <tr>
 			<td></td>
 			<td colspan="2">
-			      No IPR disclosures have been submitted directly on <i>{{ doc|rfcspace|lstrip:"0" }}</i>{% if iprs %},
+			      No IPR disclosures have been submitted directly on <i>{{ doc.name|rfcspace|lstrip:"0" }}</i>{% if iprs %},
 			      but there are disclosures on {% ifequal docs|length 2 %}a related document{% else %}related documents{% endifequal %}, listed on this page{% endif %}.
 			   </b>
 			</td>
