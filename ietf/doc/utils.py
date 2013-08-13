@@ -3,9 +3,7 @@ import math
 
 from django.conf import settings
 
-# Should this move from idrfc to doc?
-from ietf.idrfc import markup_txt
-
+from ietf.utils import markup_txt
 from ietf.doc.models import *
 
 def get_state_types(doc):
