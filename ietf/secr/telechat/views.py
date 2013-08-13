@@ -15,7 +15,6 @@ from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.idrfc.lastcall import request_last_call
 from ietf.idrfc.mails import email_ad, email_state_changed
-from ietf.idrfc.utils import add_document_comment
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem, WGAction
 from ietf.iesg.views import _agenda_data
 
