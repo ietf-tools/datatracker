@@ -4,11 +4,10 @@ import datetime
 
 from django.conf import settings
 
-from ietf.idrfc.mails import *
-from ietf.idrfc.utils import *
-
 from ietf.doc.models import *
 from ietf.person.models import Person
+from ietf.doc.utils import log_state_changed
+from ietf.idrfc.mails import *
 
 def request_last_call(request, doc):
     if not doc.latest_event(type="changed_ballot_writeup_text"):
@@ -45,7 +44,7 @@ def expire_last_call(doc):
 
     save_document_in_history(doc)
 
-    prev = doc.get_state("draft-iesg")
+    prev_state = doc.friendly_state()
     doc.set_state(state)
 
     prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
@@ -53,7 +52,7 @@ def expire_last_call(doc):
     if prev_tag:
         doc.tags.remove(prev_tag)
 
-    e = log_state_changed(None, doc, Person.objects.get(name="(System)"), prev, prev_tag)
+    e = log_state_changed(None, doc, Person.objects.get(name="(System)"), doc.friendly_state(), prev_state)
                     
     doc.time = e.time
     doc.save()

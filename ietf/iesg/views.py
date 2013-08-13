@@ -49,7 +49,7 @@ from django.utils import simplejson as json
 from django import forms
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
-from ietf.idrfc.utils import update_telechat
+from ietf.doc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required, role_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
 from ietf.ipr.models import IprDocAlias 

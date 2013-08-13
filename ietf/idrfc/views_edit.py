@@ -16,11 +16,10 @@ from django.forms.util import ErrorList
 from django.contrib.auth.decorators import login_required
 
 from ietf.utils.mail import send_mail_text, send_mail_message
-from ietf.ietfauth.decorators import has_role, role_required
-from ietf.ietfauth.utils import user_is_person
+from ietf.ietfauth.decorators import role_required
+from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
 from ietf.iesg.models import TelechatDate
 from ietf.idrfc.mails import *
-from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.person.forms import EmailsField
@@ -36,7 +35,6 @@ from ietf.doc.utils import *
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
 from ietf.person.models import Person, Email
 from ietf.message.models import Message
-from ietf.idrfc.utils import log_state_changed
 
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
@@ -53,7 +51,7 @@ class ChangeStateForm(forms.Form):
     
         # tag handling is a bit awkward since the UI still works
         # as if IESG tags are a substate
-        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
         prev_tag = prev_tag[0] if prev_tag else None
 
         if state == prev and tag == prev_tag:
@@ -76,6 +74,7 @@ def change_state(request, name):
         if form.is_valid():
             next_state = form.cleaned_data['state']
             prev_state = doc.get_state("draft-iesg")
+            prev_friendly_state = doc.friendly_state()
 
             tag = form.cleaned_data['substate']
             comment = form.cleaned_data['comment'].strip()
@@ -96,7 +95,7 @@ def change_state(request, name):
                 if tag:
                     doc.tags.add(tag)
 
-                e = log_state_changed(request, doc, login, prev_state, prev_tag)
+                e = log_state_changed(request, doc, login, doc.friendly_state(), prev_friendly_state)
 
                 if comment:
                     c = DocEvent(type="added_comment")

@@ -4,13 +4,13 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.db.models import Q
 
-import datetime, os, shutil, glob, re, itertools
+import datetime, os, shutil, glob, re
 
 from ietf.utils.mail import send_mail, send_mail_subj
-from ietf.idrfc.utils import log_state_changed
 from ietf.doc.models import Document, DocEvent, State, save_document_in_history, IESG_SUBSTATE_TAGS
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting
+from ietf.doc.utils import log_state_changed
 
 def expirable_draft(draft):
     """Return whether draft is in an expirable state or not. This is
@@ -128,14 +128,14 @@ def expire_draft(doc):
     save_document_in_history(doc)
     if doc.latest_event(type='started_iesg_process'):
         dead_state = State.objects.get(used=True, type="draft-iesg", slug="dead")
-        prev = doc.get_state("draft-iesg")
+        prev_state = doc.friendly_state()
         prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
         prev_tag = prev_tag[0] if prev_tag else None
-        if prev != dead_state:
+        if doc.get_state("draft-iesg") != dead_state:
             doc.set_state(dead_state)
             if prev_tag:
                 doc.tags.remove(prev_tag)
-            log_state_changed(None, doc, system, prev, prev_tag)
+            log_state_changed(None, doc, system, doc.friendly_state(), prev_state)
 
         e = DocEvent(doc=doc, by=system)
         e.type = "expired_document"

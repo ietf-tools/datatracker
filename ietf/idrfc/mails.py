@@ -1,7 +1,6 @@
 # generation of mails 
 
-import textwrap
-from datetime import datetime, date, time, timedelta
+import textwrap, datetime
 
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
@@ -100,11 +99,11 @@ def generate_ballot_writeup(request, doc):
     return e
     
 def generate_last_call_announcement(request, doc):
-    expiration_date = date.today() + timedelta(days=14)
+    expiration_date = datetime.date.today() + datetime.timedelta(days=14)
     cc = []
     if doc.group.type_id in ("individ", "area"):
         group = "an individual submitter"
-        expiration_date += timedelta(days=14)
+        expiration_date += datetime.timedelta(days=14)
     else:
         group = "the %s WG (%s)" % (doc.group.name, doc.group.acronym)
         if doc.group.list_email:

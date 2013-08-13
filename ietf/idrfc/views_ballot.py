@@ -21,7 +21,6 @@ from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import IprDetail
 from ietf.ipr.search import iprs_from_docs
 from ietf.idrfc.mails import *
-from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
 from ietf.doc.utils import *
@@ -30,9 +29,6 @@ from ietf.name.models import BallotPositionName
 
 from ietf.message.utils import infer_message
 from ietf.person.models import Person
-
-from ietf.doc.utils import log_state_changed as docutil_log_state_changed
-from ietf.idrfc.utils import log_state_changed as idrfcutil_log_state_changed
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -57,14 +53,14 @@ def do_undefer_ballot(request, doc):
     prev_state = doc.friendly_state()
     if doc.type_id == 'draft':
         doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='iesg-eva'))
-        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
         prev_tag = prev_tag[0] if prev_tag else None
         if prev_tag:
             doc.tags.remove(prev_tag)
     elif doc.type_id == 'conflrev':
         doc.set_state(State.objects.get(used=True, type='conflrev',slug='iesgeval'))
 
-    e = docutil_log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
+    e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
     
     doc.time = e.time
     doc.save()
@@ -368,7 +364,7 @@ def defer_ballot(request, name):
         elif doc.type_id == 'conflrev':
             doc.set_state(State.objects.get(used=True, type='conflrev', slug='defer'))
 
-        e = docutil_log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
+        e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
         
         doc.time = e.time
         doc.save()
@@ -450,7 +446,7 @@ def lastcalltext(request, name):
                 if "send_last_call_request" in request.POST:
                     save_document_in_history(doc)
 
-                    prev = doc.get_state("draft-iesg")
+                    prev_state = doc.friendly_state()
                     doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='lc-req'))
 
                     prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
@@ -458,7 +454,7 @@ def lastcalltext(request, name):
                     if prev_tag:
                         doc.tags.remove(prev_tag)
 
-                    e = idrfcutil_log_state_changed(request, doc, login, prev, prev_tag)
+                    e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
                     
                     doc.time = e.time
                     doc.save()
@@ -669,6 +665,7 @@ def approve_ballot(request, name):
         else:
             new_state = State.objects.get(used=True, type="draft-iesg", slug="ann")
 
+        prev_friendly_state = doc.friendly_state()
         prev_state = doc.get_state("draft-iesg")
         if new_state.slug == "ann" and new_state.slug != prev_state.slug and not request.REQUEST.get("skiprfceditorpost"):
             # start by notifying the RFC Editor
@@ -705,7 +702,7 @@ def approve_ballot(request, name):
         
         change_description = e.desc + " and state has been changed to %s" % doc.get_state("draft-iesg").name
         
-        e = idrfcutil_log_state_changed(request, doc, login, prev_state, prev_tag)
+        e = log_state_changed(request, doc, login, doc.friendly_state(), prev_friendly_state)
                     
         doc.time = e.time
         doc.save()
@@ -770,24 +767,21 @@ def make_last_call(request, name):
 
             save_document_in_history(doc)
 
+            prev_state = doc.get_state("draft-iesg")
             if doc.type.slug == 'draft':
-
-                prev = doc.get_state("draft-iesg")
                 doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='lc'))
 
-                prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+                prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
                 prev_tag = prev_tag[0] if prev_tag else None
                 if prev_tag:
                     doc.tags.remove(prev_tag)
 
-                e = idrfcutil_log_state_changed(request, doc, login, prev, prev_tag)
+                e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
                 change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, doc.get_state("draft-iesg").name)
 
             elif doc.type.slug == 'statchg':
-
-                prev = doc.friendly_state()
                 doc.set_state(State.objects.get(used=True, type="statchg", slug='in-lc'))
-                e = docutil_log_state_changed(request, doc, login, doc.friendly_state(), prev)
+                e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
                 change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, doc.friendly_state())
                     
             doc.time = e.time

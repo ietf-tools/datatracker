@@ -8,8 +8,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from ietf.idrfc.utils import update_telechat
-from ietf.doc.utils import log_state_changed
+from ietf.doc.utils import log_state_changed, update_telechat
 from ietf.doc.models import save_document_in_history
 
 from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_document_content
