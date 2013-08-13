@@ -1425,7 +1425,6 @@ class IndividualInfoFormsTestCase(django.test.TestCase):
 
         # direct edit
         r = self.client.post(url,dict(content='here is a new writeup',submit_response="1"))
-        print r.content
         self.assertEquals(r.status_code,302)
         self.doc = Document.objects.get(name=self.docname)
         self.assertTrue(self.doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup").text.startswith('here is a new writeup'))
