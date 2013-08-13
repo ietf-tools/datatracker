@@ -94,6 +94,8 @@ class SearchForm(forms.Form):
                     q['by'] = None
             if q['by'] == 'state' and not (q.get("state") or q.get('substate')):
                 q['by'] = None
+        else:
+            q['by'] = None
         # Reset other fields
         for k in ('author','group', 'area', 'ad'):
             if k != q['by']:
