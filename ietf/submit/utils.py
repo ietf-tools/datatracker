@@ -47,53 +47,6 @@ def request_full_url(request, submission):
 
 
 def perform_post(request, submission):
-    group_id = submission.group_acronym and submission.group_acronym.pk or NONE_WG
-    state_change_msg = ''
-    try:
-        draft = InternetDraft.objects.get(filename=submission.filename)
-        draft.title = submission.id_document_name
-        draft.group_id = group_id
-        draft.filename = submission.filename
-        draft.revision = submission.revision
-        draft.revision_date = submission.submission_date
-        draft.file_type = submission.file_type
-        draft.txt_page_count = submission.txt_page_count
-        draft.last_modified_date = datetime.date.today()
-        draft.abstract = submission.abstract
-        draft.status_id = 1  # Active
-        draft.expired_tombstone = 0
-        draft.save()
-    except InternetDraft.DoesNotExist:
-        draft = InternetDraft.objects.create(
-            title=submission.id_document_name,
-            group_id=group_id,
-            filename=submission.filename,
-            revision=submission.revision,
-            revision_date=submission.submission_date,
-            file_type=submission.file_type,
-            txt_page_count=submission.txt_page_count,
-            start_date=datetime.date.today(),
-            last_modified_date=datetime.date.today(),
-            abstract=submission.abstract,
-            status_id=1,  # Active
-            intended_status_id=8,  # None
-        )
-    update_authors(draft, submission)
-    if draft.idinternal:
-        from ietf.idrfc.utils import add_document_comment
-        add_document_comment(None, draft, "New version available")
-        if draft.idinternal.cur_sub_state_id == 5 and draft.idinternal.rfc_flag == 0:  # Substate 5 Revised ID Needed
-            draft.idinternal.prev_sub_state_id = draft.idinternal.cur_sub_state_id
-            draft.idinternal.cur_sub_state_id = 2  # Substate 2 AD Followup
-            draft.idinternal.save()
-            state_change_msg = "Sub state has been changed to AD Follow up from New Id Needed"
-            add_document_comment(None, draft, state_change_msg)
-    move_docs(submission)
-    submission.status_id = POSTED
-    send_announcements(submission, draft, state_change_msg)
-    submission.save()
-
-def perform_postREDESIGN(request, submission):
     system = Person.objects.get(name="(System)")
 
     group_id = submission.group_acronym_id or NONE_WG
@@ -188,9 +141,6 @@ def perform_postREDESIGN(request, submission):
     announce_to_authors(request, submission)
 
     submission.save()
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    perform_post = perform_postREDESIGN
 
 def send_announcements(submission, draft, state_change_msg):
     announce_to_lists(request, submission)
