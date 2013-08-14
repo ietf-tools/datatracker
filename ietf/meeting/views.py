@@ -260,7 +260,7 @@ def session_agenda(request, num, session):
 
     if d:
         agenda = d[0]
-        content = read_agenda_file(num, agenda)
+        content = read_agenda_file(num, agenda) or ""
         _, ext = os.path.splitext(agenda.external_url)
         ext = ext.lstrip(".").lower()
 
