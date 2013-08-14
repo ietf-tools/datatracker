@@ -7,7 +7,7 @@ from django.conf import settings
 from ietf.doc.models import *
 from ietf.person.models import Person
 from ietf.doc.utils import log_state_changed
-from ietf.idrfc.mails import *
+from ietf.doc.mails import *
 
 def request_last_call(request, doc):
     if not doc.latest_event(type="changed_ballot_writeup_text"):

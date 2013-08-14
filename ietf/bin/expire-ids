@@ -9,7 +9,7 @@ management.setup_environ(settings)
 
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
-from ietf.idrfc.expire import *
+from ietf.doc.expire import *
 
 if not in_draft_expire_freeze():
     for doc in get_expired_drafts():

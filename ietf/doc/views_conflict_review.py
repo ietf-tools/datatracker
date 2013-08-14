@@ -15,7 +15,7 @@ from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_do
 from ietf.ietfauth.decorators import has_role, role_required
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail_preformatted
-from ietf.idrfc.mails import email_iana
+from ietf.doc.mails import email_iana
 
 from ietf.doc.models import State, Document, DocHistory, DocAlias
 from ietf.doc.models import DocEvent, NewRevisionDocEvent, WriteupDocEvent, TelechatDocEvent, BallotDocEvent, BallotPositionDocEvent

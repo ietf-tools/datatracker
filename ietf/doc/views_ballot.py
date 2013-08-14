@@ -20,8 +20,8 @@ from ietf.ietfauth.decorators import has_role, role_required
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import IprDetail
 from ietf.ipr.search import iprs_from_docs
-from ietf.idrfc.mails import *
-from ietf.idrfc.lastcall import request_last_call
+from ietf.doc.mails import *
+from ietf.doc.lastcall import request_last_call
 
 from ietf.doc.utils import *
 from ietf.doc.models import *

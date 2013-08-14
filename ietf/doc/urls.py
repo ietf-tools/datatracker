@@ -31,8 +31,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django.conf.urls.defaults import patterns, url, include
-from ietf.idrfc import views_search, views_edit, views_ballot, views
 from ietf.doc.models import State
+from ietf.doc import views_search, views_draft, views_ballot
 from ietf.doc import views_status_change
 from ietf.doc import views_doc
 
@@ -65,23 +65,23 @@ urlpatterns = patterns('',
     (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/(?P<ballot_id>[0-9]+)/$', views_doc.ballot_popup),
     #(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot.json$', views_doc.ballot_json), # legacy view
 
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_edit.change_state, name='doc_change_state'), # IESG state
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/(?P<state_type>iana-action|iana-review)/$', views_edit.change_iana_state, name='doc_change_iana_state'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/info/$', views_edit.edit_info, name='doc_edit_info'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/requestresurrect/$', views_edit.request_resurrect, name='doc_request_resurrect'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/resurrect/$', views_edit.resurrect, name='doc_resurrect'),                       
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/addcomment/$', views_edit.add_comment, name='doc_add_comment'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_draft.change_state, name='doc_change_state'), # IESG state
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/(?P<state_type>iana-action|iana-review)/$', views_draft.change_iana_state, name='doc_change_iana_state'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/info/$', views_draft.edit_info, name='doc_edit_info'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/requestresurrect/$', views_draft.request_resurrect, name='doc_request_resurrect'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/resurrect/$', views_draft.resurrect, name='doc_resurrect'),                       
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/addcomment/$', views_draft.add_comment, name='doc_add_comment'),
 
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/stream/$', views_edit.change_stream, name='doc_change_stream'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/notify/$', views_edit.edit_notices, name='doc_change_notify'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/status/$', views_edit.change_intention, name='doc_change_intended_status'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/telechat/$', views_edit.telechat_date, name='doc_change_telechat_date'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/iesgnote/$', views_edit.edit_iesg_note, name='doc_change_iesg_note'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/ad/$', views_edit.edit_ad, name='doc_change_ad'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/consensus/$', views_edit.edit_consensus, name='doc_edit_consensus'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/shepherd/$', views_edit.edit_shepherd, name='doc_edit_shepherd'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/shepherdwriteup/$', views_edit.edit_shepherd_writeup, name='doc_edit_shepherd_writeup'),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/requestpublication/$', views_edit.request_publication, name='doc_request_publication'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/stream/$', views_draft.change_stream, name='doc_change_stream'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/notify/$', views_draft.edit_notices, name='doc_change_notify'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/status/$', views_draft.change_intention, name='doc_change_intended_status'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/telechat/$', views_draft.telechat_date, name='doc_change_telechat_date'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/iesgnote/$', views_draft.edit_iesg_note, name='doc_change_iesg_note'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/ad/$', views_draft.edit_ad, name='doc_change_ad'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/consensus/$', views_draft.edit_consensus, name='doc_edit_consensus'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/shepherd/$', views_draft.edit_shepherd, name='doc_edit_shepherd'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/shepherdwriteup/$', views_draft.edit_shepherd_writeup, name='doc_edit_shepherd_writeup'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/requestpublication/$', views_draft.request_publication, name='doc_request_publication'),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/clearballot/$', views_ballot.clear_ballot, name='doc_clear_ballot'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/deferballot/$', views_ballot.defer_ballot, name='doc_defer_ballot'),

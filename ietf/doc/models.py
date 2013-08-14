@@ -340,7 +340,6 @@ class Document(DocumentInfo):
             iesg_state = self.get_state("draft-iesg")
             iesg_state_summary = None
             if iesg_state:
-                # This knowledge about which tags are reportable IESG substate tags is duplicated in idrfc
                 iesg_substate = self.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
                 # There really shouldn't be more than one tag in iesg_substate, but this will do something sort-of-sensible if there is
                 iesg_state_summary = iesg_state.name

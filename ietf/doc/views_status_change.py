@@ -23,9 +23,8 @@ from ietf.group.models import Group
 from ietf.name.models import DocRelationshipName, StdLevelName
 
 from ietf.doc.forms import TelechatForm, AdForm, NotifyForm
-
-from ietf.idrfc.views_ballot import LastCallTextForm
-from ietf.idrfc.lastcall import request_last_call
+from ietf.doc.views_ballot import LastCallTextForm
+from ietf.doc.lastcall import request_last_call
 
 class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)

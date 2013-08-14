@@ -84,7 +84,7 @@ def render_ballot_icon(user, doc):
 
     edit_position_url = ""
     if has_role(user, "Area Director"):
-        edit_position_url = urlreverse('ietf.idrfc.views_ballot.edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk))
+        edit_position_url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk))
 
     title = "IESG positions (click to show more%s)" % (", right-click to edit position" if edit_position_url else "")
 

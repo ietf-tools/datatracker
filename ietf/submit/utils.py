@@ -116,7 +116,7 @@ def perform_post(request, submission):
 
     # clean up old files
     if prev_rev != draft.rev:
-        from ietf.idrfc.expire import move_draft_files_to_archive
+        from ietf.doc.expire import move_draft_files_to_archive
         move_draft_files_to_archive(draft, prev_rev)
 
     # automatic state changes

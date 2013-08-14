@@ -38,7 +38,7 @@ from django.http import HttpResponse
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from ietf.idtracker.models import Area, IETFWG
-from ietf.idrfc.views_search import SearchForm, retrieve_search_results
+from ietf.doc.views_search import SearchForm, retrieve_search_results
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
 from ietf.ipr.models import IprDetail
 from ietf.group.models import Group

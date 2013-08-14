@@ -19,8 +19,8 @@ from ietf.utils.mail import send_mail_text, send_mail_message
 from ietf.ietfauth.decorators import role_required
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
 from ietf.iesg.models import TelechatDate
-from ietf.idrfc.mails import *
-from ietf.idrfc.lastcall import request_last_call
+from ietf.doc.mails import *
+from ietf.doc.lastcall import request_last_call
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.person.forms import EmailsField
 from ietf.group.models import Group
@@ -1008,7 +1008,7 @@ def request_publication(request, name):
         else:
             action = "Document Action"
 
-        from ietf.idrfc.templatetags.mail_filters import std_level_prompt
+        from ietf.doc.templatetags.mail_filters import std_level_prompt
 
         subject = "%s: '%s' to %s (%s-%s.txt)" % (action, doc.title, std_level_prompt(doc), doc.name, doc.rev)
 

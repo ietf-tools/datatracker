@@ -17,7 +17,10 @@ from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
 
 # extra tests
+from ietf.doc.tests_draft import *
+from ietf.doc.tests_ballot import *
 from ietf.doc.tests_conflict_review import *
+from ietf.doc.tests_status_change import *
 
 
 class SearchTestCase(django.test.TestCase):

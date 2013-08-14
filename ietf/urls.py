@@ -38,14 +38,14 @@ sitemaps = {
 }
 
 urlpatterns = patterns('',
-    (r'^$', 'ietf.idrfc.views.main'),
+    (r'^$', 'ietf.doc.views_search.frontpage'),
     (r'^accounts/', include('ietf.ietfauth.urls')),
     (r'^admin/', include(admin.site.urls)),
     (r'^admin/doc/', include('django.contrib.admindocs.urls')),
     (r'^ann/', include('ietf.announcements.urls')),
     (r'^community/', include('ietf.community.urls')),
     (r'^cookies/', include('ietf.cookies.urls')),
-    (r'^doc/', include('ietf.idrfc.urls')),
+    (r'^doc/', include('ietf.doc.urls')),
     (r'^drafts/', include('ietf.doc.redirect_drafts_urls')),
     (r'^feed/comments/(?P<remainder>.*)/$', 'django.views.generic.simple.redirect_to', { 'url': '/feed/document-changes/%(remainder)s/'}),
     (r'^feed/(?P<url>.*)/$', 'django.contrib.syndication.views.feed', { 'feed_dict': feeds}),

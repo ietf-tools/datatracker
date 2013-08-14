@@ -6,7 +6,7 @@ from ietf import settings
 from django.core import management
 management.setup_environ(settings)
 
-from ietf.idrfc.expire import get_soon_to_expire_drafts, send_expire_warning_for_draft
+from ietf.doc.expire import get_soon_to_expire_drafts, send_expire_warning_for_draft
 
 
 # notify about documents that expire within the next 2 weeks

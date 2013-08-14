@@ -4,7 +4,7 @@
 {% if editable and user|has_role:"Area Director,Secretariat" %}
 <div class="ballot-actions">
 {% if user|has_role:"Area Director" %}
-<div class="action"><a href="{% url idrfc.views_ballot.edit_position name=doc.name,ballot_id=ballot.pk %}">Edit position</a></div>
+<div class="action"><a href="{% url ietf.doc.views_ballot.edit_position name=doc.name,ballot_id=ballot.pk %}">Edit position</a></div>
 {% endif %}
 
 {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
@@ -28,7 +28,7 @@
 <div class="position-group">
   <div class="heading"><span class="square position-{{ n.slug }}"></span> {{ n.name }}</div>
   {% for p in positions %}
-  <div>{% if p.old_ad %}[{% endif %}<a{% if user|has_role:"Secretariat" %} href="{% url idrfc.views_ballot.edit_position name=doc.name,ballot_id=ballot.pk %}?ad={{ p.ad.pk }}" title="Click to edit the position of {{ p.ad.plain_name }}"{% endif %}>{{ p.ad.plain_name }}</a>{% if p.old_ad %}]{% endif %}{% if p.comment or p.discuss %}&nbsp;<a href="#{{ p.ad.plain_name|slugify }}"><img src="/images/comment.png" width="14" height="12" alt="*" border="0"/></a>{% endif %}</div>
+  <div>{% if p.old_ad %}[{% endif %}<a{% if user|has_role:"Secretariat" %} href="{% url ietf.doc.views_ballot.edit_position name=doc.name,ballot_id=ballot.pk %}?ad={{ p.ad.pk }}" title="Click to edit the position of {{ p.ad.plain_name }}"{% endif %}>{{ p.ad.plain_name }}</a>{% if p.old_ad %}]{% endif %}{% if p.comment or p.discuss %}&nbsp;<a href="#{{ p.ad.plain_name|slugify }}"><img src="/images/comment.png" width="14" height="12" alt="*" border="0"/></a>{% endif %}</div>
   {% if p.old_positions %}<div class="was">(was {{ p.old_positions|join:", " }})</div>{% endif %}
   {% empty %}
   <i>none</i>
