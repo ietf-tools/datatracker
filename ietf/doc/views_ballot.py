@@ -230,7 +230,7 @@ def edit_position(request, name, ballot_id):
 
     ballot_deferred = doc.active_defer_event()
 
-    return render_to_response('idrfc/edit_position.html',
+    return render_to_response('doc/ballot/edit_position.html',
                               dict(doc=doc,
                                    form=form,
                                    ad=ad,
@@ -289,7 +289,7 @@ def send_ballot_comment(request, name, ballot_id):
     if subj:
         subject += ": (with %s)" % " and ".join(subj)
 
-    body = render_to_string("idrfc/ballot_comment_mail.txt",
+    body = render_to_string("doc/ballot/ballot_comment_mail.txt",
                             dict(discuss=d,
                                  comment=c,
                                  ad=ad.plain_name(),
@@ -305,11 +305,11 @@ def send_ballot_comment(request, name, ballot_id):
         if request.POST.get("cc_state_change") and doc.notify:
             cc.extend(doc.notify.split(','))
 
-        send_mail_text(request, to, frm, subject, body, cc=", ".join(cc))
+        send_mail_text(request, to, frm, subject, body, cc=u", ".join(cc))
             
         return HttpResponseRedirect(return_to_url)
   
-    return render_to_response('idrfc/send_ballot_comment.html',
+    return render_to_response('doc/ballot/send_ballot_comment.html',
                               dict(doc=doc,
                                    subject=subject,
                                    body=body,
@@ -334,7 +334,7 @@ def clear_ballot(request, name):
             do_undefer_ballot(request,doc)
         return HttpResponseRedirect(urlreverse("doc_view", kwargs=dict(name=doc.name)))
 
-    return render_to_response('idrfc/clear_ballot.html',
+    return render_to_response('doc/ballot/clear_ballot.html',
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url()),
                               context_instance=RequestContext(request))
@@ -376,7 +376,7 @@ def defer_ballot(request, name):
 
         return HttpResponseRedirect(doc.get_absolute_url())
   
-    return render_to_response('idrfc/defer_ballot.html',
+    return render_to_response('doc/ballot/defer_ballot.html',
                               dict(doc=doc,
                                    telechat_date=telechat_date,
                                    back_url=doc.get_absolute_url()),
@@ -397,7 +397,7 @@ def undefer_ballot(request, name):
         do_undefer_ballot(request,doc)
         return HttpResponseRedirect(doc.get_absolute_url())
   
-    return render_to_response('idrfc/undefer_ballot.html',
+    return render_to_response('doc/ballot/undefer_ballot.html',
                               dict(doc=doc,
                                    telechat_date=telechat_date,
                                    back_url=doc.get_absolute_url()),
@@ -464,7 +464,7 @@ def lastcalltext(request, name):
 
                     request_last_call(request, doc)
                     
-                    return render_to_response('idrfc/last_call_requested.html',
+                    return render_to_response('doc/draft/last_call_requested.html',
                                               dict(doc=doc),
                                               context_instance=RequestContext(request))
         
@@ -484,7 +484,7 @@ def lastcalltext(request, name):
     if not doc.intended_std_level:
         need_intended_status = doc.file_tag()
 
-    return render_to_response('idrfc/ballot_lastcalltext.html',
+    return render_to_response('doc/ballot/lastcalltext.html',
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url(),
                                    last_call_form=form,
@@ -554,7 +554,7 @@ def ballot_writeupnotes(request, name):
                 e.desc = "Ballot has been issued"
                 e.save()
 
-                return render_to_response('idrfc/ballot_issued.html',
+                return render_to_response('doc/ballot/ballot_issued.html',
                                           dict(doc=doc,
                                                back_url=doc.get_absolute_url()),
                                           context_instance=RequestContext(request))
@@ -564,7 +564,7 @@ def ballot_writeupnotes(request, name):
     if not doc.intended_std_level:
         need_intended_status = doc.file_tag()
 
-    return render_to_response('idrfc/ballot_writeupnotes.html',
+    return render_to_response('doc/ballot/writeupnotes.html',
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url(),
                                    ballot_issued=bool(doc.latest_event(type="sent_ballot_announcement")),
@@ -618,7 +618,7 @@ def ballot_approvaltext(request, name):
     if not doc.intended_std_level:
         need_intended_status = doc.file_tag()
 
-    return render_to_response('idrfc/ballot_approvaltext.html',
+    return render_to_response('doc/ballot/approvaltext.html',
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url(),
                                    approval_text_form=form,
@@ -672,7 +672,7 @@ def approve_ballot(request, name):
             import ietf.sync.rfceditor
             response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
             if error:
-                return render_to_response('doc/rfceditor_post_approved_draft_failed.html',
+                return render_to_response('doc/draft/rfceditor_post_approved_draft_failed.html',
                                   dict(name=doc.name,
                                        response=response,
                                        error=error),
@@ -725,7 +725,7 @@ def approve_ballot(request, name):
 
         return HttpResponseRedirect(doc.get_absolute_url())
 
-    return render_to_response('idrfc/approve_ballot.html',
+    return render_to_response('doc/ballot/approve_ballot.html',
                               dict(doc=doc,
                                    action=action,
                                    announcement=announcement),
@@ -817,7 +817,7 @@ def make_last_call(request, name):
             expire_days = 14
             if doc.group.type_id in ("individ", "area"):
                 expire_days = 28
-            templ = 'idrfc/make_last_call.html'
+            templ = 'doc/draft/make_last_call.html'
         else:
             expire_days=28
             templ = 'doc/status_change/make_last_call.html'

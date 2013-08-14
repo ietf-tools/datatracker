@@ -33,7 +33,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
 {% load ietf_filters %}
-{% load ballot_icon %}
 <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
 {% if show_add_to_list and user.is_authenticated %}
 <td class="addtolist">
@@ -62,7 +61,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   {% endif %}
 </td>
 
-{% include "doc/status_columns.html" %}
+{% include "doc/search/status_columns.html" %}
 
 <td class="ipr">
   {% if doc.iprs %}

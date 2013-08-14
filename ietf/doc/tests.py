@@ -246,3 +246,42 @@ class DocTestCase(django.test.TestCase):
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
+
+
+class AddCommentTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_add_comment(self):
+        draft = make_test_data()
+        url = urlreverse('doc_add_comment', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form textarea[name=comment]')), 1)
+
+        # request resurrect
+        events_before = draft.docevent_set.count()
+        mailbox_before = len(outbox)
+        
+        r = self.client.post(url, dict(comment="This is a test."))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEquals(draft.docevent_set.count(), events_before + 1)
+        self.assertEquals("This is a test.", draft.latest_event().desc)
+        self.assertEquals("added_comment", draft.latest_event().type)
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("updated" in outbox[-1]['Subject'])
+        self.assertTrue(draft.name in outbox[-1]['Subject'])
+
+        # Make sure we can also do it as IANA
+        self.client.login(remote_user="iana")
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form textarea[name=comment]')), 1)
+

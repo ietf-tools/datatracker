@@ -1,5 +1,4 @@
-# changing state and metadata and commenting on Internet Drafts for
-# Area Directors and Secretariat
+# changing state and metadata on Internet Drafts
 
 import re, os, datetime
 
@@ -123,7 +122,7 @@ def change_state(request, name):
                 if next_state.slug == "lc-req":
                     request_last_call(request, doc)
 
-                    return render_to_response('idrfc/last_call_requested.html',
+                    return render_to_response('doc/draft/last_call_requested.html',
                                               dict(doc=doc,
                                                    url=doc.get_absolute_url()),
                                               context_instance=RequestContext(request))
@@ -151,7 +150,7 @@ def change_state(request, name):
             to_iesg_eval = State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")
             next_states = next_states.exclude(slug="iesg-eva")
 
-    return render_to_response('idrfc/change_state.html',
+    return render_to_response('doc/draft/change_state.html',
                               dict(form=form,
                                    doc=doc,
                                    state=state,
@@ -199,7 +198,7 @@ def change_iana_state(request, name, state_type):
     else:
         form = ChangeIanaStateForm(state_type, initial=dict(state=prev_state.pk if prev_state else None))
 
-    return render_to_response('idrfc/change_iana_state.html',
+    return render_to_response('doc/draft/change_iana_state.html',
                               dict(form=form,
                                    doc=doc),
                               context_instance=RequestContext(request))
@@ -263,7 +262,7 @@ def change_stream(request, name):
         stream = doc.stream
         form = ChangeStreamForm(initial=dict(stream=stream))
 
-    return render_to_response('idrfc/change_stream.html',
+    return render_to_response('doc/draft/change_stream.html',
                               dict(form=form,
                                    doc=doc,
                                    ),
@@ -321,7 +320,7 @@ def change_intention(request, name):
         intended_std_level = doc.intended_std_level
         form = ChangeIntentionForm(initial=dict(intended_std_level=intended_std_level))
 
-    return render_to_response('idrfc/change_intended_status.html',
+    return render_to_response('doc/draft/change_intended_status.html',
                               dict(form=form,
                                    doc=doc,
                                    ),
@@ -506,7 +505,7 @@ def edit_info(request, name):
     if doc.group.type_id not in ("individ", "area"):
         form.standard_fields = [x for x in form.standard_fields if x.name != "area"]
 
-    return render_to_response('idrfc/edit_info.html',
+    return render_to_response('doc/draft/edit_info.html',
                               dict(doc=doc,
                                    form=form,
                                    user=request.user,
@@ -533,7 +532,7 @@ def request_resurrect(request, name):
         
         return HttpResponseRedirect(doc.get_absolute_url())
   
-    return render_to_response('idrfc/request_resurrect.html',
+    return render_to_response('doc/draft/request_resurrect.html',
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url()),
                               context_instance=RequestContext(request))
@@ -565,41 +564,9 @@ def resurrect(request, name):
         doc.save()
         return HttpResponseRedirect(doc.get_absolute_url())
   
-    return render_to_response('idrfc/resurrect.html',
+    return render_to_response('doc/draft/resurrect.html',
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url()),
-                              context_instance=RequestContext(request))
-
-class AddCommentForm(forms.Form):
-    comment = forms.CharField(required=True, widget=forms.Textarea)
-
-@role_required('Area Director', 'Secretariat', 'IANA', 'RFC Editor')
-def add_comment(request, name):
-    """Add comment to history of document."""
-    doc = get_object_or_404(Document, docalias__name=name)
-
-    login = request.user.get_profile()
-
-    if request.method == 'POST':
-        form = AddCommentForm(request.POST)
-        if form.is_valid():
-            c = form.cleaned_data['comment']
-            
-            e = DocEvent(doc=doc, by=login)
-            e.type = "added_comment"
-            e.desc = c
-            e.save()
-
-            if doc.type_id == "draft":
-                email_ad(request, doc, doc.ad, login,
-                            "A new comment added by %s" % login.name)
-            return HttpResponseRedirect(urlreverse("doc_history", kwargs=dict(name=doc.name)))
-    else:
-        form = AddCommentForm()
-  
-    return render_to_response('idrfc/add_comment.html',
-                              dict(doc=doc,
-                                   form=form),
                               context_instance=RequestContext(request))
 
 class NotifyForm(forms.Form):
@@ -642,7 +609,7 @@ def edit_notices(request, name):
         init = { "notify" : doc.notify }
         form = NotifyForm(initial=init)
 
-    return render_to_response('idrfc/change_notify.html',
+    return render_to_response('doc/draft/change_notify.html',
                               {'form':   form,
                                'doc': doc,
                               },
@@ -683,7 +650,7 @@ def telechat_date(request, name):
     else:
         form = TelechatForm(initial=initial)
 
-    return render_to_response('idrfc/edit_telechat_date.html',
+    return render_to_response('doc/edit_telechat_date.html',
                               dict(doc=doc,
                                    form=form,
                                    user=request.user,
@@ -732,7 +699,7 @@ def edit_iesg_note(request, name):
     else:
         form = IESGNoteForm(initial=initial)
 
-    return render_to_response('idrfc/edit_iesg_note.html',
+    return render_to_response('doc/draft/edit_iesg_note.html',
                               dict(doc=doc,
                                    form=form,
                                    ),
@@ -802,7 +769,7 @@ def edit_shepherd_writeup(request, name):
                                               )
         form = ShepherdWriteupUploadForm(initial=init)
 
-    return render_to_response('idrfc/change_shepherd_writeup.html',
+    return render_to_response('doc/draft/change_shepherd_writeup.html',
                               {'form': form,
                                'doc' : doc,
                               },
@@ -853,7 +820,7 @@ def edit_shepherd(request, name):
         init = { "shepherd": current_shepherd}
         form = ShepherdForm(initial=init)
 
-    return render_to_response('idrfc/change_shepherd.html',
+    return render_to_response('doc/change_shepherd.html',
                               {'form':   form,
                                'doc': doc,
                               },
@@ -896,7 +863,7 @@ def edit_ad(request, name):
         init = { "ad" : doc.ad_id }
         form = AdForm(initial=init)
 
-    return render_to_response('idrfc/change_ad.html',
+    return render_to_response('doc/draft/change_ad.html',
                               {'form':   form,
                                'doc': doc,
                               },
@@ -934,7 +901,7 @@ def edit_consensus(request, name):
     else:
         form = ConsensusForm(initial=dict(consensus=nice_consensus(prev_consensus).replace("Unknown", "")))
 
-    return render_to_response('idrfc/change_consensus.html',
+    return render_to_response('doc/draft/change_consensus.html',
                               {'form': form,
                                'doc': doc,
                               },
@@ -968,7 +935,7 @@ def request_publication(request, name):
                 import ietf.sync.rfceditor
                 response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
                 if error:
-                    return render_to_response('doc/rfceditor_post_approved_draft_failed.html',
+                    return render_to_response('doc/draft/rfceditor_post_approved_draft_failed.html',
                                       dict(name=doc.name,
                                            response=response,
                                            error=error),
@@ -1017,7 +984,7 @@ def request_publication(request, name):
         form = PublicationForm(initial=dict(subject=subject,
                                             body=body))
 
-    return render_to_response('idrfc/request_publication.html',
+    return render_to_response('doc/draft/request_publication.html',
                               dict(form=form,
                                    doc=doc,
                                    message=m,

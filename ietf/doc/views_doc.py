@@ -42,6 +42,7 @@ from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.core.urlresolvers import reverse as urlreverse, NoReverseMatch
 from django.conf import settings
+from django import forms
 
 from ietf.doc.models import *
 from ietf.doc.utils import *
@@ -49,6 +50,7 @@ from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.utils import *
 from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
 from ietf.wgcharter.utils import historic_milestones_for_charter
+from ietf.doc.mails import email_ad
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -446,7 +448,7 @@ def document_main(request, name, rev=None):
         else:
             sorted_relations=None
 
-        return render_to_response("idrfc/document_status_change.html",
+        return render_to_response("doc/document_status_change.html",
                                   dict(doc=doc,
                                        top=top,
                                        content=content,
@@ -763,4 +765,36 @@ def ballot_json(request, name):
     response = HttpResponse(mimetype='text/plain')
     response.write(json.dumps(ballot.dict(), indent=2))
     return response
+
+class AddCommentForm(forms.Form):
+    comment = forms.CharField(required=True, widget=forms.Textarea)
+
+@role_required('Area Director', 'Secretariat', 'IANA', 'RFC Editor')
+def add_comment(request, name):
+    """Add comment to history of document."""
+    doc = get_object_or_404(Document, docalias__name=name)
+
+    login = request.user.get_profile()
+
+    if request.method == 'POST':
+        form = AddCommentForm(request.POST)
+        if form.is_valid():
+            c = form.cleaned_data['comment']
+            
+            e = DocEvent(doc=doc, by=login)
+            e.type = "added_comment"
+            e.desc = c
+            e.save()
+
+            if doc.type_id == "draft":
+                email_ad(request, doc, doc.ad, login,
+                            "A new comment added by %s" % login.name)
+            return HttpResponseRedirect(urlreverse("doc_history", kwargs=dict(name=doc.name)))
+    else:
+        form = AddCommentForm()
+  
+    return render_to_response('doc/add_comment.html',
+                              dict(doc=doc,
+                                   form=form),
+                              context_instance=RequestContext(request))
 

@@ -37,9 +37,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block wg_content %}
 <div class="group-documents">
 
-{% include "idrfc/search_results.html" %}
+{% include "doc/search/search_results.html" %}
 
-{% with docs_related as docs %}{% include "idrfc/search_results.html" %}{% endwith %}
+{% with docs_related as docs %}{% include "doc/search/search_results.html" %}{% endwith %}
 
 </div>
 {% endblock wg_content %}

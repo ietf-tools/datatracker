@@ -363,13 +363,13 @@ def search(request):
         results = []
         meta = { 'by': None, 'advanced': False, 'searching': False }
 
-    return render_to_response('doc/search.html',
+    return render_to_response('doc/search/search.html',
                               {'form':form, 'docs':results, 'meta':meta, 'show_add_to_list': True },
                               context_instance=RequestContext(request))
 
 def frontpage(request):
     form = SearchForm()
-    return render_to_response('idrfc/main.html', {'form':form}, context_instance=RequestContext(request))
+    return render_to_response('doc/frontpage.html', {'form':form}, context_instance=RequestContext(request))
 
 def ad_dashboard_group(doc):
 

@@ -21,7 +21,7 @@ def email_state_changed(request, doc, text):
     text = strip_tags(text)
     send_mail(request, to, None,
               "ID Tracker State Update Notice: %s" % doc.file_tag(),
-              "idrfc/state_changed_email.txt",
+              "doc/mail/state_changed_email.txt",
               dict(text=text,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
@@ -44,14 +44,14 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
 
     send_mail(request, to, None,
               "ID Tracker Stream Change Notice: %s" % doc.file_tag(),
-              "idrfc/stream_changed_email.txt",
+              "doc/mail/stream_changed_email.txt",
               dict(text=text,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
 def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
     send_mail(request, ["IANA <iana@iana.org>", "RFC Editor <rfc-editor@rfc-editor.org>"], None,
               "%s changed state from %s to %s" % (doc.name, prev_state.name, next_state.name),
-              "idrfc/pulled_from_rfc_queue_email.txt",
+              "doc/mail/pulled_from_rfc_queue_email.txt",
               dict(doc=doc,
                    prev_state=prev_state,
                    next_state=next_state,
@@ -78,7 +78,7 @@ def email_ad(request, doc, ad, changed_by, text, subject=None):
     send_mail(request, to,
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
               "%s updated by %s" % (doc.file_tag(), changed_by.plain_name()),
-              "idrfc/change_notice.txt",
+              "doc/mail/change_notice.txt",
               dict(text=html_to_text(text),
                    doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
@@ -93,7 +93,7 @@ def generate_ballot_writeup(request, doc):
     e.by = request.user.get_profile()
     e.doc = doc
     e.desc = u"Ballot writeup was generated"
-    e.text = unicode(render_to_string("idrfc/ballot_writeup.txt", {'iana': iana}))
+    e.text = unicode(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
     e.save()
     
     return e
@@ -118,7 +118,7 @@ def generate_last_call_announcement(request, doc):
     else:
         ipr_links = None
 
-    mail = render_to_string("idrfc/last_call_announcement.txt",
+    mail = render_to_string("doc/mail/last_call_announcement.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url() + "ballot/",
                                  expiration_date=expiration_date.strftime("%Y-%m-%d"), #.strftime("%B %-d, %Y"),
@@ -196,7 +196,7 @@ def generate_approval_mail_approved(request, doc):
 
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
         
-    return render_to_string("idrfc/approval_mail.txt",
+    return render_to_string("doc/mail/approval_mail.txt",
                             dict(doc=doc,
                                  docs=[doc],
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
@@ -227,7 +227,7 @@ def generate_approval_mail_rfc_editor(request, doc):
         # include IRSG
         to.append('"Internet Research Steering Group" <irsg@irtf.org>')
 
-    return render_to_string("idrfc/approval_mail_rfc_editor.txt",
+    return render_to_string("doc/mail/approval_mail_rfc_editor.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  doc_type=doc_type,
@@ -251,7 +251,7 @@ def generate_publication_request(request, doc):
         approving_body = str(doc.stream)
         consensus_body = approving_body
 
-    return render_to_string("idrfc/publication_request.txt",
+    return render_to_string("doc/mail/publication_request.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  group_description=group_description,
@@ -267,7 +267,7 @@ def send_last_call_request(request, doc):
     
     send_mail(request, to, frm,
               "Last Call: %s" % doc.file_tag(),
-              "idrfc/last_call_request.txt",
+              "doc/mail/last_call_request.txt",
               dict(docs=[doc],
                    doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
@@ -282,7 +282,7 @@ def email_resurrect_requested(request, doc, by):
 
     send_mail(request, to, e.formatted_email(),
               "I-D Resurrection Request",
-              "idrfc/resurrect_request_email.txt",
+              "doc/mail/resurrect_request_email.txt",
               dict(doc=doc,
                    by=frm,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
@@ -297,7 +297,7 @@ def email_resurrection_completed(request, doc, requester):
     frm = "I-D Administrator <internet-drafts-reply@ietf.org>"
     send_mail(request, to, frm,
               "I-D Resurrection Completed - %s" % doc.file_tag(),
-              "idrfc/resurrect_completed_email.txt",
+              "doc/mail/resurrect_completed_email.txt",
               dict(doc=doc,
                    by=frm,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
@@ -307,7 +307,7 @@ def email_ballot_deferred(request, doc, by, telechat_date):
     frm = "DraftTracker Mail System <iesg-secretary@ietf.org>"
     send_mail(request, to, frm,
               "IESG Deferred Ballot notification: %s" % doc.file_tag(),
-              "idrfc/ballot_deferred_email.txt",
+              "doc/mail/ballot_deferred_email.txt",
               dict(doc=doc,
                    by=by,
                    telechat_date=telechat_date))
@@ -364,7 +364,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
     e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     ballot_writeup = e.text if e else ""
 
-    return render_to_string("idrfc/issue_ballot_mail.txt",
+    return render_to_string("doc/mail/issue_ballot_mail.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  active_ad_positions=active_ad_positions,
@@ -408,7 +408,7 @@ def email_last_call_expired(doc):
               to,
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
               "Last Call Expired: %s" % doc.file_tag(),
-              "idrfc/change_notice.txt",
+              "doc/mail/change_notice.txt",
               dict(text=text,
                    doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),

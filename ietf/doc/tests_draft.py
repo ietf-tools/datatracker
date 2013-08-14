@@ -406,44 +406,6 @@ class ResurrectTestCase(django.test.TestCase):
         self.assertEquals(draft.get_state_slug(), "active")
         self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
         self.assertEquals(len(outbox), mailbox_before + 1)
-        
-class AddCommentTestCase(django.test.TestCase):
-    fixtures = ['names']
-
-    def test_add_comment(self):
-        draft = make_test_data()
-        url = urlreverse('doc_add_comment', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "secretary", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form textarea[name=comment]')), 1)
-
-        # request resurrect
-        events_before = draft.docevent_set.count()
-        mailbox_before = len(outbox)
-        
-        r = self.client.post(url, dict(comment="This is a test."))
-        self.assertEquals(r.status_code, 302)
-
-        self.assertEquals(draft.docevent_set.count(), events_before + 1)
-        self.assertEquals("This is a test.", draft.latest_event().desc)
-        self.assertEquals("added_comment", draft.latest_event().type)
-        self.assertEquals(len(outbox), mailbox_before + 1)
-        self.assertTrue("updated" in outbox[-1]['Subject'])
-        self.assertTrue(draft.name in outbox[-1]['Subject'])
-
-        # Make sure we can also do it as IANA
-        self.client.login(remote_user="iana")
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form textarea[name=comment]')), 1)
-
 
 
 class ExpireIDsTestCase(django.test.TestCase):
@@ -905,3 +867,41 @@ class IndividualInfoFormsTestCase(django.test.TestCase):
         self.docname='draft-ietf-mars-test'
         self.doc = Document.objects.get(name=self.docname)
         
+class RequestPublicationTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_request_publication(self):
+        draft = make_test_data()
+        draft.stream = StreamName.objects.get(slug="iab")
+        draft.group = Group.objects.get(acronym="iab")
+        draft.intended_std_level = IntendedStdLevelName.objects.get(slug="inf")
+        draft.save()
+        draft.set_state(State.objects.get(used=True, type="draft-stream-iab", slug="approved"))
+
+        url = urlreverse('doc_request_publication', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "iabchair", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        subject = q('input#id_subject')[0].get("value")
+        self.assertTrue("Document Action" in subject)
+        body = q('.request-publication #id_body').text()
+        self.assertTrue("Informational" in body)
+        self.assertTrue("IAB" in body)
+
+        # approve
+        mailbox_before = len(outbox)
+
+        r = self.client.post(url, dict(subject=subject, body=body, skiprfceditorpost="1"))
+        self.assertEquals(r.status_code, 302)
+
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.get_state_slug("draft-stream-iab"), "rfc-edit")
+        self.assertEquals(len(outbox), mailbox_before + 2)
+        self.assertTrue("Document Action" in outbox[-2]['Subject'])
+        self.assertTrue("Document Action" in draft.message_set.order_by("-time")[0].subject)
+        # the IANA copy
+        self.assertTrue("Document Action" in outbox[-1]['Subject'])
+        self.assertTrue(not outbox[-1]['CC'])

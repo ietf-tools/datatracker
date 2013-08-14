@@ -6,10 +6,10 @@
 <h1>Search Internet-Drafts and RFCs</h1>
 
 <div class="ietf-box search-form-box">
-{% include "idrfc/search_form.html" %}
+{% include "doc/search/search_form.html" %}
 </div>
 
-{% if meta.searching %}{% include "idrfc/search_results.html" %}{% endif %}
+{% if meta.searching %}{% include "doc/search/search_results.html" %}{% endif %}
 
 {% endblock content %}
 

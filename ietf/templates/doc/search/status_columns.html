@@ -1,4 +1,4 @@
-{% load ietf_filters %}{% load ballot_icon_redesign %}
+{% load ietf_filters %}{% load ballot_icon %}
 <td class="status">
   {{ doc.friendly_state|safe }} {% if not doc.get_state_slug == "rfc" %}{{ doc|state_age_colored }}{% endif %}
 

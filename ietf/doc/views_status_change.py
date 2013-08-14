@@ -700,7 +700,7 @@ def last_call(request, name):
 
                     request_last_call(request, status_change)
 
-                    return render_to_response('idrfc/last_call_requested.html',
+                    return render_to_response('doc/draft/last_call_requested.html',
                                               dict(doc=status_change,
                                                    url = status_change.get_absolute_url(),
                                                   ),

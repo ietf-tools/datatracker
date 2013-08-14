@@ -70,7 +70,7 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/info/$', views_draft.edit_info, name='doc_edit_info'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/requestresurrect/$', views_draft.request_resurrect, name='doc_request_resurrect'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/resurrect/$', views_draft.resurrect, name='doc_resurrect'),                       
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/addcomment/$', views_draft.add_comment, name='doc_add_comment'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/addcomment/$', views_doc.add_comment, name='doc_add_comment'),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/stream/$', views_draft.change_stream, name='doc_change_stream'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/notify/$', views_draft.edit_notices, name='doc_change_notify'),

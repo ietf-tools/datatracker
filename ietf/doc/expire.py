@@ -82,7 +82,7 @@ def send_expire_warning_for_draft(doc):
     if to or cc:
         send_mail(request, to, frm,
                   u"Expiration impending: %s" % doc.file_tag(),
-                  "idrfc/expire_warning_email.txt",
+                  "doc/draft/expire_warning_email.txt",
                   dict(doc=doc,
                        state=state,
                        expiration=expiration
@@ -101,7 +101,7 @@ def send_expire_notice_for_draft(doc):
     send_mail(request, to,
               "I-D Expiring System <ietf-secretariat-reply@ietf.org>",
               u"I-D was expired %s" % doc.file_tag(),
-              "idrfc/id_expired_email.txt",
+              "doc/draft/id_expired_email.txt",
               dict(doc=doc,
                    state=state,
                    ))

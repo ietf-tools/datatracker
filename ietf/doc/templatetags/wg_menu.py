@@ -45,7 +45,7 @@ area_short_names = {
 
 class WgMenuNode(template.Node):
     def render(self, context):
-        x = cache.get('idrfc_wgmenu')
+        x = cache.get('base_left_wgmenu')
         if x:
             return x
 
@@ -62,7 +62,7 @@ class WgMenuNode(template.Node):
         areas = [a for a in areas if a.active_groups]
 
         res = loader.render_to_string('base_wgmenu.html', {'areas':areas})
-        cache.set('idrfc_wgmenu', x, 30*60)
+        cache.set('base_left_wgmenu', x, 30*60)
         return res
     
 def do_wg_menu(parser, token):

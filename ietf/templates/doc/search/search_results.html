@@ -65,7 +65,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <tr class="header"><td colspan="10">{{ doc_group.grouper|plural:doc_group.list }}</td></tr>
 
   {% for doc in doc_group.list %}
-    {% include "idrfc/search_result_row.html" %}
+    {% include "doc/search/search_result_row.html" %}
   {% endfor %}
 {% endfor %}
 </table>
