@@ -82,9 +82,15 @@ while urls:
                 ctype = ctype[:ctype.index(";")]
 
             if ctype == "text/html":
-                for u in extract_html_urls(r.content):
-                    if u not in visited and u not in urls:
-                        urls[u] = url
+                try:
+                    for u in extract_html_urls(r.content):
+                        if u not in visited and u not in urls:
+                            urls[u] = url
+                except:
+                    print "error extracting HTML urls from", url
+                    print "============="
+                    print traceback.format_exc()
+                    print "============="
         else:
             tags.append(u"FAIL (from %s)" % referrer)
 
