@@ -285,3 +285,10 @@ class AddCommentTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertEquals(len(q('form textarea[name=comment]')), 1)
 
+
+class TemplateTagTest(unittest.TestCase):
+    def test_template_tags(self):
+        import doctest
+        from ietf.doc.templatetags import ietf_filters
+        failures, tests = doctest.testmod(ietf_filters)
+        self.assertEqual(failures, 0)

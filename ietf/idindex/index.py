@@ -8,7 +8,7 @@ import pytz
 from django.conf import settings
 from django.template.loader import render_to_string
 
-from ietf.idtracker.templatetags.ietf_filters import clean_whitespace
+from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.models import *
 
 def all_id_txt():

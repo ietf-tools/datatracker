@@ -51,8 +51,8 @@ from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
 from ietf.doc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required, role_required
-from ietf.idtracker.templatetags.ietf_filters import in_group
-from ietf.ipr.models import IprDocAlias 
+from ietf.ietfauth.utils import has_role
+from ietf.ipr.models import IprDocAlias
 from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent
 from ietf.group.models import Group, GroupMilestone
 
@@ -712,7 +712,7 @@ def get_possible_wg_actions():
 def working_group_actions(request):
     current_items = WGAction.objects.order_by('status_date').select_related()
 
-    if request.method == 'POST' and in_group(request.user, 'Secretariat'):
+    if request.method == 'POST' and has_role(request.user, 'Secretariat'):
         filename = request.POST.get('filename')
         if filename and filename in os.listdir(settings.IESG_WG_EVALUATION_DIR):
             if 'delete' in request.POST:
