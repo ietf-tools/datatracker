@@ -87,7 +87,7 @@ def change_state(request, name, option=None):
                               dict(form=form,
                                    doc=review,
                                    login=login,
-                                   help_url=reverse('help_conflict_review_states'),
+                                   help_url=reverse('state_help', kwargs=dict(type="conflict-review")),
                                    ),
                               context_instance=RequestContext(request))
 

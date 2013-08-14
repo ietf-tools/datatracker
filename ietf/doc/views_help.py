@@ -10,7 +10,8 @@ def state_help(request, type):
         "draft-rfceditor": ("draft-rfceditor", "RFC Editor States For Internet-Drafts"),
         "draft-iana-action": ("draft-iana-action", "IANA Action States For Internet-Drafts"),
         "charter": ("charter", "Charter States"),
-        "conflict-review": ("conflrev", "Conflict Review States")
+        "conflict-review": ("conflrev", "Conflict Review States"),
+        "status-change": ("statchg", "RFC Status Change States"),
         }.get(type, (None, None))
     state_type = get_object_or_404(StateType, slug=slug)
 

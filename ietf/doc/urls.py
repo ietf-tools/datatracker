@@ -98,10 +98,3 @@ urlpatterns = patterns('',
     (r'^(?P<name>[A-Za-z0-9._+-]+)/conflict-review/', include('ietf.doc.urls_conflict_review')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/status-change/', include('ietf.doc.urls_status_change')),
 )
-
-urlpatterns += patterns('django.views.generic.simple',
-    url(r'^help/state/charter/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(used=True, type="charter"),'title':"Charter" } }, name='help_charter_states'),
-    url(r'^help/state/conflict-review/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(used=True, type="conflrev").order_by("order"),'title':"Conflict Review" } }, name='help_conflict_review_states'),
-    url(r'^help/state/status-change/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(type="statchg").order_by("order"),'title':"RFC Status Change" } }, name='help_status_change_states'),
-)
-

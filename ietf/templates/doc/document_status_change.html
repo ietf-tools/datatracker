@@ -36,7 +36,7 @@
     </tr>
     {% endfor %}
     <tr>
-      <td><a href="/doc/help/state/status-change/">Review State</a>:</td>
+      <td><a href="{% url state_help type="status-change" %}">Review State</a>:</td>
       <td>
         <div>
         <a title="{{ doc.get_state.desc }}"{% if not snapshot and user|has_role:"Area Director,Secretariat" %} class="editlink" href="{% url status_change_change_state name=doc.name %}"{% endif %}>{{ doc.get_state.name }}</a>
