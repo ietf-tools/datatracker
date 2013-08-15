@@ -331,11 +331,13 @@ def read_agenda_file(num, doc):
         return None
 
 def session_draft_list(num, session):
-    agenda = get_object_or_404(Document,
-                               type="agenda",
-                               session__meeting__number=num,
-                               session__group__acronym=session,
-                               states=State.objects.get(type="agenda", slug="active"))
+    try:
+        agenda = Document.objects.filter(type="agenda",
+                                         session__meeting__number=num,
+                                         session__group__acronym=session,
+                                         states=State.objects.get(type="agenda", slug="active")).distinct().get()
+    except Document.DoesNotExist:
+        raise Http404
 
     drafts = set()
     content = read_agenda_file(num, agenda)
