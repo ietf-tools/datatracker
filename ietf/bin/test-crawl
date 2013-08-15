@@ -64,7 +64,7 @@ while urls:
         print "was fetching", url
         sys.exit(1)
     except:
-        print "FAIL", url
+        print 500, "%.3fs" % (datetime.datetime.now() - timestamp).total_seconds(), url, "FAIL (from %s)" % referrer
         print "============="
         print traceback.format_exc()
         print "============="
