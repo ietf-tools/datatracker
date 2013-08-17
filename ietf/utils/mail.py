@@ -171,6 +171,8 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     msg['Subject'] = subject
     msg['X-Test-IDTracker'] = (settings.SERVER_MODE == 'production') and 'no' or 'yes'
     msg['X-IETF-IDTracker'] = ietf.__version__
+    msg['Auto-Submitted'] = "auto-generated"
+    msg['Precedence'] = "bulk"
     if extra:
 	for k, v in extra.items():
             if v:
