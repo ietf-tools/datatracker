@@ -50,6 +50,7 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 {% load cache %}
 {% cache 900 ietf_meeting_materials meeting_num cache_version %}
 
+{% with "True" as show_agenda %}
 <!-- Plenaries -->
 {% if plenaries %}
     <a name="plenaries"></a>
@@ -73,6 +74,7 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 
 <!-- Training Sessions -->
 {% if training %}
+    {% with "False" as show_agenda %}
     <a name="training"></a>
     <h2 class="ietf-divider">Training</h2>
     {% for session in training %}
@@ -80,6 +82,7 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 	 {% include "meeting/group_materials.html" %}
       {% endifchanged %}
     {% endfor %}
+    {% endwith %}
 {% endif %}
 <!-- End of Training Sessions -->
 
@@ -106,6 +109,7 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
     {% endfor %}
 {% endif %}
 <!-- End of IRTF Sessions -->
+{% endwith %}
 
 {% endcache %}
 
