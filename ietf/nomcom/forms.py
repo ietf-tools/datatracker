@@ -678,7 +678,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
 
 class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
-
+    content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }))
     fieldsets = [('Template content', ('content', )), ]
 
 

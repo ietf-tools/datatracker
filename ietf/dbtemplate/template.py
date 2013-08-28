@@ -1,6 +1,8 @@
 import os
 import string
 from docutils.core import publish_string
+from docutils.utils import SystemMessage
+import debug
 
 from django.template import Template as DjangoTemplate, TemplateDoesNotExist, TemplateEncodingError
 from django.template.loader import BaseLoader
@@ -40,16 +42,23 @@ class RSTTemplate(PlainTemplate):
 
     def render(self, context):
         interpolated_string = super(RSTTemplate, self).render(context)
-        return publish_string(source=interpolated_string,
-                              writer_name='html',
-                              settings_overrides={
-                                  'input_encoding': 'unicode',
-                                  'output_encoding': 'unicode',
-                                  'embed_stylesheet': False,
-                                  'xml_declaration': False,
-                                  'template': RST_TEMPLATE,
-                              })
-
+        try:
+            return publish_string(source=interpolated_string,
+                                  writer_name='html',
+                                  settings_overrides={
+                                      'input_encoding': 'unicode',
+                                      'output_encoding': 'unicode',
+                                      'embed_stylesheet': False,
+                                      'xml_declaration': False,
+                                      'template': RST_TEMPLATE,
+                                      'halt_level': 2,
+                                  })
+        except SystemMessage, e:
+            e.message = e.message.replace('<string>:', 'line ')
+            args = list(e.args)
+            args[0] = args[0].replace('<string>:', 'line ')
+            e.args = tuple(args)
+            raise e
 
 class Loader(BaseLoader):
 
