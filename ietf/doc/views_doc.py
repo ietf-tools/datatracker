@@ -137,9 +137,12 @@ def document_main(request, name, rev=None):
 
         iesg_state = doc.get_state("draft-iesg")
         iesg_substate = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-        iesg_state_summary = iesg_state.name
-        if iesg_substate:
-            iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
+        if iesg_state:
+            iesg_state_summary = iesg_state.name
+            if iesg_substate:
+                iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
+        else:
+            iesg_state_summary = None
 
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
