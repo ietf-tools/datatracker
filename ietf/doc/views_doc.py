@@ -136,6 +136,10 @@ def document_main(request, name, rev=None):
         split_content = not ( request.GET.get('include_text') or request.COOKIES.get("full_draft", "") == "on" )
 
         iesg_state = doc.get_state("draft-iesg")
+        iesg_substate = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+        iesg_state_summary = iesg_state.name
+        if iesg_substate:
+            iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
 
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
@@ -353,6 +357,7 @@ def document_main(request, name, rev=None):
                                        milestones=doc.groupmilestone_set.filter(state="active"),
                                        consensus=consensus,
                                        iesg_state=iesg_state,
+                                       iesg_state_summary=iesg_state_summary,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),

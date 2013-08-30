@@ -151,7 +151,7 @@
       <td><a href="/idtracker/help/state/">IESG State</a>:</td>
       <td>
         <a {% if iesg_state and can_edit %}class="editlink" href="{% url doc_change_state name=doc.name %}"{% endif %}>
-        {{ iesg_state|default:"I-D Exists" }}</a>
+        {{ iesg_state_summary|default:"I-D Exists" }}</a>
 
         {% if iana_review_state %}
         <div>IANA Review State:
