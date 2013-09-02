@@ -235,51 +235,66 @@ class Document(DocumentInfo):
             return "charter-ietf-%s" % self.chartered_group.acronym
         return name
 
+    def canonical_docalias(self):
+        return self.docalias_set.get(name=self.name)
+
     def display_name(self):
         name = self.canonical_name()
         if name.startswith('rfc'):
             name = name.upper()
         return name
 
-    def related_that(self, relationship):
-        """Return the documents that are source of relationship targeting self."""
+    def relations_that(self, relationship):
+        """Return the related-document objects that describe a given relationship targeting self."""
         if isinstance(relationship, str):
             relationship = [ relationship ]
         if isinstance(relationship, tuple):
             relationship = list(relationship)
         if not isinstance(relationship, list):
             raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
-        return Document.objects.filter(relateddocument__target__document=self, relateddocument__relationship__in=relationship)
+        return RelatedDocument.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
 
-    def related_that_doc(self, relationship):
-        """Return the doc aliases that are target of relationship originating from self."""
+    def all_relations_that(self, relationship, related=None):
+        if not related:
+            related = []
+        rels = self.relations_that(relationship)
+        for r in rels:
+            if not r in related:
+                related += [ r ]
+                related = r.source.all_relations_that(relationship, related)
+        return related
+
+    def relations_that_doc(self, relationship):
+        """Return the related-document objects that describe a given relationship from self to other documents."""
         if isinstance(relationship, str):
             relationship = [ relationship ]
         if isinstance(relationship, tuple):
             relationship = list(relationship)
         if not isinstance(relationship, list):
             raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
-        return DocAlias.objects.filter(relateddocument__source=self, relateddocument__relationship__in=relationship)
+        return RelatedDocument.objects.filter(source=self, relationship__in=relationship).select_related('target__document')
+
+    def all_relations_that_doc(self, relationship, related=None):
+        if not related:
+            related = []
+        rels = self.relations_that_doc(relationship)
+        for r in rels:
+            if not r in related:
+                related += [ r ]
+                related = r.target.document.all_relations_that_doc(relationship, related)
+        return related
+
+    def related_that(self, relationship):
+        return list(set([x.source.docalias_set.get(name=x.source.name) for x in self.relations_that(relationship)]))
 
     def all_related_that(self, relationship, related=None):
-        if related is None:
-            related = []
-        rel = self.related_that(relationship)
-        for doc in rel:
-            if not doc in related:
-                related += [ doc ]
-                related = doc.document.all_related_that(relationship, related)
-        return related
+        return list(set([x.source.docalias_set.get(name=x.source.name) for x in self.all_relations_that(relationship)]))
+
+    def related_that_doc(self, relationship):
+        return list(set([x.target for x in self.relations_that_doc(relationship)]))
 
     def all_related_that_doc(self, relationship, related=None):
-        if related is None:
-            related = []
-        rel = self.related_that_doc(relationship)
-        for alias in rel:
-            if not alias in related:
-                related += [ alias ]
-                related = alias.document.all_related_that_doc(relationship, related)
-        return related
+        return list(set([x.target for x in self.all_relations_that_doc(relationship)]))
 
     def telechat_date(self, e=None):
         if not e:
@@ -352,7 +367,7 @@ class Document(DocumentInfo):
             elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
-                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('doc_view', kwargs=dict(name=name)), name) for name in rs))
+                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('doc_view', kwargs=dict(name=alias.document)), alias.document) for alias in rs))
                 else:
                     return "Replaced"
             elif state.slug == "active":
@@ -383,6 +398,12 @@ class Document(DocumentInfo):
         from ietf.ipr.models import IprDocAlias
         return IprDocAlias.objects.filter(doc_alias__document=self)
 
+    def related_ipr(self):
+        """Returns the IPR disclosures against this document and those documents this
+        document directly or indirectly obsoletes or replaces
+        """
+        from ietf.ipr.models import IprDocAlias
+        return IprDocAlias.objects.filter(doc_alias__in=list(self.docalias_set.all())+self.all_related_that_doc(['obs','replaces']))
 
 
 class RelatedDocHistory(models.Model):

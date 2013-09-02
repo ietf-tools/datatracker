@@ -44,6 +44,7 @@ from ietf.doc.models import *
 from ietf.person.models import *
 from ietf.group.models import *
 from ietf.ipr.models import IprDocAlias
+from ietf.ipr.search import related_docs
 from ietf.idindex.index import active_drafts_index_by_group
 
 class SearchForm(forms.Form):
@@ -135,9 +136,32 @@ def fill_in_search_attributes(docs):
     for d in docs:
         d.iprs = []
 
+# Consider reworking the following block using all_relations_that_doc? That might simplify the final assembly
+# down to the code at "if a not in docs_dict"...
+
+    rel_docs = []
+    rel_id_camefrom = {}
+    for d in docs:
+        if isinstance(d,DocAlias):
+            d = d.document
+        rel_this_doc = d.all_related_that_doc(['replaces','obs']) 
+        for rel in rel_this_doc:
+            rel_id_camefrom.setdefault(rel.document.pk,[]).append(d.pk)
+        rel_docs += [x.document for x in rel_this_doc]
+
     ipr_docaliases = IprDocAlias.objects.filter(doc_alias__document__in=doc_ids).select_related('doc_alias')
     for a in ipr_docaliases:
         docs_dict[a.doc_alias.document_id].iprs.append(a)
+   
+    rel_docs_dict = dict((d.pk, d) for d in rel_docs)
+    rel_doc_ids = rel_docs_dict.keys()
+    
+    rel_ipr_docaliases = IprDocAlias.objects.filter(doc_alias__document__in=rel_doc_ids).select_related('doc_alias')
+    for a in rel_ipr_docaliases:
+        if a.doc_alias.document_id in rel_id_camefrom:
+            for k in rel_id_camefrom[a.doc_alias.document_id]:
+                if a not in docs_dict[k].iprs:
+                    docs_dict[k].iprs.append(a)
 
     # telechat date, can't do this with above query as we need to get TelechatDocEvents out
     seen = set()

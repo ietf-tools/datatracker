@@ -3,7 +3,7 @@
 {% load ietf_filters %}
 	    {% block search_result %}
 	    <table cellpadding="1" cellspacing="0" border="0">
-	       <tr><td colspan="3"><b>{% block search_header %}{% if not count %}Search result on {{ q }}{% else %}Document Title Search Result{% endif %}{% endblock %}</b></td></tr>
+	       <tr><td colspan="3"><b>{% block search_header %}Search result on {{ q }}{% endblock %}</b></td></tr>
 	       {% if not count %}
 		  <tr>
 		     <td></td>
@@ -15,16 +15,16 @@
 		  <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
 
 		  {% block iprlist %}
-		     {% for doc in docs %}
+		     {% for alias in docs %}
 		     <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
 			<tr >
 			   <td colspan="3">
-			      IPR that is related to <b><i>{{ doc|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.title|escape }}"{% if doc.related %}, {{ doc.relation }} {{ doc.related|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.title }}"{% endif %},
-			      </i></b>which has the string <b>"<i>{{ q }}</i>"</b> within the document title.
+			      IPR that is related to <b><i>{{ alias.name|rfcspace|lstrip:"0"|rfcnospace }}, "{{ alias.document.title|escape }}"{% if alias.related %}, that was {{ alias.relation|lower }} {{ alias.related.source.name|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ alias.related.source.title }}"{% endif %}
+			      </i><!--,</b> which has the string <b>"<i>{{ q }}</i>"</b> within the document title.-->
 			   </td>
 			</tr>
-			{% if doc.iprs %}
-			   {% for ipr in doc.iprs %}
+			{% if alias.iprs %}
+			   {% for ipr in alias.iprs %}
 			      <tr valign="top">
 				 <td width="100">{{ ipr.submitted_date }}</td>
 				 <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
@@ -41,7 +41,7 @@
 			{% else %}
 			<tr>
 			   <td></td>
-			   <td colspan="2"><b>No IPR disclosures related to <i>{{ doc|rfcspace|lstrip:"0" }}</i> have been submitted</b></td>
+			   <td colspan="2"><b>No IPR disclosures related to <i>{{ alias.name|rfcspace|lstrip:"0" }}</i> have been submitted</b></td>
 			</tr>
 			{% endif %}
 		     </tbody>

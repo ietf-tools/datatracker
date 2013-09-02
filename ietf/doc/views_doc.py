@@ -49,6 +49,7 @@ from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.utils import *
 from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
 from ietf.wgcharter.utils import historic_milestones_for_charter
+from ietf.ipr.models import IprDocAlias
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -92,7 +93,7 @@ def document_main(request, name, rev=None):
 
     group = doc.group
     if doc.type_id == 'conflrev':
-        conflictdoc = doc.related_that_doc('conflrev').get().document
+        conflictdoc = doc.related_that_doc('conflrev')[0].document
     
     revisions = []
     for h in doc.history_set.order_by("time", "id"):
@@ -278,11 +279,11 @@ def document_main(request, name, rev=None):
         search_archive = urllib.quote(search_archive, safe="~")
 
         # conflict reviews
-        conflict_reviews = [d.name for d in doc.related_that("conflrev")]
+        conflict_reviews = [d.document.name for d in doc.related_that("conflrev")]
 
         status_change_docs = doc.related_that(status_change_relationships)
-        status_changes = [ rel for rel in status_change_docs  if rel.get_state_slug() in ('appr-sent','appr-pend')]
-        proposed_status_changes = [ rel for rel in status_change_docs  if rel.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')]
+        status_changes = [ rel.document for rel in status_change_docs  if rel.document.get_state_slug() in ('appr-sent','appr-pend')]
+        proposed_status_changes = [ rel.document for rel in status_change_docs  if rel.document.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')]
 
         # remaining actions
         actions = []
@@ -345,9 +346,9 @@ def document_main(request, name, rev=None):
                                        replaces=[d.name for d in doc.related_that_doc("replaces")],
                                        replaced_by=[d.name for d in doc.related_that("replaces")],
                                        updates=[prettify_std_name(d.name) for d in doc.related_that_doc("updates")],
-                                       updated_by=[prettify_std_name(d.canonical_name()) for d in doc.related_that("updates")],
+                                       updated_by=[prettify_std_name(d.document.canonical_name()) for d in doc.related_that("updates")],
                                        obsoletes=[prettify_std_name(d.name) for d in doc.related_that_doc("obs")],
-                                       obsoleted_by=[prettify_std_name(d.canonical_name()) for d in doc.related_that("obs")],
+                                       obsoleted_by=[prettify_std_name(d.document.canonical_name()) for d in doc.related_that("obs")],
                                        conflict_reviews=conflict_reviews,
                                        status_changes=status_changes,
                                        proposed_status_changes=proposed_status_changes,

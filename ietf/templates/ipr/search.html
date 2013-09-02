@@ -81,7 +81,7 @@ label { float:left; width: 200px; }
 		  <select name="wg_search">
 		     <option value="">--Select WG</option>
 		     {% for wg in wgs %}
-		     <option value="{{ wg.group_acronym.acronym }}">{{ wg.group_acronym.acronym }}</option>{% endfor %}
+		     <option value="{{ wg.acronym }}">{{ wg.acronym }}</option>{% endfor %}
 		  </select>
 <input type="submit" value="SEARCH" width="15">
       </form>
