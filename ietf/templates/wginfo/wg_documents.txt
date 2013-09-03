@@ -1,2 +1,0 @@
-{% load ietf_filters %}{% regroup docs by view_sort_group as grouped_docs %}{% for doc_group in grouped_docs %}{% for doc in doc_group.list %}{% include "wginfo/wg_documents_entry.txt" %}{% endfor %}{% endfor %}{% regroup docs_related by view_sort_group as grouped_docs_related %}{% for doc_group in grouped_docs_related %}{% for doc in doc_group.list %}Related {% include "wginfo/wg_documents_entry.txt" %}{% endfor %}{% endfor %}
-

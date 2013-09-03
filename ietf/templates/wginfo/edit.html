@@ -66,7 +66,7 @@ Create new WG or BoF
       <td></td>
       <td class="actions">
 	{% ifequal action "edit" %}
-          <a href="{% url wg_charter acronym=wg.acronym %}">Back</a>
+          <a href="{% url group_charter acronym=wg.acronym %}">Back</a>
           <input type="submit" value="Save"/>
         {% else %} 
            {% ifequal action "charter" %}

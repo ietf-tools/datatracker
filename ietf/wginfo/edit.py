@@ -258,7 +258,7 @@ def edit(request, acronym=None, action="edit"):
             if action=="charter":
                 return redirect('charter_submit', name=wg.charter.name, option="initcharter")
 
-            return redirect('wg_charter', acronym=wg.acronym)
+            return redirect('group_charter', acronym=wg.acronym)
     else: # form.is_valid()
         if not new_wg:
             from ietf.person.forms import json_emails
@@ -312,7 +312,7 @@ def conclude(request, acronym):
             e.desc = "Requested closing group"
             e.save()
 
-            return redirect('wg_charter', acronym=wg.acronym)
+            return redirect('group_charter', acronym=wg.acronym)
     else:
         form = ConcludeForm()
 

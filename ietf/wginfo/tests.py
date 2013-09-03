@@ -178,7 +178,7 @@ class WgEditTestCase(django.test.TestCase):
         make_test_data()
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse('wg_edit', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('group_edit', kwargs=dict(acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get

@@ -313,7 +313,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
             if milestone_set == "charter":
                 return redirect('doc_view', name=group.charter.canonical_name())
             else:
-                return redirect('wg_charter', acronym=group.acronym)
+                return redirect('group_charter', acronym=group.acronym)
     else:
         for m in milestones:
             forms.append(MilestoneForm(instance=m, needs_review=needs_review))
