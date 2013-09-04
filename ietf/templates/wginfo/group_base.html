@@ -78,7 +78,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   {% endif %}
 
   {% if can_manage_delegates %}
-  <a {% if selected == "manage_delegates" %}class="selected"{% else %}href="{% url manage_delegates group..acronym %}"{% endif %}>Manage delegations</a> |
+  <a {% if selected == "manage_delegates" %}class="selected"{% else %}href="{% url manage_delegates group.acronym %}"{% endif %}>Manage delegations</a> |
   {% endif %}
 
   {% if can_manage_shepherds %}
