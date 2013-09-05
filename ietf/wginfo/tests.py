@@ -50,36 +50,168 @@ from ietf.name.models import *
 from ietf.person.models import *
 from ietf.wginfo.mails import *
 
-
-class WgInfoUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
-
-class WgFileTestCase(unittest.TestCase):
-    def testFileExistence(self):
-        fpath = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, "tls.desc.txt")
-        if not os.path.exists(fpath):
-            print "\nERROR: charter files not found in "+settings.IETFWG_DESCRIPTIONS_PATH
-            print "They are needed for testing WG charter pages."
-            print "Download them to a local directory with:"
-            print "wget -nd -nc -np -r http://www.ietf.org/wg-descriptions/"
-            print "And set IETFWG_DESCRIPTIONS_PATH in settings_local.py\n"
-
-class WgOverviewTestCase(django.test.TestCase):
+class GroupPagesTests(django.test.TestCase):
     fixtures = ["names"]
 
-    def test_overview(self):
-        make_test_data()
+    def setUp(self):
+        self.charter_dir = os.path.abspath("tmp-charter-dir")
+        os.mkdir(self.charter_dir)
+        settings.CHARTER_PATH = self.charter_dir
 
-        wg = Group.objects.get(acronym="mars")
-        wg.charter.set_state(State.objects.get(used=True, type="charter", slug="intrev"))
+    def tearDown(self):
+        shutil.rmtree(self.charter_dir)
+
+    def test_active_wgs(self):
+        draft = make_test_data()
+        group = draft.group
+
+        url = urlreverse('ietf.wginfo.views.active_wgs')
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(group.parent.name in r.content)
+        self.assertTrue(group.acronym in r.content)
+        self.assertTrue(group.name in r.content)
+        self.assertTrue(group.ad.plain_name() in r.content)
+
+    def test_wg_summaries(self):
+        draft = make_test_data()
+        group = draft.group
+
+        chair = Email.objects.filter(role__group=group, role__name="chair")[0]
+
+        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
+            f.write("This is a charter.")
+
+        url = urlreverse('ietf.wginfo.views.wg_summary_area')
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(group.parent.name in r.content)
+        self.assertTrue(group.acronym in r.content)
+        self.assertTrue(group.name in r.content)
+        self.assertTrue(chair.address in r.content)
+
+        url = urlreverse('ietf.wginfo.views.wg_summary_acronym')
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(group.acronym in r.content)
+        self.assertTrue(group.name in r.content)
+        self.assertTrue(chair.address in r.content)
+        
+        url = urlreverse('ietf.wginfo.views.wg_charters')
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(group.acronym in r.content)
+        self.assertTrue(group.name in r.content)
+        self.assertTrue(group.ad.plain_name() in r.content)
+        self.assertTrue(chair.address in r.content)
+        self.assertTrue("This is a charter." in r.content)
+
+        url = urlreverse('ietf.wginfo.views.wg_charters_by_acronym')
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(group.acronym in r.content)
+        self.assertTrue(group.name in r.content)
+        self.assertTrue(group.ad.plain_name() in r.content)
+        self.assertTrue(chair.address in r.content)
+        self.assertTrue("This is a charter." in r.content)
+
+    def test_chartering_wgs(self):
+        draft = make_test_data()
+        group = draft.group
+        group.charter.set_state(State.objects.get(used=True, type="charter", slug="intrev"))
 
         url = urlreverse('ietf.wginfo.views.chartering_wgs')
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('table.ietf-doctable td.acronym a:contains("mars")')), 1)
+        self.assertEquals(len(q('table.ietf-doctable td.acronym a:contains("%s")' % group.acronym)), 1)
 
+    def test_bofs(self):
+        draft = make_test_data()
+        group = draft.group
+        group.state_id = "bof"
+        group.save()
+
+        url = urlreverse('ietf.wginfo.views.bofs')
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('table.ietf-doctable td.acronym a:contains("%s")' % group.acronym)), 1)
+        
+    def test_group_documents(self):
+        draft = make_test_data()
+        group = draft.group
+
+        draft2 = Document.objects.create(
+            name="draft-somebody-mars-test",
+            time=datetime.datetime.now(),
+            type_id="draft",
+            title="Test By Somebody",
+            stream_id="ietf",
+            group=Group.objects.get(type="individ"),
+            abstract="Abstract.",
+            rev="01",
+            pages=2,
+            intended_std_level_id="ps",
+            shepherd=None,
+            ad=None,
+            expires=datetime.datetime.now() + datetime.timedelta(days=10),
+            notify="",
+            note="",
+            )
+
+        draft2.set_state(State.objects.get(used=True, type="draft", slug="active"))
+        DocAlias.objects.create(
+            document=draft2,
+            name=draft2.name,
+            )
+
+        url = urlreverse('ietf.wginfo.views.group_documents', kwargs=dict(acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(draft.name in r.content)
+        self.assertTrue(group.name in r.content)
+        self.assertTrue(group.acronym in r.content)
+
+        self.assertTrue(draft2.name in r.content)
+
+    def test_group_charter(self):
+        draft = make_test_data()
+        group = draft.group
+
+        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
+            f.write("This is a charter.")
+
+        milestone = GroupMilestone.objects.create(
+            group=group,
+            state_id="active",
+            desc="Get Work Done",
+            due=datetime.date.today() + datetime.timedelta(days=100))
+        milestone.docs.add(draft)
+
+        url = urlreverse('ietf.wginfo.views.group_charter', kwargs=dict(acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(group.name in r.content)
+        self.assertTrue(group.acronym in r.content)
+        self.assertTrue("This is a charter." in r.content)
+        self.assertTrue(milestone.desc in r.content)
+        self.assertTrue(milestone.docs.all()[0].name in r.content)
+
+    def test_history(self):
+        draft = make_test_data()
+        group = draft.group
+
+        e = GroupEvent.objects.create(
+            group=group,
+            desc="Something happened.",
+            type="added_comment",
+            by=Person.objects.get(name="(System)"))
+
+        url = urlreverse('ietf.wginfo.views.history', kwargs=dict(acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(e.desc in r.content)
 
 class WgEditTestCase(django.test.TestCase):
     fixtures = ["names"]
