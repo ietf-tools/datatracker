@@ -24,7 +24,7 @@
    </tr>
    {% ifequal ipr.status 1 %}
       {% if ipr.legacy_title_1 %}
-	 <tr>
+         <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
 	    <td></td>
 	    <td></td>
 	    <td>
@@ -34,7 +34,7 @@
 	 </tr>
       {% endif %}
       {% if ipr.legacy_title_2 %}
-	 <tr>
+         <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
 	    <td></td>
 	    <td></td>
 	    <td>
