@@ -63,7 +63,10 @@ def fill_in_charter_info(group, include_drafts=False):
     milestone_state = "charter" if group.state_id == "proposed" else "active"
     group.milestones = group.groupmilestone_set.filter(state=milestone_state).order_by('due')
 
-    group.charter_text = get_charter_text(group)
+    if group.charter:
+        group.charter_text = get_charter_text(group)
+    else:
+        group.charter_text = u"Not chartered yet."
 
     if include_drafts:
         aliases = DocAlias.objects.filter(document__type="draft", document__group=group).select_related('document').order_by("name")
