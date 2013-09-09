@@ -318,8 +318,11 @@ def document_main(request, name, rev=None):
                 label += " (note that intended status is not set)"
             actions.append((label, urlreverse('doc_request_publication', kwargs=dict(name=doc.name))))
 
-        if doc.get_state_slug() != "expired" and doc.stream_id in ("ietf",) and can_edit and not iesg_state:
-            actions.append(("Begin IESG Processing", urlreverse('doc_edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
+        if doc.get_state_slug() != "expired" and doc.stream_id in ("ietf",):
+            if not iesg_state and can_edit:
+                actions.append(("Begin IESG Processing", urlreverse('doc_edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
+            elif can_edit_stream_info and (not iesg_state or iesg_state.slug == 'watching'):
+                actions.append(("Submit to IESG for Publication", urlreverse('doc_to_iesg', kwargs=dict(name=doc.name))))
 
         return render_to_response("doc/document_draft.html",
                                   dict(doc=doc,

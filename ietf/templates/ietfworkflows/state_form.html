@@ -1,73 +1,32 @@
 <form action="" method="post">
-<table class="ietf-table edit-form" style="width: 100%;">
-<tr>
-  <th>1. Input information about change</th>
-  <th>2. Change annotation tags if needed</th>
-</tr>
-<tr style="vertical-align: top;"><td style="width: 50%;">
-    <div class="field{% if form.comment.errors %} error{% endif %}">
-    {{ form.comment.errors }}
-    Comment: <br/>
-    <textarea name="comment">{{ form.data.comment }}</textarea>
-    </div>
-    <div class="field{% if form.weeks.errors %} error{% endif %}">
-    {{ form.weeks.errors }}
-    Estimated time in next status:<br />
-    <input type="text" name="weeks" value="{{ form.data.weeks }}" /> (in weeks)
-    </div>
-</td><td>
-  <div class="field">
-    {{ form.tags }}
-  </div>
-</td></tr>
-</table>
 
-<br />
-
-<table class="ietf-table edit-form edit-form-tags" style="width: 100%;">
-<tr>
-  <th>3. Select one action</th>
-</tr>
-<tr><td>
-    <div class="only-tags field">
-      <ul>
-      <li><input type="submit" name="only_tags" value="Update annotation tags" /> State remains unchanged: <strong>{{ form.state.name }}</strong></li>
-      </ul>
-    </div>
-  {% with form.get_transitions as transitions %}
-  {% if transitions %}
-  <ul>
-    {% for transition in transitions %}
-    <li class="{% cycle oddrow,evenrow %}">
-    <input type="submit" name="transition_{{ transition.pk }}" value="{{ transition.name }}" />
-    Changes state to: <strong>{{ transition.destination.name }}</strong>
-    </li>
-    {% endfor %}
-  {% endif %}
-  </ul>
-  {% endwith %}
-
+<div class="rec-states">
   {% with form.get_next_states as next_states %}
   {% if next_states %}
-  <ul>
-    Jump to the next state:
-    {% for state in next_states %}
-    <input type="submit" name="new_state_{{ state.pk }}" value="{{ state.name }}" />
+    <span class="rec-state-header">Recommended next state{{next_states|pluralize}}:</span>
+    <ul class="rec-statelist">
+      {% for state in next_states %}
+      <li class="rec-state">'{{ state.name }}'{% if not forloop.last %}, {% endif %}</li>
     {% endfor %}
+    </ul>
   {% endif %}
-  </ul>
   {% endwith %}
+</div>
 
-    <div class="free-change field{% if form.new_state.errors %} error{% endif %}">
-      {{ form.new_state.errors }}
-      Change to another state:
-      <select name="new_state">
-        {% for value, name in form.get_states %}
-          <option value="{{ value }}">{{ name }}</option>
-        {% endfor %}
-      </select>
-      <input type="submit" name="change" value="Change state" />
-    </div>
-</td></tr>
+<table id="new-edit-form">
+    {% for field in form.visible_fields %}
+    <tr>
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+
+      {{ field.errors }}
+      </td>
+    </tr>
+   {% endfor %}
 </table>
+<div class="actions">
+<input type="submit" name="save" value="Save" />
+<input type="submit" name="cancel" value="Cancel" />
+</div>
 </form>

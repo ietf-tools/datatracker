@@ -72,7 +72,6 @@ class EditStreamInfoTestCase(django.test.TestCase):
         unused = draft.group.unused_tags.values_list("slug", flat=True)
         for t in q("input[name=tags]"):
             self.assertTrue(t.attrib["value"] not in unused)
-        self.assertEquals(len(q('form input[type=submit][name=only_tags]')), 1)
 
         # set tags
         mailbox_before = len(outbox)
@@ -115,10 +114,26 @@ class EditStreamInfoTestCase(django.test.TestCase):
             self.assertTrue(t.attrib["value"] not in unused)
         self.assertEquals(len(q('select[name=new_state]')), 1)
 
-        # set state
+        old_state = draft.get_state("draft-stream-%s" % draft.stream_id )
         new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="parked")
+        self.assertTrue(old_state!=new_state)
         mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
+
+        # First make sure cancel doesn't change anything
+        r = self.client.post(url,
+                             dict(comment="some comment",
+                                  weeks="10",
+                                  tags=[x.pk for x in draft.tags.filter(slug__in=get_tags_for_stream_id(draft.stream_id))],
+                                  new_state=new_state.pk,
+				  cancel="1",
+                                  ))
+        self.assertEquals(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEquals(draft.get_state("draft-stream-%s" % draft.stream_id), old_state)
+
+        # Set new state
         r = self.client.post(url,
                              dict(comment="some comment",
                                   weeks="10",

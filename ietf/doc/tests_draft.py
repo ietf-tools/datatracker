@@ -328,6 +328,24 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(events[-3].type, "started_iesg_process")
         self.assertEquals(len(outbox), mailbox_before)
 
+        # Redo, starting in publication requested to make sure WG state is also set
+        draft.unset_state('draft-iesg')
+        draft.set_state(State.objects.get(type='draft-stream-ietf',slug='writeupw'))
+        draft.stream = StreamName.objects.get(slug='ietf')
+        draft.save()
+        r = self.client.post(url,
+                             dict(intended_std_level=str(draft.intended_std_level_id),
+                                  ad=ad.pk,
+                                  create_in_state=State.objects.get(used=True, type="draft-iesg", slug="pub-req").pk,
+                                  notify="test@example.com",
+                                  note="This is a note",
+                                  telechat_date="",
+                                  ))
+        self.assertEquals(r.status_code, 302)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.get_state_slug('draft-iesg'),'pub-req')
+        self.assertEquals(draft.get_state_slug('draft-stream-ietf'),'sub-pub')
+
     def test_edit_consensus(self):
         draft = make_test_data()
         
@@ -867,6 +885,66 @@ class IndividualInfoFormsTestCase(django.test.TestCase):
         self.docname='draft-ietf-mars-test'
         self.doc = Document.objects.get(name=self.docname)
         
+class SubmitToIesgTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def verify_permissions(self):
+
+        def verify_fail(remote_user):
+            if remote_user:
+                self.client.login(remote_user=remote_user)
+            r = self.client.get(url)
+            self.assertEquals(r.status_code,404)
+
+        def verify_can_see(remote_user):
+            self.client.login(remote_user=remote_user)
+            r = self.client.get(url)
+            self.assertEquals(r.status_code,200)
+            q = PyQuery(r.content)
+            self.assertEquals(len(q('form input[name="confirm"]')),1) 
+
+        url = urlreverse('doc_to_iesg', kwargs=dict(name=self.docname))
+
+        for username in [None,'plain','iana','iab chair']:
+            verify_fail(username)
+
+        for username in ['marschairman','secretary','ad']:
+            verify_can_see(username)
+        
+    def cancel_submission(self):
+        url = urlreverse('doc_to_iesg', kwargs=dict(name=self.docname))
+        self.client.login(remote_user='marschairman')
+
+	r = self.client.post(url, dict(cancel="1"))
+        self.assertEquals(r.status_code, 302)
+
+        doc = Document.objects.get(pk=self.doc.pk)
+        self.assertTrue(doc.get_state('draft-iesg')==None)
+
+    def confirm_submission(self):
+        url = urlreverse('doc_to_iesg', kwargs=dict(name=self.docname))
+        self.client.login(remote_user='marschairman')
+
+        docevent_count_pre = self.doc.docevent_set.count()
+        mailbox_before = len(outbox)
+
+	r = self.client.post(url, dict(confirm="1"))
+        self.assertEquals(r.status_code, 302)
+
+        doc = Document.objects.get(pk=self.doc.pk)
+        self.assertTrue(doc.get_state('draft-iesg').slug=='pub-req')
+        self.assertTrue(doc.get_state('draft-stream-ietf').slug=='sub-pub')
+        self.assertTrue(doc.ad!=None)
+        self.assertTrue(doc.docevent_set.count() != docevent_count_pre)
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("Publication has been requested" in outbox[-1]['Subject'])
+
+    def setUp(self):
+        make_test_data()
+        self.docname='draft-ietf-mars-test'
+        self.doc = Document.objects.get(name=self.docname)
+        self.doc.unset_state('draft-iesg') 
+
 class RequestPublicationTestCase(django.test.TestCase):
     fixtures = ['names']
 

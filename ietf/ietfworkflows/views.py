@@ -70,12 +70,16 @@ def _edit_draft_stream(request, draft, form_class=DraftTagsStateForm):
     if request.method == 'POST':
         form = form_class(user=user, draft=draft, data=request.POST)
         form.request = request
+        if request.POST.get("cancel",""):
+            return HttpResponseRedirect(draft.get_absolute_url())
         if form.is_valid():
             form.save()
-            if form_class == NoWorkflowStateForm and settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                return HttpResponseRedirect(urlreverse('ietf.ietfworkflows.views.edit_state', kwargs={ 'name': draft.filename } ))
+           
+            # This behavior surprises folks. Let's try running awhile without it.
+            #if form_class == NoWorkflowStateForm and settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            #    return HttpResponseRedirect(urlreverse('ietf.ietfworkflows.views.edit_state', kwargs={ 'name': draft.filename } ))
 
-            return HttpResponseRedirect('.')
+            return HttpResponseRedirect(draft.get_absolute_url())
     else:
         form = form_class(user=user, draft=draft)
         form.request = request
