@@ -238,8 +238,11 @@ def group_documents_txt(request, acronym):
 
     docs, meta, docs_related, meta_related = search_for_group_documents(group)
 
+    for d in docs:
+        d.prefix = d.get_state().name
+
     for d in docs_related:
-        d.search_heading = u"Related %s" % d.search_heading
+        d.prefix = u"Related %s" % d.get_state().name
 
     rows = []
     for d in itertools.chain(docs, docs_related):
@@ -249,7 +252,7 @@ def group_documents_txt(request, acronym):
         else:
             name = "%s-%s" % (d.name, d.rev)
 
-        rows.append(u"\t".join((d.search_heading.replace("Internet-Draft", ""), name, clean_whitespace(d.title))))
+        rows.append(u"\t".join((d.prefix, name, clean_whitespace(d.title))))
 
     return HttpResponse(u"\n".join(rows), mimetype='text/plain; charset=UTF-8')
 
@@ -269,7 +272,7 @@ def group_charter(request, acronym):
     if group.state_id in ("active", "dormant"):
         actions.append((u"Request closing %s" % group.type.name, urlreverse("wg_conclude", kwargs=dict(acronym=group.acronym))))
 
-    is_chair = request.user.is_authenticated() and group.role_set.filter(name="chair", person__user=request.user),
+    is_chair = request.user.is_authenticated() and group.role_set.filter(name="chair", person__user=request.user)
 
     return render_to_response('wginfo/group_charter.html',
                               construct_group_menu_context(request, group, "charter", {
