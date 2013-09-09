@@ -72,7 +72,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	 {% endfor %}
 
 	 {% for item in ipr.updated_by.all %}
-	 {% ifequal item.processed 1 %}
+	 {% if item.processed == 1 and item.ipr.status != 2 %}
 	     <p>
 	     This IPR disclosure has been updated by IPR disclosure ID #{{ item.ipr.ipr_id }},
 	     {% ifequal item.status_to_be 1 %}
@@ -81,7 +81,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 		"{{ item.ipr.title|escape }}", which was removed at the request of the submitter.
 	     {% endifequal %}
 	     </p>
-	 {% endifequal %}
+	 {% endif %}
 	 {% endfor %}
 
 	 <p><a href="{% url ietf.ipr.new.update ipr.ipr_id %}" rel="nofollow">Update this IPR disclosure</a>. Note: Updates to IPR disclosures must only be made by authorized

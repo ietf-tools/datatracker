@@ -9,7 +9,7 @@ management.setup_environ(settings)
 
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
-from ietf.idrfc.lastcall import *
+from ietf.doc.lastcall import *
 
 drafts = get_expired_last_calls()
 for doc in drafts:

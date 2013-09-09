@@ -8,16 +8,14 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from ietf.idrfc.utils import update_telechat
-
-from ietf.doc.utils import log_state_changed
+from ietf.doc.utils import log_state_changed, update_telechat
 
 from ietf.doc.models import save_document_in_history
 from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_document_content
 from ietf.ietfauth.decorators import has_role, role_required
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail_preformatted
-from ietf.idrfc.mails import email_iana
+from ietf.doc.mails import email_iana
 
 from ietf.doc.models import State, Document, DocHistory, DocAlias
 from ietf.doc.models import DocEvent, NewRevisionDocEvent, WriteupDocEvent, TelechatDocEvent, BallotDocEvent, BallotPositionDocEvent
@@ -89,7 +87,7 @@ def change_state(request, name, option=None):
                               dict(form=form,
                                    doc=review,
                                    login=login,
-                                   help_url=reverse('help_conflict_review_states'),
+                                   help_url=reverse('state_help', kwargs=dict(type="conflict-review")),
                                    ),
                               context_instance=RequestContext(request))
 

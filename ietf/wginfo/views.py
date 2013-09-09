@@ -38,7 +38,7 @@ from django.http import HttpResponse
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from ietf.idtracker.models import Area, IETFWG
-from ietf.idrfc.views_search import SearchForm, retrieve_search_results
+from ietf.doc.views_search import SearchForm, retrieve_search_results
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
 from ietf.ipr.models import IprDetail
 from ietf.group.models import Group
@@ -76,11 +76,11 @@ def wg_summary_acronym(request):
     return HttpResponse(loader.render_to_string('wginfo/1wg-summary-by-acronym.txt', {'area_list': areas, 'wg_list': wgs}),mimetype='text/plain; charset=UTF-8')
 
 def wg_summary_area(request):
-    wgs = IETFWG.objects.filter(status='1',group_type='1',start_date__isnull=False)
+    wgs = IETFWG.objects.filter(status='1',group_type='1',start_date__isnull=False).exclude(parent=None)
     return HttpResponse(loader.render_to_string('wginfo/1wg-summary.txt', {'wg_list': wgs}),mimetype='text/plain; charset=UTF-8')
 
 def wg_charters(request):
-    wgs = IETFWG.objects.filter(status='1',group_type='1',start_date__isnull=False)
+    wgs = IETFWG.objects.filter(status='1',group_type='1',start_date__isnull=False).exclude(parent=None)
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         for wg in wgs:
             fill_in_charter_info(wg, include_drafts=True)

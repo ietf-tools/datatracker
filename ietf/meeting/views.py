@@ -260,7 +260,7 @@ def session_agenda(request, num, session):
 
     if d:
         agenda = d[0]
-        content = read_agenda_file(num, agenda)
+        content = read_agenda_file(num, agenda) or "Could not read agenda file"
         _, ext = os.path.splitext(agenda.external_url)
         ext = ext.lstrip(".").lower()
 
@@ -331,33 +331,34 @@ def read_agenda_file(num, doc):
         return None
 
 def session_draft_list(num, session):
-    #extensions = ["html", "htm", "txt", "HTML", "HTM", "TXT", ]
-    result = []
-    found = False
+    try:
+        agenda = Document.objects.filter(type="agenda",
+                                         session__meeting__number=num,
+                                         session__group__acronym=session,
+                                         states=State.objects.get(type="agenda", slug="active")).distinct().get()
+    except Document.DoesNotExist:
+        raise Http404
 
     drafts = set()
+    content = read_agenda_file(num, agenda)
+    if content:
+        drafts.update(re.findall('(draft-[-a-z0-9]*)', content))
 
-    for agenda in Document.objects.filter(type="agenda", session__meeting__number=num, session__group__acronym=session):
-        content = read_agenda_file(num, agenda)
-        if content != None:
-            found = True
-            drafts.update(re.findall('(draft-[-a-z0-9]*)', content))
-
-    if not found:
-        raise Http404("No agenda for the %s group of IETF %s is available" % (session, num))
-    
+    result = []
     for draft in drafts:
         try:
-            if (re.search('-[0-9]{2}$',draft)):
+            if re.search('-[0-9]{2}$', draft):
                 doc_name = draft
             else:
-                id = InternetDraft.objects.get(filename=draft)
-                #doc = IdWrapper(id)
-                doc_name = draft + "-" + id.revision
-            result.append(doc_name)
-        except InternetDraft.DoesNotExist:
+                doc = Document.objects.get(filename=draft)
+                doc_name = draft + "-" + doc.rev
+
+            if doc_name not in result:
+                result.append(doc_name)
+        except Document.DoesNotExist:
             pass
-    return sorted(list(set(result)))
+
+    return sorted(result)
 
 
 def session_draft_tarfile(request, num, session):

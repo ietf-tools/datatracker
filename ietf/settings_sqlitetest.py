@@ -1,7 +1,7 @@
 # Standard settings except we use SQLite, this is useful for speeding
 # up tests that depend on the test database, try for instance:
 #
-#   ./manage.py test --settings=settings_sqlitetest idrfc.ChangeStateTestCase
+#   ./manage.py test --settings=settings_sqlitetest doc.ChangeStateTestCase
 #
 
 from settings import *

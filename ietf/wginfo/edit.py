@@ -62,8 +62,8 @@ class WGForm(forms.Form):
         if self.wg and acronym == self.wg.acronym:
             return acronym # no change, no check
 
-        if not re.match(r'^[-a-z0-9]+$', acronym):
-            raise forms.ValidationError("Acronym is invalid, may only contain letters, numbers and dashes.")
+        if not re.match(r'^[a-z][a-z0-9]+$', acronym):
+            raise forms.ValidationError("Acronym is invalid, must be at least two characters and only contain lowercase letters and numbers starting with a letter.")
 
         existing = Group.objects.filter(acronym__iexact=acronym)
         if existing:

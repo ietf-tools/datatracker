@@ -16,9 +16,9 @@
 	 {% endifequal %}
 	 {% endfor %}
 	 {% for item in ipr.updated_by.all %}
-	       {% ifequal item.processed 1 %}
+	       {% if item.processed == 1 and item.ipr.status != 2 %}
 	    Updated by ID <a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">#{{ item.ipr.ipr_id }}</a>.<br/> 
-	       {% endifequal %}
+	       {% endif %}
 	 {% endfor %}
       </td>
    </tr>

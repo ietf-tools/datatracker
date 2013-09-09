@@ -8,8 +8,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from ietf.idrfc.utils import update_telechat
-from ietf.doc.utils import log_state_changed
+from ietf.doc.utils import log_state_changed, update_telechat
 from ietf.doc.models import save_document_in_history
 
 from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_document_content
@@ -24,9 +23,8 @@ from ietf.group.models import Group
 from ietf.name.models import DocRelationshipName, StdLevelName
 
 from ietf.doc.forms import TelechatForm, AdForm, NotifyForm
-
-from ietf.idrfc.views_ballot import LastCallTextForm
-from ietf.idrfc.lastcall import request_last_call
+from ietf.doc.views_ballot import LastCallTextForm
+from ietf.doc.lastcall import request_last_call
 
 class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)
@@ -95,7 +93,7 @@ def change_state(request, name, option=None):
                               dict(form=form,
                                    doc=status_change,
                                    login=login,
-                                   help_url=reverse('help_status_change_states')
+                                   help_url=reverse('state_help', kwargs=dict(type="status-change")),
                                    ),
                               context_instance=RequestContext(request))
 
@@ -702,7 +700,7 @@ def last_call(request, name):
 
                     request_last_call(request, status_change)
 
-                    return render_to_response('idrfc/last_call_requested.html',
+                    return render_to_response('doc/draft/last_call_requested.html',
                                               dict(doc=status_change,
                                                    url = status_change.get_absolute_url(),
                                                   ),

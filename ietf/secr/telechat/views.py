@@ -13,9 +13,8 @@ from ietf.doc.utils import get_document_content, log_state_changed
 from ietf.group.models import Group
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
-from ietf.idrfc.lastcall import request_last_call
-from ietf.idrfc.mails import email_owner, email_state_changed
-from ietf.idrfc.utils import add_document_comment
+from ietf.doc.lastcall import request_last_call
+from ietf.doc.mails import email_ad, email_state_changed
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem, WGAction
 from ietf.iesg.views import _agenda_data
 
@@ -230,7 +229,7 @@ def doc_detail(request, date, name):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         
-        # logic from idrfc/views_ballot.py EditPositionRedesign
+        # logic from doc/views_ballot.py EditPositionRedesign
         if button_text == 'update_ballot':
             formset = BallotFormset(request.POST, initial=initial_ballot)
             state_form = ChangeStateForm(initial=initial_state)
@@ -257,7 +256,7 @@ def doc_detail(request, date, name):
             url = reverse('telechat_doc_detail', kwargs={'date':date,'name':name})
             return HttpResponseRedirect(url)
         
-        # logic from idrfc/views_edit.py change_stateREDESIGN
+        # logic from doc/views_draft.py change_state
         elif button_text == 'update_state':
             formset = BallotFormset(initial=initial_ballot)
             state_form = ChangeStateForm(request.POST, initial=initial_state)
@@ -291,7 +290,7 @@ def doc_detail(request, date, name):
                     doc.save()
                     
                     email_state_changed(request, doc, e.desc)
-                    email_owner(request, doc, doc.ad, login, e.desc)
+                    email_ad(request, doc, doc.ad, login, e.desc)
     
                     if state.slug == "lc-req":
                         request_last_call(request, doc)

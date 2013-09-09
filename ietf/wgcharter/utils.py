@@ -83,7 +83,7 @@ def historic_milestones_for_charter(charter, rev):
     
 
 def update_telechat(request, doc, by, new_telechat_date):
-    # FIXME: reuse function in idrfc/utils.py instead of this one
+    # FIXME: reuse function in doc/utils.py instead of this one
     # (need to fix auto-setting returning item problem first though)
     from ietf.doc.models import TelechatDocEvent
     

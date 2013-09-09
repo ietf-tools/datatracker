@@ -12,7 +12,7 @@ from django.utils.text import truncate_words
 
 from ietf.doc.models import *
 from ietf.doc.utils import augment_events_with_revision
-from ietf.idtracker.templatetags.ietf_filters import format_textarea
+from ietf.doc.templatetags.ietf_filters import format_textarea
 
 class DocumentChanges(Feed):
     feed_type = Atom1Feed

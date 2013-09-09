@@ -49,11 +49,10 @@ from django.utils import simplejson as json
 from django import forms
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
-from ietf.idrfc.models import RfcIndex
-from ietf.idrfc.utils import update_telechat
+from ietf.doc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required, role_required
-from ietf.idtracker.templatetags.ietf_filters import in_group
-from ietf.ipr.models import IprDocAlias 
+from ietf.ietfauth.utils import has_role
+from ietf.ipr.models import IprDocAlias
 from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent
 from ietf.group.models import Group, GroupMilestone
 
@@ -603,61 +602,27 @@ def telechat_docs_tarfile(request,year,month,day):
     return response
 
 def discusses(request):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        res = []
-
-        for d in IDInternal.objects.filter(states__type="draft-iesg", states__slug__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), docevent__ballotpositiondocevent__pos="discuss").distinct():
-            found = False
-            for p in d.positions.all():
-                if p.discuss:
-                    found = True
-                    break
-
-            if not found:
-                continue
-
-            if d.rfc_flag:
-                doc = RfcWrapper(d)
-            else:
-                doc = IdWrapper(draft=d)
-
-            if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
-                res.append(doc)
-
-        return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
-    
-    positions = Position.objects.filter(discuss=1)
     res = []
-    try:
-        ids = set()
-    except NameError:
-        # for Python 2.3 
-        from sets import Set as set
-        ids = set()
-    
-    for p in positions:
-        try:
-            draft = p.ballot.drafts.filter(primary_flag=1)
-            if len(draft) > 0 and draft[0].rfc_flag:
-                if not -draft[0].draft_id in ids:
-                    ids.add(-draft[0].draft_id)
-                    try:
-                        ri = RfcIndex.objects.get(rfc_number=draft[0].draft_id)
-                        doc = RfcWrapper(ri)
-                        if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
-                            res.append(doc)
-                    except RfcIndex.DoesNotExist:
-                        # NOT QUITE RIGHT, although this should never happen
-                        pass
-            if len(draft) > 0 and not draft[0].rfc_flag and draft[0].draft.id_document_tag not in ids:
-                ids.add(draft[0].draft.id_document_tag)
-                doc = IdWrapper(draft=draft[0])
-                if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
-                    res.append(doc)
-        except IDInternal.DoesNotExist:
-            pass
-    return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
 
+    for d in IDInternal.objects.filter(states__type="draft-iesg", states__slug__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), docevent__ballotpositiondocevent__pos="discuss").distinct():
+        found = False
+        for p in d.positions.all():
+            if p.discuss:
+                found = True
+                break
+
+        if not found:
+            continue
+
+        if d.rfc_flag:
+            doc = RfcWrapper(d)
+        else:
+            doc = IdWrapper(draft=d)
+
+        if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
+            res.append(doc)
+
+    return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
 
 @role_required('Area Director', 'Secretariat')
 def milestones_needing_review(request):
@@ -747,7 +712,7 @@ def get_possible_wg_actions():
 def working_group_actions(request):
     current_items = WGAction.objects.order_by('status_date').select_related()
 
-    if request.method == 'POST' and in_group(request.user, 'Secretariat'):
+    if request.method == 'POST' and has_role(request.user, 'Secretariat'):
         filename = request.POST.get('filename')
         if filename and filename in os.listdir(settings.IESG_WG_EVALUATION_DIR):
             if 'delete' in request.POST:
