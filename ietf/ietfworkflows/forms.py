@@ -156,9 +156,9 @@ class NoWorkflowStateForm(StreamDraftForm):
 
 class DraftTagsStateForm(StreamDraftForm):
 
+    new_state = forms.ChoiceField(label='State')
+    weeks = forms.IntegerField(label='Expected weeks in state',required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
-    new_state = forms.ChoiceField()
-    weeks = forms.IntegerField(required=False)
     tags = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple, required=False)
 
     template = 'ietfworkflows/state_form.html'
@@ -167,6 +167,9 @@ class DraftTagsStateForm(StreamDraftForm):
         super(DraftTagsStateForm, self).__init__(*args, **kwargs)
         self.state = get_state_for_draft(self.draft)
         self.fields['new_state'].choices = self.get_states()
+        self.fields['new_state'].initial = self.state.pk
+        if self.draft.stream_id == 'ietf':
+            self.fields['new_state'].help_text = "Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication."
         if self.is_bound:
             for key, value in self.data.items():
                 if key.startswith('transition_'):

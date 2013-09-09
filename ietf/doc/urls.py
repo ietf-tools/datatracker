@@ -69,6 +69,7 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/(?P<state_type>iana-action|iana-review)/$', views_draft.change_iana_state, name='doc_change_iana_state'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/info/$', views_draft.edit_info, name='doc_edit_info'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/requestresurrect/$', views_draft.request_resurrect, name='doc_request_resurrect'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/submit-to-iesg/$', views_draft.to_iesg, name='doc_to_iesg'), 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/resurrect/$', views_draft.resurrect, name='doc_resurrect'),                       
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/addcomment/$', views_doc.add_comment, name='doc_add_comment'),
 
