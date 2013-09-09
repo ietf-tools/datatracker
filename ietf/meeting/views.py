@@ -350,7 +350,7 @@ def session_draft_list(num, session):
             if re.search('-[0-9]{2}$', draft):
                 doc_name = draft
             else:
-                doc = Document.objects.get(filename=draft)
+                doc = Document.objects.get(name=draft)
                 doc_name = draft + "-" + doc.rev
 
             if doc_name not in result:
