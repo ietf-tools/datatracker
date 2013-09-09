@@ -1,3 +1,115 @@
+ietfdb (4.71) ietf; urgency=medium
+
+  * Merged in personal/rjs/r6117-pubreq@6119:
+
+    - Made Publication Request (for documents from IETF working groups) an
+      explicit action rather than a side-effect.
+
+    - Simplified the working group state edit form.
+
+    - Added hints to the WG state edit form to use the document's main page to
+      request publication.
+
+    - If a document is moved into IESG processing directly by the secretariat or
+      an AD (old processing path), set working group state accordingly.
+
+
+  * Merged in branch/iola/shimfree@6083.  This cleans up and moves relevant 
+    code from idrfc/ to doc/.  There should now only be a bit of old wrapper 
+    code left in idrfc; that will go away when the remaining models which use 
+    it are cleaned up.
+
+  * Fixed the manage.py command so it adds our own import path to the Python 
+    path automatically; people won't have to explicitly add pythonpath any
+    more::
+      $ PYTHONPATH=$PWD ietf/manage.py ...
+
+  * Applied a patch from rjsparks@nostrum.com to fix a line colouring bug in 
+    IPR lists.
+
+  * Fixed a regression: wrong URL to IESG state diagram in state help.  Fixes 
+    issue #1119.
+
+  * Merged personal/rjs/v4.70@6042:
+
+    - Made reporting IPR consistant across document searches, IPR 
+      searches, AD document queues, last calls, and agendas. All these points now 
+      report on the document(s) being directly queried, and the documents those 
+      transitively replace or obsolete.
+
+    - Brought search results against WGs and document titles into 
+      consistency with results from searching for individual documents
+
+    - Added the IPR count to the link on the documents main page (when 
+      not zero)
+
+    - Built on Henrik's reimplementation of all_related_\*, making the 
+      \*_related_\* functions return DocAlias? lists consistently, and added 
+      corresponding _relations_ functions to get lists of actual RelatedDocument? 
+      objects.
+
+    - Added getting the DocAlias? with the same name to Document
+
+    - Added getting related IPR disclosures (as described in the first 
+      bullet) to Document
+
+    - Simplified ipr/related.py
+
+    - Removed the use of DraftLikeDocAlias? and IETFWG from 
+      ipr/search.py. Retooled the various search functions and templates to use 
+      DocAlias? and IprDocAlias? directly.
+
+    - Removed dead code from ipr/search.py
+
+    - Removed the special handling of WG 2000 from ipr/search.py 
+
+    This fixes bug #1071
+
+  * Fixed a regression in display of IESG state; added back substate 
+    information.  Fixes issue #1117.
+
+  * Added template rendering verification on dbtemplate form submission in 
+    order to catch errors in edited templates before they are committed.  This 
+    should prevent server 500 errors when rendering dbtemplate pages.  Fixes 
+    issue #1113.
+
+  * Selectively removed the agenda and minutes warnings from the meeting 
+    materials page, for educational sessions where agenda and minutes aren't 
+    expected.  Fixes issue #1115.
+
+  * Changed the order of the files diffed in the draft diff links on the 
+    history page.  Fixes issue #1114.
+
+  * Added Auto-Submitted and Precedence header fields to outgoing email 
+    messages.
+
+  * Fixed a possible KeyError bug for a missing form field 'by'.
+
+  * Added code to expire last calls for statechg documents too (in addition 
+    to iesg drafts) with the expire-last-call script.  Fixes issue #1092.
+
+  * Added secretaries to those who are authorized to edit stream info for a 
+    document.
+
+  * Added a penalty field to the ConstraintNames, for use in agenda 
+    scheduling.
+
+  * Refactored group membership code, adding advisors and liaisons to the 
+    membership list.  Needed for the nomcom code.
+
+  * Fixed the broken WG document list template (regression caused by the 
+    shimfree merge).
+
+  * Fixed the red-on-red error message style which came in with the nomcom 
+    code merge.
+
+  * Fixed the nomcom email pipe command to read from stdin if no file given, 
+    and give better error messages.
+
+  * Added migrations which should have been part of release 4.70.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Sep 2013 21:40:25 +0200
+
 ietfdb (4.70) ietf; urgency=high
 
   This release provides a datatracker nomcom app, ported from the earlier
