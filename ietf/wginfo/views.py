@@ -157,7 +157,8 @@ def wg_documents(request, acronym):
         parts = d.name.split("-", 2);
         # canonical form draft-<name|ietf>-wg-etc
         if len(parts) >= 3 and parts[1] != "ietf" and parts[2].startswith(wg.group_acronym.acronym + "-"):
-                docs_related_pruned.append(d)
+            d.search_heading = "Related Internet-Draft"
+            docs_related_pruned.append(d)
 
     docs_related = docs_related_pruned
 
@@ -165,8 +166,9 @@ def wg_documents(request, acronym):
     cleaned_docs = []
     docs_related_names = set(d.name for d in docs_related)
     for d in docs:
-        if d.stream_id == "ietf" and d.get_state_slug("draft-stream-ietf") == "c-adopt":
+        if d.stream_id == "ietf" and d.get_state_slug("draft-stream-ietf") in [ "c-adopt", "wg-cand" ]:
             if d.name not in docs_related_names:
+                d.search_heading = "Related Internet-Draft"
                 docs_related.append(d)
         else:
             cleaned_docs.append(d)
