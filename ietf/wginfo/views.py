@@ -48,6 +48,7 @@ from ietf.doc.utils import get_chartering_type
 from ietf.person.models import Email
 from ietf.group.utils import get_charter_text
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
+from ietf.ietfauth.utils import has_role
 
 
 def fill_in_charter_info(group, include_drafts=False):
