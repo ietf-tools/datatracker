@@ -363,6 +363,24 @@ span.fieldRequired {
     color: red;
 }
 
+.state-help-icon {
+    display: inline-block;
+    margin-left: 0.2em;
+    padding: 0 0.2em;
+    font-weight: bold;
+    font-style: normal;
+    font-size: 90%;
+    color: #999;
+    background-color: #ddd;
+    text-decoration: none;
+}
+
+.state-help-icon:hover {
+    color: #eee;
+    background-color: #bbb;
+    transition-duration: 0.2s;
+}
+
 /* js styles */
 .js-info {
     background-color: #FFDD88;
