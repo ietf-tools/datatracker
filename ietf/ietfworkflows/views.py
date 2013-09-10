@@ -113,8 +113,8 @@ def edit_adopt(request, name):
     return _edit_draft_stream(request, draft, NoWorkflowStateForm)
 
 def edit_state(request, name):
-    draft = get_object_or_404(InternetDraft, filename=name)
-    if not can_edit_state(request.user, draft):
+    draft = get_object_or_404(InternetDraft, filename=name, stream__isnull=False)
+    if not can_edit_state(request.user, draft, ):
         return HttpResponseForbidden("You don't have permission to access this view")
     return _edit_draft_stream(request, draft, DraftTagsStateForm)
 

@@ -92,20 +92,24 @@
     <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
     <tr>
-       <td>{{ doc.stream }} State:</td>
-       <td class="stream-state">
-         <a {% if can_edit_stream_info %}class="editlink" href="{% url edit_state name=doc.name %}"{% endif %}>
-           {{ stream_state|default:"(None)" }}
-         </a>
+       {% if doc.stream %}
+           <td>{{ doc.stream }} State:</td>
+           <td class="stream-state">
+               <a {% if doc.stream and can_edit_stream_info %}class="editlink" href="{% url edit_state name=doc.name %}"{% endif %}>
+               {{ stream_state|default:"(None)" }}
+             </a>
 
-       {% for m in milestones %}
-         <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)" class="milestone">{{ m.due|date:"M Y" }}</span>
-       {% endfor %}
+           {% for m in milestones %}
+             <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)" class="milestone">{{ m.due|date:"M Y" }}</span>
+           {% endfor %}
 
-       {% if stream_tags %}
-       <div class="stream-tags">{% for tag in stream_tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+           {% if stream_tags %}
+           <div class="stream-tags">{% for tag in stream_tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+           {% endif %}
+           </td>
+       {% else %}
+          <td>Stream State:</td><td>No stream defined</td>
        {% endif %}
-       </td>
     </tr>
 
     {% if consensus %}

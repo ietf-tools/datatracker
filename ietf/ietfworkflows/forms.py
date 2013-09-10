@@ -167,7 +167,7 @@ class DraftTagsStateForm(StreamDraftForm):
         super(DraftTagsStateForm, self).__init__(*args, **kwargs)
         self.state = get_state_for_draft(self.draft)
         self.fields['new_state'].choices = self.get_states()
-        self.fields['new_state'].initial = self.state.pk
+        self.fields['new_state'].initial = self.state.pk if self.state else None
         if self.draft.stream_id == 'ietf':
             self.fields['new_state'].help_text = "Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication."
         if self.is_bound:
