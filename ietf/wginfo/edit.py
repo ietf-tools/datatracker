@@ -343,6 +343,10 @@ def customize_workflow(request, acronym):
             else:
                 group.unused_states.add(state)
 
+            # redirect so the back button works correctly, otherwise
+            # repeated POSTs fills up the history
+            return redirect("ietf.wginfo.edit.customize_workflow", acronym=group.acronym)
+
         if action == "setnextstates":
             try:
                 state = State.objects.get(pk=request.POST.get("state"))
@@ -358,6 +362,8 @@ def customize_workflow(request, acronym):
                 transitions, _ = GroupStateTransitions.objects.get_or_create(group=group, state=state)
                 transitions.next_states = next_states
 
+            return redirect("ietf.wginfo.edit.customize_workflow", acronym=group.acronym)
+
         if action == "settagactive":
             active = request.POST.get("active") == "1"
             try:
@@ -369,6 +375,8 @@ def customize_workflow(request, acronym):
                 group.unused_tags.remove(tag)
             else:
                 group.unused_tags.add(tag)
+
+            return redirect("ietf.wginfo.edit.customize_workflow", acronym=group.acronym)
 
 
     # put some info for the template on tags and states
