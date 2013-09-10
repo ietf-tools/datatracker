@@ -22,6 +22,7 @@ ietfdb (4.71) ietf; urgency=medium
   * Fixed the manage.py command so it adds our own import path to the Python 
     path automatically; people won't have to explicitly add pythonpath any
     more::
+
       $ PYTHONPATH=$PWD ietf/manage.py ...
 
   * Applied a patch from rjsparks@nostrum.com to fix a line colouring bug in 
@@ -43,7 +44,7 @@ ietfdb (4.71) ietf; urgency=medium
     - Added the IPR count to the link on the documents main page (when 
       not zero)
 
-    - Built on Henrik's reimplementation of all_related_\*, making the 
+    - Built on Henrik's reimplementation of all_related\_\*, making the 
       \*_related_\* functions return DocAlias? lists consistently, and added 
       corresponding _relations_ functions to get lists of actual RelatedDocument? 
       objects.
