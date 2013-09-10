@@ -9,6 +9,7 @@ from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter,
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 from django.utils import simplejson
+from django.utils.html import strip_tags
 try:
     from email import utils as emailutils
 except ImportError:
@@ -475,6 +476,14 @@ def state(doc, slug):
         slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
     return doc.get_state(slug)
 
+@register.filter
+def statehelp(state):
+    "Output help icon with tooltip for state."
+    from django.core.urlresolvers import reverse as urlreverse
+    tooltip = escape(strip_tags(state.desc))
+    url = urlreverse("state_help", kwargs=dict(type=state.type_id)) + "#" + state.slug
+    return mark_safe('<a class="state-help-icon" href="%s" title="%s">?</a>' % (url, tooltip))
+
 def _test():
     import doctest
     doctest.testmod()
@@ -483,11 +492,10 @@ if __name__ == "__main__":
     _test()
 
 @register.filter
-def plural(text, list, arg=u's'):
+def plural(text, seq, arg=u's'):
     "Similar to pluralize, but looks at the text, too"
     from django.template.defaultfilters import pluralize
     if text.endswith('s'):
         return text
     else:
-        return text + pluralize(len(list), arg)
-        
+        return text + pluralize(len(seq), arg)
