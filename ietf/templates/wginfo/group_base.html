@@ -32,7 +32,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
-{% load ietf_filters wgchairs_tags %}
+{% load ietf_filters %}
 {% block title %}{{ group.name }} ({{ group.acronym }}) - {% block group_subtitle %}{% endblock %}{% endblock %}
 
 {% block morecss %}
@@ -72,18 +72,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <div class="ietf-navset">
   <a {% if selected == "documents" %}class="selected"{% else %}href="{% url ietf.wginfo.views.group_documents acronym=group.acronym %}"{% endif %}>Documents</a> |
   <a {% if selected == "charter" %}class="selected"{% else %}href="{% url ietf.wginfo.views.group_charter acronym=group.acronym %}"{% endif %}>Charter</a> |
-
-  {% if can_manage_workflow %}
-  <a {% if selected == "manage_workflow" %}class="selected"{% else %}href="{% url manage_workflow group.acronym %}"{% endif %}>Manage workflow</a> |
-  {% endif %}
-
-  {% if can_manage_delegates %}
-  <a {% if selected == "manage_delegates" %}class="selected"{% else %}href="{% url manage_delegates group.acronym %}"{% endif %}>Manage delegations</a> |
-  {% endif %}
-
-  {% if can_manage_shepherds %}
-  <a {% if selected == "manage_shepherds" %}class="selected"{% else %}href="{% url manage_shepherds group.acronym %}"{% endif %}>Manage shepherds</a> |
-  {% endif %}
 
   <a {% if selected == "history" %}class="selected"{% else %}href="{% url ietf.wginfo.views.history acronym=group.acronym %}"{% endif %}>History</a> |
   {% if group.list_archive|startswith:"http:" or group.list_archive|startswith:"https:" or group.list_archive|startswith:"ftp:" %}

@@ -1,13 +1,6 @@
-{% extends "wginfo/wg_base.html" %}
+{% extends "base.html" %}
 
-{% block wg_titledetail %}Manage Workflow{% endblock %}
-
-{% block pagehead %}
-{{ block.super }}
-<script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
-<script type="text/javascript" src="/js/yui/yui-20100305.js"></script>
-<script type="text/javascript" src="/js/base.js"></script>
-{% endblock pagehead %}
+{% block title %}Customize Workflow for {{ group.acronym }} {{ group.type.name }}{% endblock %}
 
 {% block morecss %}
 {{ block.super }}
@@ -53,13 +46,20 @@
 }
 {% endblock %}
 
-{% block wg_content %}
-<div class="wg-workflow-management">
-<h2>Edit workflow</h2>
+{% block content %}
+{% load ietf_filters %}
 
-<p>Below you can customize the draft states and tags used in the {{ wg.acronym }} WG. Note that some states are mandatory for WG operation and cannot be deactivated.</p>
+<div class="group-customize-workflow">
 
-<p>You can see the default Working Group I-D State Diagram in <a href="http://tools.ietf.org/html/rfc6174#section-4.1">Section 4.1 of RFC6174</a>.</p>
+<h1>Customize Workflow for {{ group.acronym }} {{ group.type.name }}</h1>
+
+<p>Below you can customize the draft states and tags used in the
+<a href="{% url group_charter group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>. Note that some states are
+mandatory for group operation and cannot be deactivated.</p>
+
+<p>You can see the default Working Group I-D State Diagram
+in <a href="http://tools.ietf.org/html/rfc6174#section-4.1">Section 4.1 of RFC6174</a>.</p>
+
 
 <h3>States</h3>
 
@@ -90,11 +90,7 @@
       {% endif %}
     </td>
     <td>
-      <div>
-        <span>{{ state.name }} {% if not state.used %} (not used in {{ wg.acronym }}){% endif %}</span>
-        <a class="toggler" title="Click to show description of state" href="">+</a>
-      </div>
-      <div class="toggled">{{ state.desc|safe|linebreaks }}</div>
+      {{ state.name }} {% if not state.used %} (not used in {{ group.acronym }}){% endif %} {{ state|statehelp }}
     </td>
     <td>
       <div>
@@ -142,11 +138,14 @@
         <input type="hidden" name="action" value="settagactive" />
       </form>
     </td>
-    <td><span>{{ tag.name }} {% if not tag.used %} (not used in {{ wg.acronym }}){% endif %}</span></td>
+    <td><span>{{ tag.name }} {% if not tag.used %} (not used in {{ group.acronym }}){% endif %}</span></td>
   </tr>
   {% endfor %}
 </table>
 
+{% endblock content %}
+
+{% block js %}
 <script type="text/javascript">
 //<![CDATA[
 jQuery('.state-table .toggler').click(function(e) {
@@ -164,5 +163,4 @@ jQuery('.state-table .toggler').click(function(e) {
 });
 //]]>
 </script>
-
 {% endblock %}

@@ -20,7 +20,7 @@ from ietf.group.models import *
 from ietf.group.utils import save_group_in_history
 from ietf.wgcharter.mails import email_secretariat
 from ietf.person.forms import EmailsField
-
+from ietf.doc.utils import get_tags_for_stream_id
 
 class WGForm(forms.Form):
     name = forms.CharField(max_length=255, label="WG Name", required=True)
@@ -320,3 +320,81 @@ def conclude(request, acronym):
                               dict(form=form,
                                    wg=wg),
                               context_instance=RequestContext(request))
+
+
+def customize_workflow(request, acronym):
+    MANDATORY_STATES = ('c-adopt', 'wg-doc', 'sub-pub')
+
+    group = get_object_or_404(Group, acronym=acronym, type="wg")
+    if not request.user.is_authenticated() or not (has_role(request.user, "Secretariat") or group.role_set.filter(name="chair", person__user=request.user)):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
+    if request.method == 'POST':
+        action = request.POST.get("action")
+        if action == "setstateactive":
+            active = request.POST.get("active") == "1"
+            try:
+                state = State.objects.exclude(slug__in=MANDATORY_STATES).get(pk=request.POST.get("state"))
+            except State.DoesNotExist:
+                return HttpResponse("Invalid state %s" % request.POST.get("state"))
+
+            if active:
+                group.unused_states.remove(state)
+            else:
+                group.unused_states.add(state)
+
+        if action == "setnextstates":
+            try:
+                state = State.objects.get(pk=request.POST.get("state"))
+            except State.DoesNotExist:
+                return HttpResponse("Invalid state %s" % request.POST.get("state"))
+
+            next_states = State.objects.filter(used=True, type='draft-stream-ietf', pk__in=request.POST.getlist("next_states"))
+            unused = group.unused_states.all()
+            if set(next_states.exclude(pk__in=unused)) == set(state.next_states.exclude(pk__in=unused)):
+                # just use the default
+                group.groupstatetransitions_set.filter(state=state).delete()
+            else:
+                transitions, _ = GroupStateTransitions.objects.get_or_create(group=group, state=state)
+                transitions.next_states = next_states
+
+        if action == "settagactive":
+            active = request.POST.get("active") == "1"
+            try:
+                tag = DocTagName.objects.get(pk=request.POST.get("tag"))
+            except DocTagName.DoesNotExist:
+                return HttpResponse("Invalid tag %s" % request.POST.get("tag"))
+
+            if active:
+                group.unused_tags.remove(tag)
+            else:
+                group.unused_tags.add(tag)
+
+
+    # put some info for the template on tags and states
+    unused_tags = group.unused_tags.all().values_list('slug', flat=True)
+    tags = DocTagName.objects.filter(slug__in=get_tags_for_stream_id("ietf"))
+    for t in tags:
+        t.used = t.slug not in unused_tags
+
+    unused_states = group.unused_states.all().values_list('slug', flat=True)
+    states = State.objects.filter(used=True, type="draft-stream-ietf")
+    transitions = dict((o.state, o) for o in group.groupstatetransitions_set.all())
+    for s in states:
+        s.used = s.slug not in unused_states
+        s.mandatory = s.slug in MANDATORY_STATES
+
+        default_n = s.next_states.all()
+        if s in transitions:
+            n = transitions[s].next_states.all()
+        else:
+            n = default_n
+
+        s.next_states_checkboxes = [(x in n, x in default_n, x) for x in states]
+        s.used_next_states = [x for x in n if x.slug not in unused_states]
+
+    return render_to_response('wginfo/customize_workflow.html', {
+            'group': group,
+            'states': states,
+            'tags': tags,
+            }, RequestContext(request))

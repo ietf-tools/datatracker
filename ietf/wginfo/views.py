@@ -49,10 +49,6 @@ from ietf.person.models import Email
 from ietf.group.utils import get_charter_text
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 
-from ietf.wgchairs.accounts import (can_manage_workflow_in_group,
-                                    can_manage_delegates_in_group,
-                                    can_manage_shepherds_in_group)
-
 
 def fill_in_charter_info(group, include_drafts=False):
     group.areadirector = group.ad.role_email("ad", group.parent) if group.ad else None
@@ -179,9 +175,6 @@ def construct_group_menu_context(request, group, selected, others):
     d = {
         "group": group,
         "selected": selected,
-        "can_manage_delegates": can_manage_delegates_in_group(request.user, group),
-        "can_manage_workflow": can_manage_workflow_in_group(request.user, group),
-        "can_manage_shepherds": can_manage_shepherds_in_group(request.user, group),
         }
 
     d.update(others)
@@ -273,6 +266,10 @@ def group_charter(request, acronym):
         actions.append((u"Request closing %s" % group.type.name, urlreverse("wg_conclude", kwargs=dict(acronym=group.acronym))))
 
     is_chair = request.user.is_authenticated() and group.role_set.filter(name="chair", person__user=request.user)
+
+    if is_chair or has_role(request.user, "Secretariat"):
+        actions.append((u"Manage delegates", urlreverse("manage_delegates", kwargs=dict(acronym=group.acronym))))
+        actions.append((u"Customize workflow", urlreverse("ietf.wginfo.edit.customize_workflow", kwargs=dict(acronym=group.acronym))))
 
     return render_to_response('wginfo/group_charter.html',
                               construct_group_menu_context(request, group, "charter", {
