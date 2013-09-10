@@ -55,7 +55,7 @@ def add_legacy_fields(group):
     group.chairs = group.role_set.filter(name="chair")
     group.techadvisors = group.role_set.filter(name="techadv")
     group.editors = group.role_set.filter(name="editor")
-    group.secretaries = group.role_set.filter(name="secretaries")
+    group.secretaries = group.role_set.filter(name="secr")
 
     #fill_in_charter_info(group)
 
