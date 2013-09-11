@@ -5,45 +5,25 @@
 {% block morecss %}
 {{ block.super }}
 .state-table .inactive,
-.tag-table .inactive {
-  font-style: italic;
+.tag-table .inactive { font-style: italic; color: #666; }
+.state-table .state { margin-bottom: 0.1em; }
+.state-table .set-next-states label { display: block; cursor: pointer; }
+.state-table .set-next-states label input { vertical-align: middle; }
+.state-table .set-state input, .set-tag input { width: 6em; }
+.state-table .toggled { display: none; }
+.state-table .toggler {
   color: #666;
-}
-.state-table .state {
-  padding-right: 0.6em;
-}
-.set-next-states {
-  margin-top: 1em;
-}
-.set-next-states label {
-  display: block;
-  cursor: pointer;
-}
-.set-next-states label input {
-  vertical-align: middle;
-}
-.set-state input, .set-tag input {
-  width: 6em;
-}
-.toggled {
-  display: none;
-}
-.toggler {
-  color: #000;
+  background: #ddd;
+  font-weight: bold;
   text-decoration: none;
-  padding: 0px 3px;
+  padding: 1px 3px;
   display: inline-block;
   margin-left: 0.5em;
-  font-size: 15px;
-  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
-.inactive .toggler {
-  color: #666;
-}
-.toggler:hover {
-  background-color: #999;
-  color: #fff;
-}
+.state-table .inactive .toggler { color: #aaa; background: #eee; }
+.state-table .toggler:hover { background-color: #999; color: #fff; }
 {% endblock %}
 
 {% block content %}
@@ -95,11 +75,11 @@ in <a href="http://tools.ietf.org/html/rfc6174#section-4.1">Section 4.1 of RFC61
     <td>
       <div>
       {% if state.used_next_states %}
-      {% for n in state.used_next_states %}<span class="state">{{ n.name }}</span>{% if not forloop.last %} {% endif %}{% endfor %}
+        {% for n in state.used_next_states %}<div class="state">{{ n.name }}</div>{% endfor %}
       {% else %}
-      <i>None</i>
+        <div><i>None</i></div>
       {% endif %}
-      <a class="toggler" title="Click to set next states for state"  href="">+</a>
+      <a class="toggler" title="Click to set next states for state"  href="">+ customize</a>
       </div>
       <form class="toggled set-next-states" method="post" action="">
       Select the next states:
@@ -153,11 +133,11 @@ jQuery('.state-table .toggler').click(function(e) {
     var toggler = jQuery(this),
         toggled = toggler.parent().siblings(".toggled");
     if (toggled.is(":hidden")) {
-        toggler.html("&ndash;");
+        toggler.html("&ndash; customize");
         toggled.slideDown(300);
     }
     else {
-        toggler.html("+");
+        toggler.html("+ customize");
         toggled.slideUp(300);
     }
 });
