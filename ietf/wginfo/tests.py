@@ -817,3 +817,75 @@ class MilestoneTestCase(django.test.TestCase):
         self.assertTrue(group.acronym in outbox[-1]["Subject"])
         self.assertTrue(m1.desc in unicode(outbox[-1]))
         self.assertTrue(m2.desc in unicode(outbox[-1]))
+
+class CustomizeWorkflowTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_customize_workflow(self):
+        make_test_data()
+
+        group = Group.objects.get(acronym="mars")
+
+        url = urlreverse('ietf.wginfo.edit.customize_workflow', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        state = State.objects.get(used=True, type="draft-stream-ietf", slug="wg-lc")
+        self.assertTrue(state not in group.unused_states.all())
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q("form.set-state").find("input[name=state][value='%s']" % state.pk).parents("form").find("input[name=active][value='0']")), 1)
+
+        # deactivate state
+        r = self.client.post(url,
+                             dict(action="setstateactive",
+                                  state=state.pk,
+                                  active="0"))
+        self.assertEquals(r.status_code, 302)
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q("form.set-state").find("input[name=state][value='%s']" % state.pk).parents("form").find("input[name=active][value='1']")), 1)
+        group = Group.objects.get(acronym=group.acronym)
+        self.assertTrue(state in group.unused_states.all())
+
+        # change next states
+        state = State.objects.get(used=True, type="draft-stream-ietf", slug="wg-doc")
+        next_states = State.objects.filter(used=True, type=b"draft-stream-ietf", slug__in=["parked", "dead", "wait-wgw", 'sub-pub']).values_list('pk', flat=True)
+        r = self.client.post(url,
+                             dict(action="setnextstates",
+                                  state=state.pk,
+                                  next_states=next_states))
+        self.assertEquals(r.status_code, 302)
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q("form.set-next-states").find("input[name=state][value='%s']" % state.pk).parents('form').find("input[name=next_states][checked=checked]")), len(next_states))
+        transitions = GroupStateTransitions.objects.filter(group=group, state=state)
+        self.assertEquals(len(transitions), 1)
+        self.assertEquals(set(transitions[0].next_states.values_list("pk", flat=True)), set(next_states))
+
+        # change them back to default
+        next_states = state.next_states.values_list("pk", flat=True)
+        r = self.client.post(url,
+                             dict(action="setnextstates",
+                                  state=state.pk,
+                                  next_states=next_states))
+        self.assertEquals(r.status_code, 302)
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        transitions = GroupStateTransitions.objects.filter(group=group, state=state)
+        self.assertEquals(len(transitions), 0)
+
+        # deactivate tag
+        tag = DocTagName.objects.get(slug="w-expert")
+        r = self.client.post(url,
+                             dict(action="settagactive",
+                                  tag=tag.pk,
+                                  active="0"))
+        self.assertEquals(r.status_code, 302)
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form').find('input[name=tag][value="%s"]' % tag.pk).parents("form").find("input[name=active]")), 1)
+        group = Group.objects.get(acronym=group.acronym)
+        self.assertTrue(tag in group.unused_tags.all())
