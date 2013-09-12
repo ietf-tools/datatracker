@@ -1,8 +1,9 @@
 # edit/create view for WGs
 
-import re, os, string, datetime, shutil
+import re, os, datetime, shutil
 
 from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.http import HttpResponseForbidden
 from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from django import forms
