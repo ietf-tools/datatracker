@@ -216,8 +216,14 @@ def cancel(request, acronym):
         session.status_id = 'deleted'
         session.save()
 
-        # clear schedule assignments if already scheduled
-        session.scheduledsession_set.all().delete()
+        # clear timeslot assignment if already scheduled
+        if session.timeslot_set.all():
+            timeslot = session.timeslot_set.all()[0]
+            timeslot.session = None
+            timeslot.save()
+
+    # log activity
+    #add_session_activity(group,'Session was cancelled',meeting,user)
 
     # send notifitcation
     to_email = SESSION_REQUEST_EMAIL
