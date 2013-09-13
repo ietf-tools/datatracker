@@ -1063,7 +1063,7 @@ def request_publication(request, name):
             send_mail_message(request, m)
 
             # IANA copy
-            m.to = "IANA <drafts-approval@icann.org>"
+            m.to = settings.IANA_APPROVE_EMAIL
             send_mail_message(request, m, extra=extra_automation_headers(doc))
 
             e = DocEvent(doc=doc, type="requested_publication", by=request.user.get_profile())

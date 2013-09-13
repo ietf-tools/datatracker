@@ -100,7 +100,7 @@ def send_conflict_eval_email(request,review):
     send_mail_preformatted(request,msg)
     email_iana(request, 
                review.relateddocument_set.get(relationship__slug='conflrev').target.document,
-               'draft-eval@icann.org',
+               settings.IANA_EVAL_EMAIL,
                 msg)
 
 class UploadForm(forms.Form):

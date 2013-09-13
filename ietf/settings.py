@@ -281,6 +281,9 @@ else:
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
 
+IANA_EVAL_EMAIL = "drafts-eval@icann.org"
+IANA_APPROVE_EMAIL = "drafts-approval@icann.org"
+
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
