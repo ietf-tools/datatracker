@@ -20,7 +20,7 @@ def user_is_person(user, person):
 
     return person.user_id == user.id
 
-def has_role(user, role_names):
+def has_role(user, role_names, *args, **kwargs):
     """Determines whether user has any of the given standard roles
     given. Role names must be a list or, in case of a single value, a
     string."""
@@ -53,6 +53,9 @@ def has_role(user, role_names):
 	    "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state="active"),
 	    "RG Chair": Q(person=person,name="chair", group__type="rg", group__state="active"),
 	    "RG Secretary": Q(person=person,name="secr", group__type="rg", group__state="active"),
+            "Nomcom Chair": Q(person=person, name="chair", group__type="nomcom", group__state="active", group__acronym__icontains=kwargs.get('year', '0000')),
+            "Nomcom Advisor": Q(person=person, name="advisor", group__type="nomcom", group__state="active", group__acronym__icontains=kwargs.get('year', '0000')),
+            "Nomcom": Q(person=person, group__type="nomcom", group__state="active", group__acronym__icontains=kwargs.get('year', '0000')),
             }
 
         filter_expr = Q()
@@ -85,7 +88,7 @@ def passes_test_decorator(test_func, message):
 def role_required(*role_names):
     """View decorator for checking that the user is logged in and
     has one of the listed roles."""
-    return passes_test_decorator(lambda u, *args, **kwargs: has_role(u, role_names),
+    return passes_test_decorator(lambda u, *args, **kwargs: has_role(u, role_names, *args, **kwargs),
                                  "Restricted to role%s %s" % ("s" if len(role_names) != 1 else "", ", ".join(role_names)))
 
 # specific permissions
