@@ -21,8 +21,7 @@ from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
                                get_user_email, validate_private_key, validate_public_key,
                                get_or_create_nominee, create_feedback_email)
-from ietf.nomcom.decorators import nomcom_member_required
-
+from ietf.ietfauth.utils import role_required
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
 
@@ -121,7 +120,7 @@ class EditMembersFormPreview(FormPreview):
     form_template = 'nomcom/edit_members.html'
     preview_template = 'nomcom/edit_members_preview.html'
 
-    @method_decorator(nomcom_member_required(role='chair'))
+    @method_decorator(role_required("Nomcom Chair", "Nomcom Advisor"))
     def __call__(self, request, *args, **kwargs):
         year = kwargs['year']
         group = get_group_or_404(year)
