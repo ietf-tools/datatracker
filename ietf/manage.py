@@ -10,7 +10,10 @@ warnings.filterwarnings("ignore", message="the sha module is deprecated; use the
 
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)) )
+
+path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if not path in sys.path:
+    sys.path.insert(0, path)
 
 from django.core.management import execute_manager
 try:
