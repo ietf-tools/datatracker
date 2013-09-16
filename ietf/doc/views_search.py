@@ -46,6 +46,8 @@ from ietf.group.models import *
 from ietf.ipr.models import IprDocAlias
 from ietf.idindex.index import active_drafts_index_by_group
 
+import debug
+
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
     rfcs = forms.BooleanField(required=False, initial=True)
@@ -149,9 +151,10 @@ def fill_in_search_attributes(docs):
         rel_docs += [x.document for x in rel_this_doc]
 
     ipr_docaliases = IprDocAlias.objects.filter(doc_alias__document__in=doc_ids).select_related('doc_alias')
+    
     for a in ipr_docaliases:
-        docs_dict[a.doc_alias.document_id].iprs.append(a)
-
+        if a.ipr.status==1 and a.ipr not in docs_dict[a.doc_alias.document_id].iprs:
+            docs_dict[a.doc_alias.document_id].iprs.append(a.ipr)
     rel_docs_dict = dict((d.pk, d) for d in rel_docs)
     rel_doc_ids = rel_docs_dict.keys()
     
@@ -159,8 +162,8 @@ def fill_in_search_attributes(docs):
     for a in rel_ipr_docaliases:
         if a.doc_alias.document_id in rel_id_camefrom:
             for k in rel_id_camefrom[a.doc_alias.document_id]:
-                if a not in docs_dict[k].iprs:
-                    docs_dict[k].iprs.append(a)
+                if a.ipr.status==1 and a.ipr not in docs_dict[k].iprs:
+                    docs_dict[k].iprs.append(a.ipr)
 
     # telechat date, can't do this with above query as we need to get TelechatDocEvents out
     seen = set()
