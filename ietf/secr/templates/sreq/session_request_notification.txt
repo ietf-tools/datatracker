@@ -1,5 +1,5 @@
 {% load ams_filters %}
 
-{{ header }} meeting session request has just been submitted by {{ login|smart_login }} {{ group.acronym }} working group.
+{{ header }} meeting session request has just been submitted by {{ requester }}.
 
 {% include "includes/session_info.txt" %}

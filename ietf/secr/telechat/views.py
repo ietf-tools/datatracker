@@ -54,9 +54,9 @@ def get_doc_list(agenda):
     docs = []
     for key in sorted(agenda['docs']):
         docs.extend(agenda['docs'][key])
-    
+
     return [x['obj'] for x in docs]
-    
+
 def get_doc_writeup(doc):
     '''
     This function takes a Document object and returns the ballot writeup for display
@@ -72,7 +72,7 @@ def get_doc_writeup(doc):
         path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
         writeup = get_document_content(doc.name,path,split=False,markup=False)
     return writeup
-        
+
 def get_last_telechat_date():
     '''
     This function returns the date of the last telechat
@@ -80,37 +80,37 @@ def get_last_telechat_date():
     '''
     return TelechatDate.objects.filter(date__lt=datetime.date.today()).order_by('-date')[0].date
     #return '2011-11-01' # uncomment for testing
-    
+
 def get_next_telechat_date():
     '''
     This function returns the date of the next telechat
     '''
     return TelechatDate.objects.filter(date__gte=datetime.date.today()).order_by('date')[0].date
-    
+
 def get_section_header(file,agenda):
     '''
-    This function takes a filename and an agenda dictionary and returns the 
+    This function takes a filename and an agenda dictionary and returns the
     agenda section header as a string for use in the doc template
     '''
     h1 = {'2':'Protocol Actions','3':'Document Actions','4':'Working Group Actions'}
-    h2a = {'1':'WG Submissions','2':'Individual Submissions'}
-    h2b = {'1':'WG Submissions','2':'Individual Submissions via AD','3':'IRTF and Independent Submission Stream Documents'}
+    h2a = {'1':'WG Submissions','2':'Individual Submissions','3':'Status Changes'}
+    h2b = {'1':'WG Submissions','2':'Individual Submissions via AD','3':'Status Changes','4':'IRTF and Independent Submission Stream Documents'}
     h2c = {'1':'WG Creation','2':'WG Chartering'}
     h3a = {'1':'New Item','2':'Returning Item','3':'For Action'}
     h3b = {'1':'Proposed for IETF Review','2':'Proposed for Approval'}
     h3c = {'1':'Under Evaluation for IETF Review','2':'Proposed for Approval'}
-    
+
     # Robert updated _agenda_data to return Document objects instead of the ID wrapper
     #doc = InternetDraft.objects.get(filename=file)
     doc = Document.objects.get(name=file)
-    
+
     test = {'obj':doc}
     for k,v in agenda['docs'].iteritems():
         if test in v:
             section = k
             count = '%s of %s' % (v.index(test) + 1, len(v))
             break
-    
+
     header = [ '%s %s' % (section[1], h1[section[1]]) ]
     if section[1] == '2':
         header.append('%s.%s %s' % (section[1], section[2], h2a[section[2]]))
@@ -126,7 +126,7 @@ def get_section_header(file,agenda):
     else:
         header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3a[section[3]]))
     header.append(count)
-    
+
     return header
 
 def get_first_doc(agenda):
@@ -136,28 +136,28 @@ def get_first_doc(agenda):
     for k,v in sorted(agenda['docs'].iteritems()):
         if v:
             return v[0]['obj']
-    
+
     return None
-    
+
 # -------------------------------------------------
 # View Functions
 # -------------------------------------------------
 def bash(request, date):
-    
+
     agenda = _agenda_data(request, date=date)
-    
+
     return render_to_response('telechat/bash.html', {
         'agenda': agenda,
         'date': date},
         RequestContext(request, {}),
     )
-    
+
 def doc(request, date):
     '''
     This view redirects to doc_detail using the first document in the agenda or
     displays the message "No Documents"
     '''
-    
+
     agenda = _agenda_data(request, date=date)
     doc = get_first_doc(agenda)
     if doc:
@@ -170,32 +170,29 @@ def doc(request, date):
         'document': None},
         RequestContext(request, {}),
     )
-    
+
 def doc_detail(request, date, name):
     '''
     This view displays the ballot information for the document, and lets the user make
     changes to ballot positions and document state.
     '''
     doc = get_object_or_404(Document, docalias__name=name)
-    
-    # As of Datatracker v4.32, Conflict Review (conflrev) Document Types can 
-    # be added to the Telechat agenda.  We need to check the document type here
-    # and set the state_type for use later in the view
+
+    # As of Datatracker v4.32, Conflict Review (conflrev) Document Types can
+    # be added to the Telechat agenda.  If Document.type_id == draft use draft-iesg
+    # for state type
+    state_type = doc.type_id
     if doc.type_id == 'draft':
         state_type = 'draft-iesg'
-    elif doc.type_id == 'conflrev':
-        state_type = 'conflrev'
-    elif doc.type_id == 'charter':
-        state_type = 'charter'
-        
+
     started_process = doc.latest_event(type="started_iesg_process")
     login = request.user.get_profile()
-    
+
     if doc.active_ballot():
         ballots = doc.active_ballot().active_ad_positions()  # returns dict of ad:ballotpositiondocevent
     else:
         ballots = []
-    
+
     # setup form initials
     initial_ballot = []
     open_positions = 0
@@ -205,19 +202,19 @@ def doc_detail(request, date, name):
             open_positions += 1
         elif not ballots[key]:
             open_positions += 1
-    
+
     tags = doc.tags.filter(slug__in=TELECHAT_TAGS)
     tag = tags[0].pk if tags else None
-    
+
     writeup = get_doc_writeup(doc)
-    
+
     initial_state = {'state':doc.get_state(state_type).pk,
                      'substate':tag}
-    
+
     BallotFormset = formset_factory(BallotForm, extra=0)
     agenda = _agenda_data(request, date=date)
     header = get_section_header(name,agenda) if name else ''
-    
+
     # nav button logic
     doc_list = get_doc_list(agenda)
     nav_start = nav_end = False
@@ -225,10 +222,10 @@ def doc_detail(request, date, name):
         nav_start = True
     if doc == doc_list[-1]:
         nav_end = True
-    
+
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
-        
+
         # logic from doc/views_ballot.py EditPositionRedesign
         if button_text == 'update_ballot':
             formset = BallotFormset(request.POST, initial=initial_ballot)
@@ -250,12 +247,12 @@ def doc_detail(request, date, name):
                         pos.desc = '[Ballot Position Update] Position for %s has been changed to %s by %s' % (ad.name, pos.pos.name, login.name)
                     pos.save()
                     has_changed = True
-                    
+
             if has_changed:
                 messages.success(request,'Ballot position changed.')
             url = reverse('telechat_doc_detail', kwargs={'date':date,'name':name})
             return HttpResponseRedirect(url)
-        
+
         # logic from doc/views_draft.py change_state
         elif button_text == 'update_state':
             formset = BallotFormset(initial=initial_ballot)
@@ -269,45 +266,45 @@ def doc_detail(request, date, name):
                 # as if IESG tags are a substate
                 prev_tag = doc.tags.filter(slug__in=(TELECHAT_TAGS))
                 prev_tag = prev_tag[0] if prev_tag else None
-    
+
                 #if state != prev or tag != prev_tag:
                 if state_form.changed_data:
                     save_document_in_history(doc)
                     old_description = doc.friendly_state()
-                    
+
                     if 'state' in state_form.changed_data:
                         doc.set_state(state)
-                        
+
                     if 'substate' in state_form.changed_data:
                         if prev_tag:
                             doc.tags.remove(prev_tag)
                         if tag:
                             doc.tags.add(tag)
-                    
+
                     new_description = doc.friendly_state()
                     e = log_state_changed(request, doc, login, new_description, old_description)
                     doc.time = e.time
                     doc.save()
-                    
+
                     email_state_changed(request, doc, e.desc)
                     email_ad(request, doc, doc.ad, login, e.desc)
     
                     if state.slug == "lc-req":
                         request_last_call(request, doc)
-                
+
                 messages.success(request,'Document state updated')
                 url = reverse('telechat_doc_detail', kwargs={'date':date,'name':name})
-                return HttpResponseRedirect(url)        
+                return HttpResponseRedirect(url)
     else:
         formset = BallotFormset(initial=initial_ballot)
         state_form = ChangeStateForm(initial=initial_state)
-        
+
         # if this is a conflict review document add referenced document
         if doc.type_id == 'conflrev':
-            conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document 
+            conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
         else:
             conflictdoc = None
-    
+
     return render_to_response('telechat/doc.html', {
         'date': date,
         'document': doc,
@@ -322,10 +319,10 @@ def doc_detail(request, date, name):
         'nav_end': nav_end},
         RequestContext(request, {}),
     )
-    
+
 def doc_navigate(request, date, name, nav):
     '''
-    This view takes three arguments: 
+    This view takes three arguments:
     date - the date of the Telechat
     name - the name of the current document being displayed
     nav  - [next|previous] which direction the user wants to navigate in the list of docs
@@ -334,22 +331,22 @@ def doc_navigate(request, date, name, nav):
     doc = get_object_or_404(Document, docalias__name=name)
     agenda = _agenda_data(request, date=date)
     target = name
-    
+
     docs = get_doc_list(agenda)
     index = docs.index(doc)
-    
+
     if nav == 'next' and index < len(docs) - 1:
         target = docs[index + 1].name
     elif nav == 'previous' and index != 0:
         target = docs[index - 1].name
-    
+
     url = reverse('telechat_doc_detail', kwargs={'date':date,'name':target})
     return HttpResponseRedirect(url)
 
 def main(request):
     '''
     The is the main view where the user selects an existing telechat or creates a new one.
-    
+
     NOTES ON EXTERNAL HELPER FUNCTIONS:
     _agenda_data():     returns dictionary of agenda sections
     get_ballot(name):   returns a BallotWrapper and RfcWrapper or IdWrapper
@@ -358,7 +355,7 @@ def main(request):
             date=request.POST['date']
             url = reverse('telechat_doc', kwargs={'date':date})
             return HttpResponseRedirect(url)
-    
+
     choices = [ (d.date.strftime('%Y-%m-%d'),
                  d.date.strftime('%Y-%m-%d')) for d in TelechatDate.objects.all() ]
     next_telechat = get_next_telechat_date().strftime('%Y-%m-%d')
@@ -368,22 +365,22 @@ def main(request):
         'form': form},
         RequestContext(request, {}),
     )
-    
+
 def management(request, date):
     '''
     This view displays management issues and lets the user update the status
     '''
-    
+
     agenda = _agenda_data(request, date=date)
     issues = TelechatAgendaItem.objects.filter(type=3).order_by('id')
-    
+
     return render_to_response('telechat/management.html', {
         'agenda': agenda,
         'date': date,
         'issues': issues},
         RequestContext(request, {}),
     )
-    
+
 def minutes(request, date):
     '''
     This view shows a list of documents that were approved since the last telechat
@@ -398,9 +395,9 @@ def minutes(request, date):
     docs = [ e.doc for e in events ]
     pa_docs = [ d for d in docs if d.intended_std_level.slug not in ('inf','exp','hist') ]
     da_docs = [ d for d in docs if d.intended_std_level.slug in ('inf','exp','hist') ]
-    
+
     agenda = _agenda_data(request, date=date)
-    
+
     return render_to_response('telechat/minutes.html', {
         'agenda': agenda,
         'date': date,
@@ -409,7 +406,7 @@ def minutes(request, date):
         'da_docs': da_docs},
         RequestContext(request, {}),
     )
-    
+
 def new(request):
     '''
     This view creates a new telechat agenda and redirects to the default view
@@ -418,17 +415,17 @@ def new(request):
         date = request.POST['date']
         # create legacy telechat record
         Telechat.objects.create(telechat_date=date)
-        
+
         messages.success(request,'New Telechat Agenda created')
         url = reverse('telechat_doc', kwargs={'date':date,'name':name})
-        return HttpResponseRedirect(url)  
-        
+        return HttpResponseRedirect(url)
+
 def roll_call(request, date):
-    
+
     agenda = _agenda_data(request, date=date)
     ads = Person.objects.filter(role__name='ad')
     sorted_ads = sorted(ads, key = lambda a: a.name_parts()[3])
-    
+
     return render_to_response('telechat/roll_call.html', {
         'agenda': agenda,
         'date': date,

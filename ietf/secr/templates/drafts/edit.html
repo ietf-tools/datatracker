@@ -9,10 +9,10 @@
   <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
 {% endblock %}
 
-{% block breadcrumbs %}{{ block.super }} 
+{% block breadcrumbs %}{{ block.super }}
   &raquo; <a href="../../">Drafts</a>
   &raquo; <a href="../">{{ draft.name }}</a>
-  &raquo; Edit 
+  &raquo; Edit
 {% endblock %}
 
 {% block content %}
@@ -36,12 +36,13 @@
         <tr><th>Abstract:</th><td>{{ form.abstract.errors }}{{ form.abstract }}</td></tr>
         <tr><th>Expiration Date:</th><td>{{ draft.expires|date:"M. d, Y" }}</td></tr>
         <tr><th>Intended Std Level:</th><td>{{ form.intended_std_level.errors }}{{ form.intended_std_level }}</td></tr>
+        <tr><th>Standardization Level:</th><td>{{ form.std_level.errors }}{{ form.std_level }}</td></tr>
         <tr><th>RFC Number:</th><td>{{ draft.rfc_number }}</td></tr>
         <tr><th>Comments:</th><td>{{ form.internal_comments.errors }}{{ form.internal_comments }}</td></tr>
         <tr><th>Replaced by:</th><td>{{ form.replaced_by.errors }}{{ form.replaced_by }}</td></tr>
         <tr><th>Last Modified Date:</th><td>{{ draft.time }}</td></tr>
       </table>
-      
+
   <div class="button-group">
     <ul>
       <li><button type="submit" name="submit" value="Save">Save</button></li>

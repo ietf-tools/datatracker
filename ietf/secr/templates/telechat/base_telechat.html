@@ -34,6 +34,12 @@
       <li>2.2.3 For Action</li>
       {% with agenda.docs.s223 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
       <li></li>
+      <li>2.3 Status Changes</li>
+      <li>2.3.1 New Item</li>
+      {% with agenda.docs.s231 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>2.3.2 Returning Item</li>
+      {% with agenda.docs.232 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li></li>
       <li class="level1">3 Document Actions</li>
       <li>3.1 WG Submissions</li>
       <li>3.1.1 New Item</li>
@@ -51,13 +57,19 @@
       <li>3.2.3 For Action</li>
       {% with agenda.docs.s323 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
       <li></li>
-      <li>3.3 Independent Submissions via RFC Editor</li>
+      <li>3.3 Status Changes</li>
       <li>3.3.1 New Item</li>
       {% with agenda.docs.s331 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
       <li>3.3.2 Returning Item</li>
       {% with agenda.docs.s332 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
-      <li>3.3.3 For Action</li>
-      {% with agenda.docs.s333 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li></li>
+      <li>3.4 Independent Submissions via RFC Editor</li>
+      <li>3.4.1 New Item</li>
+      {% with agenda.docs.s341 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>3.4.2 Returning Item</li>
+      {% with agenda.docs.s342 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>3.4.3 For Action</li>
+      {% with agenda.docs.s343 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
       <li></li>
       <li class="level1">4 Working Group Actions</li>
       <li>4.1 WG Creation</li>

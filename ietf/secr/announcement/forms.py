@@ -13,7 +13,9 @@ from ietf.wgchairs.accounts import get_person_for_user
 # Globals
 # ---------------------------------------------
 
-#ANNOUNCE_FROM_GROUPS = ['ietf','rsoc','iab',current_nomcom().acronym]
+ANNOUNCE_FROM_GROUPS = ['ietf','rsoc','iab']
+if current_nomcom():
+    ANNOUNCE_FROM_GROUPS += [ current_nomcom().acronym ]
 ANNOUNCE_TO_GROUPS= ['ietf']
 
 # this list isn't currently available as a Role query so it's hardcoded
@@ -32,8 +34,9 @@ FROM_LIST = ('IETF Secretariat <ietf-secretariat@ietf.org>',
              'The IETF Trust <tme@multicasttech.com>',
              'RSOC Chair <rsoc-chair@iab.org>',
              'ISOC Board of Trustees <eburger@standardstrack.com>',
-             'RFC Series Editor <rse@rfc-editor.org>')
-             
+             'RFC Series Editor <rse@rfc-editor.org>',
+             'IAB Executive Director <execd@iab.org>')
+
 TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
            'I-D Announcement List <i-d-announce@ietf.org>',
            'The IESG <iesg@ietf.org>',
@@ -51,14 +54,14 @@ class MultiEmailField(forms.Field):
         # Return an empty list if no input was given.
         if not value:
             return []
-        
+
         import types
         if isinstance(value, types.StringTypes):
             values = value.split(',')
             return [ x.strip() for x in values ]
         else:
             return value
-            
+
     def validate(self, value):
         "Check if value consists only of valid emails."
 
@@ -67,7 +70,7 @@ class MultiEmailField(forms.Field):
 
         for email in value:
             validate_email(email)
-            
+
 # ---------------------------------------------
 # Helper Functions
 # ---------------------------------------------
@@ -87,13 +90,7 @@ def get_from_choices(user):
         f = (FROM_LIST[6],)
     elif has_role(user,'IAD'):
         f = (FROM_LIST[9],)
-    # NomCom, RSOC Chair, IAOC Chair aren't supported by has_role()
-    elif Role.objects.filter(name="chair",
-                             group__acronym__startswith="nomcom",
-                             group__state="active",
-                             group__type="ietf",
-                             person=person):
-        f = (FROM_LIST[7],)
+    #RSOC Chair, IAOC Chair aren't supported by has_role()
     elif Role.objects.filter(person=person,
                              group__acronym='rsoc',
                              name="chair"):
@@ -106,17 +103,33 @@ def get_from_choices(user):
                              group__acronym='rse',
                              name="chair"):
         f = (FROM_LIST[15],)
+    elif Role.objects.filter(person=person,
+                             group__acronym='iab',
+                             name='execdir'):
+        f = (FROM_LIST[6],FROM_LIST[16])
+
+    # NomCom
+    nomcoms = Role.objects.filter(name="chair",
+                                  group__acronym__startswith="nomcom",
+                                  group__state="active",
+                                  group__type="ietf",
+                                  person=person)
+    if nomcoms:
+        year = nomcoms[0].group.acronym[-4:]
+        alias = 'NomCom Chair %s <nomcom-chair-%s@ietf.org>' % (year,year)
+        f = (alias,)
+
     return zip(f,f)
-    
+
 def get_to_choices():
     #groups = Group.objects.filter(acronym__in=ANNOUNCE_TO_GROUPS)
     #roles = Role.objects.filter(group__in=(groups),name="Announce")
     #choices = [ (r.email, r.person.name) for r in roles ]
     #choices.append(('Other...','Other...'),)
     return zip(TO_LIST,TO_LIST)
-    
+
 # ---------------------------------------------
-# Select Choices 
+# Select Choices
 # ---------------------------------------------
 #TO_CHOICES = tuple(AnnouncedTo.objects.values_list('announced_to_id','announced_to'))
 TO_CHOICES = get_to_choices()
@@ -127,24 +140,33 @@ TO_CHOICES = get_to_choices()
 # ---------------------------------------------
 
 class AnnounceForm(forms.ModelForm):
-    nomcom = forms.BooleanField(required=False)
+    #nomcom = forms.BooleanField(required=False)
+    nomcom = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__startswith='nomcom',type='ietf',state='active'),required=False)
     to_custom = MultiEmailField(required=False,label='')
     #cc = MultiEmailField(required=False)
-    
+
     class Meta:
         model = Message
         fields = ('nomcom', 'to','to_custom','frm','cc','bcc','reply_to','subject','body')
-        
+
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user')
+        person = user.get_profile()
         super(AnnounceForm, self).__init__(*args, **kwargs)
         self.fields['to'].widget = forms.Select(choices=TO_CHOICES)
         self.fields['to'].help_text = 'Select name OR select Other... and enter email below'
         self.fields['cc'].help_text = 'Use comma separated lists for emails (Cc, Bcc, Reply To)'
         self.fields['frm'].widget = forms.Select(choices=get_from_choices(user))
         self.fields['frm'].label = 'From'
-        self.fields['nomcom'].label = 'NomCom message?'
-    
+        self.fields['nomcom'].label = 'NomCom message:'
+        nomcom_roles = person.role_set.filter(group__in=self.fields['nomcom'].queryset,name='chair')
+        secr_roles = person.role_set.filter(group__acronym='secretariat',name='secr')
+        if nomcom_roles:
+            self.initial['nomcom'] = nomcom_roles[0].group.pk
+        if not nomcom_roles and not secr_roles:
+            self.fields['nomcom'].widget = forms.HiddenInput()
+        self.initial['reply_to'] = 'ietf@ietf.org'
+
     def clean(self):
         super(AnnounceForm, self).clean()
         data = self.cleaned_data
@@ -152,9 +174,9 @@ class AnnounceForm(forms.ModelForm):
             return self.cleaned_data
         if data['to'] == 'Other...' and not data['to_custom']:
             raise forms.ValidationError('You must enter a "To" email address')
-            
+
         return data
-    
+
     def save(self, *args, **kwargs):
         user = kwargs.pop('user')
         message = super(AnnounceForm, self).save(commit=False)
@@ -163,10 +185,10 @@ class AnnounceForm(forms.ModelForm):
             message.to = self.cleaned_data['to_custom']
         if kwargs['commit']:
             message.save()
-        
-        # add nomcom to related groups if checked
-        if self.cleaned_data.get('nomcom', False):
-            nomcom = current_nomcom()
+
+        # handle nomcom message
+        nomcom = self.cleaned_data.get('nomcom',False)
+        if nomcom:
             message.related_groups.add(nomcom)
-        
+
         return message

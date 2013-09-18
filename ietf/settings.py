@@ -86,7 +86,7 @@ MEDIA_ROOT = BASE_DIR + "/../static/"
 
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
-MEDIA_URL = ''
+MEDIA_URL = 'http://www.ietf.org'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
@@ -134,6 +134,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'django.core.context_processors.request',
+    'django.core.context_processors.media',
     'django.contrib.messages.context_processors.messages',
     'ietf.context_processors.server_mode',
     'ietf.context_processors.revision_info',
@@ -374,7 +375,7 @@ SECR_BLUE_SHEET_URL = 'https://datatracker.ietf.org/documents/blue_sheet.rtf'
 SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
 SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
-SECR_STATIC_URL = '/secr/'
+SECR_STATIC_URL = '/secretariat/'
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

@@ -10,11 +10,11 @@
 <hr />
 <h3><a name="intro" id="intro"></a>1. Introduction </h3>
 <ul>
-  <li><a href="acknowledgement.html">1.1. Acknowledgements</a></li>
-  <li><a href="overview.html">1.2. IETF Overview</a></li>
-  <li><a href="progress-report.html">1.3. Progress Report</a></li>
-  <li><a href="agenda.html">1.4. Agenda</a></li>
-  <li><a href="attendee.html">1.5. Attendees</a></li>
+  <li><a href="acknowledgement.html">1.1 Acknowledgements</a></li>
+  <li><a href="overview.html">1.2 IETF Overview</a></li>
+  <li><a href="progress-report.html">1.3 Progress Report</a></li>
+  <li><a href="agenda.html">1.4 Agenda</a></li>
+  <li><a href="attendee.html">1.5 Attendees</a></li>
 </ul>
 <hr />
 <h3><a name="wgreports" id="wgreports"></a>2. Area, Working Group and BoF Reports </h3>
@@ -26,8 +26,8 @@
 <hr />
 <h3><a name="plenary" id="plenary"></a>3. Plenaries</h3>
 <ul>
-  <li><a href ="administrative-plenary.html">3.1.  Administrative Plenary</a></li>
-  <li><a href="technical-plenary.html">3.2.  Technical Plenary</a></li>
+  <li><a href ="administrative-plenary.html">3.1  Administrative Plenary</a></li>
+  <li><a href="technical-plenary.html">3.2  Technical Plenary</a></li>
 </ul>
 <hr />
 <h3><a name="training" id="training">4. Training</h3>
@@ -39,9 +39,18 @@
 <hr />
 <h3><a name="irtf" id="irtf">5. Internet Research Task Force </h3>
 <ul>
-  <li><a href="irtf.html">5.1. IRTF introduction</a></li>
-  <li><a href="rg_irtf.html">5.2. Research Groups</a></li>
+  <li><a href="irtf.html">5.1 IRTF introduction</a></li>
+  <li><a href="rg_irtf.html">5.2 Research Groups</a></li>
 </ul>
 <hr />
+{% if extras %}
+<h3>6. Other</h3>
+<ul>
+  {% for group in extras %}
+  <li><a href="{{ group.acronym }}.html">6.{{ forloop.counter }} {{ group.name }}</a><
+/li>
+  {% endfor %}
+</ul>
+{% endif %}
 
 {% endblock %}
