@@ -150,20 +150,23 @@ def fill_in_search_attributes(docs):
             rel_id_camefrom.setdefault(rel.document.pk,[]).append(d.pk)
         rel_docs += [x.document for x in rel_this_doc]
 
-    ipr_docaliases = IprDocAlias.objects.filter(doc_alias__document__in=doc_ids).select_related('doc_alias')
-    
+    ipr_docaliases = IprDocAlias.objects.filter(doc_alias__document__in=doc_ids, ipr__status__in=[1,3]).select_related('doc_alias')
     for a in ipr_docaliases:
-        if a.ipr.status==1 and a.ipr not in docs_dict[a.doc_alias.document_id].iprs:
+        if a.ipr not in docs_dict[a.doc_alias.document_id].iprs:
             docs_dict[a.doc_alias.document_id].iprs.append(a.ipr)
+
     rel_docs_dict = dict((d.pk, d) for d in rel_docs)
     rel_doc_ids = rel_docs_dict.keys()
-    
-    rel_ipr_docaliases = IprDocAlias.objects.filter(doc_alias__document__in=rel_doc_ids).select_related('doc_alias')
+    rel_ipr_docaliases = IprDocAlias.objects.filter(doc_alias__document__in=rel_doc_ids, ipr__status__in=[1,3]).select_related('doc_alias')
     for a in rel_ipr_docaliases:
         if a.doc_alias.document_id in rel_id_camefrom:
             for k in rel_id_camefrom[a.doc_alias.document_id]:
-                if a.ipr.status==1 and a.ipr not in docs_dict[k].iprs:
+                if a.ipr not in docs_dict[k].iprs:
                     docs_dict[k].iprs.append(a.ipr)
+
+    # Clean up, make sure these temporary variables aren't used later
+    # (so we can re-work the code in due time):
+    del rel_docs, rel_id_camefrom, rel_docs_dict, rel_doc_ids, rel_ipr_docaliases
 
     # telechat date, can't do this with above query as we need to get TelechatDocEvents out
     seen = set()
