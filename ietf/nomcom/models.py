@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import os
 
 from django.db import models
@@ -34,7 +34,7 @@ class ReminderDates(models.Model):
 
 
 class NomCom(models.Model):
-    public_key = models.FileField(storage=FileSystemStorage(location=settings.PUBLIC_KEYS_URL),
+    public_key = models.FileField(storage=FileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR),
                                   upload_to=upload_path_handler, blank=True, null=True)
 
     group = models.ForeignKey(Group)
