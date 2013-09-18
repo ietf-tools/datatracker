@@ -13,11 +13,14 @@ WSGIPythonEggs /var/www/.python-eggs/
 <VirtualHost *:80> 
     ServerName tracker.tools.ietf.org
 
+    ServerSignature Off
+    CustomLog /var/log/apache2/tracker.tools.ietf.org-access.log full
+    ErrorLog /var/log/apache2/tracker.tools.ietf.org-error.log
+
     DocumentRoot "/srv/www/ietfdb/static/"
 
-    AliasMatch	"^/((robots.txt|favicon.ico|images|css|js|media)(.*))$" /srv/www/ietfdb/static/$1
-    AliasMatch	"^/secretariat/(img|css|js|error)(/|$)"			/srv/www/ietfdb/static/secretariat/$1
-    AliasMatch	"^/secr/(img|css|js|error)(/|$)"			/srv/www/ietfdb/static/secr/$1
+    Alias	/robots.tx	/srv/www/ietfdb/static/dev/robots.txt
+    AliasMatch	"^/((favicon.ico|images|css|js|media|secretariat)(.*))$" /srv/www/ietfdb/static/$1
 
     WSGIScriptAlias / /srv/www/ietfdb/ietf/wsgi.py
 
@@ -29,7 +32,6 @@ WSGIPythonEggs /var/www/.python-eggs/
 	AuthDigestDomain http://tools.ietf.org/
 	Require valid-user
     </Location>
-
 </VirtualHost>
 ----
 
