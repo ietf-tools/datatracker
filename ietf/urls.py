@@ -79,7 +79,7 @@ urlpatterns = patterns('',
 if settings.SERVER_MODE in ('development', 'test'):
     urlpatterns += patterns('',
         (r'^(?P<path>(?:images|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
-        (r'^(?P<path>secr/(img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
+        (r'^(?P<path>secretariat/(img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
         (r'^(?P<path>robots\.txt)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT+"dev/"}),
         (r'^_test500/$', lambda x: None),
 	)
