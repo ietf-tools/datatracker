@@ -40,7 +40,7 @@ import os
 import sys
 import syslog
 
-path = os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if not path in sys.path:
     sys.path.insert(0, path)
 
