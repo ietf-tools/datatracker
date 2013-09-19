@@ -1,3 +1,59 @@
+ietfdb (4.72) ietf; urgency=medium
+
+  * Added a migration for a new ConstraintName field: penalty
+
+  * Fixed 2 issues with the wg document list: Wrong heading for the related 
+    docs, and candidate wg docs listed as wg docs, rather than related docs.
+
+  * Fixed an issue arising when trying to edit a document state when there's
+    no prior state, and removed the link to edit the document state when
+    there's no set state.
+
+  * Tweaked the template used to generate the various 1wg-charter*.txt 
+    files to properly fetch email addresses.
+
+  * Merged in a fix from rjsparks@nostrum.com for incorrect IANA 
+    notification email addresses.
+
+  * Added Nomcom role suport to role_required() through has_role().  This will
+    let us get rid of the more specialized ad_hoc nomcom_memeber_required()
+    function which can't handle access for multiple roles.
+
+  * Replaced the ad_hoc nomcom_member_required() decorator with the generic 
+    role_required() decorator.  Changed access permission for nomcom-chair only 
+    pages to also permit nomcom advisor access (this lets the previous nomcom 
+    chair explain and assist as needed).  Also tweaked some text strings in the 
+    email feedback pipe script.
+
+  * Added a WSGI connector for the datatracker, to let us run under mod_wsgi.
+
+  * Modified the code which accumulates ipr disclosures associated with a 
+    document, shown as an IPR count in search results.  The previous code had 
+    two deficiencies: it could count some IPR disclosures twice, and it also 
+    included withdrawn and pending disclosures.  The current count matches the 
+    IPR search results better.
+
+  * Moved the nomcom private key storage out of the source tree, which is a 
+    silly place to put it.
+
+  * Added a dev-specific robots.txt, which blocks all robots.
+
+  * Merged in the latest secretariat code from rcross@amsl.com, from
+    branch/amsl/trunkmerge@6149.
+
+  * Added the ability to search for documents from a certain stream to the
+    main document search form.
+
+  * Added overview pages for non-ietf-stream documents (ise, iab, irtf), and
+    links to them form the sidebar.
+
+  * Removed the old ad documents page and its view function, and put in a
+    redirect from the temporary /ad2/ url to the /ad/ url.  Also replaced the
+    two AD document links in the lefthand menubar with one pointing to the new
+    view (under the old URL).
+
+ -- Henrik Levkowetz <henrik@netnod.se>  19 Sep 2013 21:31:42 +0200
+
 ietfdb (4.71) ietf; urgency=medium
 
   * Merged in personal/rjs/r6117-pubreq@6119:
