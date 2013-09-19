@@ -7,7 +7,6 @@ from ietf.secr.utils.group import current_nomcom
 
 from ietf.message.models import Message
 from ietf.ietfauth.decorators import has_role
-from ietf.wgchairs.accounts import get_person_for_user
 
 # ---------------------------------------------
 # Globals
@@ -158,7 +157,7 @@ class AnnounceForm(forms.ModelForm):
     def save(self, *args, **kwargs):
         user = kwargs.pop('user')
         message = super(AnnounceForm, self).save(commit=False)
-        message.by = get_person_for_user(user)
+        message.by = user.get_profile()
         if self.cleaned_data['to'] == 'Other...':
             message.to = self.cleaned_data['to_custom']
         if kwargs['commit']:
