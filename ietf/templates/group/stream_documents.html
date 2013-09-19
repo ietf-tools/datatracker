@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2013, All Rights Reserved #}
+
+{% block title %}{{ stream }} Stream Documents{% endblock %}
+
+{% block content %}
+<h1>{{ stream }} Stream Documents</h1>
+
+{% include "doc/search/search_results.html" %}
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="/js/utils.js"></script>
+<script type="text/javascript" src="/js/doc-search.js"></script>
+{% endblock %}
