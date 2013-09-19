@@ -9,6 +9,7 @@ Start chartering new WG
 {% endblock %}
 
 {% block morecss %}
+form.edit td { padding-bottom: .5em; }
 form.edit #id_name,
 form.edit #id_list_email,
 form.edit #id_list_subscribe,
@@ -16,8 +17,7 @@ form.edit #id_list_archive,
 form.edit #id_urls,
 form.edit #id_comments { width: 400px; }
 form.edit input[type=checkbox] { vertical-align: middle; }
-ul.errorlist { border-width: 0px; padding: 0px; margin: 0px;}
-ul.errorlist li { color: #a00; margin: 0px; padding: 0px; list-style: none; }
+form.edit #id_urls { height: 4em; }
 {% endblock %}
 
 {% block pagehead %}
@@ -27,16 +27,20 @@ ul.errorlist li { color: #a00; margin: 0px; padding: 0px; list-style: none; }
 {% block content %}
 {% load ietf_filters %}
 <h1>
-{% ifequal action "edit" %}
+{% if action == "edit" %}
 Edit WG {{ wg.acronym }}
 {% else %} 
-  {% ifequal action "charter" %}
+  {% if action == "charter" %}
 Start chartering new WG
   {% else %}
 Create new WG or BoF
-  {% endifequal %}
-{% endifequal %}
+  {% endif %}
+{% endif %}
 </h1>
+
+<p>Note that persons with authorization to manage information, e.g.
+chairs and delegates, need a Datatracker account to actually do
+so. New accounts can be <a href="{% url create_account %}">created here</a>.</p>
 
 <form class="edit" action="" method="POST">
   <table>
@@ -44,11 +48,9 @@ Create new WG or BoF
     <tr>
       <th>{{ field.label_tag }}: {% if field.field.required %}*{% endif %}</th>
       <td>{{ field }}
-      {% ifequal field.name "ad" %}
-      {% if user|has_role:"Area Director" %}
+      {% if field.name == "ad" and user|has_role:"Area Director" %}
       <label><input type="checkbox" name="ad" value="{{ login.pk }}" /> Assign to me</label>
       {% endif %}
-      {% endifequal %}      
       {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {{ field.errors }}
       </td>
@@ -65,16 +67,16 @@ Create new WG or BoF
     <tr>
       <td></td>
       <td class="actions">
-	{% ifequal action "edit" %}
-          <a href="{% url group_charter acronym=wg.acronym %}">Back</a>
-          <input type="submit" value="Save"/>
+	{% if action == "edit" %}
+          <a class="button" href="{% url group_charter acronym=wg.acronym %}">Cancel</a>
+          <input class="button" type="submit" value="Save"/>
         {% else %} 
-           {% ifequal action "charter" %}
+           {% if action == "charter" %}
               <input type="submit" value="Start chartering"/>
            {% else %}
               <input type="submit" value="Create group or bof"/>
-           {% endifequal %}
-	{% endifequal %}
+           {% endif %}
+	{% endif %}
       </td>
     </tr>
   </table>
