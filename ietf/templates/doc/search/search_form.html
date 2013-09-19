@@ -79,6 +79,9 @@ Additional search criteria:
 <div class="search_field">
   <label><input type="radio" class="radio" name="by" value="state" {% if meta.by == "state" %}checked="checked"{% endif %}/> IESG State:</label> {{ form.state }} :: {{ form.substate }}
 </div>
+<div class="search_field">
+  <label><input type="radio" class="radio" name="by" value="stream" {% if meta.by == "stream" %}checked="checked"{% endif %}/> Stream:</label> {{ form.stream }}
+</div>
 
 </div><!-- end of advanced -->
 

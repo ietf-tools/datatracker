@@ -54,9 +54,10 @@ class SearchForm(forms.Form):
     activedrafts = forms.BooleanField(required=False, initial=True)
     olddrafts = forms.BooleanField(required=False, initial=False)
 
-    by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state')], required=False, initial='wg', label='Foobar')
+    by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state','stream')], required=False, initial='wg')
     author = forms.CharField(required=False)
     group = forms.CharField(required=False)
+    stream = forms.ModelChoiceField(StreamName.objects.all().order_by('name'), empty_label="any stream", required=False)
     area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), empty_label="any area", required=False)
     ad = forms.ChoiceField(choices=(), required=False)
     state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label="any state", required=False)
@@ -298,6 +299,8 @@ def retrieve_search_results(form, all_types=False):
             docs = docs.filter(states=query["state"])
         if query["substate"]:
             docs = docs.filter(tags=query["substate"])
+    elif by == "stream":
+        docs = docs.filter(stream__slug=query["stream"])
 
     # evaluate and fill in attribute results immediately to cut down
     # the number of queries
