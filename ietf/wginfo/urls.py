@@ -30,5 +30,4 @@ urlpatterns = patterns('',
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/milestones/charter/reset/$', milestones.reset_charter_milestones, None, "wg_reset_charter_milestones"),
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/ajax/searchdocs/$', milestones.ajax_search_docs, None, "wg_ajax_search_docs"),
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/workflow/$', edit.customize_workflow),
-     (r'^(?P<acronym>[^/]+)/management/', include('ietf.wgchairs.urls')),
 )

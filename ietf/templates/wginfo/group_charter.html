@@ -105,6 +105,17 @@ is occasionally incorrect.</span>
   </tr>
   {% endif %}
 
+  {% if group.delegates %}
+  <tr>
+    <td>Delegate{{ group.delegates|pluralize }}:</td>
+    <td>
+      {% for delegate in group.delegates %}
+      <a href="mailto:{{ delegate.address }}">{{ delegate.person.plain_name }} &lt;{{ delegate.address }}&gt;</a><br/>
+      {% endfor %}
+    </td>
+  </tr>
+  {% endif %}
+  
   <tr><th colspan="2">Mailing List</th></tr>
 
   <tr><td>Address:</td><td>{{ group.list_email|urlize }}</td></tr>

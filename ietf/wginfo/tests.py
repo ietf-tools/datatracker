@@ -355,6 +355,7 @@ class WgEditTestCase(django.test.TestCase):
                                   chairs="aread@ietf.org, ad1@ietf.org",
                                   secretaries="aread@ietf.org, ad1@ietf.org, ad2@ietf.org",
                                   techadv="aread@ietf.org",
+                                  delegates="ad2@ietf.org",
                                   list_email="mars@mail",
                                   list_subscribe="subscribe.mars",
                                   list_archive="archive.mars",
@@ -375,6 +376,7 @@ class WgEditTestCase(django.test.TestCase):
         self.assertEquals(group.ad, ad)
         for k in ("chair", "secr", "techadv"):
             self.assertTrue(group.role_set.filter(name=k, email__address="aread@ietf.org"))
+        self.assertTrue(group.role_set.filter(name="delegate", email__address="ad2@ietf.org"))
         self.assertEquals(group.list_email, "mars@mail")
         self.assertEquals(group.list_subscribe, "subscribe.mars")
         self.assertEquals(group.list_archive, "archive.mars")

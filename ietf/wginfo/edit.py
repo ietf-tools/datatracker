@@ -23,13 +23,16 @@ from ietf.wgcharter.mails import email_secretariat
 from ietf.person.forms import EmailsField
 from ietf.doc.utils import get_tags_for_stream_id
 
+MAX_GROUP_DELEGATES = 3
+
 class WGForm(forms.Form):
-    name = forms.CharField(max_length=255, label="WG Name", required=True)
-    acronym = forms.CharField(max_length=10, label="WG Acronym", required=True)
-    state = forms.ModelChoiceField(GroupStateName.objects.all(), label="WG State", required=True)
-    chairs = EmailsField(label="WG Chairs", required=False)
-    secretaries = EmailsField(label="WG Secretaries", required=False)
-    techadv = EmailsField(label="WG Technical Advisors", required=False)
+    name = forms.CharField(max_length=255, label="Name", required=True)
+    acronym = forms.CharField(max_length=10, label="Acronym", required=True)
+    state = forms.ModelChoiceField(GroupStateName.objects.all(), label="State", required=True)
+    chairs = EmailsField(label="Chairs", required=False)
+    secretaries = EmailsField(label="Secretaries", required=False)
+    techadv = EmailsField(label="Technical Advisors", required=False)
+    delegates = EmailsField(label="Delegates", required=False, help_text=mark_safe("Type in name to search for person<br>Chairs can delegate the authority to update the state of group documents - max %s persons at a given time" % MAX_GROUP_DELEGATES))
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
     parent = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), label="IETF Area", empty_label="(None)", required=False)
     list_email = forms.CharField(max_length=64, required=False)
@@ -96,6 +99,13 @@ class WGForm(forms.Form):
 
     def clean_urls(self):
         return [x.strip() for x in self.cleaned_data["urls"].splitlines() if x.strip()]
+
+    def clean_delegates(self):
+        if len(self.cleaned_data["delegates"]) > MAX_GROUP_DELEGATES:
+            raise forms.ValidationError("At most %s delegates can be appointed at the same time, please remove %s delegates." % (
+                    MAX_GROUP_DELEGATES, len(self.cleaned_data["delegates"]) - MAX_GROUP_DELEGATES))
+        return self.cleaned_data["delegates"]
+
 
 def format_urls(urls, fs="\n"):
     res = []
@@ -221,7 +231,7 @@ def edit(request, acronym=None, action="edit"):
                     shutil.copy(old, new)
 
             # update roles
-            for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors")]:
+            for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors"), ('delegates', 'delegate', "Delegates")]:
                 new = clean[attr]
                 old = Email.objects.filter(role__group=wg, role__name=slug).select_related("person")
                 if set(new) != set(old):
@@ -269,6 +279,7 @@ def edit(request, acronym=None, action="edit"):
                         chairs=Email.objects.filter(role__group=wg, role__name="chair"),
                         secretaries=Email.objects.filter(role__group=wg, role__name="secr"),
                         techadv=Email.objects.filter(role__group=wg, role__name="techadv"),
+                        delegates=Email.objects.filter(role__group=wg, role__name="delegate"),
                         ad=wg.ad_id if wg.ad else None,
                         parent=wg.parent.id if wg.parent else None,
                         list_email=wg.list_email if wg.list_email else None,

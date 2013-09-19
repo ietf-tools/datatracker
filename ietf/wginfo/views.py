@@ -255,6 +255,7 @@ def group_charter(request, acronym):
     group = get_object_or_404(Group, type="wg", acronym=acronym)
 
     fill_in_charter_info(group, include_drafts=False)
+    group.delegates = Email.objects.filter(role__group=group, role__name="delegate")
 
     actions = []
     if group.state_id != "conclude":
@@ -269,7 +270,6 @@ def group_charter(request, acronym):
     is_chair = request.user.is_authenticated() and group.role_set.filter(name="chair", person__user=request.user)
 
     if is_chair or has_role(request.user, "Secretariat"):
-        actions.append((u"Manage delegates", urlreverse("manage_delegates", kwargs=dict(acronym=group.acronym))))
         actions.append((u"Customize workflow", urlreverse("ietf.wginfo.edit.customize_workflow", kwargs=dict(acronym=group.acronym))))
 
     return render_to_response('wginfo/group_charter.html',
