@@ -5,8 +5,6 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper, IdWrapper
 from ietf.ietfworkflows.utils import (get_workflow_for_draft,
                                       get_state_for_draft)
-from ietf.wgchairs.accounts import (can_manage_shepherd_of_a_document,
-                                    can_manage_writeup_of_a_document)
 from ietf.ietfworkflows.streams import get_stream_from_wrapper
 from ietf.ietfworkflows.models import Stream
 from ietf.ietfworkflows.accounts import (can_edit_state, can_edit_stream,
