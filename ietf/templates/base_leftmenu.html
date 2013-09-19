@@ -41,8 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <li><a href="{%url ietf.cookies.views.settings %}" rel="nofollow">Options</a></li>
 {% if user|has_role:"Area Director" %}
 <li class="sect first">AD Dashboard</li>
-  <li><a href="{% url drafts_for_ad name=user.get_profile.full_name_as_key %}">My Documents (Old)</a></li>
-  <li><a href="{% url docs_for_ad name=user.get_profile.full_name_as_key %}">My Documents (New)</a></li>
+  <li><a href="{% url docs_for_ad name=user.get_profile.full_name_as_key %}">My Documents</a></li>
   <li><a href="{% url ietf.iesg.views.agenda_documents %}">Next Telechat</a></li>
   <li><a href="{% url ietf.iesg.views.discusses %}">Discusses</a></li>
   <li><a href="{% url ietf.iesg.views.milestones_needing_review %}">Milestones</a></li>
