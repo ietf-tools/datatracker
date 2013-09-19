@@ -104,7 +104,7 @@ class SearchTestCase(django.test.TestCase):
     def test_drafts_pages(self):
         draft = make_test_data()
 
-        r = self.client.get(urlreverse("drafts_for_ad", kwargs=dict(name=draft.ad.full_name_as_key())))
+        r = self.client.get(urlreverse("docs_for_ad", kwargs=dict(name=draft.ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in r.content)
 

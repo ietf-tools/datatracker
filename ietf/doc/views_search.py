@@ -491,36 +491,6 @@ def ad_dashboard_sort_key(doc):
 
     return "3%s" % seed
 
-def drafts_for_ad(request, name):
-    ad = None
-    responsible = Document.objects.values_list('ad', flat=True).distinct()
-    for p in Person.objects.filter(Q(role__name__in=("pre-ad", "ad"),
-                                     role__group__type="area",
-                                     role__group__state="active")
-                                   | Q(pk__in=responsible)).distinct():
-        if name == p.full_name_as_key():
-            ad = p
-            break
-    if not ad:
-        raise Http404
-    form = SearchForm({'by':'ad','ad': ad.id,
-                       'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
-                       'sort': 'status'})
-    results, meta = retrieve_search_results(form)
-    del meta["headers"][-1]
-    # 
-    for d in results:
-        if d.get_state_slug() == "active":
-            iesg_state = d.get_state("draft-iesg")
-            if iesg_state:
-                if iesg_state.slug == "dead":
-                    d.search_heading = "IESG Dead Internet-Drafts"
-                else:
-                    d.search_heading = "%s Internet-Drafts" % iesg_state.name
-    return render_to_response('doc/drafts_for_ad.html',
-                              { 'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name() },
-                              context_instance=RequestContext(request))
-
 def docs_for_ad(request, name):
     ad = None
     responsible = Document.objects.values_list('ad', flat=True).distinct()
