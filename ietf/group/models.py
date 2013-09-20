@@ -54,25 +54,12 @@ class Group(GroupInfo):
         e = model.objects.filter(group=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
 
-    def is_chair(self, user):
-        chair = self.get_chair()
-        if chair:
-            return self.get_chair().person.user == user
-        else:
-            return False
-
-    def is_member(self, user):
-        members = self.get_members()
-        users = [member.person.user for member in members]
-        return user in users
+    def has_role(self, role_name, user):
+        return user.is_authenticated() and self.role_set.filter(name=role_name, person__user=user).exists()
 
     def get_chair(self):
         chair = self.role_set.filter(name__slug='chair')[:1]
         return chair and chair[0] or None
-
-    def get_members(self):
-        members = self.role_set.filter(name__slug__in=["chair", "member", "advisor", "liaison"])
-        return members
 
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')

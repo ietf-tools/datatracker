@@ -64,18 +64,6 @@ def get_user_email(user):
     return mail
 
 
-def is_nomcom_member(user, nomcom):
-    is_group_member = nomcom.group.is_member(user)
-    if not is_group_member:
-        raise PermissionDenied("Must be nomcom member")
-
-
-def is_nomcom_chair(user, nomcom):
-    is_group_chair = nomcom.group.is_chair(user)
-    if not is_group_chair:
-        raise PermissionDenied("Must be nomcom chair")
-
-
 def get_hash_nominee_position(date, nominee_position_id):
     return hashlib.md5('%s%s%s' % (settings.SECRET_KEY, date, nominee_position_id)).hexdigest()
 
