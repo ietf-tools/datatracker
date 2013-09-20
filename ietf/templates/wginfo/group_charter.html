@@ -138,13 +138,6 @@ is occasionally incorrect.</span>
 
 </table>
 
-{% if user|has_role:"Area Director,Secretariat" %}
-<div style="margin: 2px; margin-top: 2em;">
-  {% for name, url in actions %}
-  <a href="{{ url }}">{{ name }}</a> {% if not forloop.last %} | {% endif %}
-  {% endfor %}
-</div>
-{% endif %}
 </div>
 
 {% with group.groupurl_set.all as urls %}
@@ -161,14 +154,7 @@ is occasionally incorrect.</span>
 
 <p>{{ group.charter_text|escape|format_charter|safe }}</p>
 
-<h2>{% if group.state_id == "proposed" %}Proposed{% endif %} Milestones
-
-{% if group.state_id != "proposed" %}
-{% if user|has_role:"Area Director,Secretariat" or is_chair %}
-<a class="button" href="{% url wg_edit_milestones acronym=group.acronym %}">Add or edit milestones</a>
-{% endif %}
-{% endif %}
-</h2>
+<h2>{% if group.state_id == "proposed" %}Proposed{% endif %} Milestones</h2>
 
 {% with group.milestones as milestones %}
 {% include "wginfo/milestones.html" %}

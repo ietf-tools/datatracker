@@ -70,6 +70,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </h1>
 
 <div class="ietf-navset">
+  <div>
   <a {% if selected == "documents" %}class="selected"{% else %}href="{% url ietf.wginfo.views.group_documents acronym=group.acronym %}"{% endif %}>Documents</a> |
   <a {% if selected == "charter" %}class="selected"{% else %}href="{% url ietf.wginfo.views.group_charter acronym=group.acronym %}"{% endif %}>Charter</a> |
 
@@ -78,6 +79,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <a href="{{ group.list_archive }}">List Archive &raquo;</a> |
   {% endif %}
   <a href="http://tools.ietf.org/wg/{{ group.acronym }}/">Tools WG Page &raquo;</a>
+  </div>
+
+  {% if menu_actions %}
+  <div class="actions">
+  {% for name, url in menu_actions %}
+    <a href="{{ url }}">{{ name }}</a>
+  {% endfor %}
+  </div>
+  {% endif %}
 </div>
 
 {% block group_content %}

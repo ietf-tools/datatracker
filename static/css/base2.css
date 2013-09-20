@@ -76,6 +76,7 @@ a img { border: 0; }
 .ietf-navset .selected { font-weight:bold; padding: 0 3px; }
 .ietf-navset a, .ietf-navset a:visited { color: white; padding:0 3px; }
 
+.ietf-navset .actions { margin-top: 0.5em; font-style: italic; font-size: 90%; }
 
 .ietf-ballot .left { background: #edf5ff; width:160px; padding-left: 10px; }
 .ietf-ballot .right { padding-left: 15px; padding-right:15px; width:610px;padding-top:0px;}
