@@ -24,7 +24,7 @@ def is_chair(user, year):
     nomcom = get_nomcom_by_year(year=year)
     if has_role(user, "Secretariat"):
         return True
-    return nomcom.group.has_role("chair", user)
+    return nomcom.group.has_role(user, "chair")
 
 
 @register.filter

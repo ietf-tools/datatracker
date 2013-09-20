@@ -54,8 +54,10 @@ class Group(GroupInfo):
         e = model.objects.filter(group=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
 
-    def has_role(self, role_name, user):
-        return user.is_authenticated() and self.role_set.filter(name=role_name, person__user=user).exists()
+    def has_role(self, user, role_names):
+        if isinstance(role_names, str) or isinstance(role_names, unicode):
+            role_names = [role_names]
+        return user.is_authenticated() and self.role_set.filter(name__in=role_names, person__user=user).exists()
 
     def get_chair(self):
         chair = self.role_set.filter(name__slug='chair')[:1]

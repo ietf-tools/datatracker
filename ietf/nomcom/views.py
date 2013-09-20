@@ -81,7 +81,7 @@ def private_key(request, year):
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
     all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom).not_duplicated()
-    is_chair = nomcom.group.has_role("chair", request.user)
+    is_chair = nomcom.group.has_role(request.user, "chair")
     message = None
     if is_chair and request.method == 'POST':
         action = request.POST.get('action')
