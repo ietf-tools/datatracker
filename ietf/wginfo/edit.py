@@ -1,8 +1,9 @@
 # edit/create view for WGs
 
-import re, os, string, datetime, shutil
+import re, os, datetime, shutil
 
 from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.http import HttpResponseForbidden
 from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from django import forms
@@ -20,15 +21,18 @@ from ietf.group.models import *
 from ietf.group.utils import save_group_in_history
 from ietf.wgcharter.mails import email_secretariat
 from ietf.person.forms import EmailsField
+from ietf.doc.utils import get_tags_for_stream_id
 
+MAX_GROUP_DELEGATES = 3
 
 class WGForm(forms.Form):
-    name = forms.CharField(max_length=255, label="WG Name", required=True)
-    acronym = forms.CharField(max_length=10, label="WG Acronym", required=True)
-    state = forms.ModelChoiceField(GroupStateName.objects.all(), label="WG State", required=True)
-    chairs = EmailsField(label="WG Chairs", required=False)
-    secretaries = EmailsField(label="WG Secretaries", required=False)
-    techadv = EmailsField(label="WG Technical Advisors", required=False)
+    name = forms.CharField(max_length=255, label="Name", required=True)
+    acronym = forms.CharField(max_length=10, label="Acronym", required=True)
+    state = forms.ModelChoiceField(GroupStateName.objects.all(), label="State", required=True)
+    chairs = EmailsField(label="Chairs", required=False)
+    secretaries = EmailsField(label="Secretaries", required=False)
+    techadv = EmailsField(label="Technical Advisors", required=False)
+    delegates = EmailsField(label="Delegates", required=False, help_text=mark_safe("Type in name to search for person<br>Chairs can delegate the authority to update the state of group documents - max %s persons at a given time" % MAX_GROUP_DELEGATES))
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
     parent = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), label="IETF Area", empty_label="(None)", required=False)
     list_email = forms.CharField(max_length=64, required=False)
@@ -95,6 +99,13 @@ class WGForm(forms.Form):
 
     def clean_urls(self):
         return [x.strip() for x in self.cleaned_data["urls"].splitlines() if x.strip()]
+
+    def clean_delegates(self):
+        if len(self.cleaned_data["delegates"]) > MAX_GROUP_DELEGATES:
+            raise forms.ValidationError("At most %s delegates can be appointed at the same time, please remove %s delegates." % (
+                    MAX_GROUP_DELEGATES, len(self.cleaned_data["delegates"]) - MAX_GROUP_DELEGATES))
+        return self.cleaned_data["delegates"]
+
 
 def format_urls(urls, fs="\n"):
     res = []
@@ -220,7 +231,7 @@ def edit(request, acronym=None, action="edit"):
                     shutil.copy(old, new)
 
             # update roles
-            for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors")]:
+            for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors"), ('delegates', 'delegate', "Delegates")]:
                 new = clean[attr]
                 old = Email.objects.filter(role__group=wg, role__name=slug).select_related("person")
                 if set(new) != set(old):
@@ -258,7 +269,7 @@ def edit(request, acronym=None, action="edit"):
             if action=="charter":
                 return redirect('charter_submit', name=wg.charter.name, option="initcharter")
 
-            return redirect('wg_charter', acronym=wg.acronym)
+            return redirect('group_charter', acronym=wg.acronym)
     else: # form.is_valid()
         if not new_wg:
             from ietf.person.forms import json_emails
@@ -268,6 +279,7 @@ def edit(request, acronym=None, action="edit"):
                         chairs=Email.objects.filter(role__group=wg, role__name="chair"),
                         secretaries=Email.objects.filter(role__group=wg, role__name="secr"),
                         techadv=Email.objects.filter(role__group=wg, role__name="techadv"),
+                        delegates=Email.objects.filter(role__group=wg, role__name="delegate"),
                         ad=wg.ad_id if wg.ad else None,
                         parent=wg.parent.id if wg.parent else None,
                         list_email=wg.list_email if wg.list_email else None,
@@ -312,7 +324,7 @@ def conclude(request, acronym):
             e.desc = "Requested closing group"
             e.save()
 
-            return redirect('wg_charter', acronym=wg.acronym)
+            return redirect('group_charter', acronym=wg.acronym)
     else:
         form = ConcludeForm()
 
@@ -320,3 +332,89 @@ def conclude(request, acronym):
                               dict(form=form,
                                    wg=wg),
                               context_instance=RequestContext(request))
+
+
+def customize_workflow(request, acronym):
+    MANDATORY_STATES = ('c-adopt', 'wg-doc', 'sub-pub')
+
+    group = get_object_or_404(Group, acronym=acronym, type="wg")
+    if not request.user.is_authenticated() or not (has_role(request.user, "Secretariat") or group.role_set.filter(name="chair", person__user=request.user)):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
+    if request.method == 'POST':
+        action = request.POST.get("action")
+        if action == "setstateactive":
+            active = request.POST.get("active") == "1"
+            try:
+                state = State.objects.exclude(slug__in=MANDATORY_STATES).get(pk=request.POST.get("state"))
+            except State.DoesNotExist:
+                return HttpResponse("Invalid state %s" % request.POST.get("state"))
+
+            if active:
+                group.unused_states.remove(state)
+            else:
+                group.unused_states.add(state)
+
+            # redirect so the back button works correctly, otherwise
+            # repeated POSTs fills up the history
+            return redirect("ietf.wginfo.edit.customize_workflow", acronym=group.acronym)
+
+        if action == "setnextstates":
+            try:
+                state = State.objects.get(pk=request.POST.get("state"))
+            except State.DoesNotExist:
+                return HttpResponse("Invalid state %s" % request.POST.get("state"))
+
+            next_states = State.objects.filter(used=True, type='draft-stream-ietf', pk__in=request.POST.getlist("next_states"))
+            unused = group.unused_states.all()
+            if set(next_states.exclude(pk__in=unused)) == set(state.next_states.exclude(pk__in=unused)):
+                # just use the default
+                group.groupstatetransitions_set.filter(state=state).delete()
+            else:
+                transitions, _ = GroupStateTransitions.objects.get_or_create(group=group, state=state)
+                transitions.next_states = next_states
+
+            return redirect("ietf.wginfo.edit.customize_workflow", acronym=group.acronym)
+
+        if action == "settagactive":
+            active = request.POST.get("active") == "1"
+            try:
+                tag = DocTagName.objects.get(pk=request.POST.get("tag"))
+            except DocTagName.DoesNotExist:
+                return HttpResponse("Invalid tag %s" % request.POST.get("tag"))
+
+            if active:
+                group.unused_tags.remove(tag)
+            else:
+                group.unused_tags.add(tag)
+
+            return redirect("ietf.wginfo.edit.customize_workflow", acronym=group.acronym)
+
+
+    # put some info for the template on tags and states
+    unused_tags = group.unused_tags.all().values_list('slug', flat=True)
+    tags = DocTagName.objects.filter(slug__in=get_tags_for_stream_id("ietf"))
+    for t in tags:
+        t.used = t.slug not in unused_tags
+
+    unused_states = group.unused_states.all().values_list('slug', flat=True)
+    states = State.objects.filter(used=True, type="draft-stream-ietf")
+    transitions = dict((o.state, o) for o in group.groupstatetransitions_set.all())
+    for s in states:
+        s.used = s.slug not in unused_states
+        s.mandatory = s.slug in MANDATORY_STATES
+
+        default_n = s.next_states.all()
+        if s in transitions:
+            n = transitions[s].next_states.all()
+        else:
+            n = default_n
+
+        s.next_states_checkboxes = [(x in n, x in default_n, x) for x in states]
+        s.used_next_states = [x for x in n if x.slug not in unused_states]
+
+    return render_to_response('wginfo/customize_workflow.html', {
+            'group': group,
+            'states': states,
+            'tags': tags,
+            }, RequestContext(request))

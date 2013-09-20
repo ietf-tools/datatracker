@@ -3,12 +3,14 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
 from ietf.doc.models import *
+from ietf.doc.utils import get_tags_for_stream_id
 
 def state_help(request, type):
     slug, title = {
         "draft-iesg": ("draft-iesg", "IESG States For Internet-Drafts"),
         "draft-rfceditor": ("draft-rfceditor", "RFC Editor States For Internet-Drafts"),
         "draft-iana-action": ("draft-iana-action", "IANA Action States For Internet-Drafts"),
+        "draft-stream-ietf": ("draft-stream-ietf", "IETF Stream States For Internet-Drafts"),
         "charter": ("charter", "Charter States"),
         "conflict-review": ("conflrev", "Conflict Review States"),
         "status-change": ("statchg", "RFC Status Change States"),
@@ -35,6 +37,9 @@ def state_help(request, type):
         states.insert(0, fake_state)
 
         tags = DocTagName.objects.filter(slug__in=IESG_SUBSTATE_TAGS)
+    elif state_type.slug.startswith("draft-stream-"):
+        possible = get_tags_for_stream_id(state_type.slug.replace("draft-stream-", ""))
+        tags = DocTagName.objects.filter(slug__in=possible)
 
     return render_to_response("doc/state_help.html", {
             "title": title,
@@ -42,5 +47,4 @@ def state_help(request, type):
             "states": states,
             "has_next_states": has_next_states,
             "tags": tags,
-            },
-                              context_instance=RequestContext(request))
+            }, context_instance=RequestContext(request))

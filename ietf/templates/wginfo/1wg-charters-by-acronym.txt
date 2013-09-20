@@ -1,4 +1,4 @@
-{% load ietf_filters %}{% for wg in wg_list|dictsort:"group_acronym.acronym" %}{% if wg.area.area.status_id == 1 and wg.area.area.acronym != "iesg" %}{% if wg.start_date %}{{ wg }}
-{% endif %}{% endif %}{% endfor %}
-{% for wg in wg_list|dictsort:"group_acronym.acronym" %}{% if wg.area.area.status_id == 1 and wg.area.area.acronym != "iesg" %}{% if wg.start_date %}{% include "wginfo/wg-charter.txt" %}
-{% endif %}{% endif %}{% endfor %}
+{% autoescape off %}{% load ietf_filters %}{% for group in groups %}{{ group.acronym }}
+{% endfor %}
+
+{% for group in groups %}{% include "wginfo/group_entry_with_charter.txt" %}{% endfor %}{% endautoescape %}

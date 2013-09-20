@@ -24,7 +24,7 @@
   {% for state in states %}
   <tr id="{{ state.slug }}" class="{{ forloop.counter|divisibleby:2|yesno:"evenrow,oddrow" }}">
     <td class="name">{{ state.name }}</td>
-    <td class="desc">{{ state.desc|linebreaksbr }}</td>
+    <td class="desc">{{ state.desc|safe|linebreaksbr }}</td>
     {% if has_next_states %}
     <td class="name">
       {% for s in state.next_states.all %}

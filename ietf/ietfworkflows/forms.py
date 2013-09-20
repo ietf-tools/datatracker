@@ -7,7 +7,6 @@ from workflows.models import State
 from workflows.utils import set_workflow_for_object
 
 from ietf.idtracker.models import PersonOrOrgInfo, IETFWG, InternetDraft
-from ietf.wgchairs.accounts import get_person_for_user
 from ietf.ietfworkflows.models import Stream, StreamDelegate
 from ietf.ietfworkflows.utils import (get_workflow_for_draft, get_workflow_for_wg,
                                       get_state_for_draft, get_state_by_name,
@@ -33,7 +32,10 @@ class StreamDraftForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.draft = kwargs.pop('draft', None)
         self.user = kwargs.pop('user', None)
-        self.person = get_person_for_user(self.user)
+        try:
+            self.person = self.user.get_profile()
+        except:
+            self.person = None
         self.workflow = get_workflow_for_draft(self.draft)
         self.message = {}
         super(StreamDraftForm, self).__init__(*args, **kwargs)
