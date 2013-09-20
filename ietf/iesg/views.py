@@ -620,6 +620,10 @@ def discusses(request):
             doc = IdWrapper(draft=d)
 
         if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
+            # quick hack - to be removed when the proxy code is removed
+            doc.underlying = doc.underlying_document()
+            doc.underlying.milestones = d.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
+
             res.append(doc)
 
     return direct_to_template(request, 'iesg/discusses.html', {'docs':res})

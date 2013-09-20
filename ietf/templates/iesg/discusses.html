@@ -58,7 +58,7 @@ Show: <input type="radio" name="discuss_show" checked="checked" value="all" id="
 {% for doc in docs %}
 <tr class="discuss_row {% cycle oddrow,evenrow %} {% if user|in_group:"Area_Director" %}{% if doc|my_position:user|equal:"Discuss" %}discuss_byme{% else %}discuss_notbyme{% endif %} {% ifequal user.get_profile.person|lower doc.ad_name|lower %}discuss_forme{%else%}discuss_notforme{%endifequal%}{% endif %}">
 <td class="doc">{{ doc.displayname_with_link|safe }}</td>
-{% include "idrfc/status_columns.html" %}
+{% with doc.underlying as doc %}{% include "doc/search/status_columns.html" %}{% endwith %}
 <td class="ad">{{ doc.ad_name|default:"" }}</td>
 <td>
 {% for po in doc.ietf_process.iesg_ballot.get_discuss|dictsort:"is_old_ad" %}
