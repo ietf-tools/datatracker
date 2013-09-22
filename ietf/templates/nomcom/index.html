@@ -1,24 +1,37 @@
-{% extends "nomcom/nomcom_base.html" %}
+{# Copyright The IETF Trust 2009, All Rights Reserved #}
 
-{% load nomcom_tags %}
+{% extends "base.html" %}
+{% load ietf_filters %}
+{% block title %}IAB/IESG NomcOms{% endblock %}
+
 
 {% block content %}
+<h1>IAB/IESG NomComs</h1>
 
-  <h1>Nomcom Pages</h1>
-
- 
-
-  <div class="ietf-navset">
-    {% if selected == "index" %}<span class="selected">Home</span>{% else %}<a href="{% url nomcom_year_index year %}">Home</a>{% endif %} |
-    {% if nomcom|has_publickey %}
-      {% if selected == "nominate" %}<span class="selected">Nominate</span>{% else %}<a href="{% url nomcom_public_nominate year %}">Nominate</a>{% endif %} |
-      {% if selected == "feedback" %}<span class="selected">Provide Comments</span>{% else %}<a href="{% url nomcom_public_feedback year %}">Provide Comments</a>{% endif %} |
-    {% endif %}
-    {% if selected == "requirements" %}<span class="selected">Requirements</span>{% else %}<a href="{% url nomcom_requirements year %}">Requirements</a>{% endif %} |
-    {% if selected == "questionnaires" %}<span class="selected">Questionnaires</span>{% else %}<a href="{% url nomcom_questionnaires year %}">Questionnaires</a>{% endif %} |
-  </div>
-
-  {% block nomcom_content %}
-  {% endblock %}
-
+   <div style="margin-left:2em;">
+      <table class="ietf-doctable">
+	 <tr>
+		<th>Year</th>
+		<th>Chair</th>
+		<th></th>
+		<th></th>
+	 </tr>
+	 {% for nomcom in nomcom_list %}
+	     <tr>
+		<td>{{ nomcom.label }}</td>
+		<td >{% with nomcom.get_chair as role %}<a href="mailto:{{role.person.email_address}}">{{role.person}}</a>{% endwith %}</td>
+		<td >
+		{% if nomcom.ann_url %}
+		   <a href="{{ nomcom.ann_url }}">Announcements</a>
+		{% endif %}
+		</td>
+		<td >
+		{% if nomcom.url %}
+		   <a href="{{ nomcom.url }}">Pages</a>
+		{% endif %}
+		</td>
+	     </tr>
+	 {% endfor %}
+      </table>
+   </div>
 {% endblock %}

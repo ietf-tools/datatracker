@@ -9,7 +9,7 @@
 
 {% for regime in regimes %}
   <hr>
-  <h1>Messages from {{ regime.group.start_year }} - {{ regime.group.end_year }}</h1>
+  <h1 id="{{regime.group.start_year}}">Messages from {{ regime.group.start_year }} - {{ regime.group.end_year }}</h1>
 
   {# use person email address here rather than the generic nomcom-chair@ietf.org #}
   <h4>Committee Chair: <a href="mailto:{{ regime.chair.person.email_address }}">{{ regime.chair.person.plain_name }}</a></h4>
@@ -33,7 +33,7 @@
 
 {# somebody ought to import these announcements in the DB instead of this mess #}
 
-<h3>Messages from 2003-2004 NomCom</h3>
+<h3 id="2003">Messages from 2003-2004 NomCom</h3>
 Committee Chair: <A HREF="mailto:richdr@microsoft.com">Rich Draves</A>
 <br><br><li><a href="http://www.ietf.org/old/2009/nomcom/msg08-25-2003.txt">IETF Nominations Committee Chair Announcement</a> August 25, 2003
 <LI><a href="http://www.ietf.org/old/2009/nomcom/msg09.22.txt">NomCom call for volunteers</a> September 22, 2003
@@ -51,7 +51,7 @@ Committee Chair: <A HREF="mailto:richdr@microsoft.com">Rich Draves</A>
 <LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg09.28.txt">Call for Security AD nominations</a> September 28, 2004
 <LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg11.07.04.txt">Steve Bellovin replacement</a> November  07, 2004 
  
-<h3>Messages from 2002-2003 NomCom</h3>
+<h3 id="2002">Messages from 2002-2003 NomCom</h3>
 
 Committee Chair: <A HREF="mailto:PRoberts@MEGISTO.com">Phil Roberts</A>
 <br><br>

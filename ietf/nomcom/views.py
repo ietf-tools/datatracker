@@ -20,6 +20,7 @@ from django.forms.models import modelformset_factory, inlineformset_factory
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
 from ietf.name.models import NomineePositionState, FeedbackType
+from ietf.group.models import Group
 
 from ietf.nomcom.decorators import nomcom_private_key_required
 from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
@@ -33,9 +34,33 @@ from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
                                HOME_TEMPLATE, NOMINEE_REMINDER_TEMPLATE)
 from ietf.ietfauth.utils import role_required
 
+import debug
 
 def index(request):
-    nomcom_list = NomCom.objects.all()
+    nomcom_list = Group.objects.filter(type__slug='nomcom').order_by('acronym')
+    for nomcom in nomcom_list:
+        year = nomcom.acronym[6:]
+        debug.show('year')
+        try:
+            year = int(year)
+        except ValueError:
+            year = None
+        debug.show('year')
+        nomcom.year = year
+        nomcom.label = "%s/%s" % (year, year+1)
+        if   year in [ 2005, 2006, 2007, 2008, 2009, 2010 ]:
+            nomcom.url = "https://tools.ietf.org/group/nomcom/%02d" % (year % 100)
+        elif year in [ 2011, 2012 ]:
+            nomcom.url = "https://www.ietf.org/nomcom/%04d" % year
+        elif year > 2012:
+            nomcom.url = "/nomcom/%04d" % year
+        else:
+            nomcom.url = None
+        if year >= 2002:
+            nomcom.ann_url = "/ann/nomcom/#%4d" % year
+        else:
+            nomcom.ann_url = None
+    debug.show('nomcom.url')
     return render_to_response('nomcom/index.html',
                               {'nomcom_list': nomcom_list,}, RequestContext(request))
     

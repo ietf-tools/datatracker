@@ -137,8 +137,10 @@ table.ietf-table { border-collapse:collapse; border:1px solid #7f7f7f; }
 .ietf-doctable th.status, .ietf-doctable td.status { min-width: 20em;}
 .ietf-doctable th.ipr { font-variant: small-caps; }
 .ietf-doctable th.ad, .ietf-doctable td.ad { white-space:nowrap; min-width: 6em; }
+.ietf-doctable td { padding-right: 0.5em; padding-left: 0.5em; }
 .ietf-doctable td.ballot { border-left: hidden; min-width: 37px; }
 .ietf-doctable td .updated-by { max-width: 20em; } /* some RFCs have really long lists */
+
 
 .ietf-doctable .status .milestone,
 .ietf-box .stream-state .milestone
