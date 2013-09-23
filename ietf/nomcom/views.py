@@ -424,8 +424,10 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
         return HttpResponseForbidden("The nomination already was %s" % nominee_position.state)
 
     state = get_object_or_404(NomineePositionState, slug=state)
-    message = ('warning', "Are you sure to change the nomination on %s as %s?" % (nominee_position.position.name,
-                                                                                  state.name))
+    message = ('warning',
+        "Check Yes to set the state of your nomination to %s to %s (this"+
+        "is not a final commitment - you can notify us later if you need to change this)" %
+        (nominee_position.position.name, state.name))
     if request.method == 'POST':
         nominee_position.state = state
         nominee_position.save()
