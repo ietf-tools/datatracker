@@ -53,10 +53,10 @@ from ietf.ietfauth.utils import has_role
 
 def fill_in_charter_info(group, include_drafts=False):
     group.areadirector = group.ad.role_email("ad", group.parent) if group.ad else None
-    group.chairs = Email.objects.filter(role__group=group, role__name="chair")
-    group.techadvisors = Email.objects.filter(role__group=group, role__name="techadv")
-    group.editors = Email.objects.filter(role__group=group, role__name="editor")
-    group.secretaries = Email.objects.filter(role__group=group, role__name="secr")
+    group.chairs = Email.objects.filter(role__group=group, role__name="chair").select_related("person")
+    group.techadvisors = Email.objects.filter(role__group=group, role__name="techadv").select_related("person")
+    group.editors = Email.objects.filter(role__group=group, role__name="editor").select_related("person")
+    group.secretaries = Email.objects.filter(role__group=group, role__name="secr").select_related("person")
     milestone_state = "charter" if group.state_id == "proposed" else "active"
     group.milestones = group.groupmilestone_set.filter(state=milestone_state).order_by('due')
 
@@ -275,7 +275,7 @@ def group_charter(request, acronym):
     group = get_object_or_404(Group, type="wg", acronym=acronym)
 
     fill_in_charter_info(group, include_drafts=False)
-    group.delegates = Email.objects.filter(role__group=group, role__name="delegate")
+    group.delegates = Email.objects.filter(role__group=group, role__name="delegate").select_related("person")
 
     e = group.latest_event(type__in=("changed_state", "requested_close",))
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
