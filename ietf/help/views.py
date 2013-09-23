@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import os
+
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 
@@ -29,3 +31,11 @@ def state(request, doc, type=None):
     return render_to_response('help/states.html', {"doc": doc, "type": statetype, "states":states},
         context_instance=RequestContext(request))
 
+def environment(request):
+    if request.is_secure():
+        os.environ['SCHEME'] = "https"
+    else:
+        os.environ['SCHEME'] = "http"
+    os.environ["URL"] = request.build_absolute_uri(".")
+    return render_to_response('help/environment.html', {"env": os.environ},
+        context_instance=RequestContext(request))
