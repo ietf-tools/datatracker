@@ -1,13 +1,17 @@
 # Copyright The IETF Trust 2008, All Rights Reserved
 
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext, loader
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseForbidden
+from django import forms
 
-from ietf.group.models import Group
+from ietf.group.models import *
+from ietf.group.utils import *
 from ietf.doc.models import Document
 from ietf.doc.views_search import SearchForm, retrieve_search_results
 from ietf.name.models import StreamName
+from ietf.ietfauth.utils import has_role
+from ietf.person.forms import EmailsField
 
 import debug
 
@@ -26,4 +30,46 @@ def stream_documents(request, acronym):
     docs, meta = retrieve_search_results(form)
     return render_to_response('group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta }, context_instance=RequestContext(request))
 
+class StreamEditForm(forms.Form):
+    delegates = EmailsField(label="Delegates", required=False, help_text=u"Type in name to search for person")
+
+def stream_edit(request, acronym):
+    group = get_object_or_404(Group, acronym=acronym)
+
+    if not (has_role(request.user, "Secretariat") or group.has_role(request.user, "chair")):
+        return HttpResponseForbidden("You don't have permission to access this page.")
+
+    chairs = Email.objects.filter(role__group=group, role__name="chair").select_related("person")
+
+    if request.method == 'POST':
+        form = StreamEditForm(request.POST)
+
+        if form.is_valid():
+            save_group_in_history(group)
+
+            # update roles
+            attr, slug, title = ('delegates', 'delegate', "Delegates")
+
+            new = form.cleaned_data[attr]
+            old = Email.objects.filter(role__group=group, role__name=slug).select_related("person")
+            if set(new) != set(old):
+                desc = "%s changed to <b>%s</b> from %s" % (
+                    title, ", ".join(x.get_name() for x in new), ", ".join(x.get_name() for x in old))
+
+                GroupEvent.objects.create(group=group, by=request.user.get_profile(), type="info_changed", desc=desc)
+
+                group.role_set.filter(name=slug).delete()
+                for e in new:
+                    Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
+
+            return redirect("ietf.group.views.streams")
+    else:
+        form = StreamEditForm(initial=dict(delegates=Email.objects.filter(role__group=group, role__name="delegate")))
+
+    return render_to_response('group/stream_edit.html',
+                              {'group': group,
+                               'chairs': chairs,
+                               'form': form,
+                               },
+                              context_instance=RequestContext(request))
     
