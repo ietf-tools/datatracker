@@ -8,7 +8,6 @@ from ietf.utils.log import log
 class EncryptedException(Exception):
     pass
 
-
 class EncryptedTextField(models.TextField):
     def pre_save(self, instance, add):
         if add:

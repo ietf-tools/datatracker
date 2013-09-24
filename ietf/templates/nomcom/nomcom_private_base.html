@@ -27,7 +27,7 @@
       {% if selected == "edit_nomcom" %}<span class="selected">Edit Settings</span>{% else %}<a href="{% url nomcom_edit_nomcom year %}">Edit Settings</a>{% endif %} |
       {% if selected == "edit_templates" %}<span class="selected">Edit Pages</span>{% else %}<a href="{% url nomcom_list_templates year %}">Edit Pages</a>{% endif %} |
       {% if selected == "edit_positions" %}<span class="selected">Edit Positions</span>{% else %}<a href="{% url nomcom_list_positions year %}">Edit Positions</a>{% endif %} |
-      {% if selected == "merge" %}<span class="selected">Merge Email Addresses</span>{% else %}<a href="{% url nomcom_private_merge year %}">Merge Email Addresses</a>{% endif %} 
+      {% if selected == "merge" %}<span class="selected">Merge Email Addresses</span>{% else %}<a href="{% url nomcom_private_merge year %}">Merge Email Addresses</a>{% endif %} |
       {% if selected == "edit_members" %}<span class="selected">Edit Nomcom Members</span>{% else %}<a href="{% url nomcom_edit_members year %}">Edit Nomcom Members</a>{% endif %}
     </div>
     {% endif %}

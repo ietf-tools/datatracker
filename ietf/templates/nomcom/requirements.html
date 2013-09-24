@@ -7,17 +7,17 @@
   <script type="text/javascript" src="/js/base.js"></script>
 {% endblock pagehead %}
 
-{% block subtitle %} - Requirements {% endblock %}
+{% block subtitle %} - Desired Expertise {% endblock %}
 
 {% block nomcom_content %}
-  <h2>Requirements</h2>
+  <h2>Desired Expertises</h2>
   <div id="mytabs" class="yui-navset">
   <ul class="yui-nav">
     {% for position in positions %}
       <li><a href="#{{ position.name }}"><em>{{ position.name }}</em></a></li>
     {% endfor %}
   </ul>
-  Pick the position requirements to view from the list immediately above
+  Click on a position above to view the summary of desired expertise for that position
   <div class="yui-content">
     {% for position in positions %}
       <div id="{{ position.name }}">

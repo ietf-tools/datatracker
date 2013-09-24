@@ -425,8 +425,8 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
 
     state = get_object_or_404(NomineePositionState, slug=state)
     message = ('warning',
-        "Check Yes to set the state of your nomination to %s to %s (this"+
-        "is not a final commitment - you can notify us later if you need to change this)" %
+        ("Click on 'Save' to set the state of your nomination to %s to %s (this"+
+        "is not a final commitment - you can notify us later if you need to change this)") %
         (nominee_position.position.name, state.name))
     if request.method == 'POST':
         nominee_position.state = state

@@ -32,6 +32,7 @@ urlpatterns = patterns('ietf.nomcom.views',
 
     url(r'^(?P<year>\d{4})/$', 'year_index', name='nomcom_year_index'),
     url(r'^(?P<year>\d{4})/requirements/$', 'requirements', name='nomcom_requirements'),
+    url(r'^(?P<year>\d{4})/expertise/$', 'requirements', name='nomcom_requirements'),
     url(r'^(?P<year>\d{4})/questionnaires/$', 'questionnaires', name='nomcom_questionnaires'),
     url(r'^(?P<year>\d{4})/feedback/$', 'public_feedback', name='nomcom_public_feedback'),
     url(r'^(?P<year>\d{4})/nominate/$', 'public_nominate', name='nomcom_public_nominate'),
