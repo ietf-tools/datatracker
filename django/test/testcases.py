@@ -63,6 +63,16 @@ def restore_transaction_methods():
     transaction.leave_transaction_management = real_leave_transaction_management
     transaction.managed = real_managed
 
+_MAX_LENGTH = 80
+def safe_repr(obj, short=False):
+    try:
+        result = repr(obj)
+    except Exception:
+        result = object.__repr__(obj)
+    if not short or len(result) < _MAX_LENGTH:
+        return result
+    return result[:_MAX_LENGTH] + ' [truncated]...'
+
 class OutputChecker(doctest.OutputChecker):
     def check_output(self, want, got, optionflags):
         "The entry method for doctest output checking. Defers to a sequence of child checkers"
