@@ -15,10 +15,10 @@ form.edit td { padding-bottom: .5em; }
 <h1>Manage {{ group.name }} stream</h1>
 
 <p>
-  <b>Chair{{ chairs|pluralize }}:</b>
+  <b>Chair{{ chairs|pluralize }}:
   {% for chair in chairs %}
   {{ chair.person.plain_name }} &lt;{{ chair.address }}&gt;{% if not forloop.last %}, {% endif %}
-  {% endfor %}
+  {% endfor %}</b>
 </p>
 
 <p>Delegates can be assigned with permission to do the tasks of the
