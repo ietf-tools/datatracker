@@ -24,9 +24,6 @@ from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.person.forms import EmailsField
 from ietf.group.models import Group
 
-from ietf.ietfworkflows.models import Stream
-from ietf.ietfworkflows.utils import update_stream
-from ietf.ietfworkflows.streams import get_stream_from_draft
 from ietf.ietfworkflows.accounts import can_edit_state
 
 from ietf.doc.models import *
