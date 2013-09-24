@@ -18,7 +18,7 @@ def streams_menu(context):
         streams = StreamName.objects.exclude(slug="legacy")
 
         if has_role(user, "Secretariat"):
-            editable_stream = streams
+            editable_streams.extend(streams)
         else:
             acronyms = Group.objects.filter(acronym__in=(s.slug for s in streams),
                                             role__name="chair",
@@ -28,4 +28,4 @@ def streams_menu(context):
                 if s.slug in acronyms:
                     editable_streams.append(s)
 
-    return { 'editable_streams': streams }
+    return { 'editable_streams': editable_streams }
