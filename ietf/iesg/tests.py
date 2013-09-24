@@ -10,7 +10,6 @@ from pyquery import PyQuery
 from ietf.idtracker.models import *
 from ietf.iesg.models import *
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, login_testing_unauthorized
-from ietf.ietfworkflows.models import Stream
 
 class RescheduleOnAgendaTestCase(django.test.TestCase):
     fixtures = ['base', 'draft']
