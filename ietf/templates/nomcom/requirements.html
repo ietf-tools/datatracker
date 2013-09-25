@@ -10,21 +10,31 @@
 {% block subtitle %} - Desired Expertise {% endblock %}
 
 {% block nomcom_content %}
-  <h2>Desired Expertises</h2>
+  <h2>Desired Expertise</h2>
+  <div style="width: 60em; margin: 1em;">
+     These pages contain the current  summaries of desired expertise for  open
+     positions, provided to the Nomcom by the IESG, IAB, and IAOC. As the Nomcom
+     proceeds, per BCP 10, we will take input from the community on the
+     qualifications required for the positions. We will determine our selections
+     based on all of this information. We may update these pages periodically.
+  </div>
+
   <div id="mytabs" class="yui-navset">
-  <ul class="yui-nav">
-    {% for position in positions %}
-      <li><a href="#{{ position.name }}"><em>{{ position.name }}</em></a></li>
-    {% endfor %}
-  </ul>
-  Click on a position above to view the summary of desired expertise for that position
-  <div class="yui-content">
-    {% for position in positions %}
-      <div id="{{ position.name }}">
-          <h3>{{ position.description }}</h3>
-          {{ position.get_requirement|linebreaks}}
-      </div>
-    {% endfor %}
+     <ul class="yui-nav">
+	{% for position in positions %}
+	<li><a href="#{{ position.name }}"><em>{{ position.name }}</em></a></li>
+	{% endfor %}
+     </ul>
+
+     Click on a position above to view the summary of desired expertise for that position
+     <div class="yui-content">
+	{% for position in positions %}
+	<div id="{{ position.name }}">
+	   <h3>{{ position.description }}</h3>
+	   {{ position.get_requirement|linebreaks}}
+	</div>
+	{% endfor %}
+     </div>
   </div>
 
   <script type="text/javascript">
