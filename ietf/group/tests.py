@@ -21,7 +21,7 @@ class StreamTests(django.test.TestCase):
 
         stream_acronym = "ietf"
 
-        url = urlreverse("ietf.group.views.stream_edit", kwargs=dict(acronym=stream_acronym))
+        url = urlreverse("ietf.group.views_stream.stream_edit", kwargs=dict(acronym=stream_acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         # get
