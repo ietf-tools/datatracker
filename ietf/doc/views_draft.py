@@ -1100,3 +1100,99 @@ def request_publication(request, name):
                                    ),
                               context_instance = RequestContext(request))
 
+class AdoptDraftForm(forms.Form):
+    group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=["wg", "rg"], state="active").order_by("-type", "acronym"), required=True, empty_label=None)
+    comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption")
+    weeks = forms.IntegerField(required=False, label="Expected weeks in adoption state")
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")
+
+        super(AdoptDraftForm, self).__init__(*args, **kwargs)
+
+        if has_role(user, "Secretariat"):
+            pass # all groups
+        else:
+            self.fields["group"].queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=("chair", "delegate", "secr")).distinct()
+
+        self.fields['group'].choices = [(g.pk, '%s - %s' % (g.acronym, g.name)) for g in self.fields["group"].queryset]
+
+
+@login_required
+def adopt_draft(request, name):
+    doc = get_object_or_404(Document, type="draft", name=name)
+
+    if not can_adopt_draft(request.user, doc):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
+    if request.method == 'POST':
+        form = AdoptDraftForm(request.POST, user=request.user)
+
+        if form.is_valid():
+            # adopt
+            by = request.user.get_profile()
+
+            save_document_in_history(doc)
+
+            doc.time = datetime.datetime.now()
+
+            group = form.cleaned_data["group"]
+            comment = form.cleaned_data["comment"].strip()
+
+            if group.type.slug == "rg":
+                new_stream = StreamName.objects.get(slug="irtf")                
+                adopt_state_slug = "active"
+            else:
+                new_stream = StreamName.objects.get(slug="ietf")                
+                adopt_state_slug = "c-adopt"
+
+            if doc.stream != new_stream:
+                e = DocEvent(type="changed_stream", time=doc.time, by=by, doc=doc)
+                e.desc = u"Changed stream to <b>%s</b>" % new_stream.name
+                if doc.stream:
+                    e.desc += u" from %s" % doc.stream.name
+                e.save()
+                doc.stream = new_stream
+
+            if group != doc.group:
+                e = DocEvent(type="changed_group", time=doc.time, by=by, doc=doc)
+                e.desc = u"Changed group to <b>%s (%s)</b>" % (group.name, group.acronym.upper())
+                if doc.group.type_id != "individ":
+                    e.desc += " from %s (%s)" % (doc.group.name, doc.group.acronym.upper())
+                e.save()
+                doc.group = group
+
+            doc.save()
+
+            prev_state = doc.get_state("draft-stream-%s" % doc.stream_id)
+            new_state = State.objects.get(slug=adopt_state_slug, type="draft-stream-%s" % doc.stream_id, used=True)
+
+            if new_state != prev_state:
+                doc.set_state(new_state)
+                e = add_state_change_event(doc, by, prev_state, new_state, doc.time)
+
+                due_date = None
+                if form.cleaned_data["weeks"] != None:
+                    due_date = datetime.date.today() + datetime.timedelta(weeks=form.cleaned_data["weeks"])
+
+                update_reminder(doc, "stream-s", e, due_date)
+
+                email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
+
+            if comment:
+                e = DocEvent(type="added_comment", time=doc.time, by=by, doc=doc)
+                e.desc = comment
+                e.save()
+
+            return HttpResponseRedirect(doc.get_absolute_url())
+    else:
+        form = AdoptDraftForm(user=request.user)
+
+    return render_to_response('doc/draft/adopt_draft.html',
+                              {'doc': doc,
+                               'form': form,
+                              },
+                              context_instance=RequestContext(request))
+
+def change_stream_state(request):
+    pass

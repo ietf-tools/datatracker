@@ -983,3 +983,41 @@ class RequestPublicationTestCase(django.test.TestCase):
         # the IANA copy
         self.assertTrue("Document Action" in outbox[-1]['Subject'])
         self.assertTrue(not outbox[-1]['CC'])
+
+class AdoptDraftTests(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_adopt_document(self):
+        draft = make_test_data()
+        draft.stream = None
+        draft.group = Group.objects.get(type="individ")
+        draft.save()
+        draft.unset_state("draft-stream-ietf")
+
+        url = urlreverse('doc_adopt_draft', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "marschairman", url)
+        
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form select[name="group"] option')), 1) # we can only select "mars"
+
+        # adopt in mars WG
+        mailbox_before = len(outbox)
+        events_before = draft.docevent_set.count()
+        r = self.client.post(url,
+                             dict(comment="some comment",
+                                  group=Group.objects.get(acronym="mars").pk,
+                                  weeks="10"))
+        self.assertEquals(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEquals(draft.group.acronym, "mars")
+        self.assertEquals(draft.stream_id, "ietf")
+        self.assertEquals(draft.docevent_set.count() - events_before, 4)
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
+        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+

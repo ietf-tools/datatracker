@@ -86,6 +86,8 @@ urlpatterns += patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/shepherd/$', views_draft.edit_shepherd, name='doc_edit_shepherd'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/shepherdwriteup/$', views_draft.edit_shepherd_writeup, name='doc_edit_shepherd_writeup'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/requestpublication/$', views_draft.request_publication, name='doc_request_publication'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/adopt/$', views_draft.adopt_draft, name='doc_adopt_draft'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/stream/$', views_draft.change_stream_state, name='doc_change_stream_state'),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/clearballot/$', views_ballot.clear_ballot, name='doc_clear_ballot'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/deferballot/$', views_ballot.defer_ballot, name='doc_defer_ballot'),

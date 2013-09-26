@@ -1,0 +1,8 @@
+{% autoescape off %}{% filter wordwrap:73 %}
+The stream state of {{ doc }} has been changed{% if prev_state %} from {{ prev_state.name }}{% endif %} to {{ new_state.name }} by {{ changed_by }}.
+{% if comment %}
+
+Comment:
+{{ comment }}
+{% endif %}
+{% endfilter %}{% endautoescape %}

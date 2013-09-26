@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Adopt {{ doc }} in Group{% endblock %}
+
+{% block morecss %}
+form.adopt-draft th { width: 8em; }
+form.adopt-draft #id_comment { width: 30em; }
+form.adopt-draft #id_weeks { width: 3em; }
+form.adopt-draft .actions { text-align: right; padding-top: 1em; }
+p.intro { max-width: 50em; }
+{% endblock %}
+
+{% block content %}
+<h1>Adopt {{ doc }} in Group</h1>
+
+<p class="intro">You can adopt this draft into a group.</p>
+
+<p class="intro">For a WG, the draft enters the IETF stream and the
+stream state becomes "Call for Adoption by WG Issued". For an RG, the
+draft enters the IRTF stream and the stream state becomes "Active RG
+Document".</p>
+
+<form class="adopt-draft" action="" method="post">
+  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+  <table>
+    {% for field in form.visible_fields %}
+    <tr>
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {{ field.errors }}
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td colspan="2" class="actions">
+        <a class="button" href="{{ doc.get_absolute_url }}">Cancel</a>
+        <input class="button" type="submit" value="Adopt Draft"/>
+      </td>
+    </tr>
+  </table>
+</form>
+{% endblock %}

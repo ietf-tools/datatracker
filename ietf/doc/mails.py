@@ -413,3 +413,34 @@ def email_last_call_expired(doc):
                    doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc="iesg-secretary@ietf.org")
+
+def stream_state_email_recipients(doc, extra_recipients):
+    persons = set()
+    res = []
+    for r in Role.objects.filter(group=doc.group, name__in=("chair", "delegate")).select_related("person", "email"):
+        res.append(r.formatted_email())
+        persons.add(r.person)
+
+    for email in doc.authors.all():
+        if email.person not in persons:
+            res.append(email.formatted_email())
+            persons.add(email.person)
+
+    for x in extra_recipients:
+        if not x in res:
+            res.append(x)
+
+    return res
+    
+def email_stream_state_changed(request, doc, prev_state, new_state, changed_by, comment="", extra_recipients=[]):
+    recipients = stream_state_email_recipients(doc, extra_recipients)
+
+    send_mail(request, recipients, settings.DEFAULT_FROM_EMAIL,
+              u"Stream State Changed for Draft %s" % doc.name,
+              'doc/mail/stream_state_changed_email.txt',
+              dict(doc=doc,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                   prev_state=prev_state,
+                   new_state=new_state,
+                   changed_by=changed_by,
+                   comment=comment))

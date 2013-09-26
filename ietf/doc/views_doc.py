@@ -290,13 +290,8 @@ def document_main(request, name, rev=None):
         # remaining actions
         actions = []
 
-        if ((not doc.stream_id or doc.stream_id in ("ietf", "irtf")) and group.type_id == "individ" and
-            (request.user.is_authenticated() and
-             Role.objects.filter(person__user=request.user, name__in=("chair", "secr", "delegate"),
-                                 group__type__in=("wg","rg"),
-                                 group__state="active")
-             or has_role(request.user, "Secretariat"))):
-            actions.append(("Adopt in Group", urlreverse('edit_adopt', kwargs=dict(name=doc.name))))
+        if can_adopt_draft(request.user, doc):
+            actions.append(("Adopt in Group", urlreverse('doc_adopt_draft', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() == "expired" and not resurrected_by and can_edit:
             actions.append(("Request Resurrect", urlreverse('doc_request_resurrect', kwargs=dict(name=doc.name))))
