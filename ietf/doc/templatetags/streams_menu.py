@@ -1,6 +1,7 @@
 from django import template
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
+from django.contrib.auth.models import AnonymousUser
 
 from ietf.ietfauth.utils import has_role
 from ietf.group.models import Group
@@ -10,9 +11,9 @@ register = template.Library()
 
 @register.inclusion_tag('base/streams_menu.html', takes_context=True)
 def streams_menu(context):
-    user = context["request"].user
-
     editable_streams = []
+
+    user = context["request"].user if "request" in context else AnonymousUser()
 
     if user.is_authenticated():
         streams = StreamName.objects.exclude(slug="legacy")
