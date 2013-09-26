@@ -1,9 +1,0 @@
-#!/bin/sh
-
-if [ install = "$1" ]; then
-  :
-
-### BEGIN DIVERT GENERATE ###
-### END DIVERT GENERATE ###
-
-fi

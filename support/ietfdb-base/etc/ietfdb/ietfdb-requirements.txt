@@ -1,3 +1,0 @@
-distribute==0.6.28
-wsgiref==0.1.2
-
