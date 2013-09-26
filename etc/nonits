@@ -1,5 +1,0 @@
-#!/bin/sh
-
-echo " Summary: 0 errors"
-echo " No nits found"
-true
