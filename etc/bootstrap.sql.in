@@ -1,0 +1,11 @@
+create database @APPNAME@;
+create database @APPNAME@_test;
+create user migrations identified by '@DBPASSWORD@';
+create user @APPNAME@ identified by '@DBPASSWORD@';
+create user test_@APPNAME@ identified by '@DBPASSWORD@';
+grant all on @APPNAME@.* TO 'migrations'@'%';
+grant all on @APPNAME@.* TO '@APPNAME@'@'%';
+grant all on test_@APPNAME@.* TO '@APPNAME@'@'%';
+grant all on @APPNAME@_test.* TO 'test_@APPNAME@'@'%';
+
+-- INSERT INTO auth_user VALUES (999412, 'admin', '', '', 'admin@example.com', 'sha1$48cf6$be9eb63ed0c17db7afdc8c2835f95f1ab93a30e9', true, true, true, '2011-12-09 16:03:28.471308-05', '2011-12-09 16:03:28.471308-05');

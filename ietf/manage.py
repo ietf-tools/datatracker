@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import os
+import sys
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.abspath(BASE_DIR + "/.."))
+
 # Don't complain about these DeprecationWarnings (we still
 # want to see others, though)
 import warnings

@@ -14,10 +14,10 @@ function set_cookie ( name, value, exp_y, exp_m, exp_d, path, domain, secure )
 
     if ( domain )
         cookie_string += "; domain=" + escape ( domain );
-  
+
     if ( secure )
         cookie_string += "; secure";
-  
+
     document.cookie = cookie_string;
 }
 function delete_cookie ( cookie_name )
@@ -45,7 +45,7 @@ function setcolor(id, color, skip_cookie)
     oneDay    = 24*oneHour;
     oneWeek   = 7*oneDay;
     oneMonth  = 31*oneDay;
-		
+
     var now = new Date();
     var exp = new Date(now.getTime() + 3*oneMonth);
 

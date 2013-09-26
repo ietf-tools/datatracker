@@ -7,6 +7,8 @@ class Command(BaseCommand):
         make_option('--addrport', action='store', dest='addrport',
             type='string', default='',
             help='port number or ipaddr:port to run the server on'),
+        make_option('--ipv6', '-6', action='store_true', dest='enable_ipv6', default=False,
+            help='Forces IPv6 support.'),
     )
     help = 'Runs a development server with data from the given fixture(s).'
     args = '[fixture ...]'
@@ -30,4 +32,4 @@ class Command(BaseCommand):
         # a strange error -- it causes this handle() method to be called
         # multiple times.
         shutdown_message = '\nServer stopped.\nNote that the test database, %r, has not been deleted. You can explore it on your own.' % db_name
-        call_command('runserver', addrport=addrport, shutdown_message=shutdown_message, use_reloader=False)
+        call_command('runserver', addrport=addrport, shutdown_message=shutdown_message, use_reloader=False, enable_ipv6=options['enable_ipv6'])

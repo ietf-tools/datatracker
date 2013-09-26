@@ -9,3 +9,4 @@ class MeetingUrlTestCase(SimpleUrlTestCase):
             return canonicalize_feed(content)
         else:
             return content
+

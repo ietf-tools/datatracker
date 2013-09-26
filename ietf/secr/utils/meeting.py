@@ -1,5 +1,5 @@
 from django.conf import settings
-from ietf.meeting.models import Meeting
+from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot
 
 import os
 
@@ -28,6 +28,34 @@ def get_proceedings_path(meeting, group):
         path = os.path.join(get_upload_root(meeting),'%s.html' % group.acronym)
     return path
     
+def get_session(timeslot, schedule=None):
+    '''
+    Helper function to get the session given a timeslot, assume Official schedule if one isn't
+    provided.  Replaces "timeslot.session"
+    '''
+    # todo, doesn't account for shared timeslot
+    if not schedule:
+        schedule = timeslot.meeting.agenda
+    qs = timeslot.sessions.filter(scheduledsession__schedule=schedule)  #.exclude(states__slug='deleted')
+    if qs:
+        return qs[0]
+    else:
+        return None
+    
+def get_timeslot(session, schedule=None):
+    '''
+    Helper function to get the timeslot associated with a session.  Created for Agenda Tool
+    db schema changes.  Use this function in place of session.timeslot_set.all()[0].  Don't specify
+    schedule to use the meeting "official" schedule.
+    '''
+    if not schedule:
+        schedule = session.meeting.agenda
+    ss = session.scheduledsession_set.filter(schedule=schedule)
+    if ss:
+        return ss[0].timeslot
+    else:
+        return None
+
 def get_upload_root(meeting):
     path = ''
     if meeting.type.slug == 'ietf':

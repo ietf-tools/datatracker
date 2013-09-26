@@ -1,0 +1,77 @@
+#!/usr/bin/perl
+# Autogenerate the list of packages to dpkg-divert for this .deb package
+
+use File::stat;
+
+# List of files that are being overriden by this package
+if (! -e "diversions") { system("touch diversions"); }
+open DIVERSIONS, "<diversions";
+my @diversions = <DIVERSIONS>;
+close DIVERSIONS;
+
+my $begin_delim = "### BEGIN DIVERT GENERATE ###";
+my $end_delim = "### END DIVERT GENERATE ###";
+
+my $preinst_path = "DEBIAN/preinst";
+my $postrm_path = "DEBIAN/postrm";
+my $pkg = shift;
+
+# Slurp in both existing files (to use as a template)
+undef $/;
+
+if(open( PREINST, "<$preinst_path")) {
+  $preinst = <PREINST>;
+  close PREINST;
+} else {
+  $preinst='#!/bin/sh
+
+if [ install = "$1" ] || [ upgrade = "$1" ]; then
+  :
+'.$begin_delim."\n".$end_delim."\nfi\n";
+}
+
+if(open(POSTRM, "<$postrm_path")) {
+  $postrm = <POSTRM>;
+  close POSTRM;
+} else {
+  $postrm='#!/bin/sh
+if [ remove = "$1" ]; then
+  :
+'.$begin_delim."\n".$end_delim."\nfi\n";
+}
+
+# Generate preinst stub
+my $preinst_stub = "";
+foreach my $entry (@diversions)
+{
+  chomp($entry);
+  next if ($entry =~ /^$/);
+  my @pair = split(",", $entry);
+  $pair[1] =~ s/\n//;
+  $preinst_stub .= "  dpkg-divert --package $pkg --add --rename --divert $pair[0].$pair[1] $pair[0]\n";
+}
+$preinst =~ s/$begin_delim.*$end_delim/$begin_delim\n$preinst_stub$end_delim/s;
+
+# Write generated portion back to script file
+open PREINST, ">$preinst_path";
+print PREINST $preinst;
+close PREINST;
+chmod 0755, $preinst_path;
+
+# Generate postrm stub
+my $postrm_stub = "";
+foreach my $entry (@diversions)
+{
+  chomp($entry);
+  next if ($entry =~ /^$/);
+  my @pair = split(",", $entry);
+  $pair[1] =~ s/\n//;
+  $postrm_stub .= "  dpkg-divert --package $pkg --remove --rename --divert $pair[0].$pair[1] $pair[0]\n";
+}
+$postrm =~ s/$begin_delim.*$end_delim/$begin_delim\n$postrm_stub$end_delim/s;
+
+# Write generated portion back to script file
+open POSTRM, ">$postrm_path";
+print POSTRM $postrm;
+close POSTRM;
+chmod 0755, $postrm_path;

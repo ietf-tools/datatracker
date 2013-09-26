@@ -6,6 +6,8 @@ class Command(NoArgsCommand):
     option_list = NoArgsCommand.option_list + (
         make_option('--plain', action='store_true', dest='plain',
             help='Tells Django to use plain Python, not IPython.'),
+        make_option('--test', action='store_true', dest='test',
+            help='Tells Django to load test environment'),
     )
     help = "Runs a Python interactive interpreter. Tries to use IPython, if it's available."
 
@@ -16,6 +18,19 @@ class Command(NoArgsCommand):
         # models from installed apps.
         from django.db.models.loading import get_models
         loaded_models = get_models()
+
+        use_test  = options.get('test', False)
+        if use_test:
+            from django import test
+            print "Setting up test environment"
+            test.utils.setup_test_environment() # Setup the environment
+            from django.db import connection
+            print "Creating test db"
+            db = connection.creation.create_test_db() # Create the test db
+            print "Created test db, now loading data"
+            from django.core.management import call_command
+            call_command('loaddata', *['list', 'of', 'fixtures', 'here']) # Load fixtures
+            print "Created test db"
 
         use_plain = options.get('plain', False)
 
@@ -57,12 +72,12 @@ class Command(NoArgsCommand):
 
             # We want to honor both $PYTHONSTARTUP and .pythonrc.py, so follow system
             # conventions and get $PYTHONSTARTUP first then import user.
-            if not use_plain: 
-                pythonrc = os.environ.get("PYTHONSTARTUP") 
-                if pythonrc and os.path.isfile(pythonrc): 
-                    try: 
-                        execfile(pythonrc) 
-                    except NameError: 
+            if not use_plain:
+                pythonrc = os.environ.get("PYTHONSTARTUP")
+                if pythonrc and os.path.isfile(pythonrc):
+                    try:
+                        execfile(pythonrc)
+                    except NameError:
                         pass
                 # This will import .pythonrc.py as a side-effect
                 import user

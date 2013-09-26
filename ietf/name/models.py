@@ -54,7 +54,7 @@ class MeetingTypeName(NameModel):
 class SessionStatusName(NameModel):
     """Waiting for Approval, Approved, Waiting for Scheduling, Scheduled, Cancelled, Disapproved"""
 class TimeSlotTypeName(NameModel):
-    """Session, Break, Registration"""
+    """Session, Break, Registration, Other(Non-Session), Reserved, unavail"""
 class ConstraintName(NameModel):
     """Conflict"""
     penalty = models.IntegerField(default=0, help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)")

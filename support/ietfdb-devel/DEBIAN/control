@@ -1,0 +1,10 @@
+Package: ietf-ietfdb-devel
+Version: $(VER)
+Section: ietf
+Priority: optional
+Architecture: all
+Provides: ietf-ietfdb-devel
+Depends: ietf-ietfdb-base, mysql-server
+Maintainer: <mcr@sandelman.ca>
+Description: Installs prerequites for running IETF DB (Datatracker) locally
+	as a developer.

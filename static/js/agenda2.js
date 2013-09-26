@@ -33,8 +33,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 function setAgendaColor(color) {
-    IETF.agendaPalette.hide();  
-    document.getElementById(IETF.agendaRow).className="bg"+color;  
+    IETF.agendaPalette.hide();
+    document.getElementById(IETF.agendaRow).className="bg"+color;
     if (color == 'none') {
 	YAHOO.util.Cookie.removeSub("ietf-agenda-colors", IETF.agendaRow);
     } else {
@@ -43,7 +43,7 @@ function setAgendaColor(color) {
     }
 }
 function createPalette() {
-    IETF.agendaPalette = new YAHOO.widget.Overlay("ietf-agenda-palette", { constraintoviewport:true, visible:false } ); 
+    IETF.agendaPalette = new YAHOO.widget.Overlay("ietf-agenda-palette", { constraintoviewport:true, visible:false } );
     var body = '<table class="ietf-agenda-palette"><tr><td colspan="4">Select a color for this line</td></tr>';
     var c = ['aqua', 'blue', 'fuchsia', 'gray', 'green', 'lime',
         'maroon', 'navy', 'olive', 'purple', 'red', 'silver',
@@ -55,7 +55,7 @@ function createPalette() {
     }
     body += '<tr><td class="bgnone" colspan="4"><a href="javascript:setAgendaColor(\'none\');">none</a></td></tr></table>';
     IETF.agendaPalette.setBody(body);
-    IETF.agendaPalette.render(document.body); 
+    IETF.agendaPalette.render(document.body);
 }
 function pickAgendaColor(row, place) {
     if (!IETF.agendaPalette) {
@@ -67,7 +67,7 @@ function pickAgendaColor(row, place) {
 }
 function updateAgendaColors() {
     var colors = YAHOO.util.Cookie.getSubs("ietf-agenda-colors");
-    for (var k in colors) {  
+    for (var k in colors) {
 	document.getElementById(k).className="bg"+colors[k];
     }
 }

@@ -1,0 +1,28 @@
+#!/bin/sh
+
+TOPDIR=@TOPDIR@
+RUNDIR=${TOPDIR}/run
+DBDIR=${RUNDIR}/db
+LOGDIR=${RUNDIR}/log
+SOCKET=${RUNDIR}/mysqld.sock
+PIDFILE=${RUNDIR}/mysqld.pid
+mkdir -p ${RUNDIR}/mysqld
+mkdir -p ${TOPDIR}/db/mysql
+mkdir -p ${LOGDIR}/mysql
+if [ -d /usr/local/mysql ]; then
+        BASEDIR=/usr/local/mysql
+else
+        BASEDIR=/usr
+fi
+
+mkdir -p ${LOGDIR}/mysql
+
+PATH=/usr/local/mysql/bin:$PATH export PATH
+mysqld --basedir=${BASEDIR} --datadir=${DBDIR} --pid-file=${PIDFILE} --skip-external-locking --socket=${SOCKET} --skip-networking --general_log=${LOGDIR}/mysql-query.log --transaction-isolation=READ-COMMITTED  --default-storage-engine=InnoDB --skip-sync-frm=OFF&
+
+#--default-table-type=innodb 
+#[mysqld]
+#default-table-type=innodb
+#transaction-isolation=READ-COMMITTED
+#default-character-set=utf8
+#skip-sync-frm=OFF

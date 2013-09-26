@@ -533,6 +533,9 @@ class TestCase(TransactionTestCase):
     to use TransactionTestCase, if you need transaction management inside a test.
     """
 
+    # fixtures_loaded is for AgendaTransactionTestCase.
+    fixtures_loaded = False
+
     def _fixture_setup(self):
         if not connections_support_transactions():
             return super(TestCase, self)._fixture_setup()
@@ -545,6 +548,10 @@ class TestCase(TransactionTestCase):
             databases = [DEFAULT_DB_ALIAS]
 
         for db in databases:
+            # should be a no-op, but another test case method might have left junk.
+            call_command('flush', verbosity=0, interactive=False, database=db)
+            TestCase.fixtures_loaded = False
+
             transaction.enter_transaction_management(using=db)
             transaction.managed(True, using=db)
         disable_transaction_methods()

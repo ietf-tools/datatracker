@@ -1,0 +1,5 @@
+#!/bin/sh
+
+ServerRoot=@TOPDIR@
+[ -f $ServerRoot/run/apache2.pid ] && kill `cat $ServerRoot/run/apache2.pid`
+

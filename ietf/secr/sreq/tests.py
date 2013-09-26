@@ -13,7 +13,7 @@ from ietf.idtracker.models import Role
 from urlparse import urlsplit
 #from pyquery import PyQuery
 
-SECR_USER='secretary'
+SEC_USER='secretary'
 
 class SreqUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
@@ -25,7 +25,7 @@ class MainTestCase(TestCase):
     def test_main(self):
         draft = make_test_data()
         url = reverse('sessions')
-        r = self.client.get(url, REMOTE_USER=SECR_USER)
+        r = self.client.get(url,REMOTE_USER=SEC_USER)
         self.assertEquals(r.status_code, 200)
         sched = r.context['scheduled_groups']
         unsched = r.context['unscheduled_groups']
@@ -44,7 +44,7 @@ class SubmitRequestCase(TestCase):
                      'id_attendees':'10',
                      'id_conflict1':'',
                      'id_comments':'need projector'}
-        self.client.login(  REMOTE_USER=SECR_USER)
+        self.client.login(remote_user=SEC_USER)
         r = self.client.post(url,post_data)
         self.assertEquals(r.status_code, 200)
 """

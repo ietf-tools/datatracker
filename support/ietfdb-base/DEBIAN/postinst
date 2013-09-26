@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ configure = "$1" ]; then
+    : setup python stuff.
+    virtualenv=/data/pythonenv/IETFDB
+    mkdir -p /data/pythonenv
+    virtualenv -p /usr/bin/python2.6 --no-site-packages /data/pythonenv/BASELINE
+    virtualenv -p /usr/bin/python2.6 --no-site-packages ${virtualenv}
+
+    # we do this in two steps, because it seems that we can not upgrade
+    # distribute when we need to use it to install mysql-python.
+    ${virtualenv}/bin/pip install --upgrade -r /etc/ietfdb/ietfdb-requirements.txt
+    ${virtualenv}/bin/pip install --upgrade -r /etc/ietfdb/ietfdb-requirements2.txt
+fi
+

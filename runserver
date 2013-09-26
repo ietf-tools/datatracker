@@ -1,0 +1,3 @@
+#!/bin/sh
+
+REMOTE_USER=mcr+ietf@sandelman.ca ./manage runserver $*

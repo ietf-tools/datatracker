@@ -13,6 +13,7 @@ from django.utils import simplejson
 
 from ietf.utils.mail import send_mail
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot
+from ietf.meeting.helpers import get_schedule
 from ietf.group.models import Group
 from ietf.name.models import SessionStatusName, TimeSlotTypeName
 from ietf.person.models import Person
@@ -32,6 +33,30 @@ import datetime
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
+def assign(session,timeslot,meeting):
+    '''
+    Robust function to assign a session to a timeslot
+    '''
+    qs = timeslot.scheduledsession_set.filter(schedule=meeting.agenda)
+    # this should never happen, but just in case
+    if not qs:
+        ScheduledSession.objects.create(schedule=meeting.agenda,
+                                        session=session,
+                                        timeslot=timeslot)
+    else:
+        # find the first unassigned scheduled session or create a new one
+        for ss in qs:
+            if not ss.session:
+                ss.session = session
+                ss.save()
+                break
+        else:
+            ScheduledSession.objects.create(schedule=meeting.agenda,
+                                            session=session,
+                                            timeslot=timeslot)
+    session.status_id = 'sched'
+    session.save()
+
 def build_timeslots(meeting,room=None):
     '''
     This function takes a Meeting object and an optional room argument.  If room isn't passed we
@@ -39,6 +64,7 @@ def build_timeslots(meeting,room=None):
     If room is passed pre-create timeslots for the new room.  Call this after saving new rooms
     or adding a room.
     '''
+    schedule = get_schedule(meeting)
     slots = meeting.timeslot_set.filter(type='session')
     if room:
         rooms = [room]
@@ -69,6 +95,8 @@ def build_timeslots(meeting,room=None):
                                         time=new_time,
                                         location=room,
                                         duration=t.duration)
+                ScheduledSession.objects.create(schedule=schedule,timeslot=t)
+        meeting.create_all_timeslots();
 
 def build_nonsession(meeting):
     '''
@@ -98,6 +126,7 @@ def build_nonsession(meeting):
                                 time=new_time,
                                 duration=slot.duration,
                                 show_location=slot.show_location)
+        ScheduledSession.create(schedule=schedule,session=session,timeslot=ts)
 
 def get_last_meeting(meeting):
     last_number = int(meeting.number) - 1
@@ -185,8 +214,8 @@ def sort_groups(meeting):
     groups_with_sessions = [ s.group for s in sessions ]
     gset = set(groups_with_sessions)
     sorted_groups_with_sessions = sorted(gset, key = lambda instance: instance.acronym)
-    slots = TimeSlot.objects.filter(meeting=meeting,session__isnull=False)
-    groups_with_timeslots = [ s.session.group for s in slots ]
+    scheduled_sessions = ScheduledSession.objects.filter(schedule=meeting.agenda,session__isnull=False)
+    groups_with_timeslots = [ x.session.group for x in scheduled_sessions ]
     for group in sorted_groups_with_sessions:
             if group in groups_with_timeslots:
                 scheduled_groups.append(group)
@@ -587,8 +616,8 @@ def schedule(request, meeting_id, acronym):
             d['day'] = qs[0].time.isoweekday() % 7 + 1     # adjust to django week_day
             d['time'] = qs[0].time.strftime('%H%M')
         else:
-            d['day'] = 2
-        if is_combined(s):
+            d['day'] = 2    # default
+        if is_combined(s,meeting):
             d['combine'] = True
         initial.append(d)
 
@@ -644,59 +673,39 @@ def schedule(request, meeting_id, acronym):
                                                            modified=now)
                         messages.warning(request, 'WARNING: There are now two sessions scheduled for the timeslot: %s' % timeslot)
 
-                    # COMBINE SECTION - BEFORE --------------
-                    if 'combine' in form.changed_data and not combine:
-                        next_slot = get_next_slot(initial_timeslot)
-                        next_slot.session = None
-                        next_slot.modified = now
-                        next_slot.save()
-                    # ---------------------------------------
-
                     if any(x in form.changed_data for x in ('day','time','room')):
                         # clear the old timeslot(s)
                         for ts in initial_timeslots:
-                            # if the initial timeslot is one of multiple we should delete it
-                            tqs = TimeSlot.objects.filter(meeting=meeting,
-                                                          type='session',
-                                                          time=ts.time,
-                                                          location=ts.location)
-                            if tqs.count() > 1:
-                                ts.delete()
-                            else:
-                                ts.session = None
-                                ts.modified = now
-                                ts.save()
-                        # assign new timeslot(s)
-                        new_slots = []
-                        if timeslot:
-                            new_slots.append(timeslot)
-                        if was_combined:
-                            new_slots.append(get_next_slot(timeslot))
-                        for ts in new_slots:
-                            timeslot.session = session
-                            timeslot.modified = now
-                            timeslot.save()
+                            # get SS record(s) and unschedule by removing the session reference
+                            for ss in session.scheduledsession_set.filter(schedule=meeting.agenda):
+                                ss.session = None
+                                ss.save()
 
-                        if new_slots:
-                            session.status_id = 'sched'
+                        if timeslot:
+                            assign(session,timeslot,meeting)
+                            if timeslot.sessions.all().count() > 1:
+                                messages.warning(request, 'WARNING: There are now multiple sessions scheduled for the timeslot: %s' % timeslot)
                         else:
                             session.status_id = 'schedw'
 
                         session.modified = now
                         session.save()
 
-
                     if 'note' in form.changed_data:
                         session.agenda_note = note
                         session.modified = now
                         session.save()
 
-                    # COMBINE SECTION - AFTER ---------------
-                    if 'combine' in form.changed_data and combine:
+                    # COMBINE SECTION ----------------------
+                    if 'combine' in form.changed_data:
                         next_slot = get_next_slot(timeslot)
-                        next_slot.session = session
-                        next_slot.modified = now
-                        next_slot.save()
+                        if combine:
+                            assign(session,next_slot,meeting)
+                        else:
+                            for ss in next_slot.scheduledsession_set.filter(schedule=meeting.agenda,session=session):
+                                ss.session = None
+                                ss.save()
+
                     # ---------------------------------------
 
             # notify.  dont send if Tutorial, BOF or indicated on form
@@ -815,12 +824,13 @@ def times(request, meeting_id):
                 return HttpResponseRedirect(url)
 
             for room in meeting.room_set.all():
-                TimeSlot.objects.create(type_id='session',
-                                        meeting=meeting,
-                                        name=name,
-                                        time=new_time,
-                                        location=room,
-                                        duration=duration)
+                ts = TimeSlot.objects.create(type_id='session',
+                                             meeting=meeting,
+                                             name=name,
+                                             time=new_time,
+                                             location=room,
+                                             duration=duration)
+                ScheduledSession.objects.create(schedule=meeting.agenda,timeslot=ts)
 
             messages.success(request, 'Timeslots created')
             url = reverse('meetings_times', kwargs={'meeting_id':meeting_id})
@@ -846,7 +856,9 @@ def times_delete(request, meeting_id, time):
     parts = [ int(x) for x in time.split(':') ]
     dtime = datetime.datetime(*parts)
 
-    if Session.objects.filter(timeslot__time=dtime,timeslot__meeting=meeting):
+    if ScheduledSession.objects.filter(timeslot__time=dtime,
+                                       timeslot__meeting=meeting,
+                                       session__isnull=False):
         messages.error(request, 'ERROR deleting timeslot.  There is one or more sessions scheduled for this timeslot.')
         url = reverse('meetings_times', kwargs={'meeting_id':meeting_id})
         return HttpResponseRedirect(url)

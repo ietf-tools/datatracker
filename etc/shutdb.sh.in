@@ -1,0 +1,15 @@
+#!/bin/sh
+
+TOPDIR=@TOPDIR@
+RUNDIR=${TOPDIR}/run
+LOGDIR=${TOPDIR}/log
+PIDFILE=${RUNDIR}/mysqld.pid
+SOCKET=${RUNDIR}/mysqld.sock
+if [ -d /usr/local/mysql ]; then
+	BASEDIR=/usr/local/mysql
+else
+	BASEDIR=/usr
+fi
+
+mysqladmin --protocol=socket --socket=${SOCKET} -u root --password=Ahw3ooh2 shutdown
+

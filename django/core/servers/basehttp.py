@@ -11,6 +11,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import mimetypes
 import os
 import re
+import socket
 import stat
 import sys
 import urllib
@@ -714,8 +715,12 @@ class AdminMediaHandler(object):
         start_response(status, headers.items())
         return output
 
-def run(addr, port, wsgi_handler):
+class WSGIServerV6(WSGIServer):
+    address_family = socket.AF_INET6
+ 
+def run(addr, port, wsgi_handler, enable_ipv6=False):
     server_address = (addr, port)
-    httpd = WSGIServer(server_address, WSGIRequestHandler)
+    server_class = (enable_ipv6 and WSGIServerV6) or WSGIServer
+    httpd = server_class(server_address, WSGIRequestHandler)
     httpd.set_app(wsgi_handler)
     httpd.serve_forever()

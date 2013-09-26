@@ -53,7 +53,7 @@
       {% ifchanged  %}
       <tr>
 	 <td colspan="4">
-	    <a name="{{slot.meeting_date|date:"Y-m-d"}}_0000" />
+	    <a name="{{ss.timeslot.meeting_date|date:"Y-m-d"}}_0000" />
 	    <h4>{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}</h4>
 	 </td>
       </tr>
@@ -95,31 +95,31 @@
 	 </td>
       </tr>
       {% if not slot.is_plenary %}
-      {% for session in slot.sessions_by_area|dictsort:"area" %}
+      {% for ss in slot.scheduledsessions_by_area|dictsort:"area" %}
       <tr id="{{meeting.num}}-{{slot.meeting_date|date:"D"|lower}}-{{slot.time_desc|slice:":4"}}-{{session.info.acronym|lower}}">	 <td><a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{session.info.room_id.room_name|slugify}}">{{ session.info.room_id.room_name}}</a></td>
-	 {% if session.info.area %}
+	 {% if ss.info.area %}
 	 <td>
-	    {% if session.info.isWG %}<a href="http://www.ietf.org/dyn/wg/charter/{{ session.info.acronym|lower }}-charter.html">{%endif%}
-	       {% ifequal session.info.group_type_str "BOF" %}<span style="background-color: #6FD">{% endifequal %}
-	       {{ session.info.acronym|lower }}
-	       {% ifequal session.info.group_type_str "BOF" %}</span>{% endifequal %}
-	    {% if session.info.isWG %}</a>{%endif%}
+	    {% if ss.info.isWG %}<a href="http://www.ietf.org/dyn/wg/charter/{{ session.info.acronym|lower }}-charter.html">{%endif%}
+	       {% ifequal ss.info.group_type_str "BOF" %}<span style="background-color: #6FD">{% endifequal %}
+	       {{ ss.info.acronym|lower }}
+	       {% ifequal ss.info.group_type_str "BOF" %}</span>{% endifequal %}
+	    {% if ss.info.isWG %}</a>{%endif%}
 	 </td>
 	 <td>
-	    {% if session.info.agenda_file %}<a href="http://tools.ietf.org/wg/{{session.info.acronym}}/agenda/">{%endif%}
-	       {{ session.info.acronym_name|truncate_ellipsis:"20"|safe }}
-	    {% if session.info.agenda_file %}</a>{%endif%}
+	    {% if ss.info.agenda_file %}<a href="http://tools.ietf.org/wg/{{session.info.acronym}}/agenda/">{%endif%}
+	       {{ ss.info.acronym_name|truncate_ellipsis:"20"|safe }}
+	    {% if ss.info.agenda_file %}</a>{%endif%}
 	 </td>
 	 {% endif %}
       </tr>
       {% endfor %}
       {% endif %}
       {% else %}
-      {% for session in slot.sessions %}
+      {% for scheduledsession in slot.scheduledsessions %}
       <tr>
 	 <td colspan="4">
 	    <a name="{{slot.meeting_date|date:"Y-m-d"}}_{{slot.time_desc|slice:":4"}}" />
-	    {{ slot.time_desc }}  {{ session.acronym_name|escape }} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{session.room_id.room_name|slugify}}">{{ session.room_id.room_name}}</a>
+	    {{ scheduledsession.session.time_desc }}  {{ scheduledsession.session.acronym_name|escape }} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{scheduledsession.session.room_id.room_name|slugify}}">{{ scheduledsession.session.room_id.room_name}}</a>
 	 </td>
       </tr>
       {% endfor %}

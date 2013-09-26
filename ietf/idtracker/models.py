@@ -11,6 +11,7 @@ from ietf.utils import FKAsOneToOne
 from ietf.utils.broken_foreign_key import BrokenForeignKey
 from ietf.utils.cached_lookup_field import CachedLookupField
 from ietf.utils.admin import admin_link
+from ietf.group.colors import fg_group_colors, bg_group_colors
 
 class Acronym(models.Model):
     INDIVIDUAL_SUBMITTER = 1027
@@ -101,6 +102,17 @@ class Area(models.Model):
     def active_areas():
         return Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
     active_areas = staticmethod(active_areas)
+
+    # these are copied to Group because it is still proxied.
+    def upcase_acronym(self):
+        return self.area_acronym.upper()
+    
+    def fg_color(self):
+        return fg_group_colors[self.upcase_area_acronym]
+
+    def bg_color(self):
+        return bg_group_colors[self.upcase_area_acronym]
+        
     class Meta:
         db_table = 'areas'
 	verbose_name="area"

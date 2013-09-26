@@ -7,12 +7,12 @@ from models import *
 
 class MeetingProxy(Meeting):
     objects = TranslatingManager(dict(meeting_num="number"), always_filter=dict(type="ietf"))
-                                      
+
     def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
         return self
-                
+
     #meeting_num = models.IntegerField(primary_key=True)
     @property
     def meeting_num(self):
@@ -25,7 +25,7 @@ class MeetingProxy(Meeting):
     @property
     def end_date(self):
         return self.date + datetime.timedelta(days=5)
-    
+
     #city = models.CharField(blank=True, max_length=255)
     #state = models.CharField(blank=True, max_length=255)
     #country = models.CharField(blank=True, max_length=255)
@@ -39,14 +39,14 @@ class MeetingProxy(Meeting):
     def __str__(self):
 	return "IETF-%s" % (self.meeting_num)
     def get_meeting_date (self,offset):
-        return self.start_date + datetime.timedelta(days=offset) 
+        return self.start_date + datetime.timedelta(days=offset)
     def num(self):
         return self.number
 
     @property
     def meeting_venue(self):
         return MeetingVenueProxy().from_object(self)
-    
+
     @classmethod
     def get_first_cut_off(cls):
         start_date = cls.objects.all().order_by('-date')[0].start_date
@@ -69,7 +69,7 @@ class MeetingProxy(Meeting):
 
 class ProceedingProxy(Meeting):
     objects = TranslatingManager(dict(meeting_num="number"))
-                                      
+
     #meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True, primary_key=True)
     @property
     def meeting_num(self):
@@ -100,13 +100,13 @@ class ProceedingProxy(Meeting):
 	return "IETF %s" % (self.meeting_num_id)
     class Meta:
         proxy = True
-    
+
 class SwitchesProxy(Meeting):
     def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
         return self
-    
+
     #name = models.CharField(max_length=100)
     #val = models.IntegerField(null=True, blank=True)
     #updated_date = models.DateField(null=True, blank=True)
@@ -120,12 +120,12 @@ class SwitchesProxy(Meeting):
 
 class MeetingVenueProxy(Meeting):
     objects = TranslatingManager(dict(meeting_num="number"))
-                                      
+
     def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
         return self
-    
+
     #meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
     @property
     def meeting_num(self):
@@ -138,106 +138,12 @@ class MeetingVenueProxy(Meeting):
     @property
     def reg_area_name(self):
         return self.reg_area
-    
+
     def __str__(self):
 	return "IETF %s" % (self.meeting_num)
 
     class Meta:
         proxy = True
-
-class MeetingTimeProxy(TimeSlot):
-    # the old MeetingTimes did not include a room, so there we can't
-    # do a proper mapping - instead this proxy is one TimeSlot and
-    # uses the information in that to emulate a MeetingTime and enable
-    # retrieval of the other related TimeSlots
-    objects = TranslatingManager(dict(day_id="time", time_desc="time"))
-
-    def from_object(self, base):
-        for f in base._meta.fields:
-            setattr(self, f.name, getattr(base, f.name))
-        return self
-    
-    #time_id = models.AutoField(primary_key=True)
-    @property
-    def time_id(self):
-        return self.pk
-    #time_desc = models.CharField(max_length=100)
-    @property
-    def time_desc(self):
-        return u"%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
-    #meeting = models.ForeignKey(Meeting, db_column='meeting_num') # same name
-    #day_id = models.IntegerField()
-    @property
-    def day_id(self):
-        return (self.time.date() - self.meeting.date).days
-    #session_name = models.ForeignKey(SessionName,null=True)
-    @property
-    def session_name(self):
-        if self.type_id not in ("session", "plenary"):
-            return None
-        
-        class Dummy(object):
-            def __unicode__(self):
-                return self.session_name
-        d = Dummy()
-        d.session_name = self.name
-        return d
-    def __str__(self):
-	return "[%s] |%s| %s" % (self.meeting.number, self.time.strftime('%A'), self.time_desc)
-    def sessions(self):
-        if not hasattr(self, "sessions_cache"):
-            self.sessions_cache = WgMeetingSessionProxy.objects.filter(meeting=self.meeting, time=self.time, type__in=("session", "plenary", "other")).exclude(type="session", session=None)
-
-        return self.sessions_cache
-    def sessions_by_area(self):
-        return [ {"area":session.area()+session.acronym(), "info":session} for session in self.sessions() ]
-    def meeting_date(self):
-        return self.time.date()
-    def registration(self):
-        if not hasattr(self, '_reg_info'):
-            try:
-                self._reg_info = MeetingTimeProxy.objects.get(meeting=self.meeting, time__month=self.time.month, time__day=self.time.day, type="reg")
-            except MeetingTimeProxy.DoesNotExist:
-                self._reg_info = None
-        return self._reg_info
-    def reg_info(self):
-	reg_info = self.registration()
-        if reg_info and reg_info.time_desc:
-            return "%s %s" % (reg_info.time_desc, reg_info.name)
-        else:
-            return ""
-    def break_info(self):
-        breaks = MeetingTimeProxy.objects.filter(meeting=self.meeting, time__month=self.time.month, time__day=self.time.day, type="break").order_by("time")
-        for brk in breaks:
-            if brk.time_desc[-4:] == self.time_desc[:4]:
-                return brk
-        return None
-    def is_plenary(self):
-        return self.type_id == "plenary"
-
-    # from NonSession
-    #non_session_id = models.AutoField(primary_key=True)
-    @property
-    def non_session_id(self):
-        return self.id
-    #day_id = models.IntegerField(blank=True, null=True) # already wrapped
-    #non_session_ref = models.ForeignKey(NonSessionRef)
-    @property
-    def non_session_ref(self):
-        return 1 if self.type_id == "reg" else 3
-    #meeting = models.ForeignKey(Meeting, db_column='meeting_num') 3 same name
-    #time_desc = models.CharField(blank=True, max_length=75) # already wrapped
-    #show_break_location = models.BooleanField()
-    @property
-    def show_break_location(self):
-        return self.show_location
-    def day(self):
-        return self.time.strftime("%A")
-    
-    class Meta:
-        proxy = True
-        
-NonSessionProxy = MeetingTimeProxy
 
 class WgMeetingSessionProxy(TimeSlot):
     # we model WgMeetingSession as a TimeSlot, to make the illusion
@@ -270,7 +176,7 @@ class WgMeetingSessionProxy(TimeSlot):
     def length_session1(self):
         if not self.session:
             return "0"
-        
+
         secs = self.session.requested_duration.seconds
         if secs == 0:
             return "0"
@@ -287,12 +193,12 @@ class WgMeetingSessionProxy(TimeSlot):
     def conflicting_group_acronyms(self, level):
         if not self.session:
             return ""
-        
+
         conflicts = Constraint.objects.filter(meeting=self.meeting_id,
                                               target=self.session.group,
                                               name=level)
         return " ".join(c.source.acronym for c in conflicts)
-        
+
     #conflict1 = models.CharField(blank=True, max_length=255)
     @property
     def conflict1(self):
@@ -372,7 +278,7 @@ class WgMeetingSessionProxy(TimeSlot):
             # the filenames to match the document name instead
             filename = docs[0].external_url
             self._agenda_file = "%s/agenda/%s" % (self.meeting.number, filename)
-            
+
         return self._agenda_file
     def minute_file(self,interimvar=0):
         if not self.session:
@@ -401,14 +307,14 @@ class WgMeetingSessionProxy(TimeSlot):
     @property
     def ordinality(self):
         return 1
-    
+
     @property
     def room_id(self):
         class Dummy: pass
         d = Dummy()
         d.room_name = self.location.name
         return d
-    
+
     # from ResolveAcronym:
     def acronym(self):
         if self.type_id == "plenary":
@@ -471,10 +377,10 @@ class WgMeetingSessionProxy(TimeSlot):
                 return "WG"
 
         return ""
-    
+
     class Meta:
         proxy = True
-        
+
 class SlideProxy(Document):
     objects = TranslatingManager(dict(), always_filter=dict(type="slides"))
 

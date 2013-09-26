@@ -1,19 +1,19 @@
 {% load humanize %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
 VERSION:2.0
 METHOD:PUBLISH{% if vtimezone %}
-{{vtimezone}}{% endif %}{% for slot in timeslots %}
+{{vtimezone}}{% endif %}{% for ss in scheduledsessions %}
 BEGIN:VEVENT
-UID:ietf-{{slot.meeting.number}}-{{slot.pk}}
-SUMMARY:{% if slot.session.name %}{{slot.session.name}}{% else %}{% if slot.type.name == "Break" %}{{slot.name}}{% else %}{{slot.session.group.acronym|upper}} - {{slot.session.group.name}}{% endif%}{%endif%}
-{% if slot.show_location %}LOCATION:{{slot.get_location}}
+UID:ietf-{{meeting.number}}-{{ss.timeslot.pk}}
+SUMMARY:{% if ss.session.name %}{{ss.session.name}}{% else %}{% if ss.timeslot.type.name == "Break" %}{{ss.timeslot.name}}{% else %}{{ss.session.group.acronym|upper}} - {{ss.session.group.name}}{% endif%}{%endif%}
+{% if ss.timeslot.show_location %}LOCATION:{{ss.timeslot.get_location}}
 {% endif %}STATUS:TENTATIVE
 CLASS:PUBLIC
-DTSTART{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.time|date:"Ymd" }}T{{slot.time|date:"Hi"}}00
-DTEND{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.end_time|date:"Ymd" }}T{{slot.end_time|date:"Hi"}}00
-DTSTAMP:{{ slot.modified|date:"Ymd" }}T{{ slot.modified|date:"His" }}Z
-{% if slot.session.agenda %}URL:http://www.ietf.org{{slot.session.agenda.get_absolute_url}}
-DESCRIPTION:{{slot.name}}\n{% if slot.session.agenda_note %}
- Note: {{slot.session.agenda_note}}\n{% endif %}{% for material in slot.session.materials.all %}
+DTSTART{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ ss.timeslot.time|date:"Ymd" }}T{{ss.timeslot.time|date:"Hi"}}00
+DTEND{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ ss.timeslot.end_time|date:"Ymd" }}T{{ss.timeslot.end_time|date:"Hi"}}00
+DTSTAMP:{{ ss.timeslot.modified|date:"Ymd" }}T{{ ss.timeslot.modified|date:"His" }}Z
+{% if ss.timeslot.session.agenda %}URL:http://www.ietf.org{{ss.session.agenda.get_absolute_url}}
+DESCRIPTION:{{ss.timeslot.name}}\n{% if ss.session.agenda_note %}
+ Note: {{ss.session.agenda_note}}\n{% endif %}{% for material in ss.session.materials.all %}
  \n{{material.type}}{% if material.type.name != "Agenda" %}
   ({{material.title}}){% endif %}:
   http://www.ietf.org{{material.get_absolute_url}}\n{% endfor %}

@@ -1,0 +1,10 @@
+Package: ietf-ietfdb-base
+Version: $(VER)
+Section: ietf
+Priority: optional
+Architecture: all
+Provides: ietf-ietfdb-base
+Depends: python2.6, apache2, python-virtualenv, libmysqlclient-dev,
+         python2.6-dev
+Maintainer: <mcr@sandelman.ca>
+Description: Installs prerequites for running IETF DB (Datatracker)

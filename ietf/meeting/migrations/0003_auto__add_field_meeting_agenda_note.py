@@ -7,13 +7,13 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        
+
         # Adding field 'Meeting.agenda_note'
         db.add_column('meeting_meeting', 'agenda_note', self.gf('django.db.models.fields.TextField')(default='', blank=True), keep_default=False)
 
 
     def backwards(self, orm):
-        
+
         # Deleting field 'Meeting.agenda_note'
         db.delete_column('meeting_meeting', 'agenda_note')
 

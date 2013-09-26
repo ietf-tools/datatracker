@@ -1,0 +1,21 @@
+#!/bin/sh
+
+TOPDIR=@TOPDIR@
+RUNDIR=${TOPDIR}/run
+LOGDIR=${TOPDIR}/log
+SOCKET=${RUNDIR}/mysqld.sock
+PIDFILE=${RUNDIR}/mysqld.pid
+mkdir -p ${RUNDIR}/mysqld
+mkdir -p ${TOPDIR}/db/mysql
+mkdir -p ${LOGDIR}/mysql
+if [ -d /usr/local/mysql ]; then
+        BASEDIR=/usr/local/mysql
+else
+        BASEDIR=/usr
+fi
+
+PATH=/usr/local/mysql/bin:$PATH export PATH
+connargs="--protocol=socket --socket=${SOCKET} "
+mysql $connargs -u root --password='Ahw3ooh2' ietfdb $*
+
+

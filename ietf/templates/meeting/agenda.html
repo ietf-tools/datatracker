@@ -35,15 +35,9 @@ tr.grouprow > td { padding: 4px; }
 td.materials { align:right; }
 span.note { font-style: italic; color:#ff0000; }
 
-#APP-groups, #selector-APP { color:#008; background-color:#eef }
-#GEN-groups, #selector-GEN { color:#080; background-color:#efe }
-#INT-groups, #selector-INT { color:#088; background-color:#eff }
-#OPS-groups, #selector-OPS { color:#800; background-color:#fee }
-#RAI-groups, #selector-RAI { color:#808; background-color:#fef }
-#RTG-groups, #selector-RTG { color:#880; background-color:#ffe }
-#SEC-groups, #selector-SEC { color:#488; background-color:#dff }
-#TSV-groups, #selector-TSV { color:#484; background-color:#dfd }
-#IRTF-groups, #selector-IRTF { color:#448; background-color:#ddf }
+{% for area in area_list %}
+#{{ area.upcase_acronym }}-groups, #selector-{{ area.upcase_acronym }} { color:{{ area.fg_color }}; background-color: {{ area.bg_color }} }
+{% endfor %}
 
 img.hidden { display: none; }
 
@@ -76,212 +70,9 @@ img.hidden { display: none; }
 
 {% block pagehead %}
 <script type="text/javascript" src='/js/agenda2.js'></script>
-<script type="text/javascript">
-
-  var lastfrag;
-
-  function setGroupState()
-  {
-    var frag = window.location.hash.replace("#",'');
-    window.setTimeout("setGroupState()",1000);
-    if (frag == lastfrag) { return; }
-
-    var weekview = document.getElementById('weekview');
-    var ical_link = document.getElementById('ical-link');
-    var ical_href = document.getElementById('ical-href');
-
-
-    lastfrag = frag;
-
-    var fragment = frag.split(',');
-
-    if (frag.length)
-    {
-      weekview.setAttribute("src","week-view.html#"+frag);
-      weekview.className = '';
-      ical_url = ical_href.getAttribute("href").split("?")[0];
-      ical_href.setAttribute("href",ical_url+"?"+frag);
-      ical_link.className = '';
-    }
-    else
-    {
-      weekview.className = 'hidden';
-      ical_link.className = 'hidden';
-    }
-
-    var selectors = document.getElementsByTagName('div');
-    var re = RegExp("^selector-");
-    var re2 = RegExp("^selector-(" + fragment.join('|') + ")$");
-
-    for (var i=0 ; i<selectors.length; i++)
-    {
-      if (re.test(selectors[i].id))
-      {
-        var wg = selectors[i].textContent?selectors[i].textContent:selectors[i].text;
-        var area_groups = document.getElementById(wg + "-groups");
-        if (re2.test(selectors[i].id))
-        {
-          selectors[i].className="selected";
-          if (area_groups)
-          {
-            area_groups.className = 'inactive';
-          }
-        }
-        else
-        {
-          selectors[i].className="unselected";
-          if (area_groups)
-          {
-            area_groups.className = '';
-          }
-        }
-      }
-    }
-    var rows = document.getElementsByTagName('tr');
-    var hidenone = false;
-    if (frag.length == 0) { hidenone=true; }
-
-    var re = RegExp("-(" + fragment.join('|') + ")($|-)");
-
-    for (var i = 0; i < rows.length; i++)
-    {
-      if (rows[i].className == 'groupagenda' || rows[i].className == 'grouprow')
-      {
-        if (re.test(rows[i].id) || (hidenone && rows[i].className == 'grouprow'))
-        {
-          rows[i].style.display="table-row";
-          if (rows[i].className == 'groupagenda')
-          {
-            var iframe = rows[i].firstElementChild.nextElementSibling.firstElementChild;
-            if (iframe.getAttribute("xsrc") != iframe.getAttribute("src"))
-            {
-              iframe.setAttribute("src",iframe.getAttribute("xsrc"));
-            }
-          }
-        }
-        else
-        {
-          rows[i].style.display="none";
-        }
-      }
-    }
-
-    // Handle special cases (checkboxes)
-    var special = ['edu','ietf','tools','iesg','iab'];
-    var re3 = RegExp("^(" + fragment.join('|') + ")$");
-    for (i in special)
-    {
-      var include = document.getElementById("include-"+special[i]);
-      include.checked = ! re3.test("\-"+special[i]);
-    }
-  }
-
-  /* Resizes an IFRAME to fit its contents. */
-  function r(iframe)
-  {
-    try
-    {
-      iframe.height = 1;
-      iframe.style.border = "solid";
-      iframe.style.borderWidth = "1px";
-      iframe.style.margin = "0";
-      iframe.style.padding = "10px";
-      iframe.style.overflow = "auto";
-      docHeight = iframe.contentWindow.document.body.scrollHeight;
-      iframe.height = docHeight;
-    }
-    catch (e) { return; }
-
-    /* The following code works really well UNLESS some crazy chair
-       decides to submit a text agenda that is, say, 500 columns wide.
-       But this tends to happen. So, until I find a way to stop
-       that brand of crazy from breaking the world, I'm disabling
-       this code. Too bad, really -- it made the page much nicer to
-       use. */
-    return;
-
-    if (iframe.contentWindow.document.body.innerHTML)
-    {
-      var div = document.createElement("div");
-      div.style.border = "solid";
-      div.style.borderWidth = "1px";
-      div.style.margin = "0";
-      div.style.padding = "10px";
-      div.style.overflow = "auto";
-      div.innerHTML=iframe.contentWindow.document.body.innerHTML;
-      iframe.parentNode.replaceChild(div,iframe);
-    }
-  }
-
-  function add_hash_item(item)
-  {
-    if (window.location.hash.replace("#","").length == 0)
-    {
-      window.location.hash = item;
-    }
-    else
-    {
-      window.location.hash += "," + item;
-    }
-    window.location.hash = window.location.hash.replace(/^#?,/,'');
-  }
-
-  function remove_hash_item(item)
-  {
-    var re = new RegExp('(^|#|,)' + item + "(,|$)");
-    window.location.hash = window.location.hash.replace(re,"$2")
-    window.location.hash = window.location.hash.replace(/^#?,/,'');
-  }
-
-  function toggle(selection)
-  {
-    var active = selection.className;
-    var wg = selection.textContent?selection.textContent:selection.text;
-
-    if (active == "selected")
-    {
-      remove_hash_item(wg);
-    }
-    else
-    {
-      add_hash_item(wg);
-    }
-    setGroupState();
-  }
-
-  function toggle_special(checkbox)
-  {
-    var special = checkbox.id.replace('include-','');
-    if (checkbox.checked)
-    {
-      remove_hash_item("-"+special);
-    }
-    else
-    {
-      add_hash_item("-"+special);
-    }
-  }
-
-  function toggle_wg_selector ()
-  {
-    var wg_selector = document.getElementById('wg-selector');
-    var triangle_right = document.getElementById('wg-selector-triangle-right');
-    var triangle_down = document.getElementById('wg-selector-triangle-down');
-    if (wg_selector.className == 'hidden')
-    {
-      wg_selector.className = '';
-      triangle_right.className = 'hidden';
-      triangle_down.className = '';
-    }
-    else
-    {
-      wg_selector.className = 'hidden';
-      triangle_right.className = '';
-      triangle_down.className = 'hidden';
-    }
-    setGroupState();
-  }
-</script>
+<script type="text/javascript" src='/js/jquery-1.5.1.min.js'></script>
+<script type="text/javascript" src='/js/browsertime.js'></script>
+<script type="text/javascript" src='/js/weekview.js'></script>
 
 {% endblock pagehead %}
 {% block bodyAttrs %}onload='setGroupState();updateAgendaColors()'{% endblock %}
@@ -308,7 +99,7 @@ You can customize the agenda below to show only selected working group sessions.
 <table id="wg-selector" width="100%" class="hidden">
   <tr>
     {% for area in area_list %}
-      <th><div id='selector-{{area|upper}}' class="unselected" onclick="toggle(this)">{{area|upper}}</div></th>
+      <th><div id='selector-{{area.acronym|upper}}' class="unselected" onclick="toggle(this)">{{area.acronym|upper}}</div></th>
     {% endfor %}
   </tr>
   <tr>
@@ -338,7 +129,7 @@ You can customize the agenda below to show only selected working group sessions.
 <table width="100%" id="ics-preconfig"><tr><td align="center">
   Preconfigured .ics links:
   {% for area in area_list %}
-    <a href="{% url ietf.meeting.views.ical_agenda num=meeting.number %}?{{area|upper}},-~Other,-~Plenary">{{area|upper}}</a> &#8226;
+    <a href="{% url ietf.meeting.views.ical_agenda num=meeting.number %}?{{area|upper}},-~Other,-~Plenary">{{area.acronym|upper}}</a> &#8226;
   {% endfor %}
   <a href="{% url ietf.meeting.views.ical_agenda num=meeting.number %}">Non-Area Events</a>
 </td></tr></table>
@@ -346,60 +137,59 @@ You can customize the agenda below to show only selected working group sessions.
 {% if meeting.agenda_note %}<h2 class="ietf-divider" style="background-color: #C00; margin-top: 2em; margin-bottom: 0;">{{ meeting.agenda_note|safe }}</h2>{% endif %}
 
 <table id="agenda" width="100%">
-{% for slot in timeslots %}
+{% for ss in scheduledsessions %}
    {% ifchanged  %}
       <tr class="meeting-date">
          <td colspan="6">
-           <h2 class="ietf-divider">{{ slot.time|date:"l"|upper }}, {{ slot.time|date:"F j, Y" }}</h2>
+           <h2 class="ietf-divider">{{ ss.timeslot.time|date:"l"|upper }}, {{ ss.timeslot.time|date:"F j, Y" }}</h2>
          </td>
       </tr>
    {% endifchanged %}
    {% ifchanged %}
       <tr class="time-title">
          <td colspan="1" class="timecolumn">
-	    {{slot.time|date:"Hi"}}-{{slot.end_time|date:"Hi"}}&nbsp;<span class="ietf-tiny">{{slot.tzname}}</span>
+           {{ss.timeslot.time|date:"Hi"}}-{{ss.timeslot.end_time|date:"Hi"}}&nbsp;<span class="ietf-tiny">{{ss.timeslot.tzname}}</span>
          </td>
          <td colspan="5">
-           {% if slot.type.name == 'Session' %}{{ slot.time|date:"l"}}{% endif %}
-           {{slot.name}}
-           {% if slot.type.name != 'Session' %} - 
-           {% if slot.show_location %}<a href="http://tools.ietf.org/agenda/{{meeting.number}}/venue/?room={{ slot.get_location|slugify }}">{{slot.get_location|escape}}</a>{% endif %}
+           {{ss.timeslot.name}}
+           {% if ss.timeslot.type.name != 'Session' %} - 
+           {% if ss.timeslot.show_location %}<a href="http://tools.ietf.org/agenda/{{meeting.number}}/venue/?room={{ ss.timeslot.get_location|slugify }}">{{ss.timeslot.get_location|escape}}</a>{% endif %}
            {% endif %}
          </td>
       </tr>
    {% endifchanged %}
-   {% if slot.type.name = 'Session' %} {% if slot.session.group %}
-     <tr id="{{meeting.number}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}" class="grouprow">
+   {% if ss.timeslot.type.name = 'Session' %} {% if ss.session.group %}
+     <tr id="{{meeting.number}}-{{ss.timeslot.time|date:"D-Hi"|lower}}-{{ss.session.group.parent.acronym|upper}}-{{ss.session.group.acronym|lower}}" class="grouprow">
        <td>
-       <td>{% if slot.show_location %}<a href="http://tools.ietf.org/agenda/{{meeting.number}}/venue/?room={{ slot.get_location|slugify }}">{{slot.get_location|escape}}</a>{% endif %}</td>
-       <td>{{slot.session.group.parent.acronym|upper}}</td>
+       <td>{% if ss.timeslot.show_location %}<a href="http://tools.ietf.org/agenda/{{meeting.number}}/venue/?room={{ ss.timeslot.get_location|slugify }}">{{ss.timeslot.get_location|escape}}</a>{% endif %}</td>
+       <td>{{ss.session.group.parent.acronym|upper}}</td>
        <td>
-           {% if slot.session.group.charter %}<a href="{{slot.session.group.charter.get_absolute_url}}">{{slot.session.group.acronym}}</a>
-           {% else %}{{slot.session.group.acronym}}{% endif %}</td>
+           {% if ss.session.group.charter %}<a href="{{ss.session.group.charter.get_absolute_url}}">{{ss.session.group.acronym}}</a>
+           {% else %}{{ss.session.group.acronym}}{% endif %}</td>
        <td>
-         <img src="/images/color-palette-4x4.gif" alt="" onclick="pickAgendaColor('{{meeting.number}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}',this);" title="color tag this line"/ class="noprint">
-           {% if slot.session.agenda %}<a href="/meeting/{{ meeting.number }}/agenda/{{ slot.session.group.acronym }}/">{{slot.session.group.name}}</a>
-           {% else %}{{slot.session.group.name}}{% endif %}
-           {% if slot.session.group.state.name = "BOF" %} BOF {% endif %}
-           {% if slot.session.agenda_note %}
-           <br/><span class="note">{{slot.session.agenda_note}}</span>{% endif %}</td>
-       <td class="materials">{% if slot.session.agenda %}drafts:&nbsp;<a href="/meeting/{{meeting.number}}/agenda/{{slot.session.group.acronym}}-drafts.tgz">tar</a>|<a href="/meeting/{{ meeting.number }}/agenda/{{slot.session.group.acronym}}-drafts.pdf">pdf</a>{%endif%}</td>
+         <img src="/images/color-palette-4x4.gif" alt="" onclick="pickAgendaColor('{{meeting.number}}-{{ss.timeslot.time|date:"D-Hi"|lower}}-{{ss.session.group.parent.acronym|upper}}-{{ss.session.group.acronym|lower}}',this);" title="color tag this line"/ class="noprint">
+           {% if ss.session.agenda %}<a href="/meeting/{{ meeting.number }}/agenda/{{ ss.session.group.acronym }}/">{{ss.session.group.name}}</a>
+           {% else %}{{ss.session.group.name}}{% endif %}
+           {% if ss.session.group.state.name = "BOF" %} BOF {% endif %}
+           {% if ss.session.agenda_note %}
+           <br/><span class="note">{{ss.session.agenda_note}}</span>{% endif %}</td>
+       <td class="materials">{% if ss.session.agenda %}drafts:&nbsp;<a href="/meeting/{{meeting.number}}/agenda/{{ss.session.group.acronym}}-drafts.tgz">tar</a>|<a href="/meeting/{{ meeting.number }}/agenda/{{ss.session.group.acronym}}-drafts.pdf">pdf</a>{%endif%}</td>
      </tr>
-     <tr id="{{meeting.number}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}" class="groupagenda">
+     <tr id="{{meeting.number}}-{{ss.timeslot.time|date:"D-Hi"|lower}}-{{ss.session.group.parent.acronym|upper}}-{{ss.session.group.acronym|lower}}" class="groupagenda">
        <td></td>
        <td colspan="5">
-          {% if slot.session.agenda %}
-          {% if slot.session.agenda.file_extension in show_inline%}
-          <iframe width="100%" height="1px" src="about:blank" xsrc="{{slot.session.agenda.href}}" onload="r(this)"></iframe>
+          {% if ss.session.agenda %}
+          {% if ss.session.agenda.file_extension in show_inline%}
+          <iframe width="100%" height="1px" src="about:blank" xsrc="{{ss.session.agenda.href}}" onload="r(this)"></iframe>
           {% else %}
-          <b><i>Agenda submitted in {{slot.session.agenda.file_extension|upper}} format</i></b>
+          <b><i>Agenda submitted in {{ss.session.agenda.file_extension|upper}} format</i></b>
           {% endif %}
           {% else %}
           <b><i>No Agenda Submitted</i></b>
           {% endif %}
-          {% if slot.session.slides %}
+          {% if ss.session.slides %}
           <h3>Slides:</h3>
-          <ol>{% for slide in slot.session.slides %}
+          <ol>{% for slide in ss.session.slides %}
             <li>
               <img src="/images/{{slide.file_extension|upper}}_icon.png">
               <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>
@@ -410,14 +200,14 @@ You can customize the agenda below to show only selected working group sessions.
      </tr>
 
    {% endif %} {% endif %}
-   {% if slot.type.name = 'Plenary' %}
+   {% if ss.timeslot.type.name = 'Plenary' %}
      <tr>
        <td></td>
        <td colspan="5">
-         <iframe width="100%" height="1px" src="{{slot.session.agenda.href}}" onload="r(this)"></iframe>
-          {% if slot.session.slides %}
+         <iframe width="100%" height="1px" src="{{ss.session.agenda.href}}" onload="r(this)"></iframe>
+          {% if ss.session.slides %}
           <h3>Slides:</h3>
-          <ol>{% for slide in slot.session.slides %}
+          <ol>{% for slide in ss.session.slides %}
             <li>
               <img src="/images/{{slide.file_extension|upper}}_icon.png">
               <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>

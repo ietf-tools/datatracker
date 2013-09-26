@@ -21,6 +21,9 @@ RESERVED_CHARS="!*'();:@&=+$,/?%#[]"
 
 absolute_http_url_re = re.compile(r"^https?://", re.I)
 
+class Http403(Exception):
+    pass
+
 class Http404(Exception):
     pass
 
@@ -74,6 +77,15 @@ class HttpRequest(object):
                                          self.get_host(), self.path)
             location = urljoin(current_uri, location)
         return iri_to_uri(location)
+
+    # added by mcr@sandelman.ca
+    def get_host_protocol(self):
+        """
+        Builds an absolute URI for the server.
+        """
+        current_uri = '%s://%s' % (self.is_secure() and 'https' or 'http',
+                                   self.get_host())
+        return iri_to_uri(current_uri)
 
     def is_secure(self):
         return os.environ.get("HTTPS") == "on"
@@ -413,10 +425,22 @@ class HttpResponse(object):
     def _get_content(self):
         if self.has_header('Content-Encoding'):
             return ''.join(self._container)
-        return smart_str(''.join(self._container), self._charset)
+        # the /meeting/75/agenda/mip4 test case results in
+        # self._container == [None]
+        f1 = ''
+        try:
+            f1 = ''.join(self._container)
+        except:
+            pass
+            #import sys
+            #sys.stdout.write("container:  %s" % (self._container))
+        return smart_str(f1, self._charset)
 
     def _set_content(self, value):
-        self._container = [value]
+        if value is None:
+            self._container = ['']
+        else:
+            self._container = [value]
         self._is_string = True
 
     content = property(_get_content, _set_content)

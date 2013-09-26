@@ -1,0 +1,52 @@
+#!/bin/bash
+
+TOPDIR=@TOPDIR@
+RUNDIR=${TOPDIR}/run
+LOGDIR=${TOPDIR}/log
+DBDIR=${RUNDIR}/db
+PIDFILE=${RUNDIR}/mysqld.pid
+SOCKET=${RUNDIR}/mysqld.sock
+if [ -d /usr/local/mysql ]; then
+	BASEDIR=/usr/local/mysql
+else
+	BASEDIR=/usr
+fi
+
+mkdir -p ${RUNDIR}/mysqld
+mkdir -p ${TOPDIR}/db/mysql
+mkdir -p ${LOGDIR}/mysql
+PATH=${BASEDIR}/scripts:${BASEDIR}/bin:$PATH export PATH
+
+mysql_install_db --no-defaults --basedir=${BASEDIR} --datadir=${DBDIR} --pid-file=${PIDFILE} --skip-external-locking --socket=${SOCKET} --log_bin=${LOGDIR}/mysql/mysql-bin.log
+
+echo ${SOCKET} >.mysql.socket
+
+# now start the DB.
+# have to start up mysql with TCP networking enabled!
+mysqld --basedir=${BASEDIR} --datadir=${DBDIR} --pid-file=${PIDFILE} --skip-external-locking --socket=${SOCKET} --port=3307 --log_bin=${LOGDIR}/mysql/mysql-bin.log  --default-storage-engine=InnoDB &
+sleep 10
+
+connargs="--protocol=socket --socket=${SOCKET} "
+
+( echo "update user set host='%' where host='localhost';" 
+  echo "update user set password=PASSWORD('Ahw3ooh2') where user='root';"
+  echo "FLUSH PRIVILEGES;" ) | mysql -h 127.0.0.1 --port=3307 -u root mysql
+
+echo TRYING new PW. "(do \q twice)"
+mysql -h 127.0.0.1 --port=3307 -u root --password='Ahw3ooh2' mysql
+mysql $connargs -u root --password='Ahw3ooh2' mysql
+
+sleep 10
+
+if [ -f etc/bootstrap.sql ]; then
+    cat etc/bootstrap.sql | mysql -h 127.0.0.1 --port=3307 -u root --password='Ahw3ooh2' mysql
+fi
+
+sleep 10
+
+(
+echo "FLUSH PRIVILEGES;"
+) | mysql -h 127.0.0.1 --port=3307 -u root --password='Ahw3ooh2' mysql
+
+mysqladmin -h 127.0.0.1 --port=3307 -u root --password=Ahw3ooh2 shutdown
+

@@ -20,6 +20,7 @@ from django.db import models
 from django.conf import settings
 from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup, Area, IETFWG
 from ietf.utils.broken_foreign_key import BrokenForeignKey
+from ietf.meeting.models import TimeSlot
 import datetime
 #from ietf.utils import log
 
@@ -273,74 +274,6 @@ class IESGHistory(models.Model):
         verbose_name = "Meeting AD info"
         verbose_name_plural = "Meeting AD info"
     
-class MeetingTime(models.Model):
-    time_id = models.AutoField(primary_key=True)
-    time_desc = models.CharField(max_length=100)
-    meeting = models.ForeignKey(Meeting, db_column='meeting_num')
-    day_id = models.IntegerField()
-    session_name = models.ForeignKey(SessionName,null=True)
-    def __str__(self):
-	return "[%d] |%s| %s" % (self.meeting_id, (self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc)
-    def sessions(self):
-	"""
-	Get all sessions that are scheduled at this time.
-	"""
-	sessions = WgMeetingSession.objects.filter(
-	    models.Q(sched_time_id1=self.time_id) |
-	    models.Q(sched_time_id2=self.time_id) |
-	    models.Q(sched_time_id3=self.time_id) |
-            models.Q(combined_time_id1=self.time_id) |
-            models.Q(combined_time_id2=self.time_id))
-	for s in sessions:
-	    if s.sched_time_id1_id == self.time_id:
-		s.room_id = s.sched_room_id1
-                s.ordinality = 1
-	    elif s.sched_time_id2_id == self.time_id:
-		s.room_id = s.sched_room_id2
-                s.ordinality = 2
-	    elif s.sched_time_id3_id == self.time_id:
-		s.room_id = s.sched_room_id3
-                s.ordinality = 3
-            elif s.combined_time_id1_id == self.time_id:
-                s.room_id = s.combined_room_id1
-                s.ordinality = 4
-            elif s.combined_time_id2_id == self.time_id:
-                s.room_id = s.combined_room_id2
-                s.ordinality = 5
-	    else:
-		s.room_id = 0
-                s.ordinality = 0
-	return sessions
-    def sessions_by_area(self):
-        return [ {"area":session.area()+session.acronym(), "info":session} for session in self.sessions() ]
-    def meeting_date(self):
-        return self.meeting.get_meeting_date(self.day_id)
-    def registration(self):
-        if hasattr(self, '_reg_info'):
-            return self._reg_info
-        reg = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=1)
-        reg.name = reg.non_session_ref.name
-        self._reg_info = reg
-	return reg
-    def reg_info(self):
-	reg_info = self.registration()
-        if reg_info.time_desc:
-            return "%s %s" % (reg_info.time_desc, reg_info.name)
-        else:
-            return ""
-    def break_info(self):
-        breaks = NonSession.objects.filter(meeting=self.meeting).exclude(non_session_ref=1).filter(models.Q(day_id=self.day_id) | models.Q(day_id__isnull=True)).order_by('time_desc')
-        for brk in breaks:
-            if brk.time_desc[-4:] == self.time_desc[:4]:
-                brk.name = brk.non_session_ref.name
-                return brk
-        return None
-    def is_plenary(self):
-        return self.session_name_id in [9, 10]
-    class Meta:
-        db_table = 'meeting_times'
-        verbose_name = "Meeting slot time"
-
 class MeetingRoom(models.Model):
     room_id = models.AutoField(primary_key=True)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
@@ -385,19 +318,19 @@ class WgMeetingSession(models.Model, ResolveAcronym):
     last_modified_date = models.DateField(null=True, blank=True)
     ad_comments = models.TextField(blank=True,null=True)
     sched_room_id1 = models.ForeignKey(MeetingRoom, db_column='sched_room_id1', null=True, blank=True, related_name='here1')
-    sched_time_id1 = BrokenForeignKey(MeetingTime, db_column='sched_time_id1', null=True, blank=True, related_name='now1')
+    sched_time_id1 = BrokenForeignKey(TimeSlot, db_column='sched_time_id1', null=True, blank=True, related_name='now1')
     sched_date1 = models.DateField(null=True, blank=True)
     sched_room_id2 = models.ForeignKey(MeetingRoom, db_column='sched_room_id2', null=True, blank=True, related_name='here2')
-    sched_time_id2 = BrokenForeignKey(MeetingTime, db_column='sched_time_id2', null=True, blank=True, related_name='now2')
+    sched_time_id2 = BrokenForeignKey(TimeSlot, db_column='sched_time_id2', null=True, blank=True, related_name='now2')
     sched_date2 = models.DateField(null=True, blank=True)
     sched_room_id3 = models.ForeignKey(MeetingRoom, db_column='sched_room_id3', null=True, blank=True, related_name='here3')
-    sched_time_id3 = BrokenForeignKey(MeetingTime, db_column='sched_time_id3', null=True, blank=True, related_name='now3')
+    sched_time_id3 = BrokenForeignKey(TimeSlot, db_column='sched_time_id3', null=True, blank=True, related_name='now3')
     sched_date3 = models.DateField(null=True, blank=True)
     special_agenda_note = models.CharField(blank=True, max_length=255)
     combined_room_id1 = models.ForeignKey(MeetingRoom, db_column='combined_room_id1', null=True, blank=True, related_name='here4')
-    combined_time_id1 = BrokenForeignKey(MeetingTime, db_column='combined_time_id1', null=True, blank=True, related_name='now4')
+    combined_time_id1 = BrokenForeignKey(TimeSlot, db_column='combined_time_id1', null=True, blank=True, related_name='now4')
     combined_room_id2 = models.ForeignKey(MeetingRoom, db_column='combined_room_id2', null=True, blank=True, related_name='here5')
-    combined_time_id2 = BrokenForeignKey(MeetingTime, db_column='combined_time_id2', null=True, blank=True, related_name='now5')
+    combined_time_id2 = BrokenForeignKey(TimeSlot, db_column='combined_time_id2', null=True, blank=True, related_name='now5')
     def __str__(self):
 	return "%s at %s" % (self.acronym(), self.meeting)
     def agenda_file(self,interimvar=0):
@@ -611,12 +544,11 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     MeetingOld = Meeting
     ProceedingOld = Proceeding
     MeetingVenueOld = MeetingVenue
-    MeetingTimeOld = MeetingTime
     WgMeetingSessionOld = WgMeetingSession
     SlideOld = Slide
     SwitchesOld = Switches
     IESGHistoryOld = IESGHistory
-    from ietf.meeting.proxy import MeetingProxy as Meeting, ProceedingProxy as Proceeding, MeetingVenueProxy as MeetingVenue, MeetingTimeProxy as MeetingTime, WgMeetingSessionProxy as WgMeetingSession, SlideProxy as Slide, SwitchesProxy as Switches, IESGHistoryProxy as IESGHistory
+    from ietf.meeting.proxy import MeetingProxy as Meeting, ProceedingProxy as Proceeding, MeetingVenueProxy as MeetingVenue, WgMeetingSessionProxy as WgMeetingSession, SlideProxy as Slide, SwitchesProxy as Switches, IESGHistoryProxy as IESGHistory
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core
