@@ -126,7 +126,7 @@ def can_adopt(user, draft):
         person = get_person_for_user(user)
         if not person:
             return False
-        return is_wgchair(person) or is_rgchair(person) or is_wgdelegate(person) or is_rgdelegate() or is_secretariat(user)
+        return is_wgchair(person) or is_rgchair(person) or is_wgdelegate(person) or is_rgdelegate(person) or is_secretariat(user)
     else:
         return is_secretariat(user)
     
