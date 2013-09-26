@@ -22,13 +22,13 @@ from south.modelsinspector import add_introspection_rules
 SECS_PER_DAY=3600*24
 
 class TimedeltaField(models.Field):
-    """
+    u'''
     Store Python's datetime.timedelta in an integer column.
     Most database systems only support 32 bit integers by default.
-    """
+    '''
     __metaclass__ = models.SubfieldBase
     empty_strings_allowed = False
-
+    
     def __init__(self, *args, **kwargs):
         super(TimedeltaField, self).__init__(*args, **kwargs)
 
