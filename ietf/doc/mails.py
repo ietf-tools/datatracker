@@ -432,15 +432,28 @@ def stream_state_email_recipients(doc, extra_recipients):
 
     return res
     
-def email_stream_state_changed(request, doc, prev_state, new_state, changed_by, comment="", extra_recipients=[]):
+def email_stream_state_changed(request, doc, prev_state, new_state, by, comment="", extra_recipients=[]):
     recipients = stream_state_email_recipients(doc, extra_recipients)
 
+    state_type = (prev_state or new_state).type
+
     send_mail(request, recipients, settings.DEFAULT_FROM_EMAIL,
-              u"Stream State Changed for Draft %s" % doc.name,
+              u"%s changed for %s" % (state_type.label, doc.name),
               'doc/mail/stream_state_changed_email.txt',
               dict(doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                   state_type=state_type,
                    prev_state=prev_state,
                    new_state=new_state,
-                   changed_by=changed_by,
+                   by=by,
+                   comment=comment))
+
+def email_draft_adopted(request, doc, by, comment):
+    recipients = stream_state_email_recipients(doc, [])
+    send_mail(request, recipients, settings.DEFAULT_FROM_EMAIL,
+              u"%s adopted in %s %s" % (doc.name, doc.group.acronym, doc.group.type.name),
+              'doc/mail/draft_adopted_email.txt',
+              dict(doc=doc,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                   by=by,
                    comment=comment))

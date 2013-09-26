@@ -1017,7 +1017,6 @@ class AdoptDraftTests(django.test.TestCase):
         self.assertEquals(draft.stream_id, "ietf")
         self.assertEquals(draft.docevent_set.count() - events_before, 4)
         self.assertEquals(len(outbox), mailbox_before + 1)
-        self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
+        self.assertTrue("adopted" in outbox[-1]["Subject"].lower())
         self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
-

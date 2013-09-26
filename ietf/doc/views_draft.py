@@ -1177,13 +1177,13 @@ def adopt_draft(request, name):
 
                 update_reminder(doc, "stream-s", e, due_date)
 
-                email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
-
             if comment:
                 e = DocEvent(type="added_comment", time=doc.time, by=by, doc=doc)
                 e.desc = comment
                 e.save()
 
+            email_draft_adopted(request, doc, by, comment)
+                
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
         form = AdoptDraftForm(user=request.user)
