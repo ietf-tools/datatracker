@@ -1,4 +1,4 @@
-import logging
+#import logging
 
 from django.conf import settings
 
@@ -13,7 +13,12 @@ except:
     except:
         from dajaxice.utils import simple_import_module as import_module
 
-log = logging.getLogger('dajaxice.DajaxiceRequest')
+#log = logging.getLogger('dajaxice.DajaxiceRequest')
+import syslog
+def warning(msg):
+    syslog.syslog(syslog.LOG_WANRNING, msg)
+log = syslog
+log.warning = warning
 
 
 class DajaxiceFunction(object):

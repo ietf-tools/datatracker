@@ -33,7 +33,7 @@
 
 import os
 import sys
-import logging
+#import logging
 import traceback
 
 from django.conf import settings
@@ -43,7 +43,21 @@ from django.http import HttpResponse
 from dajaxice.core import dajaxice_functions
 from dajaxice.exceptions import FunctionNotCallableError, DajaxiceImportError
 
-log = logging.getLogger('dajaxice.DajaxiceRequest')
+#log = logging.getLogger('dajaxice.DajaxiceRequest')
+import syslog
+def debug(msg):
+    syslog.syslog(syslog.LOG_DEBUG, msg)
+def info(msg):
+    syslog.syslog(syslog.LOG_INFO, msg)
+def warning(msg):
+    syslog.syslog(syslog.LOG_WANRNING, msg)
+def error(msg):
+    syslog.syslog(syslog.LOG_ERR, msg)
+log = syslog
+log.debug = debug
+log.info = info
+log.warning = warning
+log.error = error
 
 # Python 2.7 has an importlib with import_module.
 # For older Pythons, Django's bundled copy provides it.
