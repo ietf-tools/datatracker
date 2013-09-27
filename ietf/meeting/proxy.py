@@ -5,6 +5,8 @@ from django.conf import settings
 from ietf.utils.proxy import TranslatingManager
 from models import *
 
+import debug
+
 class MeetingProxy(Meeting):
     objects = TranslatingManager(dict(meeting_num="number"), always_filter=dict(type="ietf"))
                                       
@@ -113,8 +115,12 @@ class SwitchesProxy(Meeting):
     #updated_time = models.TimeField(null=True, blank=True)
     def updated(self):
         from django.db.models import Max
-	return max(self.timeslot_set.aggregate(Max('modified'))["modified__max"],
+        import pytz
+	ts = max(self.timeslot_set.aggregate(Max('modified'))["modified__max"],
                    self.session_set.aggregate(Max('modified'))["modified__max"])
+        tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
+        ts = tz.localize(ts)
+        return ts
     class Meta:
         proxy = True
 
