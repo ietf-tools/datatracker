@@ -11,6 +11,7 @@ from pyquery import PyQuery
 import debug
 
 from ietf.doc.models import *
+from ietf.doc .utils import *
 from ietf.name.models import *
 from ietf.group.models import *
 from ietf.person.models import *
@@ -999,9 +1000,9 @@ class AdoptDraftTests(django.test.TestCase):
         
         # get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form select[name="group"] option')), 1) # we can only select "mars"
+        self.assertEqual(len(q('form select[name="group"] option')), 1) # we can only select "mars"
 
         # adopt in mars WG
         mailbox_before = len(outbox)
@@ -1010,13 +1011,100 @@ class AdoptDraftTests(django.test.TestCase):
                              dict(comment="some comment",
                                   group=Group.objects.get(acronym="mars").pk,
                                   weeks="10"))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(pk=draft.pk)
-        self.assertEquals(draft.group.acronym, "mars")
-        self.assertEquals(draft.stream_id, "ietf")
-        self.assertEquals(draft.docevent_set.count() - events_before, 4)
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(draft.group.acronym, "mars")
+        self.assertEqual(draft.stream_id, "ietf")
+        self.assertEqual(draft.docevent_set.count() - events_before, 4)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("adopted" in outbox[-1]["Subject"].lower())
         self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+
+class ChangeStreamStateTests(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_set_tags(self):
+        draft = make_test_data()
+        draft.tags = DocTagName.objects.filter(slug="w-expert")
+        draft.group.unused_tags.add("w-refdoc")
+
+        url = urlreverse('doc_change_stream_state', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "marschairman", url)
+        
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        # make sure the unused tags are hidden
+        unused = draft.group.unused_tags.values_list("slug", flat=True)
+        for t in q("input[name=tags]"):
+            self.assertTrue(t.attrib["value"] not in unused)
+
+        # set tags
+        mailbox_before = len(outbox)
+        events_before = draft.docevent_set.count()
+        r = self.client.post(url,
+                             dict(new_state=draft.get_state("draft-stream-%s" % draft.stream_id).pk,
+                                  comment="some comment",
+                                  weeks="10",
+                                  tags=["need-aut", "sheph-u"],
+                                  ))
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.tags.count(), 2)
+        self.assertEqual(draft.tags.filter(slug="w-expert").count(), 0)
+        self.assertEqual(draft.tags.filter(slug="need-aut").count(), 1)
+        self.assertEqual(draft.tags.filter(slug="sheph-u").count(), 1)
+        self.assertEqual(draft.docevent_set.count() - events_before, 2)
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("tags changed" in outbox[-1]["Subject"].lower())
+        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("plain@example.com" in unicode(outbox[-1]))
+
+    def test_set_state(self):
+        draft = make_test_data()
+
+        url = urlreverse('doc_change_stream_state', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "marschairman", url)
+        
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        # make sure the unused states are hidden
+        unused = draft.group.unused_states.values_list("pk", flat=True)
+        for t in q("select[name=new_state]").find("option[name=tags]"):
+            self.assertTrue(t.attrib["value"] not in unused)
+        self.assertEqual(len(q('select[name=new_state]')), 1)
+
+        # set new state
+        old_state = draft.get_state("draft-stream-%s" % draft.stream_id )
+        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="parked")
+        self.assertNotEqual(old_state, new_state)
+        mailbox_before = len(outbox)
+        events_before = draft.docevent_set.count()
+
+        r = self.client.post(url,
+                             dict(new_state=new_state.pk,
+                                  comment="some comment",
+                                  weeks="10",
+                                  tags=[t.pk for t in draft.tags.filter(slug__in=get_tags_for_stream_id(draft.stream_id))],
+                                  ))
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.get_state("draft-stream-%s" % draft.stream_id), new_state)
+        self.assertEqual(draft.docevent_set.count() - events_before, 2)
+        reminder = DocReminder.objects.filter(event__doc=draft, type="stream-s")
+        self.assertEqual(len(reminder), 1)
+        due = datetime.datetime.now() + datetime.timedelta(weeks=10)
+        self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
+        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+

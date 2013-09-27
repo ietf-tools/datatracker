@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.search import iprs_from_docs, related_docs
-from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
+from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent, DocTagName
 from ietf.person.models import Person
 from ietf.group.models import Group, Role
 
@@ -414,7 +414,7 @@ def email_last_call_expired(doc):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc="iesg-secretary@ietf.org")
 
-def stream_state_email_recipients(doc, extra_recipients):
+def stream_state_email_recipients(doc, extra_recipients=[]):
     persons = set()
     res = []
     for r in Role.objects.filter(group=doc.group, name__in=("chair", "delegate")).select_related("person", "email"):
@@ -426,14 +426,25 @@ def stream_state_email_recipients(doc, extra_recipients):
             res.append(email.formatted_email())
             persons.add(email.person)
 
-    for x in extra_recipients:
-        if not x in res:
-            res.append(x)
+    for p in extra_recipients:
+        if not p in persons:
+            res.append(p.formatted_email())
+            persons.add(p)
 
     return res
-    
-def email_stream_state_changed(request, doc, prev_state, new_state, by, comment="", extra_recipients=[]):
-    recipients = stream_state_email_recipients(doc, extra_recipients)
+
+def email_draft_adopted(request, doc, by, comment):
+    recipients = stream_state_email_recipients(doc)
+    send_mail(request, recipients, settings.DEFAULT_FROM_EMAIL,
+              u"%s adopted in %s %s" % (doc.name, doc.group.acronym, doc.group.type.name),
+              'doc/mail/draft_adopted_email.txt',
+              dict(doc=doc,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                   by=by,
+                   comment=comment))
+
+def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=""):
+    recipients = stream_state_email_recipients(doc)
 
     state_type = (prev_state or new_state).type
 
@@ -448,12 +459,20 @@ def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=
                    by=by,
                    comment=comment))
 
-def email_draft_adopted(request, doc, by, comment):
-    recipients = stream_state_email_recipients(doc, [])
+def email_stream_tags_changed(request, doc, added_tags, removed_tags, by, comment=""):
+    extra_recipients = []
+
+    if DocTagName.objects.get(slug="sheph-u") in added_tags and doc.shepherd:
+        extra_recipients.append(doc.shepherd)
+
+    recipients = stream_state_email_recipients(doc, extra_recipients)
+
     send_mail(request, recipients, settings.DEFAULT_FROM_EMAIL,
-              u"%s adopted in %s %s" % (doc.name, doc.group.acronym, doc.group.type.name),
-              'doc/mail/draft_adopted_email.txt',
+              u"Tags changed for %s" % doc.name,
+              'doc/mail/stream_tags_changed_email.txt',
               dict(doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                   added=added_tags,
+                   removed=removed_tags,
                    by=by,
                    comment=comment))

@@ -13,6 +13,7 @@ from django.db.models import Max
 from django.conf import settings
 from django.forms.util import ErrorList
 from django.contrib.auth.decorators import login_required
+from django.template.defaultfilters import pluralize
 
 from ietf.utils.mail import send_mail_text, send_mail_message
 from ietf.ietfauth.decorators import role_required
@@ -1123,7 +1124,7 @@ def adopt_draft(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
 
     if not can_adopt_draft(request.user, doc):
-        return HttpResponseForbidden("You don't have permission to access this view")
+        return HttpResponseForbidden("You don't have permission to access this page")
 
     if request.method == 'POST':
         form = AdoptDraftForm(request.POST, user=request.user)
@@ -1137,8 +1138,6 @@ def adopt_draft(request, name):
             doc.time = datetime.datetime.now()
 
             group = form.cleaned_data["group"]
-            comment = form.cleaned_data["comment"].strip()
-
             if group.type.slug == "rg":
                 new_stream = StreamName.objects.get(slug="irtf")                
                 adopt_state_slug = "active"
@@ -1146,6 +1145,7 @@ def adopt_draft(request, name):
                 new_stream = StreamName.objects.get(slug="ietf")                
                 adopt_state_slug = "c-adopt"
 
+            # stream
             if doc.stream != new_stream:
                 e = DocEvent(type="changed_stream", time=doc.time, by=by, doc=doc)
                 e.desc = u"Changed stream to <b>%s</b>" % new_stream.name
@@ -1154,6 +1154,7 @@ def adopt_draft(request, name):
                 e.save()
                 doc.stream = new_stream
 
+            # group
             if group != doc.group:
                 e = DocEvent(type="changed_group", time=doc.time, by=by, doc=doc)
                 e.desc = u"Changed group to <b>%s (%s)</b>" % (group.name, group.acronym.upper())
@@ -1164,9 +1165,9 @@ def adopt_draft(request, name):
 
             doc.save()
 
+            # state
             prev_state = doc.get_state("draft-stream-%s" % doc.stream_id)
             new_state = State.objects.get(slug=adopt_state_slug, type="draft-stream-%s" % doc.stream_id, used=True)
-
             if new_state != prev_state:
                 doc.set_state(new_state)
                 e = add_state_change_event(doc, by, prev_state, new_state, doc.time)
@@ -1177,6 +1178,8 @@ def adopt_draft(request, name):
 
                 update_reminder(doc, "stream-s", e, due_date)
 
+            # comment
+            comment = form.cleaned_data["comment"].strip()
             if comment:
                 e = DocEvent(type="added_comment", time=doc.time, by=by, doc=doc)
                 e.desc = comment
@@ -1194,5 +1197,128 @@ def adopt_draft(request, name):
                               },
                               context_instance=RequestContext(request))
 
-def change_stream_state(request):
-    pass
+class ChangeStreamStateForm(forms.Form):
+    new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State')
+    weeks = forms.IntegerField(label='Expected weeks in state',required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history")
+    tags = forms.ModelMultipleChoiceField(queryset=DocTagName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
+
+    def __init__(self, *args, **kwargs):
+        doc = kwargs.pop("doc")
+        state_type = kwargs.pop("state_type")
+        super(ChangeStreamStateForm, self).__init__(*args, **kwargs)
+
+        f = self.fields["new_state"]
+        f.queryset = f.queryset.filter(type=state_type)
+        if doc.group:
+            unused_states = doc.group.unused_states.values_list("pk", flat=True)
+            f.queryset = f.queryset.exclude(pk__in=unused_states)
+        f.label = state_type.label
+
+        f = self.fields['tags']
+        f.queryset = f.queryset.filter(slug__in=get_tags_for_stream_id(doc.stream_id))
+        if doc.group:
+            unused_tags = doc.group.unused_tags.values_list("pk", flat=True)
+            f.queryset = f.queryset.exclude(pk__in=unused_tags)
+
+def next_states_for_stream_state(doc, state_type, current_state):
+    # find next states
+    next_states = []
+    if current_state:
+        next_states = current_state.next_states.all()
+
+        if doc.stream_id == "ietf" and doc.group:
+            transitions = doc.group.groupstatetransitions_set.filter(state=current_state)
+            if transitions:
+                next_states = transitions[0].next_states.all()
+    else:
+        # return the initial state
+        states = State.objects.filter(used=True, type=state_type).order_by('order')
+        if states:
+            next_states = states[:1]
+
+    if doc.group:
+        unused_states = doc.group.unused_states.values_list("pk", flat=True)
+        next_states = [n for n in next_states if n.pk not in unused_states]
+
+    return next_states
+
+@login_required
+def change_stream_state(request, name):
+    doc = get_object_or_404(Document, type="draft", name=name)
+    if not doc.stream:
+        raise Http404
+
+    if not is_authorized_in_doc_stream(request.user, doc):
+        return HttpResponseForbidden("You don't have permission to access this page")
+
+    state_type = StateType.objects.get(slug="draft-stream-%s" % doc.stream_id)
+    prev_state = doc.get_state(state_type.slug)
+    next_states = next_states_for_stream_state(doc, state_type, prev_state)
+
+    if request.method == 'POST':
+        form = ChangeStreamStateForm(request.POST, doc=doc, state_type=state_type)
+        if form.is_valid():
+            by = request.user.get_profile()
+
+            save_document_in_history(doc)
+
+            doc.time = datetime.datetime.now()
+            comment = form.cleaned_data["comment"].strip()
+
+            # state
+            new_state = form.cleaned_data["new_state"]
+            if new_state != prev_state:
+                doc.set_state(new_state)
+                e = add_state_change_event(doc, by, prev_state, new_state, doc.time)
+
+                due_date = None
+                if form.cleaned_data["weeks"] != None:
+                    due_date = datetime.date.today() + datetime.timedelta(weeks=form.cleaned_data["weeks"])
+
+                update_reminder(doc, "stream-s", e, due_date)
+
+                email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
+
+            # tags
+            existing_tags = set(doc.tags.all())
+            new_tags = set(form.cleaned_data["tags"])
+
+            if existing_tags != new_tags:
+                doc.tags = new_tags
+
+                e = DocEvent(type="changed_document", time=doc.time, by=by, doc=doc)
+                added_tags = new_tags - existing_tags
+                removed_tags = existing_tags - new_tags
+                l = []
+                if added_tags:
+                    l.append(u"Tag%s %s set." % (pluralize(added_tags), ", ".join(t.name for t in added_tags)))
+                if removed_tags:
+                    l.append(u"Tag%s %s cleared." % (pluralize(removed_tags), ", ".join(t.name for t in removed_tags)))
+                e.desc = " ".join(l)
+                e.save()
+
+                email_stream_tags_changed(request, doc, added_tags, removed_tags, by, comment)
+
+            # comment
+            if comment:
+                e = DocEvent(type="added_comment", time=doc.time, by=by, doc=doc)
+                e.desc = comment
+                e.save()
+
+            return HttpResponseRedirect(doc.get_absolute_url())
+    else:
+        form = ChangeStreamStateForm(initial=dict(new_state=prev_state.pk),
+                                     doc=doc, state_type=state_type)
+
+    milestones = doc.groupmilestone_set.all()
+
+
+    return render_to_response("doc/draft/change_stream_state.html",
+                              {"doc": doc,
+                               "form": form,
+                               "milestones": milestones,
+                               "state_type": state_type,
+                               "next_states": next_states,
+                              },
+                              context_instance=RequestContext(request))

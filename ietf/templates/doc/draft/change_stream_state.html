@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Change {{ state_type.label }} of {{ doc }}{% endblock %}
+
+{% block morecss %}
+.next-states { margin-bottom: 1em; }
+.next-states a {
+  display: inline-block;
+  margin: 0 0.2em;
+  padding: 0.2em 0.3em;
+  border-radius: 0.2em;
+  cursor: pointer;
+  color: #333;
+  font-weight: bold;
+}
+.next-states a:hover { background-color: #eee; transition-duration: 0.2s; }
+form.change-state th { max-width: 8em; }
+form.change-state th, form.change-state td { padding-bottom: 0.3em; }
+form.change-state #id_comment { width: 30em; }
+form.change-state #id_weeks { width: 2em;}
+form.change-state .actions { text-align: right; padding-top: 1em; }
+form.change-state ul { padding: 0; margin: 0; }
+form.change-state ul li { padding: 0; padding-bottom: 0.1em; margin: 0; list-style-type: none; }
+form.change-state ul li input { vertical-align: middle; }
+form.change-state ul li label { cursor: pointer; }
+{% endblock %}
+
+{% block content %}
+<h1>Change {{ state_type.label }} of {{ doc }}</h1>
+
+<p class="intro">For help on the states, see the <a href="{% url state_help type=state_type.slug %}">state table</a>.</p>
+
+{% if next_states %}
+<div class="next-states">
+  <span>Recommended next state{{next_states|pluralize}}:</span>
+  {% for state in next_states %}<a tabindex="0" data-state="{{ state.pk }}">{{ state.name }}</a> {% if not forloop.last %} or {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+<form class="change-state" action="" method="post">
+  <table cellspacing="0">
+    {% for field in form.visible_fields %}
+    <tr>
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+
+      {{ field.errors }}
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td colspan="2" class="actions">
+        <a class="button" href="{{ doc.get_absolute_url }}">Cancel</a>
+        <input class="button" type="submit" value="Save"/>
+      </td>
+    </tr>
+  </table>
+</form>
+{% endblock %}
+
+{% block js %}
+<script>
+jQuery(document).ready(function () {
+    jQuery(".next-states a").click(function (e) {
+        e.preventDefault();
+        var s = jQuery(this).data("state");
+        console.log(s)
+        jQuery("#id_new_state").val(s);
+    });
+});
+</script>
+{% endblock %}
