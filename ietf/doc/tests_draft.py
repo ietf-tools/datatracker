@@ -1030,7 +1030,7 @@ class ChangeStreamStateTests(django.test.TestCase):
         draft.tags = DocTagName.objects.filter(slug="w-expert")
         draft.group.unused_tags.add("w-refdoc")
 
-        url = urlreverse('doc_change_stream_state', kwargs=dict(name=draft.name))
+        url = urlreverse('doc_change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))
         login_testing_unauthorized(self, "marschairman", url)
         
         # get
@@ -1068,7 +1068,7 @@ class ChangeStreamStateTests(django.test.TestCase):
     def test_set_state(self):
         draft = make_test_data()
 
-        url = urlreverse('doc_change_stream_state', kwargs=dict(name=draft.name))
+        url = urlreverse('doc_change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))
         login_testing_unauthorized(self, "marschairman", url)
         
         # get

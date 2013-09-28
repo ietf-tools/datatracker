@@ -95,7 +95,7 @@
        {% if doc.stream %}
            <td>{{ doc.stream }} State:</td>
            <td class="stream-state">
-               <a {% if doc.stream and can_edit_stream_info %}class="editlink" href="{% url edit_state name=doc.name %}"{% endif %}>
+               <a {% if doc.stream and can_edit_stream_info %}class="editlink" href="{% url doc_change_stream_state name=doc.name state_type=stream_state_type_slug %}"{% endif %}>
                {{ stream_state|default:"(None)" }}
              </a>
 

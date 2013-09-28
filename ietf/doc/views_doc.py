@@ -258,9 +258,11 @@ def document_main(request, name, rev=None):
                 resurrected_by = e.by
 
         # stream info
+        stream_state_type_slug = None
         stream_state = None
         if doc.stream:
-            stream_state = doc.get_state("draft-stream-%s" % doc.stream_id)
+            stream_state_type_slug = "draft-stream-%s" % doc.stream_id
+            stream_state = doc.get_state(stream_state_type_slug)
         stream_tags = doc.tags.filter(slug__in=get_tags_for_stream_id(doc.stream_id))
 
         shepherd_writeup = doc.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
@@ -356,6 +358,7 @@ def document_main(request, name, rev=None):
                                        has_errata=doc.tags.filter(slug="errata"),
                                        published=doc.latest_event(type="published_rfc"),
                                        file_urls=file_urls,
+                                       stream_state_type_slug=stream_state_type_slug,
                                        stream_state=stream_state,
                                        stream_tags=stream_tags,
                                        milestones=doc.groupmilestone_set.filter(state="active"),

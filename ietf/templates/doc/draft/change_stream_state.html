@@ -32,7 +32,7 @@ form.change-state ul li label { cursor: pointer; }
 
 {% if next_states %}
 <div class="next-states">
-  <span>Recommended next state{{next_states|pluralize}}:</span>
+  <span>Recommended next state{{ next_states|pluralize }}:</span>
   {% for state in next_states %}<a tabindex="0" data-state="{{ state.pk }}">{{ state.name }}</a> {% if not forloop.last %} or {% endif %}{% endfor %}
 </div>
 {% endif %}
@@ -65,7 +65,6 @@ jQuery(document).ready(function () {
     jQuery(".next-states a").click(function (e) {
         e.preventDefault();
         var s = jQuery(this).data("state");
-        console.log(s)
         jQuery("#id_new_state").val(s);
     });
 });

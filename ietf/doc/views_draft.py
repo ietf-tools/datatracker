@@ -1198,7 +1198,7 @@ def adopt_draft(request, name):
                               context_instance=RequestContext(request))
 
 class ChangeStreamStateForm(forms.Form):
-    new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State')
+    new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State', help_text=u"Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication.")
     weeks = forms.IntegerField(label='Expected weeks in state',required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history")
     tags = forms.ModelMultipleChoiceField(queryset=DocTagName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
@@ -1244,15 +1244,16 @@ def next_states_for_stream_state(doc, state_type, current_state):
     return next_states
 
 @login_required
-def change_stream_state(request, name):
+def change_stream_state(request, name, state_type):
     doc = get_object_or_404(Document, type="draft", name=name)
     if not doc.stream:
         raise Http404
 
+    state_type = get_object_or_404(StateType, slug=state_type)
+
     if not is_authorized_in_doc_stream(request.user, doc):
         return HttpResponseForbidden("You don't have permission to access this page")
 
-    state_type = StateType.objects.get(slug="draft-stream-%s" % doc.stream_id)
     prev_state = doc.get_state(state_type.slug)
     next_states = next_states_for_stream_state(doc, state_type, prev_state)
 
@@ -1308,7 +1309,7 @@ def change_stream_state(request, name):
 
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
-        form = ChangeStreamStateForm(initial=dict(new_state=prev_state.pk),
+        form = ChangeStreamStateForm(initial=dict(new_state=prev_state.pk if prev_state else None),
                                      doc=doc, state_type=state_type)
 
     milestones = doc.groupmilestone_set.all()
