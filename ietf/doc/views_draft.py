@@ -25,8 +25,6 @@ from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.person.forms import EmailsField
 from ietf.group.models import Group
 
-from ietf.ietfworkflows.accounts import can_edit_state
-
 from ietf.doc.models import *
 from ietf.doc.utils import *
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
@@ -1026,7 +1024,7 @@ def request_publication(request, name):
 
     doc = get_object_or_404(Document, type="draft", name=name, stream__in=("iab", "ise", "irtf"))
 
-    if not can_edit_state(request.user, doc):
+    if not is_authorized_in_doc_stream(request.user, doc):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     m = Message()

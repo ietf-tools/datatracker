@@ -175,7 +175,6 @@ INSTALLED_APPS = (
     'ietf.idrfc',
     'ietf.wginfo',
     'ietf.submit',
-    'ietf.ietfworkflows',
     'ietf.wgcharter',
     'ietf.sync',
     'ietf.community',
