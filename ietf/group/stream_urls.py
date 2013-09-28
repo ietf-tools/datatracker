@@ -8,5 +8,4 @@ urlpatterns = patterns('',
      (r'^$', views_stream.streams),
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/$', views_stream.stream_documents, None),
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/edit/$', views_stream.stream_edit),
-     (r'^management/', include('ietf.ietfworkflows.urls')),
 )
