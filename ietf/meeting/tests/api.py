@@ -1,7 +1,7 @@
 import base64
 import sys, datetime
 from django.test              import Client
-from ietf.meeting.tests.ttest import AgendaTransactionalTestCase
+from django.test import TestCase
 
 #from ietf.person.models import Person
 from django.contrib.auth.models import User
@@ -11,7 +11,9 @@ from auths import auth_joeblow, auth_wlo, auth_ietfchair, auth_ferrel
 from django.utils import simplejson as json
 from ietf.meeting.helpers import get_meeting
 
-class ApiTestCase(AgendaTransactionalTestCase):
+import debug
+
+class ApiTestCase(TestCase):
     fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
                  'meeting83.json',
                  'constraint83.json',
@@ -483,7 +485,7 @@ class ApiTestCase(AgendaTransactionalTestCase):
 
         m83perm = json.loads(resp.content)
         self.assertEqual(m83perm['secretariat'], True)
-        self.assertEqual(m83perm['owner_href'],  "http://testserver/people/108757.json")
+        self.assertEqual(m83perm['owner_href'],  "http://testserver/person/108757.json")
         self.assertEqual(m83perm['read_only'],   False)
         self.assertEqual(m83perm['write_perm'],  True)
 
@@ -498,7 +500,7 @@ class ApiTestCase(AgendaTransactionalTestCase):
 
         m83perm = json.loads(resp.content)
         self.assertEqual(m83perm['secretariat'], False)
-        self.assertEqual(m83perm['owner_href'],  "http://testserver/people/108757.json")
+        self.assertEqual(m83perm['owner_href'],  "http://testserver/person/108757.json")
         self.assertEqual(m83perm['read_only'],   True)
         self.assertEqual(m83perm['write_perm'],  False)
 
@@ -516,163 +518,10 @@ class ApiTestCase(AgendaTransactionalTestCase):
 
         m83perm = json.loads(resp.content)
         self.assertEqual(m83perm['secretariat'], False)
-        self.assertEqual(m83perm['owner_href'],  "http://testserver/people/108757.json")
+        self.assertEqual(m83perm['owner_href'],  "http://testserver/person/108757.json")
         self.assertEqual(m83perm['read_only'],   True)
         self.assertEqual(m83perm['write_perm'],  True)
         self.assertEqual(resp.status_code, 200)
-
-    def test_createNewAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        # try to create a new agenda
-        resp = self.client.post('/meeting/83/agendas', {
-                'name' : 'fakeagenda1',
-            }, **extra_headers)
-
-        self.assertEqual(resp.status_code, 302)
-
-        # see that in fact wlo can create a new timeslot
-        mtg83 = get_meeting(83)
-        n83 = mtg83.schedule_set.filter(name='fakeagenda1')
-        self.assertNotEqual(n83, None)
-
-    def test_updateAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-        self.assertTrue(a83.visible)
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='application/json'
-
-        # try to create a new agenda
-        resp = self.client.put('/meeting/83/agendas/%s.json' % (a83.name),
-                               data='visible=0',
-                               content_type="application/x-www-form-urlencoded",
-                               **extra_headers)
-
-        self.assertEqual(resp.status_code, 200)
-
-        # see that in fact wlo can create a new timeslot
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-        self.assertFalse(a83.visible)
-
-    def test_deleteAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-        self.assertNotEqual(a83, None)
-
-        # try to delete an agenda
-        resp = self.client.delete('/meeting/83/agendas/%s.json' % (a83.name), **auth_wlo)
-        self.assertEqual(resp.status_code, 200)
-
-        # see that in fact wlo can delete an existing room.
-        mtg83 = get_meeting(83)
-        a83c = mtg83.schedule_set.filter(pk = a83.pk).count()
-        self.assertEqual(a83c, 0)
-        self.assertEqual(mtg83.agenda, None)
-
-    #
-    # MEETING API
-    #
-    def test_getMeetingJson(self):
-        resp = self.client.get('/meeting/83.json')
-        m83json = json.loads(resp.content)
-        self.assertNotEqual(m83json, None)
-
-    def test_setMeetingAgendaNonSecretariat(self):
-        mtg83 = get_meeting(83)
-        self.assertNotEqual(mtg83.agenda, None)
-
-        # try to create a new agenda
-        resp = self.client.put('/meeting/83.json',
-                               data="agenda=None",
-                               content_type="application/x-www-form-urlencoded",
-                               **auth_joeblow)
-
-        self.assertEqual(resp.status_code, 403)
-        self.assertNotEqual(mtg83.agenda, None)
-
-    def test_setMeetingAgendaNoneSecretariat(self):
-        mtg83 = get_meeting(83)
-        self.assertNotEqual(mtg83.agenda, None)
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='application/json'
-
-        # try to create a new agenda
-        resp = self.client.post('/meeting/83.json',
-                                data="agenda=None",
-                                content_type="application/x-www-form-urlencoded",
-                                **extra_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        # new to reload the object
-        mtg83 = get_meeting(83)
-        self.assertEqual(mtg83.agenda, None)
-
-    def test_setMeetingAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        new_sched = mtg83.schedule_set.create(name="funny",
-                                              meeting=mtg83,
-                                              public=True,
-                                              owner=mtg83.agenda.owner)
-        self.assertNotEqual(mtg83.agenda, new_sched)
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        # try to create a new agenda
-        resp = self.client.put('/meeting/83.json',
-                               data="agenda=%s" % new_sched.name,
-                               content_type="application/x-www-form-urlencoded",
-                               **extra_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        # new to reload the object
-        mtg83 = get_meeting(83)
-        self.assertEqual(mtg83.agenda, new_sched)
-
-    def test_setNonPublicMeetingAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        new_sched = mtg83.schedule_set.create(name="funny",
-                                              meeting=mtg83,
-                                              public=False,
-                                              owner=mtg83.agenda.owner)
-        self.assertNotEqual(mtg83.agenda, new_sched)
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        # try to create a new agenda
-        resp = self.client.put('/meeting/83.json',
-                               data="agenda=%s" % new_sched.name,
-                               content_type="application/x-www-form-urlencoded",
-                               **extra_headers)
-        self.assertEqual(resp.status_code, 406)
-
-        # new to reload the object
-        mtg83 = get_meeting(83)
-        self.assertNotEqual(mtg83.agenda, new_sched)
-
-    def test_wlo_isSecretariatCanEditSched24(self):
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        # check that wlo
-        resp = self.client.post('/dajaxice/ietf.meeting.readonly/', {
-            'argv': '{"meeting_num":"83","schedule_id":"24"}'
-            }, **extra_headers)
-
-        m83perm = json.loads(resp.content)
-        self.assertEqual(m83perm['secretariat'], True)
-        self.assertEqual(m83perm['owner_href'],  "http://testserver/people/108757.json")
-        self.assertEqual(m83perm['read_only'],   False)
-        self.assertEqual(m83perm['write_perm'],  True)
 
     def test_wlo_isNonUserCanNotSave(self):
         extra_headers = auth_joeblow
@@ -685,289 +534,11 @@ class ApiTestCase(AgendaTransactionalTestCase):
 
         m83perm = json.loads(resp.content)
         self.assertEqual(m83perm['secretariat'], False)
-        self.assertEqual(m83perm['owner_href'],  "http://testserver/people/108757.json")
+        self.assertEqual(m83perm['owner_href'],  "http://testserver/person/108757.json")
         self.assertEqual(m83perm['read_only'],   True)
         self.assertEqual(m83perm['write_perm'],  False)
 
-    def test_af_IsReadOnlySched24(self):
-        extra_headers = auth_ferrel
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        resp = self.client.post('/dajaxice/ietf.meeting.readonly/', {
-            'argv': '{"meeting_num":"83","schedule_id":"24"}'
-            }, **extra_headers)
-
-        m83perm = json.loads(resp.content)
-        self.assertEqual(m83perm['secretariat'], False)
-        self.assertEqual(m83perm['owner_href'],  "http://testserver/people/108757.json")
-        self.assertEqual(m83perm['read_only'],   True)
-        self.assertEqual(m83perm['write_perm'],  True)
-
-        self.assertEqual(resp.status_code, 200)
-
-    def test_createNewAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        # try to create a new agenda
-        resp = self.client.post('/meeting/83/agendas', {
-                'name' : 'fakeagenda1',
-            }, **extra_headers)
-
-        self.assertEqual(resp.status_code, 302)
-
-        # see that in fact wlo can create a new timeslot
-        mtg83 = get_meeting(83)
-        n83 = mtg83.schedule_set.filter(name='fakeagenda1')
-        self.assertNotEqual(n83, None)
-
-    def test_updateAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-        self.assertTrue(a83.visible)
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='application/json'
-
-        # try to create a new agenda
-        resp = self.client.put('/meeting/83/agendas/%s.json' % (a83.name),
-                               data='visible=0',
-                               content_type="application/x-www-form-urlencoded",
-                               **extra_headers)
-
-        self.assertEqual(resp.status_code, 200)
-
-        # see that in fact wlo can create a new timeslot
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-        self.assertFalse(a83.visible)
-
-    def test_deleteAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-        self.assertNotEqual(a83, None)
-
-        # try to delete an agenda
-        resp = self.client.delete('/meeting/83/agendas/%s.json' % (a83.name), **auth_wlo)
-        self.assertEqual(resp.status_code, 200)
-
-        # see that in fact wlo can delete an existing room.
-        mtg83 = get_meeting(83)
-        a83c = mtg83.schedule_set.filter(pk = a83.pk).count()
-        self.assertEqual(a83c, 0)
-        self.assertEqual(mtg83.agenda, None)
-
-    #
-    # MEETING API
-    #
-    def test_getMeetingJson(self):
-        resp = self.client.get('/meeting/83.json')
-        m83json = json.loads(resp.content)
-        self.assertNotEqual(m83json, None)
-
-    def test_setMeetingAgendaNonSecretariat(self):
-        mtg83 = get_meeting(83)
-        self.assertNotEqual(mtg83.agenda, None)
-
-        # try to create a new agenda
-        resp = self.client.put('/meeting/83.json',
-                               data="agenda=None",
-                               content_type="application/x-www-form-urlencoded",
-                               **auth_joeblow)
-
-        self.assertEqual(resp.status_code, 403)
-        self.assertNotEqual(mtg83.agenda, None)
-
-    def test_setMeetingAgendaNoneSecretariat(self):
-        mtg83 = get_meeting(83)
-        self.assertNotEqual(mtg83.agenda, None)
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='application/json'
-
-        # try to create a new agenda
-        resp = self.client.post('/meeting/83.json',
-                                data="agenda=None",
-                                content_type="application/x-www-form-urlencoded",
-                                **extra_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        # new to reload the object
-        mtg83 = get_meeting(83)
-        self.assertEqual(mtg83.agenda, None)
-
-    def test_setMeetingAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        new_sched = mtg83.schedule_set.create(name="funny",
-                                              meeting=mtg83,
-                                              public=True,
-                                              owner=mtg83.agenda.owner)
-        self.assertNotEqual(mtg83.agenda, new_sched)
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        # try to create a new agenda
-        resp = self.client.put('/meeting/83.json',
-                               data="agenda=%s" % new_sched.name,
-                               content_type="application/x-www-form-urlencoded",
-                               **extra_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        # new to reload the object
-        mtg83 = get_meeting(83)
-        self.assertEqual(mtg83.agenda, new_sched)
-
-    def test_setNonPublicMeetingAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        new_sched = mtg83.schedule_set.create(name="funny",
-                                              meeting=mtg83,
-                                              public=False,
-                                              owner=mtg83.agenda.owner)
-        self.assertNotEqual(mtg83.agenda, new_sched)
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        # try to create a new agenda
-        resp = self.client.put('/meeting/83.json',
-                               data="agenda=%s" % new_sched.name,
-                               content_type="application/x-www-form-urlencoded",
-                               **extra_headers)
-        self.assertEqual(resp.status_code, 406)
-
-        # new to reload the object
-        mtg83 = get_meeting(83)
-        self.assertNotEqual(mtg83.agenda, new_sched)
-
-    def test_wlo_isSecretariatCanEditSched24(self):
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        # check that wlo
-        resp = self.client.post('/dajaxice/ietf.meeting.readonly/', {
-            'argv': '{"meeting_num":"83","schedule_id":"24"}'
-            }, **extra_headers)
-
-        m83perm = json.loads(resp.content)
-        self.assertEqual(m83perm['secretariat'], True)
-        self.assertEqual(m83perm['owner_href'],  "http://testserver/people/108757.json")
-        self.assertEqual(m83perm['read_only'],   False)
-        self.assertEqual(m83perm['write_perm'],  True)
-
-    def test_wlo_isNonUserCanNotSave(self):
-        extra_headers = auth_joeblow
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        # check that wlo
-        resp = self.client.post('/dajaxice/ietf.meeting.readonly/', {
-            'argv': '{"meeting_num":"83","schedule_id":"24"}'
-            }, **extra_headers)
-
-        m83perm = json.loads(resp.content)
-        self.assertEqual(m83perm['secretariat'], False)
-        self.assertEqual(m83perm['owner_href'],  "http://testserver/people/108757.json")
-        self.assertEqual(m83perm['read_only'],   True)
-        self.assertEqual(m83perm['write_perm'],  False)
-
-    def test_createNewAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='text/json'
-
-        # try to create a new agenda
-        resp = self.client.post('/meeting/83/agendas', {
-                'name' : 'fakeagenda1',
-            }, **extra_headers)
-
-        self.assertEqual(resp.status_code, 302)
-
-        # see that in fact wlo can create a new timeslot
-        mtg83 = get_meeting(83)
-        n83 = mtg83.schedule_set.filter(name='fakeagenda1')
-        self.assertNotEqual(n83, None)
-
-    def test_updateAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-        self.assertTrue(a83.visible)
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='application/json'
-
-        # try to create a new agenda
-        resp = self.client.put('/meeting/83/agendas/%s.json' % (a83.name),
-                               data='visible=0',
-                               content_type="application/x-www-form-urlencoded",
-                               **extra_headers)
-
-        self.assertEqual(resp.status_code, 200)
-
-        # see that in fact wlo can create a new timeslot
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-        self.assertFalse(a83.visible)
-
-    def test_deleteAgendaSecretariat(self):
-        mtg83 = get_meeting(83)
-        a83   = mtg83.agenda
-        self.assertNotEqual(a83, None)
-
-        # try to delete an agenda
-        resp = self.client.delete('/meeting/83/agendas/%s.json' % (a83.name), **auth_wlo)
-        self.assertEqual(resp.status_code, 200)
-
-        # see that in fact wlo can delete an existing room.
-        mtg83 = get_meeting(83)
-        a83c = mtg83.schedule_set.filter(pk = a83.pk).count()
-        self.assertEqual(a83c, 0)
-        self.assertEqual(mtg83.agenda, None)
-
-    #
-    # MEETING API
-    #
-    def test_getMeetingJson(self):
-        resp = self.client.get('/meeting/83.json')
-        m83json = json.loads(resp.content)
-        self.assertNotEqual(m83json, None)
-
-    def test_setMeetingAgendaNonSecretariat(self):
-        mtg83 = get_meeting(83)
-        self.assertNotEqual(mtg83.agenda, None)
-
-        # try to create a new agenda
-        resp = self.client.put('/meeting/83.json',
-                               data="agenda=None",
-                               content_type="application/x-www-form-urlencoded",
-                               **auth_joeblow)
-
-        self.assertEqual(resp.status_code, 403)
-        self.assertNotEqual(mtg83.agenda, None)
-
-    def test_setMeetingAgendaNoneSecretariat(self):
-        mtg83 = get_meeting(83)
-        self.assertNotEqual(mtg83.agenda, None)
-
-        extra_headers = auth_wlo
-        extra_headers['HTTP_ACCEPT']='application/json'
-
-        # try to create a new agenda
-        resp = self.client.post('/meeting/83.json',
-                                data="agenda=None",
-                                content_type="application/x-www-form-urlencoded",
-                                **extra_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        # new to reload the object
-        mtg83 = get_meeting(83)
-        self.assertEqual(mtg83.agenda, None)
-
-    def test_setMeetingAgendaSecretariat(self):
+    def test_setMeetingAgendaSecretariat2(self):
         mtg83 = get_meeting(83)
         new_sched = mtg83.schedule_set.create(name="funny",
                                               meeting=mtg83,

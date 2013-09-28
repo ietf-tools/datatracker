@@ -1,6 +1,6 @@
 import sys
 from django.test              import Client
-from ietf.meeting.tests.ttest import AgendaTransactionalTestCase
+from django.test import TestCase
 #from ietf.person.models import Person
 from django.contrib.auth.models import User
 from ietf.ietfauth.decorators import has_role
@@ -18,7 +18,7 @@ auth_joeblow = {'REMOTE_USER':'joeblow'}
 auth_ferrel = {'REMOTE_USER':'stephen.farrell@cs.tcd.ie'}
 
 
-class AuthDataTestCase(AgendaTransactionalTestCase):
+class AuthDataTestCase(TestCase):
     fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
                  'meeting83.json',
                  'constraint83.json',

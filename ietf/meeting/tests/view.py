@@ -1,7 +1,7 @@
 import re
 import sys
 from django.test.client       import Client
-from ietf.meeting.tests.ttest import AgendaTransactionalTestCase
+from django.test import TestCase
 #from ietf.person.models import Person
 from django.contrib.auth.models import User
 from settings import BASE_DIR
@@ -11,9 +11,9 @@ from ietf.meeting.helpers import get_meeting
 from django.core.urlresolvers import reverse
 from ietf.meeting.views import edit_agenda
 
-capture_output = False
+capture_output = True
 
-class ViewTestCase(AgendaTransactionalTestCase):
+class ViewTestCase(TestCase):
     fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
                  'meeting83.json',
                  'constraint83.json',

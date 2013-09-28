@@ -1,13 +1,13 @@
 import sys
 from django.test              import Client
-from ietf.meeting.tests.ttest import AgendaTransactionalTestCase
+from django.test import TestCase
 from ietf.name.models     import SessionStatusName
 from ietf.person.models   import Person
 from ietf.group.models    import Group
 from ietf.meeting.models  import TimeSlot, Session, Meeting, ScheduledSession
 from ietf.meeting.helpers import get_meeting, get_schedule
 
-class AgendaInfoTestCase(AgendaTransactionalTestCase):
+class AgendaInfoTestCase(TestCase):
     fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
                  'meeting83.json',
                  'constraint83.json',
@@ -142,8 +142,8 @@ class AgendaInfoTestCase(AgendaTransactionalTestCase):
 
     def test_serialize_constraint(self):
         session1  = Session.objects.get(pk=2157)
-        sitefqdn  = "http://datatracker.ietf.org"
-        json_dict = session1.constraints_dict(sitefqdn)
+        host_scheme  = "http://datatracker.ietf.org"
+        json_dict = session1.constraints_dict(host_scheme)
         self.assertEqual(len(json_dict), 25)
 
     def test_avtcore_has_two_slots(self):
