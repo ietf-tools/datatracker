@@ -289,47 +289,6 @@ def get_wg_list(scheduledsessions):
     wg_name_list = get_wg_name_list(scheduledsessions)
     return Group.objects.filter(acronym__in = set(wg_name_list)).order_by('parent__acronym','acronym')
 
-def read_agenda_file(num, doc):
-    # XXXX FIXME: the path fragment in the code below should be moved to
-    # settings.py.  The *_PATH settings should be generalized to format()
-    # style python format, something like this:
-    #  DOC_PATH_FORMAT = { "agenda": "/foo/bar/agenda-{meeting.number}/agenda-{meeting-number}-{doc.group}*", }
-    path = os.path.join(settings.AGENDA_PATH, "%s/agenda/%s" % (num, doc.external_url))
-    if os.path.exists(path):
-        with open(path) as f:
-            return f.read()
-    else:
-        return None
-
-def session_draft_list(num, session):
-    #extensions = ["html", "htm", "txt", "HTML", "HTM", "TXT", ]
-    result = []
-    found = False
-
-    drafts = set()
-
-    for agenda in Document.objects.filter(type="agenda", session__meeting__number=num, session__group__acronym=session):
-        content = read_agenda_file(num, agenda)
-        if content != None:
-            found = True
-            drafts.update(re.findall('(draft-[-a-z0-9]*)', content))
-
-    if not found:
-        raise Http404("No agenda for the %s group of IETF %s is available" % (session, num))
-
-    for draft in drafts:
-        try:
-            if (re.search('-[0-9]{2}$',draft)):
-                doc_name = draft
-            else:
-                id = InternetDraft.objects.get(filename=draft)
-                #doc = IdWrapper(id)
-                doc_name = draft + "-" + id.revision
-            result.append(doc_name)
-        except InternetDraft.DoesNotExist:
-            pass
-    return sorted(list(set(result)))
-
 
 def get_meeting(num=None):
     if (num == None):
