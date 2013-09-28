@@ -154,7 +154,6 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     'django.contrib.messages',
     'south',
-    'permissions',
     'ietf.person',
     'ietf.name',
     'ietf.group',
