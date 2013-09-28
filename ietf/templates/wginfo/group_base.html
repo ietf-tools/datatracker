@@ -51,14 +51,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .ietf-concluded-warning { background:red;color:white;padding:2px 2px;}
 .ietf-proposed-bg { }
 .ietf-proposed-warning { background:green;color:white;padding:2px 2px;}
-.ietf-box th {
-  font-weight: bold;
-  padding-top: 1em;
-  text-align: left;
-}
-.ietf-box tr:first-child th {
-  padding-top: 0;
-}
+.ietf-box th { font-weight: bold; padding-top: 1em; text-align: left; }
+.ietf-box tr:first-child th { padding-top: 0; }
 {% endblock morecss %}
 
 {% block content %}
@@ -73,7 +67,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <div>
   <a {% if selected == "documents" %}class="selected"{% else %}href="{% url ietf.wginfo.views.group_documents acronym=group.acronym %}"{% endif %}>Documents</a> |
   <a {% if selected == "charter" %}class="selected"{% else %}href="{% url ietf.wginfo.views.group_charter acronym=group.acronym %}"{% endif %}>Charter</a> |
-
   <a {% if selected == "history" %}class="selected"{% else %}href="{% url ietf.wginfo.views.history acronym=group.acronym %}"{% endif %}>History</a> |
   {% if group.list_archive|startswith:"http:" or group.list_archive|startswith:"https:" or group.list_archive|startswith:"ftp:" %}
   <a href="{{ group.list_archive }}">List Archive &raquo;</a> |
@@ -83,9 +76,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   {% if menu_actions %}
   <div class="actions">
-  {% for name, url in menu_actions %}
+    {% for name, url in menu_actions %}
     <a href="{{ url }}">{{ name }}</a>
-  {% endfor %}
+    {% endfor %}
   </div>
   {% endif %}
 </div>

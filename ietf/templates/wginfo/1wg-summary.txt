@@ -4,7 +4,7 @@
 
 {% for area in areas %}{{ area.name }} ({{ area.acronym }})
 {{ area.name|dashify }}------{% for ad in area.ads %}
-  {{ ad.person }} <{{ ad.address }}>{% endfor %}
+  {{ ad.person.plain_name }} <{{ ad.email.address }}>{% endfor %}
 
 {% for group in area.groups %}{{ group.name }} ({{ group.acronym }})
 {% include "wginfo/group_entry.txt" %}

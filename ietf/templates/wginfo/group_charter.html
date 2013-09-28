@@ -59,7 +59,7 @@ is occasionally incorrect.</span>
     <td>Chair{{ group.chairs|pluralize }}:</td>
     <td>
       {% for chair in group.chairs %}
-      <a href="mailto:{{ chair.address }}">{{ chair.person.plain_name }} &lt;{{ chair.address }}&gt;</a><br/>
+      <a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }} &lt;{{ chair.email.address }}&gt;</a><br/>
       {% endfor %}
   </td>
   </tr>
@@ -77,7 +77,7 @@ is occasionally incorrect.</span>
     <td>Tech Advisor{{ group.techadvisors|pluralize }}:</td>
     <td>
       {% for techadvisor in group.techadvisors %}
-      <a href="mailto:{{ techadvisor.address }}">{{ techadvisor.person.plain_name }} &lt;{{ techadvisor.address }}&gt;</a><br/>
+      <a href="mailto:{{ techadvisor.email.address }}">{{ techadvisor.person.plain_name }} &lt;{{ techadvisor.email.address }}&gt;</a><br/>
       {% endfor %}
     </td>
   </tr>
@@ -88,7 +88,7 @@ is occasionally incorrect.</span>
   <td>Editor{{ group.editors|pluralize }}:</td>
   <td>
     {% for editor in group.editors %}
-    <a href="mailto:{{ editor.address }}">{{ editor.person.plain_name }} &lt;{{ editor.address }}&gt;</a><br/>
+    <a href="mailto:{{ editor.email.address }}">{{ editor.person.plain_name }} &lt;{{ editor.email.address }}&gt;</a><br/>
     {% endfor %}
   </td>
   </tr>
@@ -99,7 +99,7 @@ is occasionally incorrect.</span>
     <td>Secretar{{ group.secretaries|pluralize:"y,ies" }}:</td>
     <td>
       {% for secretary in group.secretaries %}
-      <a href="mailto:{{ secretary.address }}">{{ secretary.person.plain_name }} &lt;{{ secretary.address }}&gt;</a><br/>
+      <a href="mailto:{{ secretary.email.address }}">{{ secretary.person.plain_name }} &lt;{{ secretary.email.address }}&gt;</a><br/>
       {% endfor %}
     </td>
   </tr>
@@ -110,7 +110,7 @@ is occasionally incorrect.</span>
     <td>Delegate{{ group.delegates|pluralize }}:</td>
     <td>
       {% for delegate in group.delegates %}
-      <a href="mailto:{{ delegate.address }}">{{ delegate.person.plain_name }} &lt;{{ delegate.address }}&gt;</a><br/>
+      <a href="mailto:{{ delegate.email.address }}">{{ delegate.person.plain_name }} &lt;{{ delegate.email.address }}&gt;</a><br/>
       {% endfor %}
     </td>
   </tr>
@@ -142,10 +142,10 @@ is occasionally incorrect.</span>
 
 {% with group.groupurl_set.all as urls %}
 {% if urls %}
-<p>In addition to the charter maintained by the IETF Secretariat, there is additional information about this working group on the Web at: 
-{% for url in urls %}
-<a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}, {% endif %}
-{% endfor %}
+<p>In addition to the charter maintained by the IETF Secretariat, there is additional information about this working group on the Web at:
+  {% for url in urls %}
+  <a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}, {% endif %}
+  {% endfor %}
 </p>
 {% endif %}
 {% endwith %}

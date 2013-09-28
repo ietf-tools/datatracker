@@ -53,47 +53,44 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    {% for area in areas %}
    <h2 class="ietf-divider" id="{{area.name|cut:" "}}">{{ area.name }}</h2>
 
-   {% for ad in area.ads %}
-   {% if forloop.first %}
-   <p>Area Director{{ forloop.revcounter|pluralize }}:</p>
+   {% if area.ads %}
+   <p>Area Director{{ area.ads|pluralize }}:</p>
    <table style="margin-left: 2em" class="ietf-wg-table">
-      {% endif %}
-      <tr><td><span class="square bgcolor{{forloop.counter}}">&nbsp;</span></td> <td><a href="mailto:{{ ad.address }}">{{ ad.person.plain_name }} &lt;{{ ad.address }}&gt;</a>{% if ad.incoming %} (Incoming AD){% endif %}</td></tr>
-      {% if forloop.last %}
+      {% for ad in area.ads %}
+      <tr>
+         <td><span class="square bgcolor{{forloop.counter}}">&nbsp;</span></td>
+         <td><a href="mailto:{{ ad.email.address }}">{{ ad.person.plain_name }} &lt;{{ ad.email.address }}&gt;</a>{% if ad.name == "pre-ad" %} (Incoming AD){% endif %}</td>
+      </tr>
+     {% endfor %}
    </table>
    {% endif %}
-   {% endfor %}
 
-   {% for url in area.urls %}
-   {% if forloop.first %}
-   <p>Area Specific Web Page{{ forloop.revcounter|pluralize}}:</p>
+   {% if area.urls %}
+   <p>Area Specific Web Page{{ area.urls|pluralize}}:</p>
    <p style="margin-left: 2em">
-      {% endif %}
+      {% for url in area.urls %}
       <a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}<br/>{% endif %}
-      {% if forloop.last %}
+      {% endfor %}
    </p>
    {% endif %}
-   {% endfor %}
 
-   {% for wg in area.wgs %}
-   {% if forloop.first %}
-   <p>Active Working Groups:</p>
+   {% if area.groups %}
+   <p>Active Working Group{{ area.groups|pluralize}}:</p>
    <div style="margin-left:2em;">
       <table class="ietf-wg-table">
-	 {% endif %}
+         {% for group in area.groups %}
 	 <tr>
-	    <td width="10%;"><a href="/wg/{{ wg.acronym }}/">{{ wg.acronym }}</a></td>
-	    <td width="1%">{% for ad in area.ads %}{% ifequal ad.person_id wg.ad_id %}<span title="AD for {{ wg.acronym }}: {{ad.person }}" class="square bgcolor{{forloop.counter}}"></span>{% endifequal %}{% endfor %}</td>
-	    <td width="50%">{{ wg.name }}</td>
-	    <td width="39%">{% for chair in wg.chairs %}<a href="mailto:{{ chair.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+	    <td width="10%;"><a href="/wg/{{ group.acronym }}/">{{ group.acronym }}</a></td>
+	    <td width="1%">{% for ad in area.ads %}{% if ad.person_id == group.ad_id %}<span title="AD for {{ group.acronym }}: {{ ad.person }}" class="square bgcolor{{forloop.counter}}"></span>{% endif %}{% endfor %}</td>
+	    <td width="50%">{{ group.name }}</td>
+	    <td width="39%">{% for chair in group.chairs %}<a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</td>
 	 </tr>
-	 {% if forloop.last %}
+         {% endfor %}
       </table>
    </div>
-   {% endif %}
-   {% empty %}
+   {% else %}
    <p>No Active Working Groups</p>
-   {% endfor %}{# wg #}
+   {% endif %}
 
    {% endfor %}{# area #}
 

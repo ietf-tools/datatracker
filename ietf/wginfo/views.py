@@ -41,22 +41,22 @@ from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.views_search import SearchForm, retrieve_search_results
-from ietf.ipr.models import IprDetail
-from ietf.group.models import Group, GroupURL
+from ietf.group.models import Group, GroupURL, Role
 from ietf.doc.models import State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
-from ietf.person.models import Email
 from ietf.group.utils import get_charter_text
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.ietfauth.utils import has_role
 
+def roles(group, role_name):
+    return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
 
 def fill_in_charter_info(group, include_drafts=False):
     group.areadirector = group.ad.role_email("ad", group.parent) if group.ad else None
-    group.chairs = Email.objects.filter(role__group=group, role__name="chair").select_related("person")
-    group.techadvisors = Email.objects.filter(role__group=group, role__name="techadv").select_related("person")
-    group.editors = Email.objects.filter(role__group=group, role__name="editor").select_related("person")
-    group.secretaries = Email.objects.filter(role__group=group, role__name="secr").select_related("person")
+    group.chairs =roles(group, "chair")
+    group.techadvisors = roles(group, "techadv")
+    group.editors = roles(group, "editor")
+    group.secretaries = roles(group, "secr")
     milestone_state = "charter" if group.state_id == "proposed" else "active"
     group.milestones = group.groupmilestone_set.filter(state=milestone_state).order_by('due')
 
@@ -77,19 +77,16 @@ def fill_in_charter_info(group, include_drafts=False):
                 a.rel = RelatedDocument.objects.filter(source=a.document).distinct()
                 a.invrel = RelatedDocument.objects.filter(target=a).distinct()
 
-def extract_last_name(email):
-    return email.person.name_parts()[3]
-
-def extract_group_chairs(group):
-    return sorted(Email.objects.filter(role__group=group, role__name="chair").select_related("person"), key=extract_last_name)
+def extract_last_name(role):
+    return role.person.name_parts()[3]
 
 def wg_summary_area(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:
-        area.ads = sorted(Email.objects.filter(role__group=area, role__name="ad").select_related("person"), key=extract_last_name)
+        area.ads = sorted(roles(area, "ad"), key=extract_last_name)
         area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("acronym")
         for group in area.groups:
-            group.chairs = extract_group_chairs(group)
+            group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
 
     areas = [a for a in areas if a.groups]
 
@@ -101,7 +98,7 @@ def wg_summary_acronym(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     groups = Group.objects.filter(type="wg", state="active").order_by("acronym").select_related("parent")
     for group in groups:
-        group.chairs = extract_group_chairs(group)
+        group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
     return render_to_response('wginfo/1wg-summary-by-acronym.txt',
                               { 'areas': areas,
                                 'groups': groups },
@@ -110,7 +107,7 @@ def wg_summary_acronym(request):
 def wg_charters(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:
-        area.ads = sorted(Email.objects.filter(role__group=area, role__name="ad").select_related("person"), key=extract_last_name)
+        area.ads = sorted(roles(area, "ad"), key=extract_last_name)
         area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("name")
         for group in area.groups:
             fill_in_charter_info(group, include_drafts=True)
@@ -123,7 +120,7 @@ def wg_charters_by_acronym(request):
     areas = dict((a.id, a) for a in Group.objects.filter(type="area", state="active").order_by("name"))
 
     for area in areas.itervalues():
-        area.ads = sorted(Email.objects.filter(role__group=area, role__name="ad").select_related("person"), key=extract_last_name)
+        area.ads = sorted(roles(area, "ad"), key=extract_last_name)
 
     groups = Group.objects.filter(type="wg", state="active").exclude(parent=None).order_by("acronym")
     for group in groups:
@@ -137,20 +134,13 @@ def active_wgs(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:
         # dig out information for template
-        area.ads = []
-        for e in Email.objects.filter(role__group=area, role__name="ad").select_related("person"):
-            e.incoming = False
-            area.ads.append(e)
+        area.ads = (list(sorted(roles(area, "ad"), key=extract_last_name))
+                    + list(sorted(roles(area, "pre-ad"), key=extract_last_name)))
 
-        for e in Email.objects.filter(role__group=area, role__name="pre-ad").select_related("person"):
-            e.incoming = True
-            area.ads.append(e)
-
-        area.ads.sort(key=lambda e: (e.incoming, extract_last_name(e)))
-        area.wgs = Group.objects.filter(parent=area, type="wg", state="active").order_by("acronym")
+        area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("acronym")
         area.urls = area.groupurl_set.all().order_by("name")
-        for wg in area.wgs:
-            wg.chairs = extract_group_chairs(wg)
+        for group in area.groups:
+            group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
 
     return render_to_response('wginfo/active_wgs.html', {'areas':areas}, RequestContext(request))
 
@@ -275,7 +265,7 @@ def group_charter(request, acronym):
     group = get_object_or_404(Group, type="wg", acronym=acronym)
 
     fill_in_charter_info(group, include_drafts=False)
-    group.delegates = Email.objects.filter(role__group=group, role__name="delegate").select_related("person")
+    group.delegates = roles(group, "delegate")
 
     e = group.latest_event(type__in=("changed_state", "requested_close",))
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"

@@ -7,22 +7,22 @@
  Current Status: {{ group.state.name }}
 
  Chair{{ group.chairs|pluralize }}:
-{% for chair in group.chairs %}     {{ chair.person.name }} <{{chair.address}}>
+{% for chair in group.chairs %}     {{ chair.person.name }} <{{chair.email.address}}>
 {% endfor %}
  {{ group.area.name}} Directors:
-{% for ad in group.area.ads %}     {{ ad.person.plain_name }} <{{ ad }}>
+{% for ad in group.area.ads %}     {{ ad.person.plain_name }} <{{ ad.email.address }}>
 {% endfor %}
 {% if group.areadirector %} {{ group.area.name }} Advisor:
      {{ group.areadirector.person.plain_name }} <{{ group.areadirector.address }}>
 {% endif %}{% if group.techadvisors %}
  Tech Advisor{{ group.techadvisors|pluralize }}:
-{% for techadvisor in group.techadvisors %}     {{ techadvisor.person.plain_name }} <{{ techadvisor.address }}>
+{% for techadvisor in group.techadvisors %}     {{ techadvisor.person.plain_name }} <{{ techadvisor.email.address }}>
 {% endfor %}{% endif %}{% if group.editors %}
  Editor{{ group.editors|pluralize }}:
-{% for editor in group.editors %}     {{ editor.person.plain_name }} <{{ editor.address}}>
+{% for editor in group.editors %}     {{ editor.person.plain_name }} <{{ editor.email.address }}>
 {% endfor %}{% endif %}{% if group.secretaries %}
  Secretar{{ group.secretaries|pluralize:"y,ies" }}:
-{% for secretary in group.secretaries %}     {{ secretary.person.plain_name }} <{{ secretary.address }}>
+{% for secretary in group.secretaries %}     {{ secretary.person.plain_name }} <{{ secretary.email.address }}>
 {% endfor %}{% endif %}
  Mailing Lists:
      General Discussion: {{ group.list_email }}
