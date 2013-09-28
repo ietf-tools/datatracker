@@ -9,7 +9,7 @@ trap 'echo "$program($LINENO): Command failed with error code $? ($0 $*)"; exit 
 if [ "$*" ]; then apps="$@"; graph="${1%.*}"; else apps=$(ls */models.py | sed 's!/models.py!!'); graph="models"; fi
 
 newapps="doc group meeting message person name"
-legacyapps="announcements idindex idrfc idtracker iesg ietfauth ietfworkflows ipr liaisons mailinglists proceedings redirects submit wgcharter wginfo"
+legacyapps="announcements idindex idrfc idtracker iesg ietfauth ipr liaisons mailinglists proceedings redirects submit wgcharter wginfo"
 
 proxy="$(grep ^class */proxy.py | tr '()' '  ' | awk '{printf $2 ","}')"
 names="$(grep ^class name/models.py | tr '()' '  ' | awk '{printf $2 ","}')"
