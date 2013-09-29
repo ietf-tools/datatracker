@@ -37,7 +37,7 @@
 &lt;
 </div>
 
-<div href="{{ meeting.relurl }}" class="agenda_list_title">
+<div href="{{ meeting.json_url }}" class="agenda_list_title">
 <p>Meeting {{meeting.number}}</p>
 </div>
 
@@ -50,7 +50,7 @@
     </td></tr></table>
   </div>
 
-  <form action="{{schedule.relurl}}" method="PUT">
+  <form action="{{schedule.json_url}}" method="PUT">
   <fieldset>
      <table>
         {{ form.as_table }}

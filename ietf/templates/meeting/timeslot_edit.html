@@ -102,7 +102,7 @@ function setup_slots(){
 	  {% for slot in slot_slices|lookup:day %}
 	      <th class="day_{{day}} room_title">
                   <div
-                       href="{{slot.relurl}}"
+                       href="{{slot.json_url}}"
                        timeslot_id="{{slot.pk}}"
                        class="delete delete_slot bottom_left"
                        id="delete_{{day|date:'Y-m-d'}}_{{slot.time|date:'Hi'}}">X</div>
@@ -120,7 +120,7 @@ function setup_slots(){
     <th class="vert_time">
       <div class="delete delete_room bottom_left"
 	   id="delete_{{r|to_acceptable_id}}"
-	   href="{{r.relurl}}"
+	   href="{{r.json_url}}"
 	   roomid="{{r.pk}}">X</div>
       <div class="right room_name">{{r}} <span class="capacity">({{r.capacity}})</span></div>
 

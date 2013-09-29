@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+from urlparse import urljoin
+
 from django.db import models
 from django.db.models import Q
 
@@ -8,7 +10,8 @@ from ietf.person.models import Email, Person
 from ietf.group.colors import fg_group_colors, bg_group_colors
 
 import datetime
-
+import debug
+    
 class GroupInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     name = models.CharField(max_length=80)
@@ -88,20 +91,20 @@ class Group(GroupInfo):
     def bg_color(self):
         return bg_group_colors[self.upcase_acronym]
 
-    def url(self, sitefqdn):
-        return "%s/group/%s.json" % (sitefqdn, self.acronym)
+    def json_url(self):
+        return "/group/%s.json" % (self.acronym,)
 
-    def json_dict(self, sitefqdn):
+    def json_dict(self, host_scheme):
         group1= dict()
-        group1['href'] = self.url(sitefqdn)
+        group1['href'] = urljoin(host_scheme, self.json_url())
         group1['acronym'] = self.acronym
         group1['name']    = self.name
         group1['state']   = self.state.slug
         group1['type']    = self.type.slug
-        group1['parent_href']  = self.parent.url(sitefqdn)
+        group1['parent_href']  = urljoin(host_scheme, self.parent.json_url())
         # uncomment when people URL handle is created
         #if self.ad is not None:
-        #    group1['ad_href']      = self.ad.url(sitefqdn)
+        #    group1['ad_href']      = urljoin(host_scheme, self.ad.url())
         group1['list_email'] = self.list_email
         group1['list_subscribe'] = self.list_subscribe
         group1['list_archive'] = self.list_archive

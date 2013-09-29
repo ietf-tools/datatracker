@@ -16,8 +16,8 @@ log = logging.getLogger(__name__)
 def group_json(request, groupname):
     group = get_object_or_404(Group, acronym=groupname)
 
-    #print "group request is: %s\n" % (request.get_host_protocol())
-    return HttpResponse(json.dumps(group.json_dict(request.get_host_protocol()),
+    #print "group request is: %s\n" % (request.build_absolute_uri('/'))
+    return HttpResponse(json.dumps(group.json_dict(request.build_absolute_uri('/')),
                                    sort_keys=True, indent=2),
                         mimetype="text/json")
 

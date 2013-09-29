@@ -92,14 +92,14 @@ class Person(PersonInfo):
     def person(self): # little temporary wrapper to help porting to new schema
         return self
 
-    def url(self, sitefqdn):
-        return "%s/people/%s.json" % (sitefqdn, self.id)
+    def json_url(self):
+        return "/person/%s.json" % (self.id, )
 
     # person json not yet implemented
-    #def json_dict(self, sitefqdn):
+    #def json_dict(self, host_scheme):
     #    ct1 = dict()
     #    ct1['person_id'] = self.id
-    #    ct1['href']      = self.url(sitefqdn)
+    #    ct1['href']      = self.url(host_scheme)
     #    ct1['name']      = self.name
     #    ct1['ascii']     = self.ascii
     #    ct1['affliation']= self.affliation

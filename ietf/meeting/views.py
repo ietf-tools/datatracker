@@ -46,8 +46,7 @@ from ietf.meeting.helpers import get_areas, get_area_list_from_sessions, get_pse
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_scheduledsessions_from_schedule, get_all_scheduledsessions_from_schedule
 from ietf.meeting.helpers import get_modified_from_scheduledsessions
-from ietf.meeting.helpers import get_wg_list, session_draft_list
-from ietf.meeting.helpers import get_meeting, get_schedule, read_agenda_file, agenda_permissions
+from ietf.meeting.helpers import get_wg_list, get_meeting, get_schedule, agenda_permissions
 
 
 @decorator_from_middleware(GZipMiddleware)
@@ -240,8 +239,8 @@ def edit_timeslots(request, num=None):
 
     time_slices,date_slices,slots = meeting.build_timeslices()
 
-    meeting_base_url = meeting.url(request.get_host_protocol(), "")
-    site_base_url =request.get_host_protocol()
+    meeting_base_url = request.build_absolute_uri(meeting.base_url())
+    site_base_url =request.build_absolute_uri('/')
     rooms = meeting.room_set.order_by("capacity")
     rooms = rooms.all()
 
@@ -289,8 +288,8 @@ def edit_agenda(request, num=None, schedule_name=None):
     schedule = get_schedule(meeting, schedule_name)
     #sys.stdout.write("2 requestor: %u for sched owned by: %u \n" % ( requestor.id, schedule.owner.id ))
 
-    meeting_base_url = meeting.url(request.get_host_protocol(), "")
-    site_base_url =request.get_host_protocol()
+    meeting_base_url = request.build_absolute_uri(meeting.base_url())
+    site_base_url =request.build_absolute_uri('/')
     rooms = meeting.room_set.order_by("capacity")
     rooms = rooms.all()
     saveas = SaveAsForm()
@@ -380,7 +379,6 @@ def edit_agendas(request, num=None, order=None):
 
     return HttpResponse(render_to_string("meeting/agenda_list.html",
                                          {"meeting":   meeting,
-                                          "sitefqdn":  request.get_host_protocol(),
                                           "schedules": schedules.all()
                                           },
                                          RequestContext(request)),
@@ -615,20 +613,6 @@ def session_draft_pdf(request, num, session):
     os.unlink(pdfn)
     return HttpResponse(pdf_contents, mimetype="application/pdf")
 
-def get_meeting(num=None):
-    if (num == None):
-        meeting = Meeting.objects.filter(type="ietf").order_by("-date")[:1].get()
-    else:
-        meeting = get_object_or_404(Meeting, number=num)
-    return meeting
-
-def get_schedule(meeting, name=None):
-    if name is None:
-        schedule = meeting.agenda
-    else:
-        schedule = get_object_or_404(meeting.schedule_set, name=name)
-    return schedule
-
 def week_view(request, num=None):
     meeting = get_meeting(num)
     timeslots = TimeSlot.objects.filter(meeting__id = meeting.id)
@@ -681,9 +665,7 @@ def ical_agenda(request, num=None, schedule_name=None):
             tzfn = os.path.join(settings.TZDATA_ICS_PATH, meeting.time_zone + ".ics")
             tzf = open(tzfn)
             icstext = tzf.read()
-            debug.show('icstext[:128]')
             vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
-            debug.show('vtimezone[:128]')
             tzf.close()
         except IOError:
             vtimezone = None

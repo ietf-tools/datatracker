@@ -36,7 +36,7 @@
 &lt;
 </div>
 
-<div href="{{ meeting.relurl }}" class="agenda_list_title">
+<div href="{{ meeting.json_url }}" class="agenda_list_title">
 <p>Meeting {{meeting.number}}</p>
 </div>
 
@@ -54,7 +54,7 @@
     <th>Public</th>
   </tr>
   {% for agenda in schedules %}
-    <tr agenda_name="{{agenda.name}}" id="agenda_name_{{agenda.name|slugify}}" href="{{agenda|args:sitefqdn|call:"url"}}" class="{{agenda.official_class}}_row">
+    <tr agenda_name="{{agenda.name}}" id="agenda_name_{{agenda.name|slugify}}" href="{{agenda.base_url}}" class="{{agenda.official_class}}_row">
       <td class="agenda_mark agenda_data"> <span class="styled_button agenda_official_mark {{agenda.official_class}}">{{ agenda.official_token }}</span></td>
       <td class="agenda_data"> <span class="agenda_owner">{{ agenda.owner }}</span> </td>
       <td class="agenda_data">

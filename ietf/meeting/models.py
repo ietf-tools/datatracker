@@ -1,6 +1,8 @@
 # old meeting models can be found in ../proceedings/models.py
 
 import pytz, datetime
+from urlparse import urljoin
+import copy
 
 from django.db import models
 from django.conf import settings
@@ -110,21 +112,20 @@ class Meeting(models.Model):
             return qs[0]
         return None
 
-    def url(self, sitefqdn, exten=".json"):
-        return "%s/meeting/%s%s" % (sitefqdn, self.number, exten)
+    def json_url(self):
+        return "/meeting/%s.json" % (self.number, )
 
-    @property
-    def relurl(self):
-        return self.url("")
+    def base_url(self):
+        return "/meeting/%s" % (self.number, )
 
-    def json_dict(self, sitefqdn):
+    def json_dict(self, host_scheme):
         # unfortunately, using the datetime aware json encoder seems impossible,
         # so the dates are formatted as strings here.
         agenda_url = ""
         if self.agenda:
-            agenda_url = self.agenda.url(sitefqdn)
+            agenda_url = urljoin(host_scheme, self.agenda.base_url())
         return {
-            'href':                 self.url(sitefqdn),
+            'href':                 urljoin(host_scheme, self.base_url()),
             'name':                 self.number,
             'submission_start_date':   fmt_date(self.get_submission_start_date()),
             'submission_cut_off_date': fmt_date(self.get_submission_cut_off_date()),
@@ -135,7 +136,7 @@ class Meeting(models.Model):
             'country':                 self.country,
             'time_zone':               self.time_zone,
             'venue_name':              self.venue_name,
-            'venus_addr':              self.venue_addr,
+            'venue_addr':              self.venue_addr,
             'break_area':              self.break_area,
             'reg_area':                self.reg_area
             }
@@ -205,16 +206,12 @@ class Room(models.Model):
                                     duration=ts.duration)
         self.meeting.create_all_timeslots()
 
-    def url(self, sitefqdn):
-        return "%s/meeting/%s/room/%s.json" % (sitefqdn, self.meeting.number, self.id)
+    def json_url(self):
+        return "/meeting/%s/room/%s.json" % (self.meeting.number, self.id)
 
-    @property
-    def relurl(self):
-        return self.url("")
-
-    def json_dict(self, sitefqdn):
+    def json_dict(self, host_scheme):
         return {
-            'href':                 self.url(sitefqdn),
+            'href':                 urljoin(host_scheme, self.json_url()),
             'name':                 self.name,
             'capacity':             self.capacity,
             }
@@ -363,12 +360,8 @@ class TimeSlot(models.Model):
         ts["domid"]    = self.js_identifier
         return ts
 
-    def url(self, sitefqdn):
-        return "%s/meeting/%s/timeslot/%s.json" % (sitefqdn, self.meeting.number, self.id)
-
-    @property
-    def relurl(self):
-        return self.url("")
+    def json_url(self):
+        return "/meeting/%s/timeslot/%s.json" % (self.meeting.number, self.id)
 
 
     """
@@ -377,12 +370,14 @@ class TimeSlot(models.Model):
     rooms.
     """
     def create_concurrent_timeslots(self):
-        ts = self
-        for room in self.meeting.room_set.all():
+        rooms = self.meeting.room_set.all()
+        self.room = rooms[0]
+	self.save()
+        for room in rooms[1:]:
+            ts = copy.copy(self)
+            ts.id = None
             ts.location = room
             ts.save()
-            # this is simplest way to "clone" an object...
-            ts.id = None
         self.meeting.create_all_timeslots()
 
     """
@@ -438,19 +433,11 @@ class Schedule(models.Model):
     def __unicode__(self):
         return u"%s:%s(%s)" % (self.meeting, self.name, self.owner)
 
-    def url(self, sitefqdn):
-        return "%s/meeting/%s/agenda/%s" % (sitefqdn, self.meeting.number, self.name)
+    def base_url(self):
+        return "/meeting/%s/agenda/%s" % (self.meeting.number, self.name)
 
-    @property
-    def relurl(self):
-        return self.url("")
-
-    def url_edit(self, sitefqdn):
-        return "%s/meeting/%s/agenda/%s/edit" % (sitefqdn, self.meeting.number, self.name)
-
-    @property
-    def relurl_edit(self):
-        return self.url_edit("")
+    def url_edit(self):
+        return "/meeting/%s/agenda/%s/edit" % (self.meeting.number, self.name)
 
     @property
     def visible_token(self):
@@ -489,14 +476,14 @@ class Schedule(models.Model):
 
     # I'm loath to put calls to reverse() in there.
     # is there a better way?
-    def url(self, sitefqdn):
+    def json_url(self):
         # XXX need to include owner.
-        return "%s/meeting/%s/agendas/%s.json" % (sitefqdn, self.meeting.number, self.name)
+        return "/meeting/%s/agendas/%s.json" % (self.meeting.number, self.name)
 
-    def json_dict(self, sitefqdn):
+    def json_dict(self, host_scheme):
         sch = dict()
         sch['schedule_id'] = self.id
-        sch['href']        = self.url(sitefqdn)
+        sch['href']        = urljoin(host_scheme, self.json_url())
         if self.visible:
             sch['visible']  = "visible"
         else:
@@ -505,7 +492,7 @@ class Schedule(models.Model):
             sch['public']   = "public"
         else:
             sch['public']   = "private"
-        sch['owner']       = self.owner.url(sitefqdn)
+        sch['owner']       = urljoin(host_scheme, self.owner.json_url())
         # should include href to list of scheduledsessions, but they have no direct API yet.
         return sch
 
@@ -631,7 +618,7 @@ class ScheduledSession(models.Model):
     def json_dict(self, selfurl):
         ss = dict()
         ss['scheduledsession_id'] = self.id
-        #ss['href']          = self.url(sitefqdn)
+        #ss['href']          = self.url(host_scheme)
         ss['empty'] =  self.empty_str
         ss['timeslot_id'] = self.timeslot.id
         if self.session:
@@ -664,21 +651,21 @@ class Constraint(models.Model):
     def __unicode__(self):
         return u"%s %s %s" % (self.source, self.name.name.lower(), self.target)
 
-    def url(self, sitefqdn):
-        return "%s/meeting/%s/constraint/%s.json" % (sitefqdn, self.meeting.number, self.id)
+    def json_url(self):
+        return "/meeting/%s/constraint/%s.json" % (self.meeting.number, self.id)
 
-    def json_dict(self, sitefqdn):
+    def json_dict(self, host_scheme):
         ct1 = dict()
         ct1['constraint_id'] = self.id
-        ct1['href']          = self.url(sitefqdn)
+        ct1['href']          = urljoin(host_scheme, self.json_url())
         ct1['name']          = self.name.slug
         if self.person is not None:
-            ct1['person_href'] = self.person.url(sitefqdn)
+            ct1['person_href'] = urljoin(host_scheme, self.person.json_url())
         if self.source is not None:
-            ct1['source_href'] = self.source.url(sitefqdn)
+            ct1['source_href'] = urljoin(host_scheme, self.source.json_url())
         if self.target is not None:
-            ct1['target_href'] = self.target.url(sitefqdn)
-        ct1['meeting_href'] = self.meeting.url(sitefqdn)
+            ct1['target_href'] = urljoin(host_scheme, self.target.json_url())
+        ct1['meeting_href'] = urljoin(host_scheme, self.meeting.json_url())
         return ct1
 
 
@@ -763,24 +750,24 @@ class Session(models.Model):
     def official_scheduledsession(self):
         return self.scheduledsession_for_agenda(self.meeting.agenda)
 
-    def constraints_dict(self, sitefqdn):
+    def constraints_dict(self, host_scheme):
         constraint_list = []
         for constraint in self.group.constraint_source_set.filter(meeting=self.meeting):
-            ct1 = constraint.json_dict(sitefqdn)
+            ct1 = constraint.json_dict(host_scheme)
             constraint_list.append(ct1)
 
         for constraint in self.group.constraint_target_set.filter(meeting=self.meeting):
-            ct1 = constraint.json_dict(sitefqdn)
+            ct1 = constraint.json_dict(host_scheme)
             constraint_list.append(ct1)
         return constraint_list
 
-    def url(self, sitefqdn):
-        return "%s/meeting/%s/session/%s.json" % (sitefqdn, self.meeting.number, self.id)
+    def json_url(self):
+        return "/meeting/%s/session/%s.json" % (self.meeting.number, self.id)
 
-    def json_dict(self, sitefqdn):
+    def json_dict(self, host_scheme):
         sess1 = dict()
-        sess1['href']           = self.url(sitefqdn)
-        sess1['group_href']     = self.group.url(sitefqdn)
+        sess1['href']           = urljoin(host_scheme, self.json_url())
+        sess1['group_href']     = urljoin(host_scheme, self.group.json_url())
         sess1['group_acronym']  = str(self.group.acronym)
         sess1['name']           = str(self.name)
         sess1['short_name']     = str(self.name)

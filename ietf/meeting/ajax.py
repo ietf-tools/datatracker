@@ -1,3 +1,5 @@
+from urlparse import urljoin
+
 from django.utils import simplejson as json
 from dajaxice.core import dajaxice_functions
 from dajaxice.decorators import dajaxice_register
@@ -8,7 +10,7 @@ from django.shortcuts import get_object_or_404
 
 from ietf.ietfauth.decorators import group_required, has_role
 from ietf.name.models import TimeSlotTypeName
-from django.http import HttpResponseRedirect, HttpResponse, Http404, QueryDict, Http403
+from django.http import HttpResponseRedirect, HttpResponse, Http404, QueryDict
 
 from ietf.meeting.helpers import get_meeting, get_schedule, get_schedule_by_id, agenda_permissions
 from ietf.meeting.views   import edit_timeslots, edit_agenda
@@ -56,7 +58,7 @@ def readonly(request, meeting_num, schedule_id):
     return json.dumps(
         {'secretariat': secretariat,
          'write_perm':  write_perm,
-         'owner_href':  schedule.owner.url(request.get_host_protocol()),
+         'owner_href':  request.build_absolute_uri(schedule.owner.json_url()),
          'read_only':   read_only})
 
 @group_required('Area Director','Secretariat')
@@ -73,7 +75,7 @@ def update_timeslot(request, schedule_id, session_id, scheduledsession_id=None, 
     cansee,canedit = agenda_permissions(meeting, schedule, request.user)
 
     if not canedit:
-        raise Http403
+        #raise Exception("Not permitted")
         return json.dumps({'error':'no permission'})
 
     session_id = int(session_id)
@@ -136,7 +138,7 @@ def update_timeslot_purpose(request, timeslot_id=None, purpose=None):
     timeslot.type = timeslottypename
     timeslot.save()
 
-    return json.dumps(timeslot.json_dict(request.get_host_protocol))
+    return json.dumps(timeslot.json_dict(request.build_absolute_uri('/')))
 
 #############################################################################
 ## ROOM API
@@ -149,7 +151,7 @@ def timeslot_roomlist(request, mtg):
     rooms = mtg.room_set.all()
     json_array=[]
     for room in rooms:
-        json_array.append(room.json_dict(request.get_host_protocol))
+        json_array.append(room.json_dict(request.build_absolute_uri('/')))
     return HttpResponse(json.dumps(json_array),
                         mimetype="application/json")
 
@@ -199,7 +201,7 @@ def timeslot_roomurl(request, num=None, roomid=None):
 
     if request.method == 'GET':
         room = get_object_or_404(meeting.room_set, pk=roomid)
-        return HttpResponse(json.dumps(room.json_dict(request.get_host_protocol())),
+        return HttpResponse(json.dumps(room.json_dict(request.build_absolute_uri('/'))),
                             mimetype="application/json")
     elif request.method == 'PUT':
         return timeslot_updroom(request, meeting)
@@ -216,7 +218,7 @@ def timeslot_slotlist(request, mtg):
     slots = mtg.timeslot_set.all()
     json_array=[]
     for slot in slots:
-        json_array.append(slot.json_dict(request.get_host_protocol()))
+        json_array.append(slot.json_dict(request.build_absolute_uri('/')))
     return HttpResponse(json.dumps(json_array),
                         mimetype="application/json")
 
@@ -267,7 +269,7 @@ def timeslot_sloturl(request, num=None, slotid=None):
 
     if request.method == 'GET':
         slot = get_object_or_404(meeting.timeslot_set, pk=slotid)
-        return HttpResponse(json.dumps(slot.json_dict(request.get_host_protocol())),
+        return HttpResponse(json.dumps(slot.json_dict(request.build_absolute_uri('/'))),
                             mimetype="application/json")
     elif request.method == 'PUT':
         # not yet implemented!
@@ -287,7 +289,7 @@ def agenda_list(request, mtg):
     agendas = mtg.schedule_set.all()
     json_array=[]
     for agenda in agendas:
-        json_array.append(agenda.json_dict(request.get_host_protocol))
+        json_array.append(agenda.json_dict(request.build_absolute_uri('/')))
     return HttpResponse(json.dumps(json_array),
                         mimetype="application/json")
 
@@ -355,7 +357,7 @@ def agenda_update(request, meeting, schedule):
         meeting.save()
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
-        return HttpResponse(json.dumps(schedule.json_dict(request.get_host_protocol())),
+        return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
                             mimetype="application/json")
     else:
         return HttpResponseRedirect(
@@ -390,7 +392,7 @@ def agenda_infourl(request, num=None, schedule_name=None):
     #log.debug("results in agenda: %u / %s" % (schedule.id, request.method))
 
     if request.method == 'GET':
-        return HttpResponse(json.dumps(schedule.json_dict(request.get_host_protocol())),
+        return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
                             mimetype="application/json")
     elif request.method == 'PUT':
         return agenda_update(request, meeting, schedule)
@@ -404,7 +406,7 @@ def agenda_infourl(request, num=None, schedule_name=None):
 #############################################################################
 
 def meeting_get(request, meeting):
-    return HttpResponse(json.dumps(meeting.json_dict(request.get_host_protocol()),
+    return HttpResponse(json.dumps(meeting.json_dict(request.build_absolute_uri('/')),
                                 sort_keys=True, indent=2),
                         mimetype="application/json")
 
@@ -458,7 +460,7 @@ def session_json(request, num, sessionid):
     except Session.DoesNotExist:
         return json.dumps({'error':"no such session %s" % sessionid})
 
-    sess1 = session.json_dict(request.get_host_protocol())
+    sess1 = session.json_dict(request.build_absolute_uri('/'))
     return HttpResponse(json.dumps(sess1, sort_keys=True, indent=2),
                         mimetype="application/json")
 
@@ -473,7 +475,7 @@ def session_constraints(request, num, sessionid):
     except Session.DoesNotExist:
         return json.dumps({"error":"no such session"})
 
-    constraint_list = session.constraints_dict(request.get_host_protocol())
+    constraint_list = session.constraints_dict(request.build_absolute_uri('/'))
 
     json_str = json.dumps(constraint_list,
                           sort_keys=True, indent=2),
