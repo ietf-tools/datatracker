@@ -1,6 +1,7 @@
 import sys
 import time as timeutils
 import inspect
+
 try:
     import syslog
     logger = syslog.syslog
@@ -15,11 +16,14 @@ except ImportError:
     pformat = lambda x: x
 
 import cProfile
+import traceback as tb
+
 try:
     from django.conf import settings
     debug = settings.DEBUG
 except ImportError:
     debug = True
+
 from decorator import decorator
 
 # A debug decorator, written by Paul Butler, taken from
@@ -34,7 +38,7 @@ increment = 2
 # Number of times to indent output
 # A list is used to force access by reference
 _report_indent = [4]
-_mark = timeutils.clock()
+_mark = [ timeutils.clock() ]
 
 def set_indent(i):
     _report_indent[0] = i
@@ -79,16 +83,15 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         return fn
 
 def mark():
-    say("! mark")
-    _mark = timeutils.clock()
+    _mark[0] = timeutils.clock()
 
 def lap(s):
-    tau = timeutils.clock() - _mark
+    tau = timeutils.clock() - _mark[0]
     say(">  %s: %.3fs since mark" % (s, tau))
 
 def clock(s):
     lap(s)
-    _mark = timeutils.clock()
+    _mark[0] = timeutils.clock()
 
 def time(fn):
     """Decorator to print timing information about a function call.
@@ -170,3 +173,16 @@ def profile(fn):
     else:
         return fn
     
+def traceback():
+    if debug:
+        indent = ' ' * (_report_indent[0])
+        for s in tb.format_stack()[:-1]:
+            sys.stderr.write("%s%s" % (indent, s))
+
+def info(name):
+    if debug:
+        frame = inspect.stack()[1][0]
+        value = eval(name, frame.f_globals, frame.f_locals)
+        indent = ' ' * (_report_indent[0])
+        sys.stderr.write("%s%s: %s %s\n" % (indent, name, value, type(value)))
+
