@@ -348,7 +348,8 @@ HTPASSWD_FILE = "/www/htpasswd"
 # DB redesign
 USE_DB_REDESIGN_PROXY_CLASSES = True
 
-SOUTH_TESTS_MIGRATE = False 
+SOUTH_TESTS_MIGRATE = False
+TEST_GLOBAL_FIXTURES = ["names"] # fixtures loaded for all tests by test runner
 
 # Generation of bibxml files for xml2rfc
 BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'

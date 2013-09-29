@@ -37,6 +37,7 @@ import socket
 from django.conf import settings
 from django.template import TemplateDoesNotExist
 from django.test.simple import run_tests as django_run_tests
+from django.core.management import call_command
 
 import debug
 
@@ -55,6 +56,9 @@ def safe_create_1(self, verbosity, *args, **kwargs):
     x = old_create(self, 0, *args, **kwargs)
     print "     Saving test database name "+settings.DATABASES["default"]["NAME"]+"..."
     test_database_name = settings.DATABASES["default"]["NAME"]
+    if settings.TEST_GLOBAL_FIXTURES:
+        print "     Loading globale test fixtures: %s" % ", ".join(settings.TEST_GLOBAL_FIXTURES)
+        call_command('loaddata', *settings.TEST_GLOBAL_FIXTURES, verbosity=0, commit=False, database="default")
     return x
 
 def safe_destroy_0_1(*args, **kwargs):
