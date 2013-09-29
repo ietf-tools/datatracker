@@ -29,12 +29,13 @@ def output(name, qs):
 # pick all name models directly out of the module
 objects = []
 
+import inspect
 import ietf.name.models
 for n in dir(ietf.name.models):
-    if n[:1].upper() == n[:1] and n.endswith("Name"):
-        model = getattr(ietf.name.models, n)
-        if not model._meta.abstract:
-            objects.extend(model.objects.all())
+    symbol = getattr(ietf.name.models, n)
+    if inspect.isclass(symbol) and issubclass(symbol, ietf.name.models.NameModel):
+        if not symbol._meta.abstract:
+            objects.extend(symbol.objects.all())
 
 
 import ietf.doc.models # also pick some other name-like types while we're at it

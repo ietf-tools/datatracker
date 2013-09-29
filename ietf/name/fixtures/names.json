@@ -81,6 +81,7 @@
   "model": "name.constraintname",
   "fields": {
    "order": 0,
+   "penalty": 0,
    "used": true,
    "name": "Conflicts with",
    "desc": ""
@@ -91,6 +92,7 @@
   "model": "name.constraintname",
   "fields": {
    "order": 0,
+   "penalty": 0,
    "used": true,
    "name": "Conflicts with (secondary)",
    "desc": ""
@@ -101,6 +103,7 @@
   "model": "name.constraintname",
   "fields": {
    "order": 0,
+   "penalty": 0,
    "used": true,
    "name": "Conflicts with (tertiary)",
    "desc": ""
@@ -701,6 +704,56 @@
   }
  },
  {
+  "pk": "liaison",
+  "model": "name.doctypename",
+  "fields": {
+   "order": 0,
+   "used": false,
+   "name": "Liaison",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "comment",
+  "model": "name.feedbacktype",
+  "fields": {
+   "order": 0,
+   "used": true,
+   "name": "Comment",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "questio",
+  "model": "name.feedbacktype",
+  "fields": {
+   "order": 0,
+   "used": true,
+   "name": "Questionnaire response",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "nomina",
+  "model": "name.feedbacktype",
+  "fields": {
+   "order": 0,
+   "used": true,
+   "name": "Nomination",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "junk",
+  "model": "name.feedbacktype",
+  "fields": {
+   "order": 0,
+   "used": true,
+   "name": "Junk",
+   "desc": ""
+  }
+ },
+ {
   "pk": "active",
   "model": "name.groupmilestonestatename",
   "fields": {
@@ -921,6 +974,16 @@
   }
  },
  {
+  "pk": "nomcom",
+  "model": "name.grouptypename",
+  "fields": {
+   "order": 0,
+   "used": true,
+   "name": "Nomcom",
+   "desc": "An IETF/IAB Nominating Committee.  Use 'SDO' for external nominating committees."
+  }
+ },
+ {
   "pk": "ps",
   "model": "name.intendedstdlevelname",
   "fields": {
@@ -1047,6 +1110,36 @@
    "order": 0,
    "used": true,
    "name": "Interim",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "pending",
+  "model": "name.nomineepositionstate",
+  "fields": {
+   "order": 0,
+   "used": true,
+   "name": "Nominated, pending response",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "accepted",
+  "model": "name.nomineepositionstate",
+  "fields": {
+   "order": 0,
+   "used": true,
+   "name": "Accepted",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "declined",
+  "model": "name.nomineepositionstate",
+  "fields": {
+   "order": 0,
+   "used": true,
+   "name": "Declined",
    "desc": ""
   }
  },
@@ -2624,6 +2717,19 @@
   }
  },
  {
+  "pk": 133,
+  "model": "doc.state",
+  "fields": {
+   "used": true,
+   "name": "Pending",
+   "next_states": [],
+   "slug": "pending",
+   "type": "draft-rfceditor",
+   "order": 0,
+   "desc": ""
+  }
+ },
+ {
   "pk": 45,
   "model": "doc.state",
   "fields": {
@@ -2751,6 +2857,21 @@
    "type": "draft-stream-iab",
    "order": 10,
    "desc": "This document was an active IAB document, but for some reason it is no longer being pursued for the IAB stream. It is possible that the document might be revived later, possibly in another stream."
+  }
+ },
+ {
+  "pk": 134,
+  "model": "doc.state",
+  "fields": {
+   "used": true,
+   "name": "Candidate for WG Adoption",
+   "next_states": [
+    35
+   ],
+   "slug": "wg-cand",
+   "type": "draft-stream-ietf",
+   "order": 0,
+   "desc": "The document has been marked as a candidate for WG adoption by the WG Chair.  This state can be used before a call for adoption is issued (and the document is put in the \"Call For Adoption By WG Issued\" state), to indicate that the document is in the queue for a call for adoption, even if none has been issued yet."
   }
  },
  {
