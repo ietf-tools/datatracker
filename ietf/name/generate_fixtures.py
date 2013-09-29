@@ -17,8 +17,8 @@ from django.db.models import Q
 
 def output(name, qs):
     try:
-        f = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures/%s.xml" % name), 'w')
-        f.write(serialize("xml", qs, indent=4))
+        f = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures/%s.json" % name), 'w')
+        f.write(serialize("json", qs, indent=1))
         f.close()
     except:
         from django.db import connection
