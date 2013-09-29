@@ -22,10 +22,7 @@ from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 
 
-class ConflictReviewTestCase(django.test.TestCase):
-
-    fixtures = ['names']
-
+class ConflictReviewTests(django.test.TestCase):
     def test_start_review(self):
 
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
@@ -254,10 +251,7 @@ class ConflictReviewTestCase(django.test.TestCase):
         make_test_data()
 
 
-class ConflictReviewSubmitTestCase(django.test.TestCase):
-
-    fixtures = ['names']
-
+class ConflictReviewSubmitTests(django.test.TestCase):
     def test_initial_submission(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         url = urlreverse('conflict_review_submit',kwargs=dict(name=doc.name))

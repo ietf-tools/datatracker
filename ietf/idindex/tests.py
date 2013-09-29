@@ -9,9 +9,7 @@ from ietf.doc.models import *
 from ietf.idindex.index import *
 
 
-class IndexTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class IndexTests(django.test.TestCase):
     def setUp(self):
         self.id_dir = os.path.abspath("tmp-id-dir")
         os.mkdir(self.id_dir)

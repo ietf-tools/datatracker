@@ -8,7 +8,6 @@ import debug
 SECR_USER='secretary'
 
 class GroupsTest(TestCase):
-    fixtures = ['names']
     """
     fixtures = [ 'acronym.json',
                  'area.json',

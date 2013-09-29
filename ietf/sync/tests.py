@@ -15,9 +15,7 @@ from ietf.sync import iana, rfceditor
 
 from pyquery import PyQuery
 
-class IANASyncTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class IANASyncTests(django.test.TestCase):
     def test_protocol_page_sync(self):
         draft = make_test_data()
         DocAlias.objects.create(name="rfc1234", document=draft)
@@ -176,9 +174,7 @@ ICANN
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="iana_review").count(), 1)
 
 
-class RFCSyncTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class RFCSyncTests(django.test.TestCase):
     def test_rfc_index(self):
         doc = make_test_data()
         doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
@@ -367,9 +363,7 @@ class RFCSyncTestCase(django.test.TestCase):
         self.assertEquals(len(changed), 0)
         self.assertEquals(len(warnings), 0)
 
-class DiscrepanciesTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class DiscrepanciesTests(django.test.TestCase):
     def test_discrepancies(self):
         make_test_data()
 
@@ -408,9 +402,7 @@ class DiscrepanciesTestCase(django.test.TestCase):
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
         self.assertTrue(doc.name in r.content)
 
-class RFCEditorUndoTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class RFCEditorUndoTests(django.test.TestCase):
     def test_rfceditor_undo(self):
         draft = make_test_data()
 

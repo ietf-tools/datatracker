@@ -20,8 +20,6 @@ class SreqUrlTestCase(SimpleUrlTestCase):
         self.doTestUrls(__file__)
 
 class MainTestCase(TestCase):
-    fixtures = ['names']
-    
     def test_main(self):
         draft = make_test_data()
         url = reverse('sessions')
@@ -33,8 +31,6 @@ class MainTestCase(TestCase):
         self.failUnless(len(unsched) > 0)
 
 class SubmitRequestCase(TestCase):
-    fixtures = ['names']
-    
     def test_submit_request(self):
         draft = make_test_data()
         acronym = Group.objects.all()[0].acronym

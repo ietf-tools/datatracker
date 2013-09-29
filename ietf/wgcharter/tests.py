@@ -21,9 +21,7 @@ from ietf.person.models import *
 from ietf.iesg.models import TelechatDate
 from ietf.wgcharter.utils import *
 
-class EditCharterTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class EditCharterTests(django.test.TestCase):
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
         os.mkdir(self.charter_dir)
@@ -197,9 +195,7 @@ class EditCharterTestCase(django.test.TestCase):
             self.assertEquals(f.read(),
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
-class ApproveCharterTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class ApproveCharterTests(django.test.TestCase):
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
         os.mkdir(self.charter_dir)

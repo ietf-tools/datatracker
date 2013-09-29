@@ -20,8 +20,6 @@ def augment_data():
                               by_id=0)
                               
 class MainTestCase(TestCase):
-    fixtures = ['names']
-                
     def test_main(self):
         "Main Test"
         draft = make_test_data()

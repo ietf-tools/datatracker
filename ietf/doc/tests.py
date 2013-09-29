@@ -24,8 +24,6 @@ from ietf.doc.tests_status_change import *
 
 
 class SearchTestCase(django.test.TestCase):
-    fixtures = ['names']
-
     def test_search(self):
         draft = make_test_data()
 
@@ -126,8 +124,6 @@ class SearchTestCase(django.test.TestCase):
         
 
 class DocTestCase(django.test.TestCase):
-    fixtures = ['names']
-
     def test_document_draft(self):
         draft = make_test_data()
 
@@ -249,8 +245,6 @@ class DocTestCase(django.test.TestCase):
 
 
 class AddCommentTestCase(django.test.TestCase):
-    fixtures = ['names']
-
     def test_add_comment(self):
         draft = make_test_data()
         url = urlreverse('doc_add_comment', kwargs=dict(name=draft.name))

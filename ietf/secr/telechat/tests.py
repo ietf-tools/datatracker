@@ -15,8 +15,6 @@ def augment_data():
     TelechatDate.objects.create(date=datetime.datetime.today())
     
 class MainTestCase(TestCase):
-    fixtures = ['names']
-                
     def test_main(self):
         "Main Test"
         augment_data()

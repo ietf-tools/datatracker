@@ -22,8 +22,6 @@ AD_USER=''
 
 
 class MainTestCase(TestCase):
-    fixtures = ['names']
-    
     # ------- Test View -------- #
     def test_main(self):
         "Main Test"
@@ -37,8 +35,6 @@ class DummyCase(TestCase):
     print name
 
 class UnauthorizedCase(TestCase):
-    fixtures = ['names']
-                
     def test_unauthorized(self):
         "Unauthorized Test"
         draft = make_test_data()
@@ -49,8 +45,6 @@ class UnauthorizedCase(TestCase):
         self.assertEquals(r.status_code, 403)
     
 class SubmitCase(TestCase):
-    fixtures = ['names']
-    
     def test_invalid_submit(self):
         "Invalid Submit"
         draft = make_test_data()

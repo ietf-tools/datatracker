@@ -14,8 +14,6 @@ from ietf.group.models import *
 from ietf.person.models import *
 
 class StreamTests(django.test.TestCase):
-    fixtures = ['names']
-
     def test_stream_edit(self):
         make_test_data()
 

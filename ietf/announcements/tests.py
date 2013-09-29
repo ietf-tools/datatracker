@@ -67,8 +67,6 @@ class SendScheduledAnnouncementsTestCase(django.test.TestCase):
 
 
 class SendScheduledAnnouncementsTestCaseREDESIGN(django.test.TestCase):
-    fixtures = ["names"]
-
     def test_send_plain_announcement(self):
         make_test_data()
 

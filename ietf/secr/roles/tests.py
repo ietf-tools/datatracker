@@ -14,8 +14,6 @@ def augment_data():
         Group.objects.create(acronym='dummy',name='Dummy Group',type_id='sdo')
 
 class MainTestCase(TestCase):
-    fixtures = ['names']
-                
     def test_main(self):
         "Main Test"
         augment_data()

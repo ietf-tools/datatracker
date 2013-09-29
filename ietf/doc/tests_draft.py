@@ -22,9 +22,7 @@ from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 
 
-class ChangeStateTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class ChangeStateTests(django.test.TestCase):
     def test_change_state(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="ad-eval"))
@@ -178,9 +176,7 @@ class ChangeStateTestCase(django.test.TestCase):
         self.assertTrue("Last call was requested" in draft.latest_event().desc)
         
 
-class EditInfoTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class EditInfoTests(django.test.TestCase):
     def test_edit_info(self):
         draft = make_test_data()
         url = urlreverse('doc_edit_info', kwargs=dict(name=draft.name))
@@ -360,9 +356,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, True)
 
 
-class ResurrectTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class ResurrectTests(django.test.TestCase):
     def test_request_resurrect(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
@@ -427,9 +421,7 @@ class ResurrectTestCase(django.test.TestCase):
         self.assertEquals(len(outbox), mailbox_before + 1)
 
 
-class ExpireIDsTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class ExpireIDsTests(django.test.TestCase):
     def setUp(self):
         self.id_dir = os.path.abspath("tmp-id-dir")
         self.archive_dir = os.path.abspath("tmp-id-archive")
@@ -609,9 +601,7 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "deleted_tombstones", txt)))
 
-class ExpireLastCallTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class ExpireLastCallTests(django.test.TestCase):
     def test_expire_last_call(self):
         from ietf.doc.lastcall import get_expired_last_calls, expire_last_call
         
@@ -658,10 +648,7 @@ class ExpireLastCallTestCase(django.test.TestCase):
         self.assertEquals(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call Expired" in outbox[-1]["Subject"])
 
-class IndividualInfoFormsTestCase(django.test.TestCase):
-
-    fixtures = ['names']
-
+class IndividualInfoFormsTests(django.test.TestCase):
     def test_doc_change_stream(self):
         url = urlreverse('doc_change_stream', kwargs=dict(name=self.docname))
         login_testing_unauthorized(self, "secretary", url)
@@ -886,9 +873,7 @@ class IndividualInfoFormsTestCase(django.test.TestCase):
         self.docname='draft-ietf-mars-test'
         self.doc = Document.objects.get(name=self.docname)
         
-class SubmitToIesgTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class SubmitToIesgTests(django.test.TestCase):
     def verify_permissions(self):
 
         def verify_fail(remote_user):
@@ -946,9 +931,7 @@ class SubmitToIesgTestCase(django.test.TestCase):
         self.doc = Document.objects.get(name=self.docname)
         self.doc.unset_state('draft-iesg') 
 
-class RequestPublicationTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class RequestPublicationTests(django.test.TestCase):
     def test_request_publication(self):
         draft = make_test_data()
         draft.stream = StreamName.objects.get(slug="iab")
@@ -986,8 +969,6 @@ class RequestPublicationTestCase(django.test.TestCase):
         self.assertTrue(not outbox[-1]['CC'])
 
 class AdoptDraftTests(django.test.TestCase):
-    fixtures = ['names']
-
     def test_adopt_document(self):
         draft = make_test_data()
         draft.stream = None
@@ -1023,8 +1004,6 @@ class AdoptDraftTests(django.test.TestCase):
         self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
 
 class ChangeStreamStateTests(django.test.TestCase):
-    fixtures = ['names']
-
     def test_set_tags(self):
         draft = make_test_data()
         draft.tags = DocTagName.objects.filter(slug="w-expert")

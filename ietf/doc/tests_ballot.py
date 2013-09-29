@@ -20,9 +20,7 @@ from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 
-class EditPositionTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class EditPositionTests(django.test.TestCase):
     def test_edit_position(self):
         draft = make_test_data()
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name,
@@ -169,9 +167,7 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertTrue("Test!" in str(m))
 
         
-class DeferBallotTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class DeferBallotTests(django.test.TestCase):
     def test_defer_ballot(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
@@ -215,9 +211,7 @@ class DeferBallotTestCase(django.test.TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.get_state_slug("draft-iesg"), "iesg-eva")
 
-class BallotWriteupsTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class BallotWriteupsTests(django.test.TestCase):
     def test_edit_last_call_text(self):
         draft = make_test_data()
         url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.name))
@@ -406,9 +400,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("Subject: Results of IETF-conflict review" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
         
-class ApproveBallotTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class ApproveBallotTests(django.test.TestCase):
     def test_approve_ballot(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")) # make sure it's approvable
@@ -456,9 +448,7 @@ class ApproveBallotTestCase(django.test.TestCase):
         self.assertEquals(len(outbox), mailbox_before + 3)
         self.assertTrue("NOT be published" in str(outbox[-1]))
 
-class MakeLastCallTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class MakeLastCallTests(django.test.TestCase):
     def test_make_last_call(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="lc-req"))

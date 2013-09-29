@@ -10,8 +10,6 @@ import debug
 SECR_USER='secretary'
 
 class MainTestCase(TestCase):
-    fixtures = ['names']
-                
     def test_main(self):
         "Main Test"
         make_test_data()

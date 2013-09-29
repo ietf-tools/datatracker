@@ -25,7 +25,7 @@ from ietf.nomcom.utils import get_nomcom_by_year
 
 class NomcomViewsTest(TestCase):
     """Tests to create a new nomcom"""
-    fixtures = ['names', 'nomcom_templates']
+    fixtures = ['nomcom_templates']
 
     def check_url_status(self, url, status):
         response = self.client.get(url)
@@ -589,7 +589,7 @@ class NomcomViewsTest(TestCase):
 
 class NomineePositionStateSaveTest(TestCase):
     """Tests for the NomineePosition save override method"""
-    fixtures = ['names', 'nomcom_templates']
+    fixtures = ['nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()
@@ -621,7 +621,7 @@ class NomineePositionStateSaveTest(TestCase):
 
 
 class FeedbackTest(TestCase):
-    fixtures = ['names', 'nomcom_templates']
+    fixtures = ['nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()

@@ -91,9 +91,7 @@ def make_liaison_models():
     return l
     
 
-class LiaisonManagementTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class LiaisonManagementTests(django.test.TestCase):
     def setUp(self):
         self.liaison_dir = os.path.abspath("tmp-liaison-dir")
         os.mkdir(self.liaison_dir)

@@ -51,8 +51,6 @@ from ietf.person.models import *
 from ietf.wginfo.mails import *
 
 class GroupPagesTests(django.test.TestCase):
-    fixtures = ["names"]
-
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
         os.mkdir(self.charter_dir)
@@ -213,9 +211,7 @@ class GroupPagesTests(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
         self.assertTrue(e.desc in r.content)
 
-class WgEditTestCase(django.test.TestCase):
-    fixtures = ["names"]
-
+class WgEditTests(django.test.TestCase):
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
         os.mkdir(self.charter_dir)
@@ -413,9 +409,7 @@ class WgEditTestCase(django.test.TestCase):
         group = Group.objects.get(acronym=group.acronym)
         self.assertEquals(group.state_id, "active")
 
-class MilestoneTestCase(django.test.TestCase):
-    fixtures = ["names"]
-
+class MilestoneTests(django.test.TestCase):
     def create_test_milestones(self):
         draft = make_test_data()
 
@@ -820,9 +814,7 @@ class MilestoneTestCase(django.test.TestCase):
         self.assertTrue(m1.desc in unicode(outbox[-1]))
         self.assertTrue(m2.desc in unicode(outbox[-1]))
 
-class CustomizeWorkflowTestCase(django.test.TestCase):
-    fixtures = ['names']
-
+class CustomizeWorkflowTests(django.test.TestCase):
     def test_customize_workflow(self):
         make_test_data()
 

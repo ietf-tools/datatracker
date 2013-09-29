@@ -22,10 +22,7 @@ from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 
 
-class StatusChangeTestCase(django.test.TestCase):
-
-    fixtures = ['names']
-
+class StatusChangeTests(django.test.TestCase):
     def test_start_review(self):
 
         url = urlreverse('start_rfc_status_change',kwargs=dict(name=""))
@@ -353,10 +350,7 @@ class StatusChangeTestCase(django.test.TestCase):
         make_test_data()
 
 
-class StatusChangeSubmitTestCase(django.test.TestCase):
-
-    fixtures = ['names']
-
+class StatusChangeSubmitTests(django.test.TestCase):
     def test_initial_submission(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         url = urlreverse('status_change_submit',kwargs=dict(name=doc.name))

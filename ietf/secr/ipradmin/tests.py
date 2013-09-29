@@ -9,8 +9,6 @@ from pyquery import PyQuery
 SECR_USER='secretary'
 
 class MainTestCase(TestCase):
-    fixtures = ['names']
-                
     def test_main(self):
         "Main Test"
         draft = make_test_data()

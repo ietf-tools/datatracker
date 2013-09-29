@@ -19,8 +19,8 @@ from ietf.group.models import Group, Role
 from ietf.doc.models import *
 from ietf.submit.models import IdSubmissionDetail, Preapproval
 
-class SubmitTestCase(django.test.TestCase):
-    fixtures = ['names', 'idsubmissionstatus']
+class SubmitTests(django.test.TestCase):
+    fixtures = ['idsubmissionstatus']
 
     def setUp(self):
         self.staging_dir = os.path.abspath("tmp-submit-staging-dir")
@@ -401,8 +401,8 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue("Full URL for managing submission" in outbox[-1]["Subject"])
         self.assertTrue(name in outbox[-1]["Subject"])
 
-class ApprovalsTestCase(django.test.TestCase):
-    fixtures = ['names', 'idsubmissionstatus']
+class ApprovalsTests(django.test.TestCase):
+    fixtures = ['idsubmissionstatus']
 
     def test_approvals(self):
         make_test_data()
