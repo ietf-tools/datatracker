@@ -1163,7 +1163,6 @@
 {"pk": 144, "model": "group.role", "fields":     {"person": 4763, "group": 1280, "name": "techadv", "email": "kostick@qsun.att.com"}},
 {"pk": 145, "model": "group.role", "fields":     {"person": 4624, "group": 1313, "name": "techadv", "email": "john+ietf@jck.com"}},
 {"pk": 146, "model": "group.role", "fields":     {"person": 10836, "group": 1310, "name": "techadv", "email": "robert.moskowitz@icsalabs.com"}},
-{"pk": 147, "model": "group.role", "fields":     {"person": 3798, "group": 925, "name": "techadv", "email": "kaj@research.telcordia.com"}},
 {"pk": 148, "model": "group.role", "fields":     {"person": 105907, "group": 1744, "name": "techadv", "email": "stpeter@stpeter.im"}},
 {"pk": 149, "model": "group.role", "fields":     {"person": 5778, "group": 1478, "name": "techadv", "email": "harald@alvestrand.no"}},
 {"pk": 150, "model": "group.role", "fields":     {"person": 16029, "group": 1436, "name": "techadv", "email": "rafalow@us.ibm.com"}},
