@@ -10,6 +10,8 @@ from ietf.name.models import *
 from ietf.group.models import *
 from ietf.person.models import *
 
+import debug
+
 def make_test_data():
     # telechat dates
     t = datetime.date.today()
@@ -21,7 +23,7 @@ def make_test_data():
 
     # groups
     secretariat, created = Group.objects.get_or_create(
-        name="Secretariat",
+        name="IETF Secretariat",
         acronym="secretariat",
         state_id="active",
         type_id="ietf",
@@ -32,27 +34,39 @@ def make_test_data():
         state_id="active",
         type_id="ietf",
         parent=None)
-    for x in ["irtf", "iab", "ise", "iesg"]:
-        Group.objects.get_or_create(
-            name=x.upper(),
-            acronym=x,
-            state_id="active",
-            type_id="ietf",
-            parent=None)
-    area, created = Group.objects.get_or_create(
+
+# XXX As given below, the group objects created doesn't match what's in the
+# fixtures, so if both are used, things blow up.  The code below should
+# probably be updated to match what's in the fixtures, making the fixtures
+# unnecessary for a number of test cases.
+
+#     irtf, created = Group.objects.get_or_create(
+#         name="IRTF",
+#         acronym="irtf",
+#         state_id="active",
+#         type_id="irtf",
+#         parent=None)
+#     for g,t,n,p in [("iab","ietf", "Internet Architecture Board",1),  ("ise","ietf", "Independent Submission Editor", None), ("iesg","ietf", "Internet Engineering Steering Group", 1), ]:
+#         Group.objects.get_or_create(
+#             name=n,
+#             acronym=g,
+#             state_id="active",
+#             type_id=t,
+#             parent_id=p)
+    area = Group.objects.create(
         name="Far Future",
         acronym="farfut",
         state_id="active",
         type_id="area",
         parent=ietf)
-    individ, created = Group.objects.get_or_create(
-        name="Individual submissions",
-        acronym="none",
-        state_id="active",
-        type_id="individ",
-        parent=None)
+#     individ, created = Group.objects.get_or_create(
+#         name="Individual submissions",
+#         acronym="none",
+#         state_id="active",
+#         type_id="individ",
+#         parent=None)
     # mars WG
-    group, created = Group.objects.get_or_create(
+    group  = Group.objects.create(
         name="Martian Special Interest Group",
         acronym="mars",
         state_id="active",
@@ -61,7 +75,7 @@ def make_test_data():
         list_email="mars-wg@ietf.org",
         )
     mars_wg = group
-    charter, created = Document.objects.get_or_create(
+    charter = Document.objects.create(
         name="charter-ietf-" + group.acronym,
         type_id="charter",
         title=group.name,
@@ -111,7 +125,7 @@ def make_test_data():
     # persons
 
     # system
-    system_person = Person.objects.create(
+    system_person, created = Person.objects.get_or_create(
 #        id=0, # special value
         name="(System)",
         ascii="(System)",
@@ -120,36 +134,35 @@ def make_test_data():
     system_person.save()
 
     # IANA and RFC Editor groups
-    iana = Group.objects.create(
+    iana, created = Group.objects.get_or_create(
         name="IANA",
         acronym="iana",
         state_id="active",
         type_id="ietf",
         parent=None,
         )
-    rfc_editor = Group.objects.create(
+    rfc_editor, created = Group.objects.get_or_create(
         name="RFC Editor",
         acronym="rfceditor",
         state_id="active",
-        type_id="ietf",
+        type_id="rfcedtyp",
         parent=None,
         )
-    
-    if system_person.id != 0: # work around bug in Django
-        Person.objects.filter(id=system_person.id).update(id=0)
-        system_person = Person.objects.get(id=0)
 
-    alias = Alias(person=system_person, name=system_person.name)
-    alias.save()
+#    if system_person.id != 0: # work around bug in Django
+#        Person.objects.filter(id=system_person.id).update(id=0)
+#        system_person = Person.objects.get(id=0)
+
+    Alias.objects.get_or_create(person=system_person, name=system_person.name)
     Email.objects.get_or_create(address="", person=system_person)
 
     # plain IETF'er
-    u = User.objects.create(username="plain")
-    plainman = Person.objects.create(
+    u, created = User.objects.get_or_create(username="plain")
+    plainman, created = Person.objects.get_or_create(
         name="Plain Man",
         ascii="Plain Man",
         user=u)
-    email = Email.objects.create(
+    email, created = Email.objects.get_or_create(
         address="plain@example.com",
         person=plainman)
     
@@ -308,15 +321,15 @@ def make_test_data():
         )
 
     # Secretariat user
-    u = User.objects.create(id=509, username="wnl")
-    p = Person.objects.create(
+    u, created = User.objects.get_or_create(id=509, username="wnl")
+    p, created = Person.objects.get_or_create(
         name="Wanda Lo",
         ascii="Wanda Lo",
         user=u)
-    email = Email.objects.create(
+    email, created = Email.objects.get_or_create(
         address="wnl@amsl.com",
         person=p)
-    Role.objects.create(
+    Role.objects.get_or_create(
         name_id="auth",
         group=secretariat,
         email=email,

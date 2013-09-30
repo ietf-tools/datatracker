@@ -37,6 +37,7 @@ import socket
 from django.conf import settings
 from django.template import TemplateDoesNotExist
 from django.test.simple import run_tests as django_run_tests
+from django.core.management import call_command
 
 import debug
 
@@ -50,12 +51,14 @@ old_create = None
 def safe_create_1(self, verbosity, *args, **kwargs):
     global test_database_name, old_create
     print "     Creating test database..."
-    settings.DATABASES["default"]["OPTIONS"] = settings.DATABASE_TEST_OPTIONS
-    print "     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"]
-    x = old_create(self, 0, *args, **kwargs)
-    print "     Saving test database name "+settings.DATABASES["default"]["NAME"]+"..."
-    test_database_name = settings.DATABASES["default"]["NAME"]
-    return x
+    if settings.DATABASES["default"]["ENGINE"] == 'django.db.backends.mysql':
+        settings.DATABASES["default"]["OPTIONS"] = settings.DATABASE_TEST_OPTIONS
+        print "     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"]
+    test_database_name = old_create(self, 0, *args, **kwargs)
+    if settings.GLOBAL_TEST_FIXTURES:
+        print "     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES) 
+        call_command('loaddata', *settings.GLOBAL_TEST_FIXTURES, verbosity=0, commit=False, database="default")
+    return test_database_name
 
 def safe_destroy_0_1(*args, **kwargs):
     global test_database_name, old_destroy
