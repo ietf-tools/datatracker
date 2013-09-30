@@ -61,8 +61,8 @@ DATABASES = {
 }
 
 DATABASE_TEST_OPTIONS = {
-        # Uncomment this to speed up testing if your database supports InnoDB:
-        # 'init_command': 'SET storage_engine=InnoDB',
+        # Comment this out if your database doesn't support InnoDB
+        'init_command': 'SET storage_engine=InnoDB',
     }
 
 # Local time zone for this installation. Choices can be found here:
@@ -176,6 +176,7 @@ INSTALLED_APPS = (
     'ietf.liaisons',
     'ietf.mailinglists',
     'ietf.meeting',
+    'ietf.utils',
     #'ietf.proceedings',
     'ietf.redirects',
     'ietf.idrfc',
@@ -226,6 +227,9 @@ SERVER_MODE = 'development'
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
+
+# Fixtures which will be loaded before testing starts
+GLOBAL_TEST_FIXTURES = [ 'names','groups','persons', 'roles']
 
 # WG Chair configuration
 MAX_WG_DELEGATES = 3
