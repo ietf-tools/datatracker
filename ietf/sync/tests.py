@@ -1,11 +1,11 @@
 import unittest, re, json, datetime, StringIO
-import django.test
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils import TestCase
 
 from ietf.doc.models import *
 from ietf.doc.utils import add_state_change_event
@@ -15,8 +15,9 @@ from ietf.sync import iana, rfceditor
 
 from pyquery import PyQuery
 
-class IANASyncTestCase(django.test.TestCase):
-    fixtures = ['names']
+class IANASyncTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_protocol_page_sync(self):
         draft = make_test_data()
@@ -176,8 +177,9 @@ ICANN
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="iana_review").count(), 1)
 
 
-class RFCSyncTestCase(django.test.TestCase):
-    fixtures = ['names']
+class RFCSyncTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_rfc_index(self):
         doc = make_test_data()
@@ -367,8 +369,9 @@ class RFCSyncTestCase(django.test.TestCase):
         self.assertEquals(len(changed), 0)
         self.assertEquals(len(warnings), 0)
 
-class DiscrepanciesTestCase(django.test.TestCase):
-    fixtures = ['names']
+class DiscrepanciesTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_discrepancies(self):
         make_test_data()
@@ -408,8 +411,9 @@ class DiscrepanciesTestCase(django.test.TestCase):
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
         self.assertTrue(doc.name in r.content)
 
-class RFCEditorUndoTestCase(django.test.TestCase):
-    fixtures = ['names']
+class RFCEditorUndoTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_rfceditor_undo(self):
         draft = make_test_data()

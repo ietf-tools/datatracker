@@ -1,6 +1,6 @@
 import sys
 from django.test              import Client
-from django.test import TestCase
+from ietf.utils import TestCase
 from ietf.name.models     import SessionStatusName
 from ietf.person.models   import Person
 from ietf.group.models    import Group
@@ -8,7 +8,8 @@ from ietf.meeting.models  import TimeSlot, Session, Meeting, ScheduledSession
 from ietf.meeting.helpers import get_meeting, get_schedule
 
 class AgendaInfoTestCase(TestCase):
-    fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
                  'meeting83.json',
                  'constraint83.json',
                  'workinggroups.json',
@@ -32,8 +33,7 @@ class AgendaInfoTestCase(TestCase):
         self.assertEqual(len(timeslots),26)
         self.assertEqual(meeting.number,'83')
         self.assertEqual(venue.meeting_num, "83")
-        # will change as more ADs are added to fixtures
-        self.assertEqual(len(ads), 3)
+        self.assertTrue(len(ads) > 0)
 
     def test_AgendaInfoReturnsSortedTimeSlots(self):
         from ietf.meeting.views import agenda_info

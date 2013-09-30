@@ -1,7 +1,6 @@
 from datetime import timedelta
 import os, shutil
 
-import django.test
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 
@@ -9,11 +8,12 @@ from pyquery import PyQuery
 
 from ietf.idtracker.models import *
 from ietf.iesg.models import *
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, login_testing_unauthorized
 from ietf.ietfworkflows.models import Stream
 
-class RescheduleOnAgendaTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft']
+class RescheduleOnAgendaTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['base', 'draft']
 
     def test_reschedule(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
@@ -54,8 +54,8 @@ class RescheduleOnAgendaTestCase(django.test.TestCase):
         self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
         self.assertTrue("Telechat" in draft.idinternal.comments()[0].comment_text)
 
-class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
-    fixtures = ['names']
+class RescheduleOnAgendaTestCaseREDESIGN(TestCase):
+    perma_fixtures = ['names']
 
     def test_reschedule(self):
         from ietf.utils.test_data import make_test_data
@@ -111,8 +111,8 @@ class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     RescheduleOnAgendaTestCase = RescheduleOnAgendaTestCaseREDESIGN
 
-class ManageTelechatDatesTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft']
+class ManageTelechatDatesTestCase(TestCase):
+    perma_fixtures = ['base', 'draft']
 
     def test_set_dates(self):
         dates = TelechatDates.objects.all()[0]
@@ -152,8 +152,8 @@ class ManageTelechatDatesTestCase(django.test.TestCase):
         self.assertTrue(dates.date4 == new_date)
         self.assertTrue(dates.date1 == old_date2)
 
-# class ManageTelechatDatesTestCaseREDESIGN(django.test.TestCase):
-#     fixtures = ['names']
+# class ManageTelechatDatesTestCaseREDESIGN(TestCase):
+#     perma_fixtures = ['names']
 
 #     def test_set_dates(self):
 #         from ietf.utils.test_data import make_test_data
@@ -203,8 +203,8 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     #ManageTelechatDatesTestCase = ManageTelechatDatesTestCaseREDESIGN
     del ManageTelechatDatesTestCase
         
-class WorkingGroupActionsTestCase(django.test.TestCase):
-    fixtures = ['base', 'wgactions']
+class WorkingGroupActionsTestCase(TestCase):
+    perma_fixtures = ['base', 'wgactions']
 
     def setUp(self):
         super(self.__class__, self).setUp()
@@ -313,8 +313,8 @@ class WorkingGroupActionsTestCase(django.test.TestCase):
 
         self.assertTrue('(sieve)' not in r.content)
 
-class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
-    fixtures = ['names']
+class WorkingGroupActionsTestCaseREDESIGN(TestCase):
+    perma_fixtures = ['names']
 
     def setUp(self):
         super(self.__class__, self).setUp()
@@ -473,9 +473,9 @@ class IesgUrlTestCase(SimpleUrlTestCase):
 
 from ietf.doc.models import Document,TelechatDocEvent,State
 from ietf.group.models import Person
-class DeferUndeferTestCase(django.test.TestCase):
+class DeferUndeferTestCase(TestCase):
 
-    fixtures=['names']
+    perma_fixtures = ['names']
 
     def helper_test_defer(self,name):
 

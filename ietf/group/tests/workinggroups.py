@@ -1,9 +1,11 @@
 import sys
-from django.test import TestCase
+from ietf.utils import TestCase
 from ietf.group.models import Group
 
 class WorkingGroupTestCase(TestCase):
-    fixtures = [ 'workinggroups.json']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    fixtures = [ 'workinggroups', ]
+    perma_fixtures = []
 
     def test_FindOneWg(self):
         one = Group.objects.filter(acronym = 'roll')

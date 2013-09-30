@@ -5,7 +5,7 @@ The test cases are split into multiple files.
 """
 
 import sys
-from django.test import TestCase
+from ietf.utils import TestCase
 from datetime import datetime
 
 # actual tests are distributed among a set of files in subdir tests/

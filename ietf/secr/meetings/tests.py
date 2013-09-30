@@ -1,5 +1,5 @@
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from ietf.utils import TestCase
 
 from ietf.meeting.models import Meeting
 from ietf.utils.test_data import make_test_data
@@ -9,7 +9,8 @@ from pyquery import PyQuery
 SECR_USER='secretary'
 
 class MainTestCase(TestCase):
-    fixtures = ['names']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
                 
     def test_main(self):
         "Main Test"

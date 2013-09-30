@@ -1,5 +1,5 @@
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from ietf.utils import TestCase
 from django.contrib.auth.models import User
 
 from ietf.group.models import Group, GroupEvent
@@ -14,13 +14,15 @@ import datetime
 SECR_USER='secretary'
 
 def augment_data():
+    system = Person.objects.get(name="(system)")
     area = Group.objects.get(acronym='farfut')
     GroupEvent.objects.create(group=area,
                               type='started',
-                              by_id=0)
+                              by=system)
                               
 class MainTestCase(TestCase):
-    fixtures = ['names']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names', 'persons', 'groupgroup', 'groupevents']
                 
     def test_main(self):
         "Main Test"

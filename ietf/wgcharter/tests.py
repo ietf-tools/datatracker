@@ -3,12 +3,12 @@
 import os, shutil, datetime
 from StringIO import StringIO
 
-import django.test
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils import TestCase
 
 from pyquery import PyQuery
 
@@ -21,8 +21,9 @@ from ietf.person.models import *
 from ietf.iesg.models import TelechatDate
 from ietf.wgcharter.utils import *
 
-class EditCharterTestCase(django.test.TestCase):
-    fixtures = ['names']
+class EditCharterTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
@@ -197,8 +198,9 @@ class EditCharterTestCase(django.test.TestCase):
             self.assertEquals(f.read(),
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
-class ApproveCharterTestCase(django.test.TestCase):
-    fixtures = ['names']
+class ApproveCharterTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")

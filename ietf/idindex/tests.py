@@ -1,16 +1,17 @@
 import datetime, shutil
 
-import django.test
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.test_data import make_test_data
+from ietf.utils import TestCase
 
 from ietf.doc.models import *
 from ietf.idindex.index import *
 
 
-class IndexTestCase(django.test.TestCase):
-    fixtures = ['names']
+class IndexTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def setUp(self):
         self.id_dir = os.path.abspath("tmp-id-dir")

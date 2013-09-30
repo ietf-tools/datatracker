@@ -1,6 +1,6 @@
 from django.db import connection
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from ietf.utils import TestCase
 from django.contrib.auth.models import User
 
 from ietf.group.models import Group
@@ -22,7 +22,8 @@ AD_USER=''
 
 
 class MainTestCase(TestCase):
-    fixtures = ['names']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
     
     # ------- Test View -------- #
     def test_main(self):
@@ -34,22 +35,20 @@ class MainTestCase(TestCase):
 
 class DummyCase(TestCase):
     name = connection.settings_dict['NAME']
-    print name
 
 class UnauthorizedCase(TestCase):
-    fixtures = ['names']
+    perma_fixtures = ['names']
                 
     def test_unauthorized(self):
         "Unauthorized Test"
         draft = make_test_data()
         url = reverse('announcement')
-        # get random working group chair
-        person = Person.objects.filter(role__group__type='wg')[0]
+        person = Person.objects.filter(role__group__acronym='mars')[0]
         r = self.client.get(url,REMOTE_USER=person.user)
         self.assertEquals(r.status_code, 403)
     
 class SubmitCase(TestCase):
-    fixtures = ['names']
+    perma_fixtures = ['names']
     
     def test_invalid_submit(self):
         "Invalid Submit"

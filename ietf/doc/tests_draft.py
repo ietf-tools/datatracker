@@ -3,7 +3,6 @@ import StringIO
 import os, shutil
 from datetime import date, timedelta, time
 
-import django.test
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 
@@ -19,10 +18,12 @@ from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
+from ietf.utils import TestCase
 
 
-class ChangeStateTestCase(django.test.TestCase):
-    fixtures = ['names']
+class ChangeStateTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_change_state(self):
         draft = make_test_data()
@@ -177,8 +178,9 @@ class ChangeStateTestCase(django.test.TestCase):
         self.assertTrue("Last call was requested" in draft.latest_event().desc)
         
 
-class EditInfoTestCase(django.test.TestCase):
-    fixtures = ['names']
+class EditInfoTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_edit_info(self):
         draft = make_test_data()
@@ -359,8 +361,9 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, True)
 
 
-class ResurrectTestCase(django.test.TestCase):
-    fixtures = ['names']
+class ResurrectTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_request_resurrect(self):
         draft = make_test_data()
@@ -426,8 +429,9 @@ class ResurrectTestCase(django.test.TestCase):
         self.assertEquals(len(outbox), mailbox_before + 1)
 
 
-class ExpireIDsTestCase(django.test.TestCase):
-    fixtures = ['names']
+class ExpireIDsTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def setUp(self):
         self.id_dir = os.path.abspath("tmp-id-dir")
@@ -608,8 +612,9 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "deleted_tombstones", txt)))
 
-class ExpireLastCallTestCase(django.test.TestCase):
-    fixtures = ['names']
+class ExpireLastCallTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_expire_last_call(self):
         from ietf.doc.lastcall import get_expired_last_calls, expire_last_call
@@ -657,9 +662,9 @@ class ExpireLastCallTestCase(django.test.TestCase):
         self.assertEquals(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call Expired" in outbox[-1]["Subject"])
 
-class IndividualInfoFormsTestCase(django.test.TestCase):
-
-    fixtures = ['names']
+class IndividualInfoFormsTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_doc_change_stream(self):
         url = urlreverse('doc_change_stream', kwargs=dict(name=self.docname))
@@ -885,8 +890,9 @@ class IndividualInfoFormsTestCase(django.test.TestCase):
         self.docname='draft-ietf-mars-test'
         self.doc = Document.objects.get(name=self.docname)
         
-class SubmitToIesgTestCase(django.test.TestCase):
-    fixtures = ['names']
+class SubmitToIesgTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def verify_permissions(self):
 
@@ -945,8 +951,9 @@ class SubmitToIesgTestCase(django.test.TestCase):
         self.doc = Document.objects.get(name=self.docname)
         self.doc.unset_state('draft-iesg') 
 
-class RequestPublicationTestCase(django.test.TestCase):
-    fixtures = ['names']
+class RequestPublicationTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_request_publication(self):
         draft = make_test_data()

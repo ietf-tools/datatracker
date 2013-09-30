@@ -32,12 +32,12 @@
 
 import os, unittest, shutil, calendar
 
-import django.test
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils import TestCase
 
 from pyquery import PyQuery
 import debug
@@ -65,8 +65,9 @@ class WgFileTestCase(unittest.TestCase):
             print "wget -nd -nc -np -r http://www.ietf.org/wg-descriptions/"
             print "And set IETFWG_DESCRIPTIONS_PATH in settings_local.py\n"
 
-class WgOverviewTestCase(django.test.TestCase):
-    fixtures = ["names"]
+class WgOverviewTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ["names"]
 
     def test_overview(self):
         make_test_data()
@@ -81,8 +82,9 @@ class WgOverviewTestCase(django.test.TestCase):
         self.assertEquals(len(q('table.ietf-doctable td.acronym a:contains("mars")')), 1)
 
 
-class WgEditTestCase(django.test.TestCase):
-    fixtures = ["names"]
+class WgEditTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ["names"]
 
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
@@ -279,8 +281,9 @@ class WgEditTestCase(django.test.TestCase):
         group = Group.objects.get(acronym=group.acronym)
         self.assertEquals(group.state_id, "active")
 
-class MilestoneTestCase(django.test.TestCase):
-    fixtures = ["names"]
+class MilestoneTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ["names"]
 
     def create_test_milestones(self):
         draft = make_test_data()

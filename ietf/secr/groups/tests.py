@@ -1,5 +1,5 @@
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from ietf.utils import TestCase
 from ietf.group.models import Group
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
@@ -8,9 +8,10 @@ import debug
 SECR_USER='secretary'
 
 class GroupsTest(TestCase):
-    fixtures = ['names']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names','persons','groupgroup',]
     """
-    fixtures = [ 'acronym.json',
+    perma_fixtures = [ 'acronym.json',
                  'area.json',
                  'areadirector',
                  'areagroup.json',
@@ -97,8 +98,8 @@ class GroupsTest(TestCase):
     # ------- Test Edit -------- #
     def test_edit_valid(self):
         draft = make_test_data()
-        group = Group.objects.filter(type='wg')[0]
-        area = Group.objects.filter(type='area')[0]
+        group = Group.objects.filter(acronym='mars')[0]
+        area = Group.objects.filter(acronym='farfut')[0]
         ad = Person.objects.get(name='Aread Irector')        
         url = reverse('groups_edit', kwargs={'acronym':group.acronym})
         target = reverse('groups_view', kwargs={'acronym':group.acronym})
@@ -118,7 +119,7 @@ class GroupsTest(TestCase):
     # ------- Test People -------- #
     def test_people_delete(self):
         draft = make_test_data()
-        group = Group.objects.filter(type='wg')[0]
+        group = Group.objects.filter(acronym='mars')[0]
         role = group.role_set.all()[0]
         url = reverse('groups_delete_role', kwargs={'acronym':group.acronym,'id':role.id})
         target = reverse('groups_people', kwargs={'acronym':group.acronym})
@@ -129,7 +130,7 @@ class GroupsTest(TestCase):
     def test_people_add(self):
         draft = make_test_data()
         person = Person.objects.get(name='Aread Irector')
-        group = Group.objects.filter(type='wg')[0]
+        group = Group.objects.filter(acronym='mars')[0]
         url = reverse('groups_people', kwargs={'acronym':group.acronym})
         post_data = {'name':'chair',
                      'person':'Joe Smith - (%s)' % person.id,

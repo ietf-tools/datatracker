@@ -3,7 +3,7 @@ import sys
 from urlparse import urljoin
 
 from django.test              import Client
-from django.test import TestCase
+from ietf.utils import TestCase
 
 from django.contrib.auth.models import User
 from ietf.person.models import Person
@@ -13,7 +13,8 @@ from ietf.group.models    import Group
 
 
 class UrlGenTestCase(TestCase):
-    fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
                  'meeting83.json',
                  'constraint83.json',
                  'workinggroups.json',

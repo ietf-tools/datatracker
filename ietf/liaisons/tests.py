@@ -3,13 +3,13 @@ import datetime, os, shutil
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse as urlreverse
-import django.test
 from StringIO import StringIO
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import SimpleUrlTestCase, canonicalize_feed, canonicalize_sitemap, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
+from ietf.utils import TestCase
 
 class LiaisonsUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
@@ -91,12 +91,19 @@ def make_liaison_models():
     return l
     
 
-class LiaisonManagementTestCase(django.test.TestCase):
-    fixtures = ['names']
+class LiaisonManagementTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def setUp(self):
         self.liaison_dir = os.path.abspath("tmp-liaison-dir")
-        os.mkdir(self.liaison_dir)
+        try:
+            os.mkdir(self.liaison_dir)
+        except OSError, e:
+            if "File exists" in str(e):
+                pass
+            else:
+                raise
         
         settings.LIAISON_ATTACH_PATH = self.liaison_dir
 

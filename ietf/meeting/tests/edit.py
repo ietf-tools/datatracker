@@ -2,7 +2,7 @@ import re
 import sys
 from settings import BASE_DIR
 from django.test              import Client
-from django.test import TestCase
+from ietf.utils import TestCase
 #from ietf.person.models import Person
 from django.contrib.auth.models import User
 from django.test.client import Client
@@ -12,7 +12,8 @@ from auths import auth_joeblow, auth_wlo, auth_ietfchair, auth_ferrel
 capture_output = False
 
 class EditTestCase(TestCase):
-    fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
                  'meeting83.json',
                  'constraint83.json',
                  'workinggroups.json',

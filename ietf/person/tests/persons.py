@@ -1,10 +1,11 @@
 import sys
-from django.test import TestCase
+from ietf.utils import TestCase
 from ietf.group.models import Group
 from ietf.person.models import Person
 
 class PersonFetchTestCase(TestCase):
-    fixtures = [ 'person.json', 'users.json']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = [ 'persons']
 
     def test_FindNoPerson(self):
         one = Person.objects.by_email('wlo@amsl.org')

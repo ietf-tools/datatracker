@@ -2,7 +2,7 @@
 import os
 import tempfile
 
-from django.test import TestCase
+from ietf.utils import TestCase
 from django.db import IntegrityError
 from django.core.urlresolvers import reverse
 from django.core.files import File
@@ -25,7 +25,8 @@ from ietf.nomcom.utils import get_nomcom_by_year
 
 class NomcomViewsTest(TestCase):
     """Tests to create a new nomcom"""
-    fixtures = ['names', 'nomcom_templates']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names', 'nomcom_templates']
 
     def check_url_status(self, url, status):
         response = self.client.get(url)
@@ -589,7 +590,8 @@ class NomcomViewsTest(TestCase):
 
 class NomineePositionStateSaveTest(TestCase):
     """Tests for the NomineePosition save override method"""
-    fixtures = ['names', 'nomcom_templates']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names', 'nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()
@@ -621,7 +623,7 @@ class NomineePositionStateSaveTest(TestCase):
 
 
 class FeedbackTest(TestCase):
-    fixtures = ['names', 'nomcom_templates']
+    perma_fixtures = ['names', 'nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()
