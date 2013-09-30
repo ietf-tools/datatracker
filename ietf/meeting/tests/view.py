@@ -1,7 +1,7 @@
 import re
 import sys
 from django.test.client       import Client
-from django.test import TestCase
+from ietf.utils import TestCase
 #from ietf.person.models import Person
 from django.contrib.auth.models import User
 from settings import BASE_DIR
@@ -11,10 +11,9 @@ from ietf.meeting.helpers import get_meeting
 from django.core.urlresolvers import reverse
 from ietf.meeting.views import edit_agenda
 
-capture_output = True
-
 class ViewTestCase(TestCase):
-    fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
                  'meeting83.json',
                  'constraint83.json',
                  'workinggroups.json',
@@ -28,24 +27,32 @@ class ViewTestCase(TestCase):
         agenda83txt = agenda83txtio.read();  # read entire file
         resp = self.client.get('/meeting/83/agenda.txt')
         # to capture new output (and check it for correctness)
-        if capture_output:
-            out = open("%s/meeting/tests/agenda-83-txt-output-out.txt" % BASE_DIR, "w")
+        fn = ""
+        if resp.content != agenda83.txt:
+            fn = "%s/meeting/tests/agenda-83-txt-output-out.txt" % BASE_DIR
+            out = open(fn, "w")
             out.write(resp.content)
             out.close()
-        self.assertEqual(resp.content, agenda83txt, "agenda83 txt changed")
+        self.assertEqual(resp.content, agenda83txt, "The /meeting/83/agenda.txt page changed.\nThe newly generated agenda has been written to file: %s" % fn)
 
     def test_agenda83utc(self):
         # verify that the generated html has not changed.
         import io
         agenda83utcio = open("%s/meeting/tests/agenda-83-utc-output.html" % BASE_DIR, "r")
-        agenda83utc = agenda83utcio.read();  # read entire file
+        agenda83utc_valid = agenda83utcio.read();  # read entire file
         resp = self.client.get('/meeting/83/agenda-utc.html')
-        # to capture new output (and check it for correctness set capture_output above)
-        if capture_output:
-            out = open("%s/meeting/tests/agenda-83-utc-output-out.html" % BASE_DIR, "w")
+        # both agendas will have a software version indication inside a
+        # comment.  This will change.  Remove comments before comparing.
+        agenda83utc_valid = re.sub("<!-- v.*-->","", agenda83utc_valid)
+        agenda83utc_response = re.sub("<!-- v.*-->","", resp.content)
+        fn = ""
+        # to capture new output (and check it for correctness)
+        if agenda83utc_valid != agenda83utc_response:
+            fn = "%s/meeting/tests/agenda-83-utc-output-out.html" % BASE_DIR
+            out = open(fn, "w")
             out.write(resp.content)
             out.close()
-        self.assertEqual(resp.content, agenda83utc, "agenda83 utc changed")
+        self.assertEqual(agenda83utc_valid, agenda83utc_response, "The /meeting/83/agenda-utc.html page changed.\nThe newly generated agenda has been written to file: %s" % fn)
 
     def test_nameOfClueWg(self):
         clue_session = Session.objects.get(pk=2194)
