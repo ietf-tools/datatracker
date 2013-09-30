@@ -35,36 +35,26 @@
 from django.conf.urls.defaults import patterns, url
 from django.conf import settings
 from ietf.iesg import views
-from ietf.idtracker.models import BallotInfo
-
-queryset_ann = BallotInfo.objects.all()
 
 urlpatterns = patterns('',
-        (r'^telechat/.*$', 'django.views.generic.simple.redirect_to', { 'url': 'http://www.ietf.org/iesg/minutes.html' })
-)                       
-
-urlpatterns += patterns('django.views.generic.list_detail',
-	(r'^ann/(?P<object_id>\d+)/$', 'object_detail', { 'queryset': queryset_ann, 'template_name':"iesg/ballotinfo_detail.html" }),
-)
-
-urlpatterns += patterns('',
-        (r'^ann/ind/$',views.inddocs),
-        (r'^ann/(?P<cat>[^/]+)/$',views.wgdocs),
-        (r'^agenda/$', views.agenda),                        
-        (r'^agenda/agenda.txt$', views.agenda_txt),                        
-        (r'^agenda/agenda.json$', views.agenda_json),                        
-        (r'^agenda/scribe_template.html$', views.agenda_scribe_template),
-        (r'^agenda/moderator_package.html$', views.agenda_moderator_package),
-        (r'^agenda/agenda_package.txt$', views.agenda_package),
-        (r'^agenda/documents.txt$', views.agenda_documents_txt),
-        (r'^agenda/documents/$', views.agenda_documents),
-        (r'^agenda/telechat-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)-docs.tgz', views.telechat_docs_tarfile),
-        (r'^discusses/$', views.discusses),
-        (r'^milestones', views.milestones_needing_review),
-        (r'^telechatdates/$', 'django.views.generic.simple.redirect_to', { 'url': '/admin/iesg/telechatdate/' }),
-        url(r'^wgactions/$', views.working_group_actions, name="iesg_working_group_actions"),
-        url(r'^wgactions/add/$', views.edit_working_group_action, { 'wga_id': None }, name="iesg_add_working_group_action"),
-        url(r'^wgactions/(?P<wga_id>\d+)/$', views.edit_working_group_action, name="iesg_edit_working_group_action"),
+    (r'^telechat/.*$', 'django.views.generic.simple.redirect_to', { 'url': 'http://www.ietf.org/iesg/minutes.html' })
+    (r'^ann/ind/$',views.inddocs),
+    (r'^ann/(?P<cat>[^/]+)/$',views.wgdocs),
+    (r'^agenda/$', views.agenda),                        
+    (r'^agenda/agenda.txt$', views.agenda_txt),                        
+    (r'^agenda/agenda.json$', views.agenda_json),                        
+    (r'^agenda/scribe_template.html$', views.agenda_scribe_template),
+    (r'^agenda/moderator_package.html$', views.agenda_moderator_package),
+    (r'^agenda/agenda_package.txt$', views.agenda_package),
+    (r'^agenda/documents.txt$', views.agenda_documents_txt),
+    (r'^agenda/documents/$', views.agenda_documents),
+    (r'^agenda/telechat-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)-docs.tgz', views.telechat_docs_tarfile),
+    (r'^discusses/$', views.discusses),
+    (r'^milestones', views.milestones_needing_review),
+    (r'^telechatdates/$', 'django.views.generic.simple.redirect_to', { 'url': '/admin/iesg/telechatdate/' }),
+    url(r'^wgactions/$', views.working_group_actions, name="iesg_working_group_actions"),
+    url(r'^wgactions/add/$', views.edit_working_group_action, { 'wga_id': None }, name="iesg_add_working_group_action"),
+    url(r'^wgactions/(?P<wga_id>\d+)/$', views.edit_working_group_action, name="iesg_edit_working_group_action"),
 )
 
 if settings.SERVER_MODE != 'production':
