@@ -223,6 +223,8 @@ Maillot         	OPS 	dnsop       	Domain Name System Operations WG
 ====================================================================
 AREA DIRECTORS
 
+APP  Applications Area   Barry Leiba/Huawei Technologies & Pete Resnick/QTI, a Qualcomm company
 GEN  General Area        Russ Housley/Vigil Security, LLC
+OPS  Operations and Man  Ron Bonica/Juniper Networks & Benoit Claise/Cisco
 SEC  Security Area       Stephen Farrell/Trinity College Dublin & Sean Turner/IECA
 
