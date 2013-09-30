@@ -1,4 +1,3 @@
-from datetime import timedelta
 import os, shutil
 
 import django.test
@@ -7,16 +6,38 @@ from django.conf import settings
 
 from pyquery import PyQuery
 
-from ietf.idtracker.models import *
+from ietf.utils.test_data import make_test_data
+from ietf.doc.models import Document, TelechatDocEvent, State
+from ietf.person.models import Person
+from ietf.group.models import Group
 from ietf.iesg.models import *
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, login_testing_unauthorized
 
+class IESGAgendaTests(django.test.TestCase):
+    def test_feed(self):
+        draft = make_test_data()
+
+        url = "/feed/iesg-agenda/"
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(draft.name not in r.content)
+
+        # add to schedule
+        e = TelechatDocEvent(type="scheduled_for_telechat")
+        e.doc = draft
+        e.by = Person.objects.get(name="Aread Irector")
+        e.telechat_date = TelechatDate.objects.active()[0].date
+        e.returning_item = True
+        e.save()
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(draft.name in r.content)
+        self.assertTrue(draft.title in r.content)
+
 class RescheduleOnAgendaTestCase(django.test.TestCase):
     def test_reschedule(self):
-        from ietf.utils.test_data import make_test_data
-        from ietf.person.models import Person
-        from ietf.doc.models import TelechatDocEvent
-        
         draft = make_test_data()
 
         # add to schedule
@@ -82,8 +103,6 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
         
     
     def test_working_group_actions(self):
-        from ietf.utils.test_data import make_test_data
-        
         make_test_data()
         
         url = urlreverse('iesg_working_group_actions')
@@ -98,8 +117,6 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
         self.assertTrue('(sieve)' in r.content)
 
     def test_delete_wgaction(self):
-        from ietf.utils.test_data import make_test_data
-
         make_test_data()
         
         wga = WGAction.objects.all()[0]
@@ -111,9 +128,6 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
         self.assertTrue(not WGAction.objects.filter(pk=wga.pk))
 
     def test_edit_wgaction(self):
-        from ietf.utils.test_data import make_test_data
-        from ietf.person.models import Person
-        
         make_test_data()
         
         wga = WGAction.objects.all()[0]
@@ -146,10 +160,6 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
         self.assertEquals(wga.telechat_date, dates[3].date)
         
     def test_add_possible_wg(self):
-        from ietf.utils.test_data import make_test_data
-        from ietf.person.models import Person
-        from ietf.group.models import Group
-        
         make_test_data()
         
         url = urlreverse('iesg_working_group_actions')
@@ -191,8 +201,6 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
         self.assertEquals(wgas_before + 1, WGAction.objects.all().count())
         
     def test_delete_possible_wg(self):
-        from ietf.utils.test_data import make_test_data
-
         make_test_data()
         
         url = urlreverse('iesg_working_group_actions')
@@ -214,10 +222,6 @@ class IesgUrlTestCase(SimpleUrlTestCase):
         else:
             return content
 
-#Tests added since database redesign that speak the new clases
-
-from ietf.doc.models import Document,TelechatDocEvent,State
-from ietf.group.models import Person
 class DeferUndeferTestCase(django.test.TestCase):
     def helper_test_defer(self,name):
 
@@ -313,5 +317,4 @@ class DeferUndeferTestCase(django.test.TestCase):
     # when charters support being deferred, be sure to test them here
 
     def setUp(self):
-        from ietf.utils.test_data import make_test_data
         make_test_data()
