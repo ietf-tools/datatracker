@@ -57,7 +57,7 @@ def safe_create_1(self, verbosity, *args, **kwargs):
     print "     Saving test database name "+settings.DATABASES["default"]["NAME"]+"..."
     test_database_name = settings.DATABASES["default"]["NAME"]
     if settings.TEST_GLOBAL_FIXTURES:
-        print "     Loading globale test fixtures: %s" % ", ".join(settings.TEST_GLOBAL_FIXTURES)
+        print "     Loading global test fixtures: %s" % ", ".join(settings.TEST_GLOBAL_FIXTURES)
         call_command('loaddata', *settings.TEST_GLOBAL_FIXTURES, verbosity=0, commit=False, database="default")
     return x
 
