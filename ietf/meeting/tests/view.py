@@ -28,7 +28,7 @@ class ViewTestCase(TestCase):
         resp = self.client.get('/meeting/83/agenda.txt')
         # to capture new output (and check it for correctness)
         fn = ""
-        if resp.content != agenda83.txt:
+        if resp.content != agenda83txt:
             fn = "%s/meeting/tests/agenda-83-txt-output-out.txt" % BASE_DIR
             out = open(fn, "w")
             out.write(resp.content)
