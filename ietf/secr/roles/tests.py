@@ -1,11 +1,12 @@
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from ietf.utils import TestCase
 
 from ietf.group.models import Group
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
 
 from pyquery import PyQuery
+import debug
 
 SECR_USER='secretary'
 
@@ -14,7 +15,8 @@ def augment_data():
         Group.objects.create(acronym='dummy',name='Dummy Group',type_id='sdo')
 
 class MainTestCase(TestCase):
-    fixtures = ['names']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names', 'persons', 'groupgroup']
                 
     def test_main(self):
         "Main Test"
@@ -26,7 +28,7 @@ class MainTestCase(TestCase):
     def test_roles_delete(self):
         draft = make_test_data()
         augment_data()
-        group = Group.objects.filter(type='wg')[0]
+        group = Group.objects.filter(acronym='mars')[0]
         role = group.role_set.all()[0]
         url = reverse('roles_delete_role', kwargs={'acronym':group.acronym,'id':role.id})
         target = reverse('roles') + '?group=%s' % group.acronym
@@ -38,7 +40,7 @@ class MainTestCase(TestCase):
         draft = make_test_data()
         augment_data()
         person = Person.objects.get(name='Aread Irector')
-        group = Group.objects.filter(type='wg')[0]
+        group = Group.objects.filter(acronym='mars')[0]
         url = reverse('roles')
         target = reverse('roles') + '?group=%s' % group.acronym
         post_data = {'group_acronym':group.acronym,

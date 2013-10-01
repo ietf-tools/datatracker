@@ -6,7 +6,6 @@ from StringIO import StringIO
 from textwrap import wrap
 
 
-import django.test
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
@@ -15,6 +14,7 @@ from ietf.utils.test_data  import make_test_data
 from ietf.utils.mail import outbox
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_status_change import default_approval_text
+from ietf.utils import TestCase
 
 from ietf.doc.models import Document,DocEvent,NewRevisionDocEvent,BallotPositionDocEvent,TelechatDocEvent,WriteupDocEvent,DocAlias,State
 from ietf.name.models import StreamName
@@ -22,9 +22,9 @@ from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 
 
-class StatusChangeTestCase(django.test.TestCase):
-
-    fixtures = ['names']
+class StatusChangeTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_start_review(self):
 
@@ -353,9 +353,9 @@ class StatusChangeTestCase(django.test.TestCase):
         make_test_data()
 
 
-class StatusChangeSubmitTestCase(django.test.TestCase):
-
-    fixtures = ['names']
+class StatusChangeSubmitTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_initial_submission(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')

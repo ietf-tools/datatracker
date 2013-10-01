@@ -35,17 +35,21 @@
 import os
 import re
 import sys
-import django
-from django.db import connection
-from django.test import TestCase
-from django.test.client import Client
-import ietf.settings
-from django.conf import settings
 from datetime import datetime
 import urllib2 as urllib
 from difflib import unified_diff
 
-real_database_name = ietf.settings.DATABASES["default"]["NAME"]
+import django.test
+from django.db import connection, connections, transaction, DEFAULT_DB_ALIAS
+from django.test.testcases import connections_support_transactions
+from django.test.testcases import disable_transaction_methods
+from django.test.client import Client
+from django.conf import settings
+from django.core.management import call_command
+
+import debug
+
+real_database_name = settings.DATABASES["default"]["NAME"]
 
 import traceback
 
@@ -57,7 +61,7 @@ class RealDatabaseTest:
         self._setDatabaseName(newdb)
 
     def tearDownRealDatabase(self):
-        curdb = self._getDatabaseName()
+        #curdb = self._getDatabaseName()
         #print "     Switching database from "+curdb+" to "+self._original_testdb
         self._setDatabaseName(self._original_testdb)
 
@@ -105,7 +109,7 @@ def split_url(url):
         args = {}
     return url, args
 
-class SimpleUrlTestCase(TestCase,RealDatabaseTest):
+class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
 
     def setUp(self):
         self.setUpRealDatabase()
@@ -158,7 +162,8 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
                 if code in codes:
                     sys.stdout.write(".")
                 else:
-                    sys.stdout.write("E")
+                    sys.stdout.write("F")
+                    failed = True
             elif self.verbosity > 1:
                 if code in codes:
                     print "OK   %s %s" % (code, url)
@@ -232,7 +237,72 @@ def login_testing_unauthorized(tc, remote_user, url):
 
     tc.client.login(remote_user=remote_user)
     
-class ReverseLazyTest(TestCase):
+class ReverseLazyTest(django.test.TestCase):
     def test_redirect_with_lazy_reverse(self):
         response = self.client.get('/ipr/update/')
         self.assertRedirects(response, "/ipr/", status_code=301)
+
+loaded_fixtures = []
+
+class TestCase(django.test.TestCase):
+    """
+    Does basically the same as django.test.TestCase, but if the test database has
+    support for transactions, it loads perma_fixtures before the transaction which
+    surrounds every test.  This causes the perma_fixtures to stay in the database
+    after the transaction which surrounds each test is rolled back, which lets us
+    load each preload_fixture only once.  However, it requires that all the
+    perma_fixtures are consistent with each other and with all regular fixtures
+    across all applications.  You could view the perma_fixtures as on_the_fly
+    initial_data for tests.
+
+    Regular fixtures are re-loaded for each TestCase, as usual.
+
+    We don't flush the database, as that triggers a re-load of initial_data.
+    """
+
+    def _fixture_setup(self):
+        global loaded_fixtures
+
+        if not connections_support_transactions():
+            if hasattr(self, 'perma_fixtures'):
+                if not hasattr(self, 'fixtures'):
+                    self.fixtures = self.perma_fixtures
+                else:
+                    self.fixtures += self.perma_fixtures
+            return super(TestCase, self)._fixture_setup()
+
+        # If the test case has a multi_db=True flag, setup all databases.
+        # Otherwise, just use default.
+        if getattr(self, 'multi_db', False):
+            databases = connections
+        else:
+            databases = [DEFAULT_DB_ALIAS]
+
+        for db in databases:
+            if hasattr(self, 'perma_fixtures'):
+                fixtures = [ fixture for fixture in self.perma_fixtures if not fixture in loaded_fixtures ]
+                if fixtures:
+                    call_command('loaddata', *fixtures, **{
+                                                            'verbosity': 0,
+                                                            'commit': False,
+                                                            'database': db
+                                                            })
+                loaded_fixtures += fixtures
+
+        for db in databases:
+            transaction.enter_transaction_management(using=db)
+            transaction.managed(True, using=db)
+        disable_transaction_methods()
+
+        from django.contrib.sites.models import Site
+        Site.objects.clear_cache()
+
+        for db in databases:
+            if hasattr(self, 'fixtures'):
+                call_command('loaddata', *self.fixtures, **{
+                                                            'verbosity': 0,
+                                                            'commit': False,
+                                                            'database': db
+                                                            })
+
+

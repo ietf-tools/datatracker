@@ -71,11 +71,39 @@ class PersonInfo(models.Model):
     class Meta:
         abstract = True
 
+class PersonManager(models.Manager):
+    def by_email(self, email):
+        results = self.get_query_set().filter(user__email = email)
+        if len(results)>0:
+            return results[0]
+        else:
+            return None
+    def by_username(self, username):
+        results = self.get_query_set().filter(user__username = username)
+        if len(results)>0:
+            return results[0]
+        else:
+            return None
+
 class Person(PersonInfo):
+    objects = PersonManager()
     user = models.OneToOneField(User, blank=True, null=True)
 
     def person(self): # little temporary wrapper to help porting to new schema
         return self
+
+    def json_url(self):
+        return "/person/%s.json" % (self.id, )
+
+    # person json not yet implemented
+    #def json_dict(self, host_scheme):
+    #    ct1 = dict()
+    #    ct1['person_id'] = self.id
+    #    ct1['href']      = self.url(host_scheme)
+    #    ct1['name']      = self.name
+    #    ct1['ascii']     = self.ascii
+    #    ct1['affliation']= self.affliation
+    #    return ct1
 
 class PersonHistory(PersonInfo):
     person = models.ForeignKey(Person, related_name="history_set")

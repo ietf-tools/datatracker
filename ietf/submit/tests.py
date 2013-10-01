@@ -6,21 +6,22 @@ import re
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse as urlreverse
-import django.test
 from StringIO import StringIO
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
+from ietf.utils import TestCase
 
 from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role
 from ietf.doc.models import *
 from ietf.submit.models import IdSubmissionDetail, Preapproval
 
-class SubmitTestCase(django.test.TestCase):
-    fixtures = ['names', 'idsubmissionstatus']
+class SubmitTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names', 'idsubmissionstatus']
 
     def setUp(self):
         self.staging_dir = os.path.abspath("tmp-submit-staging-dir")
@@ -401,8 +402,8 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue("Full URL for managing submission" in outbox[-1]["Subject"])
         self.assertTrue(name in outbox[-1]["Subject"])
 
-class ApprovalsTestCase(django.test.TestCase):
-    fixtures = ['names', 'idsubmissionstatus']
+class ApprovalsTestCase(TestCase):
+    perma_fixtures = ['names', 'idsubmissionstatus']
 
     def test_approvals(self):
         make_test_data()

@@ -3,13 +3,13 @@ import datetime, os, shutil
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse as urlreverse
-import django.test
 from StringIO import StringIO
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
+from ietf.utils import TestCase
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from ietf.person.models import Person, Email
@@ -18,8 +18,9 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from ietf.doc.utils import *
     from ietf.name.models import DocTagName
 
-class EditStreamInfoTestCase(django.test.TestCase):
-    fixtures = ['names']
+class EditStreamInfoTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_adopt_document(self):
         draft = make_test_data()

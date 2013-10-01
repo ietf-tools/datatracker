@@ -1,6 +1,5 @@
 import os, shutil, datetime
 
-import django.test
 from django.core.urlresolvers import reverse as urlreverse
 
 from pyquery import PyQuery
@@ -8,6 +7,7 @@ from pyquery import PyQuery
 from ietf.utils.mail import outbox
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
+from ietf.utils import TestCase
 
 from ietf.doc.models import *
 from ietf.name.models import *
@@ -23,8 +23,9 @@ from ietf.doc.tests_conflict_review import *
 from ietf.doc.tests_status_change import *
 
 
-class SearchTestCase(django.test.TestCase):
-    fixtures = ['names']
+class SearchTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_search(self):
         draft = make_test_data()
@@ -125,8 +126,9 @@ class SearchTestCase(django.test.TestCase):
         self.assertTrue(draft.title in r.content)
         
 
-class DocTestCase(django.test.TestCase):
-    fixtures = ['names']
+class DocTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_document_draft(self):
         draft = make_test_data()
@@ -248,8 +250,9 @@ class DocTestCase(django.test.TestCase):
         self.assertEqual(r.status_code, 200)
 
 
-class AddCommentTestCase(django.test.TestCase):
-    fixtures = ['names']
+class AddCommentTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_add_comment(self):
         draft = make_test_data()

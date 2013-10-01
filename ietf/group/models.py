@@ -1,13 +1,17 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+from urlparse import urljoin
+
 from django.db import models
 from django.db.models import Q
 
 from ietf.name.models import *
 from ietf.person.models import Email, Person
+from ietf.group.colors import fg_group_colors, bg_group_colors
 
 import datetime
-
+import debug
+    
 class GroupInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     name = models.CharField(max_length=80)
@@ -73,6 +77,39 @@ class Group(GroupInfo):
     def get_members(self):
         members = self.role_set.filter(name__slug__in=["chair", "member", "advisor", "liaison"])
         return members
+
+    # these are copied to Group because it is still proxied.
+    @property
+    def upcase_acronym(self):
+        return self.acronym.upper()
+
+    @property
+    def fg_color(self):
+        return fg_group_colors[self.upcase_acronym]
+
+    @property
+    def bg_color(self):
+        return bg_group_colors[self.upcase_acronym]
+
+    def json_url(self):
+        return "/group/%s.json" % (self.acronym,)
+
+    def json_dict(self, host_scheme):
+        group1= dict()
+        group1['href'] = urljoin(host_scheme, self.json_url())
+        group1['acronym'] = self.acronym
+        group1['name']    = self.name
+        group1['state']   = self.state.slug
+        group1['type']    = self.type.slug
+        group1['parent_href']  = urljoin(host_scheme, self.parent.json_url())
+        # uncomment when people URL handle is created
+        #if self.ad is not None:
+        #    group1['ad_href']      = urljoin(host_scheme, self.ad.url())
+        group1['list_email'] = self.list_email
+        group1['list_subscribe'] = self.list_subscribe
+        group1['list_archive'] = self.list_archive
+        group1['comments']     = self.comments
+        return group1
 
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')

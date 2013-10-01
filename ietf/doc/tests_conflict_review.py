@@ -6,7 +6,6 @@ from StringIO import StringIO
 from textwrap import wrap
 
 
-import django.test
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
@@ -15,6 +14,7 @@ from ietf.utils.test_data  import make_test_data
 from ietf.utils.mail import outbox
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_conflict_review import default_approval_text
+from ietf.utils import TestCase
 
 from ietf.doc.models import Document,DocEvent,NewRevisionDocEvent,BallotPositionDocEvent,TelechatDocEvent,DocAlias,State
 from ietf.name.models import StreamName
@@ -22,9 +22,9 @@ from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 
 
-class ConflictReviewTestCase(django.test.TestCase):
-
-    fixtures = ['names']
+class ConflictReviewTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_start_review(self):
 
@@ -254,9 +254,9 @@ class ConflictReviewTestCase(django.test.TestCase):
         make_test_data()
 
 
-class ConflictReviewSubmitTestCase(django.test.TestCase):
-
-    fixtures = ['names']
+class ConflictReviewSubmitTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names',]
 
     def test_initial_submission(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')

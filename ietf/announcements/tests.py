@@ -1,11 +1,11 @@
 import datetime
 
 from django.conf import settings
-import django.test
 
 from ietf.utils.test_utils import SimpleUrlTestCase, canonicalize_sitemap
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
+from ietf.utils import TestCase
 
 from ietf.announcements.models import ScheduledAnnouncement
 
@@ -21,7 +21,7 @@ class AnnouncementsUrlTestCase(SimpleUrlTestCase):
         else:
             return content
 
-class SendScheduledAnnouncementsTestCase(django.test.TestCase):
+class SendScheduledAnnouncementsTestCase(TestCase):
     def test_send_plain_announcement(self):
         a = ScheduledAnnouncement.objects.create(
             mail_sent=False,
@@ -66,8 +66,9 @@ class SendScheduledAnnouncementsTestCase(django.test.TestCase):
         self.assertTrue(ScheduledAnnouncement.objects.get(id=a.id).mail_sent)
 
 
-class SendScheduledAnnouncementsTestCaseREDESIGN(django.test.TestCase):
-    fixtures = ["names"]
+class SendScheduledAnnouncementsTestCaseREDESIGN(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ["names"]
 
     def test_send_plain_announcement(self):
         make_test_data()

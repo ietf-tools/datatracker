@@ -2,7 +2,7 @@ import unittest
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from ietf.utils import TestCase
 from django.test.client import Client
 from ietf.group.models import Group
 from ietf.ietfauth.decorators import has_role
@@ -20,7 +20,8 @@ class SreqUrlTestCase(SimpleUrlTestCase):
         self.doTestUrls(__file__)
 
 class MainTestCase(TestCase):
-    fixtures = ['names']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
     
     def test_main(self):
         draft = make_test_data()
@@ -33,7 +34,7 @@ class MainTestCase(TestCase):
         self.failUnless(len(unsched) > 0)
 
 class SubmitRequestCase(TestCase):
-    fixtures = ['names']
+    perma_fixtures = ['names']
     
     def test_submit_request(self):
         draft = make_test_data()

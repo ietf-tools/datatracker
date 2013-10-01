@@ -2,7 +2,7 @@ from django import forms
 from django.db.models import Q
 
 from ietf.group.models import Group
-from ietf.meeting.models import Meeting, Room, TimeSlot, Session
+from ietf.meeting.models import Meeting, Room, TimeSlot, Session, ScheduledSession
 from ietf.meeting.timedeltafield import TimedeltaFormField, TimedeltaWidget
 from ietf.name.models import TimeSlotTypeName
 
@@ -64,8 +64,9 @@ class BaseMeetingRoomFormSet(forms.models.BaseInlineFormSet):
         '''Check that any rooms marked for deletion are not in use'''
         for form in self.deleted_forms:
             room = form.cleaned_data['id']
-            sessions = Session.objects.filter(timeslot__location=room)
-            if sessions:
+            scheduledsessions = ScheduledSession.objects.filter(timeslot__location=room,
+                                                                session__isnull=False)
+            if scheduledsessions:
                 raise forms.ValidationError('Cannot delete meeting room %s.  Already assigned to some session.' % room.name)
                 
 class TimeSlotModelChoiceField(forms.ModelChoiceField):

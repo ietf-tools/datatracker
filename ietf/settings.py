@@ -13,6 +13,9 @@ except ImportError:
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# a place to put ajax logs if necessary.
+LOG_DIR  = '/var/log/datatracker'
+
 import sys
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
 sys.path.append(os.path.abspath(BASE_DIR + "/../redesign"))
@@ -58,8 +61,8 @@ DATABASES = {
 }
 
 DATABASE_TEST_OPTIONS = {
-        # Uncomment this to speed up testing if your database supports InnoDB:
-        # 'init_command': 'SET storage_engine=InnoDB',
+        # Comment this out if your database doesn't support InnoDB
+        'init_command': 'SET storage_engine=InnoDB',
     }
 
 # Local time zone for this installation. Choices can be found here:
@@ -93,6 +96,8 @@ MEDIA_URL = 'http://www.ietf.org'
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/media/'
 
+DAJAXICE_MEDIA_PREFIX="dajaxice"
+
 AUTH_PROFILE_MODULE = 'person.Person'
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
@@ -113,6 +118,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.RemoteUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.http.ConditionalGetMiddleware',
     'django.middleware.doc.XViewMiddleware',
     'ietf.middleware.SQLLogMiddleware',
     'ietf.middleware.SMTPExceptionMiddleware',
@@ -140,7 +146,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'ietf.context_processors.revision_info',
     'ietf.secr.context_processors.secr_revision_info',
     'ietf.secr.context_processors.static',
-    'ietf.context_processors.rfcdiff_prefix', 
+    'ietf.context_processors.rfcdiff_prefix',
 )
 
 INSTALLED_APPS = (
@@ -170,6 +176,7 @@ INSTALLED_APPS = (
     'ietf.liaisons',
     'ietf.mailinglists',
     'ietf.meeting',
+    'ietf.utils',
     #'ietf.proceedings',
     'ietf.redirects',
     'ietf.idrfc',
@@ -196,6 +203,7 @@ INSTALLED_APPS = (
     'ietf.secr.sreq',
     'ietf.nomcom',
     'ietf.dbtemplate',
+    'dajaxice',
 )
 
 INTERNAL_IPS = (
@@ -219,6 +227,9 @@ SERVER_MODE = 'development'
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
+
+# Fixtures which will be loaded before testing starts
+GLOBAL_TEST_FIXTURES = [ 'names','groups','persons', 'roles']
 
 # WG Chair configuration
 MAX_WG_DELEGATES = 3
@@ -352,7 +363,7 @@ HTPASSWD_FILE = "/www/htpasswd"
 # DB redesign
 USE_DB_REDESIGN_PROXY_CLASSES = True
 
-SOUTH_TESTS_MIGRATE = False 
+SOUTH_TESTS_MIGRATE = False
 
 # Generation of bibxml files for xml2rfc
 BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
@@ -376,6 +387,10 @@ SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
 SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 SECR_STATIC_URL = '/secretariat/'
+
+USE_ETAGS=True
+
+PRODUCTION_TIMEZONE = "America/Los_Angeles"
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

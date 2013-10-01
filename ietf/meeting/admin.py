@@ -27,7 +27,7 @@ admin.site.register(Meeting, MeetingAdmin)
 class TimeSlotAdmin(admin.ModelAdmin):
     list_display = ["meeting", "type", "name", "time", "duration", "location", "session_desc"]
     list_filter = ["meeting", ]
-    raw_id_fields = ["location", "session"]
+    raw_id_fields = ["location"]
     ordering = ["-time"]
 
     def session_desc(self, instance):

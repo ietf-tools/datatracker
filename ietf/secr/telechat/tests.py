@@ -1,5 +1,5 @@
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from ietf.utils import TestCase
 
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem, WGAction
 from ietf.person.models import Person
@@ -15,7 +15,8 @@ def augment_data():
     TelechatDate.objects.create(date=datetime.datetime.today())
     
 class MainTestCase(TestCase):
-    fixtures = ['names']
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
                 
     def test_main(self):
         "Main Test"

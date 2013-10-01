@@ -25,7 +25,7 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
  <a href="#plenaries"><b>Plenaries</b></a> &nbsp;|&nbsp;
  {% endif %}
  {% if ietf %}
-    {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.acronym as areas %}
+    {% regroup ietf|dictsort:"session.group.parent.acronym" by session.group.parent.acronym as areas %}
     {% for area in areas %}
        {% if not forloop.first %}&nbsp;|&nbsp;{% endif %}
        <a href="#{{area.grouper}}"><b>{{ area.grouper.upper }}</b></a>
@@ -55,13 +55,15 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 {% if plenaries %}
     <a name="plenaries"></a>
     <h2 class="ietf-divider">Plenaries</h2>
-    {% for session in plenaries %}
-       {% include "meeting/group_materials.html" %}
+    {% for scheduledsession in plenaries %}
+       {% with scheduledsession.session as session %}
+          {% include "meeting/group_materials.html" %}
+       {% endwith %}
     {% endfor %}
 {% endif %}
 
 <!-- Working groups -->
-{% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
+{% regroup ietf|dictsort:"session.group.parent.acronym" by session.group.parent.name as areas %}
 {% for sessions in areas %}
    <a name="{{sessions.list.0.group.parent.acronym}}"></a>
    <h2 class="ietf-divider">{{ sessions.grouper }}</h2>
@@ -77,9 +79,11 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
     {% with "False" as show_agenda %}
     <a name="training"></a>
     <h2 class="ietf-divider">Training</h2>
-    {% for session in training %}
+    {% for scheduledsession in training %}
       {% ifchanged %}
-	 {% include "meeting/group_materials.html" %}
+        {% with scheduledsession.session as session %}
+ 	  {% include "meeting/group_materials.html" %}
+        {% endwith %}
       {% endifchanged %}
     {% endfor %}
     {% endwith %}
@@ -100,11 +104,12 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 
 <!-- IRTF Sessions -->
 {% if irtf %}
-   <a name="irtf"></a>
-   <h2 class="ietf-divider">IRTF</h2>
-    {% for session in irtf|dictsort:"group.acronym" %}
+<h2 class="ietf-divider">IRTF</h2>
+    {% for scheduledsession in irtf|dictsort:"group.acronym" %}
       {% ifchanged %}
-	 {% include "meeting/group_materials.html" %}
+        {% with scheduledsession.session as session %}
+ 	  {% include "meeting/group_materials.html" %}
+        {% endwith %}
       {% endifchanged %}
     {% endfor %}
 {% endif %}

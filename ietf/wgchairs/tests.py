@@ -3,13 +3,13 @@ import datetime, os, shutil
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse as urlreverse
-import django.test
 from StringIO import StringIO
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
+from ietf.utils import TestCase
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from ietf.person.models import Person, Email
@@ -17,8 +17,9 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from ietf.doc.models import Document, State, WriteupDocEvent
     from ietf.name.models import DocTagName
         
-class ManageDelegatesTestCase(django.test.TestCase):
-    fixtures = ['names']
+class ManageDelegatesTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_delete_delegate(self):
         make_test_data()
@@ -99,8 +100,9 @@ class ManageDelegatesTestCase(django.test.TestCase):
         self.assertEquals(history_before + 1, GroupHistory.objects.filter(acronym="mars").count())
 
 
-class ManageShepherdsTestCase(django.test.TestCase):
-    fixtures = ['names']
+class ManageShepherdsTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_manage_shepherds(self):
         make_test_data()
@@ -138,8 +140,9 @@ class ManageShepherdsTestCase(django.test.TestCase):
         self.assertEquals(len(q('div#othershepherds a:contains("Shepherd other")')), 1)
 
 
-class ManageWorkflowTestCase(django.test.TestCase):
-    fixtures = ['names']
+class ManageWorkflowTestCase(TestCase):
+    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
+    perma_fixtures = ['names']
 
     def test_manage_workflows(self):
         make_test_data()
