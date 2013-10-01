@@ -61,9 +61,9 @@ replied to the nomination notification they have received.){% endif %}</p>
             <select name="position">
               <option value="">All</option>
               {% for position in positions %}
-                  <option value="{{ position.position__id }}"
-                    {% ifequal position.position__id  selected_position %}selected="selected"{% endifequal%}>
-                    {{ position.position__name }}
+                  <option value="{{ position.id }}"
+                    {% ifequal position.id  selected_position %}selected="selected"{% endifequal%}>
+                    {{ position.name }}
                   </option>
               {% endfor %}
             </select>

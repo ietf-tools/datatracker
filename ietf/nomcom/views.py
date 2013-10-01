@@ -40,12 +40,10 @@ def index(request):
     nomcom_list = Group.objects.filter(type__slug='nomcom').order_by('acronym')
     for nomcom in nomcom_list:
         year = nomcom.acronym[6:]
-        debug.show('year')
         try:
             year = int(year)
         except ValueError:
             year = None
-        debug.show('year')
         nomcom.year = year
         nomcom.label = "%s/%s" % (year, year+1)
         if   year in [ 2005, 2006, 2007, 2008, 2009, 2010 ]:
@@ -60,7 +58,6 @@ def index(request):
             nomcom.ann_url = "/ann/nomcom/#%4d" % year
         else:
             nomcom.ann_url = None
-    debug.show('nomcom.url')
     return render_to_response('nomcom/index.html',
                               {'nomcom_list': nomcom_list,}, RequestContext(request))
     
@@ -145,7 +142,7 @@ def private_index(request, year):
 
     stats = all_nominee_positions.values('position__name', 'position__id').annotate(total=Count('position'))
     states = list(NomineePositionState.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': u'Questionnaire'}]
-    positions = all_nominee_positions.values('position__name', 'position__id').distinct()
+    positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
         for state in states:
             if state['slug'] == questionnaire_state:
