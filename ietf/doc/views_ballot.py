@@ -693,7 +693,7 @@ def approve_ballot(request, name):
         e = DocEvent(doc=doc, by=login)
         if action == "do_not_publish":
             e.type = "iesg_disapproved"
-            e.desc = "Do Not Publish note has been sent to RFC Editor"
+            e.desc = "Do Not Publish note has been sent to the RFC Editor"
         else:
             e.type = "iesg_approved"
             e.desc = "IESG has approved the document"

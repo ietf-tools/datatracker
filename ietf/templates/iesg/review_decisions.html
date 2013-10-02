@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}IESG Review Decisions{% endblock %}
+
+{% block content %}
+<h1>IESG Review Decisions</h1>
+
+<p>Showing review decisions announced in {% if year %}{{ year }}{% else %}the past 6 months{% endif %}.</p>
+
+<p>Announcements in:
+  {% for y in years %}<a {% if y != year %}href="{% url ietf.iesg.views.review_decisions year=y %}"{% endif %}>{{ y }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+</p>
+
+{% for e in events %}
+{% ifchanged %}<h3>{{ e.time|date:"F j, Y" }}</h3>{% endifchanged %}
+<div>{{ e.desc }} <a href="{{ e.doc.get_absolute_url }}">{{ e.doc.name }}</a> {% if e.doc.intended_std_level %}({{ e.doc.intended_std_level }}){% endif %} - {{ e.doc.title }}</div>
+{% endfor %}
+
+{% endblock %}

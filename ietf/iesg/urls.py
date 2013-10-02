@@ -37,10 +37,10 @@ from django.conf import settings
 from ietf.iesg import views
 
 urlpatterns = patterns('',
-    (r'^telechat/.*$', 'django.views.generic.simple.redirect_to', { 'url': 'http://www.ietf.org/iesg/minutes.html' })
-    (r'^ann/ind/$',views.inddocs),
-    (r'^ann/(?P<cat>[^/]+)/$',views.wgdocs),
-    (r'^agenda/$', views.agenda),                        
+    (r'^telechat/.*$', 'django.views.generic.simple.redirect_to', { 'url': 'http://www.ietf.org/iesg/minutes.html' }),
+    (r'^decisions/(?:(?P<year>[0-9]{4})/)?$', views.review_decisions),
+    (r'^ann/(?:ind|new|prev)/$', 'django.views.generic.simple.redirect_to', { 'url': "/iesg/decisions/", 'permanent': True }),
+    (r'^agenda/$', views.agenda),
     (r'^agenda/agenda.txt$', views.agenda_txt),                        
     (r'^agenda/agenda.json$', views.agenda_json),                        
     (r'^agenda/scribe_template.html$', views.agenda_scribe_template),

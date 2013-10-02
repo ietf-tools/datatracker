@@ -36,7 +36,6 @@ import codecs, re, os, glob
 import datetime
 import tarfile
 
-from ietf.idtracker.models import IDInternal, InternetDraft, AreaGroup, Position, IESGLogin, Acronym
 from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
 from django.views.decorators.vary import vary_on_cookie
@@ -47,91 +46,42 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.conf import settings
 from django.utils import simplejson as json
 from django import forms
+
+from ietf.idtracker.models import IDInternal, InternetDraft, AreaGroup, Position, IESGLogin, Acronym
+
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
 from ietf.doc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required, role_required
 from ietf.ietfauth.utils import has_role
 from ietf.ipr.models import IprDocAlias
-from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent
+from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent
 from ietf.group.models import Group, GroupMilestone
 
-def date_threshold():
-    """Return the first day of the month that is 185 days ago."""
-    ret = datetime.date.today() - datetime.timedelta(days=185)
-    ret = ret - datetime.timedelta(days=ret.day - 1)
-    return ret
+def review_decisions(request, year=None):
+    events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
 
-def inddocs(request):
-    queryset_list_ind = [d for d in InternetDraft.objects.filter(stream__in=("IRTF","ISE"), docevent__type="iesg_approved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_approved"]
-    queryset_list_ind.sort(key=lambda d: d.b_approve_date, reverse=True)
+    years = sorted((d.year for d in events.dates('time', 'year')), reverse=True)
 
-    queryset_list_ind_dnp = [d for d in IDInternal.objects.filter(stream__in=("IRTF","ISE"), docevent__type="iesg_disapproved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_disapproved"]
-    queryset_list_ind_dnp.sort(key=lambda d: d.dnp_date, reverse=True)
-
-    return render_to_response('iesg/independent_doc.html',
-                              dict(object_list=queryset_list_ind,
-                                   object_list_dnp=queryset_list_ind_dnp),
-                              context_instance=RequestContext(request))
-   
-
-def wgdocs(request,cat):
-   pass
-
-def wgdocsREDESIGN(request,cat):
-    is_recent = 0
-    proto_actions = []
-    doc_actions = []
-    threshold = date_threshold()
-    
-    proto_levels = ["bcp", "ds", "ps", "std"]
-    doc_levels = ["exp", "inf"]
-    
-    if cat == 'new':
-        is_recent = 1
-        
-        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__gte=threshold, intended_std_level__in=proto_levels + doc_levels).exclude(stream__in=("ISE","IRTF")).distinct()
-        for d in drafts:
-            if d.b_approve_date and d.b_approve_date >= threshold:
-                if d.intended_std_level_id in proto_levels:
-                    proto_actions.append(d)
-                elif d.intended_std_level_id in doc_levels:
-                    doc_actions.append(d)
-
-    elif cat == 'prev':
-        # proto
-        start_date = datetime.date(1997, 12, 1)
-        
-        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__lt=threshold, docevent__time__gte=start_date, intended_std_level__in=proto_levels).exclude(stream__in=("ISE","IRTF")).distinct()
-
-        for d in drafts:
-            if d.b_approve_date and start_date <= d.b_approve_date < threshold:
-                proto_actions.append(d)
-
-        # doc
-        start_date = datetime.date(1998, 10, 15)
-        
-        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__lt=threshold, docevent__time__gte=start_date, intended_std_level__in=doc_levels).exclude(stream__in=("ISE","IRTF")).distinct()
-
-        for d in drafts:
-            if d.b_approve_date and start_date <= d.b_approve_date < threshold:
-                doc_actions.append(d)
+    if year:
+        year = int(year)
+        events = events.filter(time__year=year)
     else:
-        raise Http404
+        d = datetime.date.today() - datetime.timedelta(days=185)
+        d = datetime.date(d.year, d.month, 1)
+        events = events.filter(time__gte=d)
 
-    proto_actions.sort(key=lambda d: d.b_approve_date, reverse=True)
-    doc_actions.sort(key=lambda d: d.b_approve_date, reverse=True)
-    
-    return render_to_response('iesg/ietf_doc.html',
-                              dict(object_list=proto_actions,
-                                   object_list_doc=doc_actions,
-                                   is_recent=is_recent,
-                                   title_prefix="Recent" if is_recent else "Previous"),
+    events = events.select_related("doc", "doc__intended_std_level").order_by("-time", "-id")
+
+    #proto_levels = ["bcp", "ds", "ps", "std"]
+    #doc_levels = ["exp", "inf"]
+
+    return render_to_response('iesg/review_decisions.html',
+                              dict(events=events,
+                                   years=years,
+                                   year=year),
                               context_instance=RequestContext(request))
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    wgdocs = wgdocsREDESIGN
-    
 
 def get_doc_section(id):
     pass
