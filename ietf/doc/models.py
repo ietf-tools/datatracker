@@ -568,7 +568,7 @@ EVENT_TYPES = [
 
 class DocEvent(models.Model):
     """An occurrence for a document, used for tracking who, when and what."""
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened", db_index=True)
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
     by = models.ForeignKey(Person)
     doc = models.ForeignKey('doc.Document')
