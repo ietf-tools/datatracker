@@ -2,6 +2,11 @@
 
 {% block title %}IESG Review Decisions{% endblock %}
 
+{% block morecss %}
+div.decisions h3 { margin-bottom: 0.5em; }
+div.decisions div { padding-left: 1em; text-indent: -1em; }
+{% endblock %}
+
 {% block content %}
 <h1>IESG Review Decisions</h1>
 
@@ -11,9 +16,11 @@
   {% for y in years %}<a {% if y != year %}href="{% url ietf.iesg.views.review_decisions year=y %}"{% endif %}>{{ y }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
 </p>
 
+<div class="decisions">
 {% for e in events %}
-{% ifchanged %}<h3>{{ e.time|date:"F j, Y" }}</h3>{% endifchanged %}
-<div>{{ e.desc }} <a href="{{ e.doc.get_absolute_url }}">{{ e.doc.name }}</a> {% if e.doc.intended_std_level %}({{ e.doc.intended_std_level }}){% endif %} - {{ e.doc.title }}</div>
+  {% ifchanged %}<h3>{{ e.time|date:"F j, Y" }}</h3>{% endifchanged %}
+  <div>{{ e.desc }} <a href="{% url doc_view e.doc.name %}">{{ e.doc.name }}</a> {% if e.doc.intended_std_level %}({{ e.doc.intended_std_level }}){% endif %} - {{ e.doc.title }}</div>
 {% endfor %}
+</div>
 
 {% endblock %}
