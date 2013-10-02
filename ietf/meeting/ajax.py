@@ -28,8 +28,13 @@ from ietf.settings import LOG_DIR
 
 log = logging.getLogger(__name__)
 
+import debug
+
 @dajaxice_register
 def readonly(request, meeting_num, schedule_id):
+    debug.say('readonly()')
+    debug.show('meeting_num')
+    debug.show('schedule_id')
     meeting = get_meeting(meeting_num)
     schedule = get_schedule_by_id(meeting, schedule_id)
 
@@ -60,6 +65,30 @@ def readonly(request, meeting_num, schedule_id):
          'write_perm':  write_perm,
          'owner_href':  request.build_absolute_uri(schedule.owner.json_url()),
          'read_only':   read_only})
+
+@group_required('Area Director','Secretariat')
+@dajaxice_register
+def update_timeslot_pinned(request, schedule_id, scheduledsession_id, pinned=False):
+    schedule = get_object_or_404(Schedule, pk = int(schedule_id))
+    meeting  = schedule.meeting
+    cansee,canedit = agenda_permissions(meeting, schedule, request.user)
+
+    if not canedit:
+        raise Http403
+        return json.dumps({'error':'no permission'})
+
+    if scheduledsession_id is not None:
+        ss_id = int(scheduledsession_id)
+
+    if ss_id != 0:
+        ss = get_object_or_404(schedule.scheduledsession_set, pk=ss_id)
+
+    ss.pinned = pinned
+    ss.save()
+
+    return json.dumps({'message':'valid'})
+
+
 
 @group_required('Area Director','Secretariat')
 @dajaxice_register
@@ -458,7 +487,10 @@ def session_json(request, num, sessionid):
     try:
         session = meeting.session_set.get(pk=int(sessionid))
     except Session.DoesNotExist:
-        return json.dumps({'error':"no such session %s" % sessionid})
+#        return json.dumps({'error':"no such session %s" % sessionid})
+        return HttpResponse(json.dumps({'error':"no such session %s" % sessionid}),
+                            status = 404,
+                            mimetype="application/json")
 
     sess1 = session.json_dict(request.build_absolute_uri('/'))
     return HttpResponse(json.dumps(sess1, sort_keys=True, indent=2),
@@ -466,6 +498,25 @@ def session_json(request, num, sessionid):
 
 # Would like to cache for 1 day, but there are invalidation issues.
 #@cache_page(86400)
+def constraint_json(request, num, constraintid):
+    meeting = get_meeting(num)
+
+    try:
+        constraint = meeting.constraint_set.get(pk=int(constraintid))
+    except Constraint.DoesNotExist:
+        return HttpResponse(json.dumps({'error':"no such constraint %s" % constraintid}),
+                            status = 404,
+                            mimetype="application/json")
+
+    json1 = constraint.json_dict(request.get_host_protocol())
+    return HttpResponse(json.dumps(json1, sort_keys=True, indent=2),
+                        mimetype="application/json")
+
+
+# Cache for 2 hour2
+#@cache_page(7200)
+# caching is a problem if there Host: header changes.
+#
 def session_constraints(request, num, sessionid):
     meeting = get_meeting(num)
 

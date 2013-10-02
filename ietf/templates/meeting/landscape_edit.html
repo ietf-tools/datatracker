@@ -9,6 +9,11 @@
 {% block morecss %}
 {% for area in area_list %}
 .{{ area.upcase_acronym}}-scheme, .meeting_event th.{{ area.upcase_acronym}}-scheme, #{{ area.upcase_acronym }}-groups, #selector-{{ area.upcase_acronym }} { color:{{ area.fg_color }}; background-color: {{ area.bg_color }} }
+.director-mark-{{ area.upcase_acronym}} {
+   border: 2px solid {{ area.fg_color}};
+   color:{{ area.fg_color }};
+   background-color: {{ area.bg_color }}
+}
 {% endfor %}
 {% endblock morecss %}
 
@@ -29,24 +34,13 @@
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.draggable.min.js'></script>
 <!-- <script type='text/javascript' src='/js/jquery-ui-1.8.11.custom.min.js'></script> -->
 
-{% if server_mode %}
-	{% ifnotequal server_mode "production" %}
-	<script src="https://towtruck.mozillalabs.com/towtruck.js"></script>
-	{% endifnotequal %}
-{% endif %}
-
-
-
-
-
-
 {% dajaxice_js_import %}
 
 <script type='text/javascript' src='/js/spin/dist/spin.min.js'></script>
-<script type='text/javascript' src='/js/agenda_edit.js'></script>
-<script type='text/javascript' src='/js/agenda_helpers.js'></script>
-<script type='text/javascript' src='/js/agenda_objects.js'></script>
-<script type='text/javascript' src='/js/agenda_listeners.js'></script>
+<script type='text/javascript' src='/js/agenda/agenda_edit.js'></script>
+<script type='text/javascript' src='/js/agenda/agenda_helpers.js'></script>
+<script type='text/javascript' src='/js/agenda/agenda_objects.js'></script>
+<script type='text/javascript' src='/js/agenda/agenda_listeners.js'></script>
 
 
 <script type='text/javascript'>
@@ -64,28 +58,29 @@ function setup_slots(){
     days.push("{{day}}");
 {% endfor %}
 
-{% for s in sessions %}
-   session_obj({"title" : "{{ s.short_name }}",
-                "description":"{{ s.group.name }}",
-                "special_request": "{{ s.special_request_token }}",
-                "session_id":"{{s.id}}",
-                "owner": "{{s.owner.owner}}",
-                "group_id":"{{s.group.id}}",
-                "area":"{{s.group.parent.acronym|upper}}",
-                "duration":"{{s.requested_duration.seconds|durationFormat}}",
-                "attendees":"{{s.attendees}}",
-	       });
+{% for ad in area_directors %}
+area_directors["{{ad.area}}"] = [];
 {% endfor %}
+{% for ad in area_directors %}
+area_directors["{{ad.area}}"].push(find_person_by_href("{{ad.defurl}}"));
+{% endfor %}
+
+{% autoescape off %}
+{% for s in session_jsons %}
+   session_obj({{s}});
+{% endfor %}
+{% endautoescape %}
 
 {% for s in scheduledsessions %}
    make_ss({ "scheduledsession_id": "{{s.id}}",
      "empty": "{{s.empty_str}}",
      "timeslot_id":"{{s.timeslot.id}}",
      "session_id" :"{{s.session.id}}",
+     "pinned" :"{{s.pinned}}",
      {% if s.session %}{% if s.extendedfrom %}"extendedfrom_id":"{{s.extendedfrom.id}}",
-     {% endif %}{% endif %}"room"       :"{{s.timeslot.location|slugify}}",
+     {% endif %}{% endif %}"room"       :"{{s.timeslot.location.name|slugify}}",
      {% if s.slot_to_the_right %}"following_timeslot_id":"{{s.slot_to_the_right.id}}",
-     {% endif %}"roomtype"   :"{{s.slottype|lower}}",
+     {% endif %}"roomtype"   :"{{s.slottype}}",
      "time"       :"{{s.timeslot.time|date:'Hi' }}",
      "date"       :"{{s.timeslot.time|date:'Y-m-d'}}",
      "domid"      :"{{s.timeslot.js_identifier}}"});
@@ -141,6 +136,17 @@ Please save this agenda to your account first.
       <button class="styled_button">all agendas</button>
     </a>
   </div>
+  <div id="hidden_room" class="hide_buttons events_bar_buttons">
+    <div class="very_small left">hidden rooms:<span id="hidden_rooms" >0/{{rooms|length}}</span></div>
+    <div><button class="small_button" id="show_hidden_rooms">Show</button></div>
+  </div>
+  <div id="hidden_day" class="hide_buttons events_bar_buttons">
+    <div class="very_small left">hidden days:<span id="hidden_days" >0/{{time_slices|length}}</span></div>
+    <div><button class="small_button" id="show_hidden_days">Show</button></div>
+  </div>
+
+  </div>
+
   <div id="unassigned_order" class="events_bar_buttons">
     <select id="unassigned_sort_button" class="dialog">
       <option id="unassigned_alpha" value="alphaname" selected>Alphabetical</option>
@@ -219,15 +225,16 @@ Please save this agenda to your account first.
 
 
   {% for r in rooms %}
-  <tr id="{{r|to_acceptable_id}}" class="{% cycle 'agenda_row_alt' '' %} agenda_slot">
+  <tr id="{{r.name|to_acceptable_id}}" class="{% cycle 'agenda_row_alt' '' %} agenda_slot">
     <th class="vert_time">
-      <div class="close very_small close_room top_left small_button" id="close_{{r|to_acceptable_id}}">X</div>
-      <div class="right room_name">{{r}} <span class="capacity">({{r.capacity}})</span></div>
+      <div class="close very_small close_room top_left small_button" id="close_{{r.name|to_acceptable_id}}">X</div>
+      <div class="right room_name">{{r.name}} <span class="capacity">({{r.capacity}})</span></div>
 
-      <!-- <span class="hide_room light_blue_border">X</span><span class="left">{{r}}</span></th> -->
+      <!-- <span class="hide_room light_blue_border">X</span><span class="left">{{r.name}}</span>-->
+    </th>
     {% for day in time_slices %}
       {% for slot in date_slices|lookup:day %}
-        <td id="{{r|slugify}}_{{day}}_{{slot.0|date:'Hi'}}" class="day_{{day}} agenda-column-{{day}}-{{slot.0|date:'Hi'}} agenda_slot agenda_slot_unavailable" capacity="{{r.capacity}}" ></td>
+        <td id="{{r.name|slugify}}_{{day}}_{{slot.0|date:'Hi'}}" class="day_{{day}} agenda-column-{{day}}-{{slot.0|date:'Hi'}} agenda_slot agenda_slot_unavailable" capacity="{{r.capacity}}" ></td>
       {% endfor %}
         <td class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer"></td>
     {% endfor %}
@@ -246,9 +253,10 @@ Please save this agenda to your account first.
   <div class="ss_info_box">
     <div class="ss_info ss_info_left">
       <table>
-	<tr><td class="ss_info_name_short">Group:</td><td id="info_grp"></td></tr>
-	<tr><td class="ss_info_name_short">Name:</td><td id="info_name"></td></tr>
-	<tr><td class="ss_info_name_short">Area:</td><td><span id="info_area"></span><button id="show_all_area" class="right">Show All</button></td></tr>
+	<tr><td class="ss_info_name_short">Group:</td><td><span id="info_grp"></span>
+            <!-- <button id="agenda_sreq_button" class="right">Edit Request</button> --></tr>
+	<tr><td class="ss_info_name_short">Name:</td> <td d="info_name"></td></tr>
+	<tr><td class="ss_info_name_short">Area:</td> <td><span id="info_area"></span><button id="show_all_area" class="right">Show All</button></td></tr>
       </table>
     </div>
 
@@ -264,45 +272,25 @@ Please save this agenda to your account first.
     <div id="conflict_table">
       <div id="special_requests">Special Requests</div>
       <table>
-	<tr>
-	  <th class="heading" colspan=2>conflict 1 <span class="small right cb_all_conflict">show all<input id="cb_conflict1" type="checkbox"></span></th>
-	  <th class="border"></th>
-	  <th class="heading" colspan=2>conflict 2<span class="small right cb_all_conflict">show all<input id="cb_conflict2" type="checkbox"></span></th>
-	  <th class="border"></th>
-	  <th class="heading" colspan=2>conflict 3<span class="small right cb_all_conflict">show all<input id="cb_conflict3" type="checkbox"></span></th>
-	</tr>
 	<tbody id="conflict_table_body">
-	  <tr id="row01">
-	    <td class="conflict1"></td>
-	    <td class="conflict1"></td>
-	    <td class="border"></td>
-	    <td class="conflict2"></td>
-	    <td class="conflict2"></td>
-	    <td class="border"></td>
-	    <td class="conflict3"></td>
-	    <td class="conflict3"></td>
-	  </tr>
-	  <tr id="row02">
-	    <td class="conflict1"></td>
-	    <td class="conflict1"></td>
-	    <td class="border"></td>
-	    <td class="conflict2"></td>
-	    <td class="conflict2"></td>
-	    <td class="border"></td>
-	    <td class="conflict3"></td>
-	    <td class="conflict3 empty"></td>
-	  </tr>
-	  <tr id="row03">
-	    <td class="conflict1 empty"></td>
-	    <td class="conflict1 empty"></td>
-	    <td class="border"></td>
-	    <td class="conflict2 empty"></td>
-	    <td class="conflict2 empty"></td>
-	    <td class="border"></td>
-	    <td class="conflict3 empty"></td>
-	    <td class="conflict3 empty"></td>
-	  </tr>
-
+	  <tr class="conflict_list_row">
+            <td class="conflict_list_title">
+              Group conflicts
+            </td>
+	    <td id="conflict_group_list">
+            <ul>
+            </ul>
+            </td>
+          </tr>
+	  <tr class="conflict_list_row">
+            <td class="conflict_list_title">
+              <b>be present</b>
+            </td>
+	    <td id="conflict_people_list">
+            <ul>
+            </ul>
+            </td>
+          </tr>
 	</tbody>
       </table>
     </div>
@@ -311,24 +299,15 @@ Please save this agenda to your account first.
       <button class="agenda_selected_buttons small_button" disabled
       id="double_slot">Extend</button>
     </div>
+    <div id="agenda_pin_slot" class="button_disabled">
+      <button class="agenda_selected_buttons small_button" disabled
+      id="pin_slot">Pin</button>
+    </div>
     <div class="color_legend">
       {% for area in area_list %}
       <span class="{{area.upcase_acronym}}-scheme"><input class='color_checkboxes' type="checkbox" id="{{area.upcase_acronym}}" value="{{area.upcase_acronym}}-value" checked>{{area.upcase_acronym}}</span>
       {% endfor %}
     </div>
-  </div>
-
-  <div class="show_hidden_things">
-    <div class="hide_buttons">
-      <div class="very_small left">hidden rooms:<span id="hidden_rooms" >0/{{rooms|length}}</span></div>
-      <div class="right"><button class="small_button" id="show_hidden_rooms">Show</button></div>
-    </div>
-
-    <div class="hide_buttons">
-      <div class="very_small left">hidden days:<span id="hidden_days" >0/{{time_slices|length}}</span></div>
-      <div class="right"><button class="small_button" id="show_hidden_days">Show</button></div>
-    </div>
-
   </div>
 
   <div class="agenda_save_box">
@@ -347,10 +326,31 @@ Please save this agenda to your account first.
 </div>
 
 <!-- some boxes for dialogues -->
-<div id="dialog-confirm" title="" style="display:none">
+<div id="dialog-confirm-two" title="" style="display:none">
   <p>
     <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
-    <span id="dialog-confirm-text"></span>
+    <span class="dialog-confirm-text">Are you sure you want to put two sessions into the same slot?</span>
+  </p>
+</div>
+
+<div id="dialog-confirm-toosmall" title="" style="display:none">
+  <p>
+    <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
+    <span class="dialog-confirm-text">The room you are moving to has a lower
+      room capacity then the requested capacity,<br>
+      Are you sure you want to continue?
+    </span>
+  </p>
+</div>
+
+<div id="dialog-confirm-twotoosmall" title="" style="display:none">
+  <p>
+    <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
+    <span class="dialog-confirm-text">
+      The slot you are moving to already has a session in it, <br>
+      the room is also smaller than the requested amount.<br>
+      Are you sure you want to continue?
+    </span>
   </p>
 </div>
 

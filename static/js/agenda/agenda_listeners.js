@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2013, The IETF Trust. See ../../../LICENSE.
 *
-*   www.credil.org: Project Orlando 2013 
+*   www.credil.org: Project Orlando 2013
 *   Author: Justin Hornosty ( justin@credil.org )
 *           Michael Richardson <mcr@sandelman.ca>
 *
@@ -29,7 +29,9 @@ function resize_listeners() {
 
 
 
-/* this function needs to be renamed... it should only deal with listeners who need to be unbound prior to rebinding. */
+/* this function needs to be renamed...
+   it should only deal with listeners who need to be unbound prior to rebinding.
+*/
 function listeners(){
     //$(".agenda_slot td").not(".meeting_event ui-draggable").unbind('click');
     //$(".agenda_slot td").not(".meeting_event ui-draggable").click(function(event){ console.log("#meetings clicked"); console.log(event); });
@@ -80,41 +82,42 @@ function listeners(){
     $("#show_all_button").click(show_all);
 
     resize_th();
-
-
 }
 
-function toggle_dialog(session, to_slot_id, to_slot, from_slot_id, from_slot, bucket_list, event, ui, dom_obj, slot_occupied, too_small){
+var __debug_movement_warnings = false;
+var __debug_toggle_result;
+var __debug_toggle_parameters;
+function toggle_dialog(parameters) {
     var result = "null";
     var message = "";
-    console.log(session, to_slot_id, to_slot, from_slot_id, from_slot, bucket_list, event, ui, dom_obj);
-    if(slot_occupied && !too_small){
-	message = "Are you sure you want to put two sessions into the same slot?"
+    if(parameters.slot_occupied==true && parameters.too_small==false) {
+        dialogid = $( "#dialog-confirm-two" );
     }
-    else if(too_small && !slot_occupied){
-	message = "The room you are moving to has a lower room capacity then the requested capacity,<br>Are you sure you want to continue?";
+    else if(parameters.slot_occupied==false && parameters.too_small==true) {
+        dialogid = $( "#dialog-confirm-toosmall" );
     }
-    else if(too_small && slot_occupied){
-	message = "The slot you are moving to already has a session in it, the room is also smaller than the requested amount.<br>Are you sure you want to continue?";
+    else if(parameters.too_small==true && parameters.slot_occupied==true){
+        dialogid = $( "#dialog-confirm-twotoosmall" );
     }
     else{
-	console.log("error, from toggle_dialog:",session, to_slot_id, to_slot, from_slot_id, from_slot, bucket_list, event, ui, dom_obj, slot_occupied, too_small);
-	return
-	}
+	console.log("error, from toggle_dialog:", parameters);
+	return;
+    }
 
-    $("#dialog-confirm-text").html(message);
-    $( "#dialog-confirm" ).dialog({
+    if(__debug_movement_warnings) {
+        console.log("toggle_dialog param", parameters, "message", message);
+        __debug_toggle_parameters = parameters;
+    }
+
+    dialogid.dialog({
 	resizable: true,
 	modal: true,
 	buttons: {
             "Yes": function() {
 		$( this ).dialog( "close" );
-		result = "yes";
-                session.double_wide = false;
-		move_slot(session,
-                          to_slot_id, to_slot,
-                          from_slot_id, from_slot,
-                          bucket_list, event, ui, dom_obj, /* same_timeslot=*/true);
+		__debug_toggle_result = "yes";
+                parameters.session.double_wide = false;
+		move_slot(parameters);
             },
 	    //"Swap Slots": function(){
 	    //	$( this ).dialog( "close" );
@@ -122,16 +125,12 @@ function toggle_dialog(session, to_slot_id, to_slot, from_slot_id, from_slot, bu
 	    //},
             Cancel: function() {
 		$( this ).dialog( "close" );
-		result = "cancel"
+		__debug_toggle_result = "cancel"
             }
 	}
     });
 
-
-    return result;
-
-
-
+    return __debug_toggle_result;
 }
 
 function resize_th(){
@@ -434,30 +433,17 @@ function static_listeners(){
     sort_unassigned();
 }
 
-// this is a counter that keeps track of when all of the constraints have
-// been loaded.  This could be replaced with a $.Deferred().when mechanism.
-// it is reset in recalculate().
-var CONFLICT_LOAD_COUNT = 0;
-function increment_conflict_load_count() {
-    CONFLICT_LOAD_COUNT++;
-    //console.log(CONFLICT_LOAD_COUNT+"/"+meeting_objs_length);
-}
-
 // recalculate all conflicts from scratch
 function recalculate(event) {
     start_spin();
     console.log("loading all conflicts");
-    CONFLICT_LOAD_COUNT = 0;
-    get_all_conflicts();
 
-    do_work(function() {
-        return CONFLICT_LOAD_COUNT >= meeting_objs_length;
-    },
-            function() {
-                stop_spin();
-                console.log("showing all conflicts");
-                show_all_conflicts();
-            });
+    var promise = get_all_conflicts();
+    promise.done(function() {
+        stop_spin();
+        console.log("showing all conflicts");
+        show_all_conflicts();
+    });
 }
 
 function color_legend_click(event){
@@ -496,7 +482,7 @@ function set_transparent(){
 	}else{
 	    $("."+k+"-scheme.meeting_obj").parent().parent().parent().draggable("option","disabled",false);
 	}
-	
+
     });
 }
 
@@ -534,13 +520,9 @@ function meeting_event_click(event){
     var container  = $(event.target).closest('.meeting_box_container');
 
     if(container == undefined) {
-        // 20130606 XXX WHEN IS THIS USED?
-	var slot_obj = {   slot_id: meeting_event_id ,
-            scheduledsession_id:meeting_event_id,
-            timeslot_id: null,
-            session_id: meeting_event_id,
-         }
-	session.load_session_obj(fill_in_session_info, session.slot);
+        fill_in_session_info(session, true, session.slot);
+        // no async necessary, session is completely loaded
+	//session.load_session_obj(fill_in_session_info, session.slot);
 	return;
     }
 
@@ -560,7 +542,7 @@ function meeting_event_click(event){
     }
 
     empty_info_table();
-    session.load_session_obj(fill_in_session_info, session.slot);
+    fill_in_session_info(session, true, session.slot);
     __DEBUG__SLOT_OBJ = current_timeslot;
     __DEBUG__SESSION_OBJ = session;
 }
@@ -613,13 +595,13 @@ function info_name_select_change(){
         last_session = session;
         last_session.selectit();
 	// now set up the call back that might have to retrieve info.
-	session.load_session_obj(fill_in_session_info, ss);
+        fill_in_session_info(session, true, ss);
     }
     else {
 	ss = meeting_objs[slot_id];
         last_session = ss;
         last_session.selectit();
-	ss.load_session_obj(fill_in_session_info, ss);
+        fill_in_session_info(ss, true, ss.slot);
     }
 
     console.log("selecting new item:", last_session.title);
@@ -655,6 +637,53 @@ function dajaxice_error(a){
     console.log("dajaxice_error");
 }
 
+function set_pin_session_button(scheduledsession) {
+    $("#pin_slot").unbind('click');
+    if(scheduledsession == undefined) {
+        return;
+    }
+    state = scheduledsession.pinned;
+    console.log("button set to: ",state);
+    if(state) {
+        $("#pin_slot").html("unPin");
+        $("#agenda_pin_slot").addClass("button_down");
+        $("#agenda_pin_slot").removeClass("button_up");
+        $("#pin_slot").click(function(event) {
+            update_pin_session(scheduledsession, false);
+        });
+    } else {
+        $("#pin_slot").html(" Pin ");
+        $("#agenda_pin_slot").addClass("button_up");
+        $("#agenda_pin_slot").removeClass("button_down");
+        $("#pin_slot").click(function(event) {
+            update_pin_session(scheduledsession, true);
+        });
+    }
+}
+
+function update_pin_session(scheduledsession, state) {
+    start_spin();
+    console.log("Calling dajaxice", scheduledsession, state);
+    Dajaxice.ietf.meeting.update_timeslot_pinned(function(message) {
+        console.log("dajaxice callback");
+        stop_spin();
+        if(message.message != "valid") {
+            alert("Update of pinned failed");
+            return;
+        }
+        scheduledsession.pinned = state;
+        session = scheduledsession.session()
+        session.pinned = state;
+        session.repopulate_event(scheduledsession.domid);
+        set_pin_session_button(scheduledsession);
+    },
+						 {
+                                                     'schedule_id': schedule_id,
+						     'scheduledsession_id':  scheduledsession.scheduledsession_id,
+                                                     'pinned': state
+						 });
+}
+
 function fill_in_session_info(session, success, extra) {
     if(session == null || session == "None" || !success){
 	empty_info_table();
@@ -665,7 +694,20 @@ function fill_in_session_info(session, success, extra) {
     $(".agenda_double_slot").addClass("button_enabled");
     $(".agenda_selected_buttons").attr('disabled',false);
 
-    session.retrieve_constraints_by_session(draw_constraints, function(){});
+    if(!read_only) {
+        $("#agenda_pin_slot").removeClass("button_disabled");
+        $("#agenda_pin_slot").addClass("button_enabled");
+        set_pin_session_button(session.slot);
+    } else {
+        $("#pin_slot").unbind('click');
+    }
+
+    // here is where we would set up the session request edit button.
+    // $(".agenda_sreq_button").html(session.session_req_link);
+
+    session.retrieve_constraints_by_session().success(function(newobj,status,jq) {
+        draw_constraints(session);
+    });
 }
 
 function group_name_or_empty(constraint) {
@@ -677,60 +719,43 @@ function group_name_or_empty(constraint) {
 }
 
 function draw_constraints(session) {
-    $("#conflict_table_body").html("");
 
-    //console.log("5 fill", session.title);
-    if(!"conflicts" in session) {
-        console.log("6 done");
-        return;
+    if("conflicts" in session) {
+        var group_icons = "";
+
+        $.each(session.conflicts, function(index) {
+            conflict = session.conflicts[index];
+            if(conflict.conflict_groupP()) {
+                group_icons += "<li class='conflict'>"+conflict.conflict_view();
+                highlight_conflict(conflict);
+            }
+        });
+        if(group_icons == "") {
+            $("#conflict_group_list").html("none");
+        } else {
+            $("#conflict_group_list").html("<ul>"+group_icons+"</ul>");
+        }
+    } else {
+        $("#conflict_group_list").html("none");
+    }
+    if("bethere" in session.constraints) {
+        var people_icons = "";
+
+        $.each(session.constraints.bethere, function(index) {
+            conflict = session.constraints.bethere[index];
+            if(conflict.conflict_peopleP()) {
+                people_icons += "<li class='conflict'>"+conflict.conflict_view();
+            }
+        });
+        if(people_icons == "") {
+            $("#conflict_people_list").html("none");
+        } else {
+            $("#conflict_people_list").html("<ul>"+people_icons+"</ul>");
+        }
+    } else {
+        $("#conflict_people_list").html("none");
     }
 
-    var conflict1_a = session.conflicts[1][0];
-    var conflict1_b = session.conflicts[1][1];
-    var conflict2_a = session.conflicts[2][0];
-    var conflict2_b = session.conflicts[2][1];
-    var conflict3_a = session.conflicts[3][0];
-    var conflict3_b = session.conflicts[3][1];
-
-    for(var i=0; i<=session.conflict_half_count; i++) {
-        $("#conflict_table_body").append("<tr><td class='conflict1'>"+
-                                         group_name_or_empty(conflict1_a[i])+
-                                         "</td>"+
-                                         "<td class='conflict1'>"+
-                                         group_name_or_empty(conflict1_b[i])+
-                                         "</td><td class='border'></td>"+
-                                         "<td class='conflict2'>"+
-                                         group_name_or_empty(conflict2_a[i])+
-                                         "</td>"+
-                                         "<td class='conflict2'>"+
-                                         group_name_or_empty(conflict2_b[i])+
-                                         "</td><td class='border'></td>"+
-                                         "<td class='conflict3'>"+
-                                         group_name_or_empty(conflict3_a[i])+
-                                         "</td>"+
-                                         "<td class='conflict3'>"+
-                                         group_name_or_empty(conflict3_b[i])+
-                                         "</tr>");
-
-        highlight_conflict(conflict1_a[i]);
-        highlight_conflict(conflict1_b[i]);
-        highlight_conflict(conflict2_a[i]);
-        highlight_conflict(conflict2_b[i]);
-        highlight_conflict(conflict3_a[i]);
-        highlight_conflict(conflict3_b[i]);
-
-	// console.log("draw", i,
-	// 	    group_name_or_empty(conflict1_a[i]),
-	// 	    group_name_or_empty(conflict1_b[i]),
-	// 	    group_name_or_empty(conflict2_a[i]),
-	// 	    group_name_or_empty(conflict2_b[i]),
-	// 	    group_name_or_empty(conflict3_a[i]),
-	// 	    group_name_or_empty(conflict3_b[i]));
-    }
-
-    // setup check boxes for conflicts
-    $('.conflict_checkboxes').unbind('click');
-    $('.conflict_checkboxes').click(conflict_click);
 }
 
 function highlight_conflict(constraint) {
@@ -785,7 +810,7 @@ function droppable(){
 	    start: drop_start,
 	})
 
-	$("#meetings td").droppable({
+	$("#meetings td.ui-droppable").droppable({
 	    over :drop_over,
 	    activate:drop_activate,
 	    out :drop_out,
@@ -886,12 +911,12 @@ function drop_drop(event, ui){
     var too_small = false;
     var occupied = false;
 
-    
+
     if(from_slot_id == to_slot_id){ // hasn't moved don't do anything
 	return
     }
 
-    
+
     if(session_attendees > room_capacity){
 	too_small = true;
     }
@@ -908,10 +933,17 @@ function drop_drop(event, ui){
     }
 
     if(too_small || occupied){
-	toggle_dialog(session,
-                          to_slot_id, to_slot,
-                          from_slot_id, from_slot,
-                          bucket_list, event, ui, this, occupied, too_small);
+	toggle_dialog({ "session": session,
+                        "to_slot_id": to_slot_id,
+                        "to_slot":    to_slot,
+                        "from_slot_id": from_slot_id,
+                        "from_slot":    from_slot,
+                        "bucket_list":  bucket_list,
+                        "event":        event,
+                        "ui":           ui,
+                        "dom_obj":      this,
+                        "slot_occupied":     occupied,
+                        "too_small":    too_small});
 	return
     }
 
@@ -920,18 +952,25 @@ function drop_drop(event, ui){
     // (could return if necessary)
     session.double_wide = false;
 
-    move_slot(session,
-              to_slot_id, to_slot,
-              from_slot_id, from_slot,
-              bucket_list, event, ui, this, /* force=*/false);
+    move_slot({"session": session,
+               "to_slot_id": to_slot_id,
+               "to_slot":    to_slot,
+               "from_slot_id":from_slot_id,
+               "from_slot":   from_slot,
+               "bucket_list": bucket_list,
+               "event":       event,
+               "ui":          ui,
+               "dom_obj":     this,
+               "force":       false});
 }
 
 function recalculate_conflicts_for_session(session, old_column_classes, new_column_classes)
 {
     // go recalculate things
-    session.clear_conflict();
-    session.retrieve_constraints_by_session(find_and_populate_conflicts,
-                                            function() {});
+    session.clear_all_conflicts();
+
+    find_and_populate_conflicts(session);
+    session.examine_people_conflicts(old_column_classes);
 
     var sk;
     for(sk in meeting_objs) {
@@ -956,8 +995,8 @@ function recalculate_conflicts_for_session(session, old_column_classes, new_colu
                         column_class.column_tag == old_column_class.column_tag)) {
                         console.log("recalculating conflicts for:", s.title);
                         s.clear_conflict();
-                        s.retrieve_constraints_by_session(find_and_populate_conflicts,
-                                                          function() {});
+                        find_and_populate_conflicts(s);
+                        s.examine_people_conflicts();
                     }
                 }
             }
@@ -969,48 +1008,46 @@ function recalculate_conflicts_for_session(session, old_column_classes, new_colu
 
 var _move_debug = false;
 var _LAST_MOVED;
-function move_slot(session,
-                   to_slot_id, to_slot,
-                   from_slot_id, from_slot,
-                   bucket_list, event, ui, thiss,
-                   same_timeslot){
-
-    /* thiss: is a jquery selector of where the slot will be appeneded to
-       Naming is in regards to that most often function is called from drop_drop where 'this' is the dom dest.
+function move_slot(parameters) {
+    /* dom_obj: is a jquery selector of where the slot will be appeneded to
+       Naming is in regards to that most often function is called from
+       drop_drop where 'this' is the dom dest.
     */
     var update_to_slot_worked = false;
 
     if(_move_debug) {
-        _LAST_MOVED = session;
-        if(from_slot != undefined) {
-            console.log("from_slot", from_slot.domid);
+        _LAST_MOVED = parameters.session;
+        if(parameters.from_slot != undefined) {
+            console.log("from_slot", parameters.from_slot.domid);
         } else {
             console.log("from_slot was unassigned");
         }
     }
     var update_to_slot_worked = false;
-    if(same_timeslot == null){
-	same_timeslot = false;
+    if(parameters.same_timeslot == null){
+	parameters.same_timeslot = false;
     }
-    if(bucket_list) {
-	update_to_slot_worked = update_to_slot(session.session_id, to_slot_id, true);
+    if(parameters.bucket_list) {
+	update_to_slot_worked = update_to_slot(parameters.session.session_id,
+                                               parameters.to_slot_id, true);
     }
     else{
-	update_to_slot_worked = update_to_slot(session.session_id, to_slot_id, same_timeslot);
+	update_to_slot_worked = update_to_slot(parameters.session.session_id,
+                                               parameters.to_slot_id, parameters.same_timeslot);
     }
 
     if(_move_debug) {
         console.log("update_slot_worked", update_to_slot_worked);
     }
     if(update_to_slot_worked){
-	if(update_from_slot(session.session_id, from_slot_id)){
-	    remove_duplicate(from_slot_id, session.session_id);
+	if(update_from_slot(parameters.session.session_id, parameters.from_slot_id)){
+	    remove_duplicate(parameters.from_slot_id, parameters.session.session_id);
 	    // do something
 	}
 	else{
             if(_move_debug) {
 	        console.log("issue updateing from_slot");
-	        console.log("from_slot_id",from_slot_id, slot_status[from_slot_id]);
+	        console.log("parameters.from_slot_id",parameters.from_slot_id, slot_status[parameters.from_slot_id]);
             }
 	    return;
 	}
@@ -1018,77 +1055,74 @@ function move_slot(session,
     else{
         if(_move_debug) {
 	    console.log("issue updateing to_slot");
-	    console.log("to_slot_id",to_slot_id, slot_status[to_slot_id]);
+	    console.log("to_slot_id",parameters.to_slot_id, slot_status[parameters.to_slot_id]);
         }
 	return;
     }
-    session.slot_status_key = to_slot[arr_key_index].domid
-    //*****  do dajaxice call here  ****** //
+    parameters.session.slot_status_key = parameters.to_slot[arr_key_index].domid;
 
-    var eTemplate = session.event_template()
+    var eTemplate = parameters.session.event_template()
 
-    //console.log("this:", thiss);
-    $(thiss).append(eTemplate);
+    console.log("dom_obj:", parameters.dom_obj);
+    $(parameters.dom_obj).append(eTemplate);
 
-    ui.draggable.remove();
+    parameters.ui.draggable.remove();
 
 
 
     /* set colours */
-    $(thiss).removeClass('highlight_free_slot');
-    if(check_free({id:to_slot_id}) ){
-	$(thiss).addClass('free_slot')
+    $(parameters.dom_obj).removeClass('highlight_free_slot');
+    if(check_free({id:parameters.to_slot_id}) ){
+	$(parameters.dom_obj).addClass('free_slot')
     }
     else{
-	$(thiss).removeClass('free_slot')
+	$(parameters.dom_obj).removeClass('free_slot')
     }
 
-    if(check_free({id:from_slot_id}) ){
-	// $("#"+from_slot_id).css('background-color', color_droppable_empty_slot)
-	$("#"+from_slot_id).addClass('free_slot');
+    if(check_free({id:parameters.from_slot_id}) ){
+	$("#"+parameters.from_slot_id).addClass('free_slot');
     }
     else{
-	// $("#"+from_slot_id).css('background-color',none_color);
-	$("#"+from_slot_id).removeClass('free_slot');
+	$("#"+parameters.from_slot_id).removeClass('free_slot');
     }
     $("#"+bucketlist_id).removeClass('free_slot');
     /******************************************************/
 
-    var schedulesession_id = null;
     var scheduledsession = null;
-    for(var i =0; i< to_slot.length; i++){
-	if (to_slot[i].session_id == session.session_id){
-            scheduledsession = to_slot[i];
-	    schedulesession_id = to_slot[i].scheduledsession_id;
+    for(var i =0; i< parameters.to_slot.length; i++){
+	if (parameters.to_slot[i].session_id == parameters.session.session_id){
+            scheduledsession = parameters.to_slot[i];
 	    break;
 	}
     }
-    if(schedulesession_id != null){
-        session.placed(scheduledsession, true);
+
+    if(scheduledsession != null){
+        console.log("moved session",parameters.session.title,"to",scheduledsession);
+        parameters.session.placed(scheduledsession, true);
         start_spin();
         if(_move_debug) {
 	    console.log('schedule_id',schedule_id,
-                        'session_id', session.session_id,
-                        'scheduledsession_id', schedulesession_id);
+                        'session_id', parameters.session.session_id,
+                        'scheduledsession_id', scheduledsession.scheduledsession_id);
         }
 
-        if(session.slot2) {
-            session.double_wide = false;
+        if(parameters.session.slot2) {
+            parameters.session.double_wide = false;
 	    Dajaxice.ietf.meeting.update_timeslot(dajaxice_callback,
 					      {
                                                   'schedule_id':schedule_id,
-						  'session_id': session.session_id,
+						  'session_id': parameters.session.session_id,
 						  'scheduledsession_id': 0,
 					      });
-            session.slot2 = undefined;
+            parameters.session.slot2 = undefined;
         }
 
-	if(same_timeslot){
+	if(parameters.same_timeslot){
 	    	Dajaxice.ietf.meeting.update_timeslot(dajaxice_callback,
 					      {
                                                   'schedule_id':schedule_id,
-						  'session_id': session.session_id,
-						  'scheduledsession_id': schedulesession_id,
+						  'session_id': parameters.session.session_id,
+						  'scheduledsession_id': scheduledsession.scheduledsession__id,
                                                   'extended_from_id': 0,
 						  'duplicate':true
 					      });
@@ -1096,12 +1130,12 @@ function move_slot(session,
 	    Dajaxice.ietf.meeting.update_timeslot(dajaxice_callback,
 						  {
                                                       'schedule_id':schedule_id,
-						      'session_id': session.session_id,
-						      'scheduledsession_id': schedulesession_id,
+						      'session_id': parameters.session.session_id,
+						      'scheduledsession_id': scheduledsession.scheduledsession_id,
 						  });
 	}
 
-        session.update_column_classes([scheduledsession], bucket_list);
+        parameters.session.update_column_classes([scheduledsession], parameters.bucket_list);
     }
     else{
         if(_move_debug) {
@@ -1128,7 +1162,7 @@ function drop_over(event, ui){
     }
     $(event.draggable).addClass('highlight_current_selected');
     $(ui.draggable).addClass('highlight_current_selected');
-    
+
 //    $(ui.draggable).css("background",dragging_color);
 //    $(event.draggable).css("background",dragging_color);
 }

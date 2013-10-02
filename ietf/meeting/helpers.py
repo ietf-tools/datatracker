@@ -10,8 +10,11 @@ from tempfile import mkstemp
 
 from django import forms
 from django.http import Http404
+from django.http import HttpRequest
 from django.db.models import Max, Q
 from django.conf import settings
+from django.core.cache import cache
+from django.utils.cache import get_cache_key
 
 import debug
 import urllib
@@ -344,3 +347,15 @@ def agenda_permissions(meeting, schedule, user):
         canedit = True
 
     return cansee,canedit
+
+def session_constraint_expire(session):
+    from django.core.urlresolvers import reverse
+    from ajax import session_constraints
+    path = reverse(session_constraints, args=[session.meeting.number, session.pk])
+    request = HttpRequest()
+    request.path = path
+    key = get_cache_key(request)
+    if key is not None and cache.has_key(key):
+        cache.delete(key)
+
+

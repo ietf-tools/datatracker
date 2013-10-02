@@ -67,6 +67,12 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="bethere" model="name.constraintname">
+        <field type="CharField" name="name">Person must be present</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="obs" model="name.docrelationshipname">
         <field type="CharField" name="name">Obsoletes</field>
         <field type="TextField" name="desc"></field>

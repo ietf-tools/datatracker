@@ -11,7 +11,7 @@ from ietf.group.colors import fg_group_colors, bg_group_colors
 
 import datetime
 import debug
-    
+
 class GroupInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     name = models.CharField(max_length=80)
@@ -101,10 +101,14 @@ class Group(GroupInfo):
         group1['name']    = self.name
         group1['state']   = self.state.slug
         group1['type']    = self.type.slug
-        group1['parent_href']  = urljoin(host_scheme, self.parent.json_url())
+        if self.parent is not None:
+            group1['parent_href']  = urljoin(host_scheme, self.parent.json_url())
         # uncomment when people URL handle is created
-        #if self.ad is not None:
-        #    group1['ad_href']      = urljoin(host_scheme, self.ad.url())
+        try:
+            if self.ad is not None:
+                group1['ad_href']      = urljoin(host_scheme, self.ad.json_url())
+        except Person.DoesNotExist:
+            pass
         group1['list_email'] = self.list_email
         group1['list_subscribe'] = self.list_subscribe
         group1['list_archive'] = self.list_archive

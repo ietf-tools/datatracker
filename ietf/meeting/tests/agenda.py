@@ -1,5 +1,6 @@
 import sys
 from django.test              import Client
+from ietf.meeting.tests.ttest import AgendaTransactionalTestCase
 from ietf.utils import TestCase
 from ietf.name.models     import SessionStatusName
 from ietf.person.models   import Person
@@ -22,7 +23,7 @@ class AgendaInfoTestCase(TestCase):
         p1 = Person.objects.get(pk = 5376)       # Russ Housley
         st1 = SessionStatusName.objects.get(slug = "appr")
         s1 = m1.session_set.create(name = "newone", group = g1, requested_by = p1, status = st1)
-        self.assertEqual(s1.__unicode__(), "IETF-83: pkix (unscheduled)")
+        self.assertEqual(s1.__unicode__(), "IETF-83: pkix (unscheduled)[22090]")
 
     def test_AgendaInfo(self):
         from ietf.meeting.views import agenda_info
@@ -33,7 +34,8 @@ class AgendaInfoTestCase(TestCase):
         self.assertEqual(len(timeslots),26)
         self.assertEqual(meeting.number,'83')
         self.assertEqual(venue.meeting_num, "83")
-        self.assertTrue(len(ads) > 0)
+        # will change as more ADs are added to fixtures
+        self.assertEqual(len(ads), 8)
 
     def test_AgendaInfoReturnsSortedTimeSlots(self):
         from ietf.meeting.views import agenda_info
@@ -106,7 +108,7 @@ class AgendaInfoTestCase(TestCase):
         from ietf.meeting.views import get_meeting
         meeting = get_meeting(num)
         session1= Session.objects.get(pk=2157)
-        self.assertEqual(session1.__unicode__(), u"IETF-83: pkix 0900")
+        self.assertEqual(session1.__unicode__(), u"IETF-83: pkix 0900[2157]")
 
     def test_sessionstr_interim(self):
         """
@@ -152,5 +154,12 @@ class AgendaInfoTestCase(TestCase):
         avtcore = mtg83.session_set.get(group__acronym='avtcore')
         self.assertEqual(avtcore.pk, 2216)  # sanity check
         self.assertEqual(len(avtcore.scheduledsession_set.filter(schedule = sch83)), 2)
+
+    def test_clue_has_ad_present(self):
+        mtg83 = get_meeting(83)
+        clue83 = mtg83.session_set.filter(group__acronym='clue')[0]
+        is_present = clue83.people_constraints
+        self.assertIsNotNone(is_present, "why is constraint list none")
+        self.assertEqual(len(is_present), 3)
 
 

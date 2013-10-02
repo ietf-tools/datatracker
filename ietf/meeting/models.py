@@ -112,6 +112,15 @@ class Meeting(models.Model):
             return qs[0]
         return None
 
+    @property
+    def sessions_that_wont_meet(self):
+        return self.session_set.filter(status__slug='notmeet')
+
+    @property
+    def sessions_that_can_meet(self):
+        return self.session_set.exclude(status__slug='notmeet').exclude(status__slug='disappr').exclude(status__slug='deleted').exclude(status__slug='apprw')
+
+
     def json_url(self):
         return "/meeting/%s.json" % (self.number, )
 
@@ -125,7 +134,7 @@ class Meeting(models.Model):
         if self.agenda:
             agenda_url = urljoin(host_scheme, self.agenda.base_url())
         return {
-            'href':                 urljoin(host_scheme, self.base_url()),
+            'href':                 urljoin(host_scheme, self.json_url()),
             'name':                 self.number,
             'submission_start_date':   fmt_date(self.get_submission_start_date()),
             'submission_cut_off_date': fmt_date(self.get_submission_cut_off_date()),
@@ -187,7 +196,7 @@ class Room(models.Model):
     capacity = models.IntegerField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.name
+        return "%s size: %u" % (self.name, self.capacity)
 
     def delete_timeslots(self):
         for ts in self.timeslot_set.all():
@@ -363,7 +372,6 @@ class TimeSlot(models.Model):
     def json_url(self):
         return "/meeting/%s/timeslot/%s.json" % (self.meeting.number, self.id)
 
-
     """
     This routine takes the current timeslot, which is assumed to have no location,
     and assigns a room, and then creates an identical timeslot for all of the other
@@ -378,6 +386,7 @@ class TimeSlot(models.Model):
             ts.id = None
             ts.location = room
             ts.save()
+
         self.meeting.create_all_timeslots()
 
     """
@@ -428,6 +437,7 @@ class Schedule(models.Model):
     owner    = models.ForeignKey(Person)
     visible  = models.BooleanField(default=True, help_text=u"Make this agenda available to those who know about it")
     public   = models.BooleanField(default=True, help_text=u"Make this agenda publically available")
+    badness  = models.IntegerField(null=True, blank=True)
     # considering copiedFrom = models.ForeignKey('Schedule', blank=True, null=True)
 
     def __unicode__(self):
@@ -436,8 +446,12 @@ class Schedule(models.Model):
     def base_url(self):
         return "/meeting/%s/agenda/%s" % (self.meeting.number, self.name)
 
-    def url_edit(self):
-        return "/meeting/%s/agenda/%s/edit" % (self.meeting.number, self.name)
+#     def url_edit(self):
+#         return "/meeting/%s/agenda/%s/edit" % (self.meeting.number, self.name)
+# 
+#     @property
+#     def relurl_edit(self):
+#         return self.url_edit("")
 
     @property
     def visible_token(self):
@@ -464,6 +478,10 @@ class Schedule(models.Model):
         else:
             return "agenda_unofficial"
 
+    # returns a dictionary {group -> [scheduledsession+]}
+    # and it has [] if the session is not placed.
+    # if there is more than one session for that group,
+    # then a list of them is returned (always a list)
     @property
     def official_token(self):
         if self.is_official:
@@ -496,6 +514,60 @@ class Schedule(models.Model):
         # should include href to list of scheduledsessions, but they have no direct API yet.
         return sch
 
+    @property
+    def qs_scheduledsessions_with_assignments(self):
+        return self.scheduledsession_set.filter(session__isnull=False)
+
+    @property
+    def qs_scheduledsessions_without_assignments(self):
+        return self.scheduledsession_set.filter(session__isnull=True)
+
+    @property
+    def group_mapping(self):
+        assignments,sessions,total,scheduled = self.group_session_mapping
+        return assignments
+
+    @property
+    def group_session_mapping(self):
+        assignments = dict()
+        sessions    = dict()
+        total       = 0
+        scheduled   = 0
+        allschedsessions = self.qs_scheduledsessions_with_assignments.filter(timeslot__type = "session").all()
+        for sess in self.meeting.sessions_that_can_meet.all():
+            assignments[sess.group] = []
+            sessions[sess] = None
+            total =+ 1
+
+        for ss in allschedsessions:
+            assignments[ss.session.group].append(ss)
+            # XXX can not deal with a session in two slots
+            sessions[ss.session] = ss
+            scheduled =+ 1
+        return assignments,sessions,total,scheduled
+
+    # calculate badness of entire schedule
+    def calc_badness(self):
+        # now calculate badness
+        assignments = self.group_mapping
+        return self.calc_badness1(assignments)
+
+    cached_sessions_that_can_meet = None
+    @property
+    def sessions_that_can_meet(self):
+        if self.cached_sessions_that_can_meet is None:
+            self.cached_sessions_that_can_meet = self.meeting.sessions_that_can_meet.all()
+        return self.cached_sessions_that_can_meet
+
+    # calculate badness of entire schedule
+    def calc_badness1(self, assignments):
+        badness = 0
+        for sess in self.sessions_that_can_meet:
+            badness += sess.badness(assignments)
+        self.badness = badness
+        return badness
+
+
 class ScheduledSession(models.Model):
     """
     This model provides an N:M relationship between Session and TimeSlot.
@@ -508,6 +580,11 @@ class ScheduledSession(models.Model):
     extendedfrom = models.ForeignKey('ScheduledSession', null=True, default=None, help_text=u"Timeslot this session is an extension of")
     modified = models.DateTimeField(default=datetime.datetime.now)
     notes    = models.TextField(blank=True)
+    badness  = models.IntegerField(default=0, blank=True, null=True)
+    pinned   = models.BooleanField(default=False, help_text="Do not move session during automatic placement")
+
+    # use to distinguish this from FakeScheduledSession in placement.py
+    faked   = "real"
 
     def __unicode__(self):
         return u"%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
@@ -628,6 +705,7 @@ class ScheduledSession(models.Model):
         ss["time"]     = date_format(self.timeslot.time, 'Hi')
         ss["date"]     = time_format(self.timeslot.time, 'Y-m-d')
         ss["domid"]    = self.timeslot.js_identifier
+        ss["pinned"]   = self.pinned
         return ss
 
 
@@ -636,7 +714,7 @@ class Constraint(models.Model):
     Specifies a constraint on the scheduling.
     One type (name=conflic?) of constraint is between source WG and target WG,
            e.g. some kind of conflict.
-    Another type (name=adpresent) of constraing is between source WG and
+    Another type (name=bethere) of constraing is between source WG and
            availability of a particular Person, usually an AD.
     A third type (name=avoidday) of constraing is between source WG and
            a particular day of the week, specified in day.
@@ -648,8 +726,37 @@ class Constraint(models.Model):
     day    = models.DateTimeField(null=True, blank=True)
     name   = models.ForeignKey(ConstraintName)
 
+    active_status = None
+
     def __unicode__(self):
-        return u"%s %s %s" % (self.source, self.name.name.lower(), self.target)
+        return u"%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
+
+    @property
+    def person_conflicted(self):
+        if self.person is None:
+            return "unknown person"
+        return self.person.name
+
+    def status(self):
+        if self.active_status is not None:
+            return self.active_status
+        else:
+            return True
+
+    def __lt__(self, y):
+        #import sys
+        #sys.stdout.write("me: %s y: %s\n" % (self.name.slug, y.name.slug))
+        if self.name.slug == 'conflict' and y.name.slug == 'conflic2':
+            return True
+        if self.name.slug == 'conflict' and y.name.slug == 'conflic3':
+            return True
+        if self.name.slug == 'conflic2' and y.name.slug == 'conflic3':
+            return True
+        return False
+
+    @property
+    def constraint_cost(self):
+        return self.name.cost();
 
     def json_url(self):
         return "/meeting/%s/constraint/%s.json" % (self.meeting.number, self.id)
@@ -668,7 +775,8 @@ class Constraint(models.Model):
         ct1['meeting_href'] = urljoin(host_scheme, self.meeting.json_url())
         return ct1
 
-
+constraint_cache_uses = 0
+constraint_cache_initials = 0
 
 class Session(models.Model):
     """Session records that a group should have a session on the
@@ -691,6 +799,8 @@ class Session(models.Model):
     modified = models.DateTimeField(default=datetime.datetime.now)
 
     materials = models.ManyToManyField(Document, blank=True)
+
+    unique_constraints_dict = None
 
     def agenda(self):
         items = self.materials.filter(type="agenda",states__type="agenda",states__slug="active")
@@ -719,7 +829,7 @@ class Session(models.Model):
         ss = self.scheduledsession_set.order_by('timeslot__time')
         if ss:
             ss0name = ss[0].timeslot.time.strftime("%H%M")
-        return u"%s: %s %s" % (self.meeting, self.group.acronym, ss0name)
+        return u"%s: %s %s[%u]" % (self.meeting, self.group.acronym, ss0name, self.pk)
 
     @property
     def short_name(self):
@@ -750,16 +860,38 @@ class Session(models.Model):
     def official_scheduledsession(self):
         return self.scheduledsession_for_agenda(self.meeting.agenda)
 
+    def unique_constraints(self):
+        global constraint_cache_uses, constraint_cache_initials
+        constraint_cache_uses += 1
+        # this cache keeps the automatic placer from visiting the database continuously
+        if self.unique_constraints_dict is not None:
+            constraint_cache_initials += 1
+            return self.unique_constraints_dict
+        self.unique_constraints_dict = dict()
+        for constraint in self.constraints():
+            self.unique_constraints_dict[constraint.target] = constraint
+
+        for constraint in self.reverse_constraints():
+            # update the constraint if there is a previous one, and
+            # it is more important than what we had before
+            if not (constraint in self.unique_constraints_dict) or (self.unique_constraints_dict[constraint.source] < constraint):
+                self.unique_constraints_dict[constraint.source] = constraint
+        return self.unique_constraints_dict
+
     def constraints_dict(self, host_scheme):
         constraint_list = []
-        for constraint in self.group.constraint_source_set.filter(meeting=self.meeting):
+        for constraint in self.constraints():
             ct1 = constraint.json_dict(host_scheme)
             constraint_list.append(ct1)
 
-        for constraint in self.group.constraint_target_set.filter(meeting=self.meeting):
+        for constraint in self.reverse_constraints():
             ct1 = constraint.json_dict(host_scheme)
             constraint_list.append(ct1)
         return constraint_list
+
+    @property
+    def people_constraints(self):
+        return self.group.constraint_source_set.filter(meeting=self.meeting, name='bethere')
 
     def json_url(self):
         return "/meeting/%s/session/%s.json" % (self.meeting.number, self.id)
@@ -767,21 +899,230 @@ class Session(models.Model):
     def json_dict(self, host_scheme):
         sess1 = dict()
         sess1['href']           = urljoin(host_scheme, self.json_url())
-        sess1['group_href']     = urljoin(host_scheme, self.group.json_url())
-        sess1['group_acronym']  = str(self.group.acronym)
+        if self.group is not None:
+            sess1['group']          = self.group.json_dict(host_scheme)
+            # nuke rest of these as soon as JS cleaned up.
+            sess1['group_href']     = urljoin(host_scheme, self.group.json_url())
+            sess1['group_acronym']  = str(self.group.acronym)
+            if self.group.parent is not None:
+                sess1['area']           = str(self.group.parent.acronym).upper()
+            sess1['GroupInfo_state']= str(self.group.state)
+            sess1['description']    = str(self.group.name)
+            sess1['group_id']       = str(self.group.pk)
+        sess1['session_id']     = str(self.pk)
         sess1['name']           = str(self.name)
-        sess1['short_name']     = str(self.name)
+        sess1['title']          = str(self.short_name)
+        sess1['short_name']     = str(self.short_name)
         sess1['agenda_note']    = str(self.agenda_note)
         sess1['attendees']      = str(self.attendees)
         sess1['status']         = str(self.status)
         if self.comments is not None:
             sess1['comments']       = str(self.comments)
         sess1['requested_time'] = str(self.requested.strftime("%Y-%m-%d"))
-        sess1['requested_by']   = str(self.requested_by)
-        sess1['requested_duration']= "%.1f h" % (float(self.requested_duration.seconds) / 3600)
-        sess1['area']           = str(self.group.parent.acronym)
-        sess1['responsible_ad'] = str(self.group.ad)
-        sess1['GroupInfo_state']= str(self.group.state)
+        # the related person object sometimes does not exist in the dataset.
+        try:
+            if self.requested_by is not None:
+                sess1['requested_by']   = str(self.requested_by)
+        except Person.DoesNotExist:
+            pass
+
+        sess1['requested_duration']= "%.1f" % (float(self.requested_duration.seconds) / 3600)
+        sess1['duration']          = sess1['requested_duration']
+        sess1['special_request'] = str(self.special_request_token)
         return sess1
 
+    def badness_test(self, num):
+        import sys
+        from settings import BADNESS_CALC_LOG
+        #sys.stdout.write("num: %u / BAD: %u\n" % (num, BADNESS_CALC_LOG))
+        return BADNESS_CALC_LOG >= num
+
+    def badness_log(self, num, msg):
+        if self.badness_test(num):
+            sys.stdout.write(msg)
+
+    # this evaluates the current session based upon the constraints
+    # given, in the context of the assignments in the array.
+    #
+    # MATH.
+    #    each failed conflic3 is worth 1000   points
+    #    each failed conflic2 is worth 10000  points
+    #    each failed conflic1 is worth 100000 points
+    #    being in a room too small than asked is worth 200,000 * (size/50)
+    #    being in a room too big by more than 100 is worth 200,000 once.
+    #    a conflict where AD must be in two places is worth 500,000.
+    #    not being scheduled is worth  10,000,000 points
+    #
+    def badness(self, assignments):
+        badness = 0
+
+        if not (self.group in assignments):
+            return 0
+
+        conflicts = self.unique_constraints()
+
+        if self.badness_test(2):
+            self.badness_log(2, "badgroup: %s badness calculation has %u constraints\n" % (self.group.acronym, len(conflicts)))
+        import sys
+        from settings import BADNESS_UNPLACED, BADNESS_TOOSMALL_50, BADNESS_TOOSMALL_100, BADNESS_TOOBIG, BADNESS_MUCHTOOBIG
+        count = 0
+        myss_list = assignments[self.group]
+        # for each constraint of this sessions' group, by group
+        if len(myss_list)==0:
+            if self.badness_test(2):
+                self.badness_log(2, " 0group: %s is unplaced\n" % (self.group.acronym))
+            return BADNESS_UNPLACED
+
+        for myss in myss_list:
+            if self.attendees is None or myss.timeslot is None or myss.timeslot.location.capacity is None:
+                continue
+            mismatch = self.attendees - myss.timeslot.location.capacity
+            if mismatch > 100:
+                # the room is too small by 100
+                badness += BADNESS_TOOSMALL_100
+            elif mismatch > 50:
+                # the room is too small by 50
+                badness += BADNESS_TOOSMALL_50
+            elif mismatch < 50:
+                # the room is too big by 50
+                badness += BADNESS_TOOBIG
+            elif mismatch < 100:
+                # the room is too big by 100 (not intimate enough)
+                badness += BADNESS_MUCHTOOBIG
+
+        for group,constraint in conflicts.items():
+            if group is None:
+                # must not be a group constraint.
+                continue
+            count += 1
+            # get the list of sessions for other group.
+            sess_count = 0
+            if group in assignments:
+                sess_count = len(assignments[group])
+            if self.badness_test(4):
+                self.badness_log(4, "  [%u] 1group: %s session_count: %u\n" % (count, group.acronym, sess_count))
+
+            # see if the other group which is conflicted, has an assignment,
+            if group in assignments:
+                other_sessions = assignments[group]
+                # and if it does, see if any of it's sessions conflict with any of my sessions
+                # (each group could have multiple slots)
+                #if self.badness_test(4):
+                #    self.badness_log(4, "  [%u] 9group: other sessions: %s\n" % (count, other_sessions))
+                for ss in other_sessions:
+                    # this causes additional database dips
+                    #if self.badness_test(4):
+                    #    self.badness_log(4, "  [%u] 9group: ss: %s %s\n" % (count, ss, ss.faked))
+                    if ss.session is None:
+                        continue
+                    if ss.timeslot is None:
+                        continue
+                    if self.badness_test(3):
+                        self.badness_log(3, "    [%u] 2group: %s vs ogroup: %s\n" % (count, self.group.acronym, ss.session.group.acronym))
+                    if ss.session.group.acronym == self.group.acronym:
+                        continue
+                    if self.badness_test(3):
+                        self.badness_log(3, "    [%u] 3group: %s sessions: %s\n" % (count, group.acronym, ss.timeslot.time))
+                    # see if they are scheduled at the same time.
+                    conflictbadness = 0
+                    for myss in myss_list:
+                        if myss.timeslot is None:
+                            continue
+                        if self.badness_test(3):
+                            self.badness_log(3, "      [%u] 4group: %s my_sessions: %s vs %s\n" % (count, group.acronym, myss.timeslot.time, ss.timeslot.time))
+                        if ss.timeslot.time == myss.timeslot.time:
+                            newcost = constraint.constraint_cost
+                            if self.badness_test(2):
+                                self.badness_log(2, "        [%u] 5group: %s conflicts: %s on %s cost %u\n" % (count, self.group.acronym, ss.session.group.acronym, ss.timeslot.time, newcost))
+                            # yes accumulate badness.
+                            conflictbadness += newcost
+                    ss.badness = conflictbadness
+                    ss.save()
+                    badness += conflictbadness
+        # done
+        if self.badness_test(1):
+            self.badness_log(1, "badgroup: %s badness = %u\n" % (self.group.acronym, badness))
+        return badness
+
+    def setup_conflicts(self):
+        conflicts = self.unique_constraints()
+
+        self.session_conflicts = []
+
+        for group,constraint in conflicts.items():
+            if group is None:
+                # must not be a group constraint, people constraints TBD.
+                continue
+
+            # get the list of sessions for other group.
+            for session in self.meeting.session_set.filter(group = group):
+                # make a tuple...
+                conflict = (session.pk, constraint)
+                self.session_conflicts.append(conflict)
+
+    # This evaluates the current session based upon the constraints
+    # given.  The conflicts have first been shorted into an array (session_conflicts)
+    # as a tuple, and include the constraint itself.
+    #
+    # While the conflicts are listed by group, the conflicts listed here
+    # have been resolved into pk of session requests that will conflict.
+    # This is to make comparison be a straight integer comparison.
+    #
+    # scheduleslot contains the list of sessions which are at the same time as
+    # this item.
+    #
+    # timeslot is where this item has been scheduled.
+    #
+    # MATH.
+    #    each failed conflic3 is worth 1000   points
+    #    each failed conflic2 is worth 10000  points
+    #    each failed conflic1 is worth 100000 points
+    #    being in a room too small than asked is worth 200,000 * (size/50)
+    #    being in a room too big by more than 100 is worth 200,000 once.
+    #    a conflict where AD must be in two places is worth 500,000.
+    #    not being scheduled is worth  10,000,000 points
+    #
+    def badness_fast(self, timeslot, scheduleslot, session_pk_list):
+        from settings import BADNESS_UNPLACED, BADNESS_TOOSMALL_50, BADNESS_TOOSMALL_100, BADNESS_TOOBIG, BADNESS_MUCHTOOBIG
+
+        badness = 0
+
+        # see if item has not been scheduled
+        if timeslot is None:
+            return BADNESS_UNPLACED
+
+        # see if this session is in too small a place.
+        if self.attendees is not None and timeslot.location.capacity is not None:
+            mismatch = self.attendees - timeslot.location.capacity
+            if mismatch > 100:
+                # the room is too small by 100
+                badness += BADNESS_TOOSMALL_100
+            elif mismatch > 50:
+                # the room is too small by 50
+                badness += BADNESS_TOOSMALL_50
+            elif mismatch < 50:
+                # the room is too big by 50
+                badness += BADNESS_TOOBIG
+            elif mismatch < 100:
+                # the room is too big by 100 (not intimate enough)
+                badness += BADNESS_MUCHTOOBIG
+
+        # now go through scheduleslot items and see if any are conflicts
+        # inner loop is the shorter one, usually max 8 rooms.
+        for conflict in self.session_conflicts:
+            for pkt in session_pk_list:
+                pk = pkt[0]
+                if pk == self.pk:          # ignore conflicts with self.
+                    continue
+
+                if conflict[0] == pk:
+                    ss = pkt[1]
+                    if ss.timeslot is not None and ss.timeslot.location == timeslot.location:
+                        continue          # ignore conflicts when two sessions in the same room
+                    constraint = conflict[1]
+                    badness += constraint.constraint_cost
+
+        if self.badness_test(1):
+            self.badness_log(1, "badgroup: %s badness = %u\n" % (self.group.acronym, badness))
+        return badness
 

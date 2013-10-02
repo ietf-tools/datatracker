@@ -226,5 +226,6 @@ AREA DIRECTORS
 APP  Applications Area   Barry Leiba/Huawei Technologies & Pete Resnick/QTI, a Qualcomm company
 GEN  General Area        Russ Housley/Vigil Security, LLC
 OPS  Operations and Man  Ron Bonica/Juniper Networks & Benoit Claise/Cisco
+RAI  Real-time Applicat  Gonzalo Camarillo/Ericsson
 SEC  Security Area       Stephen Farrell/Trinity College Dublin & Sean Turner/IECA
 

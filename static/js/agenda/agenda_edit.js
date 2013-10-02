@@ -29,6 +29,7 @@ var slot_status = {};     // indexed by domid, contains an array of ScheduledSes
 var slot_objs   = {};     // scheduledsession indexed by id.
 
 var group_objs = {};      // list of working groups
+var area_directors = {};  // list of promises of area directors, index by href.
 
 var read_only = true;     // it is true until we learn otherwise.
 var days = [];
@@ -68,20 +69,28 @@ $(document).ready(function() {
 function initStuff(){
     log("initstuff() running...");
     setup_slots();
+    directorpromises = mark_area_directors();
     log("setup_slots() ran");
     droppable();
-    log("droppable() ran");
-    load_all_groups();        // should be in a single big block.
-    log("groups loaded");
-    load_events();
-    log("load_events() ran");
-    find_meeting_no_room();
 
-    listeners();
+    $.when.apply($,directorpromises).done(function() {
+        /* can not load events until area director info has been loaded */
+        log("droppable() ran");
+        load_events();
+        log("load_events() ran");
+        find_meeting_no_room();
+        listeners();
+        droppable();
+        duplicate_sessions = find_double_timeslots();
+
+        if(load_conflicts) {
+            recalculate(null);
+        }
+    });
+
     static_listeners();
     log("listeners() ran");
     calculate_name_select_box();
-    duplicate_sessions = find_double_timeslots();
 
     start_spin();
 
@@ -94,11 +103,6 @@ function initStuff(){
 
     /* Comment this out for fast loading */
     //load_conflicts = false;
-
-    if(load_conflicts) {
-        recalculate(null);
-    }
-
 }
 
 var __READ_ONLY;

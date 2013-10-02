@@ -1,3 +1,51 @@
+ietfdb (4.80) ietf; urgench=high
+
+  This is a major release which provides the code drop from phase 3 of the
+  Agenda Scheduling Tool.  The code has been merged in, and a lot of minor
+  alignments done.  Deployment of this will make the phase 3 agenda editing
+  tools available from the main ietf site, will align the database schema with
+  that used in the ongoing development work, and will provide the correct
+  models for secretariat tool adaptations.
+
+  * Reworked the TestCase code and fixture loading substantially, resulting
+    in a substantial speed increase for tests when run on a transaction-
+    capable database engine.
+
+  * Added an index page for nomcoms, at /nomcom/, with links to nomcom 
+    pages and announcements, where they exist.
+
+  * Fixed some bugs in the EncryptedTextField class.
+
+  * Fixed the language of the nomination confirmation message.
+
+  * Changed 'requirement' to 'desired expertise' in user-visible places in 
+    the nomcom app.
+
+  * Fixed a wrong secretariat template extension name.
+
+  * Provide the missing safe_rep function required in the back-ported 
+    assertIsNone() test case method.
+
+  * Added an explanatory paragraph to the Desired Expertise page.
+
+  * The exception string for submission upload read errors seems to have 
+    changed after we switched to wsgi, from "Client read error" to "request 
+    data read error".  Now looking for just "read error".
+
+  * Tweaked the introductory text on the Desired Expertise page.
+
+  * Added a makefixture management command, from 
+    http://djangosnippets.org/snippets/918/, somewhat hacked.
+
+  * Updated fixtures, built to be more internally consistent in order to be 
+    able to pre-load them for the test suite.
+
+  * Fixed the manyfold duplicated position names in the position selection 
+    drop-down list in the nomcom private index page.  Fixes issue #1137.
+
+ -- Henrik Levkowetz <henrik@netnod.se>  01 Oct 2013 16:54:16 +0200
+
+
 ietfdb (4.72) ietf; urgency=medium
 
   * Added a migration for a new ConstraintName field: penalty

@@ -4,7 +4,7 @@
 *
 * Copyright (c) 2013, The IETF Trust. See ../../../LICENSE.
 *
-*   www.credil.org: Project Orlando 2013 
+*   www.credil.org: Project Orlando 2013
 *   Author: Justin Hornosty ( justin@credil.org )
 *           Michael Richardson <mcr@sandelman.ca>
 *
@@ -231,6 +231,7 @@ function insert_timeslotedit_cell(ssid) {
         var newpurpose = $("#"+select_id).val()
         console.log("setting id: #"+select_id+" to "+newpurpose+" ("+roomtypeclass+")");
 
+        // how does dajaxice relay an error?
         Dajaxice.ietf.meeting.update_timeslot_purpose(
             function(json) {
                 if(json == "") {

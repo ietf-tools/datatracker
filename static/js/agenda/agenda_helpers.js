@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2013, The IETF Trust. See ../../../LICENSE.
 *
-*   www.credil.org: Project Orlando 2013 
+*   www.credil.org: Project Orlando 2013
 *   Author: Justin Hornosty ( justin@credil.org )
 *           Michael Richardson <mcr@sandelman.ca>
 *
@@ -135,6 +135,7 @@ function style_empty_slots(){
 
 }
 
+var __debug_load_events = false;
 /* this pushes every event into the agendas */
 function load_events(){
     console.log("load events...");
@@ -142,6 +143,9 @@ function load_events(){
     /* first delete all html items that might have gotten saved if
      * user save-as and went offline.
      */
+    if(__debug_load_events) {
+        console.log("processing double slot status relations");
+    }
     $.each(slot_status, function(key) {
         ssid_arr = slot_status[key];
 
@@ -153,12 +157,16 @@ function load_events(){
             // well as backwards.
             if(ssid.extendedfrom_id != false) {
                 other = slot_objs[ssid.extendedfrom_id];
-                console.log("slot:",ssid.scheduledsession_id, "extended from: ",key,ssid.extendedfrom_id); // ," is: ", other);
+                if(__debug_load_events) {
+                    console.log("slot:",ssid.scheduledsession_id, "extended from: ",key,ssid.extendedfrom_id); // ," is: ", other);
+                }
                 if(other != undefined) {
                     ssid.extendedfrom = other;
                     other.extendedto  = ssid;
                 } else {
-                    console.log("extended from: ",ssid.extendedfrom_id," not found");
+                    if(__debug_load_events) {
+                        console.log("extended from: ",ssid.extendedfrom_id," not found");
+                    }
                 }
             }
 	}
@@ -166,6 +174,9 @@ function load_events(){
 
     // go through the slots again, and if one slot has been extended, then
     // extend any other "sister" slots as well.
+    if(__debug_load_events) {
+        console.log("marking extended slots for slots with multiple sessions");
+    }
     $.each(slot_status, function(key) {
         ssid_arr = slot_status[key];
 
@@ -174,54 +185,77 @@ function load_events(){
 	    ssid = ssid_arr[q];
             if(extendedto == undefined &&
                ssid.extendedto != undefined) {
+                if(__debug_load_events) {
+                    console.log("ssid",ssid.session_id,"extended");
+                }
                 extendedto = ssid.extendedto;
             }
         }
 	for(var q = 0; q<ssid_arr.length; q++){
 	    ssid = ssid_arr[q];
             ssid.extendedto = extendedto;
+            if(__debug_load_events) {
+                console.log("ssid",ssid.session_id,"extended");
+            }
         }
+    });
+
+    if(__debug_load_events) {
+        console.log("finding responsible ad");
+    }
+    $.each(meeting_objs, function(key) {
+        session = meeting_objs[key];
+        session.find_responsible_ad();
     });
 
     $.each(slot_status, function(key) {
         ssid_arr = slot_status[key]
 	if(key == "sortable-list"){
-	    //console.log("sortable list");
-	}else{
+	    console.log("sortable list");
+	}else {
 
-	for(var q = 0; q<ssid_arr.length; q++){
-	    ssid = ssid_arr[q];
-            slot_id = ("#"+ssid.domid);
-            //$(slot_id).css('background-color',color_droppable_empty_slot ); //'#006699'
+	    for(var q = 0; q<ssid_arr.length; q++){
+	        ssid = ssid_arr[q];
+                slot_id = ("#"+ssid.domid);
 
-	    //console.log("removing class from "+ssid.domid);
-	    /* also, since we are HERE, set the class to indicate if slot is available */
-	    $(slot_id).addClass("agenda_slot_" + ssid.roomtype);
-            $(slot_id).removeClass("agenda_slot_unavailable");
-
-            session = meeting_objs[ssid.session_id];
-            if (session != null) {
-
-                if(ssid.extendedto != undefined) {
-                    session.double_wide = true;
-                    session.slot2 = ssid.extendedto;
+                if(__debug_load_events) {
+                    console.log("populating slot: ",slot_id,key);
                 }
-                if(ssid.extendedfrom == undefined) {
-	       	    session.slot_status_key = key;
+	        /* also, since we are HERE, set the class to indicate if slot is available */
+	        $(slot_id).addClass("agenda_slot_" + ssid.roomtype);
+
+                if(ssid.roomtype == "unavail") {
+                    $(slot_id).removeClass("ui-droppable");
+                    $(slot_id).removeClass("free_slot");
+                    $(slot_id).addClass("agenda_slot_unavailable");
+                } else {
+                    $(slot_id).removeClass("agenda_slot_unavailable");
+                    $(slot_id).addClass("ui-droppable");
+                    session = meeting_objs[ssid.session_id];
+                    if (session != null) {
+                        if(ssid.extendedto != undefined) {
+                            session.double_wide = true;
+                            session.slot2 = ssid.extendedto;
+                        }
+                        if(ssid.extendedfrom == undefined) {
+	       	            session.slot_status_key = key;
+                        }
+
+	                $(slot_id).removeClass('free_slot');
+
+                        if(ssid.extendedfrom == undefined) {
+                            if(__debug_load_events) {
+                                console.log("  with session", session.title);
+                            }
+
+                            session.populate_event(key);
+                        }
+                        session.placed(ssid, false);
+                    } else {
+	                $(slot_id).addClass('free_slot');
+                    }
                 }
-
-	        $(slot_id).removeClass('free_slot');
-
-                if(ssid.extendedfrom == undefined) {
-                    session.populate_event(key);
-                }
-		//log("setting "+slot_id+" as used");
-
-                session.placed(ssid, false);
-            } else {
-	        $(slot_id).addClass('free_slot');
             }
-	}
 	}
     });
 
@@ -279,7 +313,7 @@ function find_friends(inp){
 	return ss_arr;
     }
     else{
-	console.log("find_friends("+inp+") did not find anything");
+	//console.log("find_friends("+inp+") did not find anything");
 	return null;
     }
 }
@@ -508,13 +542,12 @@ var child = null;
 function remove_duplicate(timeslot_id, ss_id){
     children = $("#"+timeslot_id).children();
     child = children;
-    console.log(children);
     for(var i = 0; i< children.length; i++){ // loop to
 	if($(children[i]).attr('session_id') == ss_id) { // make sure we only remove duplicate.
 	    try{
 		$(children[i]).remove();
 	    }catch(exception){
-		console.log(exception);
+		console.log("exception from remove_duplicate",exception);
 	    }
 	}
     }

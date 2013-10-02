@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import datetime
+from urlparse import urljoin
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -89,21 +90,28 @@ class Person(PersonInfo):
     objects = PersonManager()
     user = models.OneToOneField(User, blank=True, null=True)
 
+    #this variable, if not None, may be used by url() to keep the sitefqdn.
+    default_hostscheme = None
+
     def person(self): # little temporary wrapper to help porting to new schema
         return self
+
+    @property
+    def defurl(self):
+        return urljoin(self.default_hostscheme,self.json_url())
 
     def json_url(self):
         return "/person/%s.json" % (self.id, )
 
-    # person json not yet implemented
-    #def json_dict(self, host_scheme):
-    #    ct1 = dict()
-    #    ct1['person_id'] = self.id
-    #    ct1['href']      = self.url(host_scheme)
-    #    ct1['name']      = self.name
-    #    ct1['ascii']     = self.ascii
-    #    ct1['affliation']= self.affliation
-    #    return ct1
+    # return info about the person
+    def json_dict(self, hostscheme):
+        ct1 = dict()
+        ct1['person_id'] = self.id
+        ct1['href']      = urljoin(hostscheme, self.json_url())
+        ct1['name']      = self.name
+        ct1['ascii']     = self.ascii
+        ct1['affiliation']= self.affiliation
+        return ct1
 
 class PersonHistory(PersonInfo):
     person = models.ForeignKey(Person, related_name="history_set")

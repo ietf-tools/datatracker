@@ -1454,5 +1454,9 @@
 {"pk": 22491, "model": "meeting.constraint", "fields": {"source": 1847, "meeting": 83, "target": 1751, "name": "conflic2"}},
 {"pk": 22492, "model": "meeting.constraint", "fields": {"source": 1847, "meeting": 83, "target": 1817, "name": "conflic2"}},
 {"pk": 22493, "model": "meeting.constraint", "fields": {"source": 1847, "meeting": 83, "target": 1728, "name": "conflic2"}},
-{"pk": 22494, "model": "meeting.constraint", "fields": {"source": 1847, "meeting": 83, "target": 1789, "name": "conflic2"}}
+{"pk": 22494, "model": "meeting.constraint", "fields": {"source": 1847, "meeting": 83, "target": 1789, "name": "conflic2"}},
+{"pk": 23000, "model": "meeting.constraint", "fields": {"source": 1816, "meeting": 83, "name": "bethere", "person": 103539}},
+{"pk": 23001, "model": "meeting.constraint", "fields": {"source": 1816, "meeting": 83, "name": "bethere", "person": 108554}},
+{"pk": 23002, "model": "meeting.constraint", "fields": {"source": 1816, "meeting": 83, "name": "bethere", "person": 102830}}
+
 ]
