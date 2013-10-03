@@ -32,9 +32,6 @@ import debug
 
 @dajaxice_register
 def readonly(request, meeting_num, schedule_id):
-    debug.say('readonly()')
-    debug.show('meeting_num')
-    debug.show('schedule_id')
     meeting = get_meeting(meeting_num)
     schedule = get_schedule_by_id(meeting, schedule_id)
 
