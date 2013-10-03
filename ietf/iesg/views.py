@@ -76,10 +76,13 @@ def review_decisions(request, year=None):
     #proto_levels = ["bcp", "ds", "ps", "std"]
     #doc_levels = ["exp", "inf"]
 
+    timeframe = u"%s" % year if year else u"the past 6 months"
+
     return render_to_response('iesg/review_decisions.html',
                               dict(events=events,
                                    years=years,
-                                   year=year),
+                                   year=year,
+                                   timeframe=timeframe),
                               context_instance=RequestContext(request))
 
 
