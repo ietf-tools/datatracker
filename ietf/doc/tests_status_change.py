@@ -150,6 +150,25 @@ class StatusChangeTestCase(TestCase):
         self.assertEquals(doc.notify,newlist)
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Notification list changed'))       
 
+    def test_edit_title(self):
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        url = urlreverse('status_change_title',kwargs=dict(name=doc.name))
+
+        login_testing_unauthorized(self, "ad", url)
+
+        # normal get 
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('input[name=title]')),1)
+
+        # change title
+        r = self.client.post(url,dict(title='New title'))
+        self.assertEquals(r.status_code,302)
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        self.assertEquals(doc.title,'New title')
+        self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Title changed'))       
+
     def test_edit_ad(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         url = urlreverse('status_change_ad',kwargs=dict(name=doc.name))

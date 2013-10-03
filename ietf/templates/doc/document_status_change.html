@@ -24,7 +24,12 @@
   <div>
     {% if snapshot %}Snapshot of{% endif %}
     {% if doc.get_state_slug not in approved_states %}Proposed{% endif %}
-    Status change : {{ doc.title }} </a>
+    Status change : 
+           <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+               class="editlink" href="{% url status_change_title name=doc.name %}"
+              {% endif %}
+           >
+           {{ doc.title }} </a>
   </div>
 
   <table id="metatable" width="100%">

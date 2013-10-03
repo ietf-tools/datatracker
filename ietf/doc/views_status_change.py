@@ -236,6 +236,41 @@ def edit_notices(request, name):
                               },
                               context_instance = RequestContext(request))
 
+class ChangeTitleForm(forms.Form):
+    title = forms.CharField(max_length=255, label="Title", required=True)
+
+@role_required("Area Director", "Secretariat")
+def edit_title(request, name):
+    """Change the title for this status_change document."""
+
+    status_change = get_object_or_404(Document, type="statchg", name=name)
+
+    if request.method == 'POST':
+        form = ChangeTitleForm(request.POST)
+        if form.is_valid():
+
+            status_change.title = form.cleaned_data['title']
+            status_change.save()
+    
+            login = request.user.get_profile()
+            c = DocEvent(type="added_comment", doc=status_change, by=login)
+            c.desc = "Title changed to '%s'"%status_change.title
+            c.save()
+
+            return redirect("doc_view", name=status_change.name)
+
+    else:
+        init = { "title" : status_change.title }
+        form = ChangeTitleForm(initial=init)
+
+    titletext = '%s-%s.txt' % (status_change.canonical_name(),status_change.rev)
+    return render_to_response('doc/change_title.html',
+                              {'form': form,
+                               'doc': status_change,
+                               'titletext' : titletext,
+                              },
+                              context_instance = RequestContext(request))
+
 @role_required("Area Director", "Secretariat")
 def edit_ad(request, name):
     """Change the shepherding Area Director for this status_change."""
