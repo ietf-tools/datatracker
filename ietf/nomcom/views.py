@@ -78,9 +78,9 @@ def private_key(request, year):
     nomcom = get_nomcom_by_year(year)
     message = None
     if request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None):
-        message = ('warning', 'Alredy there is a private key in your session')
+        message = ('warning', 'You already have a private decryption key set for this session.')
     else:
-        message = ('warning', "There isn't a private key in your session yet")
+        message = ('warning', "You don't have a private decryption key set for this session yet")
 
     back_url = request.GET.get('back_to', reverse('nomcom_private_index', None, args=(year, )))
     if request.method == 'POST':
