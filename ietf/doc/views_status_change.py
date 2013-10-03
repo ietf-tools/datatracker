@@ -80,6 +80,14 @@ def change_state(request, name, option=None):
                     send_status_change_eval_email(request,status_change)
 
 
+                if new_state.slug == "lc-req":
+                    request_last_call(request, status_change)
+                    return render_to_response('doc/draft/last_call_requested.html',
+                                              dict(doc=status_change,
+                                                   url = status_change.get_absolute_url(),
+                                                  ),
+                                              context_instance=RequestContext(request))
+
             return redirect('doc_view', name=status_change.name)
     else:
         s = status_change.get_state()
