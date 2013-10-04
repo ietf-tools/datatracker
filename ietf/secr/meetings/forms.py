@@ -146,7 +146,7 @@ class NewSessionForm(forms.Form):
             time_obj = datetime.datetime.combine(day_obj,hour)
             slot = TimeSlot.objects.get(meeting=self.meeting,time=time_obj,location=room)
             next_slot = get_next_slot(slot)
-            if not next_slot or next_slot.session != None:
+            if not next_slot:
                 raise forms.ValidationError('There is no next session to combine')
         
         return cleaned_data

@@ -27,7 +27,7 @@ from ietf.group.models import Group
 from ietf.group.proxy import IETFWG
 from ietf.group.utils import get_charter_text
 from ietf.ietfauth.decorators import has_role
-from ietf.meeting.models import Meeting, Session, TimeSlot
+from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession
 from ietf.name.models import MeetingTypeName, SessionStatusName
 from ietf.person.models import Person
 
@@ -685,22 +685,17 @@ def select(request, meeting_num):
 
     # initialize Training form, this select widget needs to have a session id, because it's
     # utilmately the session that we associate material with
-    # NOTE: there are two ways to query for the groups we want, the later seems more specific
     if has_role(user,'Secretariat'):
-        choices = []
-        #for session in Session.objects.filter(meeting=meeting).exclude(name=""):
-        for session in Session.objects.filter(meeting=meeting,timeslot__type='other').order_by('name'):
-            choices.append((session.id,session.timeslot_set.all()[0].name))
+        ss = ScheduledSession.objects.filter(schedule=meeting.agenda,timeslot__type='other')
+        choices = [ (i.session.id, i.session.name) for i in sorted(ss,key=lambda x: x.session.name) ]
         training_form = GroupSelectForm(choices=choices)
     else:
         training_form = None
 
     # iniialize plenary form
     if has_role(user,['Secretariat','IETF Chair','IAB Chair']):
-        choices = []
-        for session in Session.objects.filter(meeting=meeting,
-                                              timeslot__type='plenary').order_by('name'):
-            choices.append((session.id,session.timeslot_set.all()[0].name))
+        ss = ScheduledSession.objects.filter(schedule=meeting.agenda,timeslot__type='plenary')
+        choices = [ (i.session.id, i.session.name) for i in sorted(ss,key=lambda x: x.session.name) ]
         plenary_form = GroupSelectForm(choices=choices)
     else:
         plenary_form = None
