@@ -71,7 +71,6 @@ def update_timeslot_pinned(request, schedule_id, scheduledsession_id, pinned=Fal
     cansee,canedit = agenda_permissions(meeting, schedule, request.user)
 
     if not canedit:
-        raise Http403
         return json.dumps({'error':'no permission'})
 
     if scheduledsession_id is not None:
