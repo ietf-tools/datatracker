@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.30"
+version = "0.31"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -139,8 +139,8 @@ class Draft():
         # to limit later searches to the first page.
         if len(self.pages) <= 1:
             self.pages = []
-            for pagestart in range(0, len(self.lines), 58):
-                self.pages += [ "\n".join(self.lines[pagestart:pagestart+54]) ]
+            for pagestart in range(0, len(self.lines), 56):
+                self.pages += [ "\n".join(self.lines[pagestart:pagestart+56]) ]
 
 
         self.filename, self.revision = self._parse_draftname()
@@ -194,12 +194,30 @@ class Draft():
         blankcount = 0
         linecount = 0
         # two functions with side effects
+        def striplines(p):
+            r = []
+            beg = end = 0
+            for i in range(len(p)):
+                l = p[i]
+                if l.strip() == "":
+                    continue
+                else:
+                    beg = i
+                    break
+            for i in range(len(p)-1,0,-1):
+                l = p[i]
+                if l.strip() == "":
+                    continue
+                else:
+                    end = i
+                    break
+            return p[beg:end]
         def endpage(pages, page, newpage, line):
             if line:
                 page += [ line ]
             return begpage(pages, page, newpage)
         def begpage(pages, page, newpage, line=None):
-            if page and len(page) > 5:
+            if page and len(striplines(page)) > 5:
                 pages += [ "\n".join(page) ]
                 page = []
                 newpage = True
@@ -209,7 +227,7 @@ class Draft():
         for line in self.rawlines:
             linecount += 1
             line = line.rstrip()
-            if re.search("\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I):
+            if re.search("\[?page [0-9ivx]+\]?[ \t\f]*$", line, re.I):
                 pages, page, newpage = endpage(pages, page, newpage, line)
                 continue
             if re.search("\f", line, re.I):
@@ -262,7 +280,12 @@ class Draft():
     # ----------------------------------------------------------------------
     def get_pagecount(self):
         if self._pagecount == None:
-            self._pagecount = len(re.findall("\[[Pp]age [0-9ixldv]+\]", self.text)) or len(self.lines)/58
+            label_pages = len(re.findall("\[page [0-9ixldv]+\]", self.text, re.I))
+            count_pages = len(self.pages)
+            if label_pages > count_pages/2:
+                self._pagecount = label_pages
+            else:
+                self._pagecount = count_pages
         return self._pagecount
 
     # ----------------------------------------------------------------------
@@ -740,9 +763,11 @@ class Draft():
                                                 revpt = [ n for n in names if n ]
                                                 revpt.reverse()
                                                 if not ((" ".join(parts) == fullname) or (" ".join(revpt) == fullname)):
-                                                    _err("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
-                                                authors[i] = (fullname, first, middle, surname, suffix)
-                                                companies[i] = None
+                                                    _warn("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
+                                                    authors[i] = None
+                                                else:
+                                                    authors[i] = (fullname, first, middle, surname, suffix)
+                                                    companies[i] = None
                                             break
                             except AssertionError, e:
                                 sys.stderr.write("filename: "+self.filename+"\n")
@@ -914,7 +939,9 @@ class Draft():
                         rfcrefs += [ rfc_match.group(0).replace(" ","").lower() ]
                     draft_match = re.search("draft-[a-z0-9-]+", para)
                     if draft_match:
-                        draftrefs += [ draft_match.group(0).lower() ]
+                        draft = draft_match.group(0).lower()
+                        if not draft in draftrefs:
+                            draftrefs += [ draft ]
         normrefs = list(set(normrefs))
         normrefs.sort()
         rfcrefs = list(set(rfcrefs))
@@ -1152,4 +1179,6 @@ if __name__ == "__main__":
         _main()
     except KeyboardInterrupt:
         raise
-        pass
+    except Exception, e:
+        _err(e)
+
