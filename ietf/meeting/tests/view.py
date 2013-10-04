@@ -44,7 +44,12 @@ class ViewTestCase(TestCase):
         # both agendas will have a software version indication inside a
         # comment.  This will change.  Remove comments before comparing.
         agenda83utc_valid = re.sub("<!-- v.*-->","", agenda83utc_valid)
-        agenda83utc_response = re.sub("<!-- v.*-->","", resp.content)
+        agenda83utc_valid = re.sub('<a href="/release/.*?</a>','', agenda83utc_valid)
+        
+        agenda83utc_response = resp.content
+        agenda83utc_response = re.sub("<!-- v.*-->","", agenda83utc_response)
+        agenda83utc_response = re.sub('<a href="/release/.*</a>','', agenda83utc_response)
+
         fn = ""
         # to capture new output (and check it for correctness)
         if agenda83utc_valid != agenda83utc_response:
