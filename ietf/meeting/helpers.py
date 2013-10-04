@@ -145,7 +145,7 @@ def get_ntimeslots_from_ss(agenda, scheduledsessions):
 def get_ntimeslots_from_agenda(agenda):
     # now go through the timeslots, only keeping those that are
     # sessions/plenary/training and don't occur at the same time
-    scheduledsessions = agenda.scheduledsession_set.all().order_by("timeslot__time")
+    scheduledsessions = agenda.scheduledsession_set.all().order_by("timeslot__time").exclude(timeslot__type = "unavail")
     ntimeslots = get_ntimeslots_from_ss(agenda, scheduledsessions)
     return ntimeslots, scheduledsessions
 
