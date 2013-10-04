@@ -190,6 +190,9 @@ class Meeting(models.Model):
                     ScheduledSession.objects.create(schedule = sched,
                                                     timeslot = ts)
 
+    class Meta:
+        ordering = ["-date", ]
+
 class Room(models.Model):
     meeting = models.ForeignKey(Meeting)
     name = models.CharField(max_length=255)
