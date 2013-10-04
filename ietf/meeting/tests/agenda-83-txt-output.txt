@@ -27,6 +27,7 @@ SUNDAY, March 25, 2012
 
 MONDAY, March 26, 2012
 0800-1800  IETF Registration - Hall Maillot A
+0800-0900  Beverages - Hall Maillot A
 0900-1130  Morning Session I
 252B            	APP 	appsawg     	Applications Area Working Group WG - Combined with APPAREA
 252A            	INT 	multimob    	Multicast Mobility WG
@@ -37,6 +38,7 @@ Maillot         	OPS 	v6ops       	IPv6 Operations WG
 243             	RAI 	mmusic      	Multiparty Multimedia Session Control WG
 242AB           	RTG 	idr         	Inter-Domain Routing WG
 
+1130-1300  Break - Hall Maillot A
 1300-1500  Afternoon Session I
 212/213         	APP 	eai         	Email Address Internationalization WG - CANCELED
 242AB           	APP 	websec      	Web Security WG
@@ -45,8 +47,8 @@ Maillot         	OPS 	v6ops       	IPv6 Operations WG
 252B            	RAI 	avtcore     	Audio/Video Transport Core Maintenance WG
 Maillot         	RTG 	ccamp       	Common Control and Measurement Plane WG
 241             	RTG 	sidr        	Secure Inter-Domain Routing WG
+252A            	TSV 	i2aex       	Infrastructure-to-Application Information Exposure BOF - Room Changed From 241
 253             	TSV 	ippm        	IP Performance Metrics WG
-252A            	TSV 	i2aex       	Infrastructure-to-Application Information Exposure WG - Room Changed From 241
 
 1510-1610  Afternoon Session II
 243             	APP 	urnbis      	Uniform Resource Names, Revised WG
@@ -58,15 +60,40 @@ Maillot         	INT 	pcp         	Port Control Protocol WG
 252A            	SEC 	ipsecme     	IP Security Maintenance and Extensions WG
 212/213         	TSV 	rmt         	Reliable Multicast Transport WG
 
+1610-1630  Beverage and Snack Break I - Hall Maillot A
 1630-1930  Technical Plenary - Amphitheatre Bleu
+
+   1630 - 1930 Technical Plenary
+   
+   1630 - 1700 Welcome
+   1. Welcome - Bernard Aboba
+   2. IRTF Chair's Report - Lars Eggert
+   3. IAB Chair's Report - Bernard Aboba
+   4. RSOC Report - Fred Baker & Heather Flanagan
+   
+   1700 - 1715 World IPv6 Launch - Leslie Daigle
+   
+   1715 - 1915 Technical Session: "Implementation Challenges with Browser Security"
+      
+       Hannes Tschofenig: Introduction
+       Eric Rescorla:     "How do we get to TLS Everywhere?"
+       Tom Lowenthal:     "Cryptography Infrastructure"
+       Chris Weber:       "When Good Standards Go Bad"
+       Ian Fette:         "Lessons Learned from WebSockets (RFC 6455)"
+       Jeff Hodges:       "It's Not the End of the World"
+   
+   1915 - 1930 IAB Open Microphone Session
+   
+   1930 Adjourn
 
 
 
 TUESDAY, March 27, 2012
 0800-1800  IETF Registration - Hall Maillot A
+0800-0900  Beverages - Hall Maillot A
 0900-1130  Morning Session I
 243             	APP 	core        	Constrained RESTful Environments WG
-252A            	GEN 	antitrust   	Does the IETF Need an Anti-Trust Policy WG
+252A            	GEN 	antitrust   	Does the IETF Need an Anti-Trust Policy BOF
 Maillot         	INT 	6man        	IPv6 Maintenance WG
 241             	IRTF	dtnrg       	Delay-Tolerant Networking Research Group 
 252B            	RAI 	clue        	ControLling mUltiple streams for tElepresence WG
@@ -74,6 +101,7 @@ Maillot         	INT 	6man        	IPv6 Maintenance WG
 212/213         	SEC 	pkix        	Public-Key Infrastructure (X.509) WG
 253             	TSV 	tsvwg       	Transport Area Working Group WG
 
+1130-1300  Break - Hall Maillot A
 1300-1500  Afternoon Session I
 252A            	APP 	httpbis     	Hypertext Transfer Protocol Bis WG
 252B            	INT 	pcp         	Port Control Protocol WG
@@ -85,6 +113,7 @@ Maillot         	RAI 	dispatch    	Dispatch WG
 253             	SEC 	kitten      	Common Authentication Technology Next Generation WG - Combined with KRB-WG
 253             	SEC 	krb-wg      	Kerberos WG - Combined with KITTEN
 
+1500-1520  Beverage and Snack Break I - Hall Maillot A
 1520-1700  Afternoon Session II
 243             	APP 	weirds      	Web Extensible Internet Registration Data Service WG
 212/213         	INT 	ancp        	Access Node Control Protocol WG
@@ -97,7 +126,7 @@ Maillot         	RAI 	avtext      	Audio/Video Transport Extensions WG
 
 1710-1810  Afternoon Session III
 212/213         	APP 	marf        	Messaging Abuse Reporting Format WG
-Maillot         	GEN 	rfcform     	RFC Format WG
+Maillot         	GEN 	rfcform     	RFC Format BOF
 242AB           	INT 	dnsext      	DNS Extensions WG
 252A            	IRTF	iccrg       	Internet Congestion Control Research Group 
 243             	OPS 	netconf     	Network Configuration WG
@@ -109,6 +138,7 @@ Maillot         	GEN 	rfcform     	RFC Format WG
 
 WEDNESDAY, March 28, 2012
 0800-1700  IETF Registration - Hall Maillot A
+0800-0900  Beverages - Hall Maillot A
 0900-1130  Morning Session I
 243             	APP 	paws        	Protocol to Access WS database WG
 242AB           	INT 	homenet     	Home Networking WG
@@ -121,6 +151,7 @@ Maillot         	RTG 	ccamp       	Common Control and Measurement Plane WG
 252A            	TSV 	ppsp        	Peer to Peer Streaming Protocol WG
 
 1130-1300  Working Group Chairs' Training - 252B
+1130-1300  Break - Hall Maillot A
 1300-1500  Afternoon Session I
 252B            	APP 	hybi        	BiDirectional or Server-Initiated HTTP WG
 243             	APP 	repute      	Reputation Services WG
@@ -134,29 +165,49 @@ Maillot         	RTG 	nvo3        	Network Virtualization Overlays WG
 1510-1610  Afternoon Session II
 242AB           	INT 	softwire    	Softwires WG
 Maillot         	OPS 	armd        	Address Resolution for Massive numbers of hosts in the Data center WG
-253             	RAI 	xmpp        	Extensible Messaging and Presence Protocol WG
 241             	RAI 	p2psip      	Peer-to-Peer Session Initiation Protocol WG
 252A            	RAI 	soc         	SIP Overload Control WG
+253             	RAI 	xmpp        	Extensible Messaging and Presence Protocol WG
 252B            	RTG 	bfd         	Bidirectional Forwarding Detection WG
 243             	SEC 	tls         	Transport Layer Security WG
 212/213         	TSV 	pcn         	Congestion and Pre-Congestion Notification WG
 
+1610-1630  Beverage and Snack Break I - Hall Maillot A
 1630-1930  IETF Operations and Administration Plenary - Amphitheatre Bleu
+
+   Administrative and Management Plenary
+   
+      1. Welcome
+      2. Host Presentation
+      3. Reporting
+          - IETF Chair Report
+          - NOC Report
+          - IAOC Chair & IAD Reports
+          - Trust Chair Report
+          - NomCom Chair Report
+      4. Open Internet Endowment Status Report
+      5. Thank Outgoing IAB, IAOC, and IESG Members
+      6. Introduce Incoming IAOC Members
+      7. IAOC Open Mic
+      8. Introduce Incoming IESG Members 
+      9. IESG Open Mic
 
 
 
 THURSDAY, March 29, 2012
 0800-1700  IETF Registration - Hall Maillot A
+0800-0900  Beverages - Hall Maillot A
 0900-1130  Morning Session I
 252A            	APP 	scim        	System for Cross-domain Identity Management WG
-241             	INT 	dmm         	Distributed Mobility Management WG
 253             	INT 	dhc         	Dynamic Host Configuration WG
+241             	INT 	dmm         	Distributed Mobility Management WG
 212/213         	OPS 	mboned      	MBONE Deployment WG
 Maillot         	RAI 	rtcweb      	Real-Time Communication in WEB-browsers WG
 242AB           	RTG 	pwe3        	Pseudowire Emulation Edge to Edge WG
 243             	SEC 	abfab       	Application Bridging for Federated Access Beyond web WG
 252B            	TSV 	alto        	Application-Layer Traffic Optimization WG
 
+1130-1300  Break - Hall Maillot A
 1300-1500  Afternoon Session I
 253             	APP 	precis      	Preparation and Comparison of Internationalized Strings WG
 Maillot         	INT 	intarea     	Internet Area Working Group WG
@@ -167,6 +218,7 @@ Maillot         	INT 	intarea     	Internet Area Working Group WG
 252A            	SEC 	oauth       	Web Authorization Protocol WG
 252B            	TSV 	cdni        	Content Delivery Networks Interconnection WG
 
+1500-1520  Beverage Break - Hall Maillot A
 1520-1720  Afternoon Session II
 241             	APP 	httpbis     	Hypertext Transfer Protocol Bis WG
 252B            	INT 	lwig        	Light-Weight Implementation Guidance WG
@@ -177,6 +229,7 @@ Maillot         	OPS 	v6ops       	IPv6 Operations WG
 252A            	SEC 	emu         	EAP Method Update WG
 253             	TSV 	decade      	Decoupled Application Data Enroute WG
 
+1720-1740  Beverage and Snack Break II - Hall Maillot A
 1740-1940  Afternoon Session III
 252A            	INT 	mif         	Multiple Interfaces WG
 212/213         	OPS 	ipfix       	IP Flow Information Export WG
@@ -191,6 +244,7 @@ Maillot         	RAI 	clue        	ControLling mUltiple streams for tElepresence
 
 FRIDAY, March 30, 2012
 0800-1100  IETF Registration - Hall Maillot A
+0800-0900  Beverages - Hall Maillot A
 0900-1100  Morning Session I
 253             	APP 	core        	Constrained RESTful Environments WG
 252A            	APP 	spfbis      	SPF Update WG
@@ -201,9 +255,10 @@ Maillot         	RTG 	mpls        	Multiprotocol Label Switching WG
 242AB           	TSV 	cdni        	Content Delivery Networks Interconnection WG
 241             	TSV 	tcpm        	TCP Maintenance and Minor Extensions WG
 
+1100-1120  Beverage and Snack Break I - Hall Maillot A
 1120-1220  Afternoon Session I
 253             	APP 	iri         	Internationalized Resource Identifiers WG
-243             	GEN 	rpsreqs     	Remote Participation System Requirements WG
+243             	GEN 	rpsreqs     	Remote Participation System Requirements BOF
 242AB           	INT 	trill       	Transparent Interconnection of Lots of Links WG
 212/213         	IRTF	cfrg        	Crypto Forum Research Group 
 Maillot         	OPS 	dnsop       	Domain Name System Operations WG
@@ -212,7 +267,7 @@ Maillot         	OPS 	dnsop       	Domain Name System Operations WG
 252B            	TSV 	mptcp       	Multipath TCP WG
 
 1230-1330  Afternoon Session II
-243             	GEN 	rpsreqs     	Remote Participation System Requirements WG
+243             	GEN 	rpsreqs     	Remote Participation System Requirements BOF
 212/213         	IRTF	cfrg        	Crypto Forum Research Group 
 242AB           	OPS 	grow        	Global Routing Operations WG
 253             	RAI 	atoca       	Authority-to-Citizen Alert WG
@@ -223,9 +278,12 @@ Maillot         	OPS 	dnsop       	Domain Name System Operations WG
 ====================================================================
 AREA DIRECTORS
 
-APP  Applications Area   Barry Leiba/Huawei Technologies & Pete Resnick/QTI, a Qualcomm company
+APP  Applications Area   Pete Resnick/Qualcomm Incorporated & Barry Leiba/IBM Research
 GEN  General Area        Russ Housley/Vigil Security, LLC
-OPS  Operations and Man  Ron Bonica/Juniper Networks & Benoit Claise/Cisco
-RAI  Real-time Applicat  Gonzalo Camarillo/Ericsson
-SEC  Security Area       Stephen Farrell/Trinity College Dublin & Sean Turner/IECA
+INT  Internet Area       Ralph Droms/Cisco Systems & Brian Haberman/
+OPS  Operations and Man  Ronald Bonica/Juniper Networks & Benoit Claise/
+RAI  Real-time Applicat  Gonzalo Camarillo/Ericsson & Robert Sparks/Tekelec
+RTG  Routing Area        Stewart Bryant/Cisco Systems & Adrian Farrel/
+SEC  Security Area       Stephen Farrell/Trinity College Dublin & Sean Turner/International Electronic Communication Analysts
+TSV  Transport Area      Wesley Eddy/ & Martin Stiemerling/
 
