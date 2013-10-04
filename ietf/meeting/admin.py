@@ -2,6 +2,13 @@ from django.contrib import admin
 
 from ietf.meeting.models import *
 
+class RoomAdmin(admin.ModelAdmin):
+    list_display = ["id", "meeting", "name", "capacity", ]
+    list_filter = ["meeting"]
+    ordering = ["-meeting"]
+
+admin.site.register(Room, RoomAdmin)
+
 class RoomInline(admin.TabularInline):
     model = Room
 
