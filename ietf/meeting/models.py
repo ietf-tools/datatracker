@@ -3,6 +3,7 @@
 import pytz, datetime
 from urlparse import urljoin
 import copy
+import debug
 
 from django.db import models
 from django.conf import settings
@@ -267,6 +268,13 @@ class TimeSlot(models.Model):
     def reg_info(self):
         return (self.registration() is not None)
 
+    def break_info(self):
+        breaks = self.__class__.objects.filter(meeting=self.meeting, time__month=self.time.month, time__day=self.time.day, type="break").order_by("time")
+        for brk in breaks:
+            if brk.time_desc[-4:] == self.time_desc[:4]:
+                return brk
+        return None
+	 
     def __unicode__(self):
         location = self.get_location()
         if not location:
@@ -642,14 +650,13 @@ class ScheduledSession(models.Model):
             return ""
         return self.session.group.parent.acronym
 
-    @property
-    def break_info(self):
-        breaks = self.schedule.scheduledsessions_set.filter(timeslot__time__month=self.timeslot.time.month, timeslot__time__day=self.timeslot.time.day, timeslot__type="break").order_by("timeslot__time")
-        now = self.timeslot.time_desc[:4]
-        for brk in breaks:
-            if brk.time_desc[-4:] == now:
-                return brk
-        return None
+#    def break_info(self):
+#        breaks = self.schedule.scheduledsessions_set.filter(timeslot__time__month=self.timeslot.time.month, timeslot__time__day=self.timeslot.time.day, timeslot__type="break").order_by("timeslot__time")
+#        now = self.timeslot.time_desc[:4]
+#        for brk in breaks:
+#            if brk.time_desc[-4:] == now:
+#                return brk
+#        return None
 
     @property
     def area_name(self):
