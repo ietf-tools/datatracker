@@ -692,7 +692,7 @@ def ical_agenda(request, num=None, schedule_name=None):
     else:
         vtimezone = None
 
-    return HttpResponse(render_to_string("meeting/agendaREDESIGN.ics",
+    return HttpResponse(render_to_string("meeting/agenda.ics",
         {"scheduledsessions":scheduledsessions, "meeting":meeting, "vtimezone": vtimezone },
         RequestContext(request)), mimetype="text/calendar")
 
