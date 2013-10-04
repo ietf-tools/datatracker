@@ -697,7 +697,7 @@ def ical_agenda(request, num=None, schedule_name=None):
         RequestContext(request)), mimetype="text/calendar")
 
 def csv_agenda(request, num=None, name=None):
-    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num, name)
+    timeslots, scheduledsessions, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num, name)
     # we should really use the Python csv module or something similar
     # rather than a template file which is one big mess
 
