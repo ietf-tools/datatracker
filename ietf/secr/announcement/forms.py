@@ -141,7 +141,7 @@ TO_CHOICES = get_to_choices()
 
 class AnnounceForm(forms.ModelForm):
     #nomcom = forms.BooleanField(required=False)
-    nomcom = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__startswith='nomcom',type='ietf',state='active'),required=False)
+    nomcom = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__startswith='nomcom',type='nomcom',state='active'),required=False)
     to_custom = MultiEmailField(required=False,label='')
     #cc = MultiEmailField(required=False)
 
