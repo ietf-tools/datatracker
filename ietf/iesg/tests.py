@@ -7,11 +7,27 @@ from django.conf import settings
 from pyquery import PyQuery
 
 from ietf.utils.test_data import make_test_data
-from ietf.doc.models import Document, TelechatDocEvent, State
+from ietf.doc.models import Document, DocEvent, TelechatDocEvent, State
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.iesg.models import *
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, login_testing_unauthorized
+
+class ReviewDecisionsTests(django.test.TestCase):
+    def test_review_decisions(self):
+        draft = make_test_data()
+
+        e = DocEvent(type="iesg_approved")
+        e.doc = draft
+        e.by = Person.objects.get(name="Aread Irector")
+        e.save()
+
+        url = urlreverse('ietf.iesg.views.review_decisions')
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(draft.name in r.content)
+
 
 class IESGAgendaTests(django.test.TestCase):
     def test_feed(self):
