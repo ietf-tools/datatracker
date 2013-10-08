@@ -35,7 +35,8 @@ FROM_LIST = ('IETF Secretariat <ietf-secretariat@ietf.org>',
              'RSOC Chair <rsoc-chair@iab.org>',
              'ISOC Board of Trustees <eburger@standardstrack.com>',
              'RFC Series Editor <rse@rfc-editor.org>',
-             'IAB Executive Director <execd@iab.org>')
+             'IAB Executive Director <execd@iab.org>',
+             'IETF Mentoring Program <mentoring@ietf.org>')
 
 TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
            'I-D Announcement List <i-d-announce@ietf.org>',
@@ -107,12 +108,16 @@ def get_from_choices(user):
                              group__acronym='iab',
                              name='execdir'):
         f = (FROM_LIST[6],FROM_LIST[16])
+    elif Role.objects.filter(person=person,
+                             group__acronym='mentor',
+                             name="chair"):
+        f = (FROM_LIST[17],)
 
     # NomCom
     nomcoms = Role.objects.filter(name="chair",
                                   group__acronym__startswith="nomcom",
                                   group__state="active",
-                                  group__type="ietf",
+                                  group__type="nomcom",
                                   person=person)
     if nomcoms:
         year = nomcoms[0].group.acronym[-4:]
