@@ -23,7 +23,7 @@ def check_access(user):
     Secretariat, IAD, IAB Chair, IETF Chair, RSOC Chair, IAOC Chair, NomCom Chair, RSE Chair
     '''
     person = user.get_profile()
-    groups_with_access = ("iab", "rsoc", "ietf", "iaoc", "rse")
+    groups_with_access = ("iab", "rsoc", "ietf", "iaoc", "rse", "mentor")
     if Role.objects.filter(person=person,
                            group__acronym__in=groups_with_access,
                            name="chair") or has_role(user, ["Secretariat","IAD"]):
@@ -31,7 +31,7 @@ def check_access(user):
     if Role.objects.filter(name="chair",
                            group__acronym__startswith="nomcom",
                            group__state="active",
-                           group__type="ietf",
+                           group__type="nomcom",
                            person=person):
         return True
     if Role.objects.filter(person=person,
