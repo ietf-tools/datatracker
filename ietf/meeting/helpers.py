@@ -81,13 +81,11 @@ class NamedTimeSlot(object):
     def is_plenary(self):
         return self.timeslot.is_plenary
 
-    @property
     def is_plenaryw(self):
-        return self.timeslot.is_plenary_type("plenaryw")
+        return self.timeslot.is_plenary_type("opsplenary")
 
-    @property
     def is_plenaryt(self):
-        return self.timeslot.is_plenary_type("plenaryt")
+        return self.timeslot.is_plenary_type("techplenary")
 
     @property
     def tzname(self):

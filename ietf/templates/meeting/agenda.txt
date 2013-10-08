@@ -14,9 +14,9 @@
 {{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}{% if slot.reg_info %}
 {{ slot.registration.time_desc  }}  {{ slot.registration.name  }}{% if venue.reg_area_name %} - {{ venue.reg_area_name }}{% endif %}{% endif %}
 {% endifchanged %}{% if slot.session_name %}{% if slot.break_info %}{{ slot.break_info.time_desc }}  {{ slot.break_info.name }}{% if venue.break_area_name and slot.break_info.show_location %} - {{ venue.break_area_name }}{% endif %}
-{% endif %}{{ slot.time_desc               }}  {{ slot.session_name }}{% if slot.is_plenary %} - {{ slot.room_name }}{% endif %}{% if slot.has_plenaryw %}
+{% endif %}{{ slot.time_desc               }}  {{ slot.session_name }}{% if slot.is_plenary %} - {{ slot.room_name }}{% endif %}{% if slot.is_plenaryw %}
 
-{{ plenaryw_agenda }}{% endif %}{% if slot.has_plenaryt %}
+{{ plenaryw_agenda }}{% endif %}{% if slot.is_plenaryt %}
 
 {{ plenaryt_agenda }}{% endif %}{% if not slot.is_plenary %}{% for ss in slot.scheduledsessions_by_area|dictsort:"area" %}{% if ss.info.session %}
 {{ ss.info.room_name|ljust:14 }}  	{% if ss.info.area %}{{ ss.info.area|upper|ljust:4 }}	{{ ss.info.acronym|ljust:10 }}  	{% endif %}{{ ss.info.acronym_name }} {{ ss.info.group_type_str }}{% if ss.info.special_agenda_note %} - {{ ss.info.special_agenda_note }}{% endif %}{% endif %}{% endfor %}{% endif %}

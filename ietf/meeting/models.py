@@ -355,9 +355,8 @@ class TimeSlot(models.Model):
     def is_plenary(self):
         return self.type_id == "plenary"
 
-    @property
     def is_plenary_type(self, name, agenda=None):
-        return self.scheduledsessions_at_same_time(agenda)[0].acronym == name
+        return self.type_id == "plenary" and self.sessions.all()[0].short == name
 
     @property
     def slot_decor(self):
