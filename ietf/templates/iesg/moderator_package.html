@@ -144,7 +144,7 @@ teleconference.  The Secretariat will post them in the public archive.</p>
 <h3>7. Working Group News</h3>
 
 {% filter linebreaks_crlf %}<pre>
-{% for name in ad_names %}[ ] {{ name }}
+{% for ad in ads %}[ ] {{ ad.plain_name }}
 {% endfor %}
 </pre>{% endfilter %}
 

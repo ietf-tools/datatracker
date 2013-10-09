@@ -44,38 +44,38 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
     <ul>
     {% for doc in section_docs %}
         <li>
-        {{ doc.obj.title|escape }} ({{ doc.obj.intended_std_level }})
-        <br><a href="{% url doc_view name=doc.obj.canonical_name %}">{{doc.obj.canonical_name}}</a>
-        {% with doc.obj.rfc_number as rfc_number %}
+        {{ doc.title|escape }} ({{ doc.intended_std_level }})
+        <br><a href="{% url doc_view name=doc.canonical_name %}">{{doc.canonical_name}}</a>
+        {% with doc.rfc_number as rfc_number %}
             {% if rfc_number %}
                 <a href="http://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">[txt]</a>
             {% else %}
-                <a href="http://www.ietf.org/id/{{doc.obj.canonical_name}}-{{doc.obj.rev}}.txt">[txt]</a>
+                <a href="http://www.ietf.org/id/{{doc.canonical_name}}-{{doc.rev}}.txt">[txt]</a>
             {% endif %}
         {% endwith %}
-        <br>Token: {{ doc.obj.ad.plain_name|escape }} ({{doc.obj.area_acronym}} area)   
-        {% if doc.obj.note %}
-            <br>Note: {{ doc.obj.note|linebreaksbr }}
+        <br>Token: {{ doc.ad.plain_name|escape }} ({{doc.area_acronym}} area)   
+        {% if doc.note %}
+            <br>Note: {{ doc.note|linebreaksbr }}
         {% endif %}
-        {% for ipr in doc.obj.ipr %}
+        {% for ipr in doc.ipr %}
             {% ifequal ipr.ipr.status 1 %}
                 <br>IPR: <a href="http://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a>
             {% endifequal %}
         {% endfor %} 
-        {% if doc.obj.active_ballot %}
-            <br><b>Discusses/comments</b> <a href="http://datatracker.ietf.org/doc/{{doc.obj.canonical_name}}/ballot/">[ballot]</a>:
+        {% if doc.active_ballot %}
+            <br><b>Discusses/comments</b> <a href="http://datatracker.ietf.org/doc/{{doc.canonical_name}}/ballot/">[ballot]</a>:
             <ul>
-            {% for p in doc.obj.active_ballot.active_ad_positions.values %}
+            {% for p in doc.active_ballot.active_ad_positions.values %}
                 {% if p.pos %}
                     {% if p.discuss %}
                         <li>
-                        <a href="#{{doc.obj.name}}+{{p.ad|slugify}}+discuss">{{ p.ad }}: Discuss [{{ p.discuss_time }}]</a>:
+                        <a href="#{{doc.name}}+{{p.ad|slugify}}+discuss">{{ p.ad }}: Discuss [{{ p.discuss_time }}]</a>:
                         <br>{{ p.discuss|escape }}
                         </li>
                     {% endif %}
                     {% if p.comment %}
                         <li>
-                        <a href="#{{doc.obj.name}}+{{p.ad|slugify}}+comment">{{ p.ad }}: Comment [{{ p.comment_time }}]</a>:
+                        <a href="#{{doc.name}}+{{p.ad|slugify}}+comment">{{ p.ad }}: Comment [{{ p.comment_time }}]</a>:
                         <br>{{ p.comment|escape }}
                         </li>
                     {% endif %}

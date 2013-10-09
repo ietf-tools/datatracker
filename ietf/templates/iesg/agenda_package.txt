@@ -5,7 +5,7 @@ Contents:
 1. Roll Call and Dial-In Instructions
    https://www.ietf.org/iesg/internal/rollcall.txt
 2. Agenda
-   http://datatracker.ietf.org/iesg/agenda/?private
+   https://datatracker.ietf.org/iesg/agenda/
 3. Management Item Details
    https://datatracker.ietf.org/cgi-bin/display_news.cgi?template_type=3
 4. Previous minutes

@@ -36,7 +36,6 @@ import codecs, re, os, glob
 import datetime
 import tarfile
 
-from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
 from django.views.decorators.vary import vary_on_cookie
 from django.core.urlresolvers import reverse as urlreverse
@@ -51,12 +50,16 @@ from ietf.idtracker.models import IDInternal, InternetDraft, AreaGroup, Position
 
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
-from ietf.doc.utils import update_telechat
-from ietf.ietfauth.decorators import group_required, role_required
-from ietf.ietfauth.utils import has_role
+
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 from ietf.ipr.models import IprDocAlias
 from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent
 from ietf.group.models import Group, GroupMilestone
+from ietf.person.models import Person
+
+from ietf.doc.utils import update_telechat
+from ietf.ietfauth.utils import has_role, role_required
+from ietf.iesg.agenda import get_agenda_date, agenda_data, agenda_docs, agenda_wg_actions, agenda_management_issues
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
@@ -85,150 +88,8 @@ def review_decisions(request, year=None):
                                    timeframe=timeframe),
                               context_instance=RequestContext(request))
 
-
-def get_doc_section(id):
-    pass
-
-def get_doc_sectionREDESIGN(doc):
-    if doc.type_id == 'draft':
-        if doc.intended_std_level_id in ["bcp", "ds", "ps", "std"]:
-            s = "2"
-        else:
-            s = "3"
-
-        g = doc.group_acronym()
-        if g and str(g) != 'none':
-            s = s + "1"
-        elif (s == "3") and doc.stream_id in ("ise","irtf"):
-            s = s + "3"
-        else:
-            s = s + "2"
-        if not doc.get_state_slug=="rfc" and doc.get_state_slug('draft-iesg') not in ("lc", "writeupw", "goaheadw", "iesg-eva", "defer"):
-            s = s + "3"
-        elif doc.returning_item():
-            s = s + "2"
-        else:
-            s = s + "1"
-    elif doc.type_id == 'charter':
-        s = get_wg_section(doc.group)
-    elif doc.type_id == 'statchg':
-        protocol_action = False
-        for relation in doc.relateddocument_set.filter(relationship__slug__in=('tops','tois','tohist','toinf','tobcp','toexp')):
-            if relation.relationship.slug in ('tops','tois') or relation.target.document.std_level.slug in ('std','ds','ps'):
-                protocol_action = True
-        if protocol_action:
-            s="23"
-        else:
-            s="33"
-        if doc.get_state_slug() not in ("iesgeval", "defer", "appr-pr", "appr-pend", "appr-sent"):
-            s = s + "3"
-        elif doc.returning_item():
-            s = s + "2"
-        else:
-            s = s + "1"
-    elif doc.type_id == 'conflrev':
-        if doc.get_state('conflrev').slug not in ('adrev','iesgeval','appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent','defer'):
-             s = "343"
-        elif doc.returning_item():
-             s = "342"
-        else:
-             s = "341"
-
-    return s
-
-def get_wg_section(wg):
-    s = ""
-    charter_slug = None
-    if wg.charter:
-        charter_slug = wg.charter.get_state_slug()
-    if wg.state_id in ['active','dormant']:
-        if charter_slug in ['extrev','iesgrev']:
-            s = '422'
-        else:
-            s = '421'
-    else:
-        if charter_slug in ['extrev','iesgrev']:
-            s = '412'
-        else:
-            s = '411'
-    return s
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    get_doc_section = get_doc_sectionREDESIGN
-    
-def agenda_docs(date, next_agenda):
-    matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).select_related("stream").distinct()
-
-    docmatches = []
-        
-    for doc in matches:
-        if doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
-            continue
-
-        e = doc.latest_event(type="started_iesg_process")
-        doc.balloting_started = e.time if e else datetime.datetime.min
-
-        if doc.type_id == "draft":
-            s = doc.get_state("draft-iana-review")
-            if s: # and s.slug in ("not-ok", "changed", "need-rev"):
-                doc.iana_review_state = str(s)
-
-            if doc.get_state_slug("draft-iesg") == "lc":
-                e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
-                if e:
-                    doc.lastcall_expires = e.expires
-
-            if doc.stream_id in ("ietf", "irtf", "iab"):
-                doc.consensus = "Unknown"
-                e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-                if e:
-                    doc.consensus = "Yes" if e.consensus else "No"
-        elif doc.type_id=='conflrev':
-            doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
-
-        docmatches.append(doc)
-
-    # Be careful to keep this the same as what's used in agenda_documents
-    docmatches.sort(key=lambda d: d.balloting_started)
-    
-    res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
-    for k in range(1,4):
-        res['s34%d'%k]=[]
-    for id in docmatches:
-        section_key = "s"+get_doc_section(id)
-        if section_key not in res:
-            res[section_key] = []
-        res[section_key].append({'obj':id})
-    return res
-
-def agenda_wg_actions(date):
-    res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
-    charters = Document.objects.filter(type="charter", docevent__telechatdocevent__telechat_date=date).select_related("group").distinct()
-    charters = charters.filter(group__state__slug__in=["proposed","active"])
-    for c in charters:
-        if c.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
-            continue
-
-        c.group.txt_link = settings.CHARTER_TXT_URL + "%s-%s.txt" % (c.canonical_name(), c.rev)
-
-        section_key = "s" + get_wg_section(c.group)
-        if section_key not in res:
-            res[section_key] = []
-        # Cleanup - Older view code wants obj, newer wants doc. Older code should be moved forward
-        res[section_key].append({'obj': c.group, 'doc': c})
-    return res
-
-def agenda_management_issues(date):
-    return TelechatAgendaItem.objects.filter(type=3).order_by('id')
-
-def _agenda_json(request, date=None):
-    if not date:
-        date = TelechatDates.objects.all()[0].date1
-        next_agenda = True
-    else:
-        y,m,d = date.split("-")
-        date = datetime.date(int(y), int(m), int(d))
-        next_agenda = None
+def agenda_json(request, date=None):
+    date = get_agenda_date(date)
 
     data = {'telechat-date':str(date),
             'as-of':str(datetime.datetime.utcnow()),
@@ -272,83 +133,88 @@ def _agenda_json(request, date=None):
     data['sections']['6'] = {'title':"Management Issues"}
     data['sections']['7'] = {'title':"Working Group News"}
 
-    docs = agenda_docs(date, next_agenda)
+    docs = agenda_docs(date)
     for section in docs.keys():
         # in case the document is in a state that does not have an agenda section
-        if section != 's':
-            s = str(".".join(list(section)[1:]))
-            if s[0:1] == '4':
-                # ignore these; not sure why they are included by agenda_docs
-                pass
+        if section == 's':
+            continue
+
+        s = str(".".join(list(section)[1:]))
+        if s[0:1] == '4':
+            # ignore these; not sure why they are included by agenda_docs
+            continue
+
+        if not docs[section]:
+            continue
+
+        # If needed, add a "For Action" section to agenda
+        if s[4:5] == '3':
+            data['sections'][s] = {'title':"For Action", 'docs':[]}
+
+        for d in docs[section]:
+            docinfo = {'docname':d.canonical_name(),
+                       'title':d.title,
+                       'ad':d.ad.name if d.ad else None }
+            if d.note:
+                docinfo['note'] = d.note
+            defer = d.active_defer_event()
+            if defer:
+                docinfo['defer-by'] = defer.by.name
+                docinfo['defer-at'] = str(defer.time)
+            if d.type_id == "draft":
+                docinfo['rev'] = d.rev
+                docinfo['intended-std-level'] = str(d.intended_std_level)
+                if d.rfc_number():
+                    docinfo['rfc-number'] = d.rfc_number()
+
+                iana_state = d.get_state("draft-iana-review")
+                if iana_state and iana_state.slug in ("not-ok", "changed", "need-rev"):
+                    docinfo['iana-review-state'] = str(iana_state)
+
+                if d.get_state_slug("draft-iesg") == "lc":
+                    e = d.latest_event(LastCallDocEvent, type="sent_last_call")
+                    if e:
+                        docinfo['lastcall-expires'] = e.expires.strftime("%Y-%m-%d")
+
+                docinfo['consensus'] = None
+                e = d.latest_event(ConsensusDocEvent, type="changed_consensus")
+                if e:
+                    docinfo['consensus'] = e.consensus
+            elif d.type_id == 'conflrev':
+                docinfo['rev'] = d.rev
+                td = d.relateddocument_set.get(relationship__slug='conflrev').target.document
+                docinfo['target-docname'] = td.canonical_name()
+                docinfo['target-title'] = td.title
+                docinfo['target-rev'] = td.rev
+                docinfo['intended-std-level'] = str(td.intended_std_level)
+                docinfo['stream'] = str(td.stream)
             else:
-                if len(docs[section]) != 0:
-                    # If needed, add a "For Action" section to agenda
-                    if s[4:5] == '3':
-                        data['sections'][s] = {'title':"For Action", 'docs':[]}
-
-                    for obj in docs[section]:
-                        d = obj['obj']
-                        docinfo = {'docname':d.canonical_name(),
-                                   'title':d.title,
-                                   'ad':d.ad.name}
-                        if d.note:
-                            docinfo['note'] = d.note
-                        defer = d.active_defer_event()
-                        if defer:
-                            docinfo['defer-by'] = defer.by.name
-                            docinfo['defer-at'] = str(defer.time)
-			if d.type_id == "draft":
-                            docinfo['rev'] = d.rev
-                            docinfo['intended-std-level'] = str(d.intended_std_level)
-                            if d.rfc_number():
-                                docinfo['rfc-number'] = d.rfc_number()
-
-                            iana_state = d.get_state("draft-iana-review")
-                            if iana_state and iana_state.slug in ("not-ok", "changed", "need-rev"):
-                                docinfo['iana-review-state'] = str(iana_state)
-
-                            if d.get_state_slug("draft-iesg") == "lc":
-                                e = d.latest_event(LastCallDocEvent, type="sent_last_call")
-                                if e:
-                                    docinfo['lastcall-expires'] = e.expires.strftime("%Y-%m-%d")
-
-                            docinfo['consensus'] = None
-                            e = d.latest_event(ConsensusDocEvent, type="changed_consensus")
-                            if e:
-                                docinfo['consensus'] = e.consensus
-                        elif d.type_id == 'conflrev':
-                            docinfo['rev'] = d.rev
-                            td = d.relateddocument_set.get(relationship__slug='conflrev').target.document
-                            docinfo['target-docname'] = td.canonical_name()
-                            docinfo['target-title'] = td.title
-                            docinfo['target-rev'] = td.rev
-                            docinfo['intended-std-level'] = str(td.intended_std_level)
-                            docinfo['stream'] = str(td.stream)
-			else:
-			    # XXX check this -- is there nothing to set for
-			    # all other documents here?
-			    pass
-                        data['sections'][s]['docs'] += [docinfo, ]
+                # XXX check this -- is there nothing to set for
+                # all other documents here?
+                pass
+            data['sections'][s]['docs'] += [docinfo, ]
 
     wgs = agenda_wg_actions(date)
     for section in wgs.keys():
         # in case the charter is in a state that does not have an agenda section
-        if section != 's':
-            s = str(".".join(list(section)[1:]))
-            if s[0:1] != '4':
-                # ignore these; not sure why they are included by agenda_wg_actions
-                pass
-            else:
-                if len(wgs[section]) != 0:
-                    for obj in wgs[section]:
-                        wg = obj['obj']
-                        doc = obj['doc']
-                        wginfo = {'docname': doc.canonical_name(),
-                                  'rev': doc.rev,
-                                  'wgname': doc.group.name,
-                                  'acronym': doc.group.acronym,
-                                  'ad': doc.group.ad.name}
-                        data['sections'][s]['wgs'] += [wginfo, ]
+        if section == 's':
+            continue
+
+        s = str(".".join(list(section)[1:]))
+        if s[0:1] != '4':
+            # ignore these; not sure why they are included by agenda_wg_actions
+            continue
+
+        if not wgs[section]:
+            continue
+
+        for doc in wgs[section]:
+            wginfo = {'docname': doc.canonical_name(),
+                      'rev': doc.rev,
+                      'wgname': doc.group.name,
+                      'acronym': doc.group.acronym,
+                      'ad': doc.group.ad.name}
+            data['sections'][s]['wgs'] += [wginfo, ]
 
     mgmt = agenda_management_issues(date)
     num = 0
@@ -356,83 +222,36 @@ def _agenda_json(request, date=None):
         num += 1
         data['sections']["6.%d" % num] = {'title':m.title}
 
-    return data
-
-def _agenda_data(request, date=None):
-    if not date:
-        date = TelechatDates.objects.all()[0].date1
-        next_agenda = True
-    else:
-        y,m,d = date.split("-")
-        date = datetime.date(int(y), int(m), int(d))
-        next_agenda = None
-    #date = "2006-03-16"
-    docs = agenda_docs(date, next_agenda)
-    mgmt = agenda_management_issues(date)
-    wgs = agenda_wg_actions(date)
-    data = {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs}
-    for key, filename in {'action_items':settings.IESG_TASK_FILE,
-                          'roll_call':settings.IESG_ROLL_CALL_FILE,
-                          'minutes':settings.IESG_MINUTES_FILE}.items():
-        try:
-            f = codecs.open(filename, 'r', 'utf-8', 'replace')
-            text = f.read().strip()
-            f.close()
-            data[key] = text
-        except IOError:
-            data[key] = "(Error reading "+key+")"
-    return data
+    return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
 
 @vary_on_cookie
 def agenda(request, date=None):
-    data = _agenda_data(request, date)
+    data = agenda_data(request, date)
     data['private'] = 'private' in request.REQUEST
     data['settings'] = settings
     return render_to_response("iesg/agenda.html", data, context_instance=RequestContext(request))
 
-def agenda_txt(request):
-    data = _agenda_data(request)
+def agenda_txt(request, date=None):
+    data = agenda_data(request, date)
     return render_to_response("iesg/agenda.txt", data, context_instance=RequestContext(request), mimetype="text/plain")
 
-def agenda_json(request):
-    response = HttpResponse(mimetype='text/plain')
-    response.write(json.dumps(_agenda_json(request), indent=2))
-    return response
+def agenda_scribe_template(request, date=None):
+    date = get_agenda_date(date)
+    docs = agenda_docs(date)
+    return render_to_response('iesg/scribe_template.html', { 'date':str(date), 'docs':docs }, context_instance=RequestContext(request) )
 
-def agenda_scribe_template(request):
-    date = TelechatDates.objects.all()[0].date1
-    docs = agenda_docs(date, True)
-    return render_to_response('iesg/scribe_template.html', {'date':str(date), 'docs':docs, 'USE_DB_REDESIGN_PROXY_CLASSES': settings.USE_DB_REDESIGN_PROXY_CLASSES}, context_instance=RequestContext(request) )
-
-def _agenda_moderator_package(request):
-    data = _agenda_data(request)
-    data['ad_names'] = [str(x) for x in IESGLogin.active_iesg()]
-    data['ad_names'].sort(key=lambda x: x.split(' ')[-1])
+@role_required('Area Director', 'Secretariat')
+def agenda_moderator_package(request, date=None):
+    data = agenda_data(request, date)
+    data['ads'] = sorted(Person.objects.filter(role__name="ad", role__group__state="active"),
+                         key=lambda p: p.name_parts()[3])
     return render_to_response("iesg/moderator_package.html", data, context_instance=RequestContext(request))
 
-@group_required('Area_Director','Secretariat')
-def agenda_moderator_package(request):
-    return _agenda_moderator_package(request)
-
-def agenda_moderator_package_test(request):
-    if request.META['REMOTE_ADDR'] == "127.0.0.1":
-        return _agenda_moderator_package(request)
-    else:
-        return HttpResponseForbidden()
-
-def _agenda_package(request):
-    data = _agenda_data(request)
+@role_required('Area Director', 'Secretariat')
+def agenda_package(request, date=None):
+    data = agenda_data(request)
     return render_to_response("iesg/agenda_package.txt", data, context_instance=RequestContext(request), mimetype='text/plain')
 
-@group_required('Area_Director','Secretariat')
-def agenda_package(request):
-    return _agenda_package(request)
-
-def agenda_package_test(request):
-    if request.META['REMOTE_ADDR'] == "127.0.0.1":
-        return _agenda_package(request)
-    else:
-        return HttpResponseForbidden()
 
 def agenda_documents_txt(request):
     dates = TelechatDates.objects.all()[0].dates()
@@ -665,7 +484,7 @@ def get_possible_wg_actions():
     return res
 
 
-@group_required('Area_Director', 'Secretariat')
+@role_required('Area Director', 'Secretariat')
 def working_group_actions(request):
     current_items = WGAction.objects.order_by('status_date').select_related()
 
@@ -716,7 +535,7 @@ class EditWGActionForm(forms.ModelForm):
         self.fields['telechat_date'].choices = choices
         
         
-@group_required('Secretariat')
+@role_required('Secretariat')
 def edit_working_group_action(request, wga_id):
     if wga_id != None:
         wga = get_object_or_404(WGAction, pk=wga_id)

@@ -1,4 +1,4 @@
-import os, shutil
+import os, shutil, json
 
 import django.test
 from django.core.urlresolvers import reverse as urlreverse
@@ -6,12 +6,14 @@ from django.conf import settings
 
 from pyquery import PyQuery
 
+from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.doc.models import Document, DocEvent, TelechatDocEvent, State
 from ietf.person.models import Person
 from ietf.group.models import Group
+from ietf.name.models import StreamName
 from ietf.iesg.models import *
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, login_testing_unauthorized
+from ietf.iesg.agenda import get_agenda_date
 
 class ReviewDecisionsTests(django.test.TestCase):
     def test_review_decisions(self):
@@ -30,27 +32,113 @@ class ReviewDecisionsTests(django.test.TestCase):
 
 
 class IESGAgendaTests(django.test.TestCase):
-    def test_feed(self):
-        draft = make_test_data()
+    def setUp(self):
+        make_test_data()
 
+        ise_draft = Document.objects.get(name="draft-imaginary-independent-submission")
+        ise_draft.stream = StreamName.objects.get(slug="ise")
+        ise_draft.save()
+
+        self.telechat_docs = {
+            "ietf_draft": Document.objects.get(name="draft-ietf-mars-test"),
+            "ise_draft": ise_draft,
+            "conflrev": Document.objects.get(name="conflict-review-imaginary-irtf-submission"),
+            "statusch": Document.objects.get(name="status-change-imaginary-mid-review"),
+            "charter": Document.objects.filter(type="charter")[0],
+            }
+
+        by = Person.objects.get(name="Aread Irector")
+        date = get_agenda_date()
+
+        for d in self.telechat_docs.values():
+            TelechatDocEvent.objects.create(type="scheduled_for_telechat",
+                                            doc=d,
+                                            by=by,
+                                            telechat_date=date,
+                                            returning_item=True)
+
+    def test_feed(self):
         url = "/feed/iesg-agenda/"
 
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
-        self.assertTrue(draft.name not in r.content)
 
-        # add to schedule
-        e = TelechatDocEvent(type="scheduled_for_telechat")
-        e.doc = draft
-        e.by = Person.objects.get(name="Aread Irector")
-        e.telechat_date = TelechatDate.objects.active()[0].date
-        e.returning_item = True
-        e.save()
+        for d in self.telechat_docs.values():
+            self.assertTrue(d.name in r.content)
+            self.assertTrue(d.title in r.content)
 
+    def test_agenda_json(self):
+        r = self.client.get(urlreverse("ietf.iesg.views.agenda_json"))
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            if d.type_id == "charter":
+                self.assertTrue(d.group.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.group.acronym in r.content, "%s acronym not in response" % k)
+            else:
+                self.assertTrue(d.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+        self.assertTrue(json.loads(r.content))
+
+    def test_agenda(self):
+        r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            self.assertTrue(d.name in r.content, "%s not in response" % k)
+            self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+    def test_agenda_txt(self):
+        r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            if d.type_id == "charter":
+                self.assertTrue(d.group.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.group.acronym in r.content, "%s acronym not in response" % k)
+            else:
+                self.assertTrue(d.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+    def test_agenda_scribe_template(self):
+        r = self.client.get(urlreverse("ietf.iesg.views.agenda_scribe_template"))
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            if d.type_id == "charter":
+                continue # scribe template doesn't contain chartering info
+
+            self.assertTrue(d.name in r.content, "%s not in response" % k)
+            self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+    def test_agenda_moderator_package(self):
+        url = urlreverse("ietf.iesg.views.agenda_moderator_package")
+        login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
-        self.assertTrue(draft.name in r.content)
-        self.assertTrue(draft.title in r.content)
+
+        for k, d in self.telechat_docs.iteritems():
+            if d.type_id == "charter":
+                self.assertTrue(d.group.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.group.acronym in r.content, "%s acronym not in response" % k)
+            else:
+                self.assertTrue(d.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+    def test_agenda_package(self):
+        url = urlreverse("ietf.iesg.views.agenda_package")
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            if d.type_id == "charter":
+                self.assertTrue(d.group.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.group.acronym in r.content, "%s acronym not in response" % k)
+            else:
+                self.assertTrue(d.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.title in r.content, "%s title not in response" % k)
 
 class RescheduleOnAgendaTestCase(django.test.TestCase):
     def test_reschedule(self):

@@ -31,12 +31,12 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}{% load ietf_filters %}
-{% for wg in section_wgs %}
+{% for doc in section_wgs %}
 <h3>{{ title1 }}<br>
 {{ title2 }}<br>
-{{ title3 }} ({{ forloop.counter }} of {{ section_wgs|length }})</h3>
+{{ title3 }} ({{ forloop.counter }} of {{ section_wgs|length }})</h3>
 
-<p><b>{{ wg.obj.name }} ({{wg.obj.acronym}})<br>
+<p><b>{{ doc.group.name }} ({{ doc.group.acronym }})<br>
 
 {% if title3|startswith:"4.1.1" %}
   <p>Does anyone have an objection to the charter being sent for

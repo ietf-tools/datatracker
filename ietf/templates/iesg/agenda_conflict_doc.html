@@ -68,29 +68,26 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endif %}<h4>{{ title3 }}</h4>
 
 {% for doc in section_docs %}
-{% if forloop.first %}
-{% endif %}
-
 <table class="agenda-doc">
 <tbody>
 <tr><td>
-<a href="{% url doc_view name=doc.obj.name %}">{{doc.obj.name}}-{{doc.obj.rev}}</a>
-<a href="http://www.ietf.org/id/{{doc.obj.name}}-{{doc.obj.rev}}.txt">[txt]</a>
+<a href="{% url doc_view name=doc.name %}">{{doc.name}}-{{doc.rev}}</a>
+<a href="http://www.ietf.org/id/{{doc.name}}-{{doc.rev}}.txt">[txt]</a>
 
-<br/>{{ doc.obj.title|escape }} 
+<br/>{{ doc.title|escape }} 
 <div style="padding-left:30px;">
-<a href="{% url doc_view name=doc.obj.conflictdoc.name %}">{{doc.obj.conflictdoc.name}}-{{doc.obj.conflictdoc.rev}}</a>
-<a href="http://www.ietf.org/id/{{doc.obj.conflictdoc.name}}-{{doc.obj.conflictdoc.rev}}.txt">[txt]</a>
-<br/>{{ doc.obj.conflictdoc.title|escape }} ({{doc.obj.conflictdoc.stream}}: {{ doc.obj.conflictdoc.intended_std_level }})
-{% if doc.obj.conflictdoc.note %}
-<br/>Note: {{ doc.obj.conflictdoc.note|linebreaksbr }}
+<a href="{% url doc_view name=doc.conflictdoc.name %}">{{doc.conflictdoc.name}}-{{doc.conflictdoc.rev}}</a>
+<a href="http://www.ietf.org/id/{{doc.conflictdoc.name}}-{{doc.conflictdoc.rev}}.txt">[txt]</a>
+<br/>{{ doc.conflictdoc.title|escape }} ({{doc.conflictdoc.stream}}: {{ doc.conflictdoc.intended_std_level }})
+{% if doc.conflictdoc.note %}
+<br/>Note: {{ doc.conflictdoc.note|linebreaksbr }}
 {% endif %}
 
-{% if doc.obj.conflictdoc.ipr %}
+{% if doc.conflictdoc.ipr %}
 <br />
 <h5>IPR:</h5>
    <ul>
-   {% for ipr in doc.obj.conflictdoc.ipr %}
+   {% for ipr in doc.conflictdoc.ipr %}
       {% ifequal ipr.ipr.status 1 %}
       <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a></li>
       {% endifequal %}
@@ -100,17 +97,16 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endif %}
 </div>
 
-Token: {{ doc.obj.ad }} 
-{% with doc.obj.active_defer_event as defer %}
+Token: {{ doc.ad }} 
+{% with doc.active_defer_event as defer %}
 {% if defer %}
 <br/>Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}
 {% endif %}
 {% endwith %}
 </td><td style="padding-left:20px; width: 50px;">
-{% ballot_icon doc.obj %}
+{% ballot_icon doc %}
 </td></tr></tbody></table>
-{% if forloop.last %}
-{% endif %}
+
 {% empty %}
 <p>NONE</p>
 {% endfor %}

@@ -37,16 +37,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <h3>{{ title2 }}</h3>
 {% endif %}<h4>{{ title3 }}</h4>
 
-{% for wg in section_wgs %}
+{% for doc in section_wgs %}
 
 <div class="agenda-wg">
 <span width="30%" style="float:right;">
-{% ballot_icon wg.doc %}
+{% ballot_icon doc %}
 </span>
 <span width="30%">
-  <div> <a href="{{ wg.doc.get_absolute_url }}">{{ wg.doc.name}}-({{wg.doc.rev}})</a> <a href="{{ settings.CHARTER_TXT_URL }}{{ wg.doc.filename_with_rev }}">[txt]</a> </div>
-  <div>{{ wg.doc.group.name|escape }} ({{wg.doc.group.acronym}})</div>
-  <div>Area: {{ wg.doc.group.parent.acronym|upper }}  ({{ wg.doc.ad|default:"Sponsoring AD not assigned" }})</div>
+  <div> <a href="{{ doc.get_absolute_url }}">{{ doc.name}}-({{doc.rev}})</a> <a href="{{ settings.CHARTER_TXT_URL }}{{ doc.filename_with_rev }}">[txt]</a> </div>
+  <div>{{ doc.group.name|escape }} ({{doc.group.acronym}})</div>
+  <div>Area: {{ doc.group.parent.acronym|upper }}  ({{ doc.ad|default:"Sponsoring AD not assigned" }})</div>
 </span>
 </div>
 

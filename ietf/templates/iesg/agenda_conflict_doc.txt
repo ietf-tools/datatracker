@@ -39,13 +39,13 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {{ title2 }}
 {% endif %}{{ title3 }}
 {% for doc in section_docs %}
-  o {{doc.obj.canonical_name}}-{{doc.obj.rev}}
-    {% filter wordwrap:"68"|indent|indent %}{{ doc.obj.title }}{% endfilter %}
-      {{doc.obj.conflictdoc.canonical_name}}-{{doc.obj.conflictdoc.rev}}
-      {% filter wordwrap:"66"|indent:"4" %}{{ doc.obj.conflictdoc.title }} ({{doc.obj.conflictdoc.stream}}: {{ doc.obj.conflictdoc.intended_std_level }}){% endfilter %}
-{% if doc.obj.conflictdoc.note %}{# note: note is not escaped #}      {% filter wordwrap:"64"|indent:"6" %}Note: {{ doc.obj.conflictdoc.note|striptags }}{% endfilter %}
-{% endif %}    Token: {{ doc.obj.ad }}
-{% with doc.obj.active_defer_event as defer %}{% if defer %}    Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}{% endif %}{% endwith %}
+  o {{doc.canonical_name}}-{{doc.rev}}
+    {% filter wordwrap:"68"|indent|indent %}{{ doc.title }}{% endfilter %}
+      {{doc.conflictdoc.canonical_name}}-{{doc.conflictdoc.rev}}
+      {% filter wordwrap:"66"|indent:"4" %}{{ doc.conflictdoc.title }} ({{doc.conflictdoc.stream}}: {{ doc.conflictdoc.intended_std_level }}){% endfilter %}
+{% if doc.conflictdoc.note %}{# note: note is not escaped #}      {% filter wordwrap:"64"|indent:"6" %}Note: {{ doc.conflictdoc.note|striptags }}{% endfilter %}
+{% endif %}    Token: {{ doc.ad }}
+{% with doc.active_defer_event as defer %}{% if defer %}    Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}{% endif %}{% endwith %}
 {% empty %}
   NONE
 {% endfor %}

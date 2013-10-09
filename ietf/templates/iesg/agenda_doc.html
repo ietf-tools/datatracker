@@ -64,35 +64,32 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endif %}<h4>{{ title3 }}</h4>
 
 {% for doc in section_docs %}
-{% if forloop.first %}
-{% endif %}
-
 <table class="agenda-doc">
 <tbody>
 <tr><td>
-<a href="{% url doc_view name=doc.obj.canonical_name %}">{{doc.obj.canonical_name}}</a>
-{% with doc.obj.rfc_number as rfc_number %}
+<a href="{% url doc_view name=doc.canonical_name %}">{{doc.canonical_name}}</a>
+{% with doc.rfc_number as rfc_number %}
 {% if rfc_number %}
 <a href="http://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">[txt]</a>
 {% else %}
-<a href="http://www.ietf.org/id/{{doc.obj.name}}-{{doc.obj.rev}}.txt">[txt]</a>
+<a href="http://www.ietf.org/id/{{doc.name}}-{{doc.rev}}.txt">[txt]</a>
 {% endif %}
 {% endwith %}
 
-<span class="stream">{% if doc.obj.stream %} - {{ doc.obj.stream }} stream{% endif %}</span>
+<span class="stream">{% if doc.stream %} - {{ doc.stream }} stream{% endif %}</span>
 
-<br/>{{ doc.obj.title|escape }} ({{ doc.obj.intended_std_level }})
+<br/>{{ doc.title|escape }} ({{ doc.intended_std_level }})
 
 
-{% if doc.obj.note %}
-<br/>Note: {{ doc.obj.note|linebreaksbr }}
+{% if doc.note %}
+<br/>Note: {{ doc.note|linebreaksbr }}
 {% endif %}
 
-{% if doc.obj.ipr %}
+{% if doc.ipr %}
 <br />
 <h5>IPR:</h5>
    <ul>
-   {% for ipr in doc.obj.ipr %}
+   {% for ipr in doc.ipr %}
       {% ifequal ipr.ipr.status 1 %}
       <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a></li>
       {% endifequal %}
@@ -101,30 +98,29 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 
 {% endif %}
 
-<br/>Token: {{ doc.obj.ad }} ({{doc.obj.area_acronym}} area)
-{% with doc.obj.active_defer_event as defer %}
+<br/>Token: {{ doc.ad }} ({{doc.area_acronym}} area)
+{% with doc.active_defer_event as defer %}
 {% if defer %}
 <br/>Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}
 {% endif %}
 {% endwith %}
 
-{% if doc.obj.iana_review_state %}
-<br/>IANA Review: {{ doc.obj.iana_review_state }}
+{% if doc.iana_review_state %}
+<br/>IANA Review: {{ doc.iana_review_state }}
 {% endif %}
 
-{% if doc.obj.consensus %}
-<br/>Consensus: {{ doc.obj.consensus }}
+{% if doc.consensus %}
+<br/>Consensus: {{ doc.consensus }}
 {% endif %}
 
-{% if doc.obj.lastcall_expires %}
-<br/>Last call expires: {{ doc.obj.lastcall_expires|date:"Y-m-d" }}
+{% if doc.lastcall_expires %}
+<br/>Last call expires: {{ doc.lastcall_expires|date:"Y-m-d" }}
 {% endif %}
 
 </td><td style="padding-left:20px; width: 50px;">
-{% ballot_icon doc.obj %}
+{% ballot_icon doc %}
 </td></tr></tbody></table>
-{% if forloop.last %}
-{% endif %}
+
 {% empty %}
 <p>NONE</p>
 {% endfor %}

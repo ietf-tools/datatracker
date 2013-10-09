@@ -8,15 +8,14 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
 from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
-from ietf.doc.proxy import InternetDraft
 from ietf.doc.utils import get_document_content, log_state_changed
 from ietf.group.models import Group
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.mails import email_ad, email_state_changed
-from ietf.iesg.models import TelechatDate, TelechatAgendaItem, WGAction
-from ietf.iesg.views import _agenda_data
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem
+from ietf.iesg.agenda import agenda_data
 
 from forms import *
 import os
@@ -38,9 +37,7 @@ active_ballot_positions: takes one argument, doc.  returns a dictionary with a k
 NOTE: this function has been deprecated as of Datatracker 4.34.  Should now use methods on the Document.
 For example: doc.active_ballot().active_ad_positions()
 
-_agenda_data: takes a request object and a date string in the format YYYY-MM-DD.
-    - 2012-07-28 this function was changed to return Document objects instead
-      of old InternetDraft wrappers
+agenda_data: takes a request object and a date string in the format YYYY-MM-DD.
 '''
 
 # -------------------------------------------------
@@ -55,7 +52,7 @@ def get_doc_list(agenda):
     for key in sorted(agenda['docs']):
         docs.extend(agenda['docs'][key])
 
-    return [x['obj'] for x in docs]
+    return docs
 
 def get_doc_writeup(doc):
     '''
@@ -100,15 +97,12 @@ def get_section_header(file,agenda):
     h3b = {'1':'Proposed for IETF Review','2':'Proposed for Approval'}
     h3c = {'1':'Under Evaluation for IETF Review','2':'Proposed for Approval'}
 
-    # Robert updated _agenda_data to return Document objects instead of the ID wrapper
-    #doc = InternetDraft.objects.get(filename=file)
     doc = Document.objects.get(name=file)
 
-    test = {'obj':doc}
     for k,v in agenda['docs'].iteritems():
-        if test in v:
+        if doc in v:
             section = k
-            count = '%s of %s' % (v.index(test) + 1, len(v))
+            count = '%s of %s' % (v.index(doc) + 1, len(v))
             break
 
     header = [ '%s %s' % (section[1], h1[section[1]]) ]
@@ -135,7 +129,7 @@ def get_first_doc(agenda):
     '''
     for k,v in sorted(agenda['docs'].iteritems()):
         if v:
-            return v[0]['obj']
+            return v[0]
 
     return None
 
@@ -144,7 +138,7 @@ def get_first_doc(agenda):
 # -------------------------------------------------
 def bash(request, date):
 
-    agenda = _agenda_data(request, date=date)
+    agenda = agenda_data(request, date=date)
 
     return render_to_response('telechat/bash.html', {
         'agenda': agenda,
@@ -158,7 +152,7 @@ def doc(request, date):
     displays the message "No Documents"
     '''
 
-    agenda = _agenda_data(request, date=date)
+    agenda = agenda_data(request, date=date)
     doc = get_first_doc(agenda)
     if doc:
         url = reverse('telechat_doc_detail', kwargs={'date':date,'name':doc.name})
@@ -212,7 +206,7 @@ def doc_detail(request, date, name):
                      'substate':tag}
 
     BallotFormset = formset_factory(BallotForm, extra=0)
-    agenda = _agenda_data(request, date=date)
+    agenda = agenda_data(request, date=date)
     header = get_section_header(name,agenda) if name else ''
 
     # nav button logic
@@ -329,7 +323,7 @@ def doc_navigate(request, date, name, nav):
     The view retrieves the appropriate document and redirects to the doc view.
     '''
     doc = get_object_or_404(Document, docalias__name=name)
-    agenda = _agenda_data(request, date=date)
+    agenda = agenda_data(request, date=date)
     target = name
 
     docs = get_doc_list(agenda)
@@ -346,10 +340,6 @@ def doc_navigate(request, date, name, nav):
 def main(request):
     '''
     The is the main view where the user selects an existing telechat or creates a new one.
-
-    NOTES ON EXTERNAL HELPER FUNCTIONS:
-    _agenda_data():     returns dictionary of agenda sections
-    get_ballot(name):   returns a BallotWrapper and RfcWrapper or IdWrapper
     '''
     if request.method == 'POST':
             date=request.POST['date']
@@ -371,7 +361,7 @@ def management(request, date):
     This view displays management issues and lets the user update the status
     '''
 
-    agenda = _agenda_data(request, date=date)
+    agenda = agenda_data(request, date=date)
     issues = TelechatAgendaItem.objects.filter(type=3).order_by('id')
 
     return render_to_response('telechat/management.html', {
@@ -396,7 +386,7 @@ def minutes(request, date):
     pa_docs = [ d for d in docs if d.intended_std_level.slug not in ('inf','exp','hist') ]
     da_docs = [ d for d in docs if d.intended_std_level.slug in ('inf','exp','hist') ]
 
-    agenda = _agenda_data(request, date=date)
+    agenda = agenda_data(request, date=date)
 
     return render_to_response('telechat/minutes.html', {
         'agenda': agenda,
@@ -422,8 +412,8 @@ def new(request):
 
 def roll_call(request, date):
 
-    agenda = _agenda_data(request, date=date)
-    ads = Person.objects.filter(role__name='ad')
+    agenda = agenda_data(request, date=date)
+    ads = Person.objects.filter(role__name='ad', role__group__state="active")
     sorted_ads = sorted(ads, key = lambda a: a.name_parts()[3])
 
     return render_to_response('telechat/roll_call.html', {

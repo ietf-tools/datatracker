@@ -34,8 +34,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if title2_first %}{% if title1_first %}{{ title1 }}{% endif %}
 {{ title2 }}
 {% endif %}{{ title3 }}
-{% for wg in section_wgs %}
-  o {{ wg.obj.name }} ({{wg.obj.acronym}})
+{% for doc in section_wgs %}
+  o {{ doc.group.name }} ({{ doc.group.acronym }})
 {% empty %}
   NONE
 {% endfor %}
