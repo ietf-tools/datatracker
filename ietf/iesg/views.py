@@ -37,7 +37,6 @@ import datetime
 import tarfile
 
 from django.views.generic.simple import direct_to_template
-from django.views.decorators.vary import vary_on_cookie
 from django.core.urlresolvers import reverse as urlreverse
 from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.template import RequestContext, Context, loader
@@ -224,7 +223,6 @@ def agenda_json(request, date=None):
 
     return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
 
-@vary_on_cookie
 def agenda(request, date=None):
     data = agenda_data(request, date)
     data['settings'] = settings
