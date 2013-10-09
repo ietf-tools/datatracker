@@ -58,7 +58,7 @@ from ietf.person.models import Person
 
 from ietf.doc.utils import update_telechat
 from ietf.ietfauth.utils import has_role, role_required
-from ietf.iesg.agenda import get_agenda_date, agenda_data, agenda_docs, agenda_wg_actions, agenda_management_issues
+from ietf.iesg.agenda import *
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
@@ -212,7 +212,7 @@ def agenda_json(request, date=None):
                       'rev': doc.rev,
                       'wgname': doc.group.name,
                       'acronym': doc.group.acronym,
-                      'ad': doc.group.ad.name}
+                      'ad': doc.group.ad.name if doc.group.ad else None}
             data['sections'][s]['wgs'] += [wginfo, ]
 
     mgmt = agenda_management_issues(date)

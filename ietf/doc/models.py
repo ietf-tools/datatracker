@@ -306,7 +306,7 @@ class Document(DocumentInfo):
         if g:
             if g.type_id == "area":
                 return g.acronym
-            elif g.type_id != "individ":
+            elif g.type_id != "individ" and g.parent:
                 return g.parent.acronym
         else:
             return None
