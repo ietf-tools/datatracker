@@ -251,16 +251,31 @@ def agenda_package(request, date=None):
 
 
 def agenda_documents_txt(request):
-    dates = TelechatDates.objects.all()[0].dates()
+    dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
+
     docs = []
-    for date in dates:
-        from ietf.doc.models import TelechatDocEvent
-        for d in Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
-            if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
-                docs.append(d)
-    t = loader.get_template('iesg/agenda_documents.txt')
-    c = Context({'docs':docs,'special_stream_list':['ise','irtf']})
-    return HttpResponse(t.render(c), mimetype='text/plain')
+    for d in Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct():
+        date = d.telechat_date()
+        if date in dates:
+            d.computed_telechat_date = date
+            docs.append(d)
+    docs.sort(key=lambda d: d.computed_telechat_date)
+
+    # output table
+    rows = []
+    rows.append("# Fields: telechat date, filename (draft-foo-bar or rfc1234), intended status, rfc editor submission flag (0=no, 1=yes), area acronym, AD name, version")
+    for d in docs:
+        row = (
+            d.computed_telechat_date.isoformat(),
+            d.name,
+            unicode(d.intended_std_level),
+            "1" if d.stream_id in ("ise", "irtf") else "0",
+            unicode(d.area_acronym()).lower(),
+            d.ad.plain_name() if d.ad else "None Assigned",
+            d.rev,
+            )
+        rows.append("\t".join(row))
+    return HttpResponse(u"\n".join(rows), mimetype='text/plain')
 
 class RescheduleForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
