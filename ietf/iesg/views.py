@@ -227,7 +227,6 @@ def agenda_json(request, date=None):
 @vary_on_cookie
 def agenda(request, date=None):
     data = agenda_data(request, date)
-    data['private'] = 'private' in request.REQUEST
     data['settings'] = settings
     return render_to_response("iesg/agenda.html", data, context_instance=RequestContext(request))
 

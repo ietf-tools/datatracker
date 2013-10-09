@@ -65,11 +65,11 @@ div.agenda-wg { margin-left: 30px; margin-top:0.5em; margin-bottom: 0.5em; width
 <h2>1. Administrivia</h2>
 <div id="section1">
 
-   <h3>1.1 {% if private or user|has_role:"Area Director,IAB Chair,Secretariat" %}<a href="https://www.ietf.org/iesg/internal/rollcall.txt">Roll Call</a>{% else %}Roll Call{% endif %}</h3>
+   <h3>1.1 {% if user|has_role:"Area Director,IAB Chair,Secretariat" %}<a href="https://www.ietf.org/iesg/internal/rollcall.txt">Roll Call</a>{% else %}Roll Call{% endif %}</h3>
 
    <h3>1.2 Bash the Agenda</h3>
 
-   <h3>1.3 Approval of the {% if private or user|has_role:"Area Director,IAB Chair,Secretariat" %}<a href="https://www.ietf.org/iesg/internal/minutes.txt">Minutes</a>{%else%}Minutes{%endif%} of Past Telechats</h3>
+   <h3>1.3 Approval of the {% if user|has_role:"Area Director,IAB Chair,Secretariat" %}<a href="https://www.ietf.org/iesg/internal/minutes.txt">Minutes</a>{%else%}Minutes{%endif%} of Past Telechats</h3>
    <h3>1.4 List of Remaining Action Items from Last Telechat</h3>
 <pre>
 {{ action_items }}
