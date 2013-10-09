@@ -6,6 +6,7 @@ from django.conf import settings
 from django.template.defaultfilters import linebreaksbr, force_escape
 
 from ietf.utils.pipe import pipe
+from ietf.utils.log import log
 from ietf.ietfauth.decorators import has_role
 from ietf.doc.templatetags.ietf_filters import wrap_text
 
