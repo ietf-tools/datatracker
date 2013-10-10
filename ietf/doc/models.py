@@ -80,6 +80,8 @@ class DocumentInfo(models.Model):
             return settings.CHARTER_PATH
         elif self.type_id == "conflrev": 
             return settings.CONFLICT_REVIEW_PATH
+        elif self.type_id == "statchg":
+            return settings.STATUS_CHANGE_PATH
         else:
             raise NotImplemented
 
