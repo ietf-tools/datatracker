@@ -34,7 +34,7 @@
 
 import codecs, re, os, glob
 import datetime
-import tarfile
+import tarfile, StringIO, time
 
 from django.views.generic.simple import direct_to_template
 from django.core.urlresolvers import reverse as urlreverse
@@ -352,36 +352,40 @@ def agenda_documents(request):
         telechats.append({'date':date, 'docs':res})
     return direct_to_template(request, 'iesg/agenda_documents.html', { 'telechats':telechats })
 
-def telechat_docs_tarfile(request,year,month,day):
-    from tempfile import mkstemp
-    date=datetime.date(int(year),int(month),int(day))
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from ietf.doc.models import TelechatDocEvent
-        docs = []
-        for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
-            if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
-                docs.append(d)
-    else:
-        docs= IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
+def telechat_docs_tarfile(request, date):
+    date = get_agenda_date(date)
+
+    docs = []
+    for d in Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
+        if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
+            docs.append(d)
+
     response = HttpResponse(mimetype='application/octet-stream')
-    response['Content-Disposition'] = 'attachment; filename=telechat-%s-%s-%s-docs.tgz'%(year, month, day)
-    tarstream = tarfile.open('','w:gz',response)
-    mfh, mfn = mkstemp()
-    manifest = open(mfn, "w")
+    response['Content-Disposition'] = 'attachment; filename=telechat-%s-docs.tgz' % date.isoformat()
+
+    tarstream = tarfile.open('', 'w:gz', response)
+
+    manifest = StringIO.StringIO()
+
     for doc in docs:
-        doc_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.draft.filename+"-"+doc.draft.revision_display()+".txt")
+        doc_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".txt")
         if os.path.exists(doc_path):
             try:
-                tarstream.add(doc_path, str(doc.draft.filename+"-"+doc.draft.revision_display()+".txt"))
-                manifest.write("Included:  "+doc_path+"\n")
-            except Exception, e:
-                manifest.write(("Failed (%s): "%e)+doc_path+"\n")
+                tarstream.add(doc_path, str(doc.name + "-" + doc.rev + ".txt"))
+                manifest.write("Included:  %s\n" % doc_path)
+            except Exception as e:
+                manifest.write("Failed (%s): %s\n" % (e, doc_path))
         else:
-            manifest.write("Not found: "+doc_path+"\n")
-    manifest.close()
-    tarstream.add(mfn, "manifest.txt")
+            manifest.write("Not found: %s\n" % doc_path)
+
+    manifest.seek(0)
+    t = tarfile.TarInfo(name="manifest.txt")
+    t.size = len(manifest.buf)
+    t.mtime = time.time()
+    tarstream.addfile(t, manifest)
+
     tarstream.close()
-    os.unlink(mfn)
+
     return response
 
 def discusses(request):
