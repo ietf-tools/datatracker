@@ -1,7 +1,7 @@
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
-from ietf.iesg.models import TelechatDate, TelechatAgendaItem, WGAction
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
 

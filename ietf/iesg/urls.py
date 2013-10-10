@@ -39,6 +39,7 @@ from ietf.iesg import views
 urlpatterns = patterns('',
     (r'^telechat/.*$', 'django.views.generic.simple.redirect_to', { 'url': 'http://www.ietf.org/iesg/minutes.html' }),
     (r'^ann/(?:ind|new|prev)/$', 'django.views.generic.simple.redirect_to', { 'url': "/iesg/decisions/", 'permanent': True }),
+    (r'^telechatdates/$', 'django.views.generic.simple.redirect_to', { 'url': '/admin/iesg/telechatdate/' }),
 
     (r'^decisions/(?:(?P<year>[0-9]{4})/)?$', views.review_decisions),
     (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?$', views.agenda),
@@ -47,13 +48,10 @@ urlpatterns = patterns('',
     (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?scribe_template.html$', views.agenda_scribe_template),
     (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?moderator_package.html$', views.agenda_moderator_package),
     (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?agenda_package.txt$', views.agenda_package),
+
     (r'^agenda/documents.txt$', views.agenda_documents_txt),
     (r'^agenda/documents/$', views.agenda_documents),
-    (r'^agenda/telechat-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)-docs.tgz', views.telechat_docs_tarfile),
+    (r'^agenda/telechat-(?:(?P<date>\d{4}-\d{2}-\d{2})-)?docs.tgz', views.telechat_docs_tarfile),
     (r'^discusses/$', views.discusses),
     (r'^milestones/$', views.milestones_needing_review),
-    (r'^telechatdates/$', 'django.views.generic.simple.redirect_to', { 'url': '/admin/iesg/telechatdate/' }),
-    url(r'^wgactions/$', views.working_group_actions, name="iesg_working_group_actions"),
-    url(r'^wgactions/add/$', views.edit_working_group_action, { 'wga_id': None }, name="iesg_add_working_group_action"),
-    url(r'^wgactions/(?P<wga_id>\d+)/$', views.edit_working_group_action, name="iesg_edit_working_group_action"),
 )
