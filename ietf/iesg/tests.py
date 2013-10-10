@@ -50,12 +50,20 @@ class IESGAgendaTests(django.test.TestCase):
         by = Person.objects.get(name="Aread Irector")
         date = get_agenda_date()
 
+        self.draft_dir = os.path.abspath("tmp-agenda-draft-dir")
+        os.mkdir(self.draft_dir)
+        settings.INTERNET_DRAFT_PATH = self.draft_dir
+
         for d in self.telechat_docs.values():
             TelechatDocEvent.objects.create(type="scheduled_for_telechat",
                                             doc=d,
                                             by=by,
                                             telechat_date=date,
                                             returning_item=True)
+
+
+    def tearDown(self):
+        shutil.rmtree(self.draft_dir)
 
     def test_feed(self):
         url = "/feed/iesg-agenda/"
@@ -157,6 +165,35 @@ class IESGAgendaTests(django.test.TestCase):
             self.assertTrue(d.name in r.content, "%s not in response" % k)
             self.assertTrue(d.title in r.content, "%s title not in response" % k)
 
+    def test_agenda_telechat_docs(self):
+        d1 = self.telechat_docs["ietf_draft"]
+        d2 = self.telechat_docs["ise_draft"]
+
+        d1_filename = "%s-%s.txt" % (d1.name, d1.rev)
+        d2_filename = "%s-%s.txt" % (d2.name, d2.rev)
+
+        with open(os.path.join(self.draft_dir, d1_filename), "w") as f:
+            f.write("test content")
+
+        url = urlreverse("ietf.iesg.views.telechat_docs_tarfile", kwargs=dict(date=get_agenda_date().isoformat()))
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+
+        import tarfile, StringIO
+
+        tar = tarfile.open(None, fileobj=StringIO.StringIO(r.content))
+        names = tar.getnames()
+        self.assertTrue(d1_filename in names)
+        self.assertTrue(d2_filename not in names)
+        self.assertTrue("manifest.txt" in names)
+
+        f = tar.extractfile(d1_filename)
+        self.assertEqual(f.read(), "test content")
+
+        f = tar.extractfile("manifest.txt")
+        lines = list(f.readlines())
+        self.assertTrue("Included" in [l for l in lines if d1_filename in l][0])
+        self.assertTrue("Not found" in [l for l in lines if d2_filename in l][0])
 
 class RescheduleOnAgendaTests(django.test.TestCase):
     def test_reschedule(self):
