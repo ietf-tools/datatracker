@@ -148,8 +148,17 @@ class IESGAgendaTests(django.test.TestCase):
         for k, d in self.telechat_docs.iteritems():
             self.assertTrue(d.name in r.content, "%s not in response" % k)
 
+    def test_agenda_documents(self):
+        url = urlreverse("ietf.iesg.views.agenda_documents")
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
 
-class RescheduleOnAgendaTestCase(django.test.TestCase):
+        for k, d in self.telechat_docs.iteritems():
+            self.assertTrue(d.name in r.content, "%s not in response" % k)
+            self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+
+class RescheduleOnAgendaTests(django.test.TestCase):
     def test_reschedule(self):
         draft = make_test_data()
 
