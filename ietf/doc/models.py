@@ -339,7 +339,7 @@ class Document(DocumentInfo):
         return self.latest_event(LastCallDocEvent,type="sent_last_call")
 
     def displayname_with_link(self):
-        return '<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev)
+        return mark_safe('<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev))
 
     def rfc_number(self):
         n = self.canonical_name()

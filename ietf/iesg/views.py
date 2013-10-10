@@ -306,8 +306,7 @@ def handle_reschedule_form(request, doc, dates):
     if request.method == 'POST':
         form = RescheduleForm(request.POST, **formargs)
         if form.is_valid():
-            login = request.user.get_profile()
-            update_telechat(request, doc, login,
+            update_telechat(request, doc, request.user.get_profile(),
                             form.cleaned_data['telechat_date'],
                             False if form.cleaned_data['clear_returning_item'] else None)
             doc.time = datetime.datetime.now()
@@ -319,21 +318,21 @@ def handle_reschedule_form(request, doc, dates):
     return form
 
 def agenda_documents(request):
-    dates = TelechatDates.objects.all()[0].dates()
-    from ietf.doc.models import TelechatDocEvent
+    dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
     docs = []
-    for d in Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct():
+    for d in Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).select_related().distinct():
         if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date in dates:
             docs.append(d)
 
             e = d.latest_event(type="started_iesg_process")
             d.balloting_started = e.time if e else datetime.datetime.min
     docs.sort(key=lambda d: d.balloting_started)
+
     for i in docs:
         i.reschedule_form = handle_reschedule_form(request, i, dates)
 
     # some may have been taken off the schedule by the reschedule form
-    docs = [d for d in docs if d.telechat_date()]
+    docs = [d for d in docs if d.telechat_date() in dates]
 
     telechats = []
     for date in dates:
@@ -351,7 +350,7 @@ def agenda_documents(request):
                 i.iprCount = len(i.ipr())
             res[section_key].append(i)
         telechats.append({'date':date, 'docs':res})
-    return direct_to_template(request, 'iesg/agenda_documents_redesign.html', {'telechats':telechats, 'hide_telechat_date':True})
+    return direct_to_template(request, 'iesg/agenda_documents.html', { 'telechats':telechats })
 
 def telechat_docs_tarfile(request,year,month,day):
     from tempfile import mkstemp

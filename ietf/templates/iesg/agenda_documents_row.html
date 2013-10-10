@@ -36,31 +36,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% load ballot_icon %}
 {% load ietf_filters %}
-<tr 
-{% if user|in_group:"Area_Director" %}
-{% if doc|my_position:user|equal:"Discuss" %}style="background:#ffa0a0;"{% endif %}
-{% if doc|my_position:user|equal:"Block" %}style="background:#ffa0a0;"{% endif %}
-{% if doc|my_position:user|equal:"Abstain" %}style="background:#ffff00;"{% endif %}
-{% if doc|my_position:user|equal:"Yes"  or  doc|my_position:user|slugify|equal:"no-objection" %}style="background:#a0ffa0;"{% endif %}
-{% if doc|my_position:user|equal:"Recuse" %}style="background:#c0c0c0;"{% endif %}
+<tr {% spaceless %}
+{% with doc|ballotposition:user as pos %}
+{% if pos %}
+{% if pos.blocking %}style="background:#ffa0a0;"{% endif %}
+{% if pos.slug == "yes" or pos.slug == "noobj" %}style="background:#a0ffa0;"{% endif %}
+{% if pos.slug == "abstain" %}style="background:#ffff00;"{% endif %}
+{% if pos.slug == "recuse" %}style="background:#c0c0c0;"{% endif %}
 {% endif %}
->
+{% endwith %}
+{% endspaceless %} >
 <td class="doc">
-<div>{{ doc.displayname_with_link|safe }}</div>
-{% with doc.active_defer_event as defer %}{% if defer %}
-<div><b title="deferred by {{ defer.by }}">(deferred on {{ defer.time|date:"Y-m-d" }})</b></div>
-{% endif %}{% endwith %}
-{% if user|in_group:"Secretariat" %}
-<div class="reschedule"><label>Reschedule: {{ doc.reschedule_form.telechat_date }}</label></div> 
-{% if doc.reschedule_form.show_clear %} 
-<div class="clear-returning-item"><label>{{ doc.reschedule_form.clear_returning_item }} Clear returning item</label></div> 
-{% endif %} 
-{% endif %} 
+  <div>{{ doc.displayname_with_link }}</div>
+  {% with doc.active_defer_event as defer %}{% if defer %}
+  <div><b title="deferred by {{ defer.by }}">(deferred on {{ defer.time|date:"Y-m-d" }})</b></div>
+  {% endif %}{% endwith %}
+  {% if user|has_role:"Secretariat" %}
+  <div class="reschedule"><label>Reschedule: {{ doc.reschedule_form.telechat_date }}</label></div> 
+  {% if doc.reschedule_form.show_clear %} 
+  <div class="clear-returning-item"><label>{{ doc.reschedule_form.clear_returning_item }} Clear returning item</label></div> 
+  {% endif %} 
+  {% endif %} 
 </td>
 <td class="title">{{ doc.title }}
-{% with doc.pages as pagecount %}{% if pagecount %}<span class="doc_pages">({{doc.pages}} pp)</span>{% endif %}{% endwith %}
+  {% if doc.pages %}<span class="doc_pages">({{doc.pages}} pp)</span>{% endif %}
 </td>
-{% include "iesg/agenda_documents_row_status_redesign.html" %}
+{% include "iesg/agenda_documents_row_status.html" %}
 {% include "doc/search/ipr_column_with_label.html" %}
-<td class="ad">{{ doc.ad.plain_name|default:"" }}</td>
+<td class="ad">{{ doc.ad|default:"" }}</td>
 </tr>

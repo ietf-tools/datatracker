@@ -1,0 +1,4 @@
+{% extends "doc/search/status_columns.html" %}
+{% block extra_status %}
+{% if doc.type_id == 'draft' %}<br/>Intended status: {{ doc.intended_std_level }}{% endif %}
+{% endblock %}

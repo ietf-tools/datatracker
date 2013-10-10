@@ -39,22 +39,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% block morecss %}
 .agenda_docs tr.oddrow {background-color: #EDF5FF; }
-.agenda_docs tr.header.telechat_date { margin-top:10px; background:#2647A0; color: white;}
-.agenda_docs tr.header.telechat_date td { font-size: 125%; }
+.agenda_docs tr.header.telechat-date { margin-top:10px; background:#2647A0; color: white;}
+.agenda_docs tr.header.telechat-date td { font-size: 125%; }
 .agenda_docs tr.header + tr.header { border-top: 2px solid white;}
-.agenda_docs tr td {
-  vertical-align: top;
-}
+.agenda_docs tr td { vertical-align: top; }
 .agenda_docs tr .reschedule,
-.agenda_docs tr .clear-returning-item {
-  font-size: 11px;
-}
-.agenda_docs tr .doc_pages {
-font-size:80%; font-style:italic; 
-}
-.secretariat-actions {
-  margin-bottom: 10px;
-}
+.agenda_docs tr .clear-returning-item { font-size: 11px; }
+.agenda_docs tr .doc_pages { font-size: 80%; font-style: italic; }
+.secretariat-actions { margin-bottom: 1em; }
 {% endblock %}
 
 {% block pagehead %}
@@ -65,12 +57,14 @@ font-size:80%; font-style:italic;
 <h1>Documents on Future IESG Telechat Agendas</h1>
 
 <form action="" method="POST">
-{% if user|in_group:"Secretariat" %}
+
+{% if user|has_role:"Secretariat" %}
 <div class="secretariat-actions">
-<input type="submit" value="Save"/>
+  <input title="Save reschedule changes done with the drop-down boxes below" type="submit" value="Save Reschedules"/>
 </div>
 {% endif %}
-  
+
+
 <table class="ietf-table ietf-doctable agenda_docs">
 {% for t in telechats %}
 
@@ -78,7 +72,7 @@ font-size:80%; font-style:italic;
 <tr class="header"><td colspan="6">&nbsp;</td></tr>
 {% endif %}
 
-<tr class="header telechat_date"><td colspan="6">IESG telechat {{t.date}}</td></tr>
+<tr class="header telechat-date"><td colspan="6">IESG telechat {{t.date}}</td></tr>
 
 {% if forloop.first %}
 <tr class="header"><td colspan="6"><a href="/iesg/agenda/">Full IESG Agenda</a></td></tr>
@@ -90,77 +84,77 @@ font-size:80%; font-style:italic;
 
 <tr class="header"><td colspan="6">2.1 WG Submissions</td></tr>
 
-    {% for doc in t.docs.s211 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s211 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s212 %}<tr class="header"><td colspan="6">2.1.2 Returning Item</td></tr>{% endif %}
-    {% for doc in t.docs.s212 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s212 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s213 %}<tr class="header"><td colspan="6">2.1.3 For Action</td></tr>{% endif %}
-    {% for doc in t.docs.s213 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s213 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
 <tr class="header"><td colspan="6">2.2 Individual Submissions</td></tr>
 
-    {% for doc in t.docs.s221 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s221 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s222 %}<tr class="header"><td colspan="6">2.2.2 Returning Item</td></tr>{% endif %}
-    {% for doc in t.docs.s222 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s222 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s223 %}<tr class="header"><td colspan="6">2.2.3 For Action</td></tr>{% endif %}
-    {% for doc in t.docs.s223 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s223 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
 <tr class="header"><td colspan="6">2.3 Status Changes</td></tr>
 
-    {% for doc in t.docs.s231 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s231 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s222 %}<tr class="header"><td colspan="6">2.3.2 Returning Item</td></tr>{% endif %}
-    {% for doc in t.docs.s232 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s232 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s223 %}<tr class="header"><td colspan="6">2.3.3 For Action</td></tr>{% endif %}
-    {% for doc in t.docs.s233 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s233 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
 <tr class="header"><td colspan="6">3. Document Actions</td></tr>
 
 <tr class="header"><td colspan="6">3.1 WG Submissions</td></tr>
 
-    {% for doc in t.docs.s311 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s311 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s312 %}<tr class="header"><td colspan="6">3.1.2 Returning Item</td></tr>{% endif %}
-    {% for doc in t.docs.s312 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s312 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s313 %}<tr class="header"><td colspan="6">3.1.3 For Action</td></tr>{% endif %}
-    {% for doc in t.docs.s313 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s313 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
 <tr class="header"><td colspan="6">3.2 Individual Submissions Via AD</td></tr>
 
-    {% for doc in t.docs.s321 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s321 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s322 %}<tr class="header"><td colspan="6">3.2.2 Returning Item</td></tr>{% endif %}
-    {% for doc in t.docs.s322 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s322 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s323 %}<tr class="header"><td colspan="6">3.2.3 For Action</td></tr>{% endif %}
-    {% for doc in t.docs.s323 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s323 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
 <tr class="header"><td colspan="6">3.3 Status Changes</td></tr>
 
-    {% for doc in t.docs.s331 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s331 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s332 %}<tr class="header"><td colspan="6">3.3.2 Returning Item</td></tr>{% endif %}
-    {% for doc in t.docs.s332 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s332 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s333 %}<tr class="header"><td colspan="6">3.3.3 For Action</td></tr>{% endif %}
-    {% for doc in t.docs.s333 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s333 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
 <tr class="header"><td colspan="6">3.4 IRTF and Independent Submission Stream Documents</td></tr>
 
-    {% for doc in t.docs.s341 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s341 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s342 %}<tr class="header"><td colspan="6">3.4.2 Returning Item</td></tr>{% endif %}
-    {% for doc in t.docs.s342 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s342 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s343 %}<tr class="header"><td colspan="6">3.4.3 For Action</td></tr>{% endif %}
-    {% for doc in t.docs.s343 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s343 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
 <tr class="header"><td colspan="6">4. Working Group Actions</td></tr>
 
     {% if t.docs.s411 or t.docs.s412%}<tr class="header"><td colspan="6">4.1 WG Creation</td></tr>{% endif %}
 
     {% if t.docs.s411 %}<tr class="header"><td colspan="6">4.1.1 Proposed for IETF Review</td></tr>{% endif %}
-    {% for doc in t.docs.s411 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s411 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s412 %}<tr class="header"><td colspan="6">4.1.2 Proposed for Approval</td></tr>{% endif %}
-    {% for doc in t.docs.s412 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s412 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
     {% if t.docs.s421 or t.docs.s422 %}<tr class="header"><td colspan="6">4.2 WG Rechartering</td></tr>{% endif %}
 
     {% if t.docs.s421 %}<tr class="header"><td colspan="6">4.2.1 Under Evaluation for IETF Review</td></tr>{% endif %}
-    {% for doc in t.docs.s421 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s421 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
     {% if t.docs.s422 %}<tr class="header"><td colspan="6">4.2.2 Proposed for Approval</td></tr>{% endif %}
-    {% for doc in t.docs.s422 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% for doc in t.docs.s422 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
 {% endfor %}
 
