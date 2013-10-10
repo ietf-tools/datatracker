@@ -368,7 +368,7 @@ def telechat_docs_tarfile(request, date):
     manifest = StringIO.StringIO()
 
     for doc in docs:
-        doc_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".txt")
+        doc_path = os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")
         if os.path.exists(doc_path):
             try:
                 tarstream.add(doc_path, str(doc.name + "-" + doc.rev + ".txt"))
