@@ -67,11 +67,6 @@ def render_ballot_icon(doc, user):
     if not doc:
         return ""
 
-    # FIXME: temporary backwards-compatibility hack
-    from ietf.doc.models import Document
-    if not isinstance(doc, Document):
-        doc = doc._draft
-
     if not showballoticon(doc):
         return ""
 
@@ -158,29 +153,7 @@ def ballotposition(doc, user):
 
 
 @register.filter
-def my_position(doc, user):
-    if not has_role(user, "Area Director"):
-        return None
-    # FIXME: temporary backwards-compatibility hack
-    from ietf.doc.models import Document
-    if not isinstance(doc, Document):
-        doc = doc._draft
-
-    ballot = doc.active_ballot()
-    pos = "No Record"
-    if ballot:
-        changed_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad__user=user, ballot=ballot)
-        if changed_pos:
-            pos = changed_pos.pos.name;
-    return pos
-
-@register.filter()
 def state_age_colored(doc):
-    # FIXME: temporary backwards-compatibility hack
-    from ietf.doc.models import Document
-    if not isinstance(doc, Document):
-        doc = doc._draft
-
     if doc.type_id == 'draft':
         if not doc.get_state_slug() in ["active", "rfc"]:
             # Don't show anything for expired/withdrawn/replaced drafts
