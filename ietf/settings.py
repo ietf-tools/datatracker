@@ -321,7 +321,7 @@ IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 # NomCom Tool settings
 ROLODEX_URL = ""
 NOMCOM_PUBLIC_KEYS_DIR = '/a/www/nomcom/public_keys/'
-NOMCOM_FROM_EMAIL = DEFAULT_FROM_EMAIL
+NOMCOM_FROM_EMAIL = 'nomcom-chair@ietf.org'
 NOMCOM_ADMIN_EMAIL = DEFAULT_FROM_EMAIL
 OPENSSL_COMMAND = '/usr/bin/openssl'
 DAYS_TO_EXPIRE_NOMINATION_LINK = ''
