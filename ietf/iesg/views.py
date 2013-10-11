@@ -43,19 +43,17 @@ from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response, get_object_or_404
 from django.conf import settings
 from django.utils import simplejson as json
+from django.db import models
 from django import forms
-
-from ietf.idtracker.models import IDInternal, InternetDraft, AreaGroup, Position, IESGLogin, Acronym
-from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
 
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 from ietf.ipr.models import IprDocAlias
-from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent
+from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.group.models import Group, GroupMilestone
 from ietf.person.models import Person
 
-from ietf.doc.utils import update_telechat
-from ietf.ietfauth.utils import has_role, role_required
+from ietf.doc.utils import update_telechat, augment_events_with_revision
+from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.iesg.agenda import *
 
 def review_decisions(request, year=None):
@@ -387,31 +385,39 @@ def telechat_docs_tarfile(request, date):
     return response
 
 def discusses(request):
-    res = []
+    possible_docs = Document.objects.filter(models.Q(states__type="draft-iesg",
+                                                     states__slug__in=IESG_BALLOT_ACTIVE_STATES) |
+                                            models.Q(states__type="charter",
+                                                     states__slug__in=("intrev", "iesgrev")) |
+                                            models.Q(states__type__in=("statchg", "conflrev"),
+                                                     states__slug__in=("iesgeval", "defer")),
+                                            docevent__ballotpositiondocevent__pos__blocking=True)
+    possible_docs = possible_docs.select_related("stream", "group", "ad").distinct()[:10]
 
-    for d in IDInternal.objects.filter(states__type="draft-iesg", states__slug__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), docevent__ballotpositiondocevent__pos="discuss").distinct():
-        found = False
-        for p in d.positions.all():
-            if p.discuss:
-                found = True
-                break
-
-        if not found:
+    docs = []
+    for doc in possible_docs:
+        ballot = doc.active_ballot()
+        if not ballot:
             continue
 
-        if d.rfc_flag:
-            doc = RfcWrapper(d)
-        else:
-            doc = IdWrapper(draft=d)
+        blocking_positions = [p for p in ballot.all_positions() if p.pos.blocking]
 
-        if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
-            # quick hack - to be removed when the proxy code is removed
-            doc.underlying = doc.underlying_document()
-            doc.underlying.milestones = d.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
+        if not blocking_positions:
+            continue
 
-            res.append(doc)
+        augment_events_with_revision(doc, blocking_positions)
 
-    return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
+        doc.by_me = bool([p for p in blocking_positions if user_is_person(request.user, p.ad)])
+        doc.for_me = user_is_person(request.user, doc.ad)
+        doc.milestones = doc.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
+        doc.blocking_positions = blocking_positions
+
+        docs.append(doc)
+
+    # latest first
+    docs.sort(key=lambda d: min(p.time for p in d.blocking_positions), reverse=True)
+
+    return direct_to_template(request, 'iesg/discusses.html', { 'docs': docs })
 
 @role_required('Area Director', 'Secretariat')
 def milestones_needing_review(request):
