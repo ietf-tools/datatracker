@@ -101,7 +101,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% else %}
    <li><a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in to track drafts</a></li>
 {% endif %}
-{% if user|has_role:"Area_Director,Secretariat" %}
+{% if user|has_role:"Area Director,Secretariat" %}
   <li><a href="{% url rfc_status_changes %}">RFC status changes</a></li>
 {% endif %}
 
