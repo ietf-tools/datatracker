@@ -242,15 +242,6 @@ class RescheduleOnAgendaTests(django.test.TestCase):
         self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").returning_item)
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
 
-class IesgUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
-    def doCanonicalize(self, url, content):
-        if url.startswith("/feed/"):
-            return canonicalize_feed(content)
-        else:
-            return content
-
 class DeferUndeferTestCase(django.test.TestCase):
     def helper_test_defer(self,name):
 
