@@ -173,7 +173,6 @@ def state_age_colored(doc):
                               Q(desc__istartswith="State Changes to ")|
                               Q(desc__istartswith="Sub state has been changed to ")|
                               Q(desc__istartswith="State has been changed to ")|
-                              Q(desc__istartswith="IESG has approved and state has been changed to")|
                               Q(desc__istartswith="IESG process started in state")
                           ).order_by('-time')[0].time.date() 
         except IndexError:
