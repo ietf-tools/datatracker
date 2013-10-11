@@ -32,10 +32,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import datetime
+
 from django.db import models
 from django.conf import settings
-from ietf.idtracker.models import Acronym
-import datetime
 
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
@@ -48,10 +48,7 @@ class TelechatAgendaItem(models.Model):
     text = models.TextField(blank=True, db_column='template_text')
     type = models.IntegerField(db_column='template_type', choices=TYPE_CHOICES, default=3)
     title = models.CharField(max_length=255, db_column='template_title')
-    #The following fields are apparently not used
-    #note = models.TextField(null=True,blank=True)
-    #discussed_status_id = models.IntegerField(null=True, blank=True)
-    #decision = models.TextField(null=True,blank=True)
+
     def __unicode__(self):
         type_name = self.TYPE_CHOICES_DICT.get(self.type, str(self.type))
         return u'%s: %s' % (type_name, self.title or "")
@@ -65,6 +62,7 @@ class Telechat(models.Model):
     management_issue = models.TextField(blank=True)
     frozen = models.IntegerField(null=True, blank=True)
     mi_frozen = models.IntegerField(null=True, blank=True)
+
     class Meta:
         db_table = u'telechat'
 
