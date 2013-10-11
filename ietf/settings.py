@@ -32,6 +32,7 @@ ADMINS = (
     ('Henrik Levkowetz', 'henrik@levkowetz.com'),
     ('Robert Sparks', 'rjsparks@nostrum.com'),
     ('Ole Laursen', 'olau@iola.dk'),
+    ('Ryan Cross', 'rcross@amsl.com'),
 )
 
 # Server name of the tools server
