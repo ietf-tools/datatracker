@@ -103,7 +103,7 @@ class EditPositionForm(forms.Form):
 
     def clean_discuss(self):
        entered_discuss = self.cleaned_data["discuss"]
-       entered_pos = self.cleaned_data["position"]
+       entered_pos = self.cleaned_data.get("position", "norecord")
        if entered_pos.blocking and not entered_discuss:
            raise forms.ValidationError("You must enter a non-empty discuss")
        return entered_discuss
