@@ -122,7 +122,7 @@ class DocumentInfo(models.Model):
 
         if not hasattr(self, "state_cache") or self.state_cache == None:
             self.state_cache = {}
-            for s in self.states.all().select_related():
+            for s in self.states.all().select_related("type"):
                 self.state_cache[s.type_id] = s
 
         return self.state_cache.get(state_type, None)
@@ -149,8 +149,8 @@ class DocumentInfo(models.Model):
 
     def active_ballot(self):
         """Returns the most recently created ballot if it isn't closed."""
-        ballot = self.latest_event(BallotDocEvent, type="created_ballot")
-        if ballot and self.ballot_open(ballot.ballot_type.slug):
+        ballot = self.latest_event(BallotDocEvent, type__in=("created_ballot", "closed_ballot"))
+        if ballot and ballot.type == "created_ballot":
             return ballot
         else:
             return None
@@ -616,17 +616,15 @@ class BallotDocEvent(DocEvent):
         active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active"))
         res = {}
     
-        if self.doc.latest_event(BallotDocEvent, type="created_ballot") == self:
-        
-            positions = BallotPositionDocEvent.objects.filter(type="changed_ballot_position",ad__in=active_ads, ballot=self).select_related('ad', 'pos').order_by("-time", "-id")
-   
-            for pos in positions:
-                if pos.ad not in res:
-                    res[pos.ad] = pos
-    
-            for ad in active_ads:
-                if ad not in res:
-                    res[ad] = None
+        positions = BallotPositionDocEvent.objects.filter(type="changed_ballot_position",ad__in=active_ads, ballot=self).select_related('ad', 'pos').order_by("-time", "-id")
+
+        for pos in positions:
+            if pos.ad not in res:
+                res[pos.ad] = pos
+
+        for ad in active_ads:
+            if ad not in res:
+                res[ad] = None
         return res
 
     def all_positions(self):
