@@ -414,14 +414,6 @@ def equal(x, y):
 def startswith(x, y):
     return unicode(x).startswith(y)
 
-# based on http://www.djangosnippets.org/snippets/847/ by 'whiteinge'
-@register.filter
-def in_group(user, groups):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        return has_role(user, groups.replace("Area_Director", "Area Director"))
-
-    return user and user.is_authenticated() and bool(user.groups.filter(name__in=groups.split(',')).values('name'))
-
 @register.filter
 def has_role(user, role_names):
     from ietf.ietfauth.decorators import has_role

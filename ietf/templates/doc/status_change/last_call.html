@@ -33,7 +33,7 @@ form #id_last_call_text {
 </form>
 
 {% load ietf_filters %}
-{% if user|in_group:"Secretariat" %}
+{% if user|has_role:"Secretariat" %}
 <p>
 <a href="{% url doc_make_last_call name=doc.name %}">Make Last Call</a>
 </p>
