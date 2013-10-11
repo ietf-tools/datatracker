@@ -392,7 +392,7 @@ def discusses(request):
                                             models.Q(states__type__in=("statchg", "conflrev"),
                                                      states__slug__in=("iesgeval", "defer")),
                                             docevent__ballotpositiondocevent__pos__blocking=True)
-    possible_docs = possible_docs.select_related("stream", "group", "ad").distinct()[:10]
+    possible_docs = possible_docs.select_related("stream", "group", "ad").distinct()
 
     docs = []
     for doc in possible_docs:
