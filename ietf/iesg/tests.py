@@ -8,7 +8,7 @@ from pyquery import PyQuery
 
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
-from ietf.doc.models import Document, DocEvent, TelechatDocEvent, State
+from ietf.doc.models import *
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.name.models import StreamName
@@ -347,3 +347,23 @@ class DeferUndeferTestCase(django.test.TestCase):
 
     def setUp(self):
         make_test_data()
+
+class IESGDiscussesTests(django.test.TestCase):
+    def test_feed(self):
+        draft = make_test_data()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+
+        pos = BallotPositionDocEvent()
+        pos.ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
+        pos.pos_id = "discuss"
+        pos.type = "changed_ballot_position"
+        pos.doc = draft
+        pos.ad = pos.by = Person.objects.get(user__username="ad")
+        pos.save()
+
+        r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
+        self.assertEquals(r.status_code, 200)
+
+        self.assertTrue(draft.name in r.content)
+        self.assertTrue(pos.ad.plain_name() in r.content)
+
