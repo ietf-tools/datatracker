@@ -423,7 +423,7 @@ def discusses(request):
 def milestones_needing_review(request):
     # collect milestones, grouped on AD and group
     ads = {}
-    for m in GroupMilestone.objects.filter(state="review").exclude(group__state="concluded", group__ad=None).distinct().select_related("group", "group__ad"):
+    for m in GroupMilestone.objects.filter(state="review").exclude(group__state="concluded").exclude(group__ad=None).distinct().select_related("group", "group__ad"):
         groups = ads.setdefault(m.group.ad, {})
         milestones = groups.setdefault(m.group, [])
         milestones.append(m)
