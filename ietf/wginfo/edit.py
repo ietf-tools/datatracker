@@ -50,18 +50,22 @@ class WGForm(forms.Form):
 
         self.confirm_msg = ""
         self.autoenable_confirm = False
+        if self.wg:
+            self.fields['acronym'].widget.attrs['readonly'] = True
 
     def clean_acronym(self):
         self.confirm_msg = ""
         self.autoenable_confirm = False
 
+        # Changing the acronym of an already existing WG will cause 404s all
+        # over the place, loose history, and generally muck up a lot of
+        # things, so we don't permit it
+        if self.wg:
+            return self.wg.acronym # no change permitted
+
         acronym = self.cleaned_data['acronym'].strip().lower()
 
         # be careful with acronyms, requiring confirmation to take existing or override historic
-
-        if self.wg and acronym == self.wg.acronym:
-            return acronym # no change, no check
-
         if not re.match(r'^[a-z][a-z0-9]+$', acronym):
             raise forms.ValidationError("Acronym is invalid, must be at least two characters and only contain lowercase letters and numbers starting with a letter.")
 
@@ -69,7 +73,7 @@ class WGForm(forms.Form):
         if existing:
             existing = existing[0]
 
-        if not self.wg and existing and existing.type_id == "wg":
+        if existing and existing.type_id == "wg":
             if self.confirmed:
                 return acronym # take over confirmed
 
