@@ -217,8 +217,7 @@ class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
         if diff:
             print "    Differences found:"
             print diff
-        else:
-            print "    No differences found with %s" % master
+            self.assertEquals(refhtml, testhtml)
 
 def canonicalize_feed(s):
     # Django 0.96 handled time zone different -- ignore it for now
