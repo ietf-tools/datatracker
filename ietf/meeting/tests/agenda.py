@@ -8,6 +8,8 @@ from ietf.group.models    import Group
 from ietf.meeting.models  import TimeSlot, Session, Meeting, ScheduledSession
 from ietf.meeting.helpers import get_meeting, get_schedule
 
+import debug
+
 class AgendaInfoTestCase(TestCase):
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
     perma_fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
@@ -120,16 +122,6 @@ class AgendaInfoTestCase(TestCase):
         from ietf.meeting.views import agenda_info
         num = '83'
         timeslots, scheduledsessions, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-        for slot in timeslots:
-            for ss in slot.scheduledsessions_by_area:
-                self.assertIsNotNone(ss)
-                self.assertIsNotNone(ss["area"])
-                self.assertIsNotNone(ss["info"])
-
-    def test_AgendaInfoNamedSlotSessionsByArea(self):
-        from ietf.meeting.views import agenda_info
-        num = '83'
-        timeslots, scheduledsessions, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
         # the third timeslot should be 1300-1450 on Sunday March 25.
         # it should have three things:
         #1300-1450  Tools for Creating Internet-Drafts Tutorial - 241
@@ -138,7 +130,7 @@ class AgendaInfoTestCase(TestCase):
         #import pdb
         #pdb.set_trace()
         slot3 = timeslots[2]
-        self.assertEqual(slot3.time_desc, "1300-1450")
+        self.assertEqual(slot3.time_desc(), "1300-1450")
         events = slot3.scheduledsessions_at_same_time
         self.assertEqual(len(events), 3)
 
