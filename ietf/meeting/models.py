@@ -248,6 +248,11 @@ class TimeSlot(models.Model):
     #
 
     @property
+    def session(self):
+        sessions = self.sessions.filter(scheduledsession__schedule=self.meeting.agenda)
+        session = sessions.get() if sessions.count() == 1 else None
+        return session
+
     def time_desc(self):
         return u"%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
 
