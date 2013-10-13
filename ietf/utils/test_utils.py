@@ -87,10 +87,6 @@ def read_testurls(filename):
                 goodurl = None
             elif len(urlspec) == 3:
                 codes, testurl, goodurl = urlspec
-                # strip protocol and host -- we're making that configurable
-                goodurl = re.sub("^https?://[a-z0-9.]+", "", goodurl)
-                if not goodurl.startswith("/"):
-                    goodurl = "/" + goodurl
             else:
                 raise ValueError("Expected 'HTTP_CODE TESTURL [GOODURL]' in %s line, found '%s'." % (filename, line))
 
@@ -187,34 +183,42 @@ class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
         return content
 
     def doDiff(self, tuple, response):
-        if not self.ref_prefix:
-            return
         (codes, url, master) = tuple
+        if not self.ref_prefix and not master:
+            return
         if "skipdiff" in codes:
             return
-        refurl = self.ref_prefix+url
-        print "    Fetching "+refurl
-        refhtml = None
-        try:
-            mfile = urllib.urlopen(refurl)
+        if master:
+            cwd = os.getcwd()
+            master = os.path.join(cwd, master)
+            mfile = open(master)
             refhtml = mfile.read()
             mfile.close()
-        except Exception, e:
-            print "    Error retrieving %s: %s" % (refurl, e)
-            return
-        testhtml = self.doCanonicalize(url, response.content)
+        else:
+            refurl = self.ref_prefix+url
+            print "    Fetching "+refurl
+            refhtml = None
+            try:
+                mfile = urllib.urlopen(refurl)
+                refhtml = mfile.read()
+                mfile.close()
+            except Exception, e:
+                print "    Error retrieving %s: %s" % (refurl, e)
+                return
         refhtml = self.doCanonicalize(url, refhtml)
+        testhtml = self.doCanonicalize(url, response.content)
+
         #print "REFERENCE:\n----------------------\n"+refhtml+"\n-------------\n"
         #print "TEST:\n----------------------\n"+testhtml+"\n-------------\n"
 
         list0 = refhtml.split("\n")
         list1 = testhtml.split("\n")
-        diff = "\n".join(unified_diff(list0, list1, refurl, url, "", "", 0, lineterm=""))
+        diff = "\n".join(unified_diff(list0, list1, master or refurl, url, "", "", 0, lineterm=""))
         if diff:
             print "    Differences found:"
             print diff
         else:
-            print "    No differences found"
+            print "    No differences found with %s" % master
 
 def canonicalize_feed(s):
     # Django 0.96 handled time zone different -- ignore it for now
