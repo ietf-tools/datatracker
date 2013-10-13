@@ -218,7 +218,7 @@ class WgEditTestCase(TestCase):
         state = GroupStateName.objects.get(slug="bof")
         r = self.client.post(url,
                              dict(name="Mars Not Special Interest Group",
-                                  acronym="mnsig",
+                                  acronym="mars",
                                   parent=area.pk,
                                   ad=ad.pk,
                                   state=state.pk,
@@ -239,7 +239,7 @@ class WgEditTestCase(TestCase):
                     label = ""
         self.assertEquals(r.status_code, 302)
 
-        group = Group.objects.get(acronym="mnsig")
+        group = Group.objects.get(acronym="mars")
         self.assertEquals(group.name, "Mars Not Special Interest Group")
         self.assertEquals(group.parent, area)
         self.assertEquals(group.ad, ad)
