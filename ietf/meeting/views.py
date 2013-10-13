@@ -113,6 +113,21 @@ def agenda_html_request(request,num=None, schedule_name=None):
         # GET and HEAD.
         return html_agenda(request, num, schedule_name)
 
+def legacy_get_agenda_info(request, num=None, schedule=None):
+    meeting = get_meeting(num)
+    timeslots = TimeSlot.objects.filter(Q(meeting__id = meeting.id)).exclude(type__slug='unavail').order_by('time','name')
+    modified = timeslots.aggregate(Max('modified'))['modified__max']
+
+    area_list = list(set([ session.group.parent.acronym for session in [ timeslot.session for timeslot in timeslots.filter(type = 'Session', sessions__group__parent__isnull = False, scheduledsession__schedule=schedule).order_by('sessions__group__parent__acronym').distinct() if timeslot.session ] ]))
+    area_list.sort()
+
+#    wg_name_list = timeslots.filter(type = 'Session', sessions__group__isnull = False, sessions__group__parent__isnull = False, scheduledsession__schedule=schedule).order_by('sessions__group__acronym').distinct('sessions__group')#.values_list('sessions__group__acronym',flat=True)
+    wg_name_list = list(set([ session.group.acronym for session in [ timeslot.session for timeslot in timeslots.filter(type = 'Session', sessions__group__parent__isnull = False, scheduledsession__schedule=schedule).order_by('sessions__group__acronym').distinct() if timeslot.session ] ]))
+
+    wg_list = Group.objects.filter(acronym__in = set(wg_name_list)).order_by('parent__acronym','acronym')
+
+    return timeslots, modified, meeting, area_list, wg_list
+
 def get_agenda_info(request, num=None, schedule_name=None):
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, schedule_name)
@@ -143,26 +158,19 @@ def html_agenda_1(request, num, schedule_name, template_version="meeting/agenda.
     if "iPhone" in user_agent:
         return iphone_agenda(request, num, schedule_name)
 
-    scheduledsessions, schedule, modified, meeting, area_list, wg_list, time_slices, date_slices, rooms = get_agenda_info(request, num, schedule_name)
-    areas = get_areas()
+    meeting = get_meeting(num)
+    schedule = get_schedule(meeting, schedule_name)
 
+    timeslots, modified, meeting, area_list, wg_list = legacy_get_agenda_info(request, num, schedule)
     return HttpResponse(render_to_string(template_version,
-        {"scheduledsessions":scheduledsessions,
-         "rooms":rooms,
-         "areas":areas,
-         "time_slices":time_slices,
-         "date_slices":date_slices,
-         "modified": modified, "meeting":meeting,
-         "area_list": area_list, "wg_list": wg_list,
-         "fg_group_colors": fg_group_colors,
-         "bg_group_colors": bg_group_colors,
+        {"timeslots":timeslots, "modified": modified, "meeting":meeting,
+         "area_list": area_list, "wg_list": wg_list ,
          "show_inline": set(["txt","htm","html"]) },
         RequestContext(request)), mimetype="text/html")
 
 def html_agenda(request, num=None, schedule_name=None):
     return html_agenda_1(request, num, schedule_name, "meeting/agenda.html")
 
-@decorator_from_middleware(GZipMiddleware)
 def html_agenda_utc(request, num=None, schedule_name=None):
     return html_agenda_1(request, num, schedule_name, "meeting/agenda_utc.html")
 
