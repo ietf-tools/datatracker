@@ -45,6 +45,7 @@ th { text-align: right; vertical-align: text-top; }
 {%ifchanged%}
 <tr><td class="status" colspan="7"><!-- {{session.group.parent.id}} -->{{session.status}}</td></tr>
 {%endifchanged%}
+yes
 <tr class="{% if forloop.counter|divisibleby:2 %}even{% else %}odd{% endif %}">
   <th valign="top">{{session.group.acronym|upper}}</th>
   <td valign="top" align="center">{% if not session.requested_duration %}<i>{{session.status}}</i>{%else%} {{session.requested_duration|stringformat:"s"|slice:"0:4"}} {% endif %}</td>

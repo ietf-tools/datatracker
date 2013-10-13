@@ -27,7 +27,7 @@ $(document).ready(function() {
     cancel_url = $("#agenda_cancel_url").attr("href");
 
     /* hide the side bar by default. */
-    $("#CLOSE_IETF_MENUBAR").click();
+    $("#close_ietf_menubar").click();
 });
 
 function init_agenda_edit(){

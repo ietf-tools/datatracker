@@ -65,8 +65,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endif %}</div>
 {% endif %}
 
-<div class="menu">
-<table style="margin-left:8px;margin-top:8px; width:98%;"  id="IETF_MENUBAR"> <!-- width="98%;"> this was causing issues.-->
+{% block start_content_table %}
+<table style="margin-left:8px;margin-top:8px; width:98%;" id="ietf_menubar">
 <tr valign="top">
 <td style="width:130px;padding-right:8px;" class="noprint">
 <div class="ietf-navbar">
@@ -80,11 +80,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <a href="http://tools.ietf.org/tools/ietfdb/newticket">Report a bug</a>
 </div>
 </td>
-</div><!-- shouldn't this end menu class? -->
-{% block noTable %} {% comment %} if we don't want a table we do this, make sure to close the tags inside. {% endcomment %}
-
 <td>
-
+{% endblock start_content_table %}
 {% if messages %}
 <ul class="messages">
     {% for message in messages %}
@@ -92,12 +89,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     {% endfor %}
 </ul>
 {% endif %}
-
-
 {% block content %}
 {% endblock %}
-
-{% endblock %} {% comment %} Ends no table {% endcomment %}
 
 <script type="text/javascript" src="/js/lib/jquery-1.8.2.min.js"></script>
 <script type="text/javascript" src="/js/yui/yui-20100305.js"></script> 
@@ -114,9 +107,10 @@ YAHOO.util.Event.onContentReady("wgs", function () {
 {% block js %}{% endblock %}
 
 {% block content_end %}
-{% endblock %} 
-</div>
+{% endblock %}
 <div id="ietf-extras"></div>
+{% block end_content_table %}
 </td></tr></table>
+{% endblock end_content_table %}
 {% include "debug.html" %}
 </body></html>

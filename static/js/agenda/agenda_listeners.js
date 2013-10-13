@@ -424,7 +424,7 @@ function unassigned_sort_change(){
 
 /* the functionality of these listeners will never change so they do not need to be run twice  */
 function static_listeners(){
-    $('#CLOSE_IETF_MENUBAR').click(hide_ietf_menu_bar);
+    $('#close_ietf_menubar').click(hide_ietf_menu_bar);
 
     $('#unassigned_sort_button').unbind('change');
     $('#unassigned_sort_button').change(unassigned_sort_change);
@@ -769,19 +769,19 @@ function highlight_conflict(constraint) {
 
 var menu_bar_hidden = false;
 function hide_ietf_menu_bar(){
-    $('#IETF_MENUBAR').toggle('slide',"",100);
+    $('#ietf_menubar').toggle('slide',"",100);
     if(menu_bar_hidden){
 	menu_bar_hidden = false;
 	$('.wrapper').css('width','auto');
 	$('.wrapper').css('margin-left','160px');
-	$('#CLOSE_IETF_MENUBAR').html("<");
+	$('#close_ietf_menubar').html("<");
 
     }
     else{
 	menu_bar_hidden = true;
 	$('.wrapper').css('width','auto');
 	$('.wrapper').css('margin-left','0px');
-	$('#CLOSE_IETF_MENUBAR').html(">");
+	$('#close_ietf_menubar').html(">");
     }
 }
 

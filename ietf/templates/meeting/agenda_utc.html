@@ -76,7 +76,7 @@ img.hidden { display: none; }
 
 {% block pagehead %}
 <script type="text/javascript" src='/js/agenda2.js'></script>
-<script type="text/javascript" src='/js/jquery-1.5.1.min.js'></script>
+<script type="text/javascript" src='/js/jquery-1.8.2.min.js'></script>
 <script type="text/javascript" src='/js/browsertime.js'></script>
 <script type="text/javascript" src='/js/weekview.js'></script>
 <script type="text/javascript" >
@@ -129,7 +129,7 @@ You can customize the agenda below to show only selected working group sessions.
       <div id='selector-{{wg.acronym}}' class="unselected" onclick="toggle(this)">{% if wg.state.name = "BOF" %}<i>{{wg.acronym}}</i>{% else %}{{wg.acronym}}{% endif %}</div>{% endfor %}
     </td>
   </tr>
-  <tr><td align="center" colspan="{{area_list.count}}">
+  <tr><td align="center" colspan="{{area_list|length}}">
     Also show:
     <input type="checkbox" class="include-checkbox" id="include-edu" onchange="toggle_special(this)"/>EDU &#8226;
     <input type="checkbox" class="include-checkbox" id="include-ietf" onchange="toggle_special(this)"/>IETF &#8226;
@@ -137,7 +137,7 @@ You can customize the agenda below to show only selected working group sessions.
     <input type="checkbox" class="include-checkbox" id="include-iesg" onchange="toggle_special(this)"/>IESG &#8226;
     <input type="checkbox" class="include-checkbox" id="include-iab" onchange="toggle_special(this)"/>IAB
 <!--  </td></tr>
-  <tr><td align="center" colspan="{{area_list.count}}">
+  <tr><td align="center" colspan="{{area_list|length}}">
 -->
   <br/><i>Groups displayed in italics are BOFs</i></td></tr>
 </table>

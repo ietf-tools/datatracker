@@ -30,10 +30,13 @@
 <script type='text/javascript' src='/js/agenda/agendas_edit.js'></script>
 {% endblock scripts %}
 
-{% block noTable %}
-</tr></table></div>
+
+{% block start_content_table %}{% endblock %}
+{% block end_content_table %}{% endblock %}
+
+{% block content %}
 <div class="wrapper custom_text_stuff">
-<div style="ui-icon ui-icon-arrow-1-w" id="CLOSE_IETF_MENUBAR">
+<div style="ui-icon ui-icon-arrow-1-w" id="close_ietf_menubar">
 &lt;
 </div>
 
@@ -87,5 +90,4 @@
 </div>
 </div>
 
-<table><tr>
 {% endblock %}

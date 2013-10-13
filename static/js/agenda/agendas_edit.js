@@ -24,7 +24,7 @@ $(document).ready(function() {
     init_agendas_edit();
 
     /* hide the side bar by default. */
-    $("#CLOSE_IETF_MENUBAR").click();
+    $("#close_ietf_menubar").click();
 });
 
 /*

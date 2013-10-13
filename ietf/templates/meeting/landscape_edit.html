@@ -117,8 +117,11 @@ area_directors["{{ad.area}}"].push(find_person_by_href("{{ad.defurl}}"));
 {% endblock scripts %}
 
 
-{% block noTable %}
-</tr></table></div>
+{% block start_content_table %}{% endblock %}
+{% block end_content_table %}{% endblock %}
+
+{% block content %}
+
 <div id="read_only">
 <p>
 You do not have write permission to agenda: {{schedule.name}}
@@ -157,7 +160,7 @@ Please save this agenda to your account first.
     </select>
   </div>
   <div class="agenda_slot_title" >
-    <div style="ui-icon ui-icon-arrow-1-w" id="CLOSE_IETF_MENUBAR">
+    <div style="ui-icon ui-icon-arrow-1-w" id="close_ietf_menubar">
       &lt;
     </div>
     <b>Unassigned Events:</b>
@@ -364,7 +367,5 @@ Please save this agenda to your account first.
     You can not extend this session. The slot is not available.
   </p>
 </div>
-
-<table><tr><td>
 
 {% endblock %}

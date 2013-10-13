@@ -59,7 +59,7 @@ var total_days = 0; // the number of days
 $(document).ready(function() {
     initStuff();
 
-   $("#CLOSE_IETF_MENUBAR").click();
+   $("#close_ietf_menubar").click();
 
 });
 

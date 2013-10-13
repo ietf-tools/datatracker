@@ -175,7 +175,7 @@ table.meeting_event {
 }
 
 
-#CLOSE_IETF_MENUBAR{
+#close_ietf_menubar{
     border-radius: 4px;
     background-color:#2b95b5;
     color:white;
@@ -190,7 +190,7 @@ table.meeting_event {
 
 }
 
-#IETF_MENUBAR{
+#ietf_menubar{
     width:auto;
 
 }

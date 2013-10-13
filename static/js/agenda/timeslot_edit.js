@@ -51,7 +51,7 @@ var total_days = 0; // the number of days
 $(document).ready(function() {
     init_timeslot_edit();
 
-    $("#CLOSE_IETF_MENUBAR").click();
+    $("#close_ietf_menubar").click();
 });
 
 /*

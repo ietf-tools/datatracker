@@ -14,8 +14,11 @@
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: {{ schedule.owner }} / {{ schedule.name }}{% endblock %}
 {% load agenda_custom_tags %}
 
-{% block noTable %}
-</tr></table></div>
+{% block start_content_table %}{% endblock %}
+{% block end_content_table %}{% endblock %}
+
+{% block content %}
+
 <div id="read_only">
 <p>
 You can not have access this agenda. It belongs to {{ schedule.owner }}.
@@ -25,5 +28,5 @@ You can not have access this agenda. It belongs to {{ schedule.owner }}.
 </p>
 <div class="wrapper custom_text_stuff">
 </div>
-<table><tr><td>
+
 {% endblock %}
