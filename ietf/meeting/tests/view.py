@@ -20,21 +20,6 @@ class ViewTestCase(TestCase):
                  'groupgroup.json',
                  'person.json', 'users.json' ]
 
-    def test_agenda83txt(self):
-        # verify that the generated text has not changed.
-        import io
-        agenda83txtio = open("%s/meeting/tests/agenda-83-txt-output.txt" % BASE_DIR, "r")
-        agenda83txt = agenda83txtio.read();  # read entire file
-        resp = self.client.get('/meeting/83/agenda.txt')
-        # to capture new output (and check it for correctness)
-        fn = ""
-        if resp.content != agenda83txt:
-            fn = "%s/meeting/tests/agenda-83-txt-output-out.txt" % BASE_DIR
-            out = open(fn, "w")
-            out.write(resp.content)
-            out.close()
-        self.assertEqual(resp.content, agenda83txt, "The /meeting/83/agenda.txt page changed.\nThe newly generated agenda has been written to file: %s" % fn)
-
     def test_nameOfClueWg(self):
         clue_session = Session.objects.get(pk=2194)
         self.assertEqual(clue_session.short_name, "clue")
