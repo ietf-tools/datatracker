@@ -99,7 +99,8 @@ img.hidden { display: none; }
 </div>
 
 
-<table style="margin-left:8px;margin-top:8px;" width="98%;">
+
+<table style="margin-left:8px;margin-top:8px; width:98%;" id="ietf_menubar">
 <tr valign="top">
 <td style="width:130px;padding-right:8px;" class="noprint">
 <div class="ietf-navbar">
@@ -11643,10 +11644,11 @@ YAHOO.util.Event.onContentReady("wgs", function () {
 
 
 
- 
-</div>
+
 <div id="ietf-extras"></div>
+
 </td></tr></table>
+
 
 
 

@@ -35,30 +35,6 @@ class ViewTestCase(TestCase):
             out.close()
         self.assertEqual(resp.content, agenda83txt, "The /meeting/83/agenda.txt page changed.\nThe newly generated agenda has been written to file: %s" % fn)
 
-    def test_agenda83utc(self):
-        # verify that the generated html has not changed.
-        import io
-        agenda83utcio = open("%s/meeting/tests/agenda-83-utc-output.html" % BASE_DIR, "r")
-        agenda83utc_valid = agenda83utcio.read();  # read entire file
-        resp = self.client.get('/meeting/83/agenda-utc.html')
-        # both agendas will have a software version indication inside a
-        # comment.  This will change.  Remove comments before comparing.
-        agenda83utc_valid = re.sub("<!-- v.*-->","", agenda83utc_valid)
-        agenda83utc_valid = re.sub('<a href="/release/.*?</a>','', agenda83utc_valid)
-        
-        agenda83utc_response = resp.content
-        agenda83utc_response = re.sub("<!-- v.*-->","", agenda83utc_response)
-        agenda83utc_response = re.sub('<a href="/release/.*</a>','', agenda83utc_response)
-
-        fn = ""
-        # to capture new output (and check it for correctness)
-        if agenda83utc_valid != agenda83utc_response:
-            fn = "%s/meeting/tests/agenda-83-utc-output-out.html" % BASE_DIR
-            out = open(fn, "w")
-            out.write(resp.content)
-            out.close()
-        self.assertEqual(agenda83utc_valid, agenda83utc_response, "The /meeting/83/agenda-utc.html page changed.\nThe newly generated agenda has been written to file: %s" % fn)
-
     def test_nameOfClueWg(self):
         clue_session = Session.objects.get(pk=2194)
         self.assertEqual(clue_session.short_name, "clue")
