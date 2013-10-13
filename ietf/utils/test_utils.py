@@ -171,7 +171,9 @@ class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
                 else:
                     print "    (%.1f s, %d kB)" % (elapsed, len(response.content)/1000)
             if code in codes and code == "200":
-                self.doDiff(tuple, response)
+                diff_result = self.doDiff(tuple, response)
+                if diff_result == False:
+                    failed = True
         except:
             failed = True
             print "Exception for URL '%s'" % url
@@ -217,7 +219,7 @@ class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
         if diff:
             print "    Differences found:"
             print diff
-            self.assertEquals(refhtml, testhtml)
+            return False
 
 def canonicalize_feed(s):
     # Django 0.96 handled time zone different -- ignore it for now
