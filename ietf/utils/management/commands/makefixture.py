@@ -47,7 +47,7 @@ from django.db.models.fields.related import ForeignKey
 from django.db.models.fields.related import ManyToManyField
 from django.db.models.loading import get_models
 
-DEBUG = False
+DEBUG = True
 
 def model_name(m):
     module = m.__module__.split('.')[:-1] # remove .models
@@ -116,34 +116,38 @@ class Command(LabelCommand):
                 raise CommandError("Wrong slice: %s" % slice)
 
         all = objects
+        collected = set([(x.__class__, x.pk) for x in all])
+        related = []
+        for obj in objects:
+            # follow reverse relations as requested
+            for reverse_field in follow_reverse.get(obj.__class__, []):
+                mgr = getattr(obj, reverse_field)
+                for new in mgr.all():
+                    if new and not (new.__class__, new.pk) in collected:
+                        collected.add((new.__class__, new.pk))
+                        related.append(new)
+        objects += related
+        all.extend(related)
         if propagate:
-            collected = set([(x.__class__, x.pk) for x in all])
             while objects:
                 related = []
-                for x in objects:
+                for obj in objects:
                     if DEBUG:
-                        print "Adding %s[%s]" % (model_name(x), x.pk)
+                        print "Adding %s[%s]" % (model_name(obj), obj.pk)
                     # follow forward relation fields
-                    for f in x.__class__._meta.fields + x.__class__._meta.many_to_many:
+                    for f in obj.__class__._meta.fields + obj.__class__._meta.many_to_many:
                         if isinstance(f, ForeignKey):
-                            new = getattr(x, f.name) # instantiate object
+                            new = getattr(obj, f.name) # instantiate object
                             if new and not (new.__class__, new.pk) in collected:
                                 collected.add((new.__class__, new.pk))
                                 related.append(new)
                         if isinstance(f, ManyToManyField):
-                            for new in getattr(x, f.name).all():
+                            for new in getattr(obj, f.name).all():
                                 if new and not (new.__class__, new.pk) in collected:
                                     collected.add((new.__class__, new.pk))
                                     related.append(new)
-                    # follow reverse relations as requested
-                    for reverse_field in follow_reverse.get(x.__class__, []):
-                        mgr = getattr(x, reverse_field)
-                        for new in mgr.all():
-                            if new and not (new.__class__, new.pk) in collected:
-                                collected.add((new.__class__, new.pk))
-                                related.append(new)
                 objects = related
-                all.extend(objects)
+                all.extend(related)
 
         try:
             return serializers.serialize(format, all, indent=indent)
