@@ -135,12 +135,25 @@ class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
                 failures = failures + 1
         self.assertEqual(failures, 0, "%d URLs failed" % failures)
 
+    def saveBadResponse(self, url, response):
+        msg = "The %s page changed\n" % url
+        url = url.lstrip('/')
+        path = settings.TEST_DIFF_FAILURE_DIR
+        path = os.path.join(path, url)
+        if not os.path.exist(os.path.dirname(path)):
+            os.mkdir(os.path.dirname(path))
+        with open(path) as file:
+            file.write(response)
+        msg += "The newly generated page has been saved at:\n  %s" % path
+        return msg
+
     def doTestUrl(self, tuple):
         (codes, url, master) = tuple
         baseurl, args = split_url(url)
         failed = False
         #enable this to see query counts
         #settings.DEBUG = True
+        msg = None
         try:
             if "heavy" in codes and self.skip_heavy_tests:
                 if self.verbosity > 1:
@@ -173,12 +186,14 @@ class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
             if code in codes and code == "200":
                 diff_result = self.doDiff(tuple, response)
                 if diff_result == False:
+                    msg = self.saveBadResponse(url, response)
                     failed = True
         except:
             failed = True
-            print "Exception for URL '%s'" % url
+            msg = "Exception for URL '%s'" % url
+            print msg
             traceback.print_exc()
-        self.assertEqual(failed, False)
+        self.assertEqual(failed, False, msg)
         
     # Override this in subclasses if needed
     def doCanonicalize(self, url, content):
