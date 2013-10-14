@@ -232,6 +232,8 @@ TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
 # Fixtures which will be loaded before testing starts
 GLOBAL_TEST_FIXTURES = [ 'names','groups','persons', 'roles']
 
+TEST_DIFF_FAILURE_DIR = "/tmp/test/failure/"
+
 # WG Chair configuration
 MAX_WG_DELEGATES = 3
 
