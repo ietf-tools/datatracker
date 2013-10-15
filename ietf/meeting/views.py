@@ -413,49 +413,33 @@ def edit_agendas(request, num=None, order=None):
                                          RequestContext(request)),
                         mimetype="text/html")
 
-
-##############################################################################
 def iphone_agenda(request, num, name):
-    timeslots, scheduledsessions, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num, name)
+    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
 
-    groups_meeting = set();
-    for ss in scheduledsessions:
-        if ss.session is not None:
-            groups_meeting.add(ss.session.group.acronym)
+    groups_meeting = [];
+    for slot in timeslots:
+        for session in slot.sessions():
+            groups_meeting.append(session.acronym())
+    groups_meeting = set(groups_meeting);
 
     wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).filter(group_acronym__acronym__in = groups_meeting).order_by('group_acronym__acronym')
     rgs = IRTF.objects.all().filter(acronym__in = groups_meeting).order_by('acronym')
-    areas = get_areas()
+    areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
     template = "meeting/m_agenda.html"
     return render_to_response(template,
-            {"timeslots":timeslots,
-             "scheduledsessions":scheduledsessions,
-             "update":update,
-             "meeting":meeting,
-             "venue":venue,
-             "ads":ads,
-             "areas":areas,
-             "plenaryw_agenda":plenaryw_agenda,
-             "plenaryt_agenda":plenaryt_agenda,
-             "wg_list" : wgs,
-             "rg_list" : rgs},
+            {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
+                "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, 
+                "wg_list" : wgs, "rg_list" : rgs, "area_list" : areas},
             context_instance=RequestContext(request))
 
 
 def text_agenda(request, num=None, name=None):
-    timeslots, scheduledsessions, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num, name)
+    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
     plenaryw_agenda = "   "+plenaryw_agenda.strip().replace("\n", "\n   ")
     plenaryt_agenda = "   "+plenaryt_agenda.strip().replace("\n", "\n   ")
-
     return HttpResponse(render_to_string("meeting/agenda.txt",
-        {"timeslots":timeslots,
-         "scheduledsessions":scheduledsessions,
-         "update":update,
-         "meeting":meeting,
-         "venue":venue,
-         "ads":ads,
-         "plenaryw_agenda":plenaryw_agenda,
-         "plenaryt_agenda":plenaryt_agenda, },
+        {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
+            "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
         RequestContext(request)), mimetype="text/plain")
 
 def read_agenda_file(num, doc):
@@ -473,9 +457,9 @@ def read_agenda_file(num, doc):
 def session_agenda(request, num, session):
     d = Document.objects.filter(type="agenda", session__meeting__number=num)
     if session == "plenaryt":
-        d = d.filter(session__name__icontains="technical", session__timeslot__type="plenary")
+        d = d.filter(session__name__icontains="technical", session__slots__type="plenary")
     elif session == "plenaryw":
-        d = d.filter(session__name__icontains="admin", session__timeslot__type="plenary")
+        d = d.filter(session__name__icontains="admin", session__slots__type="plenary")
     else:
         d = d.filter(session__group__acronym=session)
 
@@ -649,7 +633,7 @@ def week_view(request, num=None):
     return render_to_response(template,
             {"timeslots":timeslots,"render_types":["Session","Other","Break","Plenary"]}, context_instance=RequestContext(request))
 
-def ical_agenda(request, num=None, schedule_name=None):
+def ical_agenda(request, num=None, name=None):
     meeting = get_meeting(num)
 
     q = request.META.get('QUERY_STRING','') or ""
@@ -660,7 +644,7 @@ def ical_agenda(request, num=None, schedule_name=None):
 
     # Process the special flags.
     #   "-wgname" will remove a working group from the output.
-    #   "~Type" will add that type to the output.
+    #   "~Type" will add that type to the output. 
     #   "-~Type" will remove that type from the output
     # Current types are:
     #   Session, Other (default on), Break, Plenary (default on)
@@ -676,16 +660,13 @@ def ical_agenda(request, num=None, schedule_name=None):
             elif item[0] == '~':
                 include_types |= set([item[1:2].upper()+item[2:]])
 
-    schedule = get_schedule(meeting, schedule_name)
-    scheduledsessions = get_scheduledsessions_from_schedule(schedule)
-
-    scheduledsessions = scheduledsessions.filter(
-        Q(timeslot__type__name__in = include_types) |
-        Q(session__group__acronym__in = filter) |
-        Q(session__group__parent__acronym__in = filter)
-        ).exclude(Q(session__group__acronym__in = exclude))
+    timeslots = TimeSlot.objects.filter(Q(meeting__id = meeting.id),
+        Q(type__name__in = include_types) |
+        Q(sessions__group__acronym__in = filter) |
+        Q(sessions__group__parent__acronym__in = filter)
+        ).exclude(Q(sessions__group__acronym__in = exclude))
         #.exclude(Q(session__group__isnull = False),
-        #Q(session__group__acronym__in = exclude) |
+        #Q(session__group__acronym__in = exclude) | 
         #Q(session__group__parent__acronym__in = exclude))
 
     if meeting.time_zone:
@@ -701,11 +682,15 @@ def ical_agenda(request, num=None, schedule_name=None):
         vtimezone = None
 
     return HttpResponse(render_to_string("meeting/agenda.ics",
-        {"scheduledsessions":scheduledsessions, "meeting":meeting, "vtimezone": vtimezone },
+        {"timeslots":timeslots, "meeting":meeting, "vtimezone": vtimezone },
         RequestContext(request)), mimetype="text/calendar")
 
 def csv_agenda(request, num=None, name=None):
-    timeslots, scheduledsessions, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num, name)
+    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
+    #wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
+    #rgs = IRTF.objects.all().order_by('acronym')
+    #areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
+
     # we should really use the Python csv module or something similar
     # rather than a template file which is one big mess
 
