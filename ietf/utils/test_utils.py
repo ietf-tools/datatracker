@@ -140,11 +140,12 @@ class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
         url = url.lstrip('/')
         path = settings.TEST_DIFF_FAILURE_DIR
         path = os.path.join(path, url)
-        if not os.path.exist(os.path.dirname(path)):
-            os.mkdir(os.path.dirname(path))
-        with open(path) as file:
-            file.write(response)
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+        with open(path, "w") as file:
+            file.write(response.content)
         msg += "The newly generated page has been saved at:\n  %s" % path
+        print msg
         return msg
 
     def doTestUrl(self, tuple):
