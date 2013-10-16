@@ -24,10 +24,10 @@ Contents:
 ------------------------------------------------------------------------
 3. MANAGEMENT ITEM DETAILS
 ------------------------------------------------------------------------
-{% for m in mgmt %}
-6.{{forloop.counter}} {{m.title}}
+{% for num, section in management_items %}
+{{ num }} {{ section.title}}
 
-{{m.text|wordwrap:"76"}}
+{{ section.text|wordwrap:"76" }}
 {% endfor %}
 
 ------------------------------------------------------------------------

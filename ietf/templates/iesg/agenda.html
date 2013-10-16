@@ -1,113 +1,120 @@
 {% extends "base.html" %}
-{% comment %}
-Copyright (C) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
-All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions 
-are met:
-
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided
-   with the distribution.
-
- * Neither the name of the Nokia Corporation and/or its
-   subsidiary(-ies) nor the names of its contributors may be used
-   to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. #}
-{% endcomment %}
 {% load ietf_filters %}
-{% block title %}IESG Agenda: {{date}}{% endblock %}
 
-{% block morecss %}
-.agenda hr { margin-top: 2em; }
-.agenda #section1 h3, #section6 h3 { margin-top:0; margin-bottom:0;  }
-.agenda noh3 { margin-left: 30px; }
-.agenda h4 { margin-top: 0; margin-bottom: 0; }
-.agenda h5 { font-size: inherit; margin: 1em 0;}
-.agenda #section23 p, #section4 p { margin-left:30px; nomargin-top: 0; nomargin-bottom:0; nofont-style:italic;}
-.agenda #section1 pre { margin-left: 30px; }
-.agenda blockquote { margin-left: 30px; width: 70ex; font-style:italic;}
-table.agenda-doc { margin-left: 30px; margin-top:0.5em; margin-bottom: 0.5em; width: 95%; }
-table.agenda-doc > tbody > tr { vertical-align:top; }
-div.agenda-wg { margin-left: 30px; margin-top:0.5em; margin-bottom: 0.5em; width: 95%; }
-.agenda .stream { padding-left: 0.5em; }
-{% endblock morecss %}
+{% block title %}IESG Agenda: {{ date }}{% endblock %}
 
 {% block pagehead %}
 <link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/" />
 {% endblock %}
 
-{% block content %}
+{% block morecss %}
+.agenda hr { margin-top: 2em; }
+.agenda .section.s1 h3 { margin: 0; }
+.agenda .section p, .agenda .section pre, .agenda blockquote, .agenda .agenda-doc { margin-left: 2.2em; }
+.agenda h4 { margin-top: 0; margin-bottom: 0; }
+.agenda h5 { font-size: inherit; margin: 1em 0; }
+.agenda blockquote { width: 37.6em; font-style:italic; }
+.agenda .agenda-doc { margin-top: 0.5em; margin-bottom: 0.8em; width: 95%; clear: both; }
+.agenda .agenda-doc .ballot-icon-column { float: right; padding: 0.5em 1em; }
+.agenda .stream { padding-left: 0.5em; }
+{% endblock morecss %}
 
+{% block content %}
 <div class="agenda">
 
-<h1>IESG Agenda: {{ date}} </h1>
+<h1>IESG Agenda: {{ date }} </h1>
 
-<p>See also: <a href="/iesg/agenda/documents/">Documents on Future IESG Telechat Agendas</a> and <a href="/iesg/discusses/">IESG Discuss Positions</a>.</p>
+<p>See also: <a href="/iesg/agenda/documents/">Documents on Future
+IESG Telechat Agendas</a> and <a href="/iesg/discusses/">IESG Discuss
+Positions</a>.</p>
 
-<h2>1. Administrivia</h2>
-<div id="section1">
+{% for num, section in sections %}
+<div class="section s{{ num|slice:"1" }}">
 
-   <h3>1.1 {% if user|has_role:"Area Director,IAB Chair,Secretariat" %}<a href="https://www.ietf.org/iesg/internal/rollcall.txt">Roll Call</a>{% else %}Roll Call{% endif %}</h3>
+{% if num|sectionlevel == 1 %}<h2>{{ num }}. {{ section.title|safe }}</h2>{% endif %}
+{% if num|sectionlevel == 2 %}<h3>{{ num }} {{ section.title|safe }}</h3>{% endif %}
+{% if num|sectionlevel == 3 %}<h4>{{ num }} {{ section.title|safe }}</h4>{% endif %}
 
-   <h3>1.2 Bash the Agenda</h3>
-
-   <h3>1.3 Approval of the {% if user|has_role:"Area Director,IAB Chair,Secretariat" %}<a href="https://www.ietf.org/iesg/internal/minutes.txt">Minutes</a>{%else%}Minutes{%endif%} of Past Telechats</h3>
-   <h3>1.4 List of Remaining Action Items from Last Telechat</h3>
+{% if num == "1.4" %}
 <pre>
-{{ action_items }}
+{{ section.text }}
 </pre>
-</div>
+{% endif %}
 
-<div id="section23">
-{% with "iesg/agenda_doc.html" as doc_template %}
-{% with "iesg/agenda_conflict_doc.html" as doc_conflict_template %}
-{% include "iesg/agenda_outline_23.html" %}
-{% endwith %}
-{% endwith %}
-</div>
+{% if num >= "2" and num < "5" %}
+  {% if num == "2" %}
+    <blockquote>
+    Reviews should focus on these questions: "Is this document a
+    reasonable basis on which to build the salient part of the Internet
+    infrastructure? If not, what changes would make it so?"
+    </blockquote>
+  {% endif %}
 
-<div id="section4">
-{% with "iesg/agenda_wg.html" as wg_template %}
-{% include "iesg/agenda_outline_4.html" %}
-{% endwith %}
-</div>
+  {% if num == "3.1" or num == "3.2" %}
+    <blockquote>
+    Reviews should focus on these questions: "Is this document a
+    reasonable contribution to the area of Internet engineering
+    which it covers? If not, what changes would make it so?"
+    </blockquote>
+  {% endif %}
+  
+  {% if num == "3.3" %}
+    <blockquote>
+    Reviews should focus on these questions: "Are the proposed 
+    changes to document status appropriate? Have all requirements 
+    for such a change been met? If not, what changes to the proposal 
+    would make it appropriate?" 
+    </blockquote>
+  {% endif %}
 
-<h2>5. IAB News We Can Use</h2>
+  {% if num == "3.4" %}
+    <blockquote>
+    The IESG will use RFC 5742 responses: 1) The IESG has concluded
+    that there is no conflict between this document and IETF work; 2)
+    The IESG has concluded that this work is related to IETF work done
+    in WG &lt;X&gt;, but this relationship does not prevent
+    publishing; 3) The IESG has concluded that publication could
+    potentially disrupt the IETF work done in WG &lt;X&gt; and
+    recommends not publishing the document at this time; 4) The IESG
+    has concluded that this document violates IETF procedures for
+    &lt;Y&gt; and should therefore not be published without IETF
+    review and IESG approval; or 5) The IESG has concluded that this
+    document extends an IETF protocol in a way that requires IETF
+    review and should therefore not be published without IETF review
+    and IESG approval.<br/>
+    <br />
+    The document shepherd must propose one of these responses in the
+    conflict-review document, and the document shepherd may supply text 
+    for an IESG Note in that document. The Area Director ballot positions 
+    indicate consensus with the response proposed by the document shepherd 
+    and agreement that the IESG should request inclusion of the IESG Note.<br/>
+    <br />
+    Other matters may be recorded in comments, and the comments will
+    be passed on to the RFC Editor as community review of the document.
+    </blockquote>
+  {% endif %}
 
-<h2>6. Management Issues</h2>
-<div id="section6">
-{% for m in mgmt %}
-<h3>6.{{forloop.counter}} {{m.title|escape}}</h3>
-{% if user|has_role:"Area Director,IAB Chair,Secretariat" %}
+
+  {% if "docs" in section %}
+  {% for doc in section.docs %}
+    {% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/agenda_doc.html" %}{% endif %}
+    {% if doc.type_id == "conflrev" %}{% include "iesg/agenda_conflict_doc.html" %}{% endif %}
+    {% if doc.type_id == "charter" %}{% include "iesg/agenda_charter.html" %}{% endif %}
+  {% empty %}
+  <p>NONE</p>
+  {% endfor %}
+  {% endif %}
+{% endif %}
+
+{% if num|startswith:"6." and user|has_role:"Area Director,IAB Chair,Secretariat" %}
 <pre>
-{{m.text|wordwrap:"76"}}
+{{ section.text|wordwrap:"76" }}
 </pre>
-{% endif %}{# if user|has_role  #}
+{% endif %}
 
+</div>
 {% endfor %}
-</div>
-
-<h2>7. Working Group News</h2>
-
-</div>
 
 {% endblock content %}
 

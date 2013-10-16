@@ -1,0 +1,17 @@
+{% load ballot_icon %}
+<div class="agenda-doc">
+  <div class="ballot-icon-column">
+    {% ballot_icon doc %}
+  </div>
+
+  <div>
+  <div>
+    <a href="{{ doc.get_absolute_url }}">{{ doc.name}}-({{doc.rev}})</a>
+    <a href="{{ settings.CHARTER_TXT_URL }}{{ doc.filename_with_rev }}">[txt]</a>
+  </div>
+
+  <div>{{ doc.group.name|escape }} ({{doc.group.acronym}})</div>
+
+  <div>Area: {{ doc.group.parent.acronym|upper }}  ({{ doc.ad|default:"Sponsoring AD not assigned" }})</div>
+  </div>
+</div>

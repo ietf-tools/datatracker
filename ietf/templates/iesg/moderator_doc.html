@@ -35,28 +35,29 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endcomment %}
 {% load ietf_filters %}
-{% for doc in section_docs %}
-<h3>{{ title1 }}<br>
-{{ title2 }}<br>
-{{ title3 }} ({{ forloop.counter }} of {{ section_docs|length }})</h3>
 
-<p><b>{{doc.name}}-{{doc.rev}}</b><br>
-<i>({{ doc.title|escape }})</i><br>
-<b>Intended status: {{ doc.intended_std_level }}<br>
-Token: {{ doc.ad.plain_name|escape }}<br>
-{% if doc.type.slug == "draft" %}
-Last call ends: {{ doc.most_recent_ietflc.expires.date|default:"(none)" }}
-{% if doc.most_recent_ietflc.expires.date|timesince_days < 3 %}!!!{% endif %}
-{% endif %}</b></p>
+<p>
+  <b>{{doc.name}}-{{doc.rev}}</b><br>
+  <i>({{ doc.title|escape }})</i><br>
+  <b>
+    Intended status: {{ doc.intended_std_level }}<br>
+    Token: {{ doc.ad.plain_name|escape }}<br>
+    {% if doc.type_id == "draft" %}
+    Last call ends: {{ doc.most_recent_ietflc.expires.date|default:"(none)" }}
+    {% if doc.most_recent_ietflc.expires.date|timesince_days < 3 %}!!!{% endif %}
+    {% endif %}
+  </b>
+</p>
 
-{% if doc.active_ballot %}
+{% with doc.active_ballot as ballot %}
+{% if ballot %}
 <small><pre>
                         Yes  No-Objection  Discuss  Abstain  Recuse
-{% for pos in doc.active_ballot.all_positions %}{% if pos.old_ad %}{{pos.ad.plain_name|bracket|ljust:"22"}}{%else%}{{pos.ad.plain_name|ljust:"22"}}{%endif%} {{pos|bracketpos:"yes"}}    {{pos|bracketpos:"noobj"}}       {{pos|bracketpos:"discuss"}}    {{pos|bracketpos:"abstain"}}    {{pos|bracketpos:"recuse"}}
+{% for pos in ballot.all_positions %}{% if pos.old_ad %}{{pos.ad.plain_name|bracket|ljust:"22"}}{%else%}{{pos.ad.plain_name|ljust:"22"}}{%endif%} {{pos|bracketpos:"yes"}}    {{pos|bracketpos:"noobj"}}       {{pos|bracketpos:"discuss"}}    {{pos|bracketpos:"abstain"}}    {{pos|bracketpos:"recuse"}}
 {% endfor %}
 </pre></small>
 
-{% if title1|startswith:"2." %}
+{% if num|startswith:"2." %}
 <p>____ open positions<br>
 [ &nbsp; ] would you like to record a position?</p>
 {% endif %}
@@ -67,14 +68,15 @@ Last call ends: {{ doc.most_recent_ietflc.expires.date|default:"(none)" }}
 {% else %}
 <p>(Ballot not issued)</p>
 {% endif %}
+{% endwith %}
 
-{% if title2|startswith:"3.1" or title2|startswith:"3.2" %}
+{% if num|startswith:"3.1" or num|startswith:"3.2" %}
 <p>Does anyone have an[y further] objection to this document being published as an {{ doc.intended_std_level }} RFC?</p>
 {% endif %}
-{% if title3|startswith:"3.3.1" or title3|startswith:"3.3.2" %}
-<p>Does anyone have an objection to this conflict review response being sent to the {{doc.conflictdoc.stream}}?</p>
+{% if num|startswith:"3.3.1" or num|startswith:"3.3.2" %}
+<p>Does anyone have an objection to this conflict review response being sent to the {{ doc.conflictdoc.stream }}?</p>
 {% endif %}
-{% if title3|startswith:"3.3.3" %}
+{% if num|startswith:"3.3.3" %}
 <p>Who will do the review of this document?</p>
 {% endif %}
 
@@ -82,7 +84,7 @@ Last call ends: {{ doc.most_recent_ietflc.expires.date|default:"(none)" }}
 Next State:<br>
 Sub State: </p>
 
-{% if title3|startswith:"2.1.1" or title3|startswith:"2.1.2" %}
+{% if num|startswith:"2.1.1" or num|startswith:"2.1.2" %}
   <p>If APPROVED - The Secretariat will send a working group
   submission, Protocol Action Announcement.</p>
 
@@ -92,7 +94,7 @@ Sub State: </p>
   AD].</p>
 {% endif %}
 
-{% if title3|startswith:"2.2.1" or title3|startswith:"2.2.2" %}
+{% if num|startswith:"2.2.1" or num|startswith:"2.2.2" %}
   <p>If APPROVED - The Secretariat will send an individual submission,
   Protocol Action Announcement.</p>
 
@@ -102,7 +104,7 @@ Sub State: </p>
   AD].</p>
 {% endif %}
 
-{% if title3|startswith:"2.3.1" or title3|startswith:"2.3.2" %}
+{% if num|startswith:"2.3.1" or num|startswith:"2.3.2" %}
   <p>If APPROVED - The Secretariat will send the associated status change
   Protocol Action Announcements.</p>
 
@@ -112,7 +114,7 @@ Sub State: </p>
   AD].</p>
 {% endif %}
 
-{% if title3|startswith:"3.1.1" or title3|startswith:"3.1.2" %}
+{% if num|startswith:"3.1.1" or num|startswith:"3.1.2" %}
   <p>If APPROVED - The Secretariat will send a working group submission
   Document Action Announcement.</p>
 
@@ -121,7 +123,7 @@ Sub State: </p>
   Ed. Note, IESG, note, etc.] from [Name that AD].</p>
 {% endif %}
 
-{% if title3|startswith:"3.2.1" or title3|startswith:"3.2.2" %}
+{% if num|startswith:"3.2.1" or num|startswith:"3.2.2" %}
   <p>If APPROVED - The Secretariat will send an individual submission
   Document Action Announcement.</p>
 
@@ -130,7 +132,7 @@ Sub State: </p>
   [RFC Ed. Note, IESG, note, etc.] from [Name that AD].</p>
 {% endif %}
 
-{% if title3|startswith:"3.3.1" or title3|startswith:"3.3.2" %}
+{% if num|startswith:"3.3.1" or num|startswith:"3.3.2" %}
   <p>If APPROVED - The Secretariat will send the associated status change
   Document Action Announcements.</p>
 
@@ -139,7 +141,7 @@ Sub State: </p>
   Ed. Note, IESG, note, etc.] from [Name that AD].</p>
 {% endif %}
 
-{% if title3|startswith:"3.4.1" or title3|startswith:"3.4.2" %}
+{% if num|startswith:"3.4.1" or num|startswith:"3.4.2" %}
   <p>If APPROVED - The Secretariat will send a standard no problem
   message to the RFC Editor. [Name of AD] will you supply the text for
   the IESG Note?</p>
@@ -155,12 +157,3 @@ Sub State: </p>
   the Do Not Publish message to the RFC Editor that includes the note
   drafted by[Name the AD].</p>
 {% endif %}
-
-
-{% empty %}
-<h3>{{ title1 }}<br>
-{{ title2 }}<br>
-{{ title3 }}</h3>
-
-<p>NONE</p>
-{% endfor %}

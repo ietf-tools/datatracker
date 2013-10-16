@@ -31,14 +31,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}{% load ietf_filters %}
-{% for doc in section_wgs %}
-<h3>{{ title1 }}<br>
-{{ title2 }}<br>
-{{ title3 }} ({{ forloop.counter }} of {{ section_wgs|length }})</h3>
+<p><b>{{ doc.group.name }} ({{ doc.group.acronym }})</b></p>
 
-<p><b>{{ doc.group.name }} ({{ doc.group.acronym }})<br>
-
-{% if title3|startswith:"4.1.1" %}
+{% if num|startswith:"4.1.1" %}
   <p>Does anyone have an objection to the charter being sent for
   EXTERNAL REVIEW?</p>
 
@@ -52,7 +47,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   * OR Back on the Agenda next time in the same category.</p>
 {% endif %}
 
-{% if title3|startswith:"4.1.2" %}
+{% if num|startswith:"4.1.2" %}
   <p>Does anyone have an objection to the creation of this working
   group?</p>
 
@@ -64,7 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   * OR Wait for instructions from the shepherding AD.</p>
 {% endif %}
 
-{% if title3|startswith:"4.2.1" %}
+{% if num|startswith:"4.2.1" %}
   <p>Does anyone have an objection with just making the changes to the
   charter?</p>
 
@@ -82,7 +77,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   acronym].</p>
 {% endif %}
 
-{% if title3|startswith:"4.2.2" %}
+{% if num|startswith:"4.2.2" %}
 
   <p>Does anyone have an objection to the rechartering of this working
   group?</p>
@@ -94,11 +89,3 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   * Place the charter back on the agenda for the next telechat.<br>
   * OR Wait for instructions from the shepherding AD.</p>
 {% endif %}
-
-{% empty %}
-<h3>{{ title1 }}<br>
-{{ title2 }}<br>
-{{ title3 }}</h3>
-
-<p>NONE</p>
-{% endfor %}

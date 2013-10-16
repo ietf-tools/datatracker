@@ -33,46 +33,47 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}{% comment %}
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endcomment %}<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-{% load ietf_filters %}
-<html><head>
-<title>Moderator Package for {{date}} IESG Telechat</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<style type="text/css">
-h3 { page-break-before:always; }
-@media print {
-html { margin: 0; }
-body { margin: 0; }
-h3 { margin-top: 0; }
-}
-@media screen {
-h3 { border-top: 1px dotted #a0a0a0; padding-top: 1em; }
-}
-</style>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Moderator Package for {{ date }} IESG Telechat</title>
+  <style type="text/css">
+  h3 { page-break-before:always; }
+  @media print {
+    html { margin: 0; }
+    body { margin: 0; }
+    h3 { margin-top: 0; }
+  }
+  @media screen {
+    h3 { border-top: 1px dotted #a0a0a0; padding-top: 1em; }
+  }
+  </style>
 </head>
 <body>
 
-<h1>Moderator Package for {{date}} IESG Telechat</h1>
+{% load ietf_filters %}
+
+<h1>Moderator Package for {{ date }} IESG Telechat</h1>
 
 <p>Generated at {% now "Y-m-d H:i:s T" %}.</p>
 
-<!-- ===================================================================== -->
-<!-- SECTION 1 -->
-<!-- ===================================================================== -->
+{% for num, section in sections %}
+<h3>{% for parent_num, parent_section in section.parents %}{{ parent_num }}{% if parent_num|sectionlevel == 1 %}.{% endif %} {{ parent_section.title }}<br>{% endfor %}{{ num }}{% if num|sectionlevel == 1 %}.{% endif %} {{ section.title }}</h3>
 
-<h3>1. Administrivia<br>1.1 Roll Call</h3>
-
+{% if num == "1.1" %}
 {% filter linebreaks_crlf %}<pre>
-{{ roll_call }}
-</pre>{% endfilter %}
+{{ section.text }}
+</pre>
+{% endfilter %}
+{% endif %}
 
-<h3>1. Administrivia<br>1.2 Bash the Agenda</h3>
-
+{% if num == "1.2" %}
 <p>Does anyone want to add anything NEW to the agenda?</p>
 
 <p>Does anyone have any other changes to the agenda as it stands?</p>
+{% endif %}
 
-<h3>1. Administrivia<br>1.3 Approval of the Minutes of Past Telechats</h3>
-
+{% if num == "1.3" %}
 <p>Does anyone have an objection to the minutes of the __________ IESG
 Teleconference being approved?</p>
 
@@ -82,70 +83,52 @@ teleconference.  The Secretariat will post them in the public archive.</p>
 <p>Are there narrative minutes to approve for today?</p>
 
 {% filter linebreaks_crlf %}<pre>
-{{ minutes }}
-</pre>{% endfilter %}
+{{ section.text }}
+</pre>
+{% endfilter %}
+{% endif %}
 
-<h3>1. Administrivia<br>1.4 List of Remaining Action Items from Last Telechat</h3>
-
+{% if num == "1.4" %}
 {% filter linebreaks_crlf %}<pre>
-{{ action_items }}
-</pre>{% endfilter %}
+{{ section.text }}
+</pre>
+{% endfilter %}
+{% endif %}
 
-<!-- ===================================================================== -->
-<!-- SECTIONS 2+3 -->
-<!-- ===================================================================== -->
+{% if num >= "2" and num < "5" %}
+  {% if "doc" in section %}
+  {% with section.doc as doc %}
+  {% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/moderator_doc.html" %}{% endif %}
+  {% if doc.type_id == "conflrev" %}{% include "iesg/moderator_conflict_doc.html" %}{% endif %}
+  {% if doc.type_id == "charter" %}{% include "iesg/moderator_charter.html" %}{% endif %}
+  {% endwith %}
+  {% else %}
+  <p>NONE</p>
+  {% endif %}
+{% endif %}
 
-{% with "iesg/moderator_doc.html" as doc_template %}
-{% with "iesg/moderator_conflict_doc.html" as doc_conflict_template %}
-{% include "iesg/agenda_outline_23.html" %}
-{% endwith %}
-{% endwith %}
+{% if num >= "6" and num < "7" %}
+  {% if num == "6" %}
+  <p>NONE</p>
+  {% else %}
+  <p>Is there anything that you would like the Secretariat to record in the minutes for this management issue?</p>
 
-<!-- ===================================================================== -->
-<!-- SECTION 4 -->
-<!-- ===================================================================== -->
+  <p>Decision:</p>
 
-{% with "iesg/moderator_wg.html" as wg_template %}
-{% include "iesg/agenda_outline_4.html" %}
-{% endwith %}
+  <p>The management issue was discussed.</p>
 
-<!-- ===================================================================== -->
-<!-- SECTION 5 -->
-<!-- ===================================================================== -->
+  <p>Action Item (if applicable):</p>
+  {% endif %}
+{% endif %}
 
-<h3>5. IAB News We Can Use</h3>
-
-<!-- ===================================================================== -->
-<!-- SECTION 6 -->
-<!-- ===================================================================== -->
-
-{% for m in mgmt %}
-<h3>6. Management Items<br>
-6.{{forloop.counter}} {{m.title}}</h3>
-
-<p>Is there anything that you would like the Secretariat to record in the minutes for this management issue?</p>
-
-<p>Decision:</p>
-
-<p>The management issue was discussed.</p>
-
-<p>Action Item (if applicable):</p>
-
-{% empty %}
-<h3>6. Management Items</h3>
-
-<p>NONE</p>
-{% endfor %}
-
-<!-- ===================================================================== -->
-<!-- SECTION 7 -->
-<!-- ===================================================================== -->
-
-<h3>7. Working Group News</h3>
-
+{% if num == "7" %}
 {% filter linebreaks_crlf %}<pre>
-{% for ad in ads %}[ ] {{ ad.plain_name }}
+{% for ad in section.ads %}[ ] {{ ad.plain_name }}
 {% endfor %}
 </pre>{% endfilter %}
+{% endif %}
 
-</body></html>
+{% endfor %}
+
+</body>
+</html>

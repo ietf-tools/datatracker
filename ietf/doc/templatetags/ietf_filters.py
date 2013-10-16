@@ -476,6 +476,10 @@ def statehelp(state):
     url = urlreverse("state_help", kwargs=dict(type=state.type_id)) + "#" + state.slug
     return mark_safe('<a class="state-help-icon" href="%s" title="%s">?</a>' % (url, tooltip))
 
+@register.filter
+def sectionlevel(section_number):
+    return section_number.count(".") + 1
+
 def _test():
     import doctest
     doctest.testmod()

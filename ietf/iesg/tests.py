@@ -229,10 +229,12 @@ class RescheduleOnAgendaTests(django.test.TestCase):
         r = self.client.post(url, { '%s-telechat_date' % form_id: d.isoformat(),
                                     '%s-clear_returning_item' % form_id: "1" })
 
-        self.assertEquals(r.status_code, 200)
+        self.assertEquals(r.status_code, 302)
 
         # check that it moved below the right header in the DOM on the
         # agenda docs page
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
         d_header_pos = r.content.find("IESG telechat %s" % d.isoformat())
         draft_pos = r.content.find(draft.name)
         self.assertTrue(d_header_pos < draft_pos)

@@ -15,7 +15,7 @@ from ietf.person.models import Person
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.mails import email_ad, email_state_changed
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
-from ietf.iesg.agenda import agenda_data
+from ietf.iesg.agenda import agenda_data, get_doc_section
 
 from forms import *
 import os
@@ -24,8 +24,6 @@ import datetime
 '''
 EXPECTED CHANGES:
 x group pages will be just another doc, charter doc
-x charter docs to discuss will be passed in the 'docs' section of agenda
-x expand get_section_header to include section 4
 x consolidate views (get rid of get_group_header,group,group_navigate)
 
 '''
@@ -49,8 +47,9 @@ def get_doc_list(agenda):
     Document objects in the order they appear in the agenda sections 1-3.
     '''
     docs = []
-    for key in sorted(agenda['docs']):
-        docs.extend(agenda['docs'][key])
+    for num, section in sorted(agenda['sections'].iteritems()):
+        if "docs" in section:
+            docs.extend(section["docs"])
 
     return docs
 
@@ -84,41 +83,29 @@ def get_next_telechat_date():
     '''
     return TelechatDate.objects.filter(date__gte=datetime.date.today()).order_by('date')[0].date
 
-def get_section_header(file,agenda):
+def get_section_header(doc, agenda):
     '''
     This function takes a filename and an agenda dictionary and returns the
-    agenda section header as a string for use in the doc template
+    agenda section header as a list for use in the doc template
     '''
-    h1 = {'2':'Protocol Actions','3':'Document Actions','4':'Working Group Actions'}
-    h2a = {'1':'WG Submissions','2':'Individual Submissions','3':'Status Changes'}
-    h2b = {'1':'WG Submissions','2':'Individual Submissions via AD','3':'Status Changes','4':'IRTF and Independent Submission Stream Documents'}
-    h2c = {'1':'WG Creation','2':'WG Chartering'}
-    h3a = {'1':'New Item','2':'Returning Item','3':'For Action'}
-    h3b = {'1':'Proposed for IETF Review','2':'Proposed for Approval'}
-    h3c = {'1':'Under Evaluation for IETF Review','2':'Proposed for Approval'}
+    num = get_doc_section(doc)
 
-    doc = Document.objects.get(name=file)
+    header = []
 
-    for k,v in agenda['docs'].iteritems():
-        if doc in v:
-            section = k
-            count = '%s of %s' % (v.index(doc) + 1, len(v))
-            break
+    split = num.split(".")
 
-    header = [ '%s %s' % (section[1], h1[section[1]]) ]
-    if section[1] == '2':
-        header.append('%s.%s %s' % (section[1], section[2], h2a[section[2]]))
-    elif section[1] == '4':
-        header.append('%s.%s %s' % (section[1], section[2], h2c[section[2]]))
-    else:
-        header.append('%s.%s %s' % (section[1], section[2], h2b[section[2]]))
-    if section[1] == '4':
-        if section[2] == '1':
-            header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3b[section[3]]))
-        elif section[2] == '2':
-            header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3c[section[3]]))
-    else:
-        header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3a[section[3]]))
+    for i in xrange(num.count(".")):
+        parent_num = ".".join(split[:i + 1])
+        parent = agenda["sections"].get(parent_num)
+        if parent:
+            if "." not in parent_num:
+                parent_num += "."
+            header.append(u"%s %s" % (parent_num, parent["title"]))
+
+    section = agenda["sections"][num]
+    header.append(u"%s %s" % (num, section["title"]))
+
+    count = '%s of %s' % (section["docs"].index(doc) + 1, len(section["docs"]))
     header.append(count)
 
     return header
@@ -127,9 +114,9 @@ def get_first_doc(agenda):
     '''
     This function takes an agenda dictionary and returns the first document in the agenda
     '''
-    for k,v in sorted(agenda['docs'].iteritems()):
-        if v:
-            return v[0]
+    for num, section in sorted(agenda['sections'].iteritems()):
+        if "docs" in section and section["docs"]:
+            return section["docs"][0]
 
     return None
 
@@ -207,7 +194,7 @@ def doc_detail(request, date, name):
 
     BallotFormset = formset_factory(BallotForm, extra=0)
     agenda = agenda_data(request, date=date)
-    header = get_section_header(name,agenda) if name else ''
+    header = get_section_header(doc, agenda)
 
     # nav button logic
     doc_list = get_doc_list(agenda)
@@ -376,17 +363,18 @@ def minutes(request, date):
     This view shows a list of documents that were approved since the last telechat
     '''
     # get the telechat previous to selected one
-    dates = [ t.date for t in TelechatDate.objects.all() ]
     y,m,d = date.split('-')
     current = datetime.date(int(y),int(m),int(d))
-    index = dates.index(current)
-    previous = dates[index + 1]
+
+    previous = TelechatDate.objects.filter(date__lt=current).order_by("-date")[0].date
     events = DocEvent.objects.filter(type='iesg_approved',time__gte=previous,time__lt=current,doc__type='draft')
     docs = [ e.doc for e in events ]
     pa_docs = [ d for d in docs if d.intended_std_level.slug not in ('inf','exp','hist') ]
     da_docs = [ d for d in docs if d.intended_std_level.slug in ('inf','exp','hist') ]
 
     agenda = agenda_data(request, date=date)
+
+    # FIXME: this doesn't show other documents
 
     return render_to_response('telechat/minutes.html', {
         'agenda': agenda,

@@ -2,6 +2,9 @@
 
 import codecs, re, os, datetime
 
+# FIXME: once we're on Python 2.7, replace with: from collections import OrderedDict
+from django.utils.datastructures import SortedDict as OrderedDict
+
 from django.http import Http404
 from django.conf import settings
 
@@ -17,7 +20,8 @@ def get_agenda_date(date=None):
             return datetime.date.today()
     else:
         try:
-            return TelechatDate.objects.active().get(date=datetime.datetime.strptime(date, "%Y-%m-%d").date()).date
+            # FIXME: .active()
+            return TelechatDate.objects.all().get(date=datetime.datetime.strptime(date, "%Y-%m-%d").date()).date
         except (ValueError, TelechatDate.DoesNotExist):
             raise Http404
 
@@ -30,66 +34,125 @@ def get_doc_section(doc):
 
         g = doc.group_acronym()
         if g and str(g) != 'none':
-            s = s + "1"
-        elif (s == "3") and doc.stream_id in ("ise","irtf"):
-            s = s + "3"
+            s += ".1"
+        elif s == "3" and doc.stream_id in ("ise","irtf"):
+            s += ".3"
         else:
-            s = s + "2"
+            s += ".2"
         if doc.get_state_slug() != "rfc" and doc.get_state_slug('draft-iesg') not in ("lc", "writeupw", "goaheadw", "iesg-eva", "defer"):
-            s = s + "3"
+            s += ".3"
         elif doc.returning_item():
-            s = s + "2"
+            s += ".2"
         else:
-            s = s + "1"
+            s += ".1"
+
     elif doc.type_id == 'charter':
-        s = get_wg_section(doc.group)
+        s = "4"
+        if doc.group.state_id in ('active', 'dormant'):
+            s += ".2"
+        else:
+            s += ".1"
+        if doc.get_state_slug() in ('extrev', 'iesgrev'):
+            s += '.2'
+        else:
+            s += '.1'
+
     elif doc.type_id == 'statchg':
         protocol_action = False
         for relation in doc.relateddocument_set.filter(relationship__slug__in=('tops','tois','tohist','toinf','tobcp','toexp')):
             if relation.relationship.slug in ('tops','tois') or relation.target.document.std_level.slug in ('std','ds','ps'):
                 protocol_action = True
         if protocol_action:
-            s="23"
+            s = "2.3"
         else:
-            s="33"
+            s = "3.3"
         if doc.get_state_slug() not in ("iesgeval", "defer", "appr-pr", "appr-pend", "appr-sent"):
-            s = s + "3"
+            s += ".3"
         elif doc.returning_item():
-            s = s + "2"
+            s += ".2"
         else:
-            s = s + "1"
+            s += ".1"
     elif doc.type_id == 'conflrev':
         if doc.get_state('conflrev').slug not in ('adrev','iesgeval','appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent','defer'):
-             s = "343"
+             s = "3.4.3"
         elif doc.returning_item():
-             s = "342"
+             s = "3.4.2"
         else:
-             s = "341"
+             s = "3.4.1"
 
     return s
 
-def get_wg_section(wg):
-    s = ""
-    charter_slug = None
-    if wg.charter:
-        charter_slug = wg.charter.get_state_slug()
-    if wg.state_id in ['active','dormant']:
-        if charter_slug in ['extrev','iesgrev']:
-            s = '422'
-        else:
-            s = '421'
-    else:
-        if charter_slug in ['extrev','iesgrev']:
-            s = '412'
-        else:
-            s = '411'
-    return s
+def agenda_sections():
+    return OrderedDict([
+        ('1', {'title':"Administrivia"}),
+        ('1.1', {'title':"Roll Call"}),
+        ('1.2', {'title':"Bash the Agenda"}),
+        ('1.3', {'title':"Approval of the Minutes of Past Telechats"}),
+        ('1.4', {'title':"List of Remaining Action Items from Last Telechat"}),
+        ('2', {'title':"Protocol Actions"}),
+        ('2.1', {'title':"WG Submissions"}),
+        ('2.1.1', {'title':"New Items", 'docs': []}),
+        ('2.1.2', {'title':"Returning Items", 'docs':[]}),
+        ('2.1.3', {'title':"For Action", 'docs':[]}),
+        ('2.2', {'title':"Individual Submissions"}),
+        ('2.2.1', {'title':"New Items", 'docs':[]}),
+        ('2.2.2', {'title':"Returning Items", 'docs':[]}),
+        ('2.2.3', {'title':"For Action", 'docs':[]}),
+        ('2.3', {'title':"Status Changes"}),
+        ('2.3.1', {'title':"New Items", 'docs':[]}),
+        ('2.3.2', {'title':"Returning Items", 'docs':[]}),
+        ('2.3.3', {'title':"For Action", 'docs':[]}),
+        ('3', {'title':"Document Actions"}),
+        ('3.1', {'title':"WG Submissions"}),
+        ('3.1.1', {'title':"New Items", 'docs':[]}),
+        ('3.1.2', {'title':"Returning Items", 'docs':[]}),
+        ('3.1.3', {'title':"For Action", 'docs':[]}),
+        ('3.2', {'title':"Individual Submissions Via AD"}),
+        ('3.2.1', {'title':"New Items", 'docs':[]}),
+        ('3.2.2', {'title':"Returning Items", 'docs':[]}),
+        ('3.2.3', {'title':"For Action", 'docs':[]}),
+        ('3.3', {'title':"Status Changes"}),
+        ('3.3.1', {'title':"New Items", 'docs':[]}),
+        ('3.3.2', {'title':"Returning Items", 'docs':[]}),
+        ('3.3.3', {'title':"For Action", 'docs':[]}),
+        ('3.4', {'title':"IRTF and Independent Submission Stream Documents"}),
+        ('3.4.1', {'title':"New Items", 'docs':[]}),
+        ('3.4.2', {'title':"Returning Items", 'docs':[]}),
+        ('3.4.3', {'title':"For Action", 'docs':[]}),
+        ('4', {'title':"Working Group Actions"}),
+        ('4.1', {'title':"WG Creation"}),
+        ('4.1.1', {'title':"Proposed for IETF Review", 'docs':[]}),
+        ('4.1.2', {'title':"Proposed for Approval", 'docs':[]}),
+        ('4.2', {'title':"WG Rechartering"}),
+        ('4.2.1', {'title':"Under Evaluation for IETF Review", 'docs':[]}),
+        ('4.2.2', {'title':"Proposed for Approval", 'docs':[]}),
+        ('5', {'title':"IAB News We Can Use"}),
+        ('6', {'title':"Management Issues"}),
+        ('7', {'title':"Working Group News"}),
+        ])
 
-def agenda_docs(date):
-    matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).select_related("stream").distinct()
+def fill_in_agenda_administrivia(date, sections):
+    extra_info_files = (
+        ("1.1", "roll_call", settings.IESG_ROLL_CALL_FILE),
+        ("1.3", "minutes", settings.IESG_MINUTES_FILE),
+        ("1.4", "action_items", settings.IESG_TASK_FILE),
+        )
 
-    docmatches = []
-        
+    for s, key, filename in extra_info_files:
+        try:
+            with codecs.open(filename, 'r', 'utf-8', 'replace') as f:
+                t = f.read().strip()
+        except IOError:
+            t = u"(Error reading %s)" % filename
+
+        sections[s]["text"] = t
+
+def fill_in_agenda_docs(date, sections, matches=None):
+    if not matches:
+        matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date)
+        matches = matches.select_related("stream", "group").distinct()
+
+    docs = []
     for doc in matches:
         if doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
             continue
@@ -112,59 +175,42 @@ def agenda_docs(date):
                 e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
                 if e:
                     doc.consensus = "Yes" if e.consensus else "No"
-        elif doc.type_id=='conflrev':
+        elif doc.type_id == "conflrev":
             doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+        elif doc.type_id == "charter":
+            #if doc.group.state_id not in ("proposed", "active"):
+            #    continue
 
-        docmatches.append(doc)
+            doc.group.txt_link = settings.CHARTER_TXT_URL + "%s-%s.txt" % (doc.canonical_name(), doc.rev)
+
+        num = get_doc_section(doc)
+        if num: #  and num in sections
+            sections[num]["docs"].append(doc)
+
+    # prune empty "For action" sections
+    empty_for_action = [num for num, section in sections.iteritems()
+                        if section["title"] == "For Action" and not section["docs"]]
+    for num in empty_for_action:
+        del sections[num]
 
     # Be careful to keep this the same as what's used in agenda_documents
-    docmatches.sort(key=lambda d: d.balloting_started)
-    
-    res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
-    for k in range(1,4):
-        res['s34%d'%k]=[]
-    for doc in docmatches:
-        section_key = "s" + get_doc_section(doc)
-        if section_key not in res:
-            res[section_key] = []
-        res[section_key].append(doc)
-    return res
+    for s in sections.itervalues():
+        if "docs" in s:
+            s["docs"].sort(key=lambda d: d.balloting_started)
 
-def agenda_wg_actions(date):
-    res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
-    charters = Document.objects.filter(type="charter", docevent__telechatdocevent__telechat_date=date).select_related("group").distinct()
-    charters = charters.filter(group__state__slug__in=["proposed","active"])
-    for c in charters:
-        if c.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
-            continue
-
-        c.group.txt_link = settings.CHARTER_TXT_URL + "%s-%s.txt" % (c.canonical_name(), c.rev)
-
-        section_key = "s" + get_wg_section(c.group)
-        if section_key not in res:
-            res[section_key] = []
-        res[section_key].append(c)
-    return res
-
-def agenda_management_issues(date):
-    return TelechatAgendaItem.objects.filter(type=3).order_by('id')
+def fill_in_agenda_management_issues(date, sections):
+    s = "6.%s"
+    for i, item in enumerate(TelechatAgendaItem.objects.filter(type=3).order_by('id'), start=1):
+        sections[s % i] = { "title": item.title, "text": item.text }
 
 def agenda_data(request, date=None):
     """Return a dict with the different IESG telechat agenda components."""
     date = get_agenda_date(date)
-    docs = agenda_docs(date)
-    mgmt = agenda_management_issues(date)
-    wgs = agenda_wg_actions(date)
-    data = {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs}
-    for key, filename in {'action_items':settings.IESG_TASK_FILE,
-                          'roll_call':settings.IESG_ROLL_CALL_FILE,
-                          'minutes':settings.IESG_MINUTES_FILE}.items():
-        try:
-            f = codecs.open(filename, 'r', 'utf-8', 'replace')
-            text = f.read().strip()
-            f.close()
-            data[key] = text
-        except IOError:
-            data[key] = "(Error reading "+key+")"
-    return data
+    sections = agenda_sections()
+
+    fill_in_agenda_administrivia(date, sections)
+    fill_in_agenda_docs(date, sections)
+    fill_in_agenda_management_issues(date, sections)
+
+    return { 'date': date.isoformat(), 'sections': sections }
 
