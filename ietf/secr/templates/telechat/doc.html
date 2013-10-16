@@ -7,8 +7,8 @@
 {% block subsection %}
 <div id="telechat-content">
 {% if document %}
-    {% if not nav_start %}<a href="./previous/"><< Previous</a>{% endif %}
-    {% if not nav_end %}<span class="right-nav"><a href="./next/">Next >></a></span>{% endif %}
+    {% if not nav_start %}<a href="./previous/">&laquo; Previous</a>{% endif %}
+    {% if not nav_end %}<span class="right-nav"><a href="./next/">Next &raquo;</a></span>{% endif %}
     <br />
     <h3>
       {% for line in header %}
@@ -64,7 +64,7 @@
        
     <a name="writeup"><h2>Ballot Writeup</h2></a>
     <pre>
-    {{ writeup }}
+{{ writeup }}
     </pre>
     
 
