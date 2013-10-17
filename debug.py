@@ -73,7 +73,7 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         ret = fn(*params,**kwargs)
         _report_indent[0] -= increment
         if debug:
-            sys.stderr.write("%s  %s [#%s] ==> %s\n" % (indent, fc, call, repr(ret)))
+            sys.stderr.write("%s  %s [#%s] ==> %s\n" % (indent, fc, call, fix(repr(ret))))
 
         return ret
     wrap.callcount = 0
