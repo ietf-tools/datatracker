@@ -205,7 +205,7 @@ def agenda_info(num=None):
     
     active_agenda = State.objects.get(used=True, type='agenda', slug='active')
     plenary_agendas = Document.objects.filter(session__meeting=meeting, session__slots__type="plenary", type="agenda", ).distinct()
-    plenaryw_agenda = plenaryt_agenda = "The Plenary has not been scheduled"
+    plenaryw_agenda = plenaryt_agenda = "The agenda has not been uploaded yet."
     for agenda in plenary_agendas:
         if active_agenda in agenda.states.all():
             # we use external_url at the moment, should probably regularize
@@ -216,7 +216,7 @@ def agenda_info(num=None):
                 s = f.read()
                 f.close()
             except IOError:
-                 s = "THE AGENDA HAS NOT BEEN UPLOADED YET"
+                 s = "No agenda file found."
 
             if "tech" in agenda.name.lower():
                 plenaryt_agenda = s
