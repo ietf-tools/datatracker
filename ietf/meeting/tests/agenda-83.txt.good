@@ -276,14 +276,3 @@ Maillot         	OPS 	dnsop       	Domain Name System Operations WG
 
 
 ====================================================================
-AREA DIRECTORS
-
-APP  Applications Area   Pete Resnick/Qualcomm Incorporated & Barry Leiba/IBM Research
-GEN  General Area        Russ Housley/Vigil Security, LLC
-INT  Internet Area       Ralph Droms/Cisco Systems & Brian Haberman/
-OPS  Operations and Man  Ronald Bonica/Juniper Networks & Benoit Claise/
-RAI  Real-time Applicat  Gonzalo Camarillo/Ericsson & Robert Sparks/Tekelec
-RTG  Routing Area        Stewart Bryant/Cisco Systems & Adrian Farrel/
-SEC  Security Area       Stephen Farrell/Trinity College Dublin & Sean Turner/International Electronic Communication Analysts
-TSV  Transport Area      Wesley Eddy/ & Martin Stiemerling/
-
