@@ -249,9 +249,10 @@ class TimeSlot(models.Model):
 
     @property
     def session(self):
-        sessions = self.sessions.filter(scheduledsession__schedule=self.meeting.agenda)
-        session = sessions.get() if sessions.count() == 1 else None
-        return session
+        if not hasattr(self, "_session_cache"):
+            sessions = self.sessions.filter(scheduledsession__schedule=self.meeting.agenda)
+            self._session_cache = sessions.get() if sessions.count() == 1 else None
+        return self._session_cache
 
     @property
     def time_desc(self):
