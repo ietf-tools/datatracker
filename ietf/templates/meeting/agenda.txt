@@ -24,7 +24,4 @@
 {% else %}{% for session in slot.sessions %}{{ slot.time_desc }}  {{ session.acronym_name }} - {{ session.room_id.room_name }}
 {% endfor %}{% endif %}{% endfor %}
 ====================================================================
-AREA DIRECTORS
-{% regroup ads by area as grouped %}{% for ad in grouped %}
-{{ ad.grouper|upper|ljust:5 }}{{ ad.list.0.area.area_acronym.name|slice:":18"|ljust:18 }}  {% for ad_person in ad.list %}{% ifequal forloop.counter 2 %} & {% endifequal %}{{ ad_person.person }}/{{ ad_person.person.affiliation }}{% endfor %}{% endfor %}
 {% endautoescape %}
