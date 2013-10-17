@@ -5,6 +5,8 @@ from django.conf import settings
 from ietf.utils.proxy import TranslatingManager
 from models import *
 
+import debug
+
 class MeetingProxy(Meeting):
     objects = TranslatingManager(dict(meeting_num="number"), always_filter=dict(type="ietf"))
                                       
@@ -189,10 +191,9 @@ class MeetingTimeProxy(TimeSlot):
     def __str__(self):
 	return "[%s] |%s| %s" % (self.meeting.number, self.time.strftime('%A'), self.time_desc)
     def sessions(self):
-        if not hasattr(self, "sessions_cache"):
-            self.sessions_cache = WgMeetingSessionProxy.objects.filter(meeting=self.meeting, time=self.time, type__in=("session", "plenary", "other")).exclude(type="session", sessions=None)
-
-        return self.sessions_cache
+        if not hasattr(self, "_sessions_cache"):
+            self._sessions_cache = WgMeetingSessionProxy.objects.filter(meeting=self.meeting, time=self.time, type__in=("session", "plenary", "other"), scheduledsession__schedule=self.meeting.agenda, sessions__isnull=False)
+        return self._sessions_cache
     def sessions_by_area(self):
         return [ {"area":session.area()+session.acronym(), "info":session} for session in self.sessions() ]
     def meeting_date(self):
