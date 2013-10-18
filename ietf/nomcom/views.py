@@ -31,10 +31,8 @@ from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
 from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates
 from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
                                get_hash_nominee_position, send_reminder_to_nominees,
-                               HOME_TEMPLATE, NOMINEE_REMINDER_TEMPLATE)
+                               HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE)
 from ietf.ietfauth.utils import role_required
-
-import debug
 
 def index(request):
     nomcom_list = Group.objects.filter(type__slug='nomcom').order_by('acronym')
@@ -166,11 +164,27 @@ def private_index(request, year):
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
-def send_reminder_mail(request, year):
+def send_reminder_mail(request, year, type):
     nomcom = get_nomcom_by_year(year)
-    nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().filter(nomineeposition__state='pending').distinct()
     nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
-    mail_path = nomcom_template_path + NOMINEE_REMINDER_TEMPLATE
+
+    if type=='accept':
+        interesting_state = 'pending'
+        mail_path = nomcom_template_path + NOMINEE_ACCEPT_REMINDER_TEMPLATE
+        reminder_description = 'accept (or decline) a nomination'
+        selected_tab = 'send_accept_reminder'
+    elif type=='questionnaire':
+        interesting_state = 'accepted'
+        mail_path = nomcom_template_path + NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE
+        reminder_description = 'complete the questionnaire for a nominated position'
+        selected_tab = 'send_questionnaire_reminder'
+    else:
+        raise Http404
+
+    nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().filter(nomineeposition__state=interesting_state).distinct()
+    annotated_nominees = list(nominees)
+    for nominee in annotated_nominees:
+        nominee.interesting_positions = [x.position.name for x in nominee.nomineeposition_set.all() if x.state.slug==interesting_state]
     mail_template = DBTemplate.objects.filter(group=nomcom.group, path=mail_path)
     mail_template = mail_template and mail_template[0] or None
     message = None
@@ -179,16 +193,21 @@ def send_reminder_mail(request, year):
         selected_nominees = request.POST.getlist('selected')
         selected_nominees = nominees.filter(id__in=selected_nominees)
         if selected_nominees:
-            send_reminder_to_nominees(selected_nominees)
-            message = ('success', 'An query has been sent to each person, asking them to accept (or decline) the nominations')
+            addrs = send_reminder_to_nominees(selected_nominees,type)
+            if addrs:
+                message = ('success', 'A copy of "%s" has been sent to %s'%(mail_template.title,", ".join(addrs)))
+            else:
+                message = {'warning', 'No messages were sent.'}
         else:
-            message = ('warning', "Please, select some nominee")
+            message = ('warning', "Please, select at least one nominee")
     return render_to_response('nomcom/send_reminder_mail.html',
                               {'nomcom': nomcom,
                                'year': year,
-                               'nominees': nominees,
+                               'nominees': annotated_nominees,
                                'mail_template': mail_template,
-                               'selected': 'send_reminder_mail',
+                               'selected': selected_tab,
+                               'reminder_description': reminder_description,
+                               'state_description': NomineePositionState.objects.get(slug=interesting_state).name,
                                'message': message}, RequestContext(request))
 
 

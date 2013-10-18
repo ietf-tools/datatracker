@@ -19,7 +19,8 @@
     {% if user|is_chair:year %} |
       {% if selected == "feedback_pending" %}<span class="selected">Pending Feedback</span>{% else %}<a href="{% url nomcom_view_feedback_pending year %}">Pending Feedback</a>{% endif %} |
       {% if selected == "feedback_email" %}<span class="selected">Enter Email Feedback</span>{% else %}<a href="{% url nomcom_private_feedback_email year %}">Enter Email Feedback</a>{% endif %} |
-      {% if selected == "send_reminder_mail" %}<span class="selected">Send Reminder</span>{% else %}<a href="{% url nomcom_send_reminder_mail year %}">Send Reminder</a>{% endif %} 
+      {% if selected == "send_accept_reminder" %}<span class="selected">Send Accept Reminder</span>{% else %}<a href="{% url nomcom_send_reminder_mail year "accept" %}">Send Accept Reminder</a>{% endif %} |
+      {% if selected == "send_questionnaire_reminder" %}<span class="selected">Send Questionnaire Reminder</span>{% else %}<a href="{% url nomcom_send_reminder_mail year "questionnaire" %}">Send Questionnaire Reminder</a>{% endif %} 
     {% endif %}
     </div>
     {% if user|is_chair:year %}

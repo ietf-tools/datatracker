@@ -96,8 +96,8 @@ $position: Position</field>
 </field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
-    <object p="8" model="dbtemplate.dbtemplate">
-        <field type="CharField" name="path">/nomcom/defaults/email/nomination_reminder.txt</field>
+    <object pk="8" model="dbtemplate.dbtemplate">
+        <field type="CharField" name="path">/nomcom/defaults/email/nomination_accept_reminder.txt</field>
         <field type="CharField" name="title">Email sent to nominees asking them to accept (or decline) the nominations.</field>
         <field type="TextField" name="variables">$positions: Nomination positions</field>
         <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
@@ -114,7 +114,7 @@ If you accept, you will need to fill out a questionnaire.
 Best regards,</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
-    <object p="9" model="dbtemplate.dbtemplate">
+    <object pk="9" model="dbtemplate.dbtemplate">
         <field type="CharField" name="path">/nomcom/defaults/email/nomination_receipt.txt</field>
         <field type="CharField" name="title">Email sent to nominator to get a confirmation mail containing feedback in cleartext</field>
         <field type="TextField" name="variables">$nominee: Full name of the nominee
@@ -137,7 +137,7 @@ $comments
 Thank you,</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
-    <object p="10" model="dbtemplate.dbtemplate">
+    <object pk="10" model="dbtemplate.dbtemplate">
         <field type="CharField" name="path">/nomcom/defaults/email/feedback_receipt.txt</field>
         <field type="CharField" name="title">Email sent to feedback author to get a confirmation mail containing feedback in cleartext</field>
         <field type="TextField" name="variables">$nominee: Full name of the nominee
@@ -156,6 +156,20 @@ $comments
 --------------------------------------------------------------------------
 
 Thank you,</field>
+        <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="11" model="dbtemplate.dbtemplate">
+        <field type="CharField" name="path">/nomcom/defaults/email/questionnaire_reminder.txt</field>
+        <field type="CharField" name="title">Email sent to nominees reminding them to complete a questionnaire</field>
+        <field type="TextField" name="variables">$positions: Nomination positions</field>
+        <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
+        <field type="TextField" name="content">
+Thank you for accepting your nomination for the position of $position.
+
+Please remember to complete and return the questionnaire for this position at your earliest opportunity.
+The questionaire is repeated below for your convenience.
+
+--------</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
 </django-objects>
