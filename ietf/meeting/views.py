@@ -664,7 +664,7 @@ def ical_agenda(request, num=None, name=None):
         Q(type__name__in = include_types) |
         Q(sessions__group__acronym__in = filter) |
         Q(sessions__group__parent__acronym__in = filter)
-        ).exclude(Q(sessions__group__acronym__in = exclude))
+        ).exclude(Q(sessions__group__acronym__in = exclude)).distinct()
         #.exclude(Q(session__group__isnull = False),
         #Q(session__group__acronym__in = exclude) | 
         #Q(session__group__parent__acronym__in = exclude))
