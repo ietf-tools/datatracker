@@ -661,6 +661,10 @@ ul.session-buttons {
     list-style-type: circle;
 }
 
+#telechat-sidebar ul.doc-list {
+    margin-bottom: 0.8em;
+}
+
 ul.doc-list li {
     list-style-type: circle;
 }
@@ -683,6 +687,18 @@ ul.doc-list li {
 
 #telechat-sidebar li.level1 {
     font-size: 110%;
+}
+
+#telechat-sidebar li.level3 + li.level2 {
+    margin-top: 1em;
+}
+
+#telechat-sidebar li.level3 + li.level1 {
+    margin-top: 1.5em;
+}
+
+#telechat-sidebar li div {
+    font-style: italic;
 }
 
 #telechat-positions-table td {
