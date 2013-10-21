@@ -143,7 +143,7 @@ class Position(models.Model):
     requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True, editable=False)
     questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True, editable=False)
     is_open = models.BooleanField(verbose_name='Is open')
-    incumbent = models.ForeignKey(Email)
+    incumbent = models.ForeignKey(Email, null=True, blank=True)
 
     objects = PositionManager()
 
