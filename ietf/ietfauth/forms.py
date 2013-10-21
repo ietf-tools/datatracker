@@ -15,7 +15,7 @@ from ietf.person.models import Person, Email
 
 class RegistrationForm(forms.Form):
 
-    email = forms.EmailField(label="Your email")
+    email = forms.EmailField(label="Your email (lowercase)")
     realm = 'IETF'
     expire = 3
 
@@ -45,6 +45,8 @@ class RegistrationForm(forms.Form):
         email = self.cleaned_data.get('email', '')
         if not email:
             return email
+        if email.lower() != email:
+            raise forms.ValidationError(_('The supplied address contained uppercase letters.  Please use a lowercase email address.'))
         if User.objects.filter(username=email).count():
             raise forms.ValidationError(_('An account with the email address you provided already exists.'))
         return email
