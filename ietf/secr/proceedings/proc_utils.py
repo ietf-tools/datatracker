@@ -14,7 +14,7 @@ from itertools import chain
 from ietf.secr.proceedings.models import Registration
 from ietf.secr.utils.document import get_rfc_num
 from ietf.secr.utils.group import groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_material
+from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_material, get_session
 from models import InterimMeeting    # proxy model
 
 from urllib2 import urlopen
@@ -32,7 +32,8 @@ def mycomp(timeslot):
     This takes a timeslot object and returns a key to sort by the area acronym or None
     '''
     try:
-        group = timeslot.session.group
+        session = get_session(timeslot)
+        group = session.group
         key = '%s:%s' % (group.parent.acronym, group.acronym)
     except AttributeError:
         key = None
@@ -528,7 +529,7 @@ def gen_research(context):
 def gen_training(context):
     meeting = context['meeting']
     timeslots = context['others']
-    sessions = [ t.session for t in timeslots ]
+    sessions = [ get_session(t) for t in timeslots ]
     for counter,session in enumerate(sessions, start=1):
         slides = session.materials.filter(type='slides')
         minutes = session.materials.filter(type='minutes')
