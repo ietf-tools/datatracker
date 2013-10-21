@@ -41,7 +41,8 @@ class Migration(DataMigration):
 
              Decline: http://$domain$decline_url
 
-             If you accept, you will receive a questionnaire for the position in a subsequent email.
+             If you accept, you will receive a questionnaire for the position in a
+             subsequent email.
 
              Best Regards,
              """)
@@ -60,10 +61,14 @@ class Migration(DataMigration):
 
         template = DBTemplate.objects.get(group=None,title__startswith="Header of the email that contains")
         template.content = textwrap.dedent("""\
-            Hi $nominee, this is the questionnaire for the position $position.  
-            Please follow the directions in the questionnaire closely - you may see that some changes have been made from previous years, so please take note.
+            Hi $nominee, this is the questionnaire for the position $position.
+            Please follow the directions in the questionnaire closely - you may see
+            that some changes have been made from previous years, so please take note.
 
-            We look forward to reading your questionnaire response!  If you have any administrative questions, please send mail to nomcom-chair@ietf.org.  Thank you!
+            We look forward to reading your questionnaire response!  If you have any
+            administrative questions, please send mail to nomcom-chair@ietf.org.
+
+            Thank you!
         """)
         template.save()
 
@@ -78,7 +83,8 @@ class Migration(DataMigration):
 
              Decline: http://$domain$decline_url
 
-             If you accept, you will receive a questionnaire for the position in a subsequent email.
+             If you accept, you will receive a questionnaire for the position in a
+             subsequent email.
 
              Best Regards,
         """)
