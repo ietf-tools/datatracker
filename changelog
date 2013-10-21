@@ -1,3 +1,99 @@
+ietfdb (4.81) ietf; urgency=medium
+
+  * Merged in branch/amsl/1.50@6388 from rcross@amsl.com, with secretariat
+    tool announcement fixes, permission fixes, and agenda database schema
+    fixes.
+
+  * Required logins to be all-lowercase.  This was prompted by repeated
+    trouble with people registering non-lowercase logins, then trying to log
+    in with all-lowercase, or vice versa.
+
+  * Merged [6465] and [6466] from rjsparks@nostrum.com:
+
+    Added the ability to send reminders to complete questionnaires to nominees
+    in the accepted state.  Changed the send_reminders management command to
+    not take any arguments and run against all active nomcoms.  Removed bugs
+    from the send_reminders management command and added tests for it.
+    Adjusted several dbtemplate titles and content.  Fixes bug 1157
+
+  * Merged [6468] and [6469] from ejimenez@yaco.es:
+
+    Now a Nomcom incumbent can be set to None for positions. Fixes #1156.
+
+  * Let Timeslot.session() Return the first session, rather than none, for
+    timeslots with multiple associated sessions for the public schedule.
+
+  * Made the timeslots sent to the agenda.ics and agenda.txt template
+    distinct, to avoid duplicate agenda items.  Fixes issue #1155.
+
+  * Added caching for the somewhat costly TimeSlot.session() method/property.
+    This speeds up text agenda generation using the legacy template
+    substantially.
+
+  * Tweaked the strings displayed when a plenary agenda cannot be shown.
+
+  * Changed the select statement in MeetingProxy.sessions() to produce correct
+    results for the official agenda, and filter out timeslot entries without
+    scheduled sessions.
+
+  * Remove the AD information from the text agenda until we fix the database
+    so that it displays consistently correctly for past meetings.
+
+  * Reverted to release 4.72 versions of several functions and methods,
+    starting with agenda_info() and the view functions that use it.  Also
+    changed meeting/tests/agenda.py to accept matching return values.
+    Reverted old supporting models and proxy models to 4.72 versions, too, in
+    meeting/proxy.py and proceedings/models.py.  Updated the proxy models
+    which rely on TimeSlot to work properly with the m2m sessions field, and
+    adjusted some other functions, such as session_agenda() to also understand
+    the m2m sessions field (and its reverse).  Added an understanding of the
+    "bof-conc" state to the code which returns 'BOF' or 'WG' for agenda
+    templates.
+
+  * Reverted to release 4.72 versions of txt, ics, and csv agendas, with minor
+    tweaks.
+
+  * Improved the test suite with improved diff tests for retrieved urltest
+    files.  A number of other test tweaks and enhancements, including several
+    known-good master files to diff generated pages against.
+
+  * Cleanup action: replaced the noTable block construct with start/end
+    table_content blocks in order to not have to open and close tables in
+    different blocks, and not have empty tables lying about.
+
+  * Reinstated the release 4.72 get_agenda_info() as legacy_get_agenda_info(),
+    and tweaked it to work with the new Timeslot model's sessions field.
+    Reverted the html agenda view code to use legacy_get_agenda_info(), based
+    on the release 4.72 code.  This is a fix to display the html agenda for
+    now, and will need more cleanup, but this should be done without
+    introducing scheduledsession instances to the template.
+
+  * Added a property method to return what the 'session' field used to return,
+    but based on the 'sessions' m2m field filtered with the meeting agenda.
+    This is right for the main meeting agenda, but not for personal schedule
+    layouts, so this isn't a final fix.
+
+  * Reverted html agenda templates to release 4.72 state, except for a jquery
+    version change and moving inline weekview javascript to a separate file.
+
+  * Changed the WG edit form so that once an acronym has been set, the acronym
+    field is read-only; also changed the form validation to not permit changes
+    to an existing acronym.
+
+  * Changed NOMCOM_FROM_EMAIL to be the Nomcom chair instead of the
+    secretariat. Fixes issue #1152.
+
+  * Merged [6413] from rjsparks@nostrum.com: Removed redundant call to
+    not_duplicated from the nomcom/private_index template.  It was already
+    applied in the view, and interacted badly with the list comprehension
+    method of filtering for NomineePositions that had associated questionnaire
+    responses.  Fixes bug 1151.
+
+  * Added Ryan to the admin list so he'll get 500 notifications.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com> 21 Oct 2013 22:58:26 +0200
+
+
 ietfdb (4.80) ietf; urgency=high
 
   This is a major release which provides the code drop from phase 3 of the
