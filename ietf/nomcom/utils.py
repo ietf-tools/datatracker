@@ -32,7 +32,8 @@ HOME_TEMPLATE = 'home.rst'
 INEXISTENT_PERSON_TEMPLATE = 'email/inexistent_person.txt'
 NOMINEE_EMAIL_TEMPLATE = 'email/new_nominee.txt'
 NOMINATION_EMAIL_TEMPLATE = 'email/new_nomination.txt'
-NOMINEE_REMINDER_TEMPLATE = 'email/nomination_reminder.txt'
+NOMINEE_ACCEPT_REMINDER_TEMPLATE = 'email/nomination_accept_reminder.txt'
+NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE = 'email/questionnaire_reminder.txt'
 NOMINATION_RECEIPT_TEMPLATE = 'email/nomination_receipt.txt'
 FEEDBACK_RECEIPT_TEMPLATE = 'email/feedback_receipt.txt'
 
@@ -40,7 +41,8 @@ DEFAULT_NOMCOM_TEMPLATES = [HOME_TEMPLATE,
                             INEXISTENT_PERSON_TEMPLATE,
                             NOMINEE_EMAIL_TEMPLATE,
                             NOMINATION_EMAIL_TEMPLATE,
-                            NOMINEE_REMINDER_TEMPLATE,
+                            NOMINEE_ACCEPT_REMINDER_TEMPLATE,
+                            NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE,
                             NOMINATION_RECEIPT_TEMPLATE,
                             FEEDBACK_RECEIPT_TEMPLATE]
 
@@ -107,7 +109,7 @@ def initialize_questionnaire_for_position(position):
         content=header_template.content)
     questionnaire = DBTemplate.objects.create(
         group=position.nomcom.group,
-        title=template.title + '[%s]' % position.name,
+        title=template.title + ' [%s]' % position.name,
         path='/nomcom/' + position.nomcom.group.acronym + '/' + str(position.id) + '/' + QUESTIONNAIRE_TEMPLATE,
         variables=template.variables,
         type_id=template.type_id,
@@ -191,15 +193,15 @@ def validate_public_key(public_key):
     return (not error, error)
 
 
-def send_reminder_to_nominee(nominee_position):
+def send_accept_reminder_to_nominee(nominee_position):
     today = datetime.date.today().strftime('%Y%m%d')
-    subject = 'IETF Nomination Information'
+    subject = 'Reminder: please accept (or decline) your nomination.'
     from_email = settings.NOMCOM_FROM_EMAIL
     domain = Site.objects.get_current().domain
     position = nominee_position.position
     nomcom = position.nomcom
     nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
-    mail_path = nomcom_template_path + NOMINEE_REMINDER_TEMPLATE
+    mail_path = nomcom_template_path + NOMINEE_ACCEPT_REMINDER_TEMPLATE
     nominee = nominee_position.nominee
     to_email = nominee.email.address
 
@@ -229,11 +231,42 @@ def send_reminder_to_nominee(nominee_position):
     body += '\n\n%s' % render_to_string(path, context)
     send_mail_text(None, to_email, from_email, subject, body)
 
+def send_questionnaire_reminder_to_nominee(nominee_position):
+    today = datetime.date.today().strftime('%Y%m%d')
+    subject = 'Reminder: please complete the Nomcom questionnaires for your nomination.'
+    from_email = settings.NOMCOM_FROM_EMAIL
+    domain = Site.objects.get_current().domain
+    position = nominee_position.position
+    nomcom = position.nomcom
+    nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
+    mail_path = nomcom_template_path + NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE
+    nominee = nominee_position.nominee
+    to_email = nominee.email.address
 
-def send_reminder_to_nominees(nominees):
-    for nominee in nominees:
-        for nominee_position in nominee.nomineeposition_set.pending():
-            send_reminder_to_nominee(nominee_position)
+    hash = get_hash_nominee_position(today, nominee_position.id)
+
+    context = {'nominee': nominee,
+               'position': position,
+               'domain': domain,
+               }
+    body = render_to_string(mail_path, context)
+    path = '%s%d/%s' % (nomcom_template_path, position.id, QUESTIONNAIRE_TEMPLATE)
+    body += '\n\n%s' % render_to_string(path, context)
+    send_mail_text(None, to_email, from_email, subject, body)
+
+def send_reminder_to_nominees(nominees,type):
+    addrs = []
+    if type=='accept':
+        for nominee in nominees:
+            for nominee_position in nominee.nomineeposition_set.pending():
+                send_accept_reminder_to_nominee(nominee_position)
+                addrs.append(nominee_position.nominee.email.address)
+    elif type=='questionnaire':
+        for nominee in nominees:
+            for nominee_position in nominee.nomineeposition_set.accepted():
+                send_questionnaire_reminder_to_nominee(nominee_position)
+                addrs.append(nominee_position.nominee.email.address)
+    return addrs
 
 
 def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, author):

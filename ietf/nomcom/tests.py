@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import tempfile
+import datetime
 
 from ietf.utils import TestCase
 from django.db import IntegrityError
@@ -9,6 +10,7 @@ from django.core.files import File
 from django.contrib.formtools.preview import security_hash
 
 from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.mail import outbox
 
 
 from ietf.person.models import Email, Person
@@ -20,7 +22,8 @@ from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionState, Feedback, FeedbackType, \
                                Nomination
 from ietf.nomcom.forms import EditChairForm, EditMembersForm
-from ietf.nomcom.utils import get_nomcom_by_year
+from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee
+from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 
 
 class NomcomViewsTest(TestCase):
@@ -653,3 +656,63 @@ class FeedbackTest(TestCase):
 
         os.unlink(self.privatekey_file.name)
         os.unlink(self.cert_file.name)
+
+class ReminderCommandTest(TestCase):
+    perma_fixtures = ['names', 'nomcom_templates']
+
+    def setUp(self):
+        nomcom_test_data()
+        self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
+
+        gen = Position.objects.get(nomcom=self.nomcom,name='GEN')
+        rai = Position.objects.get(nomcom=self.nomcom,name='RAI')
+        iab = Position.objects.get(nomcom=self.nomcom,name='IAB')
+
+        today = datetime.date.today()
+        t_minus_3 = today - datetime.timedelta(days=3)
+        t_minus_4 = today - datetime.timedelta(days=4)
+        n = get_or_create_nominee(self.nomcom,"Nominee 1","nominee1@example.org",gen,None)
+        np = n.nomineeposition_set.get(position=gen)
+        np.time = t_minus_3
+        np.save()
+        n = get_or_create_nominee(self.nomcom,"Nominee 1","nominee1@example.org",iab,None)
+        np = n.nomineeposition_set.get(position=iab)
+        np.state = NomineePositionState.objects.get(slug='accepted')
+        np.time = t_minus_3
+        np.save()
+        n = get_or_create_nominee(self.nomcom,"Nominee 2","nominee2@example.org",rai,None)
+        np = n.nomineeposition_set.get(position=rai)
+        np.time = t_minus_4
+        np.save()
+
+    def test_is_time_to_send(self):
+        self.nomcom.reminder_interval = 4
+        today = datetime.date.today()
+        self.assertTrue(is_time_to_send(self.nomcom,today+datetime.timedelta(days=4),today))
+        for delta in range(4):
+            self.assertFalse(is_time_to_send(self.nomcom,today+datetime.timedelta(days=delta),today))
+        self.nomcom.reminder_interval = None
+        self.assertFalse(is_time_to_send(self.nomcom,today,today))
+        self.nomcom.reminderdates_set.create(date=today)
+        self.assertTrue(is_time_to_send(self.nomcom,today,today))
+
+    def test_command(self):
+        c = Command()
+        messages_before=len(outbox)
+        self.nomcom.reminder_interval = 3
+        self.nomcom.save()
+        c.handle(None,None)
+        self.assertEqual(len(outbox), messages_before + 2)
+        self.assertTrue('nominee1@example.org' in outbox[-1]['To'])
+        self.assertTrue('please complete' in outbox[-1]['Subject'])
+        self.assertTrue('nominee1@example.org' in outbox[-2]['To'])
+        self.assertTrue('please accept' in outbox[-2]['Subject'])
+        messages_before=len(outbox)
+        self.nomcom.reminder_interval = 4
+        self.nomcom.save()
+        c.handle(None,None)
+        self.assertEqual(len(outbox), messages_before + 1)
+        self.assertTrue('nominee2@example.org' in outbox[-1]['To'])
+        self.assertTrue('please accept' in outbox[-1]['Subject'])
+ 
+     

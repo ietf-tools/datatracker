@@ -1,18 +1,15 @@
 {% extends "nomcom/nomcom_private_base.html" %}
+{% load ietf_filters %}
 
-{% block subtitle %} - Send reminder emails {% endblock %}
+{% block subtitle %} - Send reminder messages {% endblock %}
 
 {% block nomcom_content %}
 
-<h2>Request nomination acceptance from the listed nominees</h2>
+<h2>Send a message to the selected nominees reminding them to {{reminder_description}}</h2>
 
-<p>
-An query will be sent to each person, asking them to accept (or decline) the nomination.
+<p>These are the nominees that are in the '{{state_description}}' state for the listed positions. </p>
 
-The list has been pre-populated with the selected list of nominees
-
-The message that will be sent is shown below the address entry form.
-</p>
+<p>The message that will be sent is shown below the list of nominees. </p>
 
 <form method="post" action="">
   <h3>Nominees who have not responded</h2>
@@ -31,7 +28,7 @@ The message that will be sent is shown below the address entry form.
   <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
     <td><input class="batch-select" type="checkbox" value="{{ nominee.id }}" name="selected" checked="checked"/></td>
     <td>{{ nominee }}</td>
-    <td>{% for nominee_position in nominee.nomineeposition_set.all %}{% ifequal nominee_position.state.slug "pending" %} {{ nominee_position.position.name }}, {% endifequal %}{% endfor %}</td>
+    <td>{{nominee.interesting_positions|join:", "}}</td>
   </tr>
   {% endfor %}
   </table>
@@ -46,6 +43,6 @@ The message that will be sent is shown below the address entry form.
 
 <p>The message that will be sent is as follows: {% if mail_template %}<a href="{% url nomcom_edit_template year mail_template.id %}">(Edit the message)</a>{% endif %}</p>
 
-{% include mail_template.path %}
+<pre>{{ mail_template.content|wrap_text:80|escape }}</pre>
 
 {% endblock %}

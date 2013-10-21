@@ -1,5 +1,6 @@
 from django.conf.urls.defaults import patterns, url
-from django.views.generic.simple import direct_to_template
+from django.views.generic.simple import direct_to_template, redirect_to
+from ietf.utils.lazy import reverse_lazy
 from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, \
                               EditMembersForm, EditMembersFormPreview
 
@@ -17,7 +18,8 @@ urlpatterns = patterns('ietf.nomcom.views',
     url(r'^(?P<year>\d{4})/private/view-feedback/nominee/(?P<nominee_id>\d+)$', 'view_feedback_nominee', name='nomcom_view_feedback_nominee'),
     url(r'^(?P<year>\d{4})/private/edit/nominee/(?P<nominee_id>\d+)$', 'edit_nominee', name='nomcom_edit_nominee'),
     url(r'^(?P<year>\d{4})/private/merge/$', 'private_merge', name='nomcom_private_merge'),
-    url(r'^(?P<year>\d{4})/private/send-reminder-mail/$', 'send_reminder_mail', name='nomcom_send_reminder_mail'),
+#    url(r'^(?P<year>\d{4})/private/send-reminder-mail/$', redirect_to, { 'url': reverse_lazy('nomcom_send_reminder_mail',kwargs={'year':year,'type':'accept'})}),
+    url(r'^(?P<year>\d{4})/private/send-reminder-mail/(?P<type>\w+)/$', 'send_reminder_mail', name='nomcom_send_reminder_mail'),
     url(r'^(?P<year>\d{4})/private/edit-members/$', EditMembersFormPreview(EditMembersForm), name='nomcom_edit_members'),
     url(r'^(?P<year>\d{4})/private/edit-chair/$', EditChairFormPreview(EditChairForm), name='nomcom_edit_chair'),
     url(r'^(?P<year>\d{4})/private/edit-nomcom/$', 'edit_nomcom', name='nomcom_edit_nomcom'),
