@@ -9,7 +9,7 @@ def pipe(cmd, str=None):
         bufsize = len(str)
 
     pipe = Popen(cmd, True, bufsize)
-    if str:
+    if not str is None:
         pipe.tochild.write(str)
         pipe.tochild.close()
 
