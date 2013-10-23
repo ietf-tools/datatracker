@@ -33,6 +33,13 @@ class NomineePositionQuerySet(QuerySet):
     def not_duplicated(self):
         return self.filter(nominee__duplicated__isnull=True)
 
+    def with_questionnaire_response(self):
+        return self.filter(nominee__feedback__type='questio',nominee__feedback__positions=models.F('position')).distinct()
+
+    def without_questionnaire_response(self):
+        with_ids = self.with_questionnaire_response().values_list('id', flat=True)
+        return self.exclude(id__in=with_ids)
+
 
 class NomineePositionManager(models.Manager, MixinManager):
     def get_query_set(self):

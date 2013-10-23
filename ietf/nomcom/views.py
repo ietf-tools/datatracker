@@ -173,18 +173,26 @@ def send_reminder_mail(request, year, type):
         mail_path = nomcom_template_path + NOMINEE_ACCEPT_REMINDER_TEMPLATE
         reminder_description = 'accept (or decline) a nomination'
         selected_tab = 'send_accept_reminder'
+        state_description = NomineePositionState.objects.get(slug=interesting_state).name
     elif type=='questionnaire':
         interesting_state = 'accepted'
         mail_path = nomcom_template_path + NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE
         reminder_description = 'complete the questionnaire for a nominated position'
         selected_tab = 'send_questionnaire_reminder'
+        state_description =  NomineePositionState.objects.get(slug=interesting_state).name+' but no questionnaire has been received'
     else:
         raise Http404
 
     nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().filter(nomineeposition__state=interesting_state).distinct()
-    annotated_nominees = list(nominees)
-    for nominee in annotated_nominees:
-        nominee.interesting_positions = [x.position.name for x in nominee.nomineeposition_set.all() if x.state.slug==interesting_state]
+    annotated_nominees = []
+    for nominee in nominees:
+        if type=='accept':
+            nominee.interesting_positions = [x.position.name for x in nominee.nomineeposition_set.pending()]
+        else:
+            nominee.interesting_positions = [x.position.name for x in nominee.nomineeposition_set.accepted().without_questionnaire_response()]
+        if nominee.interesting_positions:
+            annotated_nominees.append(nominee)
+
     mail_template = DBTemplate.objects.filter(group=nomcom.group, path=mail_path)
     mail_template = mail_template and mail_template[0] or None
     message = None
@@ -197,7 +205,7 @@ def send_reminder_mail(request, year, type):
             if addrs:
                 message = ('success', 'A copy of "%s" has been sent to %s'%(mail_template.title,", ".join(addrs)))
             else:
-                message = {'warning', 'No messages were sent.'}
+                message = ('warning', 'No messages were sent.')
         else:
             message = ('warning', "Please, select at least one nominee")
     return render_to_response('nomcom/send_reminder_mail.html',
@@ -207,7 +215,7 @@ def send_reminder_mail(request, year, type):
                                'mail_template': mail_template,
                                'selected': selected_tab,
                                'reminder_description': reminder_description,
-                               'state_description': NomineePositionState.objects.get(slug=interesting_state).name,
+                               'state_description': state_description,
                                'message': message}, RequestContext(request))
 
 

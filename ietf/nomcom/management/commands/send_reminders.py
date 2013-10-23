@@ -20,16 +20,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         for nomcom in NomCom.objects.filter(group__state__slug='active'):
-            for state in ('pending','accepted'):
-                for nominee_position in NomineePosition.objects.filter(nominee__nomcom=nomcom,
-                                                                       state=state,
-                                                                       nominee__duplicated__isnull=True):
-                    if is_time_to_send(nomcom, datetime.date.today(), nominee_position.time.date()):
-                        if state=='pending':
-                            send_accept_reminder_to_nominee(nominee_position)
-                            log('Sent accept reminder to %s' % nominee_position.nominee.email.address)
-                        elif state=='accepted':
-                            send_questionnaire_reminder_to_nominee(nominee_position)
-                            log('Sent questionnaire reminder to %s' % nominee_position.nominee.email.address)
-                        else:
-                            pass
+            nps = NomineePosition.objects.filter(nominee__nomcom=nomcom,nominee__duplicated__isnull=True)
+            for nominee_position in nps.pending():
+                if is_time_to_send(nomcom, datetime.date.today(), nominee_position.time.date()):
+                    send_accept_reminder_to_nominee(nominee_position)
+                    log('Sent accept reminder to %s' % nominee_position.nominee.email.address)
+            for nominee_position in nps.accepted().without_questionnaire_response():
+                if is_time_to_send(nomcom, datetime.date.today(), nominee_position.time.date()):
+                    send_questionnaire_reminder_to_nominee(nominee_position)
+                    log('Sent questionnaire reminder to %s' % nominee_position.nominee.email.address)
