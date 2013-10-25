@@ -203,7 +203,7 @@ def fill_in_agenda_management_issues(date, sections):
     for i, item in enumerate(TelechatAgendaItem.objects.filter(type=3).order_by('id'), start=1):
         sections[s % i] = { "title": item.title, "text": item.text }
 
-def agenda_data(request, date=None):
+def agenda_data(date=None):
     """Return a dict with the different IESG telechat agenda components."""
     date = get_agenda_date(date)
     sections = agenda_sections()

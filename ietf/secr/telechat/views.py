@@ -35,7 +35,7 @@ active_ballot_positions: takes one argument, doc.  returns a dictionary with a k
 NOTE: this function has been deprecated as of Datatracker 4.34.  Should now use methods on the Document.
 For example: doc.active_ballot().active_ad_positions()
 
-agenda_data: takes a request object and a date string in the format YYYY-MM-DD.
+agenda_data: takes a date string in the format YYYY-MM-DD.
 '''
 
 # -------------------------------------------------
@@ -125,7 +125,7 @@ def get_first_doc(agenda):
 # -------------------------------------------------
 def bash(request, date):
 
-    agenda = agenda_data(request, date=date)
+    agenda = agenda_data(date=date)
 
     return render_to_response('telechat/bash.html', {
         'agenda': agenda,
@@ -139,7 +139,7 @@ def doc(request, date):
     displays the message "No Documents"
     '''
 
-    agenda = agenda_data(request, date=date)
+    agenda = agenda_data(date=date)
     doc = get_first_doc(agenda)
     if doc:
         url = reverse('telechat_doc_detail', kwargs={'date':date,'name':doc.name})
@@ -193,7 +193,7 @@ def doc_detail(request, date, name):
                      'substate':tag}
 
     BallotFormset = formset_factory(BallotForm, extra=0)
-    agenda = agenda_data(request, date=date)
+    agenda = agenda_data(date=date)
     header = get_section_header(doc, agenda)
 
     # nav button logic
@@ -310,7 +310,7 @@ def doc_navigate(request, date, name, nav):
     The view retrieves the appropriate document and redirects to the doc view.
     '''
     doc = get_object_or_404(Document, docalias__name=name)
-    agenda = agenda_data(request, date=date)
+    agenda = agenda_data(date=date)
     target = name
 
     docs = get_doc_list(agenda)
@@ -348,7 +348,7 @@ def management(request, date):
     This view displays management issues and lets the user update the status
     '''
 
-    agenda = agenda_data(request, date=date)
+    agenda = agenda_data(date=date)
     issues = TelechatAgendaItem.objects.filter(type=3).order_by('id')
 
     return render_to_response('telechat/management.html', {
@@ -372,7 +372,7 @@ def minutes(request, date):
     pa_docs = [ d for d in docs if d.intended_std_level.slug not in ('inf','exp','hist') ]
     da_docs = [ d for d in docs if d.intended_std_level.slug in ('inf','exp','hist') ]
 
-    agenda = agenda_data(request, date=date)
+    agenda = agenda_data(date=date)
 
     # FIXME: this doesn't show other documents
 
@@ -400,7 +400,7 @@ def new(request):
 
 def roll_call(request, date):
 
-    agenda = agenda_data(request, date=date)
+    agenda = agenda_data(date=date)
     ads = Person.objects.filter(role__name='ad', role__group__state="active")
     sorted_ads = sorted(ads, key = lambda a: a.name_parts()[3])
 

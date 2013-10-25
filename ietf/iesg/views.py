@@ -84,7 +84,7 @@ def review_decisions(request, year=None):
                               context_instance=RequestContext(request))
 
 def agenda_json(request, date=None):
-    data = agenda_data(request, date)
+    data = agenda_data(date)
 
     res = {
         "telechat-date": str(data["date"]),
@@ -171,7 +171,7 @@ def agenda_json(request, date=None):
     return HttpResponse(json.dumps(res, indent=2), mimetype='text/plain')
 
 def agenda(request, date=None):
-    data = agenda_data(request, date)
+    data = agenda_data(date)
 
     if has_role(request.user, ["Area Director", "IAB Chair", "Secretariat"]):
         data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace("Roll Call", '<a href="https://www.ietf.org/iesg/internal/rollcall.txt">Roll Call</a>')
@@ -184,14 +184,14 @@ def agenda(request, date=None):
             }, context_instance=RequestContext(request))
 
 def agenda_txt(request, date=None):
-    data = agenda_data(request, date)
+    data = agenda_data(date)
     return render_to_response("iesg/agenda.txt", {
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
             }, context_instance=RequestContext(request), mimetype="text/plain")
 
 def agenda_scribe_template(request, date=None):
-    data = agenda_data(request, date)
+    data = agenda_data(date)
     sections = sorted((num, section) for num, section in data["sections"].iteritems() if "2" <= num < "4")
     appendix_docs = []
     for num, section in sections:
@@ -208,7 +208,7 @@ def agenda_scribe_template(request, date=None):
 def agenda_moderator_package(request, date=None):
     """Output telechat agenda with one page per section, with each
     document in its own section."""
-    data = agenda_data(request, date)
+    data = agenda_data(date)
 
     def leaf_section(num, section):
         return not (num == "1"
@@ -255,7 +255,7 @@ def agenda_moderator_package(request, date=None):
 
 @role_required('Area Director', 'Secretariat')
 def agenda_package(request, date=None):
-    data = agenda_data(request, date)
+    data = agenda_data(date)
     return render_to_response("iesg/agenda_package.txt", {
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
