@@ -72,6 +72,7 @@ def get_doc_section(doc):
             s += ".2"
         else:
             s += ".1"
+
     elif doc.type_id == 'conflrev':
         if doc.get_state('conflrev').slug not in ('adrev','iesgeval','appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent','defer'):
              s = "3.4.3"
