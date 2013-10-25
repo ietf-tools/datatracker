@@ -13,7 +13,7 @@ from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.name.models import StreamName
 from ietf.iesg.models import *
-from ietf.iesg.agenda import get_agenda_date
+from ietf.iesg.agenda import get_agenda_date, agenda_data
 
 class ReviewDecisionsTests(django.test.TestCase):
     def test_review_decisions(self):
@@ -43,7 +43,7 @@ class IESGAgendaTests(django.test.TestCase):
             "ietf_draft": Document.objects.get(name="draft-ietf-mars-test"),
             "ise_draft": ise_draft,
             "conflrev": Document.objects.get(name="conflict-review-imaginary-irtf-submission"),
-            "statusch": Document.objects.get(name="status-change-imaginary-mid-review"),
+            "statchg": Document.objects.get(name="status-change-imaginary-mid-review"),
             "charter": Document.objects.filter(type="charter")[0],
             }
 
@@ -64,6 +64,175 @@ class IESGAgendaTests(django.test.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.draft_dir)
+
+    def test_fill_in_agenda_docs(self):
+        draft = self.telechat_docs["ietf_draft"]
+        statchg = self.telechat_docs["statchg"]
+        conflrev = self.telechat_docs["conflrev"]
+        charter = self.telechat_docs["charter"]
+
+        # put on agenda
+        date = datetime.date.today() + datetime.timedelta(days=50)
+        TelechatDate.objects.create(date=date)
+        telechat_event = TelechatDocEvent.objects.create(
+            type="scheduled_for_telechat",
+            doc=draft,
+            by=Person.objects.get(name="Aread Irector"),
+            telechat_date=date,
+            returning_item=False)
+        date_str = date.isoformat()
+
+        # 2.1 protocol WG submissions
+        draft.intended_std_level_id = "ps"
+        draft.group = Group.objects.get(acronym="mars")
+        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.1.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.1.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="pub-req"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.1.3"]["docs"])
+
+        # 2.2 protocol individual submissions
+        draft.group = Group.objects.get(type="individ")
+        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.2.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.2.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="pub-req"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.2.3"]["docs"])
+
+        # 3.1 document WG submissions
+        draft.intended_std_level_id = "inf"
+        draft.group = Group.objects.get(acronym="mars")
+        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.1.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.1.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="pub-req"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.1.3"]["docs"])
+
+        # 3.2 document individual submissions
+        draft.group = Group.objects.get(type="individ")
+        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.2.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.2.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="pub-req"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.2.3"]["docs"])
+
+        
+        # 2.3 protocol status changes
+        telechat_event.doc = statchg
+        telechat_event.save()
+
+        relation = RelatedDocument.objects.create(
+            source=statchg,
+            target=DocAlias.objects.filter(name__startswith='rfc', document__std_level="ps")[0],
+            relationship_id="tohist")
+
+        statchg.group = Group.objects.get(acronym="mars")
+        statchg.save()
+        statchg.set_state(State.objects.get(type="statchg", slug="iesgeval"))
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["2.3.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["2.3.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        statchg.set_state(State.objects.get(type="statchg", slug="adrev"))
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["2.3.3"]["docs"])
+        
+        # 3.3 document status changes
+        relation.target = DocAlias.objects.filter(name__startswith='rfc', document__std_level="inf")[0]
+        relation.save()
+
+        statchg.group = Group.objects.get(acronym="mars")
+        statchg.save()
+        statchg.set_state(State.objects.get(type="statchg", slug="iesgeval"))
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["3.3.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["3.3.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        statchg.set_state(State.objects.get(type="statchg", slug="adrev"))
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["3.3.3"]["docs"])
+
+
+        # 3.4 IRTF/ISE conflict reviews
+        telechat_event.doc = conflrev
+        telechat_event.save()
+
+        conflrev.group = Group.objects.get(acronym="mars")
+        conflrev.save()
+        conflrev.set_state(State.objects.get(type="conflrev", slug="iesgeval"))
+        self.assertTrue(conflrev in agenda_data(date_str)["sections"]["3.4.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(conflrev in agenda_data(date_str)["sections"]["3.4.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        conflrev.set_state(State.objects.get(type="conflrev", slug="needshep"))
+        self.assertTrue(conflrev in agenda_data(date_str)["sections"]["3.4.3"]["docs"])
+
+
+        # 4 WGs
+        telechat_event.doc = charter
+        telechat_event.save()
+
+        charter.group = Group.objects.get(acronym="mars")
+        charter.save()
+
+        charter.group.state_id = "bof"
+        charter.group.save()
+
+        charter.set_state(State.objects.get(type="charter", slug="infrev"))
+        self.assertTrue(charter in agenda_data(date_str)["sections"]["4.1.1"]["docs"])
+
+        charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
+        self.assertTrue(charter in agenda_data(date_str)["sections"]["4.1.2"]["docs"])
+
+        charter.group.state_id = "active"
+        charter.group.save()
+
+        charter.set_state(State.objects.get(type="charter", slug="infrev"))
+        self.assertTrue(charter in agenda_data(date_str)["sections"]["4.2.1"]["docs"])
+
+        charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
+        self.assertTrue(charter in agenda_data(date_str)["sections"]["4.2.2"]["docs"])
+
+        #for n, s in agenda_data(date_str)["sections"].iteritems():
+        #    print n, s.get("docs") if "docs" in s else s["title"]
 
     def test_feed(self):
         url = "/feed/iesg-agenda/"
