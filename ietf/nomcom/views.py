@@ -197,7 +197,7 @@ def send_reminder_mail(request, year, type):
             if addrs:
                 message = ('success', 'A copy of "%s" has been sent to %s'%(mail_template.title,", ".join(addrs)))
             else:
-                message = {'warning', 'No messages were sent.'}
+                message = ('warning', 'No messages were sent.')
         else:
             message = ('warning', "Please, select at least one nominee")
     return render_to_response('nomcom/send_reminder_mail.html',
