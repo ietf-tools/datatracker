@@ -37,8 +37,8 @@ from ietf.doc.models import Document
 
 
 args = sys.argv[1:]
-if len(args) < 1:
-    warn("Expected '$ %s DRAFTNAME', but found no arguments -- exiting" % program)
+if len(args) < 3:
+    warn("Expected '$ %s DRAFTNAME  USER.LOG  POSTFIX.LOG', but found no arguments -- exiting" % program)
     sys.exit(1)
 
 draft = args[0]
@@ -56,19 +56,22 @@ from_email = settings.IDSUBMIT_FROM_EMAIL
 if "<" in from_email:
     from_email = from_email.split("<")[1].split(">")[0]
 
-submission = IdSubmissionDetail.objects.filter(filename=draft).order_by('-pk')[0]
+submission = IdSubmissionDetail.objects.filter(filename=draft).latest('submission_date')
 document = Document.objects.get(name=draft)
 emails = [ author.address for author in document.authors.all() ]
 
-file = Path(settings.INTERNET_DRAFT_PATH) / ("%s-%s.txt"%(draft, submission.revision))
-
-upload_time = time.localtime(file.mtime)
-timestr1 = time.strftime("%b %d %H:%M", upload_time)
-timestr2 = timestr1[:-1] + chr(((ord(timestr1[-1])-ord('0')+1)%10)+ord('0'))
-note("Looking for mail log lines timestamped %s, also checking %s ..." % (timestr1, timestr2))
+timestrings = []
+for file in [ Path(settings.INTERNET_DRAFT_PATH) / ("%s-%s.txt"%(draft, submission.revision)),
+              Path(settings.IDSUBMIT_STAGING_PATH) / ("%s-%s.txt"%(draft, submission.revision)) ]:
+    if os.path.exists(file):
+        upload_time = time.localtime(file.mtime)
+        ts = time.strftime("%b %d %H:%M", upload_time)
+        timestrings += [ ts ]
+        timestrings += [ ts[:-1] + chr(((ord(ts[-1])-ord('0')+1)%10)+ord('0')) ]
+        print "Looking for mail log lines timestamped %s, also checking %s ..." % (timestrings[0], timestrings[1])
 
 for log in logfiles:
-    note("\n  Checking %s ...\n" % log)
+    print "\n  Checking %s ...\n" % log
     if log.endswith('.gz'):
         import gzip
         logfile = gzip.open(log)
@@ -76,15 +79,20 @@ for log in logfiles:
         logfile = open(log)
     queue_ids = []
     for line in logfile:
-        if line.startswith(timestr1) or line.startswith(timestr2):
-            if from_email in line:
-                for to_email in emails:
-                    if to_email in line:
-                        sys.stdout.write(line)
-                        if "queued_as:" in line:
-                            queue_ids += [ line.split("queued_as:")[1].split(",")[0] ]
-            elif queue_ids:
-                for qi in queue_ids:
-                    if qi in line:
-                        sys.stdout.write(line)
-        
+        if from_email in line and "Confirmation for Auto-Post of I-D "+draft in line:
+            ts = line[:12]
+            timestrings += [ ts ]
+            print "Found a mention of %s, adding timestamp %s: \n  %s" % (draft, ts, line)
+        for ts in timestrings:
+            if line.startswith(ts):
+                if from_email in line:
+                    for to_email in emails:
+                        if to_email in line:
+                            sys.stdout.write(line)
+                            if "queued_as:" in line:
+                                queue_ids += [ line.split("queued_as:")[1].split(",")[0] ]
+                elif queue_ids:
+                    for qi in queue_ids:
+                        if qi in line:
+                            sys.stdout.write(line)
+                        
