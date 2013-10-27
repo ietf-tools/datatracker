@@ -231,10 +231,15 @@ class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
 
         list0 = refhtml.split("\n")
         list1 = testhtml.split("\n")
-        diff = "\n".join(unified_diff(list0, list1, master or refurl, url, "", "", 0, lineterm=""))
-        if diff:
-            print "    Differences found:"
-            print diff
+        diff_list = list(unified_diff(list0, list1, master or refurl, url, "", "", 0, lineterm=""))
+        if len(diff_list):
+            if len(diff_list) > 10:
+                print "The diff is too long to show in its entirety.  Here are the first 10 lines:\n"
+                print "\n".join(diff_list[:16])
+                print "..."
+            else:
+                print "    Differences found:"
+                print "\n".join(unified_diff(list0, list1, master or refurl, url, "", "", 0, lineterm=""))
             return False
 
 def canonicalize_feed(s):
