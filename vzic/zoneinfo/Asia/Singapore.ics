@@ -2,7 +2,7 @@ BEGIN:VCALENDAR
 PRODID:-//IETF Tools//NONSGML ietf-agenda-ical 1.03//EN
 VERSION:2.0
 BEGIN:VTIMEZONE
-TZID:/tools.ietf.org/Olson_20110927_1/Asia/Singapore
+TZID:Asia/Singapore
 X-LIC-LOCATION:Asia/Singapore
 BEGIN:STANDARD
 TZOFFSETFROM:+065525

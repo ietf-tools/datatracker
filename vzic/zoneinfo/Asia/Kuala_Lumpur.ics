@@ -2,7 +2,7 @@ BEGIN:VCALENDAR
 PRODID:-//IETF Tools//NONSGML ietf-agenda-ical 1.03//EN
 VERSION:2.0
 BEGIN:VTIMEZONE
-TZID:/tools.ietf.org/Olson_20110927_1/Asia/Kuala_Lumpur
+TZID:Asia/Kuala_Lumpur
 X-LIC-LOCATION:Asia/Kuala_Lumpur
 BEGIN:STANDARD
 TZOFFSETFROM:+064646

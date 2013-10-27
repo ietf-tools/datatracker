@@ -2,7 +2,7 @@ BEGIN:VCALENDAR
 PRODID:-//IETF Tools//NONSGML ietf-agenda-ical 1.03//EN
 VERSION:2.0
 BEGIN:VTIMEZONE
-TZID:/tools.ietf.org/Olson_20110927_1/Africa/Porto-Novo
+TZID:Africa/Porto-Novo
 X-LIC-LOCATION:Africa/Porto-Novo
 BEGIN:STANDARD
 TZOFFSETFROM:+001028

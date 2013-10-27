@@ -2,7 +2,7 @@ BEGIN:VCALENDAR
 PRODID:-//IETF Tools//NONSGML ietf-agenda-ical 1.03//EN
 VERSION:2.0
 BEGIN:VTIMEZONE
-TZID:/tools.ietf.org/Olson_20110927_1/America/St_Barthelemy
+TZID:America/St_Barthelemy
 X-LIC-LOCATION:America/St_Barthelemy
 BEGIN:STANDARD
 TZOFFSETFROM:-040608
