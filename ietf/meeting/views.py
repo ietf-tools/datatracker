@@ -433,6 +433,8 @@ def iphone_agenda(request, num, name):
             context_instance=RequestContext(request))
 
 def agenda(request, num=None, name=None, ext=".html"):
+    if ext is None:
+        ext = ".html"
     mimetype = {".html":"text/html", ".txt": "text/plain", ".ics":"text/calendar", ".csv":"text/csv"}
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
