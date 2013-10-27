@@ -23,7 +23,6 @@
 -0243900 +0255500 Africa/Gaborone
 -0175000 +0310300 Africa/Harare
 -0261500 +0280000 Africa/Johannesburg
-+0045100 +0313600 Africa/Juba
 +0001900 +0322500 Africa/Kampala
 +0153600 +0323200 Africa/Khartoum
 -0015700 +0300400 Africa/Kigali
@@ -52,7 +51,6 @@
 -0223400 +0170600 Africa/Windhoek
 +0515248 -1763929 America/Adak
 +0611305 -1495401 America/Anchorage
-+0181200 -0630400 America/Anguilla
 +0170300 -0614800 America/Antigua
 -0071200 -0481200 America/Araguaina
 -0343600 -0582700 America/Argentina/Buenos_Aires
@@ -67,7 +65,6 @@
 -0331900 -0662100 America/Argentina/San_Luis
 -0264900 -0651300 America/Argentina/Tucuman
 -0544800 -0681800 America/Argentina/Ushuaia
-+0123000 -0695800 America/Aruba
 -0251600 -0574000 America/Asuncion
 +0484531 -0913718 America/Atikokan
 -0125900 -0383100 America/Bahia
@@ -96,7 +93,6 @@
 +0594600 -1201400 America/Dawson_Creek
 +0394421 -1045903 America/Denver
 +0421953 -0830245 America/Detroit
-+0151800 -0612400 America/Dominica
 +0533300 -1132800 America/Edmonton
 -0064000 -0695200 America/Eirunepe
 +0134200 -0891200 America/El_Salvador
@@ -105,8 +101,6 @@
 +0641100 -0514400 America/Godthab
 +0532000 -0602500 America/Goose_Bay
 +0212800 -0710800 America/Grand_Turk
-+0120300 -0614500 America/Grenada
-+0161400 -0613200 America/Guadeloupe
 +0143800 -0903100 America/Guatemala
 -0021000 -0795000 America/Guayaquil
 +0064800 -0581000 America/Guyana
@@ -123,7 +117,7 @@
 +0410305 -0863611 America/Indiana/Winamac
 +0682059 -1334300 America/Inuvik
 +0634400 -0682800 America/Iqaluit
-+0180000 -0764800 America/Jamaica
++0175805 -0764736 America/Jamaica
 +0581807 -1342511 America/Juneau
 +0381515 -0854534 America/Kentucky/Louisville
 +0364947 -0845057 America/Kentucky/Monticello
@@ -144,8 +138,7 @@
 +0460600 -0644700 America/Moncton
 +0254000 -1001900 America/Monterrey
 -0345300 -0561100 America/Montevideo
-+0453100 -0733400 America/Montreal
-+0164300 -0621300 America/Montserrat
+America/Montreal
 +0250500 -0772100 America/Nassau
 +0404251 -0740023 America/New_York
 +0490100 -0881600 America/Nipigon
@@ -177,17 +170,12 @@
 +0702900 -0215800 America/Scoresbysund
 +0571035 -1351807 America/Sitka
 +0473400 -0524300 America/St_Johns
-+0171800 -0624300 America/St_Kitts
-+0140100 -0610000 America/St_Lucia
-+0182100 -0645600 America/St_Thomas
-+0130900 -0611400 America/St_Vincent
 +0501700 -1075000 America/Swift_Current
 +0140600 -0871300 America/Tegucigalpa
 +0763400 -0684700 America/Thule
 +0482300 -0891500 America/Thunder_Bay
 +0323200 -1170100 America/Tijuana
 +0433900 -0792300 America/Toronto
-+0182700 -0643700 America/Tortola
 +0491600 -1230700 America/Vancouver
 +0604300 -1350300 America/Whitehorse
 +0495300 -0970900 America/Winnipeg
@@ -198,7 +186,6 @@
 -0664000 +1400100 Antarctica/DumontDUrville
 -0543000 +1585700 Antarctica/Macquarie
 -0673600 +0625300 Antarctica/Mawson
--0775000 +1663600 Antarctica/McMurdo
 -0644800 -0640600 Antarctica/Palmer
 -0673400 -0680800 Antarctica/Rothera
 -0690022 +0393524 Antarctica/Syowa
@@ -234,12 +221,13 @@
 +0521600 +1042000 Asia/Irkutsk
 -0061000 +1064800 Asia/Jakarta
 -0023200 +1404200 Asia/Jayapura
-+0314600 +0351400 Asia/Jerusalem
++0314650 +0351326 Asia/Jerusalem
 +0343100 +0691200 Asia/Kabul
 +0530100 +1583900 Asia/Kamchatka
 +0245200 +0670300 Asia/Karachi
 +0392900 +0755900 Asia/Kashgar
 +0274300 +0851900 Asia/Kathmandu
++0623923 +1353314 Asia/Khandyga
 +0223200 +0882200 Asia/Kolkata
 +0560100 +0925000 Asia/Krasnoyarsk
 +0031000 +1014200 Asia/Kuala_Lumpur
@@ -275,6 +263,7 @@
 +0353916 +1394441 Asia/Tokyo
 +0475500 +1065300 Asia/Ulaanbaatar
 +0434800 +0873500 Asia/Urumqi
++0643337 +1431336 Asia/Ust-Nera
 +0175800 +1023600 Asia/Vientiane
 +0431000 +1315600 Asia/Vladivostok
 +0620000 +1294000 Asia/Yakutsk
@@ -338,7 +327,6 @@
 +0592500 +0244500 Europe/Tallinn
 +0412000 +0195000 Europe/Tirane
 +0483700 +0221800 Europe/Uzhgorod
-+0470900 +0093100 Europe/Vaduz
 +0481300 +0162000 Europe/Vienna
 +0544100 +0251900 Europe/Vilnius
 +0484400 +0442500 Europe/Volgograd
@@ -371,7 +359,6 @@
 -0093200 +1601200 Pacific/Guadalcanal
 +0132800 +1444500 Pacific/Guam
 +0211825 -1575130 Pacific/Honolulu
-+0164500 -1693100 Pacific/Johnston
 +0015200 -1572000 Pacific/Kiritimati
 +0051900 +1625900 Pacific/Kosrae
 +0090500 +1672000 Pacific/Kwajalein
