@@ -87,6 +87,9 @@ def run_tests_1(test_labels, *args, **kwargs):
     if settings.SITE_ID != 1:
         print "     Changing SITE_ID to '1' during testing."
         settings.SITE_ID = 1
+    if settings.TEMPLATE_STRING_IF_INVALID != '':
+        print "     Changing TEMPLATE_STRING_IF_INVALID to '' during testing."
+        settings.TEMPLATE_STRING_IF_INVALID = ''
     assert(not settings.IDTRACKER_BASE_URL.endswith('/'))
     kwargs["verbosity"] = kwargs["verbosity"]
     return django_run_tests(test_labels, *args, **kwargs)
