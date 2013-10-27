@@ -3,7 +3,7 @@
 # You will need to set this to the directory that the Olson timezone data
 # files are in.
 #
-OLSON_DIR = /usr/share/olson-icalendar/
+OLSON_DIR = /usr/share/olson
 
 
 # This is used as the PRODID property on the iCalendar files output.
@@ -23,8 +23,8 @@ PRODUCT_ID = -//IETF Tools//NONSGML ietf-agenda-ical 1.03//EN
 # gets expanded to today's date. There is also a vzic-merge.pl which can be
 # used to merge changes into a master set of VTIMEZONEs. If a VTIMEZONE has
 # changed, it bumps the version number on the end of this prefix. */
-TZID_PREFIX = /tools.ietf.org/Olson_%D_1/
-#TZID_PREFIX = /
+#TZID_PREFIX = /tools.ietf.org/Olson_%D_1/
+TZID_PREFIX = 
 
 # This is what libical-evolution uses.
 #TZID_PREFIX = /softwarestudio.org/Olson_%D_1/

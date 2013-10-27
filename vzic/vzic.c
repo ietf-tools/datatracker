@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "vzic.h"
 #include "vzic-parse.h"

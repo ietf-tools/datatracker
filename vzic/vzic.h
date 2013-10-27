@@ -43,6 +43,7 @@ extern gboolean VzicDumpZoneTranslatableStrings;
 extern gboolean VzicNoRRules;
 extern gboolean VzicNoRDates;
 extern char*    VzicUrlPrefix;
+extern char*    VzicOutputDir;
 
 extern GList*	VzicTimeZoneNames;
 
