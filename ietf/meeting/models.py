@@ -3,6 +3,8 @@
 import pytz, datetime
 from urlparse import urljoin
 import copy
+import os
+
 import debug
 
 from django.db import models
@@ -463,6 +465,11 @@ class Schedule(models.Model):
     def base_url(self):
         return "/meeting/%s/agenda/%s" % (self.meeting.number, self.name)
 
+    # temporary property to pacify the places where Schedule.scheduledsession_set is used
+    @property
+    def scheduledsession_set(self):
+        return self.assignments
+
 #     def url_edit(self):
 #         return "/meeting/%s/agenda/%s/edit" % (self.meeting.number, self.name)
 # 
@@ -584,6 +591,15 @@ class Schedule(models.Model):
         self.badness = badness
         return badness
 
+    def area_list(self):
+        return ( self.assignments.filter(session__group__type__slug__in=['wg', 'rg', 'ag'],
+                                         session__group__parent__isnull=False)
+                 .order_by('session__group__parent__acronym')
+                 .values_list('session__group__parent__acronym', flat=True)
+                 .distinct() )
+
+    def groups(self):
+        return Group.objects.filter(type__slug__in=['wg', 'rg', 'ag'], session__scheduledsession__schedule=self).distinct().order_by('parent__acronym', 'acronym')
 
 class ScheduledSession(models.Model):
     """
@@ -593,12 +609,15 @@ class ScheduledSession(models.Model):
     """
     timeslot = models.ForeignKey('TimeSlot', null=False, blank=False, help_text=u"")
     session  = models.ForeignKey('Session', null=True, default=None, help_text=u"Scheduled session")
-    schedule = models.ForeignKey('Schedule', null=False, blank=False, help_text=u"Who made this agenda")
+    schedule = models.ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
     extendedfrom = models.ForeignKey('ScheduledSession', null=True, default=None, help_text=u"Timeslot this session is an extension of")
     modified = models.DateTimeField(default=datetime.datetime.now)
     notes    = models.TextField(blank=True)
     badness  = models.IntegerField(default=0, blank=True, null=True)
     pinned   = models.BooleanField(default=False, help_text="Do not move session during automatic placement")
+
+    class Meta:
+        ordering = ["timeslot__time", "session__group__parent__name", "session__group__acronym", "session__name", ]
 
     # use to distinguish this from FakeScheduledSession in placement.py
     faked   = "real"
@@ -723,7 +742,6 @@ class ScheduledSession(models.Model):
         ss["domid"]    = self.timeslot.js_identifier
         ss["pinned"]   = self.pinned
         return ss
-
 
 class Constraint(models.Model):
     """
@@ -1142,3 +1160,20 @@ class Session(models.Model):
             self.badness_log(1, "badgroup: %s badness = %u\n" % (self.group.acronym, badness))
         return badness
 
+    def agenda_text(self):
+        doc = self.agenda()
+        if doc:
+            path = os.path.join(settings.AGENDA_PATH, self.meeting.number, "agenda", doc.external_url)
+            if os.path.exists(path):
+                with open(path) as f:
+                    return f.read()
+            else:
+                "No agenda file found"
+        else:
+            return "The agenda has not been uploaded yet."
+
+    def type(self):
+        if self.group.type.slug in [ "wg" ]:
+            return "BOF" if self.group.state.slug in ["bof", "bof-conc"] else "WG"
+        else:
+            return ""

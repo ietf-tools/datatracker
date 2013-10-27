@@ -432,15 +432,13 @@ def iphone_agenda(request, num, name):
                 "wg_list" : wgs, "rg_list" : rgs, "area_list" : areas},
             context_instance=RequestContext(request))
 
-
-def text_agenda(request, num=None, name=None):
-    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-    plenaryw_agenda = "   "+plenaryw_agenda.strip().replace("\n", "\n   ")
-    plenaryt_agenda = "   "+plenaryt_agenda.strip().replace("\n", "\n   ")
-    return HttpResponse(render_to_string("meeting/agenda.txt",
-        {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
-            "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
-        RequestContext(request)), mimetype="text/plain")
+def agenda(request, num=None, name=None, ext=".html"):
+    mimetype = {".html":"text/html", ".txt": "text/plain", ".ics":"text/calendar", ".csv":"text/csv"}
+    meeting = get_meeting(num)
+    schedule = get_schedule(meeting, name)
+    updated = Switches().from_object(meeting).updated()
+    return HttpResponse(render_to_string("meeting/agenda"+ext,
+        {"schedule":schedule, "updated": updated}, RequestContext(request)), mimetype=mimetype[ext])
 
 def read_agenda_file(num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
