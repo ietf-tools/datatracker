@@ -490,4 +490,8 @@ def plural(text, list, arg=u's'):
         return text
     else:
         return text + pluralize(len(list), arg)
-        
+
+@register.filter
+def ics_esc(text):
+    text = re.sub(r"([\n,;\\])", r"\\\1", text)
+    return text
