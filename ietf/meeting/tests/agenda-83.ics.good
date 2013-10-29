@@ -1,6 +1,7 @@
 BEGIN:VCALENDAR
 VERSION:2.0
 METHOD:PUBLISH
+PRODID:-//IETF//datatracker.ietf.org ical agenda//EN
 BEGIN:VTIMEZONE
 TZID:Europe/Paris
 X-LIC-LOCATION:Europe/Paris
@@ -166,73 +167,105 @@ RDATE:19770101T000000
 END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
-UID:ietf-83-2497
-SUMMARY:IETF Operations and Administration Plenary
-LOCATION:Amphitheatre Bleu
-STATUS:TENTATIVE
+UID:ietf-83-2923
+SUMMARY:Code Sprint
+LOCATION:Hall Maillot A
+STATUS:CONFIRMED
 CLASS:PUBLIC
-DTSTART;TZID="Europe/Paris":20120328T163000
-DTEND;TZID="Europe/Paris":20120328T193000
+DTSTART;TZID="Europe/Paris":20120324T093000
+DTEND;TZID="Europe/Paris":20120324T180000
+DTSTAMP:20120305T111518Z
+END:VEVENT
+BEGIN:VEVENT
+UID:ietf-83-2514
+SUMMARY:IEPG Meeting
+LOCATION:241
+STATUS:CONFIRMED
+CLASS:PUBLIC
+DTSTART;TZID="Europe/Paris":20120325T100000
+DTEND;TZID="Europe/Paris":20120325T120000
+DTSTAMP:20120224T000000Z
+END:VEVENT
+BEGIN:VEVENT
+UID:ietf-83-2503
+SUMMARY:Meetecho Tutorial for Participants and WG Chairs
+LOCATION:252A
+STATUS:CONFIRMED
+CLASS:PUBLIC
+DTSTART;TZID="Europe/Paris":20120325T130000
+DTEND;TZID="Europe/Paris":20120325T145000
 DTSTAMP:20120223T000000Z
-URL:http://www.ietf.orghttp://www.ietf.org/proceedings/83/agenda/agenda-83-iesg-ietf-operations-and-administration-plenary
-DESCRIPTION:IETF Operations and Administration Plenary\n
- \nAgenda:
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/agenda/agenda-83-iesg-ietf-operations-and-administration-plenary\n
- \nAgenda:
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/agenda/agenda-83-none-ietf-operations-and-administration-plenary\n
- \nMinutes
-  (Minutes for IESG at IETF-83):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/minutes/minutes-83-iesg-ietf-operations-and-administration-plenary\n
- \nSlides
-  (NOTE WELL):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-0-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (Agenda):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-1-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (ISOC Activities Status Report):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-10-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (NOC Report Part 2):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-11-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (Host Presentation: Cisco):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-12-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (IETF Chair Report):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-2-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (NOC Report):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-3-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (IAOC and IAD Report):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-4-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (IETF Trust Chair Report):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-5-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (ISOC Activities Status Report):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-6-ietf-operations-and-administration-plenary.ppt\n
- \nSlides
-  (Recognize Outgoing IAB, IESG, and IAOC Members):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-7-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (IETF Logo -- Open Mic):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-8-ietf-operations-and-administration-plenary.pdf\n
- \nSlides
-  (NomCom Chair Report):
-  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-9-ietf-operations-and-administration-plenary.pdf\n
+END:VEVENT
+BEGIN:VEVENT
+UID:ietf-83-2500
+SUMMARY:Newcomers' Orientation
+LOCATION:252B
+STATUS:CONFIRMED
+CLASS:PUBLIC
+DTSTART;TZID="Europe/Paris":20120325T130000
+DTEND;TZID="Europe/Paris":20120325T145000
+DTSTAMP:20120223T000000Z
+END:VEVENT
+BEGIN:VEVENT
+UID:ietf-83-2499
+SUMMARY:Tools for Creating Internet-Drafts Tutorial
+LOCATION:241
+STATUS:CONFIRMED
+CLASS:PUBLIC
+DTSTART;TZID="Europe/Paris":20120325T130000
+DTEND;TZID="Europe/Paris":20120325T145000
+DTSTAMP:20120223T000000Z
+END:VEVENT
+BEGIN:VEVENT
+UID:ietf-83-2502
+SUMMARY:Newcomers' Orientation (French)
+LOCATION:252B
+STATUS:CONFIRMED
+CLASS:PUBLIC
+DTSTART;TZID="Europe/Paris":20120325T150000
+DTEND;TZID="Europe/Paris":20120325T165000
+DTSTAMP:20120223T000000Z
+END:VEVENT
+BEGIN:VEVENT
+UID:ietf-83-2501
+SUMMARY:Operations\, Administration\, and Maintenance Tutorial
+LOCATION:241
+STATUS:CONFIRMED
+CLASS:PUBLIC
+DTSTART;TZID="Europe/Paris":20120325T150000
+DTEND;TZID="Europe/Paris":20120325T165000
+DTSTAMP:20120223T000000Z
+END:VEVENT
+BEGIN:VEVENT
+UID:ietf-83-2505
+SUMMARY:Newcomers' Meet and Greet (open to Newcomers and WG chairs only)
+LOCATION:Salon Etoile d'Or (Concorde Hotel)
+STATUS:CONFIRMED
+CLASS:PUBLIC
+DTSTART;TZID="Europe/Paris":20120325T160000
+DTEND;TZID="Europe/Paris":20120325T170000
+DTSTAMP:20120223T000000Z
+END:VEVENT
+BEGIN:VEVENT
+UID:ietf-83-2504
+SUMMARY:Welcome Reception
+LOCATION:Hall Maillot A
+STATUS:CONFIRMED
+CLASS:PUBLIC
+DTSTART;TZID="Europe/Paris":20120325T170000
+DTEND;TZID="Europe/Paris":20120325T190000
+DTSTAMP:20120223T000000Z
 END:VEVENT
 BEGIN:VEVENT
 UID:ietf-83-2498
 SUMMARY:Technical Plenary
 LOCATION:Amphitheatre Bleu
-STATUS:TENTATIVE
+STATUS:CONFIRMED
 CLASS:PUBLIC
 DTSTART;TZID="Europe/Paris":20120326T163000
 DTEND;TZID="Europe/Paris":20120326T193000
 DTSTAMP:20120223T000000Z
-URL:http://www.ietf.orghttp://www.ietf.org/proceedings/83/agenda/agenda-83-iab-technical-plenary
+URL:http://www.ietf.org/proceedings/83/agenda/agenda-83-iab-technical-plenary
 DESCRIPTION:Technical Plenary\n
  \nAgenda:
   http://www.ietf.orghttp://www.ietf.org/proceedings/83/agenda/agenda-83-iab-technical-plenary\n
@@ -283,102 +316,70 @@ DESCRIPTION:Technical Plenary\n
   http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iab-9-technical-plenary.pdf\n
 END:VEVENT
 BEGIN:VEVENT
-UID:ietf-83-2499
-SUMMARY:Tools for Creating Internet-Drafts Tutorial
-LOCATION:241
-STATUS:TENTATIVE
-CLASS:PUBLIC
-DTSTART;TZID="Europe/Paris":20120325T130000
-DTEND;TZID="Europe/Paris":20120325T145000
-DTSTAMP:20120223T000000Z
-END:VEVENT
-BEGIN:VEVENT
-UID:ietf-83-2500
-SUMMARY:Newcomers' Orientation
-LOCATION:252B
-STATUS:TENTATIVE
-CLASS:PUBLIC
-DTSTART;TZID="Europe/Paris":20120325T130000
-DTEND;TZID="Europe/Paris":20120325T145000
-DTSTAMP:20120223T000000Z
-END:VEVENT
-BEGIN:VEVENT
-UID:ietf-83-2501
-SUMMARY:Operations, Administration, and Maintenance Tutorial
-LOCATION:241
-STATUS:TENTATIVE
-CLASS:PUBLIC
-DTSTART;TZID="Europe/Paris":20120325T150000
-DTEND;TZID="Europe/Paris":20120325T165000
-DTSTAMP:20120223T000000Z
-END:VEVENT
-BEGIN:VEVENT
-UID:ietf-83-2502
-SUMMARY:Newcomers' Orientation (French)
-LOCATION:252B
-STATUS:TENTATIVE
-CLASS:PUBLIC
-DTSTART;TZID="Europe/Paris":20120325T150000
-DTEND;TZID="Europe/Paris":20120325T165000
-DTSTAMP:20120223T000000Z
-END:VEVENT
-BEGIN:VEVENT
-UID:ietf-83-2503
-SUMMARY:Meetecho Tutorial for Participants and WG Chairs
-LOCATION:252A
-STATUS:TENTATIVE
-CLASS:PUBLIC
-DTSTART;TZID="Europe/Paris":20120325T130000
-DTEND;TZID="Europe/Paris":20120325T145000
-DTSTAMP:20120223T000000Z
-END:VEVENT
-BEGIN:VEVENT
-UID:ietf-83-2504
-SUMMARY:Welcome Reception
-LOCATION:Hall Maillot A
-STATUS:TENTATIVE
-CLASS:PUBLIC
-DTSTART;TZID="Europe/Paris":20120325T170000
-DTEND;TZID="Europe/Paris":20120325T190000
-DTSTAMP:20120223T000000Z
-END:VEVENT
-BEGIN:VEVENT
-UID:ietf-83-2505
-SUMMARY:Newcomers' Meet and Greet (open to Newcomers and WG chairs only)
-LOCATION:Salon Etoile d'Or (Concorde Hotel)
-STATUS:TENTATIVE
-CLASS:PUBLIC
-DTSTART;TZID="Europe/Paris":20120325T160000
-DTEND;TZID="Europe/Paris":20120325T170000
-DTSTAMP:20120223T000000Z
-END:VEVENT
-BEGIN:VEVENT
-UID:ietf-83-2514
-SUMMARY:IEPG Meeting
-LOCATION:241
-STATUS:TENTATIVE
-CLASS:PUBLIC
-DTSTART;TZID="Europe/Paris":20120325T100000
-DTEND;TZID="Europe/Paris":20120325T120000
-DTSTAMP:20120224T000000Z
-END:VEVENT
-BEGIN:VEVENT
-UID:ietf-83-2923
-SUMMARY:Code Sprint
-LOCATION:Hall Maillot A
-STATUS:TENTATIVE
-CLASS:PUBLIC
-DTSTART;TZID="Europe/Paris":20120324T093000
-DTEND;TZID="Europe/Paris":20120324T180000
-DTSTAMP:20120305T111518Z
-END:VEVENT
-BEGIN:VEVENT
 UID:ietf-83-2926
 SUMMARY:Working Group Chairs' Training
-STATUS:TENTATIVE
+STATUS:CONFIRMED
 CLASS:PUBLIC
 DTSTART;TZID="Europe/Paris":20120328T113000
 DTEND;TZID="Europe/Paris":20120328T130000
 DTSTAMP:20120328T095200Z
+END:VEVENT
+BEGIN:VEVENT
+UID:ietf-83-2497
+SUMMARY:IETF Operations and Administration Plenary
+LOCATION:Amphitheatre Bleu
+STATUS:CONFIRMED
+CLASS:PUBLIC
+DTSTART;TZID="Europe/Paris":20120328T163000
+DTEND;TZID="Europe/Paris":20120328T193000
+DTSTAMP:20120223T000000Z
+URL:http://www.ietf.org/proceedings/83/agenda/agenda-83-iesg-ietf-operations-and-administration-plenary
+DESCRIPTION:IETF Operations and Administration Plenary\n
+ \nAgenda:
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/agenda/agenda-83-iesg-ietf-operations-and-administration-plenary\n
+ \nAgenda:
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/agenda/agenda-83-none-ietf-operations-and-administration-plenary\n
+ \nMinutes
+  (Minutes for IESG at IETF-83):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/minutes/minutes-83-iesg-ietf-operations-and-administration-plenary\n
+ \nSlides
+  (NOTE WELL):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-0-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (Agenda):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-1-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (ISOC Activities Status Report):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-10-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (NOC Report Part 2):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-11-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (Host Presentation: Cisco):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-12-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (IETF Chair Report):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-2-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (NOC Report):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-3-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (IAOC and IAD Report):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-4-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (IETF Trust Chair Report):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-5-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (ISOC Activities Status Report):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-6-ietf-operations-and-administration-plenary.ppt\n
+ \nSlides
+  (Recognize Outgoing IAB\, IESG\, and IAOC Members):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-7-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (IETF Logo -- Open Mic):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-8-ietf-operations-and-administration-plenary.pdf\n
+ \nSlides
+  (NomCom Chair Report):
+  http://www.ietf.orghttp://www.ietf.org/proceedings/83/slides/slides-83-iesg-9-ietf-operations-and-administration-plenary.pdf\n
 END:VEVENT
 END:VCALENDAR

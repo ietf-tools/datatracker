@@ -14,13 +14,14 @@ SATURDAY, March 24, 2012
 
 
 SUNDAY, March 25, 2012
-1100-1900  IETF Registration - Hall Maillot A
 1000-1200  IEPG Meeting - 241
-1300-1450  Tools for Creating Internet-Drafts Tutorial - 241
-1300-1450  Newcomers' Orientation - 252B
+1100-1900  IETF Registration - Hall Maillot A
+1130-1300  Break - Hall Maillot A
 1300-1450  Meetecho Tutorial for Participants and WG Chairs - 252A
-1500-1650  Operations, Administration, and Maintenance Tutorial - 241
+1300-1450  Newcomers' Orientation - 252B
+1300-1450  Tools for Creating Internet-Drafts Tutorial - 241
 1500-1650  Newcomers' Orientation (French) - 252B
+1500-1650  Operations, Administration, and Maintenance Tutorial - 241
 1600-1700  Newcomers' Meet and Greet (open to Newcomers and WG chairs only) - Salon Etoile d'Or (Concorde Hotel)
 1700-1900  Welcome Reception - Hall Maillot A
 
@@ -126,7 +127,11 @@ Maillot         	RAI 	avtext      	Audio/Video Transport Extensions WG
 
 1710-1810  Afternoon Session III
 212/213         	APP 	marf        	Messaging Abuse Reporting Format WG
-Maillot         	GEN 	rfcform     	RFC Format BOF
+
+1710-1810  
+Maillot         	GEN 	rfcform     	RFC Format Design Team Update BOF
+
+1710-1810  Afternoon Session III
 242AB           	INT 	dnsext      	DNS Extensions WG
 252A            	IRTF	iccrg       	Internet Congestion Control Research Group 
 243             	OPS 	netconf     	Network Configuration WG
@@ -143,15 +148,19 @@ WEDNESDAY, March 28, 2012
 243             	APP 	paws        	Protocol to Access WS database WG
 242AB           	INT 	homenet     	Home Networking WG
 253             	OPS 	opsarea     	Operations & Management Area Open Meeting  - Combined with OPSAWG
+
+0900-1130  Afternoon Session I
 253             	OPS 	opsawg      	Operations and Management Area Working Group WG - Combined with OPSAREA
+
+0900-1130  Morning Session I
 252B            	RAI 	rtcweb      	Real-Time Communication in WEB-browsers WG
 Maillot         	RTG 	ccamp       	Common Control and Measurement Plane WG
 241             	RTG 	sidr        	Secure Inter-Domain Routing WG
 212/213         	TSV 	nfsv4       	Network File System Version 4 WG
 252A            	TSV 	ppsp        	Peer to Peer Streaming Protocol WG
 
-1130-1300  Working Group Chairs' Training - 252B
 1130-1300  Break - Hall Maillot A
+1130-1300  Working Group Chairs' Lunch Tutorial - 252B
 1300-1500  Afternoon Session I
 252B            	APP 	hybi        	BiDirectional or Server-Initiated HTTP WG
 243             	APP 	repute      	Reputation Services WG
@@ -276,3 +285,4 @@ Maillot         	OPS 	dnsop       	Domain Name System Operations WG
 
 
 ====================================================================
+
