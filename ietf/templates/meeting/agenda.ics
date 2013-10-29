@@ -1,21 +1,21 @@
 {% load humanize %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
 VERSION:2.0
-METHOD:PUBLISH{% if vtimezone %}
-{{vtimezone}}{% endif %}{% for slot in timeslots %}
-BEGIN:VEVENT
-UID:ietf-{{slot.meeting.number}}-{{slot.pk}}
-SUMMARY:{% if slot.session.name %}{{slot.session.name}}{% else %}{% if slot.type.name == "Break" %}{{slot.name}}{% else %}{{slot.session.group.acronym|upper}} - {{slot.session.group.name}}{% endif%}{%endif%}
-{% if slot.show_location %}LOCATION:{{slot.get_location}}
-{% endif %}STATUS:TENTATIVE
+METHOD:PUBLISH
+PRODID:-//IETF//datatracker.ietf.org ical agenda//EN
+{{schedule.meeting.vtimezone}}{% for item in assignments %}{% if item.session.group %}BEGIN:VEVENT
+UID:ietf-{{schedule.meeting.number}}-{{item.timeslot.pk}}
+SUMMARY:{% if item.session.name %}{{item.session.name|ics_esc}}{% else %}{% if not item.session.group %}{{item.timeslot.name|ics_esc}}{% else %}{{item.session.group.acronym|lower}} - {{item.session.group.name}}{% endif%}{%endif%}
+{% if item.timeslot.show_location %}LOCATION:{{item.timeslot.get_location}}
+{% endif %}STATUS:{{item.session.ical_status}}
 CLASS:PUBLIC
-DTSTART{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.time|date:"Ymd" }}T{{slot.time|date:"Hi"}}00
-DTEND{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.end_time|date:"Ymd" }}T{{slot.end_time|date:"Hi"}}00
-DTSTAMP:{{ slot.modified|date:"Ymd" }}T{{ slot.modified|date:"His" }}Z
-{% if slot.session.agenda %}URL:http://www.ietf.org{{slot.session.agenda.get_absolute_url}}
-DESCRIPTION:{{slot.name}}\n{% if slot.session.agenda_note %}
- Note: {{slot.session.agenda_note}}\n{% endif %}{% for material in slot.session.materials.all %}
+DTSTART{% if schedule.meeting.time_zone %};TZID="{{schedule.meeting.time_zone}}"{%endif%}:{{ item.timeslot.time|date:"Ymd" }}T{{item.timeslot.time|date:"Hi"}}00
+DTEND{% if schedule.meeting.time_zone %};TZID="{{schedule.meeting.time_zone}}"{%endif%}:{{ item.timeslot.end_time|date:"Ymd" }}T{{item.timeslot.end_time|date:"Hi"}}00
+DTSTAMP:{{ item.timeslot.modified|date:"Ymd" }}T{{ item.timeslot.modified|date:"His" }}Z
+{% if item.session.agenda %}URL:{{item.session.agenda.get_absolute_url}}
+DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
+ Note: {{item.session.agenda_note|ics_esc}}\n{% endif %}{% for material in item.session.materials.all %}
  \n{{material.type}}{% if material.type.name != "Agenda" %}
-  ({{material.title}}){% endif %}:
+  ({{material.title|ics_esc}}){% endif %}:
   http://www.ietf.org{{material.get_absolute_url}}\n{% endfor %}
-{% endif %}END:VEVENT{% endfor %}
-END:VCALENDAR{% endautoescape %}
+{% endif %}END:VEVENT
+{% endif %}{% endfor %}END:VCALENDAR{% endautoescape %}

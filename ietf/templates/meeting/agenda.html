@@ -81,6 +81,7 @@ img.hidden { display: none; }
 {% endblock pagehead %}
 {% block bodyAttrs %}onload='setGroupState();updateAgendaColors()'{% endblock %}
 {% block content %}
+
 <h1>IETF {{ schedule.meeting.number }} Meeting Agenda</h1>
 
 <p>{{ schedule.meeting.city }}, {{ schedule.meeting.date|date:"F j" }} &#8211; {% ifnotequal schedule.meeting.date.month schedule.meeting.end_date.month %}{{ schedule.meeting.end_date|date:"F " }}{% endifnotequal %}{{ schedule.meeting.end_date|date:"j, Y" }}<br />

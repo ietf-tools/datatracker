@@ -432,14 +432,14 @@ def iphone_agenda(request, num, name):
                 "wg_list" : wgs, "rg_list" : rgs, "area_list" : areas},
             context_instance=RequestContext(request))
 
-def agenda(request, num=None, name=None, ext=".html"):
-    if ext is None:
-        ext = ".html"
+def agenda(request, num=None, name=None, base=None, ext=None):
+    base = base if base else 'agenda'
+    ext = ext if ext else '.html'
     mimetype = {".html":"text/html", ".txt": "text/plain", ".ics":"text/calendar", ".csv":"text/csv"}
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
     updated = Switches().from_object(meeting).updated()
-    return HttpResponse(render_to_string("meeting/agenda"+ext,
+    return HttpResponse(render_to_string("meeting/"+base+ext,
         {"schedule":schedule, "updated": updated}, RequestContext(request)), mimetype=mimetype[ext])
 
 def read_agenda_file(num, doc):
@@ -633,13 +633,15 @@ def week_view(request, num=None):
     return render_to_response(template,
             {"timeslots":timeslots,"render_types":["Session","Other","Break","Plenary"]}, context_instance=RequestContext(request))
 
-def ical_agenda(request, num=None, name=None):
+def ical_agenda(request, num=None, name=None, ext=None):
     meeting = get_meeting(num)
+    schedule = get_schedule(meeting, name)
+    updated = Switches().from_object(meeting).updated()
 
     q = request.META.get('QUERY_STRING','') or ""
-    filter = urllib.unquote(q).lower().split(',');
-    include = set(filter)
-    include_types = set(["Plenary","Other"])
+    filter = set(urllib.unquote(q).lower().split(','))
+    include = [ i for i in filter if not (i.startswith('-') or i.startswith('~')) ]
+    include_types = set(["plenary","other"])
     exclude = []
 
     # Process the special flags.
@@ -651,38 +653,26 @@ def ical_agenda(request, num=None, name=None):
     # Non-Working Group "wg names" include:
     #   edu, ietf, tools, iesg, iab
 
-    for item in include:
+    for item in filter:
         if item:
             if item[0] == '-' and item[1] == '~':
-                include_types -= set([item[2:3].upper()+item[3:]])
+                include_types -= set([item[2:]])
             elif item[0] == '-':
                 exclude.append(item[1:])
             elif item[0] == '~':
-                include_types |= set([item[1:2].upper()+item[2:]])
+                include_types |= set([item[1:]])
 
-    timeslots = TimeSlot.objects.filter(Q(meeting__id = meeting.id),
-        Q(type__name__in = include_types) |
-        Q(sessions__group__acronym__in = filter) |
-        Q(sessions__group__parent__acronym__in = filter)
-        ).exclude(Q(sessions__group__acronym__in = exclude)).distinct()
+    assignments = schedule.assignments.filter(
+        Q(timeslot__type__slug__in = include_types) |
+        Q(session__group__acronym__in = include) |
+        Q(session__group__parent__acronym__in = include)
+        ).exclude(session__group__acronym__in = exclude).distinct()
         #.exclude(Q(session__group__isnull = False),
         #Q(session__group__acronym__in = exclude) | 
         #Q(session__group__parent__acronym__in = exclude))
 
-    if meeting.time_zone:
-        try:
-            tzfn = os.path.join(settings.TZDATA_ICS_PATH, meeting.time_zone + ".ics")
-            tzf = open(tzfn)
-            icstext = tzf.read()
-            vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
-            tzf.close()
-        except IOError:
-            vtimezone = None
-    else:
-        vtimezone = None
-
     return HttpResponse(render_to_string("meeting/agenda.ics",
-        {"timeslots":timeslots, "meeting":meeting, "vtimezone": vtimezone },
+        {"schedule":schedule, "assignments":assignments, "updated":updated},
         RequestContext(request)), mimetype="text/calendar")
 
 def csv_agenda(request, num=None, name=None):

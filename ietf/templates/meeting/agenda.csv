@@ -1,5 +1,25 @@
-{% load humanize %}{% autoescape off %}{% load ietf_filters %}"Date","Start","End","Session","Room","Area","Acronym","Type","Description","Session ID","Agenda","Slides"
-{% for slot in timeslots %}{% ifchanged %}{% if slot.reg_info %}"{{ slot.meeting_date|date:"Y-m-d" }}","{{ slot.registration.time_desc|slice:":4" }}","{{ slot.registration.time_desc|slice:"5:9" }}","Registration","{{ venue.reg_area_name }}","","","","{{ slot.registration.name }}","r{{slot.day_id}}","",""
-{% endif %}{% endifchanged %}{% if slot.session_name %}{% if slot.break_info %}"{{ slot.meeting_date|date:"Y-m-d" }}","{{ slot.break_info.time_desc|slice:":4" }}","{{ slot.break_info.time_desc|slice:"5:9" }}","Break","{{ venue.break_area_name }}","","","","{{ slot.break_info.name }}","b{{slot.time_id}}","",""
-{% endif %}{% endif %}{% for session in slot.sessions_by_area %}"{{ slot.meeting_date|date:"Y-m-d" }}","{{ slot.time_desc|slice:":4" }}","{{ slot.time_desc|slice:"5:9" }}","{{ slot.session_name }}","{{ session.info.room_id.room_name }}","{{ session.info.area|upper }}","{{ session.info.acronym }}","{{ session.info.group_type_str }}","{{ session.info.acronym_name }}","{{session.info.pk}}","{% if session.info.agenda_file %}http://datatracker.ietf.org/meeting/{{ meeting.num }}/agenda/{{ session.info.acronym }}/{% endif %}","{% if session.info.slides %}{% for slide in session.info.slides %}http://www.ietf.org/proceedings/{{ slide.file_loc }}{% if not forloop.last %}|{% endif %}{% endfor %}{% endif %}"
-{% endfor %}{% endfor %}{% endautoescape %}
+{% load humanize %}{% autoescape off %}{% load ietf_filters %}"Date","Start","End","Session","Room","Area","Acronym","Type","Description","Session ID","Agenda","Slides"{% for item in schedule.assignments.all.distinct %}
+
+{% if item.timeslot.type.slug == "break" %}
+
+"{{ item.timeslot.time|date:"Y-m-d" }}","{{ item.timeslot.time_desc|slice:":4" }}","{{ item.timeslot.time_desc|slice:"5:9" }}","Break","{{ schedule.meeting.break_area}}","","","","{{ item.timeslot.name }}","b{{ item.timeslot.pk }}","",""
+
+{% endif %}{% if item.timeslot.type.slug == "reg" %}
+
+"{{ item.timeslot.time|date:"Y-m-d" }}","{{ item.timeslot.time_desc|slice:":4" }}","{{ item.timeslot.time_desc|slice:"5:9" }}","{{ item.timeslot.type.name }}","{{ schedule.meeting.reg_area }}","","","","{{ item.timeslot.name }}","r{{item.timeslot.pk}}","",""
+
+{% endif %}{% if item.timeslot.type.slug == "other" %}
+
+"{{ item.timeslot.time|date:"Y-m-d" }}","{{ item.timeslot.time_desc|slice:":4" }}","{{ item.timeslot.time_desc|slice:"5:9" }}","None","{{ item.timeslot.location.name }}","","{{ item.session.group.acronym }}","{% if item.session.group.parent %}{{item.session.group.parent.acronym|upper}}{% endif %}","{{ item.session.name }}","{{item.session.pk}}","",""
+
+
+{% endif %}{% if item.timeslot.type.slug == "plenary" %}
+
+"{{ item.timeslot.time|date:"Y-m-d" }}","{{ item.timeslot.time_desc|slice:":4" }}","{{ item.timeslot.time_desc|slice:"5:9" }}","{{ item.session.name }}","{{ item.timeslot.location.name }}","","{{ item.session.group.acronym }}","","{{ item.session.name }}","{{item.session.pk}}","{% if item.session.agenda %}http://datatracker.ietf.org/meeting/{{ schedule.meeting.number }}/agenda/{{ item.session.agenda.external_url }}{% endif %}","{% if item.session.slides %}{% for slide in item.session.slides %}http://www.ietf.org/proceedings/{{ schedule.meeting.number }}/slides/{{ slide.external_url }}{% if not forloop.last %}|{% endif %}{% endfor %}{% endif %}"
+
+{% endif %}{% if item.timeslot.type.slug == "session" and item.session.group %}
+
+"{{ item.timeslot.time|date:"Y-m-d" }}","{{ item.timeslot.time_desc|slice:":4" }}","{{ item.timeslot.time_desc|slice:"5:9" }}","{{ item.timeslot.name }}","{{ item.timeslot.location.name }}","{{ item.session.group.parent.acronym|upper }}","{{ item.session.group.acronym }}","{{ item.session.type }}","{{ item.session.group.name }}","{{ item.session.pk}}","{% if item.session.agenda %}http://datatracker.ietf.org/meeting/{{ schedule.meeting.number }}/agenda/{{ item.session.agenda.external_url }}{% endif %}","{% if item.session.slides %}{% for slide in item.session.slides %}http://www.ietf.org/proceedings/{{ schedule.meeting.number }}/slides/{{ slide.external_url }}{% if not forloop.last %}|{% endif %}{% endfor %}{% endif %}"
+
+
+{% endif %}{% endfor %}{% endautoescape %}
