@@ -4,6 +4,7 @@ import pytz, datetime
 from urlparse import urljoin
 import copy
 import os
+import re
 
 import debug
 
@@ -192,6 +193,21 @@ class Meeting(models.Model):
                 if not (ts in ts_hash):
                     ScheduledSession.objects.create(schedule = sched,
                                                     timeslot = ts)
+
+    def vtimezone(self):
+        if self.time_zone:
+            try:
+                tzfn = os.path.join(settings.TZDATA_ICS_PATH, self.time_zone + ".ics")
+                if os.path.exists(tzfn):
+                    with open(tzfn) as tzf:
+                        icstext = tzf.read()
+                    vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
+                    if vtimezone:
+                        vtimezone += "\n"
+                    return vtimezone
+            except IOError:
+                pass
+        return ''
 
     class Meta:
         ordering = ["-date", ]
@@ -1177,3 +1193,14 @@ class Session(models.Model):
             return "BOF" if self.group.state.slug in ["bof", "bof-conc"] else "WG"
         else:
             return ""
+
+    def ical_status(self):
+        if self.status.slug == 'canceled': # sic
+            return "CANCELLED"
+        elif (datetime.date.today() - self.meeting.date) > datetime.timedelta(days=5):
+            # this is a bit simpleminded, better would be to look at the
+            # time(s) of the timeslot(s) of the official meeting schedule.
+            return "CONFIRMED"
+        else:
+            return "TENTATIVE"
+            
