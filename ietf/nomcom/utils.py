@@ -263,7 +263,7 @@ def send_reminder_to_nominees(nominees,type):
                 addrs.append(nominee_position.nominee.email.address)
     elif type=='questionnaire':
         for nominee in nominees:
-            for nominee_position in nominee.nomineeposition_set.accepted():
+            for nominee_position in nominee.nomineeposition_set.accepted().without_questionnaire_response():
                 send_questionnaire_reminder_to_nominee(nominee_position)
                 addrs.append(nominee_position.nominee.email.address)
     return addrs

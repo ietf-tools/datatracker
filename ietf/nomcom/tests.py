@@ -14,6 +14,7 @@ from ietf.utils.mail import outbox
 
 
 from ietf.person.models import Email, Person
+from django.contrib.auth.models import User
 
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
                                   COMMUNITY_USER, CHAIR_USER, \
@@ -657,12 +658,15 @@ class FeedbackTest(TestCase):
         os.unlink(self.privatekey_file.name)
         os.unlink(self.cert_file.name)
 
-class ReminderCommandTest(TestCase):
+class ReminderTest(TestCase):
     perma_fixtures = ['names', 'nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
+        self.cert_file, self.privatekey_file = generate_cert()
+        self.nomcom.public_key.storage.location = tempfile.gettempdir()
+        self.nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         gen = Position.objects.get(nomcom=self.nomcom,name='GEN')
         rai = Position.objects.get(nomcom=self.nomcom,name='RAI')
@@ -684,6 +688,17 @@ class ReminderCommandTest(TestCase):
         np = n.nomineeposition_set.get(position=rai)
         np.time = t_minus_4
         np.save()
+        n = get_or_create_nominee(self.nomcom,"Nominee 2","nominee2@example.org",gen,None)
+        np = n.nomineeposition_set.get(position=gen)
+        np.state = NomineePositionState.objects.get(slug='accepted')
+        np.time = t_minus_4
+        np.save()
+        feedback = Feedback.objects.create(nomcom=self.nomcom,
+                                           comments='some non-empty comments',
+                                           type=FeedbackType.objects.get(slug='questio'),
+                                           user=User.objects.get(username=CHAIR_USER))
+        feedback.positions.add(gen)
+        feedback.nominees.add(n)
 
     def test_is_time_to_send(self):
         self.nomcom.reminder_interval = 4
@@ -714,5 +729,22 @@ class ReminderCommandTest(TestCase):
         self.assertEqual(len(outbox), messages_before + 1)
         self.assertTrue('nominee2@example.org' in outbox[-1]['To'])
         self.assertTrue('please accept' in outbox[-1]['Subject'])
- 
      
+    def test_remind_accept_view(self):
+        url = reverse('nomcom_send_reminder_mail', kwargs={'year': NOMCOM_YEAR,'type':'accept'})
+        login_testing_unauthorized(self, CHAIR_USER, url)
+        messages_before=len(outbox)
+        test_data = {'selected': [x.id for x in Nominee.objects.filter(nomcom=self.nomcom)]}
+        response = self.client.post(url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(outbox), messages_before + 2)
+
+    def test_remind_questionnaire_view(self):
+        url = reverse('nomcom_send_reminder_mail', kwargs={'year': NOMCOM_YEAR,'type':'questionnaire'})
+        login_testing_unauthorized(self, CHAIR_USER, url)
+        messages_before=len(outbox)
+        test_data = {'selected': [x.id for x in Nominee.objects.filter(nomcom=self.nomcom)]}
+        response = self.client.post(url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(outbox), messages_before + 1)
+
