@@ -498,7 +498,7 @@ class SlideProxy(Document):
     #group_acronym_id = models.IntegerField(null=True, blank=True)
     #slide_num = models.IntegerField(null=True, blank=True)
     @property
-    def slide_name(self):
+    def slide_num(self):
         return int(self.name.split("-")[3])
     #slide_type_id = models.IntegerField(choices=SLIDE_TYPE_CHOICES)
     #slide_name = models.CharField(blank=True, max_length=255)
