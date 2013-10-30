@@ -87,7 +87,7 @@ class TimedeltaFormField(forms.Field):
         for value, multiply in zip(value, self.widget.multiply):
             try:
                 i+=int(value)*multiply
-            except ValueError, TypeError:
+            except (ValueError, TypeError):
                 raise forms.ValidationError(self.error_messages['invalid'])
         return i
 
