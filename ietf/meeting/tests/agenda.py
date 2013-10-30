@@ -80,14 +80,6 @@ class AgendaInfoTestCase(TestCase):
         except Http404:
             pass
 
-
-    def test_TimeSlotHasRegistrationInfo(self):
-        # find the registration slot, and confirm that it can find the registration
-        regslot = TimeSlot.objects.get(pk=2900)
-        self.assertEqual(regslot.type.slug, "reg")
-        slot1 = TimeSlot.objects.get(pk=2371)  # "name": "Morning Session I"
-        self.assertEqual(slot1.registration(), regslot)
-
     def test_DoNotGetSchedule(self):
         from django.http import Http404
         num = '83'
@@ -117,22 +109,6 @@ class AgendaInfoTestCase(TestCase):
         Need a fixture for a meeting that is interim
         """
         pass
-
-    def test_AgendaInfoNamedSlotSessionsByArea(self):
-        from ietf.meeting.views import agenda_info
-        num = '83'
-        timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-        # the third timeslot should be 1300-1450 on Sunday March 25.
-        # it should have three things:
-        #1300-1450  Tools for Creating Internet-Drafts Tutorial - 241
-        #1300-1450  Newcomers' Orientation - 252B
-        #1300-1450  Meetecho Tutorial for Participants and WG Chairs - 252A
-        #import pdb
-        #pdb.set_trace()
-        slot3 = timeslots[2]
-        self.assertEqual(slot3.time_desc, "1300-1450")
-        events = slot3.scheduledsessions_at_same_time()
-        self.assertEqual(len(events), 3)
 
     def test_serialize_constraint(self):
         session1  = Session.objects.get(pk=2157)
