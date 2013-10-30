@@ -14,7 +14,6 @@ from timedeltafield import TimedeltaField
 
 # mostly used by json_dict()
 from django.template.defaultfilters import slugify, date as date_format, time as time_format
-from django.utils import formats
 
 from ietf.group.models import Group
 from ietf.person.models import Person
@@ -37,11 +36,6 @@ TIME_FORMAT = "%H:%M:%S"
 def fmt_date(o):
     d = datetime_safe.new_date(o)
     return d.strftime(DATE_FORMAT)
-
-def fmt_datetime(o):
-    d = datetime_safe.new_date(o)
-    return d.strftime("%s %s" % (DATE_FORMAT, TIME_FORMAT))
-
 
 class Meeting(models.Model):
     # number is either the number for IETF meetings, or some other
@@ -117,10 +111,6 @@ class Meeting(models.Model):
         return None
 
     @property
-    def sessions_that_wont_meet(self):
-        return self.session_set.filter(status__slug='notmeet')
-
-    @property
     def sessions_that_can_meet(self):
         return self.session_set.exclude(status__slug='notmeet').exclude(status__slug='disappr').exclude(status__slug='deleted').exclude(status__slug='apprw')
 
@@ -159,7 +149,6 @@ class Meeting(models.Model):
         time_slices = {}   # the times on each day
         slots = {}
 
-        ids = []
         for ts in self.timeslot_set.all():
             if ts.location is None:
                 continue
@@ -290,16 +279,6 @@ class TimeSlot(models.Model):
                 self._reg_info = None
         return self._reg_info
 
-    def reg_info(self):
-        return (self.registration() is not None)
-
-    def break_info(self):
-        breaks = self.__class__.objects.filter(meeting=self.meeting, time__month=self.time.month, time__day=self.time.day, type="break").order_by("time")
-        for brk in breaks:
-            if brk.time_desc[-4:] == self.time_desc[:4]:
-                return brk
-        return None
-	 
     def __unicode__(self):
         location = self.get_location()
         if not location:
@@ -319,6 +298,7 @@ class TimeSlot(models.Model):
         if not self.show_location:
             location = ""
         return location
+
     @property
     def tz(self):
         if self.meeting.time_zone:
@@ -343,30 +323,6 @@ class TimeSlot(models.Model):
         else:
             return None
 
-    def session_name(self):
-        if self.type_id not in ("session", "plenary"):
-            return None
-
-        class Dummy(object):
-            def __unicode__(self):
-                return self.session_name
-        d = Dummy()
-        d.session_name = self.name
-        return d
-
-    def session_for_schedule(self, schedule):
-        ss = scheduledsession_set.filter(schedule=schedule).all()[0]
-        if ss:
-            return ss.session
-        else:
-            return None
-
-    def scheduledsessions_at_same_time(self, agenda=None):
-        if agenda is None:
-            agenda = self.meeting.agenda
-
-        return agenda.scheduledsession_set.filter(timeslot__time=self.time, timeslot__type__in=("session", "plenary", "other"))
-
     @property
     def js_identifier(self):
         # this returns a unique identifier that is js happy.
@@ -374,25 +330,6 @@ class TimeSlot(models.Model):
         # also must match:
         #  {{r|slugify}}_{{day}}_{{slot.0|date:'Hi'}}
         return "%s_%s_%s" % (slugify(self.get_location()), self.time.strftime('%Y-%m-%d'), self.time.strftime('%H%M'))
-
-
-    @property
-    def is_plenary(self):
-        return self.type_id == "plenary"
-
-    def is_plenary_type(self, name, agenda=None):
-        return self.type_id == "plenary" and self.sessions.all()[0].short == name
-
-    @property
-    def slot_decor(self):
-        if self.type_id == "plenary":
-            return "plenary";
-        elif self.type_id == "session":
-            return "session";
-        elif self.type_id == "non-session":
-            return "non-session";
-        else:
-            return "reserved";
 
     def json_dict(self, selfurl):
         ts = dict()
@@ -559,10 +496,6 @@ class Schedule(models.Model):
         return self.scheduledsession_set.filter(session__isnull=False)
 
     @property
-    def qs_scheduledsessions_without_assignments(self):
-        return self.scheduledsession_set.filter(session__isnull=True)
-
-    @property
     def group_mapping(self):
         assignments,sessions,total,scheduled = self.group_session_mapping
         return assignments
@@ -586,26 +519,12 @@ class Schedule(models.Model):
             scheduled =+ 1
         return assignments,sessions,total,scheduled
 
-    # calculate badness of entire schedule
-    def calc_badness(self):
-        # now calculate badness
-        assignments = self.group_mapping
-        return self.calc_badness1(assignments)
-
     cached_sessions_that_can_meet = None
     @property
     def sessions_that_can_meet(self):
         if self.cached_sessions_that_can_meet is None:
             self.cached_sessions_that_can_meet = self.meeting.sessions_that_can_meet.all()
         return self.cached_sessions_that_can_meet
-
-    # calculate badness of entire schedule
-    def calc_badness1(self, assignments):
-        badness = 0
-        for sess in self.sessions_that_can_meet:
-            badness += sess.badness(assignments)
-        self.badness = badness
-        return badness
 
     def area_list(self):
         return ( self.assignments.filter(session__group__type__slug__in=['wg', 'rg', 'ag'],
@@ -646,10 +565,6 @@ class ScheduledSession(models.Model):
         return self.timeslot.location.name
 
     @property
-    def special_agenda_note(self):
-        return self.session.agenda_note if self.session else ""
-
-    @property
     def acronym(self):
         if self.session and self.session.group:
             return self.session.group.acronym
@@ -663,23 +578,6 @@ class ScheduledSession(models.Model):
             return None
 
     @property
-    def acronym_name(self):
-        if not self.session:
-            return self.notes
-        if hasattr(self, "interim"):
-            return self.session.group.name + " (interim)"
-        elif self.session.name:
-            return self.session.name
-        else:
-            return self.session.group.name
-
-    @property
-    def session_name(self):
-        if self.timeslot.type_id not in ("session", "plenary"):
-            return None
-        return self.timeslot.name
-
-    @property
     def area(self):
         if not self.session or not self.session.group:
             return ""
@@ -690,31 +588,6 @@ class ScheduledSession(models.Model):
         if not self.session.group.parent or not self.session.group.parent.type_id in ["area","irtf"]:
             return ""
         return self.session.group.parent.acronym
-
-#    def break_info(self):
-#        breaks = self.schedule.scheduledsessions_set.filter(timeslot__time__month=self.timeslot.time.month, timeslot__time__day=self.timeslot.time.day, timeslot__type="break").order_by("timeslot__time")
-#        now = self.timeslot.time_desc[:4]
-#        for brk in breaks:
-#            if brk.time_desc[-4:] == now:
-#                return brk
-#        return None
-
-    @property
-    def area_name(self):
-        if self.timeslot.type_id == "plenary":
-            return "Plenary Sessions"
-        elif self.session and self.session.group and self.session.group.acronym == "edu":
-            return "Training"
-        elif not self.session or not self.session.group or not self.session.group.parent or not self.session.group.parent.type_id == "area":
-            return ""
-        return self.session.group.parent.name
-
-    @property
-    def isWG(self):
-        if not self.session or not self.session.group:
-            return False
-        if self.session.group.type_id == "wg" and self.session.group.state_id != "bof":
-            return True
 
     @property
     def group_type_str(self):
@@ -982,12 +855,12 @@ class Session(models.Model):
         return sess1
 
     def badness_test(self, num):
-        import sys
         from settings import BADNESS_CALC_LOG
         #sys.stdout.write("num: %u / BAD: %u\n" % (num, BADNESS_CALC_LOG))
         return BADNESS_CALC_LOG >= num
 
     def badness_log(self, num, msg):
+        import sys
         if self.badness_test(num):
             sys.stdout.write(msg)
 
@@ -1013,7 +886,6 @@ class Session(models.Model):
 
         if self.badness_test(2):
             self.badness_log(2, "badgroup: %s badness calculation has %u constraints\n" % (self.group.acronym, len(conflicts)))
-        import sys
         from settings import BADNESS_UNPLACED, BADNESS_TOOSMALL_50, BADNESS_TOOSMALL_100, BADNESS_TOOBIG, BADNESS_MUCHTOOBIG
         count = 0
         myss_list = assignments[self.group]

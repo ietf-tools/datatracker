@@ -3,12 +3,7 @@
 #import models
 import datetime
 import os
-import re
-import tarfile
 
-from tempfile import mkstemp
-
-from django import forms
 from django.http import Http404
 from django.http import HttpRequest
 from django.db.models import Max, Q
@@ -17,10 +12,8 @@ from django.core.cache import cache
 from django.utils.cache import get_cache_key
 
 import debug
-import urllib
 
 from django.shortcuts import get_object_or_404
-from ietf.idtracker.models import InternetDraft
 from ietf.ietfauth.decorators import has_role
 from ietf.utils.history import find_history_active_at
 from ietf.doc.models import Document, State
@@ -28,124 +21,8 @@ from ietf.doc.models import Document, State
 from ietf.proceedings.models import Meeting as OldMeeting, MeetingTime, IESGHistory, Switches
 
 # New models
-from ietf.meeting.models import Meeting, TimeSlot, Session
-from ietf.meeting.models import Schedule, ScheduledSession
+from ietf.meeting.models import Meeting
 from ietf.group.models import Group
-
-class NamedTimeSlot(object):
-    """
-    this encapsulates a TimeSlot with a Schedule, so that
-    specific time slots can be returned as appropriate. It proxies
-    most things to TimeSlot.  Agenda_info returns an array of these
-    objects rather than actual Time Slots, as the templates do not
-    permit multiple parameters to be passed into a relation.
-    This may be irrelevant with Django 1.3+, given with argument extension
-    to templating language.
-    """
-    def __init__(self, agenda, timeslot):
-        self.agenda   = agenda
-        self.timeslot = timeslot
-
-    def scheduledsessions(self):
-        self.timeslot.scheduledsessions_set.filter(schedule=self.agenda, session__isnull=False)
-
-    @property
-    def time(self):
-        return self.timeslot.time
-
-    @property
-    def meeting_date(self):
-        return self.timeslot.meeting_date
-
-    @property
-    def reg_info(self):
-        return self.timeslot.reg_info
-
-    @property
-    def registration(self):
-        return self.timeslot.registration
-
-    @property
-    def session_name(self):
-        return self.timeslot.session_name
-
-    @property
-    def break_info(self):
-        return self.timeslot.break_info
-
-    @property
-    def time_desc(self):
-        return self.timeslot.time_desc
-
-    @property
-    def is_plenary(self):
-        return self.timeslot.is_plenary
-
-    def is_plenaryw(self):
-        return self.timeslot.is_plenary_type("opsplenary")
-
-    def is_plenaryt(self):
-        return self.timeslot.is_plenary_type("techplenary")
-
-    @property
-    def tzname(self):
-        return self.timeslot.tzname
-
-    @property
-    def room_name(self):
-        if self.timeslot:
-            if self.timeslot.location:
-                return self.timeslot.location.name
-            else:
-                return "no room set for plenary %u" % (self.timeslot.pk)
-        else:
-            return "bogus NamedTimeSlot"
-
-    @property
-    def sessions(self):
-        return [ ss.session for ss in self.timeslot.scheduledsession_set.filter(schedule=self.agenda, schedule__isnull=False) ]
-
-    @property
-    def scheduledsessions_at_same_time(self):
-        if not hasattr(self, "sessions_at_same_time_cache"):
-            self.sessions_at_same_time_cache = self.timeslot.scheduledsessions_at_same_time(self.agenda)
-        return self.sessions_at_same_time_cache
-
-    @property
-    def scheduledsessions(self):
-        return self.timeslot.scheduledsession_set.filter(schedule=self.agenda)
-
-    @property
-    def scheduledsessions_by_area(self):
-        things = self.scheduledsessions_at_same_time
-        if things is not None:
-            return [ {"area":ss.area+ss.acronym_name, "info":ss} for ss in things ]
-        else:
-            return [ ]
-
-    @property
-    def slot_decor(self):
-        return self.timeslot.slot_decor
-
-def get_ntimeslots_from_ss(agenda, scheduledsessions):
-    ntimeslots = []
-    time_seen = set()
-
-    for ss in scheduledsessions:
-        t = ss.timeslot
-        if not t.time in time_seen:
-            time_seen.add(t.time)
-            ntimeslots.append(NamedTimeSlot(agenda, t))
-    time_seen = None
-
-    return ntimeslots
-
-def get_ntimeslots_from_agenda(agenda):
-    # now go through the timeslots, only keeping those that are
-    # sessions/plenary/training and don't occur at the same time
-    scheduledsessions = agenda.scheduledsession_set.all().order_by("timeslot__time").exclude(timeslot__type = "unavail")
-    ntimeslots = get_ntimeslots_from_ss(agenda, scheduledsessions)
-    return ntimeslots, scheduledsessions
 
 def find_ads_for_meeting(meeting):
     ads = []
@@ -249,7 +126,6 @@ def build_all_agenda_slices(scheduledsessions, all = False):
     time_slices = []
     date_slices = {}
 
-    ids = []
     for ss in scheduledsessions:
         if(all or ss.session != None):# and len(ss.timeslot.session.agenda_note)>1):
             ymd = ss.timeslot.time.date()
