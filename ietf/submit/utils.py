@@ -17,8 +17,9 @@ from ietf.ietfauth.decorators import has_role
 
 from ietf.doc.models import *
 from ietf.person.models import Person, Alias, Email
-from ietf.doc.utils import add_state_change_event
+from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
 from ietf.message.models import Message
+
 
 # Some useful states
 UPLOADED = 1
@@ -96,6 +97,8 @@ def perform_post(request, submission):
     DocAlias.objects.get_or_create(name=submission.filename, document=draft)
 
     update_authors(draft, submission)
+
+    rebuild_reference_relations(draft)
 
     # new revision event
     e = NewRevisionDocEvent(type="new_revision", doc=draft, rev=draft.rev)
