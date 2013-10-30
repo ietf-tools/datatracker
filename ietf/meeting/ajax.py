@@ -1,32 +1,19 @@
-from urlparse import urljoin
 
 from django.utils import simplejson as json
-from dajaxice.core import dajaxice_functions
 from dajaxice.decorators import dajaxice_register
-from django.views.decorators.cache import cache_page
-from django.core import serializers
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404
 
 from ietf.ietfauth.decorators import group_required, has_role
 from ietf.name.models import TimeSlotTypeName
-from django.http import HttpResponseRedirect, HttpResponse, Http404, QueryDict
+from django.http import HttpResponseRedirect, HttpResponse, QueryDict
 
 from ietf.meeting.helpers import get_meeting, get_schedule, get_schedule_by_id, agenda_permissions
 from ietf.meeting.views   import edit_timeslots, edit_agenda
 
 
 # New models
-from ietf.meeting.models import Meeting, TimeSlot, Session
-from ietf.meeting.models import Schedule, ScheduledSession, Room
-from ietf.group.models import Group
-import datetime
-
-import logging
-import sys
-from ietf.settings import LOG_DIR
-
-log = logging.getLogger(__name__)
+from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint
 
 import debug
 
@@ -140,7 +127,7 @@ def update_timeslot(request, schedule_id, session_id, scheduledsession_id=None, 
             if(duplicate):
                 ss.id = None
             ss.save()
-    except Exception as e:
+    except Exception:
         return json.dumps({'error':'invalid scheduledsession'})
 
     return json.dumps({'message':'valid'})
@@ -195,7 +182,7 @@ def timeslot_addroom(request, meeting):
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
         url = reverse(timeslot_roomurl, args=[meeting.number, newroom.pk])
-        #log.debug("Returning timeslot_roomurl: %s " % (url))
+        #debug.log("Returning timeslot_roomurl: %s " % (url))
         return HttpResponseRedirect(url)
     else:
         return HttpResponseRedirect(
@@ -228,8 +215,9 @@ def timeslot_roomurl(request, num=None, roomid=None):
         room = get_object_or_404(meeting.room_set, pk=roomid)
         return HttpResponse(json.dumps(room.json_dict(request.build_absolute_uri('/'))),
                             mimetype="application/json")
-    elif request.method == 'PUT':
-        return timeslot_updroom(request, meeting)
+# XXX FIXME: timeslot_updroom() doesn't exist
+#    elif request.method == 'PUT':
+#        return timeslot_updroom(request, meeting)
     elif request.method == 'DELETE':
         return timeslot_delroom(request, meeting, roomid)
 
@@ -252,7 +240,7 @@ def timeslot_addslot(request, meeting):
 
     # authorization was enforced by the @group_require decorator above.
     addslotform = AddSlotForm(request.POST)
-    #log.debug("newslot: %u" % ( addslotform.is_valid() ))
+    #debug.log("newslot: %u" % ( addslotform.is_valid() ))
     if not addslotform.is_valid():
         return HttpResponse(status=404)
 
@@ -262,6 +250,10 @@ def timeslot_addslot(request, meeting):
 
     newslot.create_concurrent_timeslots()
 
+    # XXX FIXME: timeslot_dayurl is undefined.  Placeholder:
+    timeslot_dayurl = None
+    # XXX FIXME: newroom is undefined.  Placeholder:
+    newroom = None
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
         return HttpResponseRedirect(
             reverse(timeslot_dayurl, args=[meeting.number, newroom.pk]))
@@ -334,7 +326,7 @@ def agenda_add(request, meeting):
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
         url =  reverse(agenda_infourl, args=[meeting.number, newagenda.name])
-        #log.debug("Returning agenda_infourl: %s " % (url))
+        #debug.log("Returning agenda_infourl: %s " % (url))
         return HttpResponseRedirect(url)
     else:
         return HttpResponseRedirect(
@@ -348,7 +340,7 @@ def agenda_update(request, meeting, schedule):
     # accept a subset of values.
     update_dict = QueryDict(request.raw_post_data, encoding=request._encoding)
 
-    #log.debug("99 meeting.agenda: %s / %s / %s" %
+    #debug.log("99 meeting.agenda: %s / %s / %s" %
     #          (schedule, update_dict, request.raw_post_data))
 
     user = request.user
@@ -358,7 +350,7 @@ def agenda_update(request, meeting, schedule):
             value = update_dict["public"]
             if value == "0" or value == 0 or value=="false":
                 value1 = False
-            log.debug("setting public for %s to %s" % (schedule, value1))
+            #debug.log("setting public for %s to %s" % (schedule, value1))
             schedule.public = value1
 
     if "visible" in update_dict:
@@ -366,12 +358,12 @@ def agenda_update(request, meeting, schedule):
         value = update_dict["visible"]
         if value == "0" or value == 0 or value=="false":
             value1 = False
-        log.debug("setting visible for %s to %s" % (schedule, value1))
+        #debug.log("setting visible for %s to %s" % (schedule, value1))
         schedule.visible = value1
 
     if "name" in update_dict:
         value = update_dict["name"]
-        log.debug("setting name for %s to %s" % (schedule, value))
+        #debug.log("setting name for %s to %s" % (schedule, value))
         schedule.name = value
 
     schedule.save()
@@ -391,7 +383,7 @@ def agenda_update(request, meeting, schedule):
 @group_required('Secretariat')
 def agenda_del(request, meeting, schedule):
     schedule.delete_scheduledsessions()
-    #log.debug("deleting meeting: %s agenda: %s" % (meeting, meeting.agenda))
+    #debug.log("deleting meeting: %s agenda: %s" % (meeting, meeting.agenda))
     if meeting.agenda == schedule:
         meeting.agenda = None
         meeting.save()
@@ -411,10 +403,10 @@ def agenda_infosurl(request, num=None):
 
 def agenda_infourl(request, num=None, schedule_name=None):
     meeting = get_meeting(num)
-    #log.debug("agenda: %s / %s" % (meeting, schedule_name))
+    #debug.log("agenda: %s / %s" % (meeting, schedule_name))
 
     schedule = get_schedule(meeting, schedule_name)
-    #log.debug("results in agenda: %u / %s" % (schedule.id, request.method))
+    #debug.log("results in agenda: %u / %s" % (schedule.id, request.method))
 
     if request.method == 'GET':
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
@@ -442,20 +434,20 @@ def meeting_update(request, meeting):
     # at present, only the official agenda can be updated from this interface.
     update_dict = QueryDict(request.raw_post_data, encoding=request._encoding)
 
-    #log.debug("1 meeting.agenda: %s / %s / %s" % (meeting.agenda, update_dict, request.raw_post_data))
+    #debug.log("1 meeting.agenda: %s / %s / %s" % (meeting.agenda, update_dict, request.raw_post_data))
     if "agenda" in update_dict:
         value = update_dict["agenda"]
-        #log.debug("4 meeting.agenda: %s" % (value))
+        #debug.log("4 meeting.agenda: %s" % (value))
         if value is None or value == "None":
             meeting.agenda = None
         else:
             schedule = get_schedule(meeting, value)
             if not schedule.public:
                 return HttpResponse(status = 406)
-            #log.debug("3 meeting.agenda: %s" % (schedule))
+            #debug.log("3 meeting.agenda: %s" % (schedule))
             meeting.agenda = schedule
 
-    #log.debug("2 meeting.agenda: %s" % (meeting.agenda))
+    #debug.log("2 meeting.agenda: %s" % (meeting.agenda))
     meeting.save()
     return meeting_get(request, meeting)
 
