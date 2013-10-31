@@ -84,7 +84,7 @@ def current_materials(request):
     meeting = OldMeeting.objects.exclude(number__startswith='interim-').order_by('-meeting_num')[0]
     return HttpResponseRedirect( reverse(materials, args=[meeting.meeting_num]) )
 
-def mobile_user_agent_detect(request):
+def get_user_agent(request):
     if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
         user_agent = "iPhone"
     elif 'user_agent' in request.REQUEST:
@@ -332,28 +332,11 @@ def edit_agendas(request, num=None, order=None):
                                          RequestContext(request)),
                         mimetype="text/html")
 
-def iphone_agenda(request, num, name):
-    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-
-    groups_meeting = [];
-    for slot in timeslots:
-        for session in slot.sessions():
-            groups_meeting.append(session.acronym())
-    groups_meeting = set(groups_meeting);
-
-    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).filter(group_acronym__acronym__in = groups_meeting).order_by('group_acronym__acronym')
-    rgs = IRTF.objects.all().filter(acronym__in = groups_meeting).order_by('acronym')
-    areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
-    template = "meeting/m_agenda.html"
-    return render_to_response(template,
-            {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
-                "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, 
-                "wg_list" : wgs, "rg_list" : rgs, "area_list" : areas},
-            context_instance=RequestContext(request))
-
 def agenda(request, num=None, name=None, base=None, ext=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.html'
+    if 'iPhone' in get_user_agent(request) and ext == ".html":
+        base = 'm_agenda'
     mimetype = {".html":"text/html", ".txt": "text/plain", ".ics":"text/calendar", ".csv":"text/csv"}
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)

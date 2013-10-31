@@ -1075,4 +1075,18 @@ class Session(models.Model):
             return "CONFIRMED"
         else:
             return "TENTATIVE"
+
+    def agenda_file(self):
+        if not hasattr(self, '_agenda_file'):
+            self._agenda_file = ""
+
+            docs = self.materials.filter(type="agenda", states__type="agenda", states__slug="active")
+            if not docs:
+                return ""
+
+            # we use external_url at the moment, should probably regularize
+            # the filenames to match the document name instead
+            filename = docs[0].external_url
+            self._agenda_file = "%s/agenda/%s" % (self.meeting.number, filename)
             
+        return self._agenda_file

@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 {% load ietf_filters %}
-{% block title %} IETF {{ meeting.num }} Meeting Agenda{% endblock %}
+{% block title %} IETF {{ schedule.meeting.number }} Meeting Agenda{% endblock %}
 {% block head %}
   <link href="http://tools.ietf.org/css/palette.css"  rel="stylesheet" type="text/css" />
   <link rel="apple-touch-icon" href="/images/agenda-touch-icon.png" />
@@ -21,7 +21,7 @@
 	utc.setMinutes(now.getMinutes() + now.getTimezoneOffset());
 	var loc = utc;
 	// Switch page location 1 hour after local time, to give stragglers some leeway.
-	loc.setHours(utc.getHours() + {{meeting.time_zone|default_if_none:"0"}} - 1);
+	loc.setHours(utc.getHours() + {{ schedule.meeting.time_zone|default_if_none:"0"}} - 1);
 	localtime = loc.format("%Y-%m-%d_%H%M");
 	var anchors = document.getElementsByTagName("a");
 	for (var i = 0; i<anchors.length;i++){
@@ -52,7 +52,7 @@
       {% for item in schedule.assignments.all.distinct %}
 	  {% ifchanged  %}
 	  <tr>
-	     <td colspan="4">
+	     <td colspan="3">
 		<a name="{{item.timeslot.time|date:"Y-m-d"}}_0000" />
 		<h4>{{ item.timeslot.time|date:"l"|upper }}, {{ item.timeslot.time|date:"F j, Y" }}</h4>
 	     </td>
@@ -61,7 +61,7 @@
 
 	  {% if item.timeslot.type.slug == "reg" %}
 	  <tr>
-	     <td colspan="4">
+	     <td colspan="3">
 		{{ item.timeslot.time_desc  }}  {{ item.timeslot.name  }}
 		{% if schedule.meeting.reg_area %} - <a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ schedule.meeting.reg_area|slugify }}">{{ schedule.meeting.reg_area|escape }}</a>{% endif %}
 	     </td>
@@ -70,7 +70,7 @@
 
 	  {% if item.timeslot.type.slug == "break" %}
 	  <tr>
-	     <td colspan="4">
+	     <td colspan="3">
 		<br />
 		{{ item.timeslot.time_desc }}  {{ item.timeslot.name }}
 		{% if schedule.meeting.break_area and item.timeslot.break_info.show_break_location %} - <a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ schedule.meeting.break_area|slugify }}">{{ schedule.meeting.break_area|escape }}</a>{% endif %}
@@ -83,14 +83,17 @@
 	      {% if item.session.group  %}
 		  {% ifchanged %}
 		      <tr>
-			 <td colspan="4">
+			 <td colspan="3">
 			    <a name="{{item.timeslot.time|date:"Y-m-d"}}_{{item.timeslot.time_desc|slice:":4"}}" />
 			    <h5>{{item.timeslot.time|date:"D"}} {{ item.timeslot.time_desc               }}  {{ item.timeslot.name }}
 			 </td>
 		      </tr>
 		  {% endifchanged %}
 
-		  <tr id="{{schedule.meeting.number}}-{{item.timeslot.time|date:"D"|lower}}-{{item.timeslot.time_desc|slice:":4"}}-{{item.session.group.acronym|lower}}">	 <td><a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{item.timeslot.location.name|slugify}}">{{ item.timeslot.location.name}}</a></td>
+		  <tr id="{{schedule.meeting.number}}-{{item.timeslot.time|date:"D"|lower}}-{{item.timeslot.time_desc|slice:":4"}}-{{item.session.group.acronym|lower}}">
+		     <td>
+			<a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{item.timeslot.location.name|slugify}}">{{ item.timeslot.location.name}}</a>
+		     </td>
 		     <td>
 			{% if item.session.type == "WG" %}<a href="http://www.ietf.org/dyn/wg/charter/{{ item.session.group.acronym|lower }}-charter.html">{%endif%}
 			   {% ifequal item.session.type "BOF" %}<span style="background-color: #6FD">{% endifequal %}
@@ -99,9 +102,9 @@
 			{% if item.session.type == "WG" %}</a>{%endif%}
 		     </td>
 		     <td>
-			{% if item.session.info.agenda_file %}<a href="http://tools.ietf.org/wg/{{item.session.group.acronym}}/agenda/">{%endif%}
-			   {{ item.session.group.name|truncate_ellipsis:"20"|safe }}
-			{% if item.session.info.agenda_file %}</a>{%endif%}
+			{% if item.session.agenda_file %}<a href="http://tools.ietf.org/wg/{{item.session.group.acronym}}/agenda/">{%endif%}
+			   {{ item.session.group.name|truncate_ellipsis:"22"|safe }}
+			{% if item.session.agenda_file %}</a>{%endif%}
 		     </td>
 		  </tr>
 	      {% endif %}
@@ -110,9 +113,9 @@
 
 	  {% if item.timeslot.type.slug == "other" %}      
 	  <tr>
-	     <td colspan="4">
+	     <td colspan="3">
 		<a name="{{item.timeslot.time|date:"Y-m-d"}}_{{item.timeslot.time_desc|slice:":4"}}" />
-		{{ item.timeslot.time_desc }}  {{ item.timeslot.name|truncate_ellipsis:"20"|safe }} - <a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{item.timeslot.location.name|slugify}}">{{ item.timeslot.location.name}}</a>
+		{{ item.timeslot.time_desc }}  {{ item.timeslot.name|truncate_ellipsis:"19"|safe }} - <a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{item.timeslot.location.name|slugify}}">{{ item.timeslot.location.name}}</a>
 	     </td>
 	  </tr>
 	  {% endif %}{# other #}
