@@ -42,88 +42,82 @@
 {% block content %}
 <span id='colorpallet'></span>
 <div class="header">
-<a name="{{ meeting.start_date|date:"Y-m-d_0000" }}" />
-<h1>Agenda of the {{ meeting.num|ordinal }} IETF Meeting</h1>
-<h2>{{ meeting.start_date|date:"F j" }}-{% ifnotequal meeting.start_date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}</h2>
+<a name="{{ schedule.meeting.date|date:"Y-m-d_0000" }}" />
+<h1>Agenda of the {{ schedule.meeting.number|ordinal }} IETF Meeting</h1>
+<h2>{{ schedule.meeting.date|date:"F j" }}-{% ifnotequal schedule.meeting.date.month schedule.meeting.end_date.month %}{{ schedule.meeting.end_date|date:"F " }}{% endifnotequal %}{{ schedule.meeting.end_date|date:"j, Y" }}</h2>
 </div>
 <div class="legal">IETF agendas are subject to change, up to and during the meeting.</div>
 <div>
    <table id="agenda">
-      {% for slot in timeslots %}
-      {% ifchanged  %}
-      <tr>
-	 <td colspan="4">
-	    <a name="{{slot.meeting_date|date:"Y-m-d"}}_0000" />
-	    <h4>{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}</h4>
-	 </td>
-      </tr>
-      {% if slot.reg_info %}
-      <tr>
-	 <td colspan="4">
-	    {{ slot.registration.time_desc  }}  {{ slot.registration.name  }}
-	    {% if venue.reg_area_name %} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{ venue.reg_area_name|slugify }}">{{ venue.reg_area_name|escape }}</a>{% endif %}
-	 </td>
-      </tr>
-      {% endif %}
-      {% endifchanged %}
-      {% if slot.session_name %}
-      {% if slot.break_info %}
-      <tr>
-	 <td colspan="4">
-	    <br />
-	    {{ slot.break_info.time_desc }}  {{ slot.break_info.name }}
-	    {% if venue.break_area_name and slot.break_info.show_break_location %} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{ venue.break_area_name|slugify }}">{{ venue.break_area_name|escape }}</a>{% endif %}
-	 </td>
-      </tr>
-      {% endif %}
-      <tr>
-	 <td colspan="4">
-	    <a name="{{slot.meeting_date|date:"Y-m-d"}}_{{slot.time_desc|slice:":4"}}" />
-	    <h5>{{slot.meeting_date|date:"D"}} {{ slot.time_desc               }}  {{ slot.session_name }}
-	    {% ifequal slot.sessions.0.acronym "plenaryw" %}
-	    - {{ slot.sessions.0.room_id.room_name }}</h5>
-	    <pre>{{ plenaryw_agenda|escape }}</pre>
-	    {% else %}
-	    {% ifequal slot.sessions.0.acronym "plenaryt" %}
-	    - {{ slot.sessions.0.room_id.room_name }}</h5>
-	    <pre>{{ prenaryt_agenda|escape }}</pre>
-            {% else %}
-            </h5>
-	    {% endifequal %}
-            {% endifequal %}
-	    
-	 </td>
-      </tr>
-      {% if not slot.is_plenary %}
-      {% for session in slot.sessions_by_area|dictsort:"area" %}
-      <tr id="{{meeting.num}}-{{slot.meeting_date|date:"D"|lower}}-{{slot.time_desc|slice:":4"}}-{{session.info.acronym|lower}}">	 <td><a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{session.info.room_id.room_name|slugify}}">{{ session.info.room_id.room_name}}</a></td>
-	 {% if session.info.area %}
-	 <td>
-	    {% if session.info.isWG %}<a href="http://www.ietf.org/dyn/wg/charter/{{ session.info.acronym|lower }}-charter.html">{%endif%}
-	       {% ifequal session.info.group_type_str "BOF" %}<span style="background-color: #6FD">{% endifequal %}
-	       {{ session.info.acronym|lower }}
-	       {% ifequal session.info.group_type_str "BOF" %}</span>{% endifequal %}
-	    {% if session.info.isWG %}</a>{%endif%}
-	 </td>
-	 <td>
-	    {% if session.info.agenda_file %}<a href="http://tools.ietf.org/wg/{{session.info.acronym}}/agenda/">{%endif%}
-	       {{ session.info.acronym_name|truncate_ellipsis:"20"|safe }}
-	    {% if session.info.agenda_file %}</a>{%endif%}
-	 </td>
-	 {% endif %}
-      </tr>
-      {% endfor %}
-      {% endif %}
-      {% else %}
-      {% for session in slot.sessions %}
-      <tr>
-	 <td colspan="4">
-	    <a name="{{slot.meeting_date|date:"Y-m-d"}}_{{slot.time_desc|slice:":4"}}" />
-	    {{ slot.time_desc }}  {{ session.acronym_name|escape }} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{session.room_id.room_name|slugify}}">{{ session.room_id.room_name}}</a>
-	 </td>
-      </tr>
-      {% endfor %}
-      {% endif %}
+      {% for item in schedule.assignments.all.distinct %}
+	  {% ifchanged  %}
+	  <tr>
+	     <td colspan="4">
+		<a name="{{item.timeslot.time|date:"Y-m-d"}}_0000" />
+		<h4>{{ item.timeslot.time|date:"l"|upper }}, {{ item.timeslot.time|date:"F j, Y" }}</h4>
+	     </td>
+	  </tr>
+	  {% endifchanged %}
+
+	  {% if item.timeslot.type.slug == "reg" %}
+	  <tr>
+	     <td colspan="4">
+		{{ item.timeslot.time_desc  }}  {{ item.timeslot.name  }}
+		{% if schedule.meeting.reg_area %} - <a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ schedule.meeting.reg_area|slugify }}">{{ schedule.meeting.reg_area|escape }}</a>{% endif %}
+	     </td>
+	  </tr>
+	  {% endif %}{# reg #}
+
+	  {% if item.timeslot.type.slug == "break" %}
+	  <tr>
+	     <td colspan="4">
+		<br />
+		{{ item.timeslot.time_desc }}  {{ item.timeslot.name }}
+		{% if schedule.meeting.break_area and item.timeslot.break_info.show_break_location %} - <a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ schedule.meeting.break_area|slugify }}">{{ schedule.meeting.break_area|escape }}</a>{% endif %}
+	     </td>
+	  </tr>
+	  {% endif %}{# break #}
+
+
+	  {% if item.timeslot.type.slug == "session" %}
+	      {% if item.session.group  %}
+		  {% ifchanged %}
+		      <tr>
+			 <td colspan="4">
+			    <a name="{{item.timeslot.time|date:"Y-m-d"}}_{{item.timeslot.time_desc|slice:":4"}}" />
+			    <h5>{{item.timeslot.time|date:"D"}} {{ item.timeslot.time_desc               }}  {{ item.timeslot.name }}
+			 </td>
+		      </tr>
+		  {% endifchanged %}
+
+		  <tr id="{{schedule.meeting.number}}-{{item.timeslot.time|date:"D"|lower}}-{{item.timeslot.time_desc|slice:":4"}}-{{item.session.group.acronym|lower}}">	 <td><a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{item.timeslot.location.name|slugify}}">{{ item.timeslot.location.name}}</a></td>
+		     <td>
+			{% if item.session.type == "WG" %}<a href="http://www.ietf.org/dyn/wg/charter/{{ item.session.group.acronym|lower }}-charter.html">{%endif%}
+			   {% ifequal item.session.type "BOF" %}<span style="background-color: #6FD">{% endifequal %}
+			   {{ item.session.group.acronym|lower }}
+			   {% ifequal item.session.type "BOF" %}</span>{% endifequal %}
+			{% if item.session.type == "WG" %}</a>{%endif%}
+		     </td>
+		     <td>
+			{% if item.session.info.agenda_file %}<a href="http://tools.ietf.org/wg/{{item.session.group.acronym}}/agenda/">{%endif%}
+			   {{ item.session.group.name|truncate_ellipsis:"20"|safe }}
+			{% if item.session.info.agenda_file %}</a>{%endif%}
+		     </td>
+		  </tr>
+	      {% endif %}
+	  {% endif %}{# session #}
+
+
+	  {% if item.timeslot.type.slug == "other" %}      
+	  <tr>
+	     <td colspan="4">
+		<a name="{{item.timeslot.time|date:"Y-m-d"}}_{{item.timeslot.time_desc|slice:":4"}}" />
+		{{ item.timeslot.time_desc }}  {{ item.timeslot.name|truncate_ellipsis:"20"|safe }} - <a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{item.timeslot.location.name|slugify}}">{{ item.timeslot.location.name}}</a>
+	     </td>
+	  </tr>
+	  {% endif %}{# other #}
+
+
       {% endfor %}
    </table>
 </div>
