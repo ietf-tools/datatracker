@@ -46,9 +46,8 @@ from ietf.meeting.helpers import get_modified_from_scheduledsessions
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions
 
-
 @decorator_from_middleware(GZipMiddleware)
-def materials(request, meeting_num=None, schedule_name=None):
+def materials(request, meeting_num=None):
     proceeding = get_object_or_404(Proceeding, meeting_num=meeting_num)
     begin_date = proceeding.sub_begin_date
     cut_off_date = proceeding.sub_cut_off_date
@@ -61,17 +60,15 @@ def materials(request, meeting_num=None, schedule_name=None):
     sub_began = 0
     if now > begin_date:
         sub_began = 1
-
+    #sessions  = Session.objects.filter(meeting__number=meeting_num, timeslot__isnull=False)
     meeting = get_meeting(meeting_num)
-    schedule = get_schedule(meeting, schedule_name)
-
-    scheduledsessions = get_scheduledsessions_from_schedule(schedule)
-
-    plenaries = scheduledsessions.filter(session__name__icontains='plenary')
-    ietf      = scheduledsessions.filter(session__group__parent__type__slug = 'area').exclude(session__group__acronym='edu')
-    irtf      = scheduledsessions.filter(session__group__parent__acronym = 'irtf')
-    training  = scheduledsessions.filter(session__group__acronym='edu')
-    iab       = scheduledsessions.filter(session__group__parent__acronym = 'iab')
+    schedule = get_schedule(meeting,None )
+    sessions  = Session.objects.filter(meeting__number=meeting_num,scheduledsession__schedule=schedule )
+    plenaries = sessions.filter(name__icontains='plenary')
+    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
+    irtf      = sessions.filter(group__parent__acronym = 'irtf')
+    training  = sessions.filter(group__acronym='edu')
+    iab       = sessions.filter(group__parent__acronym = 'iab')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
     #
