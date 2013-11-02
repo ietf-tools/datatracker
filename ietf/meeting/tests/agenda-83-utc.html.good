@@ -3,7 +3,7 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-<!-- v4.82-dev, 6480 $ (dev) Latest release: Rev. 647, 2013-10-22 00:19:47 +0200 -->
+<!-- v4.83-dev, 6586 $ (dev) Latest release: Rev. 658, 2013-10-31 19:13:10 +0100 -->
 <title>IETF 83 Meeting Agenda - DEVELOPMENT MODE</title>
 <link rel="stylesheet" type="text/css" href="/css/yui/yui-20100305.css"></link>
 <link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
@@ -251,7 +251,6 @@ img.hidden { display: none; }
 <li class="yuimenuitem"><a class="yuimenuitemlabel" href="/wg/mile/">mile &mdash; Managed Incident Lightweight Exchange</a></li>
 <li class="yuimenuitem"><a class="yuimenuitemlabel" href="/wg/nea/">nea &mdash; Network Endpoint Assessment</a></li>
 <li class="yuimenuitem"><a class="yuimenuitemlabel" href="/wg/oauth/">oauth &mdash; Web Authorization Protocol</a></li>
-<li class="yuimenuitem"><a class="yuimenuitemlabel" href="/wg/pkix/">pkix &mdash; Public-Key Infrastructure (X.509)</a></li>
 <li class="yuimenuitem"><a class="yuimenuitemlabel" href="/wg/sacm/">sacm &mdash; Security Automation and Continuous Monitoring</a></li>
 <li class="yuimenuitem"><a class="yuimenuitemlabel" href="/wg/tls/">tls &mdash; Transport Layer Security</a></li>
 </ul></div></div></li>
@@ -326,7 +325,7 @@ img.hidden { display: none; }
 </div>
 <div style="width: 100%; text-align: center; padding-top:4px;font-size:69%;">
 
-<a href="/release/4.82-dev/">Version 4.82-dev, 2013-10-22</a>
+<a href="/release/4.83-dev/">Version 4.83-dev, 2013-10-31</a>
 <br/>
 
 <a href="http://tools.ietf.org/tools/ietfdb/newticket">Report a bug</a>
