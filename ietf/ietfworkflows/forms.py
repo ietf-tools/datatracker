@@ -250,7 +250,7 @@ class DraftTagsStateForm(StreamDraftForm):
 
         return [(i.pk, i.name) for i in self.workflow.get_states()]
 
-    def save_tags(self):
+    def save_tags(self,send_email=True):
         comment = self.cleaned_data.get('comment')
         new_tags = self.cleaned_data.get('tags')
 
@@ -275,7 +275,8 @@ class DraftTagsStateForm(StreamDraftForm):
                     person=self.person,
                     set_tags=set_tags,
                     reset_tags=reset_tags,
-                    extra_notify=extra_notify)
+                    extra_notify=extra_notify,
+                    send_email=send_email)
 
     def save_state(self):
         comment = self.cleaned_data.get('comment')
@@ -285,7 +286,14 @@ class DraftTagsStateForm(StreamDraftForm):
 
         old_state = self.draft.get_state("draft-stream-%s" % self.draft.stream_id)
         if state==old_state:
+            self.save_tags()
             return
+
+        self.save_tags(False)
+        new_tags = self.cleaned_data.get('tags')
+
+        set_tags = [tag for tag in self.available_tags if str(tag.pk) in new_tags and tag not in self.tags]
+        reset_tags = [tag for tag in self.available_tags if str(tag.pk) not in new_tags and tag in self.tags]
 
         weeks = self.cleaned_data.get('weeks')
         estimated_date = None
@@ -297,12 +305,12 @@ class DraftTagsStateForm(StreamDraftForm):
                      comment=comment,
                      person=self.person,
                      to_state=state,
-                     estimated_date=estimated_date)
+                     estimated_date=estimated_date,
+                     added_tags=set_tags,
+                     removed_tags=reset_tags)
 
     def save(self):
-        self.save_tags()
-        if 'only_tags' not in self.data.keys():
-            self.save_state()
+        self.save_state()
 
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             comment = self.cleaned_data.get('comment').strip()

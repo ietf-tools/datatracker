@@ -278,7 +278,7 @@ def get_pubreq_cc_receivers(doc):
 
     return res
 
-def update_tags(request, obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[]):
+def update_tags(request, obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[], send_email=True):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         doc = Document.objects.get(pk=obj.pk)
         save_document_in_history(doc)
@@ -297,8 +297,9 @@ def update_tags(request, obj, comment, person, set_tags=[], reset_tags=[], extra
         e.desc = " ".join(l)
         e.save()
 
-        receivers = get_notification_receivers(doc, extra_notify)
-        send_mail(request, receivers, settings.DEFAULT_FROM_EMAIL,
+        if send_email:
+            receivers = get_notification_receivers(doc, extra_notify)
+            send_mail(request, receivers, settings.DEFAULT_FROM_EMAIL,
                   u"Annotations tags changed for draft %s" % doc.name,
                   'ietfworkflows/annotation_tags_updated_mail.txt',
                   dict(doc=doc,
@@ -337,7 +338,7 @@ def update_tags(request, obj, comment, person, set_tags=[], reset_tags=[], extra
     notify_tag_entry(entry, extra_notify)
 
 
-def update_state(request, doc, comment, person, to_state, estimated_date=None, extra_notify=[]):
+def update_state(request, doc, comment, person, to_state, added_tags, removed_tags, estimated_date=None, extra_notify=[]):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         doc = Document.objects.get(pk=doc.pk)
         save_document_in_history(doc)
@@ -370,6 +371,8 @@ def update_state(request, doc, comment, person, to_state, estimated_date=None, e
             reminder.active = False
             reminder.save()
 
+        set_tags=", ".join(x.name for x in added_tags)
+        reset_tags=", ".join(x.name for x in removed_tags)
         receivers = get_notification_receivers(doc, extra_notify)
         send_mail(request, receivers, settings.DEFAULT_FROM_EMAIL,
                   u"State changed for draft %s" % doc.name,
@@ -379,7 +382,9 @@ def update_state(request, doc, comment, person, to_state, estimated_date=None, e
                                   to_state=to_state,
                                   transition_date=doc.time,
                                   person=person,
-                                  comment=comment)))
+                                  comment=comment,
+                                  set_tags=set_tags,
+                                  reset_tags=reset_tags)))
 
         if (to_state.slug=='sub-pub'):
             receivers = get_pubreq_receivers(doc, extra_notify)

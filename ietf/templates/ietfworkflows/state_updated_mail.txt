@@ -5,7 +5,8 @@ Previous state: {{ entry.from_state }}
 Current state: {{ entry.to_state }}
 Transition date: {{ entry.transition_date }}
 Author of the change: {{ entry.person }}
-
+{% if entry.set_tags %}Annotation tags set: {{ entry.set_tags }}{% endif %}
+{% if entry.reset_tags %}Annotation tags reset: {{ entry.reset_tags }}{% endif %}
 Comment:
 {{ entry.comment }}
 {% endautoescape %}
