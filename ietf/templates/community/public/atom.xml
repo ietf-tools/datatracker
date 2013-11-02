@@ -9,7 +9,11 @@
 
     {% for entry in entries %}
     <entry>
+        {% if entry.type == 'sent_last_call' %}
+        <title>Last Call Issued: {{ entry.doc.title }}</title>
+        {% else %}
         <title>{{ entry.doc.title }}</title>
+        {% endif %}
 
         <link href="{{ entry.doc.get_absolute_url }}"/>
 
