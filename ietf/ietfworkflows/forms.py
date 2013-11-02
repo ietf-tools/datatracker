@@ -282,6 +282,11 @@ class DraftTagsStateForm(StreamDraftForm):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             from ietf.doc.models import State
         state = State.objects.get(pk=self.cleaned_data.get('new_state'))
+
+        old_state = self.draft.get_state("draft-stream-%s" % self.draft.stream_id)
+        if state==old_state:
+            return
+
         weeks = self.cleaned_data.get('weeks')
         estimated_date = None
         if weeks:
