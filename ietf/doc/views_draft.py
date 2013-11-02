@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from django import forms
+from django.utils import simplejson
 from django.utils.html import strip_tags
 from django.db.models import Max
 from django.conf import settings
@@ -23,6 +24,7 @@ from ietf.doc.lastcall import request_last_call
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.person.forms import EmailsField
 from ietf.group.models import Group
+from ietf.secr.lib import jsonapi
 
 from ietf.ietfworkflows.models import Stream
 from ietf.ietfworkflows.utils import update_stream
@@ -263,6 +265,143 @@ def change_stream(request, name):
         form = ChangeStreamForm(initial=dict(stream=stream))
 
     return render_to_response('doc/draft/change_stream.html',
+                              dict(form=form,
+                                   doc=doc,
+                                   ),
+                              context_instance=RequestContext(request))
+
+@jsonapi
+def doc_ajax_internet_draft(request):
+    if request.method != 'GET' or not request.GET.has_key('term'):
+        return { 'success' : False, 'error' : 'No term submitted or not GET' }
+    q = request.GET.get('term')
+    results = DocAlias.objects.filter(name__icontains=q)
+    if (results.count() > 20):
+        results = results[:20]
+    elif results.count() == 0:
+        return { 'success' : False, 'error' : "No results" }
+    response = [dict(id=r.id, label=r.name) for r in results]
+    return response
+
+def collect_email_addresses(emails, doc):
+    for author in doc.authors.all():
+        if author.address not in emails:
+            emails[author.address] = '"%s"' % (author.person.name)
+    if doc.group.acronym != 'none':
+        for role in doc.group.role_set.filter(name='chair'):
+            if role.email.address not in emails:
+                emails[role.email.address] = '"%s"' % (role.person.name)
+        if doc.group.type.slug == 'wg':
+            address = '%s-ads@tools.ietf.org' % doc.group.acronym
+            if address not in emails:
+                emails[address] = '"%s-ads"' % (doc.group.acronym)
+        elif doc.group.type.slug == 'rg':
+            email = doc.group.parent.role_set.filter(name='char')[0].email
+            if email.address not in emails:
+                emails[email.address] = '"%s"' % (email.person.name)
+    if doc.shepherd:
+        address = doc.shepherd.email_address();
+        if address not in emails:
+            emails[address] = '"%s"' % (doc.shepherd.name)
+    return emails
+
+class ReplacesForm(forms.Form):
+    replaces = forms.CharField(max_length=512,widget=forms.HiddenInput)
+    comment = forms.CharField(widget=forms.Textarea, required=False)
+
+    def __init__(self, *args, **kwargs):
+        self.doc = kwargs.pop('doc')
+        super(ReplacesForm, self).__init__(*args, **kwargs)
+        drafts = {}
+        for d in self.doc.related_that_doc("replaces"):
+            drafts[d.id] = d.document.name
+        self.initial['replaces'] = simplejson.dumps(drafts)
+
+    def clean_replaces(self):
+        data = self.cleaned_data['replaces'].strip()
+        if data:
+            ids = [int(x) for x in simplejson.loads(data)]
+        else:
+            return []
+        objects = []
+        for id in ids:
+            try:
+                d = DocAlias.objects.get(pk=id)
+            except DocAlias.DoesNotExist, e:
+                raise forms.ValidationError("ERROR: %s not found for id %d" % DocAlias._meta.verbos_name, id)
+            if d.document == self.doc:
+                raise forms.ValidationError("ERROR: A draft can't replace itself")
+            if d.document.type_id == "draft" and d.document.get_state_slug() == "rfc":
+                raise forms.ValidationError("ERROR: A draft can't replace an RFC")
+            objects.append(d)
+        return objects
+
+def replaces(request, name):
+    """Change 'replaces' set of a Document of type 'draft' , notifying parties 
+       as necessary and logging the change as a comment."""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if doc.type_id != 'draft':
+        raise Http404
+    if not (has_role(request.user, ("Secretariat", "Area Director"))
+            or is_authorized_in_doc_stream(request.user, doc)):
+        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+    login = request.user.get_profile()
+    if request.method == 'POST':
+        form = ReplacesForm(request.POST, doc=doc)
+        if form.is_valid():
+            new_replaces = set(form.cleaned_data['replaces'])
+            comment = form.cleaned_data['comment'].strip()
+            old_replaces = set(doc.related_that_doc("replaces"))
+            if new_replaces != old_replaces:
+                save_document_in_history(doc)
+                emails = {}
+                emails = collect_email_addresses(emails, doc)
+                relationship = DocRelationshipName.objects.get(slug='replaces')
+                for d in old_replaces:
+                    if d not in new_replaces:
+                        emails = collect_email_addresses(emails, d.document)
+                        RelatedDocument.objects.filter(source=doc, target=d,
+                         relationship=relationship).delete()
+                for d in new_replaces:
+                    if d not in old_replaces:
+                        emails = collect_email_addresses(emails, d.document)
+                        RelatedDocument.objects.create(source=doc, target=d,
+                         relationship=relationship)
+                e = DocEvent(doc=doc,by=login,type='changed_document')
+                new_replaces_names = ", ".join([d.name for d in new_replaces])
+                if not new_replaces_names:
+                    new_replaces_names = "None"
+                old_replaces_names = ", ".join([d.name for d in old_replaces])
+                if not old_replaces_names:
+                    old_replaces_names = "None"
+                e.desc = u"Set of documents this document replaces changed to <b>%s</b> from %s"% (new_replaces_names, old_replaces_names)
+                e.save()
+                email_desc = e.desc
+                if comment:
+                    c = DocEvent(doc=doc,by=login,type="added_comment")
+                    c.desc = comment
+                    c.save()
+                    email_desc += "\n"+c.desc
+                doc.time = e.time
+                doc.save()
+                email_list = []
+                for key in sorted(emails):
+                    if emails[key]:
+                        email_list.append('%s <%s>' % (emails[key], key))
+                    else:
+                        email_list.append('<%s>' % key)
+                email_string = ", ".join(email_list)
+                send_mail(request, email_string,
+                 "DraftTracker Mail System <iesg-secretary@ietf.org>",
+                 "%s updated by %s" % (doc.file_tag, login),
+                 "doc/mail/change_notice.txt",
+                 dict(text=html_to_text(email_desc),
+                      doc=doc,
+                      url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+            return HttpResponseRedirect(doc.get_absolute_url())
+    else:
+        form = ReplacesForm(doc=doc)
+    return render_to_response('idrfc/change_replaces.html',
                               dict(form=form,
                                    doc=doc,
                                    ),
