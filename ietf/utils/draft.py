@@ -977,9 +977,10 @@ class Draft():
 	for boilerplate in ( 'bcp78', 'bcp79' ):
 	    if refs.get( boilerplate ) == 'unk':
 		del refs[ boilerplate ]
+        # Don't add any references that point back into this doc
+        if self.filename in refs:
+            del refs[self.filename]
 	return refs
-
-
 
     def old_get_refs( self ):
         refs = []
