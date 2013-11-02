@@ -6,6 +6,8 @@ from django.conf import settings
 from ietf.utils import markup_txt
 from ietf.doc.models import *
 
+from ietf.utils import draft
+
 def get_state_types(doc):
     res = []
 
@@ -290,3 +292,47 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
             e.desc = "Removed telechat returning item indication"
 
     e.save()
+
+def rebuild_reference_relations(doc):
+    if doc.type.slug != 'draft':
+        return None
+
+    if doc.get_state_slug() == 'rfc':
+        filename=os.path.join(settings.RFC_PATH,doc.canonical_name()+".txt")
+    else:
+        filename=os.path.join(settings.INTERNET_DRAFT_PATH,doc.filename_with_rev())
+
+    try:
+       refs = draft.Draft(draft._gettext(filename), filename).get_refs()
+    except IOError as e:
+       return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
+    
+    doc.relateddocument_set.filter(relationship__slug__in=['refnorm','refinfo','refold','refunk']).delete()
+
+    warnings = []
+    errors = []
+    unfound = set()
+    for ( ref, refType ) in refs.iteritems():
+        refdoc = DocAlias.objects.filter( name=ref )
+        count = refdoc.count()
+        if count == 0:
+            unfound.add( "%s" % ref )
+            continue
+        elif count > 1:
+            errors.append("Too many DocAlias objects found for %s"%ref)
+        else:
+            # Don't add references to ourself
+            if doc != refdoc[0].document:
+                RelatedDocument.objects.get_or_create( source=doc, target=refdoc[ 0 ], relationship=DocRelationshipName.objects.get( slug='ref%s' % refType ) )
+    if unfound:
+        warnings.append('There were %d references with no matching DocAlias'%len(unfound))
+
+    ret = {}
+    if errors:
+        ret['errors']=errors 
+    if warnings:
+        ret['warnings']=warnings 
+    if unfound:
+        ret['unfound']=list(unfound) 
+
+    return ret

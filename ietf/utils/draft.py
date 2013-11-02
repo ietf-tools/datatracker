@@ -908,6 +908,81 @@ class Draft():
 
     # ------------------------------------------------------------------
     def get_refs(self):
+	refType = 'unk'
+	refs = {}
+	typemap = {
+		'normative': 'norm',
+		'informative': 'info',
+		'informational': 'info',
+		'non-normative': 'info',
+		None: 'old'
+		}
+	# Bill's horrible "references section" regexps, built up over lots of years
+	# of fine tuning for different formats.
+	# Examples:
+	# Appendix A. References:
+	# A.1. Informative References:
+	sectionre = re.compile( r'(?i)(?:Appendix\s+)?(?:(?:[A-Z]\.)?[0-9.]*\s+)?(?:(\S+)\s*)?references:?$' )
+	# 9.1 Normative
+	sectionre2 = re.compile( r'(?i)(?:(?:[A-Z]\.)?[0-9.]*\s+)?(\S+ormative)$' )
+	# One other reference section type seen:
+	sectionre3 = re.compile( r'(?i)References \((\S+ormative)\)$' )
+	# An Internet-Draft reference.
+	idref = re.compile( r'(?i)\b(draft-(?:[-\w]+(?=-\d\d)|[-\w]+))(-\d\d)?\b' )
+	# An RFC-and-other-series reference.
+	rfcref = re.compile( r'(?i)\b(rfc|std|bcp|fyi)[- ]?(\d+)\b' )
+        # False positives for std
+        not_our_std_ref = re.compile( r'(?i)((\b(n?csc|fed|mil|is-j)-std\b)|(\bieee\s*std\d*\b)|(\bstd\s+802\b))' )
+	# An Internet-Draft or series reference hyphenated by a well-meaning line break.
+	eol = re.compile( r'(?i)\b(draft[-\w]*-|rfc|std|bcp|fyi)$' )
+        # std at the front of a line can hide things like IEEE STD or MIL-STD
+        std_start = re.compile( r'(?i)std\n*\b' )
+
+	for i in range( 15, len( self.lines ) ):
+	    line = self.lines[ i ].strip()
+	    m = sectionre.match( line )
+	    if m:
+		match = m.group( 1 )
+		if match is not None:
+		    match = match.lower()
+		refType = typemap.get( match, 'unk' )
+		continue
+	    m = sectionre2.match( line )
+	    if m:
+		refType = typemap.get( m.group( 1 ).lower(), 'unk' )
+		continue
+	    m = sectionre3.match( line )
+	    if m:
+		refType = typemap.get( m.group( 1 ).lower(), 'unk' )
+		continue
+	    # If something got split badly, rejoin it.
+	    if eol.search( line ) and i < len( self.lines ) - 1:
+		line += self.lines[ i + 1 ].lstrip()
+	    m = idref.search( line )
+	    if m:
+		draft = m.group( 1 )
+		refs[ draft ] = refType
+		continue
+	    m = rfcref.search( line )
+	    if m:
+		( series, number ) = m.groups()
+                if series.lower()=='std' and std_start.search(line) and i > 15:
+                    line = self.lines[i-1].rstrip()+line
+                if series.lower()!='std' or not not_our_std_ref.search( line ):
+   		   name = series.lower() + number.lstrip( '0' )
+		   refs[ name ] = refType
+		   continue
+	# References to BCP78 and BCP79 in boilerplate will appear as "unk".
+	# Remove them.
+	for boilerplate in ( 'bcp78', 'bcp79' ):
+	    if refs.get( boilerplate ) == 'unk':
+		del refs[ boilerplate ]
+        # Don't add any references that point back into this doc
+        if self.filename in refs:
+            del refs[self.filename]
+	return refs
+
+    def old_get_refs( self ):
         refs = []
         normrefs = []
         rfcrefs = []
