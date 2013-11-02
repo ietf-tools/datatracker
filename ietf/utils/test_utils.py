@@ -207,8 +207,8 @@ class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
         if "skipdiff" in codes:
             return
         if master:
-            cwd = os.getcwd()
-            master = os.path.join(cwd, master)
+            root_dir = os.path.dirname(os.path.dirname(os.path.abspath(sys.modules["__main__"].__file__)))
+            master = os.path.join(root_dir, master)
             mfile = open(master)
             refhtml = mfile.read()
             mfile.close()
