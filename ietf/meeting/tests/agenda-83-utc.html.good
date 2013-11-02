@@ -86,7 +86,7 @@ img.hidden { display: none; }
 </head>
 <body class="yui-skin-sam" onload='setGroupState();updateAgendaColors()'>
 <div style="background-color:#c00000;color:white;font-size:150%;height:35px;" class="noprint">
-<a href="/" style="text-decoration:none;color:white"><img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/><span style="padding-left:15px;font-weight:bold;letter-spacing:0.1em;">datatracker.ietf.org</a>  - DEVELOPMENT MODE</span>
+<span style="padding-left:15px;font-weight:bold;letter-spacing:0.1em;"><a href="/" style="text-decoration:none;color:white"><img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/>datatracker.ietf.org</a>  - DEVELOPMENT MODE</span>
 </div>
 
 
