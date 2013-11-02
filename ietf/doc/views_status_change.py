@@ -643,7 +643,7 @@ def generate_last_call_text(request, doc):
                                      settings=settings,
                                      requester=requester,
                                      expiration_date=expiration_date.strftime("%Y-%m-%d"),
-                                     changes=['%s from %s to %s'%(rel.target.name.upper(),rel.target.document.std_level.name,newstatus(rel)) for rel in doc.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS)],
+                                     changes=['%s from %s to %s\n    (%s)'%(rel.target.name.upper(),rel.target.document.std_level.name,newstatus(rel),rel.target.document.title) for rel in doc.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS)],
                                      urls=[rel.target.document.get_absolute_url() for rel in doc.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS)],
                                      cc=cc
                                     )
