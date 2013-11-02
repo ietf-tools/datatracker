@@ -63,7 +63,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% block content %}
 <div {% if concluded %}class="ietf-concluded-bg"{% endif %} {% if proposed %}class="ietf-proposed-bg"{% endif %}>
-<h1>{{wg.group_acronym.name}} ({{wg.group_acronym.acronym}}){% if concluded %}<br/><span class="ietf-concluded-warning">(concluded WG)</span>{% endif %}{% if proposed %}<br/><span class="ietf-proposed-warning">(proposed WG)</span>{% endif %}</h1>
+<h1>{{wg.group_acronym.name}} ({{wg.group_acronym.acronym}}){% if concluded %}<br/><span class="ietf-concluded-warning">(concluded {% if wg.state_id == "bof-conc" %}BoF{% else %}WG{% endif %})</span>{% endif %}{% if proposed %}<br/><span class="ietf-proposed-warning">(proposed WG)</span>{% endif %}</h1>
 
 <div class="ietf-navset">
 {% ifequal selected "documents" %}<span class="selected">Documents</span>{% else %}<a href="{% url ietf.wginfo.views.wg_documents_html acronym=wg.group_acronym.acronym %}">Documents</a>{% endifequal %} |
