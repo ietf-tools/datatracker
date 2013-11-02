@@ -238,6 +238,9 @@ def csv_group_list(request, acronym):
         return HttpResponseRedirect('%s?%s=%s' % tup)
     return _csv_list(request, clist)
 
+def view_csv_personal_list(request, secret):
+    clist = get_object_or_404(CommunityList, secret=secret)
+    return _csv_list(request, clist)
 
 def _subscribe_list(request, clist, significant):
     success = False
