@@ -402,8 +402,8 @@ class Document(DocumentInfo):
         document directly or indirectly obsoletes or replaces
         """
         from ietf.ipr.models import IprDocAlias
-        return IprDocAlias.objects.filter(doc_alias__in=list(self.docalias_set.all())+self.all_related_that_doc(['obs','replaces']))
-
+        aliases = IprDocAlias.objects.filter(doc_alias__in=list(self.docalias_set.all())+self.all_related_that_doc(['obs','replaces'])).filter(ipr__status__in=[1,3]).values_list('ipr', flat=True).distinct()
+        return aliases
 
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')
