@@ -54,7 +54,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </head>
 <body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
 <div style="background-color:{% if server_mode %}{% ifnotequal server_mode "production" %}#c00000{% else %}#313163{% endifnotequal %}{%else %}#313163{%endif%};color:white;font-size:150%;height:35px;" class="noprint">
-<a href="/" style="text-decoration:none;color:white"><img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/><span style="padding-left:15px;font-weight:bold;letter-spacing:0.1em;">datatracker.ietf.org</a> {% if server_mode %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper}} MODE{% endifnotequal %}{% endif %}</span>
+<span style="padding-left:15px;font-weight:bold;letter-spacing:0.1em;"><a href="/" style="text-decoration:none;color:white"><img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/>datatracker.ietf.org</a> {% if server_mode %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper}} MODE{% endifnotequal %}{% endif %}</span>
 </div>
 
 {% if user %}

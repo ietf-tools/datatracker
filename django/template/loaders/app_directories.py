@@ -17,10 +17,8 @@ from django.utils.importlib import import_module
 fs_encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
 app_template_dirs = []
 for app in settings.INSTALLED_APPS:
-    try:
-        mod = import_module(app)
-    except ImportError, e:
-        raise ImproperlyConfigured('ImportError %s: %s' % (app, e.args[0]))
+    mod = import_module(app)
+
     template_dir = os.path.join(os.path.dirname(mod.__file__), 'templates')
     if os.path.isdir(template_dir):
         app_template_dirs.append(template_dir.decode(fs_encoding))
