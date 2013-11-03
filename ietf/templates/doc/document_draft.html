@@ -245,6 +245,9 @@
   {% if user|has_role:"Area Director" %}
   | <a href="https://www.iesg.org/bin/c5i?mid=6&rid=77&target={{ doc.name }}" rel="nofollow" target="_blank">Search Mailing Lists (ARO)</a>
   {% endif %}
+  {% if show_add_to_list and user.is_authenticated %}
+  | <span class="search-results"><span class="addtolist"><a href="{% url community_add_document doc.name %}" title="Add to your personal ID list"><img src="/images/add_to_list.png" alt="Add to your personal ID list"/>Track this document</a></span></span>
+  {% endif %}
   </div>
 
   {% if can_edit and iesg_state %}
@@ -295,3 +298,7 @@
 
 {% endblock %}
 
+{% block js %}
+<script type="text/javascript" src="/js/utils.js"></script>
+<script type="text/javascript" src="/js/doc-search.js"></script>
+{% endblock %}
