@@ -61,9 +61,13 @@ def get_year_by_nomcom(nomcom):
 
 
 def get_user_email(user):
-    emails = Email.objects.filter(person__user=user)
-    mail = emails and emails[0] or None
-    return mail
+    emails = user.person.email_set.filter(active=True).order_by('-time')
+    if emails:
+        for email in emails:
+            if email.address == user.username:
+                return email
+        return emails[0]
+    return None
 
 
 def is_nomcom_member(user, nomcom):
