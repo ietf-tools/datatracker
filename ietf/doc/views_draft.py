@@ -439,6 +439,11 @@ def to_iesg(request,name):
                 doc.notify = notify
                 changes.append("State Change Notice email list changed to %s" % doc.notify)
 
+	    # Get the last available writeup
+            previous_writeup = doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup")
+            if previous_writeup != None:
+                changes.append(previous_writeup.text)
+
             for c in changes:
                 e = DocEvent(doc=doc, by=login)
                 e.desc = c
@@ -848,9 +853,15 @@ def edit_shepherd_writeup(request, name):
                      writeup = from_file
                 else:
                      writeup = form.cleaned_data['content']
-
                 e = WriteupDocEvent(doc=doc, by=login, type="changed_protocol_writeup")
-                e.desc = "Changed document writeup"
+
+		# Add the shepherd writeup to description if the document is in submitted for publication state
+                state = doc.get_state("draft-stream-%s" % doc.stream_id)
+                if (state.slug=='sub-pub'):
+                    e.desc = writeup
+                else:
+                    e.desc = "Changed document writeup"
+
                 e.text = writeup
                 e.save()
             
