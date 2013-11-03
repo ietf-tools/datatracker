@@ -193,33 +193,32 @@ def do_extend(draft, request):
     return
 
 def do_replace(draft, request):
-    '''
-    Actions
-    - change state to Replaced
-    - create replaced relationship
-    - create DocEvent
-    '''    
-    # ?? don't archive document prioir to expiration per Henrik
-    save_document_in_history(draft)
+    'Perform document replace'
     
+    save_document_in_history(draft)
+
     replaced = request.session['data']['replaced']          # a DocAlias
     replaced_by = request.session['data']['replaced_by']    # a Document
-    
-    # create DocEvent
-    # no replace DocEvent at this time (emails 1-13,1-14)
-    
+
     # change state and update last modified
     draft.set_state(State.objects.get(type="draft", slug="repl"))
     draft.time = datetime.datetime.now()
     draft.save()
-    
+
     # create relationship
     RelatedDocument.objects.create(source=replaced_by,
                                    target=replaced,
                                    relationship=DocRelationshipName.objects.get(slug='replaces'))
+
+    # create DocEvent
+    # no replace DocEvent at this time, Jan 2012
+    
+    # move replaced document to archive
+    archive_draft_files(replaced.document.name + '-' + replaced.document.rev)
+
     # send announcement
     announcement_from_form(request.session['email'],by=request.user.get_profile())
-    
+
     return
     
 def do_resurrect(draft, request):
