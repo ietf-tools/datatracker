@@ -152,7 +152,7 @@
     {% endif %}
 
     <tr>
-      <td><a href="/idtracker/help/state/">IESG State</a>:</td>
+      <td><a href="{% url state_help "draft-iesg" %}">IESG State</a>:</td>
       <td>
         <a {% if iesg_state and can_edit %}class="editlink" href="{% url doc_change_state name=doc.name %}"{% endif %}>
         {{ iesg_state_summary|default:"I-D Exists" }}</a>
