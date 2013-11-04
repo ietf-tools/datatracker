@@ -11,11 +11,12 @@ from email import message_from_string
 
 from django.conf import settings
 from django.contrib.sites.models import Site
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from django.utils.encoding import smart_str
+from django.core.validators import email_re
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person
@@ -23,6 +24,8 @@ from ietf.utils.pipe import pipe
 from ietf.utils import unaccent
 from ietf.utils.mail import send_mail_text, send_mail
 from ietf.utils.log import log
+
+import debug
 
 MAIN_NOMCOM_TEMPLATE_PATH = '/nomcom/defaults/'
 QUESTIONNAIRE_TEMPLATE = 'position/questionnaire.txt'
@@ -61,14 +64,25 @@ def get_year_by_nomcom(nomcom):
 
 
 def get_user_email(user):
-    emails = user.person.email_set.filter(active=True).order_by('-time')
-    if emails:
-        for email in emails:
-            if email.address == user.username:
-                return email
-        return emails[0]
-    return None
-
+    # a user object already has an email field, but we don't want to
+    # overwrite anything that might be there, and we don't know that
+    # what's there is the right thing, so we cache the lookup results in a
+    # separate attribute
+    if not hasattr(user, "_email_cache"):
+        user._email_cache = None
+        if hasattr(user, "person"):
+            emails = user.person.email_set.filter(active=True).order_by('-time')
+            if emails:
+                user._email_cache = emails[0]
+                for email in emails:
+                    if email.address == user.username:
+                        user._email_cache = email
+        else:
+            try: 
+                user._email_cache = Email.objects.get(address=user.username)
+            except ObjectDoesNotExist:
+                pass
+    return user._email_cache
 
 def is_nomcom_member(user, nomcom):
     is_group_member = nomcom.group.is_member(user)
