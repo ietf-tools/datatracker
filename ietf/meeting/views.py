@@ -46,6 +46,8 @@ from ietf.meeting.helpers import get_modified_from_scheduledsessions
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions
 
+import debug
+
 @decorator_from_middleware(GZipMiddleware)
 def materials(request, meeting_num=None):
     proceeding = get_object_or_404(Proceeding, meeting_num=meeting_num)
@@ -67,7 +69,7 @@ def materials(request, meeting_num=None):
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
-    training  = sessions.filter(group__acronym='edu')
+    training  = sessions.filter(group__acronym__in=['edu','iaoc'])
     iab       = sessions.filter(group__parent__acronym = 'iab')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
