@@ -53,7 +53,7 @@ def roles(group, role_name):
 
 def fill_in_charter_info(group, include_drafts=False):
     group.areadirector = group.ad.role_email("ad", group.parent) if group.ad else None
-    group.chairs =roles(group, "chair")
+    group.chairs = roles(group, "chair")
     group.techadvisors = roles(group, "techadv")
     group.editors = roles(group, "editor")
     group.secretaries = roles(group, "secr")
