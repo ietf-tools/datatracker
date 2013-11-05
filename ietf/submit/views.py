@@ -9,13 +9,13 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.utils.mail import send_mail
-from ietf.ietfauth.decorators import has_role, role_required
+from ietf.ietfauth.utils import has_role, role_required
 from ietf.submit.models import IdSubmissionDetail, Preapproval
 from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm, PreapprovalForm
 from ietf.submit.utils import UPLOADED, AWAITING_AUTHENTICATION, MANUAL_POST_REQUESTED, CANCELLED, POSTED, INITIAL_VERSION_APPROVAL_REQUESTED
-from ietf.submit.utils import is_secretariat, get_approvable_submissions, get_preapprovals, get_recently_approved, get_person_for_user, perform_post, remove_docs, request_full_url
+from ietf.submit.utils import get_approvable_submissions, get_preapprovals, get_recently_approved, perform_post, remove_docs, request_full_url
 from ietf.submit.utils import DraftValidation
 
 def submit_index(request):
@@ -57,10 +57,9 @@ def submit_status(request):
 
 
 def _can_approve(user, detail):
-    person = get_person_for_user(user)
     if detail.status_id != INITIAL_VERSION_APPROVAL_REQUESTED or not detail.group_acronym:
         return None
-    if person in [i.person for i in detail.group_acronym.wgchair_set.all()] or is_secretariat(user):
+    if detail.group_acronym.has_role(user, "chair") or has_role(user, "Secretariat"):
         return True
     return False
 
@@ -69,14 +68,14 @@ def _can_force_post(user, detail):
     if detail.status_id not in [MANUAL_POST_REQUESTED,
             AWAITING_AUTHENTICATION, INITIAL_VERSION_APPROVAL_REQUESTED]:
         return None
-    if is_secretariat(user):
+    if has_role(user, "Secretariat"):
         return True
     return False
 
 def _can_cancel(user, detail, submission_hash):
     if detail.status_id in [CANCELLED, POSTED]:
         return None
-    if is_secretariat(user):
+    if has_role(user, "Secretariat"):
         return True
     if submission_hash and detail.get_hash() == submission_hash:
         return True
@@ -85,7 +84,7 @@ def _can_cancel(user, detail, submission_hash):
 def _can_edit(user, detail, submission_hash):
     if detail.status_id != UPLOADED:
         return None
-    if is_secretariat(user):
+    if has_role(user, "Secretariat"):
         return True
     if submission_hash and detail.get_hash() == submission_hash:
         return True
@@ -128,7 +127,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                     submitter = auto_post_form.save_submitter_info()
                     subject = 'New draft waiting for approval: %s' % detail.filename
                     from_email = settings.IDSUBMIT_FROM_EMAIL
-                    to_email = list(set(i.person.email()[1] for i in detail.group_acronym.wgchair_set.all()))
+                    to_email = [r.formatted_email() for r in Role.objects.filter(group=detail.group_acronym, name="chair").select_related("email", "person")]
                     if to_email:
                         authors = detail.tempidauthors_set.exclude(author_order=0).order_by('author_order')
                         send_mail(request, to_email, from_email, subject, 'submit/submission_approval.txt',
@@ -158,7 +157,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
     show_notify_button = False
     if allow_edit == False or can_cancel == False:
         show_notify_button = True
-    if submission_hash is None and is_secretariat(request.user):
+    if submission_hash is None and has_role(request.user, "Secretariat"):
         submission_hash = detail.get_hash() # we'll need this when rendering the cancel button in the form
     return render_to_response('submit/draft_status.html',
                               {'selected': 'status',
@@ -285,7 +284,7 @@ def add_preapproval(request):
     groups = Group.objects.filter(type="wg").exclude(state="conclude").order_by("acronym").distinct()
 
     if not has_role(request.user, "Secretariat"):
-        groups = groups.filter(role__person=request.user.get_profile())
+        groups = groups.filter(role__person__user=request.user)
 
     if request.method == "POST":
         form = PreapprovalForm(request.POST)
@@ -310,7 +309,7 @@ def add_preapproval(request):
 def cancel_preapproval(request, preapproval_id):
     preapproval = get_object_or_404(Preapproval, pk=preapproval_id)
 
-    if not preapproval in get_preapprovals(request.user):
+    if preapproval not in get_preapprovals(request.user):
         raise HttpResponseForbidden("You do not have permission to cancel this preapproval.")
 
     if request.method == "POST" and request.POST.get("action", "") == "cancel":

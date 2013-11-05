@@ -14,11 +14,11 @@ from django.core.urlresolvers import reverse as urlreverse
 
 import debug
 
-from ietf.group.models import Group
-from ietf.idtracker.models import InternetDraft, IETFWG
-from ietf.proceedings.models import Meeting
+from ietf.group.models import Group, Role
+from ietf.doc.models import Document
+from ietf.meeting.models import Meeting
 from ietf.submit.models import IdSubmissionDetail, TempIdAuthors, Preapproval
-from ietf.submit.utils import MANUAL_POST_REQUESTED, NONE_WG, UPLOADED, AWAITING_AUTHENTICATION, POSTED, POSTED_BY_SECRETARIAT
+from ietf.submit.utils import MANUAL_POST_REQUESTED, UPLOADED, AWAITING_AUTHENTICATION, POSTED, POSTED_BY_SECRETARIAT, submission_confirmation_email_list
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
@@ -154,14 +154,14 @@ class UploadForm(forms.Form):
         same_name = IdSubmissionDetail.objects.filter(filename=filename, revision=revision, submission_date=today)
         if same_name.count() > settings.MAX_SAME_DRAFT_NAME:
             raise forms.ValidationError('The same I-D cannot be submitted more than %s times a day' % settings.MAX_SAME_DRAFT_NAME)
-        if sum([i.filesize for i in same_name]) > (settings.MAX_SAME_DRAFT_NAME_SIZE * 1048576):
+        if sum(i.filesize for i in same_name) > settings.MAX_SAME_DRAFT_NAME_SIZE * 1048576:
             raise forms.ValidationError('The same I-D submission cannot exceed more than %s MByte a day' % settings.MAX_SAME_DRAFT_NAME_SIZE)
 
         # Total from same ip
         same_ip = IdSubmissionDetail.objects.filter(remote_ip=remote_ip, submission_date=today)
         if same_ip.count() > settings.MAX_SAME_SUBMITTER:
             raise forms.ValidationError('The same submitter cannot submit more than %s I-Ds a day' % settings.MAX_SAME_SUBMITTER)
-        if sum([i.filesize for i in same_ip]) > (settings.MAX_SAME_SUBMITTER_SIZE * 1048576):
+        if sum(i.filesize for i in same_ip) > settings.MAX_SAME_SUBMITTER_SIZE * 1048576:
             raise forms.ValidationError('The same submitter cannot exceed more than %s MByte a day' % settings.MAX_SAME_SUBMITTER_SIZE)
 
         # Total in same group
@@ -169,7 +169,7 @@ class UploadForm(forms.Form):
             same_group = IdSubmissionDetail.objects.filter(group_acronym=self.group, submission_date=today)
             if same_group.count() > settings.MAX_SAME_WG_DRAFT:
                 raise forms.ValidationError('The same working group I-Ds cannot be submitted more than %s times a day' % settings.MAX_SAME_WG_DRAFT)
-            if sum([i.filesize for i in same_group]) > (settings.MAX_SAME_WG_DRAFT_SIZE * 1048576):
+            if sum(i.filesize for i in same_group) > settings.MAX_SAME_WG_DRAFT_SIZE * 1048576:
                 raise forms.ValidationError('Total size of same working group I-Ds cannot exceed %s MByte a day' % settings.MAX_SAME_WG_DRAFT_SIZE)
 
 
@@ -177,7 +177,7 @@ class UploadForm(forms.Form):
         total_today = IdSubmissionDetail.objects.filter(submission_date=today)
         if total_today.count() > settings.MAX_DAILY_SUBMISSION:
             raise forms.ValidationError('The total number of today\'s submission has reached the maximum number of submission per day')
-        if sum([i.filesize for i in total_today]) > (settings.MAX_DAILY_SUBMISSION_SIZE * 1048576):
+        if sum(i.filesize for i in total_today) > settings.MAX_DAILY_SUBMISSION_SIZE * 1048576:
             raise forms.ValidationError('The total size of today\'s submission has reached the maximum size of submission per day')
 
     def check_paths(self):
@@ -234,10 +234,10 @@ class UploadForm(forms.Form):
 
     def get_working_group(self):
         name = self.draft.filename
-        existing_draft = InternetDraft.objects.filter(filename=name)
+        existing_draft = Document.objects.filter(name=name, type="draft")
         if existing_draft:
-            group = existing_draft[0].group and existing_draft[0].group.ietfwg or None
-            if group and group.pk != NONE_WG and group.type_id != "area":
+            group = existing_draft[0].group
+            if group and group.type_id not in ("individ", "area"):
                 return group
             else:
                 return None
@@ -255,25 +255,18 @@ class UploadForm(forms.Form):
                 # first check groups with dashes
                 for g in Group.objects.filter(acronym__contains="-", type=group_type):
                     if name.startswith('draft-%s-%s-' % (components[1], g.acronym)):
-                        return IETFWG().from_object(g)
+                        return g
 
                 try:
-                    return IETFWG().from_object(Group.objects.get(acronym=components[2], type=group_type))
+                    return Group.objects.get(acronym=components[2], type=group_type)
                 except Group.DoesNotExist:
                     raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % components[2])
             elif name.startswith("draft-iab-"):
-                return IETFWG().from_object(Group.objects.get(acronym="iab"))
+                return Group.objects.get(acronym="iab")
             else:
                 return None
 
     def save_draft_info(self, draft):
-        document_id = 0
-        existing_draft = InternetDraft.objects.filter(filename=draft.filename)
-        if existing_draft:
-            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                document_id = -1
-            else:
-                document_id = existing_draft[0].id_document_tag
         detail = IdSubmissionDetail.objects.create(
             id_document_name=draft.get_title(),
             filename=draft.filename,
@@ -283,7 +276,7 @@ class UploadForm(forms.Form):
             creation_date=draft.get_creation_date(),
             submission_date=datetime.date.today(),
             idnits_message=self.idnits_message,
-            temp_id_document_tag=document_id,
+            temp_id_document_tag=-1,
             group_acronym=self.group,
             remote_ip=self.remote_ip,
             first_two_pages=''.join(draft.pages[:2]),
@@ -291,38 +284,21 @@ class UploadForm(forms.Form):
             abstract=draft.get_abstract(),
             file_type=','.join(self.file_type),
             )
-        order = 0
-        for author in draft.get_author_list():
+        for order, author in enumerate(draft.get_author_list(), start=1):
             full_name, first_name, middle_initial, last_name, name_suffix, email, company = author
-            order += 1
-            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                # save full name
-                TempIdAuthors.objects.create(
-                    id_document_tag=document_id,
-                    first_name=full_name.strip(),
-                    email_address=(email or "").strip(),
-                    author_order=order,
-                    submission=detail)
-            else:
-                TempIdAuthors.objects.create(
-                    id_document_tag=document_id,
-                    first_name=first_name,
-                    middle_initial=middle_initial,
-                    last_name=last_name,
-                    name_suffix=name_suffix,
-                    email_address=email,
-                    author_order=order,
-                    submission=detail)
+            # save full name
+            TempIdAuthors.objects.create(
+                id_document_tag=-1,
+                first_name=full_name.strip(),
+                email_address=(email or "").strip(),
+                author_order=order,
+                submission=detail)
         return detail
 
 
 class AutoPostForm(forms.Form):
 
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        name = forms.CharField(required=True)
-    else:
-        first_name = forms.CharField(label=u'Given name', required=True)
-        last_name = forms.CharField(label=u'Last name', required=True)
+    name = forms.CharField(required=True)
     email = forms.EmailField(label=u'Email address', required=True)
 
     def __init__(self, *args, **kwargs):
@@ -332,26 +308,12 @@ class AutoPostForm(forms.Form):
         super(AutoPostForm, self).__init__(*args, **kwargs)
 
     def get_author_buttons(self):
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            buttons = []
-            for i in self.validation.authors:
-                buttons.append('<input type="button" data-name="%(name)s" data-email="%(email)s" value="%(name)s" />'
-                               % dict(name=i.get_full_name(),
-                                      email=i.email()[1] or ''))
-            return "".join(buttons)
-
-
-        # this should be moved to a Javascript file and attributes like data-first-name ...
-        button_template = '<input type="button" onclick="jQuery(\'#id_first_name\').val(\'%(first_name)s\');jQuery(\'#id_last_name\').val(\'%(last_name)s\');jQuery(\'#id_email\').val(\'%(email)s\');" value="%(full_name)s" />'
-
         buttons = []
         for i in self.validation.authors:
-            full_name = u'%s. %s' % (i.first_name[0], i.last_name)
-            buttons.append(button_template % {'first_name': i.first_name,
-                                              'last_name': i.last_name,
-                                              'email': i.email()[1] or '',
-                                              'full_name': full_name})
-        return ''.join(buttons)
+            buttons.append('<input type="button" data-name="%(name)s" data-email="%(email)s" value="%(name)s" />'
+                           % dict(name=i.get_full_name(),
+                                  email=i.email()[1] or ''))
+        return "".join(buttons)
 
     def save(self, request):
         self.save_submitter_info()
@@ -361,7 +323,7 @@ class AutoPostForm(forms.Form):
     def send_confirmation_mail(self, request):
         subject = 'Confirmation for Auto-Post of I-D %s' % self.draft.filename
         from_email = settings.IDSUBMIT_FROM_EMAIL
-        to_email = self.draft.confirmation_email_list()
+        to_email = submission_confirmation_email_list(self.draft)
 
         confirm_url = settings.IDTRACKER_BASE_URL + urlreverse('draft_confirm', kwargs=dict(submission_id=self.draft.submission_id, auth_key=self.draft.auth_key))
         status_url = settings.IDTRACKER_BASE_URL + urlreverse('draft_status_by_hash', kwargs=dict(submission_id=self.draft.submission_id, submission_hash=self.draft.get_hash()))
@@ -370,21 +332,13 @@ class AutoPostForm(forms.Form):
                   { 'draft': self.draft, 'confirm_url': confirm_url, 'status_url': status_url })
 
     def save_submitter_info(self):
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            return TempIdAuthors.objects.create(
-                id_document_tag=self.draft.temp_id_document_tag,
-                first_name=self.cleaned_data['name'],
-                email_address=self.cleaned_data['email'],
-                author_order=0,
-                submission=self.draft)
-
         return TempIdAuthors.objects.create(
             id_document_tag=self.draft.temp_id_document_tag,
-            first_name=self.cleaned_data['first_name'],
-            last_name=self.cleaned_data['last_name'],
+            first_name=self.cleaned_data['name'],
             email_address=self.cleaned_data['email'],
             author_order=0,
-            submission=self.draft)
+            submission=self.draft,
+        )
 
     def save_new_draft_info(self):
         salt = hashlib.sha1(str(random.random())).hexdigest()[:5]
@@ -400,18 +354,11 @@ class MetaDataForm(AutoPostForm):
     creation_date = forms.DateField(label=u'Creation date', required=True)
     pages = forms.IntegerField(label=u'Pages', required=True)
     abstract = forms.CharField(label=u'Abstract', widget=forms.Textarea, required=True)
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        name = forms.CharField(required=True)
-    else:
-        first_name = forms.CharField(label=u'Given name', required=True)
-        last_name = forms.CharField(label=u'Last name', required=True)
+    name = forms.CharField(required=True)
     email = forms.EmailField(label=u'Email address', required=True)
     comments = forms.CharField(label=u'Comments to the secretariat', widget=forms.Textarea, required=False)
 
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        fields = ['title', 'version', 'creation_date', 'pages', 'abstract', 'name', 'email', 'comments']
-    else:
-        fields = ['title', 'version', 'creation_date', 'pages', 'abstract', 'first_name', 'last_name', 'email', 'comments']
+    fields = ['title', 'version', 'creation_date', 'pages', 'abstract', 'name', 'email', 'comments']
 
     def __init__(self, *args, **kwargs):
         super(MetaDataForm, self).__init__(*args, **kwargs)
@@ -422,43 +369,21 @@ class MetaDataForm(AutoPostForm):
         authors=[]
         if self.is_bound:
             for key, value in self.data.items():
-                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    if key.startswith('name_'):
-                        author = {'errors': {}}
-                        index = key.replace('name_', '')
-                        name = value.strip()
-                        if not name:
-                            author['errors']['name'] = 'This field is required'
-                        email = self.data.get('email_%s' % index, '').strip()
-                        if email and not email_re.search(email):
-                            author['errors']['email'] = 'Enter a valid e-mail address'
-                        if name or email:
-                            author.update({'get_full_name': name,
-                                           'email': (name, email),
-                                           'index': index,
-                                           })
-                            authors.append(author)
-
-                else:
-                    if key.startswith('first_name_'):
-                        author = {'errors': {}}
-                        index = key.replace('first_name_', '')
-                        first_name = value.strip()
-                        if not first_name:
-                            author['errors']['first_name'] = 'This field is required'
-                        last_name = self.data.get('last_name_%s' % index, '').strip()
-                        if not last_name:
-                            author['errors']['last_name'] = 'This field is required'
-                        email = self.data.get('email_%s' % index, '').strip()
-                        if email and not email_re.search(email):
-                            author['errors']['email'] = 'Enter a valid e-mail address'
-                        if first_name or last_name or email:
-                            author.update({'first_name': first_name,
-                                           'last_name': last_name,
-                                           'email': ('%s %s' % (first_name, last_name), email),
-                                           'index': index,
-                                           })
-                            authors.append(author)
+                if key.startswith('name_'):
+                    author = {'errors': {}}
+                    index = key.replace('name_', '')
+                    name = value.strip()
+                    if not name:
+                        author['errors']['name'] = 'This field is required'
+                    email = self.data.get('email_%s' % index, '').strip()
+                    if email and not email_re.search(email):
+                        author['errors']['email'] = 'Enter a valid e-mail address'
+                    if name or email:
+                        author.update({'get_full_name': name,
+                                       'email': (name, email),
+                                       'index': index,
+                                       })
+                        authors.append(author)
             authors.sort(key=lambda x: x['index'])
         return authors
 
@@ -491,7 +416,7 @@ class MetaDataForm(AutoPostForm):
             raise forms.ValidationError('Version field is not in NN format')
         if version_int > 99 or version_int < 0:
             raise forms.ValidationError('Version must be set between 00 and 99')
-        existing_revisions = [int(i.revision_display()) for i in InternetDraft.objects.filter(filename=self.draft.filename)]
+        existing_revisions = [int(i.rev) for i in Document.objects.filter(name=self.draft.filename)]
         expected = 0
         if existing_revisions:
             expected = max(existing_revisions) + 1
@@ -536,14 +461,12 @@ class MetaDataForm(AutoPostForm):
         self.save_submitter_info() # submitter is author 0
 
         for i, author in enumerate(self.authors):
-            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                # save full name
-                TempIdAuthors.objects.create(
-                    id_document_tag=draft.temp_id_document_tag,
-                    first_name=author["get_full_name"],
-                    email_address=author["email"][1],
-                    author_order=i + 1,
-                    submission=draft)
+            TempIdAuthors.objects.create(
+                id_document_tag=draft.temp_id_document_tag,
+                first_name=author["get_full_name"], # save full name
+                email_address=author["email"][1],
+                author_order=i + 1,
+                submission=draft)
 
     def save(self, request):
         self.save_new_draft_info()
@@ -556,7 +479,7 @@ class MetaDataForm(AutoPostForm):
         cc = [self.cleaned_data['email']]
         cc += [i['email'][1] for i in self.authors]
         if self.draft.group_acronym:
-            cc += [i.person.email()[1] for i in self.draft.group_acronym.wgchair_set.all()]
+            cc += [r.email.address for r in Role.objects.filter(group=self.draft.group_acronym, name="chair").select_related("email")]
         cc = list(set(cc))
         submitter = self.draft.tempidauthors_set.get(author_order=0)
         send_mail(request, to_email, from_email, subject, 'submit/manual_post_mail.txt', {
@@ -588,7 +511,7 @@ class PreapprovalForm(forms.Form):
             raise forms.ValidationError("Name ends with a dash.")
         acronym = components[2]
         if acronym not in self.groups.values_list('acronym', flat=True):
-            raise forms.ValidationError("WG acronym not recognized as one you can approve drafts for.")
+            raise forms.ValidationError("Group acronym not recognized as one you can approve drafts for.")
 
         if Preapproval.objects.filter(name=n):
             raise forms.ValidationError("Pre-approval for this name already exists.")

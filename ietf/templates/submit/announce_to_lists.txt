@@ -1,6 +1,6 @@
 {% autoescape off %}
 A New Internet-Draft is available from the on-line Internet-Drafts directories.
-{% if submission.group_acronym %} This draft is a work item of the {{ submission.group_acronym.group_acronym.name }} Working Group of the IETF.{% endif %}
+{% if submission.group_acronym %} This draft is a work item of the {{ submission.group_acronym.name }} Working Group of the IETF.{% endif %}
 
 	Title           : {{ submission.id_document_name }}
 	Author(s)       : {% for author in authors %}{{ author }}{% if not forloop.last %}

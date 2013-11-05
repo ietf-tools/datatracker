@@ -2,11 +2,8 @@ import datetime
 import re
 
 from django.conf import settings
-from ietf.idtracker.models import InternetDraft, IETFWG
 from django.template.defaultfilters import filesizeformat
 from ietf.submit.parsers.base import FileParser
-
-NONE_WG_PK = 1027
 
 
 class PlainParser(FileParser):

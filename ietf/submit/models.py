@@ -1,11 +1,10 @@
-import re, datetime                     # 
+import re, datetime, hashlib
 
 from django.conf import settings
 from django.db import models
-from django.utils.hashcompat import md5_constructor
 
-from ietf.idtracker.models import InternetDraft, IETFWG
 from ietf.person.models import Person
+from ietf.group.models import Group
 
 
 class IdSubmissionStatus(models.Model):
@@ -22,7 +21,7 @@ class IdSubmissionDetail(models.Model):
     last_updated_date = models.DateField(null=True, blank=True)
     last_updated_time = models.CharField(null=True, blank=True, max_length=25)
     id_document_name = models.CharField(null=True, blank=True, max_length=255)
-    group_acronym = models.ForeignKey(IETFWG, null=True, blank=True)
+    group_acronym = models.ForeignKey(Group, null=True, blank=True)
     filename = models.CharField(null=True, blank=True, max_length=255, db_index=True)
     creation_date = models.DateField(null=True, blank=True)
     submission_date = models.DateField(null=True, blank=True)
@@ -51,7 +50,7 @@ class IdSubmissionDetail(models.Model):
         return u"%s-%s" % (self.filename, self.revision)
 
     def create_hash(self):
-        self.submission_hash = md5_constructor(settings.SECRET_KEY + self.filename).hexdigest()
+        self.submission_hash = hashlib.md5(settings.SECRET_KEY + self.filename).hexdigest()
 
     def get_hash(self):
         if not self.submission_hash:
@@ -67,14 +66,6 @@ class IdSubmissionDetail(models.Model):
     def status_link(self):
         return '<a href="http://datatracker.ietf.org/submit/status/%s/%s/">%s</a>' % (self.submission_id, self.submission_hash, self.status)
     status_link.allow_tags = True
-
-    def confirmation_email_list(self):
-        try:
-            draft = InternetDraft.objects.get(filename=self.filename)
-            email_list = list(set(u'%s <%s>' % (i.person.ascii, i.email()) for i in draft.authors))
-        except InternetDraft.DoesNotExist:
-            email_list = list(set(u'%s <%s>' % i.email() for i in self.tempidauthors_set.all()))
-        return email_list
 
 def create_submission_hash(sender, instance, **kwargs):
     instance.create_hash()
@@ -101,10 +92,6 @@ class TempIdAuthors(models.Model):
     submission = models.ForeignKey(IdSubmissionDetail)
     middle_initial = models.CharField(blank=True, max_length=255, null=True)
     name_suffix = models.CharField(blank=True, max_length=255, null=True)
-
-    class Meta:
-        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            db_table = 'temp_id_authors'
 
     def email(self):
         return (self.get_full_name(), self.email_address)
