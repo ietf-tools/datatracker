@@ -16,6 +16,6 @@ DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
  Note: {{item.session.agenda_note|ics_esc}}\n{% endif %}{% for material in item.session.materials.all %}
  \n{{material.type}}{% if material.type.name != "Agenda" %}
   ({{material.title|ics_esc}}){% endif %}:
-  http://www.ietf.org{{material.get_absolute_url}}\n{% endfor %}
+  {{material.get_absolute_url}}\n{% endfor %}
 {% endif %}END:VEVENT
 {% endif %}{% endfor %}END:VCALENDAR{% endautoescape %}
