@@ -151,7 +151,7 @@ class IprContact(models.Model):
     department = models.CharField(blank=True, max_length=255)
     address1 = models.CharField(blank=True, max_length=255)
     address2 = models.CharField(blank=True, max_length=255)
-    telephone = models.CharField(max_length=25)
+    telephone = models.CharField(blank=True, max_length=25)
     fax = models.CharField(blank=True, max_length=25)
     email = models.EmailField(max_length=255)
     def __str__(self):

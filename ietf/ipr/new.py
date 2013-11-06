@@ -33,7 +33,7 @@ class BaseIprForm(ModelForm):
         exclude = ('rfc_document', 'id_document_tag') # 'legacy_url_0','legacy_url_1','legacy_title_1','legacy_url_2','legacy_title_2')
         
 class BaseContactForm(ModelForm):
-    telephone = forms.RegexField(phone_re, error_message=phone_error_message)
+    telephone = forms.RegexField(phone_re, error_message=phone_error_message, required=False)
     fax = forms.RegexField(phone_re, error_message=phone_error_message, required=False)
     class Meta:
         model = models.IprContact
