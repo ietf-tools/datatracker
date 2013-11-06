@@ -57,15 +57,6 @@ class IdSubmissionDetail(models.Model):
             self.create_hash()
             self.save()
         return self.submission_hash
-    def draft_link(self):
-        if self.status_id == -1:
-            return '<a href="http://www.ietf.org/id/%s-%s.txt">%s</a>' % (self.filename, self.revision, self.filename)
-        else:
-            return self.filename
-    draft_link.allow_tags = True
-    def status_link(self):
-        return '<a href="http://datatracker.ietf.org/submit/status/%s/%s/">%s</a>' % (self.submission_id, self.submission_hash, self.status)
-    status_link.allow_tags = True
 
 def create_submission_hash(sender, instance, **kwargs):
     instance.create_hash()

@@ -1,5 +1,7 @@
 from django.core.urlresolvers import reverse as urlreverse
 from django.contrib import admin
+from django.utils.safestring import mark_safe
+
 from ietf.submit.models import *
 
 class IdSubmissionStatusAdmin(admin.ModelAdmin):
@@ -18,6 +20,13 @@ class IdSubmissionDetailAdmin(admin.ModelAdmin):
                                      submission_hash=instance.get_hash()))
         return '<a href="%s">%s</a>' % (url, instance.status)
     status_link.allow_tags = True
+
+    def draft_link(self, instance):
+        if instance.status_id in (-1, -2):
+            return '<a href="http://www.ietf.org/id/%s-%s.txt">%s</a>' % (instance.filename, instance.revision, instance.filename)
+        else:
+            return instance.filename
+    draft_link.allow_tags = True
 
 admin.site.register(IdSubmissionDetail, IdSubmissionDetailAdmin)
 
