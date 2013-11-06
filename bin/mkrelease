@@ -162,7 +162,7 @@ DEV="$(printf %d.%02d-dev $MAJOR $NEXT)"
 
 
 note "Checking that changelog information is available"
-changes=$( sed -n "/^ietfdb ($VER.*)/,/^ -- /p" changelog | awk '{ if (line) print line ; line=$0 }' )
+changes=$( sed -n "/^ietfdb ($VER.*)/,/^ -- /p" changelog )
 [ "$changes" ] || die "No changelog information for $VER found"
 note "$changes"
 
