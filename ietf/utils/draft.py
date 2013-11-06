@@ -173,7 +173,10 @@ class Draft():
             except ValueError:
                 path, base = "", self.source
             if base.startswith("draft-"):
-                name, ext = base.split(".", 1)
+                if '.' in base:
+                    name, ext = base.split(".", 1)
+                else:
+                    name, ext = base, ""
                 revmatch = re.search("\d\d$", name)
                 if revmatch:
                     filename = name[:-3]
