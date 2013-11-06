@@ -45,6 +45,7 @@ class IdSubmissionDetail(models.Model):
     invalid_version = models.IntegerField(null=True, blank=True)
     idnits_failed = models.IntegerField(null=True, blank=True)
     submission_hash = models.CharField(null=True, blank=True, max_length=255)
+    replaces = models.CharField(null=True, blank=True, max_length=255)
 
     def __unicode__(self):
         return u"%s-%s" % (self.filename, self.revision)
