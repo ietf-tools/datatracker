@@ -1,3 +1,114 @@
+ietfdb (4.83) ietf; urgency=high
+
+  This release provides the code from the IETF-88 code sprint, and also
+  a number of fixes to things reported during the IETF.
+
+  The number of enhancements coming out of the sprint this time is impressive;
+  this may actually have been the most successful sprint till now.
+
+  Of particular note is the new ability for chairs and others who has the
+  permission to edit a document's state, to edit replaced-by information for
+  documents; and the introduction of information about which documents a given
+  document references, for all documents.  Future enhancements will display
+  this information as diagrams and textually, and use it to re-introduce the
+  dependency diagrams originally provide by Bill Fenner in his stand-alone
+  dependency graph application.
+
+  From rcross@amsl.com: 
+
+  * Changed draft replaces action: move document to archive directory 
+
+  From tterriberry@mozilla.com: 
+
+  * Allow wgchairs to edit document replacement relationships.
+    This actually allows anyone with can_edit_stream_info permission
+    to edit the list. This does draft name completion, but does not
+    currently filter those names for likely replacements. Styling is
+    also basically non-existent.  Fixes #1002 
+
+  * Added 'Track this document' link on drafts.  Fixes #1085. 
+
+  * Mark concluded BoFs as BoFs, not Concluded WGs.  Fixes #1169. 
+
+  From bartosz.balazinski@interdigital.com:
+
+  * Added the new version of the shepherd writeup as a comment when it's edited.
+    The new version works like this:
+
+     -  Any shepherd writeups done before the document is submitted for
+	publication are not disclosed in the history.
+
+     -  When the document is submitted for publication the available writeup (if
+	available) is added to history.
+
+     -  Any further writeups after the document has been submitted for publication
+	are disclosed in the history. 
+
+  From suresh.krishnan@ericsson.com:
+
+  * Refactored the mails sent when state is changed along with annotation tags.
+    Don't send emails for only comment changes, just add a history entry.  For
+    state changes and annotation changes, only send one email, containing
+    information about both state changes and annotation tag changes.  
+    Fixes issue #1127.
+
+  From jmh@joelhalpern.com:
+
+  * Included confirmation addresses in ID-Submission success notice.
+    Fixes issue #1097. 
+
+  * Added document titles to status change request email.  Fixes issue #1069. 
+
+  * Added \'Last Call Issued:\' to front of last call atom feed entry subjects. 
+
+  * Fixed conflict review text for irtf docs to reference RFC 5743. 
+
+  * Added the last call expiration date to the document header, and remove
+    duplicate code for producing the iest state summary. 
+
+  From markus.stenberg@iki.fi: 
+
+  * Added .csv export from private community lists.  Fixes #1074
+
+  * Took care of #841 by moving <span> correctly outside <a> altogether.
+
+  From adam@nostrum.com: 
+
+  * Fixed #1153: Fixes IPR disclosures being counted multiple times and
+    counting of \'not yet approved\' IPR disclosures. 
+
+  From rjsparks@nostrum.com: 
+
+    Refined Bill Fenner's regex based search through documents for references.
+    This populates RelatedDocument with relations for references for each type
+    draft Document; replaces these reference relationships with updated
+    copies upon draft submission.  Note to deployer: There is a script to run in
+    patches/fill_in_references.py that does the work of bringing the database
+    up to date. It takes around 10 minutes to complete on a fast development
+    laptop.  Fixes bug #1173 
+
+  Other changes:
+
+  * Tweaked the style used on the nomcom feedback pages a bit, to give people
+    a bit more room to write in the feedback field.
+
+  * It turns out that the get_user_email is called for every nominee listed on
+    a feedback page, which is insane.  But until the template can be rewritten
+    to do this in a more sane way, we cache the lookup result.
+
+  * Changed things so the left-side navbar doesn't jump to full page width in
+    the instant before the main content is loaded.  NB: Cleanup action needed:
+    replace all px dimensions with em, consistently.
+
+  * Included the IAOC update session in the training section of the agenda.
+
+  * By preference, show the same email for a logged-in user as his login, if
+    it exists; otherwise show the newest active email address.
+
+  * Many minor fixes to agenda templates and the known-good agenda test files.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2013 20:33:43 +0100
+
 ietfdb (4.82) ietf; urgency=high
 
   * Removed the ams_filters template tag file from the meeting app -- it 
