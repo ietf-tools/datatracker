@@ -143,6 +143,8 @@ class NoWorkflowStateForm(StreamDraftForm):
                      comment=comment,
                      person=self.person,
                      to_state=to_state,
+                     added_tags=[],
+                     removed_tags=[],
                      estimated_date=estimated_date)
 
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
