@@ -40,10 +40,12 @@ from django.template.defaultfilters import truncatewords_html
 from django.utils import simplejson as json
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse as urlreverse, NoReverseMatch
 from django.conf import settings
 from django import forms
 
+from ietf.community.models import CommunityList
 from ietf.doc.models import *
 from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
@@ -318,6 +320,15 @@ def document_main(request, name, rev=None):
             elif can_edit_stream_info and (not iesg_state or iesg_state.slug == 'watching'):
                 actions.append(("Submit to IESG for Publication", urlreverse('doc_to_iesg', kwargs=dict(name=doc.name))))
 
+        show_add_to_list = False
+        if request.user.is_authenticated():
+            try:
+                clist = CommunityList.objects.get(user=request.user)
+                clist.update()
+                show_add_to_list = clist.get_documents().filter(name=doc.name).count() == 0
+            except ObjectDoesNotExist:
+                pass
+
         return render_to_response("doc/document_draft.html",
                                   dict(doc=doc,
                                        group=group,
@@ -368,6 +379,7 @@ def document_main(request, name, rev=None):
                                        shepherd_writeup=shepherd_writeup,
                                        search_archive=search_archive,
                                        actions=actions,
+                                       show_add_to_list=show_add_to_list,
                                        ),
                                   context_instance=RequestContext(request))
 
