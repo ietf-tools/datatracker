@@ -97,27 +97,6 @@ process should be used:
     `General Instructions for Deployment of a New Release`_ .
 
 
-Installing a Secretariat Release
-================================
-
-Secretariat releases are based on a regular tagged release, but contain
-updated code in the ietf/secr/ tree.  They are named with a trailing
-'.secr<N>' version number.  If the tagged release is for instance 4.42, the
-first secretariat release based on that would have release number 4.42.secr1,
-and the second secretariat release based on it would be numbered 4.42.secr2.
-
-Secretariat releases are deployed in the same manner as regular releases, with
-the addition that patches made to the regular release needs to be picked up
-and applied.  Assuming we'releasing 4.42.p1.secr2, then after we've cd'd into
-the release diretory to run migrations, we'd also run a patch step to pick
-up the current patches to the current production release, which is pointed
-to by ../web::
-
-  /a/www/ietf-datatracker/4.42.p1.secr2 $ svn diff ../web/ | patch -p2
-
-Assuming that runs without error messages, the deployment is continued as
-usual, with re-pointing the symlink and restarting apache.
-
 Additional Version-Specific Instructions
 ========================================
 
