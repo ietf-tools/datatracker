@@ -6,6 +6,7 @@
 {{ block.super }}
 div.metadata-errors { border: 1px solid red; background-color: #ffeebb; padding: 5px 10px; margin: 1em 0px; }
 div.info-message-error { border: 1px solid red; background-color: #ffeebb; padding: 5px 10px; margin: 1em 0px; color: red; }
+div.info-message-warning { border: 1px solid orange; background-color: #ffffaa; padding: 5px 10px; margin: 1em 0px; color: black; }
 div.info-message-success { border: 1px solid green; background-color: #eeffbb; padding: 5px 10px; margin: 1em 0px; color: green; }
 table.metadata-table th { white-space: nowrap; font-weight: bold; }
 table.metadata-table #id_first_name, table.metadata-table #id_last_name { width: 200px; }
@@ -82,7 +83,7 @@ function confirmCancelation(){
 {% endif %} 
 
 {% if message %} 
-<div class="info-message-{{ message.0 }}">{{ message.1 }}</div> 
+<div class="info-message-{{ message.0 }}">{{ message.1|safe }}</div> 
 {% endif %}
 
 {% if auto_post_form.errors %}

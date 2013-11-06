@@ -8,6 +8,8 @@ from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, Ht
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.utils.text import get_text_list
+from django.utils.html import escape
 
 from ietf.group.models import Group
 from ietf.utils.mail import send_mail
@@ -17,6 +19,8 @@ from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm, Preapprova
 from ietf.submit.utils import UPLOADED, AWAITING_AUTHENTICATION, MANUAL_POST_REQUESTED, CANCELLED, POSTED, INITIAL_VERSION_APPROVAL_REQUESTED
 from ietf.submit.utils import is_secretariat, get_approvable_submissions, get_preapprovals, get_recently_approved, get_person_for_user, perform_post, remove_docs, request_full_url
 from ietf.submit.utils import DraftValidation
+
+import debug
 
 def submit_index(request):
     if request.method == 'POST':
@@ -112,6 +116,18 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
     else:
         replaces = None
 
+    def get_submitter(details):
+        submitter = details.tempidauthors_set.filter(author_order=0)
+        if submitter:
+            return submitter[0]
+        elif details.submitter_tag:
+            try:
+                return PersonOrOrgInfo.objects.get(pk=details.submitter_tag)
+            except PersonOrOrgInfo.DoesNotExist:
+                return False
+        return None
+
+
     if request.method == 'POST' and allow_edit:
         if request.POST.get('autopost', False):
             auto_post_form = AutoPostForm(draft=detail, validation=validation, replaces=replaces, data=request.POST)
@@ -138,6 +154,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                 else:
                     auto_post_form.save(request)
                     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
+                    submitter = get_submitter(detail)
                     validation = DraftValidation(detail)
                     is_valid = validation.is_valid()
                     status = detail.status
@@ -145,7 +162,21 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                     can_approve = _can_approve(request.user, detail)
                     can_cancel = _can_cancel(request.user, detail, submission_hash)
                     allow_edit = None
-                    message = ('success', 'Your submission is pending email authentication. An email has been sent to %s with instructions.'%', '.join(detail.confirmation_email_list()))
+                    confirmation_email_addresses = get_text_list(detail.confirmation_email_list(), "and")
+                    submitter_email_address = "<%s>" % submitter.email_address
+                    if submitter_email_address in confirmation_email_addresses:
+                        message = ('success', 'Your submission is pending email authentication. An email has been sent to %s with instructions.' % escape(confirmation_email_addresses) )
+                    else:
+                        message = ('warning',
+                            """Your submission is pending email authentication. An email has been sent to %s with instructions.
+                            <br/><br/>
+                            Please note that since the database does not have your email address in the list of authors of previous
+                            revisions of the document, you are <b>not</b> receiving a confirmation email yourself; one of the
+                            addressees above will have to send a confirmation in order to complete the submission.  This is done
+                            to avoid document hijacking.  If none of the known previous authors will be able to confirm the
+                            submission, please contact <a href="mailto:ietf-action@ietf.org">the secretariat</a> for action.
+                            """ % escape(confirmation_email_addresses) )
+                        
         else:
             submission_hash = detail.get_hash()
             if submission_hash:
