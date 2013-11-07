@@ -275,8 +275,8 @@ DOC_HREFS = {
     # who understands this better can take care of it.
     #"liai-att": None
     #"liaison": None
-    "minutes": "http://www.ietf.org/proceedings/{meeting}/minutes/{doc.name}",
-    "slides": "http://www.ietf.org/proceedings/{meeting}/slides/{doc.name}",
+    "minutes": "http://www.ietf.org/proceedings/{meeting}/minutes/{doc.external_url}",
+    "slides": "http://www.ietf.org/proceedings/{meeting}/slides/{doc.external_url}",
 }
 
 # Override this in settings_local.py if needed
