@@ -374,7 +374,7 @@ def replaces(request, name):
                 old_replaces_names = ", ".join([d.name for d in old_replaces])
                 if not old_replaces_names:
                     old_replaces_names = "None"
-                e.desc = u"Set of documents this document replaces changed to <b>%s</b> from %s"% (new_replaces_names, old_replaces_names)
+                e.desc = u"This document now replaces <b>%s</b> instead of %s"% (new_replaces_names, old_replaces_names)
                 e.save()
                 email_desc = e.desc
                 if comment:
@@ -393,7 +393,7 @@ def replaces(request, name):
                 email_string = ", ".join(email_list)
                 send_mail(request, email_string,
                  "DraftTracker Mail System <iesg-secretary@ietf.org>",
-                 "%s updated by %s" % (doc.file_tag, login),
+                 "%s updated by %s" % (doc.name, login),
                  "doc/mail/change_notice.txt",
                  dict(text=html_to_text(email_desc),
                       doc=doc,
