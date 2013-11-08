@@ -372,7 +372,7 @@ SOUTH_TESTS_MIGRATE = False
 BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
 
 # Timezone files for iCalendar
-TZDATA_ICS_PATH = BASE_DIR + '/vzic/zoneinfo/'
+TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 CHANGELOG_PATH = '/www/ietf-datatracker/web/changelog'
 
 # Secretariat Tool
