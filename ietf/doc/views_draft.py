@@ -1,6 +1,7 @@
 # changing state and metadata on Internet Drafts
 
 import re, os, datetime
+from textwrap import dedent
 
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render_to_response, get_object_or_404
@@ -374,9 +375,17 @@ def replaces(request, name):
                 old_replaces_names = ", ".join([d.name for d in old_replaces])
                 if not old_replaces_names:
                     old_replaces_names = "None"
-                e.desc = u"Set of documents this document replaces changed to <b>%s</b> from %s"% (new_replaces_names, old_replaces_names)
+                e.desc = dedent(u"""
+                    The set of documents which are replaced by %s has been updated:
+
+                    Old:
+                        %s
+
+                    New:
+                        %s
+                """ % (doc.name, old_replaces_names, new_replaces_names))
                 e.save()
-                email_desc = e.desc
+                email_desc = e.desc.replace(", ", "\n    ")
                 if comment:
                     c = DocEvent(doc=doc,by=login,type="added_comment")
                     c.desc = comment
@@ -393,7 +402,7 @@ def replaces(request, name):
                 email_string = ", ".join(email_list)
                 send_mail(request, email_string,
                  "DraftTracker Mail System <iesg-secretary@ietf.org>",
-                 "%s updated by %s" % (doc.file_tag, login),
+                 "%s updated by %s" % (doc.name, login),
                  "doc/mail/change_notice.txt",
                  dict(text=html_to_text(email_desc),
                       doc=doc,
@@ -995,8 +1004,9 @@ def edit_shepherd_writeup(request, name):
                 e = WriteupDocEvent(doc=doc, by=login, type="changed_protocol_writeup")
 
 		# Add the shepherd writeup to description if the document is in submitted for publication state
-                state = doc.get_state("draft-stream-%s" % doc.stream_id)
-                if (state.slug=='sub-pub'):
+                stream_state = doc.get_state("draft-stream-%s" % doc.stream_id)
+                iesg_state   = doc.get_state("draft-iesg")
+                if (iesg_state or (stream_state and stream_state.slug=='sub-pub')):
                     e.desc = writeup
                 else:
                     e.desc = "Changed document writeup"
