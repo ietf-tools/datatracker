@@ -66,7 +66,7 @@ def decrypt(string, request, year, plain=False):
     key = retrieve_nomcom_private_key(request, year)
 
     if not key:
-        return '<-Encripted text [No private key provided]->'
+        return '-*- Encrypted text [No private key provided] -*-'
 
     encrypted_file = tempfile.NamedTemporaryFile(delete=False)
     encrypted_file.write(string)
@@ -81,7 +81,7 @@ def decrypt(string, request, year, plain=False):
     os.unlink(encrypted_file.name)
 
     if error:
-        return '<-Encripted text [Your private key is invalid]->'
+        return '-*- Encrypted text [Your private key is invalid] -*-'
 
     if not plain:
         return force_escape(linebreaksbr(out))
