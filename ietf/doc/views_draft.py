@@ -375,15 +375,7 @@ def replaces(request, name):
                 old_replaces_names = ", ".join([d.name for d in old_replaces])
                 if not old_replaces_names:
                     old_replaces_names = "None"
-                e.desc = dedent(u"""
-                    The set of documents which are replaced by %s has been updated:
-
-                    Old:
-                        %s
-
-                    New:
-                        %s
-                """ % (doc.name, old_replaces_names, new_replaces_names))
+                e.desc = u"This document now replaces <b>%s</b> instead of %s"% (new_replaces_names, old_replaces_names)
                 e.save()
                 email_desc = e.desc.replace(", ", "\n    ")
                 if comment:
