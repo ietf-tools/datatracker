@@ -609,6 +609,29 @@ def document_shepherd_writeup(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
+def document_references(request, name):
+    doc = get_object_or_404(Document,docalias__name=name)
+    refs = doc.relations_that_doc(['refnorm','refinfo','refunk','refold'])
+    return render_to_response("doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),),context_instance=RequestContext(request))
+
+def document_referenced_by(request, name):
+    doc = get_object_or_404(Document,docalias__name=name)
+    refs = doc.relations_that(['refnorm','refinfo','refunk','refold']).filter(source__states__type__slug='draft',source__states__slug__in=['rfc','active'])
+    full = ( request.GET.get('full') != None )
+    numdocs = refs.count()
+    if not full and numdocs>250:
+       refs=refs[:250]
+    else:
+       numdocs=None
+    refs=sorted(refs,key=lambda x:(['refnorm','refinfo','refunk','refold'].index(x.relationship.slug),x.source.canonical_name()))
+    return render_to_response("doc/document_referenced_by.html",
+               dict(alias_name=name,
+                    doc=doc,
+                    numdocs=numdocs,
+                    refs=refs,
+                    ),
+               context_instance=RequestContext(request))
+
 def document_ballot_content(request, doc, ballot_id, editable=True):
     """Render HTML string with content of ballot page."""
     all_ballots = list(BallotDocEvent.objects.filter(doc=doc, type="created_ballot").order_by("time"))

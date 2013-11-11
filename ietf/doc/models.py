@@ -167,6 +167,34 @@ class RelatedDocument(models.Model):
     def __unicode__(self):
         return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 
+    def is_downref(self):
+
+        if self.source.type.slug!='draft' or self.relationship.slug not in ['refnorm','refold','refunk']:
+            return None
+
+        if self.source.get_state().slug == 'rfc':
+            source_lvl = self.source.std_level.slug
+        else:
+            source_lvl = self.source.intended_std_level.slug
+
+        if source_lvl not in ['bcp','ps','ds','std']:
+            return None
+
+        if self.target.document.get_state().slug == 'rfc':
+            target_lvl = self.target.document.std_level.slug
+        else:
+            target_lvl = self.target.document.intended_std_level.slug
+
+        rank = { 'ps':1, 'ds':2, 'std':3, 'bcp':3 }
+
+        if ( target_lvl not in rank ) or ( rank[target_lvl] < rank[source_lvl] ):
+            if self.relationship.slug == 'refnorm' and target_lvl!='unkn':
+                return "Downref"
+            else:
+                return "Possible Downref"
+
+        return None
+
 class DocumentAuthor(models.Model):
     document = models.ForeignKey('Document')
     author = models.ForeignKey(Email, help_text="Email address used by author for submission")
