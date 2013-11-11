@@ -236,6 +236,8 @@ li.error	{ margin: 0.5em; background-color: #f44; }
 	font-family: Arial, sans-serif;
 }
 
+.errorlist a { color: #fff; }
+
 .group-documents .search-results { margin-top: 1.5em; }
 
 table.milestones td.due { vertical-align: top; width: 80px; }
