@@ -28,7 +28,7 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
   </tr>
   {% for s in approvals %}
   <tr>
-    <td><a href="{% url submit_submission_status_by_hash submission_id=s.pk access_key=s.access_key %}">{{ s.name }}-{{ s.rev }}</a></td>
+    <td><a href="{% url submit_submission_status_by_hash submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
     <td>{{ s.submission_date }}</td>
   </tr>
   {% endfor %}

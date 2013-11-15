@@ -6,7 +6,7 @@ from django.db import models
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.name.models import DraftSubmissionStateName
-from ietf.utils.uniquekey import generate_unique_key
+from ietf.utils.accesstoken import generate_random_key, generate_access_token
 
 
 def parse_email_line(line):
@@ -21,7 +21,7 @@ class Submission(models.Model):
     state = models.ForeignKey(DraftSubmissionStateName)
     remote_ip = models.CharField(max_length=100, blank=True)
 
-    access_key = models.CharField(max_length=255, default=generate_unique_key)
+    access_key = models.CharField(max_length=255, default=generate_random_key)
     auth_key = models.CharField(max_length=255, blank=True)
 
     # draft metadata
@@ -58,6 +58,9 @@ class Submission(models.Model):
 
     def submitter_parsed(self):
         return parse_email_line(self.submitter)
+
+    def access_token(self):
+        return generate_access_token(self.access_key)
 
 
 class SubmissionEvent(models.Model):

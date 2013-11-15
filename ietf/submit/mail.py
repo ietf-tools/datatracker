@@ -8,6 +8,7 @@ from ietf.doc.models import Document
 from ietf.person.models import Person
 from ietf.group.models import Role
 from ietf.message.models import Message
+from ietf.utils.accesstoken import generate_access_token
 
 def submission_confirmation_email_list(submission):
     try:
@@ -25,8 +26,8 @@ def send_submission_confirmation(request, submission):
     from_email = settings.IDSUBMIT_FROM_EMAIL
     to_email = submission_confirmation_email_list(submission)
 
-    confirm_url = settings.IDTRACKER_BASE_URL + urlreverse('submit_confirm_submission', kwargs=dict(submission_id=submission.pk, auth_key=submission.auth_key))
-    status_url = settings.IDTRACKER_BASE_URL + urlreverse('submit_submission_status_by_hash', kwargs=dict(submission_id=submission.pk, access_key=submission.access_key))
+    confirm_url = settings.IDTRACKER_BASE_URL + urlreverse('submit_confirm_submission', kwargs=dict(submission_id=submission.pk, auth_token=generate_access_token(submission.auth_key)))
+    status_url = settings.IDTRACKER_BASE_URL + urlreverse('submit_submission_status_by_hash', kwargs=dict(submission_id=submission.pk, access_token=submission.access_token()))
         
     send_mail(request, to_email, from_email, subject, 'submit/confirm_submission.txt', {
         'submission': submission,
@@ -40,9 +41,8 @@ def send_full_url(request, submission):
     subject = 'Full URL for managing submission of draft %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
     to_email = submission_confirmation_email_list(submission)
-    url = settings.IDTRACKER_BASE_URL + urlreverse('submit_submission_status_by_hash',
-                                                   kwargs=dict(submission_id=submission.pk,
-                                                               access_key=submission.access_key))
+    url = settings.IDTRACKER_BASE_URL + urlreverse('submit_submission_status_by_hash', kwargs=dict(submission_id=submission.pk, access_token=submission.access_token()))
+
     send_mail(request, to_email, from_email, subject, 'submit/full_url.txt', {
         'submission': submission,
         'url': url,

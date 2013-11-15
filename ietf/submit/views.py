@@ -21,7 +21,7 @@ from ietf.submit.utils import approvable_submissions_for_user, preapprovals_for_
 from ietf.submit.utils import check_idnits, found_idnits, validate_submission, create_submission_event
 from ietf.submit.utils import post_submission, cancel_submission, rename_submission_files
 from ietf.submit.mail import send_full_url, send_approval_request_to_group, send_submission_confirmation, submission_confirmation_email_list, send_manual_post_request
-from ietf.utils.uniquekey import generate_unique_key
+from ietf.utils.accesstoken import generate_random_key, generate_access_token
 
 def upload_submission(request):
     if request.method == 'POST':
@@ -89,7 +89,7 @@ def upload_submission(request):
 
                 create_submission_event(request, submission, desc="Uploaded submission")
 
-                return redirect("submit_submission_status_by_hash", submission_id=submission.pk, access_key=submission.access_key)
+                return redirect("submit_submission_status_by_hash", submission_id=submission.pk, access_token=submission.access_token())
         except IOError as e:
             if "read error" in str(e): # The server got an IOError when trying to read POST data
                 form = UploadForm(request=request)
@@ -128,23 +128,26 @@ def search_submission(request):
                                'name': name},
                               context_instance=RequestContext(request))
 
-def can_edit_submission(request, submission, access_key):
-    key_matched = access_key and submission.access_key == access_key
+def can_edit_submission(request, submission, access_token):
+    key_matched = access_token and submission.access_token() == access_token
+    if not key_matched: key_matched = submission.access_key == access_token # backwards-compat
     return key_matched or has_role(request.user, "Secretariat")
 
-def submission_status(request, submission_id, access_key=None, message=None):
+def submission_status(request, submission_id, access_token=None):
     submission = get_object_or_404(Submission, pk=submission_id)
-    if access_key and submission.access_key != access_key:
+
+    key_matched = access_token and submission.access_token() == access_token
+    if not key_matched: key_matched = submission.access_key == access_token # backwards-compat
+    if access_token and not key_matched:
         raise Http404
 
     errors = validate_submission(submission)
     passes_idnits = found_idnits(submission.idnits_message)
 
-    key_matched = access_key and submission.access_key == access_key
     is_secretariat = has_role(request.user, "Secretariat")
     is_chair = submission.group and submission.group.has_role(request.user, "chair")
 
-    can_edit = can_edit_submission(request, submission, access_key) and submission.state_id == "uploaded"
+    can_edit = can_edit_submission(request, submission, access_token) and submission.state_id == "uploaded"
     can_cancel = (key_matched or is_secretariat) and submission.state.next_states.filter(slug="cancel")
     can_group_approve = (is_secretariat or is_chair) and submission.state_id == "grp-appr"
     can_force_post = is_secretariat and submission.state.next_states.filter(slug="posted")
@@ -161,8 +164,10 @@ def submission_status(request, submission_id, access_key=None, message=None):
 
     requires_prev_authors_approval = Document.objects.filter(name=submission.name)
 
+    message = None
+
     if submission.state_id == "cancel":
-        message = ('error', 'This submission has been cancelled, modification is no longer possible.')
+        message = ('error', 'This submission has been canceled, modification is no longer possible.')
     elif submission.state_id == "auth":
         message = ('success', u'The submission is pending email authentication. An email has been sent to: %s' % ",".join(confirmation_list))
     elif submission.state_id == "grp-appr":
@@ -192,7 +197,7 @@ def submission_status(request, submission_id, access_key=None, message=None):
                     desc = "sent approval email to group chairs: %s" % u", ".join(sent_to)
 
                 else:
-                    submission.auth_key = generate_unique_key()
+                    submission.auth_key = generate_random_key()
                     if requires_prev_authors_approval:
                         submission.state = DraftSubmissionStateName.objects.get(slug="aut-appr")
                     else:
@@ -208,11 +213,11 @@ def submission_status(request, submission_id, access_key=None, message=None):
 
                 create_submission_event(request, submission, u"Set submitter to \"%s\" and %s" % (submission.submitter, desc))
 
-                return redirect("submit_submission_status_by_hash", submission_id=submission.pk, access_key=access_key)
+                return redirect("submit_submission_status_by_hash", submission_id=submission.pk, access_token=access_token)
 
         elif action == "edit" and submission.state_id == "uploaded":
-            if access_key:
-                return redirect("submit_edit_submission_by_hash", submission_id=submission.pk, access_key=access_key)
+            if access_token:
+                return redirect("submit_edit_submission_by_hash", submission_id=submission.pk, access_token=access_token)
             else:
                 return redirect("submit_edit_submission", submission_id=submission.pk)
 
@@ -229,7 +234,7 @@ def submission_status(request, submission_id, access_key=None, message=None):
 
             cancel_submission(submission)
 
-            create_submission_event(request, submission, "Cancelled submission")
+            create_submission_event(request, submission, "Canceled submission")
 
             return redirect("submit_submission_status", submission_id=submission_id)
 
@@ -284,10 +289,10 @@ def submission_status(request, submission_id, access_key=None, message=None):
                               context_instance=RequestContext(request))
 
 
-def edit_submission(request, submission_id, access_key=None):
+def edit_submission(request, submission_id, access_token=None):
     submission = get_object_or_404(Submission, pk=submission_id, state="uploaded")
 
-    if not can_edit_submission(request.user, submission, access_key):
+    if not can_edit_submission(request.user, submission, access_token):
         return HttpResponseForbidden('You do not have permission to access this page')
 
     errors = validate_submission(submission)
@@ -360,10 +365,13 @@ def edit_submission(request, submission_id, access_key=None):
                               context_instance=RequestContext(request))
 
 
-def confirm_submission(request, submission_id, auth_key):
+def confirm_submission(request, submission_id, auth_token):
     submission = get_object_or_404(Submission, pk=submission_id)
 
-    if request.method == 'POST' and submission.state_id in ("auth", "aut-appr") and auth_key == submission.auth_key:
+    key_matched = submission.auth_key and auth_token == generate_access_token(submission.auth_key)
+    if not key_matched: key_matched = auth_token == submission.auth_key # backwards-compat
+
+    if request.method == 'POST' and submission.state_id in ("auth", "aut-appr") and key_matched:
         post_submission(request, submission)
 
         create_submission_event(request, submission, "Confirmed and posted submission")
@@ -372,7 +380,7 @@ def confirm_submission(request, submission_id, auth_key):
 
     return render_to_response('submit/confirm_submission.html', {
         'submission': submission,
-        'auth_key': auth_key,
+        'key_matched': key_matched,
     }, context_instance=RequestContext(request))
 
 

@@ -23,7 +23,7 @@ p.error { color: red; font-weight: bold; font-size: 1.5em; }
   {% endif %}
 {% else %}
 
-  {% if auth_key != submission.auth_key %}
+  {% if not key_matched %}
     <p class="error">Incorrect authorization key.</p>
 
     <p>Double-check the link you followed. If everything fails, you can go to
