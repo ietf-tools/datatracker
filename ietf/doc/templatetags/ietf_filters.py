@@ -277,6 +277,10 @@ def truncate_ellipsis(text, arg):
     else:
         return escape(text)
     
+@register.filter
+def split(text, splitter=None):
+    return text.split(splitter)
+
 @register.filter(name="wrap_long_lines")
 def wrap_long_lines(text):
     """Wraps long lines without loosing the formatting and indentation
