@@ -66,3 +66,8 @@ class FeedbackType(NameModel):
     """Type of feedback: questionnaires, nominations, comments"""
 class DBTemplateTypeName(NameModel):
     """reStructuredText, Plain, Django"""
+class DraftSubmissionStateName(NameModel):
+    """Uploaded, Awaiting Submitter Authentication, Awaiting Approval from
+    Previous Version Authors, Awaiting Initial Version Approval, Awaiting
+    Manual Post, Cancelled, Posted"""
+    next_states = models.ManyToManyField('DraftSubmissionStateName', related_name="previous_states", blank=True)

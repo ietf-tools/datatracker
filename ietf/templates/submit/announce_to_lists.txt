@@ -1,25 +1,25 @@
 {% autoescape off %}
 A New Internet-Draft is available from the on-line Internet-Drafts directories.
-{% if submission.group_acronym %} This draft is a work item of the {{ submission.group_acronym.name }} Working Group of the IETF.{% endif %}
+{% if submission.group %} This draft is a work item of the {{ submission.group.name }} Working Group of the IETF.{% endif %}
 
-	Title           : {{ submission.id_document_name }}
-	Author(s)       : {% for author in authors %}{{ author }}{% if not forloop.last %}
+        Title           : {{ submission.title }}
+        Author{{ submission.authors_parsed|pluralize:" ,s" }}         : {% for author in submission.authors_parsed %}{{ author.name }}{% if not forloop.last %}
                           {% endif %}{% endfor %}
-	Filename        : {{ submission.filename }}-{{ submission.revision }}.txt
-	Pages           : {{ submission.txt_page_count }}
+	Filename        : {{ submission.name }}-{{ submission.rev }}.txt
+	Pages           : {{ submission.pages }}
 	Date            : {{ submission.submission_date|date:"Y-m-d" }}
 
 Abstract:
 {{ submission.abstract }}
 
 The IETF datatracker status page for this draft is:
-https://datatracker.ietf.org/doc/{{ submission.filename }}
+https://datatracker.ietf.org/doc/{{ submission.name }}/
 
 There's also a htmlized version available at:
-http://tools.ietf.org/html/{{ submission.filename }}-{{ submission.revision }}
-{% if submission.revision != "00" %}
+http://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
+{% if submission.rev != "00" %}
 A diff from the previous version is available at:
-http:{{settings.RFCDIFF_PREFIX}}?url2={{ submission.filename }}-{{ submission.revision }}
+http:{{settings.RFCDIFF_PREFIX}}?url2={{ submission.name }}-{{ submission.rev }}
 {% endif %}
 
 Please note that it may take a couple of minutes from the time of submission

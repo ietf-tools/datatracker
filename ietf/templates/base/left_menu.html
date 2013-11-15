@@ -88,7 +88,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      <a style="padding: 0;" href="{% url ietf.group.views_stream.streams %}irtf/">IRTF</a>
      <a style="padding: 0;" href="{% url ietf.group.views_stream.streams %}ise/">ISE</a>
   </li> 
-  <li><a href="{% url submit_index %}">Submit a draft</a></li> 
+  <li><a href="{% url submit_upload_submission %}">Submit a draft</a></li> 
 {% if user|has_role:"WG Chair" %}
   <li><a href="{% url submit_approvals %}">Approve a draft</a></li> 
 {% endif %}

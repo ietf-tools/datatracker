@@ -4,37 +4,29 @@ from django.utils.safestring import mark_safe
 
 from ietf.submit.models import *
 
-class IdSubmissionStatusAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(IdSubmissionStatus, IdSubmissionStatusAdmin)    
-
-class IdSubmissionDetailAdmin(admin.ModelAdmin):
-    list_display = ['submission_id', 'draft_link', 'status_link', 'submission_date', 'last_updated_date',]
-    ordering = [ '-submission_date' ]
-    search_fields = ['filename', ]
-    raw_id_fields = ['group_acronym']
+class SubmissionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'draft_link', 'status_link', 'submission_date',]
+    ordering = [ '-id' ]
+    search_fields = ['name', ]
+    raw_id_fields = ['group']
 
     def status_link(self, instance):
-        url = urlreverse('draft_status_by_hash',
-                         kwargs=dict(submission_id=instance.submission_id,
-                                     submission_hash=instance.get_hash()))
-        return '<a href="%s">%s</a>' % (url, instance.status)
+        url = urlreverse('submit_submission_status_by_hash',
+                         kwargs=dict(submission_id=instance.pk,
+                                     access_key=instance.access_key))
+        return '<a href="%s">%s</a>' % (url, instance.state)
     status_link.allow_tags = True
 
     def draft_link(self, instance):
-        if instance.status_id in (-1, -2):
-            return '<a href="http://www.ietf.org/id/%s-%s.txt">%s</a>' % (instance.filename, instance.revision, instance.filename)
+        if instance.state_id == "posted":
+            return '<a href="http://www.ietf.org/id/%s-%s.txt">%s</a>' % (instance.name, instance.rev, instance.name)
         else:
-            return instance.filename
+            return instance.name
     draft_link.allow_tags = True
 
-admin.site.register(IdSubmissionDetail, IdSubmissionDetailAdmin)
+admin.site.register(Submission, SubmissionAdmin)
 
 class PreapprovalAdmin(admin.ModelAdmin):
     pass
 admin.site.register(Preapproval, PreapprovalAdmin)
-
-class TempIdAuthorsAdmin(admin.ModelAdmin):
-    ordering = ["-id"]
-admin.site.register(TempIdAuthors, TempIdAuthorsAdmin)
 

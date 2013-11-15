@@ -17,7 +17,7 @@ from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
 from ietf.doc.models import Document, DocumentAuthor
 from ietf.doc.utils import augment_with_start_time
-from ietf.submit.models import IdSubmissionDetail, Preapproval
+from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName, SubmissionEvent
 from ietf.utils.draft import Draft
 from ietf.secr.proceedings.proc_utils import get_progress_stats
 from ietf.secr.sreq.views import get_meeting
@@ -107,7 +107,7 @@ def process_files(request,draft):
     the basename, revision number and a list of file types.  Basename and revision
     are assumed to be the same for all because this is part of the validation process.
     
-    It also creates the IdSubmissionDetail record WITHOUT saving, and places it in the
+    It also creates the Submission record WITHOUT saving, and places it in the
     session for saving in the final action step.
     '''
     files = request.FILES
@@ -124,28 +124,36 @@ def process_files(request,draft):
             wrapper = Draft(file.read(),file.name)
         handle_uploaded_file(file)
     
-    # create IdSubmissionDetail record, leaved unsaved
-    idsub = IdSubmissionDetail(
-        id_document_name=draft.title,
-        filename=basename,
-        revision=revision,
-        txt_page_count=draft.pages,
-        filesize=txt_size,
-        creation_date=wrapper.get_creation_date(),
+    # create Submission record, leaved unsaved
+    idsub = Submission(
+        name=basename,
+        title=draft.title,
+        rev=revision,
+        pages=draft.pages,
+        file_size=txt_size,
+        document_date=wrapper.get_creation_date(),
         submission_date=datetime.date.today(),
         idnits_message='idnits bypassed by manual posting',
-        temp_id_document_tag=None,
-        group_acronym_id=draft.group.id,
+        group_id=draft.group.id,
         remote_ip=request.META['REMOTE_ADDR'],
         first_two_pages=''.join(wrapper.pages[:2]),
-        status_id=-2,
+        state=DraftSubmissionStateName.objects.get(slug="posted"),
         abstract=draft.abstract,
-        file_type=','.join(file_type_list),
-        man_posted_date=datetime.date.today(),
-        man_posted_by=request.user.get_profile())
+        file_types=','.join(file_type_list),
+    )
     request.session['idsub'] = idsub
     
     return (filename,revision,file_type_list)
+
+def post_submission(request):
+    submission = request.session['idsub']
+    submission.save()
+
+    SubmissionEvent.objects.create(
+        submission=submission,
+        by=request.user.person,
+        desc="Submitted and posted manually")
+
 
 def promote_files(draft, types):
     '''
@@ -308,8 +316,8 @@ def do_revision(draft, request):
     promote_files(new_draft, request.session['file_type'])
     
     # save the submission record
-    request.session['idsub'].save()
-    
+    post_submission(request)
+
     # send announcement if we are in IESG process
     if new_draft.get_state('draft-iesg'):
         announcement_from_form(request.session['email'],by=request.user.get_profile())
@@ -356,8 +364,8 @@ def do_update(draft,request):
     promote_files(new_draft, request.session['file_type'])
     
     # save the submission record
-    request.session['idsub'].save()
-    
+    post_submission(request)
+
     # send announcement
     announcement_from_form(request.session['email'],by=request.user.get_profile())
     
@@ -581,7 +589,7 @@ def add(request):
             promote_files(draft, file_type_list)
             
             # save the submission record
-            request.session['idsub'].save()
+            post_submission(request)
     
             request.session['action'] = 'add'
             

@@ -2,7 +2,7 @@
 Hi,
 
 The datatracker has received a request to send out the link to the URL where you
-can confirm the submission of your draft {{ submission.filename }}-{{ submission.revision }}.
+can confirm the submission of your draft {{ submission.name }}-{{ submission.rev }}.
 
 Please follow this link to get full access to the submission page:
   {{ url|safe }}

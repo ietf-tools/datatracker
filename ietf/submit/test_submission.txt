@@ -1,11 +1,11 @@
-Informational                                                  Test Name
+Informational                                                Author Name
 Internet-Draft                                          Test Center Inc.
 Intended status: Informational                           %(date)s
 Expires: %(expire)s
 
                           
                         Testing tests
-                  %(filename)s
+                  %(name)s
 
 
 Abstract
@@ -94,12 +94,13 @@ Internet-Draft             Testing tests                %(month_year)s
 
 Authors' Addresses
 
-  Test Name
+  Author Name
   Test Center Inc.
-  Some way 42
-  Some Where, NY
+  42 Some Road
+  Some Where 12345
+  US
 
-  Email: testname@example.com
+  Email: author@example.com
 
 
 

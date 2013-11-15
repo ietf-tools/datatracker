@@ -2,12 +2,13 @@
 Hi,
 
 The IETF datatracker draft submission service has received your draft
-{{ draft.filename }}-{{ draft.revision }}, and requires a
+{{ submission.name }}-{{ submission.rev }}, and requires a
 confirmation step in order to be able to complete the posting of
 the draft.
 
 Please follow this link to the page where you can confirm the posting:
-Confirmation URL: {{ confirm_url|safe }}
+
+{{ confirm_url }}
 
 
 Best regards,

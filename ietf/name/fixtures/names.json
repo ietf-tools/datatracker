@@ -714,6 +714,101 @@
   }
  },
  {
+  "pk": "uploaded",
+  "model": "name.draftsubmissionstatename",
+  "fields": {
+   "order": 1,
+   "next_states": [
+    "auth",
+    "aut-appr",
+    "grp-appr",
+    "manual",
+    "cancel"
+   ],
+   "used": true,
+   "name": "Uploaded",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "auth",
+  "model": "name.draftsubmissionstatename",
+  "fields": {
+   "order": 2,
+   "next_states": [
+    "cancel",
+    "posted"
+   ],
+   "used": true,
+   "name": "Awaiting Submitter Authentication",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "aut-appr",
+  "model": "name.draftsubmissionstatename",
+  "fields": {
+   "order": 3,
+   "next_states": [
+    "cancel",
+    "posted"
+   ],
+   "used": true,
+   "name": "Awaiting Approval from Previous Version Authors'",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "grp-appr",
+  "model": "name.draftsubmissionstatename",
+  "fields": {
+   "order": 4,
+   "next_states": [
+    "cancel",
+    "posted"
+   ],
+   "used": true,
+   "name": "Awaiting Initial Version Approval",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "manual",
+  "model": "name.draftsubmissionstatename",
+  "fields": {
+   "order": 5,
+   "next_states": [
+    "cancel",
+    "posted"
+   ],
+   "used": true,
+   "name": "Awaiting Manual Post",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "cancel",
+  "model": "name.draftsubmissionstatename",
+  "fields": {
+   "order": 6,
+   "next_states": [],
+   "used": true,
+   "name": "Cancelled",
+   "desc": ""
+  }
+ },
+ {
+  "pk": "posted",
+  "model": "name.draftsubmissionstatename",
+  "fields": {
+   "order": 7,
+   "next_states": [],
+   "used": true,
+   "name": "Posted",
+   "desc": ""
+  }
+ },
+ {
   "pk": "comment",
   "model": "name.feedbacktype",
   "fields": {
