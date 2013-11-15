@@ -14,6 +14,8 @@ from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 
+from ietf.submit.utils import expirable_submissions, expire_submission
+
 from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role
 from ietf.doc.models import *
@@ -523,6 +525,33 @@ class SubmitTests(django.test.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.ps" % (name, rev))))
         self.assertTrue('This is PostScript' in open(os.path.join(self.staging_dir, u"%s-%s.ps" % (name, rev))).read())
 
+    def test_expire_submissions(self):
+        s = Submission.objects.create(name="draft-ietf-mars-foo",
+                                      group=None,
+                                      submission_date=datetime.date.today() - datetime.timedelta(days=10),
+                                      rev="00",
+                                      state_id="uploaded")
+
+        self.assertEqual(len(expirable_submissions(older_than_days=10)), 0)
+        self.assertEqual(len(expirable_submissions(older_than_days=9)), 1)
+
+        s.state_id = "cancel"
+        s.save()
+
+        self.assertEqual(len(expirable_submissions(older_than_days=9)), 0)
+
+        s.state_id = "posted"
+        s.save()
+
+        self.assertEqual(len(expirable_submissions(older_than_days=9)), 0)
+
+        s.state_id = "uploaded"
+        s.save()
+
+        expire_submission(s, by=None)
+
+        self.assertEqual(s.state_id, "cancel")
+        
 
 class ApprovalsTests(django.test.TestCase):
     def test_approvals(self):
@@ -535,17 +564,15 @@ class ApprovalsTests(django.test.TestCase):
         Preapproval.objects.create(name="draft-ietf-mars-baz", by=Person.objects.get(user__username="marschairman"))
 
         Submission.objects.create(name="draft-ietf-mars-foo",
-                                          group_id=Group.objects.get(acronym="mars").pk,
-                                          submission_date=datetime.date.today(),
-                                          rev="00",
-                                          state_id="posted",
-                                          access_key="abc")
+                                  group=Group.objects.get(acronym="mars"),
+                                  submission_date=datetime.date.today(),
+                                  rev="00",
+                                  state_id="posted")
         Submission.objects.create(name="draft-ietf-mars-bar",
-                                          group_id=Group.objects.get(acronym="mars").pk,
-                                          submission_date=datetime.date.today(),
-                                          rev="00",
-                                          state_id="grp-appr",
-                                          access_key="def")
+                                  group=Group.objects.get(acronym="mars"),
+                                  submission_date=datetime.date.today(),
+                                  rev="00",
+                                  state_id="grp-appr")
 
         # get
         r = self.client.get(url)

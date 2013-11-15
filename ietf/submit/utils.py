@@ -350,3 +350,13 @@ def recently_approved_by_user(user, since):
 
     # those we can reach as chair
     return res.filter(group__role__name="chair", group__role__person__user=user)
+
+def expirable_submissions(older_than_days):
+    cutoff = datetime.date.today() - datetime.timedelta(days=older_than_days)
+    return Submission.objects.exclude(state__in=("cancel", "posted")).filter(submission_date__lt=cutoff)
+
+def expire_submission(submission, by):
+    submission.state_id = "cancel"
+    submission.save()
+
+    SubmissionEvent.objects.create(submission=submission, by=by, desc="Canceled expired submission")
