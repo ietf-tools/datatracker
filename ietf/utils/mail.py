@@ -177,10 +177,10 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 	for k, v in extra.items():
             if v:
                 msg[k] = v
-    # start debug server with python -m smtpd -n -c DebuggingServer localhost:1025
+    # start debug server with python -m smtpd -n -c DebuggingServer localhost:2025
     # then put USING_DEBUG_EMAIL_SERVER=True and EMAIL_HOST='localhost'
-    # and EMAIL_PORT=1025 in settings_local.py
-    debugging = getattr(settings, "USING_DEBUG_EMAIL_SERVER", False) and settings.EMAIL_HOST == 'localhost' and settings.EMAIL_PORT == 1025
+    # and EMAIL_PORT=2025 in settings_local.py
+    debugging = getattr(settings, "USING_DEBUG_EMAIL_SERVER", False) and settings.EMAIL_HOST == 'localhost' and settings.EMAIL_PORT == 2025
 
     if test_mode or debugging or settings.SERVER_MODE == 'production':
 	send_smtp(msg, bcc)
