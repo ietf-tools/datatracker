@@ -65,25 +65,25 @@ class SubmitTests(django.test.TestCase):
         # get
         url = urlreverse('submit_upload_submission')
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('input[type=file][name=txt]')), 1)
+        self.assertEqual(len(q('input[type=file][name=txt]')), 1)
 
         # submit
         txt_file = self.submission_txt_file(name, rev)
 
         r = self.client.post(url,
                              dict(txt=txt_file))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
-        self.assertEquals(Submission.objects.filter(name=name).count(), 1)
+        self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
         self.assertTrue(re.search('\s+Summary:\s+0\s+errors|No nits found', submission.idnits_message))
-        self.assertEquals(len(submission.authors_parsed()), 1)
+        self.assertEqual(len(submission.authors_parsed()), 1)
         author = submission.authors_parsed()[0]
-        self.assertEquals(author["name"], "Author Name")
-        self.assertEquals(author["email"], "author@example.com")
+        self.assertEqual(author["name"], "Author Name")
+        self.assertEqual(author["email"], "author@example.com")
 
         return status_url
 
@@ -92,7 +92,7 @@ class SubmitTests(django.test.TestCase):
         r = self.client.get(status_url)
         q = PyQuery(r.content)
         post_button = q('input[type=submit][value*="Post"]')
-        self.assertEquals(len(post_button), 1)
+        self.assertEqual(len(post_button), 1)
         action = post_button.parents("form").find('input[type=hidden][name="action"]').val()
 
         # post submitter info
@@ -103,7 +103,7 @@ class SubmitTests(django.test.TestCase):
         })
 
         submission = Submission.objects.get(name=name)
-        self.assertEquals(submission.submitter, u"%s <%s>" % (submitter_name, submitter_email))
+        self.assertEqual(submission.submitter, u"%s <%s>" % (submitter_name, submitter_email))
 
         return r
 
@@ -132,9 +132,9 @@ class SubmitTests(django.test.TestCase):
         mailbox_before = len(outbox)
         r = self.supply_submitter(name, status_url, "Author Name", "author@example.com")
 
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("New draft waiting for approval" in outbox[-1]["Subject"])
         self.assertTrue(name in outbox[-1]["Subject"])
 
@@ -142,34 +142,34 @@ class SubmitTests(django.test.TestCase):
         self.client.login(remote_user="marschairman")
 
         r = self.client.get(status_url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         approve_button = q('input[type=submit][value*="Approve"]')
-        self.assertEquals(len(approve_button), 1)
+        self.assertEqual(len(approve_button), 1)
 
         action = approve_button.parents("form").find('input[type=hidden][name="action"]').val()
 
         # approve submission
         mailbox_before = len(outbox)
         r = self.client.post(status_url, dict(action=action))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(docalias__name=name)
-        self.assertEquals(draft.rev, rev)
+        self.assertEqual(draft.rev, rev)
         new_revision = draft.latest_event()
-        self.assertEquals(draft.group.acronym, "mars")
-        self.assertEquals(new_revision.type, "new_revision")
-        self.assertEquals(new_revision.by.name, "Author Name")
+        self.assertEqual(draft.group.acronym, "mars")
+        self.assertEqual(new_revision.type, "new_revision")
+        self.assertEqual(new_revision.by.name, "Author Name")
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, u"%s-%s.txt" % (name, rev))))
-        self.assertEquals(draft.type_id, "draft")
-        self.assertEquals(draft.stream_id, "ietf")
+        self.assertEqual(draft.type_id, "draft")
+        self.assertEqual(draft.stream_id, "ietf")
         self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
-        self.assertEquals(draft.get_state("draft-stream-%s" % draft.stream_id).slug, "wg-doc")
-        self.assertEquals(draft.authors.count(), 1)
-        self.assertEquals(draft.authors.all()[0].get_name(), "Author Name")
-        self.assertEquals(draft.authors.all()[0].address, "author@example.com")
-        self.assertEquals(len(outbox), mailbox_before + 2)
+        self.assertEqual(draft.get_state("draft-stream-%s" % draft.stream_id).slug, "wg-doc")
+        self.assertEqual(draft.authors.count(), 1)
+        self.assertEqual(draft.authors.all()[0].get_name(), "Author Name")
+        self.assertEqual(draft.authors.all()[0].address, "author@example.com")
+        self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue((u"I-D Action: %s" % name) in outbox[-2]["Subject"])
         self.assertTrue("Author Name" in unicode(outbox[-2]))
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
@@ -213,13 +213,13 @@ class SubmitTests(django.test.TestCase):
         # supply submitter info, then previous authors get a confirmation email
         mailbox_before = len(outbox)
         r = self.supply_submitter(name, status_url, "Submitter Name", "submitter@example.com")
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue("The submission is pending approval by the authors" in r.content)
 
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_email = outbox[-1]
         self.assertTrue("Confirm submission" in confirm_email["Subject"])
         self.assertTrue(name in confirm_email["Subject"])
@@ -233,30 +233,30 @@ class SubmitTests(django.test.TestCase):
         # go to confirm page
         r = self.client.get(confirm_url)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('input[type=submit][value*="Confirm"]')), 1)
+        self.assertEqual(len(q('input[type=submit][value*="Confirm"]')), 1)
 
         # confirm
         mailbox_before = len(outbox)
         r = self.client.post(confirm_url)
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(docalias__name=name)
-        self.assertEquals(draft.rev, rev)
-        self.assertEquals(draft.group.acronym, name.split("-")[2])
-        self.assertEquals(draft.docevent_set.all()[1].type, "new_revision")
-        self.assertEquals(draft.docevent_set.all()[1].by.name, "Submitter Name")
+        self.assertEqual(draft.rev, rev)
+        self.assertEqual(draft.group.acronym, name.split("-")[2])
+        self.assertEqual(draft.docevent_set.all()[1].type, "new_revision")
+        self.assertEqual(draft.docevent_set.all()[1].by.name, "Submitter Name")
         self.assertTrue(not os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, u"%s-%s.txt" % (name, rev))))
-        self.assertEquals(draft.type_id, "draft")
-        self.assertEquals(draft.stream_id, "ietf")
-        self.assertEquals(draft.get_state_slug("draft-stream-%s" % draft.stream_id), "wg-doc")
-        self.assertEquals(draft.get_state_slug("draft-iana-review"), "changed")
-        self.assertEquals(draft.authors.count(), 1)
-        self.assertEquals(draft.authors.all()[0].get_name(), "Author Name")
-        self.assertEquals(draft.authors.all()[0].address, "author@example.com")
-        self.assertEquals(len(outbox), mailbox_before + 3)
+        self.assertEqual(draft.type_id, "draft")
+        self.assertEqual(draft.stream_id, "ietf")
+        self.assertEqual(draft.get_state_slug("draft-stream-%s" % draft.stream_id), "wg-doc")
+        self.assertEqual(draft.get_state_slug("draft-iana-review"), "changed")
+        self.assertEqual(draft.authors.count(), 1)
+        self.assertEqual(draft.authors.all()[0].get_name(), "Author Name")
+        self.assertEqual(draft.authors.all()[0].address, "author@example.com")
+        self.assertEqual(len(outbox), mailbox_before + 3)
         self.assertTrue((u"I-D Action: %s" % name) in outbox[-3]["Subject"])
         self.assertTrue((u"I-D Action: %s" % name) in draft.message_set.order_by("-time")[0].subject)
         self.assertTrue("Author Name" in unicode(outbox[-3]))
@@ -282,13 +282,13 @@ class SubmitTests(django.test.TestCase):
         mailbox_before = len(outbox)
         r = self.supply_submitter(name, status_url, "Submitter Name", "submitter@example.com")
 
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue("The submission is pending email authentication" in r.content)
 
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_email = outbox[-1]
         self.assertTrue("Confirm submission" in confirm_email["Subject"])
         self.assertTrue(name in confirm_email["Subject"])
@@ -301,18 +301,18 @@ class SubmitTests(django.test.TestCase):
         # go to confirm page
         r = self.client.get(confirm_url)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('input[type=submit][value*="Confirm"]')), 1)
+        self.assertEqual(len(q('input[type=submit][value*="Confirm"]')), 1)
 
         # confirm
         mailbox_before = len(outbox)
         r = self.client.post(confirm_url)
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(docalias__name=name)
-        self.assertEquals(draft.rev, rev)
+        self.assertEqual(draft.rev, rev)
         new_revision = draft.latest_event()
-        self.assertEquals(new_revision.type, "new_revision")
-        self.assertEquals(new_revision.by.name, "Submitter Name")
+        self.assertEqual(new_revision.type, "new_revision")
+        self.assertEqual(new_revision.by.name, "Submitter Name")
 
     def test_submit_new_wg_with_dash(self):
         draft = make_test_data()
@@ -323,7 +323,7 @@ class SubmitTests(django.test.TestCase):
 
         self.do_submission(name, "00")
 
-        self.assertEquals(Submission.objects.get(name=name).group.acronym, group.acronym)
+        self.assertEqual(Submission.objects.get(name=name).group.acronym, group.acronym)
 
     def test_submit_new_irtf(self):
         draft = make_test_data()
@@ -334,8 +334,8 @@ class SubmitTests(django.test.TestCase):
 
         self.do_submission(name, "00")
 
-        self.assertEquals(Submission.objects.get(name=name).group.acronym, group.acronym)
-        self.assertEquals(Submission.objects.get(name=name).group.type_id, group.type_id)
+        self.assertEqual(Submission.objects.get(name=name).group.acronym, group.acronym)
+        self.assertEqual(Submission.objects.get(name=name).group.type_id, group.type_id)
 
     def test_submit_new_iab(self):
         draft = make_test_data()
@@ -344,7 +344,7 @@ class SubmitTests(django.test.TestCase):
 
         self.do_submission(name, "00")
 
-        self.assertEquals(Submission.objects.get(name=name).group.acronym, "iab")
+        self.assertEqual(Submission.objects.get(name=name).group.acronym, "iab")
 
     def test_cancel_submission(self):
         # submit -> cancel
@@ -357,10 +357,10 @@ class SubmitTests(django.test.TestCase):
 
         # check we got cancel button
         r = self.client.get(status_url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         cancel_button = q('input[type=submit][value*="Cancel"]')
-        self.assertEquals(len(cancel_button), 1)
+        self.assertEqual(len(cancel_button), 1)
 
         action = cancel_button.parents("form").find("input[type=hidden][name=\"action\"]").val()
 
@@ -379,23 +379,23 @@ class SubmitTests(django.test.TestCase):
 
         # check we got edit button
         r = self.client.get(status_url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         adjust_button = q('input[type=submit][value*="Adjust"]')
-        self.assertEquals(len(adjust_button), 1)
+        self.assertEqual(len(adjust_button), 1)
 
         action = adjust_button.parents("form").find('input[type=hidden][name="action"]').val()
 
         # go to edit, we do this by posting, slightly weird
         r = self.client.post(status_url, dict(action=action))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         edit_url = r['Location']
 
         # check page
         r = self.client.get(edit_url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('input[name=edit-title]')), 1)
+        self.assertEqual(len(q('input[name=edit-title]')), 1)
 
         # edit
         mailbox_before = len(outbox)
@@ -415,25 +415,25 @@ class SubmitTests(django.test.TestCase):
             "authors-1-email": "person2@example.com",
             "authors-prefix": ["authors-", "authors-0", "authors-1"],
         })
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         submission = Submission.objects.get(name=name)
-        self.assertEquals(submission.title, "some title")
-        self.assertEquals(submission.document_date, document_date)
-        self.assertEquals(submission.abstract, "some abstract")
-        self.assertEquals(submission.pages, 123)
-        self.assertEquals(submission.note, "no comments")
-        self.assertEquals(submission.submitter, "Some Random Test Person <random@example.com>")
-        self.assertEquals(submission.state_id, "manual")
+        self.assertEqual(submission.title, "some title")
+        self.assertEqual(submission.document_date, document_date)
+        self.assertEqual(submission.abstract, "some abstract")
+        self.assertEqual(submission.pages, 123)
+        self.assertEqual(submission.note, "no comments")
+        self.assertEqual(submission.submitter, "Some Random Test Person <random@example.com>")
+        self.assertEqual(submission.state_id, "manual")
 
         authors = submission.authors_parsed()
-        self.assertEquals(len(authors), 2)
-        self.assertEquals(authors[0]["name"], "Person 1")
-        self.assertEquals(authors[0]["email"], "person1@example.com")
-        self.assertEquals(authors[1]["name"], "Person 2")
-        self.assertEquals(authors[1]["email"], "person2@example.com")
+        self.assertEqual(len(authors), 2)
+        self.assertEqual(authors[0]["name"], "Person 1")
+        self.assertEqual(authors[0]["email"], "person1@example.com")
+        self.assertEqual(authors[1]["name"], "Person 2")
+        self.assertEqual(authors[1]["email"], "person2@example.com")
 
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Manual Post Requested" in outbox[-1]["Subject"])
         self.assertTrue(name in outbox[-1]["Subject"])
 
@@ -441,20 +441,20 @@ class SubmitTests(django.test.TestCase):
         self.client.login(remote_user="secretary")
 
         r = self.client.get(status_url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         post_button = q('input[type=submit][value*="Force"]')
-        self.assertEquals(len(post_button), 1)
+        self.assertEqual(len(post_button), 1)
 
         action = post_button.parents("form").find('input[type=hidden][name="action"]').val()
 
         # force post
         mailbox_before = len(outbox)
         r = self.client.post(status_url, dict(action=action))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(docalias__name=name)
-        self.assertEquals(draft.rev, rev)
+        self.assertEqual(draft.rev, rev)
 
     def test_request_full_url(self):
         # submit -> request full URL to be sent
@@ -470,19 +470,19 @@ class SubmitTests(django.test.TestCase):
 
         # check we got request full URL button
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         request_button = q('input[type=submit][value*="Request full access"]')
-        self.assertEquals(len(request_button), 1)
+        self.assertEqual(len(request_button), 1)
 
         # request URL to be sent
         mailbox_before = len(outbox)
 
         action = request_button.parents("form").find("input[type=hidden][name=\"action\"]").val()
         r = self.client.post(url, dict(action=action))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Full URL for managing submission" in outbox[-1]["Subject"])
         self.assertTrue(name in outbox[-1]["Subject"])
 
@@ -512,9 +512,9 @@ class SubmitTests(django.test.TestCase):
             pdf=pdf_file,
             ps=ps_file,
         ))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
-        self.assertEquals(Submission.objects.filter(name=name).count(), 1)
+        self.assertEqual(Submission.objects.filter(name=name).count(), 1)
 
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
         self.assertTrue(name in open(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))).read())
@@ -576,14 +576,14 @@ class ApprovalsTests(django.test.TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
-        self.assertEquals(len(q('.approvals a:contains("draft-ietf-mars-foo")')), 0)
-        self.assertEquals(len(q('.approvals a:contains("draft-ietf-mars-bar")')), 1)
-        self.assertEquals(len(q('.preapprovals td:contains("draft-ietf-mars-foo")')), 0)
-        self.assertEquals(len(q('.preapprovals td:contains("draft-ietf-mars-baz")')), 1)
-        self.assertEquals(len(q('.recently-approved a:contains("draft-ietf-mars-foo")')), 1)
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-bar")')), 1)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-baz")')), 1)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-foo")')), 1)
 
     def test_add_preapproval(self):
         make_test_data()
@@ -593,21 +593,21 @@ class ApprovalsTests(django.test.TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('input[type=submit]')), 1)
+        self.assertEqual(len(q('input[type=submit]')), 1)
 
         # faulty post
         r = self.client.post(url, dict(name="draft-test-nonexistingwg-something"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue("errorlist" in r.content)
 
         # add
         name = "draft-ietf-mars-foo"
         r = self.client.post(url, dict(name=name))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
-        self.assertEquals(len(Preapproval.objects.filter(name=name)), 1)
+        self.assertEqual(len(Preapproval.objects.filter(name=name)), 1)
 
     def test_cancel_preapproval(self):
         make_test_data()
@@ -619,12 +619,12 @@ class ApprovalsTests(django.test.TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('input[type=submit]')), 1)
+        self.assertEqual(len(q('input[type=submit]')), 1)
 
         # cancel
         r = self.client.post(url, dict(action="cancel"))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
-        self.assertEquals(len(Preapproval.objects.filter(name=preapproval.name)), 0)
+        self.assertEqual(len(Preapproval.objects.filter(name=preapproval.name)), 0)
