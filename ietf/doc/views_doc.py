@@ -732,48 +732,6 @@ def document_json(request, name):
 
     return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
 
-def ballot_json(request, name):
-    # REDESIGN: this view needs to be deleted or updated
-    def get_ballot(name):
-        from ietf.doc.models import DocAlias
-        alias = get_object_or_404(DocAlias, name=name)
-        d = alias.document
-        from ietf.idtracker.models import InternetDraft, BallotInfo
-        from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
-        id = None
-        bw = None
-        dw = None
-        if (d.type_id=='draft'):
-            id = get_object_or_404(InternetDraft, name=d.name)
-            try:
-                if not id.ballot.ballot_issued:
-                    raise Http404
-            except BallotInfo.DoesNotExist:
-                raise Http404
-
-            bw = BallotWrapper(id)               # XXX Fixme: Eliminate this as we go forward
-            # Python caches ~100 regex'es -- explicitly compiling it inside a method
-            # (where you then throw away the compiled version!) doesn't make sense at
-            # all.
-            if re.search("^rfc([1-9][0-9]*)$", name):
-                id.viewing_as_rfc = True
-                dw = RfcWrapper(id)
-            else:
-                dw = IdWrapper(id)
-            # XXX Fixme: Eliminate 'dw' as we go forward
-
-        try:
-            b = d.latest_event(BallotDocEvent, type="created_ballot")
-        except BallotDocEvent.DoesNotExist:
-            raise Http404
-
-        return (bw, dw, b, d)
-    
-    ballot, doc, b, d = get_ballot(name)
-    response = HttpResponse(mimetype='text/plain')
-    response.write(json.dumps(ballot.dict(), indent=2))
-    return response
-
 class AddCommentForm(forms.Form):
     comment = forms.CharField(required=True, widget=forms.Textarea)
 
