@@ -170,7 +170,6 @@ INSTALLED_APPS = (
     'ietf.meeting',
     #'ietf.proceedings',
     'ietf.redirects',
-    'ietf.idrfc',
     'ietf.wginfo',
     'ietf.submit',
     'ietf.wgcharter',
