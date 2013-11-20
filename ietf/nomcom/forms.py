@@ -188,15 +188,15 @@ class EditMembersFormPreview(FormPreview):
     def post_post(self, request):
         "Validates the POST data. If valid, calls done(). Else, redisplays form."
         f = self.form(request.POST, auto_id=AUTO_ID)
+        context = {'form': f, 'stage_field': self.unused_name('stage'), 'state': self.state,
+                   'year': self.year}
         if f.is_valid():
             if self.security_hash(request, f) != request.POST.get(self.unused_name('hash')):
                 return self.failed_hash(request)  # Security hash failed.
+            self.process_preview(request, f, context)
             return self.done(request, f.cleaned_data)
         else:
-            return render_to_response(self.form_template,
-                {'form': f, 'stage_field': self.unused_name('stage'), 'state': self.state,
-                 'year': self.year},
-                context_instance=RequestContext(request))
+            return render_to_response(self.form_template, context, context_instance=RequestContext(request))
 
     def done(self, request, cleaned_data):
         members_info = self.state['members_info']
