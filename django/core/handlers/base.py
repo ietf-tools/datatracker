@@ -176,8 +176,7 @@ class BaseHandler(object):
             request_repr = "Request repr() unavailable"
         message = "%s\n\n%s" % (self._get_traceback(exc_info), request_repr)
         extra_emails = self._get_extra_emails(exc_info)
-        admin_emails = self._get_admin_emails(exc_info)
-        mail_admins(subject, message, fail_silently=True, html_message=html, extra_emails=extra_emails, admin_emails=admin_emails)
+        mail_admins(subject, message, fail_silently=True, html_message=html, extra_emails=extra_emails)
         # If Http500 handler is not installed, re-raise last exception
         if resolver.urlconf_module is None:
             raise exc_info[1], None, exc_info[2]
@@ -200,18 +199,6 @@ class BaseHandler(object):
                 admins += f.f_globals["DEBUG_EMAILS"]
             tb = tb.tb_next
         return admins
-
-    def _get_admin_emails(self, exc_info=None):
-        """Helper function to retrieve app-specific admin email overrides.
-        Here we stop as soon as we've found a setting, since the purpose
-        here is to be able to limit the distribution of email notifications
-        for especially sensitive modules."""
-        etype, value, tb = exc_info or sys.exc_info()
-        while tb is not None:
-            f = tb.tb_frame
-            if "ADMIN_EMAILS" in f.f_globals:
-                return f.f_globals["ADMIN_EMAILS"]
-        return None
 
     def apply_response_fixes(self, request, response):
         """
