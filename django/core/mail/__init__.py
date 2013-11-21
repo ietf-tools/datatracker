@@ -83,11 +83,11 @@ def send_mass_mail(datatuple, fail_silently=False, auth_user=None,
     return connection.send_messages(messages)
 
 
-def mail_admins(subject, message, fail_silently=False, connection=None, html_message=None, extra_emails=[]):
+def mail_admins(subject, message, fail_silently=False, connection=None, html_message=None, extra_emails=[], admin_emails=None):
     """Sends a message to the admins, as defined by the ADMINS setting."""
-    if not (settings.ADMINS or extra_emails):
+    if not (settings.ADMINS or extra_emails or admin_emails):
         return
-    emails = set(list(settings.ADMINS) + extra_emails)
+    emails = admin_emails if admin_emails else set(list(settings.ADMINS) + extra_emails)
     from django.core.mail import EmailMultiAlternatives
     msg = EmailMultiAlternatives(settings.EMAIL_SUBJECT_PREFIX + subject, message, settings.SERVER_EMAIL, [a[1] for a in emails])
     if html_message:
