@@ -65,7 +65,7 @@ def materials(request, meeting_num=None):
     #sessions  = Session.objects.filter(meeting__number=meeting_num, timeslot__isnull=False)
     meeting = get_meeting(meeting_num)
     schedule = get_schedule(meeting,None )
-    sessions  = Session.objects.filter(meeting__number=meeting_num,scheduledsession__schedule=schedule )
+    sessions  = Session.objects.filter(meeting__number=meeting_num,scheduledsession__schedule=schedule ).select_related()
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
