@@ -24,8 +24,6 @@ try:
 except ImportError:
     debug = True
 
-from decorator import decorator
-
 # A debug decorator, written by Paul Butler, taken from
 # http://paulbutler.org/archives/python-debugging-with-decorators/
 # Additional functions and decorator functionality added by
@@ -78,6 +76,7 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         return ret
     wrap.callcount = 0
     if debug:
+        from decorator import decorator
         return decorator(wrap, fn)
     else:
         return fn
@@ -109,6 +108,7 @@ def time(fn):
         return ret
     wrap.callcount = 0
     if debug:
+        from decorator import decorator
         return decorator(wrap, fn)
     else:
         return fn
@@ -169,6 +169,7 @@ def profile(fn):
         prof.dump_stats(datafn)
         return retval
     if debug:
+        from decorator import decorator
         return decorator(wrapper, fn)
     else:
         return fn
