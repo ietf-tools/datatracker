@@ -78,19 +78,6 @@ def get_abbr_authors(draft):
     
     return result
     
-def get_authors_email(draft):
-    """
-    Takes a draft object and returns a string of authors suitable for an email to or cc field
-    """
-    authors = []
-    for a in draft.authors.all():
-        initial = ''
-        if a.person.first_name:
-            initial = a.person.first_name[0] + '. '
-        entry = '%s%s <%s>' % (initial,a.person.last_name,a.person.email())
-        authors.append(entry)
-    return ', '.join(authors)
-
 def get_last_revision(filename):
     """
     This function takes a filename, in the same form it appears in the InternetDraft record,

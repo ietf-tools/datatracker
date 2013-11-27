@@ -176,8 +176,13 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     if extra:
 	for k, v in extra.items():
             if v:
-	        msg[k] = v
-    if test_mode or settings.SERVER_MODE == 'production':
+                msg[k] = v
+    # start debug server with python -m smtpd -n -c DebuggingServer localhost:2025
+    # then put USING_DEBUG_EMAIL_SERVER=True and EMAIL_HOST='localhost'
+    # and EMAIL_PORT=2025 in settings_local.py
+    debugging = getattr(settings, "USING_DEBUG_EMAIL_SERVER", False) and settings.EMAIL_HOST == 'localhost' and settings.EMAIL_PORT == 2025
+
+    if test_mode or debugging or settings.SERVER_MODE == 'production':
 	send_smtp(msg, bcc)
     elif settings.SERVER_MODE == 'test':
 	if toUser:
@@ -188,7 +193,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 	copy_to = settings.EMAIL_COPY_TO
     except AttributeError:
         copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
-    if copy_to and not test_mode: # if we're running automated tests, this copy is just annoying
+    if copy_to and not test_mode and not debugging: # if we're running automated tests, this copy is just annoying
         if bcc:
             msg['X-Tracker-Bcc']=bcc
         copy_email(msg, copy_to,originalBcc=bcc)

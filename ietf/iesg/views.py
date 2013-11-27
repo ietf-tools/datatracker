@@ -32,466 +32,265 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import codecs, re, os, glob
-import datetime
-import tarfile
+import codecs, re, os, glob, datetime
+import tarfile, StringIO, time
+import itertools
 
-from ietf.idtracker.models import IDInternal, InternetDraft, AreaGroup, Position, IESGLogin, Acronym
-from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
-from django.views.decorators.vary import vary_on_cookie
 from django.core.urlresolvers import reverse as urlreverse
 from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.template import RequestContext, Context, loader
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.conf import settings
 from django.utils import simplejson as json
+from django.db import models
 from django import forms
-from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
-from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
-from ietf.doc.utils import update_telechat
-from ietf.ietfauth.decorators import group_required, role_required
-from ietf.ietfauth.utils import has_role
+
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 from ietf.ipr.models import IprDocAlias
-from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent
+from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.group.models import Group, GroupMilestone
+from ietf.person.models import Person
 
-def date_threshold():
-    """Return the first day of the month that is 185 days ago."""
-    ret = datetime.date.today() - datetime.timedelta(days=185)
-    ret = ret - datetime.timedelta(days=ret.day - 1)
-    return ret
+from ietf.doc.utils import update_telechat, augment_events_with_revision
+from ietf.ietfauth.utils import has_role, role_required, user_is_person
+from ietf.iesg.agenda import *
 
-def inddocs(request):
-    queryset_list_ind = [d for d in InternetDraft.objects.filter(stream__in=("IRTF","ISE"), docevent__type="iesg_approved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_approved"]
-    queryset_list_ind.sort(key=lambda d: d.b_approve_date, reverse=True)
+def review_decisions(request, year=None):
+    events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
 
-    queryset_list_ind_dnp = [d for d in IDInternal.objects.filter(stream__in=("IRTF","ISE"), docevent__type="iesg_disapproved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_disapproved"]
-    queryset_list_ind_dnp.sort(key=lambda d: d.dnp_date, reverse=True)
+    years = sorted((d.year for d in events.dates('time', 'year')), reverse=True)
 
-    return render_to_response('iesg/independent_doc.html',
-                              dict(object_list=queryset_list_ind,
-                                   object_list_dnp=queryset_list_ind_dnp),
-                              context_instance=RequestContext(request))
-   
-
-def wgdocs(request,cat):
-   pass
-
-def wgdocsREDESIGN(request,cat):
-    is_recent = 0
-    proto_actions = []
-    doc_actions = []
-    threshold = date_threshold()
-    
-    proto_levels = ["bcp", "ds", "ps", "std"]
-    doc_levels = ["exp", "inf"]
-    
-    if cat == 'new':
-        is_recent = 1
-        
-        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__gte=threshold, intended_std_level__in=proto_levels + doc_levels).exclude(stream__in=("ISE","IRTF")).distinct()
-        for d in drafts:
-            if d.b_approve_date and d.b_approve_date >= threshold:
-                if d.intended_std_level_id in proto_levels:
-                    proto_actions.append(d)
-                elif d.intended_std_level_id in doc_levels:
-                    doc_actions.append(d)
-
-    elif cat == 'prev':
-        # proto
-        start_date = datetime.date(1997, 12, 1)
-        
-        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__lt=threshold, docevent__time__gte=start_date, intended_std_level__in=proto_levels).exclude(stream__in=("ISE","IRTF")).distinct()
-
-        for d in drafts:
-            if d.b_approve_date and start_date <= d.b_approve_date < threshold:
-                proto_actions.append(d)
-
-        # doc
-        start_date = datetime.date(1998, 10, 15)
-        
-        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__lt=threshold, docevent__time__gte=start_date, intended_std_level__in=doc_levels).exclude(stream__in=("ISE","IRTF")).distinct()
-
-        for d in drafts:
-            if d.b_approve_date and start_date <= d.b_approve_date < threshold:
-                doc_actions.append(d)
+    if year:
+        year = int(year)
+        events = events.filter(time__year=year)
     else:
-        raise Http404
+        d = datetime.date.today() - datetime.timedelta(days=185)
+        d = datetime.date(d.year, d.month, 1)
+        events = events.filter(time__gte=d)
 
-    proto_actions.sort(key=lambda d: d.b_approve_date, reverse=True)
-    doc_actions.sort(key=lambda d: d.b_approve_date, reverse=True)
-    
-    return render_to_response('iesg/ietf_doc.html',
-                              dict(object_list=proto_actions,
-                                   object_list_doc=doc_actions,
-                                   is_recent=is_recent,
-                                   title_prefix="Recent" if is_recent else "Previous"),
+    events = events.select_related("doc", "doc__intended_std_level").order_by("-time", "-id")
+
+    #proto_levels = ["bcp", "ds", "ps", "std"]
+    #doc_levels = ["exp", "inf"]
+
+    timeframe = u"%s" % year if year else u"the past 6 months"
+
+    return render_to_response('iesg/review_decisions.html',
+                              dict(events=events,
+                                   years=years,
+                                   year=year,
+                                   timeframe=timeframe),
                               context_instance=RequestContext(request))
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    wgdocs = wgdocsREDESIGN
-    
+def agenda_json(request, date=None):
+    data = agenda_data(date)
 
-def get_doc_section(id):
-    pass
+    res = {
+        "telechat-date": str(data["date"]),
+        "as-of": str(datetime.datetime.utcnow()),
+        "sections": {},
+        }
 
-def get_doc_sectionREDESIGN(doc):
-    if doc.type_id == 'draft':
-        if doc.intended_std_level_id in ["bcp", "ds", "ps", "std"]:
-            s = "2"
-        else:
-            s = "3"
+    for num, section in data["sections"].iteritems():
+        s = res["sections"][num] = {
+            "title": section["title"],
+            }
 
-        g = doc.group_acronym()
-        if g and str(g) != 'none':
-            s = s + "1"
-        elif (s == "3") and doc.stream_id in ("ise","irtf"):
-            s = s + "3"
-        else:
-            s = s + "2"
-        if not doc.get_state_slug=="rfc" and doc.get_state_slug('draft-iesg') not in ("lc", "writeupw", "goaheadw", "iesg-eva", "defer"):
-            s = s + "3"
-        elif doc.returning_item():
-            s = s + "2"
-        else:
-            s = s + "1"
-    elif doc.type_id == 'charter':
-        s = get_wg_section(doc.group)
-    elif doc.type_id == 'statchg':
-        protocol_action = False
-        for relation in doc.relateddocument_set.filter(relationship__slug__in=('tops','tois','tohist','toinf','tobcp','toexp')):
-            if relation.relationship.slug in ('tops','tois') or relation.target.document.std_level.slug in ('std','ds','ps'):
-                protocol_action = True
-        if protocol_action:
-            s="23"
-        else:
-            s="33"
-        if doc.get_state_slug() not in ("iesgeval", "defer", "appr-pr", "appr-pend", "appr-sent"):
-            s = s + "3"
-        elif doc.returning_item():
-            s = s + "2"
-        else:
-            s = s + "1"
-    elif doc.type_id == 'conflrev':
-        if doc.get_state('conflrev').slug not in ('adrev','iesgeval','appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent','defer'):
-             s = "343"
-        elif doc.returning_item():
-             s = "342"
-        else:
-             s = "341"
-
-    return s
-
-def get_wg_section(wg):
-    s = ""
-    charter_slug = None
-    if wg.charter:
-        charter_slug = wg.charter.get_state_slug()
-    if wg.state_id in ['active','dormant']:
-        if charter_slug in ['extrev','iesgrev']:
-            s = '422'
-        else:
-            s = '421'
-    else:
-        if charter_slug in ['extrev','iesgrev']:
-            s = '412'
-        else:
-            s = '411'
-    return s
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    get_doc_section = get_doc_sectionREDESIGN
-    
-def agenda_docs(date, next_agenda):
-    matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).select_related("stream").distinct()
-
-    docmatches = []
-        
-    for doc in matches:
-        if doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
+        if "docs" not in section:
             continue
 
-        e = doc.latest_event(type="started_iesg_process")
-        doc.balloting_started = e.time if e else datetime.datetime.min
+        docs = section["docs"]
 
-        if doc.type_id == "draft":
-            s = doc.get_state("draft-iana-review")
-            if s: # and s.slug in ("not-ok", "changed", "need-rev"):
-                doc.iana_review_state = str(s)
+        if "4" <= num < "5":
+            # charters
+            s["wgs"] = []
 
-            if doc.get_state_slug("draft-iesg") == "lc":
-                e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
-                if e:
-                    doc.lastcall_expires = e.expires
+            for doc in docs:
+                wginfo = {
+                    'docname': doc.canonical_name(),
+                    'rev': doc.rev,
+                    'wgname': doc.group.name,
+                    'acronym': doc.group.acronym,
+                    'ad': doc.group.ad.name if doc.group.ad else None,
+                    }
 
-            if doc.stream_id in ("ietf", "irtf", "iab"):
-                doc.consensus = "Unknown"
-                e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-                if e:
-                    doc.consensus = "Yes" if e.consensus else "No"
-        elif doc.type_id=='conflrev':
-            doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+                # consider moving the charters to "docs" like the other documents
+                s['wgs'].append(wginfo)
+        else:
+            # other documents
+            s["docs"] = []
 
-        docmatches.append(doc)
+            for doc in docs:
+                docinfo = {
+                    'docname':doc.canonical_name(),
+                    'title':doc.title,
+                    'ad':doc.ad.name if doc.ad else None,
+                    }
 
-    # Be careful to keep this the same as what's used in agenda_documents
-    docmatches.sort(key=lambda d: d.balloting_started)
-    
-    res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
-    for k in range(1,4):
-        res['s34%d'%k]=[]
-    for id in docmatches:
-        section_key = "s"+get_doc_section(id)
-        if section_key not in res:
-            res[section_key] = []
-        res[section_key].append({'obj':id})
-    return res
+                if doc.note:
+                    docinfo['note'] = doc.note
+                defer = doc.active_defer_event()
+                if defer:
+                    docinfo['defer-by'] = defer.by.name
+                    docinfo['defer-at'] = str(defer.time)
+                if doc.type_id == "draft":
+                    docinfo['rev'] = doc.rev
+                    docinfo['intended-std-level'] = str(doc.intended_std_level)
+                    if doc.rfc_number():
+                        docinfo['rfc-number'] = doc.rfc_number()
 
-def agenda_wg_actions(date):
-    res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
-    charters = Document.objects.filter(type="charter", docevent__telechatdocevent__telechat_date=date).select_related("group").distinct()
-    charters = charters.filter(group__state__slug__in=["proposed","active"])
-    for c in charters:
-        if c.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
-            continue
+                    iana_state = doc.get_state("draft-iana-review")
+                    if iana_state and iana_state.slug in ("not-ok", "changed", "need-rev"):
+                        docinfo['iana-review-state'] = str(iana_state)
 
-        c.group.txt_link = settings.CHARTER_TXT_URL + "%s-%s.txt" % (c.canonical_name(), c.rev)
+                    if doc.get_state_slug("draft-iesg") == "lc":
+                        e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
+                        if e:
+                            docinfo['lastcall-expires'] = e.expires.strftime("%Y-%m-%d")
 
-        section_key = "s" + get_wg_section(c.group)
-        if section_key not in res:
-            res[section_key] = []
-        # Cleanup - Older view code wants obj, newer wants doc. Older code should be moved forward
-        res[section_key].append({'obj': c.group, 'doc': c})
-    return res
+                    docinfo['consensus'] = None
+                    e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+                    if e:
+                        docinfo['consensus'] = e.consensus
+                elif doc.type_id == 'conflrev':
+                    docinfo['rev'] = doc.rev
+                    td = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+                    docinfo['target-docname'] = td.canonical_name()
+                    docinfo['target-title'] = td.title
+                    docinfo['target-rev'] = td.rev
+                    docinfo['intended-std-level'] = str(td.intended_std_level)
+                    docinfo['stream'] = str(td.stream)
+                else:
+                    # XXX check this -- is there nothing to set for
+                    # all other documents here?
+                    pass
 
-def agenda_management_issues(date):
-    return TelechatAgendaItem.objects.filter(type=3).order_by('id')
+                s["docs"].append(docinfo)
 
-def _agenda_json(request, date=None):
-    if not date:
-        date = TelechatDates.objects.all()[0].date1
-        next_agenda = True
-    else:
-        y,m,d = date.split("-")
-        date = datetime.date(int(y), int(m), int(d))
-        next_agenda = None
+    return HttpResponse(json.dumps(res, indent=2), mimetype='text/plain')
 
-    data = {'telechat-date':str(date),
-            'as-of':str(datetime.datetime.utcnow()),
-            'sections':{}}
-    data['sections']['1'] = {'title':"Administrivia"}
-    data['sections']['1.1'] = {'title':"Roll Call"}
-    data['sections']['1.2'] = {'title':"Bash the Agenda"}
-    data['sections']['1.3'] = {'title':"Approval of the Minutes of Past Telechats"}
-    data['sections']['1.4'] = {'title':"List of Remaining Action Items from Last Telechat"}
-    data['sections']['2'] = {'title':"Protocol Actions"}
-    data['sections']['2.1'] = {'title':"WG Submissions"}
-    data['sections']['2.1.1'] = {'title':"New Items", 'docs':[]}
-    data['sections']['2.1.2'] = {'title':"Returning Items", 'docs':[]}
-    data['sections']['2.2'] = {'title':"Individual Submissions"}
-    data['sections']['2.2.1'] = {'title':"New Items", 'docs':[]}
-    data['sections']['2.2.2'] = {'title':"Returning Items", 'docs':[]}
-    data['sections']['2.3'] = {'title':"Individual Submissions"}
-    data['sections']['2.3.1'] = {'title':"New Items", 'docs':[]}
-    data['sections']['2.3.2'] = {'title':"Returning Items", 'docs':[]}
-    data['sections']['3'] = {'title':"Document Actions"}
-    data['sections']['3.1'] = {'title':"WG Submissions"}
-    data['sections']['3.1.1'] = {'title':"New Items", 'docs':[]}
-    data['sections']['3.1.2'] = {'title':"Returning Items", 'docs':[]}
-    data['sections']['3.2'] = {'title':"Individual Submissions Via AD"}
-    data['sections']['3.2.1'] = {'title':"New Items", 'docs':[]}
-    data['sections']['3.2.2'] = {'title':"Returning Items", 'docs':[]}
-    data['sections']['3.3'] = {'title':"Status Changes"}
-    data['sections']['3.3.1'] = {'title':"New Items", 'docs':[]}
-    data['sections']['3.3.2'] = {'title':"Returning Items", 'docs':[]}
-    data['sections']['3.4'] = {'title':"IRTF and Independent Submission Stream Documents"}
-    data['sections']['3.4.1'] = {'title':"New Items", 'docs':[]}
-    data['sections']['3.4.2'] = {'title':"Returning Items", 'docs':[]}
-    data['sections']['4'] = {'title':"Working Group Actions"}
-    data['sections']['4.1'] = {'title':"WG Creation"}
-    data['sections']['4.1.1'] = {'title':"Proposed for IETF Review", 'wgs':[]}
-    data['sections']['4.1.2'] = {'title':"Proposed for Approval", 'wgs':[]}
-    data['sections']['4.2'] = {'title':"WG Rechartering"}
-    data['sections']['4.2.1'] = {'title':"Under Evaluation for IETF Review", 'wgs':[]}
-    data['sections']['4.2.2'] = {'title':"Proposed for Approval", 'wgs':[]}
-    data['sections']['5'] = {'title':"IAB News We Can Use"}
-    data['sections']['6'] = {'title':"Management Issues"}
-    data['sections']['7'] = {'title':"Working Group News"}
-
-    docs = agenda_docs(date, next_agenda)
-    for section in docs.keys():
-        # in case the document is in a state that does not have an agenda section
-        if section != 's':
-            s = str(".".join(list(section)[1:]))
-            if s[0:1] == '4':
-                # ignore these; not sure why they are included by agenda_docs
-                pass
-            else:
-                if len(docs[section]) != 0:
-                    # If needed, add a "For Action" section to agenda
-                    if s[4:5] == '3':
-                        data['sections'][s] = {'title':"For Action", 'docs':[]}
-
-                    for obj in docs[section]:
-                        d = obj['obj']
-                        docinfo = {'docname':d.canonical_name(),
-                                   'title':d.title,
-                                   'ad':d.ad.name}
-                        if d.note:
-                            docinfo['note'] = d.note
-                        defer = d.active_defer_event()
-                        if defer:
-                            docinfo['defer-by'] = defer.by.name
-                            docinfo['defer-at'] = str(defer.time)
-			if d.type_id == "draft":
-                            docinfo['rev'] = d.rev
-                            docinfo['intended-std-level'] = str(d.intended_std_level)
-                            if d.rfc_number():
-                                docinfo['rfc-number'] = d.rfc_number()
-
-                            iana_state = d.get_state("draft-iana-review")
-                            if iana_state and iana_state.slug in ("not-ok", "changed", "need-rev"):
-                                docinfo['iana-review-state'] = str(iana_state)
-
-                            if d.get_state_slug("draft-iesg") == "lc":
-                                e = d.latest_event(LastCallDocEvent, type="sent_last_call")
-                                if e:
-                                    docinfo['lastcall-expires'] = e.expires.strftime("%Y-%m-%d")
-
-                            docinfo['consensus'] = None
-                            e = d.latest_event(ConsensusDocEvent, type="changed_consensus")
-                            if e:
-                                docinfo['consensus'] = e.consensus
-                        elif d.type_id == 'conflrev':
-                            docinfo['rev'] = d.rev
-                            td = d.relateddocument_set.get(relationship__slug='conflrev').target.document
-                            docinfo['target-docname'] = td.canonical_name()
-                            docinfo['target-title'] = td.title
-                            docinfo['target-rev'] = td.rev
-                            docinfo['intended-std-level'] = str(td.intended_std_level)
-                            docinfo['stream'] = str(td.stream)
-			else:
-			    # XXX check this -- is there nothing to set for
-			    # all other documents here?
-			    pass
-                        data['sections'][s]['docs'] += [docinfo, ]
-
-    wgs = agenda_wg_actions(date)
-    for section in wgs.keys():
-        # in case the charter is in a state that does not have an agenda section
-        if section != 's':
-            s = str(".".join(list(section)[1:]))
-            if s[0:1] != '4':
-                # ignore these; not sure why they are included by agenda_wg_actions
-                pass
-            else:
-                if len(wgs[section]) != 0:
-                    for obj in wgs[section]:
-                        wg = obj['obj']
-                        doc = obj['doc']
-                        wginfo = {'docname': doc.canonical_name(),
-                                  'rev': doc.rev,
-                                  'wgname': doc.group.name,
-                                  'acronym': doc.group.acronym,
-                                  'ad': doc.group.ad.name}
-                        data['sections'][s]['wgs'] += [wginfo, ]
-
-    mgmt = agenda_management_issues(date)
-    num = 0
-    for m in mgmt:
-        num += 1
-        data['sections']["6.%d" % num] = {'title':m.title}
-
-    return data
-
-def _agenda_data(request, date=None):
-    if not date:
-        date = TelechatDates.objects.all()[0].date1
-        next_agenda = True
-    else:
-        y,m,d = date.split("-")
-        date = datetime.date(int(y), int(m), int(d))
-        next_agenda = None
-    #date = "2006-03-16"
-    docs = agenda_docs(date, next_agenda)
-    mgmt = agenda_management_issues(date)
-    wgs = agenda_wg_actions(date)
-    data = {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs}
-    for key, filename in {'action_items':settings.IESG_TASK_FILE,
-                          'roll_call':settings.IESG_ROLL_CALL_FILE,
-                          'minutes':settings.IESG_MINUTES_FILE}.items():
-        try:
-            f = codecs.open(filename, 'r', 'utf-8', 'replace')
-            text = f.read().strip()
-            f.close()
-            data[key] = text
-        except IOError:
-            data[key] = "(Error reading "+key+")"
-    return data
-
-@vary_on_cookie
 def agenda(request, date=None):
-    data = _agenda_data(request, date)
-    data['private'] = 'private' in request.REQUEST
-    data['settings'] = settings
-    return render_to_response("iesg/agenda.html", data, context_instance=RequestContext(request))
+    data = agenda_data(date)
 
-def agenda_txt(request):
-    data = _agenda_data(request)
-    return render_to_response("iesg/agenda.txt", data, context_instance=RequestContext(request), mimetype="text/plain")
+    if has_role(request.user, ["Area Director", "IAB Chair", "Secretariat"]):
+        data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace("Roll Call", '<a href="https://www.ietf.org/iesg/internal/rollcall.txt">Roll Call</a>')
+        data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace("Minutes", '<a href="https://www.ietf.org/iesg/internal/minutes.txt">Minutes</a>')
 
-def agenda_json(request):
-    response = HttpResponse(mimetype='text/plain')
-    response.write(json.dumps(_agenda_json(request), indent=2))
-    return response
+    return render_to_response("iesg/agenda.html", {
+            "date": data["date"],
+            "sections": sorted(data["sections"].iteritems()),
+            "settings": settings,
+            }, context_instance=RequestContext(request))
 
-def agenda_scribe_template(request):
-    date = TelechatDates.objects.all()[0].date1
-    docs = agenda_docs(date, True)
-    return render_to_response('iesg/scribe_template.html', {'date':str(date), 'docs':docs, 'USE_DB_REDESIGN_PROXY_CLASSES': settings.USE_DB_REDESIGN_PROXY_CLASSES}, context_instance=RequestContext(request) )
+def agenda_txt(request, date=None):
+    data = agenda_data(date)
+    return render_to_response("iesg/agenda.txt", {
+            "date": data["date"],
+            "sections": sorted(data["sections"].iteritems()),
+            }, context_instance=RequestContext(request), mimetype="text/plain")
 
-def _agenda_moderator_package(request):
-    data = _agenda_data(request)
-    data['ad_names'] = [str(x) for x in IESGLogin.active_iesg()]
-    data['ad_names'].sort(key=lambda x: x.split(' ')[-1])
-    return render_to_response("iesg/moderator_package.html", data, context_instance=RequestContext(request))
+def agenda_scribe_template(request, date=None):
+    data = agenda_data(date)
+    sections = sorted((num, section) for num, section in data["sections"].iteritems() if "2" <= num < "4")
+    appendix_docs = []
+    for num, section in sections:
+        if "docs" in section:
+            # why are we here including documents that have no discuss/comment?
+            appendix_docs.extend(section["docs"])
+    return render_to_response("iesg/scribe_template.html", {
+            "date": data["date"],
+            "sections": sections,
+            "appendix_docs": appendix_docs,
+            }, context_instance=RequestContext(request) )
 
-@group_required('Area_Director','Secretariat')
-def agenda_moderator_package(request):
-    return _agenda_moderator_package(request)
+@role_required('Area Director', 'Secretariat')
+def agenda_moderator_package(request, date=None):
+    """Output telechat agenda with one page per section, with each
+    document in its own section."""
+    data = agenda_data(date)
 
-def agenda_moderator_package_test(request):
-    if request.META['REMOTE_ADDR'] == "127.0.0.1":
-        return _agenda_moderator_package(request)
-    else:
-        return HttpResponseForbidden()
+    def leaf_section(num, section):
+        return not (num == "1"
+                    or "2" <= num < "5" and "docs" not in section
+                    or (num == "6" and "6.1" not in data["sections"]))
 
-def _agenda_package(request):
-    data = _agenda_data(request)
-    return render_to_response("iesg/agenda_package.txt", data, context_instance=RequestContext(request), mimetype='text/plain')
+    # sort and prune non-leaf headlines
+    sections = sorted((num, section) for num, section in data["sections"].iteritems()
+                      if leaf_section(num, section))
 
-@group_required('Area_Director','Secretariat')
-def agenda_package(request):
-    return _agenda_package(request)
+    # add parents field to each section
+    for num, s in sections:
+        s["parents"] = []
+        split = num.split(".")
 
-def agenda_package_test(request):
-    if request.META['REMOTE_ADDR'] == "127.0.0.1":
-        return _agenda_package(request)
-    else:
-        return HttpResponseForbidden()
+        for i in xrange(num.count(".")):
+            parent_num = ".".join(split[:i + 1])
+            parent = data["sections"].get(parent_num)
+            if parent:
+                s["parents"].append((parent_num, parent))
+
+
+    # put each document in its own section
+    flattened_sections = []
+    for num, s in sections:
+        if "2" <= num < "5" and "docs" in s and s["docs"]:
+            for i, d in enumerate(s["docs"], start=1):
+                flattened_sections.append((num, {
+                            "title": s["title"] + " (%s of %s)" % (i, len(s["docs"])),
+                            "doc": d,
+                            "parents": s["parents"],
+                            }))
+        else:
+            flattened_sections.append((num, s))
+
+    # add ads
+    data["sections"]["7"]["ads"] = sorted(Person.objects.filter(role__name="ad", role__group__state="active"),
+                                          key=lambda p: p.name_parts()[3])
+
+    return render_to_response("iesg/moderator_package.html", {
+            "date": data["date"],
+            "sections": flattened_sections,
+            }, context_instance=RequestContext(request))
+
+@role_required('Area Director', 'Secretariat')
+def agenda_package(request, date=None):
+    data = agenda_data(date)
+    return render_to_response("iesg/agenda_package.txt", {
+            "date": data["date"],
+            "sections": sorted(data["sections"].iteritems()),
+            "roll_call": data["sections"]["1.1"]["text"],
+            "minutes": data["sections"]["1.3"]["text"],
+            "management_items": [(num, section) for num, section in data["sections"].iteritems() if "6" < num < "7"],
+            }, context_instance=RequestContext(request), mimetype='text/plain')
+
 
 def agenda_documents_txt(request):
-    dates = TelechatDates.objects.all()[0].dates()
+    dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
+
     docs = []
-    for date in dates:
-        from ietf.doc.models import TelechatDocEvent
-        for d in Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
-            if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
-                docs.append(d)
-    t = loader.get_template('iesg/agenda_documents.txt')
-    c = Context({'docs':docs,'special_stream_list':['ise','irtf']})
-    return HttpResponse(t.render(c), mimetype='text/plain')
+    for d in Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct():
+        date = d.telechat_date()
+        if date in dates:
+            d.computed_telechat_date = date
+            docs.append(d)
+    docs.sort(key=lambda d: d.computed_telechat_date)
+
+    # output table
+    rows = []
+    rows.append("# Fields: telechat date, filename (draft-foo-bar or rfc1234), intended status, rfc editor submission flag (0=no, 1=yes), area acronym, AD name, version")
+    for d in docs:
+        row = (
+            d.computed_telechat_date.isoformat(),
+            d.name,
+            unicode(d.intended_std_level),
+            "1" if d.stream_id in ("ise", "irtf") else "0",
+            unicode(d.area_acronym()).lower(),
+            d.ad.plain_name() if d.ad else "None Assigned",
+            d.rev,
+            )
+        rows.append("\t".join(row))
+    return HttpResponse(u"\n".join(rows), mimetype='text/plain')
 
 class RescheduleForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
@@ -513,7 +312,7 @@ class RescheduleForm(forms.Form):
 
         self.fields['telechat_date'].choices = choices
 
-def handle_reschedule_form(request, doc, dates):
+def handle_reschedule_form(request, doc, dates, status):
     initial = dict(telechat_date=doc.telechat_date())
 
     formargs = dict(telechat_dates=dates,
@@ -522,12 +321,13 @@ def handle_reschedule_form(request, doc, dates):
     if request.method == 'POST':
         form = RescheduleForm(request.POST, **formargs)
         if form.is_valid():
-            login = request.user.get_profile()
-            update_telechat(request, doc, login,
+            update_telechat(request, doc, request.user.get_profile(),
                             form.cleaned_data['telechat_date'],
                             False if form.cleaned_data['clear_returning_item'] else None)
             doc.time = datetime.datetime.now()
             doc.save()
+
+            status["changed"] = True
     else:
         form = RescheduleForm(**formargs)
 
@@ -535,100 +335,119 @@ def handle_reschedule_form(request, doc, dates):
     return form
 
 def agenda_documents(request):
-    dates = TelechatDates.objects.all()[0].dates()
-    from ietf.doc.models import TelechatDocEvent
-    docs = []
-    for d in Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct():
-        if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date in dates:
-            docs.append(d)
+    dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
-            e = d.latest_event(type="started_iesg_process")
-            d.balloting_started = e.time if e else datetime.datetime.min
-    docs.sort(key=lambda d: d.balloting_started)
-    for i in docs:
-        i.reschedule_form = handle_reschedule_form(request, i, dates)
+    docs_by_date = dict((d, []) for d in dates)
+    for doc in Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).select_related("stream", "group").distinct():
+        d = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date
+        if d in docs_by_date:
+            docs_by_date[d].append(doc)
 
-    # some may have been taken off the schedule by the reschedule form
-    docs = [d for d in docs if d.telechat_date()]
+    reschedule_status = { "changed": False }
+
+    for i in itertools.chain(*docs_by_date.values()):
+        i.reschedule_form = handle_reschedule_form(request, i, dates, reschedule_status)
+
+    if reschedule_status["changed"]:
+        # if any were changed, redirect so the browser history is preserved
+        return redirect("ietf.iesg.views.agenda_documents")
 
     telechats = []
     for date in dates:
-        matches = filter(lambda x: x.telechat_date() == date, docs)
-        res = {}
-        for i in matches:
-            section_key = "s" + get_doc_section(i)
-            if section_key not in res:
-                res[section_key] = []
-            if i.type_id=='draft':
-                if i.get_state_slug()!="rfc":
-                    i.iprUrl = "/ipr/search?option=document_search&id_document_tag=" + str(i.name)
-                else:
-                    i.iprUrl = "/ipr/search?option=rfc_search&rfc_search=" + str(i.rfc_number())
-                i.iprCount = len(i.ipr())
-            res[section_key].append(i)
-        telechats.append({'date':date, 'docs':res})
-    return direct_to_template(request, 'iesg/agenda_documents_redesign.html', {'telechats':telechats, 'hide_telechat_date':True})
+        sections = agenda_sections()
+        fill_in_agenda_docs(date, sections, docs_by_date[d])
 
-def telechat_docs_tarfile(request,year,month,day):
-    from tempfile import mkstemp
-    date=datetime.date(int(year),int(month),int(day))
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from ietf.doc.models import TelechatDocEvent
-        docs = []
-        for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
-            if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
-                docs.append(d)
-    else:
-        docs= IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
+        for doc in docs_by_date[d]:
+            if doc.type_id=='draft':
+                if doc.get_state_slug() != "rfc":
+                    doc.iprUrl = "/ipr/search?option=document_search&id_document_tag=" + str(doc.name)
+                else:
+                    doc.iprUrl = "/ipr/search?option=rfc_search&rfc_search=" + str(doc.rfc_number())
+                doc.iprCount = len(doc.ipr())
+
+        telechats.append({
+                "date":date,
+                "sections": sorted((num, section) for num, section in sections.iteritems()
+                                   if "2" <= num < "5")
+                })
+    return direct_to_template(request, 'iesg/agenda_documents.html', { 'telechats':telechats })
+
+def telechat_docs_tarfile(request, date):
+    date = get_agenda_date(date)
+
+    docs = []
+    for d in Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
+        if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
+            docs.append(d)
+
     response = HttpResponse(mimetype='application/octet-stream')
-    response['Content-Disposition'] = 'attachment; filename=telechat-%s-%s-%s-docs.tgz'%(year, month, day)
-    tarstream = tarfile.open('','w:gz',response)
-    mfh, mfn = mkstemp()
-    manifest = open(mfn, "w")
+    response['Content-Disposition'] = 'attachment; filename=telechat-%s-docs.tgz' % date.isoformat()
+
+    tarstream = tarfile.open('', 'w:gz', response)
+
+    manifest = StringIO.StringIO()
+
     for doc in docs:
-        doc_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.draft.filename+"-"+doc.draft.revision_display()+".txt")
+        doc_path = os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")
         if os.path.exists(doc_path):
             try:
-                tarstream.add(doc_path, str(doc.draft.filename+"-"+doc.draft.revision_display()+".txt"))
-                manifest.write("Included:  "+doc_path+"\n")
-            except Exception, e:
-                manifest.write(("Failed (%s): "%e)+doc_path+"\n")
+                tarstream.add(doc_path, str(doc.name + "-" + doc.rev + ".txt"))
+                manifest.write("Included:  %s\n" % doc_path)
+            except Exception as e:
+                manifest.write("Failed (%s): %s\n" % (e, doc_path))
         else:
-            manifest.write("Not found: "+doc_path+"\n")
-    manifest.close()
-    tarstream.add(mfn, "manifest.txt")
+            manifest.write("Not found: %s\n" % doc_path)
+
+    manifest.seek(0)
+    t = tarfile.TarInfo(name="manifest.txt")
+    t.size = len(manifest.buf)
+    t.mtime = time.time()
+    tarstream.addfile(t, manifest)
+
     tarstream.close()
-    os.unlink(mfn)
+
     return response
 
 def discusses(request):
-    res = []
+    possible_docs = Document.objects.filter(models.Q(states__type="draft-iesg",
+                                                     states__slug__in=IESG_BALLOT_ACTIVE_STATES) |
+                                            models.Q(states__type="charter",
+                                                     states__slug__in=("intrev", "iesgrev")) |
+                                            models.Q(states__type__in=("statchg", "conflrev"),
+                                                     states__slug__in=("iesgeval", "defer")),
+                                            docevent__ballotpositiondocevent__pos__blocking=True)
+    possible_docs = possible_docs.select_related("stream", "group", "ad").distinct()
 
-    for d in IDInternal.objects.filter(states__type="draft-iesg", states__slug__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), docevent__ballotpositiondocevent__pos="discuss").distinct():
-        found = False
-        for p in d.positions.all():
-            if p.discuss:
-                found = True
-                break
-
-        if not found:
+    docs = []
+    for doc in possible_docs:
+        ballot = doc.active_ballot()
+        if not ballot:
             continue
 
-        if d.rfc_flag:
-            doc = RfcWrapper(d)
-        else:
-            doc = IdWrapper(draft=d)
+        blocking_positions = [p for p in ballot.all_positions() if p.pos.blocking]
 
-        if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
-            res.append(doc)
+        if not blocking_positions:
+            continue
 
-    return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
+        augment_events_with_revision(doc, blocking_positions)
+
+        doc.by_me = bool([p for p in blocking_positions if user_is_person(request.user, p.ad)])
+        doc.for_me = user_is_person(request.user, doc.ad)
+        doc.milestones = doc.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
+        doc.blocking_positions = blocking_positions
+
+        docs.append(doc)
+
+    # latest first
+    docs.sort(key=lambda d: min(p.time for p in d.blocking_positions), reverse=True)
+
+    return direct_to_template(request, 'iesg/discusses.html', { 'docs': docs })
 
 @role_required('Area Director', 'Secretariat')
 def milestones_needing_review(request):
     # collect milestones, grouped on AD and group
     ads = {}
-    for m in GroupMilestone.objects.filter(state="review").exclude(group__state="concluded", group__ad=None).distinct().select_related("group", "group__ad"):
+    for m in GroupMilestone.objects.filter(state="review").exclude(group__state="concluded").exclude(group__ad=None).distinct().select_related("group", "group__ad"):
         groups = ads.setdefault(m.group.ad, {})
         milestones = groups.setdefault(m.group, [])
         milestones.append(m)
@@ -645,162 +464,3 @@ def milestones_needing_review(request):
                                    ),
                               context_instance=RequestContext(request))
 
-def parse_wg_action_file(path):
-    f = open(path, 'rU')
-    
-    line = f.readline()
-    while line and not line.strip():
-        line = f.readline()
-
-    # name
-    m = re.search(r'([^\(]*) \(', line)
-    if not m:
-        return None
-    name = m.group(1)
-
-    # acronym
-    m = re.search(r'\((\w+)\)', line)
-    if not m:
-        return None
-    acronym = m.group(1)
-
-    # date
-    line = f.readline()
-    m = re.search(r'(\d{4})-(\d{2})-(\d{2})', line)
-    while line and not m:
-        line = f.readline()
-        m = re.search(r'(\d{4})-(\d{2})-(\d{2})', line)
-
-    last_updated = None
-    if m:
-        try:
-            last_updated = datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-        except:
-            pass
-
-    # token
-    line = f.readline()
-    while line and not 'area director' in line.lower():
-        line = f.readline()
-
-    line = f.readline()
-    line = f.readline()
-    m = re.search(r'\s*(\w+)\s*', line)
-    token = ""
-    if m:
-        token = m.group(1)
-
-    return dict(filename=os.path.basename(path), name=name, acronym=acronym,
-                status_date=last_updated, token=token)
-
-def get_possible_wg_actions():
-    res = []
-    charters = glob.glob(os.path.join(settings.IESG_WG_EVALUATION_DIR, '*-charter.txt'))
-    for path in charters:
-        d = parse_wg_action_file(path)
-        if d:
-            if not d['status_date']:
-                d['status_date'] = datetime.date(1900,1,1)
-            res.append(d)
-
-    res.sort(key=lambda x: x['status_date'])
-
-    return res
-
-
-@group_required('Area_Director', 'Secretariat')
-def working_group_actions(request):
-    current_items = WGAction.objects.order_by('status_date').select_related()
-
-    if request.method == 'POST' and has_role(request.user, 'Secretariat'):
-        filename = request.POST.get('filename')
-        if filename and filename in os.listdir(settings.IESG_WG_EVALUATION_DIR):
-            if 'delete' in request.POST:
-                os.unlink(os.path.join(settings.IESG_WG_EVALUATION_DIR, filename))
-            if 'add' in request.POST:
-                d = parse_wg_action_file(os.path.join(settings.IESG_WG_EVALUATION_DIR, filename))
-                qstr = "?" + "&".join("%s=%s" % t for t in d.iteritems())
-                return HttpResponseRedirect(urlreverse('iesg_add_working_group_action') + qstr)
-    
-
-    skip = [c.group_acronym.acronym for c in current_items]
-    possible_items = filter(lambda x: x['acronym'] not in skip,
-                            get_possible_wg_actions())
-    
-    return render_to_response("iesg/working_group_actions.html",
-                              dict(current_items=current_items,
-                                   possible_items=possible_items),
-                              context_instance=RequestContext(request))
-
-class EditWGActionForm(forms.ModelForm):
-    token_name = forms.ChoiceField(required=True)
-    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
-
-    class Meta:
-        model = WGAction
-        fields = ['status_date', 'token_name', 'category', 'note']
-
-    def __init__(self, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
-
-        # token name choices
-        self.fields['token_name'].choices = [("", "(None)")] + [(p.plain_name(), p.plain_name()) for p in IESGLogin.active_iesg().order_by('first_name')]
-        
-        # telechat choices
-        dates = TelechatDates.objects.all()[0].dates()
-        init = kwargs['initial']['telechat_date']
-        if init and init not in dates:
-            dates.insert(0, init)
-
-        choices = [("", "(not on agenda)")]
-        for d in dates:
-            choices.append((d, d.strftime("%Y-%m-%d")))
-
-        self.fields['telechat_date'].choices = choices
-        
-        
-@group_required('Secretariat')
-def edit_working_group_action(request, wga_id):
-    if wga_id != None:
-        wga = get_object_or_404(WGAction, pk=wga_id)
-    else:
-        wga = WGAction()
-        try:
-            wga.group_acronym = Acronym.objects.get(acronym=request.GET.get('acronym'))
-        except Acronym.DoesNotExist:
-            pass
-        
-        wga.token_name = request.GET.get('token')
-        try:
-            d = datetime.datetime.strptime(request.GET.get('status_date'), '%Y-%m-%d').date()
-        except:
-            d = datetime.date.today()
-        wga.status_date = d
-        wga.telechat_date = TelechatDates.objects.all()[0].date1
-        wga.agenda = True
-
-    initial = dict(telechat_date=wga.telechat_date if wga.agenda else None)
-
-    if request.method == 'POST':
-        if "delete" in request.POST:
-            wga.delete()
-            return HttpResponseRedirect(urlreverse('iesg_working_group_actions'))
-
-        form = EditWGActionForm(request.POST, instance=wga, initial=initial)
-        if form.is_valid():
-            form.save(commit=False)
-            wga.agenda = bool(form.cleaned_data['telechat_date'])
-            if wga.category in (11, 21):
-                wga.agenda = False
-            if wga.agenda:
-                wga.telechat_date = form.cleaned_data['telechat_date']
-            wga.save()
-            return HttpResponseRedirect(urlreverse('iesg_working_group_actions'))
-    else:
-        form = EditWGActionForm(instance=wga, initial=initial)
-        
-
-    return render_to_response("iesg/edit_working_group_action.html",
-                              dict(wga=wga,
-                                   form=form),
-                              context_instance=RequestContext(request))

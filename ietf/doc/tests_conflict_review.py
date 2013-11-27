@@ -22,10 +22,7 @@ from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 
 
-class ConflictReviewTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class ConflictReviewTests(TestCase):
     def test_start_review(self):
 
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
@@ -254,10 +251,7 @@ class ConflictReviewTestCase(TestCase):
         make_test_data()
 
 
-class ConflictReviewSubmitTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names',]
-
+class ConflictReviewSubmitTests(TestCase):
     def test_initial_submission(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         url = urlreverse('conflict_review_submit',kwargs=dict(name=doc.name))

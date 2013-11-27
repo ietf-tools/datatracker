@@ -76,6 +76,7 @@ a img { border: 0; }
 .ietf-navset .selected { font-weight:bold; padding: 0 3px; }
 .ietf-navset a, .ietf-navset a:visited { color: white; padding:0 3px; }
 
+.ietf-navset .actions { margin-top: 0.5em; font-style: italic; font-size: 90%; }
 
 .ietf-ballot .left { background: #edf5ff; width:160px; padding-left: 10px; }
 .ietf-ballot .right { padding-left: 15px; padding-right:15px; width:610px;padding-top:0px;}
@@ -187,7 +188,7 @@ form table .help {
 .color2 { color: #00ffff; }
 .bgcolor1 { background-color: #ffb000; }
 .bgcolor2 { background-color: #00ffff; }
-.square { width: 0.8ex; height: 0.8ex; margin: 0; padding: 0; display: inline-block; position: relative; top: 0.8ex; text-align: top;}
+.square { width: 0.8ex; height: 0.8ex; margin: 0; padding: 0; display: inline-block; position: relative; top: 0.8ex; }
 .big	{ font-size: 109.5%; margin: 0; padding: 0; }
 .large  { font-size: 120%; margin: 0; padding: 0; }
 .huge	{ font-size: 144%; margin: 0; padding: 0; }
@@ -236,6 +237,8 @@ li.error	{ margin: 0.5em; background-color: #f44; }
 	margin: 0px;
 	font-family: Arial, sans-serif;
 }
+
+.errorlist a { color: #fff; }
 
 .group-documents .search-results { margin-top: 1.5em; }
 
@@ -372,6 +375,24 @@ span.fieldRequired {
 
 .fieldError {
     background-color: #ffcc66;
+}
+
+.state-help-icon {
+    display: inline-block;
+    margin-left: 0.2em;
+    padding: 0 0.2em;
+    font-weight: bold;
+    font-style: normal;
+    font-size: 90%;
+    color: #999;
+    background-color: #ddd;
+    text-decoration: none;
+}
+
+.state-help-icon:hover {
+    color: #eee;
+    background-color: #bbb;
+    transition-duration: 0.2s;
 }
 
 /* js styles */

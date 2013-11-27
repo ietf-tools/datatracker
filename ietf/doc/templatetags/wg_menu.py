@@ -61,7 +61,7 @@ class WgMenuNode(template.Node):
 
         areas = [a for a in areas if a.active_groups]
 
-        res = loader.render_to_string('base_wgmenu.html', {'areas':areas})
+        res = loader.render_to_string('base/wg_menu.html', {'areas':areas})
         cache.set('base_left_wgmenu', x, 30*60)
         return res
     

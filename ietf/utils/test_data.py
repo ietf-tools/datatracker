@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import User
 
-from ietf.iesg.models import TelechatDate, WGAction
+from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import IprDetail, IprDocAlias
 from ietf.meeting.models import Meeting
 from ietf.doc.models import *
@@ -112,15 +112,6 @@ def make_test_data():
         )
     group.charter = charter
     group.save()
-    WGAction.objects.create(
-        pk=group.pk,
-        note="",
-        status_date=datetime.date.today(),
-        agenda=1,
-        token_name="Aread",
-        category=13,
-        telechat_date=date2
-        )
 
     # persons
 

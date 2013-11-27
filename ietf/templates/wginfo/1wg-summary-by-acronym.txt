@@ -1,10 +1,10 @@
-{% load ietf_filters %}
+{% autoescape off %}{% load ietf_filters %}
            IETF Working Group Summary (By Acronym)
 
 
 The following Area Abbreviations are used in this document
-{% for area in area_list %}
-{{ area|upper }}	 - {{ area.area_acronym.name }}{% endfor %}
-{% for wg in wg_list|dictsort:"group_acronym.acronym" %}{% if wg.start_date %}
-{{ wg.group_acronym.name|safe }} ({{ wg }}) -- {{ wg.area.area|upper }}
-{% include "wginfo/wg_summary.txt" %}{% endif %}{% endfor %}
+{% for area in areas %}
+{{ area.acronym|upper }}	 - {{ area.name }}{% endfor %}
+{% for group in groups %}
+{{ group.name }} ({{ group.acronym }}) -- {{ group.parent.acronym|upper }}
+{% include "wginfo/group_entry.txt" %}{% endfor %}{% endautoescape %}

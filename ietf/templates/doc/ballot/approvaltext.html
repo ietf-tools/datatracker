@@ -26,7 +26,7 @@ form #id_approval_text {
 </form>
 
 {% load ietf_filters %}
-{% if user|in_group:"Secretariat" %}
+{% if user|has_role:"Secretariat" %}
 <p>
 {% if can_announce %}
 <a href="{% url doc_approve_ballot name=doc.name %}">Approve ballot</a>

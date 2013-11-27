@@ -9,6 +9,7 @@ from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter,
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 from django.utils import simplejson
+from django.utils.html import strip_tags
 try:
     from email import utils as emailutils
 except ImportError:
@@ -276,6 +277,10 @@ def truncate_ellipsis(text, arg):
     else:
         return escape(text)
     
+@register.filter
+def split(text, splitter=None):
+    return text.split(splitter)
+
 @register.filter(name="wrap_long_lines")
 def wrap_long_lines(text):
     """Wraps long lines without loosing the formatting and indentation
@@ -413,14 +418,6 @@ def equal(x, y):
 def startswith(x, y):
     return unicode(x).startswith(y)
 
-# based on http://www.djangosnippets.org/snippets/847/ by 'whiteinge'
-@register.filter
-def in_group(user, groups):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        return has_role(user, groups.replace("Area_Director", "Area Director"))
-
-    return user and user.is_authenticated() and bool(user.groups.filter(name__in=groups.split(',')).values('name'))
-
 @register.filter
 def has_role(user, role_names):
     from ietf.ietfauth.decorators import has_role
@@ -475,6 +472,18 @@ def state(doc, slug):
         slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
     return doc.get_state(slug)
 
+@register.filter
+def statehelp(state):
+    "Output help icon with tooltip for state."
+    from django.core.urlresolvers import reverse as urlreverse
+    tooltip = escape(strip_tags(state.desc))
+    url = urlreverse("state_help", kwargs=dict(type=state.type_id)) + "#" + state.slug
+    return mark_safe('<a class="state-help-icon" href="%s" title="%s">?</a>' % (url, tooltip))
+
+@register.filter
+def sectionlevel(section_number):
+    return section_number.count(".") + 1
+
 def _test():
     import doctest
     doctest.testmod()
@@ -483,13 +492,13 @@ if __name__ == "__main__":
     _test()
 
 @register.filter
-def plural(text, list, arg=u's'):
+def plural(text, seq, arg=u's'):
     "Similar to pluralize, but looks at the text, too"
     from django.template.defaultfilters import pluralize
     if text.endswith('s'):
         return text
     else:
-        return text + pluralize(len(list), arg)
+        return text + pluralize(len(seq), arg)
 
 @register.filter
 def ics_esc(text):

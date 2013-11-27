@@ -1,60 +1,47 @@
-import hashlib
-import random
 import os
-import subprocess
 import datetime
 
 from django import forms
-from django.core.validators import email_re
+from django.forms.formsets import formset_factory
 from django.conf import settings
-from django.contrib.sites.models import Site
-from django.template.loader import render_to_string
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse as urlreverse
 
 import debug
 
-from ietf.group.models import Group
-from ietf.idtracker.models import InternetDraft, IETFWG
-from ietf.proceedings.models import Meeting
-from ietf.submit.models import IdSubmissionDetail, TempIdAuthors, Preapproval
-from ietf.submit.utils import MANUAL_POST_REQUESTED, NONE_WG, UPLOADED, AWAITING_AUTHENTICATION, POSTED, POSTED_BY_SECRETARIAT
+from ietf.group.models import Group, Role
+from ietf.doc.models import Document
+from ietf.meeting.models import Meeting
+from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName
+from ietf.submit.utils import validate_submission_rev, validate_submission_document_date
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils.mail import send_mail
 from ietf.utils.draft import Draft
-from ietf.utils.pipe import pipe
-from ietf.utils.log import log
 
 
 class UploadForm(forms.Form):
-
     txt = forms.FileField(label=u'.txt format', required=True)
     xml = forms.FileField(label=u'.xml format', required=False)
     pdf = forms.FileField(label=u'.pdf format', required=False)
     ps = forms.FileField(label=u'.ps format', required=False)
 
-    fieldsets = [('Upload a draft', ('txt', 'xml', 'pdf', 'ps'))]
-
-    class Media:
-        css = {'all': ("/css/liaisons.css", )}
-
-    def __init__(self, *args, **kwargs):
-        self.request=kwargs.pop('request', None)
-        self.remote_ip=self.request.META.get('REMOTE_ADDR', None)
+    def __init__(self, request, *args, **kwargs):
         super(UploadForm, self).__init__(*args, **kwargs)
-        self.in_first_cut_off = False
-        self.idnits_message = None
-        self.shutdown = False
-        self.draft = None
-        self.filesize = None
-        self.group = None
-        self.file_type = []
-        self.read_dates()
 
-    def read_dates(self):
+        self.remote_ip = request.META.get('REMOTE_ADDR', None)
+
+        self.in_first_cut_off = False
+        self.cutoff_warning = ""
+        self.shutdown = False
+        self.set_cutoff_warnings()
+
+        self.group = None
+        self.parsed_draft = None
+
+    def set_cutoff_warnings(self):
         now = datetime.datetime.utcnow()
         first_cut_off = Meeting.get_first_cut_off()
         second_cut_off = Meeting.get_second_cut_off()
@@ -74,170 +61,104 @@ class UploadForm(forms.Form):
                 self.cutoff_warning = 'The cut-off time for the I-D submission was %02dh UTC, %s.<br>The I-D submission tool will be reopened at %02dh local time at the IETF meeting location, %s.' % (settings.CUTOFF_HOUR, second_cut_off, settings.CUTOFF_HOUR, ietf_monday)
                 self.shutdown = True
 
-    def __unicode__(self):
-        return self.as_div()
+    def clean_file(self, field_name, parser_class):
+        f = self.cleaned_data[field_name]
+        if not f:
+            return f
 
-    def as_div(self):
-        return render_to_string('submit/submitform.html', {'form': self})
+        parsed_info = parser_class(f).critical_parse()
+        if parsed_info.errors:
+            raise forms.ValidationError(parsed_info.errors)
 
-    def get_fieldsets(self):
-        if not self.fieldsets:
-            yield dict(name=None, fields=self)
-        else:
-            for fieldset, fields in self.fieldsets:
-                fieldset_dict = dict(name=fieldset, fields=[])
-                for field_name in fields:
-                    if field_name in self.fields.keyOrder:
-                        fieldset_dict['fields'].append(self[field_name])
-                    if not fieldset_dict['fields']:
-                        # if there is no fields in this fieldset, we continue to next fieldset
-                        continue
-                yield fieldset_dict
+        return f
+
 
     def clean_txt(self):
-        txt_file = self.cleaned_data['txt']
-        if not txt_file:
-            return txt_file
-        parsed_info = PlainParser(txt_file).critical_parse()
-        if parsed_info.errors:
-            raise forms.ValidationError(parsed_info.errors)
-        self.filesize=txt_file.size
-        return txt_file
+        return self.clean_file("txt", PlainParser)
 
     def clean_pdf(self):
-        pdf_file = self.cleaned_data['pdf']
-        if not pdf_file: 
-            return pdf_file
-        parsed_info = PDFParser(pdf_file).critical_parse()
-        if parsed_info.errors:
-            raise forms.ValidationError(parsed_info.errors)
-        return pdf_file
+        return self.clean_file("pdf", PDFParser)
 
     def clean_ps(self):
-        ps_file = self.cleaned_data['ps']
-        if not ps_file: 
-            return ps_file
-        parsed_info = PSParser(ps_file).critical_parse()
-        if parsed_info.errors:
-            raise forms.ValidationError(parsed_info.errors)
-        return ps_file
+        return self.clean_file("ps", PSParser)
 
     def clean_xml(self):
-        xml_file = self.cleaned_data['xml']
-        if not xml_file: 
-            return xml_file
-        parsed_info = XMLParser(xml_file).critical_parse()
-        if parsed_info.errors:
-            raise forms.ValidationError(parsed_info.errors)
-        return xml_file
+        return self.clean_file("xml", XMLParser)
 
     def clean(self):
         if self.shutdown:
             raise forms.ValidationError('The tool is shut down')
-        self.check_paths()
-        if self.cleaned_data.get('txt', None):
-            self.get_draft()
-            self.group=self.get_working_group()
-            self.check_previous_submission()
-            if self.draft.revision == '00' and self.in_first_cut_off:
+
+        # sanity check that paths exist (for development servers)
+        for s in ("IDSUBMIT_STAGING_PATH", "IDSUBMIT_IDNITS_BINARY",
+                  "IDSUBMIT_REPOSITORY_PATH", "INTERNET_DRAFT_ARCHIVE_DIR"):
+            if not os.path.exists(getattr(settings, s)):
+                raise forms.ValidationError('%s defined in settings.py does not exist' % s)
+
+        if self.cleaned_data.get('txt'):
+            # try to parse it
+            txt_file = self.cleaned_data['txt']
+            txt_file.seek(0)
+            self.parsed_draft = Draft(txt_file.read(), txt_file.name)
+            txt_file.seek(0)
+
+            if not self.parsed_draft.filename:
+                raise forms.ValidationError("Draft parser could not extract a valid draft name from the .txt file")
+
+            # check group
+            self.group = self.deduce_group()
+
+            # check existing
+            existing = Submission.objects.filter(name=self.parsed_draft.filename, rev=self.parsed_draft.revision).exclude(state__in=("posted", "cancel"))
+            if existing:
+                raise forms.ValidationError(mark_safe('Submission with same name and revision is currently being processed. <a href="%s">Check the status here</a>' % urlreverse("submit_submission_status", kwargs={ 'submission_id': existing[0].pk })))
+
+            # cut-off
+            if self.parsed_draft.revision == '00' and self.in_first_cut_off:
                 raise forms.ValidationError(mark_safe(self.cutoff_warning))
-            self.check_tresholds()
+
+            # check thresholds
+            today = datetime.date.today()
+
+            self.check_submissions_tresholds(
+                "for the draft %s" % self.parsed_draft.filename,
+                dict(name=self.parsed_draft.filename, rev=self.parsed_draft.revision, submission_date=today),
+                settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME, settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE,
+            )
+            self.check_submissions_tresholds(
+                "for the same submitter",
+                dict(remote_ip=self.remote_ip, submission_date=today),
+                settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER, settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER_SIZE,
+            )
+            if self.group:
+                self.check_submissions_tresholds(
+                    "for the group \"%s\"" % (self.group.acronym),
+                    dict(group=self.group, submission_date=today),
+                    settings.IDSUBMIT_MAX_DAILY_SAME_GROUP, settings.IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE,
+                )
+            self.check_submissions_tresholds(
+                "across all submitters",
+                dict(submission_date=today),
+                settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
+            )
+
         return super(UploadForm, self).clean()
 
-    def check_tresholds(self):
-        filename = self.draft.filename
-        revision = self.draft.revision
-        remote_ip = self.remote_ip
-        today = datetime.date.today()
+    def check_submissions_tresholds(self, which, filter_kwargs, max_amount, max_size):
+        submissions = Submission.objects.filter(**filter_kwargs)
 
-        # Same draft by name
-        same_name = IdSubmissionDetail.objects.filter(filename=filename, revision=revision, submission_date=today)
-        if same_name.count() > settings.MAX_SAME_DRAFT_NAME:
-            raise forms.ValidationError('The same I-D cannot be submitted more than %s times a day' % settings.MAX_SAME_DRAFT_NAME)
-        if sum([i.filesize for i in same_name]) > (settings.MAX_SAME_DRAFT_NAME_SIZE * 1048576):
-            raise forms.ValidationError('The same I-D submission cannot exceed more than %s MByte a day' % settings.MAX_SAME_DRAFT_NAME_SIZE)
+        if len(submissions) > max_amount:
+            raise forms.ValidationError("Max submissions %s has been reached for today (maximum is %s submissions)." % (which, max_amount))
+        if sum(s.file_size for s in submissions) > max_size * 1024 * 1024:
+            raise forms.ValidationError("Max uploaded amount %s has been reached for today (maximum is %s MB)." % (which, max_size))
 
-        # Total from same ip
-        same_ip = IdSubmissionDetail.objects.filter(remote_ip=remote_ip, submission_date=today)
-        if same_ip.count() > settings.MAX_SAME_SUBMITTER:
-            raise forms.ValidationError('The same submitter cannot submit more than %s I-Ds a day' % settings.MAX_SAME_SUBMITTER)
-        if sum([i.filesize for i in same_ip]) > (settings.MAX_SAME_SUBMITTER_SIZE * 1048576):
-            raise forms.ValidationError('The same submitter cannot exceed more than %s MByte a day' % settings.MAX_SAME_SUBMITTER_SIZE)
-
-        # Total in same group
-        if self.group:
-            same_group = IdSubmissionDetail.objects.filter(group_acronym=self.group, submission_date=today)
-            if same_group.count() > settings.MAX_SAME_WG_DRAFT:
-                raise forms.ValidationError('The same working group I-Ds cannot be submitted more than %s times a day' % settings.MAX_SAME_WG_DRAFT)
-            if sum([i.filesize for i in same_group]) > (settings.MAX_SAME_WG_DRAFT_SIZE * 1048576):
-                raise forms.ValidationError('Total size of same working group I-Ds cannot exceed %s MByte a day' % settings.MAX_SAME_WG_DRAFT_SIZE)
-
-
-        # Total drafts for today
-        total_today = IdSubmissionDetail.objects.filter(submission_date=today)
-        if total_today.count() > settings.MAX_DAILY_SUBMISSION:
-            raise forms.ValidationError('The total number of today\'s submission has reached the maximum number of submission per day')
-        if sum([i.filesize for i in total_today]) > (settings.MAX_DAILY_SUBMISSION_SIZE * 1048576):
-            raise forms.ValidationError('The total size of today\'s submission has reached the maximum size of submission per day')
-
-    def check_paths(self):
-        self.staging_path = getattr(settings, 'IDSUBMIT_STAGING_PATH', None)
-        self.idnits = getattr(settings, 'IDSUBMIT_IDNITS_BINARY', None)
-        if not self.staging_path:
-            raise forms.ValidationError('IDSUBMIT_STAGING_PATH not defined in settings.py')
-        if not os.path.exists(self.staging_path):
-            raise forms.ValidationError('IDSUBMIT_STAGING_PATH defined in settings.py does not exist')
-        if not self.idnits:
-            raise forms.ValidationError('IDSUBMIT_IDNITS_BINARY not defined in settings.py')
-        if not os.path.exists(self.idnits):
-            raise forms.ValidationError('IDSUBMIT_IDNITS_BINARY defined in settings.py does not exist')
-
-    def check_previous_submission(self):
-        filename = self.draft.filename
-        revision = self.draft.revision
-        existing = IdSubmissionDetail.objects.filter(filename=filename, revision=revision,
-                                                     status__pk__gte=0, status__pk__lt=100)
-        if existing:
-            raise forms.ValidationError(mark_safe('Duplicate Internet-Draft submission is currently in process. <a href="/submit/status/%s/">Check it here</a>' % existing[0].pk))
-
-    def get_draft(self):
-        if self.draft:
-            return self.draft
-        txt_file = self.cleaned_data['txt']
-        txt_file.seek(0)
-        self.draft = Draft(txt_file.read(), txt_file.name)
-        txt_file.seek(0)
-        return self.draft
-    
-    def save(self):
-        for ext in ['txt', 'pdf', 'xml', 'ps']:
-            fd = self.cleaned_data[ext]
-            if not fd:
-                continue
-            self.file_type.append('.%s' % ext)
-            filename = os.path.join(self.staging_path, '%s-%s.%s' % (self.draft.filename, self.draft.revision, ext))
-            destination = open(filename, 'wb+')
-            for chunk in fd.chunks():
-                destination.write(chunk)
-            destination.close()
-        self.check_idnits()
-        return self.save_draft_info(self.draft)
-
-    def check_idnits(self):
-        filepath = os.path.join(self.staging_path, '%s-%s.txt' % (self.draft.filename, self.draft.revision))
-        #p = subprocess.Popen([self.idnits, '--submitcheck', '--nitcount', filepath], stdout=subprocess.PIPE)
-        cmd = "%s --submitcheck --nitcount %s" % (self.idnits, filepath)
-        code, out, err = pipe(cmd)
-        if code != 0:
-            log("idnits error: %s:\n  Error %s: %s" %(cmd, code, err))
-        self.idnits_message = out
-
-    def get_working_group(self):
-        name = self.draft.filename
-        existing_draft = InternetDraft.objects.filter(filename=name)
+    def deduce_group(self):
+        """Figure out group from name or previously submitted draft, returns None if individual."""
+        name = self.parsed_draft.filename
+        existing_draft = Document.objects.filter(name=name, type="draft")
         if existing_draft:
-            group = existing_draft[0].group and existing_draft[0].group.ietfwg or None
-            if group and group.pk != NONE_WG and group.type_id != "area":
+            group = existing_draft[0].group
+            if group and group.type_id not in ("individ", "area"):
                 return group
             else:
                 return None
@@ -245,328 +166,109 @@ class UploadForm(forms.Form):
             if name.startswith('draft-ietf-') or name.startswith("draft-irtf-"):
                 components = name.split("-")
                 if len(components) < 3:
-                    raise forms.ValidationError("The draft name \"%s\" is missing a third part, please rename it")
+                    raise forms.ValidationError(u"The draft name \"%s\" is missing a third part, please rename it" % name)
 
                 if components[1] == "ietf":
                     group_type = "wg"
-                else:
+                elif components[1] == "irtf":
                     group_type = "rg"
 
                 # first check groups with dashes
                 for g in Group.objects.filter(acronym__contains="-", type=group_type):
                     if name.startswith('draft-%s-%s-' % (components[1], g.acronym)):
-                        return IETFWG().from_object(g)
+                        return g
 
                 try:
-                    return IETFWG().from_object(Group.objects.get(acronym=components[2], type=group_type))
+                    return Group.objects.get(acronym=components[2], type=group_type)
                 except Group.DoesNotExist:
                     raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % components[2])
+
             elif name.startswith("draft-iab-"):
-                return IETFWG().from_object(Group.objects.get(acronym="iab"))
+                return Group.objects.get(acronym="iab")
+
             else:
                 return None
 
-    def save_draft_info(self, draft):
-        document_id = 0
-        existing_draft = InternetDraft.objects.filter(filename=draft.filename)
-        if existing_draft:
-            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                document_id = -1
-            else:
-                document_id = existing_draft[0].id_document_tag
-        detail = IdSubmissionDetail.objects.create(
-            id_document_name=draft.get_title(),
-            filename=draft.filename,
-            revision=draft.revision,
-            txt_page_count=draft.get_pagecount(),
-            filesize=self.filesize,
-            creation_date=draft.get_creation_date(),
-            submission_date=datetime.date.today(),
-            idnits_message=self.idnits_message,
-            temp_id_document_tag=document_id,
-            group_acronym=self.group,
-            remote_ip=self.remote_ip,
-            first_two_pages=''.join(draft.pages[:2]),
-            status_id=UPLOADED,
-            abstract=draft.get_abstract(),
-            file_type=','.join(self.file_type),
-            )
-        order = 0
-        for author in draft.get_author_list():
-            full_name, first_name, middle_initial, last_name, name_suffix, email, company = author
-            order += 1
-            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                # save full name
-                TempIdAuthors.objects.create(
-                    id_document_tag=document_id,
-                    first_name=full_name.strip(),
-                    email_address=(email or "").strip(),
-                    author_order=order,
-                    submission=detail)
-            else:
-                TempIdAuthors.objects.create(
-                    id_document_tag=document_id,
-                    first_name=first_name,
-                    middle_initial=middle_initial,
-                    last_name=last_name,
-                    name_suffix=name_suffix,
-                    email_address=email,
-                    author_order=order,
-                    submission=detail)
-        return detail
-
-
-class AutoPostForm(forms.Form):
-
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        name = forms.CharField(required=True)
-    else:
-        first_name = forms.CharField(label=u'Given name', required=True)
-        last_name = forms.CharField(label=u'Last name', required=True)
-    email = forms.EmailField(label=u'Email address', required=True)
+class NameEmailForm(forms.Form):
+    """For validating supplied submitter and author information."""
+    name = forms.CharField(required=True)
+    email = forms.EmailField(label=u'Email address')
 
     def __init__(self, *args, **kwargs):
-        self.draft = kwargs.pop('draft', None)
-        self.validation = kwargs.pop('validation', None)
-        self.replaces = kwargs.pop('replaces', None)
-        super(AutoPostForm, self).__init__(*args, **kwargs)
+        email_required = kwargs.pop("email_required", True)
+        super(NameEmailForm, self).__init__(*args, **kwargs)
 
-    def get_author_buttons(self):
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            buttons = []
-            for i in self.validation.authors:
-                buttons.append('<input type="button" data-name="%(name)s" data-email="%(email)s" value="%(name)s" />'
-                               % dict(name=i.get_full_name(),
-                                      email=i.email()[1] or ''))
-            return "".join(buttons)
+        self.fields["email"].required = email_required
+        self.fields["name"].widget.attrs["class"] = "name"
+        self.fields["email"].widget.attrs["class"] = "email"
 
+    def clean_name(self):
+        return self.cleaned_data["name"].replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
 
-        # this should be moved to a Javascript file and attributes like data-first-name ...
-        button_template = '<input type="button" onclick="jQuery(\'#id_first_name\').val(\'%(first_name)s\');jQuery(\'#id_last_name\').val(\'%(last_name)s\');jQuery(\'#id_email\').val(\'%(email)s\');" value="%(full_name)s" />'
+    def clean_email(self):
+        return self.cleaned_data["email"].replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
 
-        buttons = []
-        for i in self.validation.authors:
-            full_name = u'%s. %s' % (i.first_name[0], i.last_name)
-            buttons.append(button_template % {'first_name': i.first_name,
-                                              'last_name': i.last_name,
-                                              'email': i.email()[1] or '',
-                                              'full_name': full_name})
-        return ''.join(buttons)
+    def cleaned_line(self):
+        line = self.cleaned_data["name"]
+        email = self.cleaned_data.get("email")
+        if email:
+            line += u" <%s>" % email
+        return line
 
-    def save(self, request):
-        self.save_submitter_info()
-        self.save_new_draft_info()
-        self.send_confirmation_mail(request)
+class EditSubmissionForm(forms.ModelForm):
+    title = forms.CharField(required=True, max_length=255)
+    rev = forms.CharField(label=u'Revision', max_length=2, required=True)
+    document_date = forms.DateField(required=True)
+    pages = forms.IntegerField(required=True)
+    abstract = forms.CharField(widget=forms.Textarea, required=True)
 
-    def send_confirmation_mail(self, request):
-        subject = 'Confirmation for Auto-Post of I-D %s' % self.draft.filename
-        from_email = settings.IDSUBMIT_FROM_EMAIL
-        to_email = self.draft.confirmation_email_list()
+    note = forms.CharField(label=mark_safe(u'Comment to<br/> the Secretariat'), widget=forms.Textarea, required=False)
 
-        confirm_url = settings.IDTRACKER_BASE_URL + urlreverse('draft_confirm', kwargs=dict(submission_id=self.draft.submission_id, auth_key=self.draft.auth_key))
-        status_url = settings.IDTRACKER_BASE_URL + urlreverse('draft_status_by_hash', kwargs=dict(submission_id=self.draft.submission_id, submission_hash=self.draft.get_hash()))
-        
-        send_mail(request, to_email, from_email, subject, 'submit/confirm_autopost.txt',
-                  { 'draft': self.draft, 'confirm_url': confirm_url, 'status_url': status_url })
-
-    def save_submitter_info(self):
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            return TempIdAuthors.objects.create(
-                id_document_tag=self.draft.temp_id_document_tag,
-                first_name=self.cleaned_data['name'],
-                email_address=self.cleaned_data['email'],
-                author_order=0,
-                submission=self.draft)
-
-        return TempIdAuthors.objects.create(
-            id_document_tag=self.draft.temp_id_document_tag,
-            first_name=self.cleaned_data['first_name'],
-            last_name=self.cleaned_data['last_name'],
-            email_address=self.cleaned_data['email'],
-            author_order=0,
-            submission=self.draft)
-
-    def save_new_draft_info(self):
-        salt = hashlib.sha1(str(random.random())).hexdigest()[:5]
-        self.draft.auth_key = hashlib.sha1(salt+self.cleaned_data['email']).hexdigest()
-        self.draft.status_id = AWAITING_AUTHENTICATION
-        self.draft.save()
-
-
-class MetaDataForm(AutoPostForm):
-
-    title = forms.CharField(label=u'Title', required=True)
-    version = forms.CharField(label=u'Version', required=True)
-    creation_date = forms.DateField(label=u'Creation date', required=True)
-    pages = forms.IntegerField(label=u'Pages', required=True)
-    abstract = forms.CharField(label=u'Abstract', widget=forms.Textarea, required=True)
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        name = forms.CharField(required=True)
-    else:
-        first_name = forms.CharField(label=u'Given name', required=True)
-        last_name = forms.CharField(label=u'Last name', required=True)
-    email = forms.EmailField(label=u'Email address', required=True)
-    comments = forms.CharField(label=u'Comments to the secretariat', widget=forms.Textarea, required=False)
-
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        fields = ['title', 'version', 'creation_date', 'pages', 'abstract', 'name', 'email', 'comments']
-    else:
-        fields = ['title', 'version', 'creation_date', 'pages', 'abstract', 'first_name', 'last_name', 'email', 'comments']
-
-    def __init__(self, *args, **kwargs):
-        super(MetaDataForm, self).__init__(*args, **kwargs)
-        self.set_initials()
-        self.authors = self.get_initial_authors()
+    class Meta:
+        model = Submission
+        fields = ['title', 'rev', 'document_date', 'pages', 'abstract', 'note']
 
     def get_initial_authors(self):
         authors=[]
         if self.is_bound:
             for key, value in self.data.items():
-                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    if key.startswith('name_'):
-                        author = {'errors': {}}
-                        index = key.replace('name_', '')
-                        name = value.strip()
-                        if not name:
-                            author['errors']['name'] = 'This field is required'
-                        email = self.data.get('email_%s' % index, '').strip()
-                        if email and not email_re.search(email):
-                            author['errors']['email'] = 'Enter a valid e-mail address'
-                        if name or email:
-                            author.update({'get_full_name': name,
-                                           'email': (name, email),
-                                           'index': index,
-                                           })
-                            authors.append(author)
-
-                else:
-                    if key.startswith('first_name_'):
-                        author = {'errors': {}}
-                        index = key.replace('first_name_', '')
-                        first_name = value.strip()
-                        if not first_name:
-                            author['errors']['first_name'] = 'This field is required'
-                        last_name = self.data.get('last_name_%s' % index, '').strip()
-                        if not last_name:
-                            author['errors']['last_name'] = 'This field is required'
-                        email = self.data.get('email_%s' % index, '').strip()
-                        if email and not email_re.search(email):
-                            author['errors']['email'] = 'Enter a valid e-mail address'
-                        if first_name or last_name or email:
-                            author.update({'first_name': first_name,
-                                           'last_name': last_name,
-                                           'email': ('%s %s' % (first_name, last_name), email),
-                                           'index': index,
-                                           })
-                            authors.append(author)
+                if key.startswith('name_'):
+                    author = {'errors': {}}
+                    index = key.replace('name_', '')
+                    name = value.strip()
+                    if not name:
+                        author['errors']['name'] = 'This field is required'
+                    email = self.data.get('email_%s' % index, '').strip()
+                    if email and not email_re.search(email):
+                        author['errors']['email'] = 'Enter a valid e-mail address'
+                    if name or email:
+                        author.update({'name': name,
+                                       'email': email,
+                                       'index': index,
+                                       })
+                        authors.append(author)
             authors.sort(key=lambda x: x['index'])
         return authors
 
-    def set_initials(self):
-        self.fields['pages'].initial=self.draft.txt_page_count
-        self.fields['creation_date'].initial=self.draft.creation_date
-        self.fields['version'].initial=self.draft.revision
-        self.fields['abstract'].initial=self.draft.abstract
-        self.fields['title'].initial=self.draft.id_document_name
+    def clean_rev(self):
+        rev = self.cleaned_data["rev"]
 
-    def clean_creation_date(self):
-        creation_date = self.cleaned_data.get('creation_date', None)
-        if not creation_date:
-            return None
-        submit_date = self.draft.submission_date
-        if (creation_date + datetime.timedelta(days=3) < submit_date or
-            creation_date - datetime.timedelta(days=3) > submit_date):
-            raise forms.ValidationError('Creation Date must be within 3 days of submission date')
-        return creation_date
+        if len(rev) == 1:
+            rev = "0" + rev
 
-    def clean_version(self):
-        version = self.cleaned_data.get('version', None)
-        if not version:
-            return None
-        if len(version) > 2:
-            raise forms.ValidationError('Version field is not in NN format')
-        try:
-            version_int = int(version)
-        except ValueError:
-            raise forms.ValidationError('Version field is not in NN format')
-        if version_int > 99 or version_int < 0:
-            raise forms.ValidationError('Version must be set between 00 and 99')
-        existing_revisions = [int(i.revision_display()) for i in InternetDraft.objects.filter(filename=self.draft.filename)]
-        expected = 0
-        if existing_revisions:
-            expected = max(existing_revisions) + 1
-        if version_int != expected:
-            raise forms.ValidationError('Invalid Version Number (Version %02d is expected)' % expected)
-        return version
+        error = validate_submission_rev(self.instance.name, rev)
+        if error:
+            raise forms.ValidationError(error)
 
-    def clean(self):
-        if bool([i for i in self.authors if i['errors']]):
-            raise forms.ValidationError('Please fix errors in author list')
-        return super(MetaDataForm, self).clean()
+        return rev
 
-    def get_authors(self):
-        if not self.is_bound:
-            return self.validation.get_authors()
-        else:
-            return self.authors
+    def clean_document_date(self):
+        document_date = self.cleaned_data['document_date']
+        error = validate_submission_document_date(self.instance.submission_date, document_date)
+        if error:
+            raise forms.ValidationError(error)
 
-    def move_docs(self, draft, revision):
-        old_revision = draft.revision
-        for ext in draft.file_type.split(','):
-            source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (draft.filename, old_revision, ext))
-            dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (draft.filename, revision, ext))
-            os.rename(source, dest)
-
-    def save_new_draft_info(self):
-        draft = self.draft
-        draft.id_document_name = self.cleaned_data['title']
-        if draft.revision != self.cleaned_data['version']:
-            self.move_docs(draft, self.cleaned_data['version'])
-            draft.revision = self.cleaned_data['version']
-        draft.creation_date = self.cleaned_data['creation_date']
-        draft.txt_page_count = self.cleaned_data['pages']
-        draft.abstract = self.cleaned_data['abstract']
-        draft.comment_to_sec = self.cleaned_data['comments']
-        draft.status_id = MANUAL_POST_REQUESTED
-        draft.save()
-
-        # sync authors
-        draft.tempidauthors_set.all().delete()
-
-        self.save_submitter_info() # submitter is author 0
-
-        for i, author in enumerate(self.authors):
-            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                # save full name
-                TempIdAuthors.objects.create(
-                    id_document_tag=draft.temp_id_document_tag,
-                    first_name=author["get_full_name"],
-                    email_address=author["email"][1],
-                    author_order=i + 1,
-                    submission=draft)
-
-    def save(self, request):
-        self.save_new_draft_info()
-        self.send_mail_to_secretariat(request)
-
-    def send_mail_to_secretariat(self, request):
-        subject = 'Manual Post Requested for %s' % self.draft.filename
-        from_email = settings.IDSUBMIT_FROM_EMAIL
-        to_email = settings.IDSUBMIT_TO_EMAIL
-        cc = [self.cleaned_data['email']]
-        cc += [i['email'][1] for i in self.authors]
-        if self.draft.group_acronym:
-            cc += [i.person.email()[1] for i in self.draft.group_acronym.wgchair_set.all()]
-        cc = list(set(cc))
-        submitter = self.draft.tempidauthors_set.get(author_order=0)
-        send_mail(request, to_email, from_email, subject, 'submit/manual_post_mail.txt', {
-                'form': self,
-                'draft': self.draft,
-                'url': settings.IDTRACKER_BASE_URL + urlreverse('draft_status', kwargs=dict(submission_id=self.draft.submission_id)),
-                'submitter': submitter
-                },
-                  cc=cc)
-
+        return document_date
 
 class PreapprovalForm(forms.Form):
     name = forms.CharField(max_length=255, required=True, label="Pre-approved name", initial="draft-ietf-")
@@ -588,11 +290,11 @@ class PreapprovalForm(forms.Form):
             raise forms.ValidationError("Name ends with a dash.")
         acronym = components[2]
         if acronym not in self.groups.values_list('acronym', flat=True):
-            raise forms.ValidationError("WG acronym not recognized as one you can approve drafts for.")
+            raise forms.ValidationError("Group acronym not recognized as one you can approve drafts for.")
 
         if Preapproval.objects.filter(name=n):
             raise forms.ValidationError("Pre-approval for this name already exists.")
-        if IdSubmissionDetail.objects.filter(status__in=[POSTED, POSTED_BY_SECRETARIAT ], filename=n):
+        if Submission.objects.filter(state="posted", name=n):
             raise forms.ValidationError("A draft with this name has already been submitted and accepted. A pre-approval would not make any difference.")
 
         return n

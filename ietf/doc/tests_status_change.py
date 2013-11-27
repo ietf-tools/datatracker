@@ -22,10 +22,7 @@ from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 
 
-class StatusChangeTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class StatusChangeTests(TestCase):
     def test_start_review(self):
 
         url = urlreverse('start_rfc_status_change',kwargs=dict(name=""))
@@ -353,10 +350,7 @@ class StatusChangeTestCase(TestCase):
         make_test_data()
 
 
-class StatusChangeSubmitTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class StatusChangeSubmitTests(TestCase):
     def test_initial_submission(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         url = urlreverse('status_change_submit',kwargs=dict(name=doc.name))

@@ -80,6 +80,8 @@ class DocumentInfo(models.Model):
             return settings.CHARTER_PATH
         elif self.type_id == "conflrev": 
             return settings.CONFLICT_REVIEW_PATH
+        elif self.type_id == "statchg":
+            return settings.STATUS_CHANGE_PATH
         else:
             raise NotImplemented
 
@@ -120,7 +122,7 @@ class DocumentInfo(models.Model):
 
         if not hasattr(self, "state_cache") or self.state_cache == None:
             self.state_cache = {}
-            for s in self.states.all().select_related():
+            for s in self.states.all().select_related("type"):
                 self.state_cache[s.type_id] = s
 
         return self.state_cache.get(state_type, None)
@@ -147,8 +149,8 @@ class DocumentInfo(models.Model):
 
     def active_ballot(self):
         """Returns the most recently created ballot if it isn't closed."""
-        ballot = self.latest_event(BallotDocEvent, type="created_ballot")
-        if ballot and self.ballot_open(ballot.ballot_type.slug):
+        ballot = self.latest_event(BallotDocEvent, type__in=("created_ballot", "closed_ballot"))
+        if ballot and ballot.type == "created_ballot":
             return ballot
         else:
             return None
@@ -306,7 +308,7 @@ class Document(DocumentInfo):
         if g:
             if g.type_id == "area":
                 return g.acronym
-            elif g.type_id != "individ":
+            elif g.type_id != "individ" and g.parent:
                 return g.parent.acronym
         else:
             return None
@@ -339,7 +341,7 @@ class Document(DocumentInfo):
         return self.latest_event(LastCallDocEvent,type="sent_last_call")
 
     def displayname_with_link(self):
-        return '<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev)
+        return mark_safe('<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev))
 
     def rfc_number(self):
         n = self.canonical_name()
@@ -568,7 +570,7 @@ EVENT_TYPES = [
 
 class DocEvent(models.Model):
     """An occurrence for a document, used for tracking who, when and what."""
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened", db_index=True)
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
     by = models.ForeignKey(Person)
     doc = models.ForeignKey('doc.Document')
@@ -614,17 +616,15 @@ class BallotDocEvent(DocEvent):
         active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active"))
         res = {}
     
-        if self.doc.latest_event(BallotDocEvent, type="created_ballot") == self:
-        
-            positions = BallotPositionDocEvent.objects.filter(type="changed_ballot_position",ad__in=active_ads, ballot=self).select_related('ad', 'pos').order_by("-time", "-id")
-   
-            for pos in positions:
-                if pos.ad not in res:
-                    res[pos.ad] = pos
-    
-            for ad in active_ads:
-                if ad not in res:
-                    res[ad] = None
+        positions = BallotPositionDocEvent.objects.filter(type="changed_ballot_position",ad__in=active_ads, ballot=self).select_related('ad', 'pos').order_by("-time", "-id")
+
+        for pos in positions:
+            if pos.ad not in res:
+                res[pos.ad] = pos
+
+        for ad in active_ads:
+            if ad not in res:
+                res[ad] = None
         return res
 
     def all_positions(self):

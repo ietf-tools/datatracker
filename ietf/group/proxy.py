@@ -94,6 +94,19 @@ def proxied_role_emails(emails):
         proxy_role_email(e)
     return emails
 
+class WGDelegateProxy(Role):
+        #person = models.ForeignKey(PersonOrOrgInfo) # same name
+        #wg = models.ForeignKey(IETFWG)
+        @property
+        def wg(self):
+            return self.group
+
+        def __unicode__(self):
+            return u"%s" % self.person
+
+        class Meta:
+            proxy = True
+
 class IETFWG(Group):
     objects = TranslatingManager(dict(group_acronym="id",
                                       group_acronym__acronym="acronym",
@@ -211,8 +224,7 @@ class IETFWG(Group):
         return d
     @property
     def wgdelegate_set(self):
-        from ietf.wgchairs.models import WGDelegate
-        return WGDelegate.objects.filter(group=self, name="delegate")
+        return WGDelegateProxy.objects.filter(group=self, name="delegate")
     
     class Meta:
         proxy = True

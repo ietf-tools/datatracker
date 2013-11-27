@@ -1,0 +1,18 @@
+{% extends "wginfo/group_base.html" %}
+
+{% block group_subtitle %}Documents{% endblock %}
+
+{% block group_content %}
+<div class="group-documents">
+
+{% include "doc/search/search_results.html" %}
+
+{% with docs_related as docs %}{% with meta_related as meta %}{% include "doc/search/search_results.html" %}{% endwith %}{% endwith %}
+
+</div>
+{% endblock group_content %}
+
+{% block js %}
+<script type="text/javascript" src="/js/utils.js"></script>
+<script type="text/javascript" src="/js/doc-search.js"></script>
+{% endblock %}

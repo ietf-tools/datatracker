@@ -9,10 +9,7 @@ from ietf.doc.models import *
 from ietf.idindex.index import *
 
 
-class IndexTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class IndexTests(TestCase):
     def setUp(self):
         self.id_dir = os.path.abspath("tmp-id-dir")
         os.mkdir(self.id_dir)

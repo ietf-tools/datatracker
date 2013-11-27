@@ -24,7 +24,7 @@ connection.queries = DontSaveQueries()
 MAX_URL_LENGTH = 500
 SLOW_THRESHOLD = 1.0
 
-initial = ["/doc/all/", "/doc/in-last-call/"]
+initial = ["/doc/all/", "/doc/in-last-call/", "/iesg/decisions/"]
 
 visited = set()
 urls = {} # url -> referrer

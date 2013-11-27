@@ -30,7 +30,7 @@ from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_s
 class NomcomViewsTest(TestCase):
     """Tests to create a new nomcom"""
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names', 'nomcom_templates']
+    perma_fixtures = ['nomcom_templates']
 
     def check_url_status(self, url, status):
         response = self.client.get(url)
@@ -595,7 +595,7 @@ class NomcomViewsTest(TestCase):
 class NomineePositionStateSaveTest(TestCase):
     """Tests for the NomineePosition save override method"""
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names', 'nomcom_templates']
+    perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()
@@ -627,7 +627,7 @@ class NomineePositionStateSaveTest(TestCase):
 
 
 class FeedbackTest(TestCase):
-    perma_fixtures = ['names', 'nomcom_templates']
+    perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()
@@ -659,7 +659,7 @@ class FeedbackTest(TestCase):
         os.unlink(self.cert_file.name)
 
 class ReminderTest(TestCase):
-    perma_fixtures = ['names', 'nomcom_templates']
+    perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()

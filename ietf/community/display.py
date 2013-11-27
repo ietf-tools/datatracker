@@ -3,7 +3,6 @@ import datetime
 from django.db.models import Q
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.ietfworkflows.utils import get_state_for_draft
 from ietf.doc.models import DocAlias, DocEvent
 
 

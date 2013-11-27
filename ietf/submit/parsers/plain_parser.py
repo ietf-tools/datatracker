@@ -2,11 +2,8 @@ import datetime
 import re
 
 from django.conf import settings
-from ietf.idtracker.models import InternetDraft, IETFWG
 from django.template.defaultfilters import filesizeformat
 from ietf.submit.parsers.base import FileParser
-
-NONE_WG_PK = 1027
 
 
 class PlainParser(FileParser):
@@ -20,14 +17,14 @@ class PlainParser(FileParser):
         super(PlainParser, self).critical_parse()
         self.parse_max_size()
         self.parse_file_charset()
-        self.parse_filename()
+        self.parse_name()
         return self.parsed_info
 
     def parse_max_size(self):
-        if self.fd.size > settings.MAX_PLAIN_DRAFT_SIZE:
-            self.parsed_info.add_error('File size is larger than %s' % filesizeformat(settings.MAX_PLAIN_DRAFT_SIZE))
-        self.parsed_info.metadraft.filesize = self.fd.size
-        self.parsed_info.metadraft.submission_date = datetime.date.today()
+        if self.fd.size > settings.IDSUBMIT_MAX_PLAIN_DRAFT_SIZE:
+            self.parsed_info.add_error('File size is larger than %s' % filesizeformat(settings.IDSUBMIT_MAX_PLAIN_DRAFT_SIZE))
+        self.parsed_info.metadata.file_size = self.fd.size
+        self.parsed_info.metadata.submission_date = datetime.date.today()
 
     def parse_file_charset(self):
         import magic
@@ -43,9 +40,9 @@ class PlainParser(FileParser):
             magic.magic_load(m.cookie, None)
             filetype = m.from_buffer(content)
         if not 'ascii' in filetype:
-            self.parsed_info.add_error('A plain text document must be submitted.')
+            self.parsed_info.add_error('A plain text ASCII document must be submitted.')
 
-    def parse_filename(self):
+    def parse_name(self):
         self.fd.file.seek(0)
         draftre = re.compile('(draft-\S+)')
         revisionre = re.compile('.*-(\d+)$')
@@ -56,24 +53,24 @@ class PlainParser(FileParser):
             match = draftre.search(line)
             if not match:
                 continue
-            filename = match.group(1)
-            filename = re.sub('^[^\w]+', '', filename)
-            filename = re.sub('[^\w]+$', '', filename)
-            filename = re.sub('\.txt$', '', filename)
-            extra_chars = re.sub('[0-9a-z\-]', '', filename)
+            name = match.group(1)
+            name = re.sub('^[^\w]+', '', name)
+            name = re.sub('[^\w]+$', '', name)
+            name = re.sub('\.txt$', '', name)
+            extra_chars = re.sub('[0-9a-z\-]', '', name)
             if extra_chars:
                 if len(extra_chars) == 1:
-                    self.parsed_info.add_error((u'The filename contains a disallowed character: %s ' % (', '.join(set(extra_chars))).decode('ascii','replace')) +
+                    self.parsed_info.add_error((u'The name contains a disallowed character: %s ' % (', '.join(set(extra_chars))).decode('ascii','replace')) +
                                                 u'(see http://www.ietf.org/id-info/guidelines.html#naming for details).')
                 else:
-                    self.parsed_info.add_error((u'The filename contains disallowed characters: %s ' % (', '.join(set(extra_chars))).decode('ascii','replace')) +
+                    self.parsed_info.add_error((u'The name contains disallowed characters: %s ' % (', '.join(set(extra_chars))).decode('ascii','replace')) +
                                                 u'(see http://www.ietf.org/id-info/guidelines.html#naming for details).')
-            match_revision = revisionre.match(filename)
+            match_revision = revisionre.match(name)
             if match_revision:
-                self.parsed_info.metadraft.revision = match_revision.group(1)
+                self.parsed_info.metadata.rev = match_revision.group(1)
             else:
-                self.parsed_info.add_error(u'The filename found on the first page of the document does not contain a revision: "%s"' % (filename,))
-            filename = re.sub('-\d+$', '', filename)
-            self.parsed_info.metadraft.filename = filename
+                self.parsed_info.add_error(u'The name found on the first page of the document does not contain a revision: "%s"' % (name,))
+            name = re.sub('-\d+$', '', name)
+            self.parsed_info.metadata.name = name
             return
-        self.parsed_info.add_error('The first page of the document does not contain a legitimate filename that start with draft-*')
+        self.parsed_info.add_error('The first page of the document does not contain a legitimate name that start with draft-*')

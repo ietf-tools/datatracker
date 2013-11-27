@@ -10,6 +10,7 @@ from pyquery import PyQuery
 import debug
 
 from ietf.doc.models import *
+from ietf.doc .utils import *
 from ietf.name.models import *
 from ietf.group.models import *
 from ietf.person.models import *
@@ -21,10 +22,7 @@ from ietf.utils.mail import outbox
 from ietf.utils import TestCase
 
 
-class ChangeStateTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class ChangeStateTests(TestCase):
     def test_change_state(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="ad-eval"))
@@ -178,10 +176,7 @@ class ChangeStateTestCase(TestCase):
         self.assertTrue("Last call was requested" in draft.latest_event().desc)
         
 
-class EditInfoTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class EditInfoTests(TestCase):
     def test_edit_info(self):
         draft = make_test_data()
         url = urlreverse('doc_edit_info', kwargs=dict(name=draft.name))
@@ -361,10 +356,7 @@ class EditInfoTestCase(TestCase):
         self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, True)
 
 
-class ResurrectTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class ResurrectTests(TestCase):
     def test_request_resurrect(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
@@ -429,10 +421,7 @@ class ResurrectTestCase(TestCase):
         self.assertEquals(len(outbox), mailbox_before + 1)
 
 
-class ExpireIDsTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class ExpireIDsTests(TestCase):
     def setUp(self):
         self.id_dir = os.path.abspath("tmp-id-dir")
         self.archive_dir = os.path.abspath("tmp-id-archive")
@@ -612,10 +601,8 @@ class ExpireIDsTestCase(TestCase):
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "deleted_tombstones", txt)))
 
-class ExpireLastCallTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
 
+class ExpireLastCallTests(TestCase):
     def test_expire_last_call(self):
         from ietf.doc.lastcall import get_expired_last_calls, expire_last_call
         
@@ -662,10 +649,8 @@ class ExpireLastCallTestCase(TestCase):
         self.assertEquals(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call Expired" in outbox[-1]["Subject"])
 
-class IndividualInfoFormsTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
 
+class IndividualInfoFormsTests(TestCase):
     def test_doc_change_stream(self):
         url = urlreverse('doc_change_stream', kwargs=dict(name=self.docname))
         login_testing_unauthorized(self, "secretary", url)
@@ -890,10 +875,8 @@ class IndividualInfoFormsTestCase(TestCase):
         self.docname='draft-ietf-mars-test'
         self.doc = Document.objects.get(name=self.docname)
         
-class SubmitToIesgTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
 
+class SubmitToIesgTests(TestCase):
     def verify_permissions(self):
 
         def verify_fail(remote_user):
@@ -951,10 +934,8 @@ class SubmitToIesgTestCase(TestCase):
         self.doc = Document.objects.get(name=self.docname)
         self.doc.unset_state('draft-iesg') 
 
-class RequestPublicationTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
 
+class RequestPublicationTests(TestCase):
     def test_request_publication(self):
         draft = make_test_data()
         draft.stream = StreamName.objects.get(slug="iab")
@@ -990,3 +971,123 @@ class RequestPublicationTestCase(TestCase):
         # the IANA copy
         self.assertTrue("Document Action" in outbox[-1]['Subject'])
         self.assertTrue(not outbox[-1]['CC'])
+
+class AdoptDraftTests(TestCase):
+    def test_adopt_document(self):
+        draft = make_test_data()
+        draft.stream = None
+        draft.group = Group.objects.get(type="individ")
+        draft.save()
+        draft.unset_state("draft-stream-ietf")
+
+        url = urlreverse('doc_adopt_draft', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "marschairman", url)
+        
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form select[name="group"] option')), 1) # we can only select "mars"
+
+        # adopt in mars WG
+        mailbox_before = len(outbox)
+        events_before = draft.docevent_set.count()
+        r = self.client.post(url,
+                             dict(comment="some comment",
+                                  group=Group.objects.get(acronym="mars").pk,
+                                  weeks="10"))
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.group.acronym, "mars")
+        self.assertEqual(draft.stream_id, "ietf")
+        self.assertEqual(draft.docevent_set.count() - events_before, 4)
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("adopted" in outbox[-1]["Subject"].lower())
+        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+
+class ChangeStreamStateTests(TestCase):
+    def test_set_tags(self):
+        draft = make_test_data()
+        draft.tags = DocTagName.objects.filter(slug="w-expert")
+        draft.group.unused_tags.add("w-refdoc")
+
+        url = urlreverse('doc_change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))
+        login_testing_unauthorized(self, "marschairman", url)
+        
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        # make sure the unused tags are hidden
+        unused = draft.group.unused_tags.values_list("slug", flat=True)
+        for t in q("input[name=tags]"):
+            self.assertTrue(t.attrib["value"] not in unused)
+
+        # set tags
+        mailbox_before = len(outbox)
+        events_before = draft.docevent_set.count()
+        r = self.client.post(url,
+                             dict(new_state=draft.get_state("draft-stream-%s" % draft.stream_id).pk,
+                                  comment="some comment",
+                                  weeks="10",
+                                  tags=["need-aut", "sheph-u"],
+                                  ))
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.tags.count(), 2)
+        self.assertEqual(draft.tags.filter(slug="w-expert").count(), 0)
+        self.assertEqual(draft.tags.filter(slug="need-aut").count(), 1)
+        self.assertEqual(draft.tags.filter(slug="sheph-u").count(), 1)
+        self.assertEqual(draft.docevent_set.count() - events_before, 2)
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("tags changed" in outbox[-1]["Subject"].lower())
+        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("plain@example.com" in unicode(outbox[-1]))
+
+    def test_set_state(self):
+        draft = make_test_data()
+
+        url = urlreverse('doc_change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))
+        login_testing_unauthorized(self, "marschairman", url)
+        
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        # make sure the unused states are hidden
+        unused = draft.group.unused_states.values_list("pk", flat=True)
+        for t in q("select[name=new_state]").find("option[name=tags]"):
+            self.assertTrue(t.attrib["value"] not in unused)
+        self.assertEqual(len(q('select[name=new_state]')), 1)
+
+        # set new state
+        old_state = draft.get_state("draft-stream-%s" % draft.stream_id )
+        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="parked")
+        self.assertNotEqual(old_state, new_state)
+        mailbox_before = len(outbox)
+        events_before = draft.docevent_set.count()
+
+        r = self.client.post(url,
+                             dict(new_state=new_state.pk,
+                                  comment="some comment",
+                                  weeks="10",
+                                  tags=[t.pk for t in draft.tags.filter(slug__in=get_tags_for_stream_id(draft.stream_id))],
+                                  ))
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.get_state("draft-stream-%s" % draft.stream_id), new_state)
+        self.assertEqual(draft.docevent_set.count() - events_before, 2)
+        reminder = DocReminder.objects.filter(event__doc=draft, type="stream-s")
+        self.assertEqual(len(reminder), 1)
+        due = datetime.datetime.now() + datetime.timedelta(weeks=10)
+        self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
+        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+

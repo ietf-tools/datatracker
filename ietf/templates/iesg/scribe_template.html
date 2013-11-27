@@ -41,40 +41,50 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 </head>
 <body>
 {% load ietf_filters %}{% filter compress_empty_lines %}
-<h1>Scribe template for IESG Narrative Minutes, {{date}}</h1>
+<h1>Scribe template for IESG Narrative Minutes, {{ date }}</h1>
 
-{% with "iesg/scribe_doc.html" as doc_template %}
-{% with "iesg/scribe_conflict_doc.html" as doc_conflict_template %}
-{% include "iesg/agenda_outline_23.html" %}
-{% endwith %}
-{% endwith %}
+{% for num, section in sections %}
+  <p><b>{{ num }}{% if num|sectionlevel == 1 %}.{% endif %} {{ section.title|safe }}</b></p>
+
+  {% if "docs" in section %}
+  <ul>{% for doc in section.docs %}
+{% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/scribe_doc.html" %}{% endif %}
+{% if doc.type_id == "conflrev" %}{% include "iesg/scribe_conflict_doc.html" %}{% endif %}
+  {% empty %}
+    <li>(none)</li>{% endfor %}
+  </ul>
+  {% endif %}
+{% endfor %}
 
 <hr>
 <h2>Appendix: Snapshot of discusses/comments</h2>
 
 <p>(at {% now "Y-m-d H:i:s T" %})</p>
 
-{% for doc in docs.s211 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s212 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s213 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s221 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s222 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s223 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s231 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s232 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s233 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s311 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s312 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s313 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s321 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s322 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s323 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s331 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s332 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s333 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s341 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s342 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
-{% for doc in docs.s343 %}{% include "iesg/scribe_doc2.html" %}{%endfor%}
+{% for doc in appendix_docs %}
+    <!-- ============================================================ -->
+    <p><b>{{ doc.name }}</b></p>
+
+    {% with doc.active_ballot as ballot %}
+    {% if ballot %}
+    <ul>{% for p in ballot.active_ad_positions.values %}
+      {% if p.pos and p.discuss %}
+      <li>
+        <a name="{{ doc.name }}+{{ p.ad.plain_name|slugify }}+discuss">{{ p.ad.plain_name }}: Discuss [{{ p.discuss_time }}]</a>:
+        <br><pre>{{ p.discuss|wrap_text:80 }}</pre>
+      </li>
+      {% endif %}
+      {% if p.pos and p.comment %}
+      <li>
+        <a name="{{ doc.name }}+{{ p.ad.plain_name|slugify }}+comment">{{ p.ad.plain_name }}: Comment [{{ p.comment_time }}]</a>:
+        <br><pre>{{ p.comment|wrap_text:80 }}</pre>
+      </li>
+      {% endif %}{% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
+{% endfor %}
 
 {% endfilter %}
 </body>

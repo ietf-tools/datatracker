@@ -20,9 +20,6 @@ class SreqUrlTestCase(SimpleUrlTestCase):
         self.doTestUrls(__file__)
 
 class MainTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-    
     def test_main(self):
         draft = make_test_data()
         url = reverse('sessions')
@@ -34,8 +31,6 @@ class MainTestCase(TestCase):
         self.failUnless(len(unsched) > 0)
 
 class SubmitRequestCase(TestCase):
-    perma_fixtures = ['names']
-    
     def test_submit_request(self):
         draft = make_test_data()
         acronym = Group.objects.all()[0].acronym

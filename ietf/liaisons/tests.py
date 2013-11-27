@@ -91,10 +91,7 @@ def make_liaison_models():
     return l
     
 
-class LiaisonManagementTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class LiaisonManagementTests(TestCase):
     def setUp(self):
         self.liaison_dir = os.path.abspath("tmp-liaison-dir")
         try:

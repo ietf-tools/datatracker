@@ -66,7 +66,6 @@ urlpatterns += patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot/$', views_doc.document_ballot, name="doc_ballot"),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/doc.json$', views_doc.document_json),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/(?P<ballot_id>[0-9]+)/$', views_doc.ballot_popup),
-    #(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot.json$', views_doc.ballot_json), # legacy view
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_draft.change_state, name='doc_change_state'), # IESG state
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/(?P<state_type>iana-action|iana-review)/$', views_draft.change_iana_state, name='doc_change_iana_state'),
@@ -88,6 +87,8 @@ urlpatterns += patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/shepherd/$', views_draft.edit_shepherd, name='doc_edit_shepherd'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/shepherdwriteup/$', views_draft.edit_shepherd_writeup, name='doc_edit_shepherd_writeup'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/requestpublication/$', views_draft.request_publication, name='doc_request_publication'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/adopt/$', views_draft.adopt_draft, name='doc_adopt_draft'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/(?P<state_type>draft-stream-[a-z]+)/$', views_draft.change_stream_state, name='doc_change_stream_state'),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/clearballot/$', views_ballot.clear_ballot, name='doc_clear_ballot'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/deferballot/$', views_ballot.defer_ballot, name='doc_defer_ballot'),

@@ -21,10 +21,7 @@ from ietf.person.models import *
 from ietf.iesg.models import TelechatDate
 from ietf.wgcharter.utils import *
 
-class EditCharterTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class EditCharterTests(TestCase):
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
         os.mkdir(self.charter_dir)
@@ -198,10 +195,7 @@ class EditCharterTestCase(TestCase):
             self.assertEquals(f.read(),
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
-class ApproveCharterTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class ApproveCharterTests(TestCase):
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
         os.mkdir(self.charter_dir)

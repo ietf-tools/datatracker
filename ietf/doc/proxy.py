@@ -194,11 +194,6 @@ class InternetDraft(Document):
     def authors(self):
         return IDAuthor.objects.filter(document=self)
 
-    @property
-    def protowriteup_set(self):
-        from ietf.wgchairs.models import ProtoWriteUpProxy
-        return ProtoWriteUpProxy.objects.filter(doc=self, type="changed_protocol_writeup")
-
     # methods from InternetDraft
     def displayname(self):
         return self.name

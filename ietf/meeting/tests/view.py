@@ -13,12 +13,12 @@ from ietf.meeting.views import edit_agenda
 
 class ViewTestCase(TestCase):
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
-                 'meeting83.json',
-                 'constraint83.json',
-                 'workinggroups.json',
-                 'groupgroup.json',
-                 'person.json', 'users.json' ]
+    perma_fixtures = [ 'names',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
+                 'meeting83',
+                 'constraint83',
+                 'workinggroups',
+                 'groupgroup',
+                 'person', 'users' ]
 
     def test_nameOfClueWg(self):
         clue_session = Session.objects.get(pk=2194)

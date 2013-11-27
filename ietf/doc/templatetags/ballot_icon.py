@@ -40,31 +40,35 @@ from django.utils.safestring import mark_safe
 
 from ietf.ietfauth.utils import user_is_person, has_role
 from ietf.doc.models import BallotDocEvent, BallotPositionDocEvent, IESG_BALLOT_ACTIVE_STATES, IESG_SUBSTATE_TAGS
+from ietf.name.models import BallotPositionName
 
 
 register = template.Library()
 
-def render_ballot_icon(user, doc):
+@register.filter
+def showballoticon(doc):
+    if doc.type_id == "draft":
+        if doc.get_state_slug("draft-iesg") not in IESG_BALLOT_ACTIVE_STATES:
+            return False
+    elif doc.type_id == "charter":
+        if doc.get_state_slug() not in ("intrev", "iesgrev"):
+            return False
+    elif doc.type_id == "conflrev":
+       if doc.get_state_slug() not in ("iesgeval","defer"):
+           return False
+    elif doc.type_id == "statchg":
+       if doc.get_state_slug() not in ("iesgeval","defer"):
+           return False
+
+    return True
+
+
+def render_ballot_icon(doc, user):
     if not doc:
         return ""
 
-    # FIXME: temporary backwards-compatibility hack
-    from ietf.doc.models import Document
-    if not isinstance(doc, Document):
-        doc = doc._draft
-
-    if doc.type_id == "draft":
-        if doc.get_state_slug("draft-iesg") not in IESG_BALLOT_ACTIVE_STATES:
-            return ""
-    elif doc.type_id == "charter":
-        if doc.get_state_slug() not in ("intrev", "iesgrev"):
-            return ""
-    elif doc.type_id == "conflrev":
-       if doc.get_state_slug() not in ("iesgeval","defer"):
-           return ""
-    elif doc.type_id == "statchg":
-       if doc.get_state_slug() not in ("iesgeval","defer"):
-           return ""
+    if not showballoticon(doc):
+        return ""
 
     ballot = doc.active_ballot()
     if not ballot:
@@ -119,7 +123,7 @@ class BallotIconNode(template.Node):
         self.doc_var = doc_var
     def render(self, context):
         doc = template.resolve_variable(self.doc_var, context)
-        return render_ballot_icon(context.get("user"), doc)
+        return render_ballot_icon(doc, context.get("user"))
 
 def do_ballot_icon(parser, token):
     try:
@@ -132,29 +136,24 @@ register.tag('ballot_icon', do_ballot_icon)
 
 
 @register.filter
-def my_position(doc, user):
-    if not has_role(user, "Area Director"):
+def ballotposition(doc, user):
+    if not showballoticon(doc) or not has_role(user, "Area Director"):
         return None
-    # FIXME: temporary backwards-compatibility hack
-    from ietf.doc.models import Document
-    if not isinstance(doc, Document):
-        doc = doc._draft
 
     ballot = doc.active_ballot()
-    pos = "No Record"
-    if ballot:
-        changed_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad__user=user, ballot=ballot)
-        if changed_pos:
-            pos = changed_pos.pos.name;
+    if not ballot:
+        return None
+
+    changed_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad__user=user, ballot=ballot)
+    if changed_pos:
+        pos = changed_pos.pos
+    else:
+        pos = BallotPositionName.objects.get(slug="norecord")
     return pos
 
-@register.filter()
-def state_age_colored(doc):
-    # FIXME: temporary backwards-compatibility hack
-    from ietf.doc.models import Document
-    if not isinstance(doc, Document):
-        doc = doc._draft
 
+@register.filter
+def state_age_colored(doc):
     if doc.type_id == 'draft':
         if not doc.get_state_slug() in ["active", "rfc"]:
             # Don't show anything for expired/withdrawn/replaced drafts
@@ -174,7 +173,6 @@ def state_age_colored(doc):
                               Q(desc__istartswith="State Changes to ")|
                               Q(desc__istartswith="Sub state has been changed to ")|
                               Q(desc__istartswith="State has been changed to ")|
-                              Q(desc__istartswith="IESG has approved and state has been changed to")|
                               Q(desc__istartswith="IESG process started in state")
                           ).order_by('-time')[0].time.date() 
         except IndexError:

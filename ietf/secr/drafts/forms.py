@@ -375,7 +375,7 @@ class UploadForm(forms.Form):
             # ensure that the basename is unique
             base = splitext(txt.name)[0]
             if Document.objects.filter(name=base[:-3]):
-                raise forms.ValidationError, "This doucment filename already exists: %s" % base[:-3]
+                raise forms.ValidationError, "This document filename already exists: %s" % base[:-3]
 
             # ensure that rev is 00
             if base[-2:] != '00':
