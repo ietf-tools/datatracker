@@ -1,42 +1,18 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import re
+
 from django.views.generic.simple import direct_to_template
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.db.models import Q
 
-import re
-
 from ietf.idtracker.models import ChairsHistory
 from ietf.idtracker.models import Role
-from ietf.announcements.models import Announcement
 from ietf.group.models import Group, GroupEvent
 from ietf.message.models import Message
 
 def nomcom(request):
-    curr_chair       = (ChairsHistory.objects.
-                        get(chair_type=Role.NOMCOM_CHAIR, present_chair='1'))
-
-    all_chairs       = (ChairsHistory.objects.all().
-                        filter(chair_type='3',start_year__gt = 2003).
-                        order_by('-start_year'))
-
-    nomcom_announcements = Announcement.objects.all().filter(nomcom=1)
-
-    regimes = []
-
-    for chair in all_chairs:
-        chair_announcements = (nomcom_announcements.filter(nomcom_chair=chair).
-                               order_by('-announced_date','-announced_time'))
-        regimes = regimes + [{'chair': chair, 
-                              'announcements' : chair_announcements }]
-
-    return direct_to_template(request,
-                              "announcements/nomcom.html", 
-                              { 'curr_chair' : curr_chair,
-                                'regimes' : regimes })
-
-def nomcomREDESIGN(request):
     address_re = re.compile("<.*>")
     
     nomcoms = list(Group.objects.filter(acronym__startswith="nomcom").exclude(name="nomcom"))
@@ -69,11 +45,6 @@ def nomcomREDESIGN(request):
                               "announcements/nomcomREDESIGN.html", 
                               { 'curr_chair' : regimes[0]["chair"],
                                 'regimes' : regimes })
-        
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    nomcom = nomcomREDESIGN
-
 
 def message_detail(request, object_id):
     # restrict to nomcom announcements for the time being

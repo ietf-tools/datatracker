@@ -135,7 +135,6 @@ def get_to_choices():
 # ---------------------------------------------
 # Select Choices
 # ---------------------------------------------
-#TO_CHOICES = tuple(AnnouncedTo.objects.values_list('announced_to_id','announced_to'))
 TO_CHOICES = get_to_choices()
 #FROM_CHOICES = get_from_choices()
 
