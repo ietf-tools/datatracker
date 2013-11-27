@@ -15,7 +15,7 @@ import debug
 
 class ApiTestCase(TestCase):
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
+    perma_fixtures = [
                  'meeting83.json',
                  'constraint83.json',
                  'workinggroups.json',
