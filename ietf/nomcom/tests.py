@@ -8,13 +8,15 @@ from django.db import IntegrityError
 from django.core.urlresolvers import reverse
 from django.core.files import File
 from django.contrib.formtools.preview import security_hash
+from django.contrib.auth.models import User
 
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.mail import outbox
 
 
 from ietf.person.models import Email, Person
-from django.contrib.auth.models import User
+from ietf.group.models import Group
+from ietf.message.models import Message
 
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
                                   COMMUNITY_USER, CHAIR_USER, \
@@ -364,6 +366,25 @@ class NomcomViewsTest(TestCase):
     def test_index_view(self):
         """Verify home view"""
         self.check_url_status(self.index_url, 200)
+
+    def test_announcements_view(self):
+        nomcom = Group.objects.get(acronym="nomcom%s" % self.year, type="nomcom")
+        msg = Message.objects.create(
+            by=Person.objects.all()[0],
+            subject="This is a test",
+            to="test@example.com",
+            frm="nomcomchair@example.com",
+            body="Hello World!",
+            content_type="",
+            )
+        msg.related_groups.add(nomcom)
+        
+        r = self.client.get(reverse('ietf.nomcom.views.announcements'))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(("Messages from %s" % nomcom.time.year) in r.content)
+        self.assertTrue(nomcom.role_set.filter(name="chair")[0].person.email_address() in r.content)
+        self.assertTrue(msg.subject in r.content)
+
 
     def test_requirements_view(self):
         """Verify requirements view"""

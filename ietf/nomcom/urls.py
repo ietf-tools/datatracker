@@ -6,6 +6,7 @@ from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, \
 
 urlpatterns = patterns('ietf.nomcom.views',
     url(r'^$', 'index'),
+    url(r'^ann/$', 'announcements'),
     url(r'^(?P<year>\d{4})/private/$', 'private_index', name='nomcom_private_index'),
     url(r'^(?P<year>\d{4})/private/key/$', 'private_key', name='nomcom_private_key'),
     url(r'^(?P<year>\d{4})/private/nominate/$', 'private_nominate', name='nomcom_private_nominate'),
@@ -41,4 +42,8 @@ urlpatterns = patterns('ietf.nomcom.views',
     url(r'^(?P<year>\d{4})/process-nomination-status/(?P<nominee_position_id>\d+)/(?P<state>[\w]+)/(?P<date>[\d]+)/(?P<hash>[a-f0-9]+)/$', 'process_nomination_status', name='nomcom_process_nomination_status'),
     url(r'^ajax/position-text/(?P<position_id>\d+)/$', 'ajax_position_text', name='nomcom_ajax_position_text'),
 
+)
+
+urlpatterns += patterns('',
+    url(r'^ann/(?P<message_id>\d+)/$', 'ietf.message.views.message', {'group_type': "nomcom" }, "nomcom_announcement"),
 )

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load ietf_filters %}
+
+{% block title %}Announcement: {{ message.time|date:"F j, Y" }} - {{ message.subject }}{% endblock %}
+
+{% block content %}
+<h1>Announcement: {{ message.time|date:"F j, Y" }} - {{ message.subject }}</h1>
+
+<p>
+  From: {{ message.frm }}<br/>
+  To: {{ message.to }}<br/>
+  Date: {{ message.time|date:"F j, Y" }}<br/>
+  Subject: {{ message.subject }}
+</p>
+
+<hr width="400" align="left" />
+<pre>
+{{ message.body }}
+</pre>
+{% endblock %}

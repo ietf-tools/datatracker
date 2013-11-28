@@ -8,8 +8,9 @@
 <h3>Current Committee Chair: <a href="mailto:{{ curr_chair.email.address }}">{{ curr_chair.person.plain_name }}</a></h3>
 
 {% for regime in regimes %}
-  <hr>
-  <h1 id="{{regime.group.start_year}}">Messages from {{ regime.group.start_year }} - {{ regime.group.end_year }}</h1>
+  <hr style="margin: 1em 0; color: #ddd">
+
+  <h1 id="{{ regime.group.start_year }}">Messages from {{ regime.group.start_year }} - {{ regime.group.end_year }}</h1>
 
   {# use person email address here rather than the generic nomcom-chair@ietf.org #}
   <h4>Committee Chair: <a href="mailto:{{ regime.chair.person.email_address }}">{{ regime.chair.person.plain_name }}</a></h4>
@@ -19,17 +20,17 @@
       <th width="60%">Subject</th>
       <th width="30%">Sent To</th>
     </tr>
-  {% for ann in regime.announcements %}
+  {% for m in regime.announcements %}
     <tr>
-      <td>{{ ann.time|date:"Y-M-d" }}</td>
-      <td style="max-width:50%"><a href="/ann/nomcom/{{ ann.id  }}/">{{ ann.subject|escape }}</a></td>
-      <td>{{ ann.to_name }}</td>
+      <td>{{ m.time|date:"Y-M-d" }}</td>
+      <td style="max-width:50%"><a href="{% url nomcom_announcement message_id=m.id %}">{{ m.subject|escape }}</a></td>
+      <td>{{ m.to_name }}</td>
     <tr>
   {% endfor %}
   </table>
 {% endfor %}
 
-<hr>
+  <hr style="margin: 2em 0; color: #ddd">
 
 {# somebody ought to import these announcements in the DB instead of this mess #}
 

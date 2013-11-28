@@ -6,7 +6,7 @@ from django.core.files import File
 from django.conf import settings
 
 from ietf.utils.pipe import pipe
-from ietf.group.models import Group, Role
+from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.person.models import Email, Person
 from ietf.name.models import RoleName
 from ietf.nomcom.models import NomCom, Position, Nominee
@@ -101,6 +101,7 @@ def nomcom_test_data():
                                         state_id='active',
                                         type_id='nomcom',
                                         acronym='nomcom%s' % NOMCOM_YEAR)
+
     nomcom, created = NomCom.objects.get_or_create(group=group)
 
     cert_file, privatekey_file = generate_cert()
@@ -159,3 +160,9 @@ def nomcom_test_data():
                                                            description=description,
                                                            is_open=True,
                                                            incumbent=email)
+
+    ChangeStateGroupEvent.objects.get_or_create(group=group,
+                                                type="changed_state",
+                                                state_id="active",
+                                                time=group.time,
+                                                by=Person.objects.all()[0])
