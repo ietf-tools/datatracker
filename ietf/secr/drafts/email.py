@@ -3,7 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
 
 from ietf.message.models import Message, SendQueue
-from ietf.announcements.send_scheduled import send_scheduled_announcement
+from ietf.message.utils import send_scheduled_message_from_send_queue
 from ietf.doc.models import DocumentAuthor
 from ietf.person.models import Person
 from ietf.secr.utils.document import get_start_date
@@ -41,7 +41,7 @@ def announcement_from_form(data, **kwargs):
     send_queue = SendQueue.objects.create(by=by,message=message)
     
     # uncomment for testing
-    send_scheduled_announcement(send_queue)
+    send_scheduled_message_from_send_queue(send_queue)
     
     return message
     
