@@ -13,7 +13,6 @@ from ietf.wgcharter.feeds import GroupChanges
 
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
-from ietf.announcements.sitemaps import NOMCOMAnnouncementsMap
 
 from django.conf import settings
 
@@ -42,7 +41,6 @@ feeds = {
 sitemaps = {
     'liaison': LiaisonMap,
     'ipr': IPRMap,
-    'nomcom-announcements': NOMCOMAnnouncementsMap,
 }
 
 urlpatterns = patterns('',
