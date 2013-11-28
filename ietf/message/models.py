@@ -41,3 +41,6 @@ class SendQueue(models.Model):
     
     class Meta:
         ordering = ['time']
+
+    def __unicode__(self):
+        return u"'%s' %s -> %s (sent at %s)" % (self.message.subject, self.message.frm, self.message.to, self.sent_at or "<not yet>")
