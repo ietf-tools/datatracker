@@ -357,14 +357,6 @@ def agenda_documents(request):
         sections = agenda_sections()
         fill_in_agenda_docs(date, sections, docs_by_date[d])
 
-        for doc in docs_by_date[d]:
-            if doc.type_id=='draft':
-                if doc.get_state_slug() != "rfc":
-                    doc.iprUrl = "/ipr/search?option=document_search&id_document_tag=" + str(doc.name)
-                else:
-                    doc.iprUrl = "/ipr/search?option=rfc_search&rfc_search=" + str(doc.rfc_number())
-                doc.iprCount = len(doc.ipr())
-
         telechats.append({
                 "date":date,
                 "sections": sorted((num, section) for num, section in sections.iteritems()

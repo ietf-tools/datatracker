@@ -39,38 +39,34 @@ def patent_file_search(url, q):
             return q in text
     return False
 
-def search(request, type="", q="", id=""):
+def search(request):
     wgs = Group.objects.filter(type="wg").select_related().order_by("acronym")
-    args = request.REQUEST.items()
-    if args:
-        for key, value in args:
-            if key == "option":
-                type = value
-            if re.match(".*search", key):
-                q = value
-            if re.match(".*id", key):
-                id = value
-        if (type and q) or id:
-            #log("Got query: type=%s, q=%s, id=%s" % (type, q, id))
 
+    search_type = request.GET.get("option")
+    if search_type:
+        docid = request.GET.get("id") or request.GET.get("id_document_tag") or ""
+
+        q = ""
+        for key, value in request.GET.items():
+            if key.endswith("search"):
+                q = value
+
+        if search_type and (q or docid):
             # Search by RFC number or draft-identifier
             # Document list with IPRs
-            if type in ["document_search", "rfc_search"]:
+            if search_type in ["document_search", "rfc_search"]:
                 doc = q
-                if type == "document_search":
-                    if q:
+
+                if docid:
+                    start = DocAlias.objects.filter(name=docid)
+                else:
+                    if search_type == "document_search":
                         q = normalize_draftname(q)
                         start = DocAlias.objects.filter(name__contains=q, name__startswith="draft")
-                    if id:
-                        start = DocAlias.objects.filter(name=id)
-                if type == "rfc_search":
-                    if q:
-                        try:
-                            q = int(q, 10)
-                        except:
-                            q = -1
-                        start = DocAlias.objects.filter(name__contains=q, name__startswith="rfc")
-                if start.count() == 1:
+                    elif search_type == "rfc_search":
+                        start = DocAlias.objects.filter(name="rfc%s" % q.lstrip("0"))
+
+                if len(start) == 1:
                     first = start[0]
                     doc = str(first)
                     docs = related_docs(first)
@@ -78,7 +74,7 @@ def search(request, type="", q="", id=""):
                     iprs.sort(key=lambda x: (x.submitted_date, x.ipr_id))
                     return render("ipr/search_doc_result.html", {"q": q, "iprs": iprs, "docs": docs, "doc": doc },
                                   context_instance=RequestContext(request) )
-                elif start.count():
+                elif start:
                     return render("ipr/search_doc_list.html", {"q": q, "docs": start },
                                   context_instance=RequestContext(request) )                        
                 else:
@@ -87,7 +83,7 @@ def search(request, type="", q="", id=""):
 
             # Search by legal name
             # IPR list with documents
-            elif type == "patent_search":
+            elif search_type == "patent_search":
                 iprs = IprDetail.objects.filter(legal_name__icontains=q, status__in=[1,3]).order_by("-submitted_date", "-ipr_id")
                 count = iprs.count()
                 iprs = [ ipr for ipr in iprs if not ipr.updated_by.all() ]
@@ -96,7 +92,7 @@ def search(request, type="", q="", id=""):
 
             # Search by content of email or pagent_info field
             # IPR list with documents
-            elif type == "patent_info_search":
+            elif search_type == "patent_info_search":
                 if len(q) < 3:
                     return render("ipr/search_error.html", {"q": q, "error": "The search string must contain at least three characters" },
                                   context_instance=RequestContext(request) )
@@ -119,7 +115,7 @@ def search(request, type="", q="", id=""):
 
             # Search by wg acronym
             # Document list with IPRs
-            elif type == "wg_search":
+            elif search_type == "wg_search":
                 docs = list(DocAlias.objects.filter(document__group__acronym=q))
                 related = []
                 for doc in docs:
@@ -136,7 +132,7 @@ def search(request, type="", q="", id=""):
 
             # Search by rfc and id title
             # Document list with IPRs
-            elif type == "title_search":
+            elif search_type == "title_search":
                 docs = list(DocAlias.objects.filter(document__title__icontains=q))
                 related = []
                 for doc in docs:
@@ -153,7 +149,7 @@ def search(request, type="", q="", id=""):
 
             # Search by title of IPR disclosure
             # IPR list with documents
-            elif type == "ipr_title_search":
+            elif search_type == "ipr_title_search":
                 iprs = IprDetail.objects.filter(title__icontains=q, status__in=[1,3]).order_by("-submitted_date", "-ipr_id")
                 count = iprs.count()
                 iprs = [ ipr for ipr in iprs if not ipr.updated_by.all() ]
@@ -161,7 +157,7 @@ def search(request, type="", q="", id=""):
                                   context_instance=RequestContext(request) )
 
             else:
-                raise Http404("Unexpected search type in IPR query: %s" % type)
+                raise Http404("Unexpected search type in IPR query: %s" % search_type)
         return HttpResponseRedirect(request.path)
 
     return render("ipr/search.html", {"wgs": wgs}, context_instance=RequestContext(request))
