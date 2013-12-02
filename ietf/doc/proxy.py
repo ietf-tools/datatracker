@@ -714,7 +714,6 @@ class InternetDraft(Document):
 
     @property
     def ipr(self):
-        from ietf.ipr.models import IprDraftProxy
         return IprDraftProxy.objects.filter(doc_alias__document=self.pk)
     
     class Meta:
@@ -888,7 +887,6 @@ class DraftLikeDocAlias(DocAlias):
 
     @property
     def ipr(self):
-        from ietf.ipr.models import IprDraftProxy
         return IprDraftProxy.objects.filter(doc_alias=self.pk)
     
     class Meta:
@@ -996,3 +994,47 @@ class IDState(State):
         proxy = True
         
 
+
+
+# proxy stuff for ipr
+from ietf.ipr.models import IprDocAlias
+
+class IprDraftProxy(IprDocAlias):
+    objects = TranslatingManager(dict(document="doc_alias__name"))
+
+    # document = models.ForeignKey(InternetDraft, db_column='id_document_tag', "ipr")
+    # document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
+    @property
+    def document(self):
+        from ietf.doc.proxy import DraftLikeDocAlias
+        return DraftLikeDocAlias.objects.get(pk=self.doc_alias_id)
+
+    #revision = models.CharField(max_length=2)
+    @property
+    def revision(self):
+        return self.rev
+
+    class Meta:
+        proxy = True
+
+IprDraft = IprDraftProxy
+
+class IprRfcProxy(IprDocAlias):
+    objects = TranslatingManager(dict(document=lambda v: ("doc_alias__name", "rfc%s" % v)))
+
+    # document = models.ForeignKey(InternetDraft, db_column='id_document_tag', "ipr")
+    # document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
+    @property
+    def document(self):
+        from ietf.doc.proxy import DraftLikeDocAlias
+        return DraftLikeDocAlias.objects.get(pk=self.doc_alias_id)
+
+    #revision = models.CharField(max_length=2)
+    @property
+    def revision(self):
+        return self.rev
+
+    class Meta:
+        proxy = True
+
+IprRfc = IprRfcProxy

@@ -22,7 +22,7 @@ class LatestIprDisclosures(Feed):
         # though the database has only date, not time 
 	return datetime.combine(item.submitted_date, time(0,0,0))
     def item_author_name(self, item):
-	s = item.get_submitter()
+        s = item.get_submitter()
         if s:
             return s.name
         return None

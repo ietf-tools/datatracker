@@ -31,9 +31,9 @@
 				 <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
 				 <td>
 				    {% for item in ipr.updates.all %}
-				       {% ifequal item.updated.status 1 %}
+                                       {% if item.updated.status == 1 %}
 					  IPR disclosure ID# {{ item.updated.ipr_id }}, "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title|escape }}</a>" Updated by
-				       {% endifequal %}
+                                       {% endif %}
 				    {% endfor %}
 				    <a href="{% url ietf.ipr.views.show ipr.ipr_id %}">"{{ ipr.title|escape }}"</a>
 				 </td>

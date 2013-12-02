@@ -23,16 +23,18 @@
 			<tr valign="top">
 			   <td colspan="3">
 			      {% block intro_prefix %}IPR that was submitted by <b><i>{{ q }}</i></b>, and{% endblock %}
-			      {% block related %}
-				 {% if not ipr.docs %}
-				    is not related to a specific IETF contribution.
-				 {% else %}
-				    is related to
-				    {% for item in ipr.docs %}
-				       {% ifequal item ipr.last_draft %}<b> and </b>{% endifequal %}
-				       <b><i>{{ item.document }}, "{{ item.document.title|escape }},"</i></b>{% if item.document.related %}, {{ item.document.relation }} {{ item.document.related  }}, "{{ item.document.related.title|escape }}"{% endif %}
-				    {% endfor %}
-				 {% endif %}
+                              {% block related %}
+                                {% with ipr.docs as docs %}
+                                  {% if not docs %}
+                                     is not related to a specific IETF contribution.
+                                  {% else %}
+                                     is related to
+                                     {% for item in docs %}
+                                        {% if forloop.last and forloop.counter > 1 %}<b>and</b>{% endif %}
+                                        <b><i>{{ item.document }}, "{{ item.document.title|escape }},"</i></b>{% if item.document.related %}, {{ item.document.relation }} {{ item.document.related  }}, "{{ item.document.related.title|escape }}"{% endif %}
+                                     {% endfor %}
+                                  {% endif %}
+                                {% endwith %}
 			      {% endblock %}
 			      {% block intro_suffix %}{% endblock %}
 			   </td>

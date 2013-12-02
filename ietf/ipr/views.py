@@ -1,18 +1,18 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import os
+
 from django.shortcuts import render_to_response as render, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404
 from django.conf import settings
-from ietf.idtracker.models import IETFWG
-from ietf.ipr.models import IprDetail, SELECT_CHOICES, LICENSE_CHOICES
-from ietf.ipr.view_sections import section_table
-from ietf.utils import log
-import os
 
-def default(request):
-    """Default page, with links to sub-pages"""
+from ietf.ipr.models import IprDetail, IprDocAlias, SELECT_CHOICES, LICENSE_CHOICES
+from ietf.ipr.view_sections import section_list_for_ipr
+from ietf.doc.models import Document
+
+def about(request):
     return render("ipr/disclosure.html", {}, context_instance=RequestContext(request))
 
 def showlist(request):
@@ -28,56 +28,6 @@ def showlist(request):
             'thirdpty_disclosures': thirdpty_disclosures.order_by(* ['-submitted_date', ] ),
         }, context_instance=RequestContext(request) )
 
-def list_drafts(request):
-    iprs = IprDetail.objects.filter(status=1)
-    docipr = {}
-    docs = []
-    for ipr in iprs:
-        for draft in ipr.drafts.all():
-            name = draft.document.filename
-            if not name in docipr:
-                docipr[name] = []
-            docipr[name] += [ ipr.ipr_id ]
-        for rfc in ipr.rfcs.all():
-            name = "RFC%04d" % rfc.document.rfc_number
-            if not name in docipr:
-                docipr[name] = []
-            docipr[name] += [ ipr.ipr_id ]
-    docs = [ {"name":key, "iprs":value, } for key,value in docipr.items() ]
-    return HttpResponse(render_to_string("ipr/drafts.html", { "docs":docs, },
-                    context_instance=RequestContext(request)),
-                    mimetype="text/plain")
-
-def list_draftsREDESIGN(request):
-    from ietf.ipr.models import IprDocAlias
-    
-    docipr = {}
-
-    for o in IprDocAlias.objects.filter(ipr__status=1).select_related("doc_alias"):
-        name = o.doc_alias.name
-        if name.startswith("rfc"):
-            name = name.upper()
-
-        if not name in docipr:
-            docipr[name] = []
-
-        docipr[name].append(o.ipr_id)
-            
-    docs = [ dict(name=name, iprs=sorted(iprs)) for name, iprs in docipr.iteritems() ]
-    
-    # drafts.html is not an HTML file
-    return HttpResponse(render_to_string("ipr/drafts.html",
-                                         dict(docs=docs),
-                                         context_instance=RequestContext(request)),
-                        mimetype="text/plain")
-    
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    list_drafts = list_draftsREDESIGN
-
-
-# Details views
-
 def show(request, ipr_id=None, removed=None):
     """Show a specific IPR disclosure"""
     assert ipr_id != None
@@ -87,9 +37,9 @@ def show(request, ipr_id=None, removed=None):
 			context_instance=RequestContext(request))
     if removed and ipr.status != 3:
 	raise Http404
-    if not ipr.status == 1 and not removed:
+    if ipr.status != 1 and not removed:
 	raise Http404        
-    section_list = get_section_list(ipr)
+    section_list = section_list_for_ipr(ipr)
     contacts = ipr.contact.all()
     for contact in contacts:
         if   contact.contact_type == 1:
@@ -122,24 +72,30 @@ def show(request, ipr_id=None, removed=None):
             # if file does not exist, iframe is used instead
             pass
 
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from ietf.ipr.models import IprDraft, IprRfc
-        ipr.drafts = IprDraft.objects.filter(ipr=ipr).exclude(doc_alias__name__startswith="rfc").order_by("id")
-        ipr.rfcs = IprRfc.objects.filter(ipr=ipr).filter(doc_alias__name__startswith="rfc").order_by("id")
+    iprdocs = IprDocAlias.objects.filter(ipr=ipr).order_by("id").select_related("doc_alias", "doc_alias__document")
+
+    ipr.drafts = [x for x in iprdocs if not x.doc_alias.name.startswith("rfc")]
+    ipr.rfcs = [x for x in iprdocs if x.doc_alias.name.startswith("rfc")]
     
     return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list},
                     context_instance=RequestContext(request))
 
+def iprs_for_drafts_txt(request):
+    docipr = {}
 
-# ---- Helper functions ------------------------------------------------------
+    for o in IprDocAlias.objects.filter(ipr__status=1).select_related("doc_alias"):
+        name = o.doc_alias.name
+        if name.startswith("rfc"):
+            name = name.upper()
 
-def get_section_list(ipr):
-    if   ipr.legacy_url_0:
-        return section_table["legacy"]
-    elif ipr.generic:
-        #assert not ipr.third_party
-        return section_table["generic"]
-    elif ipr.third_party:
-        return section_table["third-party"]
-    else:
-        return section_table["specific"]
+        if not name in docipr:
+            docipr[name] = []
+
+        docipr[name].append(o.ipr_id)
+            
+    lines = [ u"# Machine-readable list of IPR disclosures by draft name" ]
+    for name, iprs in docipr.iteritems():
+        lines.append(name + "\t" + "\t".join(unicode(ipr_id) for ipr_id in sorted(iprs)))
+
+    return HttpResponse("\n".join(lines), mimetype="text/plain")
+

@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 from django.forms.formsets import formset_factory
 from django.utils import simplejson
 
-from ietf.ipr.models import IprDetail, IprContact, LICENSE_CHOICES, IprRfc, IprDraft, IprUpdate, SELECT_CHOICES, IprDocAlias
+from ietf.ipr.models import IprDetail, IprContact, LICENSE_CHOICES, IprUpdate, SELECT_CHOICES, IprDocAlias
 
 from ietf.doc.models import DocAlias
 from ietf.secr.utils.document import get_rfc_num
@@ -246,14 +246,7 @@ class IprDetailForm(BetterModelForm):
                 obj.status_to_be = old_ipr.status
                 obj.processed = 0
                 obj.save()
-        '''
-        IprRfc.objects.filter(ipr=ipr_detail).delete()
-        IprDraft.objects.filter(ipr=ipr_detail).delete()
-        for rfc in self.cleaned_data['rfc_num']:
-            IprRfc.objects.create(ipr=ipr_detail, document=rfc)
-        for draft in self.cleaned_data['id_filename']:
-            IprDraft.objects.create(ipr=ipr_detail, document=draft)
-        '''
+
         IprDocAlias.objects.filter(ipr=ipr_detail).delete()
         for doc in self.cleaned_data['rfc_num']:
             IprDocAlias.objects.create(ipr=ipr_detail,doc_alias=doc)

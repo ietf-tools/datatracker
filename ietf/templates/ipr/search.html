@@ -11,12 +11,12 @@ label { float:left; width: 200px; }
 <h1>IPR Search</h1>
 <h2>Document Search</h2>
 <div class="ietf-box search-form-box">
-      <form method="get">
+      <form>
 	 <input type="hidden" name="option" value="document_search">  
 
-   <label>I-D filename (draft-...):</label>
-  <input type="text" name="document_search" size="30">
-<input type="submit" value="SEARCH" >
+         <label>I-D name (draft-...):</label>
+         <input type="text" name="document_search" size="30">
+         <input type="submit" value="SEARCH" >
       </form>
 
       <script language="javascript"><!--
@@ -49,7 +49,7 @@ label { float:left; width: 200px; }
 	 }
 	 // -->
       </script>
-      <form name="form_rfc_search" method="get">
+      <form name="form_rfc_search">
 	 <input type="hidden" name="option" value="rfc_search">
 <label>RFC Number:</label>
 	       <input type="text" name="rfc_search" size="8">
@@ -61,13 +61,13 @@ label { float:left; width: 200px; }
 
 <div class="ietf-box search_form_box">
 
-      <form method="get">
+      <form>
 	 <input type="hidden" name="option" value="patent_search">
 	    <label>Name of patent owner/applicant:</label>
 	    <input type="text" name="patent_search" size="30">
 	    <input type="submit" value="SEARCH">
       </form>
-      <form method="get">
+      <form>
 	 <input type="hidden" name="option" value="patent_info_search"/>
 <label>Characters in patent information (Full/Partial):</label>
 <input type="text" name="patent_info_search" size="30"/>
@@ -75,7 +75,7 @@ label { float:left; width: 200px; }
       </form>
 	       <font size="-1" color="red">* The search string must contain at least three characters, including at least one digit, and include punctuation marks. For best results, please enter the entire string, or as much of it as possible.</font>
 
-      <form method="get">
+      <form>
 	 <input type="hidden" name="option" value="wg_search">
 <label>Working group name:</label>
 		  <select name="wg_search">
@@ -85,13 +85,13 @@ label { float:left; width: 200px; }
 		  </select>
 <input type="submit" value="SEARCH" width="15">
       </form>
-      <form method="get">
+      <form>
 	 <input type="hidden" name="option" value="title_search"/>
 <label>Words in document title:</label>
 <input type="text" name="title_search" size="30" />
 <input type="submit" value="SEARCH" />
       </form>
-      <form method="get">
+      <form>
 	 <input type="hidden" name="option" value="ipr_title_search" />
 <label>Words in IPR disclosure title:</label>
 <input type="text" name="ipr_title_search" size="30" />

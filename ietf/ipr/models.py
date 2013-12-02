@@ -1,11 +1,9 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
-from django.conf import settings
-from ietf.utils.lazy import reverse_lazy
 
-# ------------------------------------------------------------------------
-# Models
+from ietf.doc.models import DocAlias
+
 
 LICENSE_CHOICES = (
     (1, 'a) No License Required for Implementers.'),
@@ -42,20 +40,14 @@ class IprSelecttype(models.Model):
     type_id = models.AutoField(primary_key=True)
     is_pending = models.IntegerField(unique=True, db_column="selecttype")
     type_display = models.CharField(blank=True, max_length=15)
-    def __str__(self):
+    def __unicode__(self):
 	return self.type_display
-    class Meta:
-        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            db_table = 'ipr_selecttype'
 
 class IprLicensing(models.Model):
     licensing_option = models.AutoField(primary_key=True)
     value = models.CharField(max_length=255, db_column='licensing_option_value')
-    def __str__(self):
+    def __unicode__(self):
 	return self.value;
-    class Meta:
-        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            db_table = 'ipr_licensing'
 
 
 class IprDetail(models.Model):
@@ -115,17 +107,8 @@ class IprDetail(models.Model):
     submitted_date = models.DateField(blank=True)
     update_notified_date = models.DateField(null=True, blank=True)
 
-    def __str__(self):
-	return self.title
     def __unicode__(self):
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            # the latin-1 decode doesn't seem necessary anymore
-            return self.title
-        return self.title.decode("latin-1", 'replace')
-    def docs(self):
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            return list(IprDraftProxy.objects.filter(ipr=self))
-        return list(self.drafts.all()) + list(self.rfcs.all())
+        return self.title
     @models.permalink
     def get_absolute_url(self):
         return ('ietf.ipr.views.show', [str(self.ipr_id)])
@@ -173,8 +156,6 @@ class IprUpdate(models.Model):
     processed = models.IntegerField(null=True, blank=True)
 
 
-from ietf.doc.models import DocAlias
-
 class IprDocAlias(models.Model):
     ipr = models.ForeignKey(IprDetail, related_name='documents')
     doc_alias = models.ForeignKey(DocAlias)
@@ -189,46 +170,3 @@ class IprDocAlias(models.Model):
         verbose_name = "IPR document alias"
         verbose_name_plural = "IPR document aliases"
 
-# proxy stuff
-
-from ietf.utils.proxy import TranslatingManager
-
-class IprDraftProxy(IprDocAlias):
-    objects = TranslatingManager(dict(document="doc_alias__name"))
-
-    # document = models.ForeignKey(InternetDraft, db_column='id_document_tag', "ipr")
-    # document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
-    @property
-    def document(self):
-        from ietf.doc.proxy import DraftLikeDocAlias
-        return DraftLikeDocAlias.objects.get(pk=self.doc_alias_id)
-
-    #revision = models.CharField(max_length=2)
-    @property
-    def revision(self):
-        return self.rev
-
-    class Meta:
-        proxy = True
-
-IprDraft = IprDraftProxy
-
-class IprRfcProxy(IprDocAlias):
-    objects = TranslatingManager(dict(document=lambda v: ("doc_alias__name", "rfc%s" % v)))
-
-    # document = models.ForeignKey(InternetDraft, db_column='id_document_tag', "ipr")
-    # document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
-    @property
-    def document(self):
-        from ietf.doc.proxy import DraftLikeDocAlias
-        return DraftLikeDocAlias.objects.get(pk=self.doc_alias_id)
-
-    #revision = models.CharField(max_length=2)
-    @property
-    def revision(self):
-        return self.rev
-
-    class Meta:
-        proxy = True
-
-IprRfc = IprRfcProxy

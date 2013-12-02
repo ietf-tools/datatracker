@@ -3,28 +3,21 @@
 import codecs
 import re
 import os.path
+
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response as render
 from django.template import RequestContext
 from django.conf import settings
-from ietf.ipr.models import IprDraft, IprDetail
+
+from ietf.ipr.models import IprDocAlias, IprDetail
 from ietf.ipr.related import related_docs
 from ietf.utils import log, normalize_draftname
 from ietf.group.models import Group
 from ietf.doc.models import DocAlias
 
-
-def mark_last_doc(iprs):
-    for item in iprs:
-        docs = item.docs()
-        count = len(docs)
-        if count > 1:
-            item.last_draft = docs[count-1]
-
 def iprs_from_docs(docs):
     iprs = []
     for doc in docs:
-        from ietf.ipr.models import IprDocAlias
         disclosures = [ x.ipr for x in IprDocAlias.objects.filter(doc_alias=doc, ipr__status__in=[1,3]) ]
         doc.iprs = None
         if disclosures:
@@ -57,7 +50,7 @@ def search(request, type="", q="", id=""):
                 q = value
             if re.match(".*id", key):
                 id = value
-        if type and q or id:
+        if (type and q) or id:
             #log("Got query: type=%s, q=%s, id=%s" % (type, q, id))
 
             # Search by RFC number or draft-identifier
@@ -82,14 +75,14 @@ def search(request, type="", q="", id=""):
                     doc = str(first)
                     docs = related_docs(first)
                     iprs, docs = iprs_from_docs(docs)
-                    iprs.sort(key=lambda x:(x.submitted_date,x.ipr_id))
-                    return render("ipr/search_doc_result.html", {"q": q, "first": first, "iprs": iprs, "docs": docs, "doc": doc },
+                    iprs.sort(key=lambda x: (x.submitted_date, x.ipr_id))
+                    return render("ipr/search_doc_result.html", {"q": q, "iprs": iprs, "docs": docs, "doc": doc },
                                   context_instance=RequestContext(request) )
                 elif start.count():
                     return render("ipr/search_doc_list.html", {"q": q, "docs": start },
                                   context_instance=RequestContext(request) )                        
                 else:
-                    return render("ipr/search_doc_result.html", {"q": q, "first": {}, "iprs": {}, "docs": {}, "doc": doc },
+                    return render("ipr/search_doc_result.html", {"q": q, "iprs": {}, "docs": {}, "doc": doc },
                                   context_instance=RequestContext(request) )
 
             # Search by legal name
@@ -98,9 +91,6 @@ def search(request, type="", q="", id=""):
                 iprs = IprDetail.objects.filter(legal_name__icontains=q, status__in=[1,3]).order_by("-submitted_date", "-ipr_id")
                 count = iprs.count()
                 iprs = [ ipr for ipr in iprs if not ipr.updated_by.all() ]
-                # Some extra information, to help us render 'and' between the
-                # last two documents in a sequence
-                mark_last_doc(iprs)
                 return render("ipr/search_holder_result.html", {"q": q, "iprs": iprs, "count": count },
                                   context_instance=RequestContext(request) )
 
@@ -123,10 +113,7 @@ def search(request, type="", q="", id=""):
                         iprs.append(ipr)
                 count = len(iprs)
                 iprs = [ ipr for ipr in iprs if not ipr.updated_by.all() ]
-                # Some extra information, to help us render 'and' between the
-                # last two documents in a sequence
-                iprs.sort(key=lambda x: x.ipr_id, reverse=True) # Reverse sort                
-                mark_last_doc(iprs)
+                iprs.sort(key=lambda x: x.ipr_id, reverse=True)
                 return render("ipr/search_patent_result.html", {"q": q, "iprs": iprs, "count": count },
                                   context_instance=RequestContext(request) )
 
@@ -170,9 +157,6 @@ def search(request, type="", q="", id=""):
                 iprs = IprDetail.objects.filter(title__icontains=q, status__in=[1,3]).order_by("-submitted_date", "-ipr_id")
                 count = iprs.count()
                 iprs = [ ipr for ipr in iprs if not ipr.updated_by.all() ]
-                # Some extra information, to help us render 'and' between the
-                # last two documents in a sequence
-                mark_last_doc(iprs)
                 return render("ipr/search_iprtitle_result.html", {"q": q, "iprs": iprs, "count": count },
                                   context_instance=RequestContext(request) )
 

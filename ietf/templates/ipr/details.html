@@ -162,15 +162,15 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	    {% if ipr.rfclist %}
 	       <tr class="{% cycle row_parity %}"><td class="iprlabel">RFC Numbers:</td><td class="iprdata">{{ ipr.rfclist }}</td></tr>
 	    {% else %}
-	       {% for doc in ipr.rfcs.all %}
-	       <tr class="{% cycle row_parity %}"><td class="iprlabel iprdata">RFC {{ doc.document.rfc_number }}:</td><td class="iprdata">"{{ doc.document.title }}"</td></tr>
+               {% for iprdocalias in ipr.rfcs %}
+               <tr class="{% cycle row_parity %}"><td class="iprlabel iprdata">RFC {{ iprdocalias.doc_alias.document.rfc_number }}:</td><td class="iprdata">"{{ iprdocalias.doc_alias.document.title }}"</td></tr>
 	       {% endfor %}
 	    {% endif %}
 	    {% if ipr.draftlist %}
 	       <tr class="{% cycle row_parity %}"><td class="iprlabel">I-D Filenames (draft-...):</td><td class="iprdata">{{ ipr.draftlist }}</td></tr>
 	    {% else %}
-	       {% for doc in ipr.drafts.all %}
-	       <tr class="{% cycle row_parity %}"><td class="iprlabel">Internet-Draft:</td><td class="iprdata">"{{ doc.document.title }}"<br />({{ doc.document.filename }}{% if doc.revision %}-{{ doc.revision }}{% endif %})</td></tr>
+               {% for iprdocalias in ipr.drafts %}
+               <tr class="{% cycle row_parity %}"><td class="iprlabel">Internet-Draft:</td><td class="iprdata">"{{ iprdocalias.doc_alias.document.title }}"<br />({{ iprdocalias.doc_alias.name }}{% if iprdocalias.rev %}-{{ iprdocalias.rev }}{% endif %})</td></tr>
 	       {% endfor %}
 	    {% endif %}
 	    {% if ipr.other_designations %}

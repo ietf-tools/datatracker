@@ -8,8 +8,20 @@ class IprContactAdmin(admin.ModelAdmin):
 admin.site.register(IprContact, IprContactAdmin)
 
 class IprDetailAdmin(admin.ModelAdmin):
-    list_display = ['title', 'submitted_date', 'docs', ]
-    search_fields = ['title', 'legal_name', ]
+    list_display = ['title', 'submitted_date', 'docs', 'status']
+    search_fields = ['title', 'legal_name']
+
+    def docs(self, ipr):
+        res = []
+        for iprdocalias in IprDocAlias.objects.filter(ipr=ipr).order_by("id").select_related("doc_alias"):
+            if iprdocalias.doc_alias.name.startswith("rfc"):
+                n = iprdocalias.doc_alias.name.upper()
+            elif iprdocalias.rev:
+                n = iprdocalias.doc_alias.name + iprdocalias.rev
+            else:
+                n = iprdocalias.doc_alias.name
+            res.append(n)
+        return u", ".join(res)
 admin.site.register(IprDetail, IprDetailAdmin)
 
 class IprLicensingAdmin(admin.ModelAdmin):
