@@ -410,10 +410,6 @@ def expires_soon(x,request):
         days = 14
     return x > -days
 
-@register.filter(name='equal')
-def equal(x, y):
-    return str(x)==str(y)
-
 @register.filter(name='startswith')
 def startswith(x, y):
     return unicode(x).startswith(y)
