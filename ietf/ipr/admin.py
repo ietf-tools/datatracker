@@ -24,17 +24,9 @@ class IprDetailAdmin(admin.ModelAdmin):
         return u", ".join(res)
 admin.site.register(IprDetail, IprDetailAdmin)
 
-class IprLicensingAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(IprLicensing, IprLicensingAdmin)
-
 class IprNotificationAdmin(admin.ModelAdmin):
     pass
 admin.site.register(IprNotification, IprNotificationAdmin)
-
-class IprSelecttypeAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(IprSelecttype, IprSelecttypeAdmin)
 
 class IprUpdateAdmin(admin.ModelAdmin):
     pass

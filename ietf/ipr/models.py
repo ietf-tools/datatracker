@@ -21,10 +21,7 @@ STDONLY_CHOICES = (
     (1,  "The licensing declaration is limited solely to standards-track IETF documents."),
 )
 SELECT_CHOICES = (
-    ("0", 'NO'),
-    ("1", 'YES'),
-    ("2", 'NO'),
-    (0, 'NO'), # with new schema, choices are really numeric
+    (0, 'NO'),
     (1, 'YES'),
     (2, 'NO'),
 )
@@ -34,21 +31,6 @@ STATUS_CHOICES = (
     ( 2, "Rejected by Administrator" ), 
     ( 3, "Removed by Request" ), 
 )
-# not clear why this has both an ID and selecttype
-# Also not clear why a table for "YES" and "NO".
-class IprSelecttype(models.Model):
-    type_id = models.AutoField(primary_key=True)
-    is_pending = models.IntegerField(unique=True, db_column="selecttype")
-    type_display = models.CharField(blank=True, max_length=15)
-    def __unicode__(self):
-	return self.type_display
-
-class IprLicensing(models.Model):
-    licensing_option = models.AutoField(primary_key=True)
-    value = models.CharField(max_length=255, db_column='licensing_option_value')
-    def __unicode__(self):
-	return self.value;
-
 
 class IprDetail(models.Model):
     ipr_id = models.AutoField(primary_key=True)
@@ -85,7 +67,6 @@ class IprDetail(models.Model):
     applies_to_all = models.IntegerField("Applies to all IPR owned by Submitter", blank=True, null=True, choices=SELECT_CHOICES, db_column="selectowned")
 
     # Licensing Declaration fieldset
-    #licensing_option = models.ForeignKey(IprLicensing, db_column='licensing_option')
     licensing_option = models.IntegerField(null=True, blank=True, choices=LICENSE_CHOICES)
     lic_opt_a_sub = models.IntegerField(null=True, editable=False, choices=STDONLY_CHOICES)
     lic_opt_b_sub = models.IntegerField(null=True, editable=False, choices=STDONLY_CHOICES)
