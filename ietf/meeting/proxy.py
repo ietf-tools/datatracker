@@ -116,8 +116,9 @@ class SwitchesProxy(Meeting):
     def updated(self):
         from django.db.models import Max
         import pytz
-        ts = max(self.timeslot_set.aggregate(Max('modified'))["modified__max"],
-                   self.session_set.aggregate(Max('modified'))["modified__max"])
+        now = datetime.datetime.now()
+        ts = max(self.timeslot_set.aggregate(Max('modified'))["modified__max"] or now,
+                   self.session_set.aggregate(Max('modified'))["modified__max"] or now)
         tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
         ts = tz.localize(ts)
         return ts
