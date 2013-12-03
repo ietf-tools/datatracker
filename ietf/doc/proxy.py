@@ -1006,7 +1006,6 @@ class IprDraftProxy(IprDocAlias):
     # document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
     @property
     def document(self):
-        from ietf.doc.proxy import DraftLikeDocAlias
         return DraftLikeDocAlias.objects.get(pk=self.doc_alias_id)
 
     #revision = models.CharField(max_length=2)
@@ -1026,7 +1025,6 @@ class IprRfcProxy(IprDocAlias):
     # document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
     @property
     def document(self):
-        from ietf.doc.proxy import DraftLikeDocAlias
         return DraftLikeDocAlias.objects.get(pk=self.doc_alias_id)
 
     #revision = models.CharField(max_length=2)
