@@ -152,7 +152,7 @@ class IprTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(len(q("ul.errorlist")) > 0)
 
-        # succesfull post
+        # successful post
         r = self.client.post(url, {
             "legal_name": "Test Legal",
             "hold_name": "Test Holder",
@@ -183,7 +183,7 @@ class IprTests(TestCase):
 
         url = urlreverse("ietf.ipr.new.new", kwargs={ "type": "specific" })
 
-        # succesfull post
+        # successful post
         r = self.client.post(url, {
             "legal_name": "Test Legal",
             "hold_name": "Test Holder",
@@ -216,7 +216,7 @@ class IprTests(TestCase):
 
         url = urlreverse("ietf.ipr.new.new", kwargs={ "type": "third-party" })
 
-        # succesfull post
+        # successful post
         r = self.client.post(url, {
             "legal_name": "Test Legal",
             "hold_name": "Test Holder",
@@ -250,7 +250,7 @@ class IprTests(TestCase):
 
         url = urlreverse("ietf.ipr.new.update", kwargs={ "ipr_id": original_ipr.pk })
 
-        # succesfull post
+        # successful post
         r = self.client.post(url, {
             "legal_name": "Test Legal",
             "hold_name": "Test Holder",
