@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import re
+import re, datetime
 
 from django.shortcuts import render_to_response as render, get_object_or_404
 from django.template import RequestContext
@@ -10,6 +10,7 @@ from django import forms
 
 from ietf.utils import log
 from ietf.utils.mail import send_mail
+from ietf.doc.models import Document, DocAlias
 from ietf.ipr.models import IprDetail, IprDocAlias, IprContact, LICENSE_CHOICES, IprUpdate
 from ietf.ipr.view_sections import section_table
 
@@ -61,8 +62,6 @@ def new(request, type, update=None, submitter=None):
     one form containing fields from 4 tables -- don't build something like this again...
 
     """
-    debug = ""
-
     section_list = section_table[type].copy()
     section_list.update({"title":False, "new_intro":False, "form_intro":True,
         "form_submit":True, "form_legend": True, })
@@ -131,7 +130,7 @@ def new(request, type, update=None, submitter=None):
                 for rfc in rfclist:
                     try:
                         DocAlias.objects.get(name="rfc%s" % int(rfc))
-                    except:
+                    except (DocAlias.DoesNotExist, DocAlias.MultipleObjectsReturned, ValueError):
                         raise forms.ValidationError("Unknown RFC number: %s - please correct this." % rfc)
                 rfclist = " ".join(rfclist)
             return rfclist
@@ -145,19 +144,19 @@ def new(request, type, update=None, submitter=None):
                     if draft.endswith(".txt"):
                         draft = draft[:-4]
                     if re.search("-[0-9][0-9]$", draft):
-                        filename = draft[:-3]
+                        name = draft[:-3]
                         rev = draft[-2:]
                     else:
-                        filename = draft
+                        name = draft
                         rev = None
                     try:
-                        doc = Document.objects.get(docalias__name=filename)
-                    except Exception as e:
+                        doc = Document.objects.get(docalias__name=name)
+                    except (Document.DoesNotExist, Document.MultipleObjectsReturned) as e:
                         log("Exception: %s" % e)
-                        raise forms.ValidationError("Unknown Internet-Draft: %s - please correct this." % filename)
+                        raise forms.ValidationError("Unknown Internet-Draft: %s - please correct this." % name)
                     if rev and doc.rev != rev:
-                        raise forms.ValidationError("Unexpected revision '%s' for draft %s - the current revision is %s.  Please check this." % (rev, filename, id.revision))
-                    drafts.append("%s-%s" % (filename, doc.rev))
+                        raise forms.ValidationError("Unexpected revision '%s' for draft %s - the current revision is %s.  Please check this." % (rev, name, doc.rev))
+                    drafts.append("%s-%s" % (name, doc.rev))
                 return " ".join(drafts)
             return ""
         def clean_licensing_option(self):
@@ -178,11 +177,8 @@ def new(request, type, update=None, submitter=None):
     # POST of the "get updater" form, so we don't want to validate
     # this one.  When we're posting *this* form, submitter is None,
     # even when updating.
-    if (request.method == 'POST' or '_testpost' in request.REQUEST) and not submitter:
-        if request.method == 'POST':
-            data = request.POST.copy()
-        else:
-            data = request.GET.copy()
+    if request.method == 'POST' and not submitter:
+        data = request.POST.copy()
         data["submitted_date"] = datetime.datetime.now().strftime("%Y-%m-%d")
         data["third_party"] = section_list["third_party"]
         data["generic"] = section_list["generic"]
@@ -205,13 +201,13 @@ def new(request, type, update=None, submitter=None):
             # Save IprDetail
             instance = form.save(commit=False)
 
-	    legal_name_genitive = data['legal_name'] + "'" if data['legal_name'].endswith('s') else data['legal_name'] + "'s"
+            legal_name_genitive = data['legal_name'] + "'" if data['legal_name'].endswith('s') else data['legal_name'] + "'s"
             if type == "generic":
                 instance.title = legal_name_genitive + " General License Statement" 
-            if type == "specific":
+            elif type == "specific":
                 data["ipr_summary"] = get_ipr_summary(form.cleaned_data)
                 instance.title = legal_name_genitive + """ Statement about IPR related to %(ipr_summary)s""" % data
-            if type == "third-party":
+            elif type == "third-party":
                 data["ipr_summary"] = get_ipr_summary(form.cleaned_data)
 		ietf_name_genitive = data['ietf_name'] + "'" if data['ietf_name'].endswith('s') else data['ietf_name'] + "'s"
                 instance.title = ietf_name_genitive + """ Statement about IPR related to %(ipr_summary)s belonging to %(legal_name)s""" % data
@@ -294,7 +290,7 @@ def new(request, type, update=None, submitter=None):
         form.unbound_form = True
 
     # log(dir(form.ietf_contact_is_submitter))
-    return render("ipr/details_edit.html", {"ipr": form, "section_list":section_list, "debug": debug}, context_instance=RequestContext(request))
+    return render("ipr/details_edit.html", {"ipr": form, "section_list":section_list}, context_instance=RequestContext(request))
 
 def update(request, ipr_id=None):
     """Update a specific IPR disclosure"""
@@ -320,9 +316,7 @@ def update(request, ipr_id=None):
                 
 	if request.method == 'POST':
 	    form = UpdateForm(request.POST)
-        elif '_testpost' in request.REQUEST:
-            form = UpdateForm(request.GET)
-	else:
+        else:
 	    form = UpdateForm()
 
 	if not(form.is_valid()):

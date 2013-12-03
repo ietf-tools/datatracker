@@ -12,16 +12,8 @@ class IprDetailAdmin(admin.ModelAdmin):
     search_fields = ['title', 'legal_name']
 
     def docs(self, ipr):
-        res = []
-        for iprdocalias in IprDocAlias.objects.filter(ipr=ipr).order_by("id").select_related("doc_alias"):
-            if iprdocalias.doc_alias.name.startswith("rfc"):
-                n = iprdocalias.doc_alias.name.upper()
-            elif iprdocalias.rev:
-                n = iprdocalias.doc_alias.name + iprdocalias.rev
-            else:
-                n = iprdocalias.doc_alias.name
-            res.append(n)
-        return u", ".join(res)
+        return u", ".join(a.formatted_name() for a in IprDocAlias.objects.filter(ipr=ipr).order_by("id").select_related("doc_alias"))
+
 admin.site.register(IprDetail, IprDetailAdmin)
 
 class IprNotificationAdmin(admin.ModelAdmin):
@@ -32,4 +24,6 @@ class IprUpdateAdmin(admin.ModelAdmin):
     pass
 admin.site.register(IprUpdate, IprUpdateAdmin)
 
-admin.site.register(IprDocAlias)
+class IprDocAliasAdmin(admin.ModelAdmin):
+    raw_id_fields = ["ipr", "doc_alias"]
+admin.site.register(IprDocAlias, IprDocAliasAdmin)

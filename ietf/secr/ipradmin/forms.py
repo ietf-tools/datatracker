@@ -148,11 +148,11 @@ class IprDetailForm(BetterModelForm):
                 self.fields['updated'].initial = updates[0].updated.ipr_id
 
             rfcs = {}
-            for rfc in self.instance.documents.filter(doc_alias__name__startswith='rfc'):
+            for rfc in self.instance.docs().filter(doc_alias__name__startswith='rfc'):
                 rfcs[rfc.doc_alias.id] = get_rfc_num(rfc.doc_alias.document)+" "+rfc.doc_alias.document.title
                 
             drafts = {}
-            for draft in self.instance.documents.exclude(doc_alias__name__startswith='rfc'):
+            for draft in self.instance.docs().exclude(doc_alias__name__startswith='rfc'):
                 drafts[draft.doc_alias.id] = draft.doc_alias.document.name
             self.initial['rfc_num'] = simplejson.dumps(rfcs)
             self.initial['id_filename'] = simplejson.dumps(drafts)

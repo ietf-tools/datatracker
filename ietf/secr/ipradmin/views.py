@@ -145,7 +145,7 @@ def admin_notify(request, ipr_id):
     submitter_text = get_submitter_text(ipr_id, updated_ipr_id, from_page)
 
     document_relatives = ''
-    for iprdocalias in ipr_dtl.documents.all():
+    for iprdocalias in ipr_dtl.docs():
         document_relatives += get_document_relatives(ipr_dtl, iprdocalias.doc_alias)
 
     return dict(
@@ -520,8 +520,8 @@ def admin_detail(request, ipr_id):
         # conversion
         #rfcs = ipr_dtl.rfcs.all()
         #drafts = ipr_dtl.drafts.all()
-        rfcs = ipr_dtl.documents.filter(doc_alias__name__startswith='rfc')
-        drafts = ipr_dtl.documents.exclude(doc_alias__name__startswith='rfc')
+        rfcs = ipr_dtl.docs().filter(doc_alias__name__startswith='rfc')
+        drafts = ipr_dtl.docs().exclude(doc_alias__name__startswith='rfc')
         titles_data, rfcs_data, drafts_data, designations_data = (), (), (), ()
         rfc_titles, draft_titles = [], []
         if rfcs:

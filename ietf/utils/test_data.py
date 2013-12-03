@@ -387,10 +387,15 @@ def make_test_data():
         lic_opt_a_sub=2,
         lic_opt_b_sub=2,
         lic_opt_c_sub=2,
+        patents="PTO12345",
+        date_applied="foo",
+        country="Whole World",
         comments="",
         lic_checkbox=True,
         other_notes="",
         status=1,
+        generic=0,
+        third_party=0,
         submitted_date=datetime.date.today(),
         )
 

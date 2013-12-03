@@ -85,12 +85,12 @@ def search(request):
             # IPR list with documents
             elif search_type == "patent_search":
                 iprs = IprDetail.objects.filter(legal_name__icontains=q, status__in=[1,3]).order_by("-submitted_date", "-ipr_id")
-                count = iprs.count()
+                count = len(iprs)
                 iprs = [ ipr for ipr in iprs if not ipr.updated_by.all() ]
                 return render("ipr/search_holder_result.html", {"q": q, "iprs": iprs, "count": count },
                                   context_instance=RequestContext(request) )
 
-            # Search by content of email or pagent_info field
+            # Search by patents field or content of emails for patent numbers
             # IPR list with documents
             elif search_type == "patent_info_search":
                 if len(q) < 3:

@@ -90,9 +90,11 @@ class IprDetail(models.Model):
 
     def __unicode__(self):
         return self.title
+
     @models.permalink
     def get_absolute_url(self):
         return ('ietf.ipr.views.show', [str(self.ipr_id)])
+
     def get_submitter(self):
 	try:
 	    return self.contact.get(contact_type=3)
@@ -100,6 +102,9 @@ class IprDetail(models.Model):
 	    return None
         except IprContact.MultipleObjectsReturned:
             return self.contact.filter(contact_type=3)[0]
+
+    def docs(self):
+        return self.iprdocalias_set.select_related("doc_alias", "doc_alias__document").order_by("id")
 
 class IprContact(models.Model):
     TYPE_CHOICES = (
@@ -138,9 +143,19 @@ class IprUpdate(models.Model):
 
 
 class IprDocAlias(models.Model):
-    ipr = models.ForeignKey(IprDetail, related_name='documents')
+    ipr = models.ForeignKey(IprDetail)
     doc_alias = models.ForeignKey(DocAlias)
     rev = models.CharField(max_length=2, blank=True)
+
+    def formatted_name(self):
+        name = self.doc_alias.name
+        if name.startswith("rfc"):
+            return name.upper()
+        elif self.rev:
+            return "%s-%s" % (name, self.rev)
+        else:
+            return name
+
     def __unicode__(self):
         if self.rev:
             return u"%s which applies to %s-%s" % (self.ipr, self.doc_alias.name, self.rev)

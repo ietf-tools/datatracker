@@ -4,7 +4,6 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
-from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from django import forms
 from django.forms.util import ErrorList
@@ -319,7 +318,7 @@ def edit_ad(request, name):
                 charter.time = e.time
                 charter.save()
 
-            return HttpResponseRedirect(reverse('doc_view', kwargs={'name': charter.name}))
+            return redirect('doc_view', name=charter.name)
     else:
         init = { "ad" : charter.ad_id }
         form = AdForm(initial=init)
