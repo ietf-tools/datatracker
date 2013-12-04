@@ -12,7 +12,7 @@ from django.utils import simplejson
 from django.utils.html import strip_tags
 from django.template import RequestContext
 
-import email.utils
+from email.utils import parseaddr
 import re
 import datetime
 import types
@@ -72,11 +72,11 @@ def parse_email_list(value):
         addrs = re.split(", ?", value)
         ret = []
         for addr in addrs:
-            (name, email) = email.utils.parseaddr(addr)
+            (name, email) = parseaddr(addr)
             if not(name):
                 name = email
             ret.append('<a href="mailto:%s">%s</a>' % ( fix_ampersands(email), escape(name) ))
-        return ", ".join(ret)
+        return mark_safe(", ".join(ret))
     else:
         return value
 
@@ -87,7 +87,7 @@ def strip_email(value):
         return ""
     if "@" not in value:
         return value
-    return email.utils.parseaddr(value)[0]
+    return parseaddr(value)[0]
 
 @register.filter(name='fix_angle_quotes')
 def fix_angle_quotes(value):
