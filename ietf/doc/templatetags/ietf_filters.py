@@ -10,14 +10,12 @@ from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 from django.utils import simplejson
 from django.utils.html import strip_tags
-try:
-    from email import utils as emailutils
-except ImportError:
-    from email import Utils as emailutils
+from django.template import RequestContext
+
+import email.utils
 import re
 import datetime
 import types
-from django.template import RequestContext
 
 register = template.Library()
 
@@ -74,14 +72,23 @@ def parse_email_list(value):
         addrs = re.split(", ?", value)
         ret = []
         for addr in addrs:
-            (name, email) = emailutils.parseaddr(addr)
+            (name, email) = email.utils.parseaddr(addr)
             if not(name):
                 name = email
             ret.append('<a href="mailto:%s">%s</a>' % ( fix_ampersands(email), escape(name) ))
         return ", ".join(ret)
     else:
         return value
-    
+
+@register.filter
+def strip_email(value):
+    """Get rid of email part of name/email string like 'Some Name <email@example.com>'."""
+    if not value:
+        return ""
+    if "@" not in value:
+        return value
+    return email.utils.parseaddr(value)[0]
+
 @register.filter(name='fix_angle_quotes')
 def fix_angle_quotes(value):
     if "<" in value:
@@ -93,7 +100,7 @@ def fix_angle_quotes(value):
 @register.filter(name='make_one_per_line')
 def make_one_per_line(value):
     """
-    Turn a comma-separated list into a carraige-return-seperated list.
+    Turn a comma-separated list into a carriage-return-seperated list.
 
     >>> make_one_per_line("a, b, c")
     'a\\nb\\nc'
