@@ -11,7 +11,7 @@ from django.utils.html import mark_safe, escape
 from django.utils.functional import lazy
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.ietfauth.decorators import role_required, has_role
+from ietf.ietfauth.utils import role_required, has_role
 from ietf.doc.models import Document, DocEvent
 from ietf.doc.utils import get_chartering_type
 from ietf.group.models import *

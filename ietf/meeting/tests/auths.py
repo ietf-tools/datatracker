@@ -3,7 +3,7 @@ from django.test              import Client
 from ietf.utils import TestCase
 #from ietf.person.models import Person
 from django.contrib.auth.models import User
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 
 # from http://djangosnippets.org/snippets/850/
 

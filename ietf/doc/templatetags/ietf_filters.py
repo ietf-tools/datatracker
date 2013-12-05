@@ -423,7 +423,7 @@ def startswith(x, y):
 
 @register.filter
 def has_role(user, role_names):
-    from ietf.ietfauth.decorators import has_role
+    from ietf.ietfauth.utils import has_role
     if not user:
         return False
     return has_role(user, role_names.split(','))

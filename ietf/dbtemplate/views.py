@@ -5,7 +5,7 @@ from django.template import RequestContext
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.group.models import Group
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 
 
 def template_list(request, acronym):

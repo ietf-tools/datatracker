@@ -9,7 +9,7 @@ from django import forms
 from django.db.models import Q
 from django.contrib.auth.models import User
 
-from ietf.ietfauth.decorators import role_required, has_role
+from ietf.ietfauth.utils import role_required, has_role
 from ietf.doc.models import *
 from ietf.sync import iana, rfceditor
 from ietf.sync.discrepancies import find_discrepancies

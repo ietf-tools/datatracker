@@ -6,7 +6,7 @@ from ietf.secr.utils.mail import MultiEmailField
 from ietf.secr.utils.group import current_nomcom
 
 from ietf.message.models import Message
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 
 # ---------------------------------------------
 # Globals

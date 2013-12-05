@@ -12,7 +12,7 @@ from ietf.doc.utils import log_state_changed, update_telechat
 
 from ietf.doc.models import save_document_in_history
 from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_document_content
-from ietf.ietfauth.decorators import has_role, role_required
+from ietf.ietfauth.utils import has_role, role_required
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail_preformatted
 from ietf.doc.mails import email_iana

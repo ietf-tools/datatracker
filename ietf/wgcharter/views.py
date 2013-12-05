@@ -16,7 +16,7 @@ from django.contrib import messages
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.history import find_history_active_at
-from ietf.ietfauth.decorators import has_role, role_required
+from ietf.ietfauth.utils import has_role, role_required
 from ietf.iesg.models import TelechatDate
 from ietf.doc.models import *
 from ietf.doc.utils import *

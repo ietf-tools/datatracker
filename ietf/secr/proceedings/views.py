@@ -26,7 +26,7 @@ from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocE
 from ietf.group.models import Group
 from ietf.group.proxy import IETFWG
 from ietf.group.utils import get_charter_text
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession
 from ietf.name.models import MeetingTypeName, SessionStatusName
 from ietf.person.models import Person

@@ -14,7 +14,7 @@ from django.utils.cache import get_cache_key
 import debug
 
 from django.shortcuts import get_object_or_404
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 from ietf.utils.history import find_history_active_at
 from ietf.doc.models import Document, State
 

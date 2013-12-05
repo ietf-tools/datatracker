@@ -16,7 +16,7 @@ from django.conf import settings
 import debug
 
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.ietfauth.decorators import has_role, role_required
+from ietf.ietfauth.utils import has_role, role_required
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import IprDetail
 from ietf.ipr.search import iprs_from_docs

@@ -1,18 +1,14 @@
-
 from django.utils import simplejson as json
-from dajaxice.decorators import dajaxice_register
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404
-
-from ietf.ietfauth.decorators import group_required, has_role
-from ietf.name.models import TimeSlotTypeName
 from django.http import HttpResponseRedirect, HttpResponse, QueryDict
+
+from dajaxice.decorators import dajaxice_register
+from ietf.ietfauth.utils import role_required, has_role
+from ietf.name.models import TimeSlotTypeName
 
 from ietf.meeting.helpers import get_meeting, get_schedule, get_schedule_by_id, agenda_permissions
 from ietf.meeting.views   import edit_timeslots, edit_agenda
-
-
-# New models
 from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint
 
 import debug
@@ -50,7 +46,7 @@ def readonly(request, meeting_num, schedule_id):
          'owner_href':  request.build_absolute_uri(schedule.owner.json_url()),
          'read_only':   read_only})
 
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 @dajaxice_register
 def update_timeslot_pinned(request, schedule_id, scheduledsession_id, pinned=False):
     schedule = get_object_or_404(Schedule, pk = int(schedule_id))
@@ -73,7 +69,7 @@ def update_timeslot_pinned(request, schedule_id, scheduledsession_id, pinned=Fal
 
 
 
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 @dajaxice_register
 def update_timeslot(request, schedule_id, session_id, scheduledsession_id=None, extended_from_id=None, duplicate=False):
     schedule = get_object_or_404(Schedule, pk = int(schedule_id))
@@ -132,7 +128,7 @@ def update_timeslot(request, schedule_id, session_id, scheduledsession_id=None, 
 
     return json.dumps({'message':'valid'})
 
-@group_required('Secretariat')
+@role_required('Secretariat')
 @dajaxice_register
 def update_timeslot_purpose(request, timeslot_id=None, purpose=None):
     ts_id = int(timeslot_id)
@@ -167,10 +163,8 @@ def timeslot_roomlist(request, mtg):
     return HttpResponse(json.dumps(json_array),
                         mimetype="application/json")
 
-@group_required('Secretariat')
+@role_required('Secretariat')
 def timeslot_addroom(request, meeting):
-    # authorization was enforced by the @group_require decorator above.
-
     newroomform = AddRoomForm(request.POST)
     if not newroomform.is_valid():
         return HttpResponse(status=404)
@@ -188,9 +182,8 @@ def timeslot_addroom(request, meeting):
         return HttpResponseRedirect(
             reverse(edit_timeslots, args=[meeting.number]))
 
-@group_required('Secretariat')
+@role_required('Secretariat')
 def timeslot_delroom(request, meeting, roomid):
-    # authorization was enforced by the @group_require decorator above.
     room = get_object_or_404(meeting.room_set, pk=roomid)
 
     room.delete_timeslots()
@@ -235,10 +228,8 @@ def timeslot_slotlist(request, mtg):
     return HttpResponse(json.dumps(json_array),
                         mimetype="application/json")
 
-@group_required('Secretariat')
+@role_required('Secretariat')
 def timeslot_addslot(request, meeting):
-
-    # authorization was enforced by the @group_require decorator above.
     addslotform = AddSlotForm(request.POST)
     #debug.log("newslot: %u" % ( addslotform.is_valid() ))
     if not addslotform.is_valid():
@@ -261,9 +252,8 @@ def timeslot_addslot(request, meeting):
         return HttpResponseRedirect(
             reverse(edit_timeslots, args=[meeting.number]))
 
-@group_required('Secretariat')
+@role_required('Secretariat')
 def timeslot_delslot(request, meeting, slotid):
-    # authorization was enforced by the @group_require decorator above.
     slot = get_object_or_404(meeting.timeslot_set, pk=slotid)
 
     # this will delete self as well.
@@ -301,7 +291,7 @@ def timeslot_sloturl(request, num=None, slotid=None):
 AgendaEntryForm = modelform_factory(Schedule, exclude=('meeting','owner'))
 EditAgendaEntryForm = modelform_factory(Schedule, exclude=('meeting','owner', 'name'))
 
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 def agenda_list(request, mtg):
     agendas = mtg.schedule_set.all()
     json_array=[]
@@ -311,10 +301,8 @@ def agenda_list(request, mtg):
                         mimetype="application/json")
 
 # duplicates save-as functionality below.
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 def agenda_add(request, meeting):
-    # authorization was enforced by the @group_require decorator above.
-
     newagendaform = AgendaEntryForm(request.POST)
     if not newagendaform.is_valid():
         return HttpResponse(status=404)
@@ -332,10 +320,8 @@ def agenda_add(request, meeting):
         return HttpResponseRedirect(
             reverse(edit_agenda, args=[meeting.number, newagenda.name]))
 
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 def agenda_update(request, meeting, schedule):
-    # authorization was enforced by the @group_require decorator above.
-
     # forms are completely useless for update actions that want to
     # accept a subset of values.
     update_dict = QueryDict(request.raw_post_data, encoding=request._encoding)
@@ -380,7 +366,7 @@ def agenda_update(request, meeting, schedule):
         return HttpResponseRedirect(
             reverse(edit_agenda, args=[meeting.number, schedule.name]))
 
-@group_required('Secretariat')
+@role_required('Secretariat')
 def agenda_del(request, meeting, schedule):
     schedule.delete_scheduledsessions()
     #debug.log("deleting meeting: %s agenda: %s" % (meeting, meeting.agenda))
@@ -427,10 +413,8 @@ def meeting_get(request, meeting):
                                 sort_keys=True, indent=2),
                         mimetype="application/json")
 
-@group_required('Secretariat')
+@role_required('Secretariat')
 def meeting_update(request, meeting):
-    # authorization was enforced by the @group_require decorator above.
-
     # at present, only the official agenda can be updated from this interface.
     update_dict = QueryDict(request.raw_post_data, encoding=request._encoding)
 

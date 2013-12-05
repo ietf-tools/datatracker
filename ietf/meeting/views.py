@@ -1,17 +1,17 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-#import models
 import datetime
 import os
 import re
 import tarfile
+import debug
+import urllib
 
 from tempfile import mkstemp
 
 from django import forms
 from django.shortcuts import render_to_response, get_object_or_404
 from django.utils import simplejson as json
-from ietf.idtracker.models import IETFWG, IRTF, Area
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.core.urlresolvers import reverse
 from django.db.models import Q
@@ -19,16 +19,14 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.decorators import decorator_from_middleware
-from ietf.ietfauth.decorators import group_required, has_role
 from django.middleware.gzip import GZipMiddleware
 from django.db.models import Max
 from django.forms.models import modelform_factory
 
-import debug
-import urllib
-
 from ietf.utils.pipe import pipe
 from ietf.doc.models import Document, State
+from ietf.idtracker.models import IETFWG, IRTF, Area
+from ietf.ietfauth.utils import role_required, has_role
 
 # Old model -- needs to be removed
 from ietf.proceedings.models import Meeting as OldMeeting, WgMeetingSession, Proceeding, Switches
@@ -45,8 +43,6 @@ from ietf.meeting.helpers import get_scheduledsessions_from_schedule, get_all_sc
 from ietf.meeting.helpers import get_modified_from_scheduledsessions
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions
-
-import debug
 
 @decorator_from_middleware(GZipMiddleware)
 def materials(request, meeting_num=None):
@@ -100,7 +96,7 @@ def get_user_agent(request):
 class SaveAsForm(forms.Form):
     savename = forms.CharField(max_length=100)
 
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 def agenda_create(request, num=None, schedule_name=None):
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, schedule_name)
@@ -203,7 +199,7 @@ def edit_timeslots(request, num=None):
                                          RequestContext(request)), mimetype="text/html")
 
 ##############################################################################
-#@group_required('Area Director','Secretariat')
+#@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
 @decorator_from_middleware(GZipMiddleware)
 def edit_agenda(request, num=None, schedule_name=None):
@@ -293,7 +289,7 @@ def edit_agenda(request, num=None, schedule_name=None):
 #
 AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
 
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 @decorator_from_middleware(GZipMiddleware)
 def edit_agenda_properties(request, num=None, schedule_name=None):
 
@@ -311,7 +307,7 @@ def edit_agenda_properties(request, num=None, schedule_name=None):
 # show list of agendas.
 #
 
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 @decorator_from_middleware(GZipMiddleware)
 def edit_agendas(request, num=None, order=None):
 

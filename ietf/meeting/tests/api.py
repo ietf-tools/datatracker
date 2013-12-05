@@ -6,7 +6,7 @@ from ietf.utils import TestCase
 from ietf.person.models import Person
 from django.contrib.auth.models import User
 from ietf.meeting.models  import TimeSlot, Session, ScheduledSession, Meeting
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 from auths import auth_joeblow, auth_wlo, auth_ietfchair, auth_ferrel
 from django.utils import simplejson as json
 from ietf.meeting.helpers import get_meeting

@@ -34,6 +34,7 @@
 
 import datetime
 import hashlib
+import json
 
 from django.conf import settings
 from django.template import RequestContext
@@ -43,10 +44,12 @@ from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.utils.http import urlquote
-from django.utils import simplejson as json
 from django.utils.translation import ugettext as _
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
-from ietf.ietfauth.forms import RegistrationForm, PasswordForm, RecoverPasswordForm, TestEmailForm
+from ietf.person.models import Person, Email, Alias
+from ietf.group.models import Role
+from ietf.ietfauth.forms import RegistrationForm, PasswordForm, RecoverPasswordForm, TestEmailForm, PersonForm
 
 def index(request):
     return render_to_response('registration/index.html', context_instance=RequestContext(request))
@@ -62,8 +65,8 @@ def url_login(request, user, passwd):
 
 def ietf_login(request):
     if not request.user.is_authenticated():
-        # This probably means an exception occured inside IetfUserBackend
         return HttpResponse("Not authenticated?", status=500)
+
     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
     request.session.set_test_cookie()
     return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
@@ -79,10 +82,6 @@ def ietf_loggedin(request):
 
 @login_required
 def profile(request):
-    from ietf.person.models import Person, Email, Alias
-    from ietf.group.models import Role
-    from ietf.ietfauth.forms import PersonForm
-
     roles = []
     person = None
     try:
@@ -119,8 +118,6 @@ def profile(request):
                               context_instance=RequestContext(request))
 
 def confirm_new_email(request, username, date, email, hash):
-    from ietf.person.models import Person, Email, Alias
-    from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
     valid = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, date, email, username)).hexdigest() == hash
     if not valid:
         raise Http404
@@ -233,24 +230,15 @@ def ajax_check_username(request):
     return HttpResponse(json.dumps({'error': error}), mimetype='text/plain')
     
 def test_email(request):
+    """Set email address to which email generated in the system will be sent."""
     if settings.SERVER_MODE == "production":
-        raise Http404()
+        raise Http404
 
-    # note that the cookie set here is only used when running in
+    # Note that the cookie set here is only used when running in
     # "test" mode, normally you run the server in "development" mode,
-    # in which case email is sent out as usual; for development, put
-    # this
-    #
-    # EMAIL_HOST = 'localhost'
-    # EMAIL_PORT = 1025
-    # EMAIL_HOST_USER = None
-    # EMAIL_HOST_PASSWORD = None
-    # EMAIL_COPY_TO = ""
-    #
-    # in your settings.py and start a little debug email server in a
-    # console with the following (it receives and prints messages)
-    #
-    # python -m smtpd -n -c DebuggingServer localhost:1025
+    # in which case email is sent out as usual; for development, you
+    # can easily start a little email debug server with Python, see
+    # the instructions in utils/mail.py.
 
     cookie = None
 

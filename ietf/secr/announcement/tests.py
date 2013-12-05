@@ -4,7 +4,7 @@ from ietf.utils import TestCase
 from django.contrib.auth.models import User
 
 from ietf.group.models import Group
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 from ietf.person.models import Person
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data

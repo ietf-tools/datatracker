@@ -31,12 +31,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
-from django.conf import settings
+from urlparse import urlsplit
+
 from django.contrib.auth.models import User
 from django.test.client import Client
+
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
-from ietf.idtracker.models import Role
-from urlparse import urlsplit
 
 class IetfAuthUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
@@ -66,40 +66,3 @@ class IetfAuthTestCase(unittest.TestCase,RealDatabaseTest):
         self.assertEquals(response.status_code, 200)
         self.assert_("User name" in response.content)
         return response
-
-    def testLogin(self):
-        TEST_USERNAME = '__testuser'
-        print "     Testing login with "+TEST_USERNAME
-
-        # Delete test user (if it exists)
-        try:
-            testuser = User.objects.get(username=TEST_USERNAME)
-            testuser.delete()
-        except User.DoesNotExist:
-            pass
-
-        self._doLogin(TEST_USERNAME)
-        
-        # Delete test user after test
-        testuser = User.objects.get(username=TEST_USERNAME)
-        testuser.delete()
-        print "OK"
-
-    def testGroups(self):
-        print "     Testing group assignment"
-        username = Role.objects.get(id=Role.IETF_CHAIR).person.iesglogin_set.all()[0].login_name
-        print "     (with username "+str(username)+")"
-        
-        self._doLogin(username)
-        
-        user = User.objects.get(username=username)
-        groups = [x.name for x in user.groups.all()]
-        self.assert_("Area_Director" in groups)
-        self.assert_("IETF_Chair" in groups)
-
-        print "OK"
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    del IetfAuthTestCase.testLogin
-    # this test doesn't make any sense anymore
-    del IetfAuthTestCase.testGroups

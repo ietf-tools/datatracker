@@ -11,7 +11,7 @@ from django.utils.html import mark_safe
 
 import debug
 
-from ietf.ietfauth.decorators import role_required, has_role
+from ietf.ietfauth.utils import role_required, has_role
 
 from ietf.doc.models import *
 from ietf.name.models import *

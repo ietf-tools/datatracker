@@ -18,7 +18,7 @@ from django.contrib.auth.decorators import login_required
 from django.template.defaultfilters import pluralize
 
 from ietf.utils.mail import send_mail_text, send_mail_message
-from ietf.ietfauth.decorators import role_required
+from ietf.ietfauth.utils import role_required
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
 from ietf.iesg.models import TelechatDate
 from ietf.doc.mails import *
