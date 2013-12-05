@@ -446,7 +446,7 @@ class ExpireIDsTests(TestCase):
 
         Meeting.objects.create(number="123",
                                type=MeetingTypeName.objects.get(slug="ietf"),
-                               date=date.today())
+                               date=datetime.date.today())
         second_cut_off = Meeting.get_second_cut_off()
         ietf_monday = Meeting.get_ietf_monday()
 
