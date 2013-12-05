@@ -2,17 +2,8 @@
 
 from django.conf.urls.defaults import patterns, url
 from django.db.models import Q
-from ietf.liaisons.models import LiaisonDetail
 
-info_dict = {
-    'queryset': LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date"),
-}
-
-# there's an opportunity for date-based filtering.
-urlpatterns = patterns('django.views.generic.list_detail',
-)
-
-urlpatterns += patterns('django.views.generic.simple',
+urlpatterns = patterns('django.views.generic.simple',
      (r'^help/$', 'direct_to_template', {'template': 'liaisons/help.html'}),
      (r'^help/fields/$', 'direct_to_template', {'template': 'liaisons/field_help.html'}),
      (r'^help/from_ietf/$', 'direct_to_template', {'template': 'liaisons/guide_from_ietf.html'}),

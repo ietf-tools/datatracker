@@ -2,7 +2,7 @@
 # coding: latin-1
 
 from types import ModuleType
-import urls, models, views, forms, accounts, admin, utils, widgets, decorators, sitemaps, feeds
+import urls, models, views, forms, admin, utils, widgets, sitemaps, feeds
 
 # These people will be sent a stack trace if there's an uncaught exception in
 # code any of the modules imported above:

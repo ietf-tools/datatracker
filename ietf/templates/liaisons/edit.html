@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% load ietf_filters %}
+{% block title %}{% if liaison %}Edit liaison: {{ liaison }}{% else %}Send Liaison Statement{% endif %}{% endblock %}
+
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/liaisons.css"></link>
+<link rel="stylesheet" type="text/css" href="/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css"></link>
+{% endblock %}
+
+{% block content %}
+<h1>{% if liaison %}Edit liaison: {{ liaison }}{% else %}Send Liaison Statement{% endif %}</h1>
+
+<noscript class="js-info">
+This page depends on Javascript being enabled to work properly. Please enable Javascript and reload the page.
+</noscript>
+
+{% if not liaison %}
+<ul>
+  <li>If you wish to submit your liaison statement by e-mail, then please send it to <a href="mailto:statements@ietf.org">statements@ietf.org</a></li>
+  <li>Fields marked with <span class="fieldRequired">*</span> are required. For detailed descriptions of the fields see <a href="/liaison/help/fields/">Field help</a></li>
+</ul>
+{% endif %}
+
+{{ form }}
+
+{% endblock %}
+
+{% block js %}
+  <script type="text/javascript" src="/js/jquery-ui-1.9.0.custom/minified/jquery-ui.custom.min.js"></script>
+  <script type="text/javascript" src="/js/liaisons.js"></script>
+{% endblock %}

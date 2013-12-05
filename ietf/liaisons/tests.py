@@ -11,6 +11,11 @@ from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 from ietf.utils import TestCase
 
+from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
+from ietf.person.models import Person, Email
+from ietf.group.models import Group, Role
+from ietf.liaisons.mails import send_sdo_reminder, possibly_send_deadline_reminder
+
 class LiaisonsUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
         self.doTestUrls(__file__)
@@ -22,11 +27,6 @@ class LiaisonsUrlTestCase(SimpleUrlTestCase):
         else:
             return content
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
-    from ietf.person.models import Person, Email
-    from ietf.group.models import Group, Role
-        
 def make_liaison_models():
     sdo = Group.objects.create(
         name="United League of Marsmen",
@@ -89,7 +89,58 @@ def make_liaison_models():
         action_taken=False,
         )
     return l
-    
+
+class LiaisonTests(TestCase):
+    def test_overview(self):
+        make_test_data()
+        liaison = make_liaison_models()
+
+        r = self.client.get(urlreverse('liaison_list'))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(liaison.title in r.content)
+
+    def test_details(self):
+        make_test_data()
+        liaison = make_liaison_models()
+
+        r = self.client.get(urlreverse("liaison_detail", kwargs={ 'object_id': liaison.pk }))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(liaison.title in r.content)
+
+    def test_feeds(self):
+        make_test_data()
+        liaison = make_liaison_models()
+
+        r = self.client.get('/feed/liaison/recent/')
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(liaison.title in r.content)
+
+        r = self.client.get('/feed/liaison/from/%s/' % liaison.from_group.acronym)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(liaison.title in r.content)
+
+        r = self.client.get('/feed/liaison/to/%s/' % liaison.to_name)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(liaison.title in r.content)
+
+        r = self.client.get('/feed/liaison/subject/marsmen/')
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(liaison.title in r.content)
+
+    def test_sitemap(self):
+        make_test_data()
+        liaison = make_liaison_models()
+
+        r = self.client.get('/sitemap-liaison.xml')
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(urlreverse("liaison_detail", kwargs={ 'object_id': liaison.pk }) in r.content)
+
+    def test_help_pages(self):
+        self.assertEqual(self.client.get('/liaison/help/').status_code, 200)
+        self.assertEqual(self.client.get('/liaison/help/fields/').status_code, 200)
+        self.assertEqual(self.client.get('/liaison/help/from_ietf/').status_code, 200)
+        self.assertEqual(self.client.get('/liaison/help/to_ietf/').status_code, 200)
+
 
 class LiaisonManagementTests(TestCase):
     def setUp(self):
@@ -114,52 +165,63 @@ class LiaisonManagementTests(TestCase):
         url = urlreverse('liaison_detail', kwargs=dict(object_id=liaison.pk))
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=do_action_taken]')), 0)
+        self.assertEqual(len(q('form input[name=do_action_taken]')), 0)
         
         # log in and get
         self.client.login(remote_user="secretary")
 
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=do_action_taken]')), 1)
+        self.assertEqual(len(q('form input[name=do_action_taken]')), 1)
         
         # mark action taken
         r = self.client.post(url, dict(do_action_taken="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=do_action_taken]')), 0)
+        self.assertEqual(len(q('form input[name=do_action_taken]')), 0)
         liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertTrue(liaison.action_taken)
 
-    def test_approval(self):
+    def test_approval_process(self):
         make_test_data()
         liaison = make_liaison_models()
         # has to come from WG to need approval
         liaison.from_group = Group.objects.get(acronym="mars")
         liaison.approved = None
         liaison.save()
-        
-        url = urlreverse('liaison_approval_detail', kwargs=dict(object_id=liaison.pk))
+
+        # check the overview page
+        url = urlreverse('liaison_approval_list')
         # this liaison is for a WG so we need the AD for the area
+        login_testing_unauthorized(self, "ad", url)
+        
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(liaison.title in r.content)
+
+        # check detail page
+        url = urlreverse('liaison_approval_detail', kwargs=dict(object_id=liaison.pk))
+        self.client.logout()
         login_testing_unauthorized(self, "ad", url)
         
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(liaison.title in r.content)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=do_approval]')), 1)
+        self.assertEqual(len(q('form input[name=do_approval]')), 1)
         
         # approve
         mailbox_before = len(outbox)
         r = self.client.post(url, dict(do_approval="1"))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         
         liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertTrue(liaison.approved)
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
 
     def test_edit_liaison(self):
@@ -171,9 +233,9 @@ class LiaisonManagementTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=from_field]')), 1)
+        self.assertEqual(len(q('form input[name=from_field]')), 1)
 
         # edit
         attachments_before = liaison.attachments.count()
@@ -195,30 +257,30 @@ class LiaisonManagementTests(TestCase):
                                   attach_file_1=test_file,
                                   attach_title_1="attachment",
                                   ))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         
         new_liaison = LiaisonStatement.objects.get(id=liaison.id)
-        self.assertEquals(new_liaison.from_name, "from")
-        self.assertEquals(new_liaison.reply_to, "replyto@example.com")
-        self.assertEquals(new_liaison.to_name, "org")
-        self.assertEquals(new_liaison.to_contact, "to_poc@example.com")
-        self.assertEquals(new_liaison.response_contact, "responce_contact@example.com")
-        self.assertEquals(new_liaison.technical_contact, "technical_contact@example.com")
-        self.assertEquals(new_liaison.cc, "cc@example.com")
-        self.assertEquals(new_liaison.purpose, LiaisonStatementPurposeName.objects.get(order=4))
-        self.assertEquals(new_liaison.deadline, liaison.deadline + datetime.timedelta(days=1)),
-        self.assertEquals(new_liaison.title, "title")
-        self.assertEquals(new_liaison.submitted.date(), (liaison.submitted + datetime.timedelta(days=1)).date())
-        self.assertEquals(new_liaison.body, "body")
+        self.assertEqual(new_liaison.from_name, "from")
+        self.assertEqual(new_liaison.reply_to, "replyto@example.com")
+        self.assertEqual(new_liaison.to_name, "org")
+        self.assertEqual(new_liaison.to_contact, "to_poc@example.com")
+        self.assertEqual(new_liaison.response_contact, "responce_contact@example.com")
+        self.assertEqual(new_liaison.technical_contact, "technical_contact@example.com")
+        self.assertEqual(new_liaison.cc, "cc@example.com")
+        self.assertEqual(new_liaison.purpose, LiaisonStatementPurposeName.objects.get(order=4))
+        self.assertEqual(new_liaison.deadline, liaison.deadline + datetime.timedelta(days=1)),
+        self.assertEqual(new_liaison.title, "title")
+        self.assertEqual(new_liaison.submitted.date(), (liaison.submitted + datetime.timedelta(days=1)).date())
+        self.assertEqual(new_liaison.body, "body")
         
-        self.assertEquals(new_liaison.attachments.count(), attachments_before + 1)
+        self.assertEqual(new_liaison.attachments.count(), attachments_before + 1)
         attachment = new_liaison.attachments.order_by("-name")[0]
-        self.assertEquals(attachment.title, "attachment")
+        self.assertEqual(attachment.title, "attachment")
         with open(os.path.join(self.liaison_dir, attachment.external_url)) as f:
             written_content = f.read()
 
         test_file.seek(0)
-        self.assertEquals(written_content, test_file.read())
+        self.assertEqual(written_content, test_file.read())
         
     def test_add_incoming_liaison(self):
         make_test_data()
@@ -229,9 +291,9 @@ class LiaisonManagementTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form textarea[name=body]')), 1)
+        self.assertEqual(len(q('form textarea[name=body]')), 1)
 
         # add new
         mailbox_before = len(outbox)
@@ -260,34 +322,34 @@ class LiaisonManagementTests(TestCase):
                                   attach_title_1="attachment",
                                   send="1",
                                   ))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         
         l = LiaisonStatement.objects.all().order_by("-id")[0]
-        self.assertEquals(l.from_group, from_group)
-        self.assertEquals(l.from_contact.address, submitter.email_address())
-        self.assertEquals(l.reply_to, "replyto@example.com")
-        self.assertEquals(l.to_group, to_group)
-        self.assertEquals(l.response_contact, "responce_contact@example.com")
-        self.assertEquals(l.technical_contact, "technical_contact@example.com")
-        self.assertEquals(l.cc, "cc@example.com")
-        self.assertEquals(l.purpose, LiaisonStatementPurposeName.objects.get(order=4))
-        self.assertEquals(l.deadline, today + datetime.timedelta(days=1)),
-        self.assertEquals(l.related_to, liaison),
-        self.assertEquals(l.title, "title")
-        self.assertEquals(l.submitted.date(), today)
-        self.assertEquals(l.body, "body")
+        self.assertEqual(l.from_group, from_group)
+        self.assertEqual(l.from_contact.address, submitter.email_address())
+        self.assertEqual(l.reply_to, "replyto@example.com")
+        self.assertEqual(l.to_group, to_group)
+        self.assertEqual(l.response_contact, "responce_contact@example.com")
+        self.assertEqual(l.technical_contact, "technical_contact@example.com")
+        self.assertEqual(l.cc, "cc@example.com")
+        self.assertEqual(l.purpose, LiaisonStatementPurposeName.objects.get(order=4))
+        self.assertEqual(l.deadline, today + datetime.timedelta(days=1)),
+        self.assertEqual(l.related_to, liaison),
+        self.assertEqual(l.title, "title")
+        self.assertEqual(l.submitted.date(), today)
+        self.assertEqual(l.body, "body")
         self.assertTrue(l.approved)
         
-        self.assertEquals(l.attachments.count(), 1)
+        self.assertEqual(l.attachments.count(), 1)
         attachment = l.attachments.all()[0]
-        self.assertEquals(attachment.title, "attachment")
+        self.assertEqual(attachment.title, "attachment")
         with open(os.path.join(self.liaison_dir, attachment.external_url)) as f:
             written_content = f.read()
 
         test_file.seek(0)
-        self.assertEquals(written_content, test_file.read())
+        self.assertEqual(written_content, test_file.read())
 
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
         
     def test_add_outgoing_liaison(self):
@@ -299,9 +361,9 @@ class LiaisonManagementTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form textarea[name=body]')), 1)
+        self.assertEqual(len(q('form textarea[name=body]')), 1)
 
         # add new
         mailbox_before = len(outbox)
@@ -333,35 +395,35 @@ class LiaisonManagementTests(TestCase):
                                   attach_title_1="attachment",
                                   send="1",
                                   ))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         
         l = LiaisonStatement.objects.all().order_by("-id")[0]
-        self.assertEquals(l.from_group, from_group)
-        self.assertEquals(l.from_contact.address, submitter.email_address())
-        self.assertEquals(l.reply_to, "replyto@example.com")
-        self.assertEquals(l.to_group, to_group)
-        self.assertEquals(l.to_contact, "to_poc@example.com")
-        self.assertEquals(l.response_contact, "responce_contact@example.com")
-        self.assertEquals(l.technical_contact, "technical_contact@example.com")
-        self.assertEquals(l.cc, "cc@example.com")
-        self.assertEquals(l.purpose, LiaisonStatementPurposeName.objects.get(order=4))
-        self.assertEquals(l.deadline, today + datetime.timedelta(days=1)),
-        self.assertEquals(l.related_to, liaison),
-        self.assertEquals(l.title, "title")
-        self.assertEquals(l.submitted.date(), today)
-        self.assertEquals(l.body, "body")
+        self.assertEqual(l.from_group, from_group)
+        self.assertEqual(l.from_contact.address, submitter.email_address())
+        self.assertEqual(l.reply_to, "replyto@example.com")
+        self.assertEqual(l.to_group, to_group)
+        self.assertEqual(l.to_contact, "to_poc@example.com")
+        self.assertEqual(l.response_contact, "responce_contact@example.com")
+        self.assertEqual(l.technical_contact, "technical_contact@example.com")
+        self.assertEqual(l.cc, "cc@example.com")
+        self.assertEqual(l.purpose, LiaisonStatementPurposeName.objects.get(order=4))
+        self.assertEqual(l.deadline, today + datetime.timedelta(days=1)),
+        self.assertEqual(l.related_to, liaison),
+        self.assertEqual(l.title, "title")
+        self.assertEqual(l.submitted.date(), today)
+        self.assertEqual(l.body, "body")
         self.assertTrue(not l.approved)
         
-        self.assertEquals(l.attachments.count(), 1)
+        self.assertEqual(l.attachments.count(), 1)
         attachment = l.attachments.all()[0]
-        self.assertEquals(attachment.title, "attachment")
+        self.assertEqual(attachment.title, "attachment")
         with open(os.path.join(self.liaison_dir, attachment.external_url)) as f:
             written_content = f.read()
 
         test_file.seek(0)
-        self.assertEquals(written_content, test_file.read())
+        self.assertEqual(written_content, test_file.read())
 
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
         
         # try adding statement to non-predefined organization
@@ -383,46 +445,34 @@ class LiaisonManagementTests(TestCase):
                                   submitted_date=today.strftime("%Y-%m-%d"),
                                   body="body",
                                   ))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         l = LiaisonStatement.objects.all().order_by("-id")[0]
-        self.assertEquals(l.to_group, None)
-        self.assertEquals(l.to_name, "Mars Institute")
+        self.assertEqual(l.to_group, None)
+        self.assertEqual(l.to_name, "Mars Institute")
 
     def test_send_sdo_reminder(self):
         make_test_data()
         liaison = make_liaison_models()
 
-        from ietf.liaisons.mails import send_sdo_reminder
-
         mailbox_before = len(outbox)
         send_sdo_reminder(Group.objects.filter(type="sdo")[0])
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("authorized individuals" in outbox[-1]["Subject"])
 
     def test_send_liaison_deadline_reminder(self):
         make_test_data()
         liaison = make_liaison_models()
 
-        from ietf.liaisons.mails import possibly_send_deadline_reminder
-        from ietf.liaisons.proxy import LiaisonDetailProxy as LiaisonDetail 
-
-        l = LiaisonDetail.objects.all()[0]
-        
         mailbox_before = len(outbox)
-        possibly_send_deadline_reminder(l)
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        possibly_send_deadline_reminder(liaison)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("deadline" in outbox[-1]["Subject"])
 
         # try pushing the deadline
-        l.deadline = l.deadline + datetime.timedelta(days=30)
-        l.save()
+        liaison.deadline = liaison.deadline + datetime.timedelta(days=30)
+        liaison.save()
         
         mailbox_before = len(outbox)
-        possibly_send_deadline_reminder(l)
-        self.assertEquals(len(outbox), mailbox_before)
-
-        
-if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    # the above tests only work with the new schema
-    del LiaisonManagementTestCase 
+        possibly_send_deadline_reminder(liaison)
+        self.assertEqual(len(outbox), mailbox_before)

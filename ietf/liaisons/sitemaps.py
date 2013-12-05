@@ -2,16 +2,17 @@
 #
 from django.contrib.sitemaps import Sitemap
 from django.conf import settings
-from ietf.liaisons.models import LiaisonDetail
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from ietf.liaisons.proxy import LiaisonDetailProxy as LiaisonDetail
+from ietf.liaisons.models import LiaisonStatement
 
 class LiaisonMap(Sitemap):
     changefreq = "never"
+
     def items(self):
-        return LiaisonDetail.objects.all()
+        return LiaisonStatement.objects.all()
+
     def location(self, obj):
-	return "/liaison/%d/" % obj.detail_id
+        return "/liaison/%s/" % obj.pk
+
     def lastmod(self, obj):
-	return obj.last_modified_date
+        return obj.modified
