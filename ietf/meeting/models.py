@@ -1056,7 +1056,7 @@ class Session(models.Model):
                 with open(path) as f:
                     return f.read()
             else:
-                "No agenda file found"
+                return "No agenda file found"
         else:
             return "The agenda has not been uploaded yet."
 

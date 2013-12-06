@@ -1,5 +1,5 @@
 import sys
-from django.test              import Client
+
 from ietf.meeting.tests.ttest import AgendaTransactionalTestCase
 from ietf.utils import TestCase
 from ietf.name.models     import SessionStatusName
@@ -26,30 +26,6 @@ class AgendaInfoTestCase(TestCase):
         s1 = m1.session_set.create(name = "newone", group = g1, requested_by = p1, status = st1)
         self.assertEqual(s1.__unicode__(), "IETF-83: pkix (unscheduled)[22090]")
 
-    def test_AgendaInfo(self):
-        from ietf.meeting.views import agenda_info
-        num = '83'
-        timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-        # I think that "timeslots" here, is unique times, not actually
-        # the timeslots array itself.
-        self.assertEqual(len(timeslots),26)
-        self.assertEqual(meeting.number,'83')
-        self.assertEqual(venue.meeting_num, "83")
-        # will change as more ADs are added to fixtures
-        self.assertEqual(len(ads), 8)
-
-    def test_AgendaInfoReturnsSortedTimeSlots(self):
-        from ietf.meeting.views import agenda_info
-        num = '83'
-        timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-        for slotnum in range(0,len(timeslots)-1):
-            # debug
-            #sys.stdout.write("%d: %s vs %d: %s\n" % (timeslots[slotnum].pk,
-            #                                         timeslots[slotnum].time,
-            #                                         timeslots[slotnum+1].pk,
-            #                                         timeslots[slotnum+1].time))
-            self.assertTrue(timeslots[slotnum].time < timeslots[slotnum+1].time)
-
     # this tests that a slot at 11:20 AM on Friday, has slot 10 minutes later
     # after it
     def test_TimeSlot2408_has_SlotToTheRight(self):
@@ -67,17 +43,6 @@ class AgendaInfoTestCase(TestCase):
     def test_TimeSlot2418_hasno_SlotToTheRight(self):
         ss2418 = ScheduledSession.objects.get(pk = 2418)
         self.assertFalse(ss2418.slot_to_the_right)
-
-    def test_AgendaInfoNotFound(self):
-        from django.http import Http404
-        from ietf.meeting.views import agenda_info
-        num = '83b'
-        try:
-            timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-            # fail!!!
-            self.assertFalse(True)
-        except Http404:
-            pass
 
     def test_DoNotGetSchedule(self):
         from django.http import Http404

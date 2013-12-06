@@ -57,10 +57,10 @@ function setup_slots(){
 {% endfor %}
 
 {% for ad in area_directors %}
-area_directors["{{ad.area}}"] = [];
+area_directors["{{ad.group.acronym}}"] = [];
 {% endfor %}
 {% for ad in area_directors %}
-area_directors["{{ad.area}}"].push(find_person_by_href("{{ad.defurl}}"));
+area_directors["{{ad.group.acronym}}"].push(find_person_by_href("{{ad.person.defurl}}"));
 {% endfor %}
 
 {% autoescape off %}
