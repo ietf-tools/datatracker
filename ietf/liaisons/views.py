@@ -195,7 +195,7 @@ def liaison_detail(request, object_id):
         liaison.save()
         can_take_care = False
 
-    relations = liaison.liaisonstatement_set.all()
+    relations = liaison.liaisonstatement_set.exclude(approved=None)
 
     return render_to_response("liaisons/detail.html", {
         "liaison": liaison,
