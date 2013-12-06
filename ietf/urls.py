@@ -7,7 +7,7 @@ from django.contrib import admin
 from ietf.iesg.feeds import IESGAgenda
 from ietf.doc.feeds import DocumentChanges, InLastCall
 from ietf.ipr.feeds import LatestIprDisclosures
-from ietf.proceedings.feeds import LatestWgProceedingsActivity
+from ietf.meeting.feeds import LatestMeetingMaterial
 from ietf.liaisons.feeds import Liaisons
 from ietf.wgcharter.feeds import GroupChanges
 
@@ -35,7 +35,7 @@ feeds = {
     'group-changes': GroupChanges,
     'ipr': LatestIprDisclosures,
     'liaison': Liaisons,
-    'wg-proceedings' : LatestWgProceedingsActivity
+    'wg-proceedings' : LatestMeetingMaterial,
 }
 
 sitemaps = {
