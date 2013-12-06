@@ -167,7 +167,6 @@ INSTALLED_APPS = (
     'ietf.doc',
     'ietf.message',
     'ietf.idindex',
-    'ietf.idtracker',
     'ietf.ietfauth',
     'ietf.iesg',
     'ietf.ipr',
