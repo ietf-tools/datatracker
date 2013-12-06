@@ -175,7 +175,6 @@ INSTALLED_APPS = (
     'ietf.mailinglists',
     'ietf.meeting',
     'ietf.utils',
-    #'ietf.proceedings',
     'ietf.redirects',
     'ietf.wginfo',
     'ietf.submit',
