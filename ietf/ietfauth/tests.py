@@ -30,39 +30,46 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import unittest
 from urlparse import urlsplit
 
 from django.contrib.auth.models import User
-from django.test.client import Client
+from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_data import make_test_data
 
-class IetfAuthUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
+class IetfAuthTests(TestCase):
+    def test_index(self):
+        self.assertEqual(self.client.get(urlreverse("ietf.ietfauth.views.index")).status_code, 200)
 
-# this test case should really work on a test database instead of the
-# real one
-class IetfAuthTestCase(unittest.TestCase,RealDatabaseTest):
-    def setUp(self):
-        self.setUpRealDatabase()
-    def tearDown(self):
-        self.tearDownRealDatabase()
+    def test_login(self):
+        make_test_data()
 
-    def _doLogin(self, username):
-        c = Client()
-        response = c.get('/accounts/login/', {}, False, REMOTE_USER=username)
-        self.assertEquals(response.status_code, 302)
-        nexturl = urlsplit(response['Location'])
-        self.assertEquals(nexturl[2], "/accounts/loggedin/")
+        # try logging in with a next
+        r = self.client.get('/accounts/login/?next=/foobar', REMOTE_USER="plain")
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], "/accounts/loggedin/")
 
-        response = c.get(nexturl[2], {}, False, REMOTE_USER=username)
-        self.assertEquals(response.status_code, 302)
-        nexturl = urlsplit(response['Location'])
-        self.assertEquals(nexturl[2], "/accounts/profile/")
+        r = self.client.get('/accounts/loggedin/?next=/foobar', REMOTE_USER="plain")
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], "/foobar")
 
-        response = c.get(nexturl[2], {}, False, REMOTE_USER=username)
-        self.assertEquals(response.status_code, 200)
-        self.assert_("User name" in response.content)
-        return response
+        # try again without a next
+        r = self.client.get('/accounts/login/', REMOTE_USER="plain")
+        r = self.client.get('/accounts/loggedin/', REMOTE_USER="plain")
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], "/accounts/profile/")
+
+    def test_profile(self):
+        url = urlreverse('ietf.ietfauth.views.profile')
+        login_testing_unauthorized(self, "plain", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("plain" in r.content)
+
+        # post
+        # ... fill in
+
+    # we're missing tests of the other views
