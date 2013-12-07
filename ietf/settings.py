@@ -18,7 +18,6 @@ LOG_DIR  = '/var/log/datatracker'
 
 import sys
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
-sys.path.append(os.path.abspath(BASE_DIR + "/../redesign"))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
