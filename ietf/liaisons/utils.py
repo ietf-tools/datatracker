@@ -4,11 +4,10 @@ from ietf.group.models import Group, Role
 from ietf.person.models import Person
 from ietf.liaisons.models import LiaisonStatement
 from ietf.ietfauth.utils import has_role, passes_test_decorator
-from ietf.utils.proxy import proxy_personify_role
 
 from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
                                     get_ietf_chair, get_iab_chair, get_iab_executive_director,
-                                    is_secretariat, can_add_liaison, get_person_for_user)
+                                    is_secretariat, can_add_liaison, get_person_for_user, proxy_personify_role)
 
 can_submit_liaison_required = passes_test_decorator(
     lambda u, *args, **kwargs: can_add_liaison(u),
@@ -246,14 +245,15 @@ class WGEntity(Entity):
 
     def get_from_cc(self, person):
         result = [p for p in role_persons_with_fixed_email(self.obj, "chair") if p != person]
-        result += role_persons_with_fixed_email(self.obj.parent, "ad") if self.obj.parent else []
+        if self.obj.parent:
+            result += role_persons_with_fixed_email(self.obj.parent, "ad")
         if self.obj.list_subscribe:
             result.append(FakePerson(name ='%s Discussion List' % self.obj.name,
                                      address = self.obj.list_subscribe))
         return result
 
     def needs_approval(self, person=None):
-        # Check if person is director of this wg area
+        # Check if person is AD of area
         if self.obj.parent and self.obj.parent.role_set.filter(person=person, name="ad"):
             return False
         return True
@@ -399,14 +399,13 @@ class AreaEntityManager(EntityManager):
 
     def __init__(self, pk=None, name=None, queryset=None):
         super(AreaEntityManager, self).__init__(pk, name, queryset)
-        from ietf.group.proxy import Area
         if self.queryset == None:
-            self.queryset = Area.active_areas()
+            self.queryset = Group.objects.filter(type="area", state="active")
 
     def get_managed_list(self, query_filter=None):
         if not query_filter:
             query_filter = {}
-        return [(u'%s_%s' % (self.pk, i.pk), i.area_acronym.name) for i in self.queryset.filter(**query_filter).order_by('area_acronym__name')]
+        return [(u'%s_%s' % (self.pk, i.pk), i.name) for i in self.queryset.filter(**query_filter).order_by('name')]
 
     def get_entity(self, pk=None):
         if not pk:
@@ -415,7 +414,7 @@ class AreaEntityManager(EntityManager):
             obj = self.queryset.get(pk=pk)
         except self.queryset.model.DoesNotExist:
             return None
-        return AreaEntity(name=obj.area_acronym.name, obj=obj)
+        return AreaEntity(name=obj.name, obj=obj)
 
     def can_send_on_behalf(self, person):
         query_filter = dict(role__person=person, role__name="ad")
@@ -431,13 +430,12 @@ class WGEntityManager(EntityManager):
     def __init__(self, pk=None, name=None, queryset=None):
         super(WGEntityManager, self).__init__(pk, name, queryset)
         if self.queryset == None:
-            from ietf.group.proxy import IETFWG, Area
-            self.queryset = IETFWG.objects.filter(group_type=1, status=IETFWG.ACTIVE, areagroup__area__status=Area.ACTIVE)
+            self.queryset = Group.objects.filter(type="wg", state="active", parent__state="active").select_related("parent")
 
     def get_managed_list(self, query_filter=None):
         if not query_filter:
             query_filter = {}
-        return [(u'%s_%s' % (self.pk, i.pk), '%s - %s' % (i.group_acronym.acronym, i.group_acronym.name)) for i in self.queryset.filter(**query_filter).order_by('group_acronym__acronym')]
+        return [(u'%s_%s' % (self.pk, i.pk), '%s - %s' % (i.acronym, i.name)) for i in self.queryset.filter(**query_filter).order_by('acronym')]
 
     def get_entity(self, pk=None):
         if not pk:
@@ -446,7 +444,7 @@ class WGEntityManager(EntityManager):
             obj = self.queryset.get(pk=pk)
         except self.queryset.model.DoesNotExist:
             return None
-        return WGEntity(name=obj.group_acronym.name, obj=obj)
+        return WGEntity(name=obj.name, obj=obj)
 
     def can_send_on_behalf(self, person):
         wgs = Group.objects.filter(role__person=person, role__name__in=("chair", "secretary")).values_list('pk', flat=True)

@@ -1,6 +1,12 @@
 from ietf.person.models import Person
 from ietf.group.models import Role
-from ietf.utils.proxy import proxy_personify_role
+
+def proxy_personify_role(role):
+    """Return person from role with an old-school email() method using
+    email from role."""
+    p = role.person
+    p.email = lambda: (p.plain_name(), role.email.address)
+    return p
 
 LIAISON_EDIT_GROUPS = ['Secretariat'] # this is not working anymore, refers to old auth model
 
