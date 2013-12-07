@@ -1,9 +1,8 @@
-import reys
-from settings import BASE_DIR
+import re
+
+from django.conf import settings
 from ietf.utils import TestCase
-#from ietf.person.models import Person
-from django.contrib.auth.models import User
-from ietf.meeting.models  import TimeSlot, Session, ScheduledSession
+from ietf.meeting.models import TimeSlot, Session, ScheduledSession
 from auths import auth_joeblow, auth_wlo, auth_ietfchair, auth_ferrel
 
 capture_output = False
@@ -24,7 +23,7 @@ class EditTestCase(TestCase):
         m = re.search(".*session_obj.*", resp.content)
         # to capture new output (and check it for correctness)
         if capture_output:
-            out = open("%s/meeting/tests/edit_out.html" % BASE_DIR, "w")
+            out = open("%s/meeting/tests/edit_out.html" % settings.BASE_DIR, "w")
             out.write(resp.content)
             out.close()
         self.assertIsNotNone(m)
