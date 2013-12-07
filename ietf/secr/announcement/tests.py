@@ -8,18 +8,12 @@ from ietf.ietfauth.utils import has_role
 from ietf.person.models import Person
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
 
 from pyquery import PyQuery
 
 SECR_USER='secretary'
 WG_USER=''
 AD_USER=''
-
-#class AnnouncementUrlTestCase(SimpleUrlTestCase):
-#    def testUrls(self):
-#        self.doTestUrls(__file__)
-
 
 class MainTestCase(TestCase):
     # ------- Test View -------- #

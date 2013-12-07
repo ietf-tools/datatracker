@@ -42,7 +42,6 @@ from ietf.utils import TestCase
 from pyquery import PyQuery
 import debug
 
-from ietf.utils.test_utils import SimpleUrlTestCase
 from ietf.doc.models import *
 from ietf.group.models import *
 from ietf.group.utils import *

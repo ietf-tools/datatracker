@@ -6,7 +6,6 @@ from ietf.utils import TestCase
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
 
 #from pyquery import PyQuery
 
