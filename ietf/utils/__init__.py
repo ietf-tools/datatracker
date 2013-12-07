@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from log import log
-from cache_foreign_key import FKAsOneToOne
 from draft_search import normalize_draftname
 from test_utils import TestCase
 
