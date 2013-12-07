@@ -1,5 +1,3 @@
-import sys
-from django.test              import Client
 from ietf.utils import TestCase
 #from ietf.person.models import Person
 from django.contrib.auth.models import User

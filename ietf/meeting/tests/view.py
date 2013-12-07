@@ -1,14 +1,11 @@
 import re
-import sys
-from django.test.client       import Client
+
+from django.core.urlresolvers import reverse
+
 from ietf.utils import TestCase
-#from ietf.person.models import Person
-from django.contrib.auth.models import User
-from settings import BASE_DIR
 from ietf.meeting.models  import TimeSlot, Session, ScheduledSession
 from auths import auth_joeblow, auth_wlo, auth_ietfchair, auth_ferrel
 from ietf.meeting.helpers import get_meeting
-from django.core.urlresolvers import reverse
 from ietf.meeting.views import edit_agenda
 
 class ViewTestCase(TestCase):

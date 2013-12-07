@@ -1,11 +1,8 @@
-import re
-import sys
+import reys
 from settings import BASE_DIR
-from django.test              import Client
 from ietf.utils import TestCase
 #from ietf.person.models import Person
 from django.contrib.auth.models import User
-from django.test.client import Client
 from ietf.meeting.models  import TimeSlot, Session, ScheduledSession
 from auths import auth_joeblow, auth_wlo, auth_ietfchair, auth_ferrel
 
