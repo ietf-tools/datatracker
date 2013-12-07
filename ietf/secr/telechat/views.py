@@ -207,7 +207,7 @@ def doc_detail(request, date, name):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
 
-        # logic from doc/views_ballot.py EditPositionRedesign
+        # logic from doc/views_ballot.py EditPosition
         if button_text == 'update_ballot':
             formset = BallotFormset(request.POST, initial=initial_ballot)
             state_form = ChangeStateForm(initial=initial_state)
