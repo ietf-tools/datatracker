@@ -33,7 +33,7 @@
 import unittest, os, re
 from django.test.client import Client
 from django.conf import settings
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, split_url, read_testurls
+from ietf.utils.test_utils import split_url, read_testurls, TestCase
 import ietf.urls
 import ietf.utils.test_runner as test_runner
 
@@ -60,6 +60,10 @@ REDIRECT_TESTS = {
         '/drafts/10845/related/',
     '/public/idindex.cgi?command=id_detail&filename=draft-l3vpn-as4octet-ext-community':
         '/drafts/draft-l3vpn-as4octet-ext-community/',
+    # non-ASCII parameter
+    '/public/pidtracker.cgi?command=view_id&dTag=11171%D182&rfc_flag=0':
+        '/idtracker/',
+    '/idtracker/': '/doc/',
 
     # ipr
 
@@ -86,29 +90,16 @@ REDIRECT_TESTS = {
 
     }
 
-class RedirectsTestCase(unittest.TestCase, RealDatabaseTest):
-    def setUp(self):
-        self.setUpRealDatabase()
-    def tearDown(self):
-        self.tearDownRealDatabase()
-
-    def testRedirects(self):
-        print "     Testing redirects"
-
-        c = Client()
+class RedirectsTests(TestCase):
+    def test_redirects(self):
         for src, dst in REDIRECT_TESTS.items():
             baseurl, args = split_url(src)
-            try:
-                response = c.get(baseurl, args)
-                self.assert_(str(response.status_code).startswith("3"))
-                location = response['Location']
-                if location.startswith("http://testserver/"):
-                    location = location[17:]
-                self.assertEqual(location, dst)
-                print "OK   "+src
-            except:
-                print "Fail "+src
-                raise
+            response = self.client.get(baseurl, args)
+            self.assertTrue(str(response.status_code).startswith("3"))
+            location = response['Location']
+            if location.startswith("http://testserver/"):
+                location = location[17:]
+            self.assertEqual(location, dst, (src, dst, location))
 
 def get_patterns(module):
     all = []
@@ -155,9 +146,13 @@ class UrlCoverageTestCase(unittest.TestCase):
         else:
             print "All URLs are included in some testurl.list"
 
-class MainUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
+class MainUrlTests(TestCase):
+    def test_urls(self):
+        self.assertEqual(self.client.get("/_doesnotexist/").status_code, 404)
+        self.assertEqual(self.client.get("/sitemap.xml").status_code, 200)
+         # Google webmaster tool verification page
+        self.assertEqual(self.client.get("/googlea30ad1dacffb5e5b.html").status_code, 200)
+
 
 def get_templates():
     templates = set()
