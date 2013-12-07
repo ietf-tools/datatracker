@@ -352,9 +352,6 @@ DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
 HTPASSWD_COMMAND = "/usr/bin/htpasswd2"
 HTPASSWD_FILE = "/www/htpasswd"
 
-# DB redesign
-USE_DB_REDESIGN_PROXY_CLASSES = True
-
 SOUTH_TESTS_MIGRATE = False
 
 # Generation of bibxml files for xml2rfc
