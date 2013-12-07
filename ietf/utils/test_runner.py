@@ -32,7 +32,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import socket
+import socket, re, os
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist
@@ -44,6 +44,7 @@ import debug
 import ietf.utils.mail
 
 loaded_templates = set()
+visited_urls = set()
 test_database_name = None
 old_destroy = None
 old_create = None
@@ -74,6 +75,77 @@ def template_coverage_loader(template_name, dirs):
 
 template_coverage_loader.is_usable = True
 
+class RecordUrlsMiddleware(object):
+    def process_request(self, request):
+        visited_urls.add(request.path)
+
+def get_patterns(module):
+    all = []
+    try:
+        patterns = module.urlpatterns
+    except AttributeError:
+        patterns = []
+    for item in patterns:
+        try:
+            subpatterns = get_patterns(item.urlconf_module)
+        except:
+            subpatterns = [""]
+        for sub in subpatterns:
+            if not sub:
+                all.append(item.regex.pattern)
+            elif sub.startswith("^"):
+                all.append(item.regex.pattern + sub[1:])
+            else:
+                all.append(item.regex.pattern + ".*" + sub)
+    return all
+
+def check_url_coverage():
+    patterns = get_patterns(ietf.urls)
+
+    IGNORED_PATTERNS = ("admin",)
+
+    patterns = [(p, re.compile(p)) for p in patterns if p[1:].split("/")[0] not in IGNORED_PATTERNS]
+
+    covered = set()
+    for url in visited_urls:
+        for pattern, compiled in patterns:
+            if pattern not in covered and compiled.match(url[1:]): # strip leading /
+                covered.add(pattern)
+                break
+
+    missing = list(set(p for p, compiled in patterns) - covered)
+
+    if missing:
+        print "The following URL patterns were not tested"
+        for pattern in sorted(missing):
+            print "     Not tested", pattern
+
+def get_templates():
+    templates = set()
+    # Should we teach this to use TEMPLATE_DIRS?
+    templatepath = os.path.join(settings.BASE_DIR, "templates")
+    for root, dirs, files in os.walk(templatepath):
+        if ".svn" in dirs:
+            dirs.remove(".svn")
+        relative_path = root[len(templatepath)+1:]
+        for file in files:
+            if file.endswith("~") or file.startswith("#"):
+                continue
+            if relative_path == "":
+                templates.add(file)
+            else:
+                templates.add(os.path.join(relative_path, file))
+    return templates
+
+def check_template_coverage():
+    all_templates = get_templates()
+
+    not_loaded = list(all_templates - loaded_templates)
+    if not_loaded:
+        print "The following templates were never loaded during test"
+        for t in sorted(not_loaded):
+            print "     Not loaded", t
+
 def run_tests_1(test_labels, *args, **kwargs):
     global old_destroy, old_create, test_database_name
     from django.db import connection
@@ -81,18 +153,33 @@ def run_tests_1(test_labels, *args, **kwargs):
     connection.creation.__class__.create_test_db = safe_create_1
     old_destroy = connection.creation.__class__.destroy_test_db
     connection.creation.__class__.destroy_test_db = safe_destroy_0_1
-    if not test_labels:
+
+    check_coverage = not test_labels
+
+    if check_coverage:
         settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
-        test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")] + ['redirects.TemplateCoverageTestCase',]
+        settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
+
+    if not test_labels:
+        test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")]
+
     if settings.SITE_ID != 1:
         print "     Changing SITE_ID to '1' during testing."
         settings.SITE_ID = 1
+
     if settings.TEMPLATE_STRING_IF_INVALID != '':
         print "     Changing TEMPLATE_STRING_IF_INVALID to '' during testing."
         settings.TEMPLATE_STRING_IF_INVALID = ''
+
     assert(not settings.IDTRACKER_BASE_URL.endswith('/'))
-    kwargs["verbosity"] = kwargs["verbosity"]
-    return django_run_tests(test_labels, *args, **kwargs)
+
+    results = django_run_tests(test_labels, *args, **kwargs)
+
+    if check_coverage:
+        check_url_coverage()
+        check_template_coverage()
+
+    return results
 
 def run_tests(*args, **kwargs):
     # Tests that involve switching back and forth between the real
