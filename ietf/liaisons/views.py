@@ -135,7 +135,7 @@ def liaison_approval_list(request):
 def liaison_approval_detail(request, object_id):
     liaison = get_object_or_404(approvable_liaison_statements(request.user), pk=object_id)
 
-    if request.method=='POST' and request.POST.get('do_approval', False):
+    if request.method == 'POST' and request.POST.get('do_approval', False):
         liaison.approved = datetime.datetime.now()
         liaison.save()
 
@@ -144,6 +144,7 @@ def liaison_approval_detail(request, object_id):
 
     return render_to_response('liaisons/approval_detail.html', {
         "liaison": liaison,
+        "is_approving": True,
     }, context_instance=RequestContext(request))
 
 

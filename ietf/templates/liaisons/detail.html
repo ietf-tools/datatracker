@@ -86,12 +86,14 @@
 {% endif %}
 
 {% if liaison.related_to %}
+{% if liaison.related_to.approved or is_approving %}
 <tr>
   <td>Referenced liaison:</td>
   <td>
     <a href="{% url liaison_detail liaison.related_to.pk %}">{% if liaison.related_to.title %}{{ liaison.related_to.title }}{% else %}Liaison #{{ liaison.related_to.pk }}{% endif %}</a>
   </td>
 </tr>
+{% endif %}
 {% endif %}
 
 <tr>
