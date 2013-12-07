@@ -14,7 +14,7 @@ import datetime
 SECR_USER='secretary'
 
 def augment_data():
-    system = Person.objects.get(name="(system)")
+    system = Person.objects.get(name="(System)")
     area = Group.objects.get(acronym='farfut')
     GroupEvent.objects.create(group=area,
                               type='started',
@@ -22,7 +22,7 @@ def augment_data():
                               
 class MainTestCase(TestCase):
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['persons', 'groupgroup', 'groupevents']
+    perma_fixtures = ['groupgroup', 'groupevents']
                 
     def test_main(self):
         "Main Test"
