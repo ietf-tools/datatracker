@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+
+import datetime
+
+from django.core import management
+from django.template.loader import render_to_string
+
+from ietf import settings
+from ietf.utils.mail import send_mail_preformatted
+from ietf.utils.mail import send_mail
+
+management.setup_environ(settings)
+
+target_date=datetime.date(year=2014,month=1,day=20)
+
+send_mail(request = None, 
+          to       = "IETF-Announce <ietf-announce@ietf.org>",
+          frm      = "The IESG <iesg-secretary@ietf.org>",
+          subject  = "Upcoming change to announcement email header fields (using old header)",
+          template = "utils/header_change_content.txt",
+          context  = dict(oldornew='old', target_date=target_date),
+          extra    = {'Reply-To' : 'ietf@ietf.org',
+                      'Sender'   : '<iesg-secretary@ietf.org>',
+                     }
+         )
+
+send_mail(request = None, 
+          to       = "IETF-Announce:;",
+          frm      = "The IESG <noreply@ietf.org>",
+          subject  = "Upcoming change to announcement email header fields (using new header)",
+          template = "utils/header_change_content.txt",
+          context  = dict(oldornew='new', target_date=target_date),
+          extra    = {'Reply-To' : 'IETF Discussion List <ietf@ietf.org>',
+                      'Sender'   : '<iesg-secretary@ietf.org>',
+                     },
+          bcc      = '<ietf-announce@ietf.org>',
+         )
