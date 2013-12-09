@@ -134,8 +134,8 @@ def get_schedule_by_id(meeting, schedid):
     return schedule
 
 def meeting_updated(meeting):
-    ts = max(meeting.timeslot_set.aggregate(Max('modified'))["modified__max"],
-             meeting.session_set.aggregate(Max('modified'))["modified__max"])
+    ts = max(meeting.timeslot_set.aggregate(Max('modified'))["modified__max"] or datetime.datetime.min,
+             meeting.session_set.aggregate(Max('modified'))["modified__max"] or datetime.datetime.min)
     tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
     ts = tz.localize(ts)
     return ts
