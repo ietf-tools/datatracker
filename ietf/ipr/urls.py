@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.conf.urls import patterns, url
+from django.views.generic import RedirectView
 from django.core.urlresolvers import reverse_lazy
 
 from ietf.ipr import views, new, search

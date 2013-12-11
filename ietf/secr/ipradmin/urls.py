@@ -2,7 +2,7 @@ from django.conf.urls import patterns, url
 from django.views.generic import RedirectView
 
 urlpatterns = patterns('ietf.secr.ipradmin.views',
-    url(r'^$', RedirectView(url='admin/'), name="ipradmin"),
+    url(r'^$', RedirectView.as_view(url='admin/'), name="ipradmin"),
     url(r'^admin/?$', 'admin_list', name="ipradmin_admin_list"),
     url(r'^admin/detail/(?P<ipr_id>\d+)/?$', 'admin_detail', name="ipradmin_admin_detail"),
     url(r'^admin/create/?$', 'admin_create', name="ipradmin_admin_create"),
