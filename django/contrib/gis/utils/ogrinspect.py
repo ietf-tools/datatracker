@@ -2,13 +2,12 @@
 This module is for inspecting OGR data sources and generating either
 models for GeoDjango and/or mapping dictionaries for use with the
 `LayerMapping` utility.
-
-Author: Travis Pinney, Dane Springmeyer, & Justin Bronn
 """
-from itertools import izip
+from django.utils.six.moves import zip
 # Requires GDAL to use.
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.gdal.field import OFTDate, OFTDateTime, OFTInteger, OFTReal, OFTString, OFTTime
+from django.utils import six
 
 def mapping(data_source, geom_name='geom', layer_key=0, multi_geom=False):
     """
@@ -24,7 +23,7 @@ def mapping(data_source, geom_name='geom', layer_key=0, multi_geom=False):
 
      `multi_geom` => Boolean (default: False) - specify as multigeometry.
     """
-    if isinstance(data_source, basestring):
+    if isinstance(data_source, six.string_types):
         # Instantiating the DataSource from the string.
         data_source = DataSource(data_source)
     elif isinstance(data_source, DataSource):
@@ -68,8 +67,8 @@ def ogrinspect(*args, **kwargs):
     shp_file = 'data/mapping_hacks/world_borders.shp'
     model_name = 'WorldBorders'
 
-    print ogrinspect(shp_file, model_name, multi_geom=True, srid=4326,
-                     geom_name='shapes', blank=True)
+    print(ogrinspect(shp_file, model_name, multi_geom=True, srid=4326,
+                     geom_name='shapes', blank=True))
 
     Required Arguments
      `datasource` => string or DataSource object to file pointer
@@ -90,7 +89,7 @@ def ogrinspect(*args, **kwargs):
      `multi_geom` => Boolean (default: False) - specify as multigeometry.
 
      `name_field` => String - specifies a field name to return for the
-       `__unicode__` function (which will be generated if specified).
+       `__unicode__`/`__str__` function (which will be generated if specified).
 
      `imports` => Boolean (default: True) - set to False to omit the
        `from django.contrib.gis.db import models` code from the
@@ -124,7 +123,7 @@ def _ogrinspect(data_source, model_name, geom_name='geom', layer_key=0, srid=Non
     to the given data source.  See the `ogrinspect` docstring for more details.
     """
     # Getting the DataSource
-    if isinstance(data_source, str):
+    if isinstance(data_source, six.string_types):
         data_source = DataSource(data_source)
     elif isinstance(data_source, DataSource):
         pass
@@ -165,7 +164,7 @@ def _ogrinspect(data_source, model_name, geom_name='geom', layer_key=0, srid=Non
 
     yield 'class %s(models.Model):' % model_name
 
-    for field_name, width, precision, field_type in izip(ogr_fields, layer.field_widths, layer.field_precisions, layer.field_types):
+    for field_name, width, precision, field_type in zip(ogr_fields, layer.field_widths, layer.field_precisions, layer.field_types):
         # The model field name.
         mfield = field_name.lower()
         if mfield[-1:] == '_': mfield += 'field'
@@ -189,7 +188,7 @@ def _ogrinspect(data_source, model_name, geom_name='geom', layer_key=0, srid=Non
             yield '    %s = models.DateField(%s)' % (mfield, kwargs_str[2:])
         elif field_type is OFTDateTime:
             yield '    %s = models.DateTimeField(%s)' % (mfield, kwargs_str[2:])
-        elif field_type is OFTDate:
+        elif field_type is OFTTime:
             yield '    %s = models.TimeField(%s)' % (mfield, kwargs_str[2:])
         else:
             raise TypeError('Unknown field type %s in %s' % (field_type, mfield))
@@ -222,4 +221,5 @@ def _ogrinspect(data_source, model_name, geom_name='geom', layer_key=0, srid=Non
 
     if name_field:
         yield ''
-        yield '    def __unicode__(self): return self.%s' % name_field
+        yield '    def __%s__(self): return self.%s' % (
+            'str' if six.PY3 else 'unicode', name_field)

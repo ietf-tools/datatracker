@@ -1,4 +1,3 @@
-from django.core.exceptions import MiddlewareNotUsed
 from django.utils.http import http_date, parse_http_date_safe
 
 class ConditionalGetMiddleware(object):
@@ -11,7 +10,7 @@ class ConditionalGetMiddleware(object):
     """
     def process_response(self, request, response):
         response['Date'] = http_date()
-        if not response.has_header('Content-Length'):
+        if not response.streaming and not response.has_header('Content-Length'):
             response['Content-Length'] = str(len(response.content))
 
         if response.has_header('ETag'):
@@ -34,22 +33,3 @@ class ConditionalGetMiddleware(object):
                     response.status_code = 304
 
         return response
-
-class SetRemoteAddrFromForwardedFor(object):
-    """
-    This middleware has been removed; see the Django 1.1 release notes for
-    details.
-    
-    It previously set REMOTE_ADDR based on HTTP_X_FORWARDED_FOR. However, after
-    investiagtion, it turns out this is impossible to do in a general manner:
-    different proxies treat the X-Forwarded-For header differently. Thus, a
-    built-in middleware can lead to application-level security problems, and so
-    this was removed in Django 1.1
-    
-    """
-    def __init__(self):
-        import warnings
-        warnings.warn("SetRemoteAddrFromForwardedFor has been removed. "
-                      "See the Django 1.1 release notes for details.",
-                      category=DeprecationWarning)
-        raise MiddlewareNotUsed()

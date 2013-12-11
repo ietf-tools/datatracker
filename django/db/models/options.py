@@ -1,15 +1,19 @@
+from __future__ import unicode_literals
+
 import re
 from bisect import bisect
+import warnings
 
 from django.conf import settings
-from django.db.models.related import RelatedObject
 from django.db.models.fields.related import ManyToManyRel
 from django.db.models.fields import AutoField, FieldDoesNotExist
 from django.db.models.fields.proxy import OrderWrt
 from django.db.models.loading import get_models, app_cache_ready
-from django.utils.translation import activate, deactivate_all, get_language, string_concat
-from django.utils.encoding import force_unicode, smart_str
+from django.utils import six
+from django.utils.functional import cached_property
 from django.utils.datastructures import SortedDict
+from django.utils.encoding import force_text, smart_text, python_2_unicode_compatible
+from django.utils.translation import activate, deactivate_all, get_language, string_concat
 
 # Calculate the verbose_name by converting from InitialCaps to "lowercase with spaces".
 get_verbose_name = lambda class_name: re.sub('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1', class_name).lower().strip()
@@ -17,32 +21,45 @@ get_verbose_name = lambda class_name: re.sub('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|
 DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural', 'db_table', 'ordering',
                  'unique_together', 'permissions', 'get_latest_by',
                  'order_with_respect_to', 'app_label', 'db_tablespace',
-                 'abstract', 'managed', 'proxy', 'auto_created')
+                 'abstract', 'managed', 'proxy', 'swappable', 'auto_created',
+                 'index_together', 'select_on_save')
 
+
+@python_2_unicode_compatible
 class Options(object):
     def __init__(self, meta, app_label=None):
         self.local_fields, self.local_many_to_many = [], []
         self.virtual_fields = []
-        self.module_name, self.verbose_name = None, None
+        self.model_name, self.verbose_name = None, None
         self.verbose_name_plural = None
         self.db_table = ''
         self.ordering = []
-        self.unique_together =  []
-        self.permissions =  []
+        self.unique_together = []
+        self.index_together = []
+        self.select_on_save = False
+        self.permissions = []
         self.object_name, self.app_label = None, app_label
         self.get_latest_by = None
         self.order_with_respect_to = None
         self.db_tablespace = settings.DEFAULT_TABLESPACE
-        self.admin = None
         self.meta = meta
         self.pk = None
         self.has_auto_field, self.auto_field = False, None
         self.abstract = False
         self.managed = True
         self.proxy = False
+        # For any class that is a proxy (including automatically created
+        # classes for deferred object loading), proxy_for_model tells us
+        # which class this model is proxying. Note that proxy_for_model
+        # can create a chain of proxy models. For non-proxy models, the
+        # variable is always None.
         self.proxy_for_model = None
+        # For any non-abstract class, the concrete class is the model
+        # in the end of the proxy_for_model chain. In particular, for
+        # concrete models, the concrete_model is always the class itself.
+        self.concrete_model = None
+        self.swappable = None
         self.parents = SortedDict()
-        self.duplicate_targets = {}
         self.auto_created = False
 
         # To handle various inheritance situations, we need to track where
@@ -59,10 +76,11 @@ class Options(object):
         from django.db.backends.util import truncate_name
 
         cls._meta = self
+        self.model = cls
         self.installed = re.sub('\.models$', '', cls.__module__) in settings.INSTALLED_APPS
         # First, construct the default values for these options.
         self.object_name = cls.__name__
-        self.module_name = self.object_name.lower()
+        self.model_name = self.object_name.lower()
         self.verbose_name = get_verbose_name(self.object_name)
 
         # Next, apply any overridden values from 'class Meta'.
@@ -83,10 +101,10 @@ class Options(object):
             # unique_together can be either a tuple of tuples, or a single
             # tuple of two strings. Normalize it to a tuple of tuples, so that
             # calling code can uniformly expect that.
-            ut = meta_attrs.pop('unique_together', getattr(self, 'unique_together'))
+            ut = meta_attrs.pop('unique_together', self.unique_together)
             if ut and not isinstance(ut[0], (tuple, list)):
                 ut = (ut,)
-            setattr(self, 'unique_together', ut)
+            self.unique_together = ut
 
             # verbose_name_plural is a special case because it uses a 's'
             # by default.
@@ -100,10 +118,20 @@ class Options(object):
             self.verbose_name_plural = string_concat(self.verbose_name, 's')
         del self.meta
 
-        # If the db_table wasn't provided, use the app_label + module_name.
+        # If the db_table wasn't provided, use the app_label + model_name.
         if not self.db_table:
-            self.db_table = "%s_%s" % (self.app_label, self.module_name)
+            self.db_table = "%s_%s" % (self.app_label, self.model_name)
             self.db_table = truncate_name(self.db_table, connection.ops.max_name_length())
+
+    @property
+    def module_name(self):
+        """
+        This property has been deprecated in favor of `model_name`. refs #19689
+        """
+        warnings.warn(
+            "Options.module_name has been deprecated in favor of model_name",
+            PendingDeprecationWarning, stacklevel=2)
+        return self.model_name
 
     def _prepare(self, model):
         if self.order_with_respect_to:
@@ -117,7 +145,7 @@ class Options(object):
             if self.parents:
                 # Promote the first parent link in lieu of adding yet another
                 # field.
-                field = self.parents.value_for_index(0)
+                field = next(six.itervalues(self.parents))
                 # Look for a local field with the same name as the
                 # first parent link. If a local field has already been
                 # created, use it instead of promoting the parent
@@ -130,24 +158,6 @@ class Options(object):
                 auto = AutoField(verbose_name='ID', primary_key=True,
                         auto_created=True)
                 model.add_to_class('id', auto)
-
-        # Determine any sets of fields that are pointing to the same targets
-        # (e.g. two ForeignKeys to the same remote model). The query
-        # construction code needs to know this. At the end of this,
-        # self.duplicate_targets will map each duplicate field column to the
-        # columns it duplicates.
-        collections = {}
-        for column, target in self.duplicate_targets.iteritems():
-            try:
-                collections[target].add(column)
-            except KeyError:
-                collections[target] = set([column])
-        self.duplicate_targets = {}
-        for elt in collections.itervalues():
-            if len(elt) == 1:
-                continue
-            for column in elt:
-                self.duplicate_targets[column] = elt.difference(set([column]))
 
     def add_field(self, field):
         # Insert the given field in the order in which it was created, using
@@ -164,6 +174,22 @@ class Options(object):
             if hasattr(self, '_field_cache'):
                 del self._field_cache
                 del self._field_name_cache
+                # The fields, concrete_fields and local_concrete_fields are
+                # implemented as cached properties for performance reasons.
+                # The attrs will not exists if the cached property isn't
+                # accessed yet, hence the try-excepts.
+                try:
+                    del self.fields
+                except AttributeError:
+                    pass
+                try:
+                    del self.concrete_fields
+                except AttributeError:
+                    pass
+                try:
+                    del self.local_concrete_fields
+                except AttributeError:
+                    pass
 
         if hasattr(self, '_name_map'):
             del self._name_map
@@ -175,6 +201,13 @@ class Options(object):
         if not self.pk and field.primary_key:
             self.pk = field
             field.serialize = False
+
+    def pk_index(self):
+        """
+        Returns the index of the primary key field in the self.concrete_fields
+        list.
+        """
+        return self.concrete_fields.index(self.pk)
 
     def setup_proxy(self, target):
         """
@@ -189,7 +222,7 @@ class Options(object):
         return '<Options for %s>' % self.object_name
 
     def __str__(self):
-        return "%s.%s" % (smart_str(self.app_label), smart_str(self.module_name))
+        return "%s.%s" % (smart_text(self.app_label), smart_text(self.model_name))
 
     def verbose_name_raw(self):
         """
@@ -199,12 +232,39 @@ class Options(object):
         """
         lang = get_language()
         deactivate_all()
-        raw = force_unicode(self.verbose_name)
+        raw = force_text(self.verbose_name)
         activate(lang)
         return raw
     verbose_name_raw = property(verbose_name_raw)
 
-    def _fields(self):
+    def _swapped(self):
+        """
+        Has this model been swapped out for another? If so, return the model
+        name of the replacement; otherwise, return None.
+
+        For historical reasons, model name lookups using get_model() are
+        case insensitive, so we make sure we are case insensitive here.
+        """
+        if self.swappable:
+            model_label = '%s.%s' % (self.app_label, self.model_name)
+            swapped_for = getattr(settings, self.swappable, None)
+            if swapped_for:
+                try:
+                    swapped_label, swapped_object = swapped_for.split('.')
+                except ValueError:
+                    # setting not in the format app_label.model_name
+                    # raising ImproperlyConfigured here causes problems with
+                    # test cleanup code - instead it is raised in get_user_model
+                    # or as part of validation.
+                    return swapped_for
+
+                if '%s.%s' % (swapped_label, swapped_object.lower()) not in (None, model_label):
+                    return swapped_for
+        return None
+    swapped = property(_swapped)
+
+    @cached_property
+    def fields(self):
         """
         The getter for self.fields. This returns the list of field objects
         available to this model (including through parent models).
@@ -217,7 +277,14 @@ class Options(object):
         except AttributeError:
             self._fill_fields_cache()
         return self._field_name_cache
-    fields = property(_fields)
+
+    @cached_property
+    def concrete_fields(self):
+        return [f for f in self.fields if f.column is not None]
+
+    @cached_property
+    def local_concrete_fields(self):
+        return [f for f in self.local_fields if f.column is not None]
 
     def get_fields_with_model(self):
         """
@@ -230,6 +297,10 @@ class Options(object):
         except AttributeError:
             self._fill_fields_cache()
         return self._field_cache
+
+    def get_concrete_fields_with_model(self):
+        return [(field, model) for field, model in self.get_fields_with_model() if
+                field.column is not None]
 
     def _fill_fields_cache(self):
         cache = []
@@ -248,7 +319,7 @@ class Options(object):
             self._m2m_cache
         except AttributeError:
             self._fill_m2m_cache()
-        return self._m2m_cache.keys()
+        return list(self._m2m_cache)
     many_to_many = property(_many_to_many)
 
     def get_m2m_with_model(self):
@@ -259,7 +330,7 @@ class Options(object):
             self._m2m_cache
         except AttributeError:
             self._fill_m2m_cache()
-        return self._m2m_cache.items()
+        return list(six.iteritems(self._m2m_cache))
 
     def _fill_m2m_cache(self):
         cache = SortedDict()
@@ -277,7 +348,7 @@ class Options(object):
         """
         Returns the requested field by name. Raises FieldDoesNotExist on error.
         """
-        to_search = many_to_many and (self.fields + self.many_to_many) or self.fields
+        to_search = (self.fields + self.many_to_many) if many_to_many else self.fields
         for f in to_search:
             if f.name == name:
                 return f
@@ -316,8 +387,7 @@ class Options(object):
             cache = self._name_map
         except AttributeError:
             cache = self.init_name_map()
-        names = cache.keys()
-        names.sort()
+        names = sorted(cache.keys())
         # Internal-only names end with "+" (symmetrical m2m related names being
         # the main example). Trim them.
         return [val for val in names if not val.endswith('+')]
@@ -337,29 +407,55 @@ class Options(object):
             cache[f.name] = (f, model, True, True)
         for f, model in self.get_fields_with_model():
             cache[f.name] = (f, model, True, False)
+        for f in self.virtual_fields:
+            if hasattr(f, 'related'):
+                cache[f.name] = (f.related, None if f.model == self.model else f.model, True, False)
         if app_cache_ready():
             self._name_map = cache
         return cache
 
     def get_add_permission(self):
-        return 'add_%s' % self.object_name.lower()
+        """
+        This method has been deprecated in favor of
+        `django.contrib.auth.get_permission_codename`. refs #20642
+        """
+        warnings.warn(
+            "`Options.get_add_permission` has been deprecated in favor "
+            "of `django.contrib.auth.get_permission_codename`.",
+            PendingDeprecationWarning, stacklevel=2)
+        return 'add_%s' % self.model_name
 
     def get_change_permission(self):
-        return 'change_%s' % self.object_name.lower()
+        """
+        This method has been deprecated in favor of
+        `django.contrib.auth.get_permission_codename`. refs #20642
+        """
+        warnings.warn(
+            "`Options.get_change_permission` has been deprecated in favor "
+            "of `django.contrib.auth.get_permission_codename`.",
+            PendingDeprecationWarning, stacklevel=2)
+        return 'change_%s' % self.model_name
 
     def get_delete_permission(self):
-        return 'delete_%s' % self.object_name.lower()
+        """
+        This method has been deprecated in favor of
+        `django.contrib.auth.get_permission_codename`. refs #20642
+        """
+        warnings.warn(
+            "`Options.get_delete_permission` has been deprecated in favor "
+            "of `django.contrib.auth.get_permission_codename`.",
+            PendingDeprecationWarning, stacklevel=2)
+        return 'delete_%s' % self.model_name
 
-    def get_all_related_objects(self, local_only=False):
-        try:
-            self._related_objects_cache
-        except AttributeError:
-            self._fill_related_objects_cache()
-        if local_only:
-            return [k for k, v in self._related_objects_cache.items() if not v]
-        return self._related_objects_cache.keys()
+    def get_all_related_objects(self, local_only=False, include_hidden=False,
+                                include_proxy_eq=False):
+        return [k for k, v in self.get_all_related_objects_with_model(
+                local_only=local_only, include_hidden=include_hidden,
+                include_proxy_eq=include_proxy_eq)]
 
-    def get_all_related_objects_with_model(self):
+    def get_all_related_objects_with_model(self, local_only=False,
+                                           include_hidden=False,
+                                           include_proxy_eq=False):
         """
         Returns a list of (related-object, model) pairs. Similar to
         get_fields_with_model().
@@ -368,24 +464,39 @@ class Options(object):
             self._related_objects_cache
         except AttributeError:
             self._fill_related_objects_cache()
-        return self._related_objects_cache.items()
+        predicates = []
+        if local_only:
+            predicates.append(lambda k, v: not v)
+        if not include_hidden:
+            predicates.append(lambda k, v: not k.field.rel.is_hidden())
+        cache = (self._related_objects_proxy_cache if include_proxy_eq
+                 else self._related_objects_cache)
+        return [t for t in cache.items() if all(p(*t) for p in predicates)]
 
     def _fill_related_objects_cache(self):
         cache = SortedDict()
         parent_list = self.get_parent_list()
         for parent in self.parents:
-            for obj, model in parent._meta.get_all_related_objects_with_model():
+            for obj, model in parent._meta.get_all_related_objects_with_model(include_hidden=True):
                 if (obj.field.creation_counter < 0 or obj.field.rel.parent_link) and obj.model not in parent_list:
                     continue
                 if not model:
                     cache[obj] = parent
                 else:
                     cache[obj] = model
-        for klass in get_models():
-            for f in klass._meta.local_fields:
-                if f.rel and not isinstance(f.rel.to, str) and self == f.rel.to._meta:
-                    cache[RelatedObject(f.rel.to, klass, f)] = None
+        # Collect also objects which are in relation to some proxy child/parent of self.
+        proxy_cache = cache.copy()
+        for klass in get_models(include_auto_created=True, only_installed=False):
+            if not klass._meta.swapped:
+                for f in klass._meta.local_fields:
+                    if f.rel and not isinstance(f.rel.to, six.string_types) and f.generate_reverse_relation:
+                        if self == f.rel.to._meta:
+                            cache[f.related] = None
+                            proxy_cache[f.related] = None
+                        elif self.concrete_model == f.rel.to._meta.concrete_model:
+                            proxy_cache[f.related] = None
         self._related_objects_cache = cache
+        self._related_objects_proxy_cache = proxy_cache
 
     def get_all_related_many_to_many_objects(self, local_only=False):
         try:
@@ -394,7 +505,7 @@ class Options(object):
             cache = self._fill_related_many_to_many_cache()
         if local_only:
             return [k for k, v in cache.items() if not v]
-        return cache.keys()
+        return list(cache)
 
     def get_all_related_m2m_objects_with_model(self):
         """
@@ -405,7 +516,7 @@ class Options(object):
             cache = self._related_many_to_many_cache
         except AttributeError:
             cache = self._fill_related_many_to_many_cache()
-        return cache.items()
+        return list(six.iteritems(cache))
 
     def _fill_related_many_to_many_cache(self):
         cache = SortedDict()
@@ -418,10 +529,13 @@ class Options(object):
                     cache[obj] = parent
                 else:
                     cache[obj] = model
-        for klass in get_models():
-            for f in klass._meta.local_many_to_many:
-                if f.rel and not isinstance(f.rel.to, str) and self == f.rel.to._meta:
-                    cache[RelatedObject(f.rel.to, klass, f)] = None
+        for klass in get_models(only_installed=False):
+            if not klass._meta.swapped:
+                for f in klass._meta.local_many_to_many:
+                    if (f.rel
+                            and not isinstance(f.rel.to, six.string_types)
+                            and self == f.rel.to._meta):
+                        cache[f.related] = None
         if app_cache_ready():
             self._related_many_to_many_cache = cache
         return cache
@@ -433,7 +547,7 @@ class Options(object):
         a granparent or even more distant relation.
         """
         if not self.parents:
-            return
+            return None
         if model in self.parents:
             return [model]
         for parent in self.parents:
@@ -441,8 +555,7 @@ class Options(object):
             if res:
                 res.insert(0, parent)
                 return res
-        raise TypeError('%r is not an ancestor of this model'
-                % model._meta.module_name)
+        return None
 
     def get_parent_list(self):
         """
@@ -474,22 +587,3 @@ class Options(object):
                 # of the chain to the ancestor is that parent
                 # links
                 return self.parents[parent] or parent_link
-
-    def get_ordered_objects(self):
-        "Returns a list of Options objects that are ordered with respect to this object."
-        if not hasattr(self, '_ordered_objects'):
-            objects = []
-            # TODO
-            #for klass in get_models(get_app(self.app_label)):
-            #    opts = klass._meta
-            #    if opts.order_with_respect_to and opts.order_with_respect_to.rel \
-            #        and self == opts.order_with_respect_to.rel.to._meta:
-            #        objects.append(opts)
-            self._ordered_objects = objects
-        return self._ordered_objects
-
-    def pk_index(self):
-        """
-        Returns the index of the primary key field in the self.fields list.
-        """
-        return self.fields.index(self.pk)

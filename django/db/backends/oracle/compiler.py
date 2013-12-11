@@ -1,4 +1,5 @@
 from django.db.models.sql import compiler
+from django.utils.six.moves import zip_longest
 
 
 class SQLCompiler(compiler.SQLCompiler):
@@ -10,10 +11,10 @@ class SQLCompiler(compiler.SQLCompiler):
             rn_offset = 1
         else:
             rn_offset = 0
-        index_start = rn_offset + len(self.query.extra_select.keys())
+        index_start = rn_offset + len(self.query.extra_select)
         values = [self.query.convert_values(v, None, connection=self.connection)
                   for v in row[rn_offset:index_start]]
-        for value, field in map(None, row[index_start:], fields):
+        for value, field in zip_longest(row[index_start:], fields):
             values.append(self.query.convert_values(value, field, connection=self.connection))
         return tuple(values)
 
@@ -27,6 +28,8 @@ class SQLCompiler(compiler.SQLCompiler):
         If 'with_limits' is False, any limit/offset information is not
         included in the query.
         """
+        if with_limits and self.query.low_mark == self.query.high_mark:
+            return '', ()
 
         # The `do_offset` flag indicates whether we need to construct
         # the SQL needed to use limit/offset with Oracle.
@@ -63,4 +66,7 @@ class SQLAggregateCompiler(compiler.SQLAggregateCompiler, SQLCompiler):
     pass
 
 class SQLDateCompiler(compiler.SQLDateCompiler, SQLCompiler):
+    pass
+
+class SQLDateTimeCompiler(compiler.SQLDateTimeCompiler, SQLCompiler):
     pass

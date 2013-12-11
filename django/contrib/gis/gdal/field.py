@@ -3,26 +3,31 @@ from datetime import date, datetime, time
 from django.contrib.gis.gdal.base import GDALBase
 from django.contrib.gis.gdal.error import OGRException
 from django.contrib.gis.gdal.prototypes import ds as capi
+from django.utils.encoding import force_text
+
 
 # For more information, see the OGR C API source code:
 #  http://www.gdal.org/ogr/ogr__api_8h.html
 #
 # The OGR_Fld_* routines are relevant here.
 class Field(GDALBase):
-    "A class that wraps an OGR Field, needs to be instantiated from a Feature object."
+    """
+    This class wraps an OGR Field, and needs to be instantiated
+    from a Feature object.
+    """
 
     #### Python 'magic' routines ####
     def __init__(self, feat, index):
         """
-        Initializes on the feature pointer and the integer index of
+        Initializes on the feature object and the integer index of
         the field within the feature.
         """
         # Setting the feature pointer and index.
         self._feat = feat
         self._index = index
-        
+
         # Getting the pointer for this field.
-        fld_ptr = capi.get_feat_field_defn(feat, index)
+        fld_ptr = capi.get_feat_field_defn(feat.ptr, index)
         if not fld_ptr:
             raise OGRException('Cannot create OGR Field, invalid pointer given.')
         self.ptr = fld_ptr
@@ -33,6 +38,7 @@ class Field(GDALBase):
         # OFTReal with no precision should be an OFTInteger.
         if isinstance(self, OFTReal) and self.precision == 0:
             self.__class__ = OFTInteger
+            self._double = True
 
     def __str__(self):
         "Returns the string representation of the Field."
@@ -41,21 +47,23 @@ class Field(GDALBase):
     #### Field Methods ####
     def as_double(self):
         "Retrieves the Field's value as a double (float)."
-        return capi.get_field_as_double(self._feat, self._index)
+        return capi.get_field_as_double(self._feat.ptr, self._index)
 
     def as_int(self):
         "Retrieves the Field's value as an integer."
-        return capi.get_field_as_integer(self._feat, self._index)
+        return capi.get_field_as_integer(self._feat.ptr, self._index)
 
     def as_string(self):
         "Retrieves the Field's value as a string."
-        return capi.get_field_as_string(self._feat, self._index)
+        string = capi.get_field_as_string(self._feat.ptr, self._index)
+        return force_text(string, encoding=self._feat.encoding, strings_only=True)
 
     def as_datetime(self):
         "Retrieves the Field's value as a tuple of date & time components."
         yy, mm, dd, hh, mn, ss, tz = [c_int() for i in range(7)]
-        status = capi.get_field_as_datetime(self._feat, self._index, byref(yy), byref(mm), byref(dd),
-                                            byref(hh), byref(mn), byref(ss), byref(tz))
+        status = capi.get_field_as_datetime(
+            self._feat.ptr, self._index, byref(yy), byref(mm), byref(dd),
+            byref(hh), byref(mn), byref(ss), byref(tz))
         if status:
             return (yy, mm, dd, hh, mn, ss, tz)
         else:
@@ -65,7 +73,8 @@ class Field(GDALBase):
     @property
     def name(self):
         "Returns the name of this Field."
-        return capi.get_field_name(self.ptr)
+        name = capi.get_field_name(self.ptr)
+        return force_text(name, encoding=self._feat.encoding, strings_only=True)
 
     @property
     def precision(self):
@@ -95,10 +104,17 @@ class Field(GDALBase):
 
 ### The Field sub-classes for each OGR Field type. ###
 class OFTInteger(Field):
+    _double = False
+
     @property
     def value(self):
         "Returns an integer contained in this field."
-        return self.as_int()
+        if self._double:
+            # If this is really from an OFTReal field with no precision,
+            # read as a double and cast as Python int (to prevent overflow).
+            return int(self.as_double())
+        else:
+            return self.as_int()
 
     @property
     def type(self):
@@ -136,8 +152,8 @@ class OFTDateTime(Field):
     def value(self):
         "Returns a Python `datetime` object for this OFTDateTime field."
         # TODO: Adapt timezone information.
-        #  See http://lists.maptools.org/pipermail/gdal-dev/2006-February/007990.html
-        #  The `tz` variable has values of: 0=unknown, 1=localtime (ambiguous), 
+        #  See http://lists.osgeo.org/pipermail/gdal-dev/2006-February/007990.html
+        #  The `tz` variable has values of: 0=unknown, 1=localtime (ambiguous),
         #  100=GMT, 104=GMT+1, 80=GMT-5, etc.
         try:
             yy, mm, dd, hh, mn, ss, tz = self.as_datetime()

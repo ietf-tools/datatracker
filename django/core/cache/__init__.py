@@ -12,18 +12,22 @@ get_cache() function made available here. get_cache() takes a backend URI
 (e.g. "memcached://127.0.0.1:11211/") and returns an instance of a backend
 cache class.
 
-See docs/cache.txt for information on the public API.
+See docs/topics/cache.txt for information on the public API.
 """
-
-try:
-    from urlparse import parse_qsl
-except ImportError:
-    from cgi import parse_qsl
 
 from django.conf import settings
 from django.core import signals
-from django.core.cache.backends.base import InvalidCacheBackendError, CacheKeyWarning
+from django.core.cache.backends.base import (
+    InvalidCacheBackendError, CacheKeyWarning, BaseCache)
+from django.core.exceptions import ImproperlyConfigured
 from django.utils import importlib
+from django.utils.module_loading import import_by_path
+from django.utils.six.moves.urllib.parse import parse_qsl
+
+
+__all__ = [
+    'get_cache', 'cache', 'DEFAULT_CACHE_ALIAS'
+]
 
 # Name for use in settings file --> name of module in "backends" directory.
 # Any backend scheme that is not in this dictionary is treated as a Python
@@ -35,6 +39,8 @@ BACKENDS = {
     'db': 'db',
     'dummy': 'dummy',
 }
+
+DEFAULT_CACHE_ALIAS = 'default'
 
 def parse_backend_uri(backend_uri):
     """
@@ -60,20 +66,73 @@ def parse_backend_uri(backend_uri):
 
     return scheme, host, params
 
-def get_cache(backend_uri):
-    scheme, host, params = parse_backend_uri(backend_uri)
-    if scheme in BACKENDS:
-        name = 'django.core.cache.backends.%s' % BACKENDS[scheme]
+if DEFAULT_CACHE_ALIAS not in settings.CACHES:
+    raise ImproperlyConfigured("You must define a '%s' cache" % DEFAULT_CACHE_ALIAS)
+
+def parse_backend_conf(backend, **kwargs):
+    """
+    Helper function to parse the backend configuration
+    that doesn't use the URI notation.
+    """
+    # Try to get the CACHES entry for the given backend name first
+    conf = settings.CACHES.get(backend, None)
+    if conf is not None:
+        args = conf.copy()
+        args.update(kwargs)
+        backend = args.pop('BACKEND')
+        location = args.pop('LOCATION', '')
+        return backend, location, args
     else:
-        name = scheme
-    module = importlib.import_module(name)
-    return getattr(module, 'CacheClass')(host, params)
+        try:
+            # Trying to import the given backend, in case it's a dotted path
+            backend_cls = import_by_path(backend)
+        except ImproperlyConfigured as e:
+            raise InvalidCacheBackendError("Could not find backend '%s': %s" % (
+                backend, e))
+        location = kwargs.pop('LOCATION', '')
+        return backend, location, kwargs
 
-cache = get_cache(settings.CACHE_BACKEND)
+def get_cache(backend, **kwargs):
+    """
+    Function to load a cache backend dynamically. This is flexible by design
+    to allow different use cases:
 
-# Some caches -- pythont-memcached in particular -- need to do a cleanup at the
-# end of a request cycle. If the cache provides a close() method, wire it up
-# here.
-if hasattr(cache, 'close'):
+    To load a backend with the old URI-based notation::
+
+        cache = get_cache('locmem://')
+
+    To load a backend that is pre-defined in the settings::
+
+        cache = get_cache('default')
+
+    To load a backend with its dotted import path,
+    including arbitrary options::
+
+        cache = get_cache('django.core.cache.backends.memcached.MemcachedCache', **{
+            'LOCATION': '127.0.0.1:11211', 'TIMEOUT': 30,
+        })
+
+    """
+    try:
+        if '://' in backend:
+            # for backwards compatibility
+            backend, location, params = parse_backend_uri(backend)
+            if backend in BACKENDS:
+                backend = 'django.core.cache.backends.%s' % BACKENDS[backend]
+            params.update(kwargs)
+            mod = importlib.import_module(backend)
+            backend_cls = mod.CacheClass
+        else:
+            backend, location, params = parse_backend_conf(backend, **kwargs)
+            backend_cls = import_by_path(backend)
+    except (AttributeError, ImportError, ImproperlyConfigured) as e:
+        raise InvalidCacheBackendError(
+            "Could not find backend '%s': %s" % (backend, e))
+    cache = backend_cls(location, params)
+    # Some caches -- python-memcached in particular -- need to do a cleanup at the
+    # end of a request cycle. If not implemented in a particular backend
+    # cache.close is a no-op
     signals.request_finished.connect(cache.close)
+    return cache
 
+cache = get_cache(DEFAULT_CACHE_ALIAS)

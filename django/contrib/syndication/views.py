@@ -1,24 +1,31 @@
+from __future__ import unicode_literals
+
+from calendar import timegm
+
 from django.conf import settings
 from django.contrib.sites.models import get_current_site
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.http import HttpResponse, Http404
 from django.template import loader, TemplateDoesNotExist, RequestContext
 from django.utils import feedgenerator, tzinfo
-from django.utils.encoding import force_unicode, iri_to_uri, smart_unicode
+from django.utils.encoding import force_text, iri_to_uri, smart_text
 from django.utils.html import escape
+from django.utils.http import http_date
+from django.utils import six
+from django.utils.timezone import is_naive
+
 
 def add_domain(domain, url, secure=False):
-    if not (url.startswith('http://')
+    protocol = 'https' if secure else 'http'
+    if url.startswith('//'):
+        # Support network-path reference (see #16753) - RSS requires a protocol
+        url = '%s:%s' % (protocol, url)
+    elif not (url.startswith('http://')
             or url.startswith('https://')
             or url.startswith('mailto:')):
-        # 'url' must already be ASCII and URL-quoted, so no need for encoding
-        # conversions here.
-        if secure:
-            protocol = 'https'
-        else:
-            protocol = 'http'
-        url = iri_to_uri(u'%s://%s%s' % (protocol, domain, url))
+        url = iri_to_uri('%s://%s%s' % (protocol, domain, url))
     return url
+
 
 class FeedDoesNotExist(ObjectDoesNotExist):
     pass
@@ -35,16 +42,21 @@ class Feed(object):
         except ObjectDoesNotExist:
             raise Http404('Feed object does not exist.')
         feedgen = self.get_feed(obj, request)
-        response = HttpResponse(mimetype=feedgen.mime_type)
+        response = HttpResponse(content_type=feedgen.mime_type)
+        if hasattr(self, 'item_pubdate'):
+            # if item_pubdate is defined for the feed, set header so as
+            # ConditionalGetMiddleware is able to send 304 NOT MODIFIED
+            response['Last-Modified'] = http_date(
+                timegm(feedgen.latest_post_date().utctimetuple()))
         feedgen.write(response, 'utf-8')
         return response
 
     def item_title(self, item):
         # Titles should be double escaped by default (see #6533)
-        return escape(force_unicode(item))
+        return escape(force_text(item))
 
     def item_description(self, item):
-        return force_unicode(item)
+        return force_text(item)
 
     def item_link(self, item):
         try:
@@ -58,15 +70,14 @@ class Feed(object):
         except AttributeError:
             return default
         if callable(attr):
-            # Check func_code.co_argcount rather than try/excepting the
-            # function and catching the TypeError, because something inside
-            # the function may raise the TypeError. This technique is more
-            # accurate.
-            if hasattr(attr, 'func_code'):
-                argcount = attr.func_code.co_argcount
-            else:
-                argcount = attr.__call__.func_code.co_argcount
-            if argcount == 2: # one argument is 'self'
+            # Check co_argcount rather than try/excepting the function and
+            # catching the TypeError, because something inside the function
+            # may raise the TypeError. This technique is more accurate.
+            try:
+                code = six.get_function_code(attr)
+            except AttributeError:
+                code = six.get_function_code(attr.__call__)
+            if code.co_argcount == 2:       # one argument is 'self'
                 return attr(obj)
             else:
                 return attr()
@@ -89,6 +100,16 @@ class Feed(object):
     def get_object(self, request, *args, **kwargs):
         return None
 
+    def get_context_data(self, **kwargs):
+        """
+        Returns a dictionary to use as extra context if either
+        ``self.description_template`` or ``self.item_template`` are used.
+
+        Default implementation preserves the old behavior
+        of using {'obj': item, 'site': current_site} as the context.
+        """
+        return {'obj': kwargs.get('item'), 'site': kwargs.get('site')}
+
     def get_feed(self, obj, request):
         """
         Returns a feedgenerator.DefaultFeed object, fully populated, for
@@ -104,7 +125,7 @@ class Feed(object):
             subtitle = self.__get_dynamic_attr('subtitle', obj),
             link = link,
             description = self.__get_dynamic_attr('description', obj),
-            language = settings.LANGUAGE_CODE.decode(),
+            language = settings.LANGUAGE_CODE,
             feed_url = add_domain(
                 current_site.domain,
                 self.__get_dynamic_attr('feed_url', obj) or request.path,
@@ -135,12 +156,14 @@ class Feed(object):
                 pass
 
         for item in self.__get_dynamic_attr('items', obj):
+            context = self.get_context_data(item=item, site=current_site,
+                                            obj=obj, request=request)
             if title_tmp is not None:
-                title = title_tmp.render(RequestContext(request, {'obj': item, 'site': current_site}))
+                title = title_tmp.render(RequestContext(request, context))
             else:
                 title = self.__get_dynamic_attr('item_title', item)
             if description_tmp is not None:
-                description = description_tmp.render(RequestContext(request, {'obj': item, 'site': current_site}))
+                description = description_tmp.render(RequestContext(request, context))
             else:
                 description = self.__get_dynamic_attr('item_description', item)
             link = add_domain(
@@ -152,9 +175,9 @@ class Feed(object):
             enc_url = self.__get_dynamic_attr('item_enclosure_url', item)
             if enc_url:
                 enc = feedgenerator.Enclosure(
-                    url = smart_unicode(enc_url),
-                    length = smart_unicode(self.__get_dynamic_attr('item_enclosure_length', item)),
-                    mime_type = smart_unicode(self.__get_dynamic_attr('item_enclosure_mime_type', item))
+                    url = smart_text(enc_url),
+                    length = smart_text(self.__get_dynamic_attr('item_enclosure_length', item)),
+                    mime_type = smart_text(self.__get_dynamic_attr('item_enclosure_mime_type', item))
                 )
             author_name = self.__get_dynamic_attr('item_author_name', item)
             if author_name is not None:
@@ -164,7 +187,7 @@ class Feed(object):
                 author_email = author_link = None
 
             pubdate = self.__get_dynamic_attr('item_pubdate', item)
-            if pubdate and not pubdate.tzinfo:
+            if pubdate and is_naive(pubdate):
                 ltz = tzinfo.LocalTimezone(pubdate)
                 pubdate = pubdate.replace(tzinfo=ltz)
 
@@ -173,6 +196,8 @@ class Feed(object):
                 link = link,
                 description = description,
                 unique_id = self.__get_dynamic_attr('item_guid', item, link),
+                unique_id_is_permalink = self.__get_dynamic_attr(
+                    'item_guid_is_permalink', item),
                 enclosure = enc,
                 pubdate = pubdate,
                 author_name = author_name,
@@ -183,47 +208,3 @@ class Feed(object):
                 **self.item_extra_kwargs(item)
             )
         return feed
-
-
-def feed(request, url, feed_dict=None):
-    """Provided for backwards compatibility."""
-    from django.contrib.syndication.feeds import Feed as LegacyFeed
-    import warnings
-    warnings.warn('The syndication feed() view is deprecated. Please use the '
-                  'new class based view API.',
-                  category=PendingDeprecationWarning)
-
-    if not feed_dict:
-        raise Http404("No feeds are registered.")
-
-    try:
-        slug, param = url.split('/', 1)
-    except ValueError:
-        slug, param = url, ''
-
-    try:
-        f = feed_dict[slug]
-    except KeyError:
-        raise Http404("Slug %r isn't registered." % slug)
-
-    # Backwards compatibility within the backwards compatibility;
-    # Feeds can be updated to be class-based, but still be deployed
-    # using the legacy feed view. This only works if the feed takes
-    # no arguments (i.e., get_object returns None). Refs #14176.
-    if not issubclass(f, LegacyFeed):
-        instance = f()
-        instance.feed_url = getattr(f, 'feed_url', None) or request.path
-        instance.title_template = f.title_template or ('feeds/%s_title.html' % slug)
-        instance.description_template = f.description_template or ('feeds/%s_description.html' % slug)
-
-        return instance(request)
-
-    try:
-        feedgen = f(slug, request).get_feed(param)
-    except FeedDoesNotExist:
-        raise Http404("Invalid feed parameters. Slug %r is valid, but other parameters, or lack thereof, are not." % slug)
-
-    response = HttpResponse(mimetype=feedgen.mime_type)
-    feedgen.write(response, 'utf-8')
-    return response
-

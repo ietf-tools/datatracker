@@ -3,23 +3,24 @@ PostgreSQL database backend for Django.
 
 Requires psycopg 2: http://initd.org/projects/psycopg2
 """
-
+import logging
 import sys
 
-from django.db import utils
 from django.db.backends import *
-from django.db.backends.signals import connection_created
-from django.db.backends.postgresql.operations import DatabaseOperations as PostgresqlDatabaseOperations
-from django.db.backends.postgresql.client import DatabaseClient
-from django.db.backends.postgresql.creation import DatabaseCreation
-from django.db.backends.postgresql.version import get_version
+from django.db.backends.postgresql_psycopg2.operations import DatabaseOperations
+from django.db.backends.postgresql_psycopg2.client import DatabaseClient
+from django.db.backends.postgresql_psycopg2.creation import DatabaseCreation
+from django.db.backends.postgresql_psycopg2.version import get_version
 from django.db.backends.postgresql_psycopg2.introspection import DatabaseIntrospection
-from django.utils.safestring import SafeUnicode, SafeString
+from django.utils.encoding import force_str
+from django.utils.functional import cached_property
+from django.utils.safestring import SafeText, SafeBytes
+from django.utils.timezone import utc
 
 try:
     import psycopg2 as Database
     import psycopg2.extensions
-except ImportError, e:
+except ImportError as e:
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured("Error loading psycopg2 module: %s" % e)
 
@@ -27,58 +28,32 @@ DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-psycopg2.extensions.register_adapter(SafeString, psycopg2.extensions.QuotedString)
-psycopg2.extensions.register_adapter(SafeUnicode, psycopg2.extensions.QuotedString)
+psycopg2.extensions.register_adapter(SafeBytes, psycopg2.extensions.QuotedString)
+psycopg2.extensions.register_adapter(SafeText, psycopg2.extensions.QuotedString)
 
-class CursorWrapper(object):
-    """
-    A thin wrapper around psycopg2's normal cursor class so that we can catch
-    particular exception instances and reraise them with the right types.
-    """
+logger = logging.getLogger('django.db.backends')
 
-    def __init__(self, cursor):
-        self.cursor = cursor
-
-    def execute(self, query, args=None):
-        try:
-            return self.cursor.execute(query, args)
-        except Database.IntegrityError, e:
-            raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
-        except Database.DatabaseError, e:
-            raise utils.DatabaseError, utils.DatabaseError(*tuple(e)), sys.exc_info()[2]
-
-    def executemany(self, query, args):
-        try:
-            return self.cursor.executemany(query, args)
-        except Database.IntegrityError, e:
-            raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
-        except Database.DatabaseError, e:
-            raise utils.DatabaseError, utils.DatabaseError(*tuple(e)), sys.exc_info()[2]
-
-    def __getattr__(self, attr):
-        if attr in self.__dict__:
-            return self.__dict__[attr]
-        else:
-            return getattr(self.cursor, attr)
-
-    def __iter__(self):
-        return iter(self.cursor)
+def utc_tzinfo_factory(offset):
+    if offset != 0:
+        raise AssertionError("database connection isn't set to UTC")
+    return utc
 
 class DatabaseFeatures(BaseDatabaseFeatures):
     needs_datetime_string_cast = False
-    can_return_id_from_insert = False
-
-class DatabaseOperations(PostgresqlDatabaseOperations):
-    def last_executed_query(self, cursor, sql, params):
-        # With psycopg2, cursor objects have a "query" attribute that is the
-        # exact query sent to the database. See docs here:
-        # http://www.initd.org/tracker/psycopg/wiki/psycopg2_documentation#postgresql-status-message-and-executed-query
-        return cursor.query
-
-    def return_insert_id(self):
-        return "RETURNING %s", ()
+    can_return_id_from_insert = True
+    requires_rollback_on_dirty_transaction = True
+    has_real_datatype = True
+    can_defer_constraint_checks = True
+    has_select_for_update = True
+    has_select_for_update_nowait = True
+    has_bulk_insert = True
+    uses_savepoints = True
+    supports_tablespaces = True
+    supports_transactions = True
+    can_distinct_on_fields = True
 
 class DatabaseWrapper(BaseDatabaseWrapper):
+    vendor = 'postgresql'
     operators = {
         'exact': '= %s',
         'iexact': '= UPPER(%s)',
@@ -96,103 +71,136 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         'iendswith': 'LIKE UPPER(%s)',
     }
 
+    Database = Database
+
     def __init__(self, *args, **kwargs):
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
 
-        self.features = DatabaseFeatures()
-        autocommit = self.settings_dict["OPTIONS"].get('autocommit', False)
-        self.features.uses_autocommit = autocommit
-        self._set_isolation_level(int(not autocommit))
+        opts = self.settings_dict["OPTIONS"]
+        RC = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
+        self.isolation_level = opts.get('isolation_level', RC)
+
+        self.features = DatabaseFeatures(self)
         self.ops = DatabaseOperations(self)
         self.client = DatabaseClient(self)
         self.creation = DatabaseCreation(self)
         self.introspection = DatabaseIntrospection(self)
         self.validation = BaseDatabaseValidation(self)
 
-    def _cursor(self):
-        new_connection = False
-        set_tz = False
+    def get_connection_params(self):
         settings_dict = self.settings_dict
-        if self.connection is None:
-            new_connection = True
-            set_tz = settings_dict.get('TIME_ZONE')
-            if settings_dict['NAME'] == '':
-                from django.core.exceptions import ImproperlyConfigured
-                raise ImproperlyConfigured("You need to specify NAME in your Django settings file.")
-            conn_params = {
-                'database': settings_dict['NAME'],
-            }
-            conn_params.update(settings_dict['OPTIONS'])
-            if 'autocommit' in conn_params:
-                del conn_params['autocommit']
-            if settings_dict['USER']:
-                conn_params['user'] = settings_dict['USER']
-            if settings_dict['PASSWORD']:
-                conn_params['password'] = settings_dict['PASSWORD']
-            if settings_dict['HOST']:
-                conn_params['host'] = settings_dict['HOST']
-            if settings_dict['PORT']:
-                conn_params['port'] = settings_dict['PORT']
-            self.connection = Database.connect(**conn_params)
-            self.connection.set_client_encoding('UTF8')
-            self.connection.set_isolation_level(self.isolation_level)
-            connection_created.send(sender=self.__class__, connection=self)
-        cursor = self.connection.cursor()
-        cursor.tzinfo_factory = None
-        if new_connection:
-            if set_tz:
-                cursor.execute("SET TIME ZONE %s", [settings_dict['TIME_ZONE']])
-            if not hasattr(self, '_version'):
-                self.__class__._version = get_version(cursor)
-            if self._version[0:2] < (8, 0):
-                # No savepoint support for earlier version of PostgreSQL.
-                self.features.uses_savepoints = False
-            if self.features.uses_autocommit:
-                if self._version[0:2] < (8, 2):
-                    # FIXME: Needs extra code to do reliable model insert
-                    # handling, so we forbid it for now.
-                    from django.core.exceptions import ImproperlyConfigured
-                    raise ImproperlyConfigured("You cannot use autocommit=True with PostgreSQL prior to 8.2 at the moment.")
-                else:
-                    # FIXME: Eventually we're enable this by default for
-                    # versions that support it, but, right now, that's hard to
-                    # do without breaking other things (#10509).
-                    self.features.can_return_id_from_insert = True
-        return CursorWrapper(cursor)
+        if not settings_dict['NAME']:
+            from django.core.exceptions import ImproperlyConfigured
+            raise ImproperlyConfigured(
+                "settings.DATABASES is improperly configured. "
+                "Please supply the NAME value.")
+        conn_params = {
+            'database': settings_dict['NAME'],
+        }
+        conn_params.update(settings_dict['OPTIONS'])
+        if 'autocommit' in conn_params:
+            del conn_params['autocommit']
+        if 'isolation_level' in conn_params:
+            del conn_params['isolation_level']
+        if settings_dict['USER']:
+            conn_params['user'] = settings_dict['USER']
+        if settings_dict['PASSWORD']:
+            conn_params['password'] = force_str(settings_dict['PASSWORD'])
+        if settings_dict['HOST']:
+            conn_params['host'] = settings_dict['HOST']
+        if settings_dict['PORT']:
+            conn_params['port'] = settings_dict['PORT']
+        return conn_params
 
-    def _enter_transaction_management(self, managed):
-        """
-        Switch the isolation level when needing transaction support, so that
-        the same transaction is visible across all the queries.
-        """
-        if self.features.uses_autocommit and managed and not self.isolation_level:
-            self._set_isolation_level(1)
+    def get_new_connection(self, conn_params):
+        return Database.connect(**conn_params)
 
-    def _leave_transaction_management(self, managed):
-        """
-        If the normal operating mode is "autocommit", switch back to that when
-        leaving transaction management.
-        """
-        if self.features.uses_autocommit and not managed and self.isolation_level:
-            self._set_isolation_level(0)
-
-    def _set_isolation_level(self, level):
-        """
-        Do all the related feature configurations for changing isolation
-        levels. This doesn't touch the uses_autocommit feature, since that
-        controls the movement *between* isolation levels.
-        """
-        assert level in (0, 1)
-        try:
-            if self.connection is not None:
-                self.connection.set_isolation_level(level)
-        finally:
-            self.isolation_level = level
-            self.features.uses_savepoints = bool(level)
-
-    def _commit(self):
-        if self.connection is not None:
+    def init_connection_state(self):
+        settings_dict = self.settings_dict
+        self.connection.set_client_encoding('UTF8')
+        tz = 'UTC' if settings.USE_TZ else settings_dict.get('TIME_ZONE')
+        if tz:
             try:
-                return self.connection.commit()
-            except Database.IntegrityError, e:
-                raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
+                get_parameter_status = self.connection.get_parameter_status
+            except AttributeError:
+                # psycopg2 < 2.0.12 doesn't have get_parameter_status
+                conn_tz = None
+            else:
+                conn_tz = get_parameter_status('TimeZone')
+
+            if conn_tz != tz:
+                # Set the time zone in autocommit mode (see #17062)
+                self.set_autocommit(True)
+                self.connection.cursor().execute(
+                        self.ops.set_time_zone_sql(), [tz])
+        self.connection.set_isolation_level(self.isolation_level)
+
+    def create_cursor(self):
+        cursor = self.connection.cursor()
+        cursor.tzinfo_factory = utc_tzinfo_factory if settings.USE_TZ else None
+        return cursor
+
+    def close(self):
+        self.validate_thread_sharing()
+        if self.connection is None:
+            return
+
+        try:
+            self.connection.close()
+            self.connection = None
+        except Database.Error:
+            # In some cases (database restart, network connection lost etc...)
+            # the connection to the database is lost without giving Django a
+            # notification. If we don't set self.connection to None, the error
+            # will occur a every request.
+            self.connection = None
+            logger.warning('psycopg2 error while closing the connection.',
+                exc_info=sys.exc_info()
+            )
+            raise
+        finally:
+            self.set_clean()
+
+    def _set_isolation_level(self, isolation_level):
+        assert isolation_level in range(1, 5)     # Use set_autocommit for level = 0
+        if self.psycopg2_version >= (2, 4, 2):
+            self.connection.set_session(isolation_level=isolation_level)
+        else:
+            self.connection.set_isolation_level(isolation_level)
+
+    def _set_autocommit(self, autocommit):
+        if self.psycopg2_version >= (2, 4, 2):
+            self.connection.autocommit = autocommit
+        else:
+            if autocommit:
+                level = psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
+            else:
+                level = self.isolation_level
+            self.connection.set_isolation_level(level)
+
+    def check_constraints(self, table_names=None):
+        """
+        To check constraints, we set constraints to immediate. Then, when, we're done we must ensure they
+        are returned to deferred.
+        """
+        self.cursor().execute('SET CONSTRAINTS ALL IMMEDIATE')
+        self.cursor().execute('SET CONSTRAINTS ALL DEFERRED')
+
+    def is_usable(self):
+        try:
+            # Use a psycopg cursor directly, bypassing Django's utilities.
+            self.connection.cursor().execute("SELECT 1")
+        except DatabaseError:
+            return False
+        else:
+            return True
+
+    @cached_property
+    def psycopg2_version(self):
+        version = psycopg2.__version__.split(' ', 1)[0]
+        return tuple(int(v) for v in version.split('.'))
+
+    @cached_property
+    def pg_version(self):
+        with self.temporary_connection():
+            return get_version(self.connection)

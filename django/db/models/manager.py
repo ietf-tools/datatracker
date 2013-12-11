@@ -1,10 +1,10 @@
-from django.utils import copycompat as copy
-from django.conf import settings
+import copy
 from django.db import router
-from django.db.models.query import QuerySet, EmptyQuerySet, insert_query, RawQuerySet
+from django.db.models.query import QuerySet, insert_query, RawQuerySet
 from django.db.models import signals
 from django.db.models.fields import FieldDoesNotExist
-
+from django.utils import six
+from django.utils.deprecation import RenameMethodsBase
 
 def ensure_default_manager(sender, **kwargs):
     """
@@ -15,6 +15,10 @@ def ensure_default_manager(sender, **kwargs):
     """
     cls = sender
     if cls._meta.abstract:
+        setattr(cls, 'objects', AbstractManagerDescriptor(cls))
+        return
+    elif cls._meta.swapped:
+        setattr(cls, 'objects', SwappedManagerDescriptor(cls))
         return
     if not getattr(cls, '_default_manager', None):
         # Create the default manager, if needed.
@@ -43,7 +47,15 @@ def ensure_default_manager(sender, **kwargs):
 
 signals.class_prepared.connect(ensure_default_manager)
 
-class Manager(object):
+
+class RenameManagerMethods(RenameMethodsBase):
+    renamed_methods = (
+        ('get_query_set', 'get_queryset', PendingDeprecationWarning),
+        ('get_prefetch_query_set', 'get_prefetch_queryset', PendingDeprecationWarning),
+    )
+
+
+class Manager(six.with_metaclass(RenameManagerMethods)):
     # Tracks each time a Manager instance is created. Used to retain order.
     creation_counter = 0
 
@@ -57,7 +69,14 @@ class Manager(object):
     def contribute_to_class(self, model, name):
         # TODO: Use weakref because of possible memory leak / circular reference.
         self.model = model
-        setattr(model, name, ManagerDescriptor(self))
+        # Only contribute the manager if the model is concrete
+        if model._meta.abstract:
+            setattr(model, name, AbstractManagerDescriptor(model))
+        elif model._meta.swapped:
+            setattr(model, name, SwappedManagerDescriptor(model))
+        else:
+        # if not model._meta.abstract and not model._meta.swapped:
+            setattr(model, name, ManagerDescriptor(self))
         if not getattr(model, '_default_manager', None) or self.creation_counter < model._default_manager.creation_counter:
             model._default_manager = self
         if model._meta.abstract or (self._inherited and not self.model._meta.proxy):
@@ -101,104 +120,123 @@ class Manager(object):
     # PROXIES TO QUERYSET #
     #######################
 
-    def get_empty_query_set(self):
-        return EmptyQuerySet(self.model, using=self._db)
-
-    def get_query_set(self):
+    def get_queryset(self):
         """Returns a new QuerySet object.  Subclasses can override this method
         to easily customize the behavior of the Manager.
         """
         return QuerySet(self.model, using=self._db)
 
     def none(self):
-        return self.get_empty_query_set()
+        return self.get_queryset().none()
 
     def all(self):
-        return self.get_query_set()
+        return self.get_queryset()
 
     def count(self):
-        return self.get_query_set().count()
+        return self.get_queryset().count()
 
     def dates(self, *args, **kwargs):
-        return self.get_query_set().dates(*args, **kwargs)
+        return self.get_queryset().dates(*args, **kwargs)
+
+    def datetimes(self, *args, **kwargs):
+        return self.get_queryset().datetimes(*args, **kwargs)
 
     def distinct(self, *args, **kwargs):
-        return self.get_query_set().distinct(*args, **kwargs)
+        return self.get_queryset().distinct(*args, **kwargs)
 
     def extra(self, *args, **kwargs):
-        return self.get_query_set().extra(*args, **kwargs)
+        return self.get_queryset().extra(*args, **kwargs)
 
     def get(self, *args, **kwargs):
-        return self.get_query_set().get(*args, **kwargs)
+        return self.get_queryset().get(*args, **kwargs)
 
     def get_or_create(self, **kwargs):
-        return self.get_query_set().get_or_create(**kwargs)
+        return self.get_queryset().get_or_create(**kwargs)
 
     def create(self, **kwargs):
-        return self.get_query_set().create(**kwargs)
+        return self.get_queryset().create(**kwargs)
+
+    def bulk_create(self, *args, **kwargs):
+        return self.get_queryset().bulk_create(*args, **kwargs)
 
     def filter(self, *args, **kwargs):
-        return self.get_query_set().filter(*args, **kwargs)
+        return self.get_queryset().filter(*args, **kwargs)
 
     def aggregate(self, *args, **kwargs):
-        return self.get_query_set().aggregate(*args, **kwargs)
+        return self.get_queryset().aggregate(*args, **kwargs)
 
     def annotate(self, *args, **kwargs):
-        return self.get_query_set().annotate(*args, **kwargs)
+        return self.get_queryset().annotate(*args, **kwargs)
 
     def complex_filter(self, *args, **kwargs):
-        return self.get_query_set().complex_filter(*args, **kwargs)
+        return self.get_queryset().complex_filter(*args, **kwargs)
 
     def exclude(self, *args, **kwargs):
-        return self.get_query_set().exclude(*args, **kwargs)
+        return self.get_queryset().exclude(*args, **kwargs)
 
     def in_bulk(self, *args, **kwargs):
-        return self.get_query_set().in_bulk(*args, **kwargs)
+        return self.get_queryset().in_bulk(*args, **kwargs)
 
     def iterator(self, *args, **kwargs):
-        return self.get_query_set().iterator(*args, **kwargs)
+        return self.get_queryset().iterator(*args, **kwargs)
+
+    def earliest(self, *args, **kwargs):
+        return self.get_queryset().earliest(*args, **kwargs)
 
     def latest(self, *args, **kwargs):
-        return self.get_query_set().latest(*args, **kwargs)
+        return self.get_queryset().latest(*args, **kwargs)
+
+    def first(self):
+        return self.get_queryset().first()
+
+    def last(self):
+        return self.get_queryset().last()
 
     def order_by(self, *args, **kwargs):
-        return self.get_query_set().order_by(*args, **kwargs)
+        return self.get_queryset().order_by(*args, **kwargs)
+
+    def select_for_update(self, *args, **kwargs):
+        return self.get_queryset().select_for_update(*args, **kwargs)
 
     def select_related(self, *args, **kwargs):
-        return self.get_query_set().select_related(*args, **kwargs)
+        return self.get_queryset().select_related(*args, **kwargs)
+
+    def prefetch_related(self, *args, **kwargs):
+        return self.get_queryset().prefetch_related(*args, **kwargs)
 
     def values(self, *args, **kwargs):
-        return self.get_query_set().values(*args, **kwargs)
+        return self.get_queryset().values(*args, **kwargs)
 
     def values_list(self, *args, **kwargs):
-        return self.get_query_set().values_list(*args, **kwargs)
+        return self.get_queryset().values_list(*args, **kwargs)
 
     def update(self, *args, **kwargs):
-        return self.get_query_set().update(*args, **kwargs)
+        return self.get_queryset().update(*args, **kwargs)
 
     def reverse(self, *args, **kwargs):
-        return self.get_query_set().reverse(*args, **kwargs)
+        return self.get_queryset().reverse(*args, **kwargs)
 
     def defer(self, *args, **kwargs):
-        return self.get_query_set().defer(*args, **kwargs)
+        return self.get_queryset().defer(*args, **kwargs)
 
     def only(self, *args, **kwargs):
-        return self.get_query_set().only(*args, **kwargs)
+        return self.get_queryset().only(*args, **kwargs)
 
     def using(self, *args, **kwargs):
-        return self.get_query_set().using(*args, **kwargs)
+        return self.get_queryset().using(*args, **kwargs)
 
     def exists(self, *args, **kwargs):
-        return self.get_query_set().exists(*args, **kwargs)
+        return self.get_queryset().exists(*args, **kwargs)
 
-    def _insert(self, values, **kwargs):
-        return insert_query(self.model, values, **kwargs)
+    def _insert(self, objs, fields, **kwargs):
+        return insert_query(self.model, objs, fields, **kwargs)
 
     def _update(self, values, **kwargs):
-        return self.get_query_set()._update(values, **kwargs)
+        return self.get_queryset()._update(values, **kwargs)
 
     def raw(self, raw_query, params=None, *args, **kwargs):
         return RawQuerySet(raw_query=raw_query, model=self.model, params=params, using=self._db, *args, **kwargs)
+
 
 class ManagerDescriptor(object):
     # This class ensures managers aren't accessible via model instances.
@@ -211,6 +249,35 @@ class ManagerDescriptor(object):
             raise AttributeError("Manager isn't accessible via %s instances" % type.__name__)
         return self.manager
 
+
+class AbstractManagerDescriptor(object):
+    # This class provides a better error message when you try to access a
+    # manager on an abstract model.
+    def __init__(self, model):
+        self.model = model
+
+    def __get__(self, instance, type=None):
+        raise AttributeError("Manager isn't available; %s is abstract" % (
+            self.model._meta.object_name,
+        ))
+
+
+class SwappedManagerDescriptor(object):
+    # This class provides a better error message when you try to access a
+    # manager on a swapped model.
+    def __init__(self, model):
+        self.model = model
+
+    def __get__(self, instance, type=None):
+        raise AttributeError("Manager isn't available; %s has been swapped for '%s'" % (
+            self.model._meta.object_name, self.model._meta.swapped
+        ))
+
+
 class EmptyManager(Manager):
-    def get_query_set(self):
-        return self.get_empty_query_set()
+    def __init__(self, model):
+        super(EmptyManager, self).__init__()
+        self.model = model
+
+    def get_queryset(self):
+        return super(EmptyManager, self).get_queryset().none()

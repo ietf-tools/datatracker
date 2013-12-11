@@ -1,42 +1,51 @@
-import django
-import os.path
-import re
+from __future__ import unicode_literals
 
-def get_svn_revision(path=None):
-    """
-    Returns the SVN revision in the form SVN-XXXX,
-    where XXXX is the revision number.
+import datetime
+import os
+import subprocess
 
-    Returns SVN-unknown if anything goes wrong, such as an unexpected
-    format of internal SVN files.
-
-    If path is provided, it should be a directory whose SVN info you want to
-    inspect. If it's not provided, this will use the root django/ package
-    directory.
-    """
-    rev = None
-    if path is None:
-        path = django.__path__[0]
-    entries_path = '%s/.svn/entries' % path
-
-    try:
-        entries = open(entries_path, 'r').read()
-    except IOError:
-        pass
+def get_version(version=None):
+    "Returns a PEP 386-compliant version number from VERSION."
+    if version is None:
+        from django import VERSION as version
     else:
-        # Versions >= 7 of the entries file are flat text.  The first line is
-        # the version number. The next set of digits after 'dir' is the revision.
-        if re.match('(\d+)', entries):
-            rev_match = re.search('\d+\s+dir\s+(\d+)', entries)
-            if rev_match:
-                rev = rev_match.groups()[0]
-        # Older XML versions of the file specify revision as an attribute of
-        # the first entries node.
-        else:
-            from xml.dom import minidom
-            dom = minidom.parse(entries_path)
-            rev = dom.getElementsByTagName('entry')[0].getAttribute('revision')
+        assert len(version) == 5
+        assert version[3] in ('alpha', 'beta', 'rc', 'final')
 
-    if rev:
-        return u'SVN-%s' % rev
-    return u'SVN-unknown'
+    # Now build the two parts of the version number:
+    # main = X.Y[.Z]
+    # sub = .devN - for pre-alpha releases
+    #     | {a|b|c}N - for alpha, beta and rc releases
+
+    parts = 2 if version[2] == 0 else 3
+    main = '.'.join(str(x) for x in version[:parts])
+
+    sub = ''
+    if version[3] == 'alpha' and version[4] == 0:
+        git_changeset = get_git_changeset()
+        if git_changeset:
+            sub = '.dev%s' % git_changeset
+
+    elif version[3] != 'final':
+        mapping = {'alpha': 'a', 'beta': 'b', 'rc': 'c'}
+        sub = mapping[version[3]] + str(version[4])
+
+    return str(main + sub)
+
+def get_git_changeset():
+    """Returns a numeric identifier of the latest git changeset.
+
+    The result is the UTC timestamp of the changeset in YYYYMMDDHHMMSS format.
+    This value isn't guaranteed to be unique, but collisions are very unlikely,
+    so it's sufficient for generating the development version numbers.
+    """
+    repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    git_log = subprocess.Popen('git log --pretty=format:%ct --quiet -1 HEAD',
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            shell=True, cwd=repo_dir, universal_newlines=True)
+    timestamp = git_log.communicate()[0]
+    try:
+        timestamp = datetime.datetime.utcfromtimestamp(int(timestamp))
+    except ValueError:
+        return None
+    return timestamp.strftime('%Y%m%d%H%M%S')

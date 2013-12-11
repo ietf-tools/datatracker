@@ -2,21 +2,19 @@
 Decorators for views based on HTTP headers.
 """
 
-try:
-    from functools import wraps
-except ImportError:
-    from django.utils.functional import wraps  # Python 2.4 fallback.
-
+import logging
 from calendar import timegm
-from datetime import timedelta
+from functools import wraps
 
 from django.utils.decorators import decorator_from_middleware, available_attrs
 from django.utils.http import http_date, parse_http_date_safe, parse_etags, quote_etag
 from django.middleware.http import ConditionalGetMiddleware
 from django.http import HttpResponseNotAllowed, HttpResponseNotModified, HttpResponse
 
-
 conditional_page = decorator_from_middleware(ConditionalGetMiddleware)
+
+logger = logging.getLogger('django.request')
+
 
 def require_http_methods(request_method_list):
     """
@@ -30,11 +28,18 @@ def require_http_methods(request_method_list):
     Note that request methods should be in uppercase.
     """
     def decorator(func):
+        @wraps(func, assigned=available_attrs(func))
         def inner(request, *args, **kwargs):
             if request.method not in request_method_list:
+                logger.warning('Method Not Allowed (%s): %s', request.method, request.path,
+                    extra={
+                        'status_code': 405,
+                        'request': request
+                    }
+                )
                 return HttpResponseNotAllowed(request_method_list)
             return func(request, *args, **kwargs)
-        return wraps(func, assigned=available_attrs(func))(inner)
+        return inner
     return decorator
 
 require_GET = require_http_methods(["GET"])
@@ -42,6 +47,9 @@ require_GET.__doc__ = "Decorator to require that a view only accept the GET meth
 
 require_POST = require_http_methods(["POST"])
 require_POST.__doc__ = "Decorator to require that a view only accept the POST method."
+
+require_safe = require_http_methods(["GET", "HEAD"])
+require_safe.__doc__ = "Decorator to require that a view only accept safe methods: GET and HEAD."
 
 def condition(etag_func=None, last_modified_func=None):
     """
@@ -66,6 +74,7 @@ def condition(etag_func=None, last_modified_func=None):
     called.
     """
     def decorator(func):
+        @wraps(func, assigned=available_attrs(func))
         def inner(request, *args, **kwargs):
             # Get HTTP request headers
             if_modified_since = request.META.get("HTTP_IF_MODIFIED_SINCE")
@@ -113,9 +122,21 @@ def condition(etag_func=None, last_modified_func=None):
                     if request.method in ("GET", "HEAD"):
                         response = HttpResponseNotModified()
                     else:
+                        logger.warning('Precondition Failed: %s', request.path,
+                            extra={
+                                'status_code': 412,
+                                'request': request
+                            }
+                        )
                         response = HttpResponse(status=412)
                 elif if_match and ((not res_etag and "*" in etags) or
                         (res_etag and res_etag not in etags)):
+                    logger.warning('Precondition Failed: %s', request.path,
+                        extra={
+                            'status_code': 412,
+                            'request': request
+                        }
+                    )
                     response = HttpResponse(status=412)
                 elif (not if_none_match and request.method == "GET" and
                         res_last_modified and if_modified_since and

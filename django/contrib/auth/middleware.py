@@ -1,20 +1,21 @@
 from django.contrib import auth
+from django.contrib.auth import load_backend
+from django.contrib.auth.backends import RemoteUserBackend
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.functional import SimpleLazyObject
 
 
-class LazyUser(object):
-    def __get__(self, request, obj_type=None):
-        if not hasattr(request, '_cached_user'):
-            from django.contrib.auth import get_user
-            request._cached_user = get_user(request)
-        return request._cached_user
+def get_user(request):
+    if not hasattr(request, '_cached_user'):
+        request._cached_user = auth.get_user(request)
+    return request._cached_user
 
 
 class AuthenticationMiddleware(object):
     def process_request(self, request):
         assert hasattr(request, 'session'), "The Django authentication middleware requires session middleware to be installed. Edit your MIDDLEWARE_CLASSES setting to insert 'django.contrib.sessions.middleware.SessionMiddleware'."
-        request.__class__.user = LazyUser()
-        return None
+
+        request.user = SimpleLazyObject(lambda: get_user(request))
 
 
 class RemoteUserMiddleware(object):
@@ -48,15 +49,24 @@ class RemoteUserMiddleware(object):
         try:
             username = request.META[self.header]
         except KeyError:
-            # If specified header doesn't exist then return (leaving
-            # request.user set to AnonymousUser by the
-            # AuthenticationMiddleware).
+            # If specified header doesn't exist then remove any existing
+            # authenticated remote-user, or return (leaving request.user set to
+            # AnonymousUser by the AuthenticationMiddleware).
+            if request.user.is_authenticated():
+                try:
+                    stored_backend = load_backend(request.session.get(
+                        auth.BACKEND_SESSION_KEY, ''))
+                    if isinstance(stored_backend, RemoteUserBackend):
+                        auth.logout(request)
+                except ImproperlyConfigured as e:
+                    # backend failed to load
+                    auth.logout(request)
             return
         # If the user is already authenticated and that user is the user we are
         # getting passed in the headers, then the correct user is already
         # persisted in the session and we don't need to continue.
         if request.user.is_authenticated():
-            if request.user.username == self.clean_username(username, request):
+            if request.user.get_username() == self.clean_username(username, request):
                 return
         # We are seeing this user for the first time in this session, attempt
         # to authenticate the user.
@@ -76,6 +86,6 @@ class RemoteUserMiddleware(object):
         backend = auth.load_backend(backend_str)
         try:
             username = backend.clean_username(username)
-        except AttributeError: # Backend has no clean_username method.
+        except AttributeError:  # Backend has no clean_username method.
             pass
         return username

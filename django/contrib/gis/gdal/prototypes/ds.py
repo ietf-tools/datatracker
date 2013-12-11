@@ -6,9 +6,8 @@
 from ctypes import c_char_p, c_double, c_int, c_long, c_void_p, POINTER
 from django.contrib.gis.gdal.envelope import OGREnvelope
 from django.contrib.gis.gdal.libgdal import lgdal
-from django.contrib.gis.gdal.prototypes.generation import \
-    const_string_output, double_output, geom_output, int_output, \
-    srs_output, void_output, voidptr_output
+from django.contrib.gis.gdal.prototypes.generation import (const_string_output,
+    double_output, geom_output, int_output, srs_output, void_output, voidptr_output)
 
 c_int_p = POINTER(c_int) # shortcut type
 
@@ -18,7 +17,7 @@ cleanup_all = void_output(lgdal.OGRCleanupAll, [], errcheck=False)
 get_driver = voidptr_output(lgdal.OGRGetDriver, [c_int])
 get_driver_by_name = voidptr_output(lgdal.OGRGetDriverByName, [c_char_p])
 get_driver_count = int_output(lgdal.OGRGetDriverCount, [])
-get_driver_name = const_string_output(lgdal.OGR_Dr_GetName, [c_void_p])
+get_driver_name = const_string_output(lgdal.OGR_Dr_GetName, [c_void_p], decoding='ascii')
 
 ### DataSource ###
 open_ds = voidptr_output(lgdal.OGROpen, [c_char_p, c_int, POINTER(c_void_p)])

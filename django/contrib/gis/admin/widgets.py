@@ -1,15 +1,18 @@
-from django.conf import settings
-from django.contrib.gis.gdal import OGRException
-from django.contrib.gis.geos import GEOSGeometry, GEOSException
+import logging
+
 from django.forms.widgets import Textarea
 from django.template import loader, Context
+from django.utils import six
 from django.utils import translation
+
+from django.contrib.gis.gdal import OGRException
+from django.contrib.gis.geos import GEOSGeometry, GEOSException
 
 # Creating a template context that contains Django settings
 # values needed by admin map templates.
-geo_context = Context({'ADMIN_MEDIA_PREFIX' : settings.ADMIN_MEDIA_PREFIX,
-                       'LANGUAGE_BIDI' : translation.get_language_bidi(),
-                       })
+geo_context = Context({'LANGUAGE_BIDI' : translation.get_language_bidi()})
+logger = logging.getLogger('django.contrib.gis')
+
 
 class OpenLayersWidget(Textarea):
     """
@@ -26,13 +29,18 @@ class OpenLayersWidget(Textarea):
 
         # If a string reaches here (via a validation error on another
         # field) then just reconstruct the Geometry.
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             try:
                 value = GEOSGeometry(value)
-            except (GEOSException, ValueError):
+            except (GEOSException, ValueError) as err:
+                logger.error(
+                    "Error creating geometry from value '%s' (%s)" % (
+                    value, err)
+                )
                 value = None
 
-        if value and value.geom_type.upper() != self.geom_type:
+        if (value and value.geom_type.upper() != self.geom_type and
+                self.geom_type != 'GEOMETRY'):
             value = None
 
         # Constructing the dictionary of the map options.
@@ -56,7 +64,11 @@ class OpenLayersWidget(Textarea):
                     ogr = value.ogr
                     ogr.transform(srid)
                     wkt = ogr.wkt
-                except OGRException:
+                except OGRException as err:
+                    logger.error(
+                        "Error transforming geometry from srid '%s' to srid '%s' (%s)" % (
+                        value.srid, srid, err)
+                    )
                     wkt = ''
             else:
                 wkt = value.wkt

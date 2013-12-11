@@ -1,7 +1,7 @@
-from ctypes import c_char_p, c_int, c_size_t, c_ubyte, c_uint, POINTER
-from django.contrib.gis.geos.libgeos import CS_PTR, GEOM_PTR, PREPGEOM_PTR, GEOS_PREPARE
-from django.contrib.gis.geos.prototypes.errcheck import \
-    check_geom, check_minus_one, check_sized_string, check_string, check_zero
+from ctypes import c_char_p, c_int, c_size_t, c_ubyte, POINTER
+from django.contrib.gis.geos.libgeos import CS_PTR, GEOM_PTR
+from django.contrib.gis.geos.prototypes.errcheck import (
+    check_geom, check_minus_one, check_sized_string, check_string, check_zero)
 from django.contrib.gis.geos.prototypes.threadsafe import GEOSFunc
 
 # This is the return type used by binary output (WKB, HEX) routines.
@@ -27,7 +27,7 @@ def bin_constructor(func):
 
 # HEX & WKB output
 def bin_output(func):
-    "Generates a prototype for the routines that return a a sized string."
+    "Generates a prototype for the routines that return a sized string."
     func.argtypes = [GEOM_PTR, POINTER(c_size_t)]
     func.errcheck = check_sized_string
     func.restype = c_uchar_p

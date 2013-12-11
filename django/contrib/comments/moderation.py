@@ -62,7 +62,8 @@ from django.contrib.comments import signals
 from django.db.models.base import ModelBase
 from django.template import Context, loader
 from django.contrib import comments
-from django.contrib.sites.models import Site
+from django.contrib.sites.models import get_current_site
+from django.utils import timezone
 
 class AlreadyModerated(Exception):
     """
@@ -205,8 +206,9 @@ class CommentModerator(object):
         if self.enable_field:
             if not getattr(content_object, self.enable_field):
                 return False
-        if self.auto_close_field and self.close_after:
-            if self._get_delta(datetime.datetime.now(), getattr(content_object, self.auto_close_field)).days >= self.close_after:
+        if self.auto_close_field and self.close_after is not None:
+            close_after_date = getattr(content_object, self.auto_close_field)
+            if close_after_date is not None and self._get_delta(timezone.now(), close_after_date).days >= self.close_after:
                 return False
         return True
 
@@ -220,8 +222,9 @@ class CommentModerator(object):
         non-public), ``False`` otherwise.
 
         """
-        if self.auto_moderate_field and self.moderate_after:
-            if self._get_delta(datetime.datetime.now(), getattr(content_object, self.auto_moderate_field)).days >= self.moderate_after:
+        if self.auto_moderate_field and self.moderate_after is not None:
+            moderate_after_date = getattr(content_object, self.auto_moderate_field)
+            if moderate_after_date is not None and self._get_delta(timezone.now(), moderate_after_date).days >= self.moderate_after:
                 return True
         return False
 
@@ -237,7 +240,7 @@ class CommentModerator(object):
         t = loader.get_template('comments/comment_notification_email.txt')
         c = Context({ 'comment': comment,
                       'content_object': content_object })
-        subject = '[%s] New comment posted on "%s"' % (Site.objects.get_current().name,
+        subject = '[%s] New comment posted on "%s"' % (get_current_site(request).name,
                                                           content_object)
         message = t.render(c)
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, fail_silently=True)
@@ -299,7 +302,7 @@ class Moderator(object):
             model_or_iterable = [model_or_iterable]
         for model in model_or_iterable:
             if model in self._registry:
-                raise AlreadyModerated("The model '%s' is already being moderated" % model._meta.module_name)
+                raise AlreadyModerated("The model '%s' is already being moderated" % model._meta.model_name)
             self._registry[model] = moderation_class(model)
 
     def unregister(self, model_or_iterable):
@@ -315,7 +318,7 @@ class Moderator(object):
             model_or_iterable = [model_or_iterable]
         for model in model_or_iterable:
             if model not in self._registry:
-                raise NotModerated("The model '%s' is not currently being moderated" % model._meta.module_name)
+                raise NotModerated("The model '%s' is not currently being moderated" % model._meta.model_name)
             del self._registry[model]
 
     def pre_save_moderation(self, sender, comment, request, **kwargs):

@@ -1,11 +1,14 @@
+from __future__ import absolute_import
+
 from django import template
 from django.conf import settings
-from django.shortcuts import get_object_or_404, render_to_response
-from django.contrib.auth.decorators import login_required, permission_required
-from utils import next_redirect, confirmation_view
 from django.contrib import comments
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.comments import signals
+from django.contrib.comments.views.utils import next_redirect, confirmation_view
+from django.shortcuts import get_object_or_404, render_to_response
 from django.views.decorators.csrf import csrf_protect
+
 
 @csrf_protect
 @login_required
@@ -13,7 +16,7 @@ def flag(request, comment_id, next=None):
     """
     Flags a comment. Confirmation on GET, action on POST.
 
-    Templates: `comments/flag.html`,
+    Templates: :template:`comments/flag.html`,
     Context:
         comment
             the flagged `comments.comment` object
@@ -23,7 +26,8 @@ def flag(request, comment_id, next=None):
     # Flag on POST
     if request.method == 'POST':
         perform_flag(request, comment)
-        return next_redirect(request.POST.copy(), next, flag_done, c=comment.pk)
+        return next_redirect(request, fallback=next or 'comments-flag-done',
+            c=comment.pk)
 
     # Render a form on GET
     else:
@@ -39,7 +43,7 @@ def delete(request, comment_id, next=None):
     Deletes a comment. Confirmation on GET, action on POST. Requires the "can
     moderate comments" permission.
 
-    Templates: `comments/delete.html`,
+    Templates: :template:`comments/delete.html`,
     Context:
         comment
             the flagged `comments.comment` object
@@ -50,7 +54,8 @@ def delete(request, comment_id, next=None):
     if request.method == 'POST':
         # Flag the comment as deleted instead of actually deleting it.
         perform_delete(request, comment)
-        return next_redirect(request.POST.copy(), next, delete_done, c=comment.pk)
+        return next_redirect(request, fallback=next or 'comments-delete-done',
+            c=comment.pk)
 
     # Render a form on GET
     else:
@@ -66,7 +71,7 @@ def approve(request, comment_id, next=None):
     Approve a comment (that is, mark it as public and non-removed). Confirmation
     on GET, action on POST. Requires the "can moderate comments" permission.
 
-    Templates: `comments/approve.html`,
+    Templates: :template:`comments/approve.html`,
     Context:
         comment
             the `comments.comment` object for approval
@@ -77,7 +82,8 @@ def approve(request, comment_id, next=None):
     if request.method == 'POST':
         # Flag the comment as approved.
         perform_approve(request, comment)
-        return next_redirect(request.POST.copy(), next, approve_done, c=comment.pk)
+        return next_redirect(request, fallback=next or 'comments-approve-done',
+            c=comment.pk)
 
     # Render a form on GET
     else:
@@ -87,7 +93,7 @@ def approve(request, comment_id, next=None):
         )
 
 # The following functions actually perform the various flag/aprove/delete
-# actions. They've been broken out into seperate functions to that they
+# actions. They've been broken out into separate functions to that they
 # may be called from admin actions.
 
 def perform_flag(request, comment):

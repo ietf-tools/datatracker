@@ -1,7 +1,6 @@
 """
 Parser and utilities for the smart 'if' tag
 """
-import operator
 
 # Using a simple top down parser, as described here:
 #    http://effbot.org/zone/simple-top-down-parsing.htm.
@@ -166,7 +165,7 @@ class IfParser(object):
 
         self.tokens = mapped_tokens
         self.pos = 0
-        self.current_token = self.next()
+        self.current_token = self.next_token()
 
     def translate_token(self, token):
         try:
@@ -176,7 +175,7 @@ class IfParser(object):
         else:
             return op()
 
-    def next(self):
+    def next_token(self):
         if self.pos >= len(self.tokens):
             return EndToken
         else:
@@ -194,11 +193,11 @@ class IfParser(object):
 
     def expression(self, rbp=0):
         t = self.current_token
-        self.current_token = self.next()
+        self.current_token = self.next_token()
         left = t.nud(self)
         while rbp < self.current_token.lbp:
             t = self.current_token
-            self.current_token = self.next()
+            self.current_token = self.next_token()
             left = t.led(left, self)
         return left
 

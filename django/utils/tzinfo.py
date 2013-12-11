@@ -1,8 +1,16 @@
 "Implementation of tzinfo classes for use with datetime.datetime."
 
+from __future__ import unicode_literals
+
 import time
 from datetime import timedelta, tzinfo
-from django.utils.encoding import smart_unicode, smart_str, DEFAULT_LOCALE_ENCODING
+
+from django.utils.encoding import force_str, force_text, DEFAULT_LOCALE_ENCODING
+
+# Python's doc say: "A tzinfo subclass must have an __init__() method that can
+# be called with no arguments". FixedOffset and LocalTimezone don't honor this
+# requirement. Defining __getinitargs__ is sufficient to fix copy/deepcopy as
+# well as pickling/unpickling.
 
 class FixedOffset(tzinfo):
     "Fixed offset in minutes east from UTC."
@@ -13,11 +21,14 @@ class FixedOffset(tzinfo):
         else:
             self.__offset = timedelta(minutes=offset)
 
-        sign = offset < 0 and '-' or '+'
-        self.__name = u"%s%02d%02d" % (sign, abs(offset) / 60., abs(offset) % 60)
+        sign = '-' if offset < 0 else '+'
+        self.__name = "%s%02d%02d" % (sign, abs(offset) / 60., abs(offset) % 60)
 
     def __repr__(self):
         return self.__name
+
+    def __getinitargs__(self):
+        return self.__offset,
 
     def utcoffset(self, dt):
         return self.__offset
@@ -28,14 +39,24 @@ class FixedOffset(tzinfo):
     def dst(self, dt):
         return timedelta(0)
 
+# This implementation is used for display purposes. It uses an approximation
+# for DST computations on dates >= 2038.
+
+# A similar implementation exists in django.utils.timezone. It's used for
+# timezone support (when USE_TZ = True) and focuses on correctness.
+
 class LocalTimezone(tzinfo):
     "Proxy timezone information from time module."
     def __init__(self, dt):
         tzinfo.__init__(self)
+        self.__dt = dt
         self._tzname = self.tzname(dt)
 
     def __repr__(self):
-        return smart_str(self._tzname)
+        return force_str(self._tzname)
+
+    def __getinitargs__(self):
+        return self.__dt,
 
     def utcoffset(self, dt):
         if self._isdst(dt):
@@ -50,14 +71,16 @@ class LocalTimezone(tzinfo):
             return timedelta(0)
 
     def tzname(self, dt):
+        is_dst = False if dt is None else self._isdst(dt)
         try:
-            return smart_unicode(time.tzname[self._isdst(dt)],
-                                 DEFAULT_LOCALE_ENCODING)
+            return force_text(time.tzname[is_dst], DEFAULT_LOCALE_ENCODING)
         except UnicodeDecodeError:
             return None
 
     def _isdst(self, dt):
-        tt = (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.weekday(), 0, -1)
+        tt = (dt.year, dt.month, dt.day,
+              dt.hour, dt.minute, dt.second,
+              dt.weekday(), 0, 0)
         try:
             stamp = time.mktime(tt)
         except (OverflowError, ValueError):

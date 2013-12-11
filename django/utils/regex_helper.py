@@ -5,6 +5,10 @@ Used internally by Django and not intended for external use.
 This is not, and is not intended to be, a complete reg-exp decompiler. It
 should be good enough for a large class of URLS, however.
 """
+from __future__ import unicode_literals
+
+from django.utils import six
+from django.utils.six.moves import zip
 
 # Mapping of an escape character to a representative of that class. So, e.g.,
 # "\w" is replaced by "x" in a reverse URL. A value of None means to ignore
@@ -13,12 +17,12 @@ ESCAPE_MAPPINGS = {
     "A": None,
     "b": None,
     "B": None,
-    "d": u"0",
-    "D": u"x",
-    "s": u" ",
-    "S": u"x",
-    "w": u"x",
-    "W": u"!",
+    "d": "0",
+    "D": "x",
+    "s": " ",
+    "S": "x",
+    "w": "x",
+    "W": "!",
     "Z": None,
 }
 
@@ -41,8 +45,8 @@ class NonCapture(list):
 
 def normalize(pattern):
     """
-    Given a reg-exp pattern, normalizes it to a list of forms that suffice for
-    reverse matching. This does the following:
+    Given a reg-exp pattern, normalizes it to an iterable of forms that
+    suffice for reverse matching. This does the following:
 
     (1) For any repeating sections, keeps the minimum number of occurrences
         permitted (this means zero for optional groups).
@@ -75,9 +79,9 @@ def normalize(pattern):
     # at the next character and possibly go around without consuming another
     # one at the top of the loop.
     try:
-        ch, escaped = pattern_iter.next()
+        ch, escaped = next(pattern_iter)
     except StopIteration:
-        return zip([u''],  [[]])
+        return [('', [])]
 
     try:
         while True:
@@ -85,7 +89,7 @@ def normalize(pattern):
                 result.append(ch)
             elif ch == '.':
                 # Replace "any character" with an arbitrary representative.
-                result.append(u".")
+                result.append(".")
             elif ch == '|':
                 # FIXME: One day we'll should do this, but not in 1.0.
                 raise NotImplementedError
@@ -105,22 +109,22 @@ def normalize(pattern):
                 result = result[:start] + [inner]
             elif ch == '[':
                 # Replace ranges with the first character in the range.
-                ch, escaped = pattern_iter.next()
+                ch, escaped = next(pattern_iter)
                 result.append(ch)
-                ch, escaped = pattern_iter.next()
+                ch, escaped = next(pattern_iter)
                 while escaped or ch != ']':
-                    ch, escaped = pattern_iter.next()
+                    ch, escaped = next(pattern_iter)
             elif ch == '(':
                 # Some kind of group.
-                ch, escaped = pattern_iter.next()
+                ch, escaped = next(pattern_iter)
                 if ch != '?' or escaped:
                     # A positional group
                     name = "_%d" % num_args
                     num_args += 1
-                    result.append(Group(((u"%%(%s)s" % name), name)))
+                    result.append(Group((("%%(%s)s" % name), name)))
                     walk_to_end(ch, pattern_iter)
                 else:
-                    ch, escaped = pattern_iter.next()
+                    ch, escaped = next(pattern_iter)
                     if ch in "iLmsu#":
                         # All of these are ignorable. Walk to the end of the
                         # group.
@@ -133,19 +137,29 @@ def normalize(pattern):
                         # we cannot reverse.
                         raise ValueError("Non-reversible reg-exp portion: '(?%s'" % ch)
                     else:
-                        ch, escaped = pattern_iter.next()
-                        if ch != '<':
+                        ch, escaped = next(pattern_iter)
+                        if ch not in ('<', '='):
                             raise ValueError("Non-reversible reg-exp portion: '(?P%s'" % ch)
                         # We are in a named capturing group. Extra the name and
                         # then skip to the end.
+                        if ch == '<':
+                            terminal_char = '>'
+                        # We are in a named backreference.
+                        else:
+                            terminal_char = ')'
                         name = []
-                        ch, escaped = pattern_iter.next()
-                        while ch != '>':
+                        ch, escaped = next(pattern_iter)
+                        while ch != terminal_char:
                             name.append(ch)
-                            ch, escaped = pattern_iter.next()
+                            ch, escaped = next(pattern_iter)
                         param = ''.join(name)
-                        result.append(Group(((u"%%(%s)s" % param), param)))
-                        walk_to_end(ch, pattern_iter)
+                        # Named backreferences have already consumed the
+                        # parenthesis.
+                        if terminal_char != ')':
+                            result.append(Group((("%%(%s)s" % param), param)))
+                            walk_to_end(ch, pattern_iter)
+                        else:
+                            result.append(Group((("%%(%s)s" % param), None)))
             elif ch in "*?+{":
                 # Quanitifers affect the previous item in the result list.
                 count, ch = get_quantifier(ch, pattern_iter)
@@ -173,16 +187,16 @@ def normalize(pattern):
                 result.append(ch)
 
             if consume_next:
-                ch, escaped = pattern_iter.next()
+                ch, escaped = next(pattern_iter)
             else:
                 consume_next = True
     except StopIteration:
         pass
     except NotImplementedError:
         # A case of using the disjunctive form. No results for you!
-        return zip([u''],  [[]])
+        return [('', [])]
 
-    return zip(*flatten_result(result))
+    return list(zip(*flatten_result(result)))
 
 def next_char(input_iter):
     """
@@ -198,7 +212,7 @@ def next_char(input_iter):
         if ch != '\\':
             yield ch, False
             continue
-        ch = input_iter.next()
+        ch = next(input_iter)
         representative = ESCAPE_MAPPINGS.get(ch, ch)
         if representative is None:
             continue
@@ -235,7 +249,7 @@ def get_quantifier(ch, input_iter):
     """
     if ch in '*?+':
         try:
-            ch2, escaped = input_iter.next()
+            ch2, escaped = next(input_iter)
         except StopIteration:
             ch2 = None
         if ch2 == '?':
@@ -246,14 +260,14 @@ def get_quantifier(ch, input_iter):
 
     quant = []
     while ch != '}':
-        ch, escaped = input_iter.next()
+        ch, escaped = next(input_iter)
         quant.append(ch)
     quant = quant[:-1]
     values = ''.join(quant).split(',')
 
     # Consume the trailing '?', if necessary.
     try:
-        ch, escaped = input_iter.next()
+        ch, escaped = next(input_iter)
     except StopIteration:
         ch = None
     if ch == '?':
@@ -280,20 +294,20 @@ def flatten_result(source):
     Each of the two lists will be of the same length.
     """
     if source is None:
-        return [u''], [[]]
+        return [''], [[]]
     if isinstance(source, Group):
         if source[1] is None:
             params = []
         else:
             params = [source[1]]
         return [source[0]], [params]
-    result = [u'']
+    result = ['']
     result_args = [[]]
     pos = last = 0
     for pos, elt in enumerate(source):
-        if isinstance(elt, basestring):
+        if isinstance(elt, six.string_types):
             continue
-        piece = u''.join(source[last:pos])
+        piece = ''.join(source[last:pos])
         if isinstance(elt, Group):
             piece += elt[0]
             param = elt[1]
@@ -321,7 +335,7 @@ def flatten_result(source):
             result = new_result
             result_args = new_args
     if pos >= last:
-        piece = u''.join(source[last:])
+        piece = ''.join(source[last:])
         for i in range(len(result)):
             result[i] += piece
     return result, result_args

@@ -24,3 +24,23 @@ oracle  = _default_db == 'oracle'
 postgis = _default_db == 'postgis'
 mysql   = _default_db == 'mysql'
 spatialite = _default_db == 'spatialite'
+
+HAS_SPATIALREFSYS = True
+if oracle and 'gis' in settings.DATABASES[DEFAULT_DB_ALIAS]['ENGINE']:
+    from django.contrib.gis.db.backends.oracle.models import SpatialRefSys
+elif postgis:
+    from django.contrib.gis.db.backends.postgis.models import SpatialRefSys
+elif spatialite:
+    from django.contrib.gis.db.backends.spatialite.models import SpatialRefSys
+else:
+    HAS_SPATIALREFSYS = False
+    SpatialRefSys = None
+
+
+def has_spatial_db():
+    # All databases must have spatial backends to run GeoDjango tests.
+    spatial_dbs = [name for name, db_dict in settings.DATABASES.items()
+        if db_dict['ENGINE'].startswith('django.contrib.gis')]
+    return len(spatial_dbs) == len(settings.DATABASES)
+
+HAS_SPATIAL_DB = has_spatial_db()

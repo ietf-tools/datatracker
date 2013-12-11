@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from optparse import make_option
 
 from django.core.management.base import AppCommand
@@ -16,5 +18,5 @@ class Command(AppCommand):
     output_transaction = True
 
     def handle_app(self, app, **options):
-        connection = connections[options.get('database', DEFAULT_DB_ALIAS)]
-        return u'\n'.join(connection.ops.sequence_reset_sql(self.style, models.get_models(app, include_auto_created=True))).encode('utf-8')
+        connection = connections[options.get('database')]
+        return '\n'.join(connection.ops.sequence_reset_sql(self.style, models.get_models(app, include_auto_created=True)))

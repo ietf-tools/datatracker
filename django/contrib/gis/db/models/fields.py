@@ -4,6 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.gis import forms
 from django.contrib.gis.db.models.proxy import GeometryProxy
 from django.contrib.gis.geometry.backend import Geometry, GeometryException
+from django.utils import six
 
 # Local cache of the spatial_ref_sys table, which holds SRID data for each
 # spatial database alias. This cache exists so that the database isn't queried
@@ -43,6 +44,7 @@ class GeometryField(Field):
 
     # The OpenGIS Geometry name.
     geom_type = 'GEOMETRY'
+    form_class = forms.GeometryField
 
     # Geodetic units.
     geodetic_units = ('Decimal Degree', 'degree')
@@ -94,7 +96,7 @@ class GeometryField(Field):
         # Is this a geography rather than a geometry column?
         self.geography = geography
 
-        # Oracle-specific private attributes for creating the entrie in
+        # Oracle-specific private attributes for creating the entry in
         # `USER_SDO_GEOM_METADATA`
         self._extent = kwargs.pop('extent', (-180.0, -90.0, 180.0, 90.0))
         self._tolerance = kwargs.pop('tolerance', 0.05)
@@ -159,7 +161,7 @@ class GeometryField(Field):
         # from the given string input.
         if isinstance(geom, Geometry):
             pass
-        elif isinstance(geom, basestring) or hasattr(geom, '__geo_interface__'):
+        elif isinstance(geom, (bytes, six.string_types)) or hasattr(geom, '__geo_interface__'):
             try:
                 geom = Geometry(geom)
             except GeometryException:
@@ -200,12 +202,14 @@ class GeometryField(Field):
         return connection.ops.geo_db_type(self)
 
     def formfield(self, **kwargs):
-        defaults = {'form_class' : forms.GeometryField,
-                    'null' : self.null,
+        defaults = {'form_class' : self.form_class,
                     'geom_type' : self.geom_type,
                     'srid' : self.srid,
                     }
         defaults.update(kwargs)
+        if (self.dim > 2 and not 'widget' in kwargs and
+                not getattr(defaults['form_class'].widget, 'supports_3d', False)):
+            defaults['widget'] = forms.Textarea
         return super(GeometryField, self).formfield(**defaults)
 
     def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
@@ -267,28 +271,35 @@ class GeometryField(Field):
 # The OpenGIS Geometry Type Fields
 class PointField(GeometryField):
     geom_type = 'POINT'
+    form_class = forms.PointField
     description = _("Point")
 
 class LineStringField(GeometryField):
     geom_type = 'LINESTRING'
+    form_class = forms.LineStringField
     description = _("Line string")
 
 class PolygonField(GeometryField):
     geom_type = 'POLYGON'
+    form_class = forms.PolygonField
     description = _("Polygon")
 
 class MultiPointField(GeometryField):
     geom_type = 'MULTIPOINT'
+    form_class = forms.MultiPointField
     description = _("Multi-point")
 
 class MultiLineStringField(GeometryField):
     geom_type = 'MULTILINESTRING'
+    form_class = forms.MultiLineStringField
     description = _("Multi-line string")
 
 class MultiPolygonField(GeometryField):
     geom_type = 'MULTIPOLYGON'
+    form_class = forms.MultiPolygonField
     description = _("Multi polygon")
 
 class GeometryCollectionField(GeometryField):
     geom_type = 'GEOMETRYCOLLECTION'
+    form_class = forms.GeometryCollectionField
     description = _("Geometry collection")
