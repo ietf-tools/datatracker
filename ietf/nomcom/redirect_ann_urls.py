@@ -1,7 +1,7 @@
-from django.conf.urls.defaults import patterns
-from django.views.generic.simple import redirect_to
+from django.conf.urls import patterns
+from django.views.generic import RedirectView
 
 urlpatterns = patterns('',
-     (r'^nomcom/$', 'django.views.generic.simple.redirect_to', { 'url': "/nomcom/ann/", 'permanent': True }),
-     (r'^nomcom/(?P<message_id>\d+)/$', 'django.views.generic.simple.redirect_to', { 'url': "/nomcom/ann/%(message_id)s/", 'permanent': True }),
+    (r'^nomcom/$', RedirectView.as_view(url="/nomcom/ann/", permanent=True)),
+    (r'^nomcom/(?P<message_id>\d+)/$', RedirectView.as_view(url="/nomcom/ann/%(message_id)s/", permanent=True)),
 )

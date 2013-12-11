@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2011, All Rights Reserved
 
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 
 urlpatterns = patterns('',
     url(r'^state/$', "ietf.wgcharter.views.change_state", name='charter_change_state'),

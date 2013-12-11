@@ -30,8 +30,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from django.conf.urls.defaults import patterns, url, include
-from django.shortcuts import redirect
+from django.conf.urls import patterns, url, include
+from django.views.generic import RedirectView
+
 from ietf.doc.models import State
 from ietf.doc import views_search, views_draft, views_ballot
 from ietf.doc import views_status_change
@@ -42,14 +43,8 @@ urlpatterns = patterns('',
     url(r'^search/$', views_search.search, name="doc_search"),
     url(r'^in-last-call/$', views_search.drafts_in_last_call, name="drafts_in_last_call"),
     url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.docs_for_ad, name="docs_for_ad"),
-)
-
-urlpatterns += patterns('django.views.generic.simple',
-    (r'^ad2/(?P<name>[A-Za-z0-9.-]+)/$', 'redirect_to', {'url': '/doc/ad/%(name)s/', 'permanent': True}),
-)
-
-urlpatterns += patterns('',
-    url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'), 
+    (r'^ad2/(?P<name>[A-Za-z0-9.-]+)/$', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
+    url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'),
     url(r'^start-rfc-status-change/(?P<name>[A-Za-z0-9._+-]*)$', views_status_change.start_rfc_status_change, name='start_rfc_status_change'), 
     url(r'^iesg/(?P<last_call_only>[A-Za-z0-9.-]+/)?$', views_search.drafts_in_iesg_process, name="drafts_in_iesg_process"),
 

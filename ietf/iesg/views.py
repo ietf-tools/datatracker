@@ -36,11 +36,10 @@ import codecs, re, os, glob, datetime
 import tarfile, StringIO, time
 import itertools
 
-from django.views.generic.simple import direct_to_template
 from django.core.urlresolvers import reverse as urlreverse
 from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.template import RequestContext, Context, loader
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render_to_response, get_object_or_404, render, redirect
 from django.conf import settings
 from django.utils import simplejson as json
 from django.db import models
@@ -362,7 +361,7 @@ def agenda_documents(request):
                 "sections": sorted((num, section) for num, section in sections.iteritems()
                                    if "2" <= num < "5")
                 })
-    return direct_to_template(request, 'iesg/agenda_documents.html', { 'telechats':telechats })
+    return render(request, 'iesg/agenda_documents.html', { 'telechats': telechats })
 
 def telechat_docs_tarfile(request, date):
     date = get_agenda_date(date)
@@ -433,7 +432,7 @@ def discusses(request):
     # latest first
     docs.sort(key=lambda d: min(p.time for p in d.blocking_positions), reverse=True)
 
-    return direct_to_template(request, 'iesg/discusses.html', { 'docs': docs })
+    return render(request, 'iesg/discusses.html', { 'docs': docs })
 
 @role_required('Area Director', 'Secretariat')
 def milestones_needing_review(request):

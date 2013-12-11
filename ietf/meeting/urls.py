@@ -1,17 +1,17 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.conf.urls.defaults import patterns, url, include
-from django.views.generic.simple import redirect_to
+from django.conf.urls import patterns, url, include
+from django.views.generic import RedirectView
 from ietf.meeting import views
 from ietf.meeting import ajax
 
 urlpatterns = patterns('',
     (r'^(?P<meeting_num>\d+)/materials.html$', views.materials),
-    (r'^agenda/$',          views.agenda),
+    (r'^agenda/$', views.agenda),
     (r'^(?P<base>agenda-utc)(?P<ext>.html)?$', views.agenda),
     (r'^agenda(?P<ext>.html)?$', views.agenda),
     (r'^agenda/edit$', views.edit_agenda),
-    (r'^requests.html$', redirect_to, {"url": '/meeting/requests', "permanent": True}),
+    (r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
     (r'^requests$', views.meeting_requests),
     (r'^agenda(?P<ext>.txt)$', views.agenda),
     (r'^agenda/agenda.ics$', views.ical_agenda),
@@ -19,13 +19,13 @@ urlpatterns = patterns('',
     (r'^agenda(?P<ext>.csv)$', views.agenda),
     (r'^agenda/week-view.html$', views.week_view),
     (r'^week-view.html$', views.week_view),
-    (r'^(?P<num>\d+)/schedule/edit$',        views.edit_agenda),
+    (r'^(?P<num>\d+)/schedule/edit$', views.edit_agenda),
     (r'^(?P<num>\d+)/schedule/(?P<schedule_name>[A-Za-z0-9-:_]+)/edit$',      views.edit_agenda),
     (r'^(?P<num>\d+)/schedule/(?P<schedule_name>[A-Za-z0-9-:_]+)/details$',   views.edit_agenda_properties),
     (r'^(?P<num>\d+)/schedule/(?P<name>[A-Za-z0-9-:_]+)(?P<ext>.html)?/?$', views.agenda),
     (r'^(?P<num>\d+)/agenda(?P<ext>.html)?/?$',     views.agenda),
     (r'^(?P<num>\d+)/(?P<base>agenda-utc)(?P<ext>.html)?/?$', views.agenda),
-    (r'^(?P<num>\d+)/requests.html$', redirect_to, {"url": '/meeting/%(num)s/requests', "permanent": True}),
+    (r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
     (r'^(?P<num>\d+)/requests$', views.meeting_requests),
     (r'^(?P<num>\d+)/agenda(?P<ext>.txt)$', views.agenda),
     (r'^(?P<num>\d+)/agenda.ics$', views.ical_agenda),

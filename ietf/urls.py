@@ -1,8 +1,8 @@
 # Copyright The IETF Trust 2007, 2009, All Rights Reserved
 
-import django
-from django.conf.urls.defaults import patterns, include, handler404, handler500
+from django.conf.urls import patterns, include, handler404, handler500
 from django.contrib import admin
+from django.views.generic import RedirectView, TemplateView
 
 from ietf.iesg.feeds import IESGAgenda
 from ietf.doc.feeds import DocumentChanges, InLastCall
@@ -53,7 +53,7 @@ urlpatterns = patterns('',
     (r'^cookies/', include('ietf.cookies.urls')),
     (r'^doc/', include('ietf.doc.urls')),
     (r'^drafts/', include('ietf.doc.redirect_drafts_urls')),
-    (r'^feed/comments/(?P<remainder>.*)/$', 'django.views.generic.simple.redirect_to', { 'url': '/feed/document-changes/%(remainder)s/'}),
+    (r'^feed/comments/(?P<remainder>.*)/$', RedirectView.as_view(url='/feed/document-changes/%(remainder)s/')),
     (r'^feed/(?P<url>.*)/$', 'django.contrib.syndication.views.feed', { 'feed_dict': feeds}),
     (r'^help/', include('ietf.help.urls')),
     (r'^idtracker/', include('ietf.doc.redirect_idtracker_urls')),
@@ -80,7 +80,7 @@ urlpatterns = patterns('',
     (r'^(?P<path>public)/', include('ietf.redirects.urls')),
 
     # Google webmaster tools verification url
-    (r'^googlea30ad1dacffb5e5b.html', 'django.views.generic.simple.direct_to_template', { 'template': 'googlea30ad1dacffb5e5b.html' }),
+    (r'^googlea30ad1dacffb5e5b.html', TemplateView.as_view(template='googlea30ad1dacffb5e5b.html')),
     (r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
 )
 
