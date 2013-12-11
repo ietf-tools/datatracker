@@ -3,11 +3,14 @@ Like the old south.modelsparser, but using introspection where possible
 rather than direct inspection of models.py.
 """
 
+from __future__ import print_function
+
 import datetime
 import re
 import decimal
 
 from south.utils import get_attribute, auto_through
+from south.utils.py3 import text_type
 
 from django.db import models
 from django.db.models.base import ModelBase, Model
@@ -20,6 +23,38 @@ from django.utils import datetime_safe
 
 NOISY = False
 
+try:
+    from django.utils import timezone
+except ImportError:
+    timezone = False
+
+
+# Define any converter functions first to prevent NameErrors
+
+def convert_on_delete_handler(value):
+    django_db_models_module = 'models'  # relative to standard import 'django.db'
+    if hasattr(models, "PROTECT"):
+        if value in (models.CASCADE, models.PROTECT, models.DO_NOTHING, models.SET_DEFAULT):
+            # straightforward functions
+            return '%s.%s' % (django_db_models_module, value.__name__)
+        else:
+            # This is totally dependent on the implementation of django.db.models.deletion.SET
+            func_name = getattr(value, '__name__', None)
+            if func_name == 'set_on_delete':
+                # we must inspect the function closure to see what parameters were passed in
+                closure_contents = value.__closure__[0].cell_contents
+                if closure_contents is None:
+                    return "%s.SET_NULL" % (django_db_models_module)
+                # simple function we can perhaps cope with:
+                elif hasattr(closure_contents, '__call__'):
+                    raise ValueError("South does not support on_delete with SET(function) as values.")
+                else:
+                    # Attempt to serialise the value
+                    return "%s.SET(%s)" % (django_db_models_module, value_clean(closure_contents))
+        raise ValueError("%s was not recognized as a valid model deletion handler. Possible values: %s." % (value, ', '.join(f.__name__ for f in (models.CASCADE, models.PROTECT, models.SET, models.SET_NULL, models.SET_DEFAULT, models.DO_NOTHING))))
+    else:
+        raise ValueError("on_delete argument encountered in Django version that does not support it")
+
 # Gives information about how to introspect certain fields.
 # This is a list of triples; the first item is a list of fields it applies to,
 # (note that isinstance is used, so superclasses are perfectly valid here)
@@ -31,6 +66,7 @@ NOISY = False
 # is an optional dict.
 #
 # The introspector uses the combination of all matching entries, in order.
+                                     
 introspection_details = [
     (
         (models.Field, ),
@@ -50,12 +86,13 @@ introspection_details = [
     (
         (models.ForeignKey, models.OneToOneField),
         [],
-        {
-            "to": ["rel.to", {}],
-            "to_field": ["rel.field_name", {"default_attr": "rel.to._meta.pk.name"}],
-            "related_name": ["rel.related_name", {"default": None}],
-            "db_index": ["db_index", {"default": True}],
-        },
+        dict([
+            ("to", ["rel.to", {}]),
+            ("to_field", ["rel.field_name", {"default_attr": "rel.to._meta.pk.name"}]),
+            ("related_name", ["rel.related_name", {"default": None}]),
+            ("db_index", ["db_index", {"default": True}]),
+            ("on_delete", ["rel.on_delete", {"default": getattr(models, "CASCADE", None), "is_django_function": True, "converter": convert_on_delete_handler, "ignore_missing": True}])
+        ])
     ),
     (
         (models.ManyToManyField,),
@@ -83,6 +120,13 @@ introspection_details = [
         {
             "max_digits": ["max_digits", {"default": None}],
             "decimal_places": ["decimal_places", {"default": None}],
+        },
+    ),
+    (
+        (models.SlugField, ),
+        [],
+        {
+            "db_index": ["db_index", {"default": True}],
         },
     ),
     (
@@ -120,6 +164,7 @@ allowed_fields = [
     "^django\.db",
     "^django\.contrib\.contenttypes\.generic",
     "^django\.contrib\.localflavor",
+    "^django_localflavor_\w\w",
 ]
 
 # Regexes of ignored fields (custom fields which look like fields, but have no column behind them)
@@ -133,12 +178,10 @@ meta_details = {
     "db_table": ["db_table", {"default_attr_concat": ["%s_%s", "app_label", "module_name"]}],
     "db_tablespace": ["db_tablespace", {"default": settings.DEFAULT_TABLESPACE}],
     "unique_together": ["unique_together", {"default": []}],
+    "index_together": ["index_together", {"default": [], "ignore_missing": True}],
     "ordering": ["ordering", {"default": []}],
     "proxy": ["proxy", {"default": False, "ignore_missing": True}],
 }
-
-# 2.4 compatability
-any = lambda x: reduce(lambda y, z: y or z, x, False)
 
 
 def add_introspection_rules(rules=[], patterns=[]):
@@ -148,11 +191,13 @@ def add_introspection_rules(rules=[], patterns=[]):
     allowed_fields.extend(patterns)
     introspection_details.extend(rules)
 
+
 def add_ignored_fields(patterns):
     "Allows you to add some ignore field patterns."
     assert isinstance(patterns, (list, tuple))
     ignored_fields.extend(patterns)
     
+
 def can_ignore(field):
     """
     Returns True if we know for certain that we can ignore this field, False
@@ -163,6 +208,7 @@ def can_ignore(field):
         if re.match(regex, full_name):
             return True
     return False
+
 
 def can_introspect(field):
     """
@@ -216,9 +262,10 @@ def get_value(field, descriptor):
                 raise IsDefault
             else:
                 raise
+            
     # Lazy-eval functions get eval'd.
     if isinstance(value, Promise):
-        value = unicode(value)
+        value = text_type(value)
     # If the value is the same as the default, omit it for clarity
     if "default" in options and value == options['default']:
         raise IsDefault
@@ -241,16 +288,29 @@ def get_value(field, descriptor):
         default_value = format % tuple(map(lambda x: get_attribute(field, x), attrs))
         if value == default_value:
             raise IsDefault
+    # Clean and return the value
+    return value_clean(value, options)
+
+
+def value_clean(value, options={}):
+    "Takes a value and cleans it up (so e.g. it has timezone working right)"
+    # Lazy-eval functions get eval'd.
+    if isinstance(value, Promise):
+        value = text_type(value)
     # Callables get called.
-    if callable(value) and not isinstance(value, ModelBase):
+    if not options.get('is_django_function', False) and callable(value) and not isinstance(value, ModelBase):
         # Datetime.datetime.now is special, as we can access it from the eval
         # context (and because it changes all the time; people will file bugs otherwise).
         if value == datetime.datetime.now:
             return "datetime.datetime.now"
-        if value == datetime.datetime.utcnow:
+        elif value == datetime.datetime.utcnow:
             return "datetime.datetime.utcnow"
-        if value == datetime.date.today:
+        elif value == datetime.date.today:
             return "datetime.date.today"
+        # In case we use Django's own now function, revert to datetime's
+        # original one since we'll deal with timezones on our own.
+        elif timezone and value == timezone.now:
+            return "datetime.datetime.now"
         # All other callables get called.
         value = value()
     # Models get their own special repr()
@@ -267,16 +327,32 @@ def get_value(field, descriptor):
     # Make sure Decimal is converted down into a string
     if isinstance(value, decimal.Decimal):
         value = str(value)
+    # in case the value is timezone aware
+    datetime_types = (
+        datetime.datetime,
+        datetime.time,
+        datetime_safe.datetime,
+    )
+    if (timezone and isinstance(value, datetime_types) and
+            getattr(settings, 'USE_TZ', False) and
+            value is not None and timezone.is_aware(value)):
+        default_timezone = timezone.get_default_timezone()
+        value = timezone.make_naive(value, default_timezone)
     # datetime_safe has an improper repr value
     if isinstance(value, datetime_safe.datetime):
         value = datetime.datetime(*value.utctimetuple()[:7])
-    if isinstance(value, datetime_safe.date):
-        value = datetime.date(*value.timetuple()[:3])
+    # converting a date value to a datetime to be able to handle
+    # timezones later gracefully
+    elif isinstance(value, (datetime.date, datetime_safe.date)):
+        value = datetime.datetime(*value.timetuple()[:3])
     # Now, apply the converter func if there is one
     if "converter" in options:
         value = options['converter'](value)
     # Return the final value
-    return repr(value)
+    if options.get('is_django_function', False):
+        return value
+    else:
+        return repr(value)
 
 
 def introspector(field):
@@ -310,7 +386,7 @@ def get_model_fields(model, m2m=False):
     
     # Go through all bases (that are themselves models, but not Model)
     for base in model.__bases__:
-        if base != models.Model and issubclass(base, models.Model):
+        if hasattr(base, '_meta') and issubclass(base, models.Model):
             if not base._meta.abstract:
                 # Looks like we need their fields, Ma.
                 inherited_fields.update(get_model_fields(base))
@@ -327,7 +403,7 @@ def get_model_fields(model, m2m=False):
         # Does it define a south_field_triple method?
         if hasattr(field, "south_field_triple"):
             if NOISY:
-                print " ( Nativing field: %s" % field.name
+                print(" ( Nativing field: %s" % field.name)
             field_defs[field.name] = field.south_field_triple()
         # Can we introspect it?
         elif can_introspect(field):
@@ -343,7 +419,7 @@ def get_model_fields(model, m2m=False):
         # Shucks, no definition!
         else:
             if NOISY:
-                print " ( Nodefing field: %s" % field.name
+                print(" ( Nodefing field: %s" % field.name)
             field_defs[field.name] = None
     
     # If they've used the horrific hack that is order_with_respect_to, deal with
@@ -371,7 +447,7 @@ def get_model_meta(model):
     # This is called _ormbases as the _bases variable was previously used
     # for a list of full class paths to bases, so we can't conflict.
     for base in model.__bases__:
-        if base != models.Model and issubclass(base, models.Model):
+        if hasattr(base, '_meta') and issubclass(base, models.Model):
             if not base._meta.abstract:
                 # OK, that matches our terms.
                 if "_ormbases" not in meta_def:

@@ -2,17 +2,18 @@
 Migrate management command.
 """
 
-import sys
+from __future__ import print_function
+
+import os.path, re, sys
+from functools import reduce
 from optparse import make_option
 
 from django.core.management.base import BaseCommand
-from django.core.management.color import no_style
 from django.conf import settings
-from django.db import models
+from django.utils.importlib import import_module
 
 from south import migration
-from south.migration import Migration, Migrations
-from south.migration.utils import get_app_label
+from south.migration import Migrations
 from south.exceptions import NoMigrations
 from south.db import DEFAULT_DB_ALIAS
 
@@ -22,6 +23,8 @@ class Command(BaseCommand):
             help='Run the specified migration for all apps.'),
         make_option('--list', action='store_true', dest='show_list', default=False,
             help='List migrations noting those that have been applied'),
+        make_option('--changes', action='store_true', dest='show_changes', default=False,
+            help='List changes for migrations'),
         make_option('--skip', action='store_true', dest='skip', default=False,
             help='Will skip over out-of-order missing migrations'),
         make_option('--merge', action='store_true', dest='merge', default=False,
@@ -51,7 +54,7 @@ class Command(BaseCommand):
     help = "Runs migrations for all apps."
     args = "[appname] [migrationname|zero] [--all] [--list] [--skip] [--merge] [--no-initial-data] [--fake] [--db-dry-run] [--database=dbalias]"
 
-    def handle(self, app=None, target=None, skip=False, merge=False, backwards=False, fake=False, db_dry_run=False, show_list=False, database=DEFAULT_DB_ALIAS, delete_ghosts=False, ignore_ghosts=False, **options):
+    def handle(self, app=None, target=None, skip=False, merge=False, backwards=False, fake=False, db_dry_run=False, show_list=False, show_changes=False, database=DEFAULT_DB_ALIAS, delete_ghosts=False, ignore_ghosts=False, **options):
         
         # NOTE: THIS IS DUPLICATED FROM django.core.management.commands.syncdb
         # This code imports any module named 'management' in INSTALLED_APPS.
@@ -60,8 +63,8 @@ class Command(BaseCommand):
         # we need apps to behave correctly.
         for app_name in settings.INSTALLED_APPS:
             try:
-                __import__(app_name + '.management', {}, {}, [''])
-            except ImportError, exc:
+                import_module('.management', app_name)
+            except ImportError as exc:
                 msg = exc.args[0]
                 if not msg.startswith('No module named') or 'management' not in msg:
                     raise
@@ -77,17 +80,20 @@ class Command(BaseCommand):
             try:
                 apps = [Migrations(app)]
             except NoMigrations:
-                print "The app '%s' does not appear to use migrations." % app
-                print "./manage.py migrate " + self.args
+                print("The app '%s' does not appear to use migrations." % app)
+                print("./manage.py migrate " + self.args)
                 return
         else:
             apps = list(migration.all_migrations())
         
         # Do we need to show the list of migrations?
         if show_list and apps:
-            list_migrations(apps, database)
+            list_migrations(apps, database, **options)
+            
+        if show_changes and apps:
+            show_migration_changes(apps)
         
-        if not show_list:
+        if not (show_list or show_changes):
             
             for app in apps:
                 result = migration.migrate_app(
@@ -108,7 +114,7 @@ class Command(BaseCommand):
                     sys.exit(1) # Migration failed, so the command fails.
 
 
-def list_migrations(apps, database = DEFAULT_DB_ALIAS):
+def list_migrations(apps, database = DEFAULT_DB_ALIAS, **options):
     """
     Prints a list of all available migrations, and which ones are currently applied.
     Accepts a list of Migrations instances.
@@ -117,21 +123,142 @@ def list_migrations(apps, database = DEFAULT_DB_ALIAS):
     applied_migrations = MigrationHistory.objects.filter(app_name__in=[app.app_label() for app in apps])
     if database != DEFAULT_DB_ALIAS:
         applied_migrations = applied_migrations.using(database)
-    applied_migrations = ['%s.%s' % (mi.app_name,mi.migration) for mi in applied_migrations]
+    applied_migrations_lookup = dict(('%s.%s' % (mi.app_name, mi.migration), mi) for mi in applied_migrations)
 
-    print
+    print()
     for app in apps:
-        print " " + app.app_label()
+        print(" " + app.app_label())
         # Get the migrations object
         for migration in app:
-            if migration.app_label() + "." + migration.name() in applied_migrations:
-                print format_migration_list_item(migration.name())
+            full_name = migration.app_label() + "." + migration.name()
+            if full_name in applied_migrations_lookup:
+                applied_migration = applied_migrations_lookup[full_name]
+                print(format_migration_list_item(migration.name(), applied=applied_migration.applied, **options))
             else:
-                print format_migration_list_item(migration.name(), applied=False)
-        print
+                print(format_migration_list_item(migration.name(), applied=False, **options))
+        print()
 
+def show_migration_changes(apps):
+    """
+    Prints a list of all available migrations, and which ones are currently applied.
+    Accepts a list of Migrations instances.
+    
+    Much simpler, less clear, and much less robust version:
+        grep "ing " migrations/*.py
+    """
+    for app in apps:
+        print(app.app_label())
+        # Get the migrations objects
+        migrations = [migration for migration in app]
+        # we use reduce to compare models in pairs, not to generate a value
+        reduce(diff_migrations, migrations)
 
-def format_migration_list_item(name, applied=True):
+def format_migration_list_item(name, applied=True, **options):
     if applied:
-        return '  (*) %s' % name
-    return '  ( ) %s' % name
+        if int(options.get('verbosity')) >= 2:
+            return '  (*) %-80s  (applied %s)' % (name, applied)
+        else:
+            return '  (*) %s' % name
+    else:
+        return '  ( ) %s' % name
+                            
+def diff_migrations(migration1, migration2):
+    
+    def model_name(models, model):
+        return models[model].get('Meta', {}).get('object_name', model)
+        
+    def field_name(models, model, field):
+        return '%s.%s' % (model_name(models, model), field)
+        
+    print("  " + migration2.name())
+    
+    models1 = migration1.migration_class().models
+    models2 = migration2.migration_class().models
+
+    # find new models
+    for model in models2.keys():
+        if not model in models1.keys():
+            print('    added model %s' % model_name(models2, model))
+ 
+    # find removed models
+    for model in models1.keys():
+        if not model in models2.keys():
+            print('    removed model %s' % model_name(models1, model))
+            
+    # compare models
+    for model in models1:
+        if model in models2:
+        
+            # find added fields
+            for field in models2[model]:
+                if not field in models1[model]:
+                    print('    added field %s' % field_name(models2, model, field))
+
+            # find removed fields
+            for field in models1[model]:
+                if not field in models2[model]:
+                    print('    removed field %s' % field_name(models1, model, field))
+                
+            # compare fields
+            for field in models1[model]:
+                if field in models2[model]:
+                
+                    name = field_name(models1, model, field)
+                
+                    # compare field attributes
+                    field_value1 = models1[model][field]
+                    field_value2 = models2[model][field]
+                    
+                    # if a field has become a class, or vice versa
+                    if type(field_value1) != type(field_value2):
+                        print('    type of %s changed from %s to %s' % (
+                            name, field_value1, field_value2))
+                    
+                    # if class
+                    elif isinstance(field_value1, dict):
+                        # print '    %s is a class' % name
+                        pass
+                    
+                    # else regular field
+                    else:
+                    
+                        type1, attr_list1, field_attrs1 = models1[model][field]
+                        type2, attr_list2, field_attrs2 = models2[model][field]
+                        
+                        if type1 != type2:
+                            print('    %s type changed from %s to %s' % (
+                                name, type1, type2))
+    
+                        if attr_list1 != []:
+                            print('    %s list %s is not []' % (
+                                name, attr_list1))
+                        if attr_list2 != []:
+                            print('    %s list %s is not []' % (
+                                name, attr_list2))    
+                        if attr_list1 != attr_list2:
+                            print('    %s list changed from %s to %s' % (
+                                name, attr_list1, attr_list2))                
+                                        
+                        # find added field attributes
+                        for attr in field_attrs2:
+                            if not attr in field_attrs1:
+                                print('    added %s attribute %s=%s' % (
+                                    name, attr, field_attrs2[attr]))
+                                
+                        # find removed field attributes
+                        for attr in field_attrs1:
+                            if not attr in field_attrs2:
+                                print('    removed attribute %s(%s=%s)' % (
+                                    name, attr, field_attrs1[attr]))
+                            
+                        # compare field attributes
+                        for attr in field_attrs1:
+                            if attr in field_attrs2:
+                            
+                                value1 = field_attrs1[attr]
+                                value2 = field_attrs2[attr]
+                                if value1 != value2:
+                                    print('    %s attribute %s changed from %s to %s' % (
+                                        name, attr, value1, value2))
+    
+    return migration2

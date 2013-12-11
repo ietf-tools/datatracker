@@ -9,6 +9,7 @@ from django.conf import settings
 # Make sure the template loader cache is fixed _now_ (#448)
 import django.template.loaders.app_directories
 
+from south.hacks import hacks
 from south.management.commands.syncdb import Command as SyncCommand
 
 class MigrateAndSyncCommand(SyncCommand):
@@ -31,3 +32,9 @@ def patch_for_test_db_setup():
         management._commands['syncdb'] = 'django.core'
     else:
         management._commands['syncdb'] = MigrateAndSyncCommand()
+        # Avoid flushing data migrations.
+        # http://code.djangoproject.com/ticket/14661 introduced change that flushed custom
+        # sql during the test database creation (thus flushing the data migrations).
+        # we patch flush to be no-op during create_test_db, but still allow flushing
+        # after each test for non-transactional backends.
+        hacks.patch_flush_during_test_db_creation()

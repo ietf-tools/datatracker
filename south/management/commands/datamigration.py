@@ -2,6 +2,8 @@
 Data migration creation command
 """
 
+from __future__ import print_function
+
 import sys
 import os
 import re
@@ -32,6 +34,8 @@ class Command(BaseCommand):
     usage_str = "Usage: ./manage.py datamigration appname migrationname [--stdout] [--freeze appname]"
     
     def handle(self, app=None, name="", freeze_list=None, stdout=False, verbosity=1, **options):
+
+        verbosity = int(verbosity)
         
         # Any supposed lists that are None become empty lists
         freeze_list = freeze_list or []
@@ -44,13 +48,19 @@ class Command(BaseCommand):
         if re.search('[^_\w]', name) and name != "-":
             self.error("Migration names should contain only alphanumeric characters and underscores.")
         
-        # if not name, there's an error
+        # If not name, there's an error
         if not name:
-            self.error("You must provide a name for this migration\n" + self.usage_str)
+            self.error("You must provide a name for this migration.\n" + self.usage_str)
         
         if not app:
             self.error("You must provide an app to create a migration for.\n" + self.usage_str)
-        
+
+        # Ensure that verbosity is not a string (Python 3)
+        try:
+            verbosity = int(verbosity)
+        except ValueError:
+            self.error("Verbosity must be an number.\n" + self.usage_str)
+            
         # Get the Migrations for this app (creating the migrations dir if needed)
         migrations = Migrations(app, force_creation=True, verbose_creation=verbosity > 0)
         
@@ -61,20 +71,20 @@ class Command(BaseCommand):
         apps_to_freeze = self.calc_frozen_apps(migrations, freeze_list)
         
         # So, what's in this file, then?
-        file_contents = MIGRATION_TEMPLATE % {
+        file_contents = self.get_migration_template() % {
             "frozen_models":  freezer.freeze_apps_to_string(apps_to_freeze),
             "complete_apps": apps_to_freeze and "complete_apps = [%s]" % (", ".join(map(repr, apps_to_freeze))) or ""
         }
         
         # - is a special name which means 'print to stdout'
         if name == "-":
-            print file_contents
+            print(file_contents)
         # Write the migration file if the name isn't -
         else:
             fp = open(os.path.join(migrations.migrations_dir(), new_filename), "w")
             fp.write(file_contents)
             fp.close()
-            print >>sys.stderr, "Created %s." % new_filename
+            print("Created %s." % new_filename, file=sys.stderr)
     
     def calc_frozen_apps(self, migrations, freeze_list):
         """
@@ -98,12 +108,15 @@ class Command(BaseCommand):
         """
         Prints the error, and exits with the given code.
         """
-        print >>sys.stderr, message
+        print(message, file=sys.stderr)
         sys.exit(code)
 
+    def get_migration_template(self):
+        return MIGRATION_TEMPLATE
 
-MIGRATION_TEMPLATE = """# encoding: utf-8
-import datetime
+
+MIGRATION_TEMPLATE = """# -*- coding: utf-8 -*-
+from south.utils import datetime_utils as datetime
 from south.db import db
 from south.v2 import DataMigration
 from django.db import models
@@ -112,13 +125,15 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         "Write your forwards methods here."
-
+        # Note: Don't use "from appname.models import ModelName". 
+        # Use orm.ModelName to refer to models in this application,
+        # and orm['appname.ModelName'] for models in other applications.
 
     def backwards(self, orm):
         "Write your backwards methods here."
 
-
     models = %(frozen_models)s
 
     %(complete_apps)s
+    symmetrical = True
 """

@@ -2,6 +2,8 @@
 Quick conversion command module.
 """
 
+from __future__ import print_function
+
 from optparse import make_option
 import sys
 
@@ -38,7 +40,7 @@ class Command(BaseCommand):
         
         # Make sure we have an app
         if not app:
-            print "Please specify an app to convert."
+            print("Please specify an app to convert.")
             return
         
         # See if the app exists
@@ -46,14 +48,14 @@ class Command(BaseCommand):
         try:
             app_module = models.get_app(app)
         except ImproperlyConfigured:
-            print "There is no enabled application matching '%s'." % app
+            print("There is no enabled application matching '%s'." % app)
             return
         
         # Try to get its list of models
         model_list = models.get_models(app_module)
         if not model_list:
-            print "This application has no models; this command is for applications that already have models syncdb'd."
-            print "Make some models, and then use ./manage.py startmigration %s --initial instead." % app
+            print("This application has no models; this command is for applications that already have models syncdb'd.")
+            print("Make some models, and then use ./manage.py schemamigration %s --initial instead." % app)
             return
         
         # Ask South if it thinks it's already got migrations
@@ -62,7 +64,7 @@ class Command(BaseCommand):
         except NoMigrations:
             pass
         else:
-            print "This application is already managed by South."
+            print("This application is already managed by South.")
             return
         
         # Finally! It seems we've got a candidate, so do the two-command trick
@@ -87,7 +89,7 @@ class Command(BaseCommand):
             delete_ghosts=options.get("delete_ghosts", False),
         )
         
-        print 
-        print "App '%s' converted. Note that South assumed the application's models matched the database" % app
-        print "(i.e. you haven't changed it since last syncdb); if you have, you should delete the %s/migrations" % app
-        print "directory, revert models.py so it matches the database, and try again."
+        print() 
+        print("App '%s' converted. Note that South assumed the application's models matched the database" % app)
+        print("(i.e. you haven't changed it since last syncdb); if you have, you should delete the %s/migrations" % app)
+        print("directory, revert models.py so it matches the database, and try again.")

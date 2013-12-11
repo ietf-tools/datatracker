@@ -24,6 +24,7 @@ if has_gis:
                     "srid": ["srid", {"default": 4326}],
                     "spatial_index": ["spatial_index", {"default": True}],
                     "dim": ["dim", {"default": 2}],
+                    "geography": ["geography", {"default": False}],
                 },
             ),
         ]

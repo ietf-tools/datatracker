@@ -7,10 +7,6 @@ class NullHandler(logging.Handler):
     def emit(self, record):
         pass
 
-_logger = logging.getLogger("south")
-_logger.addHandler(NullHandler())
-_logger.setLevel(logging.DEBUG)
-
 def get_logger():
     "Attach a file handler to the logger if there isn't one already."
     debug_on = getattr(settings, "SOUTH_LOGGING_ON", False)
@@ -22,7 +18,7 @@ def get_logger():
                 _logger.addHandler(logging.FileHandler(logging_file))
                 _logger.setLevel(logging.DEBUG)
         else:
-            raise IOError, "SOUTH_LOGGING_ON is True. You also need a SOUTH_LOGGING_FILE setting."
+            raise IOError("SOUTH_LOGGING_ON is True. You also need a SOUTH_LOGGING_FILE setting.")
     
     return _logger
 
@@ -32,3 +28,11 @@ def close_logger():
         _logger.removeHandler(handler)
         if isinstance(handler, logging.FileHandler):
             handler.close()
+
+def init_logger():
+    "Initialize the south logger"
+    logger = logging.getLogger("south")
+    logger.addHandler(NullHandler())
+    return logger
+
+_logger = init_logger()

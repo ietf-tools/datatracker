@@ -5,11 +5,11 @@ class Migration:
     
     def forwards(self):
         
-        db.alter_column("southtest_spam", 'name', models.CharField(max_length=255, null=True))
+        db.alter_column("southtest_spam", 'weight', models.FloatField(null=True))
     
     def backwards(self):
         
-        db.alter_column("southtest_spam", 'name', models.CharField(max_length=255))
+        db.alter_column("southtest_spam", 'weight', models.FloatField())
 
     models = {
         "fakeapp.bug135": {

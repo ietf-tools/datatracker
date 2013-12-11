@@ -2,6 +2,8 @@
 Overridden syncdb command
 """
 
+from __future__ import print_function
+
 import sys
 from optparse import make_option
 
@@ -49,7 +51,7 @@ class Command(NoArgsCommand):
             for app_name in settings.INSTALLED_APPS:
                 try:
                     import_module('.management', app_name)
-                except ImportError, exc:
+                except ImportError as exc:
                     msg = exc.args[0]
                     if not msg.startswith('No module named') or 'management' not in msg:
                         raise
@@ -74,7 +76,7 @@ class Command(NoArgsCommand):
         
         # Run syncdb on only the ones needed
         if verbosity:
-            print "Syncing..."
+            print("Syncing...")
         
         old_installed, settings.INSTALLED_APPS = settings.INSTALLED_APPS, apps_needing_sync
         old_app_store, cache.app_store = cache.app_store, SortedDict([
@@ -95,17 +97,19 @@ class Command(NoArgsCommand):
         # Migrate if needed
         if options.get('migrate', True):
             if verbosity:
-                print "Migrating..."
+                print("Migrating...")
+            # convert from store_true to store_false
+            options['no_initial_data'] = not options.get('load_initial_data', True)
             management.call_command('migrate', **options)
         
         # Be obvious about what we did
         if verbosity:
-            print "\nSynced:\n > %s" % "\n > ".join(apps_needing_sync)
+            print("\nSynced:\n > %s" % "\n > ".join(apps_needing_sync))
         
         if options.get('migrate', True):
             if verbosity:
-                print "\nMigrated:\n - %s" % "\n - ".join(apps_migrated)
+                print("\nMigrated:\n - %s" % "\n - ".join(apps_migrated))
         else:
             if verbosity:
-                print "\nNot synced (use migrations):\n - %s" % "\n - ".join(apps_migrated)
-                print "(use ./manage.py migrate to migrate these)"
+                print("\nNot synced (use migrations):\n - %s" % "\n - ".join(apps_migrated))
+                print("(use ./manage.py migrate to migrate these)")

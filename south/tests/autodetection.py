@@ -1,6 +1,17 @@
-import unittest
+from south.tests import unittest
 
-from south.creator.changes import AutoChanges
+from south.creator.changes import AutoChanges, InitialChanges
+from south.migration.base import Migrations
+from south.tests import Monkeypatcher
+from south.creator import freezer
+from south.orm import FakeORM
+from south.v2 import SchemaMigration
+
+try:
+    from django.utils.six.moves import reload_module
+except ImportError:
+    # Older django, no python3 support
+    reload_module = reload
 
 class TestComparison(unittest.TestCase):
     
@@ -231,3 +242,119 @@ class TestComparison(unittest.TestCase):
             ),
             True,
         )
+
+class TestNonManagedIgnored(Monkeypatcher):
+    
+    installed_apps = ["non_managed"]
+
+    full_defs = {
+        'non_managed.legacy': {
+            'Meta': {'object_name': 'Legacy', 'db_table': "'legacy_table'", 'managed': 'False'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '10', 'null': 'True'}),
+            'size': ('django.db.models.fields.IntegerField', [], {})
+        }
+    } 
+
+    def test_not_added_init(self):
+        
+        migrations = Migrations("non_managed")
+        changes = InitialChanges(migrations)
+        change_list = changes.get_changes()
+        if list(change_list):
+            self.fail("Initial migration creates table for non-managed model")
+
+    def test_not_added_auto(self):
+
+        empty_defs = { }
+        class EmptyMigration(SchemaMigration):
+            "Serves as fake previous migration"
+        
+            def forwards(self, orm):
+                pass
+        
+            def backwards(self, orm):
+                pass
+        
+            models = empty_defs
+
+            complete_apps = ['non_managed']
+                    
+        migrations = Migrations("non_managed")
+        empty_orm = FakeORM(EmptyMigration, "non_managed")
+        changes = AutoChanges(
+            migrations = migrations,
+            old_defs = empty_defs,
+            old_orm = empty_orm,
+            new_defs = self.full_defs,
+        )
+        change_list = changes.get_changes()
+        if list(change_list):
+            self.fail("Auto migration creates table for non-managed model")
+
+    def test_not_deleted_auto(self):
+
+        empty_defs = { }
+        old_defs = freezer.freeze_apps(["non_managed"])
+        class InitialMigration(SchemaMigration):
+            "Serves as fake previous migration"
+        
+            def forwards(self, orm):
+                pass
+        
+            def backwards(self, orm):
+                pass
+        
+            models = self.full_defs
+
+            complete_apps = ['non_managed']
+                    
+        migrations = Migrations("non_managed")
+        initial_orm = FakeORM(InitialMigration, "non_managed")
+        changes = AutoChanges(
+            migrations = migrations,
+            old_defs = self.full_defs,
+            old_orm = initial_orm,
+            new_defs = empty_defs,
+        )
+        change_list = changes.get_changes()
+        if list(change_list):
+            self.fail("Auto migration deletes table for non-managed model")
+
+    def test_not_modified_auto(self):
+
+        fake_defs = {
+            'non_managed.legacy': {
+                'Meta': {'object_name': 'Legacy', 'db_table': "'legacy_table'", 'managed': 'False'},
+                'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+                'name': ('django.db.models.fields.CharField', [], {'max_length': '10', 'null': 'True'}),
+                #'size': ('django.db.models.fields.IntegerField', [], {}) # The "change" is the addition of this field
+            }
+        } 
+        class InitialMigration(SchemaMigration):
+            "Serves as fake previous migration"
+        
+            def forwards(self, orm):
+                pass
+        
+            def backwards(self, orm):
+                pass
+        
+            models = fake_defs
+
+            complete_apps = ['non_managed']
+                    
+        from non_managed import models as dummy_import_to_force_loading_models # TODO: Does needing this indicate a bug in MokeyPatcher?
+        reload_module(dummy_import_to_force_loading_models) # really force... 
+        
+        migrations = Migrations("non_managed")
+        initial_orm = FakeORM(InitialMigration, "non_managed")
+        changes = AutoChanges(
+            migrations = migrations,
+            old_defs = fake_defs,
+            old_orm = initial_orm,
+            new_defs = self.full_defs
+        )
+        change_list = changes.get_changes()
+        if list(change_list):
+            self.fail("Auto migration changes table for non-managed model")
