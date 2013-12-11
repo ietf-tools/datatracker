@@ -1,13 +1,13 @@
+from functools import update_wrapper
+
 from django.contrib import admin
 from django import template
-from django.utils.functional import update_wrapper
 from django.contrib.admin.util import unquote
 from django.core.exceptions import PermissionDenied
 from django.core.management import load_command_class
 from django.http import Http404
 from django.shortcuts import render_to_response
 from django.utils.encoding import force_unicode
-from django.utils.functional import update_wrapper
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
 
