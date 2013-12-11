@@ -88,8 +88,7 @@ USE_I18N = False
 MEDIA_ROOT = BASE_DIR + "/../static/"
 
 # URL that handles the media served from MEDIA_ROOT.
-# Example: "http://media.lawrence.com"
-MEDIA_URL = 'http://www.ietf.org'
+MEDIA_URL = 'http://www.ietf.org/'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
