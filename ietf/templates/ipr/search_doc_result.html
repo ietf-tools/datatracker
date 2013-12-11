@@ -9,7 +9,7 @@
 		  <tr valign="top" bgcolor="#dadada">
 		     <td width="100">{{ ipr.submitted_date }}</td>
 		     <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
-		     <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title|escape }}"</a></td>
+		     <td><a href="{% url "ietf.ipr.views.show" ipr_id=ipr.ipr_id %}">"{{ ipr.title|escape }}"</a></td>
 		  </tr>
 		  {% endfor %}
 
@@ -27,7 +27,7 @@
 			   <tr valign="top">
 			      <td width="100">{{ ipr.submitted_date }}</td>
 			      <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
-			      <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title|escape }}"</a></td>
+			      <td><a href="{% url "ietf.ipr.views.show" ipr_id=ipr.ipr_id %}">"{{ ipr.title|escape }}"</a></td>
 			   </tr>
 			{% endfor %}
 		     {% else %}

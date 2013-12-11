@@ -15,7 +15,7 @@ Pre-approval of <b>{{ preapproval.name }}</b> by {{ preapproval.by }}
 on {{ preapproval.time }}.
 
 <form class="actions" action="" method="post">
-  <a href="{% url submit_approvals %}#preapprovals">Back</a>
+  <a href="{% url "submit_approvals" %}#preapprovals">Back</a>
   <input type="hidden" name="action" value="cancel" />
   <input type="submit" value="Cancel pre-approval" />
 </form>

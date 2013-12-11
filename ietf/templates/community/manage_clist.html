@@ -47,7 +47,7 @@ In order to add some individual documents to your list you have to:
   <td>{{ doc.display_name }}</td>
   <td>{{ doc.get_state }}</td>
   <td><a href="{{ doc.get_absolute_url }}"</a>{{ doc.title }}</td>
-  <td><a href="{% url community_remove_document cl.pk doc.pk %}">Remove</a></td>
+  <td><a href="{% url "community_remove_document" cl.pk doc.pk %}">Remove</a></td>
 </tr>
 {% endfor %}
 </table>
@@ -63,7 +63,7 @@ In order to add some individual documents to your list you have to:
   <td>{{ callable.description }}</td>
   <td>{{ callable.show_value }}</td>
   <td>{% with rule.cached_ids.count as count %}{{ count }} document{{ count|pluralize }}{% endwith %}</td>
-  <td><a href="{% url community_remove_rule cl.pk rule.pk %}">Remove</a></td>
+  <td><a href="{% url "community_remove_rule" cl.pk rule.pk %}">Remove</a></td>
 </tr>
 {% endwith %}
 {% endfor %}

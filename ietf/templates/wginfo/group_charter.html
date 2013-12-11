@@ -43,11 +43,11 @@ is occasionally incorrect.</span>
     <td>Charter:</td>
     <td>
       {% if group.charter %}
-      <a href="{% url doc_view name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a> ({{ group.charter.get_state.name }})
+      <a href="{% url "doc_view" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a> ({{ group.charter.get_state.name }})
       {% else %}
       none
       {% if user|has_role:"Area Director,Secretariat" %}
-      - <a href="{% url ietf.wginfo.edit.submit_initial_charter acronym=group.acronym %}">Submit Charter</a>
+      - <a href="{% url "ietf.wginfo.edit.submit_initial_charter" acronym=group.acronym %}">Submit Charter</a>
       {% endif %}
       {% endif %}
     </td>

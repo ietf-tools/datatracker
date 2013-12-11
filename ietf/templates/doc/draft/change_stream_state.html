@@ -28,7 +28,7 @@ form.change-state ul li label { cursor: pointer; }
 {% block content %}
 <h1>Change {{ state_type.label }} of {{ doc }}</h1>
 
-<p class="intro">For help on the states, see the <a href="{% url state_help type=state_type.slug %}">state table</a>.</p>
+<p class="intro">For help on the states, see the <a href="{% url "state_help" type=state_type.slug %}">state table</a>.</p>
 
 {% if next_states %}
 <div class="next-states">

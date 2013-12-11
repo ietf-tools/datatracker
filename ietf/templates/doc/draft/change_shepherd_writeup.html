@@ -29,7 +29,7 @@ Edit shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
     <tr>
       <td></td>
       <td class="actions">
-        <a href="{% url doc_view name=doc.canonical_name %}">Back</a>
+        <a href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
         <input type="submit" name="reset_text" value="Reset to Template Text"/>
         <input type="submit" name="submit_response" value="Submit"/>
       </td>

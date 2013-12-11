@@ -137,16 +137,16 @@ You can customize the agenda below to show only selected working group sessions.
   <br/><i>Groups displayed in italics are BOFs</i></td></tr>
 </table>
 
-<div id="ical-link" class="hidden"><span style="font-size:150%">Week View</span><br/><a id="ical-href" href="{% url ietf.meeting.views.ical_agenda num=schedule.meeting.number %}"><em>Download as an .ics file</em></a></div>
+<div id="ical-link" class="hidden"><span style="font-size:150%">Week View</span><br/><a id="ical-href" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}"><em>Download as an .ics file</em></a></div>
 
 <iframe id="weekview" class="hidden" width="100%" height="600px" src="about:blank" scrolling="no"></iframe>
 
 <table width="100%" id="ics-preconfig"><tr><td align="center">
   Preconfigured .ics links:
   {% for area in schedule.area_list %}
-    <a href="{% url ietf.meeting.views.ical_agenda num=schedule.meeting.number %}?{{area|upper}},-~Other,-~Plenary">{{area|upper}}</a> &#8226;
+    <a href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}?{{area|upper}},-~Other,-~Plenary">{{area|upper}}</a> &#8226;
   {% endfor %}
-  <a href="{% url ietf.meeting.views.ical_agenda num=schedule.meeting.number %}">Non-Area Events</a>
+  <a href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}">Non-Area Events</a>
 </td></tr></table>
 
 {% if schedule.meeting.agenda_note %}<h2 class="ietf-divider" style="background-color: #C00; margin-top: 2em; margin-bottom: 0;">{{ schedule.meeting.agenda_note|safe }}</h2>{% endif %}

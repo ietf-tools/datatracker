@@ -28,7 +28,7 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
   </tr>
   {% for s in approvals %}
   <tr>
-    <td><a href="{% url submit_submission_status_by_hash submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
+    <td><a href="{% url "submit_submission_status_by_hash" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
     <td>{{ s.submission_date }}</td>
   </tr>
   {% endfor %}
@@ -38,7 +38,7 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
 <h2 id="preapprovals">Pre-approved drafts not yet submitted</h2>
 
 {% if user|has_role:"Secretariat,WG Chair" %}
-<p>You can <a href="{% url submit_add_preapproval %}">add a pre-approval</a>.</p>
+<p>You can <a href="{% url "submit_add_preapproval" %}">add a pre-approval</a>.</p>
 {% endif %}
 
 {% if not preapprovals %}
@@ -56,7 +56,7 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
     <td>{{ p.name }}</td>
     <td>{{ p.time|date:"Y-m-d" }}</td>
     <td>{{ p.by }}</td>
-    <td><a class="cancel" href="{% url submit_cancel_preapproval preapproval_id=p.id %}">cancel pre-approval</a></td>
+    <td><a class="cancel" href="{% url "submit_cancel_preapproval" preapproval_id=p.id %}">cancel pre-approval</a></td>
   </tr>
   {% endfor %}
 </table>
@@ -75,7 +75,7 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
    </tr>
    {% for d in recently_approved %}
    <tr>
-     <td><a href="{% url doc_view d.name %}">{{ d.name }}</a></td>
+     <td><a href="{% url "doc_view" d.name %}">{{ d.name }}</a></td>
      <td>{{ d.submission_date }}</td>
    </tr>
    {% endfor %}

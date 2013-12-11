@@ -40,7 +40,7 @@ Create new WG or BoF
 
 <p>Note that persons with authorization to manage information, e.g.
 chairs and delegates, need a Datatracker account to actually do
-so. New accounts can be <a href="{% url create_account %}">created here</a>.</p>
+so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
 
 <form class="edit" action="" method="POST">
   <table>
@@ -68,7 +68,7 @@ so. New accounts can be <a href="{% url create_account %}">created here</a>.</p>
       <td></td>
       <td class="actions">
 	{% if action == "edit" %}
-          <a class="button" href="{% url group_charter acronym=wg.acronym %}">Cancel</a>
+          <a class="button" href="{% url "group_charter" acronym=wg.acronym %}">Cancel</a>
           <input class="button" type="submit" value="Save"/>
         {% else %} 
            {% if action == "charter" %}

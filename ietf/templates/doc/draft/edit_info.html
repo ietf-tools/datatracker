@@ -39,7 +39,7 @@ form.edit-info .actions {
       <td>{{ field }}
       {% ifequal field.name "telechat_date" %}
         {% if not ballot_issued %}
-         <span id="ballotwarn"> A ballot for this document has not been issued: <a href="{% url doc_ballot_writeupnotes name=doc.name %}">Edit Ballot Text</a></span>
+         <span id="ballotwarn"> A ballot for this document has not been issued: <a href="{% url "doc_ballot_writeupnotes" name=doc.name %}">Edit Ballot Text</a></span>
         {% endif %}
         {{ form.returning_item }} {{ form.returning_item.label_tag }} {{ form.returning_item.errors }}
       {% endifequal %}

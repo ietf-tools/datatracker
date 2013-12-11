@@ -18,7 +18,7 @@ form.start-conflict-review .actions {
 {% block content %}
 <h1>Begin IETF conflict review for {{doc_to_review.canonical_name}}-{{doc_to_review.rev}}</h1>
 
-<p class="helptext">For help on the initial state choice, see the <a href="{% url state_help type="conflict-review" %}">state table</a>.</p>
+<p class="helptext">For help on the initial state choice, see the <a href="{% url "state_help" type="conflict-review" %}">state table</a>.</p>
 
 <form class="start-conflict-review" action="" method="post">
   <table>
@@ -34,7 +34,7 @@ form.start-conflict-review .actions {
     {% endfor %}
     <tr>
       <td colspan="2" class="actions">
-        <a href="{% url doc_view name=doc_to_review.name %}">Back</a>
+        <a href="{% url "doc_view" name=doc_to_review.name %}">Back</a>
         <input type="submit" value="Submit"/>
       </td>
     </tr>

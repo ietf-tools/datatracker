@@ -79,7 +79,7 @@
   <td>Liaisons referring to this one:</td>
   <td>
     {% for rel in relations %}
-      <a href="{% url liaison_detail rel.pk %}">{% if rel.title %}{{ rel.title }}{% else %}Liaison #{{ rel.pk }}{% endif %}</a><br />
+      <a href="{% url "liaison_detail" rel.pk %}">{% if rel.title %}{{ rel.title }}{% else %}Liaison #{{ rel.pk }}{% endif %}</a><br />
     {% endfor %}
   </td>
 </tr>
@@ -90,7 +90,7 @@
 <tr>
   <td>Referenced liaison:</td>
   <td>
-    <a href="{% url liaison_detail liaison.related_to.pk %}">{% if liaison.related_to.title %}{{ liaison.related_to.title }}{% else %}Liaison #{{ liaison.related_to.pk }}{% endif %}</a>
+    <a href="{% url "liaison_detail" liaison.related_to.pk %}">{% if liaison.related_to.title %}{{ liaison.related_to.title }}{% else %}Liaison #{{ liaison.related_to.pk }}{% endif %}</a>
   </td>
 </tr>
 {% endif %}
@@ -116,7 +116,7 @@
 </table>
 
 {% if can_edit %}
-  <p><a href="{% url liaison_edit object_id=liaison.pk %}">Edit Liaison</a></p>
+  <p><a href="{% url "liaison_edit" object_id=liaison.pk %}">Edit Liaison</a></p>
 {% endif %}
 
 {% endblock %}

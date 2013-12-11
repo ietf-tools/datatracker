@@ -56,6 +56,6 @@
 
 <h2>Delete Nomcom</h2>
 
-<p>To delete all data about {{ nomcom.group.name }}, <a href="{% url nomcom_delete_nomcom year %}" class="deletelink">click here</a></p>
+<p>To delete all data about {{ nomcom.group.name }}, <a href="{% url "nomcom_delete_nomcom" year %}" class="deletelink">click here</a></p>
 
 {% endblock %}

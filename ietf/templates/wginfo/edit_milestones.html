@@ -42,8 +42,8 @@ tr.milestone.add { font-style: italic; }
 <noscript>This page depends on Javascript being enabled to work properly.</noscript>
 
 <p>Links:
-  <a href="{% url group_charter acronym=group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>
-  - <a href="{% url doc_view name=group.charter.canonical_name %}">{{ group.charter.canonical_name }}</a>
+  <a href="{% url "group_charter" acronym=group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>
+  - <a href="{% url "doc_view" name=group.charter.canonical_name %}">{{ group.charter.canonical_name }}</a>
 </p>
 
 
@@ -58,7 +58,7 @@ Director.
 
 {% if can_reset %}
 <p>
-You can <a href="{% url wg_reset_charter_milestones acronym=group.acronym %}">reset
+You can <a href="{% url "wg_reset_charter_milestones" acronym=group.acronym %}">reset
 this list</a> to the milestones currently in use for the {{ group.acronym }} {{ group.type.name }}.
 </p>
 {% endif %}
@@ -91,7 +91,7 @@ this list</a> to the milestones currently in use for the {{ group.acronym }} {{ 
 </table>
 
 <div class="actions">
-  <a class="button" href="{% if milestone_set == "charter" %}{% url doc_view name=group.charter.canonical_name %}{% else %}{% url group_charter acronym=group.acronym %}{% endif %}">Cancel</a>
+  <a class="button" href="{% if milestone_set == "charter" %}{% url "doc_view" name=group.charter.canonical_name %}{% else %}{% url "group_charter" acronym=group.acronym %}{% endif %}">Cancel</a>
   <input class="button" type="submit" data-labelsave="Save" data-labelreview="Review changes" value="Save" style="display:none"/>
   <input type="hidden" name="action" value="save">
 </div>

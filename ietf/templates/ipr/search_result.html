@@ -43,7 +43,7 @@
 			<tr valign="top">
 			   <td width="100">{{ ipr.submitted_date }}</td>
 			   <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
-			   <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a></td>
+			   <td><a href="{% url "ietf.ipr.views.show" ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a></td>
 			</tr>
 			{% for item in ipr.updates.all %}
                         {% if item != ipr %}
@@ -51,8 +51,8 @@
 			   <td width="100">{{ item.updated.submitted_date }}</td>
 			   <td width="90"><li>ID # {{ item.updated.ipr_id }}</li></td>
 			   <td>
-			      IPR disclosure ID# {{ ipr.ipr_id }} <a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a>
-			      Updates <a href="{% url ietf.ipr.views.show ipr_id=item.ipr_id %}">{{ item.updated.title }}</a>
+			      IPR disclosure ID# {{ ipr.ipr_id }} <a href="{% url "ietf.ipr.views.show" ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a>
+			      Updates <a href="{% url "ietf.ipr.views.show" ipr_id=item.ipr_id %}">{{ item.updated.title }}</a>
 			   </td>
 			</tr>
                         {% endif %}
@@ -65,8 +65,8 @@
 	    {% endblock %}
 	    <hr><br>
 
-	    <a href="{% url ietf.ipr.search.search %}">IPR Search Main Page</a><br>
-	    <a href="{% url ietf.ipr.views.showlist %}">IPR Disclosure Page</a>
+	    <a href="{% url "ietf.ipr.search.search" %}">IPR Search Main Page</a><br>
+	    <a href="{% url "ietf.ipr.views.showlist" %}">IPR Disclosure Page</a>
 	    <br>
 {% endblock %}
 

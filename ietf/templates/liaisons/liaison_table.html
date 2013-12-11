@@ -29,7 +29,7 @@
         <a href="https://datatracker.ietf.org/documents/LIAISON/{{ doc.external_url }}">{{ doc.title }}</a><br/>
       {% endfor %}
     {% else %}
-      <a href="{% if liaison.approved %}{% url liaison_detail object_id=liaison.pk %}{% else %}{% url liaison_approval_detail object_id=liaison.pk %}{% endif %}">{{ liaison.title }}</a>
+      <a href="{% if liaison.approved %}{% url "liaison_detail" object_id=liaison.pk %}{% else %}{% url "liaison_approval_detail" object_id=liaison.pk %}{% endif %}">{{ liaison.title }}</a>
     {% endif %}
     <span style="display: none" class="liaisonPK">{{ liaison.pk }}</span>
   </td>

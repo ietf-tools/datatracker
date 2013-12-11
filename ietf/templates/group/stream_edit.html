@@ -24,7 +24,7 @@ form.edit td { padding-bottom: .5em; }
 <p>Delegates can be assigned with permission to do the tasks of the
 chair{{ chairs|pluralize }}. Note that in order to actually do so, the delegates need a
 Datatracker account. New accounts can be
-<a href="{% url create_account %}">created here</a>.</p>
+<a href="{% url "create_account" %}">created here</a>.</p>
 
 <form class="edit" action="" method="POST">
   <table>
@@ -40,7 +40,7 @@ Datatracker account. New accounts can be
     <tr>
       <td></td>
       <td class="actions">
-        <a class="button" href="{% url ietf.group.views_stream.streams %}">Cancel</a>
+        <a class="button" href="{% url "ietf.group.views_stream.streams" %}">Cancel</a>
         <input class="button" type="submit" value="Save"/>
       </td>
     </tr>

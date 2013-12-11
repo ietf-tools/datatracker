@@ -30,7 +30,7 @@ form.approve-ballot .announcement {
   </div>
 
   <div class="actions">
-    <a href="{% url doc_ballot_approvaltext name=doc.name %}">Back</a>
+    <a href="{% url "doc_ballot_approvaltext" name=doc.name %}">Back</a>
     {% ifequal action "to_announcement_list" %}
     <input type="submit" value="Notify the RFC Editor, send out the announcement and close ballot"/>
     {% endifequal %}

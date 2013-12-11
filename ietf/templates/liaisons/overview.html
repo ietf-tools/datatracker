@@ -16,9 +16,9 @@
 {% block management-links %}
 {% if can_manage %}
 <ul>
-  {% if can_send_incoming %}<li><a href="{% url add_liaison %}?incoming">Add new incoming liaison</a></li>{% endif %}
-  {% if can_send_outgoing %}<li><a href="{% url add_liaison %}">Add new outgoing liaison</a></li>{% endif %}
-  {% if approvable %}<li><a href="{% url liaison_approval_list %}">You have {{ approvable }} pending liaison statement{{ approvable|pluralize }} that need{{ approvable|pluralize:"s," }} your approval</a></li>{% endif %}
+  {% if can_send_incoming %}<li><a href="{% url "add_liaison" %}?incoming">Add new incoming liaison</a></li>{% endif %}
+  {% if can_send_outgoing %}<li><a href="{% url "add_liaison" %}">Add new outgoing liaison</a></li>{% endif %}
+  {% if approvable %}<li><a href="{% url "liaison_approval_list" %}">You have {{ approvable }} pending liaison statement{{ approvable|pluralize }} that need{{ approvable|pluralize:"s," }} your approval</a></li>{% endif %}
 </ul>
 {% endif %}
 {% endblock %}

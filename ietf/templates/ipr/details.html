@@ -62,10 +62,10 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	 {% for item in ipr.updates.all %}
 	     <p>This IPR disclosure updates IPR disclosure ID #{{ item.updated.ipr_id }},
              {% if item.updated.status == 0 %}
-                "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
+                "<a href="{% url "ietf.ipr.views.show" item.updated.ipr_id %}">{{ item.updated.title }}</a>".
 	     {% else %}
                 {% if item.updated.status == 1 %}
-                   "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
+                   "<a href="{% url "ietf.ipr.views.show" item.updated.ipr_id %}">{{ item.updated.title }}</a>".
 		{% else %}
                    "{{ item.updated.title }}", which was removed at the request of the submitter.
                 {% endif %}
@@ -78,7 +78,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	     <p>
 	     This IPR disclosure has been updated by IPR disclosure ID #{{ item.ipr.ipr_id }},
              {% if item.status_to_be == 1 %}
-                "<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>".
+                "<a href="{% url "ietf.ipr.views.show" item.ipr.ipr_id %}">{{ item.ipr.title }}</a>".
 	     {% else %}
                 "{{ item.ipr.title }}", which was removed at the request of the submitter.
              {% endif %}
@@ -86,7 +86,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	 {% endif %}
 	 {% endfor %}
 
-	 <p><a href="{% url ietf.ipr.new.update ipr.ipr_id %}" rel="nofollow">Update this IPR disclosure</a>. Note: Updates to IPR disclosures must only be made by authorized
+	 <p><a href="{% url "ietf.ipr.new.update" ipr.ipr_id %}" rel="nofollow">Update this IPR disclosure</a>. Note: Updates to IPR disclosures must only be made by authorized
    representatives of the original submitters. Updates will automatically
    be forwarded to the current Patent Holder's Contact and to the Submitter
    of the original IPR disclosure.</p>

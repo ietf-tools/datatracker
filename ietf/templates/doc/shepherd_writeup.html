@@ -16,10 +16,10 @@ Shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
 
 <pre style="border:1px solid black;padding:5px;">{{writeup}}</pre>
 
-<a href="{% url doc_view name=doc.name %}">Back</a>
+<a href="{% url "doc_view" name=doc.name %}">Back</a>
 
 {% if can_edit %}
-<span id="doc_edit_shepherd_writeup" class="yui-button yui-link-button" style="margin-left:2px;">{% url doc_edit_shepherd_writeup name=doc.name as doc_edit_url %}{% if doc_edit_url %}<span class="first-child"><a href="{{doc_edit_url}}">Edit</a></span>{% endif %}</span>
+<span id="doc_edit_shepherd_writeup" class="yui-button yui-link-button" style="margin-left:2px;">{% url "doc_edit_shepherd_writeup" name=doc.name as doc_edit_url %}{% if doc_edit_url %}<span class="first-child"><a href="{{doc_edit_url}}">Edit</a></span>{% endif %}</span>
 {% endif %}
 
 {% endblock %}

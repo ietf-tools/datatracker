@@ -32,7 +32,7 @@ Edit notification addresses for {{ doc.canonical_name }}-{{ doc.rev }}
     <tr>
       <td></td>
       <td class="actions">
-        <a href="{% url doc_view name=doc.canonical_name %}">Back</a>
+        <a href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
         <input type="submit" name="save_addresses" value="Save" />
         <input type="submit" name="regenerate_addresses" value="Regenerate Address List" />
       </td>

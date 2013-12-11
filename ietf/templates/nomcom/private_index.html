@@ -106,7 +106,7 @@
           {% if is_chair %}
             <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"/></td>
           {% endif %}
-          <td><a href="{% url ietf.nomcom.views.view_feedback_nominee year=year nominee_id=np.nominee.id %}#comment">{{ np.nominee }}</a>{% if is_chair %} <a href="{% url nomcom_edit_nominee year np.nominee.id %}">(edit)</a>{% endif %}</td>
+          <td><a href="{% url "ietf.nomcom.views.view_feedback_nominee" year=year nominee_id=np.nominee.id %}#comment">{{ np.nominee }}</a>{% if is_chair %} <a href="{% url "nomcom_edit_nominee" year np.nominee.id %}">(edit)</a>{% endif %}</td>
           <td>{{ np.position.name }}</td>
           <td>{{ np.state }}</td>
           <td>{{ np.questionnaires|yesno:"Yes,No,No" }}

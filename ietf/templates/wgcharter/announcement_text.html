@@ -28,7 +28,7 @@ form #id_announcement_text {
 
   <div class="actions">
     {% if announcement == "action" %}
-    <a href="{% url charter_approve name=charter.canonical_name %}">Go to charter approval page</a>
+    <a href="{% url "charter_approve" name=charter.canonical_name %}">Go to charter approval page</a>
     {% else %}
     <input type="submit" name="send_text" value="Send WG {{ announcement }} announcement" />
     {% endif %}

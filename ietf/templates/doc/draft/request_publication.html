@@ -27,7 +27,7 @@ href="http://www.rfc-editor.org/indsubs.html">guidelines</a>.</p>
   <tr><td style="vertical-align: top">Message:</td> <td>{{ form.body }} {{ form.body.errors }}</td></tr>
   <tr class="actions"><td></td>
     <td>
-      <a href="{% url doc_view name=doc.name %}">Back</a>
+      <a href="{% url "doc_view" name=doc.name %}">Back</a>
       <input name="reset" type="submit" value="Reset"/>
       <input type="submit" value="Send request to the RFC Editor"/>
     </td>

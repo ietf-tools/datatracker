@@ -32,7 +32,7 @@ textarea[id^="id_form-"][id$="-announcement_text"] {
    {% endfor %}
     <tr>
       <td class="actions">
-        <a href="{% url doc_view name=doc.name %}">Back</a>
+        <a href="{% url "doc_view" name=doc.name %}">Back</a>
         <input type="submit" value="Send out the announcement and close the ballot"/>
       </td>
     </tr>

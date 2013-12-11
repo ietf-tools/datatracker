@@ -21,7 +21,7 @@ form.change-state .actions {
 <h1>{{ title }}</h1>
 
 {% if not option %}
-<p class="helptext">For help on the states, see the <a href="{% url state_help type="charter" %}">state table</a>.</p>
+<p class="helptext">For help on the states, see the <a href="{% url "state_help" type="charter" %}">state table</a>.</p>
 {% endif %}
 
 <form class="change-state" action="" method="post">
@@ -66,7 +66,7 @@ form.change-state .actions {
         <input type="submit" value="Initiate chartering"/>
         {% endif %}
         {% if not option or option == "abandon" %}
-        <a href="{% url doc_view name=doc.name %}">Back</a>
+        <a href="{% url "doc_view" name=doc.name %}">Back</a>
         <input type="submit" value="Save and (possibly) notify Secretariat"/>
         {% endif %}
       </td>

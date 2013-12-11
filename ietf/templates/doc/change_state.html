@@ -36,7 +36,7 @@ form.change-state .actions {
     {% endfor %}
     <tr>
       <td colspan="2" class="actions">
-        <a href="{% url doc_view name=doc.name %}">Back</a>
+        <a href="{% url "doc_view" name=doc.name %}">Back</a>
         <input type="submit" value="Submit"/>
       </td>
     </tr>

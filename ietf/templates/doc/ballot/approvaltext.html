@@ -29,7 +29,7 @@ form #id_approval_text {
 {% if user|has_role:"Secretariat" %}
 <p>
 {% if can_announce %}
-<a href="{% url doc_approve_ballot name=doc.name %}">Approve ballot</a>
+<a href="{% url "doc_approve_ballot" name=doc.name %}">Approve ballot</a>
 {% endif %}
 </p>
 {% endif %}

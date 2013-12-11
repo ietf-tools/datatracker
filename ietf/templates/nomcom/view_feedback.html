@@ -17,7 +17,7 @@
 </tr>
 {% for nominee, feedback in nominees_feedback.items %}
 <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-  <td><a href="{% url nomcom_view_feedback_nominee year nominee.id %}#comment">{{ nominee }}</td>
+  <td><a href="{% url "nomcom_view_feedback_nominee" year nominee.id %}#comment">{{ nominee }}</td>
   {% for f in feedback %}
     <td>{{ f.1 }}</td>
   {% endfor %}
@@ -35,7 +35,7 @@
   {% endfor %}
 </tr>
 <tr class="evenrow">
-  <td><a href="{% url nomcom_view_feedback_unrelated year %}">View feedback not related to nominees</td>
+  <td><a href="{% url "nomcom_view_feedback_unrelated" year %}">View feedback not related to nominees</td>
   {% for count in independent_feedback %}
     <td>{{ count }}</td>
   {% endfor %}
