@@ -114,7 +114,7 @@ class GroupHistory(GroupInfo):
 class GroupURL(models.Model):
     group = models.ForeignKey(Group)
     name = models.CharField(max_length=255)
-    url = models.URLField(verify_exists=False)
+    url = models.URLField()
 
     def __unicode__(self):
         return u"%s (%s)" % (self.url, self.name)
