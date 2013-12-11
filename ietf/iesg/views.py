@@ -35,13 +35,13 @@
 import codecs, re, os, glob, datetime
 import tarfile, StringIO, time
 import itertools
+import json
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response, get_object_or_404, render, redirect
 from django.conf import settings
-from django.utils import simplejson as json
 from django.db import models
 from django import forms
 

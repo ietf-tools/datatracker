@@ -35,9 +35,9 @@ import os
 import sys
 #import logging
 import traceback
+import json
 
 from django.conf import settings
-from django.utils import simplejson
 from django.http import HttpResponse
 
 from dajaxice.core import dajaxice_functions
@@ -180,7 +180,7 @@ class DajaxiceRequest(object):
             argv = self.request.POST.get('argv')
             if argv != 'undefined':
                 try:
-                    argv = simplejson.loads(self.request.POST.get('argv'))
+                    argv = json.loads(self.request.POST.get('argv'))
                     argv = safe_dict(argv)
                 except Exception, e:
                     log.error('argv exception %s' % e)

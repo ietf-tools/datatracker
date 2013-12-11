@@ -6,7 +6,6 @@ from django.forms.models import inlineformset_factory, modelformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-from django.utils import simplejson
 
 from ietf.group.models import Group, GroupEvent, GroupURL, Role
 from ietf.group.utils import save_group_in_history
@@ -15,6 +14,7 @@ from ietf.person.models import Person, Email
 from forms import *
 
 import re
+import json
  
 # --------------------------------------------------
 # AJAX FUNCTIONS
@@ -32,7 +32,7 @@ def getpeople(request):
         full = '%s - (%s)' % (item.name,item.id)
         result.append(full)
         
-    return HttpResponse(simplejson.dumps(result), mimetype='application/javascript')
+    return HttpResponse(json.dumps(result), mimetype='application/javascript')
     
 def getemails(request):
     """
@@ -47,7 +47,7 @@ def getemails(request):
         d = {'id': item.address, 'value': item.address}
         results.append(d)
         
-    return HttpResponse(simplejson.dumps(results), mimetype='application/javascript')
+    return HttpResponse(json.dumps(results), mimetype='application/javascript')
     
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS

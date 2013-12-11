@@ -1,5 +1,5 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
-import datetime
+import datetime, json
 from email.utils import parseaddr
 
 from django.conf import settings
@@ -8,7 +8,6 @@ from django.core.validators import validate_email, ValidationError
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
-from django.utils import simplejson
 
 from ietf.liaisons.models import LiaisonStatement
 from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaison,
@@ -81,7 +80,7 @@ def get_info(request):
             full_list = [(person.pk, person.email())] + full_list
             result.update({'full_list': full_list})
 
-    json_result = simplejson.dumps(result)
+    json_result = json.dumps(result)
     return HttpResponse(json_result, mimetype='text/javascript')
 
 def normalize_sort(request):

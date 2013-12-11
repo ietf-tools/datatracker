@@ -9,7 +9,6 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.utils import simplejson
 
 #from sec.utils.group import get_charter_text
 from ietf.secr.utils.meeting import get_current_meeting
@@ -22,6 +21,7 @@ from forms import *
 
 import os
 import datetime
+import json
 
 # -------------------------------------------------
 # Helper Functions
@@ -76,7 +76,7 @@ def get_ads(request):
         d = {'id': item.id, 'value': item.person.first_name + ' ' + item.person.last_name}
         results.append(d)
 
-    return HttpResponse(simplejson.dumps(results), mimetype='application/javascript')
+    return HttpResponse(json.dumps(results), mimetype='application/javascript')
 '''
 # -------------------------------------------------
 # Standard View Functions

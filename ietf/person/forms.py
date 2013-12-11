@@ -1,4 +1,5 @@
-from django.utils import simplejson
+import json
+
 from django.utils.html import escape
 from django.utils.functional import lazy
 from django import forms
@@ -11,7 +12,7 @@ from ietf.person.models import *
 def json_emails(emails):
     if isinstance(emails, basestring):
         emails = Email.objects.filter(address__in=[x.strip() for x in emails.split(",") if x.strip()]).select_related("person")
-    return simplejson.dumps([{"id": e.address + "", "name": escape(u"%s <%s>" % (e.person.name, e.address))} for e in emails])
+    return json.dumps([{"id": e.address + "", "name": escape(u"%s <%s>" % (e.person.name, e.address))} for e in emails])
 
 class EmailsField(forms.CharField):
     """Multi-select field using jquery.tokeninput.js. Since the API of

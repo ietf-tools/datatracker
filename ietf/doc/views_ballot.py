@@ -1,7 +1,7 @@
 # ballot management (voting, commenting, writeups, ...) for Area
 # Directors and Secretariat
 
-import re, os, datetime
+import re, os, datetime, json
 
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render_to_response, get_object_or_404
@@ -10,7 +10,6 @@ from django.template.loader import render_to_string
 from django.template import RequestContext
 from django import forms
 from django.utils.html import strip_tags
-from django.utils import simplejson
 from django.conf import settings
 
 import debug
@@ -239,7 +238,7 @@ def edit_position(request, name, ballot_id):
                                    ballot_deferred=ballot_deferred,
                                    ballot = ballot,
                                    show_discuss_text=old_pos and old_pos.pos.blocking,
-                                   blocking_positions=simplejson.dumps(blocking_positions),
+                                   blocking_positions=json.dumps(blocking_positions),
                                    ),
                               context_instance=RequestContext(request))
 

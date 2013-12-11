@@ -9,7 +9,6 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.functional import curry
-from django.utils import simplejson
 
 from ietf.utils.mail import send_mail
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, Schedule, ScheduledSession
@@ -28,6 +27,7 @@ from forms import *
 
 import os
 import datetime
+import json
 
 # prep for agenda changes
 # --------------------------------------------------
@@ -240,7 +240,7 @@ def ajax_get_times(request, meeting_id, day):
         d = {'id': slot.time.strftime('%H%M'), 'value': '%s-%s' % (slot.time.strftime('%H%M'), slot.end_time().strftime('%H%M'))}
         results.append(d)
 
-    return HttpResponse(simplejson.dumps(results), mimetype='application/javascript')
+    return HttpResponse(json.dumps(results), mimetype='application/javascript')
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------

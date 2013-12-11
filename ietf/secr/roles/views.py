@@ -5,7 +5,6 @@ from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-from django.utils import simplejson
 
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.group.utils import save_group_in_history

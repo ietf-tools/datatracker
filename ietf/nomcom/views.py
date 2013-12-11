@@ -1,6 +1,6 @@
  # -*- coding: utf-8 -*-
 
-import datetime, re
+import datetime, re, json
 
 from django.views.generic.create_update import delete_object
 from django.conf import settings
@@ -11,7 +11,6 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect, HttpRespons
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.utils import simplejson
 from django.utils.datastructures import SortedDict
 from django.db.models import Count
 from django.forms.models import modelformset_factory, inlineformset_factory
@@ -843,5 +842,5 @@ def ajax_position_text(request, position_id):
 
     result = {'text': position_text}
 
-    json_result = simplejson.dumps(result)
+    json_result = json.dumps(result)
     return HttpResponse(json_result, mimetype='application/json')

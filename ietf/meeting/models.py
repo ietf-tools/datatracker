@@ -27,7 +27,7 @@ timezones = [(name, name) for name in pytz.common_timezones]
 timezones.sort()
 
 
-# this is used in models to format dates, as the simplejson serializer
+# this is used in models to format dates, as the built-in json serializer
 # can not deal with them, and the django provided serializer is inaccessible.
 from django.utils import datetime_safe
 DATE_FORMAT = "%Y-%m-%d"

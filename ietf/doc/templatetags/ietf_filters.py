@@ -1,6 +1,11 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import textwrap
+import re
+import datetime
+import types
+from email.utils import parseaddr
+
 from django import template
 from django.conf import settings
 from django.utils.html import escape, fix_ampersands
@@ -8,14 +13,9 @@ from django.utils.text import truncate_html_words
 from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter, urlize
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
-from django.utils import simplejson
 from django.utils.html import strip_tags
 from django.template import RequestContext
 
-from email.utils import parseaddr
-import re
-import datetime
-import types
 
 register = template.Library()
 

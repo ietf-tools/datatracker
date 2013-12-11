@@ -1,7 +1,4 @@
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 
 from django.http import HttpResponse
 from django.template import RequestContext

@@ -1,6 +1,6 @@
 # changing state and metadata on Internet Drafts
 
-import re, os, datetime
+import re, os, datetime, json
 from textwrap import dedent
 
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
@@ -9,7 +9,6 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from django import forms
-from django.utils import simplejson
 from django.utils.html import strip_tags
 from django.db.models import Max
 from django.conf import settings
@@ -312,12 +311,12 @@ class ReplacesForm(forms.Form):
         drafts = {}
         for d in self.doc.related_that_doc("replaces"):
             drafts[d.id] = d.document.name
-        self.initial['replaces'] = simplejson.dumps(drafts)
+        self.initial['replaces'] = json.dumps(drafts)
 
     def clean_replaces(self):
         data = self.cleaned_data['replaces'].strip()
         if data:
-            ids = [int(x) for x in simplejson.loads(data)]
+            ids = [int(x) for x in json.loads(data)]
         else:
             return []
         objects = []

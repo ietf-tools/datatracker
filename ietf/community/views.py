@@ -2,16 +2,15 @@ import csv
 import uuid
 import datetime
 import hashlib
-from datetime import timedelta
-from django.db import IntegrityError
+import json
 
+from django.db import IntegrityError
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.models import User
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
-from django.utils import simplejson
 from django.utils.http import urlquote
 
 from ietf.community.models import CommunityList, Rule, EmailSubscription, ListNotification
@@ -106,7 +105,7 @@ def add_document_to_list(request, clist, doc):
         tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
         return HttpResponseRedirect('%s?%s=%s' % tup)
     clist.added_ids.add(doc)
-    return HttpResponse(simplejson.dumps({'success': True}), mimetype='text/plain')
+    return HttpResponse(json.dumps({'success': True}), mimetype='text/plain')
 
 
 def remove_rule(request, list_id, rule_id):

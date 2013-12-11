@@ -1,12 +1,11 @@
 # WG milestone editing views
 
-import re, os, string, datetime, shutil, calendar
+import re, os, string, datetime, shutil, calendar, json
 
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django import forms
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
-from django.utils import simplejson
 from django.utils.html import mark_safe, escape
 from django.utils.functional import lazy
 from django.core.urlresolvers import reverse as urlreverse
@@ -19,7 +18,7 @@ from ietf.group.utils import save_group_in_history, save_milestone_in_history
 from ietf.wginfo.mails import email_milestones_changed
 
 def json_doc_names(docs):
-    return simplejson.dumps([{"id": doc.pk, "name": doc.name } for doc in docs])
+    return json.dumps([{"id": doc.pk, "name": doc.name } for doc in docs])
 
 def parse_doc_names(s):
     return Document.objects.filter(pk__in=[x.strip() for x in s.split(",") if x.strip()], type="draft")

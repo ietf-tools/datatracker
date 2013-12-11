@@ -6,7 +6,6 @@ from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.http import HttpResponseForbidden
 from django.template import RequestContext
 from django import forms
-from django.utils import simplejson
 from django.utils.html import mark_safe
 
 import debug

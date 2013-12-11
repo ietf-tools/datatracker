@@ -31,7 +31,7 @@
 #  DAMAGE.
 #----------------------------------------------------------------------
 
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 from django.conf import settings
 from dajaxice.core import dajaxice_autodiscover
 

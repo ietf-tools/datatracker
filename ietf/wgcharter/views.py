@@ -1,4 +1,4 @@
-import re, os, string, datetime, shutil, textwrap
+import re, os, string, datetime, shutil, textwrap, json
 
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
@@ -7,7 +7,6 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.template import RequestContext
 from django import forms
 from django.forms.util import ErrorList
-from django.utils import simplejson
 from django.utils.html import strip_tags, escape
 from django.utils.safestring import mark_safe
 from django.conf import settings
@@ -195,8 +194,8 @@ def change_state(request, name, option=None):
                                    title=title,
                                    initial_review=initial_review,
                                    chartering_type=chartering_type,
-                                   info_msg=simplejson.dumps(info_msg),
-                                   states_for_ballot_wo_extern=simplejson.dumps(list(states_for_ballot_wo_extern)),
+                                   info_msg=json.dumps(info_msg),
+                                   states_for_ballot_wo_extern=json.dumps(list(states_for_ballot_wo_extern)),
                                    ),
                               context_instance=RequestContext(request))
 
