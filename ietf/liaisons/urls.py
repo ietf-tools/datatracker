@@ -1,13 +1,13 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.conf.urls import patterns, url
-from django.views.generic import RedirectView,TemplateView
+from django.views.generic import RedirectView, TemplateView
 
 urlpatterns = patterns('',
-     (r'^help/$', TemplateView.as_view(template='liaisons/help.html')),
-     (r'^help/fields/$', TemplateView.as_view(template='liaisons/field_help.html')),
-     (r'^help/from_ietf/$', TemplateView.as_view(template='liaisons/guide_from_ietf.html')),
-     (r'^help/to_ietf/$', TemplateView.as_view(template='liaisons/guide_to_ietf.html')),
+     (r'^help/$', TemplateView.as_view(template_name='liaisons/help.html')),
+     (r'^help/fields/$', TemplateView.as_view(template_name='liaisons/field_help.html')),
+     (r'^help/from_ietf/$', TemplateView.as_view(template_name='liaisons/guide_from_ietf.html')),
+     (r'^help/to_ietf/$', TemplateView.as_view(template_name='liaisons/guide_to_ietf.html')),
      (r'^managers/$', RedirectView.as_view(url='http://www.ietf.org/liaison/managers.html')),
 )
 

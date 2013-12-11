@@ -2,7 +2,7 @@ from django.conf.urls import patterns, url
 from django.views.generic import TemplateView
 
 urlpatterns = patterns('',
-    url(r'^$', TemplateView.as_view(template='main.html'), name="home"),
+    url(r'^$', TemplateView.as_view(template_name='main.html'), name="home"),
     (r'^announcement/', include('ietf.secr.announcement.urls')),
     (r'^areas/', include('ietf.secr.areas.urls')),
     (r'^console/', include('ietf.secr.console.urls')),
