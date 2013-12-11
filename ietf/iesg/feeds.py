@@ -1,10 +1,12 @@
 # Copyright The IETF Trust 2007, 2008, All Rights Reserved
 
-from django.conf import settings
-from django.contrib.syndication.feeds import Feed
-from django.utils.feedgenerator import Atom1Feed
-from ietf.doc.models import Document
 import datetime
+
+from django.conf import settings
+from django.contrib.syndication.views import Feed
+from django.utils.feedgenerator import Atom1Feed
+
+from ietf.doc.models import Document
 
 class IESGAgenda(Feed):
     title = "Documents on Future IESG Telechat Agendas"

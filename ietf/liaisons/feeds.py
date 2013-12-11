@@ -3,7 +3,7 @@
 import re, datetime
 
 from django.conf import settings
-from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
+from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.db.models import Q
 from django.core.urlresolvers import reverse as urlreverse
