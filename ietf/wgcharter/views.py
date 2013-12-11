@@ -480,7 +480,7 @@ def announcement_text(request, name, ann):
 
         if "send_text" in request.POST and form.is_valid():
             parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
-            messages.success(request, "The email To: '%s' with Subjet: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
+            messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
             return redirect('doc_writeup', name=charter.name)
 
     return render_to_response('wgcharter/announcement_text.html',
