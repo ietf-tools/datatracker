@@ -7,7 +7,7 @@ from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.core.urlresolvers import reverse as urlreverse
 from django.utils.html import strip_tags
-from django.utils.text import truncate_words
+from django.template.defaultfilters import truncatewords
 
 from ietf.group.models import Group, GroupEvent
 from ietf.doc.models import DocEvent
@@ -50,7 +50,7 @@ class GroupChanges(Feed):
 	return obj.time
 
     def item_title(self, obj):
-        title = u"%s - %s" % (truncate_words(strip_tags(obj.desc), 10), obj.by)
+        title = u"%s - %s" % (truncatewords(strip_tags(obj.desc), 10), obj.by)
         if isinstance(obj, DocEvent):
             title = u"Chartering: %s" % title
 

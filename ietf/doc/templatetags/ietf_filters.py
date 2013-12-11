@@ -9,8 +9,7 @@ from email.utils import parseaddr
 from django import template
 from django.conf import settings
 from django.utils.html import escape, fix_ampersands
-from django.utils.text import truncate_html_words
-from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter, urlize
+from django.template.defaultfilters import truncatewords_html, linebreaksbr, wordwrap, stringfilter, urlize
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
@@ -457,7 +456,7 @@ def format_history_text(text):
         full = urlize_ietf_docs(full)
 
     full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(full)))))
-    snippet = truncate_html_words(full, 25)
+    snippet = truncatewords_html(full, 25)
     if snippet != full:
         return mark_safe(u'<div class="snippet">%s<span class="show-all">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
     return full

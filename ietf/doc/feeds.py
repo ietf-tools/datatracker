@@ -6,9 +6,8 @@ from django.conf import settings
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.core.urlresolvers import reverse as urlreverse
-from django.template.defaultfilters import truncatewords_html, date as datefilter, linebreaks
+from django.template.defaultfilters import truncatewords, truncatewords_html, date as datefilter, linebreaks
 from django.utils.html import strip_tags
-from django.utils.text import truncate_words
 
 from ietf.doc.models import *
 from ietf.doc.utils import augment_events_with_revision
@@ -42,7 +41,7 @@ class DocumentChanges(Feed):
 	return events
 
     def item_title(self, item):
-        return u"[%s] %s [rev. %s]" % (item.by, truncate_words(strip_tags(item.desc), 15), item.rev)
+        return u"[%s] %s [rev. %s]" % (item.by, truncatewords(strip_tags(item.desc), 15), item.rev)
 
     def item_description(self, item):
         return truncatewords_html(format_textarea(item.desc), 20)
