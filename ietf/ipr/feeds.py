@@ -1,10 +1,12 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import datetime
+
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
+from django.core.urlresolvers import reverse_lazy
+
 from ietf.ipr.models import IprDetail
-from ietf.utils.lazy import reverse_lazy
-from datetime import datetime, time
 
 class LatestIprDisclosures(Feed):
     feed_type = Atom1Feed
@@ -20,7 +22,7 @@ class LatestIprDisclosures(Feed):
     def item_pubdate(self, item):
         # this method needs to return a datetime instance, even
         # though the database has only date, not time 
-	return datetime.combine(item.submitted_date, time(0,0,0))
+        return datetime.datetime.combine(item.submitted_date, datetime.time(0,0,0))
     def item_author_name(self, item):
         s = item.get_submitter()
         if s:
