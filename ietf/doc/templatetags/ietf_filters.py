@@ -230,7 +230,7 @@ def rfclink(string):
     string = str(string);
     return "http://tools.ietf.org/html/rfc" + string;
 
-@register.filter(name='urlize_ietf_docs')
+@register.filter(name='urlize_ietf_docs', is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
     """
     Make occurrences of RFC NNNN and draft-foo-bar links to /doc/.
@@ -245,8 +245,6 @@ def urlize_ietf_docs(string, autoescape=None):
     string = re.sub("(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     string = re.sub("(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     return mark_safe(string)
-urlize_ietf_docs.is_safe = True
-urlize_ietf_docs.needs_autoescape = True
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
 @register.filter(name='dashify')
