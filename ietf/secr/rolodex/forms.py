@@ -29,7 +29,7 @@ class EmailForm(forms.ModelForm):
 class EditPersonForm(forms.ModelForm):
     class Meta:
         model = Person
-        exclude = ('time')
+        exclude = ('time',)
 
     def __init__(self, *args, **kwargs):
         super(EditPersonForm, self).__init__(*args,**kwargs)
