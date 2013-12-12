@@ -2,13 +2,12 @@
 
 import datetime, re, json
 
-from django.views.generic.create_update import delete_object
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.contrib.messages.api import success, get_messages
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404, HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, render, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils.datastructures import SortedDict
@@ -539,7 +538,7 @@ def view_feedback_pending(request, year):
     nomcom = get_nomcom_by_year(year)
     extra_ids = None
     message = None
-    for message in get_messages(request):
+    for message in messages.get_messages(request):
         message = ('success', message.message)
     FeedbackFormSet = modelformset_factory(Feedback,
                                            form=PendingFeedbackForm,
@@ -561,7 +560,7 @@ def view_feedback_pending(request, year):
             formset = FeedbackFormSet(queryset=feedbacks)
             for form in formset.forms:
                 form.set_nomcom(nomcom, request.user)
-            success(request, 'Feedback saved')
+            messages.success(request, 'Feedback saved')
             return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
     elif request.method == 'POST' and request.POST.get('end'):
         extra_ids = request.POST.get('extra_ids', None)
@@ -583,7 +582,7 @@ def view_feedback_pending(request, year):
                     form.set_nomcom(nomcom, request.user, extra)
                 extra_ids = None
             else:
-                success(request, 'Feedback saved')
+                messages.success(request, 'Feedback saved')
                 return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
     elif request.method == 'POST':
         formset = FeedbackFormSet(request.POST)
@@ -617,7 +616,7 @@ def view_feedback_pending(request, year):
                 if moved:
                     message = ('success', '%s messages classified. You must enter more information for the following feedback.' % moved)
             else:
-                success(request, 'Feedback saved')
+                messages.success(request, 'Feedback saved')
                 return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
     else:
         formset = FeedbackFormSet(queryset=feedbacks)
@@ -739,17 +738,17 @@ def edit_nomcom(request, year):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def delete_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
-    post_delete_redirect = reverse('nomcom_deleted')
-    extra_context = {'year': year,
-                     'selected': 'edit_nomcom',
-                     'nomcom': nomcom}
 
-    return delete_object(request,
-                         model=NomCom,
-                         object_id=nomcom.id,
-                         post_delete_redirect=post_delete_redirect,
-                         template_name='nomcom/delete_nomcom.html',
-                         extra_context=extra_context)
+    if request.method == 'POST':
+        nomcom.delete()
+        messages.success(request, "Deleted NomCom data")
+        return redirect('nomcom_deleted')
+
+    return render(request, 'nomcom/delete_nomcom.html', {
+        'year': year,
+        'selected': 'edit_nomcom',
+        'nomcom': nomcom,
+    })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
