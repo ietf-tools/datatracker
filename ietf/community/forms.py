@@ -52,7 +52,7 @@ class DisplayForm(forms.ModelForm):
 
 class SubscribeForm(forms.Form):
 
-    email = forms.EmailField("Your email")
+    email = forms.EmailField(label="Your email")
 
     def __init__(self, *args, **kwargs):
         self.clist = kwargs.pop('clist')
