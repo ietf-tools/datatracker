@@ -3,15 +3,15 @@ import os
 import tempfile
 import datetime
 
-from ietf.utils import TestCase
 from django.db import IntegrityError
 from django.core.urlresolvers import reverse
 from django.core.files import File
 from django.contrib.auth.models import User
 
-from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.mail import outbox
+from pyquery import PyQuery
 
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.utils.mail import outbox
 
 from ietf.person.models import Email, Person
 from ietf.group.models import Group
@@ -329,7 +329,6 @@ class NomcomViewsTest(TestCase):
         self.client.post(self.edit_chair_url, test_data)
 
     def test_edit_chair_view(self):
-        """Verify edit chair view"""
         self.access_secretariat_url(self.edit_chair_url)
         self.change_chair(COMMUNITY_USER)
 
@@ -344,11 +343,18 @@ class NomcomViewsTest(TestCase):
         self.client.logout()
 
     def test_edit_nomcom_view(self):
-        """Verify edit nomcom view"""
         self.access_chair_url(self.edit_nomcom_url)
 
+        r = self.client.get(self.edit_nomcom_url)
+        q = PyQuery(r.content)
+
         f = open(self.cert_file.name)
-        response = self.client.post(self.edit_nomcom_url, {'public_key': f})
+        response = self.client.post(self.edit_nomcom_url, {
+            'public_key': f,
+            'reminderdates_set-TOTAL_FORMS': q('input[name="reminderdates_set-TOTAL_FORMS"]').val(),
+            'reminderdates_set-INITIAL_FORMS': q('input[name="reminderdates_set-INITIAL_FORMS"]').val(),
+            'reminderdates_set-MAX_NUM_FORMS': q('input[name="reminderdates_set-MAX_NUM_FORMS"]').val(),
+        })
         f.close()
         self.assertEqual(response.status_code, 200)
 
