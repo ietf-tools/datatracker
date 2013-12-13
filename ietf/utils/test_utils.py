@@ -255,14 +255,13 @@ def canonicalize_sitemap(s):
     s = re.sub("\n*\s*(<[a-zA-Z])", "\n\g<1>", s)
     return s
         
-def login_testing_unauthorized(tc, remote_user, url):
-    r = tc.client.get(url)
-    tc.assertTrue(r.status_code in (302, 403))
+def login_testing_unauthorized(test_case, remote_user, url):
+    r = test_case.client.get(url)
+    test_case.assertTrue(r.status_code in (302, 403))
     if r.status_code == 302:
-        tc.assertTrue("/accounts/login" in r['Location'])
+        test_case.assertTrue("/accounts/login" in r['Location'])
+    test_case.client.login(remote_user=remote_user)
 
-    tc.client.login(remote_user=remote_user)
-    
 class ReverseLazyTest(django.test.TestCase):
     def test_redirect_with_lazy_reverse(self):
         response = self.client.get('/ipr/update/')
@@ -315,20 +314,4 @@ class TestCase(django.test.TestCase):
                                                             })
                 loaded_fixtures += fixtures
 
-        for db in databases:
-            transaction.enter_transaction_management(using=db)
-            transaction.managed(True, using=db)
-        disable_transaction_methods()
-
-        from django.contrib.sites.models import Site
-        Site.objects.clear_cache()
-
-        for db in databases:
-            if hasattr(self, 'fixtures'):
-                call_command('loaddata', *self.fixtures, **{
-                                                            'verbosity': 0,
-                                                            'commit': False,
-                                                            'database': db
-                                                            })
-
-
+        super(TestCase, self)._fixture_setup()
