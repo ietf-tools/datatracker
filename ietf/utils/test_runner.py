@@ -32,7 +32,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import socket, re, os, time
+import socket, re, os, time, importlib
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist
@@ -57,8 +57,18 @@ def safe_create_1(self, verbosity, *args, **kwargs):
         print "     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"]
     test_database_name = old_create(self, 0, *args, **kwargs)
     if settings.GLOBAL_TEST_FIXTURES:
-        print "     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES) 
-        call_command('loaddata', *settings.GLOBAL_TEST_FIXTURES, verbosity=0, commit=False, database="default")
+        print "     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES)
+        loadable = [f for f in settings.GLOBAL_TEST_FIXTURES if "." not in f]
+        call_command('loaddata', *loadable, verbosity=0, commit=False, database="default")
+
+        for f in settings.GLOBAL_TEST_FIXTURES:
+            if f not in loadable:
+                # try to execute the fixture
+                components = f.split(".")
+                module = importlib.import_module(".".join(components[:-1]))
+                fn = getattr(module, components[-1])
+                fn()
+
     return test_database_name
 
 def safe_destroy_0_1(*args, **kwargs):
