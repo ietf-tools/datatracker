@@ -156,7 +156,7 @@ def check_template_coverage():
         for t in sorted(not_loaded):
             print "     Not loaded", t
 
-def save_test_results(failures):
+def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
@@ -167,8 +167,8 @@ def save_test_results(failures):
     if failures:
         tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
     else:
-        if list(*args):
-            tfile.write("%s SUCCESS (tests=%s)\n" % (timestr, repr(list(*args))))
+        if test_labels:
+            tfile.write("%s SUCCESS (tests=%s)\n" % (timestr, test_labels))
         else:
             tfile.write("%s OK\n" % (timestr, ))
     tfile.close()
@@ -189,6 +189,11 @@ class IetfTestRunner(DiscoverRunner):
         connection.creation.__class__.create_test_db = safe_create_1
         old_destroy = connection.creation.__class__.destroy_test_db
         connection.creation.__class__.destroy_test_db = safe_destroy_0_1
+
+        # exclude RemoteUserMiddleware - it logs out request.user if
+        # REMOTE_USER is not passed in as a header, which the tests
+        # don't do
+        settings.MIDDLEWARE_CLASSES = tuple(m for m in settings.MIDDLEWARE_CLASSES if "RemoteUserMiddleware" not in m)
 
         check_coverage = not test_labels
 
@@ -215,6 +220,6 @@ class IetfTestRunner(DiscoverRunner):
             check_url_coverage()
             check_template_coverage()
 
-        save_test_results(failures)
+        save_test_results(failures, test_labels)
 
         return failures
