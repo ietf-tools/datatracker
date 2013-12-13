@@ -702,9 +702,8 @@ def edit_nominee(request, year, nominee_id):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def edit_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
-    has_publickey = nomcom.public_key and True or False
 
-    if has_publickey:
+    if nomcom.public_key:
         message = ('warning', 'Previous data will remain encrypted with the old key')
     else:
         message = ('warning', 'The nomcom has not a public key yet')
