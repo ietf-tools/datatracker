@@ -217,7 +217,7 @@ RFCDIFF_PREFIX = "//www.ietf.org/rfcdiff"
 SERVER_MODE = 'development'
 
 # The name of the method to use to invoke the test suite
-TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
+TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
 
 # Fixtures which will be loaded before testing starts
 GLOBAL_TEST_FIXTURES = [ 'names','groups','persons', 'roles']
