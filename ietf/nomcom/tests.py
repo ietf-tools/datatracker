@@ -7,7 +7,6 @@ from ietf.utils import TestCase
 from django.db import IntegrityError
 from django.core.urlresolvers import reverse
 from django.core.files import File
-from django.contrib.formtools.preview import security_hash
 from django.contrib.auth.models import User
 
 from ietf.utils.test_utils import login_testing_unauthorized
@@ -286,7 +285,7 @@ class NomcomViewsTest(TestCase):
         # preview
         self.client.post(self.edit_members_url, test_data)
 
-        hash = security_hash(None, EditMembersForm(test_data))
+        hash = EditChairFormPreview().security_hash(None, EditMembersForm(test_data))
         test_data.update({'hash': hash, 'stage': 2})
 
         # submit
@@ -315,7 +314,7 @@ class NomcomViewsTest(TestCase):
         # preview
         self.client.post(self.edit_chair_url, test_data)
 
-        hash = security_hash(None, EditChairForm(test_data))
+        hash = EditChairFormPreview().security_hash(None, EditChairForm(test_data))
         test_data.update({'hash': hash, 'stage': 2})
 
         # submit
