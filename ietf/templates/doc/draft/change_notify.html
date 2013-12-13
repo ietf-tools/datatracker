@@ -21,7 +21,7 @@ Edit notification addresses for {{ doc.canonical_name }}-{{ doc.rev }}
   <table>
     {% for field in form.visible_fields %}
     <tr>
-      <th>{{ field.label_tag }}:</th>
+      <th>{{ field.label_tag }}</th>
       <td>
         {{ field }}
 	{% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}

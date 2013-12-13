@@ -30,7 +30,7 @@ Datatracker account. New accounts can be
   <table>
     {% for field in form.visible_fields %}
     <tr>
-      <th>{{ field.label_tag }}: {% if field.field.required %}*{% endif %}</th>
+      <th>{{ field.label_tag }} {% if field.field.required %}*{% endif %}</th>
       <td>{{ field }}
       {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {{ field.errors }}

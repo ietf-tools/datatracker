@@ -16,7 +16,7 @@ form.edit-iesg-note #id_note {
   <table>
     {% for field in form.visible_fields %}
     <tr>
-      <th>{{ field.label_tag }}:</th>
+      <th>{{ field.label_tag }}</th>
       <td>{{ field }}
       {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {{ field.errors }}</td>

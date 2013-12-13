@@ -46,7 +46,7 @@ so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</
   <table>
     {% for field in form.visible_fields %}
     <tr>
-      <th>{{ field.label_tag }}: {% if field.field.required %}*{% endif %}</th>
+      <th>{{ field.label_tag }} {% if field.field.required %}*{% endif %}</th>
       <td>{{ field }}
       {% if field.name == "ad" and user|has_role:"Area Director" %}
       <label><input type="checkbox" name="ad" value="{{ login.pk }}" /> Assign to me</label>

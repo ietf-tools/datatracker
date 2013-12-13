@@ -70,7 +70,7 @@ form.start-rfc-status-change-review .actions {
     </tr>
     {% for field in form.visible_fields %}
     <tr>
-      <th>{{ field.label_tag }}:</th>
+      <th>{{ field.label_tag }}</th>
       <td>
       {% if field.label == "Document name" %}status-change-{% endif %}
       {{ field }}

@@ -35,7 +35,7 @@ form.edit-info .actions {
   <table>
     {% for field in form.standard_fields %}
     <tr>
-      <th>{{ field.label_tag }}:</th>
+      <th>{{ field.label_tag }}</th>
       <td>{{ field }}
       {% ifequal field.name "telechat_date" %}
         {% if not ballot_issued %}

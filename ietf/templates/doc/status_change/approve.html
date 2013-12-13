@@ -22,7 +22,7 @@ textarea[id^="id_form-"][id$="-announcement_text"] {
     {% for field in form.visible_fields %}
     <tr>
       <td>
-      <div>{{ field.label_tag }}:</div>
+      <div>{{ field.label_tag }}</div>
         {{ field }}
         {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
         {{ field.errors }}
