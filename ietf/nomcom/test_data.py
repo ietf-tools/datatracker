@@ -93,6 +93,8 @@ def check_comments(encryped, plain, privatekey_file):
 
     return decrypted_comments == plain
 
+test_cert_file = None
+
 def nomcom_test_data():
     # groups
     group, created = Group.objects.get_or_create(name='IAB/IESG Nominating Committee 2013/2014',
@@ -102,8 +104,10 @@ def nomcom_test_data():
 
     nomcom, created = NomCom.objects.get_or_create(group=group)
 
-    cert_file, privatekey_file = generate_cert()
-    nomcom.public_key.save('cert', File(open(cert_file.name, 'r')))
+    global test_cert_file
+    if not test_cert_file:
+        test_cert_file, privatekey_file = generate_cert()
+    nomcom.public_key.save('cert', File(open(test_cert_file.name, 'r')))
 
     # chair and member
     create_person(group, "chair", username=CHAIR_USER)
