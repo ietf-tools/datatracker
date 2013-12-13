@@ -630,8 +630,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
     comments = forms.CharField(label='Questionnaire response from this candidate',
                                widget=forms.Textarea())
-    fieldsets = [('New questionnaire response', ('nominee',
-                                             'comments'))]
+    fieldsets = [('New questionnaire response', ('nominee', 'comments'))]
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
@@ -659,8 +658,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
     class Meta:
         model = Feedback
-        fields = ('nominee',
-                  'positions',
+        fields = ('positions',
                   'comments')
 
     class Media:
