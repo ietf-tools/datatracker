@@ -23,7 +23,7 @@ from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comment
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionState, Feedback, FeedbackType, \
                                Nomination
-from ietf.nomcom.forms import EditChairForm, EditMembersForm
+from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, EditMembersForm
 from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 
@@ -285,7 +285,7 @@ class NomcomViewsTest(TestCase):
         # preview
         self.client.post(self.edit_members_url, test_data)
 
-        hash = EditChairFormPreview().security_hash(None, EditMembersForm(test_data))
+        hash = EditChairFormPreview(EditChairForm).security_hash(None, EditMembersForm(test_data))
         test_data.update({'hash': hash, 'stage': 2})
 
         # submit
@@ -314,7 +314,7 @@ class NomcomViewsTest(TestCase):
         # preview
         self.client.post(self.edit_chair_url, test_data)
 
-        hash = EditChairFormPreview().security_hash(None, EditChairForm(test_data))
+        hash = EditChairFormPreview(EditChairForm).security_hash(None, EditChairForm(test_data))
         test_data.update({'hash': hash, 'stage': 2})
 
         # submit
@@ -344,7 +344,7 @@ class NomcomViewsTest(TestCase):
         f.close()
         self.assertEqual(response.status_code, 200)
 
-        nominee = Nominee.objects.get(email__person__name=COMMUNITY_USER)
+        nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
         position = Position.objects.get(name='OAM')
 
         comments = u'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
@@ -619,7 +619,7 @@ class NomineePositionStateSaveTest(TestCase):
 
     def setUp(self):
         nomcom_test_data()
-        self.nominee = Nominee.objects.get(email__person__name=COMMUNITY_USER)
+        self.nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
 
     def test_state_autoset(self):
         """Verify state is autoset correctly"""
@@ -655,7 +655,7 @@ class FeedbackTest(TestCase):
 
     def test_encrypted_comments(self):
 
-        nominee = Nominee.objects.get(email__person__name=COMMUNITY_USER)
+        nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
         position = Position.objects.get(name='OAM')
         nomcom = position.nomcom
 
