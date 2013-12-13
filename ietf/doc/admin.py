@@ -87,6 +87,7 @@ class DocumentForm(forms.ModelForm):
         self.fields["states"].widget.instance = self.instance
 
     class Meta:
+        fields = '__all__'
         model = Document
 
 class DocumentAdmin(admin.ModelAdmin):

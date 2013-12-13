@@ -254,7 +254,7 @@ class IprDetailForm(BetterModelForm):
         for doc in self.cleaned_data['id_filename']:
             #doc_alias = DocAlias.objects.get(id=doc)
             IprDocAlias.objects.create(ipr=ipr_detail,doc_alias=doc)
-            
+
         return ipr_detail
 
     class Meta:
@@ -326,3 +326,6 @@ class IprDetailForm(BetterModelForm):
             }),
         ]
  
+        fields = []
+        for n, d in fieldsets:
+            fields += d["fields"]

@@ -109,6 +109,7 @@ class MeetingModelForm(forms.ModelForm):
 class MeetingRoomForm(forms.ModelForm):
     class Meta:
         model = Room
+        fields = '__all__'
 
 class ExtraSessionForm(forms.Form):
     no_notify = forms.BooleanField(required=False, label="Do NOT notify this action")

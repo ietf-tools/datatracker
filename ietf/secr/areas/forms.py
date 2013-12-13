@@ -16,6 +16,7 @@ STATE_CHOICES = (
 class AWPForm(forms.ModelForm):
     class Meta:
         model = GroupURL
+        fields = '__all__'
 
     def __init__(self, *args, **kwargs):
         super(AWPForm, self).__init__(*args,**kwargs)

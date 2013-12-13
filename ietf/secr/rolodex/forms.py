@@ -25,6 +25,7 @@ class SearchForm(forms.Form):
 class EmailForm(forms.ModelForm):
     class Meta:
         model = Email
+        fields = '__all__'
 
 class EditPersonForm(forms.ModelForm):
     class Meta:
