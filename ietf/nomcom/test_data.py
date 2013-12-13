@@ -93,7 +93,7 @@ def check_comments(encryped, plain, privatekey_file):
 
     return decrypted_comments == plain
 
-test_cert_file = None
+nomcom_test_cert_file = None
 
 def nomcom_test_data():
     # groups
@@ -104,10 +104,10 @@ def nomcom_test_data():
 
     nomcom, created = NomCom.objects.get_or_create(group=group)
 
-    global test_cert_file
-    if not test_cert_file:
-        test_cert_file, privatekey_file = generate_cert()
-    nomcom.public_key.save('cert', File(open(test_cert_file.name, 'r')))
+    global nomcom_test_cert_file
+    if not nomcom_test_cert_file:
+        nomcom_test_cert_file, privatekey_file = generate_cert()
+    nomcom.public_key.save('cert', File(open(nomcom_test_cert_file.name, 'r')))
 
     # chair and member
     create_person(group, "chair", username=CHAIR_USER)

@@ -27,6 +27,14 @@ from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, EditMembersFo
 from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 
+client_test_cert_files = None
+
+def get_cert_files():
+    global client_test_cert_files
+    if not client_test_cert_files:
+        client_test_cert_files = generate_cert()
+    return client_test_cert_files
+
 
 class NomcomViewsTest(TestCase):
     """Tests to create a new nomcom"""
@@ -39,7 +47,7 @@ class NomcomViewsTest(TestCase):
 
     def setUp(self):
         nomcom_test_data()
-        self.cert_file, self.privatekey_file = generate_cert()
+        self.cert_file, self.privatekey_file = get_cert_files()
         self.year = NOMCOM_YEAR
 
         # private urls
@@ -651,7 +659,7 @@ class FeedbackTest(TestCase):
 
     def setUp(self):
         nomcom_test_data()
-        self.cert_file, self.privatekey_file = generate_cert()
+        self.cert_file, self.privatekey_file = get_cert_files()
 
     def test_encrypted_comments(self):
 
@@ -675,16 +683,13 @@ class FeedbackTest(TestCase):
 
         self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
 
-        os.unlink(self.privatekey_file.name)
-        os.unlink(self.cert_file.name)
-
 class ReminderTest(TestCase):
     perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
-        self.cert_file, self.privatekey_file = generate_cert()
+        self.cert_file, self.privatekey_file = get_cert_files()
         self.nomcom.public_key.storage.location = tempfile.gettempdir()
         self.nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
