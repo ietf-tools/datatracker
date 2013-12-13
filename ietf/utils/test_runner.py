@@ -32,11 +32,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import socket, re, os
+import socket, re, os, time
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist
-from django.test.simple import run_tests as django_run_tests
+from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 
 import debug
@@ -146,53 +146,11 @@ def check_template_coverage():
         for t in sorted(not_loaded):
             print "     Not loaded", t
 
-def run_tests_1(test_labels, *args, **kwargs):
-    global old_destroy, old_create, test_database_name
-    from django.db import connection
-    old_create = connection.creation.__class__.create_test_db
-    connection.creation.__class__.create_test_db = safe_create_1
-    old_destroy = connection.creation.__class__.destroy_test_db
-    connection.creation.__class__.destroy_test_db = safe_destroy_0_1
-
-    check_coverage = not test_labels
-
-    if check_coverage:
-        settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
-        settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
-
-    if not test_labels:
-        test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")]
-
-    if settings.SITE_ID != 1:
-        print "     Changing SITE_ID to '1' during testing."
-        settings.SITE_ID = 1
-
-    if settings.TEMPLATE_STRING_IF_INVALID != '':
-        print "     Changing TEMPLATE_STRING_IF_INVALID to '' during testing."
-        settings.TEMPLATE_STRING_IF_INVALID = ''
-
-    assert(not settings.IDTRACKER_BASE_URL.endswith('/'))
-
-    results = django_run_tests(test_labels, *args, **kwargs)
-
-    if check_coverage:
-        check_url_coverage()
-        check_template_coverage()
-
-    return results
-
-def run_tests(*args, **kwargs):
-    # Tests that involve switching back and forth between the real
-    # database and the test database are way too dangerous to run
-    # against the production database
-    if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
-        raise EnvironmentError("Refusing to run tests on production server")
-    ietf.utils.mail.test_mode = True
-    failures = run_tests_1(*args, **kwargs)
+def save_test_results(failures):
     # Record the test result in a file, in order to be able to check the
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
-    import os, time, ietf.settings as config
+    import ietf.settings as config
     topdir = os.path.dirname(os.path.dirname(config.__file__))
     tfile = open(os.path.join(topdir,"testresult"), "a")
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -204,4 +162,49 @@ def run_tests(*args, **kwargs):
         else:
             tfile.write("%s OK\n" % (timestr, ))
     tfile.close()
-    return failures
+
+
+class IetfTestRunner(DiscoverRunner):
+    def run_tests(self, test_labels, extra_tests=None, **kwargs):
+        # Tests that involve switching back and forth between the real
+        # database and the test database are way too dangerous to run
+        # against the production database
+        if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
+            raise EnvironmentError("Refusing to run tests on production server")
+        ietf.utils.mail.test_mode = True
+
+        global old_destroy, old_create, test_database_name
+        from django.db import connection
+        old_create = connection.creation.__class__.create_test_db
+        connection.creation.__class__.create_test_db = safe_create_1
+        old_destroy = connection.creation.__class__.destroy_test_db
+        connection.creation.__class__.destroy_test_db = safe_destroy_0_1
+
+        check_coverage = not test_labels
+
+        if check_coverage:
+            settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
+            settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
+
+        if not test_labels:
+            test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")]
+
+        if settings.SITE_ID != 1:
+            print "     Changing SITE_ID to '1' during testing."
+            settings.SITE_ID = 1
+
+        if settings.TEMPLATE_STRING_IF_INVALID != '':
+            print "     Changing TEMPLATE_STRING_IF_INVALID to '' during testing."
+            settings.TEMPLATE_STRING_IF_INVALID = ''
+
+        assert not settings.IDTRACKER_BASE_URL.endswith('/')
+
+        failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
+
+        if check_coverage:
+            check_url_coverage()
+            check_template_coverage()
+
+        save_test_results(failures)
+
+        return failures
