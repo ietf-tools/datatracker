@@ -106,9 +106,10 @@ SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-    'ietf.dbtemplate.template.load_template_source',
+    ('django.template.loaders.cached.Loader',
+     ('django.template.loaders.filesystem.Loader',
+      'django.template.loaders.app_directories.Loader',)),
+    'ietf.dbtemplate.template.Loader',
 )
 
 MIDDLEWARE_CLASSES = (
