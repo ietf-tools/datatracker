@@ -31,7 +31,7 @@ form.approve .announcement {
 
   <div class="actions">
     <a href="{% url "doc_view" name=charter.name %}">Back</a>
-    <a href="{% url "charter_edit_announcement" name=charter.canonical_name,ann="action" %}?next=approve">Go to edit/regenerate announcement page</a>
+    <a href="{% url "charter_edit_announcement" name=charter.canonical_name ann="action" %}?next=approve">Go to edit/regenerate announcement page</a>
     <input type="submit" value="Send out the announcement, close ballot and update revision"/>
   </div>
 </form>
