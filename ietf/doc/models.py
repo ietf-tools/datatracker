@@ -590,7 +590,7 @@ class StateDocEvent(DocEvent):
     state = models.ForeignKey(State, blank=True, null=True)
 
 class ConsensusDocEvent(DocEvent):
-    consensus = models.BooleanField()
+    consensus = models.BooleanField(default=False)
 
 # IESG events
 class BallotType(models.Model):

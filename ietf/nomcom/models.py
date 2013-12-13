@@ -38,9 +38,9 @@ class NomCom(models.Model):
                                   upload_to=upload_path_handler, blank=True, null=True)
 
     group = models.ForeignKey(Group)
-    send_questionnaire = models.BooleanField(verbose_name='Send automatically questionnaires"',
-                                            help_text='If you check this box, questionnaires are sent automatically after nominations')
-    reminder_interval = models.PositiveIntegerField(help_text='If the nomcom user the interval field then a cron command will \
+    send_questionnaire = models.BooleanField(verbose_name='Send questionnaires automatically"', default=False,
+                                             help_text='If you check this box, questionnaires are sent automatically after nominations')
+    reminder_interval = models.PositiveIntegerField(help_text='If the nomcom user sets the interval field then a cron command will \
                                                                send reminders to the nominees who have not responded using \
                                                                the following formula: (today - nomination_date) % interval == 0',
                                                                blank=True, null=True)
@@ -142,7 +142,7 @@ class Position(models.Model):
     description = models.TextField(verbose_name='Description')
     requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True, editable=False)
     questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True, editable=False)
-    is_open = models.BooleanField(verbose_name='Is open')
+    is_open = models.BooleanField(verbose_name='Is open', default=False)
     incumbent = models.ForeignKey(Email, null=True, blank=True)
 
     objects = PositionManager()
