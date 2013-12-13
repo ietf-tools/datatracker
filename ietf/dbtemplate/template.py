@@ -61,6 +61,9 @@ class RSTTemplate(PlainTemplate):
             raise e
 
 class Loader(BaseLoader):
+    def __init__(self, *args, **kwargs):
+        super(Loader, self).__init__(self, *args, **kwargs)
+        self.is_usable = True
 
     def load_template_source(self, template_name, template_dirs=None):
         try:
