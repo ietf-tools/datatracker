@@ -12,7 +12,29 @@ from ietf.person.models import *
 
 import debug
 
-def make_test_data():
+def create_person(group, role_name, name=None, username=None, email_address=None):
+    """Add person/user/email and role."""
+    if not name:
+        name = group.acronym.capitalize() + " " + role_name.capitalize()
+    if not username:
+        username = group.acronym + "-" + role_name
+    if not email_address:
+        email_address = username + "@ietf.org"
+
+    user = User.objects.create(username=username)
+    person = Person.objects.create(name=name, ascii=name, user=user)
+    Alias.objects.create(name=name, person=person)
+    email = Email.objects.create(address=email_address, person=person)
+    Role.objects.create(group=group, name_id=role_name, person=person, email=email)
+
+def create_group(**kwargs):
+    return Group.objects.create(state_id="active", **kwargs)
+
+def make_immutable_base_data():
+    """Some base data (groups, etc.) that doesn't need to be modified by
+    tests and is thus safe to load once and for all at the start of
+    all tests in a run."""
+
     # telechat dates
     t = datetime.date.today()
     old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date
@@ -21,52 +43,79 @@ def make_test_data():
     date3 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 2)).date
     date4 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 3)).date
 
-    # groups
-    secretariat, created = Group.objects.get_or_create(
-        name="IETF Secretariat",
-        acronym="secretariat",
-        state_id="active",
-        type_id="ietf",
-        parent=None)
-    ietf, created = Group.objects.get_or_create(
-        name="IETF",
-        acronym="ietf",
-        state_id="active",
-        type_id="ietf",
-        parent=None)
+    # system
+    system_person = Person.objects.create(name="(System)", ascii="(System)", address="")
+    Alias.objects.create(person=system_person, name=system_person.name)
+    Email.objects.create(address="", person=system_person)
 
-# XXX As given below, the group objects created doesn't match what's in the
-# fixtures, so if both are used, things blow up.  The code below should
-# probably be updated to match what's in the fixtures, making the fixtures
-# unnecessary for a number of test cases.
+    # high-level groups
+    ietf = create_group(name="IETF", acronym="ietf", type_id="ietf")
+    create_person(ietf, "chair")
+    create_person(ietf, "iad")
 
-#     irtf, created = Group.objects.get_or_create(
-#         name="IRTF",
-#         acronym="irtf",
-#         state_id="active",
-#         type_id="irtf",
-#         parent=None)
-#     for g,t,n,p in [("iab","ietf", "Internet Architecture Board",1),  ("ise","ietf", "Independent Submission Editor", None), ("iesg","ietf", "Internet Engineering Steering Group", 1), ]:
-#         Group.objects.get_or_create(
-#             name=n,
-#             acronym=g,
-#             state_id="active",
-#             type_id=t,
-#             parent_id=p)
-    area = Group.objects.create(
-        name="Far Future",
-        acronym="farfut",
-        state_id="active",
-        type_id="area",
-        parent=ietf)
-#     individ, created = Group.objects.get_or_create(
-#         name="Individual submissions",
-#         acronym="none",
-#         state_id="active",
-#         type_id="individ",
-#         parent=None)
+    irtf = create_group(name="IRTF", acronym="irtf", type_id="irtf")
+    create_person(irtf, "chair")
+
+    secretariat = create_group(name="IETF Secretariat", acronym="secretariat", type_id="ietf")
+    create_person(secretariat, "secr", name="Sec Retary", username="secretary")
+
+    iab = create_group(name="Internet Architecture Board", acronym="iab", type_id="ietf", parent=ietf)
+    create_person(iab, "chair")
+
+    ise = create_group(name="Independent Submission Editor", acronym="ise", type_id="ietf")
+    create_person(ise, "chair")
+
+    rsoc = create_group(name="RFC Series Oversight Committee", acronym="rsoc", type_id="ietf")
+    create_person(rsoc, "chair")
+
+    iepg = create_group(name="IEPG", acronym="iepg", type_id="ietf")
+    create_person(iepg, "chair")
+    
+    iana = create_group(name="IANA", acronym="iana", type_id="ietf")
+    create_person(iana, "auth", name="Ina Iana", username="iana", email_address="iana@ia.na")
+
+    rfc_editor = create_group(name="RFC Editor", acronym="rfceditor", type_id="rfcedtyp")
+    create_person(rfc_editor, "auth", name="Rfc Editor", username="rfc", email_address="rfc@edit.or")
+
+    iesg = create_group(name="Internet Engineering Steering Group", acronym="iesg", type_id="ietf", parent=ietf)
+
+    individ = create_group(name="Individual submissions", acronym="none", type_id="individ")
+
+    # one area
+    area = create_group(name="Far Future", acronym="farfut", type_id="area", parent=ietf)
+    create_person(area, "ad", name="Aread Irector", username="ad", email_address="aread@ietf.org")
+
+    # create a bunch of ads for swarm tests
+    for i in range(1, 10):
+        u = User.objects.create(username="ad%s" % i)
+        p = Person.objects.create(name="Ad No%s" % i, ascii="Ad No%s" % i, user=u)
+        Alias.objects.create(name=p.name, person=p)
+        email = Email.objects.create(address="ad%s@ietf.org" % i, person=p)
+        if i < 6:
+            # active
+            Role.objects.create(name_id="ad", group=area, person=p, email=email)
+        else:
+            # inactive
+            areahist = GroupHistory.objects.create(
+                group=area,
+                name=area.name,
+                acronym=area.acronym,
+                type_id=area.type_id,
+                state_id=area.state_id,
+                parent=area.parent
+                )
+            RoleHistory.objects.create(
+                name_id="ad",
+                group=areahist,
+                person=p,
+                email=email)
+
+def make_test_data():
+    area = Group.objects.get(acronym="farfut")
+    ad = Person.objects.get(user__username="ad")
+
     # mars WG
-    group  = Group.objects.create(
+    group = Group.objects.create(
         name="Martian Special Interest Group",
         acronym="mars",
         state_id="active",
@@ -113,40 +162,6 @@ def make_test_data():
     group.charter = charter
     group.save()
 
-    # persons
-
-    # system
-    system_person, created = Person.objects.get_or_create(
-#        id=0, # special value
-        name="(System)",
-        ascii="(System)",
-        address="",
-        )
-    system_person.save()
-
-    # IANA and RFC Editor groups
-    iana, created = Group.objects.get_or_create(
-        name="IANA",
-        acronym="iana",
-        state_id="active",
-        type_id="ietf",
-        parent=None,
-        )
-    rfc_editor, created = Group.objects.get_or_create(
-        name="RFC Editor",
-        acronym="rfceditor",
-        state_id="active",
-        type_id="rfcedtyp",
-        parent=None,
-        )
-
-#    if system_person.id != 0: # work around bug in Django
-#        Person.objects.filter(id=system_person.id).update(id=0)
-#        system_person = Person.objects.get(id=0)
-
-    Alias.objects.get_or_create(person=system_person, name=system_person.name)
-    Email.objects.get_or_create(address="", person=system_person)
-
     # plain IETF'er
     u, created = User.objects.get_or_create(username="plain")
     plainman, created = Person.objects.get_or_create(
@@ -157,74 +172,8 @@ def make_test_data():
         address="plain@example.com",
         person=plainman)
     
-    # ad
-    u = User.objects.create(username="ad")
-    ad = p = Person.objects.create(
-        name="Aread Irector",
-        ascii="Aread Irector",
-        user=u)
-    email = Email.objects.create(
-        address="aread@ietf.org",
-        person=p)
-    Role.objects.create(
-        name_id="ad",
-        group=area,
-        person=p,
-        email=email)
-
     mars_wg.ad = ad
     mars_wg.save()
-
-    # create a bunch of ads for swarm tests
-    for i in range(1, 10):
-        u = User.objects.create(username="ad%s" % i)
-        p = Person.objects.create(
-            name="Ad No%s" % i,
-            ascii="Ad No%s" % i,
-            user=u)
-        email = Email.objects.create(
-            address="ad%s@ietf.org" % i,
-            person=p)
-        if i < 6:
-            # active
-            Role.objects.create(
-                name_id="ad",
-                group=area,
-                person=p,
-                email=email)
-        else:
-            areahist = GroupHistory.objects.create(
-                group=area,
-                name=area.name,
-                acronym=area.acronym,
-                type_id=area.type_id,
-                state_id=area.state_id,
-                parent=area.parent
-                )
-            RoleHistory.objects.create(
-                name_id="ad",
-                group=areahist,
-                person=p,
-                email=email)
-    
-    # stream chairs
-    for stream in ['ietf','irtf','iab','iesg']:
-        u = User.objects.create( username= ("%schair"%stream) )
-        p = Person.objects.create(
-            name="%s chair"%stream,
-            ascii="%s chair"%stream,
-            user = u,
-            )
-        chairmail = Email.objects.create(
-            address="%schair@ietf.org"%stream,
-            person = p,
-            )
-        Role.objects.create(
-            name_id = "chair",
-            group = Group.objects.get(acronym=stream),
-            person = p,
-            email = chairmail,
-            )
 
     # group chair
     u = User.objects.create(username="marschairman")
@@ -260,73 +209,6 @@ def make_test_data():
         email=email,
         )
 
-    # secretary
-    u = User.objects.create(username="secretary")
-    p = Person.objects.create(
-        name="Sec Retary",
-        ascii="Sec Retary",
-        user=u)
-    email = Email.objects.create(
-        address="sec.retary@ietf.org",
-        person=p)
-    Role.objects.create(
-        name_id="secr",
-        group=secretariat,
-        person=p,
-        email=email,
-        )
-
-    # IANA user
-    u = User.objects.create(username="iana")
-    p = Person.objects.create(
-        name="Ina Iana",
-        ascii="Ina Iana",
-        user=u)
-    Alias.objects.create(
-        name=p.name,
-        person=p)
-    email = Email.objects.create(
-        address="iana@ia.na",
-        person=p)
-    Role.objects.create(
-        name_id="auth",
-        group=iana,
-        email=email,
-        person=p,
-        )
-
-    # RFC Editor user
-    u = User.objects.create(username="rfc")
-    p = Person.objects.create(
-        name="Rfc Editor",
-        ascii="Rfc Editor",
-        user=u)
-    email = Email.objects.create(
-        address="rfc@edit.or",
-        person=p)
-    Role.objects.create(
-        name_id="auth",
-        group=rfc_editor,
-        email=email,
-        person=p,
-        )
-
-    # Secretariat user
-    u, created = User.objects.get_or_create(id=509, username="wnl")
-    p, created = Person.objects.get_or_create(
-        name="Wanda Lo",
-        ascii="Wanda Lo",
-        user=u)
-    email, created = Email.objects.get_or_create(
-        address="wnl@amsl.com",
-        person=p)
-    Role.objects.get_or_create(
-        name_id="auth",
-        group=secretariat,
-        email=email,
-        person=p,
-        )
-    
     # draft
     draft = Document.objects.create(
         name="draft-ietf-mars-test",

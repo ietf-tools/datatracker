@@ -220,7 +220,7 @@ SERVER_MODE = 'development'
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
 
 # Fixtures which will be loaded before testing starts
-GLOBAL_TEST_FIXTURES = [ 'names','groups','persons', 'roles']
+GLOBAL_TEST_FIXTURES = [ 'names','ietf.utils.test_data.make_immutable_base_data' ]
 
 TEST_DIFF_FAILURE_DIR = "/tmp/test/failure/"
 
