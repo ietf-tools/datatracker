@@ -44,6 +44,7 @@ class NomcomViewsTest(TestCase):
     def check_url_status(self, url, status):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status)
+        return response
 
     def setUp(self):
         nomcom_test_data()
@@ -73,19 +74,19 @@ class NomcomViewsTest(TestCase):
         self.check_url_status(url, 200)
         self.client.logout()
         login_testing_unauthorized(self, MEMBER_USER, url)
-        self.check_url_status(url, 200)
+        return self.check_url_status(url, 200)
 
     def access_chair_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
         login_testing_unauthorized(self, MEMBER_USER, url)
         login_testing_unauthorized(self, CHAIR_USER, url)
-        self.check_url_status(url, 200)
+        return self.check_url_status(url, 200)
 
     def access_secretariat_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
         login_testing_unauthorized(self, CHAIR_USER, url)
         login_testing_unauthorized(self, SECRETARIAT_USER, url)
-        self.check_url_status(url, 200)
+        return self.check_url_status(url, 200)
 
     def test_private_index_view(self):
         """Verify private home view"""
@@ -343,9 +344,7 @@ class NomcomViewsTest(TestCase):
         self.client.logout()
 
     def test_edit_nomcom_view(self):
-        self.access_chair_url(self.edit_nomcom_url)
-
-        r = self.client.get(self.edit_nomcom_url)
+        r = self.access_chair_url(self.edit_nomcom_url)
         q = PyQuery(r.content)
 
         f = open(self.cert_file.name)
