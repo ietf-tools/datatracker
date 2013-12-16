@@ -82,12 +82,16 @@ def safe_destroy_0_1(*args, **kwargs):
 def template_coverage_loader(template_name, dirs):
     loaded_templates.add(str(template_name))
     raise TemplateDoesNotExist
-
 template_coverage_loader.is_usable = True
 
 class RecordUrlsMiddleware(object):
     def process_request(self, request):
         visited_urls.add(request.path)
+
+class FillInRemoteUserMiddleware(object):
+    def process_request(self, request):
+        if request.user.is_authenticated() and "REMOTE_USER" not in request.META:
+            request.META["REMOTE_USER"] = request.user.username
 
 def get_patterns(module):
     all = []
@@ -190,10 +194,14 @@ class IetfTestRunner(DiscoverRunner):
         old_destroy = connection.creation.__class__.destroy_test_db
         connection.creation.__class__.destroy_test_db = safe_destroy_0_1
 
-        # exclude RemoteUserMiddleware - it logs out request.user if
-        # REMOTE_USER is not passed in as a header, which the tests
-        # don't do
-        settings.MIDDLEWARE_CLASSES = tuple(m for m in settings.MIDDLEWARE_CLASSES if "RemoteUserMiddleware" not in m)
+        classes = []
+        for m in settings.MIDDLEWARE_CLASSES:
+            if m == "django.contrib.auth.middleware.RemoteUserMiddleware":
+                # the tests are not passing in REMOTE_USER, so insert
+                # hack to do so automatically
+                classes.append("ietf.utils.test_runner.FillInRemoteUserMiddleware")
+            classes.append(m)
+        settings.MIDDLEWARE_CLASSES = classes
 
         check_coverage = not test_labels
 
@@ -201,8 +209,8 @@ class IetfTestRunner(DiscoverRunner):
             settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
             settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
 
-        if not test_labels:
-            test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")]
+        if not test_labels: # we only want to run our own tests
+            test_labels = [app for app in settings.INSTALLED_APPS if app.startswith("ietf")]
 
         if settings.SITE_ID != 1:
             print "     Changing SITE_ID to '1' during testing."
