@@ -15,9 +15,6 @@ def augment_data():
     Group.objects.create(acronym='dummy',name='Dummy Group',type_id='sdo')
 
 class MainTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['persons', 'groupgroup']
-
     def test_main(self):
         "Main Test"
         augment_data()

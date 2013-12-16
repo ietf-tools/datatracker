@@ -8,21 +8,6 @@ import debug
 SECR_USER='secretary'
 
 class GroupsTest(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['persons','groupgroup',]
-    """
-    perma_fixtures = [ 'acronym.json',
-                 'area.json',
-                 'areadirector',
-                 'areagroup.json',
-                 'goalmilestone',
-                 'iesglogin.json',
-                 'ietfwg',
-                 'personororginfo.json',
-                 'wgchair.json',
-                 'wgstatus.json',
-                 'wgtype.json' ]
-    """
     # ------- Test Search -------- #
     def test_search(self):
         "Test Search"

@@ -21,9 +21,6 @@ def augment_data():
                               by=system)
                               
 class MainTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['groupgroup', 'groupevents']
-                
     def test_main(self):
         "Main Test"
         draft = make_test_data()
