@@ -32,20 +32,20 @@
         {% endcomment %}
         <tr><td>Primary Area:</td>
             <td>{% if not group.parent %}(No Data){% else %}
-                  <a href="{% url areas_view name=group.parent.acronym %}">{{ group.parent }}</a>
+                  <a href="{% url "areas_view" name=group.parent.acronym %}">{{ group.parent }}</a>
                 {% endif %}
             </td>
         </tr>
         <tr><td>Primary Area Director:</td>
             <td>{% if group.ad %}
-                  <a href="{% url rolodex_view id=group.ad.id %}">{{ group.ad }}</a>
+                  <a href="{% url "rolodex_view" id=group.ad.id %}">{{ group.ad }}</a>
                 {% endif %} 
             </td></tr>
         <tr><td>Meeting Scheduled:</td><td>{{ group.meeting_scheduled}}</td></tr>
         <tr><td>Email Address:</td><td>{{ group.list_email }}</td></tr>
         <tr><td>Email Subscription:</td><td>{{ group.list_subscribe }}</td></tr>
         <tr><td>Email Archive:</td><td>{{ group.list_archive }}</td></tr>
-        <tr><td>Charter:</td><td><a href="{% url groups_charter acronym=group.acronym %}">View Charter</a></td></tr>
+        <tr><td>Charter:</td><td><a href="{% url "groups_charter" acronym=group.acronym %}">View Charter</a></td></tr>
         <tr><td>Comments:</td><td>{{ group.comments }}</td></tr>
         <tr><td>Last Modified Date:</td><td>{{ group.time }}</td></tr>
       </table>
@@ -60,7 +60,7 @@
         <h2>Chairperson(s)</h2>
         <table>
         {% for role in group.chairs %}
-          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
+          <tr><td><a href="{% url "rolodex_view" id=role.person.id %}">{{ role.person }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->
@@ -69,7 +69,7 @@
         <h2>Document Editor(s)</h2>
         <table>
         {% for role in group.editors %}
-          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
+          <tr><td><a href="{% url "rolodex_view" id=role.person.id %}">{{ role.person }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->
@@ -78,7 +78,7 @@
         <h2>Technical Advisor(s)</h2>
         <table>
         {% for role in group.techadvisors %}
-          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
+          <tr><td><a href="{% url "rolodex_view" id=role.person.id %}">{{ role.person }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->
@@ -87,7 +87,7 @@
         <h2>Secretary(ies)</h2>
         <table>
         {% for role in group.secretaries %}
-          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
+          <tr><td><a href="{% url "rolodex_view" id=role.person.id %}">{{ role.person }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->
@@ -100,8 +100,8 @@
           <li><button onclick="window.location='people/'">People</button></li>
           <li><button onclick="window.location='gm/'">G + M</button></li>
           {% comment %}
-          <li><button onclick="window.location='{% url sec.ids.views.search id=group.group_acronym.acronym_id %}'">Drafts</button></li>
-          <li><button onclick="window.location='{% url sec.rfcs.views.search id=group.group_acronym.acronym_id %}'">RFCs</button></li>
+          <li><button onclick="window.location='{% url "sec.ids.views.search" id=group.group_acronym.acronym_id %}'">Drafts</button></li>
+          <li><button onclick="window.location='{% url "sec.rfcs.views.search" id=group.group_acronym.acronym_id %}'">RFCs</button></li>
           {% endcomment %}
 	</ul>
       </div> <!-- button-group -->

@@ -21,7 +21,7 @@
             <td>{{ item.time|date:"D" }}</td>
             <td>{{ item.time|date:"H:i" }} - {{ item.end_time|date:"H:i" }}</td>
             <td>{{ item.name }}</td>
-            <td><a href="{% url meetings_times_delete meeting_id=meeting.number time=item.time|date:"Y:m:d:H:i" %}">Delete</a></td>
+            <td><a href="{% url "meetings_times_delete" meeting_id=meeting.number time=item.time|date:"Y:m:d:H:i" %}">Delete</a></td>
           </tr>
         {% endfor %}
       </tbody>

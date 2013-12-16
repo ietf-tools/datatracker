@@ -32,7 +32,7 @@
           <td>{{ slide.slide_name }}</td>
           <td>{{ slide.group_name }}</td>
           <td><a href="{{ MEDIA_URL }}proceedings/{{ meeting.meeting_num }}/slides/{{ slide.filename }}">Download</a></td>
-          <td><a href="{% url sec.proceedings.views.upload_presentation id=meeting.meeting_num slide_id=slide.id %}">Upload</a></td>
+          <td><a href="{% url "sec.proceedings.views.upload_presentation" id=meeting.meeting_num slide_id=slide.id %}">Upload</a></td>
         </tr>
       {% endfor %}
       </tbody>

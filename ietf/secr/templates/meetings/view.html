@@ -33,9 +33,9 @@
     
     <div class="button-group">
        <ul>
-         <li><button onclick="window.location='{% url meetings_edit_meeting meeting_id=meeting.number %}'">Edit</button></li>
-         <li><button onclick="window.location='{% url meetings_rooms meeting_id=meeting.number %}'">Rooms and Times</button></li>
-         <li><button onclick="window.location='{% url meetings_select_group meeting_id=meeting.number %}'">Schedule WG Sessions</button></li>
+         <li><button onclick="window.location='{% url "meetings_edit_meeting" meeting_id=meeting.number %}'">Edit</button></li>
+         <li><button onclick="window.location='{% url "meetings_rooms" meeting_id=meeting.number %}'">Rooms and Times</button></li>
+         <li><button onclick="window.location='{% url "meetings_select_group" meeting_id=meeting.number %}'">Schedule WG Sessions</button></li>
        </ul>
       </div> <!-- button-group -->
       

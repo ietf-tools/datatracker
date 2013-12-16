@@ -25,7 +25,7 @@
         {% for meeting in meetings %}
           <tr class = "{% cycle 'row1' 'row2' %}{% if meeting.get_submission_correction_date < today %} frozen{% else %} open{% endif %}">
             <td>
-              <a href="{% url proceedings_select meeting_num=meeting.number %}">{{ meeting.number }}</a>
+              <a href="{% url "proceedings_select" meeting_num=meeting.number %}">{{ meeting.number }}</a>
             </td>
           </tr>
         {% endfor %}
@@ -34,7 +34,7 @@
     {% if request.user_is_secretariat %}
         <div class="button-group">
           <ul id="proceedings-meeting-buttons">
-            <li><button onclick="window.location='{% url meetings_add %}'">Add</button></li>
+            <li><button onclick="window.location='{% url "meetings_add" %}'">Add</button></li>
           </ul>
         </div> <!-- button-group -->
     {% endif %}
@@ -52,7 +52,7 @@
             {% for meeting in interim_meetings %}
     
                   <tr class = "{% cycle 'row1' 'row2' %}">
-                    <td><a href="{% url proceedings_upload_unified meeting_num=meeting.number acronym=meeting.group.acronym %}">{{ meeting.group.acronym|ljust:"8" }} - {{ meeting.date }}</a></td>
+                    <td><a href="{% url "proceedings_upload_unified" meeting_num=meeting.number acronym=meeting.group.acronym %}">{{ meeting.group.acronym|ljust:"8" }} - {{ meeting.date }}</a></td>
                   </tr>
             {% endfor %}
           </tbody>
@@ -60,7 +60,7 @@
       </div> <!-- scroll -->
     <div class="button-group">
       <ul id="proceedings-interim-buttons">
-        <li><button onclick="window.location='{% url proceedings_select_interim %}'">Create Interim Meeting</button></li>
+        <li><button onclick="window.location='{% url "proceedings_select_interim" %}'">Create Interim Meeting</button></li>
       </ul>
     </div> <!-- button-group -->
     </div>

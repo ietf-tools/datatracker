@@ -49,7 +49,7 @@
       <h2>Scheduled Sessions</h2>
         <ul>
           {% for group in scheduled_groups %}
-            <li><a href="{% url meetings_schedule meeting_id=meeting.number acronym=group.acronym %}">{{ group.acronym }}</a></li>
+            <li><a href="{% url "meetings_schedule" meeting_id=meeting.number acronym=group.acronym %}">{{ group.acronym }}</a></li>
           {% endfor %}
         </ul>
       </div><!-- inline-related-->

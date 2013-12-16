@@ -27,7 +27,7 @@
 
 
 {% block breadcrumbs %}{{ block.super }} 
-  &raquo; <a href="{% url proceedings %}">Proceedings</a>
+  &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
   &raquo; {{ meeting.number }} - Select Group
 {% endblock %}
 
@@ -45,7 +45,7 @@
            meet at IETF {{meeting.number }}. You must request a session slot in order for your group(s) to appear on
            this list.</p>
            <p>- To request a session slot for a working group, please use the
-           <a href="{% url sessions %}">IETF Meeting Session Request Tool</a>.
+           <a href="{% url "sessions" %}">IETF Meeting Session Request Tool</a>.
            <br>
            - To request a session slot for a BOF, please send a message to <a href="mailto:ietf-action@ietf.org">agenda@ietf.org</a>. 
            Additional information is available at

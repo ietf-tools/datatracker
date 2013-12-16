@@ -19,7 +19,7 @@
   <h1> Meeting {{ meeting.number }}</h1>
   
   <p>
-  <a href="{% url meetings_blue_sheet_generate meeting_id=meeting.number%}">Generate Blue Sheets</a><br />
+  <a href="{% url "meetings_blue_sheet_generate" meeting_id=meeting.number%}">Generate Blue Sheets</a><br />
   <a href="{{ url }}">Download</a> latest Blue Sheets.
   </p>
   <hr />
