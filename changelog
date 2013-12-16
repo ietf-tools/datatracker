@@ -25,7 +25,7 @@ ietfdb (4.84) ietf; urgency=low
 
   * Fixed a typo.  Fixes issue #1216.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  16 Dec 2013 23:28:56 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Dec 2013 23:34:37 +0100
 
 ietfdb (4.83) ietf; urgency=high
 
