@@ -81,7 +81,7 @@ def get_info(request):
             result.update({'full_list': full_list})
 
     json_result = json.dumps(result)
-    return HttpResponse(json_result, mimetype='text/javascript')
+    return HttpResponse(json_result, content_type='text/javascript')
 
 def normalize_sort(request):
     sort = request.GET.get('sort', "")

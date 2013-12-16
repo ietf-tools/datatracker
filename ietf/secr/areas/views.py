@@ -32,7 +32,7 @@ def getpeople(request):
         full = '%s - (%s)' % (item.name,item.id)
         result.append(full)
         
-    return HttpResponse(json.dumps(result), mimetype='application/javascript')
+    return HttpResponse(json.dumps(result), content_type='application/javascript')
     
 def getemails(request):
     """
@@ -47,7 +47,7 @@ def getemails(request):
         d = {'id': item.address, 'value': item.address}
         results.append(d)
         
-    return HttpResponse(json.dumps(results), mimetype='application/javascript')
+    return HttpResponse(json.dumps(results), content_type='application/javascript')
     
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS

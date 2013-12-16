@@ -105,7 +105,7 @@ def add_document_to_list(request, clist, doc):
         tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
         return HttpResponseRedirect('%s?%s=%s' % tup)
     clist.added_ids.add(doc)
-    return HttpResponse(json.dumps({'success': True}), mimetype='text/plain')
+    return HttpResponse(json.dumps({'success': True}), content_type='text/plain')
 
 
 def remove_rule(request, list_id, rule_id):
@@ -166,7 +166,7 @@ def _atom_view(request, clist, significant=False):
                                'id': feed_id.get_urn(),
                                'updated': datetime.datetime.today(),
                               },
-                              mimetype='text/xml',
+                              content_type='text/xml',
                               context_instance=RequestContext(request))
 
 
@@ -194,7 +194,7 @@ def significant_group_list(request, acronym):
 
 def _csv_list(request, clist):
     display_config = clist.get_display_config()
-    response = HttpResponse(mimetype='text/csv')
+    response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename=draft-list.csv'
 
     writer = csv.writer(response, dialect=csv.excel, delimiter=',')

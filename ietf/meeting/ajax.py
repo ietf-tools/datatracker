@@ -162,7 +162,7 @@ def timeslot_roomlist(request, mtg):
     for room in rooms:
         json_array.append(room.json_dict(request.build_absolute_uri('/')))
     return HttpResponse(json.dumps(json_array),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 @role_required('Secretariat')
 def timeslot_addroom(request, meeting):
@@ -208,7 +208,7 @@ def timeslot_roomurl(request, num=None, roomid=None):
     if request.method == 'GET':
         room = get_object_or_404(meeting.room_set, pk=roomid)
         return HttpResponse(json.dumps(room.json_dict(request.build_absolute_uri('/'))),
-                            mimetype="application/json")
+                            content_type="application/json")
 # XXX FIXME: timeslot_updroom() doesn't exist
 #    elif request.method == 'PUT':
 #        return timeslot_updroom(request, meeting)
@@ -227,7 +227,7 @@ def timeslot_slotlist(request, mtg):
     for slot in slots:
         json_array.append(slot.json_dict(request.build_absolute_uri('/')))
     return HttpResponse(json.dumps(json_array),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 @role_required('Secretariat')
 def timeslot_addslot(request, meeting):
@@ -278,7 +278,7 @@ def timeslot_sloturl(request, num=None, slotid=None):
     if request.method == 'GET':
         slot = get_object_or_404(meeting.timeslot_set, pk=slotid)
         return HttpResponse(json.dumps(slot.json_dict(request.build_absolute_uri('/'))),
-                            mimetype="application/json")
+                            content_type="application/json")
     elif request.method == 'PUT':
         # not yet implemented!
         #return timeslot_updslot(request, meeting)
@@ -299,7 +299,7 @@ def agenda_list(request, mtg):
     for agenda in agendas:
         json_array.append(agenda.json_dict(request.build_absolute_uri('/')))
     return HttpResponse(json.dumps(json_array),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 # duplicates save-as functionality below.
 @role_required('Area Director','Secretariat')
@@ -362,7 +362,7 @@ def agenda_update(request, meeting, schedule):
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
-                            mimetype="application/json")
+                            content_type="application/json")
     else:
         return HttpResponseRedirect(
             reverse(edit_agenda, args=[meeting.number, schedule.name]))
@@ -397,7 +397,7 @@ def agenda_infourl(request, num=None, schedule_name=None):
 
     if request.method == 'GET':
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
-                            mimetype="application/json")
+                            content_type="application/json")
     elif request.method == 'PUT':
         return agenda_update(request, meeting, schedule)
     elif request.method == 'DELETE':
@@ -412,7 +412,7 @@ def agenda_infourl(request, num=None, schedule_name=None):
 def meeting_get(request, meeting):
     return HttpResponse(json.dumps(meeting.json_dict(request.build_absolute_uri('/')),
                                 sort_keys=True, indent=2),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 @role_required('Secretariat')
 def meeting_update(request, meeting):
@@ -463,11 +463,11 @@ def session_json(request, num, sessionid):
 #        return json.dumps({'error':"no such session %s" % sessionid})
         return HttpResponse(json.dumps({'error':"no such session %s" % sessionid}),
                             status = 404,
-                            mimetype="application/json")
+                            content_type="application/json")
 
     sess1 = session.json_dict(request.build_absolute_uri('/'))
     return HttpResponse(json.dumps(sess1, sort_keys=True, indent=2),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 # Would like to cache for 1 day, but there are invalidation issues.
 #@cache_page(86400)
@@ -479,11 +479,11 @@ def constraint_json(request, num, constraintid):
     except Constraint.DoesNotExist:
         return HttpResponse(json.dumps({'error':"no such constraint %s" % constraintid}),
                             status = 404,
-                            mimetype="application/json")
+                            content_type="application/json")
 
     json1 = constraint.json_dict(request.get_host_protocol())
     return HttpResponse(json.dumps(json1, sort_keys=True, indent=2),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 
 # Cache for 2 hour2
@@ -505,7 +505,7 @@ def session_constraints(request, num, sessionid):
                           sort_keys=True, indent=2),
     #print "  gives: %s" % (json_str)
 
-    return HttpResponse(json_str, mimetype="application/json")
+    return HttpResponse(json_str, content_type="application/json")
 
 
 

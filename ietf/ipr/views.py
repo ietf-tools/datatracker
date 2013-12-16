@@ -97,5 +97,5 @@ def iprs_for_drafts_txt(request):
     for name, iprs in docipr.iteritems():
         lines.append(name + "\t" + "\t".join(unicode(ipr_id) for ipr_id in sorted(iprs)))
 
-    return HttpResponse("\n".join(lines), mimetype="text/plain")
+    return HttpResponse("\n".join(lines), content_type="text/plain")
 

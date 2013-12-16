@@ -167,7 +167,7 @@ def agenda_json(request, date=None):
 
                 s["docs"].append(docinfo)
 
-    return HttpResponse(json.dumps(res, indent=2), mimetype='text/plain')
+    return HttpResponse(json.dumps(res, indent=2), content_type='text/plain')
 
 def agenda(request, date=None):
     data = agenda_data(date)
@@ -187,7 +187,7 @@ def agenda_txt(request, date=None):
     return render_to_response("iesg/agenda.txt", {
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
-            }, context_instance=RequestContext(request), mimetype="text/plain")
+            }, context_instance=RequestContext(request), content_type="text/plain")
 
 def agenda_scribe_template(request, date=None):
     data = agenda_data(date)
@@ -261,7 +261,7 @@ def agenda_package(request, date=None):
             "roll_call": data["sections"]["1.1"]["text"],
             "minutes": data["sections"]["1.3"]["text"],
             "management_items": [(num, section) for num, section in data["sections"].iteritems() if "6" < num < "7"],
-            }, context_instance=RequestContext(request), mimetype='text/plain')
+            }, context_instance=RequestContext(request), content_type='text/plain')
 
 
 def agenda_documents_txt(request):
@@ -289,7 +289,7 @@ def agenda_documents_txt(request):
             d.rev,
             )
         rows.append("\t".join(row))
-    return HttpResponse(u"\n".join(rows), mimetype='text/plain')
+    return HttpResponse(u"\n".join(rows), content_type='text/plain')
 
 class RescheduleForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
@@ -371,7 +371,7 @@ def telechat_docs_tarfile(request, date):
         if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
             docs.append(d)
 
-    response = HttpResponse(mimetype='application/octet-stream')
+    response = HttpResponse(content_type='application/octet-stream')
     response['Content-Disposition'] = 'attachment; filename=telechat-%s-docs.tgz' % date.isoformat()
 
     tarstream = tarfile.open('', 'w:gz', response)

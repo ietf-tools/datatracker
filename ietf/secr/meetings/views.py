@@ -240,7 +240,7 @@ def ajax_get_times(request, meeting_id, day):
         d = {'id': slot.time.strftime('%H%M'), 'value': '%s-%s' % (slot.time.strftime('%H%M'), slot.end_time().strftime('%H%M'))}
         results.append(d)
 
-    return HttpResponse(json.dumps(results), mimetype='application/javascript')
+    return HttpResponse(json.dumps(results), content_type='application/javascript')
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------

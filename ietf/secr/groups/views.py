@@ -76,7 +76,7 @@ def get_ads(request):
         d = {'id': item.id, 'value': item.person.first_name + ' ' + item.person.last_name}
         results.append(d)
 
-    return HttpResponse(json.dumps(results), mimetype='application/javascript')
+    return HttpResponse(json.dumps(results), content_type='application/javascript')
 '''
 # -------------------------------------------------
 # Standard View Functions
@@ -156,7 +156,7 @@ def blue_dot(request):
 
     return render_to_response('groups/blue_dot_report.txt', {
         'chairs':sorted_chairs},
-        RequestContext(request, {}), mimetype="text/plain",
+        RequestContext(request, {}), content_type="text/plain",
     )
 
 def charter(request, acronym):

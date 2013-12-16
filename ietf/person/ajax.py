@@ -16,5 +16,5 @@ def person_json(request, personid):
 
     return HttpResponse(json.dumps(person.json_dict(request.build_absolute_uri("/")),
                                    sort_keys=True, indent=2),
-                        mimetype="text/json")
+                        content_type="text/json")
 

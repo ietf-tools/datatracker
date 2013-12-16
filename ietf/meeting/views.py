@@ -195,7 +195,7 @@ def edit_timeslots(request, num=None):
                                           "slot_slices": slots,
                                           "date_slices":date_slices,
                                           "meeting":meeting},
-                                         RequestContext(request)), mimetype="text/html")
+                                         RequestContext(request)), content_type="text/html")
 
 ##############################################################################
 #@role_required('Area Director','Secretariat')
@@ -239,7 +239,7 @@ def edit_agenda(request, num=None, schedule_name=None):
                                              {"schedule":schedule,
                                               "meeting": meeting,
                                               "meeting_base_url":meeting_base_url},
-                                             RequestContext(request)), status=403, mimetype="text/html")
+                                             RequestContext(request)), status=403, content_type="text/html")
 
     sessions = meeting.sessions_that_can_meet.order_by("id", "group", "requested_by")
     scheduledsessions = get_all_scheduledsessions_from_schedule(schedule)
@@ -280,7 +280,7 @@ def edit_agenda(request, num=None, schedule_name=None):
                                           "session_jsons": session_jsons,
                                           "scheduledsessions": scheduledsessions,
                                           "show_inline": set(["txt","htm","html"]) },
-                                         RequestContext(request)), mimetype="text/html")
+                                         RequestContext(request)), content_type="text/html")
 
 ##############################################################################
 #  show the properties associated with an agenda (visible, public)
@@ -300,7 +300,7 @@ def edit_agenda_properties(request, num=None, schedule_name=None):
                                          {"schedule":schedule,
                                           "form":form,
                                           "meeting":meeting},
-                                         RequestContext(request)), mimetype="text/html")
+                                         RequestContext(request)), content_type="text/html")
 
 ##############################################################################
 # show list of agendas.
@@ -327,7 +327,7 @@ def edit_agendas(request, num=None, order=None):
                                           "schedules": schedules.all()
                                           },
                                          RequestContext(request)),
-                        mimetype="text/html")
+                        content_type="text/html")
 
 def agenda(request, num=None, name=None, base=None, ext=None):
     base = base if base else 'agenda'
@@ -339,7 +339,7 @@ def agenda(request, num=None, name=None, base=None, ext=None):
     schedule = get_schedule(meeting, name)
     updated = meeting_updated(meeting)
     return HttpResponse(render_to_string("meeting/"+base+ext,
-        {"schedule":schedule, "updated": updated}, RequestContext(request)), mimetype=mimetype[ext])
+        {"schedule":schedule, "updated": updated}, RequestContext(request)), content_type=mimetype[ext])
 
 def read_agenda_file(num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
@@ -369,9 +369,9 @@ def session_agenda(request, num, session):
         ext = ext.lstrip(".").lower()
 
         if ext == "txt":
-            return HttpResponse(content, mimetype="text/plain")
+            return HttpResponse(content, content_type="text/plain")
         elif ext == "pdf":
-            return HttpResponse(content, mimetype="application/pdf")
+            return HttpResponse(content, content_type="application/pdf")
         else:
             return HttpResponse(content)
 
@@ -455,7 +455,7 @@ def session_draft_list(num, session):
 def session_draft_tarfile(request, num, session):
     drafts = session_draft_list(num, session);
 
-    response = HttpResponse(mimetype='application/octet-stream')
+    response = HttpResponse(content_type='application/octet-stream')
     response['Content-Disposition'] = 'attachment; filename=%s-drafts.tgz'%(session)
     tarstream = tarfile.open('','w:gz',response)
     mfh, mfn = mkstemp()
@@ -522,7 +522,7 @@ def session_draft_pdf(request, num, session):
 
     os.unlink(pmn)
     os.unlink(pdfn)
-    return HttpResponse(pdf_contents, mimetype="application/pdf")
+    return HttpResponse(pdf_contents, content_type="application/pdf")
 
 def week_view(request, num=None):
     meeting = get_meeting(num)
@@ -572,7 +572,7 @@ def ical_agenda(request, num=None, name=None, ext=None):
 
     return HttpResponse(render_to_string("meeting/agenda.ics",
         {"schedule":schedule, "assignments":assignments, "updated":updated},
-        RequestContext(request)), mimetype="text/calendar")
+        RequestContext(request)), content_type="text/calendar")
 
 def meeting_requests(request, num=None) :
     meeting = get_meeting(num)

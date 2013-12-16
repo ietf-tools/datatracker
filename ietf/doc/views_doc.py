@@ -735,7 +735,7 @@ def document_json(request, name):
             data["consensus"] = e.consensus if e else None
         data["stream"] = extract_name(doc.stream)
 
-    return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
+    return HttpResponse(json.dumps(data, indent=2), content_type='text/plain')
 
 class AddCommentForm(forms.Form):
     comment = forms.CharField(required=True, widget=forms.Textarea)

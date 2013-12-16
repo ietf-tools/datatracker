@@ -17,5 +17,5 @@ def group_json(request, groupname):
     #print "group request is: %s\n" % (request.build_absolute_uri('/'))
     return HttpResponse(json.dumps(group.json_dict(request.build_absolute_uri('/')),
                                    sort_keys=True, indent=2),
-                        mimetype="text/json")
+                        content_type="text/json")
 

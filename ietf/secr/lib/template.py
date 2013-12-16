@@ -24,7 +24,7 @@ def jsonapi(fn):
     def to_json(request, *args, **kwargs):
         context_data = fn(request, *args, **kwargs)
         return HttpResponse(json.dumps(context_data),
-                mimetype='application/json')
+                content_type='application/json')
     return to_json
 
 def render(template, data, request):

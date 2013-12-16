@@ -841,4 +841,4 @@ def ajax_position_text(request, position_id):
     result = {'text': position_text}
 
     json_result = json.dumps(result)
-    return HttpResponse(json_result, mimetype='application/json')
+    return HttpResponse(json_result, content_type='application/json')
