@@ -26,7 +26,7 @@ mode = sys.argv[1]
 now = datetime.datetime.now()
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from ietf.announcements.models import SendQueue
+    from ietf.message.models import SendQueue
     announcements = SendQueue.objects.filter(sent_at=None)
     if mode == "rsync":
         announcements = announcements.filter(send_at=None)
