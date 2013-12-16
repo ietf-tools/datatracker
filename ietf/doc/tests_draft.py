@@ -866,7 +866,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.post(url,dict(txt=test_file,reset_text="1"))
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('textarea')[0].text.startswith("As required by RFC 4858"))
+        self.assertTrue(q('textarea')[0].text.strip().startswith("As required by RFC 4858"))
 
     def setUp(self):
         make_test_data()
@@ -943,7 +943,7 @@ class RequestPublicationTests(TestCase):
         draft.set_state(State.objects.get(used=True, type="draft-stream-iab", slug="approved"))
 
         url = urlreverse('doc_request_publication', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "iabchair", url)
+        login_testing_unauthorized(self, "iab-chair", url)
 
         # normal get
         r = self.client.get(url)

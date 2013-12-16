@@ -261,7 +261,7 @@ class ConflictReviewSubmitTests(TestCase):
         r = self.client.get(url)
         self.assertEquals(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertTrue(q('textarea')[0].text.startswith("[Edit this page"))
+        self.assertTrue(q('textarea[name="content"]')[0].text.strip().startswith("[Edit this page"))
         
         # Faulty posts using textbox
         # Right now, nothing to test - we let people put whatever the web browser will let them put into that textbox
@@ -296,7 +296,7 @@ class ConflictReviewSubmitTests(TestCase):
         r = self.client.get(url)
         self.assertEquals(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertTrue(q('textarea')[0].text.startswith("This is the old proposal."))
+        self.assertTrue(q('textarea')[0].text.strip().startswith("This is the old proposal."))
 
         # faulty posts trying to use file upload
         # Copied from wgtracker tests - is this really testing the server code, or is it testing
@@ -324,7 +324,7 @@ class ConflictReviewSubmitTests(TestCase):
         r = self.client.post(url,dict(reset_text="1"))
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('textarea')[0].text.startswith("[Edit this page"))
+        self.assertTrue(q('textarea')[0].text.strip().startswith("[Edit this page"))
         
     def setUp(self):
         make_test_data()
