@@ -295,3 +295,21 @@ class TemplateTagTest(unittest.TestCase):
         from ietf.doc.templatetags import ietf_filters
         failures, tests = doctest.testmod(ietf_filters)
         self.assertEqual(failures, 0)
+
+class ReferencesTest(TestCase):
+    perma_fixtures = ['names']
+
+    def test_references(self):
+        make_test_data()
+        doc1 = Document.objects.get(name='draft-ietf-mars-test')
+        doc2 = DocAlias.objects.get(name='draft-imaginary-independent-submission')
+        RelatedDocument.objects.get_or_create(source=doc1,target=doc2,relationship=DocRelationshipName.objects.get(slug='refnorm'))
+        url = urlreverse('doc_references', kwargs=dict(name=doc1.name))
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(doc2.name in r.content)
+        url = urlreverse('doc_referenced_by', kwargs=dict(name=doc2.name))
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(doc1.name in r.content)
+       

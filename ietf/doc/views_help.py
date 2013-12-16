@@ -1,6 +1,7 @@
 from django import forms
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
+from django.http import Http404
 
 from ietf.doc.models import *
 
@@ -43,4 +44,18 @@ def state_help(request, type):
             "has_next_states": has_next_states,
             "tags": tags,
             },
+                              context_instance=RequestContext(request))
+
+def relationship_help(request,subset=None):
+    subsets = { "reference": ['refnorm','refinfo','refunk','refold'],
+                "status" : ['tops','tois','tohist','toinf','tobcp','toexp'],
+              }
+    if subset and subset not in subsets:
+        raise Http404()
+    rels = DocRelationshipName.objects.filter(used=True)
+    if subset:
+       rels = rels.filter(slug__in=subsets[subset]) 
+    return render_to_response("doc/relationship_help.html", {
+               "relations": rels
+              },
                               context_instance=RequestContext(request))
