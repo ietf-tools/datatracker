@@ -1,0 +1,14 @@
+{{ obj.body|truncatewords:"30"|wordwrap:"71"|escape|linebreaksbr }}
+
+{% with obj.attachments.all as attachments %}
+  <h3>Attached Document{{ attachments|pluralize }}</h3>
+  {% if attachments %}
+    <ul>
+      {% for doc in attachments %}
+        <li><a href="https://datatracker.ietf.org/documents/LIAISON/{{ doc.external_url }}">{{ doc.title }}</a><br>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>NONE</p>
+  {% endif %}
+{% endwith %}

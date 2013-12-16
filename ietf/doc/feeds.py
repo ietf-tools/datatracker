@@ -13,14 +13,11 @@ from ietf.doc.models import *
 from ietf.doc.utils import augment_events_with_revision
 from ietf.doc.templatetags.ietf_filters import format_textarea
 
-class DocumentChanges(Feed):
+class DocumentChangesFeed(Feed):
     feed_type = Atom1Feed
 
-    def get_object(self, bits):
-	if len(bits) != 1:
-	    raise Document.DoesNotExist
-
-        return Document.objects.get(docalias__name=bits[0])
+    def get_object(self, request, name):
+        return Document.objects.get(docalias__name=name)
 
     def title(self, obj):
         return "Changes for %s" % obj.display_name()
@@ -55,7 +52,7 @@ class DocumentChanges(Feed):
     def item_link(self, item):
         return self.cached_link + "#history-%s" % item.pk
 
-class InLastCall(Feed):
+class InLastCallFeed(Feed):
     title = "Documents in Last Call"
     subtitle = "Announcements for documents in last call."
     feed_type = Atom1Feed

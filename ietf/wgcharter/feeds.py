@@ -12,13 +12,12 @@ from django.template.defaultfilters import truncatewords
 from ietf.group.models import Group, GroupEvent
 from ietf.doc.models import DocEvent
 
-class GroupChanges(Feed):
+class GroupChangesFeed(Feed):
     feed_type = Atom1Feed
-    description_template = "feeds/group_description.html"
-    def get_object(self, bits):
-	if len(bits) != 1:
-	    raise Group.DoesNotExist
-        return Group.objects.get(acronym=bits[0])
+    description_template = "wgcharter/feed_item_description.html"
+
+    def get_object(self, request, acronym):
+        return Group.objects.get(acronym=acronym)
 
     def title(self, obj):
         return u"Changes for %s %s" % (obj.acronym, obj.type)

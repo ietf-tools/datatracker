@@ -4,13 +4,6 @@ from django.conf.urls import patterns, include, handler404, handler500
 from django.contrib import admin
 from django.views.generic import RedirectView, TemplateView
 
-from ietf.iesg.feeds import IESGAgenda
-from ietf.doc.feeds import DocumentChanges, InLastCall
-from ietf.ipr.feeds import LatestIprDisclosures
-from ietf.meeting.feeds import LatestMeetingMaterial
-from ietf.liaisons.feeds import Liaisons
-from ietf.wgcharter.feeds import GroupChanges
-
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
 
@@ -28,16 +21,6 @@ except KeyError:
 from dajaxice.core import dajaxice_autodiscover
 dajaxice_autodiscover()
 
-feeds = {
-    'iesg-agenda': IESGAgenda,
-    'last-call': InLastCall,
-    'document-changes': DocumentChanges,
-    'group-changes': GroupChanges,
-    'ipr': LatestIprDisclosures,
-    'liaison': Liaisons,
-    'wg-proceedings' : LatestMeetingMaterial,
-}
-
 sitemaps = {
     'liaison': LiaisonMap,
     'ipr': IPRMap,
@@ -54,7 +37,7 @@ urlpatterns = patterns('',
     (r'^doc/', include('ietf.doc.urls')),
     (r'^drafts/', include('ietf.doc.redirect_drafts_urls')),
     (r'^feed/comments/(?P<remainder>.*)/$', RedirectView.as_view(url='/feed/document-changes/%(remainder)s/')),
-    (r'^feed/(?P<url>.*)/$', 'django.contrib.syndication.views.Feed', { 'feed_dict': feeds }),
+    (r'^feed/', include('ietf.feed_urls')),
     (r'^help/', include('ietf.help.urls')),
     (r'^idtracker/', include('ietf.doc.redirect_idtracker_urls')),
     (r'^iesg/', include('ietf.iesg.urls')),

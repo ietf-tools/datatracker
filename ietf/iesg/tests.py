@@ -231,9 +231,7 @@ class IESGAgendaTests(TestCase):
         #    print n, s.get("docs") if "docs" in s else s["title"]
 
     def test_feed(self):
-        url = "/feed/iesg-agenda/"
-
-        r = self.client.get(url)
+        r = self.client.get("/feed/iesg-agenda/")
         self.assertEquals(r.status_code, 200)
 
         for d in self.telechat_docs.values():
