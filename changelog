@@ -1,3 +1,32 @@
+ietfdb (4.84) ietf; urgency=low
+
+  This is a minor bugfix release, in preparation for merging in the latest
+  shim-removal work.
+
+  * Merged [6859] from rcross@amsl.com: 
+    Fixed calls to reverse() to match new url names since code merge
+
+  * Merged [6858] from rcross@amsl.com: 
+    Use correct URL in new IPR notification email 
+
+  * Merged [6857] from rjsparks@nostrum.com:  
+    A script to run from cron to send daily messages to IETF Announce showing
+    the email header field change.  his should be run from Jan 6 to Jan 20,
+    after which point we need to deploy analagous changes to the code that
+    constructs last call announcements. This is related to bug #811.
+
+  * Merged [6701] from rjsparks@nostrum.com:  
+    Adds pages to show what a given document refers to and what refers to it.
+    ixes bug #1194 ommit ready for merge 
+
+  * Merged [6672] from rjsparks@nostrum.com:  
+    Removed requirement to enter a phone number in various places on an IPR
+    disclosure entry form.  Fixes bug #1176 
+
+  * Fixed a typo.  Fixes issue #1216.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Dec 2013 23:28:56 +0100
+
 ietfdb (4.83) ietf; urgency=high
 
   This release provides the code from the IETF-88 code sprint, and also

@@ -120,7 +120,7 @@ def admin_notify(request, ipr_id):
         else: 
             request.session['send_result'] = 'Messages sent successfully'
         return HttpResponseRedirect(reverse(
-            'ipr_old_submitter_notify', 
+            'ipradmin_old_submitter_notify', 
             args=[ipr_id]
         ))
 
@@ -351,7 +351,7 @@ def admin_delete(request, ipr_id):
     ipr_dtl = IprDetail.objects.get(ipr_id=ipr_id)
     ipr_dtl.status = 2
     ipr_dtl.save()
-    return HttpResponseRedirect(reverse('ipr_admin_list'))
+    return HttpResponseRedirect(reverse('ipradmin_admin_list'))
 
 @template('ipradmin/notify.html')
 def old_submitter_notify(request, ipr_id):
@@ -364,7 +364,7 @@ def old_submitter_notify(request, ipr_id):
         else: 
             request.session['send_result'] = 'Messages sent successfully'
         return HttpResponseRedirect(reverse(
-            'ipr_old_submitter_notify', 
+            'ipradmin_old_submitter_notify', 
             args=[ipr_id]
         ))
 
@@ -425,9 +425,9 @@ def admin_detail(request, ipr_id):
         if command == 'post':
             return admin_post(request, ipr_id, 'detail', 'post')
         elif command == 'notify':
-            return HttpResponseRedirect(reverse('ipr_old_submitter_notify', args=[ipr_id]))
+            return HttpResponseRedirect(reverse('ipradmin_old_submitter_notify', args=[ipr_id]))
         elif command == 'delete':
-            return HttpResponseRedirect(reverse('ipr_admin_delete', args=[ipr_id]))
+            return HttpResponseRedirect(reverse('ipradmin_admin_delete', args=[ipr_id]))
 
     header_text = possible = temp_name = footer_text = ''
     contact_one_data, contact_two_data, document_data, licensing_data,\
@@ -691,7 +691,7 @@ def admin_create(request):
                 ipr_contact_formset.forms[1].save(ipr_detail)
             if ipr_contact_formset.forms[2].is_valid():
                 ipr_contact_formset.forms[2].save(ipr_detail)
-            return HttpResponseRedirect(reverse('ipr_admin_list'))
+            return HttpResponseRedirect(reverse('ipradmin_admin_list'))
     else:
         ipr_detail_form = IprDetailForm(formtype='create')
         ipr_contact_formset = IPRContactFormset(initial=[
@@ -724,7 +724,7 @@ def admin_update(request, ipr_id):
                 else:
                     redirect_url = ''
             else: # remove
-                redirect_url = reverse('ipr_admin_list')
+                redirect_url = reverse('ipradmin_admin_list')
                 if 'admin_remove_ipr' in request.POST:
                     ipr_detail.status = 2
                 elif 'request_remove_ipr' in request.POST:
