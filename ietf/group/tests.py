@@ -6,7 +6,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from pyquery import PyQuery
 
 from ietf.utils.mail import outbox
-from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.test_data import make_test_data
 
 from ietf.name.models import *

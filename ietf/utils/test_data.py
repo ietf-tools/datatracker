@@ -51,7 +51,7 @@ def make_immutable_base_data():
     # high-level groups
     ietf = create_group(name="IETF", acronym="ietf", type_id="ietf")
     create_person(ietf, "chair")
-    create_person(ietf, "iad")
+    create_person(ietf, "admdir")
 
     irtf = create_group(name="IRTF", acronym="irtf", type_id="irtf")
     create_person(irtf, "chair")
