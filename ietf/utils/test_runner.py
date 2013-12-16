@@ -201,7 +201,7 @@ class IetfTestRunner(DiscoverRunner):
                 # hack to do so automatically
                 classes.append("ietf.utils.test_runner.FillInRemoteUserMiddleware")
             classes.append(m)
-        settings.MIDDLEWARE_CLASSES = classes
+        settings.MIDDLEWARE_CLASSES = tuple(classes)
 
         check_coverage = not test_labels
 
