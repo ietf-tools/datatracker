@@ -67,7 +67,7 @@ this list</a> to the milestones currently in use for the {{ group.acronym }} {{ 
 <p class="error">There were errors, see below.</p>
 {% endif %}
 
-<form action="" method="post" id="milestones-form">
+<form action="" method="post" id="milestones-form">{% csrf_token %}
 <table cellspacing="0" cellpadding="0">
 {% for form in forms %}
 <tr class="milestone{% if form.delete.data %} delete{% endif %}">

@@ -14,7 +14,7 @@
 
 <div class="module draft-container">
     <h2>Draft - Search <span class="unlocked"><a href="add/" class="addlink">Add</a></span></h2>
-    <form id="draft-search-form" enctype="multipart/form-data" action="" method="post">
+    <form id="draft-search-form" enctype="multipart/form-data" action="" method="post">{% csrf_token %}
       <table id="draft-search-table" class="full-width amstable">
         {{ form.as_table }}
       </table>

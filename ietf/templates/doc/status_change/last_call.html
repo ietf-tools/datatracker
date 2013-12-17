@@ -12,7 +12,7 @@ form #id_last_call_text {
 {% block content %}
 <h1>Last Call text for {{ doc }}</h1>
 
-<form class="edit-last-call-text" action="" method="POST">
+<form class="edit-last-call-text" action="" method="post">{% csrf_token %}
 
   {{ last_call_form.last_call_text }}
 

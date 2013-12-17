@@ -19,7 +19,7 @@ it to the <em>{{ next_state.name }}</em> stream state.</p>
 fill in. For independent submissions, see the <a
 href="http://www.rfc-editor.org/indsubs.html">guidelines</a>.</p>
 
-<form class="request-publication" action="" method="POST">
+<form class="request-publication" action="" method="post">{% csrf_token %}
 <table>
   <tr><td>From:</td> <td>{{ message.frm }}</td></tr>
   <tr><td>To:</td> <td>{{ message.to }}</td></tr>

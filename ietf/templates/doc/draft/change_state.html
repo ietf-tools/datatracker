@@ -26,7 +26,7 @@ form.change-state .actions {
 
 <p class="helptext">For help on the states, see the <a href="{% url "state_help" type="draft-iesg" %}">state table</a>.</p>
 
-<form class="change-state" action="" method="post">
+<form class="change-state" action="" method="post">{% csrf_token %}
   <table>
     {{ form.as_table }}
     {% if state and state.slug == "rfcqueue" %}
@@ -51,7 +51,7 @@ form.change-state .actions {
 
 <div class="next-states">
   {% for n in next_states %}
-  <form action="" method="post">
+  <form action="" method="post">{% csrf_token %}
     <input type="hidden" name="state" value="{{ n.pk }}" />
     <input type="submit" value="{{ n.name }}" />
   </form>
@@ -62,7 +62,7 @@ form.change-state .actions {
 {% if to_iesg_eval %}
 <h3>You could also jump directly to</h3>
 <div class="warn-states">
-  <form action="" method="post">
+  <form action="" method="post">{% csrf_token %}
     <input type="hidden" name="state" value="{{ to_iesg_eval.pk }}" />
     <input type="submit" value="{{ to_iesg_eval.name }}" />
   </form>
@@ -77,7 +77,7 @@ form.change-state .actions {
 <h3>Or revert to previous state</h3>
 
 <div class="prev-state">
-  <form action="" method="post">
+  <form action="" method="post">{% csrf_token %}
     <input type="hidden" name="state" value="{{ prev_state.pk }}" />
     <input type="submit" value="Back to {{ prev_state.name }}" />
   </form>

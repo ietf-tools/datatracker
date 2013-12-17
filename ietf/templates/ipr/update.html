@@ -24,7 +24,7 @@ table.ipr { margin-top: 1em; }
 
 <h1>Updating {{ type|title }} IPR Disclosure <br><i>{{ ipr.title|escape }}</i></h1>
 
- <form name="form1" method="post">
+ <form name="form1" method="post">{% csrf_token %}
       {% if form.errors %}
       <p class="errorlist">
 	 There were errors in the submitted form -- see below.  Please correct these and resubmit.

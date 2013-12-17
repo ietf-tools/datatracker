@@ -38,7 +38,7 @@ You can send a reminder to each SDO Liaison Manager to request an updated list o
 By clicking the 'Send' button you will send a request to <b>all</b> the SDO Liaison Managers. In order to send the request to one SDO Liaison Manager go to the SDO edit page.
 </p>
 {% endif %}
-<form action="" method="post">
+<form action="" method="post">{% csrf_token %}
 <input type="submit" name="send" value="Send" />
 </form>
 {% endif %}

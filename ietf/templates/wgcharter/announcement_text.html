@@ -12,7 +12,7 @@ form #id_announcement_text {
 {% block content %}
 <h1>WG {{ announcement }} announcement writeup for {{ charter.chartered_group.acronym }}</h1>
 
-<form action="" method="POST">
+<form action="" method="post">{% csrf_token %}
 
   {{ announcement_text_form.announcement_text }}
 

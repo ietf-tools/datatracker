@@ -20,7 +20,7 @@
 <div class="module draft-container">
     <h2>Draft - Edit</h2>
     {{ form.non_field_errors }}
-    <form enctype="multipart/form-data" action="" method="post">
+    <form enctype="multipart/form-data" action="" method="post">{% csrf_token %}
       <table id="draft-edit-table" class="full-width amstable">
         <tr><th>Document Name:</th><td>{{ form.title.errors }}{{ form.title }}</td></tr>
         <tr><th>Group:</th><td>{{ form.group.errors }}{{ form.group }}</td></tr>

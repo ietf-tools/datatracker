@@ -21,17 +21,17 @@
       <p>Select this link to <a href="https://datatracker.ietf.org/meeting/{{ meeting.number }}/agenda.html">View Agenda</a></p>
       
       <div class="inline-related">
-        <form class="internal-form" action="" method="post">
+        <form class="internal-form" action="" method="post">{% csrf_token %}
           <label for="id_group">Working Groups</label></th>
           {{ group_form.group }}
           <input type="submit" name="submit" value="Select" />
         </form>
-        <form class="internal-form" action="" method="post">
+        <form class="internal-form" action="" method="post">{% csrf_token %}
           <label for="id_group">BOFs</label>
           {{ bof_form.group }}
           <input type="submit" name="submit" value="Select" />
         </form>
-        <form class="internal-form" action="" method="post">
+        <form class="internal-form" action="" method="post">{% csrf_token %}
           <label for="id_group">IRTF</label>
           {{ irtf_form.group }}
           <input type="submit" name="submit" value="Select" />

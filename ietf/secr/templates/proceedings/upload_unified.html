@@ -83,7 +83,7 @@
      
      <div class="inline-related">
        <h2>Upload Materials</h2>
-       <form id="upload_materials_form" enctype="multipart/form-data" action="." method="post">
+       <form id="upload_materials_form" enctype="multipart/form-data" action="." method="post">{% csrf_token %}
        <table class="center" id="proceedings-upload-table">
        {{ form.as_table }}
        </table>

@@ -14,7 +14,7 @@ cookie in your browser. So make sure cookies are enabled.</p>
 
 <p>Value of <code>testmailcc</code>: {{ cookie }}</p>
 
-<form action="" method="post">
+<form action="" method="post">{% csrf_token %}
   <table>
   {{ form.as_table }}
   </table>

@@ -54,7 +54,7 @@ div.manual-posting { margin-top: 2em; }
   </div>
 {% endif %}
 
-<form method="post">
+<form method="post">{% csrf_token %}
 
 <table class="metadata-table">
   {% for field in edit_form %}

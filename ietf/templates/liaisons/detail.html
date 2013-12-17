@@ -65,7 +65,7 @@
       <td>{{ liaison.deadline }}
         {% if liaison.action_taken %}<span class="actionTaken">Action Taken</span>{% else %}<span class="noActionTaken">Action Needed</span>{% endif %}
       {% if can_take_care %}
-        <form method="post" style="display:inline">
+        <form method="post" style="display:inline">{% csrf_token %}
           <input type="submit" value="Mark as Action Taken" name='do_action_taken' />
         </form>
       {% endif %}

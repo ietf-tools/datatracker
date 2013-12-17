@@ -52,27 +52,27 @@
            <a href="http://www.ietf.org/instructions/MTG-SLOTS.html">"Requesting Meeting Slots at IETF Meetings."</a>
            <br>
            - To upload meeting materials for a scheduled session, please select the session name below.</p>
-           <form class="internal-form" action="" method="post">
+           <form class="internal-form" action="" method="post">{% csrf_token %}
              <label for="id_group">Working Groups</label>
              {{ group_form.group }}
              <input type="submit" name="submit" value="Select" />
            </form>
            {% if irtf_form %}
-             <form class="internal-form" action="" method="post">
+             <form class="internal-form" action="" method="post">{% csrf_token %}
                <label for="id_group">IRTF Groups</label>
                {{ irtf_form.group }}
                <input type="submit" name="submit" value="Select" />
              </form>
            {% endif %}
            {% if training_form %}
-             <form class="internal-form" action="" method="post">
+             <form class="internal-form" action="" method="post">{% csrf_token %}
                <label for="id_group">Training / Other</label>
                {{ training_form.group }}
                <input type="submit" name="submit" value="Select" />
              </form>
            {% endif %}
            {% if plenary_form %}
-             <form class="internal-form" action="" method="post">
+             <form class="internal-form" action="" method="post">{% csrf_token %}
                <label for="id_group">Plenaries</label>
                {{ plenary_form.group }}
                <input type="submit" name="submit" value="Select" />

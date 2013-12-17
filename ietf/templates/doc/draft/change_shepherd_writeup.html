@@ -14,7 +14,7 @@ Edit shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
 {% block content %}
 <h1>Edit shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}</h1>
 
-<form class="edit-info" action="" enctype="multipart/form-data" method="POST">
+<form class="edit-info" action="" enctype="multipart/form-data" method="post">{% csrf_token %}
   <table>
     {% for field in form.visible_fields %}
     <tr>

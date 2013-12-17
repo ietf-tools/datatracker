@@ -18,7 +18,7 @@
     <td><a href="{% url "doc_history" e.doc_id %}">{{ e.doc_id }}</a></td>
     <td>{{ e.desc|safe }}</td>
     <td>
-      <form method="post">
+      <form method="post">{% csrf_token %}
         <input type="hidden" name="event" value="{{ e.id }}"/>
         <input type="submit" value="Remove"/>
       </form>

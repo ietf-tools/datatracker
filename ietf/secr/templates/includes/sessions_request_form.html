@@ -1,5 +1,5 @@
          <span class="required">*</span> Required Field 
-         <form id="session-request-form" action="." method="POST" name="form_post">
+         <form id="session-request-form" action="." method="post" name="form_post">{% csrf_token %}
          {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
          <table id="sessions-new-table" cellspacing="1" cellpadding="1" border="0">
            <col width="150">

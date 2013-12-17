@@ -62,7 +62,7 @@
           <h2></h2>
           <h3>Add Role</h3>
           {% with role_form as form %}
-          <form id="roles-form" action="" method="post">
+          <form id="roles-form" action="" method="post">{% csrf_token %}
             {{ role_form.non_field_errors }}
             <table class="full-width">
               <tr>

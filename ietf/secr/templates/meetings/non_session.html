@@ -46,7 +46,7 @@
     <br /><hr />
     
     <div>
-    <form id="timeslot-form" action="" method="post">
+    <form id="timeslot-form" action="" method="post">{% csrf_token %}
         <table id="timeslot-form" class="full-width amstable">
           <col width="150">
           {{ form.as_table }}

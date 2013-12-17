@@ -1,6 +1,6 @@
 <h2>Display customization</h2>
 
-<form action="#custom" method="POST" />
+<form action="#custom" method="post" />{% csrf_token %}
   <h3>Sort method</h2>
   {{ display_form.sort_method }}
 

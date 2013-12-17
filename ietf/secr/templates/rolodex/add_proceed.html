@@ -10,7 +10,7 @@
 {% block content %}
 <h1>Adding {{ name }}</h1>
 
-<form action="" method="post" id="rolodex-add-form">
+<form action="" method="post" id="rolodex-add-form">{% csrf_token %}
 <div class="module">
 <h2>Rolodex - Add</h2>
   <table class="full-width amstable">

@@ -11,7 +11,7 @@
 <div class="module">
     <h2>Announcement</h2>
     
-    <form action="" method="POST">
+    <form action="" method="post">{% csrf_token %}
     <table class="new-style full-width amstable" id="announce-table">
       {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
       {% for field in form.visible_fields %}

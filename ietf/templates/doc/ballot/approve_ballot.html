@@ -23,7 +23,7 @@ form.approve-ballot .announcement {
 
 <div>IETF announcement:</div>
 
-<form class="approve-ballot" action="" method="POST">
+<form class="approve-ballot" action="" method="post">{% csrf_token %}
 
   <div class="announcement">
     <pre>{{ announcement }}</pre>

@@ -18,7 +18,7 @@
            <h3><b>Select a meeting to manage</b></h3>
             
             <br>
-            <form action="" method="post">
+            <form action="" method="post">{% csrf_token %}
             <p>
             {{ form }}
             <input type="submit" value="Select" />

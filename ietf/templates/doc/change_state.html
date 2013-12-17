@@ -22,7 +22,7 @@ form.change-state .actions {
 
 <p class="helptext">For help on the states, see the <a href="{{help_url}}">state table</a>.</p>
 
-<form class="change-state" action="" method="post">
+<form class="change-state" action="" method="post">{% csrf_token %}
   <table>
     {% for field in form.visible_fields %}
     <tr>

@@ -42,7 +42,7 @@ Create new WG or BoF
 chairs and delegates, need a Datatracker account to actually do
 so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
 
-<form class="edit" action="" method="POST">
+<form class="edit" action="" method="post">{% csrf_token %}
   <table>
     {% for field in form.visible_fields %}
     <tr>

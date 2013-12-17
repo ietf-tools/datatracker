@@ -20,7 +20,7 @@ stream state becomes "Call for Adoption by WG Issued". For an RG, the
 draft enters the IRTF stream and the stream state becomes "Active RG
 Document".</p>
 
-<form class="adopt-draft" action="" method="post">
+<form class="adopt-draft" action="" method="post">{% csrf_token %}
   {% for field in form.hidden_fields %}{{ field }}{% endfor %}
   <table>
     {% for field in form.visible_fields %}

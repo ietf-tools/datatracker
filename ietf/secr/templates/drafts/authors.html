@@ -43,7 +43,7 @@
     <div class="inline-related">
       <!-- <hr><br> -->
       <h3>Add Author</h3>
-      <form id="groups-people" action="" method="post">
+      <form id="groups-people" action="" method="post">{% csrf_token %}
         {{ form.non_field_errors }}
         <table class="full-width">
           <tr>

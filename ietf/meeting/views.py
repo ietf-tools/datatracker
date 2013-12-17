@@ -22,6 +22,7 @@ from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.db.models import Max
 from django.forms.models import modelform_factory
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ietf.utils.pipe import pipe
 from ietf.ietfauth.utils import role_required, has_role
@@ -160,6 +161,7 @@ def agenda_create(request, num=None, schedule_name=None):
 
 
 @decorator_from_middleware(GZipMiddleware)
+@ensure_csrf_cookie
 def edit_timeslots(request, num=None):
 
     meeting = get_meeting(num)
@@ -197,6 +199,7 @@ def edit_timeslots(request, num=None):
 #@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
 @decorator_from_middleware(GZipMiddleware)
+@ensure_csrf_cookie
 def edit_agenda(request, num=None, schedule_name=None):
 
     if request.method == 'POST':
@@ -286,6 +289,7 @@ AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'pu
 
 @role_required('Area Director','Secretariat')
 @decorator_from_middleware(GZipMiddleware)
+@ensure_csrf_cookie
 def edit_agenda_properties(request, num=None, schedule_name=None):
 
     meeting = get_meeting(num)
@@ -304,6 +308,7 @@ def edit_agenda_properties(request, num=None, schedule_name=None):
 
 @role_required('Area Director','Secretariat')
 @decorator_from_middleware(GZipMiddleware)
+@ensure_csrf_cookie
 def edit_agendas(request, num=None, order=None):
 
     #if request.method == 'POST':
@@ -325,6 +330,7 @@ def edit_agendas(request, num=None, order=None):
                                          RequestContext(request)),
                         content_type="text/html")
 
+@ensure_csrf_cookie
 def agenda(request, num=None, name=None, base=None, ext=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.html'

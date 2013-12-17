@@ -31,7 +31,7 @@
     {% endif %}
     <br /><hr />
     
-    <form action="" method="post">
+    <form action="" method="post">{% csrf_token %}
         {{ form.non_field_errors }}
         <table id="timeslot-form" class="full-width">
           <tr>

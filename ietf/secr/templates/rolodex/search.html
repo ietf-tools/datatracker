@@ -13,7 +13,7 @@
 {% block content %}
 <div class="module">
     <h2>Rolodex - Search <span class="unlocked"><a href="add/" class="addlink">Add</a></span></h2>
-      <form id="rolodex-search-form" action="." method="post">
+      <form id="rolodex-search-form" action="." method="post">{% csrf_token %}
         <table class="full-width amstable">
           <col width="200">
           {{ form.as_table }}

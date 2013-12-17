@@ -53,7 +53,7 @@
     <div class="inline-group">
     <h2>Sessions</h2>
 
-        <form id="meetings-schedule-form" method="post" action="">
+        <form id="meetings-schedule-form" method="post" action="">{% csrf_token %}
         {{ formset.management_form }}
           {% for form in formset.forms %}
             <div class="inline-related{% if forloop.last %} last-related{% endif %}">

@@ -31,7 +31,7 @@ form.edit-info .actions {
 {% load ietf_filters %}
 <h1>Edit info on {{ doc }}</h1>
 
-<form class="edit-info" action="" method="POST">
+<form class="edit-info" action="" method="post">{% csrf_token %}
   <table>
     {% for field in form.standard_fields %}
     <tr>

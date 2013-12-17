@@ -70,7 +70,7 @@ In order to add some individual documents to your list you have to:
 </table>
 
 <h3>Add a new rule</h3>
-<form method="post" action="#rules">
+<form method="post" action="#rules">{% csrf_token %}
 {{ rule_form.as_p }}
 <input type="submit" name="save_rule" value="Add rule" />
 </form>

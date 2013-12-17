@@ -11,7 +11,7 @@
 
 <p>The message that will be sent is shown below the list of nominees. </p>
 
-<form method="post" action="">
+<form method="post" action="">{% csrf_token %}
   <h3>Nominees who have not responded</h2>
 
   {% if message %}

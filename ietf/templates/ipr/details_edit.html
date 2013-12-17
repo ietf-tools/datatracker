@@ -78,7 +78,7 @@ requirements of Section 6, "IPR Disclosures," of
 "Intellectual Property Rights in IETF Technology",
 will be posted, but will be marked as "non-compliant".</p>
 
-<form name="form1" method="post">
+<form name="form1" method="post">{% csrf_token %}
 
       {% if ipr.errors %}
       <p class="errorlist">

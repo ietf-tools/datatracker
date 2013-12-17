@@ -35,7 +35,7 @@
      <div class="inline-related">
        <h2>New Meeting</h2>
        <h3>Create a new {{ group.acronym }} Interim Meeting:</h3>
-       <form action="." method="post">
+       <form action="." method="post">{% csrf_token %}
        {{ form.as_p }}
 
        {% include "includes/buttons_submit_back.html" %}

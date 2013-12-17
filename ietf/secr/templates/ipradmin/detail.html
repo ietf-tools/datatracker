@@ -15,7 +15,7 @@ IPR Admin Detail Page
 
 {% block content %}
 <!-- this form is a kludge to apply the style from previously created update/create pages -->
-<form action="" method="post">
+<form action="" method="post">{% csrf_token %}
     <h3>{{ ipr_title }}</h3>
 
     {{ header_text|safe }}
@@ -73,21 +73,21 @@ IPR Admin Detail Page
 
     {% for c in controls %}
         {% if c == 'notify' %}
-<form action="" method="post">
+<form action="" method="post">{% csrf_token %}
     <input type="hidden" name="ipr_id" value="$ipr_id">
     <input type="hidden" name="command" value="notify">
     <input type="submit" name="notice_it" value="Notify the submitter of IPR that is being updated">
 </form>
         {% endif %}
         {% if c == 'post' %}
-<form action="" method="post">
+<form action="" method="post">{% csrf_token %}
     <input type="hidden" name="ipr_id" value="$ipr_id">
     <input type="hidden" name="command" value="post">
     <input type="submit" name="post_it" value="Post It">
 </form>
         {% endif %}
         {% if c == 'delete' %}
-<form action="" method="post">
+<form action="" method="post">{% csrf_token %}
     <input type="hidden" name="ipr_id" value="$ipr_id">
     <input type="hidden" name="command" value="delete">
     <input type="submit" name="do_delete" value="Delete">

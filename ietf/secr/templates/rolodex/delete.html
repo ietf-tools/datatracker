@@ -22,7 +22,7 @@
     {% endfor %}
   </ul>
 </li></ul>
-<form action="" method="post">
+<form action="" method="post">{% csrf_token %}
   <input type="hidden" name="post" value="yes" />
   <input type="submit" value="Yes, I'm sure" />
 </form>

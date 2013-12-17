@@ -25,7 +25,7 @@ form.approve-ballot .announcement {
 
 <div>{{ doc.file_tag }} ({{ doc.group.acronym }}) - {{ doc.intended_std_level.name }}</div>
 
-<form style="margin-top:20px" action="" method="POST">
+<form style="margin-top:20px" action="" method="post">{% csrf_token %}
   <table>
     {{ form.as_table }}
   </table>

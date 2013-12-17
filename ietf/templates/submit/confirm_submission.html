@@ -35,7 +35,7 @@ p.error { color: red; font-weight: bold; font-size: 1.5em; }
     <p>Please press the button below to finish posting of
       <strong>{{ submission.name }}-{{ submission.rev }}</strong></p>
 
-    <form method="post">
+    <form method="post">{% csrf_token %}
       <input type="submit" value="Confirm submission and post draft" />
     </form>
   {% endif %}

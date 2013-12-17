@@ -15,7 +15,7 @@ textarea[id^="id_form-"][id$="-announcement_text"] {
 {% block content %}
 <h1>Approve {{ doc.canonical_name }}</h1>
 
-<form class="approve" action="" method="POST">
+<form class="approve" action="" method="post">{% csrf_token %}
   {{formset.management_form}}
   <table>
    {% for form in formset.forms %}

@@ -23,7 +23,7 @@ form.approve .announcement {
 
 <div>IETF announcement:</div>
 
-<form class="approve" action="" method="POST">
+<form class="approve" action="" method="post">{% csrf_token %}
 
   <div class="announcement">
     <pre>{{ announcement }}</pre>

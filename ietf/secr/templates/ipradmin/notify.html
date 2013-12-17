@@ -31,7 +31,7 @@ IPR Admin Notify Page
 {% endif %}
 
 {% if page_id == 'detail_notify' %}
-  <form action="" method="post">
+  <form action="" method="post">{% csrf_token %}
     <input type="hidden" name="command" value="do_send_update_notification">
     <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
     <h4>Notification to the submitter of IPR that's being updated</h4>
@@ -68,7 +68,7 @@ IETF Secretariat
 {% endif %}
 
 {% if page_id == 'detail_post' %}
-    <form action="" method="post">
+    <form action="" method="post">{% csrf_token %}
     <input type="hidden" name="command" value="do_send_notifications">
     <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
     <h4>Notification to Submitter(s)</h4>
@@ -84,7 +84,7 @@ IETF Secretariat
 {% endif %}
 
 {% if page_id == 'update_post' %}
-    <form action="" method="post">
+    <form action="" method="post">{% csrf_token %}
     <input type="hidden" name="command" value="do_send_notifications">
     <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
     <h4> Notification to the submitter of IPR that's being updated</h4>

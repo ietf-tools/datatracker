@@ -4,7 +4,7 @@
 {% block content %}
 {{ block.super }}
 
-<form method="post">
+<form method="post">{% csrf_token %}
   <input type="submit" value="Approve" name='do_approval' />
 </form>
 {% endblock %}

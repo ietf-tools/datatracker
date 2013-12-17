@@ -15,7 +15,7 @@
 {% block content %}
 
 <div class="module">
-    <form action="." method="post">
+    <form action="." method="post">{% csrf_token %}
     <h2>Proceedings - PPT/DOC Files in Queue</h2>
     <table class="full-width">
     <thead>

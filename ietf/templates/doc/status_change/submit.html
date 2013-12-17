@@ -15,7 +15,7 @@ Edit status change text for {{doc.title}}
 <h1>Edit status change text for {{doc.title}}</h1>
 
 <p>The text will be submitted as <strong>{{ doc.canonical_name }}-{{ next_rev }}</strong></p>
-<form class="edit-info" action="" enctype="multipart/form-data" method="POST">
+<form class="edit-info" action="" enctype="multipart/form-data" method="post">{% csrf_token %}
   <table>
     {% for field in form.visible_fields %}
     <tr>

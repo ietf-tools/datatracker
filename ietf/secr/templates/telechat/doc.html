@@ -23,7 +23,7 @@
     Number of Open Positions: {{ open_positions }}<br />
     <br />
     <div>
-    <form action="" method="post">
+    <form action="" method="post">{% csrf_token %}
     {{ formset.management_form }}
     <table id="telechat-positions-table">
     <tr><th>Area Director</th><th>Yes</th><th>No Objections</th><th>Discuss</th><th>Abstain</th><th>Recuse</th><th>No Position</th></tr>
@@ -46,7 +46,7 @@
     
     <hr /><br />
     
-    <form action="" method="post">
+    <form action="" method="post">{% csrf_token %}
       <table>
       {{ state_form.as_table }}
       </table>

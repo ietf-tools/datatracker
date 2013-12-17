@@ -15,7 +15,7 @@
 {% if charter_milestones %}This will discard {{ charter_milestones|length }} existing charter milestone{{ charter_milestones|pluralize }}{% endif %}
 </p>
 
-<form action="" method="post" id="reset-form">
+<form action="" method="post" id="reset-form">{% csrf_token %}
 {% for milestone in current_milestones %}
 <div>
   <label>

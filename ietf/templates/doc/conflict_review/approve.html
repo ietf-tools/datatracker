@@ -15,7 +15,7 @@ form #id_announcement_text {
 {% block content %}
 <h1>Approve {{ review.canonical_name }}</h1>
 
-<form class="approve" action="" method="POST">
+<form class="approve" action="" method="post">{% csrf_token %}
 
   <table>
     {% for field in form.visible_fields %}

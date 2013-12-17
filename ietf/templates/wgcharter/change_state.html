@@ -24,7 +24,7 @@ form.change-state .actions {
 <p class="helptext">For help on the states, see the <a href="{% url "state_help" type="charter" %}">state table</a>.</p>
 {% endif %}
 
-<form class="change-state" action="" method="post">
+<form class="change-state" action="" method="post">{% csrf_token %}
   <table>
     {% for field in form.visible_fields %}
     <tr>
@@ -78,7 +78,7 @@ form.change-state .actions {
 <h3>Or revert to previous state</h3>
 
 <div class="prev-state">
-  <form action="" method="post">
+  <form action="" method="post">{% csrf_token %}
     <input type="hidden" name="charter_state" value="{{ prev_charter_state.pk }}" />
     <input type="hidden" name="state" value="{{ prev_state.slug }}" />
     <input type="submit" value="Back to {{ prev_charter_state.name }}" />

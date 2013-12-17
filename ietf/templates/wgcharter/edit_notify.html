@@ -11,7 +11,7 @@ form.edit-notify td.actions { padding-top: 1em; }
 {% load ietf_filters %}
 <h1>Set notification list for {{ doc.name }}</h1>
 
-<form class="edit-notify" action="" method="POST">
+<form class="edit-notify" action="" method="post">{% csrf_token %}
   <table>
     <tr>
       <th>{{ form.notify.label_tag }}</th>

@@ -15,7 +15,7 @@
 {% block content %}
 
 <div class="module">
-    <form action="." method="post">
+    <form action="." method="post">{% csrf_token %}
     <h2>Area - Edit</h2>
       <table class="full-width amstable">
         <col width="150">
