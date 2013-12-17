@@ -26,7 +26,7 @@ class ReviewDecisionsTests(TestCase):
         url = urlreverse('ietf.iesg.views.review_decisions')
 
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.name in r.content)
 
 class IESGAgendaTests(TestCase):
@@ -232,7 +232,7 @@ class IESGAgendaTests(TestCase):
 
     def test_feed(self):
         r = self.client.get("/feed/iesg-agenda/")
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         for d in self.telechat_docs.values():
             self.assertTrue(d.name in r.content)
@@ -240,7 +240,7 @@ class IESGAgendaTests(TestCase):
 
     def test_agenda_json(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_json"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
             if d.type_id == "charter":
@@ -254,7 +254,7 @@ class IESGAgendaTests(TestCase):
 
     def test_agenda(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
             self.assertTrue(d.name in r.content, "%s not in response" % k)
@@ -262,7 +262,7 @@ class IESGAgendaTests(TestCase):
 
     def test_agenda_txt(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
             if d.type_id == "charter":
@@ -274,7 +274,7 @@ class IESGAgendaTests(TestCase):
 
     def test_agenda_scribe_template(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_scribe_template"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
             if d.type_id == "charter":
@@ -287,7 +287,7 @@ class IESGAgendaTests(TestCase):
         url = urlreverse("ietf.iesg.views.agenda_moderator_package")
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
             if d.type_id == "charter":
@@ -301,7 +301,7 @@ class IESGAgendaTests(TestCase):
         url = urlreverse("ietf.iesg.views.agenda_package")
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
             if d.type_id == "charter":
@@ -314,7 +314,7 @@ class IESGAgendaTests(TestCase):
     def test_agenda_documents_txt(self):
         url = urlreverse("ietf.iesg.views.agenda_documents_txt")
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
             self.assertTrue(d.name in r.content, "%s not in response" % k)
@@ -322,7 +322,7 @@ class IESGAgendaTests(TestCase):
     def test_agenda_documents(self):
         url = urlreverse("ietf.iesg.views.agenda_documents")
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
             self.assertTrue(d.name in r.content, "%s not in response" % k)
@@ -340,7 +340,7 @@ class IESGAgendaTests(TestCase):
 
         url = urlreverse("ietf.iesg.views.telechat_docs_tarfile", kwargs=dict(date=get_agenda_date().isoformat()))
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         import tarfile, StringIO
 
@@ -379,11 +379,11 @@ class RescheduleOnAgendaTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         
-        self.assertEquals(len(q('form select[name=%s-telechat_date]' % form_id)), 1)
-        self.assertEquals(len(q('form input[name=%s-clear_returning_item]' % form_id)), 1)
+        self.assertEqual(len(q('form select[name=%s-telechat_date]' % form_id)), 1)
+        self.assertEqual(len(q('form input[name=%s-clear_returning_item]' % form_id)), 1)
 
         # reschedule
         events_before = draft.docevent_set.count()
@@ -392,20 +392,20 @@ class RescheduleOnAgendaTests(TestCase):
         r = self.client.post(url, { '%s-telechat_date' % form_id: d.isoformat(),
                                     '%s-clear_returning_item' % form_id: "1" })
 
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         # check that it moved below the right header in the DOM on the
         # agenda docs page
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         d_header_pos = r.content.find("IESG telechat %s" % d.isoformat())
         draft_pos = r.content.find(draft.name)
         self.assertTrue(d_header_pos < draft_pos)
 
         self.assertTrue(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
-        self.assertEquals(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, d)
+        self.assertEqual(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, d)
         self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").returning_item)
-        self.assertEquals(draft.docevent_set.count(), events_before + 1)
+        self.assertEqual(draft.docevent_set.count(), events_before + 1)
 
 class DeferUndeferTestCase(TestCase):
     def helper_test_defer(self,name):
@@ -430,20 +430,20 @@ class DeferUndeferTestCase(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form.defer')),1)
+        self.assertEqual(len(q('form.defer')),1)
 
         # defer
-        self.assertEquals(doc.telechat_date(), first_date)
+        self.assertEqual(doc.telechat_date(), first_date)
         r = self.client.post(url,dict())
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name=name)
-        self.assertEquals(doc.telechat_date(), second_date)
+        self.assertEqual(doc.telechat_date(), second_date)
         self.assertTrue(doc.returning_item())
         defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'])
         if doc.type_id in defer_states:
-           self.assertEquals(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
+           self.assertEqual(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
 
 
     def helper_test_undefer(self,name):
@@ -472,20 +472,20 @@ class DeferUndeferTestCase(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form.undefer')),1)
+        self.assertEqual(len(q('form.undefer')),1)
 
         # undefer
-        self.assertEquals(doc.telechat_date(), second_date)
+        self.assertEqual(doc.telechat_date(), second_date)
         r = self.client.post(url,dict())
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name=name)
-        self.assertEquals(doc.telechat_date(), first_date)
+        self.assertEqual(doc.telechat_date(), first_date)
         self.assertTrue(doc.returning_item()) 
         undefer_states = dict(draft=['draft-iesg','iesg-eva'],conflrev=['conflrev','iesgeval'])
         if doc.type_id in undefer_states:
-           self.assertEquals(doc.get_state(undefer_states[doc.type_id][0]).slug,undefer_states[doc.type_id][1])
+           self.assertEqual(doc.get_state(undefer_states[doc.type_id][0]).slug,undefer_states[doc.type_id][1])
 
     def test_defer_draft(self):
         self.helper_test_defer('draft-ietf-mars-test')
@@ -518,7 +518,7 @@ class IESGDiscussesTests(TestCase):
         pos.save()
 
         r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         self.assertTrue(draft.name in r.content)
         self.assertTrue(pos.ad.plain_name() in r.content)

@@ -298,7 +298,7 @@ class RFCSyncTests(TestCase):
 
         # make sure we can apply it again with no changes
         changed = rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30))
-        self.assertEquals(len(changed), 0)
+        self.assertEqual(len(changed), 0)
 
 
     def test_rfc_queue(self):
@@ -360,8 +360,8 @@ class RFCSyncTests(TestCase):
 
         # make sure we can apply it again with no changes
         changed, warnings = rfceditor.update_drafts_from_queue(drafts)
-        self.assertEquals(len(changed), 0)
-        self.assertEquals(len(warnings), 0)
+        self.assertEqual(len(changed), 0)
+        self.assertEqual(len(warnings), 0)
 
 class DiscrepanciesTests(TestCase):
     def test_discrepancies(self):
@@ -421,23 +421,23 @@ class RFCEditorUndoTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue(e2.doc_id in r.content)
 
         # delete e2
         deleted_before = DeletedEvent.objects.count()
 
         r = self.client.post(url, dict(event=e2.id))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
-        self.assertEquals(StateDocEvent.objects.filter(id=e2.id).count(), 0)
-        self.assertEquals(draft.get_state("draft-rfceditor").slug, "auth")
-        self.assertEquals(DeletedEvent.objects.count(), deleted_before + 1)
+        self.assertEqual(StateDocEvent.objects.filter(id=e2.id).count(), 0)
+        self.assertEqual(draft.get_state("draft-rfceditor").slug, "auth")
+        self.assertEqual(DeletedEvent.objects.count(), deleted_before + 1)
 
         # delete e1
         draft.state_cache = None
         r = self.client.post(url, dict(event=e1.id))
-        self.assertEquals(draft.get_state("draft-rfceditor"), None)
+        self.assertEqual(draft.get_state("draft-rfceditor"), None)
 
         # let's just test we can recover
         e = DeletedEvent.objects.all().order_by("-time", "-id")[0]

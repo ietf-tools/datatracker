@@ -252,21 +252,21 @@ class AddCommentTestCase(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form textarea[name=comment]')), 1)
+        self.assertEqual(len(q('form textarea[name=comment]')), 1)
 
         # request resurrect
         events_before = draft.docevent_set.count()
         mailbox_before = len(outbox)
         
         r = self.client.post(url, dict(comment="This is a test."))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
-        self.assertEquals(draft.docevent_set.count(), events_before + 1)
-        self.assertEquals("This is a test.", draft.latest_event().desc)
-        self.assertEquals("added_comment", draft.latest_event().type)
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(draft.docevent_set.count(), events_before + 1)
+        self.assertEqual("This is a test.", draft.latest_event().desc)
+        self.assertEqual("added_comment", draft.latest_event().type)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("updated" in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
 
@@ -275,9 +275,9 @@ class AddCommentTestCase(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form textarea[name=comment]')), 1)
+        self.assertEqual(len(q('form textarea[name=comment]')), 1)
 
 
 class TemplateTagTest(unittest.TestCase):

@@ -17,7 +17,7 @@ class GroupsTest(TestCase):
         post_data = {'group_acronym':group.acronym,'submit':'Search'}
         response = self.client.post(url,post_data,follow=True, REMOTE_USER=SECR_USER)
         #assert False, response.content
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.failUnless(group.acronym in response.content)
 
     # ------- Test Add -------- #
@@ -36,7 +36,7 @@ class GroupsTest(TestCase):
                      'awp-INITIAL_FORMS':'0',
                      'submit':'Save'}
         response = self.client.post(url,post_data, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.failUnless('This field is required' in response.content)
 
     def test_add_group_dupe(self):
@@ -54,7 +54,7 @@ class GroupsTest(TestCase):
                      'submit':'Save'}
         response = self.client.post(url,post_data, REMOTE_USER=SECR_USER)
         #print response.content
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.failUnless('Group with this Acronym already exists' in response.content)
 
     def test_add_group_success(self):
@@ -70,7 +70,7 @@ class GroupsTest(TestCase):
                      'awp-INITIAL_FORMS':'0',
                      'submit':'Save'}
         response = self.client.post(url,post_data, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     # ------- Test View -------- #
     def test_view(self):
@@ -78,7 +78,7 @@ class GroupsTest(TestCase):
         group = Group.objects.all()[0]
         url = reverse('groups_view', kwargs={'acronym':group.acronym})
         response = self.client.get(url)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     # ------- Test Edit -------- #
     def test_edit_valid(self):

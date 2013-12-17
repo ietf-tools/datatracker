@@ -43,16 +43,16 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form select[name=charter_state]')), 1)
+        self.assertEqual(len(q('form select[name=charter_state]')), 1)
         
         # faulty post
         r = self.client.post(url, dict(charter_state="-12345"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
-        self.assertEquals(charter.get_state(), first_state)
+        self.assertEqual(charter.get_state(), first_state)
         
         # change state
         for slug in ("intrev", "extrev", "iesgrev"):
@@ -61,10 +61,10 @@ class EditCharterTests(TestCase):
             mailbox_before = len(outbox)
         
             r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
-            self.assertEquals(r.status_code, 302)
+            self.assertEqual(r.status_code, 302)
         
             charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
-            self.assertEquals(charter.get_state_slug(), slug)
+            self.assertEqual(charter.get_state_slug(), slug)
             events_now = charter.docevent_set.count()
             self.assertTrue(events_now > events_before)
 
@@ -76,7 +76,7 @@ class EditCharterTests(TestCase):
             if slug in ("intrev", "iesgrev"):
                 self.assertTrue(find_event("created_ballot"))
 
-            self.assertEquals(len(outbox), mailbox_before + 1)
+            self.assertEqual(len(outbox), mailbox_before + 1)
             self.assertTrue("State changed" in outbox[-1]['Subject'])
                     
     def test_edit_telechat_date(self):
@@ -92,24 +92,24 @@ class EditCharterTests(TestCase):
         self.assertTrue(not charter.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
         telechat_date = TelechatDate.objects.active()[0].date
         r = self.client.post(url, dict(name=group.name, acronym=group.acronym, telechat_date=telechat_date.isoformat()))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
         self.assertTrue(charter.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
-        self.assertEquals(charter.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, telechat_date)
+        self.assertEqual(charter.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, telechat_date)
 
         # change telechat
         telechat_date = TelechatDate.objects.active()[1].date
         r = self.client.post(url, dict(name=group.name, acronym=group.acronym, telechat_date=telechat_date.isoformat()))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
-        self.assertEquals(charter.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, telechat_date)
+        self.assertEqual(charter.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, telechat_date)
 
         # remove from agenda
         telechat_date = ""
         r = self.client.post(url, dict(name=group.name, acronym=group.acronym, telechat_date=telechat_date))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
         self.assertTrue(not charter.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date)
@@ -125,10 +125,10 @@ class EditCharterTests(TestCase):
         # post
         self.assertTrue(not charter.notify)
         r = self.client.post(url, dict(notify="someone@example.com, someoneelse@example.com"))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
-        self.assertEquals(charter.notify, "someone@example.com, someoneelse@example.com")
+        self.assertEqual(charter.notify, "someone@example.com, someoneelse@example.com")
 
     def test_edit_ad(self):
         make_test_data()
@@ -140,18 +140,18 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('select[name=ad]')),1)
+        self.assertEqual(len(q('select[name=ad]')),1)
 
         # post
         self.assertTrue(not charter.ad)
         ad2 = Person.objects.get(name='Ad No2')
         r = self.client.post(url,dict(ad=str(ad2.pk)))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
-        self.assertEquals(charter.ad, ad2)
+        self.assertEqual(charter.ad, ad2)
 
     def test_submit_charter(self):
         make_test_data()
@@ -164,16 +164,16 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=txt]')), 1)
+        self.assertEqual(len(q('form input[name=txt]')), 1)
 
         # faulty post
         test_file = StringIO("\x10\x11\x12") # post binary file
         test_file.name = "unnamed"
 
         r = self.client.post(url, dict(txt=test_file))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue("does not appear to be a text file" in r.content)
 
         # post
@@ -185,14 +185,14 @@ class EditCharterTests(TestCase):
         test_file.name = "unnamed"
 
         r = self.client.post(url, dict(txt=test_file))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
-        self.assertEquals(charter.rev, next_revision(prev_rev))
+        self.assertEqual(charter.rev, next_revision(prev_rev))
         self.assertTrue("new_revision" in charter.latest_event().type)
 
         with open(os.path.join(self.charter_dir, charter.canonical_name() + "-" + charter.rev + ".txt")) as f:
-            self.assertEquals(f.read(),
+            self.assertEqual(f.read(),
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
 class ApproveCharterTests(TestCase):
@@ -252,29 +252,29 @@ class ApproveCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue("Send out the announcement" in q('input[type=submit]')[0].get('value'))
-        self.assertEquals(len(q('pre')), 1)
+        self.assertEqual(len(q('pre')), 1)
 
         # approve
         mailbox_before = len(outbox)
 
         r = self.client.post(url, dict())
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
-        self.assertEquals(charter.get_state_slug(), "approved")
+        self.assertEqual(charter.get_state_slug(), "approved")
         self.assertTrue(not charter.ballot_open("approve"))
 
-        self.assertEquals(charter.rev, "01")
+        self.assertEqual(charter.rev, "01")
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))))
 
-        self.assertEquals(len(outbox), mailbox_before + 2)
+        self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("WG Action" in outbox[-1]['Subject'])
         self.assertTrue("Charter approved" in outbox[-2]['Subject'])
 
-        self.assertEquals(group.groupmilestone_set.filter(state="charter").count(), 0)
-        self.assertEquals(group.groupmilestone_set.filter(state="active").count(), 2)
-        self.assertEquals(group.groupmilestone_set.filter(state="active", desc=m1.desc).count(), 1)
-        self.assertEquals(group.groupmilestone_set.filter(state="active", desc=m4.desc).count(), 1)
+        self.assertEqual(group.groupmilestone_set.filter(state="charter").count(), 0)
+        self.assertEqual(group.groupmilestone_set.filter(state="active").count(), 2)
+        self.assertEqual(group.groupmilestone_set.filter(state="active", desc=m1.desc).count(), 1)
+        self.assertEqual(group.groupmilestone_set.filter(state="active", desc=m4.desc).count(), 1)

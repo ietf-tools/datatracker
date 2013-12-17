@@ -29,7 +29,7 @@ class MainTestCase(TestCase):
         draft = make_test_data()
         url = reverse('sessions')
         r = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         sched = r.context['scheduled_groups']
         unsched = r.context['unscheduled_groups']
         self.failUnless(len(sched) == 0)
@@ -47,7 +47,7 @@ class SubmitRequestCase(TestCase):
                      'id_comments':'need projector'}
         self.client.login(  REMOTE_USER=SECR_USER)
         r = self.client.post(url,post_data)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 """
         #assert False, self.client.session..__dict__
         

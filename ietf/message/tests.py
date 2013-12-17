@@ -28,7 +28,7 @@ class MessageTests(TestCase):
         msg.related_groups.add(nomcom)
 
         r = self.client.get(urlreverse("nomcom_announcement", kwargs=dict(message_id=msg.id)))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue(msg.subject in r.content)
         self.assertTrue(msg.to in r.content)
         self.assertTrue(msg.frm in r.content)
@@ -60,7 +60,7 @@ class SendScheduledAnnouncementsTests(TestCase):
         
         send_scheduled_message_from_send_queue(q)
 
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("This is a test" in outbox[-1]["Subject"])
         self.assertTrue(SendQueue.objects.get(id=q.id).sent_at)
 
@@ -88,7 +88,7 @@ class SendScheduledAnnouncementsTests(TestCase):
         
         send_scheduled_message_from_send_queue(q)
 
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("This is a test" in outbox[-1]["Subject"])
         self.assertTrue("--NextPart" in outbox[-1].as_string())
         self.assertTrue(SendQueue.objects.get(id=q.id).sent_at)
