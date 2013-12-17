@@ -121,9 +121,9 @@ will be posted, but will be marked as "non-compliant".</p>
 	    </th>
 	 </tr>
          {% for field in ipr.holder_contact %}
-         {% ifnotequal field.name "update_auth" %}
+         {% if field.name != "update_auth" %}
 	 <tr class="{% cycle row_parity %}"><td class="iprlabel">{{field.label }}:</td><td class="iprdata">{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</td></tr>
-         {% endifnotequal %}
+         {% endif %}
          {% endfor %}
       </table>
    {% endif %}
@@ -137,9 +137,9 @@ will be posted, but will be marked as "non-compliant".</p>
 	    </th>
 	 </tr>
          {% for field in ipr.ietf_contact %}
-         {% ifnotequal field.name "update_auth" %}
+         {% if field.name != "update_auth" %}
 	 <tr class="{% cycle row_parity %}"><td class="iprlabel">{{field.label }}:</td><td class="iprdata">{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</td></tr>
-         {% endifnotequal %}
+         {% endif %}
          {% endfor %}
       </table>
    {% endif %}
@@ -296,7 +296,7 @@ will be posted, but will be marked as "non-compliant".</p>
 	       <td colspan="2">
 		  <p>
                   {{ ipr.lic_checkbox.errors }} 
-		  {% ifnotequal ipr.lic_checkbox 1 %}{{ ipr.lic_checkbox }}{% endifnotequal %}
+		  {% if ipr.lic_checkbox != 1 %}{{ ipr.lic_checkbox }}{% endif %}
 		  The individual submitting this template represents and warrants that all
 		  terms and conditions that must be satisfied for implementers of any
 		  covered IETF specification to obtain a license have been disclosed in this
@@ -357,9 +357,9 @@ will be posted, but will be marked as "non-compliant".</p>
 	    </tbody>
 	    {% endif %}
          {% for field in ipr.submitter %}
-         {% ifnotequal field.name "update_auth" %}
+         {% if field.name != "update_auth" %}
 	 <tr class="{% cycle row_parity %}"><td class="iprlabel">{{field.label }}:</td><td class="iprdata">{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</td></tr>
-         {% endifnotequal %}
+         {% endif %}
          {% endfor %}
 	 </table>
       {% endif %}

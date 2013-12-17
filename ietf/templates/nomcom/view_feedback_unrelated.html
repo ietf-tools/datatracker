@@ -30,7 +30,7 @@
         {% for feedback in ft.feedback %}
             <div>
               <h3 class="ietf-divider">From {{ feedback.author|formatted_email|default:"Anonymous" }} ({{ feedback.time|date:"Y-m-d" }})</h3>
-              {% ifequal ft.slug "nomina" %}
+              {% if ft.slug == "nomina" %}
                 {% for fn in feedback.nomination_set.all %}
                   {% if fn.candidate_name %}
                     <p><b>Candidate name:</b> {{ fn.candidate_name }}</p>
@@ -39,7 +39,7 @@
                     <p><b>Candidate phone:</b> {{ fn.candidate_phone }}</p>
                   {% endif %}
                 {% endfor %}
-              {% endifequal %}
+              {% endif %}
               <b>Positions:</b> {{ feedback.positions.all|join:"," }}
               <pre>{% decrypt feedback.comments request year 1 %}</pre>
             </div>

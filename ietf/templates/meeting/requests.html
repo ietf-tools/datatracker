@@ -31,7 +31,7 @@ th { text-align: right; vertical-align: text-top; }
 {% ifchanged %} 
 </table>
 <h2><a name="{{session.group.parent.acronym}}">{{session.group.parent.acronym|upper}} - {{session.group.parent.name}}</a></h2>
-<div class="no-req">No schedule request:{% for group in groups_not_meeting %}{%ifequal group.parent.id session.group.parent.id %} {{group.acronym|upper}}{%endifequal%}{% endfor %}</div></br>
+<div class="no-req">No schedule request:{% for group in groups_not_meeting %}{% if group.parent.id == session.group.parent.id %} {{group.acronym|upper}}{%endif%}{% endfor %}</div></br>
 <table>
 <tr>
   <td class="h"></td>
@@ -56,7 +56,7 @@ yes
   <td valign="top">
     {% if session.group.ad %}<a href="mailto:{{session.group.ad.ad_email}}">{{session.group.ad}}</a> {%endif%}
   </td>
-  <td width="30%" valign="top">{%if session.requested_duration%}<span>{% for constraint in session.constraints %}{%ifchanged%}</span><span class="{{constraint.name.slug}}">{%endifchanged%} {{constraint.target.acronym}}{%ifnotequal constraint.target.parent.id constraint.source.parent.id%} ({{constraint.target.parent.acronym}}){%endifnotequal%}{%if not forloop.last %},{%endif%} {% endfor %}</span>{%endif%}</td>
+  <td width="30%" valign="top">{%if session.requested_duration%}<span>{% for constraint in session.constraints %}{%ifchanged%}</span><span class="{{constraint.name.slug}}">{%endifchanged%} {{constraint.target.acronym}}{% if constraint.target.parent.id == constraint.source.parent.id%} ({{constraint.target.parent.acronym}}){%endif%}{%if not forloop.last %},{%endif%} {% endfor %}</span>{%endif%}</td>
   <td width="30%" valign="top">{% if session.comments %}<i><font color="#800000">{{session.comments|linebreaksbr}}</font></i>{% endif %}</td>
 </tr>
 {% endif %}

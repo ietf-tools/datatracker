@@ -15,7 +15,7 @@ IPR Admin Notify Page
 
 {% block content %}
 
-{% ifequal page_id 'send_result' %}
+{% if page_id == 'send_result' %}
   <div class="module">
     {% if result %}
         {{ result }}
@@ -28,9 +28,9 @@ IPR Admin Notify Page
       </ul>
     </div> <!-- button-group -->
   </div> <!-- module -->
-{% endifequal %}
+{% endif %}
 
-{% ifequal page_id 'detail_notify' %}
+{% if page_id == 'detail_notify' %}
   <form action="" method="post">
     <input type="hidden" name="command" value="do_send_update_notification">
     <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
@@ -65,9 +65,9 @@ IETF Secretariat
     <input type="submit" value=" Send notifications NOW ">
     </form>
     <br><br>
-{% endifequal %}
+{% endif %}
 
-{% ifequal page_id 'detail_post' %}
+{% if page_id == 'detail_post' %}
     <form action="" method="post">
     <input type="hidden" name="command" value="do_send_notifications">
     <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
@@ -81,9 +81,9 @@ IETF Secretariat
     <input type="submit" value=" Send notifications NOW ">
     </form>
     <br><br>
-{% endifequal %}
+{% endif %}
 
-{% ifequal page_id 'update_post' %}
+{% if page_id == 'update_post' %}
     <form action="" method="post">
     <input type="hidden" name="command" value="do_send_notifications">
     <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
@@ -100,6 +100,6 @@ IETF Secretariat
     </form>
     <br><br>
     </form>
-{% endifequal %}
+{% endif %}
 
 {% endblock content %}

@@ -43,15 +43,15 @@
             <tr>
                 <td>{{ role.name }} </td>
                 <td>
-                  {% ifequal role.group.type.slug "wg" %}
+                  {% if role.group.type.slug == "wg" %}
                     <a href="{% url "groups_view" acronym=role.group.acronym %}">{{ role.group.acronym }}</a>
                   {% else %}
-                    {% ifequal role.group.type.slug "area" %}
+                    {% if role.group.type.slug == "area" %}
                       <a href="{% url "areas_view" name=role.group.acronym %}">{{ role.group.acronym }}</a>
                     {% else %}
                       {{ role.group }}
-                    {% endifequal %}
-                  {% endifequal %}
+                    {% endif %}
+                  {% endif %}
                 </td>
                 <td>{{ role.email }}</td>
             </tr>

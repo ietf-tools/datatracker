@@ -190,7 +190,7 @@ $(function() {
         <ol>
             <li>{{ licensing_option_labels.0 }}) 
                 <label for="id_licensing_option_0">
-                    <input id="id_licensing_option_0"  name="licensing_option" value="1" type="radio"{% ifequal opt 1 %} checked{% endifequal %}>
+                    <input id="id_licensing_option_0"  name="licensing_option" value="1" type="radio"{% if opt == 1 %} checked{% endif %}>
                     No License Required for Implementers.
                 </label>
                 <br>
@@ -199,7 +199,7 @@ $(function() {
             </li>
             <li>{{ licensing_option_labels.1 }}) 
                 <label for="id_licensing_option_1">
-                    <input id="id_licensing_option_1" value="2" name="licensing_option" type="radio"{% ifequal opt 2 %} checked{% endifequal %}>
+                    <input id="id_licensing_option_1" value="2" name="licensing_option" type="radio"{% if opt == 2 %} checked{% endif %}>
                     Royalty-Free, Reasonable and Non-Discriminatory License to All Implementers.
                 </label>
                 <br>
@@ -208,7 +208,7 @@ $(function() {
             </li>
             <li>{{ licensing_option_labels.2 }}) 
                 <label for="id_licensing_option_2">
-                    <input id="id_licensing_option_2" value="3" name="licensing_option" type="radio"{% ifequal opt 3 %} checked{% endifequal %}>
+                    <input id="id_licensing_option_2" value="3" name="licensing_option" type="radio"{% if opt == 3 %} checked{% endif %}>
                     Reasonable and Non-Discriminatory License to All Implementers with Possible Royalty/Fee.
                 </label>
                 <br>
@@ -217,19 +217,19 @@ $(function() {
             </li>
             <li>{{ licensing_option_labels.3 }}) 
                 <label for="id_licensing_option_3">
-                    <input id="id_licensing_option_3" value="4" name="licensing_option" type="radio"{% ifequal opt 4 %} checked{% endifequal %}>
+                    <input id="id_licensing_option_3" value="4" name="licensing_option" type="radio"{% if opt == 4 %} checked{% endif %}>
                     Licensing Declaration to be Provided Later (implies a willingness to commit to the provisions of a), b), or c) above to all implementers; otherwise, the next option "Unwilling to Commit to the Provisions of a), b), or c) Above" - must be selected)
                 </label>
             </li>
             <li>{{ licensing_option_labels.4 }}) 
                 <label for="id_licensing_option_4">
-                <input id="id_licensing_option_4" value="5" name="licensing_option" type="radio"{% ifequal opt 5 %} checked{% endifequal %}>
+                <input id="id_licensing_option_4" value="5" name="licensing_option" type="radio"{% if opt == 5 %} checked{% endif %}>
                     Unwilling to Commit to the Provisions of a), b), or c) Above
                 </label>
             </li>
             <li>{{ licensing_option_labels.5 }}) 
                 <label for="id_licensing_option_5">
-                    <input id="id_licensing_option_5" value="6" name="licensing_option" type="radio"{% ifequal opt 6 %} checked{% endifequal %}>
+                    <input id="id_licensing_option_5" value="6" name="licensing_option" type="radio"{% if opt == 6 %} checked{% endif %}>
                     See text box below for licensing declaration.
                 </label>
             </li>

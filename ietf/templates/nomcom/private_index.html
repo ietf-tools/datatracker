@@ -48,7 +48,7 @@
               <option value="">All</option>
               {% for state in states %}
                 <option value="{{ state.slug }}"
-                  {% ifequal state.slug  selected_state %}selected="selected"{% endifequal%}>
+                  {% if state.slug == selected_state %}selected="selected"{% endif%}>
                   {{ state.name }}
                 </option>
               {% endfor %}
@@ -60,7 +60,7 @@
               <option value="">All</option>
               {% for position in positions %}
                   <option value="{{ position.id }}"
-                    {% ifequal position.id  selected_position %}selected="selected"{% endifequal%}>
+                    {% if position.id == selected_position %}selected="selected"{% endif%}>
                     {{ position.name }}
                   </option>
               {% endfor %}

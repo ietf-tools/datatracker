@@ -44,7 +44,7 @@
 <div class="header">
 <a name="{{ schedule.meeting.date|date:"Y-m-d_0000" }}" />
 <h1>Agenda of the {{ schedule.meeting.number|ordinal }} IETF Meeting</h1>
-<h2>{{ schedule.meeting.date|date:"F j" }}-{% ifnotequal schedule.meeting.date.month schedule.meeting.end_date.month %}{{ schedule.meeting.end_date|date:"F " }}{% endifnotequal %}{{ schedule.meeting.end_date|date:"j, Y" }}</h2>
+<h2>{{ schedule.meeting.date|date:"F j" }}-{% if schedule.meeting.date.month != schedule.meeting.end_date.month %}{{ schedule.meeting.end_date|date:"F " }}{% endif %}{{ schedule.meeting.end_date|date:"j, Y" }}</h2>
 </div>
 <div class="legal">IETF agendas are subject to change, up to and during the meeting.</div>
 <div>
@@ -96,9 +96,9 @@
 		     </td>
 		     <td>
 			{% if item.session.type == "WG" %}<a href="http://www.ietf.org/dyn/wg/charter/{{ item.session.group.acronym|lower }}-charter.html">{%endif%}
-			   {% ifequal item.session.type "BOF" %}<span style="background-color: #6FD">{% endifequal %}
+			   {% if item.session.type == "BOF" %}<span style="background-color: #6FD">{% endif %}
 			   {{ item.session.group.acronym|lower }}
-			   {% ifequal item.session.type "BOF" %}</span>{% endifequal %}
+			   {% if item.session.type == "BOF" %}</span>{% endif %}
 			{% if item.session.type == "WG" %}</a>{%endif%}
 		     </td>
 		     <td>

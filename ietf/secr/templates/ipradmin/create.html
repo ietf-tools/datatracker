@@ -78,15 +78,15 @@ $(function() {
         <ul>
         {% for field in ipr_detail_form.fieldsets.basic %}
             <li>
-                {% ifequal field.name "title" %}
+                {% if field.name == "title" %}
                   <label for="id_title">IPR Title<span class="required"> *</span></label>
                 {% else %}
-                  {% ifequal field.name "submitted_date" %}
+                  {% if field.name == "submitted_date" %}
                     <label for="id_submitted_date">Submitted Date<span class="required"> *</span></label>
                   {% else %}
                     {{ field.label_tag }}
-                  {% endifequal %}
-                {% endifequal %}
+                  {% endif %}
+                {% endif %}
                 {{ field }}
             </li>
         {% endfor %}
@@ -124,11 +124,11 @@ $(function() {
         <ul>
         {% for field in ipr_detail_form.fieldsets.legal_name %}
             <li>
-                {% ifequal field.name "legal_name" %}
+                {% if field.name == "legal_name" %}
                   <label for="id_legal_name">Legal Name<span class="required"> *</span></label>
                 {% else %}
                   {{ field.label_tag }}
-                {% endifequal %}
+                {% endif %}
                 {{ field }}
             </li>
         {% endfor %}

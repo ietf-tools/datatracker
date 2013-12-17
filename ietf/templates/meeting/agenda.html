@@ -84,7 +84,7 @@ img.hidden { display: none; }
 
 <h1>IETF {{ schedule.meeting.number }} Meeting Agenda</h1>
 
-<p>{{ schedule.meeting.city }}, {{ schedule.meeting.date|date:"F j" }} &#8211; {% ifnotequal schedule.meeting.date.month schedule.meeting.end_date.month %}{{ schedule.meeting.end_date|date:"F " }}{% endifnotequal %}{{ schedule.meeting.end_date|date:"j, Y" }}<br />
+<p>{{ schedule.meeting.city }}, {{ schedule.meeting.date|date:"F j" }} &#8211; {% if schedule.meeting.date.month != schedule.meeting.end_date.month %}{{ schedule.meeting.end_date|date:"F " }}{% endif %}{{ schedule.meeting.end_date|date:"j, Y" }}<br />
 Updated {{ updated|date:"Y-m-d H:i:s T" }}</p>
 <div class="noprint">
 (There's also a <a href="/meeting/agenda-utc">agenda with UTC times</a>, a <a href="/meeting/{{schedule.meeting.number}}/agenda.txt">plaintext agenda</a> and a <a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/">tools-style agenda</a> available)</div>

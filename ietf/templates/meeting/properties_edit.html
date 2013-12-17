@@ -74,9 +74,9 @@
 
 <div class="towtruck">
 {% if server_mode %}
-	{% ifnotequal server_mode "production" %}
+	{% if server_mode != "production" %}
 	<button onclick="TowTruck(this); return false;">Start TowTruck</button>
-	{% endifnotequal %}
+	{% endif %}
 {% endif %}
 </div>
 </div>

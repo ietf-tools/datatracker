@@ -10,7 +10,7 @@
 	{{ session.name }}
 	{% else %}
 	{{session.group.acronym.upper}}
-	{% ifequal session.group.state.slug "bof" %} <font color="red">({{ session.group.state.slug }})</font>{% endifequal %}
+	{% if session.group.state.slug == "bof" %} <font color="red">({{ session.group.state.slug }})</font>{% endif %}
 	{% endif %}
 	</b>
      </td>

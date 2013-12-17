@@ -38,23 +38,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <!-- v{{version_num}}, {{ revision_num }}, {{ revision_time }} -->
-<title>{% block title %}No title{% endblock %}{% if server_mode %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}{% endif %}</title>
+<title>{% block title %}No title{% endblock %}{% if server_mode %}{% if server_mode != "production" %} - {{ server_mode|upper }} MODE{% endif %}{% endif %}</title>
 <link rel="stylesheet" type="text/css" href="/css/yui/yui-20100305.css"></link>
 <link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
 <style type="text/css">
 {% block morecss %}{% endblock %}
 </style>
 {% block pagehead %}{% endblock %}
-{% ifnotequal server_mode "production" %}
+{% if server_mode != "production" %}
 <link rel="icon" href="/images/ietf-dev-icon.bmp" />
 {% else %}
 <link rel="icon" href="/images/ietf-icon-blue.bmp" />
-{% endifnotequal %}
+{% endif %}
 <link rel="search" href="/js/datatracker-search.xml" type="application/opensearchdescription+xml" title="IETF Datatracker Search" />
 </head>
 <body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
-<div style="background-color:{% if server_mode %}{% ifnotequal server_mode "production" %}#c00000{% else %}#313163{% endifnotequal %}{%else %}#313163{%endif%};color:white;font-size:150%;height:35px;" class="noprint">
-<span style="padding-left:15px;font-weight:bold;letter-spacing:0.1em;"><a href="/" style="text-decoration:none;color:white"><img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/>datatracker.ietf.org</a> {% if server_mode %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper}} MODE{% endifnotequal %}{% endif %}</span>
+<div style="background-color:{% if server_mode %}{% if server_mode != "production" %}#c00000{% else %}#313163{% endif %}{%else %}#313163{%endif%};color:white;font-size:150%;height:35px;" class="noprint">
+<span style="padding-left:15px;font-weight:bold;letter-spacing:0.1em;"><a href="/" style="text-decoration:none;color:white"><img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/>datatracker.ietf.org</a> {% if server_mode %}{% if server_mode != "production" %} - {{ server_mode|upper}} MODE{% endif %}{% endif %}</span>
 </div>
 
 {% if user %}

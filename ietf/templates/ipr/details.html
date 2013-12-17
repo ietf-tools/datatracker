@@ -294,7 +294,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	    <tr class="{% cycle row_parity %}">
 	       <td colspan="2">
 		  <p>
-		  {% ifnotequal ipr.lic_checkbox 1 %}{{ ipr.lic_checkbox }}{% endifnotequal %}
+		  {% if ipr.lic_checkbox != 1 %}{{ ipr.lic_checkbox }}{% endif %}
 		  The individual submitting this template represents and warrants that all
 		  terms and conditions that must be satisfied for implementers of any
 		  covered IETF specification to obtain a license have been disclosed in this

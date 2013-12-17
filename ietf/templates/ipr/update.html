@@ -44,9 +44,9 @@ table.ipr { margin-top: 1em; }
 	    </th>
 	 </tr>
          {% for field in form %} 
-         {% ifnotequal field.name "update_auth" %}
+         {% if field.name != "update_auth" %}
 	 <tr class="{% cycle row_parity %}"><td class="iprlabel">{{field.label }}:</td><td class="iprdata">{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</td></tr>
-         {% endifnotequal %}
+         {% endif %}
          {% endfor %}
       </table>
       <p>

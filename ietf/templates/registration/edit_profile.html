@@ -94,7 +94,7 @@ th {
     <td class='{% cycle 'even' 'odd'%}'>{{ role.name }} in {{ role.group.acronym|upper }} ({{ role.group.type }})</td>
     <td class='{% cycle 'even' 'odd'%}'>
       <select name="role_email_{{role.id}}">
-        {% for email in emails %}<option value="{{email.address}}"{% ifequal email.address role.email.address %} selected="selected"{% endifequal %} class='{% if email.active %}active{% else %}inactive{% endif %}'>{{email}}</option>
+        {% for email in emails %}<option value="{{email.address}}"{% if email.address == role.email.address %} selected="selected"{% endif %} class='{% if email.active %}active{% else %}inactive{% endif %}'>{{email}}</option>
      {% endfor %}</select></td>
   </tr>
   {% endfor %}

@@ -31,15 +31,15 @@ form.approve-ballot .announcement {
 
   <div class="actions">
     <a href="{% url "doc_ballot_approvaltext" name=doc.name %}">Back</a>
-    {% ifequal action "to_announcement_list" %}
+    {% if action == "to_announcement_list" %}
     <input type="submit" value="Notify the RFC Editor, send out the announcement and close ballot"/>
-    {% endifequal %}
-    {% ifequal action "to_rfc_editor" %}
+    {% endif %}
+    {% if action == "to_rfc_editor" %}
     <input type="submit" value="Send message to the RFC Editor and close ballot"/>
-    {% endifequal %}
-    {% ifequal action "do_not_publish" %}
+    {% endif %}
+    {% if action == "do_not_publish" %}
     <input type="submit" value="Send message to the RFC Editor (DNP) and close ballot"/>
-    {% endifequal %}    
+    {% endif %}    
   </div>
 </form>
 {% endblock %}
