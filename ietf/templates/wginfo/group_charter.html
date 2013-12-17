@@ -156,9 +156,7 @@ is occasionally incorrect.</span>
 
 <h2>{% if group.state_id == "proposed" %}Proposed{% endif %} Milestones</h2>
 
-{% with group.milestones as milestones %}
-{% include "wginfo/milestones.html" %}
-{% endwith %}
+{% include "wginfo/milestones.html" with milestones=group.milestones %}
 
 {% if milestones_in_review %}
 <p>+ {{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}

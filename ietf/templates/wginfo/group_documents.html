@@ -7,7 +7,7 @@
 
 {% include "doc/search/search_results.html" %}
 
-{% with docs_related as docs %}{% with meta_related as meta %}{% include "doc/search/search_results.html" %}{% endwith %}{% endwith %}
+{% include "doc/search/search_results.html" with docs=docs_related meta=meta_related %}
 
 </div>
 {% endblock group_content %}
