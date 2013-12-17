@@ -4,7 +4,7 @@ import sys
 import json
 
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.http import HttpResponse, Http404
 
 from dajaxice.core import dajaxice_functions
 from dajaxice.decorators import dajaxice_register

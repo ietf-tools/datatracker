@@ -2,7 +2,7 @@ import datetime, os, re
 
 from django import forms
 from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.http import HttpResponseRedirect, Http404
+from django.http import Http404, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from django.template.loader import render_to_string
@@ -158,7 +158,7 @@ def submit(request, name):
                 doc.time = datetime.datetime.now()
                 doc.save()
 
-                return HttpResponseRedirect(reverse('doc_view', kwargs={'name': doc.name}))
+                return redirect('doc_view', name=doc.name)
 
         elif "reset_text" in request.POST:
 
@@ -214,7 +214,7 @@ def edit_notices(request, name):
             c.desc = "Notification list changed to : "+status_change.notify
             c.save()
 
-            return HttpResponseRedirect(reverse('doc_view', kwargs={'name': status_change.name}))
+            return redirect('doc_view', name=status_change.name)
 
     else:
 

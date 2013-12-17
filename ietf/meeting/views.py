@@ -12,7 +12,7 @@ from tempfile import mkstemp
 
 from django import forms
 from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.http import HttpResponse, Http404
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.template import RequestContext
@@ -117,9 +117,7 @@ def agenda_create(request, num=None, schedule_name=None):
         sched = meeting.schedule_set.get(name=savedname, owner=request.user.person)
         if sched:
             # XXX needs to record a session error and redirect to where?
-            return HttpResponseRedirect(
-                reverse(edit_agenda,
-                        args=[meeting.number, sched.name]))
+            return redirect(edit_agenda, meeting.number, sched.name)
 
     except Schedule.DoesNotExist:
         pass
@@ -158,9 +156,7 @@ def agenda_create(request, num=None, schedule_name=None):
 
 
     # now redirect to this new schedule.
-    return HttpResponseRedirect(
-        reverse(edit_agenda,
-                args=[meeting.number, newschedule.name]))
+    return redirect(edit_agenda, meeting.number, newschedule.name)
 
 
 @decorator_from_middleware(GZipMiddleware)

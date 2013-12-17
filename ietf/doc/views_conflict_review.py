@@ -156,7 +156,7 @@ def submit(request, name):
                 review.time = datetime.datetime.now()
                 review.save()
 
-                return HttpResponseRedirect(reverse('doc_view', kwargs={'name': review.name}))
+                return redirect('doc_view', name=review.name)
 
         elif "reset_text" in request.POST:
 
@@ -214,7 +214,7 @@ def edit_notices(request, name):
             c.desc = "Notification list changed to : "+review.notify
             c.save()
 
-            return HttpResponseRedirect(reverse('doc_view', kwargs={'name': review.name}))
+            return redirect('doc_view', name=review.name)
 
     else:
 
@@ -248,7 +248,7 @@ def edit_ad(request, name):
             c.desc = "Shepherding AD changed to "+review.ad.name
             c.save()
 
-            return HttpResponseRedirect(reverse('doc_view', kwargs={'name': review.name}))
+            return redirect('doc_view', name=review.name)
 
     else:
         init = { "ad" : review.ad_id }

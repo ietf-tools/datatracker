@@ -1,7 +1,7 @@
 import json
 
 from django.core.urlresolvers import reverse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponseRedirect, HttpResponse, QueryDict
 
 from dajaxice.decorators import dajaxice_register
@@ -176,12 +176,9 @@ def timeslot_addroom(request, meeting):
     newroom.create_timeslots()
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
-        url = reverse(timeslot_roomurl, args=[meeting.number, newroom.pk])
-        #debug.log("Returning timeslot_roomurl: %s " % (url))
-        return HttpResponseRedirect(url)
+        return redirect(timeslot_roomurl, meeting.number, newroom.pk)
     else:
-        return HttpResponseRedirect(
-            reverse(edit_timeslots, args=[meeting.number]))
+        return redirect(edit_timeslots, meeting.number)
 
 @role_required('Secretariat')
 def timeslot_delroom(request, meeting, roomid):
@@ -247,11 +244,9 @@ def timeslot_addslot(request, meeting):
     # XXX FIXME: newroom is undefined.  Placeholder:
     newroom = None
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
-        return HttpResponseRedirect(
-            reverse(timeslot_dayurl, args=[meeting.number, newroom.pk]))
+        return redirect(timeslot_dayurl, meeting.number, newroom.pk)
     else:
-        return HttpResponseRedirect(
-            reverse(edit_timeslots, args=[meeting.number]))
+        return redirect(edit_timeslots, meeting.number)
 
 @role_required('Secretariat')
 def timeslot_delslot(request, meeting, slotid):
@@ -314,12 +309,9 @@ def agenda_add(request, meeting):
     newagenda.save()
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
-        url =  reverse(agenda_infourl, args=[meeting.number, newagenda.name])
-        #debug.log("Returning agenda_infourl: %s " % (url))
-        return HttpResponseRedirect(url)
+        return redirect(agenda_infourl, meeting.number, newagenda.name)
     else:
-        return HttpResponseRedirect(
-            reverse(edit_agenda, args=[meeting.number, newagenda.name]))
+        return redirect(edit_agenda, meeting.number, newagenda.name)
 
 @role_required('Area Director','Secretariat')
 def agenda_update(request, meeting, schedule):
@@ -364,8 +356,7 @@ def agenda_update(request, meeting, schedule):
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
                             content_type="application/json")
     else:
-        return HttpResponseRedirect(
-            reverse(edit_agenda, args=[meeting.number, schedule.name]))
+        return redirect(edit_agenda, meeting.number, schedule.name)
 
 @role_required('Secretariat')
 def agenda_del(request, meeting, schedule):

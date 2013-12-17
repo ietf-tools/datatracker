@@ -561,7 +561,7 @@ def view_feedback_pending(request, year):
             for form in formset.forms:
                 form.set_nomcom(nomcom, request.user)
             messages.success(request, 'Feedback saved')
-            return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
+            return redirect('nomcom_view_feedback_pending', year=year)
     elif request.method == 'POST' and request.POST.get('end'):
         extra_ids = request.POST.get('extra_ids', None)
         extra_step = True
@@ -583,7 +583,7 @@ def view_feedback_pending(request, year):
                 extra_ids = None
             else:
                 messages.success(request, 'Feedback saved')
-                return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
+                return redirect('nomcom_view_feedback_pending', year=year)
     elif request.method == 'POST':
         formset = FeedbackFormSet(request.POST)
         for form in formset.forms:
@@ -617,7 +617,7 @@ def view_feedback_pending(request, year):
                     message = ('success', '%s messages classified. You must enter more information for the following feedback.' % moved)
             else:
                 messages.success(request, 'Feedback saved')
-                return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
+                return redirect('nomcom_view_feedback_pending', year=year)
     else:
         formset = FeedbackFormSet(queryset=feedbacks)
         for form in formset.forms:
@@ -799,7 +799,7 @@ def remove_position(request, year, position_id):
 
     if request.POST.get('remove', None):
         position.delete()
-        return HttpResponseRedirect(reverse('nomcom_list_positions', None, args=(year, )))
+        return redirect('nomcom_list_positions', year=year)
     return render_to_response('nomcom/remove_position.html',
                               {'year': year,
                                'position': position,
@@ -821,7 +821,7 @@ def edit_position(request, year, position_id=None):
         form = PositionForm(request.POST, instance=position, nomcom=nomcom)
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect(reverse('nomcom_list_positions', None, args=(year, )))
+            return redirect('nomcom_list_positions', year=year)
     else:
         form = PositionForm(instance=position, nomcom=nomcom)
 

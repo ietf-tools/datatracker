@@ -3,8 +3,8 @@
 
 import re, os, datetime, json
 
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.shortcuts import render_to_response, get_object_or_404
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
@@ -208,9 +208,9 @@ def edit_position(request, name, ballot_id):
                     qstr += "&ad=%s" % request.GET.get('ad')
                 return HttpResponseRedirect(urlreverse("doc_send_ballot_comment", kwargs=dict(name=doc.name, ballot_id=ballot_id)) + qstr)
             elif request.POST.get("Defer"):
-                return HttpResponseRedirect(urlreverse("doc_defer_ballot", kwargs=dict(name=doc)))
+                return redirect("doc_defer_ballot", name=doc)
             elif request.POST.get("Undefer"):
-                return HttpResponseRedirect(urlreverse("doc_undefer_ballot", kwargs=dict(name=doc)))
+                return redirect("doc_undefer_ballot", name=doc)
             else:
                 return HttpResponseRedirect(return_to_url)
     else:
@@ -331,7 +331,7 @@ def clear_ballot(request, name):
             create_ballot_if_not_open(doc, by, t.slug)
         if doc.get_state('draft-iesg').slug == 'defer':
             do_undefer_ballot(request,doc)
-        return HttpResponseRedirect(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        return redirect("doc_view", name=doc.name)
 
     return render_to_response('doc/ballot/clear_ballot.html',
                               dict(doc=doc,

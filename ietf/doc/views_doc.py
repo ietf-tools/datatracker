@@ -760,7 +760,7 @@ def add_comment(request, name):
             if doc.type_id == "draft":
                 email_ad(request, doc, doc.ad, login,
                             "A new comment added by %s" % login.name)
-            return HttpResponseRedirect(urlreverse("doc_history", kwargs=dict(name=doc.name)))
+            return redirect("doc_history", name=doc.name)
     else:
         form = AddCommentForm()
   

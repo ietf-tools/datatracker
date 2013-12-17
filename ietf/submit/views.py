@@ -120,9 +120,9 @@ def search_submission(request):
     name = None
     if request.method == 'POST':
         name = request.POST.get('name', '')
-        submission = Submission.objects.filter(name=name).order_by('-pk')
+        submission = Submission.objects.filter(name=name).order_by('-pk').first()
         if submission:
-            return HttpResponseRedirect(urlreverse(submission_status, None, kwargs={'submission_id': submission[0].pk}))
+            return redirect(submission_status, submission_id=submission.pk)
         error = 'No valid submission found for %s' % name
     return render_to_response('submit/search_submission.html',
                               {'selected': 'status',

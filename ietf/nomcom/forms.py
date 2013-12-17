@@ -2,7 +2,7 @@ from django.conf import settings
 from django import forms
 from django.contrib.formtools.preview import FormPreview, AUTO_ID
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
@@ -209,7 +209,7 @@ class EditMembersFormPreview(FormPreview):
                                        person=member['person'],
                                        email=member['email_obj'])
 
-        return HttpResponseRedirect(reverse('nomcom_edit_members', kwargs={'year': self.year}))
+        return redirect('nomcom_edit_members', year=self.year)
 
 
 class EditChairForm(BaseNomcomForm, forms.Form):
@@ -264,7 +264,7 @@ class EditChairFormPreview(FormPreview):
                                       person=chair_info['person'],
                                       email=chair_info['email_obj'])
 
-        return HttpResponseRedirect(reverse('nomcom_edit_chair', kwargs={'year': self.year}))
+        return redirect('nomcom_edit_chair', year=self.year)
 
 
 class EditNomcomForm(BaseNomcomForm, forms.ModelForm):

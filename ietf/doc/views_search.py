@@ -36,7 +36,7 @@ from django import forms
 from django.shortcuts import render_to_response
 from django.db.models import Q
 from django.template import RequestContext
-from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseBadRequest
 
 from ietf.doc.expire import expirable_draft
 from ietf.utils import normalize_draftname

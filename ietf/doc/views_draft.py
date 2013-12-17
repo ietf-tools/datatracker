@@ -4,7 +4,7 @@ import re, os, datetime, json
 from textwrap import dedent
 
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
@@ -844,7 +844,7 @@ def edit_notices(request, name):
                 c.desc = "Notification list changed to : "+doc.notify
                 c.save()
 
-                return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+                return redirect('doc_view', name=doc.name)
 
         elif "regenerate_addresses" in request.POST:
             init = { "notify" : get_initial_notify(doc) }
@@ -897,7 +897,7 @@ def telechat_date(request, name):
 
         if form.is_valid():
             update_telechat(request, doc, login, form.cleaned_data['telechat_date'],form.cleaned_data['returning_item'])
-            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+            return redirect('doc_view', name=doc.name)
     else:
         form = TelechatForm(initial=initial)
 
@@ -946,7 +946,7 @@ def edit_iesg_note(request, name):
                 c.desc = log_message
                 c.save()
 
-            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+            return redirect('doc_view', name=doc.name)
     else:
         form = IESGNoteForm(initial=initial)
 
@@ -1001,7 +1001,7 @@ def edit_shepherd_writeup(request, name):
                 e.text = writeup
                 e.save()
             
-                return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+                return redirect('doc_view', name=doc.name)
 
         elif "reset_text" in request.POST:
 
@@ -1067,7 +1067,7 @@ def edit_shepherd(request, name):
             c.desc = "Document shepherd changed to "+ (doc.shepherd.name if doc.shepherd else "(None)")
             c.save()
 
-            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+            return redirect('doc_view', name=doc.name)
 
     else:
         current_shepherd = None
@@ -1115,7 +1115,7 @@ def edit_ad(request, name):
             c.desc = "Shepherding AD changed to "+doc.ad.name
             c.save()
 
-            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+            return redirect('doc_view', name=doc.name)
 
     else:
         init = { "ad" : doc.ad_id }
@@ -1154,7 +1154,7 @@ def edit_consensus(request, name):
 
                 e.save()
 
-            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+            return redirect('doc_view', name=doc.name)
 
     else:
         form = ConsensusForm(initial=dict(consensus=nice_consensus(prev_consensus).replace("Unknown", "")))
@@ -1225,7 +1225,7 @@ def request_publication(request, name):
                 doc.time = e.time
                 doc.save()
 
-            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+            return redirect('doc_view', name=doc.name)
 
     else:
         if doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):

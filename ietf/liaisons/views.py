@@ -32,7 +32,7 @@ def add_liaison(request, liaison=None):
                     notify_pending_by_email(request, liaison)
                 else:
                     send_liaison_by_email(request, liaison)
-            return HttpResponseRedirect(reverse('liaison_list'))
+            return redirect('liaison_list')
     else:
         form = liaison_form_factory(request, liaison=liaison)
 

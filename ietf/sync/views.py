@@ -1,7 +1,7 @@
 import subprocess, os, json
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError, HttpResponseRedirect, Http404
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
@@ -141,7 +141,7 @@ def rfceditor_undo(request):
 
         e.delete()
 
-        return HttpResponseRedirect(urlreverse("ietf.sync.views.rfceditor_undo"))
+        return redirect("ietf.sync.views.rfceditor_undo")
 
     return render_to_response('sync/rfceditor_undo.html',
                               dict(events=events,

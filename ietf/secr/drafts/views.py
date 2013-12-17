@@ -7,7 +7,7 @@ from django.db.models import get_model, Max, Q
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory, modelformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
 from email import *
@@ -530,8 +530,7 @@ def add(request):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('drafts')
-            return HttpResponseRedirect(url)
+            return redirect('drafts')
 
         upload_form = UploadForm(request.POST, request.FILES)
         form = AddModelForm(request.POST)
@@ -593,9 +592,8 @@ def add(request):
             request.session['action'] = 'add'
             
             messages.success(request, 'New draft added successfully!')
-            url = reverse('drafts_authors', kwargs={'id':draft.name})
-            return HttpResponseRedirect(url)
-            
+            redirect('drafts_authors', id=draft.name)
+
     else:
         form = AddModelForm()
         upload_form = UploadForm()
@@ -628,8 +626,7 @@ def announce(request, id):
                            content_type='Multipart/Mixed; Boundary="NextPart"')
             
     messages.success(request, 'Announcement scheduled successfully!')
-    url = reverse('drafts_view', kwargs={'id':id})
-    return HttpResponseRedirect(url)
+    return redirect('drafts_view', id=id)
 
 def approvals(request):
     '''
@@ -651,8 +648,7 @@ def author_delete(request, id, oid):
     '''
     DocumentAuthor.objects.get(id=oid).delete()
     messages.success(request, 'The author was deleted successfully')
-    url = reverse('drafts_authors', kwargs={'id':id})
-    return HttpResponseRedirect(url)
+    return redirect('drafts_authors', id=id)
 
 def authors(request, id):
     ''' 
@@ -676,11 +672,10 @@ def authors(request, id):
             action = request.session.get('action','')
             if action == 'add':
                 del request.session['action']
-                url = reverse('drafts_announce', kwargs={'id':id})
-            else:
-                url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-                
+                return redirect('drafts_announce', id=id)
+
+            return redirect('drafts_view', id=id)
+
         if form.is_valid():
             author = form.cleaned_data['email']
             authors = draft.documentauthor_set.all()
@@ -691,8 +686,7 @@ def authors(request, id):
             DocumentAuthor.objects.create(document=draft,author=author,order=order)
             
             messages.success(request, 'Author added successfully!')
-            url = reverse('drafts_authors', kwargs={'id':id})
-            return HttpResponseRedirect(url)
+            return redirect('drafts_authors', id=id)
 
     else: 
         form = AuthorForm()
@@ -717,9 +711,8 @@ def confirm(request, id):
             # TODO do cancel functions from session (ie remove uploaded files?)
             # clear session data
             request.session.clear()
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-        
+            return redirect('drafts_view', id=id)
+
         action = request.session['action']
         if action == 'revision':
             func = do_revision
@@ -740,8 +733,7 @@ def confirm(request, id):
         request.session.clear()
     
         messages.success(request, '%s action performed successfully!' % action)
-        url = reverse('drafts_view', kwargs={'id':id})
-        return HttpResponseRedirect(url)
+        return redirect('drafts_view', id=id)
 
     details = get_action_details(draft, request.session) 
     email = request.session.get('email','')
@@ -795,9 +787,8 @@ def edit(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-        
+            return redirect('drafts_view', id=id)
+
         form = EditModelForm(request.POST, instance=draft)
         if form.is_valid():
             if form.changed_data:
@@ -811,8 +802,7 @@ def edit(request, id):
                 
                 messages.success(request, 'Draft modified successfully!')
             
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
+            return redirect('drafts_view', id=id)
         else:
             #assert False, form.errors
             pass
@@ -840,14 +830,12 @@ def email(request, id):
         if button_text == 'Cancel':
             # clear session data
             request.session.clear()
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-        
+            return redirect('drafts_view', id=id)
+
         form = EmailForm(request.POST)
         if form.is_valid():
             request.session['email'] = form.data
-            url = reverse('drafts_confirm', kwargs={'id':id})
-            return HttpResponseRedirect(url)
+            return redirect('drafts_confirm', id=id)
     else:
         # the resurrect email body references the last revision number, handle
         # exception if no last revision found
@@ -864,9 +852,8 @@ def email(request, id):
         # for "revision" action skip email page and go directly to confirm
         if request.session['action'] == 'revision':
             request.session['email'] = form.initial
-            url = reverse('drafts_confirm', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-        
+            return redirect('drafts_confirm', id=id)
+
     return render_to_response('drafts/email.html', {
         'form': form,
         'draft': draft},
@@ -887,15 +874,13 @@ def extend(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-       
+            return redirect('drafts_view', id=id)
+
         form = ExtendForm(request.POST)
         if form.is_valid():
             request.session['data'] = form.cleaned_data
             request.session['action'] = 'extend'
-            url = reverse('drafts_email', kwargs={'id':id})
-            return HttpResponseRedirect(url)
+            return redirect('drafts_email', id=id)
 
     else:
         form = ExtendForm(initial={'revision_date':datetime.date.today().isoformat()})
@@ -924,16 +909,14 @@ def makerfc(request, id):
     # raise error if draft intended standard is empty
     if not draft.intended_std_level:
         messages.error(request, 'ERROR: intended RFC status is not set')
-        url = reverse('drafts_view', kwargs={'id':id})
-        return HttpResponseRedirect(url)
-            
+        return redirect('drafts_view', id=id)
+
     ObsFormset = formset_factory(RfcObsoletesForm, extra=15, max_num=15)
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-       
+            return redirect('drafts_view', id=id)
+
         form = RfcModelForm(request.POST, instance=draft)
         obs_formset = ObsFormset(request.POST, prefix='obs')
         if form.is_valid() and obs_formset.is_valid():
@@ -967,8 +950,7 @@ def makerfc(request, id):
                                                        relationship=DocRelationshipName.objects.get(slug=relation))
             
             messages.success(request, 'RFC created successfully!')
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
+            return redirect('drafts_view', id=id)
         else:
             # assert False, (form.errors, obs_formset.errors)
             pass      
@@ -1010,15 +992,13 @@ def replace(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-       
+            return redirect('drafts_view', id=id)
+
         form = ReplaceForm(request.POST, draft=draft)
         if form.is_valid():
             request.session['data'] = form.cleaned_data
             request.session['action'] = 'replace'
-            url = reverse('drafts_email', kwargs={'id':id})
-            return HttpResponseRedirect(url)
+            return redirect('drafts_email', id=id)
 
     else:
         form = ReplaceForm(draft=draft)
@@ -1037,8 +1017,7 @@ def resurrect(request, id):
     '''
     
     request.session['action'] = 'resurrect'
-    url = reverse('drafts_email', kwargs={'id':id})
-    return HttpResponseRedirect(url)
+    return redirect('drafts_email', id=id)
 
 def revision(request, id):
     '''
@@ -1051,9 +1030,8 @@ def revision(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-        
+            return redirect('drafts_view', id=id)
+
         upload_form = UploadForm(request.POST, request.FILES, draft=draft)
         form = RevisionModelForm(request.POST, instance=draft)
         if form.is_valid() and upload_form.is_valid():
@@ -1067,8 +1045,7 @@ def revision(request, id):
             request.session['revision'] = revision
             request.session['file_type'] = file_type_list
             
-            url = reverse('drafts_email', kwargs={'id':id})
-            return HttpResponseRedirect(url)
+            return redirect('drafts_email', id=id)
 
     else:
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
@@ -1100,9 +1077,8 @@ def search(request):
     if request.method == 'POST':
         form = SearchForm(request.POST)
         if request.POST['submit'] == 'Add':
-            url = reverse('sec.drafts.views.add')
-            return HttpResponseRedirect(url)
-        
+            return redirect('sec.drafts.views.add')
+
         if form.is_valid():
             kwargs = {} 
             intended_std_level = form.cleaned_data['intended_std_level']
@@ -1142,8 +1118,7 @@ def search(request):
             
             # if there's just one result go straight to view
             if len(results) == 1:
-                url = reverse('drafts_view', kwargs={'id':results[0].name})
-                return HttpResponseRedirect(url)
+                return redirect('drafts_view', id=results[0].name)
     else:
         active_state = State.objects.get(type='draft',slug='active')
         form = SearchForm(initial={'state':active_state.pk})
@@ -1167,8 +1142,7 @@ def update(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
+            return redirect('drafts_view', id=id)
 
         upload_form = UploadForm(request.POST, request.FILES, draft=draft)
         form = RevisionModelForm(request.POST, instance=draft)
@@ -1183,8 +1157,7 @@ def update(request, id):
             request.session['data']['filename'] = filename
             request.session['file_type'] = file_type_list
        
-            url = reverse('drafts_email', kwargs={'id':id})
-            return HttpResponseRedirect(url)
+            return redirect('drafts_email', id=id)
 
     else:
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
@@ -1269,18 +1242,16 @@ def withdraw(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('drafts_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-       
+            return redirect('drafts_view', id=id)
+
         form = WithdrawForm(request.POST)
         if form.is_valid():
             # save state in session and proceed to email page
             request.session['data'] = form.data
             request.session['action'] = 'withdraw'
             
-            url = reverse('drafts_email', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-            
+            return redirect('drafts_email', id=id)
+
     else:
         form = WithdrawForm()
 

@@ -4,7 +4,7 @@ from django.core.urlresolvers import reverse
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory, modelformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
 from ietf.group.models import Group, GroupEvent, GroupURL, Role
@@ -86,8 +86,7 @@ def add(request):
                     group_url.save()
 
             messages.success(request, 'The Area was created successfully!')
-            url = reverse('areas')
-            return HttpResponseRedirect(url)
+            return redirect('areas')
     else:
         # display initial forms
         area_form = AddAreaModelForm()
@@ -148,11 +147,9 @@ def edit(request, name):
                                               time=new_area.time)
                 
                 messages.success(request, 'The Area entry was changed successfully')
-                url = reverse('areas_view', kwargs={'name':name})
-                return HttpResponseRedirect(url)
+                return redirect('areas_view', name=name)
         else:
-            url = reverse('areas_view', kwargs={'name':name})
-            return HttpResponseRedirect(url)
+            return redirect('areas_view', name=name)
     else:
         form = AreaForm(instance=area)
         awp_formset = AWPFormSet(instance=area)
@@ -223,8 +220,7 @@ def people(request, name):
                 Role.objects.create(name_id='pre-ad',group=area,email=email,person=person)
                 
                 messages.success(request, 'New Area Director added successfully!')
-                url = reverse('areas_view', kwargs={'name':name})
-                return HttpResponseRedirect(url)
+                return redirect('areas_view', name=name)
     else:
         form = AreaDirectorForm()
 
@@ -290,8 +286,7 @@ def modify(request, name):
             
             messages.success(request, 'Voting rights have been granted successfully!')
 
-        url = reverse('areas_view', kwargs={'name':name})
-        return HttpResponseRedirect(url)
+        return redirect('areas_view', name=name)
 
 def view(request, name):
     """ 

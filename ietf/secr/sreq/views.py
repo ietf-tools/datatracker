@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
 from ietf.secr.utils.mail import get_ad_email_list, get_chair_email_list, get_cc_list
@@ -184,13 +184,11 @@ def approve(request, acronym):
         session.save()
 
         messages.success(request, 'Third session approved')
-        url = reverse('sessions_view', kwargs={'acronym':acronym})
-        return HttpResponseRedirect(url)
+        return redirect('sessions_view', acronym=acronym)
     else:
         # if an unauthorized user gets here return error
         messages.error(request, 'Not authorized to approve the third session')
-        url = reverse('sessions_view', kwargs={'acronym':acronym})
-        return HttpResponseRedirect(url)
+        return redirect('sessions_view', acronym=acronym)
 
 @check_permissions
 def cancel(request, acronym):
@@ -230,8 +228,7 @@ def cancel(request, acronym):
                'meeting':meeting}, cc=cc_list)
 
     messages.success(request, 'The %s Session Request has been canceled' % group.acronym)
-    url = reverse('sessions')
-    return HttpResponseRedirect(url)
+    return redirect('sessions')
 
 def confirm(request, acronym):
     '''
@@ -253,8 +250,7 @@ def confirm(request, acronym):
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             messages.success(request, 'Session Request has been canceled')
-            url = reverse('sessions')
-            return HttpResponseRedirect(url)
+            return redirect('sessions')
 
         # delete any existing session records with status = canceled or notmeet
         Session.objects.filter(group=group,meeting=meeting,status__in=('canceled','notmeet')).delete()
@@ -294,8 +290,7 @@ def confirm(request, acronym):
 
         status_text = 'IETF Agenda to be scheduled'
         messages.success(request, 'Your request has been sent to %s' % status_text)
-        url = reverse('sessions')
-        return HttpResponseRedirect(url)
+        return redirect('sessions')
 
     # GET logic
     session_conflicts = session_conflicts_as_string(group, meeting)
@@ -323,8 +318,7 @@ def edit(request, acronym):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('sessions_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('sessions_view', acronym=acronym)
 
         form = SessionForm(request.POST,initial=initial)
         if form.is_valid():
@@ -404,8 +398,7 @@ def edit(request, acronym):
                 send_notification(group,meeting,login,form.cleaned_data,'update')
 
             messages.success(request, 'Session Request updated')
-            url = reverse('sessions_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('sessions_view', acronym=acronym)
 
     else:
         form = SessionForm(initial=initial)
@@ -441,11 +434,9 @@ def main(request):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Group will not meet':
-            url = reverse('sessions_no_session', kwargs={'acronym':request.POST['group']})
-            return HttpResponseRedirect(url)
+            return redirect('sessions_no_session', acronym=request.POST['group'])
         else:
-            redirect_url = reverse('sessions_new', kwargs={'acronym':request.POST['group']})
-            return HttpResponseRedirect(redirect_url)
+            return redirect('sessions_new', acronym=request.POST['group'])
 
     meeting = get_meeting()
     scheduled_groups,unscheduled_groups = groups_by_session(request.user, meeting)
@@ -492,22 +483,19 @@ def new(request, acronym):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('sessions')
-            return HttpResponseRedirect(url)
+            return redirect('sessions')
 
         form = SessionForm(request.POST)
         if form.is_valid():
             # check if request already exists for this group
             if Session.objects.filter(group=group,meeting=meeting).exclude(status__in=('deleted','notmeet')):
                 messages.warning(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
-                url = reverse('sessions')
-                return HttpResponseRedirect(url)
+                return redirect('sessions')
 
             # save in user session
             request.session['session_form'] = form.data
 
-            url = reverse('sessions_confirm',kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('sessions_confirm',acronym=acronym)
 
     # the "previous" querystring causes the form to be returned
     # pre-populated with data from last meeeting's session request
@@ -516,8 +504,7 @@ def new(request, acronym):
         previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).exclude(status__in=('notmeet','deleted')).order_by('id')
         if not previous_sessions:
             messages.warning(request, 'This group did not meet at %s' % previous_meeting)
-            redirect_url = reverse('sessions_new', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(redirect_url)
+            return redirect('sessions_new', acronym=acronym)
 
         initial = get_initial_session(previous_sessions)
         form = SessionForm(initial=initial)
@@ -551,8 +538,7 @@ def no_session(request, acronym):
     # skip if state is already notmeet
     if Session.objects.filter(group=group,meeting=meeting,status='notmeet'):
         messages.info(request, 'The group %s is already marked as not meeting' % group.acronym)
-        url = reverse('sessions')
-        return HttpResponseRedirect(url)
+        return redirect('sessions')
 
     session = Session(group=group,
                       meeting=meeting,
@@ -579,8 +565,7 @@ def no_session(request, acronym):
 
     # redirect
     messages.success(request, 'A message was sent to notify not having a session at IETF %s' % meeting.number)
-    url = reverse('sessions')
-    return HttpResponseRedirect(url)
+    return redirect('sessions')
 
 @sec_only
 def tool_status(request):
@@ -592,8 +577,7 @@ def tool_status(request):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Done':
-            url = reverse('sessions')
-            return HttpResponseRedirect(url)
+            return redirect('sessions')
 
         form = ToolStatusForm(request.POST)
 
@@ -604,15 +588,13 @@ def tool_status(request):
                 f.close()
 
                 messages.success(request, 'Session Request Tool is now Locked')
-                url = reverse('sessions')
-                return HttpResponseRedirect(url)
+                return redirect('sessions')
 
         elif button_text == 'Unlock':
             os.remove(LOCKFILE)
 
             messages.success(request, 'Session Request Tool is now Unlocked')
-            url = reverse('sessions')
-            return HttpResponseRedirect(url)
+            return redirect('sessions')
 
     else:
         if is_locked:
@@ -638,8 +620,7 @@ def view(request, acronym):
 
     # if there are no session requests yet, redirect to new session request page
     if not sessions:
-        redirect_url = reverse('sessions_new', kwargs={'acronym':acronym})
-        return HttpResponseRedirect(redirect_url)
+        return redirect('sessions_new', acronym=acronym)
 
     # TODO simulate activity records
     activities = [{'act_date':sessions[0].requested.strftime('%b %d, %Y'),

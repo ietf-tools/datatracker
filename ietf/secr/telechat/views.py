@@ -4,7 +4,7 @@ from django.db.models import Count
 from django.forms.models import inlineformset_factory, modelformset_factory
 from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
 from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
@@ -142,8 +142,7 @@ def doc(request, date):
     agenda = agenda_data(date=date)
     doc = get_first_doc(agenda)
     if doc:
-        url = reverse('telechat_doc_detail', kwargs={'date':date,'name':doc.name})
-        return HttpResponseRedirect(url)
+        return redirect('telechat_doc_detail', date=date, name=doc.name)
     else:
         return render_to_response('telechat/doc.html', {
         'agenda': agenda,
@@ -231,8 +230,7 @@ def doc_detail(request, date, name):
 
             if has_changed:
                 messages.success(request,'Ballot position changed.')
-            url = reverse('telechat_doc_detail', kwargs={'date':date,'name':name})
-            return HttpResponseRedirect(url)
+            return redirect('telechat_doc_detail', date=date, name=name)
 
         # logic from doc/views_draft.py change_state
         elif button_text == 'update_state':
@@ -274,8 +272,7 @@ def doc_detail(request, date, name):
                         request_last_call(request, doc)
 
                 messages.success(request,'Document state updated')
-                url = reverse('telechat_doc_detail', kwargs={'date':date,'name':name})
-                return HttpResponseRedirect(url)
+                return redirect('telechat_doc_detail', date=date, name=name)
     else:
         formset = BallotFormset(initial=initial_ballot)
         state_form = ChangeStateForm(initial=initial_state)
@@ -321,17 +318,15 @@ def doc_navigate(request, date, name, nav):
     elif nav == 'previous' and index != 0:
         target = docs[index - 1].name
 
-    url = reverse('telechat_doc_detail', kwargs={'date':date,'name':target})
-    return HttpResponseRedirect(url)
+    return redirect('telechat_doc_detail', date=date, name=target)
 
 def main(request):
     '''
     The is the main view where the user selects an existing telechat or creates a new one.
     '''
     if request.method == 'POST':
-            date=request.POST['date']
-            url = reverse('telechat_doc', kwargs={'date':date})
-            return HttpResponseRedirect(url)
+        date = request.POST['date']
+        return redirect('telechat_doc', date=date)
 
     choices = [ (d.date.strftime('%Y-%m-%d'),
                  d.date.strftime('%Y-%m-%d')) for d in TelechatDate.objects.all() ]
@@ -395,8 +390,7 @@ def new(request):
         Telechat.objects.create(telechat_date=date)
 
         messages.success(request,'New Telechat Agenda created')
-        url = reverse('telechat_doc', kwargs={'date':date,'name':name})
-        return HttpResponseRedirect(url)
+        return redirect('telechat_doc', date=date, name=name)
 
 def roll_call(request, date):
 

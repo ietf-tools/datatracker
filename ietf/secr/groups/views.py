@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 
@@ -99,8 +99,7 @@ def add(request):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('groups')
-            return HttpResponseRedirect(url)
+            return redirect('groups')
 
         form = GroupModelForm(request.POST)
         awp_formset = AWPFormSet(request.POST, prefix='awp')
@@ -121,8 +120,7 @@ def add(request):
                                                  desc='Started group')
 
             messages.success(request, 'The Group was created successfully!')
-            url = reverse('groups_view', kwargs={'acronym':group.acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_view', acronym=group.acronym)
 
     else:
         form = GroupModelForm(initial={'state':'active','type':'wg'})
@@ -206,8 +204,7 @@ def delete_role(request, acronym, id):
     role.delete()
 
     messages.success(request, 'The entry was deleted successfully')
-    url = reverse('groups_people', kwargs={'acronym':acronym})
-    return HttpResponseRedirect(url)
+    return redirect('groups_people', acronym=acronym)
 
 def edit(request, acronym):
     """
@@ -229,8 +226,7 @@ def edit(request, acronym):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('groups_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_view', acronym=acronym)
 
         form = GroupModelForm(request.POST, instance=group)
         awp_formset = AWPFormSet(request.POST, instance=group)
@@ -271,8 +267,7 @@ def edit(request, acronym):
 
                 messages.success(request, 'The Group was changed successfully')
 
-            url = reverse('groups_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_view', acronym=acronym)
 
     else:
         form = GroupModelForm(instance=group)
@@ -307,15 +302,13 @@ def edit_gm(request, acronym):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('groups_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_view', acronym=acronym)
 
         formset = GMFormset(request.POST, instance=group, prefix='goalmilestone')
         if formset.is_valid():
             formset.save()
             messages.success(request, 'The Goals Milestones were changed successfully')
-            url = reverse('groups_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_view', acronym=acronym)
     else:
         formset = GMFormset(instance=group, prefix='goalmilestone')
 
@@ -358,8 +351,7 @@ def people(request, acronym):
                                 group=group)
 
             messages.success(request, 'New %s added successfully!' % name)
-            url = reverse('groups_people', kwargs={'acronym':group.acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_people', acronym=group.acronym)
     else:
         form = RoleForm(initial={'name':'chair'},group=group)
 
@@ -386,8 +378,7 @@ def search(request):
     if request.method == 'POST':
         form = SearchForm(request.POST)
         if request.POST['submit'] == 'Add':
-            url = reverse('groups_add')
-            return HttpResponseRedirect(url)
+            return redirect('groups_add')
 
         if form.is_valid():
             kwargs = {}
@@ -427,8 +418,7 @@ def search(request):
 
             # if there's just one result go straight to view
             if len(results) == 1:
-                url = reverse('groups_view', kwargs={'acronym':results[0].acronym})
-                return HttpResponseRedirect(url)
+                return redirect('groups_view', acronym=results[0].acronym)
 
     # process GET argument to support link from area app
     elif 'primary_area' in request.GET:
