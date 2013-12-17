@@ -10,7 +10,7 @@ table.ietf-materials td { padding:0.5em 0; }
 {% block content %}
 <h1>IETF {{ meeting_num }} Meeting Materials</h1>
 
-{% if sub_began %}
+{% if submission_started %}
 <p>Submission cutoff date: {{ cut_off_date|date:"F j, Y" }}<br/>
 Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 {% endif %}

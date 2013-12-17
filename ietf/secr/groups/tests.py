@@ -9,7 +9,7 @@ SECR_USER='secretary'
 
 class GroupsTest(TestCase):
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names','persons','groupgroup',]
+    perma_fixtures = ['persons','groupgroup',]
     """
     perma_fixtures = [ 'acronym.json',
                  'area.json',

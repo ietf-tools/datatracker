@@ -1,0 +1,19 @@
+{% autoescape off %}
+Hi,
+
+The IETF datatracker draft submission service has received your draft
+{{ submission.name }}-{{ submission.rev }}, and requires a
+confirmation step in order to be able to complete the posting of
+the draft.
+
+Please follow this link to the page where you can confirm the posting:
+
+{{ confirm_url }}
+
+
+Best regards,
+
+	The IETF Secretariat
+	through the draft submission service
+
+{% endautoescape %}

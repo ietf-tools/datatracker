@@ -7,7 +7,7 @@ from django.template.defaultfilters import linebreaksbr, force_escape
 
 from ietf.utils.pipe import pipe
 from ietf.utils.log import log
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 from ietf.doc.templatetags.ietf_filters import wrap_text
 
 from ietf.person.models import Person
@@ -25,7 +25,7 @@ def is_chair(user, year):
     nomcom = get_nomcom_by_year(year=year)
     if has_role(user, "Secretariat"):
         return True
-    return nomcom.group.is_chair(user)
+    return nomcom.group.has_role(user, "chair")
 
 
 @register.filter

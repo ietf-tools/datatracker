@@ -22,16 +22,16 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
 <p>You don't have any submissions to approve.</p>
 {% else %}
 <table cellspacing="0" class="approvals">
-<tr>
-  <th>Submission</th>
-  <th>Submitted</th>
-</tr>
-{% for d in approvals %}
-<tr>
-  <td><a href="{% url draft_status d.pk %}">{{ d.filename }}-{{ d.revision }}</a></td>
-  <td>{{ d.submission_date }}</td>
-</tr>
-{% endfor %}
+  <tr>
+    <th>Submission</th>
+    <th>Submitted</th>
+  </tr>
+  {% for s in approvals %}
+  <tr>
+    <td><a href="{% url submit_submission_status_by_hash submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
+    <td>{{ s.submission_date }}</td>
+  </tr>
+  {% endfor %}
 </table>
 {% endif %}
 
@@ -46,19 +46,19 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
 {% else %}
 
 <table cellspacing="0" class="preapprovals">
-<tr>
-  <th>Draft name</th>
-  <th>Pre-approved</th>
-  <th>By</th>
-</tr>
-{% for p in preapprovals %}
-<tr>
-  <td>{{ p.name }}</td>
-  <td>{{ p.time|date:"Y-m-d" }}</td>
-  <td>{{ p.by }}</td>
-  <td><a class="cancel" href="{% url submit_cancel_preapproval preapproval_id=p.id %}">cancel pre-approval</a></td>
-</tr>
-{% endfor %}
+  <tr>
+    <th>Draft name</th>
+    <th>Pre-approved</th>
+    <th>By</th>
+  </tr>
+  {% for p in preapprovals %}
+  <tr>
+    <td>{{ p.name }}</td>
+    <td>{{ p.time|date:"Y-m-d" }}</td>
+    <td>{{ p.by }}</td>
+    <td><a class="cancel" href="{% url submit_cancel_preapproval preapproval_id=p.id %}">cancel pre-approval</a></td>
+  </tr>
+  {% endfor %}
 </table>
 {% endif %}
 
@@ -69,18 +69,19 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
 {% else %}
 
 <table cellspacing="0" class="recently-approved">
-<tr>
-  <th>Draft</th>
-  <th>Submitted</th>
-</tr>
-{% for d in recently_approved %}
-<tr>
-  <td><a href="{% url doc_view d.filename %}">{{ d.filename }}</a></td>
-  <td>{{ d.submission_date }}</td>
-</tr>
-{% endfor %}
+   <tr>
+     <th>Draft</th>
+     <th>Submitted</th>
+   </tr>
+   {% for d in recently_approved %}
+   <tr>
+     <td><a href="{% url doc_view d.name %}">{{ d.name }}</a></td>
+     <td>{{ d.submission_date }}</td>
+   </tr>
+   {% endfor %}
 </table>
 {% endif %}
+
 {% else %}
 <h2>Submission approvals</h2>
 <p>

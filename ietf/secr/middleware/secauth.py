@@ -2,7 +2,7 @@ from django.conf import settings
 from django.http import HttpResponseForbidden
 from django.shortcuts import render_to_response
 
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
             
 import re
 

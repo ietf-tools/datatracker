@@ -15,10 +15,7 @@ from ietf.sync import iana, rfceditor
 
 from pyquery import PyQuery
 
-class IANASyncTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class IANASyncTests(TestCase):
     def test_protocol_page_sync(self):
         draft = make_test_data()
         DocAlias.objects.create(name="rfc1234", document=draft)
@@ -177,10 +174,7 @@ ICANN
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="iana_review").count(), 1)
 
 
-class RFCSyncTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class RFCSyncTests(TestCase):
     def test_rfc_index(self):
         doc = make_test_data()
         doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
@@ -369,10 +363,7 @@ class RFCSyncTestCase(TestCase):
         self.assertEquals(len(changed), 0)
         self.assertEquals(len(warnings), 0)
 
-class DiscrepanciesTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class DiscrepanciesTests(TestCase):
     def test_discrepancies(self):
         make_test_data()
 
@@ -411,10 +402,7 @@ class DiscrepanciesTestCase(TestCase):
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
         self.assertTrue(doc.name in r.content)
 
-class RFCEditorUndoTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class RFCEditorUndoTests(TestCase):
     def test_rfceditor_undo(self):
         draft = make_test_data()
 

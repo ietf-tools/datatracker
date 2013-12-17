@@ -1,0 +1,31 @@
+{% autoescape off %}
+Hi,
+
+Manual posting has been requested for the following Internet-Draft:
+
+I-D Submission Tool URL: 
+  {{ url }}
+
+  File name       : {{ submission.name }}
+  Revision        : {{ submission.rev }}
+  Submission date : {{ submission.submission_date }}
+  Group           : {{ submission.group|default:"Individual Submission" }} {% if errors.group %}*Please note: {{ errors.group }}*{% endif %}
+
+  Title           : {{ submission.title }}
+  Document date   : {{ submission.document_date }}
+  Pages           : {{ submission.pages }}
+  File size       : {{ submission.file_size|filesizeformat }}
+
+  Submitter       : {{ submission.submitter }}
+
+  Abstract        : {{ submission.abstract }}
+
+
+  Authors:
+{% for author in submission.authors_parsed %}    {{ author.name }}{% if author.email %} <{{ author.email }}>{% endif%}
+{% endfor %}
+
+  Comment to the secretariat:
+
+{{ submission.note }}
+{% endautoescape %}

@@ -58,25 +58,14 @@ class Group(GroupInfo):
         e = model.objects.filter(group=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
 
-    def is_chair(self, user):
-        chair = self.get_chair()
-        if chair:
-            return self.get_chair().person.user == user
-        else:
-            return False
-
-    def is_member(self, user):
-        members = self.get_members()
-        users = [member.person.user for member in members]
-        return user in users
+    def has_role(self, user, role_names):
+        if isinstance(role_names, str) or isinstance(role_names, unicode):
+            role_names = [role_names]
+        return user.is_authenticated() and self.role_set.filter(name__in=role_names, person__user=user).exists()
 
     def get_chair(self):
         chair = self.role_set.filter(name__slug='chair')[:1]
         return chair and chair[0] or None
-
-    def get_members(self):
-        members = self.role_set.filter(name__slug__in=["chair", "member", "advisor", "liaison"])
-        return members
 
     # these are copied to Group because it is still proxied.
     @property

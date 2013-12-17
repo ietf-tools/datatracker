@@ -8,7 +8,6 @@ from django.shortcuts import render_to_response
 from ietf.group.models import Group, Role
 from ietf.group.utils import get_charter_text
 from ietf.meeting.models import Session, TimeSlot, Meeting
-from ietf.meeting.views import agenda_info
 from ietf.doc.models import Document, RelatedDocument, DocEvent
 from itertools import chain
 from ietf.secr.proceedings.models import Registration
@@ -374,7 +373,6 @@ def gen_acknowledgement(context):
 def gen_agenda(context):
     meeting = context['meeting']
 
-    #timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(meeting.number)
     timeslots = TimeSlot.objects.filter(meeting=meeting)
 
     # sort by area:group then time

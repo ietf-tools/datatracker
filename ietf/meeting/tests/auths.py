@@ -1,9 +1,7 @@
-import sys
-from django.test              import Client
 from ietf.utils import TestCase
 #from ietf.person.models import Person
 from django.contrib.auth.models import User
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 
 # from http://djangosnippets.org/snippets/850/
 
@@ -20,7 +18,7 @@ auth_ferrel = {'REMOTE_USER':'stephen.farrell@cs.tcd.ie'}
 
 class AuthDataTestCase(TestCase):
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
+    perma_fixtures = [
                  'meeting83.json',
                  'constraint83.json',
                  'workinggroups.json',

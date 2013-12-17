@@ -8,24 +8,22 @@ class IprContactAdmin(admin.ModelAdmin):
 admin.site.register(IprContact, IprContactAdmin)
 
 class IprDetailAdmin(admin.ModelAdmin):
-    list_display = ['title', 'submitted_date', 'docs', ]
-    search_fields = ['title', 'legal_name', ]
-admin.site.register(IprDetail, IprDetailAdmin)
+    list_display = ['title', 'submitted_date', 'docs', 'status']
+    search_fields = ['title', 'legal_name']
 
-class IprLicensingAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(IprLicensing, IprLicensingAdmin)
+    def docs(self, ipr):
+        return u", ".join(a.formatted_name() for a in IprDocAlias.objects.filter(ipr=ipr).order_by("id").select_related("doc_alias"))
+
+admin.site.register(IprDetail, IprDetailAdmin)
 
 class IprNotificationAdmin(admin.ModelAdmin):
     pass
 admin.site.register(IprNotification, IprNotificationAdmin)
 
-class IprSelecttypeAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(IprSelecttype, IprSelecttypeAdmin)
-
 class IprUpdateAdmin(admin.ModelAdmin):
     pass
 admin.site.register(IprUpdate, IprUpdateAdmin)
 
-admin.site.register(IprDocAlias)
+class IprDocAliasAdmin(admin.ModelAdmin):
+    raw_id_fields = ["ipr", "doc_alias"]
+admin.site.register(IprDocAlias, IprDocAliasAdmin)

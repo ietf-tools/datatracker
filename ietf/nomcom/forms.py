@@ -11,7 +11,7 @@ from django.template.context import RequestContext
 
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.utils.mail import send_mail
-from ietf.ietfauth.decorators import role_required
+from ietf.ietfauth.utils import role_required
 from ietf.utils import fields as custom_fields
 from ietf.group.models import Group, Role
 from ietf.name.models import RoleName, FeedbackType, NomineePositionState

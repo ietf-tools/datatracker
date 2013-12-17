@@ -33,7 +33,7 @@
 import unittest, os, re
 from django.test.client import Client
 from django.conf import settings
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, split_url, read_testurls
+from ietf.utils.test_utils import split_url, read_testurls, TestCase
 import ietf.urls
 import ietf.utils.test_runner as test_runner
 
@@ -60,6 +60,10 @@ REDIRECT_TESTS = {
         '/drafts/10845/related/',
     '/public/idindex.cgi?command=id_detail&filename=draft-l3vpn-as4octet-ext-community':
         '/drafts/draft-l3vpn-as4octet-ext-community/',
+    # non-ASCII parameter
+    '/public/pidtracker.cgi?command=view_id&dTag=11171%D182&rfc_flag=0':
+        '/idtracker/',
+    '/idtracker/': '/doc/',
 
     # ipr
 
@@ -86,118 +90,20 @@ REDIRECT_TESTS = {
 
     }
 
-class RedirectsTestCase(unittest.TestCase, RealDatabaseTest):
-    def setUp(self):
-        self.setUpRealDatabase()
-    def tearDown(self):
-        self.tearDownRealDatabase()
-
-    def testRedirects(self):
-        print "     Testing redirects"
-
-        c = Client()
+class RedirectsTests(TestCase):
+    def test_redirects(self):
         for src, dst in REDIRECT_TESTS.items():
             baseurl, args = split_url(src)
-            try:
-                response = c.get(baseurl, args)
-                self.assert_(str(response.status_code).startswith("3"))
-                location = response['Location']
-                if location.startswith("http://testserver/"):
-                    location = location[17:]
-                self.assertEqual(location, dst)
-                print "OK   "+src
-            except:
-                print "Fail "+src
-                raise
+            response = self.client.get(baseurl, args)
+            self.assertTrue(str(response.status_code).startswith("3"))
+            location = response['Location']
+            if location.startswith("http://testserver/"):
+                location = location[17:]
+            self.assertEqual(location, dst, (src, dst, location))
 
-def get_patterns(module):
-    all = []
-    try:
-        patterns = module.urlpatterns
-    except AttributeError:
-        patterns = []
-    for item in patterns:
-        try:
-            subpatterns = get_patterns(item.urlconf_module)
-        except:
-            subpatterns = [""]
-        for sub in subpatterns:
-            if not sub:
-                all.append(item.regex.pattern)
-            elif sub.startswith("^"):
-                all.append(item.regex.pattern + sub[1:])
-            else:
-                all.append(item.regex.pattern + ".*" + sub)
-    return all
-
-class UrlCoverageTestCase(unittest.TestCase):
-    def testUrlCoverage(self):
-        print "     Testing testurl.list coverage"
-        testtuples = []
-        for root, dirs, files in os.walk(settings.BASE_DIR):
-            if "testurl.list" in files:
-                testtuples += read_testurls(root+"/testurl.list")
-
-        patterns = get_patterns(ietf.urls)
-        covered = []
-        for codes, testurl, goodurl in testtuples:
-            for pattern in patterns:
-                if re.match(pattern, testurl[1:]):
-                    covered.append(pattern)
-
-        if not set(patterns) == set(covered):
-            missing = list(set(patterns) - set(covered))
-            print "The following URLs are not tested by any testurl.list"
-            for pattern in missing:
-                if not pattern[1:].split("/")[0] in [ "admin", "accounts" ]:
-                    print "     NoTest", pattern
-            print ""
-        else:
-            print "All URLs are included in some testurl.list"
-
-class MainUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
-
-def get_templates():
-    templates = set()
-    # Shoud we teach this to use TEMPLATE_DIRS?
-    templatepath = os.path.join(settings.BASE_DIR,"templates")
-    for root, dirs, files in os.walk(templatepath):
-        if ".svn" in dirs:
-            dirs.remove(".svn")
-        relative_path = root[len(templatepath)+1:]
-        for file in files:
-            if file.endswith("~") or file.startswith("#"):
-                continue
-            if relative_path == "":
-                templates.add(file)
-            else:
-                templates.add(os.path.join(relative_path, file))
-    return templates
-
-class TemplateCoverageTestCase(unittest.TestCase):
-    def testTemplateCoverage(self):
-        if not test_runner.loaded_templates:
-            print "     Skipping template coverage test"
-            return
-
-        print "     Testing template coverage"
-        all_templates = get_templates()
-
-        #notexist = list(test_runner.loaded_templates - all_templates)
-        #if notexist:
-        #    notexist.sort()
-        #    print "The following templates do not exist"
-        #    for x in notexist:
-        #        print "NotExist", x
-            
-        notloaded = list(all_templates - test_runner.loaded_templates)
-        if notloaded:
-            notloaded.sort()
-            print "The following templates were never loaded during test"
-            for x in notloaded:
-                print "     NotLoaded", x
-        else:
-            print "     All templates were loaded during test"
-        
+class MainUrlTests(TestCase):
+    def test_urls(self):
+        self.assertEqual(self.client.get("/_doesnotexist/").status_code, 404)
+        self.assertEqual(self.client.get("/sitemap.xml").status_code, 200)
+         # Google webmaster tool verification page
+        self.assertEqual(self.client.get("/googlea30ad1dacffb5e5b.html").status_code, 200)

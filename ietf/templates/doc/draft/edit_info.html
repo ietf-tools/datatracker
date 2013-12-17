@@ -44,7 +44,7 @@ form.edit-info .actions {
         {{ form.returning_item }} {{ form.returning_item.label_tag }} {{ form.returning_item.errors }}
       {% endifequal %}
       {% ifequal field.name "ad" %}
-      {% if user|in_group:"Area_Director" %}
+      {% if user|has_role:"Area Director" %}
       <label><input type="checkbox" name="ad" value="{{ login.pk }}" /> Assign to me</label>
       {% endif %}
       {% endifequal %}      

@@ -21,8 +21,10 @@ table.ipr { margin-top: 1em; }
 {% endblock %}
 {% block content %}
 
+  {% load ietf_filters %}
+
 {% if section_list.title %}
-<h1>{{ ipr.title|escape }}</h1>
+<h1>{{ ipr.title }}</h1>
 {% endif %}
 
 
@@ -59,15 +61,15 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 
 	 {% for item in ipr.updates.all %}
 	     <p>This IPR disclosure updates IPR disclosure ID #{{ item.updated.ipr_id }},
-	     {% ifequal item.updated.status 0 %}
-		"<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title|escape }}</a>".
+             {% if item.updated.status == 0 %}
+                "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
 	     {% else %}
-		{% ifequal item.updated.status 1 %}
-		   "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title|escape }}</a>".
+                {% if item.updated.status == 1 %}
+                   "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
 		{% else %}
-		   "{{ item.updated.title|escape }}", which was removed at the request of the submitter.
-		{% endifequal %}
-	     {% endifequal %}
+                   "{{ item.updated.title }}", which was removed at the request of the submitter.
+                {% endif %}
+             {% endif %}
 	     </p>
 	 {% endfor %}
 
@@ -75,11 +77,11 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	 {% if item.processed == 1 and item.ipr.status != 2 %}
 	     <p>
 	     This IPR disclosure has been updated by IPR disclosure ID #{{ item.ipr.ipr_id }},
-	     {% ifequal item.status_to_be 1 %}
-		"<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title|escape }}</a>".
+             {% if item.status_to_be == 1 %}
+                "<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>".
 	     {% else %}
-		"{{ item.ipr.title|escape }}", which was removed at the request of the submitter.
-	     {% endifequal %}
+                "{{ item.ipr.title }}", which was removed at the request of the submitter.
+             {% endif %}
 	     </p>
 	 {% endif %}
 	 {% endfor %}
@@ -103,7 +105,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	    </th>
 	 </tr>
 	 <tr class="{% cycle row_parity %}">
-	    <td class="iprlabel">Legal Name:</td>	<td class="iprdata">{{ ipr.legal_name|escape }}</td>
+            <td class="iprlabel">Legal Name:</td>	<td class="iprdata">{{ ipr.legal_name }}</td>
 	 </tr>
       </table>
    {% endif %}
@@ -115,14 +117,14 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	    Patent Holder's Contact for License Application
 	    </th>
 	 </tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Name:</td>		<td class="iprdata">{{ ipr.holder_contact.name|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Title:</td>		<td class="iprdata">{{ ipr.holder_contact.title|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Department:</td>	<td class="iprdata">{{ ipr.holder_contact.department|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Address1:</td>	<td class="iprdata">{{ ipr.holder_contact.address1|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Address2:</td>	<td class="iprdata">{{ ipr.holder_contact.address2|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Telephone:</td>	<td class="iprdata">{{ ipr.holder_contact.telephone|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Fax:</td>		<td class="iprdata">{{ ipr.holder_contact.fax|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Email:</td>		<td class="iprdata">{{ ipr.holder_contact.email|escape }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Name:</td>		<td class="iprdata">{{ ipr.holder_contact.name }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Title:</td>		<td class="iprdata">{{ ipr.holder_contact.title }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Department:</td>	<td class="iprdata">{{ ipr.holder_contact.department }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Address1:</td>	<td class="iprdata">{{ ipr.holder_contact.address1 }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Address2:</td>	<td class="iprdata">{{ ipr.holder_contact.address2 }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Telephone:</td>	<td class="iprdata">{{ ipr.holder_contact.telephone }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Fax:</td>		<td class="iprdata">{{ ipr.holder_contact.fax }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Email:</td>		<td class="iprdata">{{ ipr.holder_contact.email }}</td></tr>
       </table>
    {% endif %}
 
@@ -136,14 +138,14 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	    </th>
 	 </tr>
 	 {% if ipr.ietf_contact.name %}
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Name:</td>		<td class="iprdata">{{ ipr.ietf_contact.name|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Title:</td>		<td class="iprdata">{{ ipr.ietf_contact.title|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Department:</td>	<td class="iprdata">{{ ipr.ietf_contact.department|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Address1:</td>	<td class="iprdata">{{ ipr.ietf_contact.address1|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Address2:</td>	<td class="iprdata">{{ ipr.ietf_contact.address2|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Telephone:</td>	<td class="iprdata">{{ ipr.ietf_contact.telephone|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Fax:</td>		<td class="iprdata">{{ ipr.ietf_contact.fax|escape }}</td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Email:</td>		<td class="iprdata">{{ ipr.ietf_contact.email|escape }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Name:</td>		<td class="iprdata">{{ ipr.ietf_contact.name }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Title:</td>		<td class="iprdata">{{ ipr.ietf_contact.title }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Department:</td>	<td class="iprdata">{{ ipr.ietf_contact.department }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Address1:</td>	<td class="iprdata">{{ ipr.ietf_contact.address1 }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Address2:</td>	<td class="iprdata">{{ ipr.ietf_contact.address2 }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Telephone:</td>	<td class="iprdata">{{ ipr.ietf_contact.telephone }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Fax:</td>		<td class="iprdata">{{ ipr.ietf_contact.fax }}</td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">Email:</td>		<td class="iprdata">{{ ipr.ietf_contact.email }}</td></tr>
 	 {% else %}
 	 <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</i></td></tr>
 	 {% endif %}
@@ -162,15 +164,15 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	    {% if ipr.rfclist %}
 	       <tr class="{% cycle row_parity %}"><td class="iprlabel">RFC Numbers:</td><td class="iprdata">{{ ipr.rfclist }}</td></tr>
 	    {% else %}
-	       {% for doc in ipr.rfcs.all %}
-	       <tr class="{% cycle row_parity %}"><td class="iprlabel iprdata">RFC {{ doc.document.rfc_number }}:</td><td class="iprdata">"{{ doc.document.title }}"</td></tr>
+               {% for iprdocalias in ipr.rfcs %}
+               <tr class="{% cycle row_parity %}"><td class="iprlabel iprdata">{{ iprdocalias.formatted_name|rfcspace }}:</td><td class="iprdata">"{{ iprdocalias.doc_alias.document.title }}"</td></tr>
 	       {% endfor %}
 	    {% endif %}
 	    {% if ipr.draftlist %}
 	       <tr class="{% cycle row_parity %}"><td class="iprlabel">I-D Filenames (draft-...):</td><td class="iprdata">{{ ipr.draftlist }}</td></tr>
 	    {% else %}
-	       {% for doc in ipr.drafts.all %}
-	       <tr class="{% cycle row_parity %}"><td class="iprlabel">Internet-Draft:</td><td class="iprdata">"{{ doc.document.title }}"<br />({{ doc.document.filename }}{% if doc.revision %}-{{ doc.revision }}{% endif %})</td></tr>
+               {% for iprdocalias in ipr.drafts %}
+               <tr class="{% cycle row_parity %}"><td class="iprlabel">Internet-Draft:</td><td class="iprdata">"{{ iprdocalias.doc_alias.document.title }}"<br />({{ iprdocalias.formatted_name }})</td></tr>
 	       {% endfor %}
 	    {% endif %}
 	    {% if ipr.other_designations %}
@@ -200,7 +202,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	    </tbody>
 	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Date(s) granted or applied for:	</td><td class="iprdata">{{ ipr.date_applied }}</td></tr>
 	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Country:				</td><td class="iprdata">{{ ipr.country }}</td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Additional Notes:</td><td class="iprdata">{{ ipr.notes|escape|linebreaks }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Additional Notes:</td><td class="iprdata">{{ ipr.notes|linebreaks }}</td></tr>
 	    <tr class="{% cycle row_parity %}">
 	       <td colspan="2">
 		     B. Does this disclosure relate to an unpublished pending patent application?:
@@ -228,7 +230,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 		     </td>
 		  </tr>
 		  {% if ipr.document_sections %}
-		  <tr class="{% cycle row_parity %}"><td class="iprlabel"></td><td class="iprdata">{{ ipr.document_sections|escape|linebreaks }}</td></tr>
+		  <tr class="{% cycle row_parity %}"><td class="iprlabel"></td><td class="iprdata">{{ ipr.document_sections|linebreaks }}</td></tr>
 		  {% else %}
 		  <tr class="{% cycle row_parity %}"><td class="iprlabel"></td><td><i>No information submitted</i></td></tr>
 		  {% endif %}
@@ -283,7 +285,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 		  </td>
 	       </tr>
 	       {% if ipr.comments %}
-	       <tr ><td class="iprlabel"> </td><td class="iprdata">{{ ipr.comments|escape|linebreaks }}</td></tr>
+	       <tr ><td class="iprlabel"> </td><td class="iprdata">{{ ipr.comments|linebreaks }}</td></tr>
 	       {% else %}
 	       <tr ><td class="iprlabel"> </td><td><i>No information submitted</i></td></tr>
 	       {% endif %}
@@ -353,14 +355,14 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	       {% endif %}
 	    </tbody>
 	    {% endif %}
-	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Name:</td>		<td class="iprdata">{{ ipr.submitter.name|escape }}</td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Title:</td>		<td class="iprdata">{{ ipr.submitter.title|escape }}</td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Department:</td>	<td class="iprdata">{{ ipr.submitter.department|escape }}</td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Address1:</td>	<td class="iprdata">{{ ipr.submitter.address1|escape }}</td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Address2:</td>	<td class="iprdata">{{ ipr.submitter.address2|escape }}</td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Telephone:</td>	<td class="iprdata">{{ ipr.submitter.telephone|escape }}</td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Fax:</td>		<td class="iprdata">{{ ipr.submitter.fax|escape }}</td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Email:</td>		<td class="iprdata">{{ ipr.submitter.email|escape }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Name:</td>		<td class="iprdata">{{ ipr.submitter.name }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Title:</td>		<td class="iprdata">{{ ipr.submitter.title }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Department:</td>	<td class="iprdata">{{ ipr.submitter.department }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Address1:</td>	<td class="iprdata">{{ ipr.submitter.address1 }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Address2:</td>	<td class="iprdata">{{ ipr.submitter.address2 }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Telephone:</td>	<td class="iprdata">{{ ipr.submitter.telephone }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Fax:</td>		<td class="iprdata">{{ ipr.submitter.fax }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Email:</td>		<td class="iprdata">{{ ipr.submitter.email }}</td></tr>
 	    {% else %}
 	    <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</i></td></tr>
 	    {% endif %}
@@ -377,7 +379,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	       </th>
 	    </tr>
 	       {% if ipr.other_notes %}
-	       <tr class="{% cycle row_parity %}"><td class="iprlabel"> </td><td class="iprdata">{{ ipr.other_notes|escape|linebreaks }}</td></tr>
+	       <tr class="{% cycle row_parity %}"><td class="iprlabel"> </td><td class="iprdata">{{ ipr.other_notes|linebreaks }}</td></tr>
 	       {% else %}
 	       <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</i></td></tr>
 	       {% endif %}

@@ -7,68 +7,134 @@ from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
 
-from ietf.idtracker.models import (InternetDraft, PersonOrOrgInfo, IETFWG,
-                                   IDAuthor, EmailAddress, IESGLogin, BallotInfo)
-from ietf.submit.models import TempIdAuthors, IdSubmissionDetail, Preapproval
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.log import log
 from ietf.utils import unaccent
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 
+from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
 from ietf.doc.models import *
 from ietf.person.models import Person, Alias, Email
 from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
 from ietf.message.models import Message
+from ietf.utils.pipe import pipe
+from ietf.utils.log import log
+from ietf.submit.mail import announce_to_lists, announce_new_version, announce_to_authors
+
+def check_idnits(path):
+    #p = subprocess.Popen([self.idnits, '--submitcheck', '--nitcount', path], stdout=subprocess.PIPE)
+    cmd = "%s --submitcheck --nitcount %s" % (settings.IDSUBMIT_IDNITS_BINARY, path)
+    code, out, err = pipe(cmd)
+    if code != 0:
+        log("idnits error: %s:\n  Error %s: %s" %( cmd, code, err))
+    return out
+
+def found_idnits(idnits_message):
+    if not idnits_message:
+        return False
+    success_re = re.compile('\s+Summary:\s+0\s+|No nits found')
+    if success_re.search(idnits_message):
+        return True
+    return False
+
+def validate_submission(submission):
+    errors = {}
+
+    if submission.state_id not in ("cancel", "posted"):
+        for ext in submission.file_types.split(','):
+            source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
+            if not os.path.exists(source):
+                errors['files'] = '"%s" was not found in the staging area.<br />We recommend you that you cancel this submission and upload your files again.' % os.path.basename(source)
+                break
+
+    if not submission.title:
+        errors['title'] = 'Title is empty or was not found'
+
+    if submission.group and submission.group.state_id != "active":
+        errors['group'] = 'Group exists but is not an active group'
+
+    if not submission.abstract:
+        errors['abstract'] = 'Abstract is empty or was not found'
+
+    if not submission.authors_parsed():
+        errors['authors'] = 'No authors found'
+
+    # revision
+    if submission.state_id != "posted":
+        error = validate_submission_rev(submission.name, submission.rev)
+        if error:
+            errors['rev'] = error
+
+    # draft date
+    error = validate_submission_document_date(submission.submission_date, submission.document_date)
+    if error:
+        errors['document_date'] = error
+
+    return errors
+
+def validate_submission_rev(name, rev):
+    if not rev:
+        return 'Revision not found'
+
+    try:
+        rev = int(rev)
+    except ValueError:
+        return 'Revision must be a number'
+    else:
+        if not (0 <= rev <= 99):
+            return 'Revision must be between 00 and 99'
+
+        expected = 0
+        existing_revs = [int(i.rev) for i in Document.objects.filter(name=name)]
+        if existing_revs:
+            expected = max(existing_revs) + 1
+
+        if rev != expected:
+            return 'Invalid revision (revision %02d is expected)' % expected
+
+    return None
+
+def validate_submission_document_date(submission_date, document_date):
+    if not document_date:
+        return 'Document date is empty or not in a proper format'
+    elif abs(submission_date - document_date) > datetime.timedelta(days=3):
+        return 'Document date must be within 3 days of submission date'
+
+    return None
+
+def create_submission_event(request, submission, desc):
+    by = None
+    if request and request.user.is_authenticated():
+        try:
+            by = request.user.person
+        except Person.DoesNotExist:
+            pass
+
+    SubmissionEvent.objects.create(submission=submission, by=by, desc=desc)
 
 
-# Some useful states
-UPLOADED = 1
-AWAITING_AUTHENTICATION = 4
-MANUAL_POST_REQUESTED = 5
-POSTED = -1
-POSTED_BY_SECRETARIAT = -2
-CANCELLED = -4
-INITIAL_VERSION_APPROVAL_REQUESTED = 10
-
-
-# Not a real WG
-NONE_WG = 1027
-
-
-def request_full_url(request, submission):
-    subject = 'Full URL for managing submission of draft %s' % submission.filename
-    from_email = settings.IDSUBMIT_FROM_EMAIL
-    to_email = submission.confirmation_email_list()
-    url = settings.IDTRACKER_BASE_URL + urlreverse('draft_status_by_hash',
-                                                   kwargs=dict(submission_id=submission.submission_id,
-                                                               submission_hash=submission.get_hash()))
-    send_mail(request, to_email, from_email, subject, 'submit/request_full_url.txt',
-              {'submission': submission,
-               'url': url})
-
-
-def perform_post(request, submission):
+def post_submission(request, submission):
     system = Person.objects.get(name="(System)")
 
-    group_id = submission.group_acronym_id or NONE_WG
     try:
-        draft = Document.objects.get(name=submission.filename)
+        draft = Document.objects.get(name=submission.name)
         save_document_in_history(draft)
     except Document.DoesNotExist:
-        draft = Document(name=submission.filename)
+        draft = Document(name=submission.name)
         draft.intended_std_level = None
 
     prev_rev = draft.rev
 
     draft.type_id = "draft"
     draft.time = datetime.datetime.now()
-    draft.title = submission.id_document_name
-    if not (group_id == NONE_WG and draft.group and draft.group.type_id == "area"):
+    draft.title = submission.title
+    group = submission.group or Group.objects.get(type="individ")
+    if not (group.type_id == "individ" and draft.group and draft.group.type_id == "area"):
         # don't overwrite an assigned area if it's still an individual
         # submission
-        draft.group_id = group_id
-    draft.rev = submission.revision
-    draft.pages = submission.txt_page_count
+        draft.group_id = group.pk
+    draft.rev = submission.rev
+    draft.pages = submission.pages
     draft.abstract = submission.abstract
     was_rfc = draft.get_state_slug() == "rfc"
 
@@ -87,14 +153,14 @@ def perform_post(request, submission):
     draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
     draft.save()
 
-    a = submission.tempidauthors_set.filter(author_order=0)
-    if a:
-        submitter = ensure_person_email_info_exists(a[0]).person
+    submitter_parsed = submission.submitter_parsed()
+    if submitter_parsed["name"] and submitter_parsed["email"]:
+        submitter = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"]).person
     else:
         submitter = system
 
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
-    DocAlias.objects.get_or_create(name=submission.filename, document=draft)
+    DocAlias.objects.get_or_create(name=submission.name, document=draft)
 
     update_authors(draft, submission)
 
@@ -136,8 +202,8 @@ def perform_post(request, submission):
 
         state_change_msg = e.desc
 
-    move_docs(submission)
-    submission.status_id = POSTED
+    move_files_to_repository(submission)
+    submission.state = DraftSubmissionStateName.objects.get(slug="posted")
 
     announce_to_lists(request, submission)
     announce_new_version(request, submission, draft, state_change_msg)
@@ -145,209 +211,33 @@ def perform_post(request, submission):
 
     submission.save()
 
-def send_announcements(submission, draft, state_change_msg):
-    announce_to_lists(request, submission)
-    if draft.idinternal and not draft.idinternal.rfc_flag:
-        announce_new_version(request, submission, draft, state_change_msg)
-    announce_to_authors(request, submission)
 
-
-def announce_to_lists(request, submission):
-    authors = []
-    for i in submission.tempidauthors_set.order_by('author_order'):
-        if not i.author_order:
-            continue
-        authors.append(i.get_full_name())
-
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        m = Message()
-        m.by = Person.objects.get(name="(System)")
-        if request.user.is_authenticated():
-            try:
-                m.by = request.user.get_profile()
-            except Person.DoesNotExist:
-                pass
-        m.subject = 'I-D Action: %s-%s.txt' % (submission.filename, submission.revision)
-        m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-        m.to = settings.IDSUBMIT_ANNOUNCE_LIST_EMAIL
-        if submission.group_acronym:
-            m.cc = submission.group_acronym.email_address
-        m.body = render_to_string('submit/announce_to_lists.txt', dict(submission=submission,
-                                                                       authors=authors,
-                                                                       settings=settings,))
-        m.save()
-        m.related_docs.add(Document.objects.get(name=submission.filename))
-
-        send_mail_message(request, m)
-    else:
-        subject = 'I-D Action: %s-%s.txt' % (submission.filename, submission.revision)
-        from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-        to_email = [settings.IDSUBMIT_ANNOUNCE_LIST_EMAIL]
-        if submission.group_acronym:
-            cc = [submission.group_acronym.email_address]
-        else:
-            cc = None
-
-        send_mail(request, to_email, from_email, subject, 'submit/announce_to_lists.txt',
-                  {'submission': submission,
-                   'authors': authors}, cc=cc, save_message=True)
-
-
-def announce_new_version(request, submission, draft, state_change_msg):
-    to_email = []
-    if draft.idinternal.state_change_notice_to:
-        to_email.append(draft.idinternal.state_change_notice_to)
-    if draft.idinternal.job_owner:
-        to_email.append(draft.idinternal.job_owner.person.email()[1])
-    try:
-        if draft.idinternal.ballot:
-            for p in draft.idinternal.ballot.positions.all():
-                if p.discuss == 1 and p.ad.user_level == IESGLogin.AD_LEVEL:
-                    to_email.append(p.ad.person.email()[1])
-    except BallotInfo.DoesNotExist:
-        pass
-    subject = 'New Version Notification - %s-%s.txt' % (submission.filename, submission.revision)
-    from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-    send_mail(request, to_email, from_email, subject, 'submit/announce_new_version.txt',
-              {'submission': submission,
-               'msg': state_change_msg})
-
-
-def announce_new_versionREDESIGN(request, submission, draft, state_change_msg):
-    to_email = []
-    if draft.notify:
-        to_email.append(draft.notify)
-    if draft.ad:
-        to_email.append(draft.ad.role_email("ad").address)
-
-    if draft.stream_id == "iab":
-        to_email.append("IAB Stream <iab-stream@iab.org>")
-    elif draft.stream_id == "ise":
-        to_email.append("Independent Submission Editor <rfc-ise@rfc-editor.org>")
-    elif draft.stream_id == "irtf":
-        to_email.append("IRSG <irsg@irtf.org>")
-
-    # if it has been sent to the RFC Editor, keep them in the loop
-    if draft.get_state_slug("draft-iesg") in ("ann", "rfcqueue"):
-        to_email.append("RFC Editor <rfc-editor@rfc-editor.org>")
-
-    active_ballot = draft.active_ballot()
-    if active_ballot:
-        for ad, pos in active_ballot.active_ad_positions().iteritems():
-            if pos and pos.pos_id == "discuss":
-                to_email.append(ad.role_email("ad").address)
-
-    if to_email:
-        subject = 'New Version Notification - %s-%s.txt' % (submission.filename, submission.revision)
-        from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-        send_mail(request, to_email, from_email, subject, 'submit/announce_new_version.txt',
-                  {'submission': submission,
-                   'msg': state_change_msg})
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    announce_new_version = announce_new_versionREDESIGN
-
-def announce_to_authors(request, submission):
-    authors = submission.tempidauthors_set.all()
-    to_email = list(set(submission.confirmation_email_list() + [u'%s <%s>' % i.email() for i in authors]))
-    from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-    subject = 'New Version Notification for %s-%s.txt' % (submission.filename, submission.revision)
-    if submission.group_acronym:
-        wg = submission.group_acronym.group_acronym.acronym
-    elif submission.filename.startswith('draft-iesg'):
-        wg = 'IESG'
-    else:
-        wg = 'Individual Submission'
-    send_mail(request, to_email, from_email, subject, 'submit/announce_to_authors.txt',
-              {'submission': submission,
-               'submitter': authors[0].get_full_name(),
-               'wg': wg})
-
-
-def find_person(first_name, last_name, middle_initial, name_suffix, email):
-    person_list = None
-    if email:
-        person_list = PersonOrOrgInfo.objects.filter(emailaddress__address=email).distinct()
-        if person_list and len(person_list) == 1:
-            return person_list[0]
-    if not person_list:
-        person_list = PersonOrOrgInfo.objects.all()
-    person_list = person_list.filter(first_name=first_name,
-                                     last_name=last_name)
-    if middle_initial:
-        person_list = person_list.filter(middle_initial=middle_initial)
-    if name_suffix:
-        person_list = person_list.filter(name_suffix=name_suffix)
-    if person_list:
-        return person_list[0]
-    return None
-
-
-def update_authors(draft, submission):
-    # TempAuthor of order 0 is submitter
-    new_authors = list(submission.tempidauthors_set.filter(author_order__gt=0))
-    person_pks = []
-    for author in new_authors:
-        person = find_person(author.first_name, author.last_name,
-                             author.middle_initial, author.name_suffix,
-                             author.email_address)
-        if not person:
-            person = PersonOrOrgInfo(
-                first_name=author.first_name,
-                last_name=author.last_name,
-                middle_initial=author.middle_initial or '',
-                name_suffix=author.name_suffix or '',
-                )
-            person.save()
-            if author.email_address:
-                EmailAddress.objects.create(
-                    address=author.email_address,
-                    priority=1,
-                    type='INET',
-                    person_or_org=person,
-                    )
-        person_pks.append(person.pk)
-        try:
-            idauthor = IDAuthor.objects.get(
-                document=draft,
-                person=person,
-                )
-            idauthor.author_order = author.author_order
-        except IDAuthor.DoesNotExist:
-            idauthor = IDAuthor(
-                document=draft,
-                person=person,
-                author_order=author.author_order,
-                )
-        idauthor.save()
-    draft.authors.exclude(person__pk__in=person_pks).delete()
-
-def get_person_from_author(author):
-    persons = None
-
+def get_person_from_name_email(name, email):
     # try email
-    if author.email_address:
-        persons = Person.objects.filter(email__address=author.email_address).distinct()
+    if email:
+        persons = Person.objects.filter(email__address=email).distinct()
         if len(persons) == 1:
             return persons[0]
+    else:
+        persons = Person.objects.none()
 
     if not persons:
         persons = Person.objects.all()
 
     # try full name
-    p = persons.filter(alias__name=author.get_full_name()).distinct()
+    p = persons.filter(alias__name=name).distinct()
     if p:
         return p[0]
 
     return None
 
-def ensure_person_email_info_exists(author):
-    person = get_person_from_author(author)
+def ensure_person_email_info_exists(name, email):
+    person = get_person_from_name_email(name, email)
 
-    # make sure we got a person
+    # make sure we have a person
     if not person:
         person = Person()
-        person.name = author.get_full_name()
+        person.name = name
         person.ascii = unaccent.asciify(person.name)
         person.save()
 
@@ -355,9 +245,9 @@ def ensure_person_email_info_exists(author):
         if person.name != person.ascii:
             Alias.objects.create(name=ascii, person=person)
 
-    # make sure we got an email address
-    if author.email_address:
-        addr = author.email_address.lower()
+    # make sure we have an email address
+    if email:
+        addr = email.lower()
     else:
         # we're in trouble, use a fake one
         addr = u"unknown-email-%s" % person.name.replace(" ", "-")
@@ -378,12 +268,10 @@ def ensure_person_email_info_exists(author):
 
     return email
 
-
-def update_authorsREDESIGN(draft, submission):
-    # order 0 is submitter
+def update_authors(draft, submission):
     authors = []
-    for author in submission.tempidauthors_set.exclude(author_order=0).order_by('author_order'):
-        email = ensure_person_email_info_exists(author)
+    for order, author in enumerate(submission.authors_parsed()):
+        email = ensure_person_email_info_exists(author["name"], author["email"])
 
         a = DocumentAuthor.objects.filter(document=draft, author=email)
         if a:
@@ -391,37 +279,29 @@ def update_authorsREDESIGN(draft, submission):
         else:
             a = DocumentAuthor(document=draft, author=email)
 
-        a.order = author.author_order
+        a.order = order
         a.save()
 
         authors.append(email)
 
     draft.documentauthor_set.exclude(author__in=authors).delete()
 
+def cancel_submission(submission):
+    submission.state = DraftSubmissionStateName.objects.get(slug="cancel")
+    submission.save()
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    update_authors = update_authorsREDESIGN
+    remove_submission_files(submission)
 
+def rename_submission_files(submission, prev_rev, new_rev):
+    for ext in submission.file_types.split(','):
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, prev_rev, ext))
+        dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, new_rev, ext))
+        os.rename(source, dest)
 
-def get_person_for_user(user):
-    try:
-        return user.get_profile().person()
-    except:
-        return None
-
-
-def is_secretariat(user):
-    if not user or not user.is_authenticated():
-        return False
-    return bool(user.groups.filter(name='Secretariat'))
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from ietf.liaisons.accounts import is_secretariat, get_person_for_user
-
-def move_docs(submission):
-    for ext in submission.file_type.split(','):
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
-        dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
+def move_files_to_repository(submission):
+    for ext in submission.file_types.split(','):
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
+        dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
         if os.path.exists(source):
             os.rename(source, dest)
         else:
@@ -430,28 +310,28 @@ def move_docs(submission):
             else:
                 raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
-def remove_docs(submission):
-    for ext in submission.file_type.split(','):
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
+def remove_submission_files(submission):
+    for ext in submission.file_types.split(','):
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
         if os.path.exists(source):
             os.unlink(source)
 
-def get_approvable_submissions(user):
+def approvable_submissions_for_user(user):
     if not user.is_authenticated():
         return []
 
-    res = IdSubmissionDetail.objects.filter(status=INITIAL_VERSION_APPROVAL_REQUESTED).order_by('-submission_date')
+    res = Submission.objects.filter(state="grp-appr").order_by('-submission_date')
     if has_role(user, "Secretariat"):
         return res
 
     # those we can reach as chair
-    return res.filter(group_acronym__role__name="chair", group_acronym__role__person__user=user)
+    return res.filter(group__role__name="chair", group__role__person__user=user)
 
-def get_preapprovals(user):
+def preapprovals_for_user(user):
     if not user.is_authenticated():
         return []
 
-    posted = IdSubmissionDetail.objects.distinct().filter(status__in=[POSTED, POSTED_BY_SECRETARIAT]).values_list('filename', flat=True)
+    posted = Submission.objects.distinct().filter(state="posted").values_list('name', flat=True)
     res = Preapproval.objects.exclude(name__in=posted).order_by("-time").select_related('by')
     if has_role(user, "Secretariat"):
         return res
@@ -462,125 +342,23 @@ def get_preapprovals(user):
 
     return res
 
-def get_recently_approved(user, since):
+def recently_approved_by_user(user, since):
     if not user.is_authenticated():
         return []
 
-    res = IdSubmissionDetail.objects.distinct().filter(status__in=[POSTED, POSTED_BY_SECRETARIAT], submission_date__gte=since, revision="00").order_by('-submission_date')
+    res = Submission.objects.distinct().filter(state="posted", submission_date__gte=since, rev="00").order_by('-submission_date')
     if has_role(user, "Secretariat"):
         return res
 
     # those we can reach as chair
-    return res.filter(group_acronym__role__name="chair", group_acronym__role__person__user=user)
+    return res.filter(group__role__name="chair", group__role__person__user=user)
 
-class DraftValidation(object):
+def expirable_submissions(older_than_days):
+    cutoff = datetime.date.today() - datetime.timedelta(days=older_than_days)
+    return Submission.objects.exclude(state__in=("cancel", "posted")).filter(submission_date__lt=cutoff)
 
-    def __init__(self, draft):
-        self.draft = draft
-        self.warnings = {}
-        self.passes_idnits = self.passes_idnits()
-        self.wg = self.get_working_group()
-        self.authors = self.get_authors()
-        self.submitter = self.get_submitter()
+def expire_submission(submission, by):
+    submission.state_id = "cancel"
+    submission.save()
 
-    def passes_idnits(self):
-        passes_idnits = self.check_idnits_success(self.draft.idnits_message)
-        return passes_idnits
-
-    def get_working_group(self):
-        if self.draft.group_acronym and self.draft.group_acronym.pk == NONE_WG:
-            return None
-        return self.draft.group_acronym
-
-    def check_idnits_success(self, idnits_message):
-        if not idnits_message:
-            return False
-        success_re = re.compile('\s+Summary:\s+0\s+|No nits found')
-        if success_re.search(idnits_message):
-            return True
-        return False
-
-    def is_valid_attr(self, key):
-        if key in self.warnings.keys():
-            return False
-        return True
-
-    def is_valid(self):
-        self.validate_metadata()
-        return not bool(self.warnings.keys()) and self.passes_idnits
-
-    def validate_metadata(self):
-        self.validate_revision()
-        self.validate_title()
-        self.validate_authors()
-        self.validate_abstract()
-        self.validate_creation_date()
-        self.validate_wg()
-        self.validate_files()
-
-    def validate_files(self):
-        if self.draft.status_id in [POSTED, POSTED_BY_SECRETARIAT]:
-            return
-        for ext in self.draft.file_type.split(','):
-            source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (self.draft.filename, self.draft.revision, ext))
-            if not os.path.exists(source):
-                self.add_warning('document_files', '"%s" were not found in the staging area.<br />We recommend you that you cancel this submission and upload your files again.' % os.path.basename(source))
-                break
-
-    def validate_title(self):
-        if not self.draft.id_document_name:
-            self.add_warning('title', 'Title is empty or was not found')
-
-    def validate_wg(self):
-        if self.wg and not self.wg.status_id == IETFWG.ACTIVE:
-            self.add_warning('group', 'Group exists but is not an active group')
-
-    def validate_abstract(self):
-        if not self.draft.abstract:
-            self.add_warning('abstract', 'Abstract is empty or was not found')
-
-    def add_warning(self, key, value):
-        self.warnings.update({key: value})
-
-    def validate_revision(self):
-        if self.draft.status_id in [POSTED, POSTED_BY_SECRETARIAT]:
-            return
-        revision = self.draft.revision
-        existing_revisions = [int(i.revision_display()) for i in InternetDraft.objects.filter(filename=self.draft.filename)]
-        expected = 0
-        if existing_revisions:
-            expected = max(existing_revisions) + 1
-        try:
-            if int(revision) != expected:
-                self.add_warning('revision', 'Invalid Version Number (Version %02d is expected)' % expected)
-        except ValueError:
-            self.add_warning('revision', 'Revision not found')
-
-    def validate_authors(self):
-        if not self.authors:
-            self.add_warning('authors', 'No authors found')
-            return
-
-    def validate_creation_date(self):
-        date = self.draft.creation_date
-        if not date:
-            self.add_warning('creation_date', 'Creation Date field is empty or the creation date is not in a proper format')
-            return
-        submit_date = self.draft.submission_date
-        if (date + datetime.timedelta(days=3) < submit_date or
-            date - datetime.timedelta(days=3) > submit_date):
-            self.add_warning('creation_date', 'Creation Date must be within 3 days of submission date')
-
-    def get_authors(self):
-        return self.draft.tempidauthors_set.exclude(author_order=0).order_by('author_order')
-
-    def get_submitter(self):
-        submitter = self.draft.tempidauthors_set.filter(author_order=0)
-        if submitter:
-            return submitter[0]
-        elif self.draft.submitter_tag:
-            try:
-                return PersonOrOrgInfo.objects.get(pk=self.draft.submitter_tag)
-            except PersonOrOrgInfo.DoesNotExist:
-                return False
-        return None
+    SubmissionEvent.objects.create(submission=submission, by=by, desc="Canceled expired submission")

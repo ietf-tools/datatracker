@@ -51,7 +51,7 @@ def expires_soon(request, days="14"):
 
 def full_draft(request, enabled="off"):
     if enabled != "on" and enabled != "off":
-            enabled = "off"
+        enabled = "off"
     response = settings(request, -1, -1, enabled)
     response.set_cookie("full_draft", enabled, 315360000)
     return response

@@ -22,14 +22,9 @@ class LatestIprDisclosures(Feed):
         # though the database has only date, not time 
 	return datetime.combine(item.submitted_date, time(0,0,0))
     def item_author_name(self, item):
-	s = item.get_submitter()
+        s = item.get_submitter()
         if s:
-            if isinstance(s.name, unicode):
-                # for django.VERSION[0] > 0
-                return s.name
-            else:
-                # for django.VERSION[0] == 0
-                return unicode(s.name, encoding='utf-8', errors='replace')
+            return s.name
         return None
     def item_author_email(self, item):
 	s = item.get_submitter()

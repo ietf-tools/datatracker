@@ -10,9 +10,6 @@ import debug
 SECR_USER='secretary'
 
 class MainTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-                
     def test_main(self):
         "Main Test"
         make_test_data()

@@ -1,14 +1,21 @@
-from django.conf import settings
+from ietf.person.models import Person
+from ietf.group.models import Role
 
-from ietf.idtracker.models import Role, PersonOrOrgInfo
+def proxy_personify_role(role):
+    """Return person from role with an old-school email() method using
+    email from role."""
+    p = role.person
+    p.email = lambda: (p.plain_name(), role.email.address)
+    return p
 
-
-LIAISON_EDIT_GROUPS = ['Secretariat']
+LIAISON_EDIT_GROUPS = ['Secretariat'] # this is not working anymore, refers to old auth model
 
 
 def get_ietf_chair():
-    person = PersonOrOrgInfo.objects.filter(role=Role.IETF_CHAIR)
-    return person and person[0] or None
+    try:
+        return proxy_personify_role(Role.objects.get(name="chair", group__acronym="ietf"))
+    except Role.DoesNotExist:
+        return None
 
 
 def get_iesg_chair():
@@ -16,48 +23,62 @@ def get_iesg_chair():
 
 
 def get_iab_chair():
-    person = PersonOrOrgInfo.objects.filter(role=Role.IAB_CHAIR)
-    return person and person[0] or None
-
-
-def get_iab_executive_director():
-    person = PersonOrOrgInfo.objects.filter(role=Role.IAB_EXCUTIVE_DIRECTOR)
-    return person and person[0] or None
-
-
-def get_person_for_user(user):
     try:
-        return user.get_profile().person()
-    except:
+        return proxy_personify_role(Role.objects.get(name="chair", group__acronym="iab"))
+    except Role.DoesNotExist:
         return None
 
 
+def get_irtf_chair():
+    try:
+        return proxy_personify_role(Role.objects.get(name="chair", group__acronym="irtf"))
+    except Role.DoesNotExist:
+        return None
+
+
+def get_iab_executive_director():
+    try:
+        return proxy_personify_role(Role.objects.get(name="execdir", group__acronym="iab"))
+    except Person.DoesNotExist:
+        return None
+
+
+def get_person_for_user(user):
+    if not user.is_authenticated():
+        return None
+    try:
+        p = user.get_profile()
+        p.email = lambda: (p.plain_name(), p.email_address())
+        return p
+    except Person.DoesNotExist:
+        return None
+
 def is_areadirector(person):
-    return bool(person.areadirector_set.all())
+    return bool(Role.objects.filter(person=person, name="ad", group__state="active", group__type="area"))
 
 
 def is_wgchair(person):
-    return bool(person.wgchair_set.all())
+    return bool(Role.objects.filter(person=person, name="chair", group__state="active", group__type="wg"))
 
 
 def is_wgsecretary(person):
-    return bool(person.wgsecretary_set.all())
-
-
-def has_role(person, role):
-    return bool(person.role_set.filter(pk=role))
+    return bool(Role.objects.filter(person=person, name="sec", group__state="active", group__type="wg"))
 
 
 def is_ietfchair(person):
-    return has_role(person, Role.IETF_CHAIR)
+    return bool(Role.objects.filter(person=person, name="chair", group__acronym="ietf"))
 
 
 def is_iabchair(person):
-    return has_role(person, Role.IAB_CHAIR)
+    return bool(Role.objects.filter(person=person, name="chair", group__acronym="iab"))
 
 
 def is_iab_executive_director(person):
-    return has_role(person, Role.IAB_EXCUTIVE_DIRECTOR)
+    return bool(Role.objects.filter(person=person, name="execdir", group__acronym="iab"))
+
+
+def is_irtfchair(person):
+    return bool(Role.objects.filter(person=person, name="chair", group__acronym="irtf"))
 
 
 def can_add_outgoing_liaison(user):
@@ -74,15 +95,17 @@ def can_add_outgoing_liaison(user):
 
 
 def is_sdo_liaison_manager(person):
-    return bool(person.liaisonmanagers_set.all())
+    return bool(Role.objects.filter(person=person, name="liaiman", group__type="sdo"))
 
 
 def is_sdo_authorized_individual(person):
-    return bool(person.sdoauthorizedindividual_set.all())
+    return bool(Role.objects.filter(person=person, name="auth", group__type="sdo"))
 
 
 def is_secretariat(user):
-    return bool(user.groups.filter(name='Secretariat'))
+    if isinstance(user, basestring):
+        return False
+    return user.is_authenticated() and bool(Role.objects.filter(person__user=user, name="secr", group__acronym="secretariat"))
 
 
 def can_add_incoming_liaison(user):
@@ -102,36 +125,14 @@ def can_add_liaison(user):
 
 
 def is_sdo_manager_for_outgoing_liaison(person, liaison):
-    from ietf.liaisons.utils import IETFHM, SDOEntity
-    from ietf.liaisons.models import SDOs
-    from_entity = IETFHM.get_entity_by_key(liaison.from_raw_code)
-    sdo = None
-    if not from_entity:
-        try:
-            sdo = SDOs.objects.get(sdo_name=liaison.from_body())
-        except SDOs.DoesNotExist:
-            pass
-    elif isinstance(from_entity, SDOEntity):
-        sdo = from_entity.obj
-    if sdo:
-        return bool(sdo.liaisonmanagers_set.filter(person=person))
+    if liaison.from_group and liaison.from_group.type_id == "sdo":
+        return bool(liaison.from_group.role_set.filter(name="liaiman", person=person))
     return False
 
 
 def is_sdo_manager_for_incoming_liaison(person, liaison):
-    from ietf.liaisons.utils import IETFHM, SDOEntity
-    from ietf.liaisons.models import SDOs
-    to_entity = IETFHM.get_entity_by_key(liaison.to_raw_code)
-    sdo = None
-    if not to_entity:
-        try:
-            sdo = SDOs.objects.get(sdo_name=liaison.to_body)
-        except SDOs.DoesNotExist:
-            pass
-    elif isinstance(to_entity, SDOEntity):
-        sdo = to_entity.obj
-    if sdo:
-        return bool(sdo.liaisonmanagers_set.filter(person=person))
+    if liaison.to_group and liaison.to_group.type_id == "sdo":
+        return bool(liaison.to_group.role_set.filter(name="liaiman", person=person))
     return False
 
 
@@ -143,6 +144,3 @@ def can_edit_liaison(user, liaison):
         return (is_sdo_manager_for_outgoing_liaison(person, liaison) or
                 is_sdo_manager_for_incoming_liaison(person, liaison))
     return False
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from accountsREDESIGN import * 

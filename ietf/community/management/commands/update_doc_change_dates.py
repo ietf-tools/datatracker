@@ -5,18 +5,18 @@ from django.db.models import Q
 
 from ietf.community.constants import SIGNIFICANT_STATES
 from ietf.community.models import DocumentChangeDates
-from redesign.doc.models import Document
+from ietf.doc.models import Document
 
 
 class Command(BaseCommand):
     help = (u"Update drafts in community lists by reviewing their rules")
 
     def handle(self, *args, **options):
-        documents = Document.objects.filter(Q(type__name='Draft') | Q(states__name='rfc')).distinct()
+        documents = Document.objects.filter(type='draft')
         index = 1
         total = documents.count()
 
-        for doc in documents:
+        for doc in documents.iterator():
             (changes, created) = DocumentChangeDates.objects.get_or_create(document=doc)
             new_version = doc.latest_event(type='new_revision')
             normal_change = doc.latest_event()

@@ -16,7 +16,7 @@ def email_milestones_changed(request, group, changes):
     def wrap_up_email(to, text):
         text = wrap(strip_tags(text), 70)
         text += "\n\n"
-        text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + urlreverse("wg_charter", kwargs=dict(acronym=group.acronym)))
+        text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(acronym=group.acronym)))
 
         send_mail_text(request, to, None,
                        u"Milestones changed for %s %s" % (group.acronym, group.type.name),
@@ -95,7 +95,7 @@ def email_milestones_due(group, early_warning_days):
                    milestones=milestones,
                    today=today,
                    early_warning_days=early_warning_days,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse("wg_charter", kwargs=dict(acronym=group.acronym))
+                   url=settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(acronym=group.acronym))
                    ))
 
 def groups_needing_milestones_due_reminder(early_warning_days):
@@ -120,7 +120,7 @@ def email_milestones_overdue(group):
               "wginfo/reminder_milestones_overdue.txt",
               dict(group=group,
                    milestones=milestones,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse("wg_charter", kwargs=dict(acronym=group.acronym))
+                   url=settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(acronym=group.acronym))
                    ))
 
 def groups_needing_milestones_overdue_reminder(grace_period=30):

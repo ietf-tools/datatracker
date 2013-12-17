@@ -1,6 +1,6 @@
-﻿ # -*- coding: utf-8 -*-
+ # -*- coding: utf-8 -*-
 
-import datetime
+import datetime, re
 
 from django.views.generic.create_update import delete_object
 from django.conf import settings
@@ -20,7 +20,8 @@ from django.forms.models import modelformset_factory, inlineformset_factory
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
 from ietf.name.models import NomineePositionState, FeedbackType
-from ietf.group.models import Group
+from ietf.group.models import Group, GroupEvent
+from ietf.message.models import Message
 
 from ietf.nomcom.decorators import nomcom_private_key_required
 from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
@@ -53,7 +54,7 @@ def index(request):
         else:
             nomcom.url = None
         if year >= 2002:
-            nomcom.ann_url = "/ann/nomcom/#%4d" % year
+            nomcom.ann_url = "/nomcom/ann/#%4d" % year
         else:
             nomcom.ann_url = None
     return render_to_response('nomcom/index.html',
@@ -70,6 +71,41 @@ def year_index(request, year):
                                'selected': 'index',
                                'template': template}, RequestContext(request))
 
+def announcements(request):
+    address_re = re.compile("<.*>")
+    
+    nomcoms = Group.objects.filter(type="nomcom")
+
+    regimes = []
+    
+    for n in nomcoms:
+        e = GroupEvent.objects.filter(group=n, type="changed_state", changestategroupevent__state="active").order_by('time')[:1]
+        n.start_year = e[0].time.year if e else 0
+        e = GroupEvent.objects.filter(group=n, type="changed_state", changestategroupevent__state="conclude").order_by('time')[:1]
+        n.end_year = e[0].time.year if e else n.start_year + 1
+
+        r = n.role_set.select_related().filter(name="chair") 
+        chair = None 
+        if r: 
+            chair = r[0] 
+
+        announcements = Message.objects.filter(related_groups=n).order_by('-time')
+        for a in announcements:
+            a.to_name = address_re.sub("", a.to)
+
+        if not announcements:
+            continue
+
+        regimes.append(dict(chair=chair,
+                            announcements=announcements,
+                            group=n))
+
+    regimes.sort(key=lambda x: x["group"].start_year, reverse=True)
+
+    return render_to_response("nomcom/announcements.html",
+                              { 'curr_chair' : regimes[0]["chair"] if regimes else None,
+                                'regimes' : regimes },
+                              context_instance=RequestContext(request))
 
 @role_required("Nomcom")
 def private_key(request, year):
@@ -101,7 +137,7 @@ def private_key(request, year):
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
     all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom).not_duplicated()
-    is_chair = nomcom.group.is_chair(request.user)
+    is_chair = nomcom.group.has_role(request.user, "chair")
     message = None
     if is_chair and request.method == 'POST':
         action = request.POST.get('action')

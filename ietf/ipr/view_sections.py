@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-
 section_table = {
                 "specific": {   "title": True,
                                 "specific": 1, "generic": 0, "third_party": 0, 
@@ -38,3 +37,15 @@ section_table = {
                                 "per_rfc_disclosure": False, "also_specific": False,
                             },
             }
+
+def section_list_for_ipr(ipr):
+    if   ipr.legacy_url_0:
+        return section_table["legacy"]
+    elif ipr.generic:
+        #assert not ipr.third_party
+        return section_table["generic"]
+    elif ipr.third_party:
+        return section_table["third-party"]
+    else:
+        return section_table["specific"]
+

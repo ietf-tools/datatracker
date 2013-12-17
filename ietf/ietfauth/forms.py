@@ -10,7 +10,8 @@ from django.contrib.sites.models import Site
 from django.utils.translation import ugettext_lazy as _
 
 from ietf.utils.mail import send_mail
-from ietf.person.models import Person, Email
+from ietf.person.models import Person, Email, Alias
+from ietf.group.models import Role
 
 
 class RegistrationForm(forms.Form):
@@ -167,7 +168,6 @@ class PersonForm(ModelForm):
     request = None
     new_emails = []
     class Meta:
-        from ietf.person.models import Person
         model = Person
         exclude = ('time','user')
 
@@ -193,8 +193,6 @@ class PersonForm(ModelForm):
         send_mail(self.request, to_email, from_email, subject, 'registration/add_email_email.txt', context)
 
     def save(self, force_insert=False, force_update=False, commit=True):
-        from ietf.group.models import Role 
-        from ietf.person.models import Alias
         m = super(PersonForm, self).save(commit=False)
         self.new_emails = [v for k,v in self.data.items() if k[:10] == u'new_email_' and u'@' in v]
 

@@ -1,5 +1,5 @@
-{% if object.by_secretariat %}
-Liaison statement submitted by email from {{ object.from_body|escape }} to {{ object.submitter_name|escape }} on {{ object.submitted_date }}
+{% load ietf_filters %}{% if not liaison.from_contact %}
+  Liaison statement submitted by email from {{ liaison.from_name }} to {{ liaison.to_name|strip_email }} on {{ liaison.submitted|date:"Y-m-d" }}
 {% else %}
-{{ object.title }}
+  {{ liaison.title }}
 {% endif %}

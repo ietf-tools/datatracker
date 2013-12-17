@@ -2,7 +2,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils.http import urlquote
 
-from ietf.ietfauth.decorators import passes_test_decorator
+from ietf.ietfauth.utils import passes_test_decorator
 
 from ietf.nomcom.utils import get_nomcom_by_year
 

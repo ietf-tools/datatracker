@@ -1,4 +1,3 @@
-{# -*- html -*- #}
 {% extends "base.html" %}
 {% load ietf_filters %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
@@ -21,12 +20,10 @@
 {% load agenda_custom_tags %}
 {% block pagehead %}
 <link rel='stylesheet' type='text/css' href='/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css' />
-<link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
 <link rel='stylesheet' type='text/css' href='/css/agenda.css' />
 {% endblock pagehead %}
 
-{% block scripts %}
-<script type='text/javascript' src='/js/lib/jquery-1.8.2.min.js'></script>
+{% block js %}
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery-ui.custom.min.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.widget.min.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.droppable.min.js'></script>
@@ -60,10 +57,10 @@ function setup_slots(){
 {% endfor %}
 
 {% for ad in area_directors %}
-area_directors["{{ad.area}}"] = [];
+area_directors["{{ad.group.acronym}}"] = [];
 {% endfor %}
 {% for ad in area_directors %}
-area_directors["{{ad.area}}"].push(find_person_by_href("{{ad.defurl}}"));
+area_directors["{{ad.group.acronym}}"].push(find_person_by_href("{{ad.person.defurl}}"));
 {% endfor %}
 
 {% autoescape off %}
@@ -114,7 +111,7 @@ area_directors["{{ad.area}}"].push(find_person_by_href("{{ad.defurl}}"));
 <style type='text/css'>
 
 </style>
-{% endblock scripts %}
+{% endblock js %}
 
 
 {% block start_content_table %}{% endblock %}
@@ -123,12 +120,8 @@ area_directors["{{ad.area}}"].push(find_person_by_href("{{ad.defurl}}"));
 {% block content %}
 
 <div id="read_only">
-<p>
-You do not have write permission to agenda: {{schedule.name}}
-</p>
-</p>
-Please save this agenda to your account first.
-</p>
+  <p>You do not have write permission to agenda: {{schedule.name}}</p>
+  <p>Please save this agenda to your account first.</p>
 </div>
 
 <div class="wrapper custom_text_stuff">
@@ -199,6 +192,7 @@ Please save this agenda to your account first.
 </div>
 
 <table id="meetings" class="ietf-navbar" style="width:100%">
+<tr>
   <th class="schedule_title"><div id="spinner"><!-- spinney goes here --></div></th>
 {% for day in time_slices %}
   <th colspan="{{date_slices|colWidth:day}}" id="{{day|date:'Y-m-d'}}-btn" class=" day_{{day}} agenda_slot_title agenda_slot_unavailable">
@@ -212,16 +206,15 @@ Please save this agenda to your account first.
     </div>
 </th>
 {% endfor %}
+</tr>
     <tr>
       <th class="th_column"><button id="show_all_button" class="styled_button">show all</button></th>
     {% for day in time_slices %}
 	  {% for slot in date_slices|lookup:day %}
 	      <th class="day_{{day}}-{{slot.0|date:'Hi'}} day_{{day}} room_title ">{{slot.0|date:'Hi'}}-{{slot.1|date:'Hi'}} </th>
+          {% endfor %}
 
-	  {% endfor %}
-              <th class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer">
-	      </div></th>
-
+              <th class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer"></th>
     {% endfor %}
 
 
@@ -324,8 +317,6 @@ Please save this agenda to your account first.
       </form>
     </div>
   </div>
-
-</div>
 
 </div>
 

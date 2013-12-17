@@ -17,7 +17,7 @@ class SendQueueAdmin(admin.ModelAdmin):
     list_display = ["time", "by", "message", "send_at", "sent_at"]
     list_filter = ["time", "send_at", "sent_at"]
     search_fields = ["message__body"]
-    raw_id_fields = ["by"]
+    raw_id_fields = ["by", "message"]
     ordering = ["-time"]
 
 admin.site.register(SendQueue, SendQueueAdmin)

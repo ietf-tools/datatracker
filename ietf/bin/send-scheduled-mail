@@ -10,42 +10,24 @@ management.setup_environ(settings)
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
 
-from ietf.announcements.models import ScheduledAnnouncement
-from ietf.announcements.send_scheduled import *
-from django.db.models import Q
-
 if len(sys.argv) != 2 or sys.argv[1] not in ('all', 'rsync', 'specific'):
-    print "USAGE: %s <all | rsync | specific>" % os.path.basename(__file__)
+    print "USAGE: %s <all | specific>" % os.path.basename(__file__)
     print "'all' means all not sent"
-    print "'rsync' means all not sent where to-be-sent-date is null"
     print "'specific' means all not sent that are due to be sent"
     sys.exit(1)
+
+from ietf.message.utils import send_scheduled_message_from_send_queue
+from ietf.message.models import SendQueue
 
 mode = sys.argv[1]
 
 now = datetime.datetime.now()
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from ietf.message.models import SendQueue
-    announcements = SendQueue.objects.filter(sent_at=None)
-    if mode == "rsync":
-        announcements = announcements.filter(send_at=None)
-    elif mode == "specific":
-        announcements = announcements.exclude(send_at=None).filter(send_at__lte=now)
-else:
-    announcements = ScheduledAnnouncement.objects.filter(mail_sent=False)
-    if mode == "rsync":
-        # include bogus 0000-00-00 entries
-        announcements = announcements.filter(Q(to_be_sent_date=None) | Q(to_be_sent_date__lte=datetime.date.min))
-    elif mode == "specific":
-        # exclude null/bogus entries
-        announcements = announcements.exclude(Q(to_be_sent_date=None) | Q(to_be_sent_date__lte=datetime.date.min))
+needs_sending = SendQueue.objects.filter(sent_at=None).select_related("message")
+if mode == "specific":
+    needs_sending = needs_sending.exclude(send_at=None).filter(send_at__lte=now)
 
-        announcements = announcements.filter(to_be_sent_date__lte=now.date(),
-                                             to_be_sent_time__lte=now.time())
-    
-for announcement in announcements:
-    send_scheduled_announcement(announcement)
+for s in needs_sending:
+    send_scheduled_message_from_send_queue(s)
 
-    subject = announcement.message.subject if settings.USE_DB_REDESIGN_PROXY_CLASSES else announcement.subject
-    syslog.syslog(u'Sent scheduled announcement %s "%s"' % (announcement.id, subject))
+    syslog.syslog(u'Sent scheduled message %s "%s"' % (s.id, s.message.subject))

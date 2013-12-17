@@ -3,7 +3,7 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-<!-- v4.84-dev, 6670 $ (dev) Latest release: Rev. 666, 2013-11-06 20:33:49 +0100 -->
+<!-- v4.85-dev, 6958 $ (dev) Latest release: Rev. 695, 2013-12-16 23:34:42 +0100 -->
 <title>IETF 83 Meeting Agenda - DEVELOPMENT MODE</title>
 <link rel="stylesheet" type="text/css" href="/css/yui/yui-20100305.css"></link>
 <link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
@@ -105,7 +105,7 @@ img.hidden { display: none; }
 <td style="width:130px;padding-right:8px;" class="noprint">
 <div class="ietf-navbar">
 
- 
+
 
 
 <ul>
@@ -119,8 +119,7 @@ img.hidden { display: none; }
 
 
 
-
-<li class="sect first">Working Groups</li>
+<li class="sect">Working Groups</li>
 
   <li style="padding-bottom:0;"><div id="wgs" class="yuimenu"><div class="bd" style="border:0;">
   <ul class="first-of-type" style="padding:0;">
@@ -330,7 +329,7 @@ img.hidden { display: none; }
 </div>
 <div style="width: 100%; text-align: center; padding-top:4px;font-size:69%;">
 
-<a href="/release/4.84-dev/">Version 4.84-dev, 2013-11-06</a>
+<a href="/release/4.85-dev/">Version 4.85-dev, 2013-12-16</a>
 <br/>
 
 <a href="http://tools.ietf.org/tools/ietfdb/newticket">Report a bug</a>

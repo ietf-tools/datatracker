@@ -1,38 +1,31 @@
-# Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
-# All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#
-#  * Redistributions in binary form must reproduce the above
-#    copyright notice, this list of conditions and the following
-#    disclaimer in the documentation and/or other materials provided
-#    with the distribution.
-#
-#  * Neither the name of the Nokia Corporation and/or its
-#    subsidiary(-ies) nor the names of its contributors may be used
-#    to endorse or promote products derived from this software
-#    without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.utils.test_utils import SimpleUrlTestCase
+from pyquery import PyQuery
 
-class MailingListsUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
+from ietf.utils.test_utils import TestCase
+from ietf.utils.test_data import make_test_data
+from ietf.utils.mail import outbox
+
+
+class MailingListTests(TestCase):
+    def test_groups(self):
+        draft = make_test_data()
+        group = draft.group
+        url = urlreverse("ietf.mailinglists.views.groups")
+
+        # only those with an archive
+        group.list_archive = ""
+        group.save()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q(".group-archives a:contains(\"%s\")" % group.acronym)), 0)
+
+        # successful get
+        group.list_archive = "https://example.com/foo"
+        group.save()
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q(".group-archives a:contains(\"%s\")" % group.acronym)), 1)
+
 

@@ -96,30 +96,17 @@ span.fieldRequired {
     background-color: #ffdd88;
 }
 
-th.orderField  a {
+th.sort a {
     text-decoration: none;
     color: white;
-    display: block;
+    padding-right: 20px;
+    background: url(/images/sort-header-clear.png) no-repeat right center;
 }
 
-th.orderFieldReversed a {
-    background: #2647A0 url(/images/arrow-down.gif) no-repeat left center;
-    padding-left: 20px;
+th.sorted a {
+    background: url(/images/sort-header-filled.png) no-repeat right center;
 }
 
-th.orderFieldActive a {
-    background: #2647A0 url(/images/arrow-up.gif) no-repeat left center;
-    padding-left: 20px;
-}
-
-.noActionTaken,
-.actionTaken {
-    border: 1px solid green;
-    padding: 2px 5px;
-    background-color: #ccffbb;
-}
-
-.noActionTaken {
-    border: 1px solid red;
-    background-color: #ffccbb;
-}
+.noActionTaken, .actionTaken { padding: 2px 5px; }
+.actionTaken { border: 1px solid green; background-color: #ccffbb; }
+.noActionTaken { border: 1px solid red; background-color: #ffccbb; }

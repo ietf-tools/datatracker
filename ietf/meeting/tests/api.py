@@ -1,21 +1,20 @@
 import base64
 import sys, datetime
-from django.test              import Client
-from ietf.utils import TestCase
+import json
 
+from ietf.utils import TestCase
 from ietf.person.models import Person
 from django.contrib.auth.models import User
 from ietf.meeting.models  import TimeSlot, Session, ScheduledSession, Meeting
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 from auths import auth_joeblow, auth_wlo, auth_ietfchair, auth_ferrel
-from django.utils import simplejson as json
 from ietf.meeting.helpers import get_meeting
 
 import debug
 
 class ApiTestCase(TestCase):
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
+    perma_fixtures = [
                  'meeting83.json',
                  'constraint83.json',
                  'workinggroups.json',
@@ -175,7 +174,7 @@ class ApiTestCase(TestCase):
         resp = self.client.get("/meeting/83/session/%u/constraints.json" % (clue83.pk))
         conflicts = json.loads(resp.content)
         self.assertNotEqual(conflicts, None)
-        self.assertEqual(len(conflicts), 39)
+        self.assertEqual(len(conflicts), 36)
 
     def test_getMeetingInfoJson(self):
         resp = self.client.get('/meeting/83.json')

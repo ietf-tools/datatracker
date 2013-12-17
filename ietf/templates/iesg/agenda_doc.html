@@ -1,130 +1,60 @@
-{% comment %} 
-Copyright (C) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
-All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+{% load ietf_filters ballot_icon %}
+<div class="agenda-doc">
+  <div class="ballot-icon-column">
+    {% ballot_icon doc %}
+  </div>
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions 
-are met:
+  <div>
+    <a href="{% url doc_view name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
+    {% with doc.rfc_number as rfc_number %}
+    {% if rfc_number %}
+    <a href="http://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">[txt]</a>
+    {% else %}
+    <a href="http://www.ietf.org/id/{{doc.name}}-{{doc.rev}}.txt">[txt]</a>
+    {% endif %}
+    {% endwith %}
 
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
+    <span class="stream">{% if doc.stream %} - {{ doc.stream }} stream{% endif %}</span>
 
- * Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided
-   with the distribution.
-
- * Neither the name of the Nokia Corporation and/or its
-   subsidiary(-ies) nor the names of its contributors may be used
-   to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-{% endcomment %}
-{% comment %}
-Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
-{% endcomment %}
-{% load ietf_filters %}{% load ballot_icon %}
-
-{% if title2_first %}{% if title1_first %}<h2>{{ title1 }}</h2>
-{% if title1|startswith:"2." %}
-    <blockquote>
-    Reviews should focus on these questions: "Is this document a
-    reasonable basis on which to build the salient part of the Internet
-    infrastructure? If not, what changes would make it so?"
-    </blockquote>
-{% endif %}
-{% endif %}
-<h3>{{ title2 }}</h3>
-{% if title2|startswith:"3.1" or title2|startswith:"3.2" %}
-    <blockquote>
-    Reviews should focus on these questions: "Is this document a
-    reasonable contribution to the area of Internet engineering
-    which it covers? If not, what changes would make it so?"
-    </blockquote>
-{% endif %}
-{% if title2|startswith:"3.3" %}
-    <blockquote>
-    Reviews should focus on these questions: "Are the proposed 
-    changes to document status appropriate? Have all requirements 
-    for such a change been met? If not, what changes to the proposal 
-    would make it appropriate?" 
-    </blockquote>
-{% endif %}
-{% endif %}<h4>{{ title3 }}</h4>
-
-{% for doc in section_docs %}
-{% if forloop.first %}
-{% endif %}
-
-<table class="agenda-doc">
-<tbody>
-<tr><td>
-<a href="{% url doc_view name=doc.obj.canonical_name %}">{{doc.obj.canonical_name}}</a>
-{% with doc.obj.rfc_number as rfc_number %}
-{% if rfc_number %}
-<a href="http://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">[txt]</a>
-{% else %}
-<a href="http://www.ietf.org/id/{{doc.obj.name}}-{{doc.obj.rev}}.txt">[txt]</a>
-{% endif %}
-{% endwith %}
-
-<span class="stream">{% if doc.obj.stream %} - {{ doc.obj.stream }} stream{% endif %}</span>
-
-<br/>{{ doc.obj.title|escape }} ({{ doc.obj.intended_std_level }})
+    <br/>{{ doc.title|escape }} ({{ doc.intended_std_level }})
 
 
-{% if doc.obj.note %}
-<br/>Note: {{ doc.obj.note|linebreaksbr }}
-{% endif %}
+    {% if doc.note %}
+    <br/>Note: {{ doc.note|linebreaksbr }}
+    {% endif %}
 
-{% if doc.obj.ipr %}
-<br />
-<h5>IPR:</h5>
-   <ul>
-   {% for ipr in doc.obj.ipr %}
-      {% ifequal ipr.ipr.status 1 %}
-      <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a></li>
-      {% endifequal %}
-   {% endfor %}
-   </ul>
+    {% if doc.ipr %}
+    <br />
+    <h5>IPR:</h5>
+     <ul>
+     {% for ipr in doc.ipr %}
+        {% if ipr.ipr.status == 1 %}
+        <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a></li>
+        {% endif %}
+     {% endfor %}
+     </ul>
 
-{% endif %}
+    {% endif %}
 
-<br/>Token: {{ doc.obj.ad }} ({{doc.obj.area_acronym}} area)
-{% with doc.obj.active_defer_event as defer %}
-{% if defer %}
-<br/>Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}
-{% endif %}
-{% endwith %}
+    <br/>Token: {{ doc.ad }} ({{ doc.area_acronym }} area)
 
-{% if doc.obj.iana_review_state %}
-<br/>IANA Review: {{ doc.obj.iana_review_state }}
-{% endif %}
+    {% with doc.active_defer_event as defer %}
+    {% if defer %}
+    <br/>Was deferred by {{ defer.by }} on {{ defer.time|date:"Y-m-d" }}
+    {% endif %}
+    {% endwith %}
 
-{% if doc.obj.consensus %}
-<br/>Consensus: {{ doc.obj.consensus }}
-{% endif %}
+    {% if doc.iana_review_state %}
+    <br/>IANA Review: {{ doc.iana_review_state }}
+    {% endif %}
 
-{% if doc.obj.lastcall_expires %}
-<br/>Last call expires: {{ doc.obj.lastcall_expires|date:"Y-m-d" }}
-{% endif %}
+    {% if doc.consensus %}
+    <br/>Consensus: {{ doc.consensus }}
+    {% endif %}
 
-</td><td style="padding-left:20px; width: 50px;">
-{% ballot_icon doc.obj %}
-</td></tr></tbody></table>
-{% if forloop.last %}
-{% endif %}
-{% empty %}
-<p>NONE</p>
-{% endfor %}
+    {% if doc.lastcall_expires %}
+    <br/>Last call expires: {{ doc.lastcall_expires|date:"Y-m-d" }}
+    {% endif %}
+
+  </div>
+</div>

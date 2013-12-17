@@ -1,101 +1,281 @@
-# Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
-# All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#
-#  * Redistributions in binary form must reproduce the above
-#    copyright notice, this list of conditions and the following
-#    disclaimer in the documentation and/or other materials provided
-#    with the distribution.
-#
-#  * Neither the name of the Nokia Corporation and/or its
-#    subsidiary(-ies) nor the names of its contributors may be used
-#    to endorse or promote products derived from this software
-#    without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import os, datetime, shutil
 
-import os
-import unittest
-from django.test.client import Client
+import urllib
+
+from pyquery import PyQuery
+
 from django.conf import settings
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, canonicalize_sitemap
-from ietf.utils.mail import outbox, empty_outbox
+from django.core.urlresolvers import reverse as urlreverse
 
-class IprUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
-    def doCanonicalize(self, url, content):
-        if url.startswith("/feed/"):
-            return canonicalize_feed(content)
-        elif url == "/sitemap-ipr.xml":
-            return canonicalize_sitemap(content)
-        else:
-            return content
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_data import make_test_data
+from ietf.utils.mail import outbox
+from ietf.ipr.models import *
 
-# this test should be ported to run on a test database instead of the
-# real database, and possibly expanded
-# class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
-#     SPECIFIC_DISCLOSURE = {
-#         'legal_name':'Testing Only Please Ignore',
-#         'hold_name':'Test Holder',
-#         'hold_telephone':'555-555-0100',
-#         'hold_email':'test.holder@example.com',
-#         'ietf_name':'Test Participant',
-#         'ietf_telephone':'555-555-0101',
-#         'ietf_email':'test.participant@example.com',
-#         'rfclist':'1149',
-#         'draftlist':'draft-burdis-http-sasl-00',
-#         'patents':'none',
-#         'date_applied':'never',
-#         'country':'nowhere',
-#         'licensing_option':'5',
-#         'subm_name':'Test Submitter',
-#         'subm_telephone':'555-555-0102',
-#         'subm_email':'test.submitter@example.com'
-#         }
-# 
-#     def setUp(self):
-#         self.setUpRealDatabase()
-#     def tearDown(self):
-#         self.tearDownRealDatabase()
-# 
-#     def testNewSpecific(self):
-#         print "     Testing IPR disclosure submission"
-#         empty_outbox()
-#         c = Client()
-#         response = c.post('/ipr/new-specific/', self.SPECIFIC_DISCLOSURE)
-#         self.assertEquals(response.status_code, 200)
-#         self.assert_("Your IPR disclosure has been submitted" in response.content)
-#         self.assertEquals(len(outbox), 1)
-#         print "OK   (1 email found in test outbox)"
+
+class IprTests(TestCase):
+    def setUp(self):
+        # for patent number search
+        self.ipr_dir = os.path.abspath("tmp-ipr-dir")
+        if not os.path.exists(self.ipr_dir):
+            os.mkdir(self.ipr_dir)
+        settings.IPR_DOCUMENT_PATH = self.ipr_dir
+
+    def tearDown(self):
+        shutil.rmtree(self.ipr_dir)
+    
+    def test_overview(self):
+        make_test_data()
+        ipr = IprDetail.objects.get(title="Statement regarding rights")
+
+        r = self.client.get(urlreverse("ipr_showlist"))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+
+    def test_iprs_for_drafts(self):
+        draft = make_test_data()
+        ipr = IprDetail.objects.get(title="Statement regarding rights")
+
+        r = self.client.get(urlreverse("ietf.ipr.views.iprs_for_drafts_txt"))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.name in r.content)
+        self.assertTrue(str(ipr.pk) in r.content)
+
+    def test_about(self):
+        r = self.client.get(urlreverse("ietf.ipr.views.about"))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("File a disclosure" in r.content)
+
+    def test_search(self):
+        draft = make_test_data()
+        ipr = IprDetail.objects.get(title="Statement regarding rights")
+
+        url = urlreverse("ipr_search")
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q("form input[name=document_search]"))
+
+        # find by id
+        r = self.client.get(url + "?option=document_search&id=%s" % draft.name)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+
+        # find draft
+        r = self.client.get(url + "?option=document_search&document_search=%s" % draft.name)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+
+        # search + select document
+        r = self.client.get(url + "?option=document_search&document_search=draft")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.name in r.content)
+        self.assertTrue(ipr.title not in r.content)
+
+        DocAlias.objects.create(name="rfc321", document=draft)
+
+        # find RFC
+        r = self.client.get(url + "?option=rfc_search&rfc_search=321")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+
+        # find by patent owner
+        r = self.client.get(url + "?option=patent_search&patent_search=%s" % ipr.legal_name)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
         
-    
-class IprFileTestCase(unittest.TestCase):
-    def testFileExistence(self):
-        print "     Testing if IPR disclosure files exist locally"
-        fpath = os.path.join(settings.IPR_DOCUMENT_PATH, "juniper-ipr-RFC-4875.txt")
-        if not os.path.exists(fpath):
-            print "\nERROR: IPR disclosure files not found in "+settings.IPR_DOCUMENT_PATH
-            print "They are needed for testing IPR searching."
-            print "Download them to a local directory with:"
-            print "wget -nd -nc -np -r ftp://ftp.ietf.org/ietf/IPR/"
-            print "And set IPR_DOCUMENT_PATH in settings_local.py\n"
-        else:
-            print "OK   (they seem to exist)"
-    
+        # find by patent info
+        r = self.client.get(url + "?option=patent_info_search&patent_info_search=%s" % ipr.patents)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+
+        # find by patent info in file
+        filename = "ipr1.txt"
+        with open(os.path.join(self.ipr_dir, filename), "w") as f:
+            f.write("Hello world\nPTO9876")
+        ipr.legacy_url_0 = "/hello/world/%s" % filename
+        ipr.save()
+
+        r = self.client.get(url + "?option=patent_info_search&patent_info_search=PTO9876")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+
+        # must search for at least 3 characters with digit
+        r = self.client.get(url + "?option=patent_info_search&patent_info_search=a")
+        self.assertTrue("ipr search result error" in r.content.lower())
+
+        r = self.client.get(url + "?option=patent_info_search&patent_info_search=aaa")
+        self.assertTrue("ipr search result error" in r.content.lower())
+        
+        # find by group acronym
+        r = self.client.get(url + "?option=wg_search&wg_search=%s" % draft.group.acronym)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+
+        # find by doc title
+        r = self.client.get(url + "?option=title_search&title_search=%s" % urllib.quote(draft.title))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+
+        # find by ipr title
+        r = self.client.get(url + "?option=ipr_title_search&ipr_title_search=%s" % urllib.quote(ipr.title))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+
+    def test_feed(self):
+        make_test_data()
+        ipr = IprDetail.objects.get(title="Statement regarding rights")
+
+        r = self.client.get("/feed/ipr/")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+
+    def test_sitemap(self):
+        make_test_data()
+        ipr = IprDetail.objects.get(title="Statement regarding rights")
+
+        r = self.client.get("/sitemap-ipr.xml")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("/ipr/%s/" % ipr.pk in r.content)
+
+    def test_new_generic(self):
+        draft = make_test_data()
+
+        url = urlreverse("ietf.ipr.new.new", kwargs={ "type": "generic" })
+
+        # faulty post
+        r = self.client.post(url, {
+            "legal_name": "Test Legal",
+            })
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("ul.errorlist")) > 0)
+
+        # successful post
+        r = self.client.post(url, {
+            "legal_name": "Test Legal",
+            "hold_name": "Test Holder",
+            "hold_telephone": "555-555-0100",
+            "hold_email": "test.holder@example.com",
+            "ietf_name": "Test Participant",
+            "ietf_telephone": "555-555-0101",
+            "ietf_email": "test.participant@example.com",
+            "patents": "none",
+            "date_applied": "never",
+            "country": "nowhere",
+            "licensing_option": "5",
+            "subm_name": "Test Submitter",
+            "subm_telephone": "555-555-0102",
+            "subm_email": "test.submitter@example.com"
+            })
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Your IPR disclosure has been submitted" in r.content)
+
+        iprs = IprDetail.objects.filter(title__icontains="General License Statement")
+        self.assertEqual(len(iprs), 1)
+        ipr = iprs[0]
+        self.assertEqual(ipr.legal_name, "Test Legal")
+        self.assertEqual(ipr.status, 0)
+
+    def test_new_specific(self):
+        draft = make_test_data()
+
+        url = urlreverse("ietf.ipr.new.new", kwargs={ "type": "specific" })
+
+        # successful post
+        r = self.client.post(url, {
+            "legal_name": "Test Legal",
+            "hold_name": "Test Holder",
+            "hold_telephone": "555-555-0100",
+            "hold_email": "test.holder@example.com",
+            "ietf_name": "Test Participant",
+            "ietf_telephone": "555-555-0101",
+            "ietf_email": "test.participant@example.com",
+            "rfclist": DocAlias.objects.filter(name__startswith="rfc")[0].name[3:],
+            "draftlist": "%s-%s" % (draft.name, draft.rev),
+            "patents": "none",
+            "date_applied": "never",
+            "country": "nowhere",
+            "licensing_option": "5",
+            "subm_name": "Test Submitter",
+            "subm_telephone": "555-555-0102",
+            "subm_email": "test.submitter@example.com"
+            })
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Your IPR disclosure has been submitted" in r.content)
+
+        iprs = IprDetail.objects.filter(title__icontains=draft.name)
+        self.assertEqual(len(iprs), 1)
+        ipr = iprs[0]
+        self.assertEqual(ipr.legal_name, "Test Legal")
+        self.assertEqual(ipr.status, 0)
+
+    def test_new_thirdparty(self):
+        draft = make_test_data()
+
+        url = urlreverse("ietf.ipr.new.new", kwargs={ "type": "third-party" })
+
+        # successful post
+        r = self.client.post(url, {
+            "legal_name": "Test Legal",
+            "hold_name": "Test Holder",
+            "hold_telephone": "555-555-0100",
+            "hold_email": "test.holder@example.com",
+            "ietf_name": "Test Participant",
+            "ietf_telephone": "555-555-0101",
+            "ietf_email": "test.participant@example.com",
+            "rfclist": "",
+            "draftlist": "%s-%s" % (draft.name, draft.rev),
+            "patents": "none",
+            "date_applied": "never",
+            "country": "nowhere",
+            "licensing_option": "5",
+            "subm_name": "Test Submitter",
+            "subm_telephone": "555-555-0102",
+            "subm_email": "test.submitter@example.com"
+            })
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Your IPR disclosure has been submitted" in r.content)
+
+        iprs = IprDetail.objects.filter(title__icontains="belonging to Test Legal")
+        self.assertEqual(len(iprs), 1)
+        ipr = iprs[0]
+        self.assertEqual(ipr.legal_name, "Test Legal")
+        self.assertEqual(ipr.status, 0)
+
+    def test_update(self):
+        draft = make_test_data()
+        original_ipr = IprDetail.objects.get(title="Statement regarding rights")
+
+        url = urlreverse("ietf.ipr.new.update", kwargs={ "ipr_id": original_ipr.pk })
+
+        # successful post
+        r = self.client.post(url, {
+            "legal_name": "Test Legal",
+            "hold_name": "Test Holder",
+            "hold_telephone": "555-555-0100",
+            "hold_email": "test.holder@example.com",
+            "ietf_name": "Test Participant",
+            "ietf_telephone": "555-555-0101",
+            "ietf_email": "test.participant@example.com",
+            "rfclist": "",
+            "draftlist": "%s-%s" % (draft.name, draft.rev),
+            "patents": "none",
+            "date_applied": "never",
+            "country": "nowhere",
+            "licensing_option": "5",
+            "subm_name": "Test Submitter",
+            "subm_telephone": "555-555-0102",
+            "subm_email": "test.submitter@example.com"
+            })
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Your IPR disclosure has been submitted" in r.content)
+
+        iprs = IprDetail.objects.filter(title__icontains=draft.name)
+        self.assertEqual(len(iprs), 1)
+        ipr = iprs[0]
+        self.assertEqual(ipr.legal_name, "Test Legal")
+        self.assertEqual(ipr.status, 0)
+
+        self.assertTrue(ipr.updates.filter(updated=original_ipr))

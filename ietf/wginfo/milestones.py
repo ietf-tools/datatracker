@@ -3,7 +3,6 @@
 import re, os, string, datetime, shutil, calendar
 
 from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from django import forms
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
@@ -12,7 +11,7 @@ from django.utils.html import mark_safe, escape
 from django.utils.functional import lazy
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.ietfauth.decorators import role_required, has_role
+from ietf.ietfauth.utils import role_required, has_role
 from ietf.doc.models import Document, DocEvent
 from ietf.doc.utils import get_chartering_type
 from ietf.group.models import *
@@ -313,7 +312,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
             if milestone_set == "charter":
                 return redirect('doc_view', name=group.charter.canonical_name())
             else:
-                return redirect('wg_charter', acronym=group.acronym)
+                return redirect('group_charter', acronym=group.acronym)
     else:
         for m in milestones:
             forms.append(MilestoneForm(instance=m, needs_review=needs_review))

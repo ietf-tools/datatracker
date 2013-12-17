@@ -8,14 +8,11 @@ from ietf.utils.mail import send_mail_text
 from ietf.liaisons.utils import role_persons_with_fixed_email
 from ietf.group.models import Role
 
-def send_liaison_by_email(request, liaison, fake=False):
-    if liaison.is_pending(): # this conditional should definitely be at the caller, not here
-        return notify_pending_by_email(request, liaison, fake)
-
+def send_liaison_by_email(request, liaison):
     subject = u'New Liaison Statement, "%s"' % (liaison.title)
     from_email = settings.LIAISON_UNIVERSAL_FROM
-    to_email = liaison.to_poc.split(',')
-    cc = liaison.cc1.split(',')
+    to_email = liaison.to_contact.split(',')
+    cc = liaison.cc.split(',')
     if liaison.technical_contact:
         cc += liaison.technical_contact.split(',')
     if liaison.response_contact:
@@ -29,7 +26,7 @@ def send_liaison_by_email(request, liaison, fake=False):
 
     send_mail_text(request, to_email, from_email, subject, body, cc=", ".join(cc), bcc=", ".join(bcc))
 
-def notify_pending_by_email(request, liaison, fake):
+def notify_pending_by_email(request, liaison):
 
     # Broken: this does not find the list of approvers for the sending body
     # For now, we are sending to statements@ietf.org so the Secretariat can nudge

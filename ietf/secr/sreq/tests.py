@@ -1,28 +1,30 @@
-import unittest
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-from ietf.utils import TestCase
-from django.test.client import Client
-from ietf.group.models import Group
-from ietf.ietfauth.decorators import has_role
-from ietf.utils.test_data import make_test_data
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
-from ietf.idtracker.models import Role
 
-from urlparse import urlsplit
+from ietf.utils import TestCase
+from ietf.group.models import Group
+from ietf.ietfauth.utils import has_role
+from ietf.utils.test_data import make_test_data
+
 #from pyquery import PyQuery
 
 SECR_USER='secretary'
 
-class SreqUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
+class SreqUrlTests(TestCase):
+    def test_urls(self):
+        draft = make_test_data()
+
+        r = self.client.get("/secr/")
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.get("/secr/sreq/")
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.get("/secr/sreq/%s/new/" % draft.group.acronym)
+        self.assertEqual(r.status_code, 200)
 
 class MainTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-    
     def test_main(self):
         draft = make_test_data()
         url = reverse('sessions')
@@ -34,8 +36,6 @@ class MainTestCase(TestCase):
         self.failUnless(len(unsched) > 0)
 
 class SubmitRequestCase(TestCase):
-    perma_fixtures = ['names']
-    
     def test_submit_request(self):
         draft = make_test_data()
         acronym = Group.objects.all()[0].acronym

@@ -7,8 +7,8 @@ from django.views.generic.simple import redirect_to
 
 urlpatterns = patterns('',
      url(r'^$', views.showlist, name='ipr_showlist'),
-     (r'^about/$', views.default),
-     (r'^by-draft/$', views.list_drafts),
+     (r'^about/$', views.about),
+     (r'^by-draft/$', views.iprs_for_drafts_txt),
      url(r'^(?P<ipr_id>\d+)/$', views.show, name='ipr_show'),
      (r'^update/$', redirect_to, { 'url': reverse_lazy('ipr_showlist') }),
      (r'^update/(?P<ipr_id>\d+)/$', new.update),
@@ -17,7 +17,3 @@ urlpatterns = patterns('',
      (r'^new-(?P<type>third-party)/$', new.new),
      url(r'^search/$', search.search, name="ipr_search"),
 )
-
-
-
-

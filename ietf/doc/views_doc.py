@@ -61,12 +61,10 @@ def render_document_top(request, doc, tab, name):
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id in ("draft","conflrev", "statchg"):
-        # if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
         tabs.append(("IESG Evaluation Record", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot,  None if ballot else "IESG Evaluation Ballot has not been created yet"))
     elif doc.type_id == "charter":
         tabs.append(("IESG Review", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot, None if ballot else "IEST Review Ballot has not been created yet"))
 
-    # FIXME: if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
     if doc.type_id not in ["conflrev", "statchg"]:
         tabs.append(("IESG Writeups", "writeup", urlreverse("doc_writeup", kwargs=dict(name=name)), True))
 
@@ -254,9 +252,11 @@ def document_main(request, name, rev=None):
                 resurrected_by = e.by
 
         # stream info
+        stream_state_type_slug = None
         stream_state = None
         if doc.stream:
-            stream_state = doc.get_state("draft-stream-%s" % doc.stream_id)
+            stream_state_type_slug = "draft-stream-%s" % doc.stream_id
+            stream_state = doc.get_state(stream_state_type_slug)
         stream_tags = doc.tags.filter(slug__in=get_tags_for_stream_id(doc.stream_id))
 
         shepherd_writeup = doc.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
@@ -286,13 +286,8 @@ def document_main(request, name, rev=None):
         # remaining actions
         actions = []
 
-        if ((not doc.stream_id or doc.stream_id in ("ietf", "irtf")) and group.type_id == "individ" and
-            (request.user.is_authenticated() and
-             Role.objects.filter(person__user=request.user, name__in=("chair", "secr", "delegate"),
-                                 group__type__in=("wg","rg"),
-                                 group__state="active")
-             or has_role(request.user, "Secretariat"))):
-            actions.append(("Adopt in Group", urlreverse('edit_adopt', kwargs=dict(name=doc.name))))
+        if can_adopt_draft(request.user, doc):
+            actions.append(("Adopt in Group", urlreverse('doc_adopt_draft', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() == "expired" and not resurrected_by and can_edit:
             actions.append(("Request Resurrect", urlreverse('doc_request_resurrect', kwargs=dict(name=doc.name))))
@@ -366,6 +361,7 @@ def document_main(request, name, rev=None):
                                        has_errata=doc.tags.filter(slug="errata"),
                                        published=doc.latest_event(type="published_rfc"),
                                        file_urls=file_urls,
+                                       stream_state_type_slug=stream_state_type_slug,
                                        stream_state=stream_state,
                                        stream_tags=stream_tags,
                                        milestones=doc.groupmilestone_set.filter(state="active"),
@@ -764,48 +760,6 @@ def document_json(request, name):
         data["stream"] = extract_name(doc.stream)
 
     return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
-
-def ballot_json(request, name):
-    # REDESIGN: this view needs to be deleted or updated
-    def get_ballot(name):
-        from ietf.doc.models import DocAlias
-        alias = get_object_or_404(DocAlias, name=name)
-        d = alias.document
-        from ietf.idtracker.models import InternetDraft, BallotInfo
-        from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
-        id = None
-        bw = None
-        dw = None
-        if (d.type_id=='draft'):
-            id = get_object_or_404(InternetDraft, name=d.name)
-            try:
-                if not id.ballot.ballot_issued:
-                    raise Http404
-            except BallotInfo.DoesNotExist:
-                raise Http404
-
-            bw = BallotWrapper(id)               # XXX Fixme: Eliminate this as we go forward
-            # Python caches ~100 regex'es -- explicitly compiling it inside a method
-            # (where you then throw away the compiled version!) doesn't make sense at
-            # all.
-            if re.search("^rfc([1-9][0-9]*)$", name):
-                id.viewing_as_rfc = True
-                dw = RfcWrapper(id)
-            else:
-                dw = IdWrapper(id)
-            # XXX Fixme: Eliminate 'dw' as we go forward
-
-        try:
-            b = d.latest_event(BallotDocEvent, type="created_ballot")
-        except BallotDocEvent.DoesNotExist:
-            raise Http404
-
-        return (bw, dw, b, d)
-    
-    ballot, doc, b, d = get_ballot(name)
-    response = HttpResponse(mimetype='text/plain')
-    response.write(json.dumps(ballot.dict(), indent=2))
-    return response
 
 class AddCommentForm(forms.Form):
     comment = forms.CharField(required=True, widget=forms.Textarea)

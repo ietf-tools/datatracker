@@ -5,9 +5,5 @@ class TelechatAgendaItemAdmin(admin.ModelAdmin):
     pass
 admin.site.register(TelechatAgendaItem, TelechatAgendaItemAdmin)
 
-class WGActionAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(WGAction, WGActionAdmin)
-
 admin.site.register(TelechatDate)
 

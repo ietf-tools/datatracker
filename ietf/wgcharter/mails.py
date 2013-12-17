@@ -33,7 +33,7 @@ def email_secretariat(request, group, type, text):
               "wgcharter/email_secretariat.txt",
               dict(text=text,
                    group=group,
-                   group_url=settings.IDTRACKER_BASE_URL + urlreverse('wg_charter', kwargs=dict(acronym=group.acronym)),
+                   group_url=settings.IDTRACKER_BASE_URL + urlreverse('group_charter', kwargs=dict(acronym=group.acronym)),
                    charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=group.charter.name)),
                    )
               )

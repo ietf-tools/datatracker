@@ -7,13 +7,12 @@ from django.contrib import admin
 from ietf.iesg.feeds import IESGAgenda
 from ietf.doc.feeds import DocumentChanges, InLastCall
 from ietf.ipr.feeds import LatestIprDisclosures
-from ietf.proceedings.feeds import LatestWgProceedingsActivity
+from ietf.meeting.feeds import LatestMeetingMaterial
 from ietf.liaisons.feeds import Liaisons
 from ietf.wgcharter.feeds import GroupChanges
 
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
-from ietf.announcements.sitemaps import NOMCOMAnnouncementsMap
 
 from django.conf import settings
 
@@ -36,13 +35,12 @@ feeds = {
     'group-changes': GroupChanges,
     'ipr': LatestIprDisclosures,
     'liaison': Liaisons,
-    'wg-proceedings' : LatestWgProceedingsActivity
+    'wg-proceedings' : LatestMeetingMaterial,
 }
 
 sitemaps = {
     'liaison': LiaisonMap,
     'ipr': IPRMap,
-    'nomcom-announcements': NOMCOMAnnouncementsMap,
 }
 
 urlpatterns = patterns('',
@@ -50,7 +48,7 @@ urlpatterns = patterns('',
     (r'^accounts/', include('ietf.ietfauth.urls')),
     (r'^admin/', include(admin.site.urls)),
     (r'^admin/doc/', include('django.contrib.admindocs.urls')),
-    (r'^ann/', include('ietf.announcements.urls')),
+    (r'^ann/', include('ietf.nomcom.redirect_ann_urls')),
     (r'^community/', include('ietf.community.urls')),
     (r'^cookies/', include('ietf.cookies.urls')),
     (r'^doc/', include('ietf.doc.urls')),
@@ -71,7 +69,6 @@ urlpatterns = patterns('',
     (r'^secr/', include('ietf.secr.urls')),
     (r'^sitemap-(?P<section>.+).xml$', 'django.contrib.sitemaps.views.sitemap', {'sitemaps': sitemaps}),
     (r'^sitemap.xml$', 'django.contrib.sitemaps.views.index', { 'sitemaps': sitemaps}),
-    (r'^streams/', include('ietf.ietfworkflows.urls')),
     (r'^submit/', include('ietf.submit.urls')),
     (r'^sync/', include('ietf.sync.urls')),
     (r'^wg/', include('ietf.wginfo.urls')),

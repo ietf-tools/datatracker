@@ -1,1 +1,0 @@
-{% load ietf_filters %}{{doc_group.grouper}}	{% if doc.get_state_slug == "rfc" %}{{doc.rfc_number}}	{{doc.title|clean_whitespace}}{% else %}{{doc.name}}-{{doc.rev}}	{{doc.title|clean_whitespace}}{% endif %}

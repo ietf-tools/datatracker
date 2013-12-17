@@ -2,7 +2,7 @@ from django.conf import settings
 from ietf.group.models import Group
 from ietf.meeting.models import Session
 
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 
 import itertools
 import os

@@ -4,11 +4,10 @@ from ietf.utils import TestCase
 from django.contrib.auth.models import User
 
 from ietf.group.models import Group
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 from ietf.person.models import Person
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
 
 from pyquery import PyQuery
 
@@ -16,15 +15,7 @@ SECR_USER='secretary'
 WG_USER=''
 AD_USER=''
 
-#class AnnouncementUrlTestCase(SimpleUrlTestCase):
-#    def testUrls(self):
-#        self.doTestUrls(__file__)
-
-
 class MainTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-    
     # ------- Test View -------- #
     def test_main(self):
         "Main Test"
@@ -37,8 +28,6 @@ class DummyCase(TestCase):
     name = connection.settings_dict['NAME']
 
 class UnauthorizedCase(TestCase):
-    perma_fixtures = ['names']
-                
     def test_unauthorized(self):
         "Unauthorized Test"
         draft = make_test_data()
@@ -48,8 +37,6 @@ class UnauthorizedCase(TestCase):
         self.assertEquals(r.status_code, 403)
     
 class SubmitCase(TestCase):
-    perma_fixtures = ['names']
-    
     def test_invalid_submit(self):
         "Invalid Submit"
         draft = make_test_data()

@@ -1,8 +1,9 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-#import models
 import datetime
 import os
+
+import pytz
 
 from django.http import Http404
 from django.http import HttpRequest
@@ -10,17 +11,13 @@ from django.db.models import Max, Q
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.cache import get_cache_key
+from django.shortcuts import get_object_or_404
 
 import debug
 
-from django.shortcuts import get_object_or_404
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 from ietf.utils.history import find_history_active_at
 from ietf.doc.models import Document, State
-
-from ietf.proceedings.models import Meeting as OldMeeting, MeetingTime, IESGHistory, Switches
-
-# New models
 from ietf.meeting.models import Meeting
 from ietf.group.models import Group
 
@@ -37,70 +34,17 @@ def find_ads_for_meeting(meeting):
         if history and history != g:
             #print " history[%u]: %s" % (num, history)
             if history.state_id == "active":
-                for x in history.rolehistory_set.filter(name="ad").select_related():
+                for x in history.rolehistory_set.filter(name="ad").select_related('group', 'person', 'email'):
                     #print "xh[%u]: %s" % (num, x)
-                    ads.append(IESGHistory().from_role(x, meeting_time))
+                    ads.append(x)
         else:
             #print " group[%u]: %s" % (num, g)
             if g.state_id == "active":
-                for x in g.role_set.filter(name="ad").select_related('group', 'person'):
+                for x in g.role_set.filter(name="ad").select_related('group', 'person', 'email'):
                     #print "xg[%u]: %s (#%u)" % (num, x, x.pk)
-                    ads.append(IESGHistory().from_role(x, meeting_time))
+                    ads.append(x)
     return ads
 
-def agenda_info(num=None):
-    try:
-        if num != None:
-            meeting = OldMeeting.objects.get(number=num)
-        else:
-            meeting = OldMeeting.objects.all().order_by('-date')[:1].get()
-    except OldMeeting.DoesNotExist:
-        raise Http404("No meeting information for meeting %s available" % num)
-
-    # now go through the timeslots, only keeping those that are
-    # sessions/plenary/training and don't occur at the same time
-    timeslots = []
-    time_seen = set()
-    for t in MeetingTime.objects.filter(meeting=meeting, type__in=("session", "plenary", "other")).order_by("time").select_related():
-        if not t.time in time_seen:
-            time_seen.add(t.time)
-            timeslots.append(t)
-
-    update = Switches().from_object(meeting)
-    venue = meeting.meeting_venue
-
-    ads = []
-    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
-    for g in Group.objects.filter(type="area").order_by("acronym"):
-        history = find_history_active_at(g, meeting_time)
-        if history and history != g:
-            if history.state_id == "active":
-                ads.extend(IESGHistory().from_role(x, meeting_time) for x in history.rolehistory_set.filter(name="ad").select_related())
-        else:
-            if g.state_id == "active":
-                ads.extend(IESGHistory().from_role(x, meeting_time) for x in g.role_set.filter(name="ad").select_related('group', 'person'))
-    
-    active_agenda = State.objects.get(used=True, type='agenda', slug='active')
-    plenary_agendas = Document.objects.filter(session__meeting=meeting, session__slots__type="plenary", type="agenda", ).distinct()
-    plenaryw_agenda = plenaryt_agenda = "The agenda has not been uploaded yet."
-    for agenda in plenary_agendas:
-        if active_agenda in agenda.states.all():
-            # we use external_url at the moment, should probably regularize
-            # the filenames to match the document name instead
-            path = os.path.join(settings.AGENDA_PATH, meeting.number, "agenda", agenda.external_url)
-            try:
-                f = open(path)
-                s = f.read()
-                f.close()
-            except IOError:
-                 s = "No agenda file found."
-
-            if "tech" in agenda.name.lower():
-                plenaryt_agenda = s
-            else:
-                plenaryw_agenda = s
-
-    return timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda
 
 # get list of all areas, + IRTF + IETF (plenaries).
 def get_pseudo_areas():
@@ -169,7 +113,7 @@ def get_wg_list(scheduledsessions):
 
 
 def get_meeting(num=None):
-    if (num == None):
+    if num == None:
         meeting = Meeting.objects.filter(type="ietf", agenda__isnull=False).order_by("-date")[:1].get()
     else:
         meeting = get_object_or_404(Meeting, number=num)
@@ -188,6 +132,13 @@ def get_schedule_by_id(meeting, schedid):
     else:
         schedule = get_object_or_404(meeting.schedule_set, id=int(schedid))
     return schedule
+
+def meeting_updated(meeting):
+    ts = max(meeting.timeslot_set.aggregate(Max('modified'))["modified__max"] or datetime.datetime.min,
+             meeting.session_set.aggregate(Max('modified'))["modified__max"] or datetime.datetime.min)
+    tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
+    ts = tz.localize(ts)
+    return ts
 
 def agenda_permissions(meeting, schedule, user):
     # do this in positive logic.

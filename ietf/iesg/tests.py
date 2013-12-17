@@ -1,67 +1,367 @@
-from datetime import timedelta
-import os, shutil
+import os, shutil, json
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 
 from pyquery import PyQuery
 
-from ietf.idtracker.models import *
+from ietf.utils.test_data import make_test_data
+from ietf.doc.models import *
+from ietf.person.models import Person
+from ietf.group.models import Group
+from ietf.name.models import StreamName
 from ietf.iesg.models import *
-from ietf.utils.test_utils import TestCase, SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, login_testing_unauthorized
-from ietf.ietfworkflows.models import Stream
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.iesg.agenda import get_agenda_date, agenda_data
 
-class RescheduleOnAgendaTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['base', 'draft']
+class ReviewDecisionsTests(TestCase):
+    def test_review_decisions(self):
+        draft = make_test_data()
 
-    def test_reschedule(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        draft.idinternal.telechat_date = TelechatDates.objects.all()[0].dates()[0]
-        draft.idinternal.agenda = True
-        draft.idinternal.returning_item = True
-        draft.idinternal.save()
+        e = DocEvent(type="iesg_approved")
+        e.doc = draft
+        e.by = Person.objects.get(name="Aread Irector")
+        e.save()
 
-        form_id = draft.idinternal.draft_id
-        telechat_date_before = draft.idinternal.telechat_date
-        
-        url = urlreverse('ietf.iesg.views.agenda_documents')
-        self.client.login(remote_user="klm")
+        url = urlreverse('ietf.iesg.views.review_decisions')
 
-        # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form select[name=%s-telechat_date]' % form_id)), 1)
-        self.assertEquals(len(q('form input[name=%s-clear_returning_item]' % form_id)), 1)
+        self.assertTrue(draft.name in r.content)
 
-        # reschedule
-        comments_before = draft.idinternal.comments().count()
-        d = TelechatDates.objects.all()[0].dates()[2]
+class IESGAgendaTests(TestCase):
+    def setUp(self):
+        make_test_data()
 
-        r = self.client.post(url, { '%s-telechat_date' % form_id: d.strftime("%Y-%m-%d"),
-                                    '%s-clear_returning_item' % form_id: "1" })
+        ise_draft = Document.objects.get(name="draft-imaginary-independent-submission")
+        ise_draft.stream = StreamName.objects.get(slug="ise")
+        ise_draft.save()
+
+        self.telechat_docs = {
+            "ietf_draft": Document.objects.get(name="draft-ietf-mars-test"),
+            "ise_draft": ise_draft,
+            "conflrev": Document.objects.get(name="conflict-review-imaginary-irtf-submission"),
+            "statchg": Document.objects.get(name="status-change-imaginary-mid-review"),
+            "charter": Document.objects.filter(type="charter")[0],
+            }
+
+        by = Person.objects.get(name="Aread Irector")
+        date = get_agenda_date()
+
+        self.draft_dir = os.path.abspath("tmp-agenda-draft-dir")
+        os.mkdir(self.draft_dir)
+        settings.INTERNET_DRAFT_PATH = self.draft_dir
+
+        for d in self.telechat_docs.values():
+            TelechatDocEvent.objects.create(type="scheduled_for_telechat",
+                                            doc=d,
+                                            by=by,
+                                            telechat_date=date,
+                                            returning_item=True)
+
+
+    def tearDown(self):
+        shutil.rmtree(self.draft_dir)
+
+    def test_fill_in_agenda_docs(self):
+        draft = self.telechat_docs["ietf_draft"]
+        statchg = self.telechat_docs["statchg"]
+        conflrev = self.telechat_docs["conflrev"]
+        charter = self.telechat_docs["charter"]
+
+        # put on agenda
+        date = datetime.date.today() + datetime.timedelta(days=50)
+        TelechatDate.objects.create(date=date)
+        telechat_event = TelechatDocEvent.objects.create(
+            type="scheduled_for_telechat",
+            doc=draft,
+            by=Person.objects.get(name="Aread Irector"),
+            telechat_date=date,
+            returning_item=False)
+        date_str = date.isoformat()
+
+        # 2.1 protocol WG submissions
+        draft.intended_std_level_id = "ps"
+        draft.group = Group.objects.get(acronym="mars")
+        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.1.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.1.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="pub-req"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.1.3"]["docs"])
+
+        # 2.2 protocol individual submissions
+        draft.group = Group.objects.get(type="individ")
+        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.2.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.2.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="pub-req"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["2.2.3"]["docs"])
+
+        # 3.1 document WG submissions
+        draft.intended_std_level_id = "inf"
+        draft.group = Group.objects.get(acronym="mars")
+        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.1.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.1.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="pub-req"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.1.3"]["docs"])
+
+        # 3.2 document individual submissions
+        draft.group = Group.objects.get(type="individ")
+        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.2.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.2.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="pub-req"))
+        self.assertTrue(draft in agenda_data(date_str)["sections"]["3.2.3"]["docs"])
+
+        # 2.3 protocol status changes
+        telechat_event.doc = statchg
+        telechat_event.save()
+
+        relation = RelatedDocument.objects.create(
+            source=statchg,
+            target=DocAlias.objects.filter(name__startswith='rfc', document__std_level="ps")[0],
+            relationship_id="tohist")
+
+        statchg.group = Group.objects.get(acronym="mars")
+        statchg.save()
+        statchg.set_state(State.objects.get(type="statchg", slug="iesgeval"))
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["2.3.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["2.3.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        statchg.set_state(State.objects.get(type="statchg", slug="adrev"))
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["2.3.3"]["docs"])
+        
+        # 3.3 document status changes
+        relation.target = DocAlias.objects.filter(name__startswith='rfc', document__std_level="inf")[0]
+        relation.save()
+
+        statchg.group = Group.objects.get(acronym="mars")
+        statchg.save()
+        statchg.set_state(State.objects.get(type="statchg", slug="iesgeval"))
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["3.3.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["3.3.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        statchg.set_state(State.objects.get(type="statchg", slug="adrev"))
+        self.assertTrue(statchg in agenda_data(date_str)["sections"]["3.3.3"]["docs"])
+
+        # 3.4 IRTF/ISE conflict reviews
+        telechat_event.doc = conflrev
+        telechat_event.save()
+
+        conflrev.group = Group.objects.get(acronym="mars")
+        conflrev.save()
+        conflrev.set_state(State.objects.get(type="conflrev", slug="iesgeval"))
+        self.assertTrue(conflrev in agenda_data(date_str)["sections"]["3.4.1"]["docs"])
+
+        telechat_event.returning_item = True
+        telechat_event.save()
+        self.assertTrue(conflrev in agenda_data(date_str)["sections"]["3.4.2"]["docs"])
+
+        telechat_event.returning_item = False
+        telechat_event.save()
+        conflrev.set_state(State.objects.get(type="conflrev", slug="needshep"))
+        self.assertTrue(conflrev in agenda_data(date_str)["sections"]["3.4.3"]["docs"])
+
+
+        # 4 WGs
+        telechat_event.doc = charter
+        telechat_event.save()
+
+        charter.group = Group.objects.get(acronym="mars")
+        charter.save()
+
+        charter.group.state_id = "bof"
+        charter.group.save()
+
+        charter.set_state(State.objects.get(type="charter", slug="infrev"))
+        self.assertTrue(charter in agenda_data(date_str)["sections"]["4.1.1"]["docs"])
+
+        charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
+        self.assertTrue(charter in agenda_data(date_str)["sections"]["4.1.2"]["docs"])
+
+        charter.group.state_id = "active"
+        charter.group.save()
+
+        charter.set_state(State.objects.get(type="charter", slug="infrev"))
+        self.assertTrue(charter in agenda_data(date_str)["sections"]["4.2.1"]["docs"])
+
+        charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
+        self.assertTrue(charter in agenda_data(date_str)["sections"]["4.2.2"]["docs"])
+
+        #for n, s in agenda_data(date_str)["sections"].iteritems():
+        #    print n, s.get("docs") if "docs" in s else s["title"]
+
+    def test_feed(self):
+        url = "/feed/iesg-agenda/"
+
+        r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
 
-        # check that it moved below the right header in the DOM
-        d_header_pos = r.content.find("IESG telechat %s" % d.strftime("%Y-%m-%d"))
-        draft_pos = r.content.find(draft.filename)
-        self.assertTrue(d_header_pos < draft_pos)
+        for d in self.telechat_docs.values():
+            self.assertTrue(d.name in r.content)
+            self.assertTrue(d.title in r.content)
 
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertEquals(draft.idinternal.telechat_date, d)
-        self.assertTrue(not draft.idinternal.returning_item)
-        self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
-        self.assertTrue("Telechat" in draft.idinternal.comments()[0].comment_text)
+    def test_agenda_json(self):
+        r = self.client.get(urlreverse("ietf.iesg.views.agenda_json"))
+        self.assertEquals(r.status_code, 200)
 
-class RescheduleOnAgendaTestCaseREDESIGN(TestCase):
-    perma_fixtures = ['names']
+        for k, d in self.telechat_docs.iteritems():
+            if d.type_id == "charter":
+                self.assertTrue(d.group.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.group.acronym in r.content, "%s acronym not in response" % k)
+            else:
+                self.assertTrue(d.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.title in r.content, "%s title not in response" % k)
 
+        self.assertTrue(json.loads(r.content))
+
+    def test_agenda(self):
+        r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            self.assertTrue(d.name in r.content, "%s not in response" % k)
+            self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+    def test_agenda_txt(self):
+        r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            if d.type_id == "charter":
+                self.assertTrue(d.group.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.group.acronym in r.content, "%s acronym not in response" % k)
+            else:
+                self.assertTrue(d.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+    def test_agenda_scribe_template(self):
+        r = self.client.get(urlreverse("ietf.iesg.views.agenda_scribe_template"))
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            if d.type_id == "charter":
+                continue # scribe template doesn't contain chartering info
+
+            self.assertTrue(d.name in r.content, "%s not in response" % k)
+            self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+    def test_agenda_moderator_package(self):
+        url = urlreverse("ietf.iesg.views.agenda_moderator_package")
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            if d.type_id == "charter":
+                self.assertTrue(d.group.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.group.acronym in r.content, "%s acronym not in response" % k)
+            else:
+                self.assertTrue(d.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+    def test_agenda_package(self):
+        url = urlreverse("ietf.iesg.views.agenda_package")
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            if d.type_id == "charter":
+                self.assertTrue(d.group.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.group.acronym in r.content, "%s acronym not in response" % k)
+            else:
+                self.assertTrue(d.name in r.content, "%s not in response" % k)
+                self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+    def test_agenda_documents_txt(self):
+        url = urlreverse("ietf.iesg.views.agenda_documents_txt")
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            self.assertTrue(d.name in r.content, "%s not in response" % k)
+
+    def test_agenda_documents(self):
+        url = urlreverse("ietf.iesg.views.agenda_documents")
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+
+        for k, d in self.telechat_docs.iteritems():
+            self.assertTrue(d.name in r.content, "%s not in response" % k)
+            self.assertTrue(d.title in r.content, "%s title not in response" % k)
+
+    def test_agenda_telechat_docs(self):
+        d1 = self.telechat_docs["ietf_draft"]
+        d2 = self.telechat_docs["ise_draft"]
+
+        d1_filename = "%s-%s.txt" % (d1.name, d1.rev)
+        d2_filename = "%s-%s.txt" % (d2.name, d2.rev)
+
+        with open(os.path.join(self.draft_dir, d1_filename), "w") as f:
+            f.write("test content")
+
+        url = urlreverse("ietf.iesg.views.telechat_docs_tarfile", kwargs=dict(date=get_agenda_date().isoformat()))
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+
+        import tarfile, StringIO
+
+        tar = tarfile.open(None, fileobj=StringIO.StringIO(r.content))
+        names = tar.getnames()
+        self.assertTrue(d1_filename in names)
+        self.assertTrue(d2_filename not in names)
+        self.assertTrue("manifest.txt" in names)
+
+        f = tar.extractfile(d1_filename)
+        self.assertEqual(f.read(), "test content")
+
+        f = tar.extractfile("manifest.txt")
+        lines = list(f.readlines())
+        self.assertTrue("Included" in [l for l in lines if d1_filename in l][0])
+        self.assertTrue("Not found" in [l for l in lines if d2_filename in l][0])
+
+class RescheduleOnAgendaTests(TestCase):
     def test_reschedule(self):
-        from ietf.utils.test_data import make_test_data
-        from ietf.person.models import Person
-        from ietf.doc.models import TelechatDocEvent
-        
         draft = make_test_data()
 
         # add to schedule
@@ -94,10 +394,12 @@ class RescheduleOnAgendaTestCaseREDESIGN(TestCase):
         r = self.client.post(url, { '%s-telechat_date' % form_id: d.isoformat(),
                                     '%s-clear_returning_item' % form_id: "1" })
 
-        self.assertEquals(r.status_code, 200)
+        self.assertEquals(r.status_code, 302)
 
         # check that it moved below the right header in the DOM on the
         # agenda docs page
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
         d_header_pos = r.content.find("IESG telechat %s" % d.isoformat())
         draft_pos = r.content.find(draft.name)
         self.assertTrue(d_header_pos < draft_pos)
@@ -107,376 +409,7 @@ class RescheduleOnAgendaTestCaseREDESIGN(TestCase):
         self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").returning_item)
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
 
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    RescheduleOnAgendaTestCase = RescheduleOnAgendaTestCaseREDESIGN
-
-class ManageTelechatDatesTestCase(TestCase):
-    perma_fixtures = ['base', 'draft']
-
-    def test_set_dates(self):
-        dates = TelechatDates.objects.all()[0]
-        url = urlreverse('ietf.iesg.views.telechat_dates')
-        login_testing_unauthorized(self, "klm", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=date1]')), 1)
-
-        # post
-        new_date = dates.date1 + timedelta(days=7)
-        
-        r = self.client.post(url, dict(date1=new_date.isoformat(),
-                                       date2=new_date.isoformat(),
-                                       date3=new_date.isoformat(),
-                                       date4=new_date.isoformat(),
-                                       ))
-        self.assertEquals(r.status_code, 200)
-
-        dates = TelechatDates.objects.all()[0]
-        self.assertTrue(dates.date1 == new_date)
-
-    def test_rollup_dates(self):
-        dates = TelechatDates.objects.all()[0]
-        url = urlreverse('ietf.iesg.views.telechat_dates')
-        login_testing_unauthorized(self, "klm", url)
-
-        old_date2 = dates.date2
-        new_date = dates.date4 + timedelta(days=14)
-        r = self.client.post(url, dict(rollup_dates="1"))
-        self.assertEquals(r.status_code, 200)
-
-        dates = TelechatDates.objects.all()[0]
-        self.assertTrue(dates.date4 == new_date)
-        self.assertTrue(dates.date1 == old_date2)
-
-# class ManageTelechatDatesTestCaseREDESIGN(TestCase):
-#     perma_fixtures = ['names']
-
-#     def test_set_dates(self):
-#         from ietf.utils.test_data import make_test_data
-#         make_test_data()
-        
-#         dates = TelechatDates.objects.all()[0]
-#         url = urlreverse('ietf.iesg.views.telechat_dates')
-#         login_testing_unauthorized(self, "secretary", url)
-
-#         # normal get
-#         r = self.client.get(url)
-#         self.assertEquals(r.status_code, 200)
-#         q = PyQuery(r.content)
-#         self.assertEquals(len(q('form input[name=date1]')), 1)
-
-#         # post
-#         new_date = dates.date1 + timedelta(days=7)
-        
-#         r = self.client.post(url, dict(date1=new_date.isoformat(),
-#                                        date2=new_date.isoformat(),
-#                                        date3=new_date.isoformat(),
-#                                        date4=new_date.isoformat(),
-#                                        ))
-#         self.assertEquals(r.status_code, 200)
-
-#         dates = TelechatDates.objects.all()[0]
-#         self.assertTrue(dates.date1 == new_date)
-
-#     def test_rollup_dates(self):
-#         from ietf.utils.test_data import make_test_data
-#         make_test_data()
-        
-#         dates = TelechatDates.objects.all()[0]
-#         url = urlreverse('ietf.iesg.views.telechat_dates')
-#         login_testing_unauthorized(self, "secretary", url)
-
-#         old_date2 = dates.date2
-#         new_date = dates.date4 + timedelta(days=14)
-#         r = self.client.post(url, dict(rollup_dates="1"))
-#         self.assertEquals(r.status_code, 200)
-
-#         dates = TelechatDates.objects.all()[0]
-#         self.assertTrue(dates.date4 == new_date)
-#         self.assertTrue(dates.date1 == old_date2)
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    #ManageTelechatDatesTestCase = ManageTelechatDatesTestCaseREDESIGN
-    del ManageTelechatDatesTestCase
-        
-class WorkingGroupActionsTestCase(TestCase):
-    perma_fixtures = ['base', 'wgactions']
-
-    def setUp(self):
-        super(self.__class__, self).setUp()
-
-        curdir = os.path.dirname(os.path.abspath(__file__))
-        self.evaldir = os.path.join(curdir, "testdir")
-        os.mkdir(self.evaldir)
-        
-        src = os.path.join(curdir, "fixtures", "sieve-charter.txt")
-        shutil.copy(src, self.evaldir)
-        
-        settings.IESG_WG_EVALUATION_DIR = self.evaldir
-
-    def tearDown(self):
-        super(self.__class__, self).tearDown()
-        shutil.rmtree(self.evaldir)
-        
-    
-    def test_working_group_actions(self):
-        url = urlreverse('iesg_working_group_actions')
-        login_testing_unauthorized(self, "klm", url)
-
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        for wga in WGAction.objects.all():
-            self.assertTrue(wga.group_acronym.name in r.content)
-
-        self.assertTrue('(sieve)' in r.content)
-
-    def test_delete_wgaction(self):
-        wga = WGAction.objects.all()[0]
-        url = urlreverse('iesg_edit_working_group_action', kwargs=dict(wga_id=wga.pk))
-        login_testing_unauthorized(self, "klm", url)
-
-        r = self.client.post(url, dict(delete="1"))
-        self.assertEquals(r.status_code, 302)
-        self.assertTrue(not WGAction.objects.filter(pk=wga.pk))
-
-    def test_edit_wgaction(self):
-        wga = WGAction.objects.all()[0]
-        url = urlreverse('iesg_edit_working_group_action', kwargs=dict(wga_id=wga.pk))
-        login_testing_unauthorized(self, "klm", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form select[name=token_name]')), 1)
-        self.assertEquals(len(q('form select[name=telechat_date]')), 1)
-
-        # change
-        dates = TelechatDates.objects.all()[0]
-        token_name = IESGLogin.active_iesg().exclude(first_name=wga.token_name)[0].first_name
-        old = wga.pk
-        r = self.client.post(url, dict(status_date=dates.date1.isoformat(),
-                                       token_name=token_name,
-                                       category="23",
-                                       note="Testing.",
-                                       telechat_date=dates.date4.isoformat()))
-        self.assertEquals(r.status_code, 302)
-
-        wga = WGAction.objects.get(pk=old)
-        self.assertEquals(wga.status_date, dates.date1)
-        self.assertEquals(wga.token_name, token_name)
-        self.assertEquals(wga.category, 23)
-        self.assertEquals(wga.note, "Testing.")
-        self.assertEquals(wga.telechat_date, dates.date4)
-        
-    def test_add_possible_wg(self):
-        url = urlreverse('iesg_working_group_actions')
-        login_testing_unauthorized(self, "klm", url)
-        
-        r = self.client.post(url, dict(add="1",
-                                       filename='sieve-charter.txt'))
-        self.assertEquals(r.status_code, 302)
-
-        add_url = r['Location']
-        r = self.client.get(add_url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue('(sieve)' in r.content)
-        self.assertEquals(len(q('form select[name=token_name]')), 1)
-        self.assertEquals(q('form input[name=status_date]')[0].get("value"), "2010-05-07")
-        self.assertEquals(len(q('form select[name=telechat_date]')), 1)
-
-        wgas_before = WGAction.objects.all().count()
-        dates = TelechatDates.objects.all()[0]
-        token_name = IESGLogin.active_iesg()[0].first_name
-        r = self.client.post(add_url,
-                             dict(status_date=dates.date1.isoformat(),
-                                  token_name=token_name,
-                                  category="23",
-                                  note="Testing.",
-                                  telechat_date=dates.date4.isoformat()))
-        self.assertEquals(r.status_code, 302)
-        self.assertEquals(wgas_before + 1, WGAction.objects.all().count())
-        
-    def test_delete_possible_wg(self):
-        url = urlreverse('iesg_working_group_actions')
-        login_testing_unauthorized(self, "klm", url)
-        
-        r = self.client.post(url, dict(delete="1",
-                                       filename='sieve-charter.txt'))
-        self.assertEquals(r.status_code, 200)
-
-        self.assertTrue('(sieve)' not in r.content)
-
-class WorkingGroupActionsTestCaseREDESIGN(TestCase):
-    perma_fixtures = ['names']
-
-    def setUp(self):
-        super(self.__class__, self).setUp()
-
-        curdir = os.path.dirname(os.path.abspath(__file__))
-        self.evaldir = os.path.join(curdir, "tmp-testdir")
-        os.mkdir(self.evaldir)
-        
-        src = os.path.join(curdir, "fixtures", "sieve-charter.txt")
-        shutil.copy(src, self.evaldir)
-        
-        settings.IESG_WG_EVALUATION_DIR = self.evaldir
-
-    def tearDown(self):
-        super(self.__class__, self).tearDown()
-        shutil.rmtree(self.evaldir)
-        
-    
-    def test_working_group_actions(self):
-        from ietf.utils.test_data import make_test_data
-        
-        make_test_data()
-        
-        url = urlreverse('iesg_working_group_actions')
-        login_testing_unauthorized(self, "secretary", url)
-
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        for wga in WGAction.objects.all():
-            self.assertTrue(wga.group_acronym.name in r.content)
-
-        self.assertTrue('(sieve)' in r.content)
-
-    def test_delete_wgaction(self):
-        from ietf.utils.test_data import make_test_data
-
-        make_test_data()
-        
-        wga = WGAction.objects.all()[0]
-        url = urlreverse('iesg_edit_working_group_action', kwargs=dict(wga_id=wga.pk))
-        login_testing_unauthorized(self, "secretary", url)
-
-        r = self.client.post(url, dict(delete="1"))
-        self.assertEquals(r.status_code, 302)
-        self.assertTrue(not WGAction.objects.filter(pk=wga.pk))
-
-    def test_edit_wgaction(self):
-        from ietf.utils.test_data import make_test_data
-        from ietf.person.models import Person
-        
-        make_test_data()
-        
-        wga = WGAction.objects.all()[0]
-        url = urlreverse('iesg_edit_working_group_action', kwargs=dict(wga_id=wga.pk))
-        login_testing_unauthorized(self, "secretary", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form select[name=token_name]')), 1)
-        self.assertEquals(len(q('form select[name=telechat_date]')), 1)
-
-        # change
-        dates = TelechatDate.objects.active()
-        token_name = Person.objects.get(name="Ad No1").plain_name()
-        old = wga.pk
-        r = self.client.post(url, dict(status_date=dates[0].date.isoformat(),
-                                       token_name=token_name,
-                                       category="23",
-                                       note="Testing.",
-                                       telechat_date=dates[3].date.isoformat()))
-        self.assertEquals(r.status_code, 302)
-
-        wga = WGAction.objects.get(pk=old)
-        self.assertEquals(wga.status_date, dates[0].date)
-        self.assertEquals(wga.token_name, token_name)
-        self.assertEquals(wga.category, 23)
-        self.assertEquals(wga.note, "Testing.")
-        self.assertEquals(wga.telechat_date, dates[3].date)
-        
-    def test_add_possible_wg(self):
-        from ietf.utils.test_data import make_test_data
-        from ietf.person.models import Person
-        from ietf.group.models import Group
-        
-        make_test_data()
-        
-        url = urlreverse('iesg_working_group_actions')
-        login_testing_unauthorized(self, "secretary", url)
-        
-        r = self.client.post(url, dict(add="1",
-                                       filename='sieve-charter.txt'))
-        self.assertEquals(r.status_code, 302)
-
-        # now we got back a URL we can use for adding, but first make
-        # sure we got a proposed group with the acronym
-        group = Group.objects.create(
-            name="Sieve test test",
-            acronym="sieve",
-            state_id="proposed",
-            type_id="wg",
-            parent=None
-            )
-        
-        add_url = r['Location']
-        r = self.client.get(add_url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue('(sieve)' in r.content)
-        self.assertEquals(len(q('form select[name=token_name]')), 1)
-        self.assertEquals(q('form input[name=status_date]')[0].get("value"), "2010-05-07")
-        self.assertEquals(len(q('form select[name=telechat_date]')), 1)
-
-        wgas_before = WGAction.objects.all().count()
-        dates = TelechatDate.objects.active()
-        token_name = Person.objects.get(name="Ad No1").plain_name()
-        r = self.client.post(add_url,
-                             dict(status_date=dates[0].date.isoformat(),
-                                  token_name=token_name,
-                                  category="23",
-                                  note="Testing.",
-                                  telechat_date=dates[3].date.isoformat()))
-        self.assertEquals(r.status_code, 302)
-        self.assertEquals(wgas_before + 1, WGAction.objects.all().count())
-        
-    def test_delete_possible_wg(self):
-        from ietf.utils.test_data import make_test_data
-
-        make_test_data()
-        
-        url = urlreverse('iesg_working_group_actions')
-        login_testing_unauthorized(self, "secretary", url)
-        
-        r = self.client.post(url, dict(delete="1",
-                                       filename='sieve-charter.txt'))
-        self.assertEquals(r.status_code, 200)
-
-        self.assertTrue('(sieve)' not in r.content)
-        
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    WorkingGroupActionsTestCase = WorkingGroupActionsTestCaseREDESIGN
-
-
-class IesgUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
-    def doCanonicalize(self, url, content):
-        if url.startswith("/feed/"):
-            return canonicalize_feed(content)
-        else:
-            return content
-
-#Tests added since database redesign that speak the new clases
-
-from ietf.doc.models import Document,TelechatDocEvent,State
-from ietf.group.models import Person
 class DeferUndeferTestCase(TestCase):
-
-    perma_fixtures = ['names']
-
     def helper_test_defer(self,name):
 
         doc = Document.objects.get(name=name)
@@ -571,5 +504,24 @@ class DeferUndeferTestCase(TestCase):
     # when charters support being deferred, be sure to test them here
 
     def setUp(self):
-        from ietf.utils.test_data import make_test_data
         make_test_data()
+
+class IESGDiscussesTests(TestCase):
+    def test_feed(self):
+        draft = make_test_data()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+
+        pos = BallotPositionDocEvent()
+        pos.ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
+        pos.pos_id = "discuss"
+        pos.type = "changed_ballot_position"
+        pos.doc = draft
+        pos.ad = pos.by = Person.objects.get(user__username="ad")
+        pos.save()
+
+        r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
+        self.assertEquals(r.status_code, 200)
+
+        self.assertTrue(draft.name in r.content)
+        self.assertTrue(pos.ad.plain_name() in r.content)
+

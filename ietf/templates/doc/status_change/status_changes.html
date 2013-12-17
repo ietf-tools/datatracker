@@ -4,7 +4,7 @@
 {% block content %}
 <h1>RFC Status Changes</h1>
 
-{% if user|in_group:"Area_Director,Secretariat" %}
+{% if user|has_role:"Area Director,Secretariat" %}
 <p><a href="{% url start_rfc_status_change name='' %}">Start new RFC status change document</a></p>
 {% endif %}
 {% regroup docs by get_state as state_groups %}

@@ -12,15 +12,21 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
 
 from django.template import Template, Context
 
-from ietf.idtracker.models import IDInternal
-#from ietf.idtracker.models import InternetDraft
-#from ietf.idtracker.models import IDStatus
+from ietf.doc.models import Document
+from ietf.person.models import Person
 
-drafts             = IDInternal.objects.all()
+drafts = Document.objects.filter(type="draft")
 
-templ_text = """{% for draft in drafts %}{% if draft.state_change_notice_to or draft.job_owner %}{% if draft.draft.filename %}{{ draft.draft.filename }}{% if draft.state_change_notice_to %} docnotify='{{ draft.state_change_notice_to|cut:"<"|cut:">" }}'{% endif %}{% if draft.job_owner %} docsponsor='{{ draft.job_owner.person.email.1 }}'{% endif %}
-{% endif %}{% endif %}{% endfor %}"""
+ads = {}
+for p in Person.objects.filter(ad_document_set__type="draft").distinct():
+    ads[p.id] = p.role_email("ad")
+
+for d in drafts:
+    d.ad_email = ads.get(d.ad_id)
+
+templ_text = """{% for draft in drafts %}{% if draft.notify or draft.ad_email %}{{ draft.name }}{% if draft.notify %} docnotify='{{ draft.notify|cut:"<"|cut:">" }}'{% endif %}{% if draft.ad_email %} docsponsor='{{ draft.ad_email }}'{% endif %}
+{% endif %}{% endfor %}"""
 template = Template(templ_text)
-context = Context({  'drafts':drafts })
+context = Context({ 'drafts':drafts })
 
-print template.render(context)
+print template.render(context).encode('utf-8')

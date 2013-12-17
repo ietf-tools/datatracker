@@ -1,8 +1,11 @@
-{% load ietf_filters %}           IETF Working Group Summary (By Area)
-{% regroup wg_list|dictsort:"area.area.area_acronym.acronym" by area.area as wga_list %}{% for area in wga_list %}{% for wg in area.list|dictsort:"group_acronym.acronym" %}{% ifequal wg.area.area.status_id 1 %}{% if forloop.first %}
-{{ wg.area_acronym.name }} ({{ wg.area_acronym }})
-{{ wg.area_acronym.name|dashify }}------{% for ad in wg.area_directors %}
-  {{ ad.person }} <{{ ad.person.email.1 }}>{% endfor %}
-{% endif %}{% if wg.start_date %}
-{{ wg.group_acronym.name|safe }} ({{ wg }})
-{% include "wginfo/wg_summary.txt" %}{% endif %}{% endifequal %}{% endfor %}{% endfor %}
+{% autoescape off %}{% load ietf_filters %}
+           IETF Working Group Summary (By Area)
+
+
+{% for area in areas %}{{ area.name }} ({{ area.acronym }})
+{{ area.name|dashify }}------{% for ad in area.ads %}
+  {{ ad.person.plain_name }} <{{ ad.email.address }}>{% endfor %}
+
+{% for group in area.groups %}{{ group.name }} ({{ group.acronym }})
+{% include "wginfo/group_entry.txt" %}
+{% endfor %}{% endfor %}{% endautoescape %}

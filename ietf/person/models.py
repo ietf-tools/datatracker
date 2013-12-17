@@ -93,9 +93,6 @@ class Person(PersonInfo):
     #this variable, if not None, may be used by url() to keep the sitefqdn.
     default_hostscheme = None
 
-    def person(self): # little temporary wrapper to help porting to new schema
-        return self
-
     @property
     def defurl(self):
         return urljoin(self.default_hostscheme,self.json_url())

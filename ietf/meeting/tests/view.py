@@ -1,24 +1,21 @@
 import re
-import sys
-from django.test.client       import Client
+
+from django.core.urlresolvers import reverse
+
 from ietf.utils import TestCase
-#from ietf.person.models import Person
-from django.contrib.auth.models import User
-from settings import BASE_DIR
 from ietf.meeting.models  import TimeSlot, Session, ScheduledSession
 from auths import auth_joeblow, auth_wlo, auth_ietfchair, auth_ferrel
 from ietf.meeting.helpers import get_meeting
-from django.core.urlresolvers import reverse
 from ietf.meeting.views import edit_agenda
 
 class ViewTestCase(TestCase):
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = [ 'names.xml',  # ietf/names/fixtures/names.xml for MeetingTypeName, and TimeSlotTypeName
-                 'meeting83.json',
-                 'constraint83.json',
-                 'workinggroups.json',
-                 'groupgroup.json',
-                 'person.json', 'users.json' ]
+    perma_fixtures = [
+                 'meeting83',
+                 'constraint83',
+                 'workinggroups',
+                 'groupgroup',
+                 'person', 'users' ]
 
     def test_nameOfClueWg(self):
         clue_session = Session.objects.get(pk=2194)

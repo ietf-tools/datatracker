@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 from django.forms.formsets import formset_factory
 from django.utils import simplejson
 
-from ietf.ipr.models import IprDetail, IprContact, LICENSE_CHOICES, IprRfc, IprDraft, IprUpdate, SELECT_CHOICES, IprDocAlias
+from ietf.ipr.models import IprDetail, IprContact, LICENSE_CHOICES, IprUpdate, SELECT_CHOICES, IprDocAlias
 
 from ietf.doc.models import DocAlias
 from ietf.secr.utils.document import get_rfc_num
@@ -148,11 +148,11 @@ class IprDetailForm(BetterModelForm):
                 self.fields['updated'].initial = updates[0].updated.ipr_id
 
             rfcs = {}
-            for rfc in self.instance.documents.filter(doc_alias__name__startswith='rfc'):
+            for rfc in self.instance.docs().filter(doc_alias__name__startswith='rfc'):
                 rfcs[rfc.doc_alias.id] = get_rfc_num(rfc.doc_alias.document)+" "+rfc.doc_alias.document.title
                 
             drafts = {}
-            for draft in self.instance.documents.exclude(doc_alias__name__startswith='rfc'):
+            for draft in self.instance.docs().exclude(doc_alias__name__startswith='rfc'):
                 drafts[draft.doc_alias.id] = draft.doc_alias.document.name
             self.initial['rfc_num'] = simplejson.dumps(rfcs)
             self.initial['id_filename'] = simplejson.dumps(drafts)
@@ -246,14 +246,7 @@ class IprDetailForm(BetterModelForm):
                 obj.status_to_be = old_ipr.status
                 obj.processed = 0
                 obj.save()
-        '''
-        IprRfc.objects.filter(ipr=ipr_detail).delete()
-        IprDraft.objects.filter(ipr=ipr_detail).delete()
-        for rfc in self.cleaned_data['rfc_num']:
-            IprRfc.objects.create(ipr=ipr_detail, document=rfc)
-        for draft in self.cleaned_data['id_filename']:
-            IprDraft.objects.create(ipr=ipr_detail, document=draft)
-        '''
+
         IprDocAlias.objects.filter(ipr=ipr_detail).delete()
         for doc in self.cleaned_data['rfc_num']:
             IprDocAlias.objects.create(ipr=ipr_detail,doc_alias=doc)

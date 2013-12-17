@@ -1,10 +1,42 @@
-from django.conf import settings
+from django.db.models import Q
 
-from ietf.idtracker.models import Area, IETFWG
-from ietf.liaisons.models import SDOs, LiaisonManagers
-from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director, is_irtfchair,
+from ietf.group.models import Group, Role
+from ietf.person.models import Person
+from ietf.liaisons.models import LiaisonStatement
+from ietf.ietfauth.utils import has_role, passes_test_decorator
+
+from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
                                     get_ietf_chair, get_iab_chair, get_iab_executive_director,
-                                    is_secretariat)
+                                    is_secretariat, can_add_liaison, get_person_for_user, proxy_personify_role)
+
+can_submit_liaison_required = passes_test_decorator(
+    lambda u, *args, **kwargs: can_add_liaison(u),
+    "Restricted to participants who are authorized to submit liaison statements on behalf of the various IETF entities")
+
+def approvable_liaison_statements(user):
+    liaisons = LiaisonStatement.objects.filter(approved=None)
+    if has_role(user, "Secretariat"):
+        return liaisons
+
+    # this is a bit complicated because IETFHM encodes the
+    # groups, it should just give us a list of ids or acronyms
+    group_codes = IETFHM.get_all_can_approve_codes(get_person_for_user(user))
+    group_acronyms = []
+    group_ids = []
+    for x in group_codes:
+        if "_" in x:
+            group_ids.append(x.split("_")[1])
+        else:
+            group_acronyms.append(x)
+
+    return liaisons.filter(Q(from_group__acronym__in=group_acronyms) | Q(from_group__pk__in=group_ids))
+
+
+# the following is a biggish object hierarchy abstracting the entity
+# names and auth rules for posting liaison statements in a sort of
+# semi-declarational (and perhaps overengineered given the revamped
+# schema) way - unfortunately, it's never been strong enough to do so
+# fine-grained enough so the form code also has some rules
 
 IETFCHAIR = {'name': u'The IETF Chair', 'address': u'chair@ietf.org'}
 IESG = {'name': u'The IESG', 'address': u'iesg@ietf.org'}
@@ -12,10 +44,7 @@ IAB = {'name': u'The IAB', 'address': u'iab@iab.org'}
 IABCHAIR = {'name': u'The IAB Chair', 'address': u'iab-chair@iab.org'}
 IABEXECUTIVEDIRECTOR = {'name': u'The IAB Executive Director', 'address': u'execd@iab.org'}
 IRTFCHAIR = {'name': u'The IRTF Chair', 'address': u'irtf-chair@irtf.org'}
-
-
-def get_all_sdo_managers():
-    return [i.person for i in LiaisonManagers.objects.all().distinct()]
+IESGANDIAB = {'name': u'The IESG and IAB', 'address': u'iesg-iab@ietf.org'}
 
 
 class FakePerson(object):
@@ -27,7 +56,12 @@ class FakePerson(object):
     def email(self):
         return (self.name, self.address)
 
+def all_sdo_managers():
+    return [proxy_personify_role(r) for r in Role.objects.filter(group__type="sdo", name="liaiman").select_related("person").distinct()]
 
+def role_persons_with_fixed_email(group, role_name):
+    return [proxy_personify_role(r) for r in Role.objects.filter(group=group, name=role_name).select_related("person").distinct()]
+    
 class Entity(object):
 
     poc = []
@@ -84,31 +118,8 @@ class IETFEntity(Entity):
         return [self.poc]
 
     def full_user_list(self):
-        result = get_all_sdo_managers()
+        result = all_sdo_managers()
         result.append(get_ietf_chair())
-        return result
-
-
-class IRTFEntity(Entity):
-
-    poc = FakePerson(**IRTFCHAIR)
-
-    def get_from_cc(self, person):
-        result = []
-        if not is_irtfchair(person):
-            result.append(self.poc)
-        return result
-
-    def needs_approval(self, person=None):
-        if is_irtfchair(person):
-            return False
-        return True
-
-    def can_approve(self):
-        return [self.poc]
-
-    def full_user_list(self):
-        result.append(get_irtf_chair())
         return result
 
 
@@ -136,27 +147,75 @@ class IABEntity(Entity):
         return [self.chair]
 
     def full_user_list(self):
-        result = get_all_sdo_managers()
+        result = all_sdo_managers()
         result += [get_iab_chair(), get_iab_executive_director()]
         return result
 
 
+class IRTFEntity(Entity):
+    chair = FakePerson(**IRTFCHAIR)
+    poc = [chair,]
+
+    def get_from_cc(self, person):
+        result = []
+        return result
+
+    def needs_approval(self, person=None):
+        if is_irtfchair(person):
+            return False
+        return True
+
+    def can_approve(self):
+        return [self.chair]
+
+    def full_user_list(self):
+        result = [get_irtf_chair()]
+        return result
+
+
+class IAB_IESG_Entity(Entity):
+
+    poc = [IABEntity.chair, IABEntity.director, FakePerson(**IETFCHAIR), FakePerson(**IESGANDIAB), ]
+    cc = [FakePerson(**IAB), FakePerson(**IESG), FakePerson(**IESGANDIAB)]
+
+    def __init__(self, name, obj=None):
+        self.name = name
+        self.obj = obj
+        self.iab = IABEntity(name, obj)
+        self.iesg = IETFEntity(name, obj)
+
+    def get_from_cc(self, person):
+        return list(set(self.iab.get_from_cc(person) + self.iesg.get_from_cc(person)))
+
+    def needs_approval(self, person=None):
+        if not self.iab.needs_approval(person):
+            return False
+        if not self.iesg.needs_approval(person):
+            return False
+        return True
+
+    def can_approve(self):
+        return list(set(self.iab.can_approve() + self.iesg.can_approve()))
+
+    def full_user_list(self):
+        return [get_ietf_chair(), get_iab_chair(), get_iab_executive_director()]
+        
 class AreaEntity(Entity):
 
     def get_poc(self):
-        return [i.person for i in self.obj.areadirector_set.all()]
+        return role_persons_with_fixed_email(self.obj, "ad")
 
     def get_cc(self, person=None):
         return [FakePerson(**IETFCHAIR)]
 
     def get_from_cc(self, person):
-        result = [i.person for i in self.obj.areadirector_set.all() if i.person!=person]
+        result = [p for p in role_persons_with_fixed_email(self.obj, "ad") if p != person]
         result.append(FakePerson(**IETFCHAIR))
         return result
 
     def needs_approval(self, person=None):
         # Check if person is an area director
-        if self.obj.areadirector_set.filter(person=person):
+        if self.obj.role_set.filter(person=person, name="ad"):
             return False
         return True
 
@@ -164,7 +223,7 @@ class AreaEntity(Entity):
         return self.get_poc()
 
     def full_user_list(self):
-        result = get_all_sdo_managers()
+        result = all_sdo_managers()
         result += self.get_poc()
         return result
 
@@ -172,34 +231,38 @@ class AreaEntity(Entity):
 class WGEntity(Entity):
 
     def get_poc(self):
-        return [i.person for i in self.obj.wgchair_set.all()]
+        return role_persons_with_fixed_email(self.obj, "chair")
 
     def get_cc(self, person=None):
-        result = [i.person for i in self.obj.area_directors()]
-        if self.obj.email_address:
-            result.append(FakePerson(name ='%s Discussion List' % self.obj.group_acronym.name,
-                                     address = self.obj.email_address))
+        if self.obj.parent:
+            result = [p for p in role_persons_with_fixed_email(self.obj.parent, "ad") if p != person]
+        else:
+            result = []
+        if self.obj.list_subscribe:
+            result.append(FakePerson(name ='%s Discussion List' % self.obj.name,
+                                     address = self.obj.list_subscribe))
         return result
 
     def get_from_cc(self, person):
-        result = [i.person for i in self.obj.wgchair_set.all() if i.person!=person]
-        result += [i.person for i in self.obj.area_directors()]
-        if self.obj.email_address:
-            result.append(FakePerson(name ='%s Discussion List' % self.obj.group_acronym.name,
-                                     address = self.obj.email_address))
+        result = [p for p in role_persons_with_fixed_email(self.obj, "chair") if p != person]
+        if self.obj.parent:
+            result += role_persons_with_fixed_email(self.obj.parent, "ad")
+        if self.obj.list_subscribe:
+            result.append(FakePerson(name ='%s Discussion List' % self.obj.name,
+                                     address = self.obj.list_subscribe))
         return result
 
     def needs_approval(self, person=None):
-        # Check if person is director of this wg area
-        if self.obj.area.area.areadirector_set.filter(person=person):
+        # Check if person is AD of area
+        if self.obj.parent and self.obj.parent.role_set.filter(person=person, name="ad"):
             return False
         return True
 
     def can_approve(self):
-        return [i.person for i in self.obj.area.area.areadirector_set.all()]
+        return role_persons_with_fixed_email(self.obj.parent, "ad") if self.obj.parent else []
 
     def full_user_list(self):
-        result = get_all_sdo_managers()
+        result = all_sdo_managers()
         result += self.get_poc()
         return result
 
@@ -210,25 +273,19 @@ class SDOEntity(Entity):
         return []
 
     def get_cc(self, person=None):
-        manager = self.obj.liaisonmanager()
-        if manager:
-            return [manager.person]
-        return []
+        return role_persons_with_fixed_email(self.obj, "liaiman")
 
     def get_from_cc(self, person=None):
-        manager = self.obj.liaisonmanager()
-        if manager and manager.person!=person:
-            return [manager.person]
-        return []
+        return [p for p in role_persons_with_fixed_email(self.obj, "liaiman") if p != person]
 
     def post_only(self, person, user):
-        if is_secretariat(user) or person.sdoauthorizedindividual_set.filter(sdo=self.obj):
+        if is_secretariat(user) or self.obj.role_set.filter(person=person, name="auth"):
             return False
         return True
 
     def full_user_list(self):
-        result = [i.person for i in self.obj.liaisonmanagers_set.all().distinct()]
-        result += [i.person for i in self.obj.sdoauthorizedindividual_set.all().distinct()]
+        result = role_persons_with_fixed_email(self.obj, "liaiman")
+        result += role_persons_with_fixed_email(self.obj, "auth")
         return result
 
 
@@ -314,17 +371,41 @@ class IRTFEntityManager(EntityManager):
         return []
 
 
+class IAB_IESG_EntityManager(EntityManager):
+
+    def __init__(self, *args, **kwargs):
+        super(IAB_IESG_EntityManager, self).__init__(*args, **kwargs)
+        self.entity = IAB_IESG_Entity(name=self.name)
+
+    def get_entity(self, pk=None):
+        return self.entity
+
+    def can_send_on_behalf(self, person):
+        if (is_iabchair(person) or
+            is_iab_executive_director(person) or
+            is_ietfchair(person)):
+            return self.get_managed_list()
+        return []
+
+    def can_approve_list(self, person):
+        if (is_iabchair(person) or
+            is_iab_executive_director(person) or
+            is_ietfchair(person)):
+            return self.get_managed_list()
+        return []
+
+
 class AreaEntityManager(EntityManager):
 
     def __init__(self, pk=None, name=None, queryset=None):
         super(AreaEntityManager, self).__init__(pk, name, queryset)
         if self.queryset == None:
-            self.queryset = Area.active_areas()
+            self.queryset = Group.objects.filter(type="area", state="active")
 
     def get_managed_list(self, query_filter=None):
         if not query_filter:
             query_filter = {}
-        return [(u'%s_%s' % (self.pk, i.pk), i.area_acronym.name) for i in self.queryset.filter(**query_filter).order_by('area_acronym__name')]
+        return [(u'%s_%s' % (self.pk, i.pk), i.name) for i in self.queryset.filter(**query_filter).order_by('name')]
 
     def get_entity(self, pk=None):
         if not pk:
@@ -333,14 +414,14 @@ class AreaEntityManager(EntityManager):
             obj = self.queryset.get(pk=pk)
         except self.queryset.model.DoesNotExist:
             return None
-        return AreaEntity(name=obj.area_acronym.name, obj=obj)
+        return AreaEntity(name=obj.name, obj=obj)
 
     def can_send_on_behalf(self, person):
-        query_filter = {'areadirector__in': person.areadirector_set.all()}
+        query_filter = dict(role__person=person, role__name="ad")
         return self.get_managed_list(query_filter)
 
     def can_approve_list(self, person):
-        query_filter = {'areadirector__in': person.areadirector_set.all()}
+        query_filter = dict(role__person=person, role__name="ad")
         return self.get_managed_list(query_filter)
 
 
@@ -349,12 +430,12 @@ class WGEntityManager(EntityManager):
     def __init__(self, pk=None, name=None, queryset=None):
         super(WGEntityManager, self).__init__(pk, name, queryset)
         if self.queryset == None:
-            self.queryset = IETFWG.objects.filter(group_type=1, status=IETFWG.ACTIVE, areagroup__area__status=Area.ACTIVE)
+            self.queryset = Group.objects.filter(type="wg", state="active", parent__state="active").select_related("parent")
 
     def get_managed_list(self, query_filter=None):
         if not query_filter:
             query_filter = {}
-        return [(u'%s_%s' % (self.pk, i.pk), '%s - %s' % (i.group_acronym.acronym, i.group_acronym.name)) for i in self.queryset.filter(**query_filter).order_by('group_acronym__acronym')]
+        return [(u'%s_%s' % (self.pk, i.pk), '%s - %s' % (i.acronym, i.name)) for i in self.queryset.filter(**query_filter).order_by('acronym')]
 
     def get_entity(self, pk=None):
         if not pk:
@@ -363,16 +444,15 @@ class WGEntityManager(EntityManager):
             obj = self.queryset.get(pk=pk)
         except self.queryset.model.DoesNotExist:
             return None
-        return WGEntity(name=obj.group_acronym.name, obj=obj)
+        return WGEntity(name=obj.name, obj=obj)
 
     def can_send_on_behalf(self, person):
-        wgs = set([i.group_acronym.pk for i in person.wgchair_set.all()])
-        wgs = wgs.union([i.group_acronym.pk for i in person.wgsecretary_set.all()])
+        wgs = Group.objects.filter(role__person=person, role__name__in=("chair", "secretary")).values_list('pk', flat=True)
         query_filter = {'pk__in': wgs}
         return self.get_managed_list(query_filter)
 
     def can_approve_list(self, person):
-        query_filter = {'areagroup__area__areadirector__in': person.areadirector_set.all()}
+        query_filter = dict(parent__role__person=person, parent__role__name="ad")
         return self.get_managed_list(query_filter)
 
 
@@ -381,10 +461,10 @@ class SDOEntityManager(EntityManager):
     def __init__(self, pk=None, name=None, queryset=None):
         super(SDOEntityManager, self).__init__(pk, name, queryset)
         if self.queryset == None:
-            self.queryset = SDOs.objects.all()
+            self.queryset = Group.objects.filter(type="sdo")
 
     def get_managed_list(self):
-        return [(u'%s_%s' % (self.pk, i.pk), i.sdo_name) for i in self.queryset.order_by('sdo_name')]
+        return [(u'%s_%s' % (self.pk, i.pk), i.name) for i in self.queryset.order_by('name')]
 
     def get_entity(self, pk=None):
         if not pk:
@@ -393,7 +473,7 @@ class SDOEntityManager(EntityManager):
             obj = self.queryset.get(pk=pk)
         except self.queryset.model.DoesNotExist:
             return None
-        return SDOEntity(name=obj.sdo_name, obj=obj)
+        return SDOEntity(name=obj.name, obj=obj)
 
 
 class IETFHierarchyManager(object):
@@ -402,7 +482,7 @@ class IETFHierarchyManager(object):
         self.managers = {'ietf': IETFEntityManager(pk='ietf', name=u'The IETF'),
                          'iesg': IETFEntityManager(pk='iesg', name=u'The IESG'),
                          'iab': IABEntityManager(pk='iab', name=u'The IAB'),
-                         'irtf': IRTFEntityManager(pk='irtf', name=u'The IAB'),
+                         'iabiesg': IAB_IESG_EntityManager(pk='iabiesg', name=u'The IESG and the IAB'),
                          'area': AreaEntityManager(pk='area', name=u'IETF Areas'),
                          'wg': WGEntityManager(pk='wg', name=u'IETF Working Groups'),
                          'sdo': SDOEntityManager(pk='sdo', name=u'Standards Development Organizations'),
@@ -430,7 +510,7 @@ class IETFHierarchyManager(object):
     def get_all_incoming_entities(self):
         entities = []
         results = []
-        for key in ['ietf', 'iesg', 'iab']:
+        for key in ['ietf', 'iesg', 'iab', 'iabiesg']:
             results += self.managers[key].get_managed_list()
         entities.append(('Main IETF Entities', results))
         entities.append(('IETF Areas', self.managers['area'].get_managed_list()))
@@ -445,7 +525,7 @@ class IETFHierarchyManager(object):
     def get_entities_for_person(self, person):
         entities = []
         results = []
-        for key in ['ietf', 'iesg', 'iab']:
+        for key in ['ietf', 'iesg', 'iab', 'iabiesg']:
             results += self.managers[key].can_send_on_behalf(person)
         if results:
             entities.append(('Main IETF Entities', results))
@@ -459,7 +539,7 @@ class IETFHierarchyManager(object):
 
     def get_all_can_approve_codes(self, person):
         entities = []
-        for key in ['ietf', 'iesg', 'iab']:
+        for key in ['ietf', 'iesg', 'iab', 'iabiesg']:
             entities += self.managers[key].can_approve_list(person)
         entities += self.managers['area'].can_approve_list(person)
         entities += self.managers['wg'].can_approve_list(person)
@@ -467,6 +547,3 @@ class IETFHierarchyManager(object):
 
 
 IETFHM = IETFHierarchyManager()
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from utilsREDESIGN import * 

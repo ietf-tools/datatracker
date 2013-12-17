@@ -9,14 +9,13 @@ from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter,
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 from django.utils import simplejson
-try:
-    from email import utils as emailutils
-except ImportError:
-    from email import Utils as emailutils
+from django.utils.html import strip_tags
+from django.template import RequestContext
+
+from email.utils import parseaddr
 import re
 import datetime
 import types
-from django.template import RequestContext
 
 register = template.Library()
 
@@ -73,14 +72,23 @@ def parse_email_list(value):
         addrs = re.split(", ?", value)
         ret = []
         for addr in addrs:
-            (name, email) = emailutils.parseaddr(addr)
+            (name, email) = parseaddr(addr)
             if not(name):
                 name = email
             ret.append('<a href="mailto:%s">%s</a>' % ( fix_ampersands(email), escape(name) ))
-        return ", ".join(ret)
+        return mark_safe(", ".join(ret))
     else:
         return value
-    
+
+@register.filter
+def strip_email(value):
+    """Get rid of email part of name/email string like 'Some Name <email@example.com>'."""
+    if not value:
+        return ""
+    if "@" not in value:
+        return value
+    return parseaddr(value)[0]
+
 @register.filter(name='fix_angle_quotes')
 def fix_angle_quotes(value):
     if "<" in value:
@@ -92,7 +100,7 @@ def fix_angle_quotes(value):
 @register.filter(name='make_one_per_line')
 def make_one_per_line(value):
     """
-    Turn a comma-separated list into a carraige-return-seperated list.
+    Turn a comma-separated list into a carriage-return-seperated list.
 
     >>> make_one_per_line("a, b, c")
     'a\\nb\\nc'
@@ -276,6 +284,10 @@ def truncate_ellipsis(text, arg):
     else:
         return escape(text)
     
+@register.filter
+def split(text, splitter=None):
+    return text.split(splitter)
+
 @register.filter(name="wrap_long_lines")
 def wrap_long_lines(text):
     """Wraps long lines without loosing the formatting and indentation
@@ -405,25 +417,13 @@ def expires_soon(x,request):
         days = 14
     return x > -days
 
-@register.filter(name='equal')
-def equal(x, y):
-    return str(x)==str(y)
-
 @register.filter(name='startswith')
 def startswith(x, y):
     return unicode(x).startswith(y)
 
-# based on http://www.djangosnippets.org/snippets/847/ by 'whiteinge'
-@register.filter
-def in_group(user, groups):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        return has_role(user, groups.replace("Area_Director", "Area Director"))
-
-    return user and user.is_authenticated() and bool(user.groups.filter(name__in=groups.split(',')).values('name'))
-
 @register.filter
 def has_role(user, role_names):
-    from ietf.ietfauth.decorators import has_role
+    from ietf.ietfauth.utils import has_role
     if not user:
         return False
     return has_role(user, role_names.split(','))
@@ -475,6 +475,18 @@ def state(doc, slug):
         slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
     return doc.get_state(slug)
 
+@register.filter
+def statehelp(state):
+    "Output help icon with tooltip for state."
+    from django.core.urlresolvers import reverse as urlreverse
+    tooltip = escape(strip_tags(state.desc))
+    url = urlreverse("state_help", kwargs=dict(type=state.type_id)) + "#" + state.slug
+    return mark_safe('<a class="state-help-icon" href="%s" title="%s">?</a>' % (url, tooltip))
+
+@register.filter
+def sectionlevel(section_number):
+    return section_number.count(".") + 1
+
 def _test():
     import doctest
     doctest.testmod()
@@ -483,13 +495,13 @@ if __name__ == "__main__":
     _test()
 
 @register.filter
-def plural(text, list, arg=u's'):
+def plural(text, seq, arg=u's'):
     "Similar to pluralize, but looks at the text, too"
     from django.template.defaultfilters import pluralize
     if text.endswith('s'):
         return text
     else:
-        return text + pluralize(len(list), arg)
+        return text + pluralize(len(seq), arg)
 
 @register.filter
 def ics_esc(text):

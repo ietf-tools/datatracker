@@ -30,76 +30,46 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import unittest
-from django.conf import settings
-from django.contrib.auth.models import User
-from django.test.client import Client
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
-from ietf.idtracker.models import Role
 from urlparse import urlsplit
 
-class IetfAuthUrlTestCase(SimpleUrlTestCase):
-    def testUrls(self):
-        self.doTestUrls(__file__)
+from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse as urlreverse
 
-# this test case should really work on a test database instead of the
-# real one
-class IetfAuthTestCase(unittest.TestCase,RealDatabaseTest):
-    def setUp(self):
-        self.setUpRealDatabase()
-    def tearDown(self):
-        self.tearDownRealDatabase()
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_data import make_test_data
 
-    def _doLogin(self, username):
-        c = Client()
-        response = c.get('/accounts/login/', {}, False, REMOTE_USER=username)
-        self.assertEquals(response.status_code, 302)
-        nexturl = urlsplit(response['Location'])
-        self.assertEquals(nexturl[2], "/accounts/loggedin/")
+class IetfAuthTests(TestCase):
+    def test_index(self):
+        self.assertEqual(self.client.get(urlreverse("ietf.ietfauth.views.index")).status_code, 200)
 
-        response = c.get(nexturl[2], {}, False, REMOTE_USER=username)
-        self.assertEquals(response.status_code, 302)
-        nexturl = urlsplit(response['Location'])
-        self.assertEquals(nexturl[2], "/accounts/profile/")
+    def test_login(self):
+        make_test_data()
 
-        response = c.get(nexturl[2], {}, False, REMOTE_USER=username)
-        self.assertEquals(response.status_code, 200)
-        self.assert_("User name" in response.content)
-        return response
+        # try logging in with a next
+        r = self.client.get('/accounts/login/?next=/foobar', REMOTE_USER="plain")
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], "/accounts/loggedin/")
 
-    def testLogin(self):
-        TEST_USERNAME = '__testuser'
-        print "     Testing login with "+TEST_USERNAME
+        r = self.client.get('/accounts/loggedin/?next=/foobar', REMOTE_USER="plain")
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], "/foobar")
 
-        # Delete test user (if it exists)
-        try:
-            testuser = User.objects.get(username=TEST_USERNAME)
-            testuser.delete()
-        except User.DoesNotExist:
-            pass
+        # try again without a next
+        r = self.client.get('/accounts/login/', REMOTE_USER="plain")
+        r = self.client.get('/accounts/loggedin/', REMOTE_USER="plain")
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], "/accounts/profile/")
 
-        self._doLogin(TEST_USERNAME)
-        
-        # Delete test user after test
-        testuser = User.objects.get(username=TEST_USERNAME)
-        testuser.delete()
-        print "OK"
+    def test_profile(self):
+        url = urlreverse('ietf.ietfauth.views.profile')
+        login_testing_unauthorized(self, "plain", url)
 
-    def testGroups(self):
-        print "     Testing group assignment"
-        username = Role.objects.get(id=Role.IETF_CHAIR).person.iesglogin_set.all()[0].login_name
-        print "     (with username "+str(username)+")"
-        
-        self._doLogin(username)
-        
-        user = User.objects.get(username=username)
-        groups = [x.name for x in user.groups.all()]
-        self.assert_("Area_Director" in groups)
-        self.assert_("IETF_Chair" in groups)
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("plain" in r.content)
 
-        print "OK"
+        # post
+        # ... fill in
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    del IetfAuthTestCase.testLogin
-    # this test doesn't make any sense anymore
-    del IetfAuthTestCase.testGroups
+    # we're missing tests of the other views

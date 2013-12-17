@@ -2,12 +2,9 @@
 <td class="status">
   {{ doc.friendly_state|safe }} {% if not doc.get_state_slug == "rfc" %}{{ doc|state_age_colored }}{% endif %}
 
-  {% if not hide_telechat_date and doc.telechat_date %}
-    <br/>IESG Telechat: {{ doc.telechat_date }}
-  {% endif %}
-
-  {% block extra_status %}{% endblock %}
-
+  {% block extra_status %}
+  {% if doc.telechat_date %}<br/>IESG Telechat: {{ doc.telechat_date }}{% endif %}
+  {% endblock %}
 
   {% if doc.get_state_slug != "rfc" %}{# I-D #}
 

@@ -35,18 +35,12 @@
           {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
         {% endif %}
 
-        {% if can_edit_stream_info %}
+        {% if replaces or can_edit_stream_info %}
         <div>
-          {% if replaces %}
-          <a class="editlink" href="{% url doc_change_replaces name=doc.name %}">Replaces</a>:
-          {{ replaces|join:", "|urlize_ietf_docs }}
-          {% else %}
-          <a class="editlink" href="{% url doc_change_replaces name=doc.name %}">Replaces: None</a>
-          {% endif %}
+          <a{% if can_edit_stream_info %} class="editlink" href="{% url doc_change_replaces name=doc.name %}"{% endif %}>
+            Replaces: {{ replaces|join:", "|urlize_ietf_docs|default:"None" }}
           </a>
         </div>
-        {% else %}
-          {% if replaces %}<div>Replaces: {{ replaces|join:", "|urlize_ietf_docs }}</div>{% endif %}
         {% endif %}
         {% if replaced_by %}<div>Replaced by: {{ replaced_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
       </td>
@@ -106,7 +100,7 @@
        {% if doc.stream %}
            <td>{{ doc.stream }} State:</td>
            <td class="stream-state">
-               <a {% if doc.stream and can_edit_stream_info %}class="editlink" href="{% url edit_state name=doc.name %}"{% endif %}>
+               <a {% if doc.stream and can_edit_stream_info %}class="editlink" href="{% url doc_change_stream_state name=doc.name state_type=stream_state_type_slug %}"{% endif %}>
                {{ stream_state|default:"(None)" }}
              </a>
 
@@ -163,7 +157,7 @@
     {% endif %}
 
     <tr>
-      <td><a href="/idtracker/help/state/">IESG State</a>:</td>
+      <td><a href="{% url state_help "draft-iesg" %}">IESG State</a>:</td>
       <td>
         <a {% if iesg_state and can_edit %}class="editlink" href="{% url doc_change_state name=doc.name %}"{% endif %}>
         {{ iesg_state_summary|default:"I-D Exists" }}</a>

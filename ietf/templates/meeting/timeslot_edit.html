@@ -13,8 +13,7 @@
 <link rel='stylesheet' type='text/css' href='/css/agenda.css' />
 {% endblock pagehead %}
 
-{% block scripts %}
-<script type='text/javascript' src='/js/lib/jquery-1.8.2.min.js'></script>
+{% block js %}
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery-ui.custom.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.widget.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.droppable.js'></script>
@@ -22,10 +21,8 @@
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.accordion.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.draggable.js'></script>
 
-{% if server_mode %}
-	{% ifnotequal server_mode "production" %}
-	<script src="https://towtruck.mozillalabs.com/towtruck.js"></script>
-	{% endifnotequal %}
+{% if server_mode and server_mode != "production" %}
+  <script src="https://towtruck.mozillalabs.com/towtruck.js"></script>
 {% endif %}
 
 {% dajaxice_js_import %}
@@ -67,7 +64,7 @@ function setup_slots(){
 <style type='text/css'>
 
 </style>
-{% endblock scripts %}
+{% endblock js %}
 
 
 {% block start_content_table %}{% endblock %}

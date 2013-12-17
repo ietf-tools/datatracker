@@ -16,7 +16,7 @@ from django.conf import settings
 import debug
 
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.ietfauth.decorators import has_role, role_required
+from ietf.ietfauth.utils import has_role, role_required
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import IprDetail
 from ietf.ipr.search import iprs_from_docs
@@ -693,7 +693,7 @@ def approve_ballot(request, name):
         e = DocEvent(doc=doc, by=login)
         if action == "do_not_publish":
             e.type = "iesg_disapproved"
-            e.desc = "Do Not Publish note has been sent to RFC Editor"
+            e.desc = "Do Not Publish note has been sent to the RFC Editor"
         else:
             e.type = "iesg_approved"
             e.desc = "IESG has approved the document"

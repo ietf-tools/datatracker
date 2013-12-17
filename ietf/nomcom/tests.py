@@ -8,13 +8,15 @@ from django.db import IntegrityError
 from django.core.urlresolvers import reverse
 from django.core.files import File
 from django.contrib.formtools.preview import security_hash
+from django.contrib.auth.models import User
 
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.mail import outbox
 
 
 from ietf.person.models import Email, Person
-from django.contrib.auth.models import User
+from ietf.group.models import Group
+from ietf.message.models import Message
 
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
                                   COMMUNITY_USER, CHAIR_USER, \
@@ -30,7 +32,7 @@ from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_s
 class NomcomViewsTest(TestCase):
     """Tests to create a new nomcom"""
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names', 'nomcom_templates']
+    perma_fixtures = ['nomcom_templates']
 
     def check_url_status(self, url, status):
         response = self.client.get(url)
@@ -365,6 +367,25 @@ class NomcomViewsTest(TestCase):
         """Verify home view"""
         self.check_url_status(self.index_url, 200)
 
+    def test_announcements_view(self):
+        nomcom = Group.objects.get(acronym="nomcom%s" % self.year, type="nomcom")
+        msg = Message.objects.create(
+            by=Person.objects.all()[0],
+            subject="This is a test",
+            to="test@example.com",
+            frm="nomcomchair@example.com",
+            body="Hello World!",
+            content_type="",
+            )
+        msg.related_groups.add(nomcom)
+        
+        r = self.client.get(reverse('ietf.nomcom.views.announcements'))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(("Messages from %s" % nomcom.time.year) in r.content)
+        self.assertTrue(nomcom.role_set.filter(name="chair")[0].person.email_address() in r.content)
+        self.assertTrue(msg.subject in r.content)
+
+
     def test_requirements_view(self):
         """Verify requirements view"""
         self.check_url_status(self.requirements_url, 200)
@@ -595,7 +616,7 @@ class NomcomViewsTest(TestCase):
 class NomineePositionStateSaveTest(TestCase):
     """Tests for the NomineePosition save override method"""
     # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names', 'nomcom_templates']
+    perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()
@@ -627,7 +648,7 @@ class NomineePositionStateSaveTest(TestCase):
 
 
 class FeedbackTest(TestCase):
-    perma_fixtures = ['names', 'nomcom_templates']
+    perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()
@@ -659,7 +680,7 @@ class FeedbackTest(TestCase):
         os.unlink(self.cert_file.name)
 
 class ReminderTest(TestCase):
-    perma_fixtures = ['names', 'nomcom_templates']
+    perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()

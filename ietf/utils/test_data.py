@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import User
 
-from ietf.iesg.models import TelechatDate, WGAction
+from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import IprDetail, IprDocAlias
 from ietf.meeting.models import Meeting
 from ietf.doc.models import *
@@ -112,15 +112,6 @@ def make_test_data():
         )
     group.charter = charter
     group.save()
-    WGAction.objects.create(
-        pk=group.pk,
-        note="",
-        status_date=datetime.date.today(),
-        agenda=1,
-        token_name="Aread",
-        category=13,
-        telechat_date=date2
-        )
 
     # persons
 
@@ -396,10 +387,15 @@ def make_test_data():
         lic_opt_a_sub=2,
         lic_opt_b_sub=2,
         lic_opt_c_sub=2,
+        patents="PTO12345",
+        date_applied="foo",
+        country="Whole World",
         comments="",
         lic_checkbox=True,
         other_notes="",
         status=1,
+        generic=0,
+        third_party=0,
         submitted_date=datetime.date.today(),
         )
 

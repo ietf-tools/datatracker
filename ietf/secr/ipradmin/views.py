@@ -15,7 +15,7 @@ from ietf.secr.ipradmin.forms import IprDetailForm, IPRContactFormset
 from ietf.secr.utils.document import get_rfc_num, is_draft
 import ietf.settings as settings
 
-from ietf.ipr.models import IprDetail, IprUpdate, IprRfc, IprDraft, IprContact, LICENSE_CHOICES, STDONLY_CHOICES, IprNotification
+from ietf.ipr.models import IprDetail, IprUpdate, IprContact, LICENSE_CHOICES, STDONLY_CHOICES, IprNotification
 from ietf.utils.mail import send_mail_text
 
 from ietf.doc.models import DocAlias
@@ -145,15 +145,7 @@ def admin_notify(request, ipr_id):
     submitter_text = get_submitter_text(ipr_id, updated_ipr_id, from_page)
 
     document_relatives = ''
-    #drafts = IprDraft.objects.filter(ipr__ipr_id=ipr_id)
-    #for draft in drafts:
-    #    document_relatives += get_document_relatives(ipr_id, draft, is_draft=1)
-
-    #rfcs = IprRfc.objects.filter(ipr__ipr_id=ipr_id)
-    #for rfc in rfcs:
-    #    document_relatives += get_document_relatives(ipr_id, rfc, is_draft=0)
-    # REDESIGN
-    for iprdocalias in ipr_dtl.documents.all():
+    for iprdocalias in ipr_dtl.docs():
         document_relatives += get_document_relatives(ipr_dtl, iprdocalias.doc_alias)
 
     return dict(
@@ -528,8 +520,8 @@ def admin_detail(request, ipr_id):
         # conversion
         #rfcs = ipr_dtl.rfcs.all()
         #drafts = ipr_dtl.drafts.all()
-        rfcs = ipr_dtl.documents.filter(doc_alias__name__startswith='rfc')
-        drafts = ipr_dtl.documents.exclude(doc_alias__name__startswith='rfc')
+        rfcs = ipr_dtl.docs().filter(doc_alias__name__startswith='rfc')
+        drafts = ipr_dtl.docs().exclude(doc_alias__name__startswith='rfc')
         titles_data, rfcs_data, drafts_data, designations_data = (), (), (), ()
         rfc_titles, draft_titles = [], []
         if rfcs:

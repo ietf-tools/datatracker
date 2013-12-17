@@ -4,7 +4,8 @@
 #   ./manage.py test --settings=settings_sqlitetest doc.ChangeStateTestCase
 #
 
-from settings import *
+from ietf.settings import *
+
 DATABASES = {
     'default': {
         'NAME': 'test.db',

@@ -31,7 +31,7 @@ from django.conf import settings
 
 from ietf.utils.path import path as Path
 
-from ietf.submit.models import IdSubmissionDetail
+from ietf.submit.models import Submission
 from ietf.doc.models import Document
 
 
@@ -56,13 +56,13 @@ from_email = settings.IDSUBMIT_FROM_EMAIL
 if "<" in from_email:
     from_email = from_email.split("<")[1].split(">")[0]
 
-submission = IdSubmissionDetail.objects.filter(filename=draft).latest('submission_date')
+submission = Submission.objects.filter(name=draft).latest('submission_date')
 document = Document.objects.get(name=draft)
 emails = [ author.address for author in document.authors.all() ]
 
 timestrings = []
-for file in [ Path(settings.INTERNET_DRAFT_PATH) / ("%s-%s.txt"%(draft, submission.revision)),
-              Path(settings.IDSUBMIT_STAGING_PATH) / ("%s-%s.txt"%(draft, submission.revision)) ]:
+for file in [ Path(settings.INTERNET_DRAFT_PATH) / ("%s-%s.txt"%(draft, submission.rev)),
+              Path(settings.IDSUBMIT_STAGING_PATH) / ("%s-%s.txt"%(draft, submission.rev)) ]:
     if os.path.exists(file):
         upload_time = time.localtime(file.mtime)
         ts = time.strftime("%b %d %H:%M", upload_time)
@@ -95,4 +95,3 @@ for log in logfiles:
                     for qi in queue_ids:
                         if qi in line:
                             sys.stdout.write(line)
-                        

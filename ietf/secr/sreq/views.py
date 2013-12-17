@@ -11,7 +11,7 @@ from ietf.secr.utils.mail import get_ad_email_list, get_chair_email_list, get_cc
 from ietf.secr.utils.decorators import check_permissions, sec_only
 from ietf.secr.utils.group import get_my_groups, groups_by_session
 
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 from ietf.utils.mail import send_mail
 from ietf.meeting.models import Meeting, Session, Constraint
 

@@ -1,19 +1,18 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import re
-import models
-import ietf.utils
-from django import forms
+import re, datetime
 
-from datetime import datetime
 from django.shortcuts import render_to_response as render, get_object_or_404
 from django.template import RequestContext
 from django.http import Http404
 from django.conf import settings
+from django import forms
+
 from ietf.utils import log
 from ietf.utils.mail import send_mail
+from ietf.doc.models import Document, DocAlias
+from ietf.ipr.models import IprDetail, IprDocAlias, IprContact, LICENSE_CHOICES, IprUpdate
 from ietf.ipr.view_sections import section_table
-from ietf.idtracker.models import Rfc, InternetDraft
 
 # ----------------------------------------------------------------
 # Create base forms from models
@@ -22,21 +21,19 @@ from ietf.idtracker.models import Rfc, InternetDraft
 phone_re = re.compile(r'^\+?[0-9 ]*(\([0-9]+\))?[0-9 -]+( ?x ?[0-9]+)?$')
 phone_error_message = """Phone numbers may have a leading "+", and otherwise only contain numbers [0-9]; dash, period or space; parentheses, and an optional extension number indicated by 'x'."""
 
-from django.forms import ModelForm
-
-class BaseIprForm(ModelForm):
-    licensing_option = forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES), required=False)
+class BaseIprForm(forms.ModelForm):
+    licensing_option = forms.IntegerField(widget=forms.RadioSelect(choices=LICENSE_CHOICES), required=False)
     is_pending = forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
     applies_to_all = forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
     class Meta:
-        model = models.IprDetail
+        model = IprDetail
         exclude = ('rfc_document', 'id_document_tag') # 'legacy_url_0','legacy_url_1','legacy_title_1','legacy_url_2','legacy_title_2')
         
-class BaseContactForm(ModelForm):
+class BaseContactForm(forms.ModelForm):
     telephone = forms.RegexField(phone_re, error_message=phone_error_message, required=False)
     fax = forms.RegexField(phone_re, error_message=phone_error_message, required=False)
     class Meta:
-        model = models.IprContact
+        model = IprContact
         exclude = ('ipr', 'contact_type')
 
 # Some subclassing:
@@ -65,8 +62,6 @@ def new(request, type, update=None, submitter=None):
     one form containing fields from 4 tables -- don't build something like this again...
 
     """
-    debug = ""
-
     section_list = section_table[type].copy()
     section_list.update({"title":False, "new_intro":False, "form_intro":True,
         "form_submit":True, "form_legend": True, })
@@ -102,19 +97,11 @@ def new(request, type, update=None, submitter=None):
                     setattr(self, contact, ContactForm(prefix=contact[:4], initial=contact_initial.get(contact, {}), *args, **kwnoinit))
             rfclist_initial = ""
             if update:
-                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    from ietf.ipr.models import IprDocAlias
-                    rfclist_initial = " ".join(a.doc_alias.name.upper() for a in IprDocAlias.objects.filter(doc_alias__name__startswith="rfc", ipr=update))
-                else:
-                    rfclist_initial = " ".join(["RFC%d" % rfc.document_id for rfc in update.rfcs.all()])
+                rfclist_initial = " ".join(a.doc_alias.name.upper() for a in IprDocAlias.objects.filter(doc_alias__name__startswith="rfc", ipr=update))
             self.base_fields["rfclist"] = forms.CharField(required=False, initial=rfclist_initial)
             draftlist_initial = ""
             if update:
-                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    from ietf.ipr.models import IprDocAlias
-                    draftlist_initial = " ".join(a.doc_alias.name + ("-%s" % a.rev if a.rev else "") for a in IprDocAlias.objects.filter(ipr=update).exclude(doc_alias__name__startswith="rfc"))
-                else:
-                    draftlist_initial = " ".join([draft.document.filename + (draft.revision and "-%s" % draft.revision or "") for draft in update.drafts.all()])
+                draftlist_initial = " ".join(a.doc_alias.name + ("-%s" % a.rev if a.rev else "") for a in IprDocAlias.objects.filter(ipr=update).exclude(doc_alias__name__startswith="rfc"))
             self.base_fields["draftlist"] = forms.CharField(required=False, initial=draftlist_initial)
             if section_list.get("holder_contact", False):
                 self.base_fields["hold_contact_is_submitter"] = forms.BooleanField(required=False)
@@ -142,12 +129,8 @@ def new(request, type, update=None, submitter=None):
                 rfclist = rfclist.strip().split()
                 for rfc in rfclist:
                     try:
-                        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                            from ietf.doc.models import DocAlias
-                            DocAlias.objects.get(name="rfc%s" % int(rfc))
-                        else:
-                            Rfc.objects.get(rfc_number=int(rfc))
-                    except:
+                        DocAlias.objects.get(name="rfc%s" % int(rfc))
+                    except (DocAlias.DoesNotExist, DocAlias.MultipleObjectsReturned, ValueError):
                         raise forms.ValidationError("Unknown RFC number: %s - please correct this." % rfc)
                 rfclist = " ".join(rfclist)
             return rfclist
@@ -161,25 +144,19 @@ def new(request, type, update=None, submitter=None):
                     if draft.endswith(".txt"):
                         draft = draft[:-4]
                     if re.search("-[0-9][0-9]$", draft):
-                        filename = draft[:-3]
+                        name = draft[:-3]
                         rev = draft[-2:]
                     else:
-                        filename = draft
+                        name = draft
                         rev = None
                     try:
-                        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                            from ietf.doc.models import DocAlias
-                            id = DocAlias.objects.get(name=filename)
-                            # proxy attribute for code below
-                            id.revision = id.document.rev
-                        else:
-                            id = InternetDraft.objects.get(filename=filename)
-                    except Exception, e:
+                        doc = Document.objects.get(docalias__name=name)
+                    except (Document.DoesNotExist, Document.MultipleObjectsReturned) as e:
                         log("Exception: %s" % e)
-                        raise forms.ValidationError("Unknown Internet-Draft: %s - please correct this." % filename)
-                    if rev and id.revision != rev:
-                        raise forms.ValidationError("Unexpected revision '%s' for draft %s - the current revision is %s.  Please check this." % (rev, filename, id.revision))
-                    drafts.append("%s-%s" % (filename, id.revision))
+                        raise forms.ValidationError("Unknown Internet-Draft: %s - please correct this." % name)
+                    if rev and doc.rev != rev:
+                        raise forms.ValidationError("Unexpected revision '%s' for draft %s - the current revision is %s.  Please check this." % (rev, name, doc.rev))
+                    drafts.append("%s-%s" % (name, doc.rev))
                 return " ".join(drafts)
             return ""
         def clean_licensing_option(self):
@@ -200,12 +177,9 @@ def new(request, type, update=None, submitter=None):
     # POST of the "get updater" form, so we don't want to validate
     # this one.  When we're posting *this* form, submitter is None,
     # even when updating.
-    if (request.method == 'POST' or '_testpost' in request.REQUEST) and not submitter:
-        if request.method == 'POST':
-            data = request.POST.copy()
-        else:
-            data = request.GET.copy()
-        data["submitted_date"] = datetime.now().strftime("%Y-%m-%d")
+    if request.method == 'POST' and not submitter:
+        data = request.POST.copy()
+        data["submitted_date"] = datetime.datetime.now().strftime("%Y-%m-%d")
         data["third_party"] = section_list["third_party"]
         data["generic"] = section_list["generic"]
         data["status"] = "0"
@@ -222,18 +196,18 @@ def new(request, type, update=None, submitter=None):
         form = IprForm(data)
         if form.is_valid():
             # Save data :
-            #   IprDetail, IprUpdate, IprContact+, IprDraft+, IprRfc+, IprNotification
+            #   IprDetail, IprUpdate, IprContact+, IprDocAlias+, IprNotification
 
             # Save IprDetail
             instance = form.save(commit=False)
 
-	    legal_name_genitive = data['legal_name'] + "'" if data['legal_name'].endswith('s') else data['legal_name'] + "'s"
+            legal_name_genitive = data['legal_name'] + "'" if data['legal_name'].endswith('s') else data['legal_name'] + "'s"
             if type == "generic":
                 instance.title = legal_name_genitive + " General License Statement" 
-            if type == "specific":
+            elif type == "specific":
                 data["ipr_summary"] = get_ipr_summary(form.cleaned_data)
                 instance.title = legal_name_genitive + """ Statement about IPR related to %(ipr_summary)s""" % data
-            if type == "third-party":
+            elif type == "third-party":
                 data["ipr_summary"] = get_ipr_summary(form.cleaned_data)
 		ietf_name_genitive = data['ietf_name'] + "'" if data['ietf_name'].endswith('s') else data['ietf_name'] + "'s"
                 instance.title = ietf_name_genitive + """ Statement about IPR related to %(ipr_summary)s belonging to %(legal_name)s""" % data
@@ -248,7 +222,7 @@ def new(request, type, update=None, submitter=None):
             instance.save()
 
             if update:
-                updater = models.IprUpdate(ipr=instance, updated=update, status_to_be=1, processed=0)
+                updater = IprUpdate(ipr=instance, updated=update, status_to_be=1, processed=0)
                 updater.save()
             contact_type = {"hold":1, "ietf":2, "subm": 3}
 
@@ -263,7 +237,7 @@ def new(request, type, update=None, submitter=None):
                     del cdata["contact_is_submitter"]
                 except KeyError:
                     pass
-                contact = models.IprContact(**dict([(str(a),b) for a,b in cdata.items()]))
+                contact = IprContact(**dict([(str(a),b) for a,b in cdata.items()]))
                 contact.save()
                 # store this contact in the instance for the email
                 # similar to what views.show() does
@@ -279,34 +253,21 @@ def new(request, type, update=None, submitter=None):
 #                else:
 #                    log("Invalid contact: %s" % contact)
 
-            # Save IprDraft(s)
+            # Save draft links
             for draft in form.cleaned_data["draftlist"].split():
-                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    name = draft[:-3]
-                    rev = draft[-2:]
-                    
-                    from ietf.doc.models import DocAlias
-                    models.IprDocAlias.objects.create(
-                        doc_alias=DocAlias.objects.get(name=name),
-                        ipr=instance,
-                        rev=rev)
-                else:
-                    id = InternetDraft.objects.get(filename=draft[:-3])
-                    iprdraft = models.IprDraft(document=id, ipr=instance, revision=draft[-2:])
-                    iprdraft.save()
+                name = draft[:-3]
+                rev = draft[-2:]
 
-            # Save IprRfc(s)
+                IprDocAlias.objects.create(
+                    doc_alias=DocAlias.objects.get(name=name),
+                    ipr=instance,
+                    rev=rev)
+
             for rfcnum in form.cleaned_data["rfclist"].split():
-                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    from ietf.doc.models import DocAlias
-                    models.IprDocAlias.objects.create(
-                        doc_alias=DocAlias.objects.get(name="rfc%s" % int(rfcnum)),
-                        ipr=instance,
-                        rev="")
-                else:
-                    rfc = Rfc.objects.get(rfc_number=int(rfcnum))
-                    iprrfc = models.IprRfc(document=rfc, ipr=instance)
-                    iprrfc.save()
+                IprDocAlias.objects.create(
+                    doc_alias=DocAlias.objects.get(name="rfc%s" % int(rfcnum)),
+                    ipr=instance,
+                    rev="")
 
             send_mail(request, settings.IPR_EMAIL_TO, ('IPR Submitter App', 'ietf-ipr@ietf.org'), 'New IPR Submission Notification', "ipr/new_update_email.txt", {"ipr": instance, "update": update})
             return render("ipr/submitted.html", {"update": update}, context_instance=RequestContext(request))
@@ -328,12 +289,12 @@ def new(request, type, update=None, submitter=None):
             form = IprForm()
         form.unbound_form = True
 
-    # ietf.utils.log(dir(form.ietf_contact_is_submitter))
-    return render("ipr/details_edit.html", {"ipr": form, "section_list":section_list, "debug": debug}, context_instance=RequestContext(request))
+    # log(dir(form.ietf_contact_is_submitter))
+    return render("ipr/details_edit.html", {"ipr": form, "section_list":section_list}, context_instance=RequestContext(request))
 
 def update(request, ipr_id=None):
     """Update a specific IPR disclosure"""
-    ipr = get_object_or_404(models.IprDetail, ipr_id=ipr_id)
+    ipr = get_object_or_404(IprDetail, ipr_id=ipr_id)
     if not ipr.status in [1,3]:
 	raise Http404        
     type = "specific"
@@ -355,9 +316,7 @@ def update(request, ipr_id=None):
                 
 	if request.method == 'POST':
 	    form = UpdateForm(request.POST)
-        elif '_testpost' in request.REQUEST:
-            form = UpdateForm(request.GET)
-	else:
+        else:
 	    form = UpdateForm()
 
 	if not(form.is_valid()):
@@ -386,6 +345,3 @@ def get_ipr_summary(data):
         ipr = ", ".join(ipr[:-1]) + ", and " + ipr[-1]
 
     return ipr
-
-# changes done by convert-096.py:changed newforms to forms
-# cleaned_data

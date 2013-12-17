@@ -1,17 +1,17 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-#import models
 import datetime
 import os
 import re
 import tarfile
+import debug
+import urllib
+import json
 
 from tempfile import mkstemp
 
 from django import forms
-from django.shortcuts import render_to_response, get_object_or_404
-from django.utils import simplejson as json
-from ietf.idtracker.models import IETFWG, IRTF, Area
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.core.urlresolvers import reverse
 from django.db.models import Q
@@ -19,53 +19,45 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.decorators import decorator_from_middleware
-from ietf.ietfauth.decorators import group_required, has_role
 from django.middleware.gzip import GZipMiddleware
 from django.db.models import Max
 from django.forms.models import modelform_factory
 
-import debug
-import urllib
-
 from ietf.utils.pipe import pipe
+from ietf.ietfauth.utils import role_required, has_role
 from ietf.doc.models import Document, State
-
-# Old model -- needs to be removed
-from ietf.proceedings.models import Meeting as OldMeeting, WgMeetingSession, Proceeding, Switches
-
-# New models
 from ietf.person.models  import Person
-from ietf.meeting.models import TimeSlot, Session, Schedule
+from ietf.meeting.models import Meeting, TimeSlot, Session, Schedule
 from ietf.group.models import Group
 
-from ietf.meeting.helpers import agenda_info
 from ietf.meeting.helpers import get_areas
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_scheduledsessions_from_schedule, get_all_scheduledsessions_from_schedule
 from ietf.meeting.helpers import get_modified_from_scheduledsessions
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
-from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions
-
-import debug
+from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, meeting_updated
 
 @decorator_from_middleware(GZipMiddleware)
 def materials(request, meeting_num=None):
-    proceeding = get_object_or_404(Proceeding, meeting_num=meeting_num)
-    begin_date = proceeding.sub_begin_date
-    cut_off_date = proceeding.sub_cut_off_date
-    cor_cut_off_date = proceeding.c_sub_cut_off_date
+    meeting = get_meeting(meeting_num)
+
+    begin_date = meeting.get_submission_start_date()
+    cut_off_date = meeting.get_submission_cut_off_date()
+    cor_cut_off_date = meeting.get_submission_correction_date()
     now = datetime.date.today()
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.REQUEST:
         pass
     elif now > cor_cut_off_date:
-        return render_to_response("meeting/materials_upload_closed.html",{'meeting_num':meeting_num,'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date}, context_instance=RequestContext(request))
-    sub_began = 0
-    if now > begin_date:
-        sub_began = 1
+        return render_to_response("meeting/materials_upload_closed.html", {
+            'meeting_num': meeting_num,
+            'begin_date': begin_date,
+            'cut_off_date': cut_off_date,
+            'cor_cut_off_date': cor_cut_off_date
+        }, context_instance=RequestContext(request))
+
     #sessions  = Session.objects.filter(meeting__number=meeting_num, timeslot__isnull=False)
-    meeting = get_meeting(meeting_num)
-    schedule = get_schedule(meeting,None )
-    sessions  = Session.objects.filter(meeting__number=meeting_num,scheduledsession__schedule=schedule ).select_related()
+    schedule = get_schedule(meeting, None)
+    sessions  = Session.objects.filter(meeting__number=meeting_num, scheduledsession__schedule=schedule).select_related()
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
@@ -73,18 +65,21 @@ def materials(request, meeting_num=None):
     iab       = sessions.filter(group__parent__acronym = 'iab')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
-    #
-    return render_to_response("meeting/materials.html",
-                              {'meeting_num':meeting_num,
-                               'plenaries': plenaries, 'ietf':ietf, 'training':training, 'irtf': irtf, 'iab':iab,
-                               'begin_date':begin_date, 'cut_off_date':cut_off_date,
-                               'cor_cut_off_date':cor_cut_off_date,'sub_began':sub_began,
-                               'cache_version':cache_version},
-                              context_instance=RequestContext(request))
+    return render_to_response("meeting/materials.html", {
+        'meeting_num': meeting_num,
+        'plenaries': plenaries, 'ietf': ietf, 'training': training, 'irtf': irtf, 'iab': iab,
+        'cut_off_date': cut_off_date,
+        'cor_cut_off_date': cor_cut_off_date,
+        'submission_started': now > begin_date,
+        'cache_version': cache_version,
+    }, context_instance=RequestContext(request))
 
 def current_materials(request):
-    meeting = OldMeeting.objects.exclude(number__startswith='interim-').order_by('-meeting_num')[0]
-    return HttpResponseRedirect( reverse(materials, args=[meeting.meeting_num]) )
+    meetings = Meeting.objects.exclude(number__startswith='interim-').order_by('-number')
+    if meetings:
+        return redirect(materials, meetings[0].number)
+    else:
+        raise Http404
 
 def get_user_agent(request):
     if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
@@ -100,7 +95,7 @@ def get_user_agent(request):
 class SaveAsForm(forms.Form):
     savename = forms.CharField(max_length=100)
 
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 def agenda_create(request, num=None, schedule_name=None):
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, schedule_name)
@@ -203,7 +198,7 @@ def edit_timeslots(request, num=None):
                                          RequestContext(request)), mimetype="text/html")
 
 ##############################################################################
-#@group_required('Area Director','Secretariat')
+#@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
 @decorator_from_middleware(GZipMiddleware)
 def edit_agenda(request, num=None, schedule_name=None):
@@ -235,9 +230,9 @@ def edit_agenda(request, num=None, schedule_name=None):
     saveasurl=reverse(edit_agenda,
                       args=[meeting.number, schedule.name])
 
-    cansee,canedit = agenda_permissions(meeting, schedule, user)
+    can_see, can_edit = agenda_permissions(meeting, schedule, user)
 
-    if not cansee:
+    if not can_see:
         #sys.stdout.write("visible: %s public: %s owner: %s request from: %s\n" % (
         #        schedule.visible, schedule.public, schedule.owner, requestor))
         return HttpResponse(render_to_string("meeting/private_agenda.html",
@@ -293,7 +288,7 @@ def edit_agenda(request, num=None, schedule_name=None):
 #
 AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
 
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 @decorator_from_middleware(GZipMiddleware)
 def edit_agenda_properties(request, num=None, schedule_name=None):
 
@@ -311,7 +306,7 @@ def edit_agenda_properties(request, num=None, schedule_name=None):
 # show list of agendas.
 #
 
-@group_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat')
 @decorator_from_middleware(GZipMiddleware)
 def edit_agendas(request, num=None, order=None):
 
@@ -342,7 +337,7 @@ def agenda(request, num=None, name=None, base=None, ext=None):
     mimetype = {".html":"text/html", ".txt": "text/plain", ".ics":"text/calendar", ".csv":"text/csv"}
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
-    updated = Switches().from_object(meeting).updated()
+    updated = meeting_updated(meeting)
     return HttpResponse(render_to_string("meeting/"+base+ext,
         {"schedule":schedule, "updated": updated}, RequestContext(request)), mimetype=mimetype[ext])
 
@@ -540,7 +535,7 @@ def week_view(request, num=None):
 def ical_agenda(request, num=None, name=None, ext=None):
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
-    updated = Switches().from_object(meeting).updated()
+    updated = meeting_updated(meeting)
 
     q = request.META.get('QUERY_STRING','') or ""
     filter = set(urllib.unquote(q).lower().split(','))

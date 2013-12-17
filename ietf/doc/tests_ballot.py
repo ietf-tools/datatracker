@@ -20,10 +20,7 @@ from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 from ietf.utils import TestCase
 
-class EditPositionTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class EditPositionTests(TestCase):
     def test_edit_position(self):
         draft = make_test_data()
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name,
@@ -170,10 +167,7 @@ class EditPositionTestCase(TestCase):
         self.assertTrue("Test!" in str(m))
 
         
-class DeferBallotTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
+class DeferBallotTests(TestCase):
     def test_defer_ballot(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
@@ -217,10 +211,8 @@ class DeferBallotTestCase(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.get_state_slug("draft-iesg"), "iesg-eva")
 
-class BallotWriteupsTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
 
+class BallotWriteupsTests(TestCase):
     def test_edit_last_call_text(self):
         draft = make_test_data()
         url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.name))
@@ -409,10 +401,8 @@ class BallotWriteupsTestCase(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("Subject: Results of IETF-conflict review" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
         
-class ApproveBallotTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
 
+class ApproveBallotTests(TestCase):
     def test_approve_ballot(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")) # make sure it's approvable
@@ -460,10 +450,8 @@ class ApproveBallotTestCase(TestCase):
         self.assertEquals(len(outbox), mailbox_before + 3)
         self.assertTrue("NOT be published" in str(outbox[-1]))
 
-class MakeLastCallTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
 
+class MakeLastCallTests(TestCase):
     def test_make_last_call(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="lc-req"))

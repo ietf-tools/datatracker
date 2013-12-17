@@ -5,6 +5,8 @@ from django.conf import settings
 
 from ietf.utils import markup_txt
 from ietf.doc.models import *
+from ietf.group.models import Role
+from ietf.ietfauth.utils import has_role
 
 from ietf.utils import draft
 
@@ -38,6 +40,20 @@ def get_tags_for_stream_id(stream_id):
         return ["w-dep", "w-review", "need-rev", "iesg-com"]
     else:
         return []
+
+def can_adopt_draft(user, doc):
+    if not user.is_authenticated():
+        return False
+
+    if has_role(user, "Secretariat"):
+        return True
+
+    return (doc.stream_id in (None, "ietf", "irtf")
+            and doc.group.type_id == "individ"
+            and Role.objects.filter(name__in=("chair", "delegate", "secr"),
+                                    group__type__in=("wg", "rg"),
+                                    group__state="active",
+                                    person__user=user).exists())
 
 def needed_ballot_positions(doc, active_positions):
     '''Returns text answering the question "what does this document
@@ -227,7 +243,30 @@ def add_state_change_event(doc, by, prev_state, new_state, timestamp=None):
         e.time = timestamp
     e.save()
     return e
-    
+
+def update_reminder(doc, reminder_type_slug, event, due_date):
+    reminder_type = DocReminderTypeName.objects.get(slug=reminder_type_slug)
+
+    try:
+        reminder = DocReminder.objects.get(event__doc=doc, type=reminder_type, active=True)
+    except DocReminder.DoesNotExist:
+        reminder = None
+
+    if due_date:
+        # activate/update reminder
+        if not reminder:
+            reminder = DocReminder(type=reminder_type)
+
+        reminder.event = event
+        reminder.due = due_date
+        reminder.active = True
+        reminder.save()
+    else:
+        # deactivate reminder
+        if reminder:
+            reminder.active = False
+            reminder.save()
+
 def prettify_std_name(n):
     if re.match(r"(rfc|bcp|fyi|std)[0-9]+", n):
         return n[:3].upper() + " " + n[3:]

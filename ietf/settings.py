@@ -18,7 +18,6 @@ LOG_DIR  = '/var/log/datatracker'
 
 import sys
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
-sys.path.append(os.path.abspath(BASE_DIR + "/../redesign"))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -161,16 +160,12 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     'django.contrib.messages',
     'south',
-    'workflows',
-    'permissions',
     'ietf.person',
     'ietf.name',
     'ietf.group',
     'ietf.doc',
     'ietf.message',
-    'ietf.announcements',
     'ietf.idindex',
-    'ietf.idtracker',
     'ietf.ietfauth',
     'ietf.iesg',
     'ietf.ipr',
@@ -178,13 +173,9 @@ INSTALLED_APPS = (
     'ietf.mailinglists',
     'ietf.meeting',
     'ietf.utils',
-    #'ietf.proceedings',
     'ietf.redirects',
-    'ietf.idrfc',
     'ietf.wginfo',
     'ietf.submit',
-    'ietf.ietfworkflows',
-    'ietf.wgchairs',
     'ietf.wgcharter',
     'ietf.sync',
     'ietf.community',
@@ -314,12 +305,6 @@ LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAI
 LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'
 LIAISON_ATTACH_URL = '/documents/LIAISON/'
 
-# ID Submission Tool settings
-IDSUBMIT_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
-IDSUBMIT_TO_EMAIL = 'internet-drafts@ietf.org'
-IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
-IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
-
 # NomCom Tool settings
 ROLODEX_URL = ""
 NOMCOM_PUBLIC_KEYS_DIR = '/a/www/nomcom/public_keys/'
@@ -330,8 +315,13 @@ DAYS_TO_EXPIRE_NOMINATION_LINK = ''
 DEFAULT_FEEDBACK_TYPE = 'offtopic'
 NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina']
 
-# Days from meeting to cut off dates on submit
-FIRST_CUTOFF_DAYS = 19
+# ID Submission Tool settings
+IDSUBMIT_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
+IDSUBMIT_TO_EMAIL = 'internet-drafts@ietf.org'
+IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
+IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
+
+FIRST_CUTOFF_DAYS = 19 # Days from meeting to cut off dates on submit
 SECOND_CUTOFF_DAYS = 12
 CUTOFF_HOUR = 00                        # midnight UTC
 SUBMISSION_START_DAYS = -90
@@ -345,26 +335,21 @@ IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = 'http://www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
 
-MAX_PLAIN_DRAFT_SIZE = 6291456  # Max size of the txt draft in bytes
+IDSUBMIT_MAX_PLAIN_DRAFT_SIZE = 6291456  # Max size of the txt draft in bytes
 
-# DOS THRESHOLDS PER DAY (Sizes are in MB)
-MAX_SAME_DRAFT_NAME = 20
-MAX_SAME_DRAFT_NAME_SIZE = 50
-MAX_SAME_SUBMITTER = 50
-MAX_SAME_SUBMITTER_SIZE = 150
-MAX_SAME_WG_DRAFT = 150
-MAX_SAME_WG_DRAFT_SIZE = 450
-MAX_DAILY_SUBMISSION = 1000
-MAX_DAILY_SUBMISSION_SIZE = 2000
-# End of ID Submission Tool settings
+IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME = 20
+IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE = 50 # in MB
+IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = 50
+IDSUBMIT_MAX_DAILY_SAME_SUBMITTER_SIZE = 150 # in MB
+IDSUBMIT_MAX_DAILY_SAME_GROUP = 150
+IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE = 450 # in MB
+IDSUBMIT_MAX_DAILY_SUBMISSIONS = 1000
+IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE = 2000 # in MB
 
 # Account settings
 DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
 HTPASSWD_COMMAND = "/usr/bin/htpasswd2"
 HTPASSWD_FILE = "/www/htpasswd"
-
-# DB redesign
-USE_DB_REDESIGN_PROXY_CLASSES = True
 
 SOUTH_TESTS_MIGRATE = False
 

@@ -24,9 +24,6 @@ from ietf.doc.tests_status_change import *
 
 
 class SearchTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
     def test_search(self):
         draft = make_test_data()
 
@@ -127,9 +124,6 @@ class SearchTestCase(TestCase):
         
 
 class DocTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
     def test_document_draft(self):
         draft = make_test_data()
 
@@ -251,9 +245,6 @@ class DocTestCase(TestCase):
 
 
 class AddCommentTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['names']
-
     def test_add_comment(self):
         draft = make_test_data()
         url = urlreverse('doc_add_comment', kwargs=dict(name=draft.name))

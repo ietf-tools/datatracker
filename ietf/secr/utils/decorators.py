@@ -3,7 +3,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from functools import wraps
 
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import has_role
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.meeting.models import Session
