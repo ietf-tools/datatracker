@@ -224,9 +224,11 @@ class IetfTestRunner(DiscoverRunner):
 
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
-        if check_coverage:
+        if check_coverage and not failures:
             check_url_coverage()
             check_template_coverage()
+
+            print "0 test failures - coverage shown above"
 
         save_test_results(failures, test_labels)
 
