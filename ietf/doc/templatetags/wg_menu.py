@@ -32,7 +32,7 @@
 
 from django import template
 from django.core.cache import cache
-from django.template import loader
+from django.template.loader import render_to_string
 
 from ietf.group.models import Group
 
@@ -43,29 +43,24 @@ area_short_names = {
     'rai':'RAI'
     }
 
-class WgMenuNode(template.Node):
-    def render(self, context):
-        x = cache.get('base_left_wgmenu')
-        if x:
-            return x
-
-        areas = Group.objects.filter(type="area", state="active").order_by('acronym')
-        groups = Group.objects.filter(type="wg", state="active", parent__in=areas).order_by("acronym")
-
-        for a in areas:
-            a.short_area_name = area_short_names.get(a.acronym) or a.name
-            if a.short_area_name.endswith(" Area"):
-                a.short_area_name = a.short_area_name[:-len(" Area")]
-
-            a.active_groups = [g for g in groups if g.parent_id == a.id]
-
-        areas = [a for a in areas if a.active_groups]
-
-        res = loader.render_to_string('base/wg_menu.html', {'areas':areas})
-        cache.set('base_left_wgmenu', x, 30*60)
+@register.simple_tag
+def wg_menu():
+    res = cache.get('base_left_wgmenu')
+    if res:
         return res
-    
-def do_wg_menu(parser, token):
-    return WgMenuNode()
 
-register.tag('wg_menu', do_wg_menu)
+    areas = Group.objects.filter(type="area", state="active").order_by('acronym')
+    groups = Group.objects.filter(type="wg", state="active", parent__in=areas).order_by("acronym")
+
+    for a in areas:
+        a.short_area_name = area_short_names.get(a.acronym) or a.name
+        if a.short_area_name.endswith(" Area"):
+            a.short_area_name = a.short_area_name[:-len(" Area")]
+
+        a.active_groups = [g for g in groups if g.parent_id == a.id]
+
+    areas = [a for a in areas if a.active_groups]
+
+    res = render_to_string('base/wg_menu.html', {'areas':areas})
+    cache.set('base_left_wgmenu', res, 30*60)
+    return res
