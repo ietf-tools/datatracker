@@ -1,4 +1,4 @@
-{{ obj.body|truncatewords:"30"|wordwrap:"71"|escape|linebreaksbr }}
+{{ obj.body|truncatewords:"30"|wordwrap:"71"|linebreaksbr }}
 
 {% with obj.attachments.all as attachments %}
   <h3>Attached Document{{ attachments|pluralize }}</h3>

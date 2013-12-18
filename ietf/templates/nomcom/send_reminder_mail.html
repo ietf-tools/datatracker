@@ -43,6 +43,6 @@
 
 <p>The message that will be sent is as follows: {% if mail_template %}<a href="{% url "nomcom_edit_template" year mail_template.id %}">(Edit the message)</a>{% endif %}</p>
 
-<pre>{{ mail_template.content|wrap_text:80|escape }}</pre>
+<pre>{{ mail_template.content|wrap_text:80 }}</pre>
 
 {% endblock %}

@@ -62,12 +62,12 @@
 
 {% if p.pos.blocking and p.discuss %}
 <p><b>{{ p.pos.name }} ({{ p.discuss_time|date:"Y-m-d" }})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
-<pre>{{ p.discuss|wrap_text:80|escape }}</pre>
+<pre>{{ p.discuss|wrap_text:80 }}</pre>
 {% endif %}
 
 {% if p.comment %}
 <p><b>Comment ({{ p.comment_time|date:"Y-m-d" }})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
-<pre>{{ p.comment|wrap_text:80|escape }}</pre>
+<pre>{{ p.comment|wrap_text:80 }}</pre>
 {% endif %}
 {% endfor %}
 

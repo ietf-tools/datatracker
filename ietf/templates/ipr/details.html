@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 
-{% block title %}IPR Details - {{ ipr.title|escape }}{% endblock %}
+{% block title %}IPR Details - {{ ipr.title }}{% endblock %}
 
 {% block pagehead %}
 <meta name="description" content="IPR disclosure #{{ipr.ipr_id}}: {{ ipr.title }} ({{ ipr.submitted_date|date:"Y" }})" />

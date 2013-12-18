@@ -68,7 +68,7 @@
   <tr class="{% cycle oddrow,evenrow %}" id="history-{{ e.pk }}">
     <td>{{ e.time|date:"Y-m-d" }}</td>
     <td>{{ e.rev }}</td>
-    <td>{{ e.by|escape }}</td>
+    <td>{{ e.by }}</td>
     <td>{{ e.desc|format_history_text }}
     </td>
   </tr>

@@ -18,9 +18,9 @@
 		  {% block iprlist %}
 		     {% for alias in docs %}
 		     <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
-			<tr >
+                        <tr>
 			   <td colspan="3">
-			      IPR that is related to <b><i>{{ alias.name|rfcspace|lstrip:"0"|rfcnospace }}, "{{ alias.document.title|escape }}"{% if alias.related %}, that was {{ alias.relation|lower }} {{ alias.related.source|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ alias.related.source.title|escape }}"{% endif %}
+                              IPR that is related to <b><i>{{ alias.name|rfcspace|lstrip:"0"|rfcnospace }}, "{{ alias.document.title }}"{% if alias.related %}, that was {{ alias.relation|lower }} {{ alias.related.source|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ alias.related.source.title|escape }}"{% endif %}
 			      </i></b>{% if alias.product_of_this_wg %} which is a product of Working Group <b><i>{{ q }}</i></b>{% endif %}
 			   </td>
 			</tr>
@@ -32,10 +32,10 @@
 				 <td>
 				    {% for item in ipr.updates.all %}
                                        {% if item.updated.status == 1 %}
-					  IPR disclosure ID# {{ item.updated.ipr_id }}, "<a href="{% url "ietf.ipr.views.show" item.updated.ipr_id %}">{{ item.updated.title|escape }}</a>" Updated by
+                                          IPR disclosure ID# {{ item.updated.ipr_id }}, "<a href="{% url "ietf.ipr.views.show" item.updated.ipr_id %}">{{ item.updated.title }}</a>" Updated by
                                        {% endif %}
 				    {% endfor %}
-				    <a href="{% url "ietf.ipr.views.show" ipr.ipr_id %}">"{{ ipr.title|escape }}"</a>
+                                    <a href="{% url "ietf.ipr.views.show" ipr.ipr_id %}">"{{ ipr.title }}"</a>
 				 </td>
 			      </tr>
 			   {% endfor %}
