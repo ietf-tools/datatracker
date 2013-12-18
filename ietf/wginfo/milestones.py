@@ -118,7 +118,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
     #
     # For charters we store the history on the charter document to not confuse people.
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     group = get_object_or_404(Group, acronym=acronym)
 
@@ -337,7 +337,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
 @role_required('WG Chair', 'Area Director', 'Secretariat')
 def reset_charter_milestones(request, acronym):
     """Reset charter milestones to the currently in-use milestones."""
-    login = request.user.get_profile()
+    login = request.user.person
 
     group = get_object_or_404(Group, acronym=acronym)
 

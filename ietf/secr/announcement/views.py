@@ -21,7 +21,7 @@ def check_access(user):
     Announcement app.  Accepted roles are:
     Secretariat, IAD, IAB Chair, IETF Chair, RSOC Chair, IAOC Chair, NomCom Chair, RSE Chair
     '''
-    person = user.get_profile()
+    person = user.person
     groups_with_access = ("iab", "rsoc", "ietf", "iaoc", "rse", "mentor")
     if Role.objects.filter(person=person,
                            group__acronym__in=groups_with_access,

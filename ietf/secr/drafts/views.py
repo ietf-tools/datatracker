@@ -190,13 +190,13 @@ def do_extend(draft, request):
     draft.save()
     
     DocEvent.objects.create(type='changed_document',
-                            by=request.user.get_profile(),
+                            by=request.user.person,
                             doc=draft,
                             time=draft.time,
                             desc='extend_expiry')
                             
     # save scheduled announcement
-    announcement_from_form(request.session['email'],by=request.user.get_profile())
+    announcement_from_form(request.session['email'],by=request.user.person)
     
     return
 
@@ -225,7 +225,7 @@ def do_replace(draft, request):
     archive_draft_files(replaced.document.name + '-' + replaced.document.rev)
 
     # send announcement
-    announcement_from_form(request.session['email'],by=request.user.get_profile())
+    announcement_from_form(request.session['email'],by=request.user.person)
 
     return
     
@@ -255,13 +255,13 @@ def do_resurrect(draft, request):
 
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='completed_resurrect',
-                                       by=request.user.get_profile(),
+                                       by=request.user.person,
                                        doc=draft,
                                        rev=draft.rev,
                                        time=draft.time)
     
     # send announcement
-    announcement_from_form(request.session['email'],by=request.user.get_profile())
+    announcement_from_form(request.session['email'],by=request.user.person)
     
     return
 
@@ -303,7 +303,7 @@ def do_revision(draft, request):
     
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='new_revision',
-                                       by=request.user.get_profile(),
+                                       by=request.user.person,
                                        doc=draft,
                                        rev=new_draft.rev,
                                        desc='New revision available',
@@ -319,7 +319,7 @@ def do_revision(draft, request):
 
     # send announcement if we are in IESG process
     if new_draft.get_state('draft-iesg'):
-        announcement_from_form(request.session['email'],by=request.user.get_profile())
+        announcement_from_form(request.session['email'],by=request.user.person)
 
     return
 
@@ -353,7 +353,7 @@ def do_update(draft,request):
     
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='new_revision',
-                                       by=request.user.get_profile(),
+                                       by=request.user.person,
                                        doc=new_draft,
                                        rev=new_draft.rev,
                                        desc='New revision available',
@@ -366,7 +366,7 @@ def do_update(draft,request):
     post_submission(request)
 
     # send announcement
-    announcement_from_form(request.session['email'],by=request.user.get_profile())
+    announcement_from_form(request.session['email'],by=request.user.person)
     
     return
 
@@ -388,7 +388,7 @@ def do_withdraw(draft,request):
     # no DocEvent ?
 
     # send announcement
-    announcement_from_form(request.session['email'],by=request.user.get_profile())
+    announcement_from_form(request.session['email'],by=request.user.person)
     
     return
 # -------------------------------------------------
@@ -577,7 +577,7 @@ def add(request):
             
             # create DocEvent
             NewRevisionDocEvent.objects.create(type='new_revision',
-                                               by=request.user.get_profile(),
+                                               by=request.user.person,
                                                doc=draft,
                                                rev=draft.rev,
                                                time=draft.time,
@@ -621,7 +621,7 @@ def announce(request, id):
     email_form = EmailForm(get_email_initial(draft,type='new'))
                             
     announcement_from_form(email_form.data,
-                           by=request.user.get_profile(),
+                           by=request.user.person,
                            from_val='Internet-Drafts@ietf.org',
                            content_type='Multipart/Mixed; Boundary="NextPart"')
             
@@ -794,7 +794,7 @@ def edit(request, id):
             if form.changed_data:
                 save_document_in_history(draft)
                 DocEvent.objects.create(type='changed_document',
-                                        by=request.user.get_profile(),
+                                        by=request.user.person,
                                         doc=draft,
                                         desc='Changed field(s): %s' % ','.join(form.changed_data))
                 # see EditModelForm.save() for detailed logic
@@ -929,7 +929,7 @@ def makerfc(request, id):
             
             # create DocEvent
             DocEvent.objects.create(type='published_rfc',
-                                    by=request.user.get_profile(),
+                                    by=request.user.person,
                                     doc=rfc)
             
             # change state

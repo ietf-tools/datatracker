@@ -162,7 +162,7 @@ def edit(request, acronym=None, action="edit"):
     else:
         raise Http404
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = WGForm(request.POST, wg=wg, confirmed=request.POST.get("confirmed", False))
@@ -312,7 +312,7 @@ def conclude(request, acronym):
     """Request the closing of a WG, prompting for instructions."""
     wg = get_object_or_404(Group, acronym=acronym)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = ConcludeForm(request.POST)

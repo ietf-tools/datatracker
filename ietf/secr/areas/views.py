@@ -75,7 +75,7 @@ def add(request):
             
             #save groupevent 'started' record
             start_date = area_form.cleaned_data.get('start_date')
-            login = request.user.get_profile()
+            login = request.user.person
             group_event = GroupEvent(group=area,time=start_date,type='started',by=login)
             group_event.save()
             
@@ -134,7 +134,7 @@ def edit(request, name):
                 if 'state' in form.changed_data:
                     ChangeStateGroupEvent.objects.create(group=new_area,
                                                          type='changed_state',
-                                                         by=request.user.get_profile(),
+                                                         by=request.user.person,
                                                          state=state,
                                                          time=new_area.time)
                     form.changed_data.remove('state')
@@ -143,7 +143,7 @@ def edit(request, name):
                 if form.changed_data:
                     GroupEvent.objects.create(group=new_area,
                                               type='info_changed',
-                                              by=request.user.get_profile(),
+                                              by=request.user.person,
                                               time=new_area.time)
                 
                 messages.success(request, 'The Area entry was changed successfully')

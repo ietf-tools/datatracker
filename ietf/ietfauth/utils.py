@@ -37,7 +37,7 @@ def has_role(user, role_names, *args, **kwargs):
     key = frozenset(role_names)
     if key not in user.roles_check_cache:
         try:
-            person = user.get_profile()
+            person = user.person
         except Person.DoesNotExist:
             return False
 

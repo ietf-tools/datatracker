@@ -34,7 +34,7 @@ def readonly(request, meeting_num, schedule_id):
         write_perm  = True
 
     try:
-        person = user.get_profile()
+        person = user.person
         if person is not None and schedule.owner == user.person:
             read_only = False
     except:
@@ -80,7 +80,7 @@ def update_timeslot(request, schedule_id, session_id, scheduledsession_id=None, 
     ess = None
     ss = None
 
-    #print "duplicate: %s schedule.owner: %s user: %s" % (duplicate, schedule.owner, request.user.get_profile())
+    #print "duplicate: %s schedule.owner: %s user: %s" % (duplicate, schedule.owner, request.user.person)
     cansee,canedit = agenda_permissions(meeting, schedule, request.user)
 
     if not canedit:
@@ -305,7 +305,7 @@ def agenda_add(request, meeting):
 
     newagenda = newagendaform.save(commit=False)
     newagenda.meeting = meeting
-    newagenda.owner   = request.user.get_profile()
+    newagenda.owner   = request.user.person
     newagenda.save()
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:

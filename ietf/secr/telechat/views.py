@@ -166,7 +166,7 @@ def doc_detail(request, date, name):
         state_type = 'draft-iesg'
 
     started_process = doc.latest_event(type="started_iesg_process")
-    login = request.user.get_profile()
+    login = request.user.person
 
     if doc.active_ballot():
         ballots = doc.active_ballot().active_ad_positions()  # returns dict of ad:ballotpositiondocevent

@@ -85,7 +85,7 @@ def profile(request):
     roles = []
     person = None
     try:
-        person = request.user.get_profile()
+        person = request.user.person
     except Person.DoesNotExist:
         return render_to_response('registration/missing_person.html', context_instance=RequestContext(request))
 

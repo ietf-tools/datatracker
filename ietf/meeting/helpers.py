@@ -147,7 +147,7 @@ def agenda_permissions(meeting, schedule, user):
     requestor= None
 
     try:
-        requestor = user.get_profile()
+        requestor = user.person
     except:
         pass
 

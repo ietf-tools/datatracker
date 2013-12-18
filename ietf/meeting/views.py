@@ -210,7 +210,7 @@ def edit_agenda(request, num=None, schedule_name=None):
     if not user.is_anonymous():
         #print "user: %s" % (user)
         try:
-            requestor = user.get_profile()
+            requestor = user.person
         except Person.DoesNotExist:
             # if we can not find them, leave them alone, only used for debugging.
             pass
@@ -319,7 +319,7 @@ def edit_agendas(request, num=None, order=None):
 
     schedules = meeting.schedule_set
     if not has_role(user, 'Secretariat'):
-        schedules = schedules.filter(visible = True) | schedules.filter(owner = user.get_profile())
+        schedules = schedules.filter(visible = True) | schedules.filter(owner = user.person)
 
     schedules = schedules.order_by('owner', 'name')
 

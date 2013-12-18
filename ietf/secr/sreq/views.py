@@ -179,7 +179,7 @@ def approve(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
     session = Session.objects.get(meeting=meeting,group=group,status='apprw')
 
-    if has_role(request.user,'Secretariat') or group.parent.role_set.filter(name='ad',person=request.user.get_profile()):
+    if has_role(request.user,'Secretariat') or group.parent.role_set.filter(name='ad',person=request.user.person):
         session.status = SessionStatusName.objects.get(slug='appr')
         session.save()
 
@@ -204,7 +204,7 @@ def cancel(request, acronym):
     meeting = get_meeting()
     group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
-    login = request.user.get_profile()
+    login = request.user.person
 
     # delete conflicts
     Constraint.objects.filter(meeting=meeting,source=group).delete()
@@ -241,7 +241,7 @@ def confirm(request, acronym):
     form = querydict.copy()
     meeting = get_meeting()
     group = get_object_or_404(Group,acronym=acronym)
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         # clear http session data
@@ -313,7 +313,7 @@ def edit(request, acronym):
     sessions_count = sessions.count()
     initial = get_initial_session(sessions)
     session_conflicts = session_conflicts_as_string(group, meeting)
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
@@ -530,7 +530,7 @@ def no_session(request, acronym):
     '''
     meeting = get_meeting()
     group = get_object_or_404(Group, acronym=acronym)
-    login = request.user.get_profile()
+    login = request.user.person
 
     # delete canceled record if there is one
     Session.objects.filter(group=group,meeting=meeting,status='canceled').delete()
@@ -640,7 +640,7 @@ def view(request, acronym):
     # if sessions include a 3rd session waiting approval and the user is a secretariat or AD of the group
     # display approve button
     if sessions.filter(status='apprw'):
-        if has_role(request.user,'Secretariat') or group.parent.role_set.filter(name='ad',person=request.user.get_profile()):
+        if has_role(request.user,'Secretariat') or group.parent.role_set.filter(name='ad',person=request.user.person):
             show_approve_button = True
 
     # build session dictionary (like querydict from new session request form) for use in template

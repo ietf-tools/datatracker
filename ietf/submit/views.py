@@ -415,7 +415,7 @@ def add_preapproval(request):
         if form.is_valid():
             p = Preapproval()
             p.name = form.cleaned_data["name"]
-            p.by = request.user.get_profile()
+            p.by = request.user.person
             p.save()
 
             return HttpResponseRedirect(urlreverse("submit_approvals") + "#preapprovals")

@@ -745,7 +745,7 @@ def add_comment(request, name):
     """Add comment to history of document."""
     doc = get_object_or_404(Document, docalias__name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = AddCommentForm(request.POST)

@@ -20,7 +20,7 @@ class CommunityListNode(template.Node):
             return ''
         lists = {'personal': CommunityList.objects.get_or_create(user=user)[0]}
         try:
-            person = user.get_profile()
+            person = user.person
             groups = []
             managed_areas = [i.group for i in Role.objects.filter(name__slug='ad', email__in=person.email_set.all())]
             for area in managed_areas:

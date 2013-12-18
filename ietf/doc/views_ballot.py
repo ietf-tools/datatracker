@@ -45,7 +45,7 @@ def do_undefer_ballot(request, doc):
     Helper function to perform undefer of ballot.  Takes the Request object, for use in 
     logging, and the Document object.
     '''
-    login = request.user.get_profile()
+    login = request.user.person
     telechat_date = TelechatDate.objects.active().order_by("date")[0].date
     save_document_in_history(doc)
 
@@ -113,7 +113,7 @@ def edit_position(request, name, ballot_id):
     doc = get_object_or_404(Document, docalias__name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
-    ad = login = request.user.get_profile()
+    ad = login = request.user.person
 
     if 'HTTP_REFERER' in request.META:
         return_to_url = request.META['HTTP_REFERER']
@@ -249,7 +249,7 @@ def send_ballot_comment(request, name, ballot_id):
     doc = get_object_or_404(Document, docalias__name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
-    ad = login = request.user.get_profile()
+    ad = login = request.user.person
 
     return_to_url = request.GET.get('return_to_url')
     if not return_to_url:
@@ -325,7 +325,7 @@ def clear_ballot(request, name):
     """Clear all positions and discusses on every open ballot for a document."""
     doc = get_object_or_404(Document, name=name)
     if request.method == 'POST':
-        by = request.user.get_profile()
+        by = request.user.person
         for t in BallotType.objects.filter(doc_type=doc.type_id):
             close_ballot(doc, by, t.slug)
             create_ballot_if_not_open(doc, by, t.slug)
@@ -347,7 +347,7 @@ def defer_ballot(request, name):
     if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
     telechat_date = TelechatDate.objects.active().order_by("date")[1].date
 
     if request.method == 'POST':
@@ -421,7 +421,7 @@ def lastcalltext(request, name):
     if not doc.get_state("draft-iesg"):
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     existing = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
     if not existing:
@@ -504,7 +504,7 @@ def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
     doc = get_object_or_404(Document, docalias__name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     existing = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     if not existing:
@@ -585,7 +585,7 @@ def ballot_approvaltext(request, name):
     if not doc.get_state("draft-iesg"):
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     existing = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
     if not existing:
@@ -633,7 +633,7 @@ def approve_ballot(request, name):
     if not doc.get_state("draft-iesg"):
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     e = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
     if not e:
@@ -742,7 +742,7 @@ def make_last_call(request, name):
     if not (doc.get_state("draft-iesg") or doc.get_state("statchg")):
         raise Http404
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     e = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
     if not e:

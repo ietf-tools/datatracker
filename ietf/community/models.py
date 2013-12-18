@@ -30,7 +30,7 @@ class CommunityList(models.Model):
         if not self.group or self.group.type.slug not in ('area', 'wg'):
             return False
         try:
-            person = user.get_profile()
+            person = user.person
         except:
             return False
         if self.group.type.slug == 'area':

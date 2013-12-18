@@ -165,7 +165,7 @@ def send_notification(request, sessions):
     '''
     group = sessions[0].group
     to_email = sessions[0].requested_by.role_email('chair').address
-    cc_list = get_cc_list(group, request.user.get_profile())
+    cc_list = get_cc_list(group, request.user.person)
     from_email = ('"IETF Secretariat"','agenda@ietf.org')
     if sessions.count() == 1:
         subject = '%s - Requested session has been scheduled for IETF %s' % (group.acronym, sessions[0].meeting.number)

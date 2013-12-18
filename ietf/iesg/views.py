@@ -320,7 +320,7 @@ def handle_reschedule_form(request, doc, dates, status):
     if request.method == 'POST':
         form = RescheduleForm(request.POST, **formargs)
         if form.is_valid():
-            update_telechat(request, doc, request.user.get_profile(),
+            update_telechat(request, doc, request.user.person,
                             form.cleaned_data['telechat_date'],
                             False if form.cleaned_data['clear_returning_item'] else None)
             doc.time = datetime.datetime.now()

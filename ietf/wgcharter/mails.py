@@ -55,7 +55,7 @@ def email_state_changed(request, doc, text):
 def generate_ballot_writeup(request, doc):
     e = WriteupDocEvent()
     e.type = "changed_ballot_writeup_text"
-    e.by = request.user.get_profile()
+    e.by = request.user.person
     e.doc = doc
     e.desc = u"Ballot writeup was generated"
     e.text = unicode(render_to_string("wgcharter/ballot_writeup.txt"))

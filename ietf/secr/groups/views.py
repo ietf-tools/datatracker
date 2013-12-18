@@ -115,7 +115,7 @@ def add(request):
             # always create started event
             ChangeStateGroupEvent.objects.create(group=group,
                                                  type='changed_state',
-                                                 by=request.user.get_profile(),
+                                                 by=request.user.person,
                                                  state=group.state,
                                                  desc='Started group')
 
@@ -249,7 +249,7 @@ def edit(request, acronym):
                         desc = state.name + ' group'
                     ChangeStateGroupEvent.objects.create(group=group,
                                                          type='changed_state',
-                                                         by=request.user.get_profile(),
+                                                         by=request.user.person,
                                                          state=state,
                                                          desc=desc)
                     form.changed_data.remove('state')
@@ -258,7 +258,7 @@ def edit(request, acronym):
                 if form.changed_data:
                     GroupEvent.objects.create(group=group,
                                               type='info_changed',
-                                              by=request.user.get_profile(),
+                                              by=request.user.person,
                                               desc='Info Changed')
 
                 # if the acronym was changed we'll want to redirect using the new acronym below

@@ -95,9 +95,8 @@ MEDIA_URL = 'http://www.ietf.org/'
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/media/'
 
-DAJAXICE_MEDIA_PREFIX="dajaxice"
+DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
-AUTH_PROFILE_MODULE = 'person.Person'
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
 #DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]

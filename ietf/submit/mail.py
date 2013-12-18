@@ -88,7 +88,7 @@ def announce_to_lists(request, submission):
     m.by = Person.objects.get(name="(System)")
     if request.user.is_authenticated():
         try:
-            m.by = request.user.get_profile()
+            m.by = request.user.person
         except Person.DoesNotExist:
             pass
     m.subject = 'I-D Action: %s-%s.txt' % (submission.name, submission.rev)

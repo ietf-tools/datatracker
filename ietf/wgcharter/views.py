@@ -54,7 +54,7 @@ def change_state(request, name, option=None):
     if charter.get_state_slug() != "infrev" or (initial_review and initial_review.expires < datetime.datetime.now()) or chartering_type == "rechartering":
         initial_review = None
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = ChangeStateForm(request.POST)
@@ -216,7 +216,7 @@ class TelechatForm(forms.Form):
 @role_required("Area Director", "Secretariat")
 def telechat_date(request, name):
     doc = get_object_or_404(Document, type="charter", name=name)
-    login = request.user.get_profile()
+    login = request.user.person
 
     e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
 
@@ -248,7 +248,7 @@ class NotifyForm(forms.Form):
 @role_required("Area Director", "Secretariat")
 def edit_notify(request, name):
     doc = get_object_or_404(Document, type="charter", name=name)
-    login = request.user.get_profile()
+    login = request.user.person
 
     init = {'notify': doc.notify}
 
@@ -299,7 +299,7 @@ def edit_ad(request, name):
     """Change the responsible Area Director for this charter."""
 
     charter = get_object_or_404(Document, type="charter", name=name)
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = AdForm(request.POST)
@@ -357,7 +357,7 @@ def submit(request, name=None, acronym=None, option=None):
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
     not_uploaded_yet = charter.rev.endswith("-00") and not os.path.exists(path)
@@ -433,7 +433,7 @@ def announcement_text(request, name, ann):
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if ann in ("action", "review"):
         existing = charter.latest_event(WriteupDocEvent, type="changed_%s_announcement" % ann)
@@ -504,7 +504,7 @@ def ballot_writeupnotes(request, name):
     if not ballot:
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     approval = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     
@@ -568,7 +568,7 @@ def approve(request, name):
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     e = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     if not e:

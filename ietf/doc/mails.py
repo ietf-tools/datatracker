@@ -90,7 +90,7 @@ def generate_ballot_writeup(request, doc):
 
     e = WriteupDocEvent()
     e.type = "changed_ballot_writeup_text"
-    e.by = request.user.get_profile()
+    e.by = request.user.person
     e.doc = doc
     e.desc = u"Ballot writeup was generated"
     e.text = unicode(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
@@ -132,7 +132,7 @@ def generate_last_call_announcement(request, doc):
 
     e = WriteupDocEvent()
     e.type = "changed_last_call_text"
-    e.by = request.user.get_profile()
+    e.by = request.user.person
     e.doc = doc
     e.desc = u"Last call announcement was generated"
     e.text = unicode(mail)
@@ -151,7 +151,7 @@ def generate_approval_mail(request, doc):
 
     e = WriteupDocEvent()
     e.type = "changed_ballot_approval_text"
-    e.by = request.user.get_profile()
+    e.by = request.user.person
     e.doc = doc
     e.desc = u"Ballot approval text was generated"
     e.text = unicode(mail)

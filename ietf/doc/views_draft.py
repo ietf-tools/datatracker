@@ -63,7 +63,7 @@ def change_state(request, name):
     if (not doc.latest_event(type="started_iesg_process")) or doc.get_state_slug() == "expired":
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = ChangeStateForm(request.POST)
@@ -186,7 +186,7 @@ def change_iana_state(request, name, state_type):
                 
                 doc.set_state(next_state)
 
-                e = add_state_change_event(doc, request.user.get_profile(), prev_state, next_state)
+                e = add_state_change_event(doc, request.user.person, prev_state, next_state)
 
                 doc.time = e.time
                 doc.save()
@@ -222,7 +222,7 @@ def change_stream(request, name):
                                  person__user=request.user))):
         return HttpResponseForbidden("You do not have permission to view this page")
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = ChangeStreamForm(request.POST)
@@ -341,7 +341,7 @@ def replaces(request, name):
     if not (has_role(request.user, ("Secretariat", "Area Director"))
             or is_authorized_in_doc_stream(request.user, doc)):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
-    login = request.user.get_profile()
+    login = request.user.person
     if request.method == 'POST':
         form = ReplacesForm(request.POST, doc=doc)
         if form.is_valid():
@@ -418,7 +418,7 @@ def change_intention(request, name):
             or is_authorized_in_doc_stream(request.user, doc)):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = ChangeIntentionForm(request.POST)
@@ -546,7 +546,7 @@ def to_iesg(request,name):
 
             save_document_in_history(doc)
 
-            login = request.user.get_profile()
+            login = request.user.person
 
             changes = []
 
@@ -621,7 +621,7 @@ def edit_info(request, name):
     if doc.get_state_slug() == "expired":
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     new_document = False
     if not doc.get_state("draft-iesg"): # FIXME: should probably receive "new document" as argument to view instead of this
@@ -771,7 +771,7 @@ def request_resurrect(request, name):
     if doc.get_state_slug() != "expired":
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         email_resurrect_requested(request, doc, login)
@@ -795,7 +795,7 @@ def resurrect(request, name):
     if doc.get_state_slug() != "expired":
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         save_document_in_history(doc)
@@ -839,7 +839,7 @@ def edit_notices(request, name):
                 doc.notify = form.cleaned_data['notify']
                 doc.save()
 
-                login = request.user.get_profile()
+                login = request.user.person
                 c = DocEvent(type="added_comment", doc=doc, by=login)
                 c.desc = "Notification list changed to : "+doc.notify
                 c.save()
@@ -884,7 +884,7 @@ class TelechatForm(forms.Form):
 @role_required("Area Director", "Secretariat")
 def telechat_date(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
-    login = request.user.get_profile()
+    login = request.user.person
 
     e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     initial_returning_item = bool(e and e.returning_item)
@@ -920,7 +920,7 @@ class IESGNoteForm(forms.Form):
 @role_required("Area Director", "Secretariat")
 def edit_iesg_note(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
-    login = request.user.get_profile()
+    login = request.user.person
 
     initial = dict(note=doc.note)
 
@@ -976,7 +976,7 @@ def edit_shepherd_writeup(request, name):
     if not can_edit_shepherd_writeup:
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         if "submit_response" in request.POST:
@@ -1062,7 +1062,7 @@ def edit_shepherd(request, name):
                 doc.shepherd = None
             doc.save()
    
-            login = request.user.get_profile()
+            login = request.user.person
             c = DocEvent(type="added_comment", doc=doc, by=login)
             c.desc = "Document shepherd changed to "+ (doc.shepherd.name if doc.shepherd else "(None)")
             c.save()
@@ -1110,7 +1110,7 @@ def edit_ad(request, name):
             doc.ad = form.cleaned_data['ad']
             doc.save()
     
-            login = request.user.get_profile()
+            login = request.user.person
             c = DocEvent(type="added_comment", doc=doc, by=login)
             c.desc = "Shepherding AD changed to "+doc.ad.name
             c.save()
@@ -1146,7 +1146,7 @@ def edit_consensus(request, name):
         form = ConsensusForm(request.POST)
         if form.is_valid():
             if form.cleaned_data["consensus"] != bool(prev_consensus):
-                e = ConsensusDocEvent(doc=doc, type="changed_consensus", by=request.user.get_profile())
+                e = ConsensusDocEvent(doc=doc, type="changed_consensus", by=request.user.person)
                 e.consensus = form.cleaned_data["consensus"] == "Yes"
 
                 e.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(e.consensus),
@@ -1179,9 +1179,9 @@ def request_publication(request, name):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     m = Message()
-    m.frm = request.user.get_profile().formatted_email()
+    m.frm = request.user.person.formatted_email()
     m.to = "RFC Editor <rfc-editor@rfc-editor.org>"
-    m.by = request.user.get_profile()
+    m.by = request.user.person
 
     next_state = State.objects.get(used=True, type="draft-stream-%s" % doc.stream.slug, slug="rfc-edit")
 
@@ -1213,7 +1213,7 @@ def request_publication(request, name):
             m.to = settings.IANA_APPROVE_EMAIL
             send_mail_message(request, m, extra=extra_automation_headers(doc))
 
-            e = DocEvent(doc=doc, type="requested_publication", by=request.user.get_profile())
+            e = DocEvent(doc=doc, type="requested_publication", by=request.user.person)
             e.desc = "Sent request for publication to the RFC Editor"
             e.save()
 
@@ -1221,7 +1221,7 @@ def request_publication(request, name):
             prev_state = doc.get_state(next_state.type)
             if next_state != prev_state:
                 doc.set_state(next_state)
-                e = add_state_change_event(doc, request.user.get_profile(), prev_state, next_state)
+                e = add_state_change_event(doc, request.user.person, prev_state, next_state)
                 doc.time = e.time
                 doc.save()
 
@@ -1280,7 +1280,7 @@ def adopt_draft(request, name):
 
         if form.is_valid():
             # adopt
-            by = request.user.get_profile()
+            by = request.user.person
 
             save_document_in_history(doc)
 
@@ -1409,7 +1409,7 @@ def change_stream_state(request, name, state_type):
     if request.method == 'POST':
         form = ChangeStreamStateForm(request.POST, doc=doc, state_type=state_type)
         if form.is_valid():
-            by = request.user.get_profile()
+            by = request.user.person
 
             save_document_in_history(doc)
 

@@ -37,7 +37,7 @@ def change_state(request, name, option=None):
        and logging the change as a comment."""
     status_change = get_object_or_404(Document, type="statchg", name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = ChangeStateForm(request.POST)
@@ -128,7 +128,7 @@ class UploadForm(forms.Form):
 def submit(request, name):
     doc = get_object_or_404(Document, type="statchg", name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
     not_uploaded_yet = doc.rev == "00" and not os.path.exists(path)
@@ -209,7 +209,7 @@ def edit_notices(request, name):
             status_change.notify = form.cleaned_data['notify']
             status_change.save()
 
-            login = request.user.get_profile()
+            login = request.user.person
             c = DocEvent(type="added_comment", doc=status_change, by=login)
             c.desc = "Notification list changed to : "+status_change.notify
             c.save()
@@ -241,7 +241,7 @@ def edit_ad(request, name):
             status_change.ad = form.cleaned_data['ad']
             status_change.save()
     
-            login = request.user.get_profile()
+            login = request.user.person
             c = DocEvent(type="added_comment", doc=status_change, by=login)
             c.desc = "Shepherding AD changed to "+status_change.ad.name
             c.save()
@@ -315,7 +315,7 @@ def approve(request, name):
     if status_change.get_state('statchg').slug not in ('appr-pend'):
       raise Http404
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     AnnouncementFormSet = formset_factory(AnnouncementForm,extra=0)        
 
@@ -498,7 +498,7 @@ def start_rfc_status_change(request,name):
            raise Http404
        seed_rfc = get_object_or_404(Document, type="draft", docalias__name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     relation_slugs = DocRelationshipName.objects.filter(slug__in=RELATION_SLUGS)
 
@@ -552,7 +552,7 @@ def start_rfc_status_change(request,name):
 @role_required("Area Director", "Secretariat")
 def telechat_date(request, name):
     doc = get_object_or_404(Document, type="statchg", name=name)
-    login = request.user.get_profile()
+    login = request.user.person
 
     e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     initial_returning_item = bool(e and e.returning_item)
@@ -582,7 +582,7 @@ def edit_relations(request, name):
 
     status_change = get_object_or_404(Document, type="statchg", name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     relation_slugs = DocRelationshipName.objects.filter(slug__in=RELATION_SLUGS)
 
@@ -651,7 +651,7 @@ def generate_last_call_text(request, doc):
 
     e = WriteupDocEvent()
     e.type = 'changed_last_call_text'
-    e.by = request.user.get_profile()
+    e.by = request.user.person
     e.doc = doc
     e.desc = 'Last call announcement was generated'
     e.text = unicode(new_text)
@@ -665,7 +665,7 @@ def last_call(request, name):
 
     status_change = get_object_or_404(Document, type="statchg", name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     last_call_event = status_change.latest_event(WriteupDocEvent, type="changed_last_call_text")
     if not last_call_event:
