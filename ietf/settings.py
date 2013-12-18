@@ -34,6 +34,8 @@ ADMINS = (
     ('Ryan Cross', 'rcross@amsl.com'),
 )
 
+ALLOWED_HOSTS = ["datatracker.ietf.org"]
+
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
 
@@ -97,6 +99,11 @@ DAJAXICE_MEDIA_PREFIX = "dajaxice"
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
 #DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
+
+# enable HTML error emails
+from django.utils.log import DEFAULT_LOGGING
+LOGGING = DEFAULT_LOGGING.copy()
+LOGGING['handlers']['mail_admins']['include_html'] = True
 
 SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
