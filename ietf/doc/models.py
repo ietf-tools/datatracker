@@ -122,7 +122,7 @@ class DocumentInfo(models.Model):
 
         if not hasattr(self, "state_cache") or self.state_cache == None:
             self.state_cache = {}
-            for s in self.states.all().select_related("type"):
+            for s in self.states.all():
                 self.state_cache[s.type_id] = s
 
         return self.state_cache.get(state_type, None)
@@ -357,7 +357,7 @@ class Document(DocumentInfo):
             iesg_state = self.get_state("draft-iesg")
             iesg_state_summary = None
             if iesg_state:
-                iesg_substate = self.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+                iesg_substate = [t for t in self.tags.all() if t.slug in IESG_SUBSTATE_TAGS]
                 # There really shouldn't be more than one tag in iesg_substate, but this will do something sort-of-sensible if there is
                 iesg_state_summary = iesg_state.name
                 if iesg_substate:

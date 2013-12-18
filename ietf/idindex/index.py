@@ -96,7 +96,9 @@ def file_types_for_drafts():
 def all_id2_txt():
     # this returns a lot of data so try to be efficient
 
-    drafts = Document.objects.filter(type="draft").exclude(name__startswith="rfc").order_by('name').select_related('group', 'group__parent', 'ad', 'ad__email', 'intended_std_level', 'shepherd', 'shepherd__email')
+    drafts = Document.objects.filter(type="draft").exclude(name__startswith="rfc").order_by('name')
+    drafts = drafts.select_related('group', 'group__parent', 'ad', 'ad__email', 'intended_std_level', 'shepherd', 'shepherd__email')
+    drafts = drafts.prefetch_related("states")
 
     rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
                                                document__states=State.objects.get(type="draft", slug="rfc")).values_list("document_id", "name"))

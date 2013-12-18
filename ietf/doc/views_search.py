@@ -112,9 +112,7 @@ def wrap_value(v):
 
 def fill_in_search_attributes(docs):
     # fill in some attributes for the search results to save some
-    # hairy template code and avoid repeated SQL queries - remaining
-    # queries we don't handle here are mostly implicit many-to-many
-    # relations for which there is poor support in Django 1.2
+    # hairy template code and avoid repeated SQL queries
 
     docs_dict = dict((d.pk, d) for d in docs)
     doc_ids = docs_dict.keys()
@@ -304,7 +302,9 @@ def retrieve_search_results(form, all_types=False):
 
     # evaluate and fill in attribute results immediately to cut down
     # the number of queries
-    results = list(docs.select_related("states", "ad", "ad__person", "std_level", "intended_std_level", "group", "stream")[:MAX])
+    docs = docs.select_related("ad", "ad__person", "std_level", "intended_std_level", "group", "stream")
+    docs = docs.prefetch_related("states__type", "tags")
+    results = list(docs[:MAX])
 
     fill_in_search_attributes(results)
 
