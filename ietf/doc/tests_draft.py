@@ -477,7 +477,7 @@ class ExpireIDsTests(TestCase):
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("aread@ietf.org" in str(outbox[-1])) # author
-        self.assertTrue("wgchairman@ietf.org" in str(outbox[-1]))
+        self.assertTrue("marschairman@ietf.org" in str(outbox[-1]))
         
     def test_expire_drafts(self):
         from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
@@ -1002,8 +1002,8 @@ class AdoptDraftTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 4)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("adopted" in outbox[-1]["Subject"].lower())
-        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
-        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
 
 class ChangeStreamStateTests(TestCase):
     def test_set_tags(self):
@@ -1042,8 +1042,8 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 2)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("tags changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
-        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("plain@example.com" in unicode(outbox[-1]))
 
     def test_set_state(self):
@@ -1086,6 +1086,6 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
-        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
 

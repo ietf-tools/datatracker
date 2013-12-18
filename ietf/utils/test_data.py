@@ -163,51 +163,17 @@ def make_test_data():
     group.save()
 
     # plain IETF'er
-    u, created = User.objects.get_or_create(username="plain")
-    plainman, created = Person.objects.get_or_create(
-        name="Plain Man",
-        ascii="Plain Man",
-        user=u)
-    email, created = Email.objects.get_or_create(
-        address="plain@example.com",
-        person=plainman)
+    u = User.objects.create(username="plain")
+    plainman = Person.objects.create(name="Plain Man", ascii="Plain Man", user=u)
+    email = Email.objects.create(address="plain@example.com", person=plainman)
+
+    # group personnel
+    create_person(mars_wg, "chair", name="WG Chair Man", username="marschairman")
+    create_person(mars_wg, "delegate", name="WG Delegate", username="marsdelegate")
     
     mars_wg.ad = ad
     mars_wg.save()
 
-    # group chair
-    u = User.objects.create(username="marschairman")
-    p = Person.objects.create(
-        name="WG Chair Man",
-        ascii="WG Chair Man",
-        user=u
-        )
-    wgchair = Email.objects.create(
-        address="wgchairman@ietf.org",
-        person=p)
-    Role.objects.create(
-        name_id="chair",
-        group=mars_wg,
-        person=p,
-        email=wgchair,
-        )
-
-    # group delegate
-    u = User.objects.create(username="wgdelegate")
-    p = Person.objects.create(
-        name="WG Delegate",
-        ascii="WG Delegate",
-        user=u
-        )
-    email = Email.objects.create(
-        address="wgdelegate@ietf.org",
-        person=p)
-    Role.objects.create(
-        name_id="delegate",
-        group=mars_wg,
-        person=p,
-        email=email,
-        )
 
     # draft
     draft = Document.objects.create(
