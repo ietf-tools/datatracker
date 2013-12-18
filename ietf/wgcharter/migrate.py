@@ -2,10 +2,7 @@ import sys, os, re, datetime
 
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
-
-from ietf import settings
-from django.core import management
-management.setup_environ(settings)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 from ietf.doc.models import *
 

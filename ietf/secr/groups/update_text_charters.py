@@ -1,6 +1,6 @@
-from ietf import settings
-from django.core import management
-management.setup_environ(settings)
+import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 from ietf.group.models import *
 

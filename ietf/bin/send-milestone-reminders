@@ -7,9 +7,7 @@
 import datetime, os
 import syslog
 
-from ietf import settings
-from django.core import management
-management.setup_environ(settings)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
 
