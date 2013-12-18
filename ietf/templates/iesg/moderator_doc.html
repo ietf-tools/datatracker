@@ -38,10 +38,10 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 
 <p>
   <b>{{doc.name}}-{{doc.rev}}</b><br>
-  <i>({{ doc.title|escape }})</i><br>
+  <i>({{ doc.title }})</i><br>
   <b>
     Intended status: {{ doc.intended_std_level }}<br>
-    Token: {{ doc.ad.plain_name|escape }}<br>
+    Token: {{ doc.ad.plain_name }}<br>
     {% if doc.type_id == "draft" %}
     Last call ends: {{ doc.most_recent_ietflc.expires.date|default:"(none)" }}
     {% if doc.most_recent_ietflc.expires.date|timesince_days < 3 %}!!!{% endif %}

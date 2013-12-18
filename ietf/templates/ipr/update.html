@@ -22,7 +22,7 @@ table.ipr { margin-top: 1em; }
 
 {% block content %}
 
-<h1>Updating {{ type|title }} IPR Disclosure <br><i>{{ ipr.title|escape }}</i></h1>
+<h1>Updating {{ type|title }} IPR Disclosure <br><i>{{ ipr.title }}</i></h1>
 
  <form name="form1" method="post">{% csrf_token %}
       {% if form.errors %}
