@@ -317,10 +317,10 @@ def agenda_add(request, meeting):
 def agenda_update(request, meeting, schedule):
     # forms are completely useless for update actions that want to
     # accept a subset of values.
-    update_dict = QueryDict(request.raw_post_data, encoding=request._encoding)
+    update_dict = QueryDict(request.body, encoding=request._encoding)
 
     #debug.log("99 meeting.agenda: %s / %s / %s" %
-    #          (schedule, update_dict, request.raw_post_data))
+    #          (schedule, update_dict, request.body))
 
     user = request.user
     if has_role(user, "Secretariat"):
@@ -408,9 +408,9 @@ def meeting_get(request, meeting):
 @role_required('Secretariat')
 def meeting_update(request, meeting):
     # at present, only the official agenda can be updated from this interface.
-    update_dict = QueryDict(request.raw_post_data, encoding=request._encoding)
+    update_dict = QueryDict(request.body, encoding=request._encoding)
 
-    #debug.log("1 meeting.agenda: %s / %s / %s" % (meeting.agenda, update_dict, request.raw_post_data))
+    #debug.log("1 meeting.agenda: %s / %s / %s" % (meeting.agenda, update_dict, request.body))
     if "agenda" in update_dict:
         value = update_dict["agenda"]
         #debug.log("4 meeting.agenda: %s" % (value))
