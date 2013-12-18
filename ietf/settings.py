@@ -91,6 +91,8 @@ MEDIA_URL = 'http://www.ietf.org/'
 
 STATIC_URL = "/"
 
+WSGI_APPLICATION = "ietf.wsgi.application"
+
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
