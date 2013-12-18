@@ -49,15 +49,11 @@ class GroupAdmin(admin.ModelAdmin):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
 
-        info = self.model._meta.app_label, self.model._meta.module_name
+        info = self.model._meta.app_label, self.model._meta.model_name
 
         urls = patterns('',
-            url(r'^reminder/$',
-                wrap(self.send_reminder),
-                name='%s_%s_reminder' % info),
-            url(r'^(.+)/reminder/$',
-                wrap(self.send_one_reminder),
-                name='%s_%s_one_reminder' % info),
+            url(r'^reminder/$', wrap(self.send_reminder), name='%s_%s_reminder' % info),
+            url(r'^(.+)/reminder/$', wrap(self.send_one_reminder), name='%s_%s_one_reminder' % info),
             )
         urls += super(GroupAdmin, self).get_urls()
         return urls
