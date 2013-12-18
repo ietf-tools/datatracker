@@ -83,13 +83,12 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
-# Absolute path to the directory that holds media.
-MEDIA_ROOT = BASE_DIR + "/../static/"
+USE_TZ = False
 
-# URL that handles the media served from MEDIA_ROOT.
 MEDIA_URL = 'http://www.ietf.org/'
 
 STATIC_URL = "/"
+STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
