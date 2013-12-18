@@ -670,7 +670,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
                     'js/SelectBox.js',
                     'js/SelectFilter2.js',
                     ]
-        admin_js = ['%s%s' % (settings.ADMIN_MEDIA_PREFIX, url) for url in admin_js]
+        admin_js = ['%sadmin/%s' % (settings.STATIC_URL, url) for url in admin_js]
         js = ["/js/jquery-1.5.1.min.js", "/js/nomcom.js"] + admin_js
 
 

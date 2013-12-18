@@ -84,16 +84,12 @@ SITE_ID = 1
 USE_I18N = False
 
 # Absolute path to the directory that holds media.
-# Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = BASE_DIR + "/../static/"
 
 # URL that handles the media served from MEDIA_ROOT.
 MEDIA_URL = 'http://www.ietf.org/'
 
-# URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
-# trailing slash.
-# Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+STATIC_URL = "/"
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
