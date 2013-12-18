@@ -95,7 +95,7 @@ def normalize_sort(request):
 
 def liaison_list(request):
     sort, order_by = normalize_sort(request)
-    liaisons = LiaisonStatement.objects.exclude(approved=None).order_by(order_by)
+    liaisons = LiaisonStatement.objects.exclude(approved=None).order_by(order_by).prefetch_related("attachments")
 
     can_send_outgoing = can_add_outgoing_liaison(request.user)
     can_send_incoming = can_add_incoming_liaison(request.user)
