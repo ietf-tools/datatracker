@@ -30,9 +30,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ietf import settings
-from django.core import management
-management.setup_environ(settings)
+import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 from django.db.models.fields.related import ForeignKey
 from django import db
