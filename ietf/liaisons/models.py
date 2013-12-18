@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
+from django.utils.text import slugify
 
 from ietf.name.models import LiaisonStatementPurposeName
 from ietf.doc.models import Document
@@ -37,7 +38,6 @@ class LiaisonStatement(models.Model):
     attachments = models.ManyToManyField(Document, blank=True)
 
     def name(self):
-        from django.template.defaultfilters import slugify
         if self.from_group:
             frm = self.from_group.acronym or self.from_group.name
         else:

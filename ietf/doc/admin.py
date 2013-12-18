@@ -1,4 +1,4 @@
-from django.template.defaultfilters import slugify
+from django.utils.text import slugify
 from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django import forms

@@ -9,8 +9,8 @@ from django.http import HttpResponseRedirect, HttpResponse, HttpResponseForbidde
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template import Context
-from django.template.defaultfilters import slugify
 from django.template.loader import get_template
+from django.utils.text import slugify
 from django.db.models import Max,Count,get_model
 
 from ietf.secr.lib import jsonapi
