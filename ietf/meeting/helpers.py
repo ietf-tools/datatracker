@@ -62,8 +62,7 @@ def get_areas():
 def get_area_list_from_sessions(scheduledsessions, num):
     return scheduledsessions.filter(timeslot__type = 'Session',
                                     session__group__parent__isnull = False).order_by(
-        'session__group__parent__acronym').distinct(
-        'session__group__parent__acronym').values_list(
+        'session__group__parent__acronym').distinct().values_list(
         'session__group__parent__acronym',flat=True)
 
 def build_all_agenda_slices(scheduledsessions, all = False):
@@ -103,8 +102,7 @@ def get_wg_name_list(scheduledsessions):
     return scheduledsessions.filter(timeslot__type = 'Session',
                                     session__group__isnull = False,
                                     session__group__parent__isnull = False).order_by(
-        'session__group__acronym').distinct(
-        'session__group').values_list(
+        'session__group__acronym').distinct().values_list(
         'session__group__acronym',flat=True)
 
 def get_wg_list(scheduledsessions):
