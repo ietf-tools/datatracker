@@ -67,7 +67,7 @@ def admin_post(request, ipr_id, from_page, command):
         ipr_dtl.save()
 
     #assert False, (ipr_dtl.ipr_id, ipr_dtl.is_pending)
-    redirect_url = '/ipradmin/admin/notify/%s?from=%s' % (ipr_id, from_page)
+    redirect_url = '/secr/ipradmin/admin/notify/%s?from=%s' % (ipr_id, from_page)
 
     return HttpResponseRedirect(redirect_url)
 # end admin_post
@@ -712,7 +712,7 @@ def admin_update(request, ipr_id):
             ipr_detail = ipr_detail_form.save(commit=False)
             if 'update_ipr' in request.POST:
                 if ipr_detail.third_party:
-                    return HttpResponseRedirect('/ipradmin/admin/notify/%s?from=update' % ipr_id)
+                    return HttpResponseRedirect('/secr/ipradmin/admin/notify/%s?from=update' % ipr_id)
                 else:
                     redirect_url = ''
             else: # remove

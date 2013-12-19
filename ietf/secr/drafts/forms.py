@@ -188,7 +188,7 @@ class EditModelForm(forms.ModelForm):
     # field must contain filename of existing draft
     def clean_replaced_by(self):
         name = self.cleaned_data.get('replaced_by', '')
-        if name and not InternetDraft.objects.filter(filename=name):
+        if name and not Document.objects.filter(name=name):
             raise forms.ValidationError("ERROR: Draft does not exist")
         return name
 

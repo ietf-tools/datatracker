@@ -158,30 +158,6 @@ def get_fullcc_list(draft):
     if draft.shepherd:
         emails[draft.shepherd.email_address()] = '"%s"' % (draft.shepherd.name)
     
-    """    
-    # add wg advisor
-    try:
-        advisor = IETFWG.objects.get(group_acronym=draft.group.acronym_id).area_director
-        if advisor:
-            add_email(emails,advisor.person)
-    except ObjectDoesNotExist:
-        pass
-    # add shepherding ad
-    try:
-        id = IDInternal.objects.get(draft=draft.id_document_tag)
-        add_email(emails,id.job_owner.person)
-    except ObjectDoesNotExist:
-        pass 
-    # add state_change_notice to
-    try:
-        id = IDInternal.objects.get(draft=draft.id_document_tag)
-        for email in id.state_change_notice_to.split(','):
-            if email.strip() not in emails:
-                emails[email.strip()] = ''
-    except ObjectDoesNotExist:
-        pass 
-    """
-    
     # use sort so we get consistently ordered lists
     result_list = []
     for key in sorted(emails):

@@ -1,1 +1,1 @@
-from django.db import models
+from ietf.ipr.models import *
