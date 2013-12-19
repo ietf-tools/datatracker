@@ -24,7 +24,6 @@ from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_m
 
 from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent, RelatedDocument
 from ietf.group.models import Group
-from ietf.group.proxy import IETFWG
 from ietf.group.utils import get_charter_text
 from ietf.ietfauth.decorators import has_role
 from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession

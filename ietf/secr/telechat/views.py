@@ -8,7 +8,6 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
 from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
-from ietf.doc.proxy import InternetDraft
 from ietf.doc.utils import get_document_content, log_state_changed
 from ietf.group.models import Group
 from ietf.name.models import BallotPositionName
