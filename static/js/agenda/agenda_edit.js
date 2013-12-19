@@ -142,7 +142,7 @@ function read_only_result(msg) {
 function read_only_check() {
     Dajaxice.ietf.meeting.readonly(read_only_result,
                                     {'meeting_num': meeting_number,
-                                     'schedule_id': schedule_id,
+                                     'schedule_id': schedule_id
                                     });
 }
 
