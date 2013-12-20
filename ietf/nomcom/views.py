@@ -1,6 +1,7 @@
  # -*- coding: utf-8 -*-
 
 import datetime, re, json
+from collections import OrderedDict
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -10,7 +11,6 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect, HttpRespons
 from django.shortcuts import render_to_response, get_object_or_404, render, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.utils.datastructures import SortedDict
 from django.db.models import Count
 from django.forms.models import modelformset_factory, inlineformset_factory
 
@@ -622,7 +622,7 @@ def view_feedback_pending(request, year):
         formset = FeedbackFormSet(queryset=feedbacks)
         for form in formset.forms:
             form.set_nomcom(nomcom, request.user)
-    type_dict = SortedDict({})
+    type_dict = OrderedDict()
     for t in FeedbackType.objects.all().order_by('pk'):
         rest = t.name
         slug = rest[0]
