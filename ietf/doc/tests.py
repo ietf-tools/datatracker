@@ -1,4 +1,4 @@
-import os, shutil, datetime
+import os, shutil, datetime, unittest2
 
 from django.core.urlresolvers import reverse as urlreverse
 
@@ -15,13 +15,6 @@ from ietf.group.models import *
 from ietf.person.models import *
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
-
-# extra tests
-from ietf.doc.tests_draft import *
-from ietf.doc.tests_ballot import *
-from ietf.doc.tests_conflict_review import *
-from ietf.doc.tests_status_change import *
-
 
 class SearchTestCase(TestCase):
     def test_search(self):
@@ -280,7 +273,7 @@ class AddCommentTestCase(TestCase):
         self.assertEqual(len(q('form textarea[name=comment]')), 1)
 
 
-class TemplateTagTest(unittest.TestCase):
+class TemplateTagTest(unittest2.TestCase):
     def test_template_tags(self):
         import doctest
         from ietf.doc.templatetags import ietf_filters
