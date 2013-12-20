@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponseRedirect, HttpResponse, QueryDict
 
 from dajaxice.decorators import dajaxice_register
-from ietf.ietfauth.utils import role_required, has_role
+from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.name.models import TimeSlotTypeName
 
 from ietf.meeting.helpers import get_meeting, get_schedule, get_schedule_by_id, agenda_permissions
@@ -33,13 +33,8 @@ def readonly(request, meeting_num, schedule_id):
     if has_role(user, "Area Director"):
         write_perm  = True
 
-    try:
-        person = user.person
-        if person is not None and schedule.owner == user.person:
-            read_only = False
-    except:
-        # specific error if user has no profile...
-        pass
+    if user_is_person(user, schedule.owner):
+        read_only = False
 
     return json.dumps(
         {'secretariat': secretariat,
