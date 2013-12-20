@@ -1,8 +1,14 @@
+{% load url from future %}
 var Dajaxice = {
-    {% for module in dajaxice_js_functions %}
-        {% include "dajaxice/dajaxice_core_loop.js" %}
-        {% endfor %}{% ifnotequal dajaxice_js_functions|length 0 %},{% endifnotequal %}
-    
+
+    {% with module=dajaxice_config.modules top='top' %}
+    {% include "dajaxice/dajaxice_function_loop.js" %}
+    {% endwith %}
+
+    {% for name, module in dajaxice_config.modules.submodules.items %}
+    {% include "dajaxice/dajaxice_module_loop.js" %},
+    {% endfor %}
+
     get_cookie: function(name)
     {
         var cookieValue = null;
@@ -19,95 +25,106 @@ var Dajaxice = {
         }
         return cookieValue;
     },
-            
-    call: function(dajaxice_function, dajaxice_callback, argv, exception_callback)
+
+    call: function(dajaxice_function, method, dajaxice_callback, argv, custom_settings)
     {
-        var send_data = [];
-        var is_callback_a_function = (typeof(dajaxice_callback) == 'function');
-        if(!is_callback_a_function){
-            alert("dajaxice_callback should be a function since dajaxice 0.2")
+        var custom_settings = custom_settings || {},
+            error_callback = Dajaxice.get_setting('default_exception_callback');
+
+        if('error_callback' in custom_settings && typeof(custom_settings['error_callback']) == 'function'){
+            error_callback = custom_settings['error_callback'];
         }
-        
-        if(exception_callback==undefined || typeof(dajaxice_callback) != 'function'){
-            exception_callback = this.get_setting('default_exception_callback');
+
+        var send_data = 'argv='+encodeURIComponent(JSON.stringify(argv)),
+            oXMLHttpRequest = new XMLHttpRequest,
+            endpoint = '{% url 'dajaxice-endpoint' %}'+dajaxice_function+'/';
+
+        if(method == 'GET'){
+            endpoint = endpoint + '?' + send_data;
         }
-        
-        send_data.push('argv='+encodeURIComponent(JSON.stringify(argv)));
-        send_data = send_data.join('&');
-        var oXMLHttpRequest = new XMLHttpRequest;
-        oXMLHttpRequest.open('POST', '/{{DAJAXICE_URL_PREFIX}}/'+dajaxice_function+'/');
+        oXMLHttpRequest.open(method, endpoint);
+        oXMLHttpRequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         oXMLHttpRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-        oXMLHttpRequest.setRequestHeader("X-CSRFToken",Dajaxice.get_cookie('csrftoken'));
+        oXMLHttpRequest.setRequestHeader("X-CSRFToken", Dajaxice.get_cookie('{{ dajaxice_config.django_settings.CSRF_COOKIE_NAME }}'));
         oXMLHttpRequest.onreadystatechange = function() {
             if (this.readyState == XMLHttpRequest.DONE) {
-                if(this.responseText == Dajaxice.EXCEPTION){
-                    exception_callback();
+                if(this.responseText == Dajaxice.EXCEPTION || !(this.status in Dajaxice.valid_http_responses())){
+                    error_callback();
                 }
                 else{
-                    try{
-                        dajaxice_callback(JSON.parse(this.responseText));
+                    var response;
+                    try {
+                        response = JSON.parse(this.responseText);
                     }
-                    catch(exception){
-                        dajaxice_callback(this.responseText);
+                    catch (exception) {
+                        response = this.responseText;
                     }
+                    dajaxice_callback(response);
                 }
             }
         }
-        oXMLHttpRequest.send(send_data);
+        if(method == 'POST'){
+            oXMLHttpRequest.send(send_data);
+        }
+        else{
+            oXMLHttpRequest.send();
+        }
+        return oXMLHttpRequest;
     },
-    
+
     setup: function(settings)
     {
         this.settings = settings;
     },
-    
+
     get_setting: function(key){
         if(this.settings == undefined || this.settings[key] == undefined){
-            return this.default_settings[key];
+            return Dajaxice.default_settings[key];
         }
         return this.settings[key];
     },
-    
-    default_exception_callback: function(data){
-        alert('Something goes wrong');
-    }
-};
 
-Dajaxice.EXCEPTION = '{{ DAJAXICE_EXCEPTION }}';
-Dajaxice.default_settings = {'default_exception_callback': Dajaxice.default_exception_callback}
+    valid_http_responses: function(){
+        return {200: null, 301: null, 302: null, 304: null}
+    },
+
+    EXCEPTION: '{{ dajaxice_config.DAJAXICE_EXCEPTION }}',
+    default_settings: {'default_exception_callback': function(){ console.log('Dajaxice: Something went wrong.')}}
+};
 
 window['Dajaxice'] = Dajaxice;
 
 {% comment %}
 /*
     XMLHttpRequest.js Compiled with Google Closure
-    
+
     XMLHttpRequest.js Copyright (C) 2008 Sergey Ilinsky (http://www.ilinsky.com)
-    
+
     This work is free software; you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
     the Free Software Foundation; either version 2.1 of the License, or
     (at your option) any later version.
-    
+
     This work is distributed in the hope that it will be useful,
     but without any warranty; without even the implied warranty of
     merchantability or fitness for a particular purpose. See the
     GNU Lesser General Public License for more details.
-    
+
     You should have received a copy of the GNU Lesser General Public License
     along with this library; if not, write to the Free Software Foundation, Inc.,
     59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 {% endcomment %}
-{% if DAJAXICE_XMLHTTPREQUEST_JS_IMPORT %}
-(function(){function b(){this._object=i?new i:new window.ActiveXObject("Microsoft.XMLHTTP");this._listeners=[]}function k(a){b.onreadystatechange&&b.onreadystatechange.apply(a);a.dispatchEvent({type:"readystatechange",bubbles:false,cancelable:false,timeStamp:new Date+0})}function p(a){var c=a.responseXML,d=a.responseText;if(h&&d&&c&&!c.documentElement&&a.getResponseHeader("Content-Type").match(/[^\/]+\/[^\+]+\+xml/)){c=new window.ActiveXObject("Microsoft.XMLDOM");c.async=false;c.validateOnParse=false;
-c.loadXML(d)}if(c)if(h&&c.parseError!=0||!c.documentElement||c.documentElement&&c.documentElement.tagName=="parsererror")return null;return c}function o(a){try{a.responseText=a._object.responseText}catch(c){}try{a.responseXML=p(a._object)}catch(d){}try{a.status=a._object.status}catch(g){}try{a.statusText=a._object.statusText}catch(e){}}function l(a){a._object.onreadystatechange=new window.Function}var i=window.XMLHttpRequest,j=!!window.controllers,h=window.document.all&&!window.opera;if(j&&i.wrapped)b.wrapped=
-i.wrapped;b.UNSENT=0;b.OPENED=1;b.HEADERS_RECEIVED=2;b.LOADING=3;b.DONE=4;b.prototype.readyState=b.UNSENT;b.prototype.responseText="";b.prototype.responseXML=null;b.prototype.status=0;b.prototype.statusText="";b.prototype.onreadystatechange=null;b.onreadystatechange=null;b.onopen=null;b.onsend=null;b.onabort=null;b.prototype.open=function(a,c,d,g,e){delete this._headers;if(arguments.length<3)d=true;this._async=d;var f=this,m=this.readyState,n;if(h&&d){n=function(){if(m!=b.DONE){l(f);f.abort()}};window.attachEvent("onunload",
-n)}b.onopen&&b.onopen.apply(this,arguments);if(arguments.length>4)this._object.open(a,c,d,g,e);else arguments.length>3?this._object.open(a,c,d,g):this._object.open(a,c,d);if(!j&&!h){this.readyState=b.OPENED;k(this)}this._object.onreadystatechange=function(){if(!(j&&!d)){f.readyState=f._object.readyState;o(f);if(f._aborted)f.readyState=b.UNSENT;else{if(f.readyState==b.DONE){l(f);h&&d&&window.detachEvent("onunload",n)}m!=f.readyState&&k(f);m=f.readyState}}}};b.prototype.send=function(a){b.onsend&&b.onsend.apply(this,
-arguments);if(a&&a.nodeType){a=window.XMLSerializer?(new window.XMLSerializer).serializeToString(a):a.xml;this._headers["Content-Type"]||this._object.setRequestHeader("Content-Type","application/xml")}this._object.send(a);if(j&&!this._async){this.readyState=b.OPENED;for(o(this);this.readyState<b.DONE;){this.readyState++;k(this);if(this._aborted)return}}};b.prototype.abort=function(){b.onabort&&b.onabort.apply(this,arguments);if(this.readyState>b.UNSENT)this._aborted=true;this._object.abort();l(this)};
-b.prototype.getAllResponseHeaders=function(){return this._object.getAllResponseHeaders()};b.prototype.getResponseHeader=function(a){return this._object.getResponseHeader(a)};b.prototype.setRequestHeader=function(a,c){if(!this._headers)this._headers={};this._headers[a]=c;return this._object.setRequestHeader(a,c)};b.prototype.addEventListener=function(a,c,d){for(var g=0,e;e=this._listeners[g];g++)if(e[0]==a&&e[1]==c&&e[2]==d)return;this._listeners.push([a,c,d])};b.prototype.removeEventListener=function(a,
-c,d){for(var g=0,e;e=this._listeners[g];g++)if(e[0]==a&&e[1]==c&&e[2]==d)break;e&&this._listeners.splice(g,1)};b.prototype.dispatchEvent=function(a){a={type:a.type,target:this,currentTarget:this,eventPhase:2,bubbles:a.bubbles,cancelable:a.cancelable,timeStamp:a.timeStamp,stopPropagation:function(){},preventDefault:function(){},initEvent:function(){}};if(a.type=="readystatechange"&&this.onreadystatechange)(this.onreadystatechange.handleEvent||this.onreadystatechange).apply(this,[a]);for(var c=0,d;d=
-this._listeners[c];c++)if(d[0]==a.type&&!d[2])(d[1].handleEvent||d[1]).apply(this,[a])};b.prototype.toString=function(){return"[object XMLHttpRequest]"};b.toString=function(){return"[XMLHttpRequest]"};if(!window.Function.prototype.apply)window.Function.prototype.apply=function(a,c){c||(c=[]);a.__func=this;a.__func(c[0],c[1],c[2],c[3],c[4]);delete a.__func};window.XMLHttpRequest=b})();
+{% if dajaxice_config.DAJAXICE_XMLHTTPREQUEST_JS_IMPORT %}
+(function(){function n(){this._object=h&&!p?new h:new window.ActiveXObject("Microsoft.XMLHTTP");this._listeners=[]}function a(){return new n}function j(b){a.onreadystatechange&&a.onreadystatechange.apply(b);b.dispatchEvent({type:"readystatechange",bubbles:!1,cancelable:!1,timeStamp:new Date+0})}function o(b){try{b.responseText=b._object.responseText}catch(a){}try{var d;var g=b._object,c=g.responseXML,f=g.responseText;i&&(f&&c&&!c.documentElement&&g.getResponseHeader("Content-Type").match(/[^\/]+\/[^\+]+\+xml/))&&
+(c=new window.ActiveXObject("Microsoft.XMLDOM"),c.async=!1,c.validateOnParse=!1,c.loadXML(f));d=c&&(i&&0!==c.parseError||!c.documentElement||c.documentElement&&"parsererror"==c.documentElement.tagName)?null:c;b.responseXML=d}catch(h){}try{b.status=b._object.status}catch(k){}try{b.statusText=b._object.statusText}catch(j){}}function l(b){b._object.onreadystatechange=new window.Function}var h=window.XMLHttpRequest,m=!!window.controllers,i=window.document.all&&!window.opera,p=i&&window.navigator.userAgent.match(/MSIE 7.0/);
+a.prototype=n.prototype;m&&h.wrapped&&(a.wrapped=h.wrapped);a.UNSENT=0;a.OPENED=1;a.HEADERS_RECEIVED=2;a.LOADING=3;a.DONE=4;a.prototype.readyState=a.UNSENT;a.prototype.responseText="";a.prototype.responseXML=null;a.prototype.status=0;a.prototype.statusText="";a.prototype.priority="NORMAL";a.prototype.onreadystatechange=null;a.onreadystatechange=null;a.onopen=null;a.onsend=null;a.onabort=null;a.prototype.open=function(b,e,d,g,c){delete this._headers;arguments.length<3&&(d=true);this._async=d;var f=
+this,h=this.readyState,k=null;if(i&&d){k=function(){if(h!=a.DONE){l(f);f.abort()}};window.attachEvent("onunload",k)}a.onopen&&a.onopen.apply(this,arguments);arguments.length>4?this._object.open(b,e,d,g,c):arguments.length>3?this._object.open(b,e,d,g):this._object.open(b,e,d);this.readyState=a.OPENED;j(this);this._object.onreadystatechange=function(){if(!m||d){f.readyState=f._object.readyState;o(f);if(f._aborted)f.readyState=a.UNSENT;else if(f.readyState==a.DONE){delete f._data;l(f);i&&d&&window.detachEvent("onunload",
+k);h!=f.readyState&&j(f);h=f.readyState}}}};a.prototype.send=function(b){a.onsend&&a.onsend.apply(this,arguments);arguments.length||(b=null);if(b&&b.nodeType){b=window.XMLSerializer?(new window.XMLSerializer).serializeToString(b):b.xml;this._headers["Content-Type"]||this._object.setRequestHeader("Content-Type","application/xml")}this._data=b;a:{this._object.send(this._data);if(m&&!this._async){this.readyState=a.OPENED;for(o(this);this.readyState<a.DONE;){this.readyState++;j(this);if(this._aborted)break a}}}};
+a.prototype.abort=function(){a.onabort&&a.onabort.apply(this,arguments);if(this.readyState>a.UNSENT)this._aborted=true;this._object.abort();l(this);this.readyState=a.UNSENT;delete this._data};a.prototype.getAllResponseHeaders=function(){return this._object.getAllResponseHeaders()};a.prototype.getResponseHeader=function(b){return this._object.getResponseHeader(b)};a.prototype.setRequestHeader=function(b,a){if(!this._headers)this._headers={};this._headers[b]=a;return this._object.setRequestHeader(b,
+a)};a.prototype.addEventListener=function(a,e,d){for(var g=0,c;c=this._listeners[g];g++)if(c[0]==a&&c[1]==e&&c[2]==d)return;this._listeners.push([a,e,d])};a.prototype.removeEventListener=function(a,e,d){for(var g=0,c;c=this._listeners[g];g++)if(c[0]==a&&c[1]==e&&c[2]==d)break;c&&this._listeners.splice(g,1)};a.prototype.dispatchEvent=function(a){a={type:a.type,target:this,currentTarget:this,eventPhase:2,bubbles:a.bubbles,cancelable:a.cancelable,timeStamp:a.timeStamp,stopPropagation:function(){},preventDefault:function(){},
+initEvent:function(){}};a.type=="readystatechange"&&this.onreadystatechange&&(this.onreadystatechange.handleEvent||this.onreadystatechange).apply(this,[a]);for(var e=0,d;d=this._listeners[e];e++)d[0]==a.type&&!d[2]&&(d[1].handleEvent||d[1]).apply(this,[a])};a.prototype.toString=function(){return"[object XMLHttpRequest]"};a.toString=function(){return"[XMLHttpRequest]"};window.Function.prototype.apply||(window.Function.prototype.apply=function(a,e){e||(e=[]);a.__func=this;a.__func(e[0],e[1],e[2],e[3],
+e[4]);delete a.__func});window.XMLHttpRequest=a})();
 {% endif %}
 
 {% comment %}
@@ -117,12 +134,12 @@ this._listeners[c];c++)if(d[0]==a.type&&!d[2])(d[1].handleEvent||d[1]).apply(thi
     I hope that in the future this code won't be neccessary, but today all browsers doesn't supports JSON.stringify().
 */
 {% endcomment %}
-{% if DAJAXICE_JSON2_JS_IMPORT %}
-if(!this.JSON)this.JSON={};
-(function(){function k(a){return a<10?"0"+a:a}function n(a){o.lastIndex=0;return o.test(a)?'"'+a.replace(o,function(c){var d=q[c];return typeof d==="string"?d:"\\u"+("0000"+c.charCodeAt(0).toString(16)).slice(-4)})+'"':'"'+a+'"'}function l(a,c){var d,f,i=g,e,b=c[a];if(b&&typeof b==="object"&&typeof b.toJSON==="function")b=b.toJSON(a);if(typeof j==="function")b=j.call(c,a,b);switch(typeof b){case "string":return n(b);case "number":return isFinite(b)?String(b):"null";case "boolean":case "null":return String(b);case "object":if(!b)return"null";
-g+=m;e=[];if(Object.prototype.toString.apply(b)==="[object Array]"){f=b.length;for(a=0;a<f;a+=1)e[a]=l(a,b)||"null";c=e.length===0?"[]":g?"[\n"+g+e.join(",\n"+g)+"\n"+i+"]":"["+e.join(",")+"]";g=i;return c}if(j&&typeof j==="object"){f=j.length;for(a=0;a<f;a+=1){d=j[a];if(typeof d==="string")if(c=l(d,b))e.push(n(d)+(g?": ":":")+c)}}else for(d in b)if(Object.hasOwnProperty.call(b,d))if(c=l(d,b))e.push(n(d)+(g?": ":":")+c);c=e.length===0?"{}":g?"{\n"+g+e.join(",\n"+g)+"\n"+i+"}":"{"+e.join(",")+"}";
-g=i;return c}}if(typeof Date.prototype.toJSON!=="function"){Date.prototype.toJSON=function(){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+k(this.getUTCMonth()+1)+"-"+k(this.getUTCDate())+"T"+k(this.getUTCHours())+":"+k(this.getUTCMinutes())+":"+k(this.getUTCSeconds())+"Z":null};String.prototype.toJSON=Number.prototype.toJSON=Boolean.prototype.toJSON=function(){return this.valueOf()}}var p=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
-o=/[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,g,m,q={"\u0008":"\\b","\t":"\\t","\n":"\\n","\u000c":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"},j;if(typeof JSON.stringify!=="function")JSON.stringify=function(a,c,d){var f;m=g="";if(typeof d==="number")for(f=0;f<d;f+=1)m+=" ";else if(typeof d==="string")m=d;if((j=c)&&typeof c!=="function"&&(typeof c!=="object"||typeof c.length!=="number"))throw new Error("JSON.stringify");return l("",
-{"":a})};if(typeof JSON.parse!=="function")JSON.parse=function(a,c){function d(f,i){var e,b,h=f[i];if(h&&typeof h==="object")for(e in h)if(Object.hasOwnProperty.call(h,e)){b=d(h,e);if(b!==undefined)h[e]=b;else delete h[e]}return c.call(f,i,h)}p.lastIndex=0;if(p.test(a))a=a.replace(p,function(f){return"\\u"+("0000"+f.charCodeAt(0).toString(16)).slice(-4)});if(/^[\],:{}\s]*$/.test(a.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,"@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
-"]").replace(/(?:^|:|,)(?:\s*\[)+/g,""))){a=eval("("+a+")");return typeof c==="function"?d({"":a},""):a}throw new SyntaxError("JSON.parse");}})();
+{% if dajaxice_config.DAJAXICE_JSON2_JS_IMPORT %}
+var JSON;JSON||(JSON={});
+(function(){function k(a){return 10>a?"0"+a:a}function o(a){p.lastIndex=0;return p.test(a)?'"'+a.replace(p,function(a){var c=r[a];return"string"===typeof c?c:"\\u"+("0000"+a.charCodeAt(0).toString(16)).slice(-4)})+'"':'"'+a+'"'}function m(a,j){var c,d,h,n,g=e,f,b=j[a];b&&("object"===typeof b&&"function"===typeof b.toJSON)&&(b=b.toJSON(a));"function"===typeof i&&(b=i.call(j,a,b));switch(typeof b){case "string":return o(b);case "number":return isFinite(b)?String(b):"null";case "boolean":case "null":return String(b);case "object":if(!b)return"null";
+e+=l;f=[];if("[object Array]"===Object.prototype.toString.apply(b)){n=b.length;for(c=0;c<n;c+=1)f[c]=m(c,b)||"null";h=0===f.length?"[]":e?"[\n"+e+f.join(",\n"+e)+"\n"+g+"]":"["+f.join(",")+"]";e=g;return h}if(i&&"object"===typeof i){n=i.length;for(c=0;c<n;c+=1)"string"===typeof i[c]&&(d=i[c],(h=m(d,b))&&f.push(o(d)+(e?": ":":")+h))}else for(d in b)Object.prototype.hasOwnProperty.call(b,d)&&(h=m(d,b))&&f.push(o(d)+(e?": ":":")+h);h=0===f.length?"{}":e?"{\n"+e+f.join(",\n"+e)+"\n"+g+"}":"{"+f.join(",")+
+"}";e=g;return h}}"function"!==typeof Date.prototype.toJSON&&(Date.prototype.toJSON=function(){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+k(this.getUTCMonth()+1)+"-"+k(this.getUTCDate())+"T"+k(this.getUTCHours())+":"+k(this.getUTCMinutes())+":"+k(this.getUTCSeconds())+"Z":null},String.prototype.toJSON=Number.prototype.toJSON=Boolean.prototype.toJSON=function(){return this.valueOf()});var q=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+p=/[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,e,l,r={"\b":"\\b","\t":"\\t","\n":"\\n","\f":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"},i;"function"!==typeof JSON.stringify&&(JSON.stringify=function(a,j,c){var d;l=e="";if(typeof c==="number")for(d=0;d<c;d=d+1)l=l+" ";else typeof c==="string"&&(l=c);if((i=j)&&typeof j!=="function"&&(typeof j!=="object"||typeof j.length!=="number"))throw Error("JSON.stringify");return m("",{"":a})});
+"function"!==typeof JSON.parse&&(JSON.parse=function(a,e){function c(a,d){var g,f,b=a[d];if(b&&typeof b==="object")for(g in b)if(Object.prototype.hasOwnProperty.call(b,g)){f=c(b,g);f!==void 0?b[g]=f:delete b[g]}return e.call(a,d,b)}var d,a=String(a);q.lastIndex=0;q.test(a)&&(a=a.replace(q,function(a){return"\\u"+("0000"+a.charCodeAt(0).toString(16)).slice(-4)}));if(/^[\],:{}\s]*$/.test(a.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,"@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
+"]").replace(/(?:^|:|,)(?:\s*\[)+/g,""))){d=eval("("+a+")");return typeof e==="function"?c({"":d},""):d}throw new SyntaxError("JSON.parse");})})();
 {% endif %}

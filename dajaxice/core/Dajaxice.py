@@ -1,156 +1,107 @@
-#import logging
+import logging
 
-from django.conf import settings
+from django.utils.importlib import import_module
 
-# Python 2.7 has an importlib with import_module.
-# For older Pythons, Django's bundled copy provides it.
-# For older Django's dajaxice reduced_import_module.
-try:
-    from importlib import import_module
-except:
-    try:
-        from django.utils.importlib import import_module
-    except:
-        from dajaxice.utils import simple_import_module as import_module
-
-#log = logging.getLogger('dajaxice.DajaxiceRequest')
-import syslog
-def warning(msg):
-    syslog.syslog(syslog.LOG_WANRNING, msg)
-log = syslog
-log.warning = warning
+log = logging.getLogger('dajaxice')
 
 
 class DajaxiceFunction(object):
+    """ Basic representation of a dajaxice ajax function."""
 
-    def __init__(self, name, path, doc=None):
+    def __init__(self, function, name, method):
+        self.function = function
         self.name = name
-        self.path = path
-        self.doc = doc
+        self.method = method
 
-    def get_callable_path(self):
-        return '%s.%s' % (self.path.replace('.ajax', ''), self.name)
-
-    def __cmp__(self, other):
-        return (self.name == other.name and self.path == other.path)
+    def call(self, *args, **kwargs):
+        """ Call the function. """
+        return self.function(*args, **kwargs)
 
 
 class DajaxiceModule(object):
-    def __init__(self, module):
-        self.functions = []
-        self.sub_modules = []
-        self.name = module[0]
+    """ Basic representation of a dajaxice module. """
 
-        sub_module = module[1:]
-        if len(sub_module) != 0:
-            self.add_submodule(sub_module)
+    def __init__(self, name=None):
+        self.name = name
+        self.functions = {}
+        self.submodules = {}
 
-    def get_module(self, module):
-        """
-        Recursively get_module util we found it.
-        """
-        if len(module) == 0:
-            return self
+    def add(self, name, function):
+        """ Add this function at the ``name`` deep. If the submodule already
+        exists, recusively call the add method into the submodule. If not,
+        create the module and call the add method."""
 
-        for dajaxice_module in self.sub_modules:
-            if dajaxice_module.name == module[0]:
-                return dajaxice_module.get_module(module[1:])
-        return None
-
-    def add_function(self, function):
-        self.functions.append(function)
-
-    def has_sub_modules(self):
-        return len(self.sub_modules) > 0
-
-    def add_submodule(self, module):
-        """
-        Recursively add_submodule, if it's not registered, create it.
-        """
-        if len(module) == 0:
-            return
+        # If this is not the final function name (there are more modules)
+        # split the name again an register a new submodule.
+        if '.' in name:
+            module, extra = name.split('.', 1)
+            if module not in self.submodules:
+                self.submodules[module] = DajaxiceModule(module)
+            self.submodules[module].add(extra, function)
         else:
-            sub_module = self.exist_submodule(module[0])
-
-            if type(sub_module) == int:
-                self.sub_modules[sub_module].add_submodule(module[1:])
-            else:
-                self.sub_modules.append(DajaxiceModule(module))
-
-    def exist_submodule(self, name):
-        """
-        Check if submodule name was already registered.
-        """
-        for module in self.sub_modules:
-            if module.name == name:
-                return self.sub_modules.index(module)
-        return False
+            self.functions[name] = function
 
 
 class Dajaxice(object):
+
     def __init__(self):
-        self._registry = []
-        self._callable = []
+        self._registry = {}
+        self._modules = None
 
-        for function in getattr(settings, 'DAJAXICE_FUNCTIONS', ()):
-            function = function.rsplit('.', 1)
-            self.register_function(function[0], function[1])
-
-    def register(self, function):
-        self.register_function(function.__module__, function.__name__, function.__doc__)
-
-    def register_function(self, module, name, doc=None):
+    def register(self, function, name=None, method='POST'):
         """
-        Register function at 'module' depth
-        """
-        #Create the dajaxice function.
-        function = DajaxiceFunction(name=name, path=module, doc=doc)
+        Register this function as a dajaxice function.
 
-        #Check for already registered functions.
-        full_path = '%s.%s' % (module, name)
-        if full_path in self._callable:
-            log.warning('%s already registered as dajaxice function.' % full_path)
+        If no name is provided, the module and the function name will be used.
+        The final (customized or not) must be unique. """
+
+        method = self.clean_method(method)
+
+        # Generate a default name
+        if not name:
+            module = ''.join(str(function.__module__).rsplit('.ajax', 1))
+            name = '.'.join((module, function.__name__))
+
+        if ':' in name:
+            log.error('Ivalid function name %s.' % name)
             return
 
-        self._callable.append(full_path)
+        # Check for already registered functions
+        if name in self._registry:
+            log.error('%s was already registered.' % name)
+            return
 
-        #Dajaxice path without ajax.
-        module_without_ajax = module.replace('.ajax', '').split('.')
+        # Create the dajaxice function.
+        function = DajaxiceFunction(function=function,
+                                    name=name,
+                                    method=method)
 
-        #Register module if necessary.
-        exist_module = self._exist_module(module_without_ajax[0])
+        # Register this new ajax function
+        self._registry[name] = function
 
-        if type(exist_module) == int:
-            self._registry[exist_module].add_submodule(module_without_ajax[1:])
-        else:
-            self._registry.append(DajaxiceModule(module_without_ajax))
+    def is_callable(self, name, method):
+        """ Return if the function callable or not. """
+        return name in self._registry and self._registry[name].method == method
 
-        #Register Function
-        module = self.get_module(module_without_ajax)
-        if module:
-            module.add_function(function)
+    def clean_method(self, method):
+        """ Clean the http method. """
+        method = method.upper()
+        if method not in ['GET', 'POST']:
+            method = 'POST'
+        return method
 
-    def get_module(self, module):
-        """
-        Recursively get module from registry
-        """
-        for dajaxice_module in self._registry:
-            if dajaxice_module.name == module[0]:
-                return dajaxice_module.get_module(module[1:])
-        return None
+    def get(self, name):
+        """ Return the dajaxice function."""
+        return self._registry[name]
 
-    def is_callable(self, name):
-        return name in self._callable
-
-    def _exist_module(self, module_name):
-        for module in self._registry:
-            if module.name == module_name:
-                return self._registry.index(module)
-        return False
-
-    def get_functions(self):
-        return self._registry
-
+    @property
+    def modules(self):
+        """ Return an easy to loop module hierarchy with all the functions."""
+        if not self._modules:
+            self._modules = DajaxiceModule()
+            for name, function in self._registry.items():
+                self._modules.add(name, function)
+        return self._modules
 
 LOADING_DAJAXICE = False
 
@@ -158,8 +109,8 @@ LOADING_DAJAXICE = False
 def dajaxice_autodiscover():
     """
     Auto-discover INSTALLED_APPS ajax.py modules and fail silently when
-    not present.
-    NOTE: dajaxice_autodiscover was inspired/copied from django.contrib.admin autodiscover
+    not present. NOTE: dajaxice_autodiscover was inspired/copied from
+    django.contrib.admin autodiscover
     """
     global LOADING_DAJAXICE
     if LOADING_DAJAXICE:

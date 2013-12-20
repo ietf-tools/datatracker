@@ -14,6 +14,12 @@ from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint
 
 import debug
 
+def dajaxice_core_js(request):
+    # this is a slightly weird hack to get, we seem to need this because
+    # we're not using the built-in static files support
+    from dajaxice.finders import DajaxiceStorage
+    return HttpResponse(DajaxiceStorage().dajaxice_core_js(), content_type="application/javascript")
+
 @dajaxice_register
 def readonly(request, meeting_num, schedule_id):
     meeting = get_meeting(meeting_num)
