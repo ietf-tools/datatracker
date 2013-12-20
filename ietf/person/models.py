@@ -72,22 +72,7 @@ class PersonInfo(models.Model):
     class Meta:
         abstract = True
 
-class PersonManager(models.Manager):
-    def by_email(self, email):
-        results = self.get_query_set().filter(user__email = email)
-        if len(results)>0:
-            return results[0]
-        else:
-            return None
-    def by_username(self, username):
-        results = self.get_query_set().filter(user__username = username)
-        if len(results)>0:
-            return results[0]
-        else:
-            return None
-
 class Person(PersonInfo):
-    objects = PersonManager()
     user = models.OneToOneField(User, blank=True, null=True)
 
     #this variable, if not None, may be used by url() to keep the sitefqdn.
