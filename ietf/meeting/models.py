@@ -630,9 +630,9 @@ class Constraint(models.Model):
     Specifies a constraint on the scheduling.
     One type (name=conflic?) of constraint is between source WG and target WG,
            e.g. some kind of conflict.
-    Another type (name=bethere) of constraing is between source WG and
+    Another type (name=bethere) of constraint is between source WG and
            availability of a particular Person, usually an AD.
-    A third type (name=avoidday) of constraing is between source WG and
+    A third type (name=avoidday) of constraint is between source WG and
            a particular day of the week, specified in day.
     """
     meeting = models.ForeignKey(Meeting)
