@@ -165,7 +165,7 @@ def agenda_create(request, num=None, schedule_name=None):
 def edit_timeslots(request, num=None):
 
     meeting = get_meeting(num)
-    timeslots = meeting.timeslot_set.exclude(location__isnull = True).all()
+    timeslots = meeting.timeslot_set.exclude(location=None).select_related("location", "type")
 
     time_slices,date_slices,slots = meeting.build_timeslices()
 
@@ -173,12 +173,11 @@ def edit_timeslots(request, num=None):
     site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
 
     rooms = meeting.room_set.order_by("capacity")
-    rooms = rooms.all()
 
     from ietf.meeting.ajax import timeslot_roomsurl, AddRoomForm, timeslot_slotsurl, AddSlotForm
 
-    roomsurl  =reverse(timeslot_roomsurl, args=[meeting.number])
-    adddayurl =reverse(timeslot_slotsurl, args=[meeting.number])
+    roomsurl  = reverse(timeslot_roomsurl, args=[meeting.number])
+    adddayurl = reverse(timeslot_slotsurl, args=[meeting.number])
 
     return HttpResponse(render_to_string("meeting/timeslot_edit.html",
                                          {"timeslots": timeslots,
@@ -528,7 +527,7 @@ def session_draft_pdf(request, num, session):
 
 def week_view(request, num=None):
     meeting = get_meeting(num)
-    timeslots = TimeSlot.objects.filter(meeting__id = meeting.id)
+    timeslots = TimeSlot.objects.filter(meeting=meeting)
 
     template = "meeting/week-view.html"
     return render_to_response(template,
