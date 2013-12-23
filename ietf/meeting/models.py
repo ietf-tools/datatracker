@@ -503,13 +503,13 @@ class Schedule(models.Model):
         for sess in self.meeting.sessions_that_can_meet.all():
             assignments[sess.group] = []
             sessions[sess] = None
-            total =+ 1
+            total += 1
 
         for ss in allschedsessions:
             assignments[ss.session.group].append(ss)
             # XXX can not deal with a session in two slots
             sessions[ss.session] = ss
-            scheduled =+ 1
+            scheduled += 1
         return assignments,sessions,total,scheduled
 
     cached_sessions_that_can_meet = None
