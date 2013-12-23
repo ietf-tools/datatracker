@@ -254,8 +254,7 @@ class TimeSlot(models.Model):
     @property
     def session(self):
         if not hasattr(self, "_session_cache"):
-            sessions = self.sessions.filter(scheduledsession__schedule=self.meeting.agenda)
-            self._session_cache = sessions.all()[0] if sessions.count() else None
+            self._session_cache = self.sessions.filter(scheduledsession__schedule=self.meeting.agenda).first()
         return self._session_cache
 
     @property
