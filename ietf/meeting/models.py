@@ -105,10 +105,7 @@ class Meeting(models.Model):
         return self.date + datetime.timedelta(days=settings.SUBMISSION_CORRECTION_DAYS)
 
     def get_schedule_by_name(self, name):
-        qs = self.schedule_set.filter(name=name)
-        if qs:
-            return qs[0]
-        return None
+        return self.schedule_set.filter(name=name).first()
 
     @property
     def sessions_that_can_meet(self):
@@ -150,7 +147,7 @@ class Meeting(models.Model):
         slots = {}
 
         for ts in self.timeslot_set.all():
-            if ts.location is None:
+            if ts.location_id is None:
                 continue
             ymd = ts.time.date()
             if ymd not in time_slices:
@@ -379,18 +376,15 @@ class TimeSlot(models.Model):
 
     """
     Find a timeslot that comes next, in the same room.   It must be on the same day,
-    and it must have a gap of 11 minutes or less. (10 is the spec)
+    and it must have a gap of less than 11 minutes. (10 is the spec)
     """
     @property
     def slot_to_the_right(self):
-        things = self.meeting.timeslot_set.filter(location = self.location,       # same room!
-                                 type     = self.type,           # must be same type (usually session)
-                                 time__gt = self.time + self.duration,  # must be after this session.
-                                 time__lt = self.time + self.duration + datetime.timedelta(0,11*60))
-        if things:
-            return things[0]
-        else:
-            return None
+        return self.meeting.timeslot_set.filter(
+            location = self.location,       # same room!
+            type     = self.type,           # must be same type (usually session)
+            time__gt = self.time + self.duration,  # must be after this session
+            time__lt = self.time + self.duration + datetime.timedelta(seconds=11*60)).first()
 
 # end of TimeSlot
 
@@ -571,9 +565,9 @@ class ScheduledSession(models.Model):
 
     @property
     def slot_to_the_right(self):
-        ss1 = self.schedule.scheduledsession_set.filter(timeslot = self.timeslot.slot_to_the_right)
-        if ss1:
-            return ss1[0]
+        s = self.timeslot.slot_to_the_right
+        if s:
+            return self.schedule.scheduledsession_set.filter(timeslot=s).first()
         else:
             return None
 
