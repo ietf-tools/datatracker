@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404
 
 import debug
 
-from ietf.ietfauth.utils import has_role
+from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.utils.history import find_history_active_at
 from ietf.doc.models import Document, State
 from ietf.meeting.models import Meeting
@@ -141,36 +141,21 @@ def meeting_updated(meeting):
 def agenda_permissions(meeting, schedule, user):
     # do this in positive logic.
     cansee = False
-    canedit= False
-    requestor= None
-
-    try:
-        requestor = user.person
-    except:
-        pass
-
-    #sys.stdout.write("requestor: %s for sched: %s \n" % ( requestor, schedule ))
-    if has_role(user, 'Secretariat'):
-        cansee = True
-        # secretariat is not superuser for edit!
-
-    if (has_role(user, 'Area Director') and schedule.visible):
-        cansee = True
-
-    if (has_role(user, 'IAB Chair') and schedule.visible):
-        cansee = True
-
-    if (has_role(user, 'IRTF Chair') and schedule.visible):
-        cansee = True
+    canedit = False
 
     if schedule.public:
         cansee = True
+    elif has_role(user, 'Secretariat'):
+        cansee = True
+        # secretariat is not superuser for edit!
+    elif schedule.visible and has_role(user, ['Area Director', 'IAB Chair', 'IRTF Chair']):
+        cansee = True
 
-    if requestor is not None and schedule.owner == requestor:
+    if user_is_person(user, schedule.owner):
         cansee = True
         canedit = True
 
-    return cansee,canedit
+    return cansee, canedit
 
 def session_constraint_expire(session):
     from django.core.urlresolvers import reverse
