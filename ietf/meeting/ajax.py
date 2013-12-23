@@ -105,7 +105,7 @@ def update_timeslot(request, schedule_id, session_id, scheduledsession_id=None, 
 
     if ess_id == 0:
         # if this is None, then we must be moving.
-        for ssO in schedule.scheduledsession_set.filter(session = session):
+        for ssO in schedule.scheduledsession_set.filter(session=session):
             #print "sched(%s): removing session %s from slot %u" % ( schedule, session, ssO.pk )
             #if ssO.extendedfrom is not None:
             #    ssO.extendedfrom.session = None
@@ -122,7 +122,7 @@ def update_timeslot(request, schedule_id, session_id, scheduledsession_id=None, 
         if ss:
             #print "ss.session: %s session:%s duplicate=%s"%(ss, session, duplicate)
             ss.session = session
-            if(duplicate):
+            if duplicate:
                 ss.id = None
             ss.save()
     except Exception:
@@ -428,8 +428,8 @@ def meeting_update(request, meeting):
     meeting.save()
     return meeting_get(request, meeting)
 
-def meeting_json(request, meeting_num):
-    meeting = get_meeting(meeting_num)
+def meeting_json(request, num):
+    meeting = get_meeting(num)
 
     if request.method == 'GET':
         return meeting_get(request, meeting)
