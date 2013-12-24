@@ -42,6 +42,9 @@ def readonly(request, meeting_num, schedule_id):
     if user_is_person(user, schedule.owner):
         read_only = False
 
+    # FIXME: the naming here needs improvement, one can have
+    # read_only == True and write_perm == True?
+
     return json.dumps(
         {'secretariat': secretariat,
          'write_perm':  write_perm,
@@ -317,32 +320,31 @@ def agenda_add(request, meeting):
 @role_required('Area Director','Secretariat')
 def agenda_update(request, meeting, schedule):
     # forms are completely useless for update actions that want to
-    # accept a subset of values. (huh? just use required=False)
-    update_dict = request.POST
+    # accept a subset of values. (huh? we could use required=False)
 
     #debug.log("99 meeting.agenda: %s / %s / %s" %
     #          (schedule, update_dict, request.body))
 
     user = request.user
     if has_role(user, "Secretariat"):
-        if "public" in update_dict:
+        if "public" in request.POST:
             value1 = True
-            value = update_dict["public"]
+            value = request.POST["public"]
             if value == "0" or value == 0 or value=="false":
                 value1 = False
             #debug.log("setting public for %s to %s" % (schedule, value1))
             schedule.public = value1
 
-    if "visible" in update_dict:
+    if "visible" in request.POST:
         value1 = True
-        value = update_dict["visible"]
+        value = request.POST["visible"]
         if value == "0" or value == 0 or value=="false":
             value1 = False
         #debug.log("setting visible for %s to %s" % (schedule, value1))
         schedule.visible = value1
 
-    if "name" in update_dict:
-        value = update_dict["name"]
+    if "name" in request.POST:
+        value = request.POST["name"]
         #debug.log("setting name for %s to %s" % (schedule, value))
         schedule.name = value
 
@@ -409,13 +411,12 @@ def meeting_get(request, meeting):
 @role_required('Secretariat')
 def meeting_update(request, meeting):
     # at present, only the official agenda can be updated from this interface.
-    update_dict = request.POST
 
     #debug.log("1 meeting.agenda: %s / %s / %s" % (meeting.agenda, update_dict, request.body))
-    if "agenda" in update_dict:
-        value = update_dict["agenda"]
+    if "agenda" in request.POST:
+        value = request.POST["agenda"]
         #debug.log("4 meeting.agenda: %s" % (value))
-        if value is None or value == "None":
+        if not value or value == "None": # value == "None" is just weird, better with empty string
             meeting.agenda = None
         else:
             schedule = get_schedule(meeting, value)
@@ -435,9 +436,6 @@ def meeting_json(request, num):
         return meeting_get(request, meeting)
     elif request.method == 'POST':
         return meeting_update(request, meeting)
-    elif request.method == 'POST':
-        return meeting_update(request, meeting)
-
     else:
         return HttpResponse(status=406)
 
