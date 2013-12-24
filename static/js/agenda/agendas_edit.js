@@ -94,7 +94,7 @@ function toggle_official(event) {
     log("clicked on "+agenda_url+" sending to "+meeting_url);
 
     $.ajax({ "url": meeting_url,
-             "type": "PUT",
+             "type": "POST",
              "data": { "agenda" : new_value },
              "dataType": "json",
              "success": function(result) {

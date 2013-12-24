@@ -282,7 +282,7 @@ def edit_agenda(request, num=None, schedule_name=None):
 
 ##############################################################################
 #  show the properties associated with an agenda (visible, public)
-#    this page uses ajax PUT requests to the API
+#    this page uses ajax POST requests to the API
 #
 AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
 

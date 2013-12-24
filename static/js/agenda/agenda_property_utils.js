@@ -58,7 +58,7 @@ function toggle_public(event) {
     event.preventDefault();
 
     $.ajax({ "url": agenda_url,
-             "type": "PUT",
+             "type": "POST",
              "data": { "public" : new_value },
              "dataType": "json",
              "success": function(result) {
@@ -82,7 +82,7 @@ function toggle_visible(event) {
     event.preventDefault();
 
     $.ajax({ "url": agenda_url,
-             "type": "PUT",
+             "type": "POST",
              "data": { "visible" : new_value },
              "dataType": "json",
              "success": function(result) {

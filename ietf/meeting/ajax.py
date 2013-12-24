@@ -2,7 +2,7 @@ import json
 
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponseRedirect, HttpResponse, QueryDict
+from django.http import HttpResponseRedirect, HttpResponse
 
 from dajaxice.decorators import dajaxice_register
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
@@ -208,7 +208,7 @@ def timeslot_roomurl(request, num=None, roomid=None):
         return HttpResponse(json.dumps(room.json_dict(request.build_absolute_uri('/'))),
                             content_type="application/json")
 # XXX FIXME: timeslot_updroom() doesn't exist
-#    elif request.method == 'PUT':
+#    elif request.method == 'POST':
 #        return timeslot_updroom(request, meeting)
     elif request.method == 'DELETE':
         return timeslot_delroom(request, meeting, roomid)
@@ -275,7 +275,7 @@ def timeslot_sloturl(request, num=None, slotid=None):
         slot = get_object_or_404(meeting.timeslot_set, pk=slotid)
         return HttpResponse(json.dumps(slot.json_dict(request.build_absolute_uri('/'))),
                             content_type="application/json")
-    elif request.method == 'PUT':
+    elif request.method == 'POST':
         # not yet implemented!
         #return timeslot_updslot(request, meeting)
         return HttpResponse(status=406)
@@ -317,8 +317,8 @@ def agenda_add(request, meeting):
 @role_required('Area Director','Secretariat')
 def agenda_update(request, meeting, schedule):
     # forms are completely useless for update actions that want to
-    # accept a subset of values.
-    update_dict = QueryDict(request.body, encoding=request._encoding)
+    # accept a subset of values. (huh? just use required=False)
+    update_dict = request.POST
 
     #debug.log("99 meeting.agenda: %s / %s / %s" %
     #          (schedule, update_dict, request.body))
@@ -390,7 +390,7 @@ def agenda_infourl(request, num=None, schedule_name=None):
     if request.method == 'GET':
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
                             content_type="application/json")
-    elif request.method == 'PUT':
+    elif request.method == 'POST':
         return agenda_update(request, meeting, schedule)
     elif request.method == 'DELETE':
         return agenda_del(request, meeting, schedule)
@@ -409,7 +409,7 @@ def meeting_get(request, meeting):
 @role_required('Secretariat')
 def meeting_update(request, meeting):
     # at present, only the official agenda can be updated from this interface.
-    update_dict = QueryDict(request.body, encoding=request._encoding)
+    update_dict = request.POST
 
     #debug.log("1 meeting.agenda: %s / %s / %s" % (meeting.agenda, update_dict, request.body))
     if "agenda" in update_dict:
@@ -433,7 +433,7 @@ def meeting_json(request, num):
 
     if request.method == 'GET':
         return meeting_get(request, meeting)
-    elif request.method == 'PUT':
+    elif request.method == 'POST':
         return meeting_update(request, meeting)
     elif request.method == 'POST':
         return meeting_update(request, meeting)
