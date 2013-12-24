@@ -1,20 +1,15 @@
 import datetime
 import logging
-import sys
 import json
 
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, Http404
 
-from dajaxice.core import dajaxice_functions
-from dajaxice.decorators import dajaxice_register
-
 from ietf.group.models import Group
 
-def group_json(request, groupname):
-    group = get_object_or_404(Group, acronym=groupname)
+def group_json(request, acronym):
+    group = get_object_or_404(Group, acronym=acronym)
 
-    #print "group request is: %s\n" % (request.build_absolute_uri('/'))
     return HttpResponse(json.dumps(group.json_dict(request.build_absolute_uri('/')),
                                    sort_keys=True, indent=2),
                         content_type="text/json")

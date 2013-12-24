@@ -3,7 +3,7 @@
 from django.conf.urls import patterns, url
 
 urlpatterns = patterns('',
-    (r'^(?P<groupname>[a-z0-9]+).json$', 'ietf.group.ajax.group_json'),
+    (r'^(?P<acronym>[a-z0-9]+).json$', 'ietf.group.ajax.group_json'),
 )
 
 
