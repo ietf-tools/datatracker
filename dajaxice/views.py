@@ -50,6 +50,7 @@ class DajaxiceRequest(View):
             try:
                 response = function.call(request, **data)
             except Exception:
+                raise # always give us a backtrace
                 if settings.DEBUG:
                     raise
                 response = dajaxice_config.DAJAXICE_EXCEPTION
