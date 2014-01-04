@@ -11,50 +11,50 @@
 *** Click on a name of the group to get a meeting agenda ***</p>
 
 <table id="agenda">
-{% for slot in timeslots %}
+{% for ss in scheduledsessions %}
     {% ifchanged  %}
       <tr class="meeting-date">
          <td colspan="6">
-           <h2 class="ietf-divider">{{ slot.time|date:"l"|upper }}, {{ slot.time|date:"F j, Y" }}</h2>
+           <h2 class="ietf-divider">{{ ss.timeslot.time|date:"l"|upper }}, {{ ss.timeslot.time|date:"F j, Y" }}</h2>
          </td>
       </tr>
    {% endifchanged %}
    {% ifchanged %}
       <tr class="time-title">
          <td colspan="1">
-           <b>{{slot.time|date:"Hi"}}-{{slot.end_time|date:"Hi"}}</b>
+           <b>{{ss.timeslot.time|date:"Hi"}}-{{ss.timeslot.end_time|date:"Hi"}}</b>
          </td>
          <td colspan="5">
-           <b>{{slot.name}}</b>
-           {% if slot.type.name != 'Session' %}
-             {% if slot.show_location %} - {{slot.get_location|escape}}{% endif %}
+           <b>{{ss.timeslot.name}}</b>
+           {% if ss.timeslot.type.name != 'Session' %}
+             {% if ss.timeslot.show_location %} - {{ss.timeslot.get_location|escape}}{% endif %}
            {% endif %}
          </td>
       </tr>
    {% endifchanged %}
-    {% if slot.type.name = 'Session' %} {% if slot.session.group %}
-     <tr id="{{meeting.number}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}" class="grouprow">
-       <td style="width:200px">{% if slot.show_location %}{{slot.get_location|escape}}{% endif %}</td>
-       <td style="width:50px">{{slot.session.group.parent.acronym|upper}}</td>
+    {% if ss.timeslot.type.name = 'Session' %} {% if ss.session.group %}
+     <tr id="{{meeting.number}}-{{ss.timeslot.time|date:"D-Hi"|lower}}-{{ss.session.group.parent.acronym|upper}}-{{ss.session.group.acronym|lower}}" class="grouprow">
+       <td style="width:200px">{% if ss.timeslot.show_location %}{{ss.timeslot.get_location|escape}}{% endif %}</td>
+       <td style="width:50px">{{ss.session.group.parent.acronym|upper}}</td>
        <td style="width:100px">
-           {% if slot.session.group.charter %}<a href="{{slot.session.group.charter.get_absolute_url}}">{{slot.session.group.acronym}}</a>
-           {% else %}{{slot.session.group.acronym}}{% endif %}</td>
+           {% if ss.session.group.charter %}<a href="http://datatracker.ietf.org{{ss.session.group.charter.get_absolute_url}}">{{ss.session.group.acronym}}</a>
+           {% else %}{{ss.session.group.acronym}}{% endif %}</td>
        <td>
-           {% if slot.session.agenda %}<a href="/meeting/{{ meeting.number }}/agenda/{{ slot.session.group.acronym }}/">{{slot.session.group.name}}</a>
-           {% else %}{{slot.session.group.name}}{% endif %}
-           {% if slot.session.group.state.name = "BOF" %} BOF {% endif %}
-           {% if slot.session.agenda_note %}
-           <br/><span class="note">{{slot.session.agenda_note}}</span>{% endif %}</td>
+           {% if ss.session.agenda %}<a href="http://datatracker.ietf.org/meeting/{{ meeting.number }}/agenda/{{ ss.session.group.acronym }}/">{{ss.session.group.name}}</a>
+           {% else %}{{ss.session.group.name}}{% endif %}
+           {% if ss.session.group.state.name = "BOF" %} BOF {% endif %}
+           {% if ss.session.agenda_note %}
+           <br/><span class="note">{{ss.session.agenda_note}}</span>{% endif %}</td>
      </tr>
 
    {% endif %} {% endif %}
-   {% if slot.type.name = 'Plenary' %}
+   {% if ss.timeslot.type.name = 'Plenary' %}
      <tr class="grouprow">
-       <td style="width:200px">{% if slot.show_location %}{{slot.get_location|escape}}{% endif %}</td>
+       <td style="width:200px">{% if ss.timeslot.show_location %}{{ss.timeslot.get_location|escape}}{% endif %}</td>
        <td></td>
        <td></td>
-       <td>{% if slot.session.agenda %}<a href="{{ slot.session.agenda.get_absolute_url }}">Agenda</a>
-           {% else %}{{slot.session.group.name}}{% endif %}
+       <td>{% if ss.session.agenda %}<a href="http://datatracker.ietf.org{{ ss.session.agenda.get_absolute_url }}">Agenda</a>
+           {% else %}{{ss.session.group.name}}{% endif %}
        </td>
      </tr>
    {% endif %}
