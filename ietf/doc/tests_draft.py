@@ -1089,3 +1089,102 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
 
+class ChangeReplacesTests(TestCase):
+    def setUp(self):
+
+        make_test_data()
+
+        mars_wg = Group.objects.get(acronym='mars')
+
+        self.basea = Document.objects.create(
+            name="draft-test-base-a",
+            time=datetime.datetime.now(),
+            type_id="draft",
+            title="Base A",
+            stream_id="ietf",
+            expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+            group=mars_wg,
+        )
+
+        self.baseb = Document.objects.create(
+            name="draft-test-base-b",
+            time=datetime.datetime.now()-datetime.timedelta(days=365),
+            type_id="draft",
+            title="Base B",
+            stream_id="ietf",
+            expires=datetime.datetime.now() - datetime.timedelta(days = 365 - settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+            group=mars_wg,
+        )
+
+        self.replacea = Document.objects.create(
+            name="draft-test-replace-a",
+            time=datetime.datetime.now(),
+            type_id="draft",
+            title="Replace Base A",
+            stream_id="ietf",
+            expires=datetime.datetime.now() + datetime.timedelta(days = settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+            group=mars_wg,
+        )
+ 
+        self.replaceboth = Document.objects.create(
+            name="draft-test-replace-both",
+            time=datetime.datetime.now(),
+            type_id="draft",
+            title="Replace Base A and Base B",
+            stream_id="ietf",
+            expires=datetime.datetime.now() + datetime.timedelta(days = settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+            group=mars_wg,
+        )
+ 
+        self.basea.set_state(State.objects.get(used=True, type="draft", slug="active"))
+        self.baseb.set_state(State.objects.get(used=True, type="draft", slug="expired"))
+        self.replacea.set_state(State.objects.get(used=True, type="draft", slug="active"))
+        self.replaceboth.set_state(State.objects.get(used=True, type="draft", slug="active"))
+
+        DocAlias.objects.create(document=self.basea,name=self.basea.name)
+        DocAlias.objects.create(document=self.baseb,name=self.baseb.name)
+        DocAlias.objects.create(document=self.replacea,name=self.replacea.name)
+        DocAlias.objects.create(document=self.replaceboth,name=self.replaceboth.name)
+
+    def test_change_replaces(self):
+
+        url = urlreverse('doc_change_replaces', kwargs=dict(name=self.replacea.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form[class=change-replaces]')), 1)
+        
+        # Post that says replacea replaces base a
+        self.assertEquals(self.basea.get_state().slug,'active')
+        repljson='{"%d":"%s"}'%(DocAlias.objects.get(name=self.basea.name).id,self.basea.name)
+        r = self.client.post(url, dict(replaces=repljson))
+        self.assertEquals(r.status_code, 302)
+        self.assertEqual(RelatedDocument.objects.filter(relationship__slug='replaces',source=self.replacea).count(),1) 
+        self.assertEquals(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
+
+        # Post that says replaceboth replaces both base a and base b
+        url = urlreverse('doc_change_replaces', kwargs=dict(name=self.replaceboth.name))
+        self.assertEquals(self.baseb.get_state().slug,'expired')
+        repljson='{"%d":"%s","%d":"%s"}'%(DocAlias.objects.get(name=self.basea.name).id,self.basea.name,
+                                          DocAlias.objects.get(name=self.baseb.name).id,self.baseb.name)
+        r = self.client.post(url, dict(replaces=repljson))
+        self.assertEquals(r.status_code, 302)
+        self.assertEquals(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
+        self.assertEquals(Document.objects.get(name='draft-test-base-b').get_state().slug,'repl')
+
+        # Post that undoes replaceboth
+        repljson='{}'
+        r = self.client.post(url, dict(replaces=repljson))
+        self.assertEquals(r.status_code, 302)
+        self.assertEquals(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl') # Because A is still also replaced by replacea
+        self.assertEquals(Document.objects.get(name='draft-test-base-b').get_state().slug,'expired')
+
+        # Post that undoes replacea
+        url = urlreverse('doc_change_replaces', kwargs=dict(name=self.replacea.name))
+        r = self.client.post(url, dict(replaces=repljson))
+        self.assertEquals(r.status_code, 302)
+        self.assertEquals(Document.objects.get(name='draft-test-base-a').get_state().slug,'active')
+

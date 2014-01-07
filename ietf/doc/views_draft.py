@@ -357,13 +357,14 @@ def replaces(request, name):
                 for d in old_replaces:
                     if d not in new_replaces:
                         emails = collect_email_addresses(emails, d.document)
-                        RelatedDocument.objects.filter(source=doc, target=d,
-                         relationship=relationship).delete()
+                        RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
+                        if not RelatedDocument.objects.filter(target=d, relationship=relationship):
+                            d.document.set_state(State.objects.get(type='draft',slug='active' if d.document.expires>datetime.datetime.now() else 'expired'))
                 for d in new_replaces:
                     if d not in old_replaces:
                         emails = collect_email_addresses(emails, d.document)
-                        RelatedDocument.objects.create(source=doc, target=d,
-                         relationship=relationship)
+                        RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
+                        d.document.set_state(State.objects.get(type='draft',slug='repl'))
                 e = DocEvent(doc=doc,by=login,type='changed_document')
                 new_replaces_names = ", ".join([d.name for d in new_replaces])
                 if not new_replaces_names:
