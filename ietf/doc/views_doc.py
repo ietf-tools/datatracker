@@ -650,7 +650,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
         ballot = all_ballots[-1]
 
     if not ballot:
-        raise Http404
+        return "<p>No ballots are available for this document at this time.</p>"
 
     deferred = doc.active_defer_event()
 
