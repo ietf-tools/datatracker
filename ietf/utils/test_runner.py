@@ -93,41 +93,51 @@ class FillInRemoteUserMiddleware(object):
         if request.user.is_authenticated() and "REMOTE_USER" not in request.META:
             request.META["REMOTE_USER"] = request.user.username
 
-def get_patterns(module):
-    all = []
+def get_url_patterns(module):
+    res = []
     try:
         patterns = module.urlpatterns
     except AttributeError:
         patterns = []
     for item in patterns:
         try:
-            subpatterns = get_patterns(item.urlconf_module)
+            subpatterns = get_url_patterns(item.urlconf_module)
         except:
-            subpatterns = [""]
-        for sub in subpatterns:
+            subpatterns = [("", None)]
+        for sub, subitem in subpatterns:
             if not sub:
-                all.append(item.regex.pattern)
+                res.append((item.regex.pattern, item))
             elif sub.startswith("^"):
-                all.append(item.regex.pattern + sub[1:])
+                res.append((item.regex.pattern + sub[1:], subitem))
             else:
-                all.append(item.regex.pattern + ".*" + sub)
-    return all
+                res.append((item.regex.pattern + ".*" + sub, subitem))
+    return res
 
 def check_url_coverage():
-    patterns = get_patterns(ietf.urls)
+    import ietf.urls
 
-    IGNORED_PATTERNS = ("admin",)
+    url_patterns = get_url_patterns(ietf.urls)
 
-    patterns = [(p, re.compile(p)) for p in patterns if p[1:].split("/")[0] not in IGNORED_PATTERNS]
+    # skip some patterns that we don't bother with
+    def ignore_pattern(regex, pattern):
+        import django.views.static
+        return (regex in ("^_test500/",)
+                or regex.startswith("^admin/")
+                or getattr(pattern.callback, "__name__", "") == "RedirectView"
+                or getattr(pattern.callback, "__name__", "") == "TemplateView"
+                or pattern.callback == django.views.static.serve)
+
+    patterns = [(regex, re.compile(regex)) for regex, pattern in url_patterns
+                if not ignore_pattern(regex, pattern)]
 
     covered = set()
     for url in visited_urls:
-        for pattern, compiled in patterns:
-            if pattern not in covered and compiled.match(url[1:]): # strip leading /
-                covered.add(pattern)
+        for regex, compiled in patterns:
+            if regex not in covered and compiled.match(url[1:]): # strip leading /
+                covered.add(regex)
                 break
 
-    missing = list(set(p for p, compiled in patterns) - covered)
+    missing = list(set(regex for regex, compiled in patterns) - covered)
 
     if missing:
         print "The following URL patterns were not tested"
@@ -225,8 +235,8 @@ class IetfTestRunner(DiscoverRunner):
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
         if check_coverage and not failures:
-            check_url_coverage()
             check_template_coverage()
+            check_url_coverage()
 
             print "0 test failures - coverage shown above"
 
