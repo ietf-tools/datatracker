@@ -32,6 +32,14 @@ class IprTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(ipr.title in r.content)
 
+    def test_ipr_details(self):
+        draft = make_test_data()
+        ipr = IprDetail.objects.get(title="Statement regarding rights")
+
+        r = self.client.get(urlreverse("ipr_show", kwargs=dict(ipr_id=ipr.pk)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in r.content)
+        
     def test_iprs_for_drafts(self):
         draft = make_test_data()
         ipr = IprDetail.objects.get(title="Statement regarding rights")
