@@ -8,13 +8,45 @@ from pyquery import PyQuery
 from ietf.utils.test_data import make_test_data
 from ietf.doc.models import *
 from ietf.person.models import Person
-from ietf.group.models import Group
+from ietf.group.models import Group, GroupMilestone
 from ietf.name.models import StreamName
 from ietf.iesg.models import *
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.iesg.agenda import get_agenda_date, agenda_data
 
-class ReviewDecisionsTests(TestCase):
+class IESGTests(TestCase):
+    def test_feed(self):
+        draft = make_test_data()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+
+        pos = BallotPositionDocEvent()
+        pos.ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
+        pos.pos_id = "discuss"
+        pos.type = "changed_ballot_position"
+        pos.doc = draft
+        pos.ad = pos.by = Person.objects.get(user__username="ad")
+        pos.save()
+
+        r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
+        self.assertEqual(r.status_code, 200)
+
+        self.assertTrue(draft.name in r.content)
+        self.assertTrue(pos.ad.plain_name() in r.content)
+
+    def test_milestones_needing_review(self):
+        draft = make_test_data()
+
+        m = GroupMilestone.objects.create(group=draft.group,
+                                          state_id="review",
+                                          desc="Test milestone",
+                                          due=datetime.date.today())
+
+        url = urlreverse("ietf.iesg.views.milestones_needing_review")
+        login_testing_unauthorized(self, "ad", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(m.desc in r.content)
+
     def test_review_decisions(self):
         draft = make_test_data()
 
@@ -503,23 +535,3 @@ class DeferUndeferTestCase(TestCase):
 
     def setUp(self):
         make_test_data()
-
-class IESGDiscussesTests(TestCase):
-    def test_feed(self):
-        draft = make_test_data()
-        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
-
-        pos = BallotPositionDocEvent()
-        pos.ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
-        pos.pos_id = "discuss"
-        pos.type = "changed_ballot_position"
-        pos.doc = draft
-        pos.ad = pos.by = Person.objects.get(user__username="ad")
-        pos.save()
-
-        r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
-        self.assertEqual(r.status_code, 200)
-
-        self.assertTrue(draft.name in r.content)
-        self.assertTrue(pos.ad.plain_name() in r.content)
-
