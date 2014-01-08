@@ -13,6 +13,13 @@ from ietf.meeting.test_data import make_meeting_test_data
 
 
 class ApiTests(TestCase):
+    def test_dajaxice_core_js(self):
+        # this is vital for Dajaxice to work and we have hacked it
+        # slightly to avoid copying static files around, so make sure
+        # we can fetch it
+        r = self.client.get("/dajaxice/dajaxice.core.js")
+        self.assertEqual(r.status_code, 200)
+
     def test_update_agenda_item(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
