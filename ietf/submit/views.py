@@ -130,10 +130,10 @@ def search_submission(request):
                                'name': name},
                               context_instance=RequestContext(request))
 
-def can_edit_submission(request, submission, access_token):
+def can_edit_submission(user, submission, access_token):
     key_matched = access_token and submission.access_token() == access_token
     if not key_matched: key_matched = submission.access_key == access_token # backwards-compat
-    return key_matched or has_role(request.user, "Secretariat")
+    return key_matched or has_role(user, "Secretariat")
 
 def submission_status(request, submission_id, access_token=None):
     submission = get_object_or_404(Submission, pk=submission_id)
@@ -149,7 +149,7 @@ def submission_status(request, submission_id, access_token=None):
     is_secretariat = has_role(request.user, "Secretariat")
     is_chair = submission.group and submission.group.has_role(request.user, "chair")
 
-    can_edit = can_edit_submission(request, submission, access_token) and submission.state_id == "uploaded"
+    can_edit = can_edit_submission(request.user, submission, access_token) and submission.state_id == "uploaded"
     can_cancel = (key_matched or is_secretariat) and submission.state.next_states.filter(slug="cancel")
     can_group_approve = (is_secretariat or is_chair) and submission.state_id == "grp-appr"
     can_force_post = is_secretariat and submission.state.next_states.filter(slug="posted")
