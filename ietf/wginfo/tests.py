@@ -1,4 +1,4 @@
-import os, unittest, shutil, calendar
+import os, unittest, shutil, calendar, json
 
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
@@ -138,6 +138,13 @@ class GroupPagesTests(TestCase):
         self.assertTrue(group.name in r.content)
         self.assertTrue(group.acronym in r.content)
 
+        self.assertTrue(draft2.name in r.content)
+
+        # test the txt version too while we're at it
+        url = urlreverse('ietf.wginfo.views.group_documents_txt', kwargs=dict(acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.name in r.content)
         self.assertTrue(draft2.name in r.content)
 
     def test_group_charter(self):
@@ -802,6 +809,15 @@ class MilestoneTests(TestCase):
         self.assertTrue(group.acronym in outbox[-1]["Subject"])
         self.assertTrue(m1.desc in unicode(outbox[-1]))
         self.assertTrue(m2.desc in unicode(outbox[-1]))
+
+    def test_ajax_search_docs(self):
+        draft = make_test_data()
+
+        r = self.client.get(urlreverse("wg_ajax_search_docs", kwargs=dict(acronym=draft.group.acronym)),
+                            dict(q=draft.name))
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertTrue(data[0]["id"], draft.name)
 
 class CustomizeWorkflowTests(TestCase):
     def test_customize_workflow(self):
