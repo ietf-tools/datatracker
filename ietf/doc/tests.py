@@ -92,6 +92,12 @@ class SearchTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in r.content)
 
+    def test_frontpage(self):
+        draft = make_test_data()
+        r = self.client.get("/")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Search Internet-Drafts" in r.content)
+
     def test_drafts_pages(self):
         draft = make_test_data()
 
@@ -214,8 +220,9 @@ class DocTestCase(TestCase):
         doc = make_test_data()
         ballot = doc.active_ballot()
 
-        BallotPositionDocEvent.objects.create(
+        pos = BallotPositionDocEvent.objects.create(
             doc=doc,
+            ballot=ballot,
             type="changed_ballot_position",
             pos_id="yes",
             comment="Looks fine to me",
@@ -225,6 +232,12 @@ class DocTestCase(TestCase):
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
+        self.assertTrue(pos.comment in r.content)
+
+        # test with ballot_id
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(pos.comment in r.content)
 
         # test popup too while we're at it
         r = self.client.get(urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
@@ -236,6 +249,77 @@ class DocTestCase(TestCase):
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
 
+    def test_writeup(self):
+        doc = make_test_data()
+
+        appr = WriteupDocEvent.objects.create(
+            doc=doc,
+            desc="Changed text",
+            type="changed_ballot_approval_text",
+            text="This is ballot approval text.",
+            by=Person.objects.get(name="(System)"))
+
+        notes = WriteupDocEvent.objects.create(
+            doc=doc,
+            desc="Changed text",
+            type="changed_ballot_writeup_text",
+            text="This is ballot writeup notes.",
+            by=Person.objects.get(name="(System)"))
+
+        url = urlreverse('doc_writeup', kwargs=dict(name=doc.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(appr.text in r.content)
+        self.assertTrue(notes.text in r.content)
+
+    def test_history(self):
+        doc = make_test_data()
+
+        e = DocEvent.objects.create(
+            doc=doc,
+            desc="Something happened.",
+            type="added_comment",
+            by=Person.objects.get(name="(System)"))
+
+        url = urlreverse('doc_history', kwargs=dict(name=doc.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(e.desc in r.content)
+        
+    def test_document_feed(self):
+        doc = make_test_data()
+
+        e = DocEvent.objects.create(
+            doc=doc,
+            desc="Something happened.",
+            type="added_comment",
+            by=Person.objects.get(name="(System)"))
+
+        r = self.client.get("/feed/document-changes/%s/" % doc.name)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(e.desc in r.content)
+
+    def test_last_call_feed(self):
+        doc = make_test_data()
+
+        doc.set_state(State.objects.get(type="draft-iesg", slug="lc"))
+
+        e = LastCallDocEvent.objects.create(
+            doc=doc,
+            desc="Last call",
+            type="sent_last_call",
+            by=Person.objects.get(user__username="secretary"),
+            expires=datetime.date.today() + datetime.timedelta(days=7))
+
+        r = self.client.get("/feed/last-call/")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(doc.name in r.content)
+
+    def test_state_help(self):
+        url = urlreverse('state_help', kwargs=dict(type="draft-iesg"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(State.objects.get(type="draft-iesg", slug="lc").name in r.content)
 
 class AddCommentTestCase(TestCase):
     def test_add_comment(self):
