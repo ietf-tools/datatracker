@@ -20,7 +20,7 @@ class StreamTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Independent Submission Editor" in r.content)
 
-    def test_streams(self):
+    def test_stream_documents(self):
         draft = make_test_data()
         draft.stream_id = "iab"
         draft.save()
