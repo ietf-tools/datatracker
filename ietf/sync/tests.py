@@ -173,6 +173,16 @@ ICANN
         iana.add_review_comment(doc_name, review_time, by, comment)
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="iana_review").count(), 1)
 
+    def test_notify_page(self):
+        # check that we can get the notify page
+        url = urlreverse("ietf.sync.views.notify", kwargs=dict(org="iana", notification="changes"))
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("new changes at" in r.content)
+
+        # we don't actually try posting as that would trigger a real run
+        
 
 class RFCSyncTests(TestCase):
     def test_rfc_index(self):
