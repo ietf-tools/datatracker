@@ -14,6 +14,21 @@ from ietf.group.models import *
 from ietf.person.models import *
 
 class StreamTests(TestCase):
+    def test_streams(self):
+        make_test_data()
+        r = self.client.get(urlreverse("ietf.group.views_stream.streams"))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Independent Submission Editor" in r.content)
+
+    def test_streams(self):
+        draft = make_test_data()
+        draft.stream_id = "iab"
+        draft.save()
+
+        r = self.client.get(urlreverse("ietf.group.views_stream.stream_documents", kwargs=dict(acronym="iab")))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.name in r.content)
+
     def test_stream_edit(self):
         make_test_data()
 
