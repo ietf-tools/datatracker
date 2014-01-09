@@ -298,7 +298,7 @@ def retrieve_search_results(form, all_types=False):
         if query["substate"]:
             docs = docs.filter(tags=query["substate"])
     elif by == "stream":
-        docs = docs.filter(stream__slug=query["stream"])
+        docs = docs.filter(stream=query["stream"])
 
     # evaluate and fill in attribute results immediately to cut down
     # the number of queries
