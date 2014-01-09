@@ -2,7 +2,7 @@ from django.conf.urls import patterns, url
 from django.views.generic import RedirectView
 
 from ietf.doc.feeds import DocumentChangesFeed, InLastCallFeed
-from ietf.wgcharter.feeds import GroupChangesFeed
+from ietf.wginfo.feeds import GroupChangesFeed
 from ietf.iesg.feeds import IESGAgendaFeed
 from ietf.ipr.feeds import LatestIprDisclosuresFeed
 from ietf.liaisons.feeds import LiaisonStatementsFeed

@@ -121,7 +121,7 @@ def check_url_coverage():
     # skip some patterns that we don't bother with
     def ignore_pattern(regex, pattern):
         import django.views.static
-        return (regex in ("^_test500/$",)
+        return (regex in ("^_test500/$", "^accounts/testemail/$")
                 or regex.startswith("^admin/")
                 or getattr(pattern.callback, "__name__", "") == "RedirectView"
                 or getattr(pattern.callback, "__name__", "") == "TemplateView"
