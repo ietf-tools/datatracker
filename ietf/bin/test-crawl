@@ -33,7 +33,7 @@ def strip_url(url):
     return url
 
 def extract_html_urls(content):
-    for m in re.finditer(r'<a.*href="([^"]+)">', content):
+    for m in re.finditer(r'<(?:a|link) [^>]*href="([^"]+)"', content):
         url = strip_url(m.group(1))
         if len(url) > MAX_URL_LENGTH:
             continue # avoid infinite GET parameter appendages
