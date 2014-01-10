@@ -11,7 +11,7 @@
 
                 if (disabledLabel.length) {
                     config.disabledLabel = disabledLabel.html();
-                    var required = ''
+                    var required = '';
                     fieldset.find('.attachRequiredField').each(function(index, field) {
                         required += '#' + $(field).html() + ',';
                     });
@@ -94,7 +94,7 @@
             };
 
             var initFileInput = function() {
-                var fieldids = ''
+                var fieldids = '';
                 config.basefields.each(function(i) {
                     var field = $(this);
                     var oldcontainer= $(this).parents('.field');
@@ -106,7 +106,7 @@
                     oldcontainer.after(newcontainer);
                     oldcontainer.hide();
                     newcontainer.show();
-                    fieldids += '#' + newfield.attr('id') + ','
+                    fieldids += '#' + newfield.attr('id') + ',';
                 });
                 config.fields = $(fieldids);
                 config.fields.change(setState);
@@ -190,7 +190,7 @@
                 var option = select.find('option:selected');
                 reply.val(option.attr('title'));
                 updateFrom();
-            }
+            };
 
             var userSelect = function(user_list) {
                 if (!user_list || !user_list.length) {
@@ -204,7 +204,7 @@
                     options += '<option value="' + person[0] + '" title="' + person[1][1] + '">'+ person[1][0] + ' &lt;' + person[1][1] + '&gt;</option>';
                 });
                 select.remove();
-                link.after('<select name="from_fake_user">' + options +'</select>')
+                link.after('<select name="from_fake_user">' + options +'</select>');
                 form.find('select[name=from_fake_user]').change(updateReplyTo);
                 updateReplyTo();
             };
@@ -281,9 +281,9 @@
             };
 
             var getRelatedLink = function() {
-                link = $(this).text();;
-                pk = $(this).nextAll('.liaisonPK').text();
-                widget = related_trigger.parent();
+                var link = $(this).text();;
+                var pk = $(this).nextAll('.liaisonPK').text();
+                var widget = related_trigger.parent();
                 widget.find('.relatedLiaisonWidgetTitle').text(link);
                 widget.find('.relatedLiaisonWidgetValue').val(pk);
                 widget.find('.noRelated').hide();
@@ -293,7 +293,7 @@
             };
 
             var selectNoRelated = function() {
-                widget = $(this).parent();
+                var widget = $(this).parent();
                 widget.find('.relatedLiaisonWidgetTitle').text('');
                 widget.find('.noRelated').show();
                 widget.find('.relatedLiaisonWidgetValue').val('');
@@ -302,10 +302,10 @@
             };
 
             var selectRelated = function() {
-	        trigger = $(this);
-                widget = $(this).parent();
-                url = widget.find('.listURL').text();
-                title = widget.find('.relatedLiaisonWidgetTitle');
+                var trigger = $(this);
+                var widget = $(this).parent();
+                var url = widget.find('.listURL').text();
+                var title = widget.find('.relatedLiaisonWidgetTitle');
                 related_dialog.html('<img src="/images/ajax-loader.gif" />');
                 related_dialog.dialog('open');
                 $.ajax({
@@ -454,7 +454,7 @@
                 input.hide();
                 select.attr('name', 'value');
                 input.next('select').remove();
-                var newselect = select.clone()
+                var newselect = select.clone();
                 newselect.insertAfter(input);
             } else {
                 input.next('select').remove();
