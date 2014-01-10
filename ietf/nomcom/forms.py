@@ -44,7 +44,7 @@ class PositionNomineeField(forms.ChoiceField):
         positions = Position.objects.get_by_nomcom(self.nomcom).opened().order_by('name')
         results = []
         for position in positions:
-            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(nominee_position=position)]
+            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(nominee_position=position).select_related("email", "email__person")]
             if nominees:
                 results.append((position.name, nominees))
         kwargs['choices'] = results
