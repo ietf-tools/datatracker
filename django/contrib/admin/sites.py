@@ -314,7 +314,8 @@ class AdminSite(object):
         Displays the login form for the given HttpRequest.
         """
         url = "/accounts/login/?next="+request.get_full_path()
-        return http.HttpResponseRedirect(url)
+        from django.http import HttpResponseRedirect
+        return HttpResponseRedirect(url)
         
         from django.contrib.auth.views import login
         context = {
