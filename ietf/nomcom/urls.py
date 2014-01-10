@@ -41,8 +41,6 @@ urlpatterns = patterns('ietf.nomcom.views',
     url(r'^(?P<year>\d{4})/feedback/$', 'public_feedback', name='nomcom_public_feedback'),
     url(r'^(?P<year>\d{4})/nominate/$', 'public_nominate', name='nomcom_public_nominate'),
     url(r'^(?P<year>\d{4})/process-nomination-status/(?P<nominee_position_id>\d+)/(?P<state>[\w]+)/(?P<date>[\d]+)/(?P<hash>[a-f0-9]+)/$', 'process_nomination_status', name='nomcom_process_nomination_status'),
-    url(r'^ajax/position-text/(?P<position_id>\d+)/$', 'ajax_position_text', name='nomcom_ajax_position_text'),
-
 )
 
 # use the generic view from message

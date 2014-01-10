@@ -603,11 +603,6 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                   'confirmation',
                   'comments')
 
-    class Media:
-        js = ("/js/jquery-1.5.1.min.js",
-              "/js/nomcom.js", )
-
-
 class FeedbackEmailForm(BaseNomcomForm, forms.Form):
 
     email_text = forms.CharField(label='Email text', widget=forms.Textarea())
@@ -620,11 +615,6 @@ class FeedbackEmailForm(BaseNomcomForm, forms.Form):
 
     def save(self, commit=True):
         create_feedback_email(self.nomcom, self.cleaned_data['email_text'])
-
-    class Media:
-        js = ("/js/jquery-1.5.1.min.js",
-              "/js/nomcom.js", )
-
 
 class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
@@ -660,19 +650,6 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
         model = Feedback
         fields = ('positions',
                   'comments')
-
-    class Media:
-        admin_js = ['js/core.js',
-                    "js/jquery.js",
-                    "js/jquery.init.js",
-                    'js/admin/RelatedObjectLookups.js',
-                    "js/getElementsBySelector.js",
-                    'js/SelectBox.js',
-                    'js/SelectFilter2.js',
-                    ]
-        admin_js = ['%sadmin/%s' % (settings.STATIC_URL, url) for url in admin_js]
-        js = ["/js/jquery-1.5.1.min.js", "/js/nomcom.js"] + admin_js
-
 
 class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
     content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }))

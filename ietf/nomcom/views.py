@@ -830,15 +830,3 @@ def edit_position(request, year, position_id=None):
                                'position': position,
                                'year': year,
                                'nomcom': nomcom}, RequestContext(request))
-
-
-def ajax_position_text(request, position_id):
-    try:
-        position_text = Position.objects.get(id=position_id).initial_text
-    except Position.DoesNotExist:
-        position_text = ""
-
-    result = {'text': position_text}
-
-    json_result = json.dumps(result)
-    return HttpResponse(json_result, content_type='application/json')
