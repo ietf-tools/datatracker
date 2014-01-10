@@ -1,13 +1,5 @@
 {% extends "base.html" %}
 
-{% block pagehead %}
-{{ block.super }}
-<script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
-<script type="text/javascript" src="/js/yui/yui-20100305.js"></script>
-<script type="text/javascript" src="/js/base.js"></script>
-<script type="text/javascript" src="/js/community.js"></script>
-{% endblock pagehead %}
-
 {% block title %}{{ cl.long_name }}{% endblock %}
 
 {% block content %}
@@ -110,9 +102,13 @@ In order to add some individual documents to your list you have to:
 
 </div>
 </div>
+{% endblock %}
 
-<script type="text/javascript">
-//<![CDATA[
+{% block js %}
+  <script type="text/javascript" src="/js/community.js"></script>
+{% endblock js %}
+
+{% block scripts %}
 var tabView = new YAHOO.widget.TabView('mytabs');
 var url = location.href.split('#'); 
 if (url[1]) { 
@@ -125,7 +121,4 @@ if (url[1]) {
      } 
   } 
 } 
-//]]>
-</script>
-
 {% endblock %}
