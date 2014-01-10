@@ -52,7 +52,7 @@ def get_user_managed_lists(parser, token):
 @register.inclusion_tag('community/display_field.html', takes_context=False)
 def show_field(field, doc):
     return {'field': field,
-            'value': field().get_value(doc),
+            'value': field.get_value(doc),
            }
 
 
