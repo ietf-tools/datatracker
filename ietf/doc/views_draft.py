@@ -1178,6 +1178,8 @@ def request_publication(request, name):
     if not is_authorized_in_doc_stream(request.user, doc):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
+    consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+
     m = Message()
     m.frm = request.user.person.formatted_email()
     m.to = "RFC Editor <rfc-editor@rfc-editor.org>"
@@ -1247,6 +1249,7 @@ def request_publication(request, name):
                                    doc=doc,
                                    message=m,
                                    next_state=next_state,
+                                   consensus_filled_in=consensus_event != None,
                                    ),
                               context_instance = RequestContext(request))
 
