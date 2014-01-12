@@ -121,6 +121,11 @@ def all_id2_txt():
         else:
             l.append(a.author.person.plain_name())
 
+    shepherds = dict((p.pk, p.formatted_email().replace('"', ''))
+                     for p in Person.objects.filter(shepherd_document_set__type="draft").distinct())
+    ads = dict((p.pk, p.formatted_email().replace('"', ''))
+               for p in Person.objects.filter(ad_document_set__type="draft").distinct())
+
     res = []
     for d in drafts:
         state = d.get_state_slug()
@@ -192,9 +197,9 @@ def all_id2_txt():
         # 14
         fields.append(u", ".join(authors.get(d.name, [])))
         # 15
-        fields.append(d.shepherd.formatted_email().replace('"', '') if d.shepherd else "")
+        fields.append(shepherds.get(d.shepherd_id, ""))
         # 16 Responsible AD name and email
-        fields.append(d.ad.formatted_email().replace('"', '') if d.ad else "")
+        fields.append(ads.get(d.ad_id, ""))
 
         #
         res.append(u"\t".join(fields))
