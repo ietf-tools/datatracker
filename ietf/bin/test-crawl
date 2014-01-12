@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, re, datetime, optparse, traceback
-import syslog
+import os, sys, re, datetime, argparse, traceback
 
 # boilerplate
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -19,9 +18,35 @@ class DontSaveQueries(object):
 connection.queries = DontSaveQueries()
 
 MAX_URL_LENGTH = 500
-SLOW_THRESHOLD = 1.0
 
-initial = ["/doc/all/", "/doc/in-last-call/", "/iesg/decisions/"]
+# args
+parser = argparse.ArgumentParser(
+    description="""Perform a test crawl of the project. For each found URL, the HTTP
+    response status is printed. If it's not OK/redirect, FAIL is
+    printed - in case of errors, a stacktrace is also included.""")
+parser.add_argument('urls', metavar='URL', nargs='*',
+                    help='One or more URLs to start the crawl from')
+parser.add_argument('--urls', '-u', dest='url_file',
+                    help='file with URLs to start the crawl from')
+parser.add_argument('--slow', dest='slow_threshold', type=float, default=1.0,
+                    help='responses taking longer than this (in seconds) results in SLOW being printed')
+
+args = parser.parse_args()
+
+slow_threshold = args.slow_threshold
+
+initial_urls = []
+initial_urls.extend(args.urls)
+
+if args.url_file:
+    with open(args.url_file) as f:
+        for line in f:
+            line = line.partition("#")[0].strip()
+            if line:
+                initial_urls.append(line)
+
+if not initial_urls:
+    initial_urls.append("/")
 
 visited = set()
 urls = {} # url -> referrer
@@ -33,8 +58,11 @@ def strip_url(url):
     return url
 
 def extract_html_urls(content):
-    for m in re.finditer(r'<(?:a|link) [^>]*href="([^"]+)"', content):
-        url = strip_url(m.group(1))
+    for m in re.finditer(r'(<(?:a|link) [^>]*href=[\'"]([^"]+)[\'"][^>]*>)', content):
+        if re.search(r'rel=["\']?nofollow["\']', m.group(1)):
+            continue
+
+        url = strip_url(m.group(2))
         if len(url) > MAX_URL_LENGTH:
             continue # avoid infinite GET parameter appendages
 
@@ -45,8 +73,10 @@ def extract_html_urls(content):
 
 client = django.test.Client()
 
-for url in initial:
+for url in initial_urls:
     urls[url] = "[initial]"
+
+errors = 0
 
 while urls:
     url, referrer = urls.popitem()
@@ -65,6 +95,7 @@ while urls:
         print "============="
         print traceback.format_exc()
         print "============="
+        errors += 1
     else:
         tags = []
 
@@ -90,9 +121,13 @@ while urls:
                     print "============="
         else:
             tags.append(u"FAIL (from %s)" % referrer)
+            errors += 1
 
-        if elapsed.total_seconds() > SLOW_THRESHOLD:
+        if elapsed.total_seconds() > slow_threshold:
             tags.append("SLOW")
 
         print r.status_code, "%.3fs" % elapsed.total_seconds(), url, " ".join(tags)
 
+if errors > 0:
+    sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
+    sys.exit(1)

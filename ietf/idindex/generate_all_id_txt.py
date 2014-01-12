@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Portions Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
