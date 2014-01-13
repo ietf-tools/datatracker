@@ -50,7 +50,6 @@ from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.utils import *
 from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
-from ietf.wgcharter.utils import historic_milestones_for_charter
 from ietf.ipr.models import IprDocAlias
 from ietf.doc.mails import email_ad
 
@@ -563,14 +562,14 @@ def document_writeup(request, name):
                          "",
                          [("WG Review Announcement",
                            text_from_writeup("changed_review_announcement"),
-                           urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="review")))]
+                           urlreverse("ietf.doc.views_charter.announcement_text", kwargs=dict(name=doc.name, ann="review")))]
                          ))
 
         sections.append(("WG Action Announcement",
                          "",
                          [("WG Action Announcement",
                            text_from_writeup("changed_action_announcement"),
-                           urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="action")))]
+                           urlreverse("ietf.doc.views_charter.announcement_text", kwargs=dict(name=doc.name, ann="action")))]
                          ))
 
         if doc.latest_event(BallotDocEvent, type="created_ballot"):
@@ -578,7 +577,7 @@ def document_writeup(request, name):
                              "",
                              [("Ballot Announcement",
                                text_from_writeup("changed_ballot_writeup_text"),
-                               urlreverse("ietf.wgcharter.views.ballot_writeupnotes", kwargs=dict(name=doc.name)))]
+                               urlreverse("ietf.doc.views_charter.ballot_writeupnotes", kwargs=dict(name=doc.name)))]
                              ))
 
     if not sections:

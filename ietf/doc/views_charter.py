@@ -23,8 +23,8 @@ from ietf.name.models import *
 from ietf.person.models import *
 from ietf.group.models import *
 from ietf.group.utils import save_group_in_history, save_milestone_in_history
-from ietf.wgcharter.mails import *
-from ietf.wgcharter.utils import *
+from ietf.wginfo.mails import email_secretariat
+from ietf.doc.utils_charter import *
 
 import debug
 
@@ -124,7 +124,7 @@ def change_state(request, name, option=None):
                 charter.save()
 
                 if message:
-                    email_secretariat(request, group, "state-%s" % charter_state.slug, message)
+                    email_secretariat(request, group, "Charter state changed to %s" % charter_state.name, message)
 
                 email_state_changed(request, charter, "State changed to %s." % charter_state)
 
@@ -185,7 +185,7 @@ def change_state(request, name, option=None):
 
     states_for_ballot_wo_extern = State.objects.filter(used=True, type="charter", slug="intrev").values_list("pk", flat=True)
 
-    return render_to_response('wgcharter/change_state.html',
+    return render_to_response('doc/charter/change_state.html',
                               dict(form=form,
                                    doc=group.charter,
                                    login=login,
@@ -230,7 +230,7 @@ def telechat_date(request, name):
     else:
         form = TelechatForm(initial=initial)
 
-    return render_to_response('wgcharter/edit_telechat_date.html',
+    return render_to_response('doc/charter/edit_telechat_date.html',
                               dict(doc=doc,
                                    form=form,
                                    user=request.user,
@@ -274,7 +274,7 @@ def edit_notify(request, name):
     else:
         form = NotifyForm(initial=init)
 
-    return render_to_response('wgcharter/edit_notify.html',
+    return render_to_response('doc/charter/edit_notify.html',
                               dict(doc=doc,
                                    form=form,
                                    user=request.user,
@@ -322,7 +322,7 @@ def edit_ad(request, name):
         init = { "ad" : charter.ad_id }
         form = AdForm(initial=init)
 
-    return render_to_response('wgcharter/change_ad.html',
+    return render_to_response('doc/charter/change_ad.html',
                               {'form':   form,
                                'charter': charter,
                               },
@@ -415,7 +415,7 @@ def submit(request, name=None, acronym=None, option=None):
         except IOError:
             pass
         form = UploadForm(initial=init)
-    return render_to_response('wgcharter/submit.html',
+    return render_to_response('doc/charter/submit.html',
                               {'form': form,
                                'next_rev': next_rev,
                                'group': group },
@@ -481,7 +481,7 @@ def announcement_text(request, name, ann):
             messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
             return redirect('doc_writeup', name=charter.name)
 
-    return render_to_response('wgcharter/announcement_text.html',
+    return render_to_response('doc/charter/announcement_text.html',
                               dict(charter=charter,
                                    announcement=ann,
                                    back_url=urlreverse("doc_writeup", kwargs=dict(name=charter.name)),
@@ -547,13 +547,13 @@ def ballot_writeupnotes(request, name):
                 e.desc = "Ballot has been sent"
                 e.save()
 
-                return render_to_response('wgcharter/ballot_issued.html',
+                return render_to_response('doc/charter/ballot_issued.html',
                                           dict(doc=charter,
                                                ),
                                           context_instance=RequestContext(request))
                         
 
-    return render_to_response('wgcharter/ballot_writeupnotes.html',
+    return render_to_response('doc/charter/ballot_writeupnotes.html',
                               dict(charter=charter,
                                    ballot_issued=bool(charter.latest_event(type="sent_ballot_announcement")),
                                    ballot_writeup_form=form,
@@ -632,7 +632,7 @@ def approve(request, name):
         charter.time = e.time
         charter.save()
 
-        email_secretariat(request, group, "state-%s" % new_charter_state.slug, change_description)
+        email_secretariat(request, group, "Charter state changed to %s" % new_charter_state.name, change_description)
 
         # move milestones over
         milestones_to_delete = list(group.groupmilestone_set.filter(state__in=("active", "review")))
@@ -689,7 +689,7 @@ def approve(request, name):
 
         return HttpResponseRedirect(charter.get_absolute_url())
     
-    return render_to_response('wgcharter/approve.html',
+    return render_to_response('doc/charter/approve.html',
                               dict(charter=charter,
                                    announcement=announcement),
                               context_instance=RequestContext(request))
@@ -720,7 +720,7 @@ def charter_with_milestones_txt(request, name, rev):
     for m in milestones:
         m.desc_filled = wrapper.fill(m.desc)
 
-    return render_to_response('wgcharter/charter_with_milestones.txt',
+    return render_to_response('doc/charter/charter_with_milestones.txt',
                               dict(charter_text=charter_text,
                                    milestones=milestones),
                               context_instance=RequestContext(request),

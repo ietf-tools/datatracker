@@ -19,7 +19,7 @@ from ietf.group.utils import *
 from ietf.name.models import *
 from ietf.person.models import *
 from ietf.iesg.models import TelechatDate
-from ietf.wgcharter.utils import *
+from ietf.doc.utils_charter import *
 
 class EditCharterTests(TestCase):
     def setUp(self):
@@ -71,13 +71,13 @@ class EditCharterTests(TestCase):
             def find_event(t):
                 return [e for e in charter.docevent_set.all()[:events_now - events_before] if e.type == t]
 
-            self.assertTrue("State changed" in find_event("changed_document")[0].desc)
+            self.assertTrue("state changed" in find_event("changed_document")[0].desc.lower())
 
             if slug in ("intrev", "iesgrev"):
                 self.assertTrue(find_event("created_ballot"))
 
             self.assertEqual(len(outbox), mailbox_before + 1)
-            self.assertTrue("State changed" in outbox[-1]['Subject'])
+            self.assertTrue("state changed" in outbox[-1]['Subject'].lower())
                     
     def test_edit_telechat_date(self):
         make_test_data()
@@ -272,7 +272,7 @@ class ApproveCharterTests(TestCase):
 
         self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("WG Action" in outbox[-1]['Subject'])
-        self.assertTrue("Charter approved" in outbox[-2]['Subject'])
+        self.assertTrue("approved" in outbox[-2]['Subject'].lower())
 
         self.assertEqual(group.groupmilestone_set.filter(state="charter").count(), 0)
         self.assertEqual(group.groupmilestone_set.filter(state="active").count(), 2)

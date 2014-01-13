@@ -12,6 +12,20 @@ from ietf.utils.mail import send_mail, send_mail_text
 
 from ietf.group.models import *
 
+def email_secretariat(request, group, subject, text):
+    to = ["iesg-secretary@ietf.org"]
+    full_subject = u"Regarding %s %s: %s" % (group.type.name, group.acronym, subject)
+    text = strip_tags(text)
+
+    send_mail(request, to, None, subject,
+              "wginfo/email_secretariat.txt",
+              dict(text=text,
+                   group=group,
+                   group_url=settings.IDTRACKER_BASE_URL + urlreverse('group_charter', kwargs=dict(acronym=group.acronym)),
+                   charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=group.charter.name)),
+                   )
+              )
+
 def email_milestones_changed(request, group, changes):
     def wrap_up_email(to, text):
         text = wrap(strip_tags(text), 70)

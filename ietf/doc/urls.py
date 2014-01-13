@@ -96,7 +96,7 @@ urlpatterns = patterns('',
 
     url(r'^help/state/(?P<type>[\w-]+)/$', 'ietf.doc.views_help.state_help', name="state_help"),
 
-    (r'^(?P<name>charter-[A-Za-z0-9._+-]+)/', include('ietf.wgcharter.urls')),
+    (r'^(?P<name>charter-[A-Za-z0-9._+-]+)/', include('ietf.doc.urls_charter')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/conflict-review/', include('ietf.doc.urls_conflict_review')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/status-change/', include('ietf.doc.urls_status_change')),
 )

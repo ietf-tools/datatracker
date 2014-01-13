@@ -17,7 +17,7 @@ from ietf.name.models import *
 from ietf.person.models import *
 from ietf.group.models import *
 from ietf.group.utils import save_group_in_history
-from ietf.wgcharter.mails import email_secretariat
+from ietf.wginfo.mails import email_secretariat
 from ietf.person.forms import EmailsField
 from ietf.doc.utils import get_tags_for_stream_id
 
@@ -319,7 +319,7 @@ def conclude(request, acronym):
         if form.is_valid():
             instructions = form.cleaned_data['instructions']
 
-            email_secretariat(request, wg, "conclude", instructions)
+            email_secretariat(request, wg, "Request closing of group", instructions)
 
             e = GroupEvent(group=wg, by=login)
             e.type = "requested_close"

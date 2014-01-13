@@ -354,7 +354,7 @@ def agenda_documents(request):
     telechats = []
     for date in dates:
         sections = agenda_sections()
-        fill_in_agenda_docs(date, sections, docs_by_date[d])
+        fill_in_agenda_docs(date, sections, docs_by_date[date])
 
         telechats.append({
                 "date":date,

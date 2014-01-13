@@ -179,7 +179,6 @@ INSTALLED_APPS = (
     'ietf.redirects',
     'ietf.wginfo',
     'ietf.submit',
-    'ietf.wgcharter',
     'ietf.sync',
     'ietf.community',
     'ietf.release',
