@@ -17,9 +17,9 @@ form #id_announcement_text {
   {{ announcement_text_form.announcement_text }}
 
   <div class="actions">
-    <a href="{{ back_url }}">Back</a>
-    <input type="submit" name="regenerate_text" value="Regenerate" />
-    <input type="submit" name="save_text" value="Save" />
+    <a class="button" href="{{ back_url }}">Cancel</a>
+    <input class="button" type="submit" name="regenerate_text" value="Regenerate" />
+    <input class="button" type="submit" name="save_text" value="Save" />
   </div>
 
 {% load ietf_filters %}

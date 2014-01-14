@@ -502,7 +502,7 @@ def ballot_writeupnotes(request, name):
 
     ballot = charter.latest_event(BallotDocEvent, type="created_ballot")
     if not ballot:
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
@@ -528,6 +528,8 @@ def ballot_writeupnotes(request, name):
                 e.text = t
                 e.save()
 
+                existing = e
+
             if "send_ballot" in request.POST and approval:
                 if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=login, ballot=ballot):
                     # sending the ballot counts as a yes
@@ -551,7 +553,6 @@ def ballot_writeupnotes(request, name):
                                           dict(doc=charter,
                                                ),
                                           context_instance=RequestContext(request))
-                        
 
     return render_to_response('doc/charter/ballot_writeupnotes.html',
                               dict(charter=charter,

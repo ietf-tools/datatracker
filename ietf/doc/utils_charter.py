@@ -140,14 +140,14 @@ def generate_ballot_writeup(request, doc):
     
     return e
 
-def default_action_text(group, charter, user):
+def default_action_text(group, charter, by):
     if next_approved_revision(group.charter.rev) == "01":
         action = "Formed"
     else:
         action = "Rechartered"
 
-    e = WriteupDocEvent(doc=charter, by=user)
-    e.by = user
+    e = WriteupDocEvent(doc=charter, by=by)
+    e.by = by
     e.type = "changed_action_announcement"
     e.desc = "%s action text was changed" % group.type.name
     e.text = render_to_string("doc/charter/action_text.txt",
@@ -165,9 +165,9 @@ def default_action_text(group, charter, user):
     e.save()
     return e
 
-def default_review_text(group, charter, user):
-    e = WriteupDocEvent(doc=charter, by=user)
-    e.by = user
+def default_review_text(group, charter, by):
+    e = WriteupDocEvent(doc=charter, by=by)
+    e.by = by
     e.type = "changed_review_announcement"
     e.desc = "%s review text was changed" % group.type.name
     e.text = render_to_string("doc/charter/review_text.txt",
