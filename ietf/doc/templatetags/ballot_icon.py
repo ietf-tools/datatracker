@@ -154,6 +154,7 @@ def state_age_colored(doc):
                               Q(desc__istartswith="Draft Added by ")|
                               Q(desc__istartswith="Draft Added in state ")|
                               Q(desc__istartswith="Draft added in state ")|
+                              Q(desc__istartswith="IESG state changed to ")|
                               Q(desc__istartswith="State changed to ")|
                               Q(desc__istartswith="State Changes to ")|
                               Q(desc__istartswith="Sub state has been changed to ")|
