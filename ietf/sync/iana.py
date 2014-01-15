@@ -187,7 +187,7 @@ def update_history_with_changes(changes, send_email=True):
                 # that we assume these changes are cronologically
                 # applied
                 prev_state = doc.get_state(state_type)
-                e = add_state_change_event(doc, system, prev_state, state, timestamp)
+                e = add_state_change_event(doc, system, prev_state, state, timestamp=timestamp)
 
                 if e:
                     # for logging purposes

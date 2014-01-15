@@ -100,12 +100,13 @@ def change_state(request, name, option=None):
                 # Charter state changed
                 save_document_in_history(charter)
 
-                prev = charter.get_state()
-                charter.set_state(charter_state)
+                prev_state = charter.get_state()
+                new_state = charter_state
+                charter.set_state(new_state)
                 charter.rev = charter_rev
 
                 if option != "abandon":
-                    log_state_changed(request, charter, login, prev)
+                    add_state_change_event(charter, login, prev_state, new_state)
                 else:
                     # kill hanging ballots
                     close_open_ballots(charter, login)
@@ -612,7 +613,7 @@ def approve(request, name):
 
             change_description += " and %s state has been changed to %s" % (group.type.name, new_state.name)
 
-        e = log_state_changed(request, charter, login, prev_charter_state)
+        e = add_state_change_event(charter, login, prev_charter_state, new_charter_state)
 
         # according to spec, 00-02 becomes 01, so copy file and record new revision
         try:

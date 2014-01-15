@@ -8,7 +8,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from ietf.doc.utils import log_state_changed, update_telechat
+from ietf.doc.utils import add_state_change_event, update_telechat
 from ietf.doc.models import save_document_in_history
 
 from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_document_content
@@ -51,14 +51,12 @@ def change_state(request, name, option=None):
                 c.desc = comment
                 c.save()
 
-            if new_state != status_change.get_state():
+            prev_state = status_change.get_state()
+            if new_state != prev_state:
                 save_document_in_history(status_change)
 
-                old_description = status_change.friendly_state()
                 status_change.set_state(new_state)
-                new_description = status_change.friendly_state()
-
-                log_state_changed(request, status_change, login, new_description, old_description)
+                add_state_change_event(status_change, login, prev_state, new_state)
 
                 status_change.time = datetime.datetime.now()
                 status_change.save()
@@ -327,10 +325,11 @@ def approve(request, name):
 
             save_document_in_history(status_change)
 
-            old_description = status_change.friendly_state()
-            status_change.set_state(State.objects.get(type='statchg', slug='appr-sent'))
-            new_description = status_change.friendly_state()
-            log_state_changed(request, status_change, login, new_description, old_description)
+            prev_state = status_change.get_state()
+            new_state = State.objects.get(type='statchg', slug='appr-sent')
+
+            status_change.set_state(new_state)
+            add_state_change_event(status_change, login, prev_state, new_state)
 
             close_open_ballots(status_change, login)
 
@@ -689,11 +688,11 @@ def last_call(request, name):
                 if "send_last_call_request" in request.POST:
                     save_document_in_history(status_change)
 
-                    old_description = status_change.friendly_state()
-                    status_change.set_state(State.objects.get(type='statchg', slug='lc-req'))
-                    new_description = status_change.friendly_state()
+                    prev_state = status_change.get_state()
+                    new_state = State.objects.get(type='statchg', slug='lc-req')
 
-                    e = log_state_changed(request, status_change, login, new_description, old_description)
+                    status_change.set_state(new_state)
+                    e = add_state_change_event(status_change, login, prev_state, new_state)
 
                     status_change.time = e.time
                     status_change.save()

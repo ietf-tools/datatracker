@@ -49,17 +49,21 @@ def do_undefer_ballot(request, doc):
     telechat_date = TelechatDate.objects.active().order_by("date")[0].date
     save_document_in_history(doc)
 
-    prev_state = doc.friendly_state()
-    if doc.type_id == 'draft':
-        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='iesg-eva'))
-        prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-        prev_tag = prev_tag[0] if prev_tag else None
-        if prev_tag:
-            doc.tags.remove(prev_tag)
-    elif doc.type_id == 'conflrev':
-        doc.set_state(State.objects.get(used=True, type='conflrev',slug='iesgeval'))
+    new_state = doc.get_state()
+    prev_tags = new_tags = []
 
-    e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
+    if doc.type_id == 'draft':
+        new_state = State.objects.get(used=True, type="draft-iesg", slug='iesg-eva')
+        prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+    elif doc.type_id == 'conflrev':
+        new_state = State.objects.get(used=True, type='conflrev',slug='iesgeval')
+
+    prev_state = doc.get_state(new_state.type_id if new_state else None)
+
+    doc.set_state(new_state)
+    doc.tags.remove(*prev_tags)
+
+    e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
     
     doc.time = e.time
     doc.save()
@@ -353,17 +357,21 @@ def defer_ballot(request, name):
     if request.method == 'POST':
         save_document_in_history(doc)
 
-        prev_state = doc.friendly_state()
-        if doc.type_id == 'draft':
-            doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='defer'))
-            prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-            prev_tag = prev_tag[0] if prev_tag else None
-            if prev_tag:
-                doc.tags.remove(prev_tag)
-        elif doc.type_id == 'conflrev':
-            doc.set_state(State.objects.get(used=True, type='conflrev', slug='defer'))
+        new_state = doc.get_state()
+        prev_tags = new_tags = []
 
-        e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
+        if doc.type_id == 'draft':
+            new_state = State.objects.get(used=True, type="draft-iesg", slug='defer')
+            prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+        elif doc.type_id == 'conflrev':
+            new_state = State.objects.get(used=True, type='conflrev', slug='defer')
+
+        prev_state = doc.get_state(new_state.type_id if new_state else None)
+
+        doc.set_state(new_state)
+        doc.tags.remove(*prev_tags)
+
+        e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
         
         doc.time = e.time
         doc.save()
@@ -445,16 +453,16 @@ def lastcalltext(request, name):
                 if "send_last_call_request" in request.POST:
                     save_document_in_history(doc)
 
-                    prev_state = doc.friendly_state()
-                    doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='lc-req'))
+                    prev_state = doc.get_state("draft-iesg")
+                    new_state = State.objects.get(used=True, type="draft-iesg", slug='lc-req')
 
-                    prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-                    prev_tag = prev_tag[0] if prev_tag else None
-                    if prev_tag:
-                        doc.tags.remove(prev_tag)
+                    prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
 
-                    e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
-                    
+                    doc.set_state(new_state)
+                    doc.tags.remove(*prev_tags)
+
+                    e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
+
                     doc.time = e.time
                     doc.save()
 
@@ -664,8 +672,9 @@ def approve_ballot(request, name):
         else:
             new_state = State.objects.get(used=True, type="draft-iesg", slug="ann")
 
-        prev_friendly_state = doc.friendly_state()
         prev_state = doc.get_state("draft-iesg")
+        prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+
         if new_state.slug == "ann" and new_state.slug != prev_state.slug and not request.REQUEST.get("skiprfceditorpost"):
             # start by notifying the RFC Editor
             import ietf.sync.rfceditor
@@ -677,18 +686,14 @@ def approve_ballot(request, name):
                                        error=error),
                                   context_instance=RequestContext(request))
 
-        # fixup document
-        close_open_ballots(doc, login)
-
         save_document_in_history(doc)
 
         doc.set_state(new_state)
-
-        prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-        prev_tag = prev_tag[0] if prev_tag else None
-        if prev_tag:
-            doc.tags.remove(prev_tag)
+        doc.tags.remove(*prev_tags)
         
+        # fixup document
+        close_open_ballots(doc, login)
+
         e = DocEvent(doc=doc, by=login)
         if action == "do_not_publish":
             e.type = "iesg_disapproved"
@@ -701,8 +706,8 @@ def approve_ballot(request, name):
         
         change_description = e.desc + " and state has been changed to %s" % doc.get_state("draft-iesg").name
         
-        e = log_state_changed(request, doc, login, doc.friendly_state(), prev_friendly_state)
-                    
+        e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
+
         doc.time = e.time
         doc.save()
 
@@ -766,25 +771,26 @@ def make_last_call(request, name):
 
             save_document_in_history(doc)
 
-            prev_state = doc.get_state("draft-iesg")
+            new_state = doc.get_state()
+            prev_tags = new_tags = []
+
             if doc.type.slug == 'draft':
-                doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='lc'))
-
-                prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-                prev_tag = prev_tag[0] if prev_tag else None
-                if prev_tag:
-                    doc.tags.remove(prev_tag)
-
-                e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
-                change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, doc.get_state("draft-iesg").name)
-
+                new_state = State.objects.get(used=True, type="draft-iesg", slug='lc')
+                prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
             elif doc.type.slug == 'statchg':
-                doc.set_state(State.objects.get(used=True, type="statchg", slug='in-lc'))
-                e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
-                change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, doc.friendly_state())
-                    
+                new_state = State.objects.get(used=True, type="statchg", slug='in-lc')
+
+            prev_state = doc.get_state(new_state.type_id)
+
+            doc.set_state(new_state)
+            doc.tags.remove(*prev_tags)
+
+            e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+
             doc.time = e.time
             doc.save()
+
+            change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, new_state.name)
 
             email_state_changed(request, doc, change_description)
             email_ad(request, doc, doc.ad, login, change_description)

@@ -13,15 +13,6 @@ from ietf.doc.models import DocEvent, NewRevisionDocEvent, WriteupDocEvent, Ball
 from ietf.utils.history import find_history_active_at
 
 
-def log_state_changed(request, doc, by, prev_state):
-    e = DocEvent(doc=doc, by=by)
-    e.type = "changed_document"
-    e.desc = u"State changed to <b>%s</b> from %s" % (
-        doc.get_state().name,
-        prev_state.name if prev_state else "None")
-    e.save()
-    return e
-
 def next_revision(rev):
     if rev == "":
         return "00-00"

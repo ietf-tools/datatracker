@@ -51,7 +51,7 @@ class EditCharterTests(TestCase):
             if option == "abandon":
                 self.assertTrue("abandoned" in charter.latest_event(type="changed_document").desc.lower())
             else:
-                self.assertTrue("state changed" in charter.latest_event(type="changed_document").desc.lower())
+                self.assertTrue("state changed" in charter.latest_event(type="changed_state").desc.lower())
 
     def test_change_state(self):
         make_test_data()
@@ -94,7 +94,7 @@ class EditCharterTests(TestCase):
             def find_event(t):
                 return [e for e in charter.docevent_set.all()[:events_now - events_before] if e.type == t]
 
-            self.assertTrue("state changed" in find_event("changed_document")[0].desc.lower())
+            self.assertTrue("state changed" in find_event("changed_state")[0].desc.lower())
 
             if slug in ("intrev", "iesgrev"):
                 self.assertTrue(find_event("created_ballot"))
@@ -110,6 +110,10 @@ class EditCharterTests(TestCase):
 
         url = urlreverse('charter_telechat_date', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
 
         # add to telechat
         self.assertTrue(not charter.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
@@ -144,6 +148,10 @@ class EditCharterTests(TestCase):
 
         url = urlreverse('charter_edit_notify', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
 
         # post
         self.assertTrue(not charter.notify)

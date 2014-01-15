@@ -392,7 +392,7 @@ class Document(DocumentInfo):
                 # Expired/Withdrawn by Submitter/IETF
                 return state.name
         else:
-           return state.name
+            return state.name
 
     def ipr(self):
         """Returns the IPR disclosures against this document (as a queryset over IprDocAlias)."""

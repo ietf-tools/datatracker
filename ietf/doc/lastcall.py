@@ -6,7 +6,7 @@ from django.conf import settings
 
 from ietf.doc.models import *
 from ietf.person.models import Person
-from ietf.doc.utils import log_state_changed
+from ietf.doc.utils import add_state_change_event
 from ietf.doc.mails import *
 
 def request_last_call(request, doc):
@@ -36,30 +36,27 @@ def get_expired_last_calls():
 
 def expire_last_call(doc):
     if doc.type_id == 'draft':
-        state = State.objects.get(used=True, type="draft-iesg", slug="writeupw")
+        new_state = State.objects.get(used=True, type="draft-iesg", slug="writeupw")
         e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
         if e and "Relevant content can frequently be found in the abstract" not in e.text:
             # if boiler-plate text has been removed, we assume the
             # write-up has been written
-            state = State.objects.get(used=True, type="draft-iesg", slug="goaheadw")
-        prev = doc.get_state("draft-iesg")
+            new_state = State.objects.get(used=True, type="draft-iesg", slug="goaheadw")
     elif doc.type_id == 'statchg':
-        state = State.objects.get(used=True, type="statchg", slug="goahead")
-        prev = doc.get_state("statchg")
+        new_state = State.objects.get(used=True, type="statchg", slug="goahead")
     else:
         raise ValueError("Unexpected document type to expire_last_call(): %s" % doc.type)
 
-    prev_state = doc.friendly_state()
-
     save_document_in_history(doc)
-    doc.set_state(state)
 
-    prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-    prev_tag = prev_tag[0] if prev_tag else None
-    if prev_tag:
-        doc.tags.remove(prev_tag)
+    prev_state = doc.get_state(new_state.type_id)
+    doc.set_state(new_state)
 
-    e = log_state_changed(None, doc, Person.objects.get(name="(System)"), doc.friendly_state(), prev_state)
+    prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+    doc.tags.remove(*prev_tags)
+
+    system = Person.objects.get(name="(System)")
+    e = add_state_change_event(doc, system, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
                     
     doc.time = e.time
     doc.save()

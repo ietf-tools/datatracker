@@ -10,7 +10,7 @@ from ietf.utils.mail import send_mail, send_mail_subj
 from ietf.doc.models import Document, DocEvent, State, save_document_in_history, IESG_SUBSTATE_TAGS
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting
-from ietf.doc.utils import log_state_changed
+from ietf.doc.utils import add_state_change_event
 
 def expirable_draft(draft):
     """Return whether draft is in an expirable state or not. This is
@@ -122,20 +122,18 @@ def expire_draft(doc):
     # clean up files
     move_draft_files_to_archive(doc, doc.rev)
 
-    # change the state
     system = Person.objects.get(name="(System)")
 
+    # change the state
     save_document_in_history(doc)
     if doc.latest_event(type='started_iesg_process'):
-        dead_state = State.objects.get(used=True, type="draft-iesg", slug="dead")
-        prev_state = doc.friendly_state()
-        prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-        prev_tag = prev_tag[0] if prev_tag else None
-        if doc.get_state("draft-iesg") != dead_state:
-            doc.set_state(dead_state)
-            if prev_tag:
-                doc.tags.remove(prev_tag)
-            log_state_changed(None, doc, system, doc.friendly_state(), prev_state)
+        new_state = State.objects.get(used=True, type="draft-iesg", slug="dead")
+        prev_state = doc.get_state(new_state.type_id)
+        prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+        if new_state != prev_state:
+            doc.set_state(new_state)
+            doc.tags.remove(*prev_tags)
+            e = add_state_change_event(doc, system, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
 
         e = DocEvent(doc=doc, by=system)
         e.type = "expired_document"

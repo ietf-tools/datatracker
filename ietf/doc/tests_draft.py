@@ -67,7 +67,7 @@ class ChangeStateTests(TestCase):
         self.assertTrue(draft.tags.filter(slug="point"))
         self.assertEqual(draft.docevent_set.count(), events_before + 2)
         self.assertTrue("Test comment" in draft.docevent_set.all()[0].desc)
-        self.assertTrue("State changed" in draft.docevent_set.all()[1].desc)
+        self.assertTrue("IESG state changed" in draft.docevent_set.all()[1].desc)
         self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("State Update Notice" in outbox[-2]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
@@ -232,6 +232,10 @@ class EditInfoTests(TestCase):
                     note="",
                     )
 
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
         # add to telechat
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
         data["telechat_date"] = TelechatDate.objects.active()[0].date.isoformat()
@@ -347,6 +351,11 @@ class EditInfoTests(TestCase):
         url = urlreverse('doc_edit_consensus', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        # post
         self.assertTrue(not draft.latest_event(ConsensusDocEvent, type="changed_consensus"))
         r = self.client.post(url, dict(consensus="Yes"))
         self.assertEqual(r.status_code, 302)
