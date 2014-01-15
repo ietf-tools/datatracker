@@ -143,45 +143,38 @@ def state_age_colored(doc):
         if not doc.get_state_slug() in ["active", "rfc"]:
             # Don't show anything for expired/withdrawn/replaced drafts
             return ""
-        main_state = doc.get_state_slug('draft-iesg')
-        if not main_state:
+        iesg_state = doc.get_state_slug('draft-iesg')
+        if not iesg_state:
             return ""
 
-        if main_state in ["dead", "watching", "pub"]:
+        if iesg_state in ["dead", "watching", "pub"]:
             return ""
         try:
             state_date = doc.docevent_set.filter(
-                              Q(desc__istartswith="Draft Added by ")|
-                              Q(desc__istartswith="Draft Added in state ")|
-                              Q(desc__istartswith="Draft added in state ")|
-                              Q(desc__istartswith="IESG state changed to ")|
-                              Q(desc__istartswith="State changed to ")|
-                              Q(desc__istartswith="State Changes to ")|
-                              Q(desc__istartswith="Sub state has been changed to ")|
-                              Q(desc__istartswith="State has been changed to ")|
-                              Q(desc__istartswith="IESG process started in state")
-                          ).order_by('-time')[0].time.date() 
+                              Q(type="started_iesg_process")|
+                              Q(type="changed_state", statedocevent__state_type="draft-iesg")
+            ).order_by('-time')[0].time.date()
         except IndexError:
             state_date = datetime.date(1990,1,1)
         days = (datetime.date.today() - state_date).days
         # loosely based on 
         # http://trac.tools.ietf.org/group/iesg/trac/wiki/PublishPath
-        if main_state == "lc":
+        if iesg_state == "lc":
             goal1 = 30
             goal2 = 30
-        elif main_state == "rfcqueue":
+        elif iesg_state == "rfcqueue":
             goal1 = 60
             goal2 = 120
-        elif main_state in ["lc-req", "ann"]:
+        elif iesg_state in ["lc-req", "ann"]:
             goal1 = 4
             goal2 = 7
         elif 'need-rev' in [x.slug for x in doc.tags.all()]:
             goal1 = 14
             goal2 = 28
-        elif main_state == "pub-req":
+        elif iesg_state == "pub-req":
             goal1 = 7
             goal2 = 14
-        elif main_state == "ad-eval":
+        elif iesg_state == "ad-eval":
             goal1 = 14
             goal2 = 28
         else:
