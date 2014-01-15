@@ -5,6 +5,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponsePermanentRedirect
 from ietf.utils import log
+from ietf.utils.mail import log_smtp_exception
 import re
 import smtplib
 import sys
@@ -21,20 +22,8 @@ class SQLLogMiddleware(object):
 class SMTPExceptionMiddleware(object):
     def process_exception(self, request, exception):
 	if isinstance(exception, smtplib.SMTPException):
-	    type = sys.exc_info()[0]
-	    value = sys.exc_info()[1]
-	    # See if it's a non-smtplib exception that we faked
-	    if type == smtplib.SMTPException and len(value.args) == 1 and isinstance(value.args[0], dict) and value.args[0].has_key('really'):
-		orig = value.args[0]
-		type = orig['really']
-		tb = traceback.format_tb(orig['tb'])
-		value = orig['value']
-	    else:
-		tb = traceback.format_tb(sys.exc_info()[2])
-            log("SMTP Exception: %s" % type)
-            log("SMTP Exception: args: %s" % value)
-            log("SMTP Exception: tb: %s" % tb)
-	    return render_to_response('email_failed.html', {'exception': type, 'args': value, 'traceback': "".join(tb)},
+            (extype, value, tb) = log_smtp_exception(exception)
+	    return render_to_response('email_failed.html', {'exception': extype, 'args': value, 'traceback': "".join(tb)},
 		context_instance=RequestContext(request))
 	return None
 
