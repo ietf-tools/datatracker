@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from ietf.group.models import Group
 from ietf.meeting.models import Session
 
@@ -44,13 +45,14 @@ def get_my_groups(user,conclude=False):
     if conclude:
         states.extend(['conclude','bof-conc'])
     all_groups = Group.objects.filter(type__in=('wg','rg','ag','team'),state__in=states).order_by('acronym')
-    if user == None:
+    
+    if user == None or has_role(user,'Secretariat'):
         return all_groups
-    else:
+    
+    try:
         person = user.get_profile()
-
-    if has_role(user,'Secretariat'):
-        return all_groups
+    except ObjectDoesNotExist:
+        return list()
 
     for group in all_groups:
         if group.role_set.filter(person=person,name__in=('chair','secr')):

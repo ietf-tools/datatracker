@@ -482,12 +482,6 @@ def main(request):
     * meetings, interim_meetings, today
 
     '''
-    # getting numerous errors when people try to access using the wrong account
-    try:
-        person = request.user.get_profile()
-    except Person.DoesNotExist:
-        return HttpResponseForbidden('ACCESS DENIED: user=%s' % request.META['REMOTE_USER'])
-
     if has_role(request.user,'Secretariat'):
         meetings = Meeting.objects.filter(type='ietf').order_by('-number')
     else:
@@ -661,7 +655,11 @@ def select(request, meeting_num):
 
     meeting = get_object_or_404(Meeting, number=meeting_num)
     user = request.user
-    person = user.get_profile()
+    try:
+        person = user.get_profile()
+    except ObjectDoesNotExist:
+        messages.warning(request, 'The account %s is not associated with any groups.  If you have multiple Datatracker accounts you may try another or report a problem to ietf-action@ietf.org' % request.user)
+        return HttpResponseRedirect(reverse('proceedings'))
     groups_session, groups_no_session = groups_by_session(user, meeting)
     proceedings_url = get_proceedings_url(meeting)
 
