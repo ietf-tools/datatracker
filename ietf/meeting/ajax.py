@@ -1,10 +1,11 @@
-from django.utils import simplejson as json
+import json
+
 from django.core.urlresolvers import reverse
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect, HttpResponse, QueryDict
+from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponseRedirect, HttpResponse
 
 from dajaxice.decorators import dajaxice_register
-from ietf.ietfauth.utils import role_required, has_role
+from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.name.models import TimeSlotTypeName
 
 from ietf.meeting.helpers import get_meeting, get_schedule, get_schedule_by_id, agenda_permissions
@@ -12,6 +13,12 @@ from ietf.meeting.views   import edit_timeslots, edit_agenda
 from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint
 
 import debug
+
+def dajaxice_core_js(request):
+    # this is a slightly weird hack to get, we seem to need this because
+    # we're not using the built-in static files support
+    from dajaxice.finders import DajaxiceStorage
+    return HttpResponse(DajaxiceStorage().dajaxice_core_js(), content_type="application/javascript")
 
 @dajaxice_register
 def readonly(request, meeting_num, schedule_id):
@@ -32,13 +39,11 @@ def readonly(request, meeting_num, schedule_id):
     if has_role(user, "Area Director"):
         write_perm  = True
 
-    try:
-        person = user.get_profile()
-        if person is not None and schedule.owner == user.person:
-            read_only = False
-    except:
-        # specific error if user has no profile...
-        pass
+    if user_is_person(user, schedule.owner):
+        read_only = False
+
+    # FIXME: the naming here needs improvement, one can have
+    # read_only == True and write_perm == True?
 
     return json.dumps(
         {'secretariat': secretariat,
@@ -79,7 +84,7 @@ def update_timeslot(request, schedule_id, session_id, scheduledsession_id=None, 
     ess = None
     ss = None
 
-    #print "duplicate: %s schedule.owner: %s user: %s" % (duplicate, schedule.owner, request.user.get_profile())
+    #print "duplicate: %s schedule.owner: %s user: %s" % (duplicate, schedule.owner, request.user.person)
     cansee,canedit = agenda_permissions(meeting, schedule, request.user)
 
     if not canedit:
@@ -103,7 +108,7 @@ def update_timeslot(request, schedule_id, session_id, scheduledsession_id=None, 
 
     if ess_id == 0:
         # if this is None, then we must be moving.
-        for ssO in schedule.scheduledsession_set.filter(session = session):
+        for ssO in schedule.scheduledsession_set.filter(session=session):
             #print "sched(%s): removing session %s from slot %u" % ( schedule, session, ssO.pk )
             #if ssO.extendedfrom is not None:
             #    ssO.extendedfrom.session = None
@@ -120,7 +125,7 @@ def update_timeslot(request, schedule_id, session_id, scheduledsession_id=None, 
         if ss:
             #print "ss.session: %s session:%s duplicate=%s"%(ss, session, duplicate)
             ss.session = session
-            if(duplicate):
+            if duplicate:
                 ss.id = None
             ss.save()
     except Exception:
@@ -161,7 +166,7 @@ def timeslot_roomlist(request, mtg):
     for room in rooms:
         json_array.append(room.json_dict(request.build_absolute_uri('/')))
     return HttpResponse(json.dumps(json_array),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 @role_required('Secretariat')
 def timeslot_addroom(request, meeting):
@@ -175,12 +180,9 @@ def timeslot_addroom(request, meeting):
     newroom.create_timeslots()
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
-        url = reverse(timeslot_roomurl, args=[meeting.number, newroom.pk])
-        #debug.log("Returning timeslot_roomurl: %s " % (url))
-        return HttpResponseRedirect(url)
+        return redirect(timeslot_roomurl, meeting.number, newroom.pk)
     else:
-        return HttpResponseRedirect(
-            reverse(edit_timeslots, args=[meeting.number]))
+        return redirect(edit_timeslots, meeting.number)
 
 @role_required('Secretariat')
 def timeslot_delroom(request, meeting, roomid):
@@ -207,9 +209,9 @@ def timeslot_roomurl(request, num=None, roomid=None):
     if request.method == 'GET':
         room = get_object_or_404(meeting.room_set, pk=roomid)
         return HttpResponse(json.dumps(room.json_dict(request.build_absolute_uri('/'))),
-                            mimetype="application/json")
+                            content_type="application/json")
 # XXX FIXME: timeslot_updroom() doesn't exist
-#    elif request.method == 'PUT':
+#    elif request.method == 'POST':
 #        return timeslot_updroom(request, meeting)
     elif request.method == 'DELETE':
         return timeslot_delroom(request, meeting, roomid)
@@ -226,7 +228,7 @@ def timeslot_slotlist(request, mtg):
     for slot in slots:
         json_array.append(slot.json_dict(request.build_absolute_uri('/')))
     return HttpResponse(json.dumps(json_array),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 @role_required('Secretariat')
 def timeslot_addslot(request, meeting):
@@ -246,11 +248,9 @@ def timeslot_addslot(request, meeting):
     # XXX FIXME: newroom is undefined.  Placeholder:
     newroom = None
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
-        return HttpResponseRedirect(
-            reverse(timeslot_dayurl, args=[meeting.number, newroom.pk]))
+        return redirect(timeslot_dayurl, meeting.number, newroom.pk)
     else:
-        return HttpResponseRedirect(
-            reverse(edit_timeslots, args=[meeting.number]))
+        return redirect(edit_timeslots, meeting.number)
 
 @role_required('Secretariat')
 def timeslot_delslot(request, meeting, slotid):
@@ -277,8 +277,8 @@ def timeslot_sloturl(request, num=None, slotid=None):
     if request.method == 'GET':
         slot = get_object_or_404(meeting.timeslot_set, pk=slotid)
         return HttpResponse(json.dumps(slot.json_dict(request.build_absolute_uri('/'))),
-                            mimetype="application/json")
-    elif request.method == 'PUT':
+                            content_type="application/json")
+    elif request.method == 'POST':
         # not yet implemented!
         #return timeslot_updslot(request, meeting)
         return HttpResponse(status=406)
@@ -298,7 +298,7 @@ def agenda_list(request, mtg):
     for agenda in agendas:
         json_array.append(agenda.json_dict(request.build_absolute_uri('/')))
     return HttpResponse(json.dumps(json_array),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 # duplicates save-as functionality below.
 @role_required('Area Director','Secretariat')
@@ -309,46 +309,42 @@ def agenda_add(request, meeting):
 
     newagenda = newagendaform.save(commit=False)
     newagenda.meeting = meeting
-    newagenda.owner   = request.user.get_profile()
+    newagenda.owner   = request.user.person
     newagenda.save()
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
-        url =  reverse(agenda_infourl, args=[meeting.number, newagenda.name])
-        #debug.log("Returning agenda_infourl: %s " % (url))
-        return HttpResponseRedirect(url)
+        return redirect(agenda_infourl, meeting.number, newagenda.name)
     else:
-        return HttpResponseRedirect(
-            reverse(edit_agenda, args=[meeting.number, newagenda.name]))
+        return redirect(edit_agenda, meeting.number, newagenda.name)
 
 @role_required('Area Director','Secretariat')
 def agenda_update(request, meeting, schedule):
     # forms are completely useless for update actions that want to
-    # accept a subset of values.
-    update_dict = QueryDict(request.raw_post_data, encoding=request._encoding)
+    # accept a subset of values. (huh? we could use required=False)
 
     #debug.log("99 meeting.agenda: %s / %s / %s" %
-    #          (schedule, update_dict, request.raw_post_data))
+    #          (schedule, update_dict, request.body))
 
     user = request.user
     if has_role(user, "Secretariat"):
-        if "public" in update_dict:
+        if "public" in request.POST:
             value1 = True
-            value = update_dict["public"]
+            value = request.POST["public"]
             if value == "0" or value == 0 or value=="false":
                 value1 = False
             #debug.log("setting public for %s to %s" % (schedule, value1))
             schedule.public = value1
 
-    if "visible" in update_dict:
+    if "visible" in request.POST:
         value1 = True
-        value = update_dict["visible"]
+        value = request.POST["visible"]
         if value == "0" or value == 0 or value=="false":
             value1 = False
         #debug.log("setting visible for %s to %s" % (schedule, value1))
         schedule.visible = value1
 
-    if "name" in update_dict:
-        value = update_dict["name"]
+    if "name" in request.POST:
+        value = request.POST["name"]
         #debug.log("setting name for %s to %s" % (schedule, value))
         schedule.name = value
 
@@ -361,10 +357,9 @@ def agenda_update(request, meeting, schedule):
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
-                            mimetype="application/json")
+                            content_type="application/json")
     else:
-        return HttpResponseRedirect(
-            reverse(edit_agenda, args=[meeting.number, schedule.name]))
+        return redirect(edit_agenda, meeting.number, schedule.name)
 
 @role_required('Secretariat')
 def agenda_del(request, meeting, schedule):
@@ -396,8 +391,8 @@ def agenda_infourl(request, num=None, schedule_name=None):
 
     if request.method == 'GET':
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
-                            mimetype="application/json")
-    elif request.method == 'PUT':
+                            content_type="application/json")
+    elif request.method == 'POST':
         return agenda_update(request, meeting, schedule)
     elif request.method == 'DELETE':
         return agenda_del(request, meeting, schedule)
@@ -411,18 +406,17 @@ def agenda_infourl(request, num=None, schedule_name=None):
 def meeting_get(request, meeting):
     return HttpResponse(json.dumps(meeting.json_dict(request.build_absolute_uri('/')),
                                 sort_keys=True, indent=2),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 @role_required('Secretariat')
 def meeting_update(request, meeting):
     # at present, only the official agenda can be updated from this interface.
-    update_dict = QueryDict(request.raw_post_data, encoding=request._encoding)
 
-    #debug.log("1 meeting.agenda: %s / %s / %s" % (meeting.agenda, update_dict, request.raw_post_data))
-    if "agenda" in update_dict:
-        value = update_dict["agenda"]
+    #debug.log("1 meeting.agenda: %s / %s / %s" % (meeting.agenda, update_dict, request.body))
+    if "agenda" in request.POST:
+        value = request.POST["agenda"]
         #debug.log("4 meeting.agenda: %s" % (value))
-        if value is None or value == "None":
+        if not value or value == "None": # value == "None" is just weird, better with empty string
             meeting.agenda = None
         else:
             schedule = get_schedule(meeting, value)
@@ -435,16 +429,13 @@ def meeting_update(request, meeting):
     meeting.save()
     return meeting_get(request, meeting)
 
-def meeting_json(request, meeting_num):
-    meeting = get_meeting(meeting_num)
+def meeting_json(request, num):
+    meeting = get_meeting(num)
 
     if request.method == 'GET':
         return meeting_get(request, meeting)
-    elif request.method == 'PUT':
-        return meeting_update(request, meeting)
     elif request.method == 'POST':
         return meeting_update(request, meeting)
-
     else:
         return HttpResponse(status=406)
 
@@ -462,11 +453,11 @@ def session_json(request, num, sessionid):
 #        return json.dumps({'error':"no such session %s" % sessionid})
         return HttpResponse(json.dumps({'error':"no such session %s" % sessionid}),
                             status = 404,
-                            mimetype="application/json")
+                            content_type="application/json")
 
     sess1 = session.json_dict(request.build_absolute_uri('/'))
     return HttpResponse(json.dumps(sess1, sort_keys=True, indent=2),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 # Would like to cache for 1 day, but there are invalidation issues.
 #@cache_page(86400)
@@ -478,11 +469,11 @@ def constraint_json(request, num, constraintid):
     except Constraint.DoesNotExist:
         return HttpResponse(json.dumps({'error':"no such constraint %s" % constraintid}),
                             status = 404,
-                            mimetype="application/json")
+                            content_type="application/json")
 
     json1 = constraint.json_dict(request.get_host_protocol())
     return HttpResponse(json.dumps(json1, sort_keys=True, indent=2),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 
 # Cache for 2 hour2
@@ -504,7 +495,7 @@ def session_constraints(request, num, sessionid):
                           sort_keys=True, indent=2),
     #print "  gives: %s" % (json_str)
 
-    return HttpResponse(json_str, mimetype="application/json")
+    return HttpResponse(json_str, content_type="application/json")
 
 
 

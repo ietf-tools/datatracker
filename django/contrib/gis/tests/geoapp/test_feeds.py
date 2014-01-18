@@ -1,13 +1,21 @@
+from __future__ import absolute_import
+
 from xml.dom import minidom
+
 from django.conf import settings
 from django.contrib.sites.models import Site
+from django.contrib.gis.geos import HAS_GEOS
+from django.contrib.gis.tests.utils import HAS_SPATIAL_DB
 from django.test import TestCase
+from django.utils.unittest import skipUnless
 
-from models import City
+if HAS_GEOS:
+    from .models import City
 
 
+@skipUnless(HAS_GEOS and HAS_SPATIAL_DB, "Geos and spatial db are required.")
 class GeoFeedTest(TestCase):
-    
+
     urls = 'django.contrib.gis.tests.geoapp.urls'
 
     def setUp(self):
@@ -19,7 +27,7 @@ class GeoFeedTest(TestCase):
         Site._meta.installed = self.old_Site_meta_installed
 
     def assertChildNodes(self, elem, expected):
-        "Taken from regressiontests/syndication/tests.py."
+        "Taken from syndication/tests.py."
         actual = set([n.nodeName for n in elem.childNodes])
         expected = set(expected)
         self.assertEqual(actual, expected)
@@ -41,7 +49,7 @@ class GeoFeedTest(TestCase):
         # Incrementing through the feeds.
         for feed in [feed1, feed2]:
             # Ensuring the georss namespace was added to the <rss> element.
-            self.assertEqual(feed.getAttribute(u'xmlns:georss'),  u'http://www.georss.org/georss')
+            self.assertEqual(feed.getAttribute('xmlns:georss'),  'http://www.georss.org/georss')
             chan = feed.getElementsByTagName('channel')[0]
             items = chan.getElementsByTagName('item')
             self.assertEqual(len(items), City.objects.count())
@@ -61,7 +69,7 @@ class GeoFeedTest(TestCase):
 
         for feed in [feed1, feed2]:
             # Ensuring the georsss namespace was added to the <feed> element.
-            self.assertEqual(feed.getAttribute(u'xmlns:georss'),  u'http://www.georss.org/georss')
+            self.assertEqual(feed.getAttribute('xmlns:georss'),  'http://www.georss.org/georss')
             entries = feed.getElementsByTagName('entry')
             self.assertEqual(len(entries), City.objects.count())
 
@@ -74,7 +82,7 @@ class GeoFeedTest(TestCase):
         doc = minidom.parseString(self.client.get('/feeds/w3cgeo1/').content)
         feed = doc.firstChild
         # Ensuring the geo namespace was added to the <feed> element.
-        self.assertEqual(feed.getAttribute(u'xmlns:geo'), u'http://www.w3.org/2003/01/geo/wgs84_pos#')
+        self.assertEqual(feed.getAttribute('xmlns:geo'), 'http://www.w3.org/2003/01/geo/wgs84_pos#')
         chan = feed.getElementsByTagName('channel')[0]
         items = chan.getElementsByTagName('item')
         self.assertEqual(len(items), City.objects.count())

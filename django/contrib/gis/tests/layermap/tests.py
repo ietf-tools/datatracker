@@ -1,31 +1,45 @@
+# coding: utf-8
+from __future__ import absolute_import, unicode_literals
+
 import os
-import unittest
+from copy import copy
 from decimal import Decimal
 
-from django.utils.copycompat import copy
+from django.contrib.gis.gdal import HAS_GDAL
+from django.contrib.gis.tests.utils import HAS_SPATIAL_DB, mysql
+from django.db import router
+from django.conf import settings
+from django.test import TestCase
+from django.utils import unittest
+from django.utils.unittest import skipUnless
+from django.utils._os import upath
 
-from django.contrib.gis.gdal import DataSource, OGRException
-from django.contrib.gis.tests.utils import mysql
-from django.contrib.gis.utils.layermapping import LayerMapping, LayerMapError, InvalidDecimal, MissingForeignKey
+if HAS_GDAL:
+    from django.contrib.gis.utils.layermapping import (LayerMapping,
+        LayerMapError, InvalidDecimal, MissingForeignKey)
+    from django.contrib.gis.gdal import DataSource
 
-from models import \
-    City, County, CountyFeat, Interstate, ICity1, ICity2, Invalid, State, \
-    city_mapping, co_mapping, cofeat_mapping, inter_mapping
+    from .models import (
+        City, County, CountyFeat, Interstate, ICity1, ICity2, Invalid, State,
+        city_mapping, co_mapping, cofeat_mapping, inter_mapping)
 
-shp_path = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data'))
+
+shp_path = os.path.realpath(os.path.join(os.path.dirname(upath(__file__)), os.pardir, 'data'))
 city_shp = os.path.join(shp_path, 'cities', 'cities.shp')
 co_shp = os.path.join(shp_path, 'counties', 'counties.shp')
 inter_shp = os.path.join(shp_path, 'interstates', 'interstates.shp')
 invalid_shp = os.path.join(shp_path, 'invalid', 'emptypoints.shp')
 
-# Dictionaries to hold what's expected in the county shapefile.  
+# Dictionaries to hold what's expected in the county shapefile.
 NAMES  = ['Bexar', 'Galveston', 'Harris', 'Honolulu', 'Pueblo']
-NUMS   = [1, 2, 1, 19, 1] # Number of polygons for each.                                                                                                                                                  
+NUMS   = [1, 2, 1, 19, 1] # Number of polygons for each.
 STATES = ['Texas', 'Texas', 'Texas', 'Hawaii', 'Colorado']
 
-class LayerMapTest(unittest.TestCase):
 
-    def test01_init(self):
+@skipUnless(HAS_GDAL and HAS_SPATIAL_DB, "GDAL and spatial db are required.")
+class LayerMapTest(TestCase):
+
+    def test_init(self):
         "Testing LayerMapping initialization."
 
         # Model field that does not exist.
@@ -43,22 +57,14 @@ class LayerMapTest(unittest.TestCase):
         # Incrementing through the bad mapping dictionaries and
         # ensuring that a LayerMapError is raised.
         for bad_map in (bad1, bad2, bad3):
-            try:
+            with self.assertRaises(LayerMapError):
                 lm = LayerMapping(City, city_shp, bad_map)
-            except LayerMapError:
-                pass
-            else:
-                self.fail('Expected a LayerMapError.')
 
         # A LookupError should be thrown for bogus encodings.
-        try:
+        with self.assertRaises(LookupError):
             lm = LayerMapping(City, city_shp, city_mapping, encoding='foobar')
-        except LookupError:
-            pass
-        else:
-            self.fail('Expected a LookupError')
 
-    def test02_simple_layermap(self):
+    def test_simple_layermap(self):
         "Test LayerMapping import of a simple point shapefile."
         # Setting up for the LayerMapping.
         lm = LayerMapping(City, city_shp, city_mapping)
@@ -79,21 +85,17 @@ class LayerMapTest(unittest.TestCase):
 
             # Comparing the geometries.
             pnt1, pnt2 = feat.geom, city.point
-            self.assertAlmostEqual(pnt1.x, pnt2.x, 6)
-            self.assertAlmostEqual(pnt1.y, pnt2.y, 6)
+            self.assertAlmostEqual(pnt1.x, pnt2.x, 5)
+            self.assertAlmostEqual(pnt1.y, pnt2.y, 5)
 
-    def test03_layermap_strict(self):
+    def test_layermap_strict(self):
         "Testing the `strict` keyword, and import of a LineString shapefile."
         # When the `strict` keyword is set an error encountered will force
         # the importation to stop.
-        try:
+        with self.assertRaises(InvalidDecimal):
             lm = LayerMapping(Interstate, inter_shp, inter_mapping)
             lm.save(silent=True, strict=True)
-        except InvalidDecimal:
-            # No transactions for geoms on MySQL; delete added features.
-            if mysql: Interstate.objects.all().delete()
-        else:
-            self.fail('Should have failed on strict import with invalid decimal values.')
+        Interstate.objects.all().delete()
 
         # This LayerMapping should work b/c `strict` is not set.
         lm = LayerMapping(Interstate, inter_shp, inter_mapping)
@@ -101,7 +103,7 @@ class LayerMapTest(unittest.TestCase):
 
         # Two interstate should have imported correctly.
         self.assertEqual(2, Interstate.objects.count())
-        
+
         # Verifying the values in the layer w/the model.
         ds = DataSource(inter_shp)
 
@@ -109,7 +111,7 @@ class LayerMapTest(unittest.TestCase):
         valid_feats = ds[0][:2]
         for feat in valid_feats:
             istate = Interstate.objects.get(name=feat['Name'].value)
-            
+
             if feat.fid == 0:
                 self.assertEqual(Decimal(str(feat['Length'])), istate.length)
             elif feat.fid == 1:
@@ -128,19 +130,19 @@ class LayerMapTest(unittest.TestCase):
             c = County.objects.get(name=name)
             self.assertEqual(n, len(c.mpoly))
             self.assertEqual(st, c.state.name) # Checking ForeignKey mapping.
-            
+
             # Multiple records because `unique` was not set.
             if county_feat:
                 qs = CountyFeat.objects.filter(name=name)
                 self.assertEqual(n, qs.count())
 
-    def test04_layermap_unique_multigeometry_fk(self):
+    def test_layermap_unique_multigeometry_fk(self):
         "Testing the `unique`, and `transform`, geometry collection conversion, and ForeignKey mappings."
         # All the following should work.
         try:
             # Telling LayerMapping that we want no transformations performed on the data.
             lm = LayerMapping(County, co_shp, co_mapping, transform=False)
-        
+
             # Specifying the source spatial reference system via the `source_srs` keyword.
             lm = LayerMapping(County, co_shp, co_mapping, source_srs=4269)
             lm = LayerMapping(County, co_shp, co_mapping, source_srs='NAD83')
@@ -150,7 +152,7 @@ class LayerMapTest(unittest.TestCase):
                 lm = LayerMapping(County, co_shp, co_mapping, transform=False, unique=arg)
         except:
             self.fail('No exception should be raised for proper use of keywords.')
-            
+
         # Testing invalid params for the `unique` keyword.
         for e, arg in ((TypeError, 5.0), (ValueError, 'foobar'), (ValueError, ('name', 'mpolygon'))):
             self.assertRaises(e, LayerMapping, County, co_shp, co_mapping, transform=False, unique=arg)
@@ -173,18 +175,19 @@ class LayerMapTest(unittest.TestCase):
         self.assertRaises(MissingForeignKey, lm.save, silent=True, strict=True)
 
         # Now creating the state models so the ForeignKey mapping may work.
-        co, hi, tx = State(name='Colorado'), State(name='Hawaii'), State(name='Texas')
-        co.save(), hi.save(), tx.save()
+        State.objects.bulk_create([
+            State(name='Colorado'), State(name='Hawaii'), State(name='Texas')
+        ])
 
         # If a mapping is specified as a collection, all OGR fields that
         # are not collections will be converted into them.  For example,
         # a Point column would be converted to MultiPoint. Other things being done
         # w/the keyword args:
-        #  `transform=False`: Specifies that no transform is to be done; this 
+        #  `transform=False`: Specifies that no transform is to be done; this
         #    has the effect of ignoring the spatial reference check (because the
         #    county shapefile does not have implicit spatial reference info).
-        # 
-        #  `unique='name'`: Creates models on the condition that they have 
+        #
+        #  `unique='name'`: Creates models on the condition that they have
         #    unique county names; geometries from each feature however will be
         #    appended to the geometry collection of the unique model.  Thus,
         #    all of the various islands in Honolulu county will be in in one
@@ -200,25 +203,28 @@ class LayerMapTest(unittest.TestCase):
         # The county helper is called to ensure integrity of County models.
         self.county_helper()
 
-    def test05_test_fid_range_step(self):
+    def test_test_fid_range_step(self):
         "Tests the `fid_range` keyword and the `step` keyword of .save()."
         # Function for clearing out all the counties before testing.
         def clear_counties(): County.objects.all().delete()
-        
+
+        State.objects.bulk_create([
+            State(name='Colorado'), State(name='Hawaii'), State(name='Texas')
+        ])
+
         # Initializing the LayerMapping object to use in these tests.
         lm = LayerMapping(County, co_shp, co_mapping, transform=False, unique='name')
 
         # Bad feature id ranges should raise a type error.
-        clear_counties()
         bad_ranges = (5.0, 'foo', co_shp)
         for bad in bad_ranges:
             self.assertRaises(TypeError, lm.save, fid_range=bad)
 
         # Step keyword should not be allowed w/`fid_range`.
         fr = (3, 5) # layer[3:5]
-        self.assertRaises(LayerMapError, lm.save, fid_range=fr, step=10) 
+        self.assertRaises(LayerMapError, lm.save, fid_range=fr, step=10)
         lm.save(fid_range=fr)
-        
+
         # Features IDs 3 & 4 are for Galveston County, Texas -- only
         # one model is returned because the `unique` keyword was set.
         qs = County.objects.all()
@@ -232,14 +238,16 @@ class LayerMapTest(unittest.TestCase):
         lm.save(fid_range=slice(None, 1), silent=True, strict=True) # layer[:1]
 
         # Only Pueblo & Honolulu counties should be present because of
-        # the `unique` keyword.  Have to set `order_by` on this QuerySet 
+        # the `unique` keyword.  Have to set `order_by` on this QuerySet
         # or else MySQL will return a different ordering than the other dbs.
-        qs = County.objects.order_by('name') 
+        qs = County.objects.order_by('name')
         self.assertEqual(2, qs.count())
         hi, co = tuple(qs)
         hi_idx, co_idx = tuple(map(NAMES.index, ('Honolulu', 'Pueblo')))
-        self.assertEqual('Pueblo', co.name); self.assertEqual(NUMS[co_idx], len(co.mpoly))
-        self.assertEqual('Honolulu', hi.name); self.assertEqual(NUMS[hi_idx], len(hi.mpoly))
+        self.assertEqual('Pueblo', co.name)
+        self.assertEqual(NUMS[co_idx], len(co.mpoly))
+        self.assertEqual('Honolulu', hi.name)
+        self.assertEqual(NUMS[hi_idx], len(hi.mpoly))
 
         # Testing the `step` keyword -- should get the same counties
         # regardless of we use a step that divides equally, that is odd,
@@ -249,7 +257,7 @@ class LayerMapTest(unittest.TestCase):
             lm.save(step=st, strict=True)
             self.county_helper(county_feat=False)
 
-    def test06_model_inheritance(self):
+    def test_model_inheritance(self):
         "Tests LayerMapping on inherited models.  See #12093."
         icity_mapping = {'name' : 'Name',
                          'population' : 'Population',
@@ -269,10 +277,55 @@ class LayerMapTest(unittest.TestCase):
         self.assertEqual(6, ICity1.objects.count())
         self.assertEqual(3, ICity2.objects.count())
 
-    def test07_invalid_layer(self):
+    def test_invalid_layer(self):
         "Tests LayerMapping on invalid geometries.  See #15378."
         invalid_mapping = {'point': 'POINT'}
         lm = LayerMapping(Invalid, invalid_shp, invalid_mapping,
                           source_srs=4326)
         lm.save(silent=True)
 
+    def test_textfield(self):
+        "Tests that String content fits also in a TextField"
+        mapping = copy(city_mapping)
+        mapping['name_txt'] = 'Name'
+        lm = LayerMapping(City, city_shp, mapping)
+        lm.save(silent=True, strict=True)
+        self.assertEqual(City.objects.count(), 3)
+        self.assertEqual(City.objects.all().order_by('name_txt')[0].name_txt, "Houston")
+
+    def test_encoded_name(self):
+        """ Test a layer containing utf-8-encoded name """
+        city_shp = os.path.join(shp_path, 'ch-city', 'ch-city.shp')
+        lm = LayerMapping(City, city_shp, city_mapping)
+        lm.save(silent=True, strict=True)
+        self.assertEqual(City.objects.count(), 1)
+        self.assertEqual(City.objects.all()[0].name, "Zürich")
+
+class OtherRouter(object):
+    def db_for_read(self, model, **hints):
+        return 'other'
+
+    def db_for_write(self, model, **hints):
+        return self.db_for_read(model, **hints)
+
+    def allow_relation(self, obj1, obj2, **hints):
+        return None
+
+    def allow_syncdb(self, db, model):
+        return True
+
+
+@skipUnless(HAS_GDAL and HAS_SPATIAL_DB, "GDAL and spatial db are required.")
+class LayerMapRouterTest(TestCase):
+
+    def setUp(self):
+        self.old_routers = router.routers
+        router.routers = [OtherRouter()]
+
+    def tearDown(self):
+        router.routers = self.old_routers
+
+    @unittest.skipUnless(len(settings.DATABASES) > 1, 'multiple databases required')
+    def test_layermapping_default_db(self):
+        lm = LayerMapping(City, city_shp, city_mapping)
+        self.assertEqual(lm.using, 'other')

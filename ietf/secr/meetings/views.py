@@ -6,10 +6,9 @@ from django.db.models import Max, Min, Q
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory, modelformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.utils.functional import curry
-from django.utils import simplejson
 
 from ietf.utils.mail import send_mail
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, Schedule, ScheduledSession
@@ -28,6 +27,7 @@ from forms import *
 
 import os
 import datetime
+import json
 
 # prep for agenda changes
 # --------------------------------------------------
@@ -165,7 +165,7 @@ def send_notification(request, sessions):
     '''
     group = sessions[0].group
     to_email = sessions[0].requested_by.role_email('chair').address
-    cc_list = get_cc_list(group, request.user.get_profile())
+    cc_list = get_cc_list(group, request.user.person)
     from_email = ('"IETF Secretariat"','agenda@ietf.org')
     if sessions.count() == 1:
         subject = '%s - Requested session has been scheduled for IETF %s' % (group.acronym, sessions[0].meeting.number)
@@ -240,7 +240,7 @@ def ajax_get_times(request, meeting_id, day):
         d = {'id': slot.time.strftime('%H%M'), 'value': '%s-%s' % (slot.time.strftime('%H%M'), slot.end_time().strftime('%H%M'))}
         results.append(d)
 
-    return HttpResponse(simplejson.dumps(results), mimetype='application/javascript')
+    return HttpResponse(json.dumps(results), content_type='application/javascript')
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
@@ -260,8 +260,7 @@ def add(request):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('meetings')
-            return HttpResponseRedirect(url)
+            return redirect('meetings')
 
         form = MeetingModelForm(request.POST)
         if form.is_valid():
@@ -271,8 +270,7 @@ def add(request):
             make_directories(meeting)
 
             messages.success(request, 'The Meeting was created successfully!')
-            url = reverse('meetings')
-            return HttpResponseRedirect(url)
+            return redirect('meetings')
     else:
         # display initial forms
         max_number = Meeting.objects.filter(type='ietf').aggregate(Max('number'))['number__max']
@@ -297,9 +295,7 @@ def blue_sheet(request, meeting_id):
             file = request.FILES['file']
             handle_upload_file(file,file.name,meeting,'bluesheets')
             messages.success(request, 'File Uploaded')
-            url = reverse('meetings_blue_sheet', kwargs={'meeting_id':meeting.number})
-            return HttpResponseRedirect(url)
-
+            return redirect('meetings_blue_sheet', meeting_id=meeting.number)
     else:
         form = UploadBlueSheetForm()
 
@@ -320,8 +316,7 @@ def blue_sheet_generate(request, meeting_id):
     create_blue_sheets(meeting, groups)
 
     messages.success(request, 'Blue Sheets generated')
-    url = reverse('meetings_blue_sheet', kwargs={'meeting_id':meeting.number})
-    return HttpResponseRedirect(url)
+    return redirect('meetings_blue_sheet', meeting_id=meeting.number)
 
 def blue_sheet_redirect(request):
     '''
@@ -334,8 +329,7 @@ def blue_sheet_redirect(request):
         meeting = qs[0]
     else:
         meeting = Meeting.objects.filter(type='ietf').order_by('-date')[0]
-    url = reverse('meetings_blue_sheet', kwargs={'meeting_id':meeting.number})
-    return HttpResponseRedirect(url)
+    return redirect('meetings_blue_sheet', meeting_id=meeting.number)
 
 def edit_meeting(request, meeting_id):
     '''
@@ -359,12 +353,10 @@ def edit_meeting(request, meeting_id):
             if form.is_valid():
                 form.save()
                 messages.success(request,'The meeting entry was changed successfully')
-                url = reverse('meetings_view', kwargs={'meeting_id':meeting_id})
-                return HttpResponseRedirect(url)
+                return redirect('meetings_view', meeting_id=meeting_id)
 
         else:
-            url = reverse('meetings_view', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
+            return redirect('meetings_view', meeting_id=meeting_id)
     else:
         form = MeetingModelForm(instance=meeting)
 
@@ -381,8 +373,7 @@ def main(request):
     meetings = Meeting.objects.filter(type='ietf').order_by('-number')
 
     if request.method == 'POST':
-        redirect_url = reverse('meetings_view', kwargs={'meeting_id':request.POST['group']})
-        return HttpResponseRedirect(redirect_url)
+        return redirect('meetings_view', meeting_id=request.POST['group'])
 
     choices = [ (str(x.number),str(x.number)) for x in meetings ]
     form = GroupSelectForm(choices=choices)
@@ -445,8 +436,7 @@ def non_session(request, meeting_id):
                                             schedule=meeting.agenda)
 
             messages.success(request, 'Non-Sessions updated successfully')
-            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
+            return redirect('meetings_non_session', meeting_id=meeting_id)
     else:
         form = NonSessionForm(initial={'show_location':True})
 
@@ -471,16 +461,14 @@ def non_session_delete(request, meeting_id, slot_id):
         session = get_session(slot)
         if session and session.materials.exclude(states__slug='deleted'):
             messages.error(request, 'Materials have already been uploaded for "%s".  You must delete those before deleting the timeslot.' % slot.name)
-            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
+            return redirect('meetings_non_session', meeting_id=meeting_id)
 
         else:
             slot.sessions.all().delete()
     slot.delete()
 
     messages.success(request, 'Non-Session timeslot deleted successfully')
-    url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
-    return HttpResponseRedirect(url)
+    return redirect('meetings_non_session', meeting_id=meeting_id)
 
 def non_session_edit(request, meeting_id, slot_id):
     '''
@@ -493,8 +481,7 @@ def non_session_edit(request, meeting_id, slot_id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
+            return redirect('meetings_non_session', meeting_id=meeting_id)
 
         form = NonSessionEditForm(request.POST,meeting=meeting, session=session)
         if form.is_valid():
@@ -512,8 +499,7 @@ def non_session_edit(request, meeting_id, slot_id):
             session.save()
 
             messages.success(request, 'Location saved')
-            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
+            return redirect('meetings_non_session', meeting_id=meeting_id)
 
     else:
         # we need to pass the session to the form in order to disallow changing
@@ -552,8 +538,7 @@ def remove_session(request, meeting_id, acronym):
         session.save()
 
     messages.success(request, '%s Session removed from agenda' % (group.acronym))
-    url = reverse('meetings_select_group', kwargs={'meeting_id':meeting.number})
-    return HttpResponseRedirect(url)
+    return redirect('meetings_select_group', meeting_id=meeting.number)
 
 def rooms(request, meeting_id):
     '''
@@ -569,8 +554,7 @@ def rooms(request, meeting_id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('meetings', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
+            return redirect('meetings', meeting_id=meeting_id)
 
         formset = RoomFormset(request.POST, instance=meeting, prefix='room')
         if formset.is_valid():
@@ -588,8 +572,7 @@ def rooms(request, meeting_id):
                         build_timeslots(meeting,room=form.instance)
 
             messages.success(request, 'Meeting Rooms changed successfully')
-            url = reverse('meetings_rooms', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
+            return redirect('meetings_rooms', meeting_id=meeting_id)
     else:
         formset = RoomFormset(instance=meeting, prefix='room')
 
@@ -634,8 +617,7 @@ def schedule(request, meeting_id, acronym):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
+            return redirect('meetings_select_group', meeting_id=meeting_id)
 
         formset = NewSessionFormset(request.POST,initial=initial)
         extra_form = ExtraSessionForm(request.POST)
@@ -710,8 +692,7 @@ def schedule(request, meeting_id, acronym):
             if has_changed:
                 messages.success(request, 'Session(s) Scheduled for %s.  %s' %  (group.acronym, notification_message))
 
-            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
+            return redirect('meetings_select_group', meeting_id=meeting_id)
 
 
     else:
@@ -810,8 +791,7 @@ def times(request, meeting_id):
             # assert False, (new_time, time_seen)
             if new_time in time_seen:
                 messages.error(request, 'There is already a timeslot for %s.  To change you must delete the old one first.' % new_time.strftime('%a %H:%M'))
-                url = reverse('meetings_times', kwargs={'meeting_id':meeting_id})
-                return HttpResponseRedirect(url)
+                return redirect('meetings_times', meeting_id=meeting_id)
 
             for room in meeting.room_set.all():
                 ts = TimeSlot.objects.create(type_id='session',
@@ -823,8 +803,7 @@ def times(request, meeting_id):
                 ScheduledSession.objects.create(schedule=meeting.agenda,timeslot=ts)
 
             messages.success(request, 'Timeslots created')
-            url = reverse('meetings_times', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
+            return redirect('meetings_times', meeting_id=meeting_id)
 
     else:
         form = TimeSlotForm()
@@ -851,14 +830,12 @@ def times_delete(request, meeting_id, time):
 
     if qs:
         messages.error(request, 'ERROR deleting timeslot.  There is one or more sessions scheduled for this timeslot.')
-        url = reverse('meetings_times', kwargs={'meeting_id':meeting_id})
-        return HttpResponseRedirect(url)
+        return redirect('meetings_times', meeting_id=meeting_id)
 
     TimeSlot.objects.filter(meeting=meeting,time=dtime).delete()
 
     messages.success(request, 'Timeslot deleted')
-    url = reverse('meetings_times', kwargs={'meeting_id':meeting_id})
-    return HttpResponseRedirect(url)
+    return redirect('meetings_times', meeting_id=meeting_id)
 
 def view(request, meeting_id):
     '''

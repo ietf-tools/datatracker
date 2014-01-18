@@ -3,7 +3,7 @@
 {% block title %}Resurrect {{ doc }}{% endblock %}
 
 {% block content %}
-<form action="" method="POST">
+<form action="" method="post">{% csrf_token %}
   <h1>Resurrect {{ doc }}</h1>
   
   <p>Resurrect {{ doc.file_tag }}?</p>

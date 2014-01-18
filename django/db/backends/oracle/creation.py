@@ -1,5 +1,9 @@
-import sys, time
+import sys
+import time
+
+from django.conf import settings
 from django.db.backends.creation import BaseDatabaseCreation
+from django.utils.six.moves import input
 
 TEST_DATABASE_PREFIX = 'test_'
 PASSWORD = 'Im_a_lumberjack'
@@ -15,6 +19,7 @@ class DatabaseCreation(BaseDatabaseCreation):
 
     data_types = {
         'AutoField':                    'NUMBER(11)',
+        'BinaryField':                  'BLOB',
         'BooleanField':                 'NUMBER(1) CHECK (%(qn_column)s IN (0,1))',
         'CharField':                    'NVARCHAR2(%(max_length)s)',
         'CommaSeparatedIntegerField':   'VARCHAR2(%(max_length)s)',
@@ -27,6 +32,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         'IntegerField':                 'NUMBER(11)',
         'BigIntegerField':              'NUMBER(19)',
         'IPAddressField':               'VARCHAR2(15)',
+        'GenericIPAddressField':        'VARCHAR2(39)',
         'NullBooleanField':             'NUMBER(1) CHECK ((%(qn_column)s IN (0,1)) OR (%(qn_column)s IS NULL))',
         'OneToOneField':                'NUMBER(11)',
         'PositiveIntegerField':         'NUMBER(11) CHECK (%(qn_column)s >= 0)',
@@ -39,7 +45,6 @@ class DatabaseCreation(BaseDatabaseCreation):
     }
 
     def __init__(self, connection):
-        self.remember = {}
         super(DatabaseCreation, self).__init__(connection)
 
     def _create_test_db(self, verbosity=1, autoclobber=False):
@@ -57,72 +62,58 @@ class DatabaseCreation(BaseDatabaseCreation):
             'tblspace_temp': TEST_TBLSPACE_TMP,
         }
 
-        self.remember['user'] = self.connection.settings_dict['USER']
-        self.remember['passwd'] = self.connection.settings_dict['PASSWORD']
-
         cursor = self.connection.cursor()
         if self._test_database_create():
-            if verbosity >= 1:
-                print 'Creating test database...'
             try:
                 self._execute_test_db_creation(cursor, parameters, verbosity)
-            except Exception, e:
+            except Exception as e:
                 sys.stderr.write("Got an error creating the test database: %s\n" % e)
                 if not autoclobber:
-                    confirm = raw_input("It appears the test database, %s, already exists. Type 'yes' to delete it, or 'no' to cancel: " % TEST_NAME)
+                    confirm = input("It appears the test database, %s, already exists. Type 'yes' to delete it, or 'no' to cancel: " % TEST_NAME)
                 if autoclobber or confirm == 'yes':
                     try:
                         if verbosity >= 1:
-                            print "Destroying old test database..."
+                            print("Destroying old test database '%s'..." % self.connection.alias)
                         self._execute_test_db_destruction(cursor, parameters, verbosity)
-                        if verbosity >= 1:
-                            print "Creating test database..."
                         self._execute_test_db_creation(cursor, parameters, verbosity)
-                    except Exception, e:
+                    except Exception as e:
                         sys.stderr.write("Got an error recreating the test database: %s\n" % e)
                         sys.exit(2)
                 else:
-                    print "Tests cancelled."
+                    print("Tests cancelled.")
                     sys.exit(1)
 
         if self._test_user_create():
             if verbosity >= 1:
-                print "Creating test user..."
+                print("Creating test user...")
             try:
                 self._create_test_user(cursor, parameters, verbosity)
-            except Exception, e:
+            except Exception as e:
                 sys.stderr.write("Got an error creating the test user: %s\n" % e)
                 if not autoclobber:
-                    confirm = raw_input("It appears the test user, %s, already exists. Type 'yes' to delete it, or 'no' to cancel: " % TEST_USER)
+                    confirm = input("It appears the test user, %s, already exists. Type 'yes' to delete it, or 'no' to cancel: " % TEST_USER)
                 if autoclobber or confirm == 'yes':
                     try:
                         if verbosity >= 1:
-                            print "Destroying old test user..."
+                            print("Destroying old test user...")
                         self._destroy_test_user(cursor, parameters, verbosity)
                         if verbosity >= 1:
-                            print "Creating test user..."
+                            print("Creating test user...")
                         self._create_test_user(cursor, parameters, verbosity)
-                    except Exception, e:
+                    except Exception as e:
                         sys.stderr.write("Got an error recreating the test user: %s\n" % e)
                         sys.exit(2)
                 else:
-                    print "Tests cancelled."
+                    print("Tests cancelled.")
                     sys.exit(1)
 
-        self.connection.settings_dict['TEST_USER'] = self.connection.settings_dict["USER"] = TEST_USER
-        self.connection.settings_dict["PASSWORD"] = TEST_PASSWD
+        real_settings = settings.DATABASES[self.connection.alias]
+        real_settings['SAVED_USER'] = self.connection.settings_dict['SAVED_USER'] = self.connection.settings_dict['USER']
+        real_settings['SAVED_PASSWORD'] = self.connection.settings_dict['SAVED_PASSWORD'] = self.connection.settings_dict['PASSWORD']
+        real_settings['TEST_USER'] = real_settings['USER'] = self.connection.settings_dict['TEST_USER'] = self.connection.settings_dict['USER'] = TEST_USER
+        real_settings['PASSWORD'] = self.connection.settings_dict['PASSWORD'] = TEST_PASSWD
 
         return self.connection.settings_dict['NAME']
-
-    def test_db_signature(self):
-        settings_dict = self.connection.settings_dict
-        return (
-            settings_dict['HOST'],
-            settings_dict['PORT'],
-            settings_dict['ENGINE'],
-            settings_dict['NAME'],
-            self._test_database_user(),
-        )
 
     def _destroy_test_db(self, test_database_name, verbosity=1):
         """
@@ -135,8 +126,8 @@ class DatabaseCreation(BaseDatabaseCreation):
         TEST_TBLSPACE = self._test_database_tblspace()
         TEST_TBLSPACE_TMP = self._test_database_tblspace_tmp()
 
-        self.connection.settings_dict["USER"] = self.remember['user']
-        self.connection.settings_dict["PASSWORD"] = self.remember['passwd']
+        self.connection.settings_dict['USER'] = self.connection.settings_dict['SAVED_USER']
+        self.connection.settings_dict['PASSWORD'] = self.connection.settings_dict['SAVED_PASSWORD']
 
         parameters = {
             'dbname': TEST_NAME,
@@ -150,17 +141,17 @@ class DatabaseCreation(BaseDatabaseCreation):
         time.sleep(1) # To avoid "database is being accessed by other users" errors.
         if self._test_user_create():
             if verbosity >= 1:
-                print 'Destroying test user...'
+                print('Destroying test user...')
             self._destroy_test_user(cursor, parameters, verbosity)
         if self._test_database_create():
             if verbosity >= 1:
-                print 'Destroying test database tables...'
+                print('Destroying test database tables...')
             self._execute_test_db_destruction(cursor, parameters, verbosity)
         self.connection.close()
 
     def _execute_test_db_creation(self, cursor, parameters, verbosity):
         if verbosity >= 2:
-            print "_create_test_db(): dbname = %s" % parameters['dbname']
+            print("_create_test_db(): dbname = %s" % parameters['dbname'])
         statements = [
             """CREATE TABLESPACE %(tblspace)s
                DATAFILE '%(tblspace)s.dbf' SIZE 20M
@@ -175,12 +166,13 @@ class DatabaseCreation(BaseDatabaseCreation):
 
     def _create_test_user(self, cursor, parameters, verbosity):
         if verbosity >= 2:
-            print "_create_test_user(): username = %s" % parameters['user']
+            print("_create_test_user(): username = %s" % parameters['user'])
         statements = [
             """CREATE USER %(user)s
                IDENTIFIED BY %(password)s
                DEFAULT TABLESPACE %(tblspace)s
                TEMPORARY TABLESPACE %(tblspace_temp)s
+               QUOTA UNLIMITED ON %(tblspace)s
             """,
             """GRANT CONNECT, RESOURCE TO %(user)s""",
         ]
@@ -188,7 +180,7 @@ class DatabaseCreation(BaseDatabaseCreation):
 
     def _execute_test_db_destruction(self, cursor, parameters, verbosity):
         if verbosity >= 2:
-            print "_execute_test_db_destruction(): dbname=%s" % parameters['dbname']
+            print("_execute_test_db_destruction(): dbname=%s" % parameters['dbname'])
         statements = [
             'DROP TABLESPACE %(tblspace)s INCLUDING CONTENTS AND DATAFILES CASCADE CONSTRAINTS',
             'DROP TABLESPACE %(tblspace_temp)s INCLUDING CONTENTS AND DATAFILES CASCADE CONSTRAINTS',
@@ -197,8 +189,8 @@ class DatabaseCreation(BaseDatabaseCreation):
 
     def _destroy_test_user(self, cursor, parameters, verbosity):
         if verbosity >= 2:
-            print "_destroy_test_user(): user=%s" % parameters['user']
-            print "Be patient.  This can take some time..."
+            print("_destroy_test_user(): user=%s" % parameters['user'])
+            print("Be patient.  This can take some time...")
         statements = [
             'DROP USER %(user)s CASCADE',
         ]
@@ -208,10 +200,10 @@ class DatabaseCreation(BaseDatabaseCreation):
         for template in statements:
             stmt = template % parameters
             if verbosity >= 2:
-                print stmt
+                print(stmt)
             try:
                 cursor.execute(stmt)
-            except Exception, err:
+            except Exception as err:
                 sys.stderr.write("Failed (%s)\n" % (err))
                 raise
 
@@ -265,3 +257,21 @@ class DatabaseCreation(BaseDatabaseCreation):
         except KeyError:
             pass
         return name
+
+    def _get_test_db_name(self):
+        """
+        We need to return the 'production' DB name to get the test DB creation
+        machinery to work. This isn't a great deal in this case because DB
+        names as handled by Django haven't real counterparts in Oracle.
+        """
+        return self.connection.settings_dict['NAME']
+
+    def test_db_signature(self):
+        settings_dict = self.connection.settings_dict
+        return (
+            settings_dict['HOST'],
+            settings_dict['PORT'],
+            settings_dict['ENGINE'],
+            settings_dict['NAME'],
+            self._test_database_user(),
+        )

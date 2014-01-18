@@ -1,1 +1,0 @@
-from persons import PersonFetchTestCase

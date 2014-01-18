@@ -103,7 +103,7 @@ class LiaisonTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(liaison.title in r.content)
 
-        r = self.client.get('/feed/liaison/from/%s/' % liaison.from_group.acronym)
+        r = self.client.get('/feed/liaison/from/%s/' % liaison.from_group.name)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(liaison.title in r.content)
 

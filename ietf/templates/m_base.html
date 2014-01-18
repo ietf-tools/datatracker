@@ -10,11 +10,11 @@
 	<!-- Project Revision {{ revision_num }}, {{ revision_time }} -->
 	<title>{% block title %}IETF Data{% endblock %}</title>
 	<meta name="viewport" content="width=320; " />
-	{% ifnotequal server_mode "production" %}
+	{% if server_mode != "production" %}
 		<link rel="icon" href="/images/ietf-dev-icon.bmp" />
 	{% else %}
 		<link rel="icon" href="/images/ietf-icon.bmp" />
-	{% endifnotequal %}
+	{% endif %}
 	<link rel="stylesheet" href="/css/mobile.css" type="text/css" />
 	{% block head %}{% endblock %}
 	<style type="text/css">

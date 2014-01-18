@@ -1,12 +1,13 @@
 """SMTP email backend class."""
 import smtplib
-import socket
+import ssl
 import threading
 
 from django.conf import settings
 from django.core.mail.backends.base import BaseEmailBackend
 from django.core.mail.utils import DNS_NAME
 from django.core.mail.message import sanitize_address
+from django.utils.encoding import force_bytes
 
 
 class EmailBackend(BaseEmailBackend):
@@ -18,8 +19,14 @@ class EmailBackend(BaseEmailBackend):
         super(EmailBackend, self).__init__(fail_silently=fail_silently)
         self.host = host or settings.EMAIL_HOST
         self.port = port or settings.EMAIL_PORT
-        self.username = username or settings.EMAIL_HOST_USER
-        self.password = password or settings.EMAIL_HOST_PASSWORD
+        if username is None:
+            self.username = settings.EMAIL_HOST_USER
+        else:
+            self.username = username
+        if password is None:
+            self.password = settings.EMAIL_HOST_PASSWORD
+        else:
+            self.password = password
         if use_tls is None:
             self.use_tls = settings.EMAIL_USE_TLS
         else:
@@ -53,12 +60,15 @@ class EmailBackend(BaseEmailBackend):
 
     def close(self):
         """Closes the connection to the email server."""
+        if self.connection is None:
+            return
         try:
             try:
                 self.connection.quit()
-            except socket.sslerror:
+            except (ssl.SSLError, smtplib.SMTPServerDisconnected):
                 # This happens when calling quit() on a TLS connection
-                # sometimes.
+                # sometimes, or when the connection was already disconnected
+                # by the server.
                 self.connection.close()
             except:
                 if self.fail_silently:
@@ -74,8 +84,7 @@ class EmailBackend(BaseEmailBackend):
         """
         if not email_messages:
             return
-        self._lock.acquire()
-        try:
+        with self._lock:
             new_conn_created = self.open()
             if not self.connection:
                 # We failed silently on open().
@@ -88,8 +97,6 @@ class EmailBackend(BaseEmailBackend):
                     num_sent += 1
             if new_conn_created:
                 self.close()
-        finally:
-            self._lock.release()
         return num_sent
 
     def _send(self, email_message):
@@ -99,9 +106,11 @@ class EmailBackend(BaseEmailBackend):
         from_email = sanitize_address(email_message.from_email, email_message.encoding)
         recipients = [sanitize_address(addr, email_message.encoding)
                       for addr in email_message.recipients()]
+        message = email_message.message()
+        charset = message.get_charset().get_output_charset() if message.get_charset() else 'utf-8'
         try:
             self.connection.sendmail(from_email, recipients,
-                    email_message.message().as_string())
+                    force_bytes(message.as_string(), charset))
         except:
             if not self.fail_silently:
                 raise

@@ -15,7 +15,7 @@
 {% block content %}
 
 <div class="module">
-    <form action="." method="post">
+    <form action="." method="post">{% csrf_token %}
     <h2>Proceedings - PPT/DOC Files in Queue</h2>
     <table class="full-width">
     <thead>
@@ -31,8 +31,8 @@
         <tr class = "{% cycle 'row1' 'row2' %}">
           <td>{{ slide.slide_name }}</td>
           <td>{{ slide.group_name }}</td>
-          <td><a href="{{ MEDIA_URL }}/proceedings/{{ meeting.meeting_num }}/slides/{{ slide.filename }}">Download</a></td>
-          <td><a href="{% url sec.proceedings.views.upload_presentation id=meeting.meeting_num, slide_id=slide.id %}">Upload</a></td>
+          <td><a href="{{ MEDIA_URL }}proceedings/{{ meeting.meeting_num }}/slides/{{ slide.filename }}">Download</a></td>
+          <td><a href="{% url "sec.proceedings.views.upload_presentation" id=meeting.meeting_num slide_id=slide.id %}">Upload</a></td>
         </tr>
       {% endfor %}
       </tbody>

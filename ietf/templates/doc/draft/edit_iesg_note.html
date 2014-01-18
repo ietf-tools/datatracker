@@ -12,11 +12,11 @@ form.edit-iesg-note #id_note {
 {% block content %}
 <h1>Edit IESG note for {{ doc.name }}</h1>
 
-<form class="edit-iesg-note" action="" method="POST">
+<form class="edit-iesg-note" action="" method="post">{% csrf_token %}
   <table>
     {% for field in form.visible_fields %}
     <tr>
-      <th>{{ field.label_tag }}:</th>
+      <th>{{ field.label_tag }}</th>
       <td>{{ field }}
       {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {{ field.errors }}</td>

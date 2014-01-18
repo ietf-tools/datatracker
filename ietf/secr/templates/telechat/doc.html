@@ -23,15 +23,15 @@
     Number of Open Positions: {{ open_positions }}<br />
     <br />
     <div>
-    <form action="" method="post">
+    <form action="" method="post">{% csrf_token %}
     {{ formset.management_form }}
     <table id="telechat-positions-table">
     <tr><th>Area Director</th><th>Yes</th><th>No Objections</th><th>Discuss</th><th>Abstain</th><th>Recuse</th><th>No Position</th></tr>
     {% for form in formset.forms %}
-    <tr{% if form.initial.position == 'norecord' or form.initial.position == None %} class="green-row"{% endif %}{% ifequal form.initial.position 'discuss' %} class="red-row"{% endifequal %}><td>{{ form.initial.name }}{{ form.name }}{{ form.id }}</td>
+    <tr{% if form.initial.position == 'norecord' or form.initial.position == None %} class="green-row"{% endif %}{% if form.initial.position == 'discuss' %} class="red-row"{% endif %}><td>{{ form.initial.name }}{{ form.name }}{{ form.id }}</td>
     {% with form.position as field %}
     {% for choice in field.field.choices %}
-    <td><input type="radio" {% ifequal form.initial.position choice.0 %}checked="checked" {% endifequal %}id="id_{{ field.html_name }}_{{ forloop.counter0 }}" value="{{ choice.0 }}" name="{{ field.html_name }}" /></td>
+    <td><input type="radio" {% if form.initial.position == choice.0 %}checked="checked" {% endif %}id="id_{{ field.html_name }}_{{ forloop.counter0 }}" value="{{ choice.0 }}" name="{{ field.html_name }}" /></td>
     {% endfor %}
     {% endwith %}
     </tr>
@@ -46,7 +46,7 @@
     
     <hr /><br />
     
-    <form action="" method="post">
+    <form action="" method="post">{% csrf_token %}
       <table>
       {{ state_form.as_table }}
       </table>

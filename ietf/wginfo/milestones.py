@@ -1,12 +1,11 @@
 # WG milestone editing views
 
-import re, os, string, datetime, shutil, calendar
+import re, os, string, datetime, shutil, calendar, json
 
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django import forms
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
-from django.utils import simplejson
 from django.utils.html import mark_safe, escape
 from django.utils.functional import lazy
 from django.core.urlresolvers import reverse as urlreverse
@@ -19,7 +18,7 @@ from ietf.group.utils import save_group_in_history, save_milestone_in_history
 from ietf.wginfo.mails import email_milestones_changed
 
 def json_doc_names(docs):
-    return simplejson.dumps([{"id": doc.pk, "name": doc.name } for doc in docs])
+    return json.dumps([{"id": doc.pk, "name": doc.name } for doc in docs])
 
 def parse_doc_names(s):
     return Document.objects.filter(pk__in=[x.strip() for x in s.split(",") if x.strip()], type="draft")
@@ -119,7 +118,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
     #
     # For charters we store the history on the charter document to not confuse people.
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     group = get_object_or_404(Group, acronym=acronym)
 
@@ -338,7 +337,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
 @role_required('WG Chair', 'Area Director', 'Secretariat')
 def reset_charter_milestones(request, acronym):
     """Reset charter milestones to the currently in-use milestones."""
-    login = request.user.get_profile()
+    login = request.user.person
 
     group = get_object_or_404(Group, acronym=acronym)
 
@@ -397,4 +396,4 @@ def reset_charter_milestones(request, acronym):
 
 def ajax_search_docs(request, acronym):
     docs = Document.objects.filter(name__icontains=request.GET.get('q',''), type="draft").order_by('name').distinct()[:20]
-    return HttpResponse(json_doc_names(docs), mimetype='application/json')
+    return HttpResponse(json_doc_names(docs), content_type='application/json')

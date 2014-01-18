@@ -2,11 +2,7 @@
 
 {% load nomcom_tags %}
 
-{% block subtitle %} - Provide feeback email{% endblock %}
-
-{% block pagehead %}
-{{ form.media }}
-{% endblock %}
+{% block subtitle %} - Provide feedback email{% endblock %}
 
 {% block nomcom_content %}
 
@@ -16,15 +12,6 @@
 {% endif %}
 
 {% if nomcom|has_publickey %}
-
-  <div class="js-info">
-    Your browser has Javascript disabled. Please enable javascript and reload the page.
-    <script type="text/javascript">
-      (function ($) {
-        $(".js-info").hide();
-      })(jQuery);
-    </script>
-  </div>
 
   <div>
     {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}

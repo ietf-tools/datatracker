@@ -3,12 +3,15 @@ Contains things to detect changes - either using options passed in on the
 commandline, or by using autodetection, etc.
 """
 
+from __future__ import print_function
+
 from django.db import models
 from django.contrib.contenttypes.generic import GenericRelation
 from django.utils.datastructures import SortedDict
 
 from south.creator.freezer import remove_useless_attributes, freeze_apps, model_key
 from south.utils import auto_through
+from south.utils.py3 import string_types
 
 class BaseChanges(object):
     """
@@ -100,6 +103,16 @@ class AutoChanges(BaseChanges):
                     params['model']._meta.object_name.lower(),
                     "_".join([x.name for x in params['fields']]),
                 ))
+            elif change_name == "AddIndex":
+                parts.append("add_index_%s_%s" % (
+                    params['model']._meta.object_name.lower(),
+                    "_".join([x.name for x in params['fields']]),
+                ))
+            elif change_name == "DeleteIndex":
+                parts.append("del_index_%s_%s" % (
+                    params['model']._meta.object_name.lower(),
+                    "_".join([x.name for x in params['fields']]),
+                ))
         return ("__".join(parts))[:70]
     
     def get_changes(self):
@@ -127,18 +140,19 @@ class AutoChanges(BaseChanges):
                         field = self.old_orm[key + ":" + fieldname]
                         if auto_through(field):
                             yield ("DeleteM2M", {"model": self.old_orm[key], "field": field})
-                    # And any unique constraints it had 
-                    unique_together = eval(old_meta.get("unique_together", "[]"))
-                    if unique_together:
-                        # If it's only a single tuple, make it into the longer one
-                        if isinstance(unique_together[0], basestring):
-                            unique_together = [unique_together]
-                        # For each combination, make an action for it
-                        for fields in unique_together:
-                            yield ("DeleteUnique", {
-                                "model": self.old_orm[key],
-                                "fields": [self.old_orm[key]._meta.get_field_by_name(x)[0] for x in fields],
-                            })
+                    # And any index/uniqueness constraints it had
+                    for attr, operation in (("unique_together", "DeleteUnique"), ("index_together", "DeleteIndex")):
+                        together = eval(old_meta.get(attr, "[]"))
+                        if together:
+                            # If it's only a single tuple, make it into the longer one
+                            if isinstance(together[0], string_types):
+                                together = [together]
+                            # For each combination, make an action for it
+                            for fields in together:
+                                yield (operation, {
+                                    "model": self.old_orm[key],
+                                    "fields": [self.old_orm[key]._meta.get_field_by_name(x)[0] for x in fields],
+                                })
                 # We always add it in here so we ignore it later
                 deleted_models.add(key)
         
@@ -158,18 +172,19 @@ class AutoChanges(BaseChanges):
                         field = self.current_field_from_key(key, fieldname)
                         if auto_through(field):
                             yield ("AddM2M", {"model": self.current_model_from_key(key), "field": field})
-                    # And any unique constraints it has 
-                    unique_together = eval(new_meta.get("unique_together", "[]"))
-                    if unique_together:
-                        # If it's only a single tuple, make it into the longer one
-                        if isinstance(unique_together[0], basestring):
-                            unique_together = [unique_together]
-                        # For each combination, make an action for it
-                        for fields in unique_together:
-                            yield ("AddUnique", {
-                                "model": self.current_model_from_key(key),
-                                "fields": [self.current_model_from_key(key)._meta.get_field_by_name(x)[0] for x in fields],
-                            })
+                    # And any index/uniqueness constraints it has
+                    for attr, operation in (("unique_together", "AddUnique"), ("index_together", "AddIndex")):
+                        together = eval(new_meta.get(attr, "[]"))
+                        if together:
+                            # If it's only a single tuple, make it into the longer one
+                            if isinstance(together[0], string_types):
+                                together = [together]
+                            # For each combination, make an action for it
+                            for fields in together:
+                                yield (operation, {
+                                    "model": self.current_model_from_key(key),
+                                    "fields": [self.current_model_from_key(key)._meta.get_field_by_name(x)[0] for x in fields],
+                                })
         
         # Now, for every model that's stayed the same, check its fields.
         for key in self.old_defs:
@@ -177,6 +192,10 @@ class AutoChanges(BaseChanges):
                 
                 old_fields, old_meta, old_m2ms = self.split_model_def(self.old_orm[key], self.old_defs[key])
                 new_fields, new_meta, new_m2ms = self.split_model_def(self.current_model_from_key(key), self.new_defs[key])
+                
+                # Do nothing for models which are now not managed.
+                if new_meta.get("managed", "True") == "False":
+                    continue
                 
                 # Find fields that have vanished.
                 for fieldname in old_fields:
@@ -281,26 +300,27 @@ class AutoChanges(BaseChanges):
                     if not auto_through(old_field) and auto_through(new_field):
                         yield ("AddM2M", {"model": self.current_model_from_key(key), "field": new_field})
                 
-                ## See if the unique_togethers have changed
-                # First, normalise them into lists of sets.
-                old_unique_together = eval(old_meta.get("unique_together", "[]"))
-                new_unique_together = eval(new_meta.get("unique_together", "[]"))
-                if old_unique_together and isinstance(old_unique_together[0], basestring):
-                    old_unique_together = [old_unique_together]
-                if new_unique_together and isinstance(new_unique_together[0], basestring):
-                    new_unique_together = [new_unique_together]
-                old_unique_together = map(set, old_unique_together)
-                new_unique_together = map(set, new_unique_together)
-                # See if any appeared or disappeared
-                for item in old_unique_together:
-                    if item not in new_unique_together:
-                        yield ("DeleteUnique", {
+                ## See if the {index,unique}_togethers have changed
+                for attr, add_operation, del_operation in (("unique_together", "AddUnique", "DeleteUnique"), ("index_together", "AddIndex", "DeleteIndex")):
+                    # First, normalise them into lists of sets.
+                    old_together = eval(old_meta.get(attr, "[]"))
+                    new_together = eval(new_meta.get(attr, "[]"))
+                    if old_together and isinstance(old_together[0], string_types):
+                        old_together = [old_together]
+                    if new_together and isinstance(new_together[0], string_types):
+                        new_together = [new_together]
+                    old_together = frozenset(tuple(o) for o in old_together)
+                    new_together = frozenset(tuple(n) for n in new_together)
+                    # See if any appeared or disappeared
+                    disappeared = old_together.difference(new_together)
+                    appeared = new_together.difference(old_together)
+                    for item in disappeared:
+                        yield (del_operation, {
                             "model": self.old_orm[key],
                             "fields": [self.old_orm[key + ":" + x] for x in item],
                         })
-                for item in new_unique_together:
-                    if item not in old_unique_together:
-                        yield ("AddUnique", {
+                    for item in appeared:
+                        yield (add_operation, {
                             "model": self.current_model_from_key(key),
                             "fields": [self.current_field_from_key(key, x) for x in item],
                         })
@@ -309,7 +329,7 @@ class AutoChanges(BaseChanges):
     def is_triple(cls, triple):
         "Returns whether the argument is a triple."
         return isinstance(triple, (list, tuple)) and len(triple) == 3 and \
-            isinstance(triple[0], (str, unicode)) and \
+            isinstance(triple[0], string_types) and \
             isinstance(triple[1], (list, tuple)) and \
             isinstance(triple[2], dict)
 
@@ -404,7 +424,7 @@ class ManualChanges(BaseChanges):
             try:
                 model_name, field_name = field_desc.split(".")
             except (TypeError, ValueError):
-                print "%r is not a valid field description." % field_desc
+                raise ValueError("%r is not a valid field description." % field_desc)
             model = models.get_model(self.migrations.app_label(), model_name)
             real_fields, meta, m2m_fields = self.split_model_def(model, model_defs[model_key(model)])
             yield ("AddField", {
@@ -417,7 +437,7 @@ class ManualChanges(BaseChanges):
             try:
                 model_name, field_name = field_desc.split(".")
             except (TypeError, ValueError):
-                print "%r is not a valid field description." % field_desc
+                print("%r is not a valid field description." % field_desc)
             model = models.get_model(self.migrations.app_label(), model_name)
             yield ("AddIndex", {
                 "model": model,
@@ -453,19 +473,20 @@ class InitialChanges(BaseChanges):
                 "model_def": real_fields,
             })
             
-            # Then, add any uniqueness that's around
+            # Then, add any indexing/uniqueness that's around
             if meta:
-                unique_together = eval(meta.get("unique_together", "[]"))
-                if unique_together:
-                    # If it's only a single tuple, make it into the longer one
-                    if isinstance(unique_together[0], basestring):
-                        unique_together = [unique_together]
-                    # For each combination, make an action for it
-                    for fields in unique_together:
-                        yield ("AddUnique", {
-                            "model": model,
-                            "fields": [model._meta.get_field_by_name(x)[0] for x in fields],
-                        })
+                for attr, operation in (("unique_together", "AddUnique"), ("index_together", "AddIndex")):
+                    together = eval(meta.get(attr, "[]"))
+                    if together:
+                        # If it's only a single tuple, make it into the longer one
+                        if isinstance(together[0], string_types):
+                            together = [together]
+                        # For each combination, make an action for it
+                        for fields in together:
+                            yield (operation, {
+                                "model": model,
+                                "fields": [model._meta.get_field_by_name(x)[0] for x in fields],
+                            })
             
             # Finally, see if there's some M2M action
             for name, triple in m2m_fields.items():

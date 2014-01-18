@@ -8,6 +8,7 @@ Functions that modify an HTTP request or response in some way.
 # it's a little fiddly to override this behavior, so they should be truly
 # universally applicable.
 
+
 def fix_location_header(request, response):
     """
     Ensures that we always use an absolute URI in any location header in the
@@ -20,17 +21,25 @@ def fix_location_header(request, response):
         response['Location'] = request.build_absolute_uri(response['Location'])
     return response
 
+
 def conditional_content_removal(request, response):
     """
     Removes the content of responses for HEAD requests, 1xx, 204 and 304
     responses. Ensures compliance with RFC 2616, section 4.3.
     """
     if 100 <= response.status_code < 200 or response.status_code in (204, 304):
-       response.content = ''
-       response['Content-Length'] = 0
+        if response.streaming:
+            response.streaming_content = []
+        else:
+            response.content = b''
+        response['Content-Length'] = '0'
     if request.method == 'HEAD':
-        response.content = ''
+        if response.streaming:
+            response.streaming_content = []
+        else:
+            response.content = b''
     return response
+
 
 def fix_IE_for_attach(request, response):
     """
@@ -60,6 +69,7 @@ def fix_IE_for_attach(request, response):
 
     return response
 
+
 def fix_IE_for_vary(request, response):
     """
     This function will fix the bug reported at
@@ -76,11 +86,11 @@ def fix_IE_for_vary(request, response):
 
     # The first part of the Content-Type field will be the MIME type,
     # everything after ';', such as character-set, can be ignored.
-    if response['Content-Type'].split(';')[0] not in safe_mime_types:
+    mime_type = response.get('Content-Type', '').partition(';')[0]
+    if mime_type not in safe_mime_types:
         try:
             del response['Vary']
         except KeyError:
             pass
 
     return response
-

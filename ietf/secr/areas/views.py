@@ -4,9 +4,8 @@ from django.core.urlresolvers import reverse
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory, modelformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
-from django.utils import simplejson
 
 from ietf.group.models import Group, GroupEvent, GroupURL, Role
 from ietf.group.utils import save_group_in_history
@@ -15,6 +14,7 @@ from ietf.person.models import Person, Email
 from forms import *
 
 import re
+import json
  
 # --------------------------------------------------
 # AJAX FUNCTIONS
@@ -32,7 +32,7 @@ def getpeople(request):
         full = '%s - (%s)' % (item.name,item.id)
         result.append(full)
         
-    return HttpResponse(simplejson.dumps(result), mimetype='application/javascript')
+    return HttpResponse(json.dumps(result), content_type='application/javascript')
     
 def getemails(request):
     """
@@ -47,7 +47,7 @@ def getemails(request):
         d = {'id': item.address, 'value': item.address}
         results.append(d)
         
-    return HttpResponse(simplejson.dumps(results), mimetype='application/javascript')
+    return HttpResponse(json.dumps(results), content_type='application/javascript')
     
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
@@ -75,7 +75,7 @@ def add(request):
             
             #save groupevent 'started' record
             start_date = area_form.cleaned_data.get('start_date')
-            login = request.user.get_profile()
+            login = request.user.person
             group_event = GroupEvent(group=area,time=start_date,type='started',by=login)
             group_event.save()
             
@@ -86,8 +86,7 @@ def add(request):
                     group_url.save()
 
             messages.success(request, 'The Area was created successfully!')
-            url = reverse('areas')
-            return HttpResponseRedirect(url)
+            return redirect('areas')
     else:
         # display initial forms
         area_form = AddAreaModelForm()
@@ -135,7 +134,7 @@ def edit(request, name):
                 if 'state' in form.changed_data:
                     ChangeStateGroupEvent.objects.create(group=new_area,
                                                          type='changed_state',
-                                                         by=request.user.get_profile(),
+                                                         by=request.user.person,
                                                          state=state,
                                                          time=new_area.time)
                     form.changed_data.remove('state')
@@ -144,15 +143,13 @@ def edit(request, name):
                 if form.changed_data:
                     GroupEvent.objects.create(group=new_area,
                                               type='info_changed',
-                                              by=request.user.get_profile(),
+                                              by=request.user.person,
                                               time=new_area.time)
                 
                 messages.success(request, 'The Area entry was changed successfully')
-                url = reverse('areas_view', kwargs={'name':name})
-                return HttpResponseRedirect(url)
+                return redirect('areas_view', name=name)
         else:
-            url = reverse('areas_view', kwargs={'name':name})
-            return HttpResponseRedirect(url)
+            return redirect('areas_view', name=name)
     else:
         form = AreaForm(instance=area)
         awp_formset = AWPFormSet(instance=area)
@@ -223,8 +220,7 @@ def people(request, name):
                 Role.objects.create(name_id='pre-ad',group=area,email=email,person=person)
                 
                 messages.success(request, 'New Area Director added successfully!')
-                url = reverse('areas_view', kwargs={'name':name})
-                return HttpResponseRedirect(url)
+                return redirect('areas_view', name=name)
     else:
         form = AreaDirectorForm()
 
@@ -290,8 +286,7 @@ def modify(request, name):
             
             messages.success(request, 'Voting rights have been granted successfully!')
 
-        url = reverse('areas_view', kwargs={'name':name})
-        return HttpResponseRedirect(url)
+        return redirect('areas_view', name=name)
 
 def view(request, name):
     """ 

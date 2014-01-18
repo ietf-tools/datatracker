@@ -21,7 +21,7 @@ def request_last_call(request, doc):
     
     e = DocEvent()
     e.type = "requested_last_call"
-    e.by = request.user.get_profile()
+    e.by = request.user.person
     e.doc = doc
     e.desc = "Last call was requested"
     e.save()

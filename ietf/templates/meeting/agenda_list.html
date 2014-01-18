@@ -44,7 +44,7 @@
 </div>
 
 <div class="agenda_list_edit">
-<p><a href="{% url ietf.meeting.views.edit_timeslots meeting.number %}">Edit Timeslots</a></p>
+<p><a href="{% url "ietf.meeting.views.edit_timeslots" meeting.number %}">Edit Timeslots</a></p>
 </div>
 
 <div id="class_list" class="agenda_list">
@@ -61,11 +61,11 @@
       <td class="agenda_mark agenda_data"> <span class="styled_button agenda_official_mark {{agenda.official_class}}">{{ agenda.official_token }}</span></td>
       <td class="agenda_data"> <span class="agenda_owner">{{ agenda.owner }}</span> </td>
       <td class="agenda_data">
-        <a href="{% url ietf.meeting.views.edit_agenda agenda.meeting.number agenda.name %}"><span class="agenda_name">{{ agenda.name }}</span></a>
+        <a href="{% url "ietf.meeting.views.edit_agenda" agenda.meeting.number agenda.name %}"><span class="agenda_name">{{ agenda.name }}</span></a>
       </td>
       <td class="agenda_data"> <span class="agenda_visible {{agenda.visible_class}}">{{ agenda.visible_token }}</span></a></td>
       <td class="agenda_data"> <span class="agenda_public {{agenda.public_class}}">{{ agenda.public_token }}</span></td>
-      <td class="agenda_mark agenda_data"> <a href="{% url ietf.meeting.views.edit_agenda_properties agenda.meeting.number agenda.name %}"><span class="styled_button agenda_edit">EDIT</span></a> </td>
+      <td class="agenda_mark agenda_data"> <a href="{% url "ietf.meeting.views.edit_agenda_properties" agenda.meeting.number agenda.name %}"><span class="styled_button agenda_edit">EDIT</span></a> </td>
       <td class="agenda_mark agenda_data"> <span class="styled_button agenda_delete">DEL</span> </td>
     </tr>
   {% endfor %}
@@ -82,9 +82,9 @@
 
 <div class="towtruck">
 {% if server_mode %}
-	{% ifnotequal server_mode "production" %}
+	{% if server_mode != "production" %}
 	<button onclick="TowTruck(this); return false;">Start TowTruck</button>
-	{% endifnotequal %}
+	{% endif %}
 {% endif %}
 </div>
 </div>

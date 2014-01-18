@@ -7,7 +7,7 @@
 <p>Please enter the name of the Internet-Draft you wish to view
   submission status for:</p>
 
-<form method="post">
+<form method="post">{% csrf_token %}
   {% if error %}<div style="color: red;">{{ error }}</div>{% endif %}
   <input type="text" name="name" value="{{ name|default:"draft-" }}" />
   <input type="submit" value="See status" />

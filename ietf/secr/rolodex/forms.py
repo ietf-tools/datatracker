@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.validators import email_re
+from django.core.validators import validate_email
 
 from ietf.person.models import Email, Person
 
@@ -25,11 +25,12 @@ class SearchForm(forms.Form):
 class EmailForm(forms.ModelForm):
     class Meta:
         model = Email
+        fields = '__all__'
 
 class EditPersonForm(forms.ModelForm):
     class Meta:
         model = Person
-        exclude = ('time')
+        exclude = ('time',)
 
     def __init__(self, *args, **kwargs):
         super(EditPersonForm, self).__init__(*args,**kwargs)
@@ -83,8 +84,8 @@ class NewEmailForm(EmailForm):
         cleaned_data = self.cleaned_data
         address = cleaned_data.get("address")
 
-        if address and not email_re.match(address):
-            raise forms.ValidationError("Enter a valid email address")
+        if address:
+            validate_email(address)
 
         return address
         

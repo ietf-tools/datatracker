@@ -32,11 +32,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import socket, re, os
+import socket, re, os, time, importlib
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist
-from django.test.simple import run_tests as django_run_tests
+from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 
 import debug
@@ -57,8 +57,18 @@ def safe_create_1(self, verbosity, *args, **kwargs):
         print "     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"]
     test_database_name = old_create(self, 0, *args, **kwargs)
     if settings.GLOBAL_TEST_FIXTURES:
-        print "     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES) 
-        call_command('loaddata', *settings.GLOBAL_TEST_FIXTURES, verbosity=0, commit=False, database="default")
+        print "     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES)
+        loadable = [f for f in settings.GLOBAL_TEST_FIXTURES if "." not in f]
+        call_command('loaddata', *loadable, verbosity=0, commit=False, database="default")
+
+        for f in settings.GLOBAL_TEST_FIXTURES:
+            if f not in loadable:
+                # try to execute the fixture
+                components = f.split(".")
+                module = importlib.import_module(".".join(components[:-1]))
+                fn = getattr(module, components[-1])
+                fn()
+
     return test_database_name
 
 def safe_destroy_0_1(*args, **kwargs):
@@ -72,48 +82,62 @@ def safe_destroy_0_1(*args, **kwargs):
 def template_coverage_loader(template_name, dirs):
     loaded_templates.add(str(template_name))
     raise TemplateDoesNotExist
-
 template_coverage_loader.is_usable = True
 
 class RecordUrlsMiddleware(object):
     def process_request(self, request):
         visited_urls.add(request.path)
 
-def get_patterns(module):
-    all = []
+class FillInRemoteUserMiddleware(object):
+    def process_request(self, request):
+        if request.user.is_authenticated() and "REMOTE_USER" not in request.META:
+            request.META["REMOTE_USER"] = request.user.username
+
+def get_url_patterns(module):
+    res = []
     try:
         patterns = module.urlpatterns
     except AttributeError:
         patterns = []
     for item in patterns:
         try:
-            subpatterns = get_patterns(item.urlconf_module)
+            subpatterns = get_url_patterns(item.urlconf_module)
         except:
-            subpatterns = [""]
-        for sub in subpatterns:
+            subpatterns = [("", None)]
+        for sub, subitem in subpatterns:
             if not sub:
-                all.append(item.regex.pattern)
+                res.append((item.regex.pattern, item))
             elif sub.startswith("^"):
-                all.append(item.regex.pattern + sub[1:])
+                res.append((item.regex.pattern + sub[1:], subitem))
             else:
-                all.append(item.regex.pattern + ".*" + sub)
-    return all
+                res.append((item.regex.pattern + ".*" + sub, subitem))
+    return res
 
 def check_url_coverage():
-    patterns = get_patterns(ietf.urls)
+    import ietf.urls
 
-    IGNORED_PATTERNS = ("admin",)
+    url_patterns = get_url_patterns(ietf.urls)
 
-    patterns = [(p, re.compile(p)) for p in patterns if p[1:].split("/")[0] not in IGNORED_PATTERNS]
+    # skip some patterns that we don't bother with
+    def ignore_pattern(regex, pattern):
+        import django.views.static
+        return (regex in ("^_test500/$", "^accounts/testemail/$")
+                or regex.startswith("^admin/")
+                or getattr(pattern.callback, "__name__", "") == "RedirectView"
+                or getattr(pattern.callback, "__name__", "") == "TemplateView"
+                or pattern.callback == django.views.static.serve)
+
+    patterns = [(regex, re.compile(regex)) for regex, pattern in url_patterns
+                if not ignore_pattern(regex, pattern)]
 
     covered = set()
     for url in visited_urls:
-        for pattern, compiled in patterns:
-            if pattern not in covered and compiled.match(url[1:]): # strip leading /
-                covered.add(pattern)
+        for regex, compiled in patterns:
+            if regex not in covered and compiled.match(url[1:]): # strip leading /
+                covered.add(regex)
                 break
 
-    missing = list(set(p for p, compiled in patterns) - covered)
+    missing = list(set(regex for regex, compiled in patterns) - covered)
 
     if missing:
         print "The following URL patterns were not tested"
@@ -146,62 +170,76 @@ def check_template_coverage():
         for t in sorted(not_loaded):
             print "     Not loaded", t
 
-def run_tests_1(test_labels, *args, **kwargs):
-    global old_destroy, old_create, test_database_name
-    from django.db import connection
-    old_create = connection.creation.__class__.create_test_db
-    connection.creation.__class__.create_test_db = safe_create_1
-    old_destroy = connection.creation.__class__.destroy_test_db
-    connection.creation.__class__.destroy_test_db = safe_destroy_0_1
-
-    check_coverage = not test_labels
-
-    if check_coverage:
-        settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
-        settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
-
-    if not test_labels:
-        test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")]
-
-    if settings.SITE_ID != 1:
-        print "     Changing SITE_ID to '1' during testing."
-        settings.SITE_ID = 1
-
-    if settings.TEMPLATE_STRING_IF_INVALID != '':
-        print "     Changing TEMPLATE_STRING_IF_INVALID to '' during testing."
-        settings.TEMPLATE_STRING_IF_INVALID = ''
-
-    assert(not settings.IDTRACKER_BASE_URL.endswith('/'))
-
-    results = django_run_tests(test_labels, *args, **kwargs)
-
-    if check_coverage:
-        check_url_coverage()
-        check_template_coverage()
-
-    return results
-
-def run_tests(*args, **kwargs):
-    # Tests that involve switching back and forth between the real
-    # database and the test database are way too dangerous to run
-    # against the production database
-    if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
-        raise EnvironmentError("Refusing to run tests on production server")
-    ietf.utils.mail.test_mode = True
-    failures = run_tests_1(*args, **kwargs)
+def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
-    import os, time, ietf.settings as config
+    import ietf.settings as config
     topdir = os.path.dirname(os.path.dirname(config.__file__))
     tfile = open(os.path.join(topdir,"testresult"), "a")
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
     if failures:
         tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
     else:
-        if list(*args):
-            tfile.write("%s SUCCESS (tests=%s)\n" % (timestr, repr(list(*args))))
+        if test_labels:
+            tfile.write("%s SUCCESS (tests=%s)\n" % (timestr, test_labels))
         else:
             tfile.write("%s OK\n" % (timestr, ))
     tfile.close()
-    return failures
+
+
+class IetfTestRunner(DiscoverRunner):
+    def run_tests(self, test_labels, extra_tests=None, **kwargs):
+        # Tests that involve switching back and forth between the real
+        # database and the test database are way too dangerous to run
+        # against the production database
+        if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
+            raise EnvironmentError("Refusing to run tests on production server")
+        ietf.utils.mail.test_mode = True
+
+        global old_destroy, old_create, test_database_name
+        from django.db import connection
+        old_create = connection.creation.__class__.create_test_db
+        connection.creation.__class__.create_test_db = safe_create_1
+        old_destroy = connection.creation.__class__.destroy_test_db
+        connection.creation.__class__.destroy_test_db = safe_destroy_0_1
+
+        classes = []
+        for m in settings.MIDDLEWARE_CLASSES:
+            if m == "django.contrib.auth.middleware.RemoteUserMiddleware":
+                # the tests are not passing in REMOTE_USER, so insert
+                # hack to do so automatically
+                classes.append("ietf.utils.test_runner.FillInRemoteUserMiddleware")
+            classes.append(m)
+        settings.MIDDLEWARE_CLASSES = tuple(classes)
+
+        check_coverage = not test_labels
+
+        if check_coverage:
+            settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
+            settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
+
+        if not test_labels: # we only want to run our own tests
+            test_labels = [app for app in settings.INSTALLED_APPS if app.startswith("ietf")]
+
+        if settings.SITE_ID != 1:
+            print "     Changing SITE_ID to '1' during testing."
+            settings.SITE_ID = 1
+
+        if settings.TEMPLATE_STRING_IF_INVALID != '':
+            print "     Changing TEMPLATE_STRING_IF_INVALID to '' during testing."
+            settings.TEMPLATE_STRING_IF_INVALID = ''
+
+        assert not settings.IDTRACKER_BASE_URL.endswith('/')
+
+        failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
+
+        if check_coverage and not failures:
+            check_template_coverage()
+            check_url_coverage()
+
+            print "0 test failures - coverage shown above"
+
+        save_test_results(failures, test_labels)
+
+        return failures

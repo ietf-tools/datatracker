@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 
 urlpatterns = patterns('ietf.doc.views_conflict_review',
     url(r'^state/$',                 "change_state",  name='conflict_review_change_state'),

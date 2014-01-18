@@ -48,7 +48,7 @@
               <option value="">All</option>
               {% for state in states %}
                 <option value="{{ state.slug }}"
-                  {% ifequal state.slug  selected_state %}selected="selected"{% endifequal%}>
+                  {% if state.slug == selected_state %}selected="selected"{% endif%}>
                   {{ state.name }}
                 </option>
               {% endfor %}
@@ -60,7 +60,7 @@
               <option value="">All</option>
               {% for position in positions %}
                   <option value="{{ position.id }}"
-                    {% ifequal position.id  selected_position %}selected="selected"{% endifequal%}>
+                    {% if position.id == selected_position %}selected="selected"{% endif%}>
                     {{ position.name }}
                   </option>
               {% endfor %}
@@ -106,7 +106,7 @@
           {% if is_chair %}
             <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"/></td>
           {% endif %}
-          <td><a href="{% url ietf.nomcom.views.view_feedback_nominee year=year nominee_id=np.nominee.id %}#comment">{{ np.nominee }}</a>{% if is_chair %} <a href="{% url nomcom_edit_nominee year np.nominee.id %}">(edit)</a>{% endif %}</td>
+          <td><a href="{% url "ietf.nomcom.views.view_feedback_nominee" year=year nominee_id=np.nominee.id %}#comment">{{ np.nominee }}</a>{% if is_chair %} <a href="{% url "nomcom_edit_nominee" year np.nominee.id %}">(edit)</a>{% endif %}</td>
           <td>{{ np.position.name }}</td>
           <td>{{ np.state }}</td>
           <td>{{ np.questionnaires|yesno:"Yes,No,No" }}

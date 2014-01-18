@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect, HttpResponse, HttpResponseForbidden
-from django.shortcuts import render_to_response, get_object_or_404
+from django.http import HttpResponse, HttpResponseForbidden
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
 from ietf.ietfauth.utils import has_role
@@ -21,7 +21,7 @@ def check_access(user):
     Announcement app.  Accepted roles are:
     Secretariat, IAD, IAB Chair, IETF Chair, RSOC Chair, IAOC Chair, NomCom Chair, RSE Chair
     '''
-    person = user.get_profile()
+    person = user.person
     groups_with_access = ("iab", "rsoc", "ietf", "iaoc", "rse", "mentor")
     if Role.objects.filter(person=person,
                            group__acronym__in=groups_with_access,
@@ -63,8 +63,7 @@ def main(request):
             data['nomcom'] = data['nomcom'].pk
         request.session['data'] = data
 
-        url = reverse('announcement_confirm')
-        return HttpResponseRedirect(url)
+        return redirect('announcement_confirm')
 
     return render_to_response('announcement/main.html', {
         'form': form},
@@ -91,15 +90,13 @@ def confirm(request):
         request.session.clear()
 
         messages.success(request, 'The announcement was sent.')
-        url = reverse('announcement')
-        return HttpResponseRedirect(url)
+        return redirect('announcement')
 
     if request.session.get('data',None):
         data = request.session['data']
     else:
         messages.error(request, 'No session data.  Your session may have expired or cookies are disallowed.')
-        redirect_url = reverse('announcement')
-        return HttpResponseRedirect(redirect_url)
+        return redirect('announcement')
 
     if data['to'] == 'Other...':
         to = ','.join(data['to_custom'])

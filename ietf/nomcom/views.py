@@ -1,18 +1,16 @@
  # -*- coding: utf-8 -*-
 
-import datetime, re
+import datetime, re, json
+from collections import OrderedDict
 
-from django.views.generic.create_update import delete_object
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.contrib.messages.api import success, get_messages
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404, HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, render, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.utils import simplejson
-from django.utils.datastructures import SortedDict
 from django.db.models import Count
 from django.forms.models import modelformset_factory, inlineformset_factory
 
@@ -540,7 +538,7 @@ def view_feedback_pending(request, year):
     nomcom = get_nomcom_by_year(year)
     extra_ids = None
     message = None
-    for message in get_messages(request):
+    for message in messages.get_messages(request):
         message = ('success', message.message)
     FeedbackFormSet = modelformset_factory(Feedback,
                                            form=PendingFeedbackForm,
@@ -562,8 +560,8 @@ def view_feedback_pending(request, year):
             formset = FeedbackFormSet(queryset=feedbacks)
             for form in formset.forms:
                 form.set_nomcom(nomcom, request.user)
-            success(request, 'Feedback saved')
-            return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
+            messages.success(request, 'Feedback saved')
+            return redirect('nomcom_view_feedback_pending', year=year)
     elif request.method == 'POST' and request.POST.get('end'):
         extra_ids = request.POST.get('extra_ids', None)
         extra_step = True
@@ -584,8 +582,8 @@ def view_feedback_pending(request, year):
                     form.set_nomcom(nomcom, request.user, extra)
                 extra_ids = None
             else:
-                success(request, 'Feedback saved')
-                return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
+                messages.success(request, 'Feedback saved')
+                return redirect('nomcom_view_feedback_pending', year=year)
     elif request.method == 'POST':
         formset = FeedbackFormSet(request.POST)
         for form in formset.forms:
@@ -618,13 +616,13 @@ def view_feedback_pending(request, year):
                 if moved:
                     message = ('success', '%s messages classified. You must enter more information for the following feedback.' % moved)
             else:
-                success(request, 'Feedback saved')
-                return HttpResponseRedirect(reverse('nomcom_view_feedback_pending', None, args=(year, )))
+                messages.success(request, 'Feedback saved')
+                return redirect('nomcom_view_feedback_pending', year=year)
     else:
         formset = FeedbackFormSet(queryset=feedbacks)
         for form in formset.forms:
             form.set_nomcom(nomcom, request.user)
-    type_dict = SortedDict({})
+    type_dict = OrderedDict()
     for t in FeedbackType.objects.all().order_by('pk'):
         rest = t.name
         slug = rest[0]
@@ -704,9 +702,8 @@ def edit_nominee(request, year, nominee_id):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def edit_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
-    has_publickey = nomcom.public_key and True or False
 
-    if has_publickey:
+    if nomcom.public_key:
         message = ('warning', 'Previous data will remain encrypted with the old key')
     else:
         message = ('warning', 'The nomcom has not a public key yet')
@@ -740,17 +737,17 @@ def edit_nomcom(request, year):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def delete_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
-    post_delete_redirect = reverse('nomcom_deleted')
-    extra_context = {'year': year,
-                     'selected': 'edit_nomcom',
-                     'nomcom': nomcom}
 
-    return delete_object(request,
-                         model=NomCom,
-                         object_id=nomcom.id,
-                         post_delete_redirect=post_delete_redirect,
-                         template_name='nomcom/delete_nomcom.html',
-                         extra_context=extra_context)
+    if request.method == 'POST':
+        nomcom.delete()
+        messages.success(request, "Deleted NomCom data")
+        return redirect('nomcom_deleted')
+
+    return render(request, 'nomcom/delete_nomcom.html', {
+        'year': year,
+        'selected': 'edit_nomcom',
+        'nomcom': nomcom,
+    })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -802,7 +799,7 @@ def remove_position(request, year, position_id):
 
     if request.POST.get('remove', None):
         position.delete()
-        return HttpResponseRedirect(reverse('nomcom_list_positions', None, args=(year, )))
+        return redirect('nomcom_list_positions', year=year)
     return render_to_response('nomcom/remove_position.html',
                               {'year': year,
                                'position': position,
@@ -824,7 +821,7 @@ def edit_position(request, year, position_id=None):
         form = PositionForm(request.POST, instance=position, nomcom=nomcom)
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect(reverse('nomcom_list_positions', None, args=(year, )))
+            return redirect('nomcom_list_positions', year=year)
     else:
         form = PositionForm(instance=position, nomcom=nomcom)
 
@@ -833,15 +830,3 @@ def edit_position(request, year, position_id=None):
                                'position': position,
                                'year': year,
                                'nomcom': nomcom}, RequestContext(request))
-
-
-def ajax_position_text(request, position_id):
-    try:
-        position_text = Position.objects.get(id=position_id).initial_text
-    except Position.DoesNotExist:
-        position_text = ""
-
-    result = {'text': position_text}
-
-    json_result = simplejson.dumps(result)
-    return HttpResponse(json_result, mimetype='application/json')

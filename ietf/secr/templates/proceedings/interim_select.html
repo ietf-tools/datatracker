@@ -23,19 +23,19 @@
            <h3><b>Select Group</b></h3>
            <p>You are authorized to manage interim meetings and meeting materials for the groups below.</p>
            
-           <form class="internal-form" action="" method="post">
+           <form class="internal-form" action="" method="post">{% csrf_token %}
              <label for="id_group">Working Groups</label>
              {{ group_form.group }}
              <input type="submit" name="submit" value="Select" />
            </form>
            {% comment %}
            {% if request.user_is_secretariat %}
-             <form class="internal-form" action="" method="post">
+             <form class="internal-form" action="" method="post">{% csrf_token %}
                <label for="id_group">IRTF Groups</label>
                {{ irtf_form.group }}
                <input type="submit" name="submit" value="Select" />
              </form>
-             <form class="internal-form" action="" method="post">
+             <form class="internal-form" action="" method="post">{% csrf_token %}
                <label for="id_group">Training</label>
                {{ training_form.group }}
                <input type="submit" name="submit" value="Select" />

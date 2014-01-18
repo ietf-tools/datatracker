@@ -2,7 +2,7 @@ from django.conf import settings
 from django import forms
 from django.contrib.formtools.preview import FormPreview, AUTO_ID
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
@@ -44,7 +44,7 @@ class PositionNomineeField(forms.ChoiceField):
         positions = Position.objects.get_by_nomcom(self.nomcom).opened().order_by('name')
         results = []
         for position in positions:
-            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(nominee_position=position)]
+            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(nominee_position=position).select_related("email", "email__person")]
             if nominees:
                 results.append((position.name, nominees))
         kwargs['choices'] = results
@@ -209,7 +209,7 @@ class EditMembersFormPreview(FormPreview):
                                        person=member['person'],
                                        email=member['email_obj'])
 
-        return HttpResponseRedirect(reverse('nomcom_edit_members', kwargs={'year': self.year}))
+        return redirect('nomcom_edit_members', year=self.year)
 
 
 class EditChairForm(BaseNomcomForm, forms.Form):
@@ -264,7 +264,7 @@ class EditChairFormPreview(FormPreview):
                                       person=chair_info['person'],
                                       email=chair_info['email_obj'])
 
-        return HttpResponseRedirect(reverse('nomcom_edit_chair', kwargs={'year': self.year}))
+        return redirect('nomcom_edit_chair', year=self.year)
 
 
 class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
@@ -603,11 +603,6 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                   'confirmation',
                   'comments')
 
-    class Media:
-        js = ("/js/jquery-1.5.1.min.js",
-              "/js/nomcom.js", )
-
-
 class FeedbackEmailForm(BaseNomcomForm, forms.Form):
 
     email_text = forms.CharField(label='Email text', widget=forms.Textarea())
@@ -621,17 +616,11 @@ class FeedbackEmailForm(BaseNomcomForm, forms.Form):
     def save(self, commit=True):
         create_feedback_email(self.nomcom, self.cleaned_data['email_text'])
 
-    class Media:
-        js = ("/js/jquery-1.5.1.min.js",
-              "/js/nomcom.js", )
-
-
 class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
     comments = forms.CharField(label='Questionnaire response from this candidate',
                                widget=forms.Textarea())
-    fieldsets = [('New questionnaire response', ('nominee',
-                                             'comments'))]
+    fieldsets = [('New questionnaire response', ('nominee', 'comments'))]
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
@@ -659,22 +648,8 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
     class Meta:
         model = Feedback
-        fields = ('nominee',
-                  'positions',
+        fields = ('positions',
                   'comments')
-
-    class Media:
-        admin_js = ['js/core.js',
-                    "js/jquery.js",
-                    "js/jquery.init.js",
-                    'js/admin/RelatedObjectLookups.js',
-                    "js/getElementsBySelector.js",
-                    'js/SelectBox.js',
-                    'js/SelectFilter2.js',
-                    ]
-        admin_js = ['%s%s' % (settings.ADMIN_MEDIA_PREFIX, url) for url in admin_js]
-        js = ["/js/jquery-1.5.1.min.js", "/js/nomcom.js"] + admin_js
-
 
 class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
     content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }))

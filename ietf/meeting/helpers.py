@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404
 
 import debug
 
-from ietf.ietfauth.utils import has_role
+from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.utils.history import find_history_active_at
 from ietf.doc.models import Document, State
 from ietf.meeting.models import Meeting
@@ -62,8 +62,7 @@ def get_areas():
 def get_area_list_from_sessions(scheduledsessions, num):
     return scheduledsessions.filter(timeslot__type = 'Session',
                                     session__group__parent__isnull = False).order_by(
-        'session__group__parent__acronym').distinct(
-        'session__group__parent__acronym').values_list(
+        'session__group__parent__acronym').distinct().values_list(
         'session__group__parent__acronym',flat=True)
 
 def build_all_agenda_slices(scheduledsessions, all = False):
@@ -103,8 +102,7 @@ def get_wg_name_list(scheduledsessions):
     return scheduledsessions.filter(timeslot__type = 'Session',
                                     session__group__isnull = False,
                                     session__group__parent__isnull = False).order_by(
-        'session__group__acronym').distinct(
-        'session__group').values_list(
+        'session__group__acronym').distinct().values_list(
         'session__group__acronym',flat=True)
 
 def get_wg_list(scheduledsessions):
@@ -143,36 +141,21 @@ def meeting_updated(meeting):
 def agenda_permissions(meeting, schedule, user):
     # do this in positive logic.
     cansee = False
-    canedit= False
-    requestor= None
-
-    try:
-        requestor = user.get_profile()
-    except:
-        pass
-
-    #sys.stdout.write("requestor: %s for sched: %s \n" % ( requestor, schedule ))
-    if has_role(user, 'Secretariat'):
-        cansee = True
-        # secretariat is not superuser for edit!
-
-    if (has_role(user, 'Area Director') and schedule.visible):
-        cansee = True
-
-    if (has_role(user, 'IAB Chair') and schedule.visible):
-        cansee = True
-
-    if (has_role(user, 'IRTF Chair') and schedule.visible):
-        cansee = True
+    canedit = False
 
     if schedule.public:
         cansee = True
+    elif has_role(user, 'Secretariat'):
+        cansee = True
+        # secretariat is not superuser for edit!
+    elif schedule.visible and has_role(user, ['Area Director', 'IAB Chair', 'IRTF Chair']):
+        cansee = True
 
-    if requestor is not None and schedule.owner == requestor:
+    if user_is_person(user, schedule.owner):
         cansee = True
         canedit = True
 
-    return cansee,canedit
+    return cansee, canedit
 
 def session_constraint_expire(session):
     from django.core.urlresolvers import reverse

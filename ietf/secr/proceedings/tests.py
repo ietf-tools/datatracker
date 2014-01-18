@@ -15,7 +15,7 @@ class MainTestCase(TestCase):
         make_test_data()
         url = reverse('proceedings')
         response = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     def test_view(self):
         "View Test"
@@ -23,4 +23,4 @@ class MainTestCase(TestCase):
         meeting = Meeting.objects.all()[0]
         url = reverse('meetings_view', kwargs={'meeting_id':meeting.number})
         response = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)

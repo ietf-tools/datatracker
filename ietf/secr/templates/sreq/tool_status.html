@@ -16,7 +16,7 @@
 <div class="module interim-container">
     <h2>Sessions - Status</h2>
     <p>Enter the message that you would like displayed to the WG Chair when this tool is locked.</p>
-    <form action="" method="post">
+    <form action="" method="post">{% csrf_token %}
       <table>
       {{ form.as_table }}
       </table>

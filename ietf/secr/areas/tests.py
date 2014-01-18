@@ -21,15 +21,12 @@ def augment_data():
                               by=system)
                               
 class MainTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['groupgroup', 'groupevents']
-                
     def test_main(self):
         "Main Test"
         draft = make_test_data()
         url = reverse('areas')
         response = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     def test_view(self):
         "View Test"
@@ -38,4 +35,4 @@ class MainTestCase(TestCase):
         areas = Group.objects.filter(type='area',state='active')
         url = reverse('areas_view', kwargs={'name':areas[0].acronym})
         response = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)

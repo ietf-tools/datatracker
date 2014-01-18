@@ -169,7 +169,7 @@
 </table>
 
 {% if can_edit %}
-  <form method="post">
+  <form method="post">{% csrf_token %}
     <input type="hidden" name="action" value="edit" />
     <input type="submit" value="Adjust Meta-Data" value="adjust" /> (Leads to manual post by the Secretariat)
   </form>
@@ -179,7 +179,7 @@
 
     <p></p>
 
-    <form method="post">
+    <form method="post">{% csrf_token %}
       <table class="metadata-table">
         {% include "submit/submitter_form.html" %}
       </table>
@@ -213,7 +213,7 @@
   <p>
     Cancel submission and delete the uploaded file{{ submission.file_types|split:","|pluralize }} permanently:
 
-    <form id="cancel-submission" method="post">
+    <form id="cancel-submission" method="post">{% csrf_token %}
       <input type="hidden" name="action" value="cancel" />
       <input type="submit" value="Cancel submission" />
     </form>
@@ -223,7 +223,7 @@
 {% if can_group_approve %}
   <h2>Approve submission</h2>
   <p>
-    <form method="post">
+    <form method="post">{% csrf_token %}
       <input type="hidden" name="action" value="approve" />
       <input type="submit" value="Approve this submission" />
     </form>
@@ -232,7 +232,7 @@
  
 {% if can_force_post %}
   <p>
-    <form method="post">
+    <form method="post">{% csrf_token %}
       <input type="hidden" name="action" value="forcepost" />
       <input type="submit" value="Force post of submission" />
     </form>
@@ -253,7 +253,7 @@
     button. An email will then be sent to the authors and submitter
     (if submitter email was entered): {{ confirmation_list|join:", " }}.</p>
 
-  <form method="post">
+  <form method="post">{% csrf_token %}
     <input type="hidden" name="action" value="sendfullurl" />
     <input type="submit" value="Request full access URL" />
   </form>

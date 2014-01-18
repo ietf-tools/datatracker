@@ -2,18 +2,11 @@
 
 {% load nomcom_tags %}
 
-{% block pagehead %}
-  {{ block.super }}
-  <script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
-  <script type="text/javascript" src="/js/yui/yui-20100305.js"></script>
-  <script type="text/javascript" src="/js/base.js"></script>
-{% endblock pagehead %}
-
 {% block subtitle %} - View comments of {{ nominee.email.person.name }}{% endblock %}
 
 {% block nomcom_content %}
 
-<p>Back to list of <a href="{% url nomcom_view_feedback year %}">nominees</a></p>
+<p>Back to list of <a href="{% url "nomcom_view_feedback" year %}">nominees</a></p>
 
 <h2>Feedback of {{ nominee }} </h2>
 
@@ -28,10 +21,10 @@
     {% for ft in feedback_types %}
       <div id="#{{ ft.slug }}">
         {% for feedback in nominee.feedback_set.all %}
-          {% ifequal feedback.type.slug ft.slug %}
+          {% if feedback.type.slug == ft.slug %}
             <div>
               <h3 class="ietf-divider">From {{ feedback.author|formatted_email|default:"Anonymous" }} ({{ feedback.time|date:"Y-m-d" }})</h3>
-              {% ifequal ft.slug "nomina" %}
+              {% if ft.slug == "nomina" %}
                 {% for fn in feedback.nomination_set.all %}
                   {% if fn.candidate_name %}
                     <h3>Candidate name:</h3> <pre>{{ fn.candidate_name }}</pre>
@@ -40,7 +33,7 @@
                     <h3>Candidate phone:</h3> <pre>{{ fn.candidate_phone }}</pre>
                   {% endif %}
                 {% endfor %}
-              {% endifequal %}
+              {% endif %}
               <h3>Positions:</h3> <pre>{{ feedback.positions.all|join:"," }}</pre>
               {% if feedback.subject %}
                 <h3>Subject:</h3> <pre>{{ feedback.subject }}</pre>
@@ -48,7 +41,7 @@
               <h3>Body</h3>
                 <pre>{% decrypt feedback.comments request year 1 %}</pre>
             </div>
-          {% endifequal %}
+          {% endif %}
         {% endfor %}
       </div>
     {% endfor %}

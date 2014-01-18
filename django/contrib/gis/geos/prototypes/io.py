@@ -1,10 +1,14 @@
 import threading
 from ctypes import byref, c_char_p, c_int, c_char, c_size_t, Structure, POINTER
+from django.contrib.gis import memoryview
 from django.contrib.gis.geos.base import GEOSBase
 from django.contrib.gis.geos.libgeos import GEOM_PTR
 from django.contrib.gis.geos.prototypes.errcheck import check_geom, check_string, check_sized_string
 from django.contrib.gis.geos.prototypes.geom import c_uchar_p, geos_char_p
 from django.contrib.gis.geos.prototypes.threadsafe import GEOSFunc
+
+from django.utils import six
+from django.utils.encoding import force_bytes
 
 ### The WKB/WKT Reader/Writer structures and pointers ###
 class WKTReader_st(Structure): pass
@@ -40,6 +44,18 @@ wkt_writer_write = GEOSFunc('GEOSWKTWriter_write')
 wkt_writer_write.argtypes = [WKT_WRITE_PTR, GEOM_PTR]
 wkt_writer_write.restype = geos_char_p
 wkt_writer_write.errcheck = check_string
+
+try:
+    wkt_writer_get_outdim = GEOSFunc('GEOSWKTWriter_getOutputDimension')
+    wkt_writer_get_outdim.argtypes = [WKT_WRITE_PTR]
+    wkt_writer_get_outdim.restype = c_int
+    wkt_writer_set_outdim = GEOSFunc('GEOSWKTWriter_setOutputDimension')
+    wkt_writer_set_outdim.argtypes = [WKT_WRITE_PTR, c_int]
+except AttributeError:
+    # GEOSWKTWriter_get/setOutputDimension has been introduced in GEOS 3.3.0
+    # Always return 2 if not available
+    wkt_writer_get_outdim = lambda ptr: 2
+    wkt_writer_set_outdim = lambda ptr, dim: None
 
 ### WKBReader routines ###
 wkb_reader_create = GEOSFunc('GEOSWKBReader_create')
@@ -118,8 +134,9 @@ class _WKTReader(IOBase):
     ptr_type = WKT_READ_PTR
 
     def read(self, wkt):
-        if not isinstance(wkt, basestring): raise TypeError
-        return wkt_reader_read(self.ptr, wkt)
+        if not isinstance(wkt, (bytes, six.string_types)):
+            raise TypeError
+        return wkt_reader_read(self.ptr, force_bytes(wkt))
 
 class _WKBReader(IOBase):
     _constructor = wkb_reader_create
@@ -128,10 +145,10 @@ class _WKBReader(IOBase):
 
     def read(self, wkb):
         "Returns a _pointer_ to C GEOS Geometry object from the given WKB."
-        if isinstance(wkb, buffer):
-            wkb_s = str(wkb)
+        if isinstance(wkb, memoryview):
+            wkb_s = bytes(wkb)
             return wkb_reader_read(self.ptr, wkb_s, len(wkb_s))
-        elif isinstance(wkb, basestring):
+        elif isinstance(wkb, (bytes, six.string_types)):
             return wkb_reader_read_hex(self.ptr, wkb, len(wkb))
         else:
             raise TypeError
@@ -146,6 +163,17 @@ class WKTWriter(IOBase):
         "Returns the WKT representation of the given geometry."
         return wkt_writer_write(self.ptr, geom.ptr)
 
+    @property
+    def outdim(self):
+        return wkt_writer_get_outdim(self.ptr)
+
+    @outdim.setter
+    def outdim(self, new_dim):
+        if not new_dim in (2, 3):
+            raise ValueError('WKT output dimension must be 2 or 3')
+        wkt_writer_set_outdim(self.ptr, new_dim)
+
+
 class WKBWriter(IOBase):
     _constructor = wkb_writer_create
     _destructor = wkb_writer_destroy
@@ -153,7 +181,7 @@ class WKBWriter(IOBase):
 
     def write(self, geom):
         "Returns the WKB representation of the given geometry."
-        return buffer(wkb_writer_write(self.ptr, geom.ptr, byref(c_size_t())))
+        return memoryview(wkb_writer_write(self.ptr, geom.ptr, byref(c_size_t())))
 
     def write_hex(self, geom):
         "Returns the HEXEWKB representation of the given geometry."
@@ -186,8 +214,8 @@ class WKBWriter(IOBase):
         return bool(ord(wkb_writer_get_include_srid(self.ptr)))
 
     def _set_include_srid(self, include):
-        if bool(include): flag = chr(1)
-        else: flag = chr(0)
+        if bool(include): flag = b'\x01'
+        else: flag = b'\x00'
         wkb_writer_set_include_srid(self.ptr, flag)
 
     srid = property(_get_include_srid, _set_include_srid)
@@ -195,27 +223,27 @@ class WKBWriter(IOBase):
 # `ThreadLocalIO` object holds instances of the WKT and WKB reader/writer
 # objects that are local to the thread.  The `GEOSGeometry` internals
 # access these instances by calling the module-level functions, defined
-# below. 
+# below.
 class ThreadLocalIO(threading.local):
     wkt_r = None
     wkt_w = None
     wkb_r = None
     wkb_w = None
     ewkb_w = None
-    ewkb_w3d = None
 
 thread_context = ThreadLocalIO()
 
 # These module-level routines return the I/O object that is local to the
-# the thread.  If the I/O object does not exist yet it will be initialized.
+# thread. If the I/O object does not exist yet it will be initialized.
 def wkt_r():
     if not thread_context.wkt_r:
         thread_context.wkt_r = _WKTReader()
     return thread_context.wkt_r
 
-def wkt_w():
+def wkt_w(dim=2):
     if not thread_context.wkt_w:
         thread_context.wkt_w = WKTWriter()
+    thread_context.wkt_w.outdim = dim
     return thread_context.wkt_w
 
 def wkb_r():
@@ -223,20 +251,15 @@ def wkb_r():
         thread_context.wkb_r = _WKBReader()
     return thread_context.wkb_r
 
-def wkb_w():
+def wkb_w(dim=2):
    if not thread_context.wkb_w:
        thread_context.wkb_w = WKBWriter()
+   thread_context.wkb_w.outdim = dim
    return thread_context.wkb_w
 
-def ewkb_w():
+def ewkb_w(dim=2):
     if not thread_context.ewkb_w:
         thread_context.ewkb_w = WKBWriter()
         thread_context.ewkb_w.srid = True
+    thread_context.ewkb_w.outdim = dim
     return thread_context.ewkb_w
-
-def ewkb_w3d():
-    if not thread_context.ewkb_w3d:
-        thread_context.ewkb_w3d = WKBWriter()
-        thread_context.ewkb_w3d.srid = True
-        thread_context.ewkb_w3d.outdim = 3
-    return thread_context.ewkb_w3d

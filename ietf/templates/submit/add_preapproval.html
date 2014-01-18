@@ -44,7 +44,7 @@ like <code>.txt</code> in the name.</p>
 </p>
 {% endif %}
 
-<form class="add-preapproval" action="" method="post">
+<form class="add-preapproval" action="" method="post">{% csrf_token %}
   <table>
     <tr>
       <td>{{ form.name.label_tag }}</td>
@@ -56,7 +56,7 @@ like <code>.txt</code> in the name.</p>
 
     <tr>
       <td class="actions" colspan="2">
-      <a href="{% url submit_approvals %}#preapprovals">Back</a>
+      <a href="{% url "submit_approvals" %}#preapprovals">Back</a>
       <input type="submit" value="Add pre-approval" />
       </td>
     </tr>

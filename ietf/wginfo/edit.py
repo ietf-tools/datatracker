@@ -6,7 +6,6 @@ from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.http import HttpResponseForbidden
 from django.template import RequestContext
 from django import forms
-from django.utils import simplejson
 from django.utils.html import mark_safe
 
 import debug
@@ -18,7 +17,7 @@ from ietf.name.models import *
 from ietf.person.models import *
 from ietf.group.models import *
 from ietf.group.utils import save_group_in_history
-from ietf.wgcharter.mails import email_secretariat
+from ietf.wginfo.mails import email_secretariat
 from ietf.person.forms import EmailsField
 from ietf.doc.utils import get_tags_for_stream_id
 
@@ -163,7 +162,7 @@ def edit(request, acronym=None, action="edit"):
     else:
         raise Http404
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = WGForm(request.POST, wg=wg, confirmed=request.POST.get("confirmed", False))
@@ -313,14 +312,14 @@ def conclude(request, acronym):
     """Request the closing of a WG, prompting for instructions."""
     wg = get_object_or_404(Group, acronym=acronym)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = ConcludeForm(request.POST)
         if form.is_valid():
             instructions = form.cleaned_data['instructions']
 
-            email_secretariat(request, wg, "conclude", instructions)
+            email_secretariat(request, wg, "Request closing of group", instructions)
 
             e = GroupEvent(group=wg, by=login)
             e.type = "requested_close"

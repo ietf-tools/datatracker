@@ -1,4 +1,4 @@
-from django.template.defaultfilters import slugify
+from django.utils.text import slugify
 from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django import forms
@@ -87,6 +87,7 @@ class DocumentForm(forms.ModelForm):
         self.fields["states"].widget.instance = self.instance
 
     class Meta:
+        fields = '__all__'
         model = Document
 
 class DocumentAdmin(admin.ModelAdmin):

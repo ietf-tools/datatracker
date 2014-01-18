@@ -7,17 +7,18 @@
    http://geodjango.org/docs/layermapping.html
 """
 import sys
-from datetime import date, datetime
 from decimal import Decimal
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import connections, DEFAULT_DB_ALIAS
+from django.db import connections, router
 from django.contrib.gis.db.models import GeometryField
-from django.contrib.gis.gdal import CoordTransform, DataSource, \
-    OGRException, OGRGeometry, OGRGeomType, SpatialReference
-from django.contrib.gis.gdal.field import \
-    OFTDate, OFTDateTime, OFTInteger, OFTReal, OFTString, OFTTime
+from django.contrib.gis.gdal import (CoordTransform, DataSource,
+    OGRException, OGRGeometry, OGRGeomType, SpatialReference)
+from django.contrib.gis.gdal.field import (
+    OFTDate, OFTDateTime, OFTInteger, OFTReal, OFTString, OFTTime)
 from django.db import models, transaction
-from django.contrib.localflavor.us.models import USStateField
+from django.utils import six
+from django.utils.encoding import force_text
+
 
 # LayerMapping exceptions.
 class LayerMapError(Exception): pass
@@ -53,21 +54,15 @@ class LayerMapping(object):
         models.SlugField : OFTString,
         models.TextField : OFTString,
         models.URLField : OFTString,
-        USStateField : OFTString,
-        models.XMLField : OFTString,
+        models.BigIntegerField : (OFTInteger, OFTReal, OFTString),
         models.SmallIntegerField : (OFTInteger, OFTReal, OFTString),
         models.PositiveSmallIntegerField : (OFTInteger, OFTReal, OFTString),
         }
 
-    # The acceptable transaction modes.
-    TRANSACTION_MODES = {'autocommit' : transaction.autocommit,
-                         'commit_on_success' : transaction.commit_on_success,
-                         }
-
     def __init__(self, model, data, mapping, layer=0,
-                 source_srs=None, encoding=None,
+                 source_srs=None, encoding='utf-8',
                  transaction_mode='commit_on_success',
-                 transform=True, unique=None, using=DEFAULT_DB_ALIAS):
+                 transform=True, unique=None, using=None):
         """
         A LayerMapping object is initialized using the given Model (not an instance),
         a DataSource (or string path to an OGR-supported data file), and a mapping
@@ -75,14 +70,14 @@ class LayerMapping(object):
         argument usage.
         """
         # Getting the DataSource and the associated Layer.
-        if isinstance(data, basestring):
-            self.ds = DataSource(data)
+        if isinstance(data, six.string_types):
+            self.ds = DataSource(data, encoding=encoding)
         else:
             self.ds = data
         self.layer = self.ds[layer]
 
-        self.using = using
-        self.spatial_backend = connections[using].ops
+        self.using = using if using is not None else router.db_for_write(model)
+        self.spatial_backend = connections[self.using].ops
 
         # Setting the mapping & model attributes.
         self.mapping = mapping
@@ -127,14 +122,13 @@ class LayerMapping(object):
 
         # Setting the transaction decorator with the function in the
         # transaction modes dictionary.
-        if transaction_mode in self.TRANSACTION_MODES:
-            self.transaction_decorator = self.TRANSACTION_MODES[transaction_mode]
-            self.transaction_mode = transaction_mode
+        self.transaction_mode = transaction_mode
+        if transaction_mode == 'autocommit':
+            self.transaction_decorator = None
+        elif transaction_mode == 'commit_on_success':
+            self.transaction_decorator = transaction.atomic
         else:
             raise LayerMapError('Unrecognized transaction mode: %s' % transaction_mode)
-
-        if using is None:
-            pass
 
     #### Checking routines used during initialization ####
     def check_fid_range(self, fid_range):
@@ -207,7 +201,7 @@ class LayerMapping(object):
                 if not (ltype.name.startswith(gtype.name) or self.make_multi(ltype, model_field)):
                     raise LayerMapError('Invalid mapping geometry; model has %s%s, '
                                         'layer geometry type is %s.' %
-                                        (fld_name, (coord_dim == 3 and '(dim=3)') or '', ltype))
+                                        (fld_name, '(dim=3)' if coord_dim == 3 else '', ltype))
 
                 # Setting the `geom_field` attribute w/the name of the model field
                 # that is a Geometry.  Also setting the coordinate dimension
@@ -253,7 +247,7 @@ class LayerMapping(object):
             sr = source_srs
         elif isinstance(source_srs, self.spatial_backend.spatial_ref_sys()):
             sr = source_srs.srs
-        elif isinstance(source_srs, (int, basestring)):
+        elif isinstance(source_srs, (int, six.string_types)):
             sr = SpatialReference(source_srs)
         else:
             # Otherwise just pulling the SpatialReference from the layer
@@ -270,7 +264,7 @@ class LayerMapping(object):
             # List of fields to determine uniqueness with
             for attr in unique:
                 if not attr in self.mapping: raise ValueError
-        elif isinstance(unique, basestring):
+        elif isinstance(unique, six.string_types):
             # Only a single field passed in.
             if unique not in self.mapping: raise ValueError
         else:
@@ -316,7 +310,7 @@ class LayerMapping(object):
         will construct and return the uniqueness keyword arguments -- a subset
         of the feature kwargs.
         """
-        if isinstance(self.unique, basestring):
+        if isinstance(self.unique, six.string_types):
             return {self.unique : kwargs[self.unique]}
         else:
             return dict((fld, kwargs[fld]) for fld in self.unique)
@@ -333,10 +327,10 @@ class LayerMapping(object):
             if self.encoding:
                 # The encoding for OGR data sources may be specified here
                 # (e.g., 'cp437' for Census Bureau boundary files).
-                val = unicode(ogr_field.value, self.encoding)
+                val = force_text(ogr_field.value, self.encoding)
             else:
                 val = ogr_field.value
-                if len(val) > model_field.max_length:
+                if model_field.max_length and len(val) > model_field.max_length:
                     raise InvalidString('%s model field maximum string length is %s, given %s characters.' %
                                         (model_field.name, model_field.max_length, len(val)))
         elif isinstance(ogr_field, OFTReal) and isinstance(model_field, models.DecimalField):
@@ -394,7 +388,7 @@ class LayerMapping(object):
 
         # Attempting to retrieve and return the related model.
         try:
-            return rel_model.objects.get(**fk_kwargs)
+            return rel_model.objects.using(self.using).get(**fk_kwargs)
         except ObjectDoesNotExist:
             raise MissingForeignKey('No ForeignKey %s model found with keyword arguments: %s' % (rel_model.__name__, fk_kwargs))
 
@@ -430,12 +424,13 @@ class LayerMapping(object):
         SpatialRefSys = self.spatial_backend.spatial_ref_sys()
         try:
             # Getting the target spatial reference system
-            target_srs = SpatialRefSys.objects.get(srid=self.geo_field.srid).srs
+            target_srs = SpatialRefSys.objects.using(self.using).get(srid=self.geo_field.srid).srs
 
             # Creating the CoordTransform object
             return CoordTransform(self.source_srs, target_srs)
-        except Exception, msg:
-            raise LayerMapError('Could not translate between the data source and model geometry: %s' % msg)
+        except Exception as msg:
+            new_msg = 'Could not translate between the data source and model geometry: %s' % msg
+            six.reraise(LayerMapError, LayerMapError(new_msg), sys.exc_info()[2])
 
     def geometry_field(self):
         "Returns the GeometryField instance associated with the geographic column."
@@ -504,9 +499,6 @@ class LayerMapping(object):
             else:
                 progress_interval = progress
 
-        # Defining the 'real' save method, utilizing the transaction
-        # decorator created during initialization.
-        @self.transaction_decorator
         def _save(feat_range=default_range, num_feat=0, num_saved=0):
             if feat_range:
                 layer_iter = self.layer[feat_range]
@@ -518,7 +510,7 @@ class LayerMapping(object):
                 # Getting the keyword arguments
                 try:
                     kwargs = self.feature_kwargs(feat)
-                except LayerMapError, msg:
+                except LayerMapError as msg:
                     # Something borked the validation
                     if strict: raise
                     elif not silent:
@@ -554,14 +546,10 @@ class LayerMapping(object):
                         # Attempting to save.
                         m.save(using=self.using)
                         num_saved += 1
-                        if verbose: stream.write('%s: %s\n' % (is_update and 'Updated' or 'Saved', m))
+                        if verbose: stream.write('%s: %s\n' % ('Updated' if is_update else 'Saved', m))
                     except SystemExit:
                         raise
-                    except Exception, msg:
-                        if self.transaction_mode == 'autocommit':
-                            # Rolling back the transaction so that other model saves
-                            # will work.
-                            transaction.rollback_unless_managed()
+                    except Exception as msg:
                         if strict:
                             # Bailing out if the `strict` keyword is set.
                             if not silent:
@@ -578,6 +566,9 @@ class LayerMapping(object):
             # Only used for status output purposes -- incremental saving uses the
             # values returned here.
             return num_saved, num_feat
+
+        if self.transaction_decorator is not None:
+            _save = self.transaction_decorator(_save)
 
         nfeat = self.layer.num_feat
         if step and isinstance(step, int) and step < nfeat:

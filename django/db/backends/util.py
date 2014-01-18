@@ -1,52 +1,110 @@
+from __future__ import unicode_literals
+
 import datetime
 import decimal
+import hashlib
+import logging
 from time import time
 
-from django.utils.hashcompat import md5_constructor
+from django.conf import settings
+from django.utils.encoding import force_bytes
+from django.utils.timezone import utc
 
-class CursorDebugWrapper(object):
+
+logger = logging.getLogger('django.db.backends')
+
+
+class CursorWrapper(object):
     def __init__(self, cursor, db):
         self.cursor = cursor
-        self.db = db # Instance of a BaseDatabaseWrapper subclass
+        self.db = db
 
-    def execute(self, sql, params=()):
+    WRAP_ERROR_ATTRS = frozenset(['fetchone', 'fetchmany', 'fetchall', 'nextset'])
+
+    def __getattr__(self, attr):
+        cursor_attr = getattr(self.cursor, attr)
+        if attr in CursorWrapper.WRAP_ERROR_ATTRS:
+            return self.db.wrap_database_errors(cursor_attr)
+        else:
+            return cursor_attr
+
+    def __iter__(self):
+        return iter(self.cursor)
+
+    # The following methods cannot be implemented in __getattr__, because the
+    # code must run when the method is invoked, not just when it is accessed.
+
+    def callproc(self, procname, params=None):
+        self.db.validate_no_broken_transaction()
+        self.db.set_dirty()
+        with self.db.wrap_database_errors:
+            if params is None:
+                return self.cursor.callproc(procname)
+            else:
+                return self.cursor.callproc(procname, params)
+
+    def execute(self, sql, params=None):
+        self.db.validate_no_broken_transaction()
+        self.db.set_dirty()
+        with self.db.wrap_database_errors:
+            if params is None:
+                return self.cursor.execute(sql)
+            else:
+                return self.cursor.execute(sql, params)
+
+    def executemany(self, sql, param_list):
+        self.db.validate_no_broken_transaction()
+        self.db.set_dirty()
+        with self.db.wrap_database_errors:
+            return self.cursor.executemany(sql, param_list)
+
+
+class CursorDebugWrapper(CursorWrapper):
+
+    # XXX callproc isn't instrumented at this time.
+
+    def execute(self, sql, params=None):
         start = time()
         try:
-            return self.cursor.execute(sql, params)
+            return super(CursorDebugWrapper, self).execute(sql, params)
         finally:
             stop = time()
+            duration = stop - start
             sql = self.db.ops.last_executed_query(self.cursor, sql, params)
             self.db.queries.append({
                 'sql': sql,
-                'time': "%.3f" % (stop - start),
+                'time': "%.3f" % duration,
             })
+            logger.debug('(%.3f) %s; args=%s' % (duration, sql, params),
+                extra={'duration': duration, 'sql': sql, 'params': params}
+            )
 
     def executemany(self, sql, param_list):
         start = time()
         try:
-            return self.cursor.executemany(sql, param_list)
+            return super(CursorDebugWrapper, self).executemany(sql, param_list)
         finally:
             stop = time()
+            duration = stop - start
+            try:
+                times = len(param_list)
+            except TypeError:           # param_list could be an iterator
+                times = '?'
             self.db.queries.append({
-                'sql': '%s times: %s' % (len(param_list), sql),
-                'time': "%.3f" % (stop - start),
+                'sql': '%s times: %s' % (times, sql),
+                'time': "%.3f" % duration,
             })
+            logger.debug('(%.3f) %s; args=%s' % (duration, sql, param_list),
+                extra={'duration': duration, 'sql': sql, 'params': param_list}
+            )
 
-    def __getattr__(self, attr):
-        if attr in self.__dict__:
-            return self.__dict__[attr]
-        else:
-            return getattr(self.cursor, attr)
-
-    def __iter__(self):
-        return iter(self.cursor)
 
 ###############################################
 # Converters from database (string) to Python #
 ###############################################
 
 def typecast_date(s):
-    return s and datetime.date(*map(int, s.split('-'))) or None # returns None if s is null
+    return datetime.date(*map(int, s.split('-'))) if s else None # returns None if s is null
 
 def typecast_time(s): # does NOT store time zone information
     if not s: return None
@@ -80,13 +138,10 @@ def typecast_timestamp(s): # does NOT store time zone information
         seconds, microseconds = seconds.split('.')
     else:
         microseconds = '0'
+    tzinfo = utc if settings.USE_TZ else None
     return datetime.datetime(int(dates[0]), int(dates[1]), int(dates[2]),
-        int(times[0]), int(times[1]), int(seconds), int((microseconds + '000000')[:6]))
-
-def typecast_boolean(s):
-    if s is None: return None
-    if not s: return False
-    return str(s)[0].lower() == 't'
+        int(times[0]), int(times[1]), int(seconds),
+        int((microseconds + '000000')[:6]), tzinfo)
 
 def typecast_decimal(s):
     if s is None or s == '':
@@ -97,23 +152,19 @@ def typecast_decimal(s):
 # Converters from Python to database (string) #
 ###############################################
 
-def rev_typecast_boolean(obj, d):
-    return obj and '1' or '0'
-
 def rev_typecast_decimal(d):
     if d is None:
         return None
     return str(d)
 
-def truncate_name(name, length=None):
+def truncate_name(name, length=None, hash_len=4):
     """Shortens a string to a repeatable mangled version with the given length.
     """
     if length is None or len(name) <= length:
         return name
 
-    hash = md5_constructor(name).hexdigest()[:4]
-
-    return '%s%s' % (name[:length-4], hash)
+    hsh = hashlib.md5(force_bytes(name)).hexdigest()[:hash_len]
+    return '%s%s' % (name[:length-hash_len], hsh)
 
 def format_number(value, max_digits, decimal_places):
     """
@@ -123,6 +174,6 @@ def format_number(value, max_digits, decimal_places):
     if isinstance(value, decimal.Decimal):
         context = decimal.getcontext().copy()
         context.prec = max_digits
-        return u'%s' % str(value.quantize(decimal.Decimal(".1") ** decimal_places, context=context))
+        return "{0:f}".format(value.quantize(decimal.Decimal(".1") ** decimal_places, context=context))
     else:
-        return u"%.*f" % (decimal_places, value)
+        return "%.*f" % (decimal_places, value)

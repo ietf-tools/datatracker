@@ -47,7 +47,7 @@ def get_person_for_user(user):
     if not user.is_authenticated():
         return None
     try:
-        p = user.get_profile()
+        p = user.person
         p.email = lambda: (p.plain_name(), p.email_address())
         return p
     except Person.DoesNotExist:

@@ -1,10 +1,10 @@
 import datetime
 import logging
 import sys
+import json
 
-from django.utils import simplejson as json
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.http import HttpResponse, Http404
 
 from dajaxice.core import dajaxice_functions
 from dajaxice.decorators import dajaxice_register
@@ -16,5 +16,5 @@ def person_json(request, personid):
 
     return HttpResponse(json.dumps(person.json_dict(request.build_absolute_uri("/")),
                                    sort_keys=True, indent=2),
-                        mimetype="text/json")
+                        content_type="text/json")
 

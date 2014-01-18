@@ -8,12 +8,12 @@ from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.utils.safestring import mark_safe
+from django.shortcuts import redirect
 
 from ietf.secr.lib import template, jsonapi
 from ietf.secr.ipradmin.managers import IprDetailManager
 from ietf.secr.ipradmin.forms import IprDetailForm, IPRContactFormset
 from ietf.secr.utils.document import get_rfc_num, is_draft
-import ietf.settings as settings
 
 from ietf.ipr.models import IprDetail, IprUpdate, IprContact, LICENSE_CHOICES, STDONLY_CHOICES, IprNotification
 from ietf.utils.mail import send_mail_text
@@ -119,10 +119,7 @@ def admin_notify(request, ipr_id):
             request.session['send_result'] = 'Some messages failed to send'
         else: 
             request.session['send_result'] = 'Messages sent successfully'
-        return HttpResponseRedirect(reverse(
-            'ipradmin_old_submitter_notify', 
-            args=[ipr_id]
-        ))
+        return redirect('ipradmin_old_submitter_notify', ipr_id=ipr_id)
 
     if 'send_result' in request.session:
         result = request.session['send_result']
@@ -343,7 +340,7 @@ def admin_delete(request, ipr_id):
     ipr_dtl = IprDetail.objects.get(ipr_id=ipr_id)
     ipr_dtl.status = 2
     ipr_dtl.save()
-    return HttpResponseRedirect(reverse('ipradmin_admin_list'))
+    return redirect('ipradmin_admin_list')
 
 @template('ipradmin/notify.html')
 def old_submitter_notify(request, ipr_id):
@@ -355,10 +352,7 @@ def old_submitter_notify(request, ipr_id):
             request.session['send_result'] = 'Some messages failed to send'
         else: 
             request.session['send_result'] = 'Messages sent successfully'
-        return HttpResponseRedirect(reverse(
-            'ipradmin_old_submitter_notify', 
-            args=[ipr_id]
-        ))
+        return redirect('ipradmin_old_submitter_notify', ipr_id=ipr_id)
 
     if 'send_result' in request.session:
         result = request.session['send_result']
@@ -417,9 +411,9 @@ def admin_detail(request, ipr_id):
         if command == 'post':
             return admin_post(request, ipr_id, 'detail', 'post')
         elif command == 'notify':
-            return HttpResponseRedirect(reverse('ipradmin_old_submitter_notify', args=[ipr_id]))
+            return redirect('ipradmin_old_submitter_notify', ipr_id=ipr_id)
         elif command == 'delete':
-            return HttpResponseRedirect(reverse('ipradmin_admin_delete', args=[ipr_id]))
+            return redirect('ipradmin_admin_delete', ipr_id=ipr_id)
 
     header_text = possible = temp_name = footer_text = ''
     contact_one_data, contact_two_data, document_data, licensing_data,\
@@ -683,7 +677,7 @@ def admin_create(request):
                 ipr_contact_formset.forms[1].save(ipr_detail)
             if ipr_contact_formset.forms[2].is_valid():
                 ipr_contact_formset.forms[2].save(ipr_detail)
-            return HttpResponseRedirect(reverse('ipradmin_admin_list'))
+            return redirect('ipradmin_admin_list')
     else:
         ipr_detail_form = IprDetailForm(formtype='create')
         ipr_contact_formset = IPRContactFormset(initial=[

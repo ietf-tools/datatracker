@@ -14,7 +14,7 @@ form.send-ballot pre {
 {% block content %}
 <h1>Send ballot position email for {{ ad }}</h1>
 
-<form class="send-ballot" action="" method="POST">
+<form class="send-ballot" action="" method="post">{% csrf_token %}
   <table>
     <tr><th>From:</th> <td>{{ frm }}</td></tr>
     <tr><th>To:</th> <td>{{ to }}</td></tr>

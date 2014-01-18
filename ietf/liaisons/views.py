@@ -1,5 +1,5 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
-import datetime
+import datetime, json
 from email.utils import parseaddr
 
 from django.conf import settings
@@ -8,8 +8,6 @@ from django.core.validators import validate_email, ValidationError
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
-from django.utils import simplejson
-from django.views.generic.list_detail import object_list, object_detail
 
 from ietf.liaisons.models import LiaisonStatement
 from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaison,
@@ -34,7 +32,7 @@ def add_liaison(request, liaison=None):
                     notify_pending_by_email(request, liaison)
                 else:
                     send_liaison_by_email(request, liaison)
-            return HttpResponseRedirect(reverse('liaison_list'))
+            return redirect('liaison_list')
     else:
         form = liaison_form_factory(request, liaison=liaison)
 
@@ -82,8 +80,8 @@ def get_info(request):
             full_list = [(person.pk, person.email())] + full_list
             result.update({'full_list': full_list})
 
-    json_result = simplejson.dumps(result)
-    return HttpResponse(json_result, mimetype='text/javascript')
+    json_result = json.dumps(result)
+    return HttpResponse(json_result, content_type='text/javascript')
 
 def normalize_sort(request):
     sort = request.GET.get('sort', "")
@@ -97,7 +95,7 @@ def normalize_sort(request):
 
 def liaison_list(request):
     sort, order_by = normalize_sort(request)
-    liaisons = LiaisonStatement.objects.exclude(approved=None).order_by(order_by)
+    liaisons = LiaisonStatement.objects.exclude(approved=None).order_by(order_by).prefetch_related("attachments")
 
     can_send_outgoing = can_add_outgoing_liaison(request.user)
     can_send_incoming = can_add_incoming_liaison(request.user)

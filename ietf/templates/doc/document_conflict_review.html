@@ -15,7 +15,7 @@
   Versions:
   <span class="revisions">
     {% for rev in revisions %}
-    <a {% if rev != doc.rev %}href="{% url doc_view name=doc.name %}{% if not forloop.last %}{{ rev }}/{% endif %}"{% endif %}>{{ rev }}</a>
+    <a {% if rev != doc.rev %}href="{% url "doc_view" name=doc.name %}{% if not forloop.last %}{{ rev }}/{% endif %}"{% endif %}>{{ rev }}</a>
     {% endfor %}
   </span>
 </div>
@@ -24,7 +24,7 @@
   <div>
     {% if snapshot %}Snapshot of{% endif %}
     {% if doc.get_state_slug not in approved_states %}Proposed{% endif %}
-    IESG Conflict Review for the {{conflictdoc.stream}} document: <a href="{% url doc_view name=conflictdoc.canonical_name %}">{{ conflictdoc.canonical_name }}{% if conflictdoc.get_state_slug != 'rfc' %}-{{ conflictdoc.rev }}{% endif %}</a>
+    IESG Conflict Review for the {{conflictdoc.stream}} document: <a href="{% url "doc_view" name=conflictdoc.canonical_name %}">{{ conflictdoc.canonical_name }}{% if conflictdoc.get_state_slug != 'rfc' %}-{{ conflictdoc.rev }}{% endif %}</a>
   </div>
 
   <table id="metatable" width="100%">
@@ -32,12 +32,12 @@
       <td><a href="/doc/help/state/conflict-review/">Conflict Review State</a>:</td>
       <td>
         <div>
-        <a title="{{ doc.get_state.desc }}"{% if not snapshot and user|has_role:"Area Director,Secretariat" %} class="editlink" href="{% url conflict_review_change_state name=doc.name %}"{% endif %}>{{ doc.get_state.name }}</a>
+        <a title="{{ doc.get_state.desc }}"{% if not snapshot and user|has_role:"Area Director,Secretariat" %} class="editlink" href="{% url "conflict_review_change_state" name=doc.name %}"{% endif %}>{{ doc.get_state.name }}</a>
 
         {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
 
           {% if request.user|has_role:"Secretariat" %}{% if doc.get_state_slug = 'appr-reqnopub-pend' or doc.get_state_slug = 'appr-noprob-pend' %}
-          - <a href="{% url conflict_review_approve name=doc.name %}">Approve conflict review</a>
+          - <a href="{% url "conflict_review_approve" name=doc.name %}">Approve conflict review</a>
           {% endif %}{% endif %}
 
         {% endif %}
@@ -49,7 +49,7 @@
       <td>Telechat Date:</td>
       <td>
           <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-                class="editlink" href="{% url conflict_review_telechat_date name=doc.name %}"
+                class="editlink" href="{% url "conflict_review_telechat_date" name=doc.name %}"
              {%endif%} >
           {% if not telechat %}Not on agenda of an IESG telechat{% else %}On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat{% if doc.returning_item %} (returning item){% endif %}{% endif %}
           </a>
@@ -67,7 +67,7 @@
        <td>Shepherding AD:</td>
        <td>
            <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-               class="editlink" href="{% url conflict_review_ad name=doc.name %}"
+               class="editlink" href="{% url "conflict_review_ad" name=doc.name %}"
               {% endif %}
            >
            {{doc.ad}}
@@ -79,7 +79,7 @@
        <td>Send notices to:</td>
        <td>
            <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-               class="editlink" href="{% url conflict_review_notices name=doc.name %}"
+               class="editlink" href="{% url "conflict_review_notices" name=doc.name %}"
               {% endif %}
            >
            {{doc.notify}}
@@ -103,7 +103,7 @@
 <h3>Conflict Review for {{ conflictdoc.name }}-{{ conflictdoc.rev }}
 
 {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug != 'apprsent' %}
-<a class="edit" href="{% url conflict_review_submit name=doc.name %}">Change conflict review text</a>
+<a class="edit" href="{% url "conflict_review_submit" name=doc.name %}">Change conflict review text</a>
 {% endif %}
 </h3>
 

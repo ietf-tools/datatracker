@@ -62,8 +62,10 @@ def showballoticon(doc):
 
     return True
 
+@register.simple_tag(takes_context=True)
+def ballot_icon(context, doc):
+    user = context.get("user")
 
-def render_ballot_icon(doc, user):
     if not doc:
         return ""
 
@@ -117,23 +119,6 @@ def render_ballot_icon(doc, user):
     res.append("</table></a>")
 
     return "".join(res)
-
-class BallotIconNode(template.Node):
-    def __init__(self, doc_var):
-        self.doc_var = doc_var
-    def render(self, context):
-        doc = template.resolve_variable(self.doc_var, context)
-        return render_ballot_icon(doc, context.get("user"))
-
-def do_ballot_icon(parser, token):
-    try:
-        tag_name, doc_name = token.split_contents()
-    except ValueError:
-        raise template.TemplateSyntaxError, "%r tag requires exactly two arguments" % token.contents.split()[0]
-    return BallotIconNode(doc_name)
-
-register.tag('ballot_icon', do_ballot_icon)
-
 
 @register.filter
 def ballotposition(doc, user):

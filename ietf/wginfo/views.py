@@ -92,7 +92,7 @@ def wg_summary_area(request):
 
     return render_to_response('wginfo/1wg-summary.txt',
                               { 'areas': areas },
-                              mimetype='text/plain; charset=UTF-8')
+                              content_type='text/plain; charset=UTF-8')
 
 def wg_summary_acronym(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
@@ -102,7 +102,7 @@ def wg_summary_acronym(request):
     return render_to_response('wginfo/1wg-summary-by-acronym.txt',
                               { 'areas': areas,
                                 'groups': groups },
-                              mimetype='text/plain; charset=UTF-8')
+                              content_type='text/plain; charset=UTF-8')
 
 def wg_charters(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
@@ -114,7 +114,7 @@ def wg_charters(request):
             group.area = area
     return render_to_response('wginfo/1wg-charters.txt',
                               { 'areas': areas },
-                              mimetype='text/plain; charset=UTF-8')
+                              content_type='text/plain; charset=UTF-8')
 
 def wg_charters_by_acronym(request):
     areas = dict((a.id, a) for a in Group.objects.filter(type="area", state="active").order_by("name"))
@@ -128,7 +128,7 @@ def wg_charters_by_acronym(request):
         group.area = areas.get(group.parent_id)
     return render_to_response('wginfo/1wg-charters-by-acronym.txt',
                               { 'groups': groups },
-                              mimetype='text/plain; charset=UTF-8')
+                              content_type='text/plain; charset=UTF-8')
 
 def active_wgs(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
@@ -258,7 +258,7 @@ def group_documents_txt(request, acronym):
 
         rows.append(u"\t".join((d.prefix, name, clean_whitespace(d.title))))
 
-    return HttpResponse(u"\n".join(rows), mimetype='text/plain; charset=UTF-8')
+    return HttpResponse(u"\n".join(rows), content_type='text/plain; charset=UTF-8')
 
 
 def group_charter(request, acronym):

@@ -81,7 +81,7 @@ def get_from_choices(user):
     all the Announced From choices.  Including
     leadership chairs and other entities.
     '''
-    person = user.get_profile()
+    person = user.person
     if has_role(user,'Secretariat'):
         f = FROM_LIST
     elif has_role(user,'IETF Chair'):
@@ -154,7 +154,7 @@ class AnnounceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user')
-        person = user.get_profile()
+        person = user.person
         super(AnnounceForm, self).__init__(*args, **kwargs)
         self.fields['to'].widget = forms.Select(choices=TO_CHOICES)
         self.fields['to'].help_text = 'Select name OR select Other... and enter email below'
@@ -183,7 +183,7 @@ class AnnounceForm(forms.ModelForm):
     def save(self, *args, **kwargs):
         user = kwargs.pop('user')
         message = super(AnnounceForm, self).save(commit=False)
-        message.by = user.get_profile()
+        message.by = user.person
         if self.cleaned_data['to'] == 'Other...':
             message.to = self.cleaned_data['to_custom']
         if kwargs['commit']:

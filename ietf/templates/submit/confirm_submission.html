@@ -14,11 +14,11 @@ p.error { color: red; font-weight: bold; font-size: 1.5em; }
 
 {% if submission.state_id != "auth" and submission.state_id != "aut-appr" %}
   {% if submission.state_id == "posted" %}
-    <p>The submission has already been posted. See the <a href="{% url doc_view name=submission.name %}">draft here</a>.</p>
+    <p>The submission has already been posted. See the <a href="{% url "doc_view" name=submission.name %}">draft here</a>.</p>
   {% else %}
     <p>The submission is not in a state where it can be confirmed.</p>
 
-    <p>Go to the <a href="{% url submit_submission_status submission_id=submission.pk %}">status page</a>
+    <p>Go to the <a href="{% url "submit_submission_status" submission_id=submission.pk %}">status page</a>
       to see what has happened to it.</p>
   {% endif %}
 {% else %}
@@ -27,7 +27,7 @@ p.error { color: red; font-weight: bold; font-size: 1.5em; }
     <p class="error">Incorrect authorization key.</p>
 
     <p>Double-check the link you followed. If everything fails, you can go to
-      the <a href="{% url submit_submission_status submission_id=submission.pk %}">status page</a>,
+      the <a href="{% url "submit_submission_status" submission_id=submission.pk %}">status page</a>,
       cancel the submission and try again.</p>
   {% else %}
     <p>Authorization key accepted.</p>
@@ -35,7 +35,7 @@ p.error { color: red; font-weight: bold; font-size: 1.5em; }
     <p>Please press the button below to finish posting of
       <strong>{{ submission.name }}-{{ submission.rev }}</strong></p>
 
-    <form method="post">
+    <form method="post">{% csrf_token %}
       <input type="submit" value="Confirm submission and post draft" />
     </form>
   {% endif %}

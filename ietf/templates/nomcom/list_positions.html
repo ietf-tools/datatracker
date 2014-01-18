@@ -3,10 +3,10 @@
 {% block nomcom_content %}
 
 <h2>Positions in {{ nomcom.group }}</h2>
-<a href="{% url nomcom_add_position year %}">Add a new position</a>
+<a href="{% url "nomcom_add_position" year %}">Add a new position</a>
 {% if positions %}
   {% for position in positions %}
-      <h3>{{ position.name }} <a href="{% url nomcom_edit_position year position.id %}">[Edit]</a> <a href="{% url nomcom_remove_position year position.id %}">[Remove]</a></h3>
+      <h3>{{ position.name }} <a href="{% url "nomcom_edit_position" year position.id %}">[Edit]</a> <a href="{% url "nomcom_remove_position" year position.id %}">[Remove]</a></h3>
       <dl>
         <dt>Description:</dt>
         <dd>{{ position.description }}</dd>
@@ -18,7 +18,7 @@
         <dd>
     <ul>
     {% for template in position.get_templates %}
-      <li><a href="{% url nomcom_edit_template year template.id %}">{{ template }}</a></li>
+      <li><a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a></li>
     {% endfor %}
     </ul>
         </dd>

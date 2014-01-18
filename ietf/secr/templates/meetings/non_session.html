@@ -29,13 +29,13 @@
             <td>{{ item.session.short }}</td>
             <td>{{ item.session.group.acronym }}</td>
             {% if item.type.slug == 'other' or item.type.slug == 'plenary' %}
-              <td><a href="{% url meetings_non_session_edit meeting_id=meeting.number slot_id=item.id %}">{{ item.location }}</a></td>
+              <td><a href="{% url "meetings_non_session_edit" meeting_id=meeting.number slot_id=item.id %}">{{ item.location }}</a></td>
             {% else %}
               <td>{{ item.location }}</td>
             {% endif %}
             <td>{{ item.show_location }}</td>
             <td>{{ item.type }}</td>
-            <td><a href="{% url meetings_non_session_delete meeting_id=meeting.number slot_id=item.id %}">Delete</a></td>
+            <td><a href="{% url "meetings_non_session_delete" meeting_id=meeting.number slot_id=item.id %}">Delete</a></td>
           </tr>
         {% endfor %}
       </tbody>
@@ -46,7 +46,7 @@
     <br /><hr />
     
     <div>
-    <form id="timeslot-form" action="" method="post">
+    <form id="timeslot-form" action="" method="post">{% csrf_token %}
         <table id="timeslot-form" class="full-width amstable">
           <col width="150">
           {{ form.as_table }}

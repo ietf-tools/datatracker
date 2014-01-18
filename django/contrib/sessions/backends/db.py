@@ -1,10 +1,10 @@
-import datetime
-from django.conf import settings
-from django.contrib.sessions.models import Session
+import logging
+
 from django.contrib.sessions.backends.base import SessionBase, CreateError
 from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError, transaction, router
-from django.utils.encoding import force_unicode
+from django.utils import timezone
+from django.utils.encoding import force_text
 
 class SessionStore(SessionBase):
     """
@@ -16,24 +16,24 @@ class SessionStore(SessionBase):
     def load(self):
         try:
             s = Session.objects.get(
-                session_key = self.session_key,
-                expire_date__gt=datetime.datetime.now()
+                session_key=self.session_key,
+                expire_date__gt=timezone.now()
             )
-            return self.decode(force_unicode(s.session_data))
-        except (Session.DoesNotExist, SuspiciousOperation):
+            return self.decode(s.session_data)
+        except (Session.DoesNotExist, SuspiciousOperation) as e:
+            if isinstance(e, SuspiciousOperation):
+                logger = logging.getLogger('django.security.%s' %
+                        e.__class__.__name__)
+                logger.warning(force_text(e))
             self.create()
             return {}
 
     def exists(self, session_key):
-        try:
-            Session.objects.get(session_key=session_key)
-        except Session.DoesNotExist:
-            return False
-        return True
+        return Session.objects.filter(session_key=session_key).exists()
 
     def create(self):
         while True:
-            self.session_key = self._get_new_session_key()
+            self._session_key = self._get_new_session_key()
             try:
                 # Save immediately to ensure we have a unique entry in the
                 # database.
@@ -53,26 +53,33 @@ class SessionStore(SessionBase):
         entry).
         """
         obj = Session(
-            session_key = self.session_key,
-            session_data = self.encode(self._get_session(no_load=must_create)),
-            expire_date = self.get_expiry_date()
+            session_key=self._get_or_create_session_key(),
+            session_data=self.encode(self._get_session(no_load=must_create)),
+            expire_date=self.get_expiry_date()
         )
         using = router.db_for_write(Session, instance=obj)
-        sid = transaction.savepoint(using=using)
         try:
-            obj.save(force_insert=must_create, using=using)
+            with transaction.atomic(using=using):
+                obj.save(force_insert=must_create, using=using)
         except IntegrityError:
             if must_create:
-                transaction.savepoint_rollback(sid, using=using)
                 raise CreateError
             raise
 
     def delete(self, session_key=None):
         if session_key is None:
-            if self._session_key is None:
+            if self.session_key is None:
                 return
-            session_key = self._session_key
+            session_key = self.session_key
         try:
             Session.objects.get(session_key=session_key).delete()
         except Session.DoesNotExist:
             pass
+
+    @classmethod
+    def clear_expired(cls):
+        Session.objects.filter(expire_date__lt=timezone.now()).delete()
+
+
+# At bottom to avoid circular import
+from django.contrib.sessions.models import Session

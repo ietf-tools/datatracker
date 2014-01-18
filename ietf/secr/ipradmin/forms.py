@@ -1,9 +1,10 @@
 from copy import deepcopy
+import json
+
 from form_utils.forms import BetterModelForm
 from django import forms
 from django.utils.safestring import mark_safe
 from django.forms.formsets import formset_factory
-from django.utils import simplejson
 
 from ietf.ipr.models import IprDetail, IprContact, LICENSE_CHOICES, IprUpdate, SELECT_CHOICES, IprDocAlias
 
@@ -154,8 +155,8 @@ class IprDetailForm(BetterModelForm):
             drafts = {}
             for draft in self.instance.docs().exclude(doc_alias__name__startswith='rfc'):
                 drafts[draft.doc_alias.id] = draft.doc_alias.document.name
-            self.initial['rfc_num'] = simplejson.dumps(rfcs)
-            self.initial['id_filename'] = simplejson.dumps(drafts)
+            self.initial['rfc_num'] = json.dumps(rfcs)
+            self.initial['id_filename'] = json.dumps(drafts)
         
         else:
             # if this is a new IPR hide status field
@@ -167,7 +168,7 @@ class IprDetailForm(BetterModelForm):
 
     def _fetch_objects(self, data, model):
         if data:
-            ids = [int(x) for x in simplejson.loads(data)]
+            ids = [int(x) for x in json.loads(data)]
         else:
             return []
         objects = []
@@ -253,7 +254,7 @@ class IprDetailForm(BetterModelForm):
         for doc in self.cleaned_data['id_filename']:
             #doc_alias = DocAlias.objects.get(id=doc)
             IprDocAlias.objects.create(ipr=ipr_detail,doc_alias=doc)
-            
+
         return ipr_detail
 
     class Meta:
@@ -325,3 +326,6 @@ class IprDetailForm(BetterModelForm):
             }),
         ]
  
+        fields = []
+        for n, d in fieldsets:
+            fields += d["fields"]

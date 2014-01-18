@@ -1,8 +1,12 @@
-from traceback import format_exception
+from __future__ import print_function
+
+from traceback import format_exception, format_exc
 
 class SouthError(RuntimeError):
     pass
 
+class SouthWarning(RuntimeWarning):
+    pass
 
 class BrokenMigration(SouthError):
     def __init__(self, migration, exc_info):
@@ -10,6 +14,11 @@ class BrokenMigration(SouthError):
         self.exc_info = exc_info
         if self.exc_info:
             self.traceback = ''.join(format_exception(*self.exc_info))
+        else:
+            try:
+                self.traceback = format_exc()
+            except AttributeError: # Python3 when there is no previous exception
+                self.traceback = None
 
     def __str__(self):
         return ("While loading migration '%(migration)s':\n"
@@ -18,6 +27,8 @@ class BrokenMigration(SouthError):
 
 class UnknownMigration(BrokenMigration):
     def __str__(self):
+        if not hasattr(self, "traceback"):
+            self.traceback = ""
         return ("Migration '%(migration)s' probably doesn't exist.\n"
                 '%(traceback)s' % self.__dict__)
 
@@ -45,7 +56,7 @@ class MultiplePrefixMatches(SouthError):
         self.matches = matches
 
     def __str__(self):
-        self.matches_list = "\n    ".join([unicode(m) for m in self.matches])
+        self.matches_list = "\n    ".join([str(m) for m in self.matches])
         return ("Prefix '%(prefix)s' matches more than one migration:\n"
                 "    %(matches_list)s") % self.__dict__
 
@@ -55,7 +66,7 @@ class GhostMigrations(SouthError):
         self.ghosts = ghosts
 
     def __str__(self):
-        self.ghosts_list = "\n    ".join([unicode(m) for m in self.ghosts])
+        self.ghosts_list = "\n    ".join([str(m) for m in self.ghosts])
         return ("\n\n ! These migrations are in the database but not on disk:\n"
                 "    %(ghosts_list)s\n"
                 " ! I'm not trusting myself; either fix this yourself by fiddling\n"
@@ -68,7 +79,7 @@ class CircularDependency(SouthError):
         self.trace = trace
 
     def __str__(self):
-        trace = " -> ".join([unicode(s) for s in self.trace])
+        trace = " -> ".join([str(s) for s in self.trace])
         return ("Found circular dependency:\n"
                 "    %s") % trace
 
@@ -98,7 +109,7 @@ class DependsOnUnknownMigration(SouthError):
         self.depends_on = depends_on
 
     def __str__(self):
-        print "Migration '%(migration)s' depends on unknown migration '%(depends_on)s'." % self.__dict__
+        print("Migration '%(migration)s' depends on unknown migration '%(depends_on)s'." % self.__dict__)
 
 
 class DependsOnUnmigratedApplication(SouthError):
@@ -135,3 +146,15 @@ class UnfreezeMeLater(Exception):
 class ImpossibleORMUnfreeze(SouthError):
     """Raised if the ORM can't manage to unfreeze all the models in a linear fashion."""
     pass
+
+class ConstraintDropped(SouthWarning):
+    def __init__(self, constraint, table, column=None):
+        self.table = table
+        if column:
+            self.column = ".%s" % column
+        else:
+            self.column = ""
+        self.constraint = constraint
+    
+    def __str__(self):
+        return "Constraint %(constraint)s was dropped from %(table)s%(column)s -- was this intended?" % self.__dict__  

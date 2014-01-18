@@ -2,8 +2,7 @@
 
 import codecs, re, os, datetime
 
-# FIXME: once we're on Python 2.7, replace with: from collections import OrderedDict
-from django.utils.datastructures import SortedDict as OrderedDict
+from collections import OrderedDict
 
 from django.http import Http404
 from django.conf import settings

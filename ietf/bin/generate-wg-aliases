@@ -17,10 +17,8 @@ mail lists: -ads, and -chairs
 import os, sys
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
-from ietf import settings
-from django.core import management
-management.setup_environ(settings)
 
 from ietf.group.models import Group
 from ietf.group.utils import get_group_ads_emails, get_group_chairs_emails, get_area_ads_emails, get_area_chairs_emails

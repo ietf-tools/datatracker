@@ -17,11 +17,11 @@ Edit notification addresses for {{titletext}}
 {% block content %}
 <h1>Edit notification addresses for {{titletext}}</h1>
 
-<form class="edit-info" action="" enctype="multipart/form-data" method="POST">
+<form class="edit-info" action="" enctype="multipart/form-data" method="post">{% csrf_token %}
   <table>
     {% for field in form.visible_fields %}
     <tr>
-      <th>{{ field.label_tag }}:</th>
+      <th>{{ field.label_tag }}</th>
       <td>
         {{ field }}
 	{% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
@@ -32,7 +32,7 @@ Edit notification addresses for {{titletext}}
     <tr>
       <td></td>
       <td class="actions">
-        <a href="{% url doc_view name=doc.canonical_name %}">Back</a>
+        <a href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
         <input type="submit" value="Submit"/>
       </td>
     </tr>

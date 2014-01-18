@@ -1,46 +1,114 @@
-#----------------------------------------------------------------------
-# Copyright (c) 2009-2011 Benito Jorge Bastida
-# All rights reserved.
-#  Redistribution and use in source and binary forms, with or without
-#  modification, are permitted provided that the following conditions are
-#  met:
-#
-#    o Redistributions of source code must retain the above copyright
-#      notice, this list of conditions, and the disclaimer that follows.
-#
-#    o Redistributions in binary form must reproduce the above copyright
-#      notice, this list of conditions, and the following disclaimer in
-#      the documentation and/or other materials provided with the
-#      distribution.
-#
-#    o Neither the name of Digital Creations nor the names of its
-#      contributors may be used to endorse or promote products derived
-#      from this software without specific prior written permission.
-#
-#  THIS SOFTWARE IS PROVIDED BY DIGITAL CREATIONS AND CONTRIBUTORS *AS
-#  IS* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-#  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-#  PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL DIGITAL
-#  CREATIONS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-#  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-#  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-#  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-#  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-#  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
-#  USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-#  DAMAGE.
-#----------------------------------------------------------------------
-
-import os
-import unittest
-
 from django.test import TestCase
+
 from django.conf import settings
 
-from dajaxice.exceptions import FunctionNotCallableError, DajaxiceImportError
-from dajaxice.core import DajaxiceRequest
-from dajaxice.core.Dajaxice import Dajaxice, DajaxiceModule, DajaxiceFunction
-from dajaxice.core import dajaxice_functions
+from dajaxice.core import DajaxiceConfig
+from dajaxice.core.Dajaxice import DajaxiceModule, DajaxiceFunction, Dajaxice
+from dajaxice.exceptions import FunctionNotCallableError
+
+
+class DajaxiceModuleTest(TestCase):
+
+    def setUp(self):
+        self.module = DajaxiceModule()
+
+    def test_constructor(self):
+        self.assertEqual(self.module.functions, {})
+        self.assertEqual(self.module.submodules, {})
+
+    def test_add_function(self):
+        function = lambda x: x
+
+        self.module.add('test', function)
+        self.assertEqual(self.module.functions, {'test': function})
+        self.assertEqual(self.module.submodules, {})
+
+        self.module.add('foo.bar', function)
+        self.assertEqual(self.module.functions, {'test': function})
+        self.assertEqual(self.module.submodules.keys(), ['foo'])
+        self.assertEqual(self.module.submodules['foo'].functions, {'bar': function})
+
+
+class DajaxiceFunctionTest(TestCase):
+
+    def test_constructor(self):
+
+        class CalledEception(Exception):
+            pass
+
+        def callback():
+            raise CalledEception
+
+        function = DajaxiceFunction(callback, 'foo', 'POST')
+
+        self.assertEqual(function.function, callback)
+        self.assertEqual(function.name, 'foo')
+        self.assertEqual(function.method, 'POST')
+        self.assertRaises(CalledEception, function.call)
+
+
+class DajaxiceTest(TestCase):
+
+    def setUp(self):
+        self.dajaxice = Dajaxice()
+        self.function = lambda x: x
+
+    def test_constructor(self):
+        self.assertEqual(self.dajaxice._registry, {})
+
+    def test_register(self):
+        self.dajaxice.register(self.function, 'foo')
+        self.assertTrue('foo' in self.dajaxice._registry)
+        self.assertEqual(type(self.dajaxice._registry['foo']), DajaxiceFunction)
+
+        def bar_function():
+            return
+
+        self.dajaxice.register(bar_function)
+        self.assertTrue('dajaxice.tests.bar_function' in self.dajaxice._registry)
+        self.assertEqual(type(self.dajaxice._registry['dajaxice.tests.bar_function']), DajaxiceFunction)
+
+    def test__is_callable(self):
+        self.dajaxice.register(self.function, 'foo')
+        self.dajaxice.register(self.function, 'bar', method='GET')
+
+        self.assertTrue(self.dajaxice.is_callable('foo', 'POST'))
+        self.assertTrue(self.dajaxice.is_callable('bar', 'GET'))
+        self.assertFalse(self.dajaxice.is_callable('foo', 'GET'))
+        self.assertFalse(self.dajaxice.is_callable('bar', 'POST'))
+        self.assertFalse(self.dajaxice.is_callable('test', 'POST'))
+        self.assertFalse(self.dajaxice.is_callable('test', 'GET'))
+
+    def test_clean_method(self):
+        self.assertEqual(self.dajaxice.clean_method('post'), 'POST')
+        self.assertEqual(self.dajaxice.clean_method('get'), 'GET')
+        self.assertEqual(self.dajaxice.clean_method('POST'), 'POST')
+        self.assertEqual(self.dajaxice.clean_method('GET'), 'GET')
+        self.assertEqual(self.dajaxice.clean_method('other'), 'POST')
+
+    def test_modules(self):
+        self.dajaxice.register(self.function, 'foo')
+        self.dajaxice.register(self.function, 'bar')
+
+        self.assertEqual(type(self.dajaxice.modules), DajaxiceModule)
+        self.assertEqual(self.dajaxice.modules.functions.keys(), ['foo', 'bar'])
+
+
+class DajaxiceConfigTest(TestCase):
+
+    def setUp(self):
+        self.config = DajaxiceConfig()
+
+    def test_defaults(self):
+        self.assertTrue(self.config.DAJAXICE_XMLHTTPREQUEST_JS_IMPORT)
+        self.assertTrue(self.config.DAJAXICE_JSON2_JS_IMPORT)
+        self.assertEqual(self.config.DAJAXICE_EXCEPTION, 'DAJAXICE_EXCEPTION')
+        self.assertEqual(self.config.DAJAXICE_MEDIA_PREFIX, 'dajaxice')
+
+        dajaxice_url = r'^%s/' % self.config.DAJAXICE_MEDIA_PREFIX
+        self.assertEqual(self.config.dajaxice_url, dajaxice_url)
+
+        self.assertEqual(type(self.config.modules), DajaxiceModule)
 
 
 class DjangoIntegrationTest(TestCase):
@@ -48,127 +116,50 @@ class DjangoIntegrationTest(TestCase):
     urls = 'dajaxice.tests.urls'
 
     def setUp(self):
-        settings.DAJAXICE_MEDIA_PREFIX = "dajaxice"
-        settings.DAJAXICE_DEBUG = False
-        settings.INSTALLED_APPS += ('dajaxice.tests', 'dajaxice.tests.submodules',)
-        os.environ['DJANGO_SETTINGS_MODULE'] = 'dajaxice'
+        settings.INSTALLED_APPS += ('dajaxice.tests',)
 
     def test_calling_not_registered_function(self):
-        self.failUnlessRaises(FunctionNotCallableError, self.client.post, '/dajaxice/dajaxice.tests.this_function_not_exist/', {'callback': 'my_callback'})
+        self.failUnlessRaises(FunctionNotCallableError, self.client.post, '/dajaxice/dajaxice.tests.this_function_not_exist/')
 
     def test_calling_registered_function(self):
-        response = self.client.post('/dajaxice/dajaxice.tests.test_foo/', {'callback': 'my_callback'})
+        response = self.client.post('/dajaxice/dajaxice.tests.test_foo/')
 
         self.failUnlessEqual(response.status_code, 200)
-        self.failUnlessEqual(response.content, 'my_callback()')
+        self.failUnlessEqual(response.content, '{"foo": "bar"}')
 
     def test_calling_registered_function_with_params(self):
 
-        response = self.client.post('/dajaxice/dajaxice.tests.test_foo_with_params/', {'callback': 'my_callback', 'argv': '{"param1":"value1"}'})
+        response = self.client.post('/dajaxice/dajaxice.tests.test_foo_with_params/', {'argv': '{"param1":"value1"}'})
 
         self.failUnlessEqual(response.status_code, 200)
-        self.failUnlessEqual(response.content, 'my_callback("value1")')
+        self.failUnlessEqual(response.content, '{"param1": "value1"}')
 
     def test_bad_function(self):
 
-        response = self.client.post('/dajaxice/dajaxice.tests.test_ajax_exception/', {'callback': 'my_callback'})
+        response = self.client.post('/dajaxice/dajaxice.tests.test_ajax_exception/')
         self.failUnlessEqual(response.status_code, 200)
-        self.failUnlessEqual(response.content, "my_callback('DAJAXICE_EXCEPTION')")
+        self.failUnlessEqual(response.content, "DAJAXICE_EXCEPTION")
 
-    def test_is_callable(self):
+    def test_get_register(self):
 
-        dr = DajaxiceRequest(None, 'dajaxice.tests.test_registered_function')
-        self.failUnless(dr._is_callable())
+        response = self.client.get('/dajaxice/dajaxice.tests.test_get_register/')
 
-        dr = DajaxiceRequest(None, 'dajaxice.tests.test_ajax_not_registered')
-        self.failIf(dr._is_callable())
+        self.failUnlessEqual(response.status_code, 200)
+        self.failUnlessEqual(response.content, '{"foo": "user"}')
 
-    def test_get_js_functions(self):
+    def test_get_custom_name_register(self):
 
-        js_functions = DajaxiceRequest.get_js_functions()
+        response = self.client.get('/dajaxice/get_user_data/')
 
-        functions = [DajaxiceFunction('test_registered_function', 'dajaxice.tests.ajax.test_registered_function'),
-                     DajaxiceFunction('test_string', 'dajaxice.tests.ajax.test_string'),
-                     DajaxiceFunction('test_ajax_exception', 'dajaxice.tests.ajax.test_ajax_exception'),
-                     DajaxiceFunction('test_foo', 'dajaxice.tests.ajax.test_foo'),
-                     DajaxiceFunction('test_foo_with_params', 'dajaxice.tests.ajax.test_foo_with_params'),
-                     DajaxiceFunction('test_submodule_registered_function', 'dajaxice.tests.submodules.ajax.test_submodule_registered_function')]
+        self.failUnlessEqual(response.status_code, 200)
+        self.failUnlessEqual(response.content, '{"bar": "user"}')
 
-        callables = [f.path for f in functions]
+    def test_multi_register(self):
 
-        self.failUnlessEqual(len(js_functions), 1)
-        self.failUnlessEqual(dajaxice_functions._callable, callables)
+        response = self.client.get('/dajaxice/get_multi/')
+        self.failUnlessEqual(response.status_code, 200)
+        self.failUnlessEqual(response.content, '{"foo": "multi"}')
 
-        sub = js_functions[0]
-        self.failUnlessEqual(len(sub.sub_modules), 1)
-        self.failUnlessEqual(len(sub.functions), 0)
-        self.failUnlessEqual(sub.name, 'dajaxice')
-
-        sub = js_functions[0].sub_modules[0]
-        self.failUnlessEqual(len(sub.sub_modules), 1)
-        self.failUnlessEqual(len(sub.functions), 5)
-        self.failUnlessEqual(sub.functions, functions[:-1])
-        self.failUnlessEqual(sub.name, 'tests')
-
-        sub = js_functions[0].sub_modules[0].sub_modules[0]
-        self.failUnlessEqual(len(sub.sub_modules), 0)
-        self.failUnlessEqual(len(sub.functions), 1)
-        self.failUnlessEqual(sub.functions, functions[-1:])
-        self.failUnlessEqual(sub.name, 'submodules')
-
-    def test_get_ajax_function(self):
-
-        # Test modern Import with a real ajax function
-        dr = DajaxiceRequest(None, 'dajaxice.tests.test_foo')
-        function = dr._modern_get_ajax_function()
-        self.failUnless(hasattr(function, '__call__'))
-
-        # Test modern Import without a real ajax function
-        dr = DajaxiceRequest(None, 'dajaxice.tests.test_foo2')
-        self.failUnlessRaises(DajaxiceImportError, dr._modern_get_ajax_function)
-
-
-class DajaxiceFunctionTest(unittest.TestCase):
-
-    def setUp(self):
-        self.function = DajaxiceFunction('my_function', 'module.submodule.foo.ajax')
-
-    def test_constructor(self):
-        self.failUnlessEqual(self.function.name, 'my_function')
-        self.failUnlessEqual(self.function.path, 'module.submodule.foo.ajax')
-
-    def test_get_callable_path(self):
-        self.failUnlessEqual(self.function.get_callable_path(), 'module.submodule.foo.my_function')
-
-
-class DajaxiceModuleTest(unittest.TestCase):
-
-    def setUp(self):
-        self.module = DajaxiceModule('module.submodule.foo.ajax'.split('.'))
-
-    def test_constructor(self):
-        self.failUnlessEqual(self.module.functions, [])
-        self.failUnlessEqual(self.module.name, 'module')
-
-        self.failUnlessEqual(len(self.module.sub_modules), 1)
-
-    def test_add_function(self):
-        function = DajaxiceFunction('my_function', 'module.submodule.foo.ajax')
-        self.failUnlessEqual(len(self.module.functions), 0)
-        self.module.add_function(function)
-        self.failUnlessEqual(len(self.module.functions), 1)
-
-    def test_has_sub_modules(self):
-        self.failUnlessEqual(self.module.has_sub_modules(), True)
-
-    def test_exist_submodule(self):
-        self.failUnlessEqual(self.module.exist_submodule('submodule'), 0)
-        self.assertFalse(self.module.exist_submodule('other'))
-        self.module.add_submodule('other.foo'.split('.'))
-        self.failUnlessEqual(self.module.exist_submodule('other'), 1)
-
-    def test_add_submodule(self):
-        self.failUnlessEqual(len(self.module.sub_modules), 1)
-        self.module.add_submodule('other.foo'.split('.'))
-        self.failUnlessEqual(len(self.module.sub_modules), 2)
-        self.assertTrue(type(self.module.sub_modules[1]), DajaxiceModule)
+        response = self.client.post('/dajaxice/post_multi/')
+        self.failUnlessEqual(response.status_code, 200)
+        self.failUnlessEqual(response.content, '{"foo": "multi"}')

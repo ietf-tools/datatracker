@@ -35,7 +35,7 @@ def change_state(request, name, option=None):
     and logging the change as a comment."""
     review = get_object_or_404(Document, type="conflrev", name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = ChangeStateForm(request.POST)
@@ -126,7 +126,7 @@ class UploadForm(forms.Form):
 def submit(request, name):
     review = get_object_or_404(Document, type="conflrev", name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
     not_uploaded_yet = review.rev == "00" and not os.path.exists(path)
@@ -156,7 +156,7 @@ def submit(request, name):
                 review.time = datetime.datetime.now()
                 review.save()
 
-                return HttpResponseRedirect(reverse('doc_view', kwargs={'name': review.name}))
+                return redirect('doc_view', name=review.name)
 
         elif "reset_text" in request.POST:
 
@@ -209,12 +209,12 @@ def edit_notices(request, name):
             review.notify = form.cleaned_data['notify']
             review.save()
 
-            login = request.user.get_profile()
+            login = request.user.person
             c = DocEvent(type="added_comment", doc=review, by=login)
             c.desc = "Notification list changed to : "+review.notify
             c.save()
 
-            return HttpResponseRedirect(reverse('doc_view', kwargs={'name': review.name}))
+            return redirect('doc_view', name=review.name)
 
     else:
 
@@ -243,12 +243,12 @@ def edit_ad(request, name):
             review.ad = form.cleaned_data['ad']
             review.save()
     
-            login = request.user.get_profile()
+            login = request.user.person
             c = DocEvent(type="added_comment", doc=review, by=login)
             c.desc = "Shepherding AD changed to "+review.ad.name
             c.save()
 
-            return HttpResponseRedirect(reverse('doc_view', kwargs={'name': review.name}))
+            return redirect('doc_view', name=review.name)
 
     else:
         init = { "ad" : review.ad_id }
@@ -300,7 +300,7 @@ def approve(request, name):
     if review.get_state('conflrev').slug not in ('appr-reqnopub-pend','appr-noprob-pend'):
       raise Http404
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
 
@@ -380,7 +380,7 @@ def start_review(request, name):
     if [ rel.source for alias in doc_to_review.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='conflrev') ]:
         raise Http404
 
-    login = request.user.get_profile()
+    login = request.user.person
 
 
     if request.method == 'POST':
@@ -448,7 +448,7 @@ def start_review(request, name):
 @role_required("Area Director", "Secretariat")
 def telechat_date(request, name):
     doc = get_object_or_404(Document, type="conflrev", name=name)
-    login = request.user.get_profile()
+    login = request.user.person
 
     e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     initial_returning_item = bool(e and e.returning_item)

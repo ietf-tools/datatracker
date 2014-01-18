@@ -2,12 +2,16 @@
 XML serializer.
 """
 
+from __future__ import unicode_literals
+
 from django.conf import settings
 from django.core.serializers import base
 from django.db import models, DEFAULT_DB_ALIAS
 from django.utils.xmlutils import SimplerXMLGenerator
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_text
 from xml.dom import pulldom
+from xml.sax import handler
+from xml.sax.expatreader import ExpatParser as _ExpatParser
 
 class Serializer(base.Serializer):
     """
@@ -44,11 +48,11 @@ class Serializer(base.Serializer):
         self.indent(1)
         obj_pk = obj._get_pk_val()
         if obj_pk is None:
-            attrs = {"model": smart_unicode(obj._meta),}
+            attrs = {"model": smart_text(obj._meta),}
         else:
             attrs = {
-                "pk": smart_unicode(obj._get_pk_val()),
-                "model": smart_unicode(obj._meta),
+                "pk": smart_text(obj._get_pk_val()),
+                "model": smart_text(obj._meta),
             }
 
         self.xml.startElement("object", attrs)
@@ -85,24 +89,19 @@ class Serializer(base.Serializer):
         differently from regular fields).
         """
         self._start_relational_field(field)
-        related = getattr(obj, field.name)
-        if related is not None:
-            if self.use_natural_keys and hasattr(related, 'natural_key'):
+        related_att = getattr(obj, field.get_attname())
+        if related_att is not None:
+            if self.use_natural_keys and hasattr(field.rel.to, 'natural_key'):
+                related = getattr(obj, field.name)
                 # If related object has a natural key, use it
                 related = related.natural_key()
                 # Iterable natural keys are rolled out as subelements
                 for key_value in related:
                     self.xml.startElement("natural", {})
-                    self.xml.characters(smart_unicode(key_value))
+                    self.xml.characters(smart_text(key_value))
                     self.xml.endElement("natural")
             else:
-                if field.rel.field_name == related._meta.pk.name:
-                    # Related to remote object via primary key
-                    related = related._get_pk_val()
-                else:
-                    # Related to remote object via other field
-                    related = getattr(related, field.rel.field_name)
-                self.xml.characters(smart_unicode(related))
+                self.xml.characters(smart_text(related_att))
         else:
             self.xml.addQuickElement("None")
         self.xml.endElement("field")
@@ -123,13 +122,13 @@ class Serializer(base.Serializer):
                     self.xml.startElement("object", {})
                     for key_value in natural:
                         self.xml.startElement("natural", {})
-                        self.xml.characters(smart_unicode(key_value))
+                        self.xml.characters(smart_text(key_value))
                         self.xml.endElement("natural")
                     self.xml.endElement("object")
             else:
                 def handle_m2m(value):
                     self.xml.addQuickElement("object", attrs={
-                        'pk' : smart_unicode(value._get_pk_val())
+                        'pk' : smart_text(value._get_pk_val())
                     })
             for relobj in getattr(obj, field.name).iterator():
                 handle_m2m(relobj)
@@ -144,7 +143,7 @@ class Serializer(base.Serializer):
         self.xml.startElement("field", {
             "name" : field.name,
             "rel"  : field.rel.__class__.__name__,
-            "to"   : smart_unicode(field.rel.to._meta),
+            "to"   : smart_text(field.rel.to._meta),
         })
 
 class Deserializer(base.Deserializer):
@@ -154,10 +153,15 @@ class Deserializer(base.Deserializer):
 
     def __init__(self, stream_or_string, **options):
         super(Deserializer, self).__init__(stream_or_string, **options)
-        self.event_stream = pulldom.parse(self.stream)
+        self.event_stream = pulldom.parse(self.stream, self._make_parser())
         self.db = options.pop('using', DEFAULT_DB_ALIAS)
+        self.ignore = options.pop('ignorenonexistent', False)
 
-    def next(self):
+    def _make_parser(self):
+        """Create a hardened XML parser (no custom/external entities)."""
+        return DefusedExpatParser()
+
+    def __next__(self):
         for event, node in self.event_stream:
             if event == "START_ELEMENT" and node.nodeName == "object":
                 self.event_stream.expandNode(node)
@@ -185,6 +189,7 @@ class Deserializer(base.Deserializer):
         # {m2m_accessor_attribute : [list_of_related_objects]})
         m2m_data = {}
 
+        model_fields = Model._meta.get_all_field_names()
         # Deseralize each field.
         for field_node in node.getElementsByTagName("field"):
             # If the field is missing the name attribute, bail (are you
@@ -195,7 +200,9 @@ class Deserializer(base.Deserializer):
 
             # Get the field from the Model. This will raise a
             # FieldDoesNotExist if, well, the field doesn't exist, which will
-            # be propagated correctly.
+            # be propagated correctly unless ignorenonexistent=True is used.
+            if self.ignore and field_name not in model_fields:
+                continue
             field = Model._meta.get_field(field_name)
 
             # As is usually the case, relation fields get the special treatment.
@@ -294,4 +301,91 @@ def getInnerText(node):
             inner_text.extend(getInnerText(child))
         else:
            pass
-    return u"".join(inner_text)
+    return "".join(inner_text)
+
+
+# Below code based on Christian Heimes' defusedxml
+
+
+class DefusedExpatParser(_ExpatParser):
+    """
+    An expat parser hardened against XML bomb attacks.
+
+    Forbids DTDs, external entity references
+
+    """
+    def __init__(self, *args, **kwargs):
+        _ExpatParser.__init__(self, *args, **kwargs)
+        self.setFeature(handler.feature_external_ges, False)
+        self.setFeature(handler.feature_external_pes, False)
+
+    def start_doctype_decl(self, name, sysid, pubid, has_internal_subset):
+        raise DTDForbidden(name, sysid, pubid)
+
+    def entity_decl(self, name, is_parameter_entity, value, base,
+                    sysid, pubid, notation_name):
+        raise EntitiesForbidden(name, value, base, sysid, pubid, notation_name)
+
+    def unparsed_entity_decl(self, name, base, sysid, pubid, notation_name):
+        # expat 1.2
+        raise EntitiesForbidden(name, None, base, sysid, pubid, notation_name)
+
+    def external_entity_ref_handler(self, context, base, sysid, pubid):
+        raise ExternalReferenceForbidden(context, base, sysid, pubid)
+
+    def reset(self):
+        _ExpatParser.reset(self)
+        parser = self._parser
+        parser.StartDoctypeDeclHandler = self.start_doctype_decl
+        parser.EntityDeclHandler = self.entity_decl
+        parser.UnparsedEntityDeclHandler = self.unparsed_entity_decl
+        parser.ExternalEntityRefHandler = self.external_entity_ref_handler
+
+
+class DefusedXmlException(ValueError):
+    """Base exception."""
+    def __repr__(self):
+        return str(self)
+
+
+class DTDForbidden(DefusedXmlException):
+    """Document type definition is forbidden."""
+    def __init__(self, name, sysid, pubid):
+        super(DTDForbidden, self).__init__()
+        self.name = name
+        self.sysid = sysid
+        self.pubid = pubid
+
+    def __str__(self):
+        tpl = "DTDForbidden(name='{}', system_id={!r}, public_id={!r})"
+        return tpl.format(self.name, self.sysid, self.pubid)
+
+
+class EntitiesForbidden(DefusedXmlException):
+    """Entity definition is forbidden."""
+    def __init__(self, name, value, base, sysid, pubid, notation_name):
+        super(EntitiesForbidden, self).__init__()
+        self.name = name
+        self.value = value
+        self.base = base
+        self.sysid = sysid
+        self.pubid = pubid
+        self.notation_name = notation_name
+
+    def __str__(self):
+        tpl = "EntitiesForbidden(name='{}', system_id={!r}, public_id={!r})"
+        return tpl.format(self.name, self.sysid, self.pubid)
+
+
+class ExternalReferenceForbidden(DefusedXmlException):
+    """Resolving an external reference is forbidden."""
+    def __init__(self, context, base, sysid, pubid):
+        super(ExternalReferenceForbidden, self).__init__()
+        self.context = context
+        self.base = base
+        self.sysid = sysid
+        self.pubid = pubid
+
+    def __str__(self):
+        tpl = "ExternalReferenceForbidden(system_id='{}', public_id={})"
+        return tpl.format(self.sysid, self.pubid)

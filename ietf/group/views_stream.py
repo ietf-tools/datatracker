@@ -56,7 +56,7 @@ def stream_edit(request, acronym):
                 desc = "%s changed to <b>%s</b> from %s" % (
                     title, ", ".join(x.get_name() for x in new), ", ".join(x.get_name() for x in old))
 
-                GroupEvent.objects.create(group=group, by=request.user.get_profile(), type="info_changed", desc=desc)
+                GroupEvent.objects.create(group=group, by=request.user.person, type="info_changed", desc=desc)
 
                 group.role_set.filter(name=slug).delete()
                 for e in new:

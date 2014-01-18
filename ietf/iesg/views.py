@@ -35,14 +35,13 @@
 import codecs, re, os, glob, datetime
 import tarfile, StringIO, time
 import itertools
+import json
 
-from django.views.generic.simple import direct_to_template
 from django.core.urlresolvers import reverse as urlreverse
 from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.template import RequestContext, Context, loader
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render_to_response, get_object_or_404, render, redirect
 from django.conf import settings
-from django.utils import simplejson as json
 from django.db import models
 from django import forms
 
@@ -168,7 +167,7 @@ def agenda_json(request, date=None):
 
                 s["docs"].append(docinfo)
 
-    return HttpResponse(json.dumps(res, indent=2), mimetype='text/plain')
+    return HttpResponse(json.dumps(res, indent=2), content_type='text/plain')
 
 def agenda(request, date=None):
     data = agenda_data(date)
@@ -188,7 +187,7 @@ def agenda_txt(request, date=None):
     return render_to_response("iesg/agenda.txt", {
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
-            }, context_instance=RequestContext(request), mimetype="text/plain")
+            }, context_instance=RequestContext(request), content_type="text/plain")
 
 def agenda_scribe_template(request, date=None):
     data = agenda_data(date)
@@ -262,7 +261,7 @@ def agenda_package(request, date=None):
             "roll_call": data["sections"]["1.1"]["text"],
             "minutes": data["sections"]["1.3"]["text"],
             "management_items": [(num, section) for num, section in data["sections"].iteritems() if "6" < num < "7"],
-            }, context_instance=RequestContext(request), mimetype='text/plain')
+            }, context_instance=RequestContext(request), content_type='text/plain')
 
 
 def agenda_documents_txt(request):
@@ -290,7 +289,7 @@ def agenda_documents_txt(request):
             d.rev,
             )
         rows.append("\t".join(row))
-    return HttpResponse(u"\n".join(rows), mimetype='text/plain')
+    return HttpResponse(u"\n".join(rows), content_type='text/plain')
 
 class RescheduleForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
@@ -321,7 +320,7 @@ def handle_reschedule_form(request, doc, dates, status):
     if request.method == 'POST':
         form = RescheduleForm(request.POST, **formargs)
         if form.is_valid():
-            update_telechat(request, doc, request.user.get_profile(),
+            update_telechat(request, doc, request.user.person,
                             form.cleaned_data['telechat_date'],
                             False if form.cleaned_data['clear_returning_item'] else None)
             doc.time = datetime.datetime.now()
@@ -362,7 +361,7 @@ def agenda_documents(request):
                 "sections": sorted((num, section) for num, section in sections.iteritems()
                                    if "2" <= num < "5")
                 })
-    return direct_to_template(request, 'iesg/agenda_documents.html', { 'telechats':telechats })
+    return render(request, 'iesg/agenda_documents.html', { 'telechats': telechats })
 
 def telechat_docs_tarfile(request, date):
     date = get_agenda_date(date)
@@ -372,7 +371,7 @@ def telechat_docs_tarfile(request, date):
         if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
             docs.append(d)
 
-    response = HttpResponse(mimetype='application/octet-stream')
+    response = HttpResponse(content_type='application/octet-stream')
     response['Content-Disposition'] = 'attachment; filename=telechat-%s-docs.tgz' % date.isoformat()
 
     tarstream = tarfile.open('', 'w:gz', response)
@@ -433,7 +432,7 @@ def discusses(request):
     # latest first
     docs.sort(key=lambda d: min(p.time for p in d.blocking_positions), reverse=True)
 
-    return direct_to_template(request, 'iesg/discusses.html', { 'docs': docs })
+    return render(request, 'iesg/discusses.html', { 'docs': docs })
 
 @role_required('Area Director', 'Secretariat')
 def milestones_needing_review(request):

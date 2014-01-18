@@ -1,5 +1,5 @@
          <span class="required">*</span> Required Field 
-         <form id="session-request-form" action="." method="POST" name="form_post">
+         <form id="session-request-form" action="." method="post" name="form_post">{% csrf_token %}
          {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
          <table id="sessions-new-table" cellspacing="1" cellpadding="1" border="0">
            <col width="150">
@@ -8,11 +8,11 @@
            <tr class="bg1"><td>Number of Sessions:<span class="required">*</span></td><td>{{ form.num_session.errors }}{{ form.num_session }}</td></tr>
            <tr class="bg2"><td>Length of Session 1:<span class="required">*</span></td><td>{{ form.length_session1.errors }}{{ form.length_session1 }}</td></tr>
            <tr class="bg2"><td>Length of Session 2:<span class="required">*</span></td><td>{{ form.length_session2.errors }}{{ form.length_session2 }}</td></tr>
-           {% ifequal group.type.slug "wg" %}
+           {% if group.type.slug == "wg" %}
              <tr class="bg2"><td>Additional Session Request:</td><td>{{ form.third_session }} Check this box to request an additional session.<br>
              Additional slot may be available after agenda scheduling has closed and with the approval of an Area Director.<br>
              Length of Third Session: {{ form.length_session3.errors }}{{ form.length_session3 }}</td></tr>
-           {% endifequal %}
+           {% endif %}
            <tr class="bg1"><td>Number of Attendees:<span class="required">*</span></td><td>{{ form.attendees.errors }}{{ form.attendees }}</td></tr>
            <tr class="bg2"><td>Conflicts to Avoid:</td>
            <td>

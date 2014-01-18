@@ -5,20 +5,12 @@ Factored out from django.db.models.query to avoid making the main module very
 large and/or so that they can be used by other modules without getting into
 circular import difficulties.
 """
+from __future__ import unicode_literals
 
-import weakref
-from django.utils.copycompat import deepcopy
-
+from django.db.backends import util
+from django.utils import six
 from django.utils import tree
-from django.utils.datastructures import SortedDict
 
-
-class CyclicDependency(Exception):
-    """
-    An error when dealing with a collection of objects that have a cyclic
-    dependency, i.e. when deleting multiple objects.
-    """
-    pass
 
 class InvalidQuery(Exception):
     """
@@ -27,114 +19,13 @@ class InvalidQuery(Exception):
     pass
 
 
-class CollectedObjects(object):
-    """
-    A container that stores keys and lists of values along with remembering the
-    parent objects for all the keys.
-
-    This is used for the database object deletion routines so that we can
-    calculate the 'leaf' objects which should be deleted first.
-
-    previously_seen is an optional argument. It must be a CollectedObjects
-    instance itself; any previously_seen collected object will be blocked from
-    being added to this instance.
-    """
-
-    def __init__(self, previously_seen=None):
-        self.data = {}
-        self.children = {}
-        if previously_seen:
-            self.blocked = previously_seen.blocked
-            for cls, seen in previously_seen.data.items():
-                self.blocked.setdefault(cls, SortedDict()).update(seen)
-        else:
-            self.blocked = {}
-
-    def add(self, model, pk, obj, parent_model, parent_obj=None, nullable=False):
-        """
-        Adds an item to the container.
-
-        Arguments:
-        * model - the class of the object being added.
-        * pk - the primary key.
-        * obj - the object itself.
-        * parent_model - the model of the parent object that this object was
-          reached through.
-        * parent_obj - the parent object this object was reached
-          through (not used here, but needed in the API for use elsewhere)
-        * nullable - should be True if this relation is nullable.
-
-        Returns True if the item already existed in the structure and
-        False otherwise.
-        """
-        if pk in self.blocked.get(model, {}):
-            return True
-
-        d = self.data.setdefault(model, SortedDict())
-        retval = pk in d
-        d[pk] = obj
-        # Nullable relationships can be ignored -- they are nulled out before
-        # deleting, and therefore do not affect the order in which objects
-        # have to be deleted.
-        if parent_model is not None and not nullable:
-            self.children.setdefault(parent_model, []).append(model)
-        return retval
-
-    def __contains__(self, key):
-        return self.data.__contains__(key)
-
-    def __getitem__(self, key):
-        return self.data[key]
-
-    def __nonzero__(self):
-        return bool(self.data)
-
-    def iteritems(self):
-        for k in self.ordered_keys():
-            yield k, self[k]
-
-    def items(self):
-        return list(self.iteritems())
-
-    def keys(self):
-        return self.ordered_keys()
-
-    def ordered_keys(self):
-        """
-        Returns the models in the order that they should be dealt with (i.e.
-        models with no dependencies first).
-        """
-        dealt_with = SortedDict()
-        # Start with items that have no children
-        models = self.data.keys()
-        while len(dealt_with) < len(models):
-            found = False
-            for model in models:
-                if model in dealt_with:
-                    continue
-                children = self.children.setdefault(model, [])
-                if len([c for c in children if c not in dealt_with]) == 0:
-                    dealt_with[model] = None
-                    found = True
-            if not found:
-                raise CyclicDependency(
-                    "There is a cyclic dependency of items to be processed.")
-
-        return dealt_with.keys()
-
-    def unordered_keys(self):
-        """
-        Fallback for the case where is a cyclic dependency but we don't  care.
-        """
-        return self.data.keys()
-
 class QueryWrapper(object):
     """
     A type that indicates the contents are an SQL fragment and the associate
     parameters. Can be used to pass opaque data to a where-clause, for example.
     """
     def __init__(self, sql, params):
-        self.data = sql, params
+        self.data = sql, list(params)
 
     def as_sql(self, qn=None, connection=None):
         return self.data
@@ -150,12 +41,13 @@ class Q(tree.Node):
     default = AND
 
     def __init__(self, *args, **kwargs):
-        super(Q, self).__init__(children=list(args) + kwargs.items())
+        super(Q, self).__init__(children=list(args) + list(six.iteritems(kwargs)))
 
     def _combine(self, other, conn):
         if not isinstance(other, Q):
             raise TypeError(other)
         obj = type(self)()
+        obj.connector = conn
         obj.add(self, conn)
         obj.add(other, conn)
         return obj
@@ -172,6 +64,16 @@ class Q(tree.Node):
         obj.negate()
         return obj
 
+    def clone(self):
+        clone = self.__class__._new_instance(
+            children=[], connector=self.connector, negated=self.negated)
+        for child in self.children:
+            if hasattr(child, 'clone'):
+                clone.children.append(child.clone())
+            else:
+                clone.children.append(child)
+        return clone
+
 class DeferredAttribute(object):
     """
     A wrapper for a deferred-loading field. When the value is read from this
@@ -179,8 +81,6 @@ class DeferredAttribute(object):
     """
     def __init__(self, field_name, model):
         self.field_name = field_name
-        self.model_ref = weakref.ref(model)
-        self.loaded = False
 
     def __get__(self, instance, owner):
         """
@@ -188,27 +88,32 @@ class DeferredAttribute(object):
         Returns the cached value.
         """
         from django.db.models.fields import FieldDoesNotExist
+        non_deferred_model = instance._meta.proxy_for_model
+        opts = non_deferred_model._meta
 
         assert instance is not None
-        cls = self.model_ref()
         data = instance.__dict__
         if data.get(self.field_name, self) is self:
             # self.field_name is the attname of the field, but only() takes the
             # actual name, so we need to translate it here.
             try:
-                cls._meta.get_field_by_name(self.field_name)
-                name = self.field_name
+                f = opts.get_field_by_name(self.field_name)[0]
             except FieldDoesNotExist:
-                name = [f.name for f in cls._meta.fields
-                    if f.attname == self.field_name][0]
-            # We use only() instead of values() here because we want the
-            # various data coersion methods (to_python(), etc.) to be called
-            # here.
-            val = getattr(
-                cls._base_manager.filter(pk=instance.pk).only(name).using(
-                    instance._state.db).get(),
-                self.field_name
-            )
+                f = [f for f in opts.fields
+                     if f.attname == self.field_name][0]
+            name = f.name
+            # Let's see if the field is part of the parent chain. If so we
+            # might be able to reuse the already loaded value. Refs #18343.
+            val = self._check_parent_chain(instance, name)
+            if val is None:
+                # We use only() instead of values() here because we want the
+                # various data coersion methods (to_python(), etc.) to be
+                # called here.
+                val = getattr(
+                    non_deferred_model._base_manager.only(name).using(
+                        instance._state.db).get(pk=instance.pk),
+                    self.field_name
+                )
             data[self.field_name] = val
         return data[self.field_name]
 
@@ -219,18 +124,33 @@ class DeferredAttribute(object):
         """
         instance.__dict__[self.field_name] = value
 
-def select_related_descend(field, restricted, requested, reverse=False):
+    def _check_parent_chain(self, instance, name):
+        """
+        Check if the field value can be fetched from a parent field already
+        loaded in the instance. This can be done if the to-be fetched
+        field is a primary key field.
+        """
+        opts = instance._meta
+        f = opts.get_field_by_name(name)[0]
+        link_field = opts.get_ancestor_link(f.model)
+        if f.primary_key and f != link_field:
+            return getattr(instance, link_field.attname)
+        return None
+
+
+def select_related_descend(field, restricted, requested, load_fields, reverse=False):
     """
     Returns True if this field should be used to descend deeper for
     select_related() purposes. Used by both the query construction code
     (sql.query.fill_related_selections()) and the model instance creation code
-    (query.get_cached_row()).
+    (query.get_klass_info()).
 
     Arguments:
      * field - the field to be checked
      * restricted - a boolean field, indicating if the field list has been
        manually restricted using a requested clause)
      * requested - The select_related() dictionary.
+     * load_fields - the set of fields to be loaded on this model
      * reverse - boolean, True if we are checking a reverse select related
     """
     if not field.rel:
@@ -244,6 +164,14 @@ def select_related_descend(field, restricted, requested, reverse=False):
             return False
     if not restricted and field.null:
         return False
+    if load_fields:
+        if field.name not in load_fields:
+            if restricted and field.name in requested:
+                raise InvalidQuery("Field %s.%s cannot be both deferred"
+                                   " and traversed using select_related"
+                                   " at the same time." %
+                                   (field.model._meta.object_name, field.name))
+            return False
     return True
 
 # This function is needed because data descriptors must be defined on a class
@@ -256,22 +184,21 @@ def deferred_class_factory(model, attrs):
     deferred attributes to a particular instance of the model.
     """
     class Meta:
-        pass
-    setattr(Meta, "proxy", True)
-    setattr(Meta, "app_label", model._meta.app_label)
+        proxy = True
+        app_label = model._meta.app_label
 
     # The app_cache wants a unique name for each model, otherwise the new class
     # won't be created (we get an old one back). Therefore, we generate the
-    # name using the passed in attrs. It's OK to reuse an old case if the attrs
-    # are identical.
+    # name using the passed in attrs. It's OK to reuse an existing class
+    # object if the attrs are identical.
     name = "%s_Deferred_%s" % (model.__name__, '_'.join(sorted(list(attrs))))
+    name = util.truncate_name(name, 80, 32)
 
-    overrides = dict([(attr, DeferredAttribute(attr, model))
-            for attr in attrs])
+    overrides = dict((attr, DeferredAttribute(attr, model)) for attr in attrs)
     overrides["Meta"] = Meta
     overrides["__module__"] = model.__module__
     overrides["_deferred"] = True
-    return type(name, (model,), overrides)
+    return type(str(name), (model,), overrides)
 
 # The above function is also used to unpickle model instances with deferred
 # fields.

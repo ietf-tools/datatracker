@@ -3,10 +3,11 @@
 import re, datetime
 
 from django.conf import settings
-from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
+from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
+from django.template.loader import render_to_string
 from django.db.models import Q
-from django.core.urlresolvers import reverse as urlreverse
+from django.core.urlresolvers import reverse as urlreverse, reverse_lazy
 
 from ietf.group.models import Group
 from ietf.liaisons.models import LiaisonStatement
@@ -14,23 +15,25 @@ from ietf.liaisons.models import LiaisonStatement
 # A slightly funny feed class, the 'object' is really
 # just a dict with some parameters that items() uses
 # to construct a queryset.
-class Liaisons(Feed):
+class LiaisonStatementsFeed(Feed):
     feed_type = Atom1Feed
+    link = reverse_lazy("liaison_list")
+    description_template = "liaisons/feed_item_description.html"
 
-    def get_object(self, bits):
-	obj = {}
-	if bits[0] == 'recent':
-	    if len(bits) != 1:
-		raise FeedDoesNotExist
-	    obj['title'] = 'Recent Liaison Statements'
+    def get_object(self, request, kind, search=None):
+        obj = {}
+
+        if kind == 'recent':
+            obj['title'] = 'Recent Liaison Statements'
 	    obj['limit'] = 15
 	    return obj
 
-        if bits[0] == 'from':
-	    if len(bits) != 2:
-		raise FeedDoesNotExist
+        if kind == 'from':
+            if not search:
+                raise FeedDoesNotExist
+
             try:
-                group = Group.objects.get(acronym=bits[1])
+                group = Group.objects.get(acronym=search)
                 obj['filter'] = { 'from_group': group }
                 obj['title'] = u'Liaison Statements from %s' % group.name
                 return obj
@@ -38,54 +41,35 @@ class Liaisons(Feed):
                 # turn all-nonword characters into one-character
                 # wildcards to make it easier to construct a URL that
                 # matches
-                search_string = re.sub(r"[^a-zA-Z1-9]", ".", bits[1])
-                statements = LiaisonStatement.objects.filter(from_name__iregex=search_string)
-                if statements:
-                    name = statements[0].from_name
-                    obj['filter'] = { 'from_name': name }
-                    obj['title'] = u'Liaison Statements from %s' % name
-                    return obj
-                else:
+                search_string = re.sub(r"[^a-zA-Z1-9]", ".", search)
+                statement = LiaisonStatement.objects.filter(from_name__iregex=search_string).first()
+                if not statement:
                     raise FeedDoesNotExist
 
-        if bits[0] == 'to':
-	    if len(bits) != 2:
-		raise FeedDoesNotExist
-            obj['filter'] = dict(to_name__icontains=bits[1])
-            obj['title'] = 'Liaison Statements where to matches %s' % bits[1]
+                name = statement.from_name
+                obj['filter'] = { 'from_name': name }
+                obj['title'] = u'Liaison Statements from %s' % name
+                return obj
+
+        if kind == 'to':
+            if not search:
+                raise FeedDoesNotExist
+
+            obj['filter'] = dict(to_name__icontains=search)
+            obj['title'] = 'Liaison Statements where to matches %s' % search
             return obj
 
-	if bits[0] == 'subject':
-	    if len(bits) != 2:
+	if kind == 'subject':
+            if not search:
 		raise FeedDoesNotExist
 
-            obj['q'] = [ Q(title__icontains=bits[1]) | Q(attachments__title__icontains=bits[1]) ]
-            obj['title'] = 'Liaison Statements where subject matches %s' % bits[1]
-	    return obj
+            obj['q'] = [ Q(title__icontains=search) | Q(attachments__title__icontains=search) ]
+            obj['title'] = 'Liaison Statements where subject matches %s' % search
+            return obj
+
 	raise FeedDoesNotExist
 
-    def get_feed(self, url=None):
-        if url:
-            return Feed.get_feed(self, url=url)
-        else:
-            raise FeedDoesNotExist
-
-    def title(self, obj):
-	return obj['title']
-
-    def link(self, obj):
-	# no real equivalent for any objects
-	return '/liaison/'
-
-    def item_link(self, obj):
-	# no real equivalent for any objects
-        return urlreverse("liaison_detail", kwargs={ "object_id": obj.pk })
-
-    def description(self, obj):
-	return self.title(obj)
-
     def items(self, obj):
-	# Start with the common queryset
         qs = LiaisonStatement.objects.all().order_by("-submitted")
 	if obj.has_key('q'):
 	    qs = qs.filter(*obj['q'])
@@ -94,6 +78,18 @@ class Liaisons(Feed):
 	if obj.has_key('limit'):
 	    qs = qs[:obj['limit']]
 	return qs
+
+    def title(self, obj):
+	return obj['title']
+
+    def description(self, obj):
+	return self.title(obj)
+
+    def item_title(self, item):
+        return render_to_string("liaisons/liaison_title.html", { 'liaison': item }).strip()
+
+    def item_link(self, item):
+        return urlreverse("liaison_detail", kwargs={ "object_id": item.pk })
 
     def item_pubdate(self, item):
         # this method needs to return a datetime instance, even

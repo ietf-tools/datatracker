@@ -30,14 +30,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re, os, datetime, urllib
+import re, os, datetime, urllib, json
 
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.template.defaultfilters import truncatewords_html
-from django.utils import simplejson as json
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.core.exceptions import ObjectDoesNotExist
@@ -51,7 +50,6 @@ from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.utils import *
 from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
-from ietf.wgcharter.utils import historic_milestones_for_charter
 from ietf.ipr.models import IprDocAlias
 from ietf.doc.mails import email_ad
 
@@ -564,14 +562,14 @@ def document_writeup(request, name):
                          "",
                          [("WG Review Announcement",
                            text_from_writeup("changed_review_announcement"),
-                           urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="review")))]
+                           urlreverse("ietf.doc.views_charter.announcement_text", kwargs=dict(name=doc.name, ann="review")))]
                          ))
 
         sections.append(("WG Action Announcement",
                          "",
                          [("WG Action Announcement",
                            text_from_writeup("changed_action_announcement"),
-                           urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="action")))]
+                           urlreverse("ietf.doc.views_charter.announcement_text", kwargs=dict(name=doc.name, ann="action")))]
                          ))
 
         if doc.latest_event(BallotDocEvent, type="created_ballot"):
@@ -579,7 +577,7 @@ def document_writeup(request, name):
                              "",
                              [("Ballot Announcement",
                                text_from_writeup("changed_ballot_writeup_text"),
-                               urlreverse("ietf.wgcharter.views.ballot_writeupnotes", kwargs=dict(name=doc.name)))]
+                               urlreverse("ietf.doc.views_charter.ballot_writeupnotes", kwargs=dict(name=doc.name)))]
                              ))
 
     if not sections:
@@ -759,7 +757,7 @@ def document_json(request, name):
             data["consensus"] = e.consensus if e else None
         data["stream"] = extract_name(doc.stream)
 
-    return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
+    return HttpResponse(json.dumps(data, indent=2), content_type='text/plain')
 
 class AddCommentForm(forms.Form):
     comment = forms.CharField(required=True, widget=forms.Textarea)
@@ -769,7 +767,7 @@ def add_comment(request, name):
     """Add comment to history of document."""
     doc = get_object_or_404(Document, docalias__name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     if request.method == 'POST':
         form = AddCommentForm(request.POST)
@@ -784,7 +782,7 @@ def add_comment(request, name):
             if doc.type_id == "draft":
                 email_ad(request, doc, doc.ad, login,
                             "A new comment added by %s" % login.name)
-            return HttpResponseRedirect(urlreverse("doc_history", kwargs=dict(name=doc.name)))
+            return redirect("doc_history", name=doc.name)
     else:
         form = AddCommentForm()
   

@@ -85,7 +85,7 @@ def profile(request):
     roles = []
     person = None
     try:
-        person = request.user.get_profile()
+        person = request.user.person
     except Person.DoesNotExist:
         return render_to_response('registration/missing_person.html', context_instance=RequestContext(request))
 
@@ -227,7 +227,7 @@ def ajax_check_username(request):
     error = False
     if User.objects.filter(username=username).count():
         error = _('This email address is already registered')
-    return HttpResponse(json.dumps({'error': error}), mimetype='text/plain')
+    return HttpResponse(json.dumps({'error': error}), content_type='text/plain')
     
 def test_email(request):
     """Set email address to which email generated in the system will be sent."""

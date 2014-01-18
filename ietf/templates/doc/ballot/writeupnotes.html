@@ -13,7 +13,7 @@ form #id_ballot_writeup {
 <h1>Ballot writeup and notes for {{ doc }}</h1>
 
   
-<form action="" method="POST">
+<form action="" method="post">{% csrf_token %}
   
   <p>(Technical Summary, Working Group Summary, Document Quality,
   Personnel, RFC Editor Note, IRTF Note, IESG Note, IANA Note)</p>

@@ -52,7 +52,7 @@
     </td></tr></table>
   </div>
 
-  <form action="{{schedule.json_url}}" method="PUT">
+  <form action="{{schedule.json_url}}" method="POST">
   <fieldset>
      <table>
         {{ form.as_table }}
@@ -60,7 +60,7 @@
      <tr>
        <td></td>
        <td colspan=2><input type="button" name="save" value="save" onClick="save_agenda(this.form)" class="styled_button">
-       <a id="agenda_cancel_url" href="{% url ietf.meeting.views.edit_agendas meeting.number %}"><span class="styled_button agenda_cancel">Cancel</span></a></td>
+       <a id="agenda_cancel_url" href="{% url "ietf.meeting.views.edit_agendas" meeting.number %}"><span class="styled_button agenda_cancel">Cancel</span></a></td>
        <td><span class="styled_button agenda_delete">DEL</span></td>
      </tr>
      </table>
@@ -74,9 +74,9 @@
 
 <div class="towtruck">
 {% if server_mode %}
-	{% ifnotequal server_mode "production" %}
+	{% if server_mode != "production" %}
 	<button onclick="TowTruck(this); return false;">Start TowTruck</button>
-	{% endifnotequal %}
+	{% endif %}
 {% endif %}
 </div>
 </div>

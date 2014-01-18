@@ -15,14 +15,14 @@ textarea[id^="id_form-"][id$="-announcement_text"] {
 {% block content %}
 <h1>Approve {{ doc.canonical_name }}</h1>
 
-<form class="approve" action="" method="POST">
+<form class="approve" action="" method="post">{% csrf_token %}
   {{formset.management_form}}
   <table>
    {% for form in formset.forms %}
     {% for field in form.visible_fields %}
     <tr>
       <td>
-      <div>{{ field.label_tag }}:</div>
+      <div>{{ field.label_tag }}</div>
         {{ field }}
         {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
         {{ field.errors }}
@@ -32,7 +32,7 @@ textarea[id^="id_form-"][id$="-announcement_text"] {
    {% endfor %}
     <tr>
       <td class="actions">
-        <a href="{% url doc_view name=doc.name %}">Back</a>
+        <a href="{% url "doc_view" name=doc.name %}">Back</a>
         <input type="submit" value="Send out the announcement and close the ballot"/>
       </td>
     </tr>

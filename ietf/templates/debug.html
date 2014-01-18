@@ -5,9 +5,9 @@
   <h2>Queries</h2>
   <p>
     {{ sql_queries|length }} Queries ({{ sql_queries|timesum }}s)
-    {% ifnotequal sql_queries|length 0 %}
+    {% if sql_queries|length != 0 %}
     (<span style="cursor: pointer;" onclick="document.getElementById('debugQueryTable').style.display='';">Show</span>)
-    {% endifnotequal %}
+    {% endif %}
   </p>
   <table id="debugQueryTable" style="display: none;">
     <col width="1"></col>

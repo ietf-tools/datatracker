@@ -7,9 +7,9 @@
       {% if milestone.resolved %}{{ milestone.resolved }}{% else %}{{ milestone.due|date:"M Y" }}{% endif %}
     </td>
     <td>
-      <div>{{ milestone.desc|escape }}</div>
+      <div>{{ milestone.desc }}</div>
       {% for d in milestone.docs.all %}
-      <a class="doc" href="{% url doc_view name=d.name %}">{{ d.name }}</a>
+      <a class="doc" href="{% url "doc_view" name=d.name %}">{{ d.name }}</a>
       {% endfor %}
     </td>
   </tr>

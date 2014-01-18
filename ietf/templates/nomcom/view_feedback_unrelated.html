@@ -2,18 +2,11 @@
 
 {% load nomcom_tags %}
 
-{% block pagehead %}
-  {{ block.super }}
-  <script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
-  <script type="text/javascript" src="/js/yui/yui-20100305.js"></script>
-  <script type="text/javascript" src="/js/base.js"></script>
-{% endblock pagehead %}
-
 {% block subtitle %} - View unrelated feedback{% endblock %}
 
 {% block nomcom_content %}
 
-<p>Back to list of <a href="{% url nomcom_view_feedback year %}">feedback</a></p>
+<p>Back to list of <a href="{% url "nomcom_view_feedback" year %}">feedback</a></p>
 
 <h2>Feedback not related to nominees</h2>
 
@@ -30,7 +23,7 @@
         {% for feedback in ft.feedback %}
             <div>
               <h3 class="ietf-divider">From {{ feedback.author|formatted_email|default:"Anonymous" }} ({{ feedback.time|date:"Y-m-d" }})</h3>
-              {% ifequal ft.slug "nomina" %}
+              {% if ft.slug == "nomina" %}
                 {% for fn in feedback.nomination_set.all %}
                   {% if fn.candidate_name %}
                     <p><b>Candidate name:</b> {{ fn.candidate_name }}</p>
@@ -39,7 +32,7 @@
                     <p><b>Candidate phone:</b> {{ fn.candidate_phone }}</p>
                   {% endif %}
                 {% endfor %}
-              {% endifequal %}
+              {% endif %}
               <b>Positions:</b> {{ feedback.positions.all|join:"," }}
               <pre>{% decrypt feedback.comments request year 1 %}</pre>
             </div>

@@ -5,7 +5,7 @@
 {% block content %}
 <h1>Undefer ballot for {{ doc }}</h1>
 
-<form class="undefer" action="" method="POST">
+<form class="undefer" action="" method="post">{% csrf_token %}
   <p>Undefer the ballot for {{ doc.file_tag }}?</p>
   
   <p>The ballot will then be on the IESG agenda of {{ telechat_date }}.</p>

@@ -20,8 +20,8 @@
     <h2>Draft - View</h2>
       <table class="full-width">
         <tr><td>Document Name:</td><td>{{ draft.title }}</td></tr>
-        <tr><td>Area:</td><td>{% if draft.group.parent %}<a href="{% url areas_view name=draft.group.parent.acronym %}">{{ draft.group.parent }}{% endif %}</td></tr>
-        <tr><td>Group:</td><td>{% if draft.group %}<a href="{% url groups_view acronym=draft.group.acronym %}">{{ draft.group.acronym }}{% endif %}</td></tr>
+        <tr><td>Area:</td><td>{% if draft.group.parent %}<a href="{% url "areas_view" name=draft.group.parent.acronym %}">{{ draft.group.parent }}{% endif %}</td></tr>
+        <tr><td>Group:</td><td>{% if draft.group %}<a href="{% url "groups_view" acronym=draft.group.acronym %}">{{ draft.group.acronym }}{% endif %}</td></tr>
         <tr><td>Area Director:</td><td>{{ draft.ad }}</td></tr>
         <tr><td>Shepherd:</td><td>{{ draft.shepherd }}</td></tr>
         <tr><td>Notify:</td><td>{{ draft.notify }}</td></tr>
@@ -48,15 +48,15 @@
         <tr><td>Start Date:</td><td>{{ draft.start_date }}</td></tr>
         <tr><td>Number of Pages:</td><td>{{ draft.pages }}</td></tr>
         {% comment %}<tr><td>Local Path:</td><td>/ftp/internet-drafts/{{ draft.local_path|default_if_none:"" }}</td></tr>{% endcomment %}
-        <tr><td>Abstract:</td><td><a href="{% url drafts_abstract id=draft.name %}">Click here to view the abstract</td></tr>
+        <tr><td>Abstract:</td><td><a href="{% url "drafts_abstract" id=draft.name %}">Click here to view the abstract</td></tr>
         <tr><td>Expiration Date:</td><td>{{ draft.expires|date:"M. d, Y" }}</td></tr>
         <tr><td>Intended Status:</td><td>{{ draft.intended_std_level|default_if_none:"" }}</td></tr>
         <tr><td>Standardization Level:</td><td>{{ draft.std_level|default_if_none:"" }}</td></tr>
         <tr><td>RFC Number:</td><td>{{ draft.rfc_number|default_if_none:"" }}</td></tr>
         <tr><td>Comments:</td><td>{{ draft.internal_comments|default_if_none:"" }}</td></tr>
         <tr><td>Last Modified Date:</td><td>{{ draft.time }}</td></tr>
-        <tr><td>Replaced by:</td><td>{% if draft.replaced_by %}<a href="{% url drafts_view id=draft.replaced_by.name %}">{{ draft.replaced_by.name }}{% endif %}</td></tr>
-        <tr><td>Related Documents:</td><td>{% for item in draft.relateddocument_set.all %}{% if not forloop.first %}, {% endif %}{{ item.relationship }} <a href="{% url drafts_view id=item.target.document.pk %}">{{ item.target.name }}</a>{% endfor %}</td></tr>
+        <tr><td>Replaced by:</td><td>{% if draft.replaced_by %}<a href="{% url "drafts_view" id=draft.replaced_by.name %}">{{ draft.replaced_by.name }}{% endif %}</td></tr>
+        <tr><td>Related Documents:</td><td>{% for item in draft.relateddocument_set.all %}{% if not forloop.first %}, {% endif %}{{ item.relationship }} <a href="{% url "drafts_view" id=item.target.document.pk %}">{{ item.target.name }}</a>{% endfor %}</td></tr>
         <tr><td>Tags:</td>
             <td>{% for tag in draft.tags.all %}
                   {% if not forloop.first %}, {% endif %}
@@ -72,7 +72,7 @@
         <h2>Author(s)</h2>
         <table class="full-width">
         {% for author in draft.documentauthor_set.all %}
-          <tr><td><a href="{% url rolodex_view id=author.author.person.id %}">{{ author.author.person.name }}</a></td></tr>
+          <tr><td><a href="{% url "rolodex_view" id=author.author.person.id %}">{{ author.author.person.name }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->
@@ -96,8 +96,8 @@
           <li><button onclick="window.location='edit/'">Edit</button></li>
           <li><button onclick="window.location='authors/'">Authors</button></li>
           {% comment %}
-          <li><button onclick="window.location='{% url sec.ids.views.search id=group.group_acronym.acronym_id %}'">Drafts</button></li>
-          <li><button onclick="window.location='{% url sec.rfcs.views.search id=group.group_acronym.acronym_id %}'">RFCs</button></li>
+          <li><button onclick="window.location='{% url "sec.ids.views.search" id=group.group_acronym.acronym_id %}'">Drafts</button></li>
+          <li><button onclick="window.location='{% url "sec.rfcs.views.search" id=group.group_acronym.acronym_id %}'">RFCs</button></li>
           {% endcomment %}
 	</ul>
       </div> <!-- button-group -->

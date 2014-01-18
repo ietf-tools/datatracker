@@ -1,13 +1,14 @@
 import subprocess, os, json
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError, HttpResponseRedirect, Http404
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 from django import forms
 from django.db.models import Q
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
 
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.doc.models import *
@@ -25,9 +26,10 @@ def discrepancies(request):
                               dict(sections=sections),
                               context_instance=RequestContext(request))
 
+@csrf_exempt # external API so we can't expect the other end to have a token
 def notify(request, org, notification):
-    """Notify that something has changed at another site to trigger a
-    run of one of the sync scripts."""
+    """Notify us that something has changed on an external site so we need to
+    run a sync script."""
 
     known_orgs = {
         "iana": "IANA",
@@ -141,7 +143,7 @@ def rfceditor_undo(request):
 
         e.delete()
 
-        return HttpResponseRedirect(urlreverse("ietf.sync.views.rfceditor_undo"))
+        return HttpResponseRedirect("")
 
     return render_to_response('sync/rfceditor_undo.html',
                               dict(events=events,

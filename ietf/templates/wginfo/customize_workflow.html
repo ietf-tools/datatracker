@@ -34,7 +34,7 @@
 <h1>Customize Workflow for {{ group.acronym }} {{ group.type.name }}</h1>
 
 <p>Below you can customize the draft states and tags used in the
-<a href="{% url group_charter group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>. Note that some states are
+<a href="{% url "group_charter" group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>. Note that some states are
 mandatory for group operation and cannot be deactivated.</p>
 
 <p>You can see the default Working Group I-D State Diagram
@@ -55,7 +55,7 @@ in <a href="http://tools.ietf.org/html/rfc6174#section-4.1">Section 4.1 of RFC61
       {% if state.mandatory %}
       (mandatory)
       {% else %}
-      <form class="set-state" method="post" action="">
+      <form class="set-state" method="post" action="">{% csrf_token %}
       {% if state.used %}
         <input type="hidden" name="state" value="{{ state.pk }}" />
         <input type="hidden" name="active" value="0" />
@@ -81,7 +81,7 @@ in <a href="http://tools.ietf.org/html/rfc6174#section-4.1">Section 4.1 of RFC61
       {% endif %}
       <a class="toggler" title="Click to set next states for state"  href="">+ customize</a>
       </div>
-      <form class="toggled set-next-states" method="post" action="">
+      <form class="toggled set-next-states" method="post" action="">{% csrf_token %}
       Select the next states:
       {% for checked, default, s in state.next_states_checkboxes %}
       <label{% if not s.used %} class="inactive"{% endif %}><input type="checkbox" name="next_states" value="{{ s.pk }}"{% if checked %} checked="checked"{% endif %} />{{ s.name }}{% if default  %} (default){% endif %}</label>
@@ -105,7 +105,7 @@ in <a href="http://tools.ietf.org/html/rfc6174#section-4.1">Section 4.1 of RFC61
   {% for tag in tags %}
   <tr class="{% cycle "oddrow" "evenrow" %}{% if not tag.used %} inactive{% endif %}" style="vertical-align: top;">
     <td>
-      <form class="set-tag" method="post" action="">
+      <form class="set-tag" method="post" action="">{% csrf_token %}
       {% if tag.used %}
         <input type="hidden" name="tag" value="{{ tag.pk }}" />
         <input type="hidden" name="active" value="0" />

@@ -9,9 +9,8 @@ from django.http import HttpResponseRedirect, HttpResponse, HttpResponseForbidde
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template import Context
-from django.template.defaultfilters import slugify
 from django.template.loader import get_template
-from django.utils import simplejson
+from django.utils.text import slugify
 from django.db.models import Max,Count,get_model
 
 from ietf.secr.lib import jsonapi
@@ -150,12 +149,12 @@ def get_proceedings_path(meeting,group):
 
 def get_proceedings_url(meeting,group=None):
     if meeting.type_id == 'ietf':
-        url = "%s/proceedings/%s/" % (settings.MEDIA_URL,meeting.number)
+        url = "%sproceedings/%s/" % (settings.MEDIA_URL,meeting.number)
         if group:
             url = url + "%s.html" % group.acronym
 
     elif meeting.type_id == 'interim':
-        url = "%s/proceedings/interim/%s/%s/proceedings.html" % (
+        url = "%sproceedings/interim/%s/%s/proceedings.html" % (
             settings.MEDIA_URL,
             meeting.date.strftime('%Y/%m/%d'),
             group.acronym)
@@ -331,7 +330,7 @@ def delete_material(request,slide_id):
 
     # create   deleted_document
     DocEvent.objects.create(doc=doc,
-                            by=request.user.get_profile(),
+                            by=request.user.person,
                             type='deleted')
 
     create_proceedings(meeting,group)
@@ -434,7 +433,7 @@ def interim(request, acronym):
             # create session to associate this meeting with a group and hold material
             Session.objects.create(meeting=meeting,
                                    group=group,
-                                   requested_by=request.user.get_profile(),
+                                   requested_by=request.user.person,
                                    status_id='sched')
 
             create_interim_directory()
@@ -483,7 +482,7 @@ def main(request):
     '''
     # getting numerous errors when people try to access using the wrong account
     try:
-        person = request.user.get_profile()
+        person = request.user.person
     except Person.DoesNotExist:
         return HttpResponseForbidden('ACCESS DENIED: user=%s' % request.META['REMOTE_USER'])
 
@@ -624,7 +623,7 @@ def replace_slide(request, slide_id):
 
             # create DocEvent uploaded
             DocEvent.objects.create(doc=slide,
-                                    by=request.user.get_profile(),
+                                    by=request.user.person,
                                     type='uploaded')
 
             # rebuild proceedings.html
@@ -660,7 +659,7 @@ def select(request, meeting_num):
 
     meeting = get_object_or_404(Meeting, number=meeting_num)
     user = request.user
-    person = user.get_profile()
+    person = user.person
     groups_session, groups_no_session = groups_by_session(user, meeting)
     proceedings_url = get_proceedings_url(meeting)
 
@@ -851,7 +850,7 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
 
             # create NewRevisionDocEvent instead of uploaded, per Ole
             NewRevisionDocEvent.objects.create(type='new_revision',
-                                       by=request.user.get_profile(),
+                                       by=request.user.person,
                                        doc=doc,
                                        rev=doc.rev,
                                        desc='New revision available',

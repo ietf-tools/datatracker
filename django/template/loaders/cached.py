@@ -3,11 +3,10 @@ Wrapper class that takes a list of template loaders as an argument and attempts
 to load templates from them in order, caching the result.
 """
 
-from django.core.exceptions import ImproperlyConfigured
-from django.template import TemplateDoesNotExist
+import hashlib
+from django.template.base import TemplateDoesNotExist
 from django.template.loader import BaseLoader, get_template_from_string, find_template_loader, make_origin
-from django.utils.hashcompat import sha_constructor
-from django.utils.importlib import import_module
+from django.utils.encoding import force_bytes
 
 class Loader(BaseLoader):
     is_usable = True
@@ -21,8 +20,12 @@ class Loader(BaseLoader):
     def loaders(self):
         # Resolve loaders on demand to avoid circular imports
         if not self._cached_loaders:
+            # Set self._cached_loaders atomically. Otherwise, another thread
+            # could see an incomplete list. See #17303.
+            cached_loaders = []
             for loader in self._loaders:
-                self._cached_loaders.append(find_template_loader(loader))
+                cached_loaders.append(find_template_loader(loader))
+            self._cached_loaders = cached_loaders
         return self._cached_loaders
 
     def find_template(self, name, dirs=None):
@@ -38,9 +41,11 @@ class Loader(BaseLoader):
         key = template_name
         if template_dirs:
             # If template directories were specified, use a hash to differentiate
-            key = '-'.join([template_name, sha_constructor('|'.join(template_dirs)).hexdigest()])
+            key = '-'.join([template_name, hashlib.sha1(force_bytes('|'.join(template_dirs))).hexdigest()])
 
-        if key not in self.template_cache:
+        try:
+            template = self.template_cache[key]
+        except KeyError:
             template, origin = self.find_template(template_name, template_dirs)
             if not hasattr(template, 'render'):
                 try:
@@ -52,7 +57,7 @@ class Loader(BaseLoader):
                     # of the actual template that does not exist.
                     return template, origin
             self.template_cache[key] = template
-        return self.template_cache[key], None
+        return template, None
 
     def reset(self):
         "Empty the template cache."

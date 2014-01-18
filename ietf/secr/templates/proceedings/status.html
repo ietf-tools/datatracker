@@ -20,7 +20,7 @@
 <div class="module">
     <h2>IETF  {{ meeting.meeting_num }}</h2>
        <table class="center">
-        <form action="modify/" method="post">
+        <form action="modify/" method="post">{% csrf_token %}
          <tr>   
             <input type="hidden" name="frozen" value="{{ proceeding.frozen }}" />
                   {% if not proceeding.frozen %}

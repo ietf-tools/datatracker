@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2010, All Rights Reserved
 
-from django.conf.urls.defaults import patterns
+from django.conf.urls import patterns
 from ietf.cookies import views
 
 urlpatterns = patterns('',

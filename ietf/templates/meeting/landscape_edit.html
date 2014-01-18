@@ -129,7 +129,7 @@ area_directors["{{ad.group.acronym}}"].push(find_person_by_href("{{ad.person.def
 
 <div id="unassigned-items">
   <div id="all_agendas" class="events_bar_buttons">
-    <a href="{% url ietf.meeting.views.edit_agendas meeting.number %}">
+    <a href="{% url "ietf.meeting.views.edit_agendas" meeting.number %}">
       <button class="styled_button">all agendas</button>
     </a>
   </div>

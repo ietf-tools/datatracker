@@ -43,11 +43,11 @@ is occasionally incorrect.</span>
     <td>Charter:</td>
     <td>
       {% if group.charter %}
-      <a href="{% url doc_view name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a> ({{ group.charter.get_state.name }})
+      <a href="{% url "doc_view" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a> ({{ group.charter.get_state.name }})
       {% else %}
       none
       {% if user|has_role:"Area Director,Secretariat" %}
-      - <a href="{% url ietf.wginfo.edit.submit_initial_charter acronym=group.acronym %}">Submit Charter</a>
+      - <a href="{% url "ietf.wginfo.edit.submit_initial_charter" acronym=group.acronym %}">Submit Charter</a>
       {% endif %}
       {% endif %}
     </td>
@@ -156,9 +156,7 @@ is occasionally incorrect.</span>
 
 <h2>{% if group.state_id == "proposed" %}Proposed{% endif %} Milestones</h2>
 
-{% with group.milestones as milestones %}
-{% include "wginfo/milestones.html" %}
-{% endwith %}
+{% include "wginfo/milestones.html" with milestones=group.milestones %}
 
 {% if milestones_in_review %}
 <p>+ {{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}

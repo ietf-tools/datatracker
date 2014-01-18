@@ -21,10 +21,6 @@ table.nominees tr td {
 
 {% block subtitle %} - Feedback{% endblock %}
 
-{% block pagehead %}
-{{ form.media }}
-{% endblock %}
-
 {% block nomcom_content %}
 
 <p>Select a nominee from the list of nominees to provide input about that nominee.
@@ -36,15 +32,6 @@ table.nominees tr td {
 {% endif %}
 
 {% if nomcom|has_publickey %}
-
-  <div class="js-info">
-    Your browser has Javascript disabled. Please enable javascript and reload the page.
-    <script type="text/javascript">
-      (function ($) {
-        $(".js-info").hide();
-      })(jQuery);
-    </script>
-  </div>
 
 <div class="content">
   <div class="primary">
@@ -68,7 +55,7 @@ table.nominees tr td {
           <tr><th>{{ p.name }}:</th></tr>
             {% for np in p.nomineeposition_set.accepted.not_duplicated %}
               <tr>
-                <td><a href="{% url nomcom_private_feedback year %}?nominee={{np.nominee.id}}&position={{ np.position.id}}">{{ np.nominee }}</td>
+                <td><a href="{% url "nomcom_private_feedback" year %}?nominee={{np.nominee.id}}&position={{ np.position.id}}">{{ np.nominee }}</td>
               </tr>
             {% endfor %}
           {% endif %}

@@ -1,21 +1,20 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import textwrap
-from django import template
-from django.conf import settings
-from django.utils.html import escape, fix_ampersands
-from django.utils.text import truncate_html_words
-from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter, urlize
-from django.template import resolve_variable
-from django.utils.safestring import mark_safe, SafeData
-from django.utils import simplejson
-from django.utils.html import strip_tags
-from django.template import RequestContext
-
-from email.utils import parseaddr
 import re
 import datetime
 import types
+from email.utils import parseaddr
+
+from django import template
+from django.conf import settings
+from django.utils.html import escape, fix_ampersands
+from django.template.defaultfilters import truncatewords_html, linebreaksbr, wordwrap, stringfilter, urlize
+from django.template import resolve_variable
+from django.utils.safestring import mark_safe, SafeData
+from django.utils.html import strip_tags
+from django.template import RequestContext
+
 
 register = template.Library()
 
@@ -231,7 +230,7 @@ def rfclink(string):
     string = str(string);
     return "http://tools.ietf.org/html/rfc" + string;
 
-@register.filter(name='urlize_ietf_docs')
+@register.filter(name='urlize_ietf_docs', is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
     """
     Make occurrences of RFC NNNN and draft-foo-bar links to /doc/.
@@ -246,8 +245,6 @@ def urlize_ietf_docs(string, autoescape=None):
     string = re.sub("(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     string = re.sub("(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     return mark_safe(string)
-urlize_ietf_docs.is_safe = True
-urlize_ietf_docs.needs_autoescape = True
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
 @register.filter(name='dashify')
@@ -457,7 +454,7 @@ def format_history_text(text):
         full = urlize_ietf_docs(full)
 
     full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(full)))))
-    snippet = truncate_html_words(full, 25)
+    snippet = truncatewords_html(full, 25)
     if snippet != full:
         return mark_safe(u'<div class="snippet">%s<span class="show-all">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
     return full

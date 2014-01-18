@@ -37,7 +37,7 @@
 
         {% if replaces or can_edit_stream_info %}
         <div>
-          <a{% if can_edit_stream_info %} class="editlink" href="{% url doc_change_replaces name=doc.name %}"{% endif %}>
+          <a{% if can_edit_stream_info %} class="editlink" href="{% url "doc_change_replaces" name=doc.name %}"{% endif %}>
             Replaces: {{ replaces|join:", "|urlize_ietf_docs|default:"None" }}
           </a>
         </div>
@@ -49,7 +49,7 @@
     <tr>
       <td>Document stream:</td>
       <td>
-        <a {% if can_change_stream %} class="editlink" href="{% url doc_change_stream name=doc.name %}"{% endif %}>
+        <a {% if can_change_stream %} class="editlink" href="{% url "doc_change_stream" name=doc.name %}"{% endif %}>
         {{ doc.stream|default:"No stream defined" }}
         </a>
       </td>
@@ -69,7 +69,7 @@
     <tr>
       <td>Intended RFC status:</td>
       <td>
-        <a {% if can_edit or can_edit_stream_info %}class="editlink" href="{% url doc_change_intended_status name=doc.name %}"{% endif %}>
+        <a {% if can_edit or can_edit_stream_info %}class="editlink" href="{% url "doc_change_intended_status" name=doc.name %}"{% endif %}>
         {{ doc.intended_std_level|default:"Unknown" }}</a>
       </td>
     </tr>
@@ -100,7 +100,7 @@
        {% if doc.stream %}
            <td>{{ doc.stream }} State:</td>
            <td class="stream-state">
-               <a {% if doc.stream and can_edit_stream_info %}class="editlink" href="{% url doc_change_stream_state name=doc.name state_type=stream_state_type_slug %}"{% endif %}>
+               <a {% if doc.stream and can_edit_stream_info %}class="editlink" href="{% url "doc_change_stream_state" name=doc.name state_type=stream_state_type_slug %}"{% endif %}>
                {{ stream_state|default:"(None)" }}
              </a>
 
@@ -121,7 +121,7 @@
     <tr>
       <td>Consensus:</td>
       <td>
-        <a title="Whether the document is the result of a community consensus process as defined in RFC 5741" {% if can_edit or can_edit_stream_info %}class="editlink" href="{% url doc_edit_consensus name=doc.name %}"{% endif %}>
+        <a title="Whether the document is the result of a community consensus process as defined in RFC 5741" {% if can_edit or can_edit_stream_info %}class="editlink" href="{% url "doc_edit_consensus" name=doc.name %}"{% endif %}>
           {{ consensus }}
         </a>
       </td>
@@ -131,7 +131,7 @@
     <tr>
       <td>Document shepherd:</td>
       <td>
-        <a {% if can_edit_stream_info %}class="editlink" href="{% url doc_edit_shepherd name=doc.name %}"{% endif %}>
+        <a {% if can_edit_stream_info %}class="editlink" href="{% url "doc_edit_shepherd" name=doc.name %}"{% endif %}>
         {{ doc.shepherd|default:"No shepherd assigned" }}
         </a>
       </td>
@@ -141,7 +141,7 @@
     <tr>
       <td>Shepherd Write-Up:</td>
       <td>
-        <a {% if can_edit_shepherd_writeup %}class="editlink"{% endif %} href="{% url doc_shepherd_writeup name=doc.name %}">
+        <a {% if can_edit_shepherd_writeup %}class="editlink"{% endif %} href="{% url "doc_shepherd_writeup" name=doc.name %}">
         {% if shepherd_writeup %}Last changed {{ shepherd_writeup.time|date:"Y-m-d"}}{% else %}(None){% endif %}
         </a>
       </td>
@@ -157,20 +157,20 @@
     {% endif %}
 
     <tr>
-      <td><a href="{% url state_help "draft-iesg" %}">IESG State</a>:</td>
+      <td><a href="{% url "state_help" "draft-iesg" %}">IESG State</a>:</td>
       <td>
-        <a {% if iesg_state and can_edit %}class="editlink" href="{% url doc_change_state name=doc.name %}"{% endif %}>
+        <a {% if iesg_state and can_edit %}class="editlink" href="{% url "doc_change_state" name=doc.name %}"{% endif %}>
         {{ iesg_state_summary|default:"I-D Exists" }}</a>
 
         {% if iana_review_state %}
         <div>IANA Review State:
-          <a {% if can_edit_iana_state %}class="editlink" href="{% url doc_change_iana_state name=doc.name state_type="iana-review" %}"{% endif %}>{{ iana_review_state }}</a>
+          <a {% if can_edit_iana_state %}class="editlink" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-review" %}"{% endif %}>{{ iana_review_state }}</a>
         </div>
         {% endif %}
 
         {% if iana_review_state %}
         <div>IANA Action State:
-          <a {% if can_edit_iana_state %}class="editlink" href="{% url doc_change_iana_state name=doc.name state_type="iana-action" %}"{% endif %}>{{ iana_action_state }}</a>
+          <a {% if can_edit_iana_state %}class="editlink" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-action" %}"{% endif %}>{{ iana_action_state }}</a>
         </div>
         {% endif %}
 
@@ -181,7 +181,7 @@
         {% endif %}
 
         <div class="telechat">
-        <a {% if can_edit %}class="editlink" href="{% url doc_change_telechat_date name=doc.name %}"{% endif %}>
+        <a {% if can_edit %}class="editlink" href="{% url "doc_change_telechat_date" name=doc.name %}"{% endif %}>
 
           {% if telechat %}
             On agenda of {{ telechat.telechat_date }} IESG telechat {% if telechat.returning_item %} (returning item){% endif %}
@@ -198,7 +198,7 @@
     <tr>
       <td>Responsible AD:</td>
       <td>
-        <a {% if can_edit %}class="editlink" href="{% url doc_change_ad name=doc.name %}"{% endif %}>
+        <a {% if can_edit %}class="editlink" href="{% url "doc_change_ad" name=doc.name %}"{% endif %}>
           {{ doc.ad|default:"(None)" }}
         </a>
       </td>
@@ -209,7 +209,7 @@
     <tr>
       <td>IESG Note:</td>
       <td>
-        <a {% if can_edit %}class="editlink" href="{% url doc_change_iesg_note name=doc.name %}"{% endif %}>
+        <a {% if can_edit %}class="editlink" href="{% url "doc_change_iesg_note" name=doc.name %}"{% endif %}>
           {{ doc.note|default:"(None)"|linebreaksbr }}
         </a>
       </td>
@@ -220,7 +220,7 @@
     <tr>
       <td>Send notices to:</td>
       <td>
-        <a {% if can_edit %}class="editlink" href="{% url doc_change_notify name=doc.name %}"{% endif %}>
+        <a {% if can_edit %}class="editlink" href="{% url "doc_change_notify" name=doc.name %}"{% endif %}>
           {{ doc.notify|default:"No addresses provided"}}
         </a>
       </td>
@@ -231,10 +231,10 @@
 
   <div class="links">
     <a href="mailto:{{ doc.name }}@tools.ietf.org?subject=Mail%20regarding%20{{ doc.name }}" rel="nofollow">Email Authors</a>
-  | <a href="{% url ipr_search %}?option=document_search&amp;id={{ doc.name }}" rel="nofollow">IPR Disclosures{% if doc.related_ipr %} ({{doc.related_ipr|length}}){% endif %}</a>
+  | <a href="{% url "ipr_search" %}?option=document_search&amp;id={{ doc.name }}" rel="nofollow">IPR Disclosures{% if doc.related_ipr %} ({{doc.related_ipr|length}}){% endif %}</a>
   | <a href="http://www.fenron.net/~fenner/ietf/deps/index.cgi?dep={{ name }}" rel="nofollow">Dependencies to this document</a>
-  | <a href="{% url doc_references doc.canonical_name %}" rel="nofollow">References</a>
-  | <a href="{% url doc_referenced_by doc.canonical_name %}" rel="nofollow">Referenced By</a>
+  | <a href="{% url 'doc_references' doc.canonical_name %}" rel="nofollow">References</a>
+  | <a href="{% url 'doc_referenced_by' doc.canonical_name %}" rel="nofollow">Referenced By</a>
   | <a href="http://tools.ietf.org/idnits?url=http://tools.ietf.org/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank">Check nits</a>
   | <a href="/feed/document-changes/{{ name }}/">History feed</a>
   | <a href="http://www.google.com/search?as_q={{ doc.name }}&as_sitesearch={{ search_archive }}" rel="nofollow" target="_blank">Search Mailing Lists</a>
@@ -242,15 +242,15 @@
   | <a href="https://www.iesg.org/bin/c5i?mid=6&rid=77&target={{ doc.name }}" rel="nofollow" target="_blank">Search Mailing Lists (ARO)</a>
   {% endif %}
   {% if show_add_to_list and user.is_authenticated %}
-  | <span class="search-results"><span class="addtolist"><a href="{% url community_add_document doc.name %}" title="Add to your personal ID list"><img src="/images/add_to_list.png" alt="Add to your personal ID list"/>Track this document</a></span></span>
+  | <span class="search-results"><span class="addtolist"><a href="{% url "community_add_document" doc.name %}" title="Add to your personal ID list"><img src="/images/add_to_list.png" alt="Add to your personal ID list"/>Track this document</a></span></span>
   {% endif %}
   </div>
 
   {% if can_edit and iesg_state %}
   <div class="links">
-    <a href="{% url doc_ballot_lastcall name=doc.name %}">Last Call Text</a>
-  | <a href="{% url doc_ballot_writeupnotes name=doc.name %}">Ballot Text</a>
-  | <a href="{% url doc_ballot_approvaltext name=doc.name %}">Announcement Text</a>
+    <a href="{% url "doc_ballot_lastcall" name=doc.name %}">Last Call Text</a>
+  | <a href="{% url "doc_ballot_writeupnotes" name=doc.name %}">Ballot Text</a>
+  | <a href="{% url "doc_ballot_approvaltext" name=doc.name %}">Announcement Text</a>
   </div>
   {% endif %}
 
@@ -278,7 +278,7 @@
 
 <h4>Abstract</h4>
 
-<p>{{ doc.abstract|escape }}</p>
+<p>{{ doc.abstract }}</p>
 
 <h4>Authors</h4>
 

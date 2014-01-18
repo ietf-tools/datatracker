@@ -3,16 +3,15 @@ import os
 import tempfile
 import datetime
 
-from ietf.utils import TestCase
 from django.db import IntegrityError
 from django.core.urlresolvers import reverse
 from django.core.files import File
-from django.contrib.formtools.preview import security_hash
 from django.contrib.auth.models import User
 
-from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.mail import outbox
+from pyquery import PyQuery
 
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.utils.mail import outbox
 
 from ietf.person.models import Email, Person
 from ietf.group.models import Group
@@ -24,9 +23,17 @@ from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comment
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionState, Feedback, FeedbackType, \
                                Nomination
-from ietf.nomcom.forms import EditChairForm, EditMembersForm
+from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, EditMembersForm
 from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
+
+client_test_cert_files = None
+
+def get_cert_files():
+    global client_test_cert_files
+    if not client_test_cert_files:
+        client_test_cert_files = generate_cert()
+    return client_test_cert_files
 
 
 class NomcomViewsTest(TestCase):
@@ -37,10 +44,11 @@ class NomcomViewsTest(TestCase):
     def check_url_status(self, url, status):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status)
+        return response
 
     def setUp(self):
         nomcom_test_data()
-        self.cert_file, self.privatekey_file = generate_cert()
+        self.cert_file, self.privatekey_file = get_cert_files()
         self.year = NOMCOM_YEAR
 
         # private urls
@@ -66,19 +74,19 @@ class NomcomViewsTest(TestCase):
         self.check_url_status(url, 200)
         self.client.logout()
         login_testing_unauthorized(self, MEMBER_USER, url)
-        self.check_url_status(url, 200)
+        return self.check_url_status(url, 200)
 
     def access_chair_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
         login_testing_unauthorized(self, MEMBER_USER, url)
         login_testing_unauthorized(self, CHAIR_USER, url)
-        self.check_url_status(url, 200)
+        return self.check_url_status(url, 200)
 
     def access_secretariat_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
         login_testing_unauthorized(self, CHAIR_USER, url)
         login_testing_unauthorized(self, SECRETARIAT_USER, url)
-        self.check_url_status(url, 200)
+        return self.check_url_status(url, 200)
 
     def test_private_index_view(self):
         """Verify private home view"""
@@ -286,7 +294,7 @@ class NomcomViewsTest(TestCase):
         # preview
         self.client.post(self.edit_members_url, test_data)
 
-        hash = security_hash(None, EditMembersForm(test_data))
+        hash = EditChairFormPreview(EditChairForm).security_hash(None, EditMembersForm(test_data))
         test_data.update({'hash': hash, 'stage': 2})
 
         # submit
@@ -315,14 +323,13 @@ class NomcomViewsTest(TestCase):
         # preview
         self.client.post(self.edit_chair_url, test_data)
 
-        hash = security_hash(None, EditChairForm(test_data))
+        hash = EditChairFormPreview(EditChairForm).security_hash(None, EditChairForm(test_data))
         test_data.update({'hash': hash, 'stage': 2})
 
         # submit
         self.client.post(self.edit_chair_url, test_data)
 
     def test_edit_chair_view(self):
-        """Verify edit chair view"""
         self.access_secretariat_url(self.edit_chair_url)
         self.change_chair(COMMUNITY_USER)
 
@@ -337,15 +344,20 @@ class NomcomViewsTest(TestCase):
         self.client.logout()
 
     def test_edit_nomcom_view(self):
-        """Verify edit nomcom view"""
-        self.access_chair_url(self.edit_nomcom_url)
+        r = self.access_chair_url(self.edit_nomcom_url)
+        q = PyQuery(r.content)
 
         f = open(self.cert_file.name)
-        response = self.client.post(self.edit_nomcom_url, {'public_key': f})
+        response = self.client.post(self.edit_nomcom_url, {
+            'public_key': f,
+            'reminderdates_set-TOTAL_FORMS': q('input[name="reminderdates_set-TOTAL_FORMS"]').val(),
+            'reminderdates_set-INITIAL_FORMS': q('input[name="reminderdates_set-INITIAL_FORMS"]').val(),
+            'reminderdates_set-MAX_NUM_FORMS': q('input[name="reminderdates_set-MAX_NUM_FORMS"]').val(),
+        })
         f.close()
         self.assertEqual(response.status_code, 200)
 
-        nominee = Nominee.objects.get(email__person__name=COMMUNITY_USER)
+        nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
         position = Position.objects.get(name='OAM')
 
         comments = u'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
@@ -620,7 +632,7 @@ class NomineePositionStateSaveTest(TestCase):
 
     def setUp(self):
         nomcom_test_data()
-        self.nominee = Nominee.objects.get(email__person__name=COMMUNITY_USER)
+        self.nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
 
     def test_state_autoset(self):
         """Verify state is autoset correctly"""
@@ -652,11 +664,11 @@ class FeedbackTest(TestCase):
 
     def setUp(self):
         nomcom_test_data()
-        self.cert_file, self.privatekey_file = generate_cert()
+        self.cert_file, self.privatekey_file = get_cert_files()
 
     def test_encrypted_comments(self):
 
-        nominee = Nominee.objects.get(email__person__name=COMMUNITY_USER)
+        nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
         position = Position.objects.get(name='OAM')
         nomcom = position.nomcom
 
@@ -676,16 +688,13 @@ class FeedbackTest(TestCase):
 
         self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
 
-        os.unlink(self.privatekey_file.name)
-        os.unlink(self.cert_file.name)
-
 class ReminderTest(TestCase):
     perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         nomcom_test_data()
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
-        self.cert_file, self.privatekey_file = generate_cert()
+        self.cert_file, self.privatekey_file = get_cert_files()
         self.nomcom.public_key.storage.location = tempfile.gettempdir()
         self.nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 

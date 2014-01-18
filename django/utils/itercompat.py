@@ -4,24 +4,11 @@ Where possible, we try to use the system-native version and only fall back to
 these implementations if necessary.
 """
 
+import collections
 import itertools
+import sys
+import warnings
 
-# Fallback for Python 2.4, Python 2.5
-def product(*args, **kwds):
-    """
-    Taken from http://docs.python.org/library/itertools.html#itertools.product
-    """
-    # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
-    # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
-    pools = map(tuple, args) * kwds.get('repeat', 1)
-    result = [[]]
-    for pool in pools:
-        result = [x+[y] for x in result for y in pool]
-    for prod in result:
-        yield tuple(prod)
-
-if hasattr(itertools, 'product'):
-    product = itertools.product
 
 def is_iterable(x):
     "A implementation independent way of checking for iterables"
@@ -32,14 +19,18 @@ def is_iterable(x):
     else:
         return True
 
-def all(iterable):
-    for item in iterable:
-        if not item:
-            return False
-    return True
+def is_iterator(x):
+    """An implementation independent way of checking for iterators
 
-def any(iterable):
-    for item in iterable:
-        if item:
-            return True
-    return False
+    Python 2.6 has a different implementation of collections.Iterator which
+    accepts anything with a `next` method. 2.7+ requires and `__iter__` method
+    as well.
+    """
+    if sys.version_info >= (2, 7):
+        return isinstance(x, collections.Iterator)
+    return isinstance(x, collections.Iterator) and hasattr(x, '__iter__')
+
+def product(*args, **kwds):
+    warnings.warn("django.utils.itercompat.product is deprecated; use the native version instead",
+                  DeprecationWarning, stacklevel=2)
+    return itertools.product(*args, **kwds)

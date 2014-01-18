@@ -47,7 +47,7 @@ def get_my_groups(user,conclude=False):
     if user == None:
         return all_groups
     else:
-        person = user.get_profile()
+        person = user.person
 
     if has_role(user,'Secretariat'):
         return all_groups

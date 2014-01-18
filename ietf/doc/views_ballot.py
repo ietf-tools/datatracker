@@ -1,16 +1,15 @@
 # ballot management (voting, commenting, writeups, ...) for Area
 # Directors and Secretariat
 
-import re, os, datetime
+import re, os, datetime, json
 
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.shortcuts import render_to_response, get_object_or_404
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from django import forms
 from django.utils.html import strip_tags
-from django.utils import simplejson
 from django.conf import settings
 
 import debug
@@ -46,7 +45,7 @@ def do_undefer_ballot(request, doc):
     Helper function to perform undefer of ballot.  Takes the Request object, for use in 
     logging, and the Document object.
     '''
-    login = request.user.get_profile()
+    login = request.user.person
     telechat_date = TelechatDate.objects.active().order_by("date")[0].date
     save_document_in_history(doc)
 
@@ -114,7 +113,7 @@ def edit_position(request, name, ballot_id):
     doc = get_object_or_404(Document, docalias__name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
-    ad = login = request.user.get_profile()
+    ad = login = request.user.person
 
     if 'HTTP_REFERER' in request.META:
         return_to_url = request.META['HTTP_REFERER']
@@ -209,9 +208,9 @@ def edit_position(request, name, ballot_id):
                     qstr += "&ad=%s" % request.GET.get('ad')
                 return HttpResponseRedirect(urlreverse("doc_send_ballot_comment", kwargs=dict(name=doc.name, ballot_id=ballot_id)) + qstr)
             elif request.POST.get("Defer"):
-                return HttpResponseRedirect(urlreverse("doc_defer_ballot", kwargs=dict(name=doc)))
+                return redirect("doc_defer_ballot", name=doc)
             elif request.POST.get("Undefer"):
-                return HttpResponseRedirect(urlreverse("doc_undefer_ballot", kwargs=dict(name=doc)))
+                return redirect("doc_undefer_ballot", name=doc)
             else:
                 return HttpResponseRedirect(return_to_url)
     else:
@@ -239,7 +238,7 @@ def edit_position(request, name, ballot_id):
                                    ballot_deferred=ballot_deferred,
                                    ballot = ballot,
                                    show_discuss_text=old_pos and old_pos.pos.blocking,
-                                   blocking_positions=simplejson.dumps(blocking_positions),
+                                   blocking_positions=json.dumps(blocking_positions),
                                    ),
                               context_instance=RequestContext(request))
 
@@ -250,7 +249,7 @@ def send_ballot_comment(request, name, ballot_id):
     doc = get_object_or_404(Document, docalias__name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
-    ad = login = request.user.get_profile()
+    ad = login = request.user.person
 
     return_to_url = request.GET.get('return_to_url')
     if not return_to_url:
@@ -326,13 +325,13 @@ def clear_ballot(request, name):
     """Clear all positions and discusses on every open ballot for a document."""
     doc = get_object_or_404(Document, name=name)
     if request.method == 'POST':
-        by = request.user.get_profile()
+        by = request.user.person
         for t in BallotType.objects.filter(doc_type=doc.type_id):
             close_ballot(doc, by, t.slug)
             create_ballot_if_not_open(doc, by, t.slug)
         if doc.get_state('draft-iesg').slug == 'defer':
             do_undefer_ballot(request,doc)
-        return HttpResponseRedirect(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        return redirect("doc_view", name=doc.name)
 
     return render_to_response('doc/ballot/clear_ballot.html',
                               dict(doc=doc,
@@ -348,7 +347,7 @@ def defer_ballot(request, name):
     if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
     telechat_date = TelechatDate.objects.active().order_by("date")[1].date
 
     if request.method == 'POST':
@@ -422,7 +421,7 @@ def lastcalltext(request, name):
     if not doc.get_state("draft-iesg"):
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     existing = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
     if not existing:
@@ -505,7 +504,7 @@ def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
     doc = get_object_or_404(Document, docalias__name=name)
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     existing = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     if not existing:
@@ -586,7 +585,7 @@ def ballot_approvaltext(request, name):
     if not doc.get_state("draft-iesg"):
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     existing = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
     if not existing:
@@ -634,7 +633,7 @@ def approve_ballot(request, name):
     if not doc.get_state("draft-iesg"):
         raise Http404()
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     e = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
     if not e:
@@ -743,7 +742,7 @@ def make_last_call(request, name):
     if not (doc.get_state("draft-iesg") or doc.get_state("statchg")):
         raise Http404
 
-    login = request.user.get_profile()
+    login = request.user.person
 
     e = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
     if not e:

@@ -228,28 +228,6 @@ class EditSubmissionForm(forms.ModelForm):
         model = Submission
         fields = ['title', 'rev', 'document_date', 'pages', 'abstract', 'note']
 
-    def get_initial_authors(self):
-        authors=[]
-        if self.is_bound:
-            for key, value in self.data.items():
-                if key.startswith('name_'):
-                    author = {'errors': {}}
-                    index = key.replace('name_', '')
-                    name = value.strip()
-                    if not name:
-                        author['errors']['name'] = 'This field is required'
-                    email = self.data.get('email_%s' % index, '').strip()
-                    if email and not email_re.search(email):
-                        author['errors']['email'] = 'Enter a valid e-mail address'
-                    if name or email:
-                        author.update({'name': name,
-                                       'email': email,
-                                       'index': index,
-                                       })
-                        authors.append(author)
-            authors.sort(key=lambda x: x['index'])
-        return authors
-
     def clean_rev(self):
         rev = self.cleaned_data["rev"]
 

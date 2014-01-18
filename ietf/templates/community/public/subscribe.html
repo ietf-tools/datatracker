@@ -12,7 +12,7 @@ We have sent an email to your email address with instructions to complete your s
 <p>
 Subscribe to the email list for notifications of {% if significant %}significant {% endif %}changes on {{ cl.long_name }}.
 </p>
-<form action="" method="post">
+<form action="" method="post">{% csrf_token %}
 <table>
   {{ form }}
 </table>

@@ -89,13 +89,6 @@ span.fieldRequired {
     background-color: #ffcc66;
 }
 
-.js-info {
-    border: 1px dashed red;
-    padding: 1em 2em;
-    font-size: 1.2em;
-    background-color: #ffdd88;
-}
-
 th.sort a {
     text-decoration: none;
     color: white;

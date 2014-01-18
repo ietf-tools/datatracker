@@ -19,7 +19,7 @@ References to {{alias_name}}
 This is an experimental product. These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
 </div>
 <div>
-Showing RFCs and active Internet-Drafts, sorted by <a href="{% url relationship_subset_help subset='reference' %}">reference type</a>, then document name.
+Showing RFCs and active Internet-Drafts, sorted by <a href="{% url 'relationship_subset_help' subset='reference' %}">reference type</a>, then document name.
 </div>
 {% if numdocs %}
 <div class="showmore">
@@ -33,7 +33,7 @@ Results restricted to the first 250 of {{ numdocs }} documents. <a href="?full=T
 <tr class="reference {% cycle 'evenrow' 'oddrow' %}">
 <td class="source">
 {% with ref.source.canonical_name as name %}
-<a href="{% url doc_view name=name %}">{{name}}</a> {% if ref.target.name != alias_name %}(as {{ref.target.name}}){% endif %} <span class="reflinks">(<a href="{% url doc_references name %}">refs</a>, <a href="{% url doc_referenced_by name %}">refby</a>)</span> 
+<a href="{% url 'doc_view' name=name %}">{{name}}</a> {% if ref.target.name != alias_name %}(as {{ref.target.name}}){% endif %} <span class="reflinks">(<a href="{% url 'doc_references' name %}">refs</a>, <a href="{% url 'doc_referenced_by' name %}">refby</a>)</span> 
 {% endwith %}
 </td>
 <td class="title">

@@ -1,15 +1,14 @@
 import time
-import datetime
-
 from django import forms
 from django.forms.util import ErrorDict
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from models import Comment
-from django.utils.encoding import force_unicode
-from django.utils.hashcompat import sha_constructor
+from django.contrib.comments.models import Comment
+from django.utils.crypto import salted_hmac, constant_time_compare
+from django.utils.encoding import force_text
 from django.utils.text import get_text_list
-from django.utils.translation import ungettext, ugettext_lazy as _
+from django.utils import timezone
+from django.utils.translation import ungettext, ugettext, ugettext_lazy as _
 
 COMMENT_MAX_LENGTH = getattr(settings,'COMMENT_MAX_LENGTH', 3000)
 
@@ -46,7 +45,7 @@ class CommentSecurityForm(forms.Form):
         }
         expected_hash = self.generate_security_hash(**security_hash_dict)
         actual_hash = self.cleaned_data["security_hash"]
-        if expected_hash != actual_hash:
+        if not constant_time_compare(expected_hash, actual_hash):
             raise forms.ValidationError("Security hash check failed.")
         return actual_hash
 
@@ -82,9 +81,13 @@ class CommentSecurityForm(forms.Form):
         return self.generate_security_hash(**initial_security_dict)
 
     def generate_security_hash(self, content_type, object_pk, timestamp):
-        """Generate a (SHA1) security hash from the provided info."""
-        info = (content_type, object_pk, timestamp, settings.SECRET_KEY)
-        return sha_constructor("".join(info)).hexdigest()
+        """
+        Generate a HMAC security hash from the provided info.
+        """
+        info = (content_type, object_pk, timestamp)
+        key_salt = "django.contrib.forms.CommentSecurityForm"
+        value = "-".join(info)
+        return salted_hmac(key_salt, value).hexdigest()
 
 class CommentDetailsForm(CommentSecurityForm):
     """
@@ -130,12 +133,12 @@ class CommentDetailsForm(CommentSecurityForm):
         """
         return dict(
             content_type = ContentType.objects.get_for_model(self.target_object),
-            object_pk    = force_unicode(self.target_object._get_pk_val()),
+            object_pk    = force_text(self.target_object._get_pk_val()),
             user_name    = self.cleaned_data["name"],
             user_email   = self.cleaned_data["email"],
             user_url     = self.cleaned_data["url"],
             comment      = self.cleaned_data["comment"],
-            submit_date  = datetime.datetime.now(),
+            submit_date  = timezone.now(),
             site_id      = settings.SITE_ID,
             is_public    = True,
             is_removed   = False,
@@ -170,11 +173,12 @@ class CommentDetailsForm(CommentSecurityForm):
         if settings.COMMENTS_ALLOW_PROFANITIES == False:
             bad_words = [w for w in settings.PROFANITIES_LIST if w in comment.lower()]
             if bad_words:
-                plural = len(bad_words) > 1
                 raise forms.ValidationError(ungettext(
                     "Watch your mouth! The word %s is not allowed here.",
-                    "Watch your mouth! The words %s are not allowed here.", plural) % \
-                    get_text_list(['"%s%s%s"' % (i[0], '-'*(len(i)-2), i[-1]) for i in bad_words], 'and'))
+                    "Watch your mouth! The words %s are not allowed here.",
+                    len(bad_words)) % get_text_list(
+                        ['"%s%s%s"' % (i[0], '-'*(len(i)-2), i[-1])
+                         for i in bad_words], ugettext('and')))
         return comment
 
 class CommentForm(CommentDetailsForm):

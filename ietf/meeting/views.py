@@ -12,7 +12,7 @@ from tempfile import mkstemp
 
 from django import forms
 from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.http import HttpResponse, Http404
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.template import RequestContext
@@ -22,6 +22,7 @@ from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.db.models import Max
 from django.forms.models import modelform_factory
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ietf.utils.pipe import pipe
 from ietf.ietfauth.utils import role_required, has_role
@@ -117,9 +118,7 @@ def agenda_create(request, num=None, schedule_name=None):
         sched = meeting.schedule_set.get(name=savedname, owner=request.user.person)
         if sched:
             # XXX needs to record a session error and redirect to where?
-            return HttpResponseRedirect(
-                reverse(edit_agenda,
-                        args=[meeting.number, sched.name]))
+            return redirect(edit_agenda, meeting.number, sched.name)
 
     except Schedule.DoesNotExist:
         pass
@@ -158,16 +157,15 @@ def agenda_create(request, num=None, schedule_name=None):
 
 
     # now redirect to this new schedule.
-    return HttpResponseRedirect(
-        reverse(edit_agenda,
-                args=[meeting.number, newschedule.name]))
+    return redirect(edit_agenda, meeting.number, newschedule.name)
 
 
 @decorator_from_middleware(GZipMiddleware)
+@ensure_csrf_cookie
 def edit_timeslots(request, num=None):
 
     meeting = get_meeting(num)
-    timeslots = meeting.timeslot_set.exclude(location__isnull = True).all()
+    timeslots = meeting.timeslot_set.exclude(location=None).select_related("location", "type")
 
     time_slices,date_slices,slots = meeting.build_timeslices()
 
@@ -175,12 +173,11 @@ def edit_timeslots(request, num=None):
     site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
 
     rooms = meeting.room_set.order_by("capacity")
-    rooms = rooms.all()
 
     from ietf.meeting.ajax import timeslot_roomsurl, AddRoomForm, timeslot_slotsurl, AddSlotForm
 
-    roomsurl  =reverse(timeslot_roomsurl, args=[meeting.number])
-    adddayurl =reverse(timeslot_slotsurl, args=[meeting.number])
+    roomsurl  = reverse(timeslot_roomsurl, args=[meeting.number])
+    adddayurl = reverse(timeslot_slotsurl, args=[meeting.number])
 
     return HttpResponse(render_to_string("meeting/timeslot_edit.html",
                                          {"timeslots": timeslots,
@@ -195,12 +192,13 @@ def edit_timeslots(request, num=None):
                                           "slot_slices": slots,
                                           "date_slices":date_slices,
                                           "meeting":meeting},
-                                         RequestContext(request)), mimetype="text/html")
+                                         RequestContext(request)), content_type="text/html")
 
 ##############################################################################
 #@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
 @decorator_from_middleware(GZipMiddleware)
+@ensure_csrf_cookie
 def edit_agenda(request, num=None, schedule_name=None):
 
     if request.method == 'POST':
@@ -211,7 +209,7 @@ def edit_agenda(request, num=None, schedule_name=None):
     if not user.is_anonymous():
         #print "user: %s" % (user)
         try:
-            requestor = user.get_profile()
+            requestor = user.person
         except Person.DoesNotExist:
             # if we can not find them, leave them alone, only used for debugging.
             pass
@@ -239,7 +237,7 @@ def edit_agenda(request, num=None, schedule_name=None):
                                              {"schedule":schedule,
                                               "meeting": meeting,
                                               "meeting_base_url":meeting_base_url},
-                                             RequestContext(request)), status=403, mimetype="text/html")
+                                             RequestContext(request)), status=403, content_type="text/html")
 
     sessions = meeting.sessions_that_can_meet.order_by("id", "group", "requested_by")
     scheduledsessions = get_all_scheduledsessions_from_schedule(schedule)
@@ -280,16 +278,17 @@ def edit_agenda(request, num=None, schedule_name=None):
                                           "session_jsons": session_jsons,
                                           "scheduledsessions": scheduledsessions,
                                           "show_inline": set(["txt","htm","html"]) },
-                                         RequestContext(request)), mimetype="text/html")
+                                         RequestContext(request)), content_type="text/html")
 
 ##############################################################################
 #  show the properties associated with an agenda (visible, public)
-#    this page uses ajax PUT requests to the API
+#    this page uses ajax POST requests to the API
 #
 AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
 
 @role_required('Area Director','Secretariat')
 @decorator_from_middleware(GZipMiddleware)
+@ensure_csrf_cookie
 def edit_agenda_properties(request, num=None, schedule_name=None):
 
     meeting = get_meeting(num)
@@ -300,7 +299,7 @@ def edit_agenda_properties(request, num=None, schedule_name=None):
                                          {"schedule":schedule,
                                           "form":form,
                                           "meeting":meeting},
-                                         RequestContext(request)), mimetype="text/html")
+                                         RequestContext(request)), content_type="text/html")
 
 ##############################################################################
 # show list of agendas.
@@ -308,6 +307,7 @@ def edit_agenda_properties(request, num=None, schedule_name=None):
 
 @role_required('Area Director','Secretariat')
 @decorator_from_middleware(GZipMiddleware)
+@ensure_csrf_cookie
 def edit_agendas(request, num=None, order=None):
 
     #if request.method == 'POST':
@@ -318,7 +318,7 @@ def edit_agendas(request, num=None, order=None):
 
     schedules = meeting.schedule_set
     if not has_role(user, 'Secretariat'):
-        schedules = schedules.filter(visible = True) | schedules.filter(owner = user.get_profile())
+        schedules = schedules.filter(visible = True) | schedules.filter(owner = user.person)
 
     schedules = schedules.order_by('owner', 'name')
 
@@ -327,8 +327,9 @@ def edit_agendas(request, num=None, order=None):
                                           "schedules": schedules.all()
                                           },
                                          RequestContext(request)),
-                        mimetype="text/html")
+                        content_type="text/html")
 
+@ensure_csrf_cookie
 def agenda(request, num=None, name=None, base=None, ext=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.html'
@@ -339,7 +340,7 @@ def agenda(request, num=None, name=None, base=None, ext=None):
     schedule = get_schedule(meeting, name)
     updated = meeting_updated(meeting)
     return HttpResponse(render_to_string("meeting/"+base+ext,
-        {"schedule":schedule, "updated": updated}, RequestContext(request)), mimetype=mimetype[ext])
+        {"schedule":schedule, "updated": updated}, RequestContext(request)), content_type=mimetype[ext])
 
 def read_agenda_file(num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
@@ -369,9 +370,9 @@ def session_agenda(request, num, session):
         ext = ext.lstrip(".").lower()
 
         if ext == "txt":
-            return HttpResponse(content, mimetype="text/plain")
+            return HttpResponse(content, content_type="text/plain")
         elif ext == "pdf":
-            return HttpResponse(content, mimetype="application/pdf")
+            return HttpResponse(content, content_type="application/pdf")
         else:
             return HttpResponse(content)
 
@@ -455,7 +456,7 @@ def session_draft_list(num, session):
 def session_draft_tarfile(request, num, session):
     drafts = session_draft_list(num, session);
 
-    response = HttpResponse(mimetype='application/octet-stream')
+    response = HttpResponse(content_type='application/octet-stream')
     response['Content-Disposition'] = 'attachment; filename=%s-drafts.tgz'%(session)
     tarstream = tarfile.open('','w:gz',response)
     mfh, mfn = mkstemp()
@@ -522,11 +523,11 @@ def session_draft_pdf(request, num, session):
 
     os.unlink(pmn)
     os.unlink(pdfn)
-    return HttpResponse(pdf_contents, mimetype="application/pdf")
+    return HttpResponse(pdf_contents, content_type="application/pdf")
 
 def week_view(request, num=None):
     meeting = get_meeting(num)
-    timeslots = TimeSlot.objects.filter(meeting__id = meeting.id)
+    timeslots = TimeSlot.objects.filter(meeting=meeting)
 
     template = "meeting/week-view.html"
     return render_to_response(template,
@@ -572,7 +573,7 @@ def ical_agenda(request, num=None, name=None, ext=None):
 
     return HttpResponse(render_to_string("meeting/agenda.ics",
         {"schedule":schedule, "assignments":assignments, "updated":updated},
-        RequestContext(request)), mimetype="text/calendar")
+        RequestContext(request)), content_type="text/calendar")
 
 def meeting_requests(request, num=None) :
     meeting = get_meeting(num)

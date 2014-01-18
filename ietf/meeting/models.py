@@ -27,7 +27,7 @@ timezones = [(name, name) for name in pytz.common_timezones]
 timezones.sort()
 
 
-# this is used in models to format dates, as the simplejson serializer
+# this is used in models to format dates, as the built-in json serializer
 # can not deal with them, and the django provided serializer is inaccessible.
 from django.utils import datetime_safe
 DATE_FORMAT = "%Y-%m-%d"
@@ -105,10 +105,7 @@ class Meeting(models.Model):
         return self.date + datetime.timedelta(days=settings.SUBMISSION_CORRECTION_DAYS)
 
     def get_schedule_by_name(self, name):
-        qs = self.schedule_set.filter(name=name)
-        if qs:
-            return qs[0]
-        return None
+        return self.schedule_set.filter(name=name).first()
 
     @property
     def sessions_that_can_meet(self):
@@ -150,7 +147,7 @@ class Meeting(models.Model):
         slots = {}
 
         for ts in self.timeslot_set.all():
-            if ts.location is None:
+            if ts.location_id is None:
                 continue
             ymd = ts.time.date()
             if ymd not in time_slices:
@@ -257,8 +254,7 @@ class TimeSlot(models.Model):
     @property
     def session(self):
         if not hasattr(self, "_session_cache"):
-            sessions = self.sessions.filter(scheduledsession__schedule=self.meeting.agenda)
-            self._session_cache = sessions.all()[0] if sessions.count() else None
+            self._session_cache = self.sessions.filter(scheduledsession__schedule=self.meeting.agenda).first()
         return self._session_cache
 
     @property
@@ -379,18 +375,15 @@ class TimeSlot(models.Model):
 
     """
     Find a timeslot that comes next, in the same room.   It must be on the same day,
-    and it must have a gap of 11 minutes or less. (10 is the spec)
+    and it must have a gap of less than 11 minutes. (10 is the spec)
     """
     @property
     def slot_to_the_right(self):
-        things = self.meeting.timeslot_set.filter(location = self.location,       # same room!
-                                 type     = self.type,           # must be same type (usually session)
-                                 time__gt = self.time + self.duration,  # must be after this session.
-                                 time__lt = self.time + self.duration + datetime.timedelta(0,11*60))
-        if things:
-            return things[0]
-        else:
-            return None
+        return self.meeting.timeslot_set.filter(
+            location = self.location,       # same room!
+            type     = self.type,           # must be same type (usually session)
+            time__gt = self.time + self.duration,  # must be after this session
+            time__lt = self.time + self.duration + datetime.timedelta(seconds=11*60)).first()
 
 # end of TimeSlot
 
@@ -510,13 +503,13 @@ class Schedule(models.Model):
         for sess in self.meeting.sessions_that_can_meet.all():
             assignments[sess.group] = []
             sessions[sess] = None
-            total =+ 1
+            total += 1
 
         for ss in allschedsessions:
             assignments[ss.session.group].append(ss)
             # XXX can not deal with a session in two slots
             sessions[ss.session] = ss
-            scheduled =+ 1
+            scheduled += 1
         return assignments,sessions,total,scheduled
 
     cached_sessions_that_can_meet = None
@@ -571,9 +564,9 @@ class ScheduledSession(models.Model):
 
     @property
     def slot_to_the_right(self):
-        ss1 = self.schedule.scheduledsession_set.filter(timeslot = self.timeslot.slot_to_the_right)
-        if ss1:
-            return ss1[0]
+        s = self.timeslot.slot_to_the_right
+        if s:
+            return self.schedule.scheduledsession_set.filter(timeslot=s).first()
         else:
             return None
 
@@ -637,9 +630,9 @@ class Constraint(models.Model):
     Specifies a constraint on the scheduling.
     One type (name=conflic?) of constraint is between source WG and target WG,
            e.g. some kind of conflict.
-    Another type (name=bethere) of constraing is between source WG and
+    Another type (name=bethere) of constraint is between source WG and
            availability of a particular Person, usually an AD.
-    A third type (name=avoidday) of constraing is between source WG and
+    A third type (name=avoidday) of constraint is between source WG and
            a particular day of the week, specified in day.
     """
     meeting = models.ForeignKey(Meeting)

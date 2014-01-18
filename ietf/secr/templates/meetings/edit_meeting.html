@@ -15,7 +15,7 @@
 {% block content %}
 
 <div class="module">
-    <form action="." method="post">
+    <form action="." method="post">{% csrf_token %}
     <h2>Meetings - Edit</h2>
       <table id="proceedings-edit-table">
         {{ form.as_table }}

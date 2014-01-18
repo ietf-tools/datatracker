@@ -15,9 +15,9 @@
 
 <div class="module">
     <h2>IETF  {{meeting.number}} Meeting - View</h2>
-     {% ifequal meeting.frozen 1 %}
+     {% if meeting.frozen == 1 %}
       <ul class="errorlist"><li> THIS IS A FROZEN PROCEEDING</li></ul> 
-     {% endifequal %}
+     {% endif %}
       <table class="full-width">
         <col id="proceedings-view-first-col" />
         <tr><td>Meeting Start Date:</td><td> {{ meeting.date }}</td></tr>
@@ -39,18 +39,18 @@
       </div><!-- inline-related-->
 
       <div class="button-group">
-     {% ifequal meeting.frozen 0 %}
+     {% if meeting.frozen == 0 %}
        <ul>
-             <li><button onclick="window.location='{% url proceedings_select meeting_num=meeting.number %}'">Upload Materials</button></li>
+             <li><button onclick="window.location='{% url "proceedings_select" meeting_num=meeting.number %}'">Upload Materials</button></li>
              <li><button onclick="window.location='convert/'">Convert Materials</button></li>
              <li><button onclick="window.location='status/'">Proceedings {{ meeting.number }} Status</button></li>
         </ul>
-     {% endifequal %}
-     {% ifequal meeting.frozen 1 %}
+     {% endif %}
+     {% if meeting.frozen == 1 %}
         <ul>
              <li><button onclick="window.location='status/'">Proceedings {{ meeting.number }} Status</button></li>
         </ul>
-    {% endifequal %}
+    {% endif %}
       </div> <!-- button-group -->
 </div> <!-- module -->
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Portions Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -30,9 +31,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ietf import settings
-from django.core import management
-management.setup_environ(settings)
+import os
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 from ietf.idindex.index import id_index_txt
 print id_index_txt(with_abstracts=True).encode('utf-8'),

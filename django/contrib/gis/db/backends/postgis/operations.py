@@ -10,6 +10,11 @@ from django.contrib.gis.measure import Distance
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.postgresql_psycopg2.base import DatabaseOperations
 from django.db.utils import DatabaseError
+from django.utils import six
+from django.utils.functional import cached_property
+
+from .models import GeometryColumns, SpatialRefSys
+
 
 #### Classes used in constructing PostGIS spatial SQL ####
 class PostGISOperator(SpatialOperation):
@@ -61,6 +66,7 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
     compiler_module = 'django.contrib.gis.db.models.sql.compiler'
     name = 'postgis'
     postgis = True
+    geom_func_prefix = 'ST_'
     version_regex = re.compile(r'^(?P<major>\d)\.(?P<minor1>\d)\.(?P<minor2>\d+)')
     valid_aggregates = dict([(k, None) for k in
                              ('Collect', 'Extent', 'Extent3D', 'MakeLine', 'Union')])
@@ -71,46 +77,7 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
     def __init__(self, connection):
         super(PostGISOperations, self).__init__(connection)
 
-        # Trying to get the PostGIS version because the function
-        # signatures will depend on the version used.  The cost
-        # here is a database query to determine the version, which
-        # can be mitigated by setting `POSTGIS_VERSION` with a 3-tuple
-        # comprising user-supplied values for the major, minor, and
-        # subminor revision of PostGIS.
-        try:
-            if hasattr(settings, 'POSTGIS_VERSION'):
-                vtup = settings.POSTGIS_VERSION
-                if len(vtup) == 3:
-                    # The user-supplied PostGIS version.
-                    version = vtup
-                else:
-                    # This was the old documented way, but it's stupid to
-                    # include the string.
-                    version = vtup[1:4]
-            else:
-                vtup = self.postgis_version_tuple()
-                version = vtup[1:]
-
-            # Getting the prefix -- even though we don't officially support
-            # PostGIS 1.2 anymore, keeping it anyway in case a prefix change
-            # for something else is necessary.
-            if version >= (1, 2, 2):
-                prefix = 'ST_'
-            else:
-                prefix = ''
-
-            self.geom_func_prefix = prefix
-            self.spatial_version = version
-        except DatabaseError:
-            raise ImproperlyConfigured('Cannot determine PostGIS version for database "%s". '
-                                       'GeoDjango requires at least PostGIS version 1.3. '
-                                       'Was the database created from a spatial database '
-                                       'template?' % self.connection.settings_dict['NAME']
-                                       )
-        except Exception, e:
-            # TODO: Raise helpful exceptions as they become known.
-            raise
-
+        prefix = self.geom_func_prefix
         # PostGIS-specific operators. The commented descriptions of these
         # operators come from Section 7.6 of the PostGIS 1.4 documentation.
         self.geometry_operators = {
@@ -163,11 +130,13 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
             'overlaps' : PostGISFunction(prefix, 'Overlaps'),
             'contains' : PostGISFunction(prefix, 'Contains'),
             'intersects' : PostGISFunction(prefix, 'Intersects'),
-            'relate' : (PostGISRelate, basestring),
-            }
+            'relate' : (PostGISRelate, six.string_types),
+            'coveredby' : PostGISFunction(prefix, 'CoveredBy'),
+            'covers' : PostGISFunction(prefix, 'Covers'),
+        }
 
         # Valid distance types and substitutions
-        dtypes = (Decimal, Distance, float, int, long)
+        dtypes = (Decimal, Distance, float) + six.integer_types
         def get_dist_ops(operator):
             "Returns operations for both regular and spherical distances."
             return {'cartesian' : PostGISDistance(prefix, operator),
@@ -179,41 +148,20 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
             'distance_gte' : (get_dist_ops('>='), dtypes),
             'distance_lt' : (get_dist_ops('<'), dtypes),
             'distance_lte' : (get_dist_ops('<='), dtypes),
-            }
-
-        # Versions 1.2.2+ have KML serialization support.
-        if version < (1, 2, 2):
-            ASKML = False
-        else:
-            ASKML = 'ST_AsKML'
-            self.geometry_functions.update(
-                {'coveredby' : PostGISFunction(prefix, 'CoveredBy'),
-                 'covers' : PostGISFunction(prefix, 'Covers'),
-                 })
-            self.distance_functions['dwithin'] = (PostGISFunctionParam(prefix, 'DWithin'), dtypes)
+            'dwithin' : (PostGISFunctionParam(prefix, 'DWithin'), dtypes)
+        }
 
         # Adding the distance functions to the geometries lookup.
         self.geometry_functions.update(self.distance_functions)
 
-        # The union aggregate and topology operation use the same signature
-        # in versions 1.3+.
-        if version < (1, 3, 0):
-            UNIONAGG = 'GeomUnion'
-            UNION = 'Union'
-            MAKELINE = False
-        else:
-            UNIONAGG = 'ST_Union'
-            UNION = 'ST_Union'
-            MAKELINE = 'ST_MakeLine'
-
         # Only PostGIS versions 1.3.4+ have GeoJSON serialization support.
-        if version < (1, 3, 4):
+        if self.spatial_version < (1, 3, 4):
             GEOJSON = False
         else:
             GEOJSON = prefix + 'AsGeoJson'
 
         # ST_ContainsProperly ST_MakeLine, and ST_GeoHash added in 1.4.
-        if version >= (1, 4, 0):
+        if self.spatial_version >= (1, 4, 0):
             GEOHASH = 'ST_GeoHash'
             BOUNDINGCIRCLE = 'ST_MinimumBoundingCircle'
             self.geometry_functions['contains_properly'] = PostGISFunction(prefix, 'ContainsProperly')
@@ -221,25 +169,28 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
             GEOHASH, BOUNDINGCIRCLE = False, False
 
         # Geography type support added in 1.5.
-        if version >= (1, 5, 0):
+        if self.spatial_version >= (1, 5, 0):
             self.geography = True
             # Only a subset of the operators and functions are available
             # for the geography type.
             self.geography_functions = self.distance_functions.copy()
             self.geography_functions.update({
-                    'coveredby' : self.geometry_functions['coveredby'],
-                    'covers' : self.geometry_functions['covers'],
-                    'intersects' : self.geometry_functions['intersects'],
-                    })
+                'coveredby': self.geometry_functions['coveredby'],
+                'covers': self.geometry_functions['covers'],
+                'intersects': self.geometry_functions['intersects'],
+            })
             self.geography_operators = {
-                'bboverlaps' : PostGISOperator('&&'),
-                }
+                'bboverlaps': PostGISOperator('&&'),
+            }
+
+        # Native geometry type support added in PostGIS 2.0.
+        if self.spatial_version >= (2, 0, 0):
+            self.geometry = True
 
         # Creating a dictionary lookup of all GIS terms for PostGIS.
-        gis_terms = ['isnull']
-        gis_terms += self.geometry_operators.keys()
-        gis_terms += self.geometry_functions.keys()
-        self.gis_terms = dict([(term, None) for term in gis_terms])
+        self.gis_terms = set(['isnull'])
+        self.gis_terms.update(self.geometry_operators)
+        self.gis_terms.update(self.geometry_functions)
 
         self.area = prefix + 'Area'
         self.bounding_circle = BOUNDINGCIRCLE
@@ -251,22 +202,19 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
         self.distance_spheroid = prefix + 'distance_spheroid'
         self.envelope = prefix + 'Envelope'
         self.extent = prefix + 'Extent'
-        self.extent3d = prefix + 'Extent3D'
         self.force_rhr = prefix + 'ForceRHR'
         self.geohash = GEOHASH
         self.geojson = GEOJSON
         self.gml = prefix + 'AsGML'
         self.intersection = prefix + 'Intersection'
-        self.kml = ASKML
+        self.kml = prefix + 'AsKML'
         self.length = prefix + 'Length'
-        self.length3d = prefix + 'Length3D'
         self.length_spheroid = prefix + 'length_spheroid'
-        self.makeline = MAKELINE
+        self.makeline = prefix + 'MakeLine'
         self.mem_size = prefix + 'mem_size'
         self.num_geom = prefix + 'NumGeometries'
-        self.num_points =prefix + 'npoints'
+        self.num_points = prefix + 'npoints'
         self.perimeter = prefix + 'Perimeter'
-        self.perimeter3d = prefix + 'Perimeter3D'
         self.point_on_surface = prefix + 'PointOnSurface'
         self.polygonize = prefix + 'Polygonize'
         self.reverse = prefix + 'Reverse'
@@ -276,8 +224,41 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
         self.sym_difference = prefix + 'SymDifference'
         self.transform = prefix + 'Transform'
         self.translate = prefix + 'Translate'
-        self.union = UNION
-        self.unionagg = UNIONAGG
+        self.union = prefix + 'Union'
+        self.unionagg = prefix + 'Union'
+
+        if self.spatial_version >= (2, 0, 0):
+            self.extent3d = prefix + '3DExtent'
+            self.length3d = prefix + '3DLength'
+            self.perimeter3d = prefix + '3DPerimeter'
+        else:
+            self.extent3d = prefix + 'Extent3D'
+            self.length3d = prefix + 'Length3D'
+            self.perimeter3d = prefix + 'Perimeter3D'
+
+    @cached_property
+    def spatial_version(self):
+        """Determine the version of the PostGIS library."""
+        # Trying to get the PostGIS version because the function
+        # signatures will depend on the version used.  The cost
+        # here is a database query to determine the version, which
+        # can be mitigated by setting `POSTGIS_VERSION` with a 3-tuple
+        # comprising user-supplied values for the major, minor, and
+        # subminor revision of PostGIS.
+        if hasattr(settings, 'POSTGIS_VERSION'):
+            version = settings.POSTGIS_VERSION
+        else:
+            try:
+                vtup = self.postgis_version_tuple()
+            except DatabaseError:
+                raise ImproperlyConfigured(
+                    'Cannot determine PostGIS version for database "%s". '
+                    'GeoDjango requires at least PostGIS version 1.3. '
+                    'Was the database created from a spatial database '
+                    'template?' % self.connection.settings_dict['NAME']
+                    )
+            version = vtup[1:]
+        return version
 
     def check_aggregate_support(self, aggregate):
         """
@@ -333,7 +314,15 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
                 raise NotImplementedError('PostGIS 1.5 supports geography columns '
                                           'only with an SRID of 4326.')
 
-            return 'geography(%s,%d)'% (f.geom_type, f.srid)
+            return 'geography(%s,%d)' % (f.geom_type, f.srid)
+        elif self.geometry:
+            # Postgis 2.0 supports type-based geometries.
+            # TODO: Support 'M' extension.
+            if f.dim == 3:
+                geom_type = f.geom_type + 'Z'
+            else:
+                geom_type = f.geom_type
+            return 'geometry(%s,%d)' % (geom_type, f.srid)
         else:
             return None
 
@@ -395,7 +384,7 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
             # If this is an F expression, then we don't really want
             # a placeholder and instead substitute in the column
             # of the expression.
-            placeholder = placeholder % '%s.%s' % tuple(map(self.quote_name, value.cols[value.expression]))
+            placeholder = placeholder % self.get_expression_column(value)
 
         return placeholder
 
@@ -403,18 +392,10 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
         """
         Helper routine for calling PostGIS functions and returning their result.
         """
-        cursor = self.connection._cursor()
-        try:
-            try:
-                cursor.execute('SELECT %s()' % func)
-                row = cursor.fetchone()
-            except:
-                # Responsibility of callers to perform error handling.
-                raise
-        finally:
-            # Close out the connection.  See #9437.
-            self.connection.close()
-        return row[0]
+        # Close out the connection.  See #9437.
+        with self.connection.temporary_connection() as cursor:
+            cursor.execute('SELECT %s()' % func)
+            return cursor.fetchone()[0]
 
     def postgis_geos_version(self):
         "Returns the version of the GEOS library used with PostGIS."
@@ -536,7 +517,7 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
                     op = op(self.geom_func_prefix, value[1])
                 elif lookup_type in self.distance_functions and lookup_type != 'dwithin':
                     if not field.geography and field.geodetic(self.connection):
-                        # Geodetic distances are only availble from Points to
+                        # Geodetic distances are only available from Points to
                         # PointFields on PostGIS 1.4 and below.
                         if not self.connection.ops.geography:
                             if field.geom_type != 'POINT':
@@ -561,7 +542,7 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
 
         elif lookup_type == 'isnull':
             # Handling 'isnull' lookup type
-            return "%s IS %sNULL" % (geo_col, (not value and 'NOT ' or ''))
+            return "%s IS %sNULL" % (geo_col, ('' if value else 'NOT ')), []
 
         raise TypeError("Got invalid lookup_type: %s" % repr(lookup_type))
 
@@ -574,16 +555,15 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
         if not self.check_aggregate_support(agg):
             raise NotImplementedError('%s spatial aggregate is not implmented for this backend.' % agg_name)
         agg_name = agg_name.lower()
-        if agg_name == 'union': agg_name += 'agg'
+        if agg_name == 'union':
+            agg_name += 'agg'
         sql_template = '%(function)s(%(field)s)'
         sql_function = getattr(self, agg_name)
         return sql_template, sql_function
 
     # Routines for getting the OGC-compliant models.
     def geometry_columns(self):
-        from django.contrib.gis.db.backends.postgis.models import GeometryColumns
         return GeometryColumns
 
     def spatial_ref_sys(self):
-        from django.contrib.gis.db.backends.postgis.models import SpatialRefSys
         return SpatialRefSys

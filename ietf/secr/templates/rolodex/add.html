@@ -34,7 +34,7 @@
 
 <div class="module">
   <h2>Name</h2>
-  <form id="rolodex-add-form" enctype="multipart/form-data" action="" method="post">
+  <form id="rolodex-add-form" enctype="multipart/form-data" action="" method="post">{% csrf_token %}
     <table class="full-width amstable">
       <col width="200">
       {{ form.as_table }}

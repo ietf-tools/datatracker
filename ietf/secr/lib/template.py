@@ -1,7 +1,4 @@
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 
 from django.http import HttpResponse
 from django.template import RequestContext
@@ -27,7 +24,7 @@ def jsonapi(fn):
     def to_json(request, *args, **kwargs):
         context_data = fn(request, *args, **kwargs)
         return HttpResponse(json.dumps(context_data),
-                mimetype='application/json')
+                content_type='application/json')
     return to_json
 
 def render(template, data, request):

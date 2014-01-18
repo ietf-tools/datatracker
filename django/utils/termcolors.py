@@ -2,6 +2,8 @@
 termcolors.py
 """
 
+from django.utils import six
+
 color_names = ('black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white')
 foreground = dict([(color_names[x], '3%s' % x) for x in range(8)])
 background = dict([(color_names[x], '4%s' % x) for x in range(8)])
@@ -33,15 +35,15 @@ def colorize(text='', opts=(), **kwargs):
         colorize('hello', fg='red', bg='blue', opts=('blink',))
         colorize()
         colorize('goodbye', opts=('underscore',))
-        print colorize('first line', fg='red', opts=('noreset',))
-        print 'this should be red too'
-        print colorize('and so should this')
-        print 'this should not be red'
+        print(colorize('first line', fg='red', opts=('noreset',)))
+        print('this should be red too')
+        print(colorize('and so should this'))
+        print('this should not be red')
     """
     code_list = []
     if text == '' and len(opts) == 1 and opts[0] == 'reset':
         return '\x1b[%sm' % RESET
-    for k, v in kwargs.iteritems():
+    for k, v in six.iteritems(kwargs):
         if k == 'fg':
             code_list.append(foreground[v])
         elif k == 'bg':
@@ -50,8 +52,8 @@ def colorize(text='', opts=(), **kwargs):
         if o in opt_dict:
             code_list.append(opt_dict[o])
     if 'noreset' not in opts:
-        text = text + '\x1b[%sm' % RESET
-    return ('\x1b[%sm' % ';'.join(code_list)) + text
+        text = '%s\x1b[%sm' % (text or '', RESET)
+    return '%s%s' % (('\x1b[%sm' % ';'.join(code_list)), text or '')
 
 def make_style(opts=(), **kwargs):
     """
@@ -59,7 +61,7 @@ def make_style(opts=(), **kwargs):
 
     Example:
         bold_red = make_style(opts=('bold',), fg='red')
-        print bold_red('hello')
+        print(bold_red('hello'))
         KEYWORD = make_style(fg='yellow')
         COMMENT = make_style(fg='blue', opts=('bold',))
     """

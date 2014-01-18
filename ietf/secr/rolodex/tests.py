@@ -13,7 +13,7 @@ class MainTestCase(TestCase):
         "Main Test"
         url = reverse('rolodex')
         response = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     def test_view(self):
         "View Test"
@@ -21,6 +21,6 @@ class MainTestCase(TestCase):
         person = Person.objects.all()[0]
         url = reverse('rolodex_view', kwargs={'id':person.id})
         response = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
 

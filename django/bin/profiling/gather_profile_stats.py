@@ -8,8 +8,9 @@ hotshot.stats (the formats are incompatible)
 """
 
 from hotshot import stats
+import os
 import pstats
-import sys, os
+import sys
 
 def gather_stats(p):
     profiles = {}
@@ -23,7 +24,7 @@ def gather_stats(p):
             prof = stats.load(os.path.join(p, f))
         else:
             continue
-        print "Processing %s" % f
+        print("Processing %s" % f)
         if path in profiles:
             profiles[path].add(prof)
         else:

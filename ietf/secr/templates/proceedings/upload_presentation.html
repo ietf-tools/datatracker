@@ -15,7 +15,7 @@
 
 {% block content %}
 <div class="module">
-    <form  enctype="multipart/form-data" action="" method="post">
+    <form  enctype="multipart/form-data" action="" method="post">{% csrf_token %}
     <h2>Proceedings - Upload (HTML-Zipped) Presentation : <font color="RED">{{ slide.group_name }}</font></h2>
     <p>For Presentation : {{ slide.slide_name }}</p>
     <table>

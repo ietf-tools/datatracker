@@ -2,18 +2,11 @@
 
 {% load nomcom_tags %}
 
-{% block pagehead %}
-  {{ block.super }}
-  <script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
-  <script type="text/javascript" src="/js/yui/yui-20100305.js"></script>
-  <script type="text/javascript" src="/js/base.js"></script>
-{% endblock pagehead %}
-
 {% block subtitle %} - Edit nominee {{ nominee }}{% endblock %}
 
 {% block nomcom_content %}
 
-<p>Back to list of <a href="{% url nomcom_private_index year %}">nominees</a></p>
+<p>Back to list of <a href="{% url "nomcom_private_index" year %}">nominees</a></p>
 
 <h2>Edit email of {{ nominee }} </h2>
 

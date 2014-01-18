@@ -52,7 +52,7 @@ class InterimMeeting(Meeting):
         If the proceedings file doesn't exist return empty string.  For use in templates.
         '''
         if os.path.exists(self.get_proceedings_path()):
-            url = "%s/proceedings/interim/%s/%s/proceedings.html" % (
+            url = "%sproceedings/interim/%s/%s/proceedings.html" % (
                 settings.MEDIA_URL,
                 self.date.strftime('%Y/%m/%d'),
                 self.group().acronym)

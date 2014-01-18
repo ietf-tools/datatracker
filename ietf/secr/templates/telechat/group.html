@@ -1,4 +1,4 @@
-    <form id="dummy" action="" method="post">
+    <form id="dummy" action="" method="post">{% csrf_token %}
     {% if header.2 == "4.1.1 Proposed for IETF Review" %}
       <b>Does anyone have an objection to the creation of this working group being sent for EXTERNAL REVIEW?</b><br><br>
       <input type="radio" name="wg_action_status" value="1"> External Review APPROVED; "The Secretariat will send a Working Group Review announcement with a copy to new-work and place it back on the agenda for the next telechat."<br><br>

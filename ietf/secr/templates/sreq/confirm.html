@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
-  &raquo; <a href="{% url sessions %}">Sessions</a>
+  &raquo; <a href="{% url "sessions" %}">Sessions</a>
   &raquo; <a href="../">New</a>
   &raquo; Session Request Confirmation 
 {% endblock %}
@@ -27,7 +27,7 @@
       <br>
     {% endif %}
     
-    <form action="" method="post">
+    <form action="" method="post">{% csrf_token %}
       {% include "includes/buttons_submit_cancel.html" %}
     </form>
 

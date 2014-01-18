@@ -31,10 +31,10 @@ class EditPositionTests(TestCase):
         
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form input[name=position]')) > 0)
-        self.assertEquals(len(q('form textarea[name=comment]')), 1)
+        self.assertEqual(len(q('form textarea[name=comment]')), 1)
 
         # vote
         events_before = draft.docevent_set.count()
@@ -42,45 +42,45 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(position="discuss",
                                        discuss=" This is a discussion test. \n ",
                                        comment=" This is a test. \n "))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
-        self.assertEquals(pos.pos.slug, "discuss")
+        self.assertEqual(pos.pos.slug, "discuss")
         self.assertTrue(" This is a discussion test." in pos.discuss)
         self.assertTrue(pos.discuss_time != None)
         self.assertTrue(" This is a test." in pos.comment)
         self.assertTrue(pos.comment_time != None)
         self.assertTrue("New position" in pos.desc)
-        self.assertEquals(draft.docevent_set.count(), events_before + 3)
+        self.assertEqual(draft.docevent_set.count(), events_before + 3)
 
         # recast vote
         events_before = draft.docevent_set.count()
         r = self.client.post(url, dict(position="noobj"))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
-        self.assertEquals(pos.pos.slug, "noobj")
-        self.assertEquals(draft.docevent_set.count(), events_before + 1)
+        self.assertEqual(pos.pos.slug, "noobj")
+        self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertTrue("Position for" in pos.desc)
         
         # clear vote
         events_before = draft.docevent_set.count()
         r = self.client.post(url, dict(position="norecord"))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
-        self.assertEquals(pos.pos.slug, "norecord")
-        self.assertEquals(draft.docevent_set.count(), events_before + 1)
+        self.assertEqual(pos.pos.slug, "norecord")
+        self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertTrue("Position for" in pos.desc)
 
         # change comment
         events_before = draft.docevent_set.count()
         r = self.client.post(url, dict(position="norecord", comment="New comment."))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
-        self.assertEquals(pos.pos.slug, "norecord")
-        self.assertEquals(draft.docevent_set.count(), events_before + 2)
+        self.assertEqual(pos.pos.slug, "norecord")
+        self.assertEqual(draft.docevent_set.count(), events_before + 2)
         self.assertTrue("Ballot comment text updated" in pos.desc)
         
     def test_edit_position_as_secretary(self):
@@ -93,18 +93,18 @@ class EditPositionTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form input[name=position]')) > 0)
 
         # vote on behalf of AD
         events_before = draft.docevent_set.count()
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
-        self.assertEquals(pos.pos.slug, "discuss")
-        self.assertEquals(pos.discuss, "Test discuss text")
+        self.assertEqual(pos.pos.slug, "discuss")
+        self.assertEqual(pos.discuss, "Test discuss text")
         self.assertTrue("New position" in pos.desc)
         self.assertTrue("by Sec" in pos.desc)
 
@@ -123,7 +123,7 @@ class EditPositionTests(TestCase):
 
         # but not touch
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
-        self.assertEquals(r.status_code, 403)
+        self.assertEqual(r.status_code, 403)
         
     def test_send_ballot_comment(self):
         draft = make_test_data()
@@ -148,7 +148,7 @@ class EditPositionTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form input[name="cc"]')) > 0)
 
@@ -156,9 +156,9 @@ class EditPositionTests(TestCase):
         mailbox_before = len(outbox)
 
         r = self.client.post(url, dict(cc="test@example.com", cc_state_change="1"))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         m = outbox[-1]
         self.assertTrue("COMMENT" in m['Subject'])
         self.assertTrue("DISCUSS" in m['Subject'])
@@ -177,18 +177,18 @@ class DeferBallotTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         # defer
         mailbox_before = len(outbox)
         
         r = self.client.post(url, dict())
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.get_state_slug("draft-iesg"), "defer")
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "defer")
         
-        self.assertEquals(len(outbox), mailbox_before + 2)
+        self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("State Update" in outbox[-2]['Subject'])
         self.assertTrue("Deferred" in outbox[-1]['Subject'])
         self.assertTrue(draft.file_tag() in outbox[-1]['Subject'])
@@ -202,14 +202,14 @@ class DeferBallotTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         # undefer
         r = self.client.post(url, dict())
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.get_state_slug("draft-iesg"), "iesg-eva")
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "iesg-eva")
 
 
 class BallotWriteupsTests(TestCase):
@@ -220,18 +220,18 @@ class BallotWriteupsTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('textarea[name=last_call_text]')), 1)
-        self.assertEquals(len(q('input[type=submit][value*="Save Last Call"]')), 1)
+        self.assertEqual(len(q('textarea[name=last_call_text]')), 1)
+        self.assertEqual(len(q('input[type=submit][value*="Save Last Call"]')), 1)
         # we're secretariat, so we got The Link 
-        self.assertEquals(len(q('a:contains("Make Last Call")')), 1)
+        self.assertEqual(len(q('a:contains("Make Last Call")')), 1)
         
         # subject error
         r = self.client.post(url, dict(
                 last_call_text="Subject: test\r\nhello\r\n\r\n",
                 save_last_call_text="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('ul.errorlist')) > 0)
 
@@ -239,7 +239,7 @@ class BallotWriteupsTests(TestCase):
         r = self.client.post(url, dict(
                 last_call_text="This is a simple test.",
                 save_last_call_text="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("This is a simple test" in draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text)
 
@@ -247,7 +247,7 @@ class BallotWriteupsTests(TestCase):
         r = self.client.post(url, dict(
                 last_call_text="This is a simple test.",
                 regenerate_last_call_text="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("Subject: Last Call" in draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text)
@@ -260,7 +260,7 @@ class BallotWriteupsTests(TestCase):
 
         # give us an announcement to send
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         
         mailbox_before = len(outbox)
 
@@ -269,8 +269,8 @@ class BallotWriteupsTests(TestCase):
                 last_call_text=draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text,
                 send_last_call_request="1"))
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.get_state_slug("draft-iesg"), "lc-req")
-        self.assertEquals(len(outbox), mailbox_before + 3)
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "lc-req")
+        self.assertEqual(len(outbox), mailbox_before + 3)
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
 
@@ -289,17 +289,17 @@ class BallotWriteupsTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('textarea[name=ballot_writeup]')), 1)
-        self.assertEquals(len(q('input[type=submit][value*="Save Ballot Writeup"]')), 1)
+        self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
+        self.assertEqual(len(q('input[type=submit][value*="Save Ballot Writeup"]')), 1)
         self.assertTrue("IANA does not" in r.content)
 
         # save
         r = self.client.post(url, dict(
                 ballot_writeup="This is a simple test.",
                 save_ballot_writeup="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("This is a simple test" in draft.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text").text)
 
@@ -342,11 +342,11 @@ class BallotWriteupsTests(TestCase):
         r = self.client.post(url, dict(
                 ballot_writeup="This is a test.",
                 issue_ballot="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
 
         self.assertTrue(draft.latest_event(type="sent_ballot_announcement"))
-        self.assertEquals(len(outbox), mailbox_before + 2)
+        self.assertEqual(len(outbox), mailbox_before + 2)
         issue_email = outbox[-2]
         self.assertTrue("Evaluation:" in issue_email['Subject'])
         self.assertTrue("comment1" not in str(issue_email))
@@ -363,22 +363,22 @@ class BallotWriteupsTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('textarea[name=approval_text]')), 1)
-        self.assertEquals(len(q('input[type=submit][value*="Save Approval"]')), 1)
+        self.assertEqual(len(q('textarea[name=approval_text]')), 1)
+        self.assertEqual(len(q('input[type=submit][value*="Save Approval"]')), 1)
 
         # save
         r = self.client.post(url, dict(
                 approval_text="This is a simple test.",
                 save_approval_text="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("This is a simple test" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
 
         # test regenerate
         r = self.client.post(url, dict(regenerate_approval_text="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("Subject: Protocol Action" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
 
@@ -386,7 +386,7 @@ class BallotWriteupsTests(TestCase):
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="nopubadw"))
 
         r = self.client.post(url, dict(regenerate_approval_text="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("NOT be published" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
 
@@ -397,7 +397,7 @@ class BallotWriteupsTests(TestCase):
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
 
         r = self.client.post(url, dict(regenerate_approval_text="1"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("Subject: Results of IETF-conflict review" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
         
@@ -412,20 +412,20 @@ class ApproveBallotTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue("send out the announcement" in q('.actions input[type=submit]')[0].get('value').lower())
-        self.assertEquals(len(q('.announcement pre:contains("Subject: Protocol Action")')), 1)
+        self.assertEqual(len(q('.announcement pre:contains("Subject: Protocol Action")')), 1)
 
         # approve
         mailbox_before = len(outbox)
 
         r = self.client.post(url, dict(skiprfceditorpost="1"))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.get_state_slug("draft-iesg"), "ann")
-        self.assertEquals(len(outbox), mailbox_before + 4)
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "ann")
+        self.assertEqual(len(outbox), mailbox_before + 4)
         self.assertTrue("Protocol Action" in outbox[-2]['Subject'])
         # the IANA copy
         self.assertTrue("Protocol Action" in outbox[-1]['Subject'])
@@ -443,11 +443,11 @@ class ApproveBallotTests(TestCase):
         mailbox_before = len(outbox)
 
         r = self.client.post(url, dict())
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.get_state_slug("draft-iesg"), "dead")
-        self.assertEquals(len(outbox), mailbox_before + 3)
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "dead")
+        self.assertEqual(len(outbox), mailbox_before + 3)
         self.assertTrue("NOT be published" in str(outbox[-1]))
 
 
@@ -461,9 +461,9 @@ class MakeLastCallTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('input[name=last_call_sent_date]')), 1)
+        self.assertEqual(len(q('input[name=last_call_sent_date]')), 1)
 
         # make last call
         mailbox_before = len(outbox)
@@ -474,12 +474,12 @@ class MakeLastCallTests(TestCase):
                              dict(last_call_sent_date=q('input[name=last_call_sent_date]')[0].get("value"),
                                   last_call_expiration_date=expire_date
                                   ))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.get_state_slug("draft-iesg"), "lc")
-        self.assertEquals(draft.latest_event(LastCallDocEvent, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
-        self.assertEquals(len(outbox), mailbox_before + 4)
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "lc")
+        self.assertEqual(draft.latest_event(LastCallDocEvent, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
+        self.assertEqual(len(outbox), mailbox_before + 4)
 
         self.assertTrue("Last Call" in outbox[-4]['Subject'])
         # the IANA copy

@@ -9,13 +9,13 @@ IPR Admin Notify Page
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }}
-  &raquo; <a href="{% url ipradmin_admin_list %}">IPR Admin</a>
+  &raquo; <a href="{% url "ipradmin_admin_list" %}">IPR Admin</a>
   &raquo; Notify
 {% endblock %}
 
 {% block content %}
 
-{% ifequal page_id 'send_result' %}
+{% if page_id == 'send_result' %}
   <div class="module">
     {% if result %}
         {{ result }}
@@ -28,10 +28,10 @@ IPR Admin Notify Page
       </ul>
     </div> <!-- button-group -->
   </div> <!-- module -->
-{% endifequal %}
+{% endif %}
 
-{% ifequal page_id 'detail_notify' %}
-  <form action="" method="post">
+{% if page_id == 'detail_notify' %}
+  <form action="" method="post">{% csrf_token %}
     <input type="hidden" name="command" value="do_send_update_notification">
     <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
     <h4>Notification to the submitter of IPR that's being updated</h4>
@@ -65,10 +65,10 @@ IETF Secretariat
     <input type="submit" value=" Send notifications NOW ">
     </form>
     <br><br>
-{% endifequal %}
+{% endif %}
 
-{% ifequal page_id 'detail_post' %}
-    <form action="" method="post">
+{% if page_id == 'detail_post' %}
+    <form action="" method="post">{% csrf_token %}
     <input type="hidden" name="command" value="do_send_notifications">
     <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
     <h4>Notification to Submitter(s)</h4>
@@ -81,10 +81,10 @@ IETF Secretariat
     <input type="submit" value=" Send notifications NOW ">
     </form>
     <br><br>
-{% endifequal %}
+{% endif %}
 
-{% ifequal page_id 'update_post' %}
-    <form action="" method="post">
+{% if page_id == 'update_post' %}
+    <form action="" method="post">{% csrf_token %}
     <input type="hidden" name="command" value="do_send_notifications">
     <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
     <h4> Notification to the submitter of IPR that's being updated</h4>
@@ -100,6 +100,6 @@ IETF Secretariat
     </form>
     <br><br>
     </form>
-{% endifequal %}
+{% endif %}
 
 {% endblock content %}

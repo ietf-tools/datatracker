@@ -46,7 +46,7 @@ div.question {
 <div class="ballot-deferred">Ballot deferred by {{ ballot_deferred.by }} on {{ ballot_deferred.time|date:"Y-m-d" }}.</div>
 {% endif %}
 
-<form class="position-form" action="" method="POST">
+<form class="position-form" action="" method="post">{% csrf_token %}
   <div>
   <span class="position">{{ form.position }}</span>
   <span class="actions">
@@ -62,7 +62,7 @@ div.question {
   
   <div class="discuss-widgets"{% if not show_discuss_text %} style="display:none"{% endif %}>
   <div class="discuss-text">
-    {{ form.discuss.label_tag }}:
+    {{ form.discuss.label_tag }}
     {% if old_pos and old_pos.discuss_time %}<span class="last-edited">(last edited {{ old_pos.discuss_time }})</span>{% endif %}
   </div>
   {{ form.discuss.errors }}
@@ -70,7 +70,7 @@ div.question {
   </div>
   
   <div class="comment-text">
-    {{ form.comment.label_tag }}:
+    {{ form.comment.label_tag }}
     {% if old_pos and old_pos.comment_time %}<span class="last-edited">(last edited {{ old_pos.comment_time }}){% endif %}</span>
   </div>
   {{ form.comment }}

@@ -17,7 +17,7 @@ IPR Administrate Page
 <div class="module">
 <div class="button-group">
 <ul>
-<li><button onclick="window.location='{% url ipradmin_admin_create %}'">Create new IPR</button></li>
+<li><button onclick="window.location='{% url "ipradmin_admin_create" %}'">Create new IPR</button></li>
 <li><button onclick="window.location='https://datatracker.ietf.org/public/ipr_disclosure.cgi'">IPR Disclosure Page</button></li>
 </ul>
 </div>
@@ -26,7 +26,7 @@ IPR Administrate Page
 <table>
 {% for ipr in queue_ipr %}
 <tr class="{% cycle 'row1' 'row2' %}">
-<td><a href="{% url ipradmin_admin_detail ipr.ipr_id %}">{{ipr.title }}</a></td>
+<td><a href="{% url "ipradmin_admin_detail" ipr.ipr_id %}">{{ipr.title }}</a></td>
 </tr>
 {% endfor %}
 </table>
@@ -36,7 +36,7 @@ IPR Administrate Page
 <table>
 {% for ipr in generic_ipr %}
   <tr class="{% cycle 'row1' 'row2' %}">
-  <td><a href="{% url ipradmin_admin_update ipr.ipr_id %}">{{ipr.title }}</a>
+  <td><a href="{% url "ipradmin_admin_update" ipr.ipr_id %}">{{ipr.title }}</a>
   {% if ipr.legacy_title_1 %}
     <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
     <a href="{{ipr.legacy_url_1}}">{{ipr.legacy_title_1}},</a>
@@ -55,7 +55,7 @@ IPR Administrate Page
 <table>
 {% for ipr in third_party_notifications %}
   <tr class="{% cycle 'row1' 'row2' %}">
-  <td><a href="{% url ipradmin_admin_update ipr.ipr_id %}">{{ipr.title }}</a>
+  <td><a href="{% url "ipradmin_admin_update" ipr.ipr_id %}">{{ipr.title }}</a>
   {% if ipr.legacy_title_1 %}
     <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
     <a href="{{ipr.legacy_url_1}}">{{ipr.legacy_title_1}},</a>
@@ -74,7 +74,7 @@ IPR Administrate Page
   <table>
   {% for ipr in specific_ipr %}
     <tr class="{% cycle 'row1' 'row2' %}">
-    <td><a href="{% url ipradmin_admin_update ipr.ipr_id %}">{{ipr.title }}</a>
+    <td><a href="{% url "ipradmin_admin_update" ipr.ipr_id %}">{{ipr.title }}</a>
     {% if ipr.legacy_title_1 %}
       <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
       <a href="{{ipr.legacy_url_1}}">{{ipr.legacy_title_1}},</a>
@@ -93,7 +93,7 @@ IPR Administrate Page
         <table>
         {% for ipr in admin_removed_ipr %}
           <tr class="{% cycle 'row1' 'row2' %}">
-          <td><a href="{% url ipradmin_admin_update ipr.ipr_id %}">{{ipr.title }}</a>
+          <td><a href="{% url "ipradmin_admin_update" ipr.ipr_id %}">{{ipr.title }}</a>
           {% if ipr.legacy_title_1 %}
             <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
             <a href="{{ipr.legacy_url_1}}">{{ipr.legacy_title_1}},</a>
@@ -111,7 +111,7 @@ IPR Administrate Page
          <table>
          {% for ipr in request_removed_ipr %}
            <tr class="{% cycle 'row1' 'row2' %}">
-           <td><a href="{% url ipradmin_admin_update ipr.ipr_id %}">{{ipr.title }}</a>
+           <td><a href="{% url "ipradmin_admin_update" ipr.ipr_id %}">{{ipr.title }}</a>
            {% if ipr.legacy_title_1 %}
              <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
              <a href="{{ipr.legacy_url_1}}">{{ipr.legacy_title_1}},</a>

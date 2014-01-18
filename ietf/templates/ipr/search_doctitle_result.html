@@ -31,10 +31,10 @@
 				 <td>
 				    {% for item in ipr.updated_by.all %}
 				       {% if item.processed == 1 and item.ipr.status != 2 %}
-					  IPR disclosure ID# {{ item.ipr.ipr_id }} "<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>" Updates
+					  IPR disclosure ID# {{ item.ipr.ipr_id }} "<a href="{% url "ietf.ipr.views.show" item.ipr.ipr_id %}">{{ item.ipr.title }}</a>" Updates
 				       {% endif %}
 				    {% endfor %}
-				    <a href="{% url ietf.ipr.views.show ipr.ipr_id %}">"{{ ipr.title }}"</a>
+				    <a href="{% url "ietf.ipr.views.show" ipr.ipr_id %}">"{{ ipr.title }}"</a>
 				 </td>
 			      </tr>
 			   {% endfor %}

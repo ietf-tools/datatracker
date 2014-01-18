@@ -45,4 +45,5 @@ class DateSelectForm(forms.Form):
 class IssueModelForm(forms.ModelForm):
     class Meta:
         model = TelechatAgendaItem
+        fields = '__all__'
         

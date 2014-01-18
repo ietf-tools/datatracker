@@ -122,7 +122,7 @@ class DocumentInfo(models.Model):
 
         if not hasattr(self, "state_cache") or self.state_cache == None:
             self.state_cache = {}
-            for s in self.states.all().select_related("type"):
+            for s in self.states.all():
                 self.state_cache[s.type_id] = s
 
         return self.state_cache.get(state_type, None)
@@ -183,9 +183,15 @@ class RelatedDocument(models.Model):
             return None
 
         if self.target.document.get_state().slug == 'rfc':
-            target_lvl = self.target.document.std_level.slug
+            if not self.target.document.std_level:
+                target_lvl = 'unkn'
+            else:
+                target_lvl = self.target.document.std_level.slug
         else:
-            target_lvl = self.target.document.intended_std_level.slug
+            if not self.target.document.intended_std_level:
+                target_lvl = 'unkn'
+            else:
+                target_lvl = self.target.document.intended_std_level.slug
 
         rank = { 'ps':1, 'ds':2, 'std':3, 'bcp':3 }
 
@@ -228,9 +234,9 @@ class Document(DocumentInfo):
             else:
                 filename = self.external_url
             if meeting.type_id == 'ietf':
-                url = '%s/proceedings/%s/%s/%s' % (settings.MEDIA_URL,meeting.number,self.type_id,filename)
+                url = '%sproceedings/%s/%s/%s' % (settings.MEDIA_URL,meeting.number,self.type_id,filename)
             elif meeting.type_id == 'interim':
-                url = "%s/proceedings/interim/%s/%s/%s/%s" % (
+                url = "%sproceedings/interim/%s/%s/%s/%s" % (
                     settings.MEDIA_URL,
                     meeting.date.strftime('%Y/%m/%d'),
                     session.group.acronym,
@@ -385,7 +391,7 @@ class Document(DocumentInfo):
             iesg_state = self.get_state("draft-iesg")
             iesg_state_summary = None
             if iesg_state:
-                iesg_substate = self.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+                iesg_substate = [t for t in self.tags.all() if t.slug in IESG_SUBSTATE_TAGS]
                 # There really shouldn't be more than one tag in iesg_substate, but this will do something sort-of-sensible if there is
                 iesg_state_summary = iesg_state.name
                 if iesg_substate:
@@ -618,7 +624,7 @@ class StateDocEvent(DocEvent):
     state = models.ForeignKey(State, blank=True, null=True)
 
 class ConsensusDocEvent(DocEvent):
-    consensus = models.BooleanField()
+    consensus = models.BooleanField(default=False)
 
 # IESG events
 class BallotType(models.Model):

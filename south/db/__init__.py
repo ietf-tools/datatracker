@@ -10,13 +10,19 @@ engine_modules = {
     'django.db.backends.postgresql_psycopg2': 'postgresql_psycopg2',
     'django.db.backends.sqlite3': 'sqlite3',
     'django.db.backends.mysql': 'mysql',
+    'mysql_oursql.standard': 'mysql',
     'django.db.backends.oracle': 'oracle',
-    'sql_server.pyodbc': 'sql_server.pyodbc', #django-pyodbc
+    'sql_server.pyodbc': 'sql_server.pyodbc', #django-pyodbc-azure
+    'django_pyodbc': 'sql_server.pyodbc', #django-pyodbc
     'sqlserver_ado': 'sql_server.pyodbc', #django-mssql
+    'firebird': 'firebird', #django-firebird
     'django.contrib.gis.db.backends.postgis': 'postgresql_psycopg2',
     'django.contrib.gis.db.backends.spatialite': 'sqlite3',
     'django.contrib.gis.db.backends.mysql': 'mysql',
     'django.contrib.gis.db.backends.oracle': 'oracle',
+    'doj.backends.zxjdbc.postgresql': 'postgresql_psycopg2', #django-jython
+    'doj.backends.zxjdbc.mysql': 'mysql', #django-jython
+    'doj.backends.zxjdbc.oracle': 'oracle', #django-jython
 }
 
 # First, work out if we're multi-db or not, and which databases we have
@@ -35,8 +41,9 @@ else:
     # Loop over the defined databases, gathering up their engines
     db_engines = dict([
         # Note we check to see if contrib.gis has overridden us.
-        (alias, "south.db.%s" % engine_modules.get(db_settings['ENGINE'], None))
+        (alias, "south.db.%s" % engine_modules[db_settings['ENGINE']])
         for alias, db_settings in settings.DATABASES.items()
+        if db_settings['ENGINE'] in engine_modules
     ])
     # Update with any overrides
     db_engines.update(getattr(settings, "SOUTH_DATABASE_ADAPTERS", {}))

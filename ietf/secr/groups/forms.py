@@ -43,7 +43,7 @@ class DescriptionForm (forms.Form):
 class GroupMilestoneForm(forms.ModelForm):
     class Meta:
         model = GroupMilestone
-        exclude = ('done')
+        exclude = ('done',)
 
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):

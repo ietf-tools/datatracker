@@ -15,15 +15,12 @@ def augment_data():
     Group.objects.create(acronym='dummy',name='Dummy Group',type_id='sdo')
 
 class MainTestCase(TestCase):
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['persons', 'groupgroup']
-
     def test_main(self):
         "Main Test"
         augment_data()
         url = reverse('roles')
         response = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     def test_roles_delete(self):
         draft = make_test_data()

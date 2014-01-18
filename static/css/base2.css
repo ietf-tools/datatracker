@@ -395,11 +395,12 @@ span.fieldRequired {
     transition-duration: 0.2s;
 }
 
-/* js styles */
-.js-info {
-    background-color: #FFDD88;
+.js-info { /* Javascript disabled box */
+    display: block;
+    background-color: #ffdd88;
     border: 1px dashed red;
     font-size: 1.2em;
     padding: 1em 2em;
+    margin: 1em 0;
 }
 

@@ -377,7 +377,7 @@ class SubmitTests(TestCase):
 
         status_url = self.do_submission(name, rev)
 
-        # check we got edit button
+        # check we have edit button
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -455,6 +455,51 @@ class SubmitTests(TestCase):
 
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
+
+    def test_search_for_submission_and_edit_as_secretariat(self):
+        # submit -> edit
+        draft = make_test_data()
+
+        name = "draft-ietf-mars-testing-tests"
+        rev = "00"
+
+        self.do_submission(name, rev)
+
+        # search status page
+        r = self.client.get(urlreverse("submit_search_submission"))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("submission status" in r.content)
+
+        # search
+        r = self.client.post(urlreverse("submit_search_submission"), dict(name=name))
+        self.assertEqual(r.status_code, 302)
+        unprivileged_status_url = r['Location']
+
+        # status page as unpriviliged => no edit button
+        r = self.client.get(unprivileged_status_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(("status of submission of %s" % name) in r.content.lower())
+        q = PyQuery(r.content)
+        adjust_button = q('input[type=submit][value*="Adjust"]')
+        self.assertEqual(len(adjust_button), 0)
+
+        # as Secretariat, we should get edit button
+        self.client.login(remote_user="secretary")
+        r = self.client.get(unprivileged_status_url)
+        q = PyQuery(r.content)
+        adjust_button = q('input[type=submit][value*="Adjust"]')
+        self.assertEqual(len(adjust_button), 1)
+
+        action = adjust_button.parents("form").find('input[type=hidden][name="action"]').val()
+
+        # go to edit, we do this by posting, slightly weird
+        r = self.client.post(unprivileged_status_url, dict(action=action))
+        self.assertEqual(r.status_code, 302)
+        edit_url = r['Location']
+
+        # check page
+        r = self.client.get(edit_url)
+        self.assertEqual(r.status_code, 200)
 
     def test_request_full_url(self):
         # submit -> request full URL to be sent
@@ -551,8 +596,14 @@ class SubmitTests(TestCase):
         expire_submission(s, by=None)
 
         self.assertEqual(s.state_id, "cancel")
-        
 
+    def test_help_pages(self):
+        r = self.client.get(urlreverse("submit_note_well"))
+        self.assertEquals(r.status_code, 200)
+
+        r = self.client.get(urlreverse("submit_tool_instructions"))
+        self.assertEquals(r.status_code, 200)
+        
 class ApprovalsTestCase(TestCase):
     def test_approvals(self):
         make_test_data()

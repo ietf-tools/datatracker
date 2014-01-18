@@ -18,7 +18,7 @@
            <h3><b>Select a meeting to manage</b></h3>
             
             <br>
-            <form action="" method="post">
+            <form action="" method="post">{% csrf_token %}
             <p>
             {{ form }}
             <input type="submit" value="Select" />
@@ -28,7 +28,7 @@
          </div> <!-- inline-related -->
          <div class="button-group">
            <ul id="proceedings-interim-buttons">
-             <li><button onclick="window.location='{% url meetings_add %}'">Create New Meeting</button></li>
+             <li><button onclick="window.location='{% url "meetings_add" %}'">Create New Meeting</button></li>
            </ul>
          </div> <!-- button-group -->
 </div> <!-- module -->

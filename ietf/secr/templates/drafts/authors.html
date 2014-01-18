@@ -34,7 +34,7 @@
             <td>{{ author.author.person }}</td>
             <td>{{ author.author }}</td>
             <td>{{ author.order }}</td>
-            <td><a href="{% url drafts_author_delete id=draft.pk oid=author.id %}">Delete</a></td>
+            <td><a href="{% url "drafts_author_delete" id=draft.pk oid=author.id %}">Delete</a></td>
           </tr>
         {% endfor %}
       </tbody>
@@ -43,7 +43,7 @@
     <div class="inline-related">
       <!-- <hr><br> -->
       <h3>Add Author</h3>
-      <form id="groups-people" action="" method="post">
+      <form id="groups-people" action="" method="post">{% csrf_token %}
         {{ form.non_field_errors }}
         <table class="full-width">
           <tr>

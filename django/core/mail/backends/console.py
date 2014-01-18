@@ -16,15 +16,12 @@ class EmailBackend(BaseEmailBackend):
         """Write all messages to the stream in a thread-safe way."""
         if not email_messages:
             return
-        self._lock.acquire()
-        try:
-            # The try-except is nested to allow for
-            # Python 2.4 support (Refs #12147)
+        with self._lock:
             try:
                 stream_created = self.open()
                 for message in email_messages:
                     self.stream.write('%s\n' % message.message().as_string())
-                    self.stream.write('-'*79)
+                    self.stream.write('-' * 79)
                     self.stream.write('\n')
                     self.stream.flush()  # flush after each message
                 if stream_created:
@@ -32,6 +29,4 @@ class EmailBackend(BaseEmailBackend):
             except:
                 if not self.fail_silently:
                     raise
-        finally:
-            self._lock.release()
         return len(email_messages)

@@ -56,7 +56,7 @@
 <h2>Document history</h2>
 {% if user|has_role:"Area Director,Secretariat,IANA,RFC Editor" %}
 <div class="history-actions">
-  <a class="button" href="{% url doc_add_comment name=doc.name %}">Add comment</a>
+  <a class="button" href="{% url "doc_add_comment" name=doc.name %}">Add comment</a>
 </div>
 {% endif %}
 
@@ -68,7 +68,7 @@
   <tr class="{% cycle oddrow,evenrow %}" id="history-{{ e.pk }}">
     <td>{{ e.time|date:"Y-m-d" }}</td>
     <td>{{ e.rev }}</td>
-    <td>{{ e.by|escape }}</td>
+    <td>{{ e.by }}</td>
     <td>{{ e.desc|format_history_text }}
     </td>
   </tr>

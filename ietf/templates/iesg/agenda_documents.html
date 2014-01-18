@@ -56,7 +56,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block content %}
 <h1>Documents on Future IESG Telechat Agendas</h1>
 
-<form action="" method="POST">
+<form action="" method="post">{% csrf_token %}
 
 {% if user|has_role:"Secretariat" %}
 <div class="secretariat-actions">

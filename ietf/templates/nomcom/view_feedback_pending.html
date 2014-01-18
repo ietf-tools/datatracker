@@ -50,7 +50,7 @@
     <div class="sumit-row">
     {% if extra_step %}
     <input type="submit" value="Save feedback" name="end" />
-    <a href="{% url nomcom_view_feedback_pending year %}">Cancel and leave the following feedback unclassified</a>
+    <a href="{% url "nomcom_view_feedback_pending" year %}">Cancel and leave the following feedback unclassified</a>
     {% else %}
     <input type="submit" value="Classify" />
     {% if default_type %}<input type="submit" name="move_to_default" value="Move all unclassified feedback to {{ default_type }}" />{% endif %}
@@ -118,7 +118,7 @@
     <div class="sumit-row">
     {% if extra_step %}
     <input type="submit" value="Save feedback" name="end" />
-    <a href="{% url nomcom_view_feedback_pending year %}">Cancel and leave the following feedback unclassified</a>
+    <a href="{% url "nomcom_view_feedback_pending" year %}">Cancel and leave the following feedback unclassified</a>
     {% else %}
     <input type="submit" value="Classify" />
     {% if default_type %}<input type="submit" name="move_to_default" value="Move all unclassified feedback to {{ default_type }}" />{% endif %}

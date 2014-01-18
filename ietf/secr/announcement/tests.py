@@ -22,7 +22,7 @@ class MainTestCase(TestCase):
         draft = make_test_data()
         url = reverse('announcement')
         r = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
 class DummyCase(TestCase):
     name = connection.settings_dict['NAME']
@@ -34,7 +34,7 @@ class UnauthorizedCase(TestCase):
         url = reverse('announcement')
         person = Person.objects.filter(role__group__acronym='mars')[0]
         r = self.client.get(url,REMOTE_USER=person.user)
-        self.assertEquals(r.status_code, 403)
+        self.assertEqual(r.status_code, 403)
     
 class SubmitCase(TestCase):
     def test_invalid_submit(self):
@@ -44,7 +44,7 @@ class SubmitCase(TestCase):
         post_data = {'id_subject':''}
         #self.client.login(remote_user='rcross')
         r = self.client.post(url,post_data, REMOTE_USER=SECR_USER)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
         

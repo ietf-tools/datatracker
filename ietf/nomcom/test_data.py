@@ -6,19 +6,18 @@ from django.core.files import File
 from django.conf import settings
 
 from ietf.utils.pipe import pipe
+from ietf.utils.test_data import create_person
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.person.models import Email, Person
 from ietf.name.models import RoleName
 from ietf.nomcom.models import NomCom, Position, Nominee
 
 COMMUNITY_USER = 'plain'
-CHAIR_USER = 'chair'
-MEMBER_USER = 'member'
-SECRETARIAT_USER = 'secretariat'
+CHAIR_USER = 'nomcomchair'
+MEMBER_USER = 'nomcommember'
+SECRETARIAT_USER = 'secretary'
 EMAIL_DOMAIN = '@example.com'
 NOMCOM_YEAR = "2013"
-
-USERS = [COMMUNITY_USER, CHAIR_USER, MEMBER_USER, SECRETARIAT_USER]
 
 POSITIONS = {
     "GEN": "IETF Chair/Gen AD",
@@ -94,6 +93,7 @@ def check_comments(encryped, plain, privatekey_file):
 
     return decrypted_comments == plain
 
+nomcom_test_cert_file = None
 
 def nomcom_test_data():
     # groups
@@ -104,54 +104,20 @@ def nomcom_test_data():
 
     nomcom, created = NomCom.objects.get_or_create(group=group)
 
-    cert_file, privatekey_file = generate_cert()
-    nomcom.public_key.save('cert', File(open(cert_file.name, 'r')))
+    global nomcom_test_cert_file
+    if not nomcom_test_cert_file:
+        nomcom_test_cert_file, privatekey_file = generate_cert()
+    nomcom.public_key.save('cert', File(open(nomcom_test_cert_file.name, 'r')))
 
-    try:
-        secretariat = Group.objects.get(acronym="secretariat")
-        secretariat.name = u'Secretariat'
-        secretariat.save()
-    except Group.DoesNotExist:
-        secretariat, created = Group.objects.get_or_create(name=u'Secretariat',
-                                                            acronym="secretariat",
-                                                            state_id="active",
-                                                            type_id="ietf",
-                                                            parent=None)
-    # users
-    for user in USERS:
-        u, created = User.objects.get_or_create(username=user)
-        if created:
-            u.set_password(user)
-            u.save()
-        person, created = Person.objects.get_or_create(
-            name=user,
-            ascii=user,
-            user=u)
-        email, created = Email.objects.get_or_create(
-            address="%s%s" % (user, EMAIL_DOMAIN),
-            person=person)
+    # chair and member
+    create_person(group, "chair", username=CHAIR_USER)
+    create_person(group, "member", username=MEMBER_USER)
 
-        if user == CHAIR_USER:
-            role, created = RoleName.objects.get_or_create(slug="chair")
-            Role.objects.get_or_create(name=role,
-                                       group=group,
-                                       person=person,
-                                       email=email)
-        if user == MEMBER_USER:
-            role, created = RoleName.objects.get_or_create(slug="member")
-            Role.objects.get_or_create(name=role,
-                                       group=group,
-                                       person=person,
-                                       email=email)
-        if user == SECRETARIAT_USER:
-            role, created = RoleName.objects.get_or_create(slug="secr")
-            Role.objects.create(name=role,
-                                group=secretariat,
-                                person=person,
-                                email=email)
     # nominee
-    email = Email.objects.get(person__name=COMMUNITY_USER)
-    nominee, created = Nominee.objects.get_or_create(email=email, nomcom=nomcom)
+    u, _ = User.objects.get_or_create(username=COMMUNITY_USER)
+    plainman, _ = Person.objects.get_or_create(name="Plain Man", ascii="Plain Man", user=u)
+    email, _ = Email.objects.get_or_create(address="plain@example.com", person=plainman)
+    nominee, _ = Nominee.objects.get_or_create(email=email, nomcom=nomcom)
 
     # positions
     for name, description in POSITIONS.iteritems():

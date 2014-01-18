@@ -16,7 +16,6 @@ from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from django.utils.encoding import smart_str
-from django.core.validators import email_re
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person

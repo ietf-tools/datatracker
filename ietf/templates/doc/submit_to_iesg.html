@@ -72,7 +72,7 @@ Upon submission:
 <li> an email message will be sent to the working group chairs, the secretariat, and everyone listed above</li>
 </div>
 
-<form action="" method="POST">
+<form action="" method="post">{% csrf_token %}
   <input type="submit" name="confirm" value="Request Publication"/>
   <input type="submit" name="cancel" value="Cancel"/>
 </form>

@@ -3,25 +3,21 @@
 import datetime, re
 
 from django.conf import settings
-from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
+from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.core.urlresolvers import reverse as urlreverse
-from django.template.defaultfilters import truncatewords_html, date as datefilter, linebreaks
+from django.template.defaultfilters import truncatewords, truncatewords_html, date as datefilter, linebreaks
 from django.utils.html import strip_tags
-from django.utils.text import truncate_words
 
 from ietf.doc.models import *
 from ietf.doc.utils import augment_events_with_revision
 from ietf.doc.templatetags.ietf_filters import format_textarea
 
-class DocumentChanges(Feed):
+class DocumentChangesFeed(Feed):
     feed_type = Atom1Feed
 
-    def get_object(self, bits):
-	if len(bits) != 1:
-	    raise Document.DoesNotExist
-
-        return Document.objects.get(docalias__name=bits[0])
+    def get_object(self, request, name):
+        return Document.objects.get(docalias__name=name)
 
     def title(self, obj):
         return "Changes for %s" % obj.display_name()
@@ -42,7 +38,7 @@ class DocumentChanges(Feed):
 	return events
 
     def item_title(self, item):
-        return u"[%s] %s [rev. %s]" % (item.by, truncate_words(strip_tags(item.desc), 15), item.rev)
+        return u"[%s] %s [rev. %s]" % (item.by, truncatewords(strip_tags(item.desc), 15), item.rev)
 
     def item_description(self, item):
         return truncatewords_html(format_textarea(item.desc), 20)
@@ -56,7 +52,7 @@ class DocumentChanges(Feed):
     def item_link(self, item):
         return self.cached_link + "#history-%s" % item.pk
 
-class InLastCall(Feed):
+class InLastCallFeed(Feed):
     title = "Documents in Last Call"
     subtitle = "Announcements for documents in last call."
     feed_type = Atom1Feed

@@ -6,10 +6,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.utils import simplejson
 
 #from sec.utils.group import get_charter_text
 from ietf.secr.utils.meeting import get_current_meeting
@@ -22,6 +21,7 @@ from forms import *
 
 import os
 import datetime
+import json
 
 # -------------------------------------------------
 # Helper Functions
@@ -76,7 +76,7 @@ def get_ads(request):
         d = {'id': item.id, 'value': item.person.first_name + ' ' + item.person.last_name}
         results.append(d)
 
-    return HttpResponse(simplejson.dumps(results), mimetype='application/javascript')
+    return HttpResponse(json.dumps(results), content_type='application/javascript')
 '''
 # -------------------------------------------------
 # Standard View Functions
@@ -99,8 +99,7 @@ def add(request):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('groups')
-            return HttpResponseRedirect(url)
+            return redirect('groups')
 
         form = GroupModelForm(request.POST)
         awp_formset = AWPFormSet(request.POST, prefix='awp')
@@ -116,13 +115,12 @@ def add(request):
             # always create started event
             ChangeStateGroupEvent.objects.create(group=group,
                                                  type='changed_state',
-                                                 by=request.user.get_profile(),
+                                                 by=request.user.person,
                                                  state=group.state,
                                                  desc='Started group')
 
             messages.success(request, 'The Group was created successfully!')
-            url = reverse('groups_view', kwargs={'acronym':group.acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_view', acronym=group.acronym)
 
     else:
         form = GroupModelForm(initial={'state':'active','type':'wg'})
@@ -156,7 +154,7 @@ def blue_dot(request):
 
     return render_to_response('groups/blue_dot_report.txt', {
         'chairs':sorted_chairs},
-        RequestContext(request, {}), mimetype="text/plain",
+        RequestContext(request, {}), content_type="text/plain",
     )
 
 def charter(request, acronym):
@@ -206,8 +204,7 @@ def delete_role(request, acronym, id):
     role.delete()
 
     messages.success(request, 'The entry was deleted successfully')
-    url = reverse('groups_people', kwargs={'acronym':acronym})
-    return HttpResponseRedirect(url)
+    return redirect('groups_people', acronym=acronym)
 
 def edit(request, acronym):
     """
@@ -229,8 +226,7 @@ def edit(request, acronym):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('groups_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_view', acronym=acronym)
 
         form = GroupModelForm(request.POST, instance=group)
         awp_formset = AWPFormSet(request.POST, instance=group)
@@ -253,7 +249,7 @@ def edit(request, acronym):
                         desc = state.name + ' group'
                     ChangeStateGroupEvent.objects.create(group=group,
                                                          type='changed_state',
-                                                         by=request.user.get_profile(),
+                                                         by=request.user.person,
                                                          state=state,
                                                          desc=desc)
                     form.changed_data.remove('state')
@@ -262,7 +258,7 @@ def edit(request, acronym):
                 if form.changed_data:
                     GroupEvent.objects.create(group=group,
                                               type='info_changed',
-                                              by=request.user.get_profile(),
+                                              by=request.user.person,
                                               desc='Info Changed')
 
                 # if the acronym was changed we'll want to redirect using the new acronym below
@@ -271,8 +267,7 @@ def edit(request, acronym):
 
                 messages.success(request, 'The Group was changed successfully')
 
-            url = reverse('groups_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_view', acronym=acronym)
 
     else:
         form = GroupModelForm(instance=group)
@@ -307,15 +302,13 @@ def edit_gm(request, acronym):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('groups_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_view', acronym=acronym)
 
         formset = GMFormset(request.POST, instance=group, prefix='goalmilestone')
         if formset.is_valid():
             formset.save()
             messages.success(request, 'The Goals Milestones were changed successfully')
-            url = reverse('groups_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_view', acronym=acronym)
     else:
         formset = GMFormset(instance=group, prefix='goalmilestone')
 
@@ -358,8 +351,7 @@ def people(request, acronym):
                                 group=group)
 
             messages.success(request, 'New %s added successfully!' % name)
-            url = reverse('groups_people', kwargs={'acronym':group.acronym})
-            return HttpResponseRedirect(url)
+            return redirect('groups_people', acronym=group.acronym)
     else:
         form = RoleForm(initial={'name':'chair'},group=group)
 
@@ -386,8 +378,7 @@ def search(request):
     if request.method == 'POST':
         form = SearchForm(request.POST)
         if request.POST['submit'] == 'Add':
-            url = reverse('groups_add')
-            return HttpResponseRedirect(url)
+            return redirect('groups_add')
 
         if form.is_valid():
             kwargs = {}
@@ -427,8 +418,7 @@ def search(request):
 
             # if there's just one result go straight to view
             if len(results) == 1:
-                url = reverse('groups_view', kwargs={'acronym':results[0].acronym})
-                return HttpResponseRedirect(url)
+                return redirect('groups_view', acronym=results[0].acronym)
 
     # process GET argument to support link from area app
     elif 'primary_area' in request.GET:

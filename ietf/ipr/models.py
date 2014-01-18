@@ -72,7 +72,7 @@ class IprDetail(models.Model):
     lic_opt_b_sub = models.IntegerField(null=True, editable=False, choices=STDONLY_CHOICES)
     lic_opt_c_sub = models.IntegerField(null=True, editable=False, choices=STDONLY_CHOICES)
     comments = models.TextField("Licensing Comments", blank=True)
-    lic_checkbox = models.BooleanField("All terms and conditions has been disclosed")
+    lic_checkbox = models.BooleanField("All terms and conditions has been disclosed", default=False)
 
 
     # Other notes fieldset
@@ -80,9 +80,9 @@ class IprDetail(models.Model):
 
     # Generated fields, not part of the submission form
     # Hidden fields
-    third_party = models.BooleanField()
-    generic = models.BooleanField()
-    comply = models.BooleanField()
+    third_party = models.BooleanField(default=False)
+    generic = models.BooleanField(default=False)
+    comply = models.BooleanField(default=False)
 
     status = models.IntegerField(null=True, blank=True, choices=STATUS_CHOICES)
     submitted_date = models.DateField(blank=True)

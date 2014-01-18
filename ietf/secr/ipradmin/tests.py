@@ -14,7 +14,7 @@ class MainTestCase(TestCase):
         draft = make_test_data()
         url = reverse('ipradmin')
         response = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 301)
+        self.assertEqual(response.status_code, 301)
 """
     def test_view(self):
         "View Test"
@@ -22,5 +22,5 @@ class MainTestCase(TestCase):
         drafts = Document.objects.filter(type='draft')
         url = reverse('drafts_view', kwargs={'id':drafts[0].name})
         response = self.client.get(url, REMOTE_USER=SECR_USER)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 """

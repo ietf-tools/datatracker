@@ -3,22 +3,18 @@
 # boiler plate
 import os, sys
 
-ietf_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../ietf'))
-
-sys.path.insert(0, ietf_path)
-
-from django.core.management import setup_environ
-import settings
-setup_environ(settings)
+basedir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
+sys.path.insert(0, basedir)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 # script
 from django.core.serializers import serialize
 from django.db.models import Q 
 
-def output(name, qs):
+def output(name, seq):
     try:
         f = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures/%s.json" % name), 'w')
-        f.write(serialize("json", qs, indent=1))
+        f.write(serialize("json", seq, indent=1))
         f.close()
     except:
         from django.db import connection

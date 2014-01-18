@@ -5,7 +5,7 @@ from django import forms
 from django.conf import settings
 from django.db.models import Q
 from django.forms.util import ErrorList
-from django.core.validators import email_re
+from django.core.validators import validate_email, ValidationError
 from django.template.loader import render_to_string
 
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
@@ -150,7 +150,9 @@ class LiaisonForm(forms.Form):
         emails = value.split(',')
         for email in emails:
             name, addr = parseaddr(email)
-            if not email_re.search(addr):
+            try:
+                validate_email(addr)
+            except ValidationError:
                 raise forms.ValidationError('Invalid email address: %s' % addr)
 
     def clean_response_contact(self):

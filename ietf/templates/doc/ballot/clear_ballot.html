@@ -5,7 +5,7 @@
 {% block content %}
 <h1>Clear ballot for {{ doc }}</h1>
 
-<form action="" method="POST">
+<form action="" method="post">{% csrf_token %}
   <p>Clear the ballot for {{ doc.file_tag }}?</p>
 
   <p>This will clear all ballot positions and discuss entries.</p>

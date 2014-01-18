@@ -26,9 +26,10 @@
 # installed, because pkg_resources is necessary to read eggs.
 
 from django.core.exceptions import ImproperlyConfigured
-from django.template import Origin, Template, Context, TemplateDoesNotExist, add_to_builtins
-from django.utils.importlib import import_module
+from django.template.base import Origin, Template, Context, TemplateDoesNotExist, add_to_builtins
 from django.conf import settings
+from django.utils.module_loading import import_by_path
+from django.utils import six
 
 template_source_loaders = None
 
@@ -89,16 +90,8 @@ def find_template_loader(loader):
         loader, args = loader[0], loader[1:]
     else:
         args = []
-    if isinstance(loader, basestring):
-        module, attr = loader.rsplit('.', 1)
-        try:
-            mod = import_module(module)
-        except ImportError, e:
-            raise ImproperlyConfigured('Error importing template source loader %s: "%s"' % (loader, e))
-        try:
-            TemplateLoader = getattr(mod, attr)
-        except AttributeError, e:
-            raise ImproperlyConfigured('Error importing template source loader %s: "%s"' % (loader, e))
+    if isinstance(loader, six.string_types):
+        TemplateLoader = import_by_path(loader)
 
         if hasattr(TemplateLoader, 'load_template_source'):
             func = TemplateLoader(*args)
@@ -136,18 +129,6 @@ def find_template(name, dirs=None):
         except TemplateDoesNotExist:
             pass
     raise TemplateDoesNotExist(name)
-
-def find_template_source(name, dirs=None):
-    # For backward compatibility
-    import warnings
-    warnings.warn(
-        "`django.template.loaders.find_template_source` is deprecated; use `django.template.loader.find_template` instead.",
-        PendingDeprecationWarning
-    )
-    template, origin = find_template(name, dirs)
-    if hasattr(template, 'render'):
-        raise Exception("Found a compiled template that is incompatible with the deprecated `django.template.loader.find_template_source` function.")
-    return template, origin
 
 def get_template(template_name):
     """
@@ -191,11 +172,13 @@ def render_to_string(template_name, dictionary=None, context_instance=None):
 
 def select_template(template_name_list):
     "Given a list of template names, returns the first that can be loaded."
+    if not template_name_list:
+        raise TemplateDoesNotExist("No template names provided")
     not_found = []
     for template_name in template_name_list:
         try:
             return get_template(template_name)
-        except TemplateDoesNotExist, e:
+        except TemplateDoesNotExist as e:
             if e.args[0] not in not_found:
                 not_found.append(e.args[0])
             continue

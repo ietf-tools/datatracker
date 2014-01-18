@@ -1,15 +1,8 @@
 # Copyright The IETF Trust 2007, 2009, All Rights Reserved
 
-import django
-from django.conf.urls.defaults import patterns, include, handler404, handler500
+from django.conf.urls import patterns, include, handler404, handler500
 from django.contrib import admin
-
-from ietf.iesg.feeds import IESGAgenda
-from ietf.doc.feeds import DocumentChanges, InLastCall
-from ietf.ipr.feeds import LatestIprDisclosures
-from ietf.meeting.feeds import LatestMeetingMaterial
-from ietf.liaisons.feeds import Liaisons
-from ietf.wgcharter.feeds import GroupChanges
+from django.views.generic import RedirectView, TemplateView
 
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
@@ -28,16 +21,6 @@ except KeyError:
 from dajaxice.core import dajaxice_autodiscover
 dajaxice_autodiscover()
 
-feeds = {
-    'iesg-agenda': IESGAgenda,
-    'last-call': InLastCall,
-    'document-changes': DocumentChanges,
-    'group-changes': GroupChanges,
-    'ipr': LatestIprDisclosures,
-    'liaison': Liaisons,
-    'wg-proceedings' : LatestMeetingMaterial,
-}
-
 sitemaps = {
     'liaison': LiaisonMap,
     'ipr': IPRMap,
@@ -53,8 +36,7 @@ urlpatterns = patterns('',
     (r'^cookies/', include('ietf.cookies.urls')),
     (r'^doc/', include('ietf.doc.urls')),
     (r'^drafts/', include('ietf.doc.redirect_drafts_urls')),
-    (r'^feed/comments/(?P<remainder>.*)/$', 'django.views.generic.simple.redirect_to', { 'url': '/feed/document-changes/%(remainder)s/'}),
-    (r'^feed/(?P<url>.*)/$', 'django.contrib.syndication.views.feed', { 'feed_dict': feeds}),
+    (r'^feed/', include('ietf.feed_urls')),
     (r'^help/', include('ietf.help.urls')),
     (r'^idtracker/', include('ietf.doc.redirect_idtracker_urls')),
     (r'^iesg/', include('ietf.iesg.urls')),
@@ -80,15 +62,17 @@ urlpatterns = patterns('',
     (r'^(?P<path>public)/', include('ietf.redirects.urls')),
 
     # Google webmaster tools verification url
-    (r'^googlea30ad1dacffb5e5b.html', 'django.views.generic.simple.direct_to_template', { 'template': 'googlea30ad1dacffb5e5b.html' }),
+    (r'^googlea30ad1dacffb5e5b.html', TemplateView.as_view(template_name='googlea30ad1dacffb5e5b.html')),
+    (r'^%s/dajaxice.core.js' % settings.DAJAXICE_MEDIA_PREFIX, 'ietf.meeting.ajax.dajaxice_core_js'),
     (r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
 )
 
 if settings.SERVER_MODE in ('development', 'test'):
     urlpatterns += patterns('',
-        (r'^(?P<path>(?:images|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
-        (r'^(?P<path>secretariat/(img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
-        (r'^(?P<path>robots\.txt)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT+"dev/"}),
+        (r'^(?P<path>(?:images|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
+        (r'^(?P<path>admin/(?:img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
+        (r'^(?P<path>secretariat/(img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
+        (r'^(?P<path>robots\.txt)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT+"dev/"}),
         (r'^_test500/$', lambda x: None),
         (r'^environment/$', 'ietf.help.views.environment'),
 	)

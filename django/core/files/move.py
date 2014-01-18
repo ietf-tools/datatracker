@@ -51,6 +51,10 @@ def file_move_safe(old_file_name, new_file_name, chunk_size = 1024*64, allow_ove
         return
 
     try:
+        # If the destination file exists and allow_overwrite is False then raise an IOError
+        if not allow_overwrite and os.access(new_file_name, os.F_OK):
+            raise IOError("Destination file %s exists and allow_overwrite is False" % new_file_name)
+
         os.rename(old_file_name, new_file_name)
         return
     except OSError:
@@ -59,29 +63,26 @@ def file_move_safe(old_file_name, new_file_name, chunk_size = 1024*64, allow_ove
         pass
 
     # first open the old file, so that it won't go away
-    old_file = open(old_file_name, 'rb')
-    try:
+    with open(old_file_name, 'rb') as old_file:
         # now open the new file, not forgetting allow_overwrite
         fd = os.open(new_file_name, os.O_WRONLY | os.O_CREAT | getattr(os, 'O_BINARY', 0) |
-                                    (not allow_overwrite and os.O_EXCL or 0))
+                                    (os.O_EXCL if not allow_overwrite else 0))
         try:
             locks.lock(fd, locks.LOCK_EX)
             current_chunk = None
-            while current_chunk != '':
+            while current_chunk != b'':
                 current_chunk = old_file.read(chunk_size)
                 os.write(fd, current_chunk)
         finally:
             locks.unlock(fd)
             os.close(fd)
-    finally:
-        old_file.close()
     copystat(old_file_name, new_file_name)
 
     try:
         os.remove(old_file_name)
-    except OSError, e:
-        # Certain operating systems (Cygwin and Windows) 
-        # fail when deleting opened files, ignore it.  (For the 
+    except OSError as e:
+        # Certain operating systems (Cygwin and Windows)
+        # fail when deleting opened files, ignore it.  (For the
         # systems where this happens, temporary files will be auto-deleted
         # on close anyway.)
         if getattr(e, 'winerror', 0) != 32 and getattr(e, 'errno', 0) != 13:

@@ -96,7 +96,9 @@ def file_types_for_drafts():
 def all_id2_txt():
     # this returns a lot of data so try to be efficient
 
-    drafts = Document.objects.filter(type="draft").exclude(name__startswith="rfc").order_by('name').select_related('group', 'group__parent', 'ad', 'ad__email', 'intended_std_level', 'shepherd', 'shepherd__email')
+    drafts = Document.objects.filter(type="draft").exclude(name__startswith="rfc").order_by('name')
+    drafts = drafts.select_related('group', 'group__parent', 'ad', 'ad__email', 'intended_std_level', 'shepherd', 'shepherd__email')
+    drafts = drafts.prefetch_related("states")
 
     rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
                                                document__states=State.objects.get(type="draft", slug="rfc")).values_list("document_id", "name"))
@@ -118,6 +120,11 @@ def all_id2_txt():
             l.append(u'%s <%s>' % (a.author.person.plain_name().replace("@", ""), a.author.address.replace(",", "")))
         else:
             l.append(a.author.person.plain_name())
+
+    shepherds = dict((p.pk, p.formatted_email().replace('"', ''))
+                     for p in Person.objects.filter(shepherd_document_set__type="draft").distinct())
+    ads = dict((p.pk, p.formatted_email().replace('"', ''))
+               for p in Person.objects.filter(ad_document_set__type="draft").distinct())
 
     res = []
     for d in drafts:
@@ -190,9 +197,9 @@ def all_id2_txt():
         # 14
         fields.append(u", ".join(authors.get(d.name, [])))
         # 15
-        fields.append(d.shepherd.formatted_email().replace('"', '') if d.shepherd else "")
+        fields.append(shepherds.get(d.shepherd_id, ""))
         # 16 Responsible AD name and email
-        fields.append(d.ad.formatted_email().replace('"', '') if d.ad else "")
+        fields.append(ads.get(d.ad_id, ""))
 
         #
         res.append(u"\t".join(fields))

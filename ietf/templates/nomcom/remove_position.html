@@ -12,7 +12,7 @@
 </dl>
 
 <h3>Do you want to remove it?</h3>
-<form method="post" action="">
+<form method="post" action="">{% csrf_token %}
 <p><input type="submit" name="remove" value="Yes, remove it" /> <a href="../">No, get me out of here</a></p>
 </form>
 

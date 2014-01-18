@@ -28,12 +28,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os, sys, time
+import os, sys, time, signal, traceback
 
 try:
-    import thread
+    from django.utils.six.moves import _thread as thread
 except ImportError:
-    import dummy_thread as thread
+    from django.utils.six.moves import _dummy_thread as thread
 
 # This import does nothing, but it's necessary to avoid some race conditions
 # in the threading module. See http://code.djangoproject.com/ticket/2330 .
@@ -52,11 +52,23 @@ RUN_RELOADER = True
 _mtimes = {}
 _win = (sys.platform == "win32")
 
+_error_files = []
+
 def code_changed():
     global _mtimes, _win
-    for filename in filter(lambda v: v, map(lambda m: getattr(m, "__file__", None), sys.modules.values())):
+    filenames = []
+    for m in list(sys.modules.values()):
+        try:
+            filenames.append(m.__file__)
+        except AttributeError:
+            pass
+    for filename in filenames + _error_files:
+        if not filename:
+            continue
         if filename.endswith(".pyc") or filename.endswith(".pyo"):
             filename = filename[:-1]
+        if filename.endswith("$py.class"):
+            filename = filename[:-9] + ".py"
         if not os.path.exists(filename):
             continue # File might be in an egg, so it can't be reloaded.
         stat = os.stat(filename)
@@ -68,8 +80,33 @@ def code_changed():
             continue
         if mtime != _mtimes[filename]:
             _mtimes = {}
+            try:
+                del _error_files[_error_files.index(filename)]
+            except ValueError:
+                pass
             return True
     return False
+
+def check_errors(fn):
+    def wrapper(*args, **kwargs):
+        try:
+            fn(*args, **kwargs)
+        except (ImportError, IndentationError, NameError, SyntaxError,
+                TypeError, AttributeError):
+            et, ev, tb = sys.exc_info()
+
+            if getattr(ev, 'filename', None) is None:
+                # get the filename from the last item in the stack
+                filename = traceback.extract_tb(tb)[-1][0]
+            else:
+                filename = ev.filename
+
+            if filename not in _error_files:
+                _error_files.append(filename)
+
+            raise
+
+    return wrapper
 
 def ensure_echo_on():
     if termios:
@@ -78,7 +115,13 @@ def ensure_echo_on():
             attr_list = termios.tcgetattr(fd)
             if not attr_list[3] & termios.ECHO:
                 attr_list[3] |= termios.ECHO
+                if hasattr(signal, 'SIGTTOU'):
+                    old_handler = signal.signal(signal.SIGTTOU, signal.SIG_IGN)
+                else:
+                    old_handler = None
                 termios.tcsetattr(fd, termios.TCSANOW, attr_list)
+                if old_handler is not None:
+                    signal.signal(signal.SIGTTOU, old_handler)
 
 def reloader_thread():
     ensure_echo_on()
@@ -107,7 +150,11 @@ def python_reloader(main_func, args, kwargs):
             pass
     else:
         try:
-            sys.exit(restart_with_reloader())
+            exit_code = restart_with_reloader()
+            if exit_code < 0:
+                os.kill(os.getpid(), -exit_code)
+            else:
+                sys.exit(exit_code)
         except KeyboardInterrupt:
             pass
 
@@ -129,5 +176,7 @@ def main(main_func, args=None, kwargs=None):
         reloader = jython_reloader
     else:
         reloader = python_reloader
-    reloader(main_func, args, kwargs)
+
+    wrapped_main_func = check_errors(main_func)
+    reloader(wrapped_main_func, args, kwargs)
 

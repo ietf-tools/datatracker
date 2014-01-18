@@ -11,7 +11,7 @@
 
 <p>The message that will be sent is shown below the list of nominees. </p>
 
-<form method="post" action="">
+<form method="post" action="">{% csrf_token %}
   <h3>Nominees who have not responded</h2>
 
   {% if message %}
@@ -41,8 +41,8 @@
 
 </form>
 
-<p>The message that will be sent is as follows: {% if mail_template %}<a href="{% url nomcom_edit_template year mail_template.id %}">(Edit the message)</a>{% endif %}</p>
+<p>The message that will be sent is as follows: {% if mail_template %}<a href="{% url "nomcom_edit_template" year mail_template.id %}">(Edit the message)</a>{% endif %}</p>
 
-<pre>{{ mail_template.content|wrap_text:80|escape }}</pre>
+<pre>{{ mail_template.content|wrap_text:80 }}</pre>
 
 {% endblock %}

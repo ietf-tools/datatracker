@@ -52,21 +52,21 @@ function toggle_public(event) {
     var agenda_url      = $(event.target).closest('tr').attr('href');
 
     var new_value = 1;
-    log("value "+current_value)
+    log("value "+current_value);
     if(current_value == "public") {
-        new_value = 0
+        new_value = 0;
     }
     event.preventDefault();
 
     $.ajax({ "url": agenda_url,
-             "type": "PUT",
+             "type": "POST",
              "data": { "public" : new_value },
              "dataType": "json",
              "success": function(result) {
                  /* result is a json object */
-                 value = result["public"]
-                 log("new value "+value)
-                 $(span_to_replace).html(value)
+                 value = result["public"];
+                 log("new value "+value);
+                 $(span_to_replace).html(value);
              }});
 }
 
@@ -76,14 +76,14 @@ function toggle_visible(event) {
     var agenda_url      = $(event.target).closest('tr').attr('href');
 
     var new_value = 1;
-    log("value "+current_value)
+    log("value "+current_value);
     if(current_value == "visible") {
-        new_value = 0
+        new_value = 0;
     }
     event.preventDefault();
 
     $.ajax({ "url": agenda_url,
-             "type": "PUT",
+             "type": "POST",
              "data": { "visible" : new_value },
              "dataType": "json",
              "success": function(result) {
@@ -131,7 +131,7 @@ function toggle_official(event) {
     //log("clicked on "+agenda_url+" sending to "+meeting_url);
 
     $.ajax({ "url": meeting_url,
-             "type": "PUT",
+             "type": "POST",
              "data": { "agenda" : new_value },
              "dataType": "json",
              "success": function(result) {
@@ -151,12 +151,12 @@ function save_agenda(form) {
 
     public_flag = form.elements["public"].checked   ? true : false;
     visible_flag = form.elements["visible"].checked ? true: false;
-    console.log("PUT to ",agenda_url," with name:", name_str,
+    console.log("POST to ",agenda_url," with name:", name_str,
                 "visible:", visible_flag,
                 "public:",  public_flag);
 
     $.ajax({"url": agenda_url,
-            "type": "PUT",
+            "type": "POST",
             "data": {  "public" : public_flag,
                        "visible": visible_flag,
                        "name"   : name_str,

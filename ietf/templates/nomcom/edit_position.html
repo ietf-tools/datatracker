@@ -5,7 +5,7 @@
 
 {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
 
-<form action="" method="post">
+<form action="" method="post">{% csrf_token %}
 {{ form }}
 <p><input type="submit" value="{% if position %}Save{% else %}Add{% endif %}" /> <a href="../">Cancel</a></p>
 </form>

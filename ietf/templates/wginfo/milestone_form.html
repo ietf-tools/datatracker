@@ -4,7 +4,7 @@
 
 <table cellspacing="0" cellpadding="0">
   <tr>
-    <td>{{ form.desc.label_tag }}:</td>
+    <td>{{ form.desc.label_tag }}</td>
     <td>
       <span class="desc">
         {% if needs_review and form.milestone and form.milestone.state_id != "review" %}
@@ -26,7 +26,7 @@
   </tr>
   <tr class="docs">
     <td>Drafts:</td>
-    <td><input name="{{ form.docs.html_name }}" class="tokenized-field" data-ajax-url="{% url wg_ajax_search_docs group.acronym %}" data-pre="{{ form.docs_prepopulate }}"/>
+    <td><input name="{{ form.docs.html_name }}" class="tokenized-field" data-ajax-url="{% url "wg_ajax_search_docs" group.acronym %}" data-pre="{{ form.docs_prepopulate }}"/>
     {{ form.docs.errors }}
     </td>
   </tr>

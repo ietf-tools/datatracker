@@ -1,4 +1,5 @@
 import re
+import sys
 from decimal import Decimal
 
 from django.contrib.gis.db.backends.base import BaseSpatialOperations
@@ -9,6 +10,9 @@ from django.contrib.gis.measure import Distance
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.sqlite3.base import DatabaseOperations
 from django.db.utils import DatabaseError
+from django.utils import six
+from django.utils.functional import cached_property
+
 
 class SpatiaLiteOperator(SpatialOperation):
     "For SpatiaLite operators (e.g. `&&`, `~`)."
@@ -42,7 +46,7 @@ class SpatiaLiteRelate(SpatiaLiteFunctionParam):
         super(SpatiaLiteRelate, self).__init__('Relate')
 
 # Valid distance types and substitutions
-dtypes = (Decimal, Distance, float, int, long)
+dtypes = (Decimal, Distance, float) + six.integer_types
 def get_dist_ops(operator):
     "Returns operations for regular distances; spherical distances are not currently supported."
     return (SpatiaLiteDistance(operator),)
@@ -89,8 +93,8 @@ class SpatiaLiteOperations(DatabaseOperations, BaseSpatialOperations):
         'overlaps' : SpatiaLiteFunction('Overlaps'),
         'contains' : SpatiaLiteFunction('Contains'),
         'intersects' : SpatiaLiteFunction('Intersects'),
-        'relate' : (SpatiaLiteRelate, basestring),
-        # Retruns true if B's bounding box completely contains A's bounding box.
+        'relate' : (SpatiaLiteRelate, six.string_types),
+        # Returns true if B's bounding box completely contains A's bounding box.
         'contained' : SpatiaLiteFunction('MbrWithin'),
         # Returns true if A's bounding box completely contains B's bounding box.
         'bbcontains' : SpatiaLiteFunction('MbrContains'),
@@ -110,29 +114,55 @@ class SpatiaLiteOperations(DatabaseOperations, BaseSpatialOperations):
     geometry_functions.update(distance_functions)
 
     def __init__(self, connection):
-        super(DatabaseOperations, self).__init__()
-        self.connection = connection
-
-        # Determine the version of the SpatiaLite library.
-        try:
-            vtup = self.spatialite_version_tuple()
-            version = vtup[1:]
-            if version < (2, 3, 0):
-                raise ImproperlyConfigured('GeoDjango only supports SpatiaLite versions '
-                                           '2.3.0 and above')
-            self.spatial_version = version
-        except ImproperlyConfigured:
-            raise
-        except Exception, msg:
-            raise ImproperlyConfigured('Cannot determine the SpatiaLite version for the "%s" '
-                                       'database (error was "%s").  Was the SpatiaLite initialization '
-                                       'SQL loaded on this database?' %
-                                       (self.connection.settings_dict['NAME'], msg))
+        super(DatabaseOperations, self).__init__(connection)
 
         # Creating the GIS terms dictionary.
-        gis_terms = ['isnull']
-        gis_terms += self.geometry_functions.keys()
-        self.gis_terms = dict([(term, None) for term in gis_terms])
+        self.gis_terms = set(['isnull'])
+        self.gis_terms.update(self.geometry_functions)
+
+    @cached_property
+    def spatial_version(self):
+        """Determine the version of the SpatiaLite library."""
+        try:
+            version = self.spatialite_version_tuple()[1:]
+        except Exception as msg:
+            new_msg = (
+                'Cannot determine the SpatiaLite version for the "%s" '
+                'database (error was "%s").  Was the SpatiaLite initialization '
+                'SQL loaded on this database?') % (self.connection.settings_dict['NAME'], msg)
+            six.reraise(ImproperlyConfigured, ImproperlyConfigured(new_msg), sys.exc_info()[2])
+        if version < (2, 3, 0):
+            raise ImproperlyConfigured('GeoDjango only supports SpatiaLite versions '
+                                       '2.3.0 and above')
+        return version
+
+    @property
+    def _version_greater_2_4_0_rc4(self):
+        if self.spatial_version >= (2, 4, 1):
+            return True
+        elif self.spatial_version < (2, 4, 0):
+            return False
+        else:
+            # Spatialite 2.4.0-RC4 added AsGML and AsKML, however both
+            # RC2 (shipped in popular Debian/Ubuntu packages) and RC4
+            # report version as '2.4.0', so we fall back to feature detection
+            try:
+                self._get_spatialite_func("AsGML(GeomFromText('POINT(1 1)'))")
+            except DatabaseError:
+                return False
+            return True
+
+    @cached_property
+    def gml(self):
+        return 'AsGML' if self._version_greater_2_4_0_rc4 else None
+
+    @cached_property
+    def kml(self):
+        return 'AsKML' if self._version_greater_2_4_0_rc4 else None
+
+    @cached_property
+    def geojson(self):
+        return 'AsGeoJSON' if self.spatial_version >= (3, 0, 0) else None
 
     def check_aggregate_support(self, aggregate):
         """
@@ -195,7 +225,7 @@ class SpatiaLiteOperations(DatabaseOperations, BaseSpatialOperations):
                 placeholder = '%s'
             # No geometry value used for F expression, substitue in
             # the column name instead.
-            return placeholder % '%s.%s' % tuple(map(self.quote_name, value.cols[value.expression]))
+            return placeholder % self.get_expression_column(value)
         else:
             if transform_value(value, f.srid):
                 # Adding Transform() to the SQL placeholder.
@@ -329,7 +359,7 @@ class SpatiaLiteOperations(DatabaseOperations, BaseSpatialOperations):
             return op.as_sql(geo_col, self.get_geom_placeholder(field, geom))
         elif lookup_type == 'isnull':
             # Handling 'isnull' lookup type
-            return "%s IS %sNULL" % (geo_col, (not value and 'NOT ' or ''))
+            return "%s IS %sNULL" % (geo_col, ('' if value else 'NOT ')), []
 
         raise TypeError("Got invalid lookup_type: %s" % repr(lookup_type))
 

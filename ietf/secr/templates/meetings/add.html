@@ -18,7 +18,7 @@
 
 <div  class="module">
   <h2>Proceedings - Add</h2>
-  <form id="proceedings-add-form" enctype="multipart/form-data" action="" method="post">
+  <form id="proceedings-add-form" enctype="multipart/form-data" action="" method="post">{% csrf_token %}
   <table id="proceedings-add-table">
     {{ form.as_table }}
   </table>

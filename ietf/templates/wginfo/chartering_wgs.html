@@ -12,7 +12,7 @@
 {% for s in charter_states %}{% if not forloop.first %}, {% if forloop.last %}or {% endif %}{% endif %}<i>{{ s.name }}</i>{% endfor %}.</p>
 
 {% if user|has_role:"Area Director,Secretariat" %}
-<p><a href="{% url wg_create %}">Start chartering new WG</a></p>
+<p><a href="{% url "wg_create" %}">Start chartering new WG</a></p>
 {% endif %}
 
 {% if not groups %}
@@ -28,10 +28,10 @@
 {% for g in groups %}
 <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
   <td class="acronym">
-    <a href="{% url group_charter acronym=g.acronym %}">{{ g.acronym }}</a>
+    <a href="{% url "group_charter" acronym=g.acronym %}">{{ g.acronym }}</a>
   </td>
   <td class="title">
-    <a href="{% url doc_view name=g.charter.name %}">{{ g.name }}</a>
+    <a href="{% url "doc_view" name=g.charter.name %}">{{ g.name }}</a>
   </td>
   <td class="date">{{ g.charter.time|date:"Y-m-d" }}</td>
   <td class="status">

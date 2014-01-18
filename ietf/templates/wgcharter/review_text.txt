@@ -1,8 +1,0 @@
-{% load ietf_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
-To: IETF-Announce <ietf-announce@ietf.org>{% if group.list_email %}
-Cc: {{ group.acronym }} {{ group.type.name }} <{{ group.list_email }}> {% endif %}
-Subject: WG Review: {{ group.name }} ({{ group.acronym }})
-
-{% filter wordwrap:73 %}{% ifequal review_type "new" %}A new IETF working group has been proposed in the {{ group.parent.name }}.{% endifequal %}{% ifequal review_type "recharter" %}The {{ group.name }} ({{group.acronym}}) working group in the {{ group.parent.name }} of the IETF is undergoing rechartering.{% endifequal %} The IESG has not made any determination yet. The following draft charter was submitted, and is provided for informational purposes only. Please send your comments to the IESG mailing list (iesg at ietf.org) by {{ review_date }}.
-
-{% include "wgcharter/group_info.txt" %}{% endfilter %}{% endautoescape %}

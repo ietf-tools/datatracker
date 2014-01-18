@@ -55,7 +55,7 @@
       }
 
       setup_ajax($("#id_replaces"), $("#replaces_list"),
-       $("#id_replaces_search"), "{% url doc_ajax_internet_draft %}");
+       $("#id_replaces_search"), "{% url "doc_ajax_internet_draft" %}");
     });
   </script>
 {% endblock %}
@@ -63,7 +63,7 @@
 {% block content %}
 <h1>Change which documents {{ doc }} replaces</h1>
 
-<form class="change-replaces" action="" method="post">
+<form class="change-replaces" action="" method="post">{% csrf_token %}
   {{ form.non_field_errors }}
   {{ form.replaces.label_tag }}
   <input type="text" id="id_replaces_search">

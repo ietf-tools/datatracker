@@ -34,6 +34,8 @@ ADMINS = (
     ('Ryan Cross', 'rcross@amsl.com'),
 )
 
+ALLOWED_HOSTS = ["datatracker.ietf.org"]
+
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
 
@@ -83,46 +85,47 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
-# Absolute path to the directory that holds media.
-# Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = BASE_DIR + "/../static/"
+USE_TZ = False
 
-# URL that handles the media served from MEDIA_ROOT.
-# Example: "http://media.lawrence.com"
-MEDIA_URL = 'http://www.ietf.org'
+MEDIA_URL = 'http://www.ietf.org/'
 
-# URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
-# trailing slash.
-# Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+STATIC_URL = "/"
+STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
 
-DAJAXICE_MEDIA_PREFIX="dajaxice"
+WSGI_APPLICATION = "ietf.wsgi.application"
 
-AUTH_PROFILE_MODULE = 'person.Person'
+DAJAXICE_MEDIA_PREFIX = "dajaxice"
+
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
 #DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
+
+# enable HTML error emails
+from django.utils.log import DEFAULT_LOGGING
+LOGGING = DEFAULT_LOGGING.copy()
+LOGGING['handlers']['mail_admins']['include_html'] = True
 
 SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.load_template_source',
-    'django.template.loaders.app_directories.load_template_source',
-    'ietf.dbtemplate.template.load_template_source',
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+    'ietf.dbtemplate.template.Loader',
 )
 
 MIDDLEWARE_CLASSES = (
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.RemoteUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
-    'django.middleware.doc.XViewMiddleware',
     'ietf.middleware.SQLLogMiddleware',
     'ietf.middleware.SMTPExceptionMiddleware',
     'ietf.middleware.RedirectTrailingPeriod',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.transaction.TransactionMiddleware',
     'ietf.middleware.UnicodeNfkcNormalization',
     'ietf.secr.middleware.secauth.SecAuthMiddleware'
@@ -136,7 +139,7 @@ TEMPLATE_DIRS = (
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.core.context_processors.auth',
+    'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'django.core.context_processors.request',
@@ -176,7 +179,6 @@ INSTALLED_APPS = (
     'ietf.redirects',
     'ietf.wginfo',
     'ietf.submit',
-    'ietf.wgcharter',
     'ietf.sync',
     'ietf.community',
     'ietf.release',
@@ -218,10 +220,10 @@ RFCDIFF_PREFIX = "//www.ietf.org/rfcdiff"
 SERVER_MODE = 'development'
 
 # The name of the method to use to invoke the test suite
-TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
+TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
 
 # Fixtures which will be loaded before testing starts
-GLOBAL_TEST_FIXTURES = [ 'names','groups','persons', 'roles']
+GLOBAL_TEST_FIXTURES = [ 'names','ietf.utils.test_data.make_immutable_base_data' ]
 
 TEST_DIFF_FAILURE_DIR = "/tmp/test/failure/"
 

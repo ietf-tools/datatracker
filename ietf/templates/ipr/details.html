@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 
-{% block title %}IPR Details - {{ ipr.title|escape }}{% endblock %}
+{% block title %}IPR Details - {{ ipr.title }}{% endblock %}
 
 {% block pagehead %}
 <meta name="description" content="IPR disclosure #{{ipr.ipr_id}}: {{ ipr.title }} ({{ ipr.submitted_date|date:"Y" }})" />
@@ -62,10 +62,10 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	 {% for item in ipr.updates.all %}
 	     <p>This IPR disclosure updates IPR disclosure ID #{{ item.updated.ipr_id }},
              {% if item.updated.status == 0 %}
-                "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
+                "<a href="{% url "ietf.ipr.views.show" item.updated.ipr_id %}">{{ item.updated.title }}</a>".
 	     {% else %}
                 {% if item.updated.status == 1 %}
-                   "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
+                   "<a href="{% url "ietf.ipr.views.show" item.updated.ipr_id %}">{{ item.updated.title }}</a>".
 		{% else %}
                    "{{ item.updated.title }}", which was removed at the request of the submitter.
                 {% endif %}
@@ -78,7 +78,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	     <p>
 	     This IPR disclosure has been updated by IPR disclosure ID #{{ item.ipr.ipr_id }},
              {% if item.status_to_be == 1 %}
-                "<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>".
+                "<a href="{% url "ietf.ipr.views.show" item.ipr.ipr_id %}">{{ item.ipr.title }}</a>".
 	     {% else %}
                 "{{ item.ipr.title }}", which was removed at the request of the submitter.
              {% endif %}
@@ -86,7 +86,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	 {% endif %}
 	 {% endfor %}
 
-	 <p><a href="{% url ietf.ipr.new.update ipr.ipr_id %}" rel="nofollow">Update this IPR disclosure</a>. Note: Updates to IPR disclosures must only be made by authorized
+	 <p><a href="{% url "ietf.ipr.new.update" ipr.ipr_id %}" rel="nofollow">Update this IPR disclosure</a>. Note: Updates to IPR disclosures must only be made by authorized
    representatives of the original submitters. Updates will automatically
    be forwarded to the current Patent Holder's Contact and to the Submitter
    of the original IPR disclosure.</p>
@@ -294,7 +294,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	    <tr class="{% cycle row_parity %}">
 	       <td colspan="2">
 		  <p>
-		  {% ifnotequal ipr.lic_checkbox 1 %}{{ ipr.lic_checkbox }}{% endifnotequal %}
+		  {% if ipr.lic_checkbox != 1 %}{{ ipr.lic_checkbox }}{% endif %}
 		  The individual submitting this template represents and warrants that all
 		  terms and conditions that must be satisfied for implementers of any
 		  covered IETF specification to obtain a license have been disclosed in this

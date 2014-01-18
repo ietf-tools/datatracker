@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, 2009, All Rights Reserved
 
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 
 urlpatterns = patterns('ietf.ietfauth.views',
         url(r'^$', 'index', name='account_index'),

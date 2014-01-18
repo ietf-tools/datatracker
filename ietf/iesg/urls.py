@@ -32,26 +32,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 from django.conf import settings
-from ietf.iesg import views
+from django.views.generic import RedirectView
 
 urlpatterns = patterns('',
-    (r'^telechat/.*$', 'django.views.generic.simple.redirect_to', { 'url': 'http://www.ietf.org/iesg/minutes.html' }),
-    (r'^ann/(?:ind|new|prev)/$', 'django.views.generic.simple.redirect_to', { 'url': "/iesg/decisions/", 'permanent': True }),
-    (r'^telechatdates/$', 'django.views.generic.simple.redirect_to', { 'url': '/admin/iesg/telechatdate/' }),
+    (r'^telechat/.*$', RedirectView.as_view(url='http://www.ietf.org/iesg/minutes.html')),
+    (r'^ann/(?:ind|new|prev)/$', RedirectView.as_view(url="/iesg/decisions/", permanent=True )),
+    (r'^telechatdates/$', RedirectView.as_view(url='/admin/iesg/telechatdate/')),
 
-    (r'^decisions/(?:(?P<year>[0-9]{4})/)?$', views.review_decisions),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?$', views.agenda),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?agenda.txt$', views.agenda_txt),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?agenda.json$', views.agenda_json),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?scribe_template.html$', views.agenda_scribe_template),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?moderator_package.html$', views.agenda_moderator_package),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?agenda_package.txt$', views.agenda_package),
+    (r'^decisions/(?:(?P<year>[0-9]{4})/)?$', "ietf.iesg.views.review_decisions"),
+    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?$', "ietf.iesg.views.agenda"),
+    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?agenda.txt$', "ietf.iesg.views.agenda_txt"),
+    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?agenda.json$', "ietf.iesg.views.agenda_json"),
+    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?scribe_template.html$', "ietf.iesg.views.agenda_scribe_template"),
+    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?moderator_package.html$', "ietf.iesg.views.agenda_moderator_package"),
+    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?agenda_package.txt$', "ietf.iesg.views.agenda_package"),
 
-    (r'^agenda/documents.txt$', views.agenda_documents_txt),
-    (r'^agenda/documents/$', views.agenda_documents),
-    (r'^agenda/telechat-(?:(?P<date>\d{4}-\d{2}-\d{2})-)?docs.tgz', views.telechat_docs_tarfile),
-    (r'^discusses/$', views.discusses),
-    (r'^milestones/$', views.milestones_needing_review),
+    (r'^agenda/documents.txt$', "ietf.iesg.views.agenda_documents_txt"),
+    (r'^agenda/documents/$', "ietf.iesg.views.agenda_documents"),
+    (r'^agenda/telechat-(?:(?P<date>\d{4}-\d{2}-\d{2})-)?docs.tgz', "ietf.iesg.views.telechat_docs_tarfile"),
+    (r'^discusses/$', "ietf.iesg.views.discusses"),
+    (r'^milestones/$', "ietf.iesg.views.milestones_needing_review"),
 )

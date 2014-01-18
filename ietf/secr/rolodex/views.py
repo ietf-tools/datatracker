@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory, modelformset_factory
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
 from ietf.person.models import Person, Email, Alias
@@ -73,9 +73,8 @@ def add_proceed(request):
         post_data = request.session['post_data']
     else:
         messages.error('ERROR: unable to save session data (enable cookies)')
-        url = reverse('rolodex_add')
-        return HttpResponseRedirect(url)
-    
+        return redirect('rolodex_add')
+
     name = post_data['name']
 
     if request.method == 'POST':
@@ -104,8 +103,7 @@ def add_proceed(request):
                 Alias.objects.create(person=person,name=person.ascii)
             
             messages.success(request, 'The Rolodex entry was added successfully')
-            url = reverse('rolodex_view', kwargs={'id': person.id})
-            return HttpResponseRedirect(url)
+            return redirect('rolodex_view', id=person.id)
     else:
         form = NewPersonForm(initial={'name':name,'ascii':name})
 
@@ -141,8 +139,7 @@ def delete(request, id):
             #person.delete()
             
             messages.warning(request, 'This feature is disabled')
-            url = reverse('rolodex')
-            return HttpResponseRedirect(url)
+            return redirect('rolodex')
 
     return render_to_response('rolodex/delete.html', {
         'person': person},
@@ -169,8 +166,7 @@ def edit(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('rolodex_view', kwargs={'id':id})
-            return HttpResponseRedirect(url)
+            return redirect('rolodex_view', id=id)
 
         person_form = EditPersonForm(request.POST, instance=person)
         email_formset = EmailFormset(request.POST, instance=person, prefix='email')
@@ -187,8 +183,7 @@ def edit(request, id):
             # add new names to alias
             
             messages.success(request, 'The Rolodex entry was changed successfully')
-            url = reverse('rolodex_view', kwargs={'id': id})
-            return HttpResponseRedirect(url)
+            return redirect('rolodex_view', id=id)
 
     else:
         person_form = EditPersonForm(instance=person)
@@ -248,9 +243,8 @@ def search(request):
             
             # if there's just one result go straight to view
             if len(results) == 1:
-                url = reverse('rolodex_view', kwargs={'id':results[0].person.id})
-                return HttpResponseRedirect(url)
-                
+                return redirect('rolodex_view', id=results[0].person.id)
+
             if not results:
                 not_found = 'No record found' 
     else:

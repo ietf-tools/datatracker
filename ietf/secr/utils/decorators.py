@@ -52,7 +52,7 @@ def check_permissions(func):
             session = slide.session_set.all()[0]
             group = session.group
         
-        login = request.user.get_profile()
+        login = request.user.person
         all_roles = chain(
             group.role_set.filter(name__in=('chair','secr')),
             group.parent.role_set.filter(name__in=('ad','chair')))
@@ -82,7 +82,7 @@ def sec_only(func):
             return func(request, *args, **kwargs)
         
         return render_to_response('unauthorized.html',{
-            'user_name':request.user.get_profile()}
+            'user_name':request.user.person}
         )
 
     return wraps(func)(wrapper)

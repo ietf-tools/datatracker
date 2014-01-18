@@ -1,3 +1,14 @@
+ietfdb (4.95) ietf; urgency=medium
+
+  This release upgrades Django from version 1.2 to version 1.6, including a
+  large number of refactorings and adjustments (about 140 individual changes)
+  to adapt to changes in both interfaces and the style of how things are done
+  between Django 1.2 and 1.6.  The full list of changes is available here: 
+
+    http://tools.ietf.org/tools/ietfdb/log/branch/iola/djangoport
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jan 2014 19:14:05 +0100
+
 ietfdb (4.90) ietf; urgency=medium
 
   This release removes almost all parts of the shim-layer code which was

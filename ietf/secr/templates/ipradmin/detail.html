@@ -9,13 +9,13 @@ IPR Admin Detail Page
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }}
-  &raquo; <a href="{% url ipradmin_admin_list %}">IPR Admin</a>
+  &raquo; <a href="{% url "ipradmin_admin_list" %}">IPR Admin</a>
   &raquo; Detail
  {% endblock %}
 
 {% block content %}
 <!-- this form is a kludge to apply the style from previously created update/create pages -->
-<form action="" method="post">
+<form action="" method="post">{% csrf_token %}
     <h3>{{ ipr_title }}</h3>
 
     {{ header_text|safe }}
@@ -38,15 +38,15 @@ IPR Admin Detail Page
             <h2>{{ section.0 }}</h2> 
             <ul>
             {% for line in section %}
-                {% ifnotequal forloop.counter 1 %}
+                {% if forloop.counter != 1 %}
                     {# related documents #}
-                    {% ifequal forloop.parentloop.counter 4 %}
+                    {% if forloop.parentloop.counter == 4 %}
                         <li>
                         <table><tr>
                         <td>{{ line.0 }}</td>
                         <td>
                         {# 'Designations for other contributions' #}
-                        {% ifequal 5 forloop.counter %}
+                        {% if 5 == forloop.counter %}
                             <strong>{{ line.1 }}</strong>
                         {% else %}
                             <ul>
@@ -54,14 +54,14 @@ IPR Admin Detail Page
                                 <li><strong>{{ item }}</strong></li>
                             {% endfor %}
                             </ul>
-                        {% endifequal %}
+                        {% endif %}
                         </td>
                         </tr></table>
                         </li>
                     {% else %}
                         <li>{{ line.0 }} <strong>{{ line.1 }}</strong></li>
-                    {% endifequal %}
-                {% endifnotequal %}
+                    {% endif %}
+                {% endif %}
             {% endfor %}
             </ul>
         <!-- </fieldset> -->
@@ -72,27 +72,27 @@ IPR Admin Detail Page
     </div> <!-- module -->
 
     {% for c in controls %}
-        {% ifequal c 'notify' %}
-<form action="" method="post">
+        {% if c == 'notify' %}
+<form action="" method="post">{% csrf_token %}
     <input type="hidden" name="ipr_id" value="$ipr_id">
     <input type="hidden" name="command" value="notify">
     <input type="submit" name="notice_it" value="Notify the submitter of IPR that is being updated">
 </form>
-        {% endifequal %}
-        {% ifequal c 'post' %}
-<form action="" method="post">
+        {% endif %}
+        {% if c == 'post' %}
+<form action="" method="post">{% csrf_token %}
     <input type="hidden" name="ipr_id" value="$ipr_id">
     <input type="hidden" name="command" value="post">
     <input type="submit" name="post_it" value="Post It">
 </form>
-        {% endifequal %}
-        {% ifequal c 'delete' %}
-<form action="" method="post">
+        {% endif %}
+        {% if c == 'delete' %}
+<form action="" method="post">{% csrf_token %}
     <input type="hidden" name="ipr_id" value="$ipr_id">
     <input type="hidden" name="command" value="delete">
     <input type="submit" name="do_delete" value="Delete">
 </form>
-        {% endifequal %}
+        {% endif %}
     {% endfor %}
 
 {% endblock %}

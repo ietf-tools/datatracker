@@ -5,17 +5,17 @@
   </div>
 
   <div>
-    <a href="{% url doc_view name=doc.name %}">{{doc.name}}-{{doc.rev}}</a>
+    <a href="{% url "doc_view" name=doc.name %}">{{doc.name}}-{{doc.rev}}</a>
     <a href="http://www.ietf.org/id/{{doc.name}}-{{doc.rev}}.txt">[txt]</a>
 
-    <br/>{{ doc.title|escape }}
+    <br/>{{ doc.title }}
 
     {% with doc.conflictdoc as conflictdoc %}
 
     <div style="padding-left:30px;">
-    <a href="{% url doc_view name=conflictdoc.name %}">{{ conflictdoc.name }}-{{ conflictdoc.rev }}</a>
+    <a href="{% url "doc_view" name=conflictdoc.name %}">{{ conflictdoc.name }}-{{ conflictdoc.rev }}</a>
     <a href="http://www.ietf.org/id/{{ conflictdoc.name }}-{{ conflictdoc.rev }}.txt">[txt]</a>
-    <br/>{{ conflictdoc.title|escape }} ({{ conflictdoc.stream }}: {{ conflictdoc.intended_std_level }})
+    <br/>{{ conflictdoc.title }} ({{ conflictdoc.stream }}: {{ conflictdoc.intended_std_level }})
     {% if conflictdoc.note %}
     <br/>Note: {{ conflictdoc.note|linebreaksbr }}
     {% endif %}
@@ -26,7 +26,7 @@
        <ul>
        {% for ipr in conflictdoc.ipr %}
           {% if ipr.ipr.status == 1 %}
-          <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a></li>
+          <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title }}</a></li>
           {% endif %}
        {% endfor %}
        </ul>

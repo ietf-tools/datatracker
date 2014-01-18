@@ -7,7 +7,7 @@
 
           <div class="inline-group">
            <div class="tabular inline-related">
-            <form id="meetings-meta-rooms" action="" method="post">
+            <form id="meetings-meta-rooms" action="" method="post">{% csrf_token %}
               {{ formset.management_form }}
               {{ formset.non_form_errors }}
               <table class="full-width">

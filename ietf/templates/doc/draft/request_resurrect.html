@@ -5,7 +5,7 @@
 {% block content %}
 <h1>Request resurrection of {{ doc }}</h1>
 
-<form action="" method="POST">
+<form action="" method="post">{% csrf_token %}
   <p>Request resurrection of the Internet Draft {{ doc.file_tag }}?</p>
 
   <p>This will send a notification to the Secretariat to resurrect the

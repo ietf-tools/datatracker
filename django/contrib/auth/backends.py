@@ -1,53 +1,63 @@
-from django.db import connection
-from django.contrib.auth.models import User, Permission
+from __future__ import unicode_literals
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 
 
 class ModelBackend(object):
     """
-    Authenticates against django.contrib.auth.models.User.
+    Authenticates against settings.AUTH_USER_MODEL.
     """
-    supports_object_permissions = False
-    supports_anonymous_user = True
 
-    # TODO: Model, login attribute name and password attribute name should be
-    # configurable.
-    def authenticate(self, username=None, password=None):
+    def authenticate(self, username=None, password=None, **kwargs):
+        UserModel = get_user_model()
+        if username is None:
+            username = kwargs.get(UserModel.USERNAME_FIELD)
         try:
-            user = User.objects.get(username=username)
+            user = UserModel._default_manager.get_by_natural_key(username)
             if user.check_password(password):
                 return user
-        except User.DoesNotExist:
-            return None
+        except UserModel.DoesNotExist:
+            # Run the default password hasher once to reduce the timing
+            # difference between an existing and a non-existing user (#20760).
+            UserModel().set_password(password)
 
-    def get_group_permissions(self, user_obj):
+    def get_group_permissions(self, user_obj, obj=None):
         """
         Returns a set of permission strings that this user has through his/her
         groups.
         """
+        if user_obj.is_anonymous() or obj is not None:
+            return set()
         if not hasattr(user_obj, '_group_perm_cache'):
             if user_obj.is_superuser:
                 perms = Permission.objects.all()
             else:
-                perms = Permission.objects.filter(group__user=user_obj)
+                user_groups_field = get_user_model()._meta.get_field('groups')
+                user_groups_query = 'group__%s' % user_groups_field.related_query_name()
+                perms = Permission.objects.filter(**{user_groups_query: user_obj})
             perms = perms.values_list('content_type__app_label', 'codename').order_by()
             user_obj._group_perm_cache = set(["%s.%s" % (ct, name) for ct, name in perms])
         return user_obj._group_perm_cache
 
-    def get_all_permissions(self, user_obj):
-        if user_obj.is_anonymous():
+    def get_all_permissions(self, user_obj, obj=None):
+        if user_obj.is_anonymous() or obj is not None:
             return set()
         if not hasattr(user_obj, '_perm_cache'):
-            user_obj._perm_cache = set([u"%s.%s" % (p.content_type.app_label, p.codename) for p in user_obj.user_permissions.select_related()])
+            user_obj._perm_cache = set(["%s.%s" % (p.content_type.app_label, p.codename) for p in user_obj.user_permissions.select_related()])
             user_obj._perm_cache.update(self.get_group_permissions(user_obj))
         return user_obj._perm_cache
 
-    def has_perm(self, user_obj, perm):
-        return perm in self.get_all_permissions(user_obj)
+    def has_perm(self, user_obj, perm, obj=None):
+        if not user_obj.is_active:
+            return False
+        return perm in self.get_all_permissions(user_obj, obj)
 
     def has_module_perms(self, user_obj, app_label):
         """
         Returns True if user_obj has any permissions in the given app_label.
         """
+        if not user_obj.is_active:
+            return False
         for perm in self.get_all_permissions(user_obj):
             if perm[:perm.index('.')] == app_label:
                 return True
@@ -55,8 +65,9 @@ class ModelBackend(object):
 
     def get_user(self, user_id):
         try:
-            return User.objects.get(pk=user_id)
-        except User.DoesNotExist:
+            UserModel = get_user_model()
+            return UserModel._default_manager.get(pk=user_id)
+        except UserModel.DoesNotExist:
             return None
 
 
@@ -89,17 +100,21 @@ class RemoteUserBackend(ModelBackend):
         user = None
         username = self.clean_username(remote_user)
 
+        UserModel = get_user_model()
+
         # Note that this could be accomplished in one try-except clause, but
         # instead we use get_or_create when creating unknown users since it has
         # built-in safeguards for multiple threads.
         if self.create_unknown_user:
-            user, created = User.objects.get_or_create(username=username)
+            user, created = UserModel.objects.get_or_create(**{
+                UserModel.USERNAME_FIELD: username
+            })
             if created:
                 user = self.configure_user(user)
         else:
             try:
-                user = User.objects.get(username=username)
-            except User.DoesNotExist:
+                user = UserModel.objects.get_by_natural_key(username)
+            except UserModel.DoesNotExist:
                 pass
         return user
 

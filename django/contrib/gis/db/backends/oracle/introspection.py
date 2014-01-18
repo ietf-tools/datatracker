@@ -1,5 +1,7 @@
 import cx_Oracle
+import sys
 from django.db.backends.oracle.introspection import DatabaseIntrospection
+from django.utils import six
 
 class OracleIntrospection(DatabaseIntrospection):
     # Associating any OBJECTVAR instances with GeometryField.  Of course,
@@ -16,9 +18,12 @@ class OracleIntrospection(DatabaseIntrospection):
                 cursor.execute('SELECT "DIMINFO", "SRID" FROM "USER_SDO_GEOM_METADATA" WHERE "TABLE_NAME"=%s AND "COLUMN_NAME"=%s',
                                (table_name.upper(), geo_col.upper()))
                 row = cursor.fetchone()
-            except Exception, msg:
-                raise Exception('Could not find entry in USER_SDO_GEOM_METADATA corresponding to "%s"."%s"\n'
-                                'Error message: %s.' % (table_name, geo_col, msg))
+            except Exception as msg:
+                new_msg = (
+                    'Could not find entry in USER_SDO_GEOM_METADATA '
+                    'corresponding to "%s"."%s"\n'
+                    'Error message: %s.') % (table_name, geo_col, msg)
+                six.reraise(Exception, Exception(new_msg), sys.exc_info()[2])
 
             # TODO: Research way to find a more specific geometry field type for
             # the column's contents.

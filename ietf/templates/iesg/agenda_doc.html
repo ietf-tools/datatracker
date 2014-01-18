@@ -5,7 +5,7 @@
   </div>
 
   <div>
-    <a href="{% url doc_view name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
+    <a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
     {% with doc.rfc_number as rfc_number %}
     {% if rfc_number %}
     <a href="http://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">[txt]</a>
@@ -16,7 +16,7 @@
 
     <span class="stream">{% if doc.stream %} - {{ doc.stream }} stream{% endif %}</span>
 
-    <br/>{{ doc.title|escape }} ({{ doc.intended_std_level }})
+    <br/>{{ doc.title }} ({{ doc.intended_std_level }})
 
 
     {% if doc.note %}
@@ -29,7 +29,7 @@
      <ul>
      {% for ipr in doc.ipr %}
         {% if ipr.ipr.status == 1 %}
-        <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a></li>
+        <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title }}</a></li>
         {% endif %}
      {% endfor %}
      </ul>

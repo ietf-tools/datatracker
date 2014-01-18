@@ -1,16 +1,16 @@
 import re, os, datetime
 
-from django.contrib.syndication.feeds import Feed
+from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
 from django.conf import settings
+from django.utils.html import escape
 
 from ietf.doc.models import Document
 
-class LatestMeetingMaterial(Feed):
+class LatestMeetingMaterialFeed(Feed):
     feed_type = Atom1Feed
     link = "/meeting/"
     language = "en"
-    feed_url = "/feed/wg-proceedings/"
     base_url = "http://www3.ietf.org/proceedings/"
 
     def items(self):
@@ -29,6 +29,12 @@ class LatestMeetingMaterial(Feed):
 
     def title(self, obj):
         return "Meeting Materials Activity"
+
+    def item_title(self, item):
+        return u"%s: %s" % (item["group_acronym"], escape(item["title"]))
+
+    def item_description(self, item):
+        return ""
 
     def item_link(self, item):
         return item['link']
