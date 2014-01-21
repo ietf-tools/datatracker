@@ -293,9 +293,9 @@ def collect_email_addresses(emails, doc):
             if address not in emails:
                 emails[address] = '"%s-ads"' % (doc.group.acronym)
         elif doc.group.type.slug == 'rg':
-            email = doc.group.parent.role_set.filter(name='char')[0].email
-            if email.address not in emails:
-                emails[email.address] = '"%s"' % (email.person.name)
+            for role in doc.group.parent.role_set.filter(name='chair'):
+                if role.email.address not in emails:
+                    emails[role.email.address] = '"%s"' % (role.person.name)
     if doc.shepherd:
         address = doc.shepherd.email_address();
         if address not in emails:
