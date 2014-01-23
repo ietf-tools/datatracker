@@ -18,10 +18,6 @@ from ietf.doc.utils import add_state_change_event
 MIN_QUEUE_RESULTS = 10
 MIN_INDEX_RESULTS = 5000
 
-# Python < 2.7 doesn't have the total_seconds method on datetime.timedelta.
-def total_seconds(td):
-    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
-
 def get_child_text(parent_node, tag_name):
     for node in parent_node.childNodes:
         if node.nodeType == Node.ELEMENT_NODE and node.localName == tag_name:
@@ -387,7 +383,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
             if abs(d - synthesized) > datetime.timedelta(days=60):
                 synthesized = d
             else:
-                direction = -1 if total_seconds(d - synthesized) < 0 else +1
+                direction = -1 if (d - synthesized).total_seconds() < 0 else +1
                 while synthesized.month != d.month or synthesized.year != d.year:
                     synthesized += datetime.timedelta(days=direction)
             e.time = synthesized
