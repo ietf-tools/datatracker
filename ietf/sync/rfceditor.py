@@ -10,6 +10,7 @@ from ietf.doc.models import *
 from ietf.person.models import *
 from ietf.name.models import *
 from ietf.doc.utils import add_state_change_event
+from ietf.doc.expire import move_draft_files_to_archive
 
 #QUEUE_URL = "http://www.rfc-editor.org/queue2.xml"
 #INDEX_URL = "http://www.rfc-editor.org/rfc/rfc-index.xml"
@@ -363,6 +364,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
 
         if doc.get_state_slug() != "rfc":
             changed_states.append(State.objects.get(used=True, type="draft", slug="rfc"))
+            move_draft_files_to_archive(doc, doc.rev)
 
         if doc.stream != stream_mapping[stream]:
             changed_attributes["stream"] = stream_mapping[stream]

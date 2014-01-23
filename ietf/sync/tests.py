@@ -1,4 +1,5 @@
-import unittest, re, json, datetime, StringIO
+import unittest, re, json, datetime, StringIO, shutil
+
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
@@ -185,6 +186,24 @@ ICANN
         
 
 class RFCSyncTests(TestCase):
+    def setUp(self):
+        self.id_dir = os.path.abspath("tmp-id-dir")
+        self.archive_dir = os.path.abspath("tmp-id-archive")
+        if not os.path.exists(self.id_dir):
+            os.mkdir(self.id_dir)
+        if not os.path.exists(self.archive_dir):
+            os.mkdir(self.archive_dir)
+        settings.INTERNET_DRAFT_PATH = self.id_dir
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
+
+    def tearDown(self):
+        shutil.rmtree(self.id_dir)
+        shutil.rmtree(self.archive_dir)
+
+    def write_draft_file(self, name, size):
+        with open(os.path.join(self.id_dir, name), 'w') as f:
+            f.write("a" * size)
+
     def test_rfc_index(self):
         doc = make_test_data()
         doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
@@ -285,6 +304,8 @@ class RFCSyncTests(TestCase):
 
 
         mailbox_before = len(outbox)
+        draft_filename = "%s-%s.txt" % (doc.name, doc.rev)
+        self.write_draft_file(draft_filename, 5000)
 
         changed = rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30))
 
@@ -305,6 +326,8 @@ class RFCSyncTests(TestCase):
         self.assertEqual(doc.get_state_slug("draft-stream-ise"), "pub")
         self.assertEqual(doc.std_level_id, "ps")
         self.assertEqual(doc.pages, 42)
+        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, draft_filename)))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, draft_filename)))
 
         # make sure we can apply it again with no changes
         changed = rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30))
