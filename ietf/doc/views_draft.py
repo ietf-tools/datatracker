@@ -57,7 +57,7 @@ class ChangeStateForm(forms.Form):
 
 @role_required('Area Director','Secretariat')
 def change_state(request, name):
-    """Change state of Internet Draft, notifying parties as necessary
+    """Change IESG state of Internet Draft, notifying parties as necessary
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
     if (not doc.latest_event(type="started_iesg_process")) or doc.get_state_slug() == "expired":
@@ -69,30 +69,28 @@ def change_state(request, name):
         form = ChangeStateForm(request.POST)
         form.docname=name
         if form.is_valid():
-            next_state = form.cleaned_data['state']
+            new_state = form.cleaned_data['state']
             prev_state = doc.get_state("draft-iesg")
-            prev_friendly_state = doc.friendly_state()
 
             tag = form.cleaned_data['substate']
             comment = form.cleaned_data['comment'].strip()
 
             # tag handling is a bit awkward since the UI still works
             # as if IESG tags are a substate
-            prev_tag = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-            prev_tag = prev_tag[0] if prev_tag else None
-
-            if next_state != prev_state or tag != prev_tag:
+            prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+            new_tags = [tag] if tag else []
+            if new_state != prev_state or set(new_tags) != set(prev_tags):
                 save_document_in_history(doc)
                 
-                doc.set_state(next_state)
+                doc.set_state(new_state)
 
-                if prev_tag:
-                    doc.tags.remove(prev_tag)
+                doc.tags.remove(*prev_tags)
+                doc.tags.add(*new_tags)
 
-                if tag:
-                    doc.tags.add(tag)
+                e = add_state_change_event(doc, login, prev_state, new_state,
+                                           prev_tags=prev_tags, new_tags=new_tags)
 
-                e = log_state_changed(request, doc, login, doc.friendly_state(), prev_friendly_state)
+                msg = e.desc
 
                 if comment:
                     c = DocEvent(type="added_comment")
@@ -101,23 +99,23 @@ def change_state(request, name):
                     c.desc = comment
                     c.save()
 
-                    e.desc += "<br>" + comment
+                    msg += "\n" + comment
                 
                 doc.time = e.time
                 doc.save()
 
-                email_state_changed(request, doc, e.desc)
-                email_ad(request, doc, doc.ad, login, e.desc)
+                email_state_changed(request, doc, msg)
+                email_ad(request, doc, doc.ad, login, msg)
 
 
-                if prev_state and prev_state.slug in ("ann", "rfcqueue") and next_state.slug not in ("rfcqueue", "pub"):
-                    email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state)
+                if prev_state and prev_state.slug in ("ann", "rfcqueue") and new_state.slug not in ("rfcqueue", "pub"):
+                    email_pulled_from_rfc_queue(request, doc, comment, prev_state, new_state)
 
-                if next_state.slug in ("iesg-eva", "lc"):
+                if new_state.slug in ("iesg-eva", "lc"):
                     if not doc.get_state_slug("draft-iana-review"):
                         doc.set_state(State.objects.get(used=True, type="draft-iana-review", slug="need-rev"))
 
-                if next_state.slug == "lc-req":
+                if new_state.slug == "lc-req":
                     request_last_call(request, doc)
 
                     return render_to_response('doc/draft/last_call_requested.html',
@@ -179,14 +177,14 @@ def change_iana_state(request, name, state_type):
     if request.method == 'POST':
         form = ChangeIanaStateForm(state_type, request.POST)
         if form.is_valid():
-            next_state = form.cleaned_data['state']
+            new_state = form.cleaned_data['state']
 
-            if next_state != prev_state:
+            if new_state != prev_state:
                 save_document_in_history(doc)
                 
-                doc.set_state(next_state)
+                doc.set_state(new_state)
 
-                e = add_state_change_event(doc, request.user.person, prev_state, next_state)
+                e = add_state_change_event(doc, request.user.person, prev_state, new_state)
 
                 doc.time = e.time
                 doc.save()
@@ -1220,7 +1218,7 @@ def request_publication(request, name):
             e.save()
 
             # change state
-            prev_state = doc.get_state(next_state.type)
+            prev_state = doc.get_state(next_state.type_id)
             if next_state != prev_state:
                 doc.set_state(next_state)
                 e = add_state_change_event(doc, request.user.person, prev_state, next_state)
@@ -1322,7 +1320,7 @@ def adopt_draft(request, name):
             new_state = State.objects.get(slug=adopt_state_slug, type="draft-stream-%s" % doc.stream_id, used=True)
             if new_state != prev_state:
                 doc.set_state(new_state)
-                e = add_state_change_event(doc, by, prev_state, new_state, doc.time)
+                e = add_state_change_event(doc, by, prev_state, new_state, timestamp=doc.time)
 
                 due_date = None
                 if form.cleaned_data["weeks"] != None:
@@ -1423,7 +1421,7 @@ def change_stream_state(request, name, state_type):
             new_state = form.cleaned_data["new_state"]
             if new_state != prev_state:
                 doc.set_state(new_state)
-                e = add_state_change_event(doc, by, prev_state, new_state, doc.time)
+                e = add_state_change_event(doc, by, prev_state, new_state, timestamp=doc.time)
 
                 due_date = None
                 if form.cleaned_data["weeks"] != None:

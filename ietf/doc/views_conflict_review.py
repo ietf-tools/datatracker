@@ -8,8 +8,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from ietf.doc.utils import log_state_changed, update_telechat
-
+from ietf.doc.utils import add_state_change_event, update_telechat
 from ietf.doc.models import save_document_in_history
 from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_document_content
 from ietf.ietfauth.utils import has_role, role_required
@@ -41,7 +40,7 @@ def change_state(request, name, option=None):
         form = ChangeStateForm(request.POST)
         if form.is_valid():
             clean = form.cleaned_data
-            review_state = clean['review_state']
+            new_state = clean['review_state']
             comment = clean['comment'].rstrip()
 
             if comment:
@@ -49,19 +48,17 @@ def change_state(request, name, option=None):
                 c.desc = comment
                 c.save()
 
-            if review_state != review.get_state():
+            prev_state = review.get_state()
+            if new_state != prev_state:
                 save_document_in_history(review)
 
-                old_description = review.friendly_state()
-                review.set_state(review_state)
-                new_description = review.friendly_state()
-
-                log_state_changed(request, review, login, new_description, old_description)
+                review.set_state(new_state)
+                add_state_change_event(review, login, prev_state, new_state)
 
                 review.time = datetime.datetime.now()
                 review.save()
 
-                if review_state.slug == "iesgeval":
+                if new_state.slug == "iesgeval":
                     create_ballot_if_not_open(review, login, "conflrev")
                     ballot = review.latest_event(BallotDocEvent, type="created_ballot")
                     if has_role(request.user, "Area Director") and not review.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot, type="changed_ballot_position"):
@@ -307,15 +304,14 @@ def approve(request, name):
         form = AnnouncementForm(request.POST)
 
         if form.is_valid():
+            prev_state = review.get_state()
 
-            new_state_slug = 'appr-reqnopub-sent' if review.get_state('conflrev').slug=='appr-reqnopub-pend' else 'appr-noprob-sent'
-            new_review_state = State.objects.get(used=True, type="conflrev", slug=new_state_slug)
+            new_state_slug = 'appr-reqnopub-sent' if prev_state.slug == 'appr-reqnopub-pend' else 'appr-noprob-sent'
+            new_state = State.objects.get(used=True, type="conflrev", slug=new_state_slug)
             save_document_in_history(review)
-            old_description = review.friendly_state()
-            review.set_state(new_review_state)
-            new_description = review.friendly_state()
 
-            log_state_changed(request, review, login, new_description, old_description)
+            review.set_state(new_state)
+            add_state_change_event(review, login, prev_state, new_state)
 
             close_open_ballots(review, login)
 

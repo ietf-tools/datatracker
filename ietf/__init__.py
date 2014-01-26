@@ -1,7 +1,7 @@
 # -*- coding: utf-8-no-bom -*-
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-__version__ = "4.91-dev"
+__version__ = "5.0.0-dev"
 
 __date__    = "$Date$"
 

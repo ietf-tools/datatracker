@@ -88,11 +88,6 @@ class RecordUrlsMiddleware(object):
     def process_request(self, request):
         visited_urls.add(request.path)
 
-class FillInRemoteUserMiddleware(object):
-    def process_request(self, request):
-        if request.user.is_authenticated() and "REMOTE_USER" not in request.META:
-            request.META["REMOTE_USER"] = request.user.username
-
 def get_url_patterns(module):
     res = []
     try:
@@ -203,15 +198,6 @@ class IetfTestRunner(DiscoverRunner):
         connection.creation.__class__.create_test_db = safe_create_1
         old_destroy = connection.creation.__class__.destroy_test_db
         connection.creation.__class__.destroy_test_db = safe_destroy_0_1
-
-        classes = []
-        for m in settings.MIDDLEWARE_CLASSES:
-            if m == "django.contrib.auth.middleware.RemoteUserMiddleware":
-                # the tests are not passing in REMOTE_USER, so insert
-                # hack to do so automatically
-                classes.append("ietf.utils.test_runner.FillInRemoteUserMiddleware")
-            classes.append(m)
-        settings.MIDDLEWARE_CLASSES = tuple(classes)
 
         check_coverage = not test_labels
 

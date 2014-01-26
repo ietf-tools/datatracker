@@ -8,7 +8,7 @@ from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
 from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
-from ietf.doc.utils import get_document_content, log_state_changed
+from ietf.doc.utils import get_document_content, add_state_change_event
 from ietf.group.models import Group
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
@@ -237,38 +237,35 @@ def doc_detail(request, date, name):
             formset = BallotFormset(initial=initial_ballot)
             state_form = ChangeStateForm(request.POST, initial=initial_state)
             if state_form.is_valid():
-                state = state_form.cleaned_data['state']
+                prev_state = doc.get_state(state_type)
+
+                new_state = state_form.cleaned_data['state']
                 tag = state_form.cleaned_data['substate']
-                prev = doc.get_state(state_type)
 
                 # tag handling is a bit awkward since the UI still works
                 # as if IESG tags are a substate
-                prev_tag = doc.tags.filter(slug__in=(TELECHAT_TAGS))
-                prev_tag = prev_tag[0] if prev_tag else None
+                prev_tags = doc.tags.filter(slug__in=TELECHAT_TAGS)
+                new_tags = [tag] if tag else []
 
-                #if state != prev or tag != prev_tag:
                 if state_form.changed_data:
                     save_document_in_history(doc)
-                    old_description = doc.friendly_state()
 
                     if 'state' in state_form.changed_data:
-                        doc.set_state(state)
+                        doc.set_state(new_state)
 
                     if 'substate' in state_form.changed_data:
-                        if prev_tag:
-                            doc.tags.remove(prev_tag)
-                        if tag:
-                            doc.tags.add(tag)
+                        doc.tags.remove(*prev_tags)
+                        doc.tags.add(*new_tags)
 
-                    new_description = doc.friendly_state()
-                    e = log_state_changed(request, doc, login, new_description, old_description)
+                    e = add_state_change_event(doc, login, prev_state, new_state,
+                                               prev_tags=prev_tags, new_tags=new_tags)
                     doc.time = e.time
                     doc.save()
 
                     email_state_changed(request, doc, e.desc)
                     email_ad(request, doc, doc.ad, login, e.desc)
     
-                    if state.slug == "lc-req":
+                    if new_state.slug == "lc-req":
                         request_last_call(request, doc)
 
                 messages.success(request,'Document state updated')

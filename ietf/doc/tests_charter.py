@@ -30,6 +30,29 @@ class EditCharterTests(TestCase):
     def tearDown(self):
         shutil.rmtree(self.charter_dir)
 
+    def test_startstop_process(self):
+        make_test_data()
+
+        group = Group.objects.get(acronym="mars")
+        charter = group.charter
+
+        for option in ("recharter", "abandon"):
+            self.client.logout()
+            url = urlreverse('charter_startstop_process', kwargs=dict(name=charter.name, option=option))
+            login_testing_unauthorized(self, "secretary", url)
+
+            # normal get
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+
+            # post
+            r = self.client.post(url, dict(message="test message"))
+            self.assertEqual(r.status_code, 302)
+            if option == "abandon":
+                self.assertTrue("abandoned" in charter.latest_event(type="changed_document").desc.lower())
+            else:
+                self.assertTrue("state changed" in charter.latest_event(type="changed_state").desc.lower())
+
     def test_change_state(self):
         make_test_data()
 
@@ -71,7 +94,7 @@ class EditCharterTests(TestCase):
             def find_event(t):
                 return [e for e in charter.docevent_set.all()[:events_now - events_before] if e.type == t]
 
-            self.assertTrue("state changed" in find_event("changed_document")[0].desc.lower())
+            self.assertTrue("state changed" in find_event("changed_state")[0].desc.lower())
 
             if slug in ("intrev", "iesgrev"):
                 self.assertTrue(find_event("created_ballot"))
@@ -87,6 +110,10 @@ class EditCharterTests(TestCase):
 
         url = urlreverse('charter_telechat_date', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
 
         # add to telechat
         self.assertTrue(not charter.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
@@ -121,6 +148,10 @@ class EditCharterTests(TestCase):
 
         url = urlreverse('charter_edit_notify', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
 
         # post
         self.assertTrue(not charter.notify)
@@ -195,15 +226,82 @@ class EditCharterTests(TestCase):
             self.assertEqual(f.read(),
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
-class ApproveCharterTests(TestCase):
-    def setUp(self):
-        self.charter_dir = os.path.abspath("tmp-charter-dir")
-        os.mkdir(self.charter_dir)
-        settings.CHARTER_PATH = self.charter_dir
+    def test_edit_announcement_text(self):
+        draft = make_test_data()
+        charter = draft.group.charter
 
-    def tearDown(self):
-        shutil.rmtree(self.charter_dir)
+        for ann in ("action", "review"):
+            url = urlreverse('ietf.doc.views_charter.announcement_text', kwargs=dict(name=charter.name, ann=ann))
+            self.client.logout()
+            login_testing_unauthorized(self, "secretary", url)
 
+            # normal get
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('textarea[name=announcement_text]')), 1)
+            # as Secretariat, we can send
+            if ann == "review":
+                mailbox_before = len(outbox)
+                by = Person.objects.get(user__username="secretary")
+                r = self.client.post(url, dict(
+                    announcement_text=default_review_text(draft.group, charter, by).text,
+                    send_text="1"))
+                self.assertEqual(len(outbox), mailbox_before + 1)
+
+            # save
+            r = self.client.post(url, dict(
+                    announcement_text="This is a simple test.",
+                    save_text="1"))
+            self.assertEqual(r.status_code, 302)
+            self.assertTrue("This is a simple test" in charter.latest_event(WriteupDocEvent, type="changed_%s_announcement" % ann).text)
+
+            # test regenerate
+            r = self.client.post(url, dict(
+                    announcement_text="This is a simple test.",
+                    regenerate_text="1"))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_%s_announcement" % ann).text)
+
+    def test_edit_ballot_writeupnotes(self):
+        draft = make_test_data()
+        charter = draft.group.charter
+        by = Person.objects.get(user__username="secretary")
+
+        BallotDocEvent.objects.create(
+            type="created_ballot",
+            ballot_type=BallotType.objects.get(doc_type="charter", slug="approve"),
+            by=by,
+            doc=charter,
+            desc="Created ballot",
+            )
+
+        url = urlreverse('ietf.doc.views_charter.ballot_writeupnotes', kwargs=dict(name=charter.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        default_action_text(draft.group, charter, by)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
+
+        # save
+        r = self.client.post(url, dict(
+            ballot_writeup="This is a simple test.",
+            save_ballot_writeup="1"))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("This is a simple test" in charter.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text").text)
+
+        # send
+        mailbox_before = len(outbox)
+        r = self.client.post(url, dict(
+            ballot_writeup="This is a simple test.",
+            send_ballot="1"))
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        
     def test_approve(self):
         make_test_data()
 
@@ -278,3 +376,23 @@ class ApproveCharterTests(TestCase):
         self.assertEqual(group.groupmilestone_set.filter(state="active").count(), 2)
         self.assertEqual(group.groupmilestone_set.filter(state="active", desc=m1.desc).count(), 1)
         self.assertEqual(group.groupmilestone_set.filter(state="active", desc=m4.desc).count(), 1)
+
+    def test_charter_with_milestones(self):
+        draft = make_test_data()
+        charter = draft.group.charter
+
+        NewRevisionDocEvent.objects.create(doc=charter,
+                                           type="new_revision",
+                                           rev=charter.rev,
+                                           by=Person.objects.get(name="(System)"))
+
+        m = GroupMilestone.objects.create(group=draft.group,
+                                          state_id="active",
+                                          desc="Test milestone",
+                                          due=datetime.date.today(),
+                                          resolved="")
+
+        url = urlreverse('charter_with_milestones_txt', kwargs=dict(name=charter.name, rev=charter.rev))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(m.desc in r.content)

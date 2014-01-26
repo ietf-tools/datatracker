@@ -581,7 +581,7 @@ def document_writeup(request, name):
                              ))
 
     if not sections:
-        raise Http404()
+        raise Http404
 
     return render_to_response("doc/document_writeup.html",
                               dict(doc=doc,

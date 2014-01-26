@@ -13,15 +13,6 @@ from ietf.doc.models import DocEvent, NewRevisionDocEvent, WriteupDocEvent, Ball
 from ietf.utils.history import find_history_active_at
 
 
-def log_state_changed(request, doc, by, prev_state):
-    e = DocEvent(doc=doc, by=by)
-    e.type = "changed_document"
-    e.desc = u"State changed to <b>%s</b> from %s" % (
-        doc.get_state().name,
-        prev_state.name if prev_state else "None")
-    e.save()
-    return e
-
 def next_revision(rev):
     if rev == "":
         return "00-00"
@@ -140,14 +131,14 @@ def generate_ballot_writeup(request, doc):
     
     return e
 
-def default_action_text(group, charter, user):
+def default_action_text(group, charter, by):
     if next_approved_revision(group.charter.rev) == "01":
         action = "Formed"
     else:
         action = "Rechartered"
 
-    e = WriteupDocEvent(doc=charter, by=user)
-    e.by = user
+    e = WriteupDocEvent(doc=charter, by=by)
+    e.by = by
     e.type = "changed_action_announcement"
     e.desc = "%s action text was changed" % group.type.name
     e.text = render_to_string("doc/charter/action_text.txt",
@@ -165,9 +156,9 @@ def default_action_text(group, charter, user):
     e.save()
     return e
 
-def default_review_text(group, charter, user):
-    e = WriteupDocEvent(doc=charter, by=user)
-    e.by = user
+def default_review_text(group, charter, by):
+    e = WriteupDocEvent(doc=charter, by=by)
+    e.by = by
     e.type = "changed_review_announcement"
     e.desc = "%s review text was changed" % group.type.name
     e.text = render_to_string("doc/charter/review_text.txt",

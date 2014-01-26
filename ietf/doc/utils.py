@@ -220,25 +220,24 @@ def get_document_content(key, filename, split=True, markup=True):
     else:
         return raw_content
 
-def log_state_changed(request, doc, by, new_description, old_description):
-    e = DocEvent(doc=doc, by=by)
-    e.type = "changed_document"
-    e.desc = u"State changed to <b>%s</b> from %s" % (new_description, old_description)
-    e.save()
-    return e
-
-def add_state_change_event(doc, by, prev_state, new_state, timestamp=None):
+def add_state_change_event(doc, by, prev_state, new_state, prev_tags=[], new_tags=[], timestamp=None):
     """Add doc event to explain that state change just happened."""
-    if prev_state == new_state:
+    if prev_state and new_state:
+        assert prev_state.type_id == new_state.type_id
+
+    if prev_state == new_state and set(prev_tags) == set(new_tags):
         return None
+
+    def tags_suffix(tags):
+        return (u"::" + u"::".join(t.name for t in tags)) if tags else u""
 
     e = StateDocEvent(doc=doc, by=by)
     e.type = "changed_state"
     e.state_type = (prev_state or new_state).type
     e.state = new_state
-    e.desc = "%s changed to <b>%s</b>" % (e.state_type.label, new_state.name)
+    e.desc = "%s changed to <b>%s</b>" % (e.state_type.label, new_state.name + tags_suffix(new_tags))
     if prev_state:
-        e.desc += " from %s" % prev_state.name
+        e.desc += " from %s" % (prev_state.name + tags_suffix(prev_tags))
     if timestamp:
         e.time = timestamp
     e.save()
