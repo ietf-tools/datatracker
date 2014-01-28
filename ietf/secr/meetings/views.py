@@ -106,7 +106,7 @@ def build_nonsession(meeting):
     last_meeting = get_last_meeting(meeting)
     delta = meeting.date - last_meeting.date
     system = Person.objects.get(name='(system)')
-    schedule = get_schedule(request, meeting)
+    schedule = get_schedule(meeting)
     
     for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other','plenary')):
         new_time = slot.time + delta
@@ -115,8 +115,8 @@ def build_nonsession(meeting):
         if slot.type.slug in ('other','plenary'):
             session = Session(meeting=meeting,
                               name=slot.name,
-                              short=slot.session.short,
-                              group=slot.session.group,
+                              short=get_session(slot).short,
+                              group=get_session(slot).group,
                               requested_by=system,
                               status_id='sched')
             session.save()
