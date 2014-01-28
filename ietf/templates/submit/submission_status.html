@@ -14,7 +14,7 @@
 <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
 {% endif %}
 
-{% if submission.state_id == "aut-appr" and submission.submitter not in confirmation_list|join:", " %}
+{% if submission.state_id == "aut-appr" and submission.submitter_parsed.email not in confirmation_list|join:", " %}
 <div class="info-message-warning">
   Please note that since the database does not have your email address in the list of authors of previous
   revisions of the document, you are <b>not</b> receiving a confirmation email yourself; one of the
