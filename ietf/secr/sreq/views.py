@@ -441,6 +441,10 @@ def main(request):
     meeting = get_meeting()
     scheduled_groups,unscheduled_groups = groups_by_session(request.user, meeting)
 
+    # warn if there are no associated groups
+    if not scheduled_groups and not unscheduled_groups:
+        messages.warning(request, 'The account %s is not associated with any groups.  If you have multiple Datatracker accounts you may try another or report a problem to ietf-action@ietf.org' % request.user)
+     
     # load form select with unscheduled groups
     choices = zip([ g.pk for g in unscheduled_groups ],
                   [ str(g) for g in unscheduled_groups ])
