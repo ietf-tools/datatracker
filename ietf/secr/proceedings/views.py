@@ -19,7 +19,7 @@ from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.utils.decorators import check_permissions, sec_only
 from ietf.secr.utils.document import get_rfc_num, get_full_path
 from ietf.secr.utils.group import get_my_groups, groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_material
+from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_material, get_timeslot
 
 from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent, RelatedDocument
 from ietf.group.models import Group
@@ -82,9 +82,9 @@ def get_extras(meeting):
     Gather "extras" which are one off groups. ie iab-wcit(86)
     '''
     groups = []
-    sessions = Session.objects.filter(meeting=meeting).exclude(group__parent__acronym__in=('app','gen','int','ops','rai','rtg','sec','tsv','irtf')).filter(timeslot__type='session')
+    sessions = Session.objects.filter(meeting=meeting).exclude(group__parent__acronym__in=('app','gen','int','ops','rai','rtg','sec','tsv','irtf'))
     for session in sessions:
-        if session.materials.all():
+        if get_timeslot(session).type.slug == 'session' and session.materials.all():
             groups.append(session.group)
     return groups
 
@@ -226,7 +226,8 @@ def ajax_generate_proceedings(request, meeting_num):
     context = {'meeting':meeting,
                'areas':areas,
                'others':others,
-               'extras':extras}
+               'extras':extras,
+               'request':request}
     proceedings_url = get_proceedings_url(meeting)
 
     # the acknowledgement page can be edited manually so only produce if it doesn't already exist

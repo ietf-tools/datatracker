@@ -7,7 +7,8 @@ from django.conf import settings
 from django.shortcuts import render_to_response
 from ietf.group.models import Group, Role
 from ietf.group.utils import get_charter_text
-from ietf.meeting.models import Session, TimeSlot, Meeting
+from ietf.meeting.helpers import get_schedule, meeting_updated
+from ietf.meeting.models import Session, TimeSlot, Meeting, ScheduledSession
 from ietf.doc.models import Document, RelatedDocument, DocEvent
 from itertools import chain
 from ietf.secr.proceedings.models import Registration
@@ -248,9 +249,12 @@ def create_proceedings(meeting, group, is_final=False):
 
             if not os.path.exists(target):
                 os.makedirs(target)
-            shutil.copy(source,target)
+            try:
+                shutil.copy(source,target)
+                rfc.bytes = os.path.getsize(source)
+            except IOError:
+                pass
             rfc.url = url_root + "rfc/%s" % filename
-            rfc.bytes = os.path.getsize(source)
             rfc.num = "RFC %s" % rfc_num
             # check related documents
             # check obsoletes
@@ -372,16 +376,12 @@ def gen_acknowledgement(context):
 
 def gen_agenda(context):
     meeting = context['meeting']
-
-    timeslots = TimeSlot.objects.filter(meeting=meeting)
-
-    # sort by area:group then time
-    sort1 = sorted(timeslots, key = mycomp)
-    sort2 = sorted(sort1, key = lambda a: a.time)
+    schedule = get_schedule(meeting)
+    scheduledsessions = ScheduledSession.objects.filter(schedule=schedule).exclude(session__isnull=True)
 
     html = render_to_response('proceedings/agenda.html',{
         'meeting': meeting,
-        'timeslots': sort2}
+        'scheduledsessions': scheduledsessions}
     )
 
     path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'agenda.html')

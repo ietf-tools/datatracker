@@ -1,3 +1,26 @@
+ietfdb (5.0.0) ietf; urgency=medium
+
+  With this release, a journey which started in 2008 with a *major* redesign
+  of the IETF database schema has reached its goal.  We've now converted the
+  datatracker completely to the schema designed then, swapping out all the
+  models that were changed, converted the database, swapped out all the GUI
+  code that was built against the old models, and polished off a host of minor
+  issues arising from the conversion.  All this while completing and
+  integrating 10 major functionality enhancement projects and releasing more
+  than 50 minor releases, with not a single day of downtime.  A history of
+  release notes is available here: https://datatracker.ietf.org/release/
+
+  In addition to bringing in the last scheduled polishing of the conversion,
+  this release also brings in an upgrade of the Django framework from version
+  1.2 to 1.6, which gives us a number of new tools and possibilities for
+  future work.
+  
+  There are still some parts of the schema that need an overhaul, and plans
+  exist for addressing those, but overall we should be in good shape for the
+  near future, with some room to grow :-)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jan 2014 0:04:11 +0100
+
 ietfdb (4.95) ietf; urgency=medium
 
   This release upgrades Django from version 1.2 to version 1.6, including a
