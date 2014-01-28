@@ -10,14 +10,30 @@ ietfdb (5.0.0) ietf; urgency=medium
   than 50 minor releases, with not a single day of downtime.  A history of
   release notes is available here: https://datatracker.ietf.org/release/
 
-  In addition to bringing in the last scheduled polishing of the conversion,
+  In addition to bringing in the last scheduled polish of the conversion,
   this release also brings in an upgrade of the Django framework from version
   1.2 to 1.6, which gives us a number of new tools and possibilities for
   future work.
   
+  A particular mention goes to Ole Laursen <olau@iola.dk>, an outstanding
+  programmer at the small Danish firm IOLA, who has been doing a lot of the
+  heavy lifting in coding the shim-layer which made it possible to change the
+  database schema without a total re-write in the spring of 2012, followed by
+  the major code re-write which has taken place since then to get rid of all
+  the parts which were written to the old database schema.
+
+  Thanks also goes to all the IETF code sprint participants who have
+  contributed, and to Robert Sparks in particular who has contributed *a lot*
+  to make it all come together.
+
   There are still some parts of the schema that need an overhaul, and plans
   exist for addressing those, but overall we should be in good shape for the
   near future, with some room to grow :-)
+
+  Detailed change information is available at:
+  - http://wiki.tools.ietf.org/tools/ietfdb/browser/trunk
+  - http://wiki.tools.ietf.org/tools/ietfdb/browser/branch/iola/djangoport
+  - http://wiki.tools.ietf.org/tools/ietfdb/browser/branch/iola/shimfree
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jan 2014 0:04:11 +0100
 
