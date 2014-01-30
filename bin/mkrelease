@@ -153,13 +153,13 @@ note "  $DIR"
 REPO=${REPO%/}				# remove trailing slash
 SRC=${SRC#/}				# remove leading slash
 
-MAJOR=${VER%.*}
-MINOR=${VER#*.}
-MINOR=${MINOR##0}
-VER="$(printf %d.%02d $MAJOR $MINOR)"
-NEXT=$(( $MINOR + 1 ))
-DEV="$(printf %d.%02d-dev $MAJOR $NEXT)"
-
+MAJOR=${VER%%.*}
+REST=${VER#*.}
+MINOR=${REST%%.*}
+CHANGE=${REST#*.}
+VER="$(printf %d.%d.%d $MAJOR $MINOR $CHANGE)"
+NEXT=$(( $CHANGE + 1 ))
+DEV="$(printf %d.%d.%d-dev $MAJOR $MINOR $NEXT)"
 
 note "Checking that changelog information is available"
 changes=$( sed -n "/^ietfdb ($VER.*)/,/^ -- /p" changelog )
