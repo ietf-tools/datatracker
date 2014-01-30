@@ -35,7 +35,7 @@ ietfdb (5.0.0) ietf; urgency=medium
   - http://wiki.tools.ietf.org/tools/ietfdb/browser/branch/iola/djangoport
   - http://wiki.tools.ietf.org/tools/ietfdb/browser/branch/iola/shimfree
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jan 2014 0:04:11 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Jan 2014 22:11:28 +0100
 
 ietfdb (4.95) ietf; urgency=medium
 
