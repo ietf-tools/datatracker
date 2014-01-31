@@ -34,7 +34,7 @@ ADMINS = (
     ('Ryan Cross', 'rcross@amsl.com'),
 )
 
-ALLOWED_HOSTS = ["datatracker.ietf.org"]
+ALLOWED_HOSTS = [".ietf.org", "4.31.198.44", ]
 
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
@@ -107,6 +107,7 @@ LOGGING['handlers']['mail_admins']['include_html'] = True
 
 SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
