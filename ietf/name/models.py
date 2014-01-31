@@ -31,7 +31,7 @@ class DocRelationshipName(NameModel):
     """Updates, Replaces, Obsoletes, Reviews, ... The relationship is
     always recorded in one direction."""
     revname = models.CharField(max_length=255)
-    
+
 class DocTypeName(NameModel):
     """Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email,
     Review, Issue, Wiki"""
@@ -71,3 +71,5 @@ class DraftSubmissionStateName(NameModel):
     Previous Version Authors, Awaiting Initial Version Approval, Awaiting
     Manual Post, Cancelled, Posted"""
     next_states = models.ManyToManyField('DraftSubmissionStateName', related_name="previous_states", blank=True)
+class RoomResourceName(NameModel):
+    "Room resources: Audio Stream, Meetecho, . . ."

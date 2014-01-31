@@ -14,6 +14,7 @@ from ietf.secr.utils.group import get_my_groups, groups_by_session
 from ietf.ietfauth.utils import has_role
 from ietf.utils.mail import send_mail
 from ietf.meeting.models import Meeting, Session, Constraint
+from ietf.meeting.helpers import get_meeting
 
 from ietf.group.models import Group, Role
 from ietf.name.models import SessionStatusName, ConstraintName
@@ -44,10 +45,13 @@ def get_initial_session(sessions):
     This function takes a queryset of sessions ordered by 'id' for consistency.  It returns
     a dictionary to be used as the initial for a legacy session form
     '''
+    initial = {}
+    if(len(sessions) == 0):
+        return initial
+
     meeting = sessions[0].meeting
     group = sessions[0].group
     conflicts = group.constraint_source_set.filter(meeting=meeting)
-    initial = {}
     # even if there are three sessions requested, the old form has 2 in this field
     initial['num_session'] = sessions.count() if sessions.count() <= 2 else 2
 
@@ -64,6 +68,7 @@ def get_initial_session(sessions):
     initial['conflict2'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflic2') ])
     initial['conflict3'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflic3') ])
     initial['comments'] = sessions[0].comments
+    initial['resources'] = sessions[0].resources.all()
     return initial
 
 def get_lock_message():
@@ -77,12 +82,6 @@ def get_lock_message():
     except IOError:
         message = "This application is currently locked."
     return message
-
-def get_meeting():
-    '''
-    Function to get the current IETF regular meeting.  Simply returns the meeting with the most recent date
-    '''
-    return Meeting.objects.filter(type='ietf').order_by('-date')[0]
 
 def get_requester_text(person,group):
     '''
@@ -181,7 +180,7 @@ def approve(request, acronym):
 
     if has_role(request.user,'Secretariat') or group.parent.role_set.filter(name='ad',person=request.user.person):
         session.status = SessionStatusName.objects.get(slug='appr')
-        session.save()
+        session_save(session)
 
         messages.success(request, 'Third session approved')
         return redirect('sessions_view', acronym=acronym)
@@ -212,7 +211,7 @@ def cancel(request, acronym):
     # mark sessions as deleted
     for session in sessions:
         session.status_id = 'deleted'
-        session.save()
+        session_save(session)
 
         # clear schedule assignments if already scheduled
         session.scheduledsession_set.all().delete()
@@ -271,7 +270,7 @@ def confirm(request, acronym):
                                       requested_duration=datetime.timedelta(0,int(duration)),
                                       comments=form['comments'],
                                       status=SessionStatusName.objects.get(slug=slug))
-                new_session.save()
+                session_save(new_session)
 
         # write constraint records
         save_conflicts(group,meeting,form['conflict1'],'conflict')
@@ -302,12 +301,61 @@ def confirm(request, acronym):
         RequestContext(request, {}),
     )
 
+def make_essential_person(pk, person, required):
+    essential_person = dict()
+    essential_person["person"]     = person.email_set.all()[0].pk
+    essential_person["bethere"]    = required
+    return essential_person
+
+def make_bepresent_formset(group, session, default=True):
+    dict_of_essential_people = {}
+
+    for x in session.people_constraints.all():
+        #print "add db: %u %s" % (x.person.pk, x.person)
+        dict_of_essential_people[x.person.pk] = make_essential_person(x.person.pk, x.person, True)
+
+    # now, add the co-chairs if they were not already present
+    chairs  = group.role_set.filter(name='chair')
+    for chairrole in chairs:
+        chair = chairrole.person
+        if not chair.pk in dict_of_essential_people:
+            #print "add chair: %u" % (chair.pk)
+            dict_of_essential_people[chair.pk] = make_essential_person(chair.pk, chair, default)
+
+    # add the responsible AD
+    if not group.ad.pk in dict_of_essential_people:
+        #print "add ad: %u" % (chair.pk)
+        dict_of_essential_people[group.ad.pk] = make_essential_person(group.ad.pk, group.ad, default)
+
+    # make the form set of these people
+    list_of_essential_people = []
+    for k,x in dict_of_essential_people.iteritems():
+        #print "k: %s x: %s" % (k,x)
+        list_of_essential_people.append(x)
+
+    list_of_essential_people.reverse()
+    #for t in list_of_essential_people:
+    #    print "t: %s" % (t)
+
+    formset = MustBePresentFormSet(initial=list_of_essential_people)
+    return formset
+
 @check_permissions
 def edit(request, acronym):
+    return edit_mtg(request, None, acronym)
+
+def session_save(session):
+    session.save()
+    if session.status_id == "schedw" and session.meeting.agenda != None:
+        # send an email to iesg-secretariat to alert to change
+        pass
+
+@check_permissions
+def edit_mtg(request, num, acronym):
     '''
     This view allows the user to edit details of the session request
     '''
-    meeting = get_meeting()
+    meeting = get_meeting(num)
     group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
     sessions_count = sessions.count()
@@ -315,13 +363,18 @@ def edit(request, acronym):
     session_conflicts = session_conflicts_as_string(group, meeting)
     login = request.user.person
 
+    session = Session()
+    if(len(sessions) > 0):
+        session = sessions[0]
+
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             return redirect('sessions_view', acronym=acronym)
 
         form = SessionForm(request.POST,initial=initial)
-        if form.is_valid():
+        bepresent_formset = MustBePresentFormSet(request.POST)
+        if form.is_valid() or bepresent_formset.is_valid():
             if form.has_changed():
                 # might be cleaner to simply delete and rewrite all records (but maintain submitter?)
                 # adjust duration or add sessions
@@ -329,7 +382,7 @@ def edit(request, acronym):
                 if 'length_session1' in form.changed_data:
                     session = sessions[0]
                     session.requested_duration = datetime.timedelta(0,int(form.cleaned_data['length_session1']))
-                    session.save()
+                    session_save(session)
 
                 # session 2
                 if 'length_session2' in form.changed_data:
@@ -351,7 +404,7 @@ def edit(request, acronym):
                         duration = datetime.timedelta(0,int(form.cleaned_data['length_session2']))
                         session = sessions[1]
                         session.requested_duration = duration
-                        session.save()
+                        session_save(session)
 
                 # session 3
                 if 'length_session3' in form.changed_data:
@@ -373,7 +426,7 @@ def edit(request, acronym):
                         duration = datetime.timedelta(0,int(form.cleaned_data['length_session3']))
                         session = sessions[2]
                         session.requested_duration = duration
-                        session.save()
+                        session_save(session)
 
 
                 if 'attendees' in form.changed_data:
@@ -390,6 +443,12 @@ def edit(request, acronym):
                     Constraint.objects.filter(meeting=meeting,source=group,name='conflic3').delete()
                     save_conflicts(group,meeting,form.cleaned_data['conflict3'],'conflic3')
 
+                if 'resources' in form.changed_data:
+                    new_resource_ids = form.cleaned_data['resources']
+                    new_resources = [ ResourceAssociation.objects.get(pk=a)
+                                      for a in new_resource_ids]
+                    session.resources = new_resources
+
                 # deprecated
                 # log activity
                 #add_session_activity(group,'Session Request was updated',meeting,user)
@@ -397,16 +456,46 @@ def edit(request, acronym):
                 # send notification
                 send_notification(group,meeting,login,form.cleaned_data,'update')
 
+            for bepresent in bepresent_formset.forms:
+                if bepresent.is_valid() and 'person' in bepresent.cleaned_data:
+                    persons_cleaned = bepresent.cleaned_data['person']
+                    if(len(persons_cleaned) == 0):
+                        continue
+
+                    person = bepresent.cleaned_data['person'][0].person
+                    if 'bethere' in bepresent.changed_data and bepresent.cleaned_data['bethere']=='True':
+                        #print "Maybe adding bethere constraint for %s" % (person)
+                        if session.people_constraints.filter(person = person).count()==0:
+                            # need to create new constraint.
+                            #print "  yes"
+                            nc = session.people_constraints.create(person = person,
+                                                                   meeting = meeting,
+                                                                   name_id = 'bethere',
+                                                                   source = session.group)
+                            nc.save()
+                    else:
+                        #print "Maybe deleting bethere constraint for %s" % (person)
+                        if session.people_constraints.filter(person = person).count() > 0:
+                            #print "  yes"
+                            session.people_constraints.filter(person = person).delete()
+
+            # nuke any cache that might be lingering around.
+            from ietf.meeting.helpers import session_constraint_expire
+            session_constraint_expire(session)
+
             messages.success(request, 'Session Request updated')
             return redirect('sessions_view', acronym=acronym)
 
     else:
         form = SessionForm(initial=initial)
 
+    bepresent_formset = make_bepresent_formset(group, session, False)
+
     return render_to_response('sreq/edit.html', {
         'meeting': meeting,
         'form': form,
         'group': group,
+        'bepresent_formset' : bepresent_formset,
         'session_conflicts': session_conflicts},
         RequestContext(request, {}),
     )
@@ -546,7 +635,7 @@ def no_session(request, acronym):
                       requested_by=login,
                       requested_duration=0,
                       status=SessionStatusName.objects.get(slug='notmeet'))
-    session.save()
+    session_save(session)
 
     # send notification
     to_email = SESSION_REQUEST_EMAIL
@@ -610,11 +699,11 @@ def tool_status(request):
         RequestContext(request, {}),
     )
 
-def view(request, acronym):
+def view(request, acronym, num = None):
     '''
     This view displays the session request info
     '''
-    meeting = get_meeting()
+    meeting = get_meeting(num)
     group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(~Q(status__in=('canceled','notmeet','deleted')),meeting=meeting,group=group).order_by('id')
 

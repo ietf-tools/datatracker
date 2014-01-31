@@ -608,6 +608,11 @@ tr.bg2 {
     background: #EEEEEE;
 }
 
+tr.bg3 {
+    background: #DDDDDD;
+}
+
+
 /*
 table#sessions-new-table td {
     padding: 2px;

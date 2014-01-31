@@ -23,12 +23,13 @@ from django.middleware.gzip import GZipMiddleware
 from django.db.models import Max
 from django.forms.models import modelform_factory
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.forms import ModelForm
 
 from ietf.utils.pipe import pipe
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.doc.models import Document, State
 from ietf.person.models  import Person
-from ietf.meeting.models import Meeting, TimeSlot, Session, Schedule
+from ietf.meeting.models import Meeting, TimeSlot, Session, Schedule, Room
 from ietf.group.models import Group
 
 from ietf.meeting.helpers import get_areas
@@ -97,13 +98,13 @@ class SaveAsForm(forms.Form):
     savename = forms.CharField(max_length=100)
 
 @role_required('Area Director','Secretariat')
-def agenda_create(request, num=None, schedule_name=None):
+def agenda_create(request, num=None, name=None):
     meeting = get_meeting(num)
-    schedule = get_schedule(meeting, schedule_name)
+    schedule = get_schedule(meeting, name)
 
     if schedule is None:
         # here we have to return some ajax to display an error.
-        raise Http404("No meeting information for meeting %s schedule %s available" % (num,schedule_name))
+        raise Http404("No meeting information for meeting %s schedule %s available" % (num,name))
 
     # authorization was enforced by the @group_require decorator above.
 
@@ -160,6 +161,7 @@ def agenda_create(request, num=None, schedule_name=None):
     return redirect(edit_agenda, meeting.number, newschedule.name)
 
 
+@role_required('Secretariat')
 @decorator_from_middleware(GZipMiddleware)
 @ensure_csrf_cookie
 def edit_timeslots(request, num=None):
@@ -174,8 +176,8 @@ def edit_timeslots(request, num=None):
 
     rooms = meeting.room_set.order_by("capacity")
 
+    # this import locate here to break cyclic loop.
     from ietf.meeting.ajax import timeslot_roomsurl, AddRoomForm, timeslot_slotsurl, AddSlotForm
-
     roomsurl  = reverse(timeslot_roomsurl, args=[meeting.number])
     adddayurl = reverse(timeslot_slotsurl, args=[meeting.number])
 
@@ -194,15 +196,47 @@ def edit_timeslots(request, num=None):
                                           "meeting":meeting},
                                          RequestContext(request)), content_type="text/html")
 
+class RoomForm(ModelForm):
+    class Meta:
+        model = Room
+        exclude = ('meeting',)
+
+@role_required('Secretariat')
+def edit_roomurl(request, num, roomid):
+    meeting = get_meeting(num)
+
+    try:
+        room = meeting.room_set.get(pk=roomid)
+    except Room.DoesNotExist:
+        raise Http404("No room %u for meeting %s" % (roomid, meeting.name))
+
+    if request.POST:
+        roomform = RoomForm(request.POST, instance=room)
+        new_room = roomform.save(commit=False)
+        new_room.meeting = meeting
+        new_room.save()
+        roomform.save_m2m()
+        return HttpResponseRedirect( reverse(edit_timeslots, args=[meeting.number]) )
+
+    roomform = RoomForm(instance=room)
+    meeting_base_url = request.build_absolute_uri(meeting.base_url())
+    site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
+    return HttpResponse(render_to_string("meeting/room_edit.html",
+                                         {"meeting_base_url": meeting_base_url,
+                                          "site_base_url": site_base_url,
+                                          "editroom":  roomform,
+                                          "meeting":meeting},
+                                         RequestContext(request)), content_type="text/html")
+
 ##############################################################################
 #@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
 @decorator_from_middleware(GZipMiddleware)
 @ensure_csrf_cookie
-def edit_agenda(request, num=None, schedule_name=None):
+def edit_agenda(request, num=None, name=None):
 
     if request.method == 'POST':
-        return agenda_create(request, num, schedule_name)
+        return agenda_create(request, num, name)
 
     user  = request.user
     requestor = "AnonymousUser"
@@ -215,8 +249,8 @@ def edit_agenda(request, num=None, schedule_name=None):
             pass
 
     meeting = get_meeting(num)
-    #sys.stdout.write("requestor: %s for sched_name: %s \n" % ( requestor, schedule_name ))
-    schedule = get_schedule(meeting, schedule_name)
+    #sys.stdout.write("requestor: %s for sched_name: %s \n" % ( requestor, name ))
+    schedule = get_schedule(meeting, name)
     #sys.stdout.write("2 requestor: %u for sched owned by: %u \n" % ( requestor.id, schedule.owner.id ))
 
     meeting_base_url = request.build_absolute_uri(meeting.base_url())
@@ -239,13 +273,7 @@ def edit_agenda(request, num=None, schedule_name=None):
                                               "meeting_base_url":meeting_base_url},
                                              RequestContext(request)), status=403, content_type="text/html")
 
-    sessions = meeting.sessions_that_can_meet.order_by("id", "group", "requested_by")
     scheduledsessions = get_all_scheduledsessions_from_schedule(schedule)
-
-    session_jsons = [ json.dumps(s.json_dict(site_base_url)) for s in sessions ]
-
-    # useful when debugging javascript
-    #session_jsons = session_jsons[1:20]
 
     # get_modified_from needs the query set, not the list
     modified = get_modified_from_scheduledsessions(scheduledsessions)
@@ -275,7 +303,6 @@ def edit_agenda(request, num=None, schedule_name=None):
                                           "area_list": area_list,
                                           "area_directors" : ads,
                                           "wg_list": wg_list ,
-                                          "session_jsons": session_jsons,
                                           "scheduledsessions": scheduledsessions,
                                           "show_inline": set(["txt","htm","html"]) },
                                          RequestContext(request)), content_type="text/html")
@@ -289,10 +316,10 @@ AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'pu
 @role_required('Area Director','Secretariat')
 @decorator_from_middleware(GZipMiddleware)
 @ensure_csrf_cookie
-def edit_agenda_properties(request, num=None, schedule_name=None):
+def edit_agenda_properties(request, num=None, name=None):
 
     meeting = get_meeting(num)
-    schedule = get_schedule(meeting, schedule_name)
+    schedule = get_schedule(meeting, name)
     form     = AgendaPropertiesForm(instance=schedule)
 
     return HttpResponse(render_to_string("meeting/properties_edit.html",
@@ -311,7 +338,7 @@ def edit_agenda_properties(request, num=None, schedule_name=None):
 def edit_agendas(request, num=None, order=None):
 
     #if request.method == 'POST':
-    #    return agenda_create(request, num, schedule_name)
+    #    return agenda_create(request, num, name)
 
     meeting = get_meeting(num)
     user = request.user
@@ -546,7 +573,7 @@ def ical_agenda(request, num=None, name=None, ext=None):
 
     # Process the special flags.
     #   "-wgname" will remove a working group from the output.
-    #   "~Type" will add that type to the output. 
+    #   "~Type" will add that type to the output.
     #   "-~Type" will remove that type from the output
     # Current types are:
     #   Session, Other (default on), Break, Plenary (default on)
@@ -568,7 +595,7 @@ def ical_agenda(request, num=None, name=None, ext=None):
         Q(session__group__parent__acronym__in = include)
         ).exclude(session__group__acronym__in = exclude).distinct()
         #.exclude(Q(session__group__isnull = False),
-        #Q(session__group__acronym__in = exclude) | 
+        #Q(session__group__acronym__in = exclude) |
         #Q(session__group__parent__acronym__in = exclude))
 
     return HttpResponse(render_to_string("meeting/agenda.ics",

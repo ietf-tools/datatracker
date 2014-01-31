@@ -19,16 +19,21 @@
 
 //////////////-GLOBALS----////////////////////////////////////////
 
-var meeting_number = 0;   // is the meeting name.
-var schedule_id    = 0;   // what is the schedule we are editing.
-var schedule_owner_href = '';  // who owns this schedule
-var is_secretariat = false;
-var meeting_objs = {};    // contains a list of session objects -- by session_id
-var session_objs = {};    // contains a list of session objects -- by session_name
-var slot_status = {};     // indexed by domid, contains an array of ScheduledSessions objects
-var slot_objs   = {};     // scheduledsession indexed by id.
+// these need to be setup in landscape_edit's setup_slots() inline function:
+//var meeting_number = 0;   // is the meeting name.
+//var schedule_id    = 0;   // what is the schedule we are editing.
+//var schedule_name;        // what is the schedule we are editing.
+//var schedule_owner_href = '';  // who owns this schedule
+//var scheduledsession_post_href;
+//var meeting_base_url;
+//var site_base_url;
+//var total_rooms = 0; // the number of rooms
+//var total_days = 0; // the number of days
 
-var group_objs = {};      // list of working groups
+var is_secretariat = false;
+
+var agenda_globals;
+
 var area_directors = {};  // list of promises of area directors, index by href.
 
 var read_only = true;     // it is true until we learn otherwise.
@@ -47,9 +52,7 @@ var last_json_txt   = "";   // last txt from a json call.
 var last_json_reply = [];   // last parsed content
 
 var hidden_rooms = [];
-var total_rooms = 0; // the number of rooms
 var hidden_days = [];
-var total_days = 0; // the number of days
 
 /****************************************************/
 
@@ -67,21 +70,38 @@ $(document).ready(function() {
    This is ran at page load and sets up the entire page.
 */
 function initStuff(){
+    agenda_globals = new AgendaGlobals();
+    //agenda_globals.__debug_session_move = true;
+
     log("initstuff() running...");
-    setup_slots();
-    directorpromises = mark_area_directors();
+    var directorpromises = [];
+
+    /* define a slot for unscheduled items */
+    var unassigned = new ScheduledSlot();
+    unassigned.make_unassigned();
+
+    setup_slots(directorpromises);
+    mark_area_directors(directorpromises);
     log("setup_slots() ran");
     droppable();
+    log("droppable() ran");
 
     $.when.apply($,directorpromises).done(function() {
-        /* can not load events until area director info has been loaded */
-        log("droppable() ran");
+        /* can not load events until area director info,
+           timeslots, sessions, and scheduledsessions
+           have been loaded
+        */
+        log("loading/linking objects");
         load_events();
         log("load_events() ran");
         find_meeting_no_room();
+        calculate_name_select_box();
+        calculate_room_select_box();
         listeners();
         droppable();
         duplicate_sessions = find_double_timeslots();
+        empty_info_table();
+        count_sessions();
 
         if(load_conflicts) {
             recalculate(null);
@@ -90,7 +110,6 @@ function initStuff(){
 
     static_listeners();
     log("listeners() ran");
-    calculate_name_select_box();
 
     start_spin();
 
@@ -99,7 +118,7 @@ function initStuff(){
     read_only_check();
     stop_spin();
 
-    meeting_objs_length = Object.keys(meeting_objs).length;
+    meeting_objs_length = Object.keys(agenda_globals.meeting_objs).length;
 
     /* Comment this out for fast loading */
     //load_conflicts = false;
@@ -134,7 +153,8 @@ function read_only_result(msg) {
     // XX go fetch the owner and display it.
     console.log("owner href:", schedule_owner_href);
 
-    empty_info_table();
+    $("#pageloaded").show();
+
     listeners();
     droppable();
 }

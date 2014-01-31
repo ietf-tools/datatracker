@@ -174,7 +174,7 @@ class EditTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         # get
-        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number, schedule_name="foo"))
+        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number, name="foo"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 

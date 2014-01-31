@@ -383,6 +383,30 @@ USE_ETAGS=True
 
 PRODUCTION_TIMEZONE = "America/Los_Angeles"
 
+# Automatic Scheduling
+#
+# how much to login while running, bigger numbers make it more verbose.
+BADNESS_CALC_LOG   = 0
+#
+# these penalties affect the calculation of how bad the assignments are.
+BADNESS_UNPLACED   = 1000000
+
+# following four are used only during migrations to setup up ConstraintName
+# and penalties are taken from the database afterwards.
+BADNESS_BETHERE    = 200000
+BADNESS_CONFLICT_1 = 100000
+BADNESS_CONFLICT_2 = 10000
+BADNESS_CONFLICT_3 = 1000
+
+BADNESS_TOOSMALL_50  = 5000
+BADNESS_TOOSMALL_100 = 50000
+BADNESS_TOOBIG     = 100
+BADNESS_MUCHTOOBIG = 500
+
+# do not run SELENIUM tests by default
+SELENIUM_TESTS = False
+SELENIUM_TESTS_ONLY = False
+
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *

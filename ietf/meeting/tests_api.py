@@ -213,7 +213,7 @@ class ApiTests(TestCase):
         meeting = make_meeting_test_data()
 
         url = urlreverse("ietf.meeting.ajax.agenda_infourl",
-                         kwargs=dict(num=meeting.number, schedule_name=meeting.agenda.name))
+                         kwargs=dict(num=meeting.number, name=meeting.agenda.name))
 
         r = self.client.get(url)
         info = json.loads(r.content)
@@ -247,7 +247,7 @@ class ApiTests(TestCase):
 
         url = urlreverse("ietf.meeting.ajax.agenda_infourl",
                          kwargs=dict(num=meeting.number,
-                                     schedule_name=meeting.agenda.name))
+                                     name=meeting.agenda.name))
 
         post_data = {
             'visible': 'false',
@@ -272,7 +272,7 @@ class ApiTests(TestCase):
 
         url = urlreverse("ietf.meeting.ajax.agenda_infourl",
                          kwargs=dict(num=meeting.number,
-                                     schedule_name=meeting.agenda.name))
+                                     name=meeting.agenda.name))
         # unauthorized delete
         self.client.login(remote_user="plain")
         r = self.client.delete(url)

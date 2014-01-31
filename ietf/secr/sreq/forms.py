@@ -1,6 +1,9 @@
 from django import forms
 
 from ietf.group.models import Group
+from ietf.meeting.models import ResourceAssociation
+from django.forms.formsets import formset_factory
+from ietf.person.forms import EmailsField
 import os
 
 # -------------------------------------------------
@@ -44,12 +47,25 @@ def join_conflicts(data):
 
 class GroupSelectForm(forms.Form):
     group = forms.ChoiceField()
-    
+
     def __init__(self,*args,**kwargs):
         choices = kwargs.pop('choices')
         super(GroupSelectForm, self).__init__(*args,**kwargs)
         self.fields['group'].widget.choices = choices
 
+BETHERE_CHOICES = ((False , 'No'), (True , 'Yes'))
+# not using the ModelFormset, too complex.
+class MustBePresentForm(forms.Form):
+    from ietf.person.models import Person
+
+    #person   = forms.ModelChoiceField(queryset= Person.objects.all(), required=False)
+    person   = EmailsField(required=False)
+    bethere  = forms.ChoiceField(required = False, choices = BETHERE_CHOICES)
+    # something like this is desired to make pre-existing items read-only
+    #self.fields['person'].widget.attrs['readonly'] = True
+
+
+MustBePresentFormSet = formset_factory(MustBePresentForm, extra = 1)
 
 class SessionForm(forms.Form):
     num_session = forms.ChoiceField(choices=NUM_SESSION_CHOICES)
@@ -65,6 +81,7 @@ class SessionForm(forms.Form):
     wg_selector2 = forms.ChoiceField(choices=WG_CHOICES,required=False)
     wg_selector3 = forms.ChoiceField(choices=WG_CHOICES,required=False)
     third_session = forms.BooleanField(required=False)
+    resources     = forms.MultipleChoiceField(choices=[(x.pk,x.desc) for x in ResourceAssociation.objects.all()], widget=forms.CheckboxSelectMultiple)
 
     def __init__(self, *args, **kwargs):
         super(SessionForm, self).__init__(*args, **kwargs)
@@ -85,7 +102,11 @@ class SessionForm(forms.Form):
         if self.initial and 'length_session3' in self.initial:
             if self.initial['length_session3'] != '0' and self.initial['length_session3'] != None:
                 self.fields['third_session'].initial = True
-                
+
+        resources = self.initial['resources']
+        resource_choices = [r.pk for r in resources]
+        self.initial['resources'] = resource_choices
+
     def clean_conflict1(self):
         conflict = self.cleaned_data['conflict1']
         check_conflict(conflict)

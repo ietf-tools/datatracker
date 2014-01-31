@@ -560,7 +560,7 @@ def scheduledsession_delete(request, meeting, schedule, scheduledsession_id):
     count=0
     for ss in scheduledsessions:
         ss.delete()
-        count =+ 1
+        count += 1
 
     return HttpResponse(json.dumps({'result':"%u objects deleted"%(count)}),
                         status = 200,
