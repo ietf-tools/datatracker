@@ -486,7 +486,7 @@ def scheduledsessions_post(request, meeting, schedule):
                             content_type="application/json")
 
     # get JSON out of raw body. XXX should check Content-Type!
-    newvalues = json.loads(request.raw_post_data)
+    newvalues = json.loads(request.body)
     if not ("session_id" in newvalues) or not ("timeslot_id" in newvalues):
         return HttpResponse(json.dumps({'error':'missing values, timeslot_id and session_id required'}),
                             status = 406,
