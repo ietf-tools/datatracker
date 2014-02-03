@@ -208,9 +208,9 @@ class Meeting(models.Model):
     def set_official_agenda(self, agenda):
         if self.agenda != agenda:
             self.agenda = agenda
+            self.save()
             if self.agenda is not None:
                 self.agenda.sendEmail()
-            self.save()
 
     class Meta:
         ordering = ["-date", ]
@@ -612,9 +612,9 @@ class Schedule(models.Model):
             if session.status.slug == "schedw":
                 session.status_id = "sched"
                 session.scheduled = datetime.datetime.now()
-                import ietf.secr.meetings.views
-                ietf.secr.meetings.views.send_notification(None, [session])
                 session.save()
+                from ietf.secr.meetings.views import send_notification
+                send_notification(None, Session.objects.filter(id=session.id))
 
 # to be renamed ScheduleTimeslotSessionAssignments (stsa)
 class ScheduledSession(models.Model):
