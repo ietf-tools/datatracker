@@ -33,6 +33,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import socket, re, os, time, importlib
+import warnings
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist
@@ -68,6 +69,8 @@ def safe_create_1(self, verbosity, *args, **kwargs):
                 module = importlib.import_module(".".join(components[:-1]))
                 fn = getattr(module, components[-1])
                 fn()
+    if verbosity < 2:
+        warnings.simplefilter("ignore", DeprecationWarning)
 
     return test_database_name
 
