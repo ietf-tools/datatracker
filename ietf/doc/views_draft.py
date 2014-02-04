@@ -1302,7 +1302,10 @@ def adopt_draft(request, name):
                 if doc.stream:
                     e.desc += u" from %s" % doc.stream.name
                 e.save()
+                old_stream = doc.stream
                 doc.stream = new_stream
+                if old_stream != None:
+                    email_stream_changed(request, doc, old_stream, new_stream)
 
             # group
             if group != doc.group:
@@ -1314,6 +1317,8 @@ def adopt_draft(request, name):
                 doc.group = group
 
             doc.save()
+
+            comment = form.cleaned_data["comment"].strip()
 
             # state
             prev_state = doc.get_state("draft-stream-%s" % doc.stream_id)
@@ -1328,8 +1333,9 @@ def adopt_draft(request, name):
 
                 update_reminder(doc, "stream-s", e, due_date)
 
+                email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
+
             # comment
-            comment = form.cleaned_data["comment"].strip()
             if comment:
                 e = DocEvent(type="added_comment", time=doc.time, by=by, doc=doc)
                 e.desc = comment

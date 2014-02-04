@@ -1010,7 +1010,7 @@ class AdoptDraftTests(TestCase):
         self.assertEqual(draft.stream_id, "ietf")
         self.assertEqual(draft.docevent_set.count() - events_before, 4)
         self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue("adopted" in outbox[-1]["Subject"].lower())
+        self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
         self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
 
