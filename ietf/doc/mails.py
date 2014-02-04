@@ -433,16 +433,6 @@ def stream_state_email_recipients(doc, extra_recipients=[]):
 
     return res
 
-def email_draft_adopted(request, doc, by, comment):
-    recipients = stream_state_email_recipients(doc)
-    send_mail(request, recipients, settings.DEFAULT_FROM_EMAIL,
-              u"%s adopted in %s %s" % (doc.name, doc.group.acronym, doc.group.type.name),
-              'doc/mail/draft_adopted_email.txt',
-              dict(doc=doc,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
-                   by=by,
-                   comment=comment))
-
 def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=""):
     recipients = stream_state_email_recipients(doc)
 

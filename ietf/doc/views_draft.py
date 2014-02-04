@@ -1335,8 +1335,6 @@ def adopt_draft(request, name):
                 e.desc = comment
                 e.save()
 
-            email_draft_adopted(request, doc, by, comment)
-                
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
         form = AdoptDraftForm(user=request.user)
