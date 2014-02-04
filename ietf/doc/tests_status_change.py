@@ -103,6 +103,19 @@ class StatusChangeTests(TestCase):
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('RDNK84ZD'))
         self.assertFalse(doc.active_ballot())
 
+        # successful change to Last Call Requested
+        messages_before = len(outbox)
+        doc.ad = Person.objects.get(user__username='ad')
+        doc.save()
+        lc_req_pk = str(State.objects.get(slug='lc-req',type__slug='statchg').pk)
+        r = self.client.post(url,dict(new_state=lc_req_pk))
+        self.assertEquals(r.status_code, 200)
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        self.assertEquals(doc.get_state('statchg').slug,'lc-req')
+        self.assertEquals(len(outbox), messages_before + 1)
+        self.assertTrue('iesg-secretary' in outbox[-1]['To'])
+        self.assertTrue('Last Call:' in outbox[-1]['Subject'])
+
         # successful change to IESG Evaluation 
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
         r = self.client.post(url,dict(new_state=iesgeval_pk,comment='TGmZtEjt'))
