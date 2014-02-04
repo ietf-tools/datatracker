@@ -520,14 +520,14 @@ class Schedule(models.Model):
         return self.cached_sessions_that_can_meet
 
     def area_list(self):
-        return ( self.assignments.filter(session__group__type__slug__in=['wg', 'rg', 'ag'],
+        return ( self.assignments.filter(session__group__type__slug__in=['wg', 'rg', 'ag', 'iab'],
                                          session__group__parent__isnull=False)
                  .order_by('session__group__parent__acronym')
                  .values_list('session__group__parent__acronym', flat=True)
                  .distinct() )
 
     def groups(self):
-        return Group.objects.filter(type__slug__in=['wg', 'rg', 'ag'], session__scheduledsession__schedule=self).distinct().order_by('parent__acronym', 'acronym')
+        return Group.objects.filter(type__slug__in=['wg', 'rg', 'ag', 'iab'], session__scheduledsession__schedule=self).distinct().order_by('parent__acronym', 'acronym')
 
 class ScheduledSession(models.Model):
     """
