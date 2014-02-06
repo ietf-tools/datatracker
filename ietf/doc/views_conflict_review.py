@@ -11,7 +11,7 @@ from django.conf import settings
 from ietf.doc.utils import add_state_change_event, update_telechat
 from ietf.doc.models import save_document_in_history
 from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_document_content
-from ietf.ietfauth.utils import has_role, role_required
+from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail_preformatted
 from ietf.doc.mails import email_iana
@@ -87,6 +87,22 @@ def change_state(request, name, option=None):
                                    help_url=reverse('state_help', kwargs=dict(type="conflict-review")),
                                    ),
                               context_instance=RequestContext(request))
+
+def send_conflict_review_started_email(request, review):
+    msg = render_to_string("doc/conflict_review/review_started.txt",
+                            dict(frm = settings.DEFAULT_FROM_EMAIL,
+                                 by = request.user.person,
+                                 review = review,
+                                 reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+                                 review_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
+                                 )
+                           )
+    if not has_role(request.user,"Secretariat"):
+        send_mail_preformatted(request,msg)
+    email_iana(request, 
+               review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+               settings.IANA_EVAL_EMAIL,
+                msg)
 
 def send_conflict_eval_email(request,review):
     msg = render_to_string("doc/eval_email.txt",
@@ -345,6 +361,9 @@ def approve(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
+class SimpleStartReviewForm(forms.Form):
+    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
+
 class StartReviewForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), 
                                 label="Shepherding AD", empty_label="(None)", required=True)
@@ -363,73 +382,96 @@ class StartReviewForm(forms.Form):
 
         self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, d.strftime("%Y-%m-%d")) for d in dates]
 
-@role_required("Secretariat")
+@role_required("Secretariat","IRTF Chair","ISE")
 def start_review(request, name):
-    """Start the conflict review process, setting the initial shepherding AD, and possibly putting the review on a telechat."""
+    if has_role(request.user,"Secretariat"):
+        return start_review_as_secretariat(request,name)
+    else:
+        return start_review_as_stream_owner(request,name)
 
+def start_review_sanity_check(request, name):
     doc_to_review = get_object_or_404(Document, type="draft", name=name)
 
-    if not doc_to_review.stream_id in ('ise','irtf'):
+    if ( not doc_to_review.stream_id in ('ise','irtf') )  or ( not is_authorized_in_doc_stream(request.user,doc_to_review)):
         raise Http404
 
     # sanity check that there's not already a conflict review document for this document
     if [ rel.source for alias in doc_to_review.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='conflrev') ]:
         raise Http404
 
-    login = request.user.person
+    return doc_to_review
 
+def build_notify_addresses(doc_to_review):
+    # Take care to do the right thing during ietf chair and stream owner transitions
+    notify_addresses = []
+    notify_addresses.extend([x.person.formatted_email() for x in Role.objects.filter(group__acronym=doc_to_review.stream.slug,name='chair')])
+    notify_addresses.append("%s@%s" % (doc_to_review.name, settings.TOOLS_SERVER))
+    return notify_addresses
+
+def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_state):
+    if doc_to_review.name.startswith('draft-'):
+        review_name = 'conflict-review-'+doc_to_review.name[6:]
+    else:
+        # This is a failsafe - and might be treated better as an error
+        review_name = 'conflict-review-'+doc_to_review.name
+
+    iesg_group = Group.objects.get(acronym='iesg')
+
+    conflict_review=Document( type_id = "conflrev",
+                              title = "IETF conflict review for %s" % doc_to_review.name,
+                              name = review_name,
+                              rev = "00",
+                              ad = ad,
+                              notify = notify,
+		              stream_id = 'ietf',
+                              group = iesg_group,
+                            )
+    conflict_review.save()
+    conflict_review.set_state(create_in_state)
+
+    DocAlias.objects.create( name=review_name , document=conflict_review )
+            
+    conflict_review.relateddocument_set.create(target=DocAlias.objects.get(name=doc_to_review.name),relationship_id='conflrev')
+
+    c = DocEvent(type="added_comment", doc=conflict_review, by=login)
+    c.desc = "IETF conflict review requested"
+    c.save()
+
+    c = DocEvent(type="added_comment", doc=doc_to_review, by=login)
+    # Is it really OK to put html tags into comment text?
+    c.desc = 'IETF conflict review initiated - see <a href="%s">%s</a>' % (reverse('doc_view', kwargs={'name':conflict_review.name}),conflict_review.name)
+    c.save()
+
+    return conflict_review
+
+def start_review_as_secretariat(request, name):
+    """Start the conflict review process, setting the initial shepherding AD, and possibly putting the review on a telechat."""
+
+    doc_to_review = start_review_sanity_check(request, name)
+
+    login = request.user.person
 
     if request.method == 'POST':
         form = StartReviewForm(request.POST)
         if form.is_valid():
+            conflict_review = build_conflict_review_document(login = login,
+                                                             doc_to_review = doc_to_review, 
+                                                             ad = form.cleaned_data['ad'],
+                                                             notify = form.cleaned_data['notify'],
+                                                             create_in_state = form.cleaned_data['create_in_state']
+                                                            )
 
-            if doc_to_review.name.startswith('draft-'):
-                review_name = 'conflict-review-'+doc_to_review.name[6:]
-            else:
-                # This is a failsafe - and might be treated better as an error
-                review_name = 'conflict-review-'+doc_to_review.name
-         
-            iesg_group = Group.objects.get(acronym='iesg')
-
-            conflict_review=Document( type_id = "conflrev",
-                                      title = "IETF conflict review for %s" % doc_to_review.name,
-                                      name = review_name,
-                                      rev = "00",
-                                      ad = form.cleaned_data['ad'],
-                                      notify = form.cleaned_data['notify'],
-			              stream_id = 'ietf',
-                                      group = iesg_group,
-                                    )
-            conflict_review.save()
-            conflict_review.set_state(form.cleaned_data['create_in_state'])
-
-            DocAlias.objects.create( name=review_name , document=conflict_review )
-            
-            conflict_review.relateddocument_set.create(target=DocAlias.objects.get(name=doc_to_review.name),relationship_id='conflrev')
-
-            c = DocEvent(type="added_comment", doc=conflict_review, by=login)
-            c.desc = "IETF conflict review requested"
-            c.save()
-
-            c = DocEvent(type="added_comment", doc=doc_to_review, by=login)
-            # Is it really OK to put html tags into comment text?
-            c.desc = 'IETF conflict review initiated - see <a href="%s">%s</a>' % (reverse('doc_view', kwargs={'name':conflict_review.name}),conflict_review.name)
-            c.save()
-            
             tc_date = form.cleaned_data['telechat_date']
             if tc_date:
                 update_telechat(request, conflict_review, login, tc_date)
 
+            send_conflict_review_started_email(request, conflict_review)
+
             return HttpResponseRedirect(conflict_review.get_absolute_url())
     else: 
-        # Take care to do the right thing during ietf chair and stream owner transitions
-        ietf_chair_id = Role.objects.filter(group__acronym='ietf',name='chair')[0].person.id
-        notify_addresses = []
-        notify_addresses.extend([x.person.formatted_email() for x in Role.objects.filter(group__acronym=doc_to_review.stream.slug,name='chair')])
-        notify_addresses.append("%s@%s" % (name, settings.TOOLS_SERVER))
-        
+        notify_addresses = build_notify_addresses(doc_to_review)
         init = { 
-                "ad" : ietf_chair_id,
+                "ad" : Role.objects.filter(group__acronym='ietf',name='chair')[0].person.id,
                 "notify" : u', '.join(notify_addresses),
                }
         form = StartReviewForm(initial=init)
@@ -440,6 +482,39 @@ def start_review(request, name):
                               },
                               context_instance = RequestContext(request))
 
+def start_review_as_stream_owner(request, name):
+    """Start the conflict review process using defaults for everything but notify and let the secretariat know"""
+
+    doc_to_review = start_review_sanity_check(request, name)
+
+    login = request.user.person
+
+    if request.method == 'POST':
+        form = SimpleStartReviewForm(request.POST)
+        if form.is_valid():
+            conflict_review = build_conflict_review_document(login = login,
+                                                             doc_to_review = doc_to_review, 
+                                                             ad = Role.objects.filter(group__acronym='ietf',name='chair')[0].person,
+                                                             notify = form.cleaned_data['notify'],
+                                                             create_in_state = State.objects.get(used=True,type='conflrev',slug='needshep')
+                                                            )
+
+            send_conflict_review_started_email(request, conflict_review)
+
+            return HttpResponseRedirect(conflict_review.get_absolute_url())
+    else: 
+        notify_addresses = build_notify_addresses(doc_to_review)
+        
+        init = { 
+                "notify" : u', '.join(notify_addresses),
+               }
+        form = SimpleStartReviewForm(initial=init)
+
+    return render_to_response('doc/conflict_review/start.html',
+                              {'form':   form,
+                               'doc_to_review': doc_to_review,
+                              },
+                              context_instance = RequestContext(request))
 
 @role_required("Area Director", "Secretariat")
 def telechat_date(request, name):

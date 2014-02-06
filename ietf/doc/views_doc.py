@@ -294,7 +294,7 @@ def document_main(request, name, rev=None):
             actions.append(("Resurrect", urlreverse('doc_resurrect', kwargs=dict(name=doc.name))))
 
         if (doc.get_state_slug() != "expired" and doc.stream_id in ("ise", "irtf")
-            and has_role(request.user, ("Secretariat",)) and not conflict_reviews):
+            and can_edit_stream_info and not conflict_reviews):
             label = "Begin IETF Conflict Review"
             if not doc.intended_std_level:
                 label += " (note that intended status is not set)"
