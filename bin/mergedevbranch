@@ -68,10 +68,11 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=chvV
-longopts=commit,help,verbose,version
+shortopts=cnhvV
+longopts=commit,no-commit,help,verbose,version
 
 # Default values
+ARG_COMMIT=1
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
@@ -89,6 +90,7 @@ fi
 while true ; do
     case "$1" in
 	-c| --commit)	ARG_COMMIT=1;;		#	 Run commit in addition to merge
+	-n| --no-commit)	ARG_COMMIT=0;;	#	 Don't commit after merge
 	-h| --help)	usage; exit;;		#	 Show this help, then exit
 	-v| --verbose)	VERBOSE=1;;		#	 Be more talkative
 	-V| --version)	version; exit;;		#	 Show program version, then exit
@@ -133,13 +135,20 @@ info=$(svn log ${repo}/ -r $rev --incremental)
 set $(echo "$info" | tail -n +2 | head -n 1 | tr "|" "\t")
 who=$2; echo -e "\n$who"
 comment=$(echo "$info" | tail -n +3); echo -e "$comment\n"
+comment=$(echo "$comment" | sed -r -e 's/(commit )?ready (for|to) merge\.?//i' -e '/^$/d')
 files=$(svn diff ${repo}/ -c $rev --summarize | awk '{$1=""; print;}' | while read file; do echo "${file/$repo\/$branch\//}"; done)
 
-echo -e "Files: \n$files"
+echo -e "Files: \n$files\n"
 
-note "Writing commit script"
-echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'} ${fix/\"/\'}\"" > ../cicmd/commit-${rev}-merge.sh
-chmod +x ../cicmd/commit-${rev}-merge.sh
+read -p "Continue with diff? [Y/n] "
+[ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || exit
+
+note "Diff:"
+svn diff -c $rev $repo/$branch | less
+
+echo ""
+read -p "Continue with the merge? [Y/n] "
+[ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || exit
 
 note "Do the merge:"
 if [[ $rev =~ : ]]; then
@@ -150,13 +159,13 @@ else
   svn merge -c $rev ${repo}/$branch ."
 fi
 
+note "Writing commit script"
+echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'} ${fix/\"/\'}\"" > ../cicmd/commit-${rev}-merge.sh
+chmod +x ../cicmd/commit-${rev}-merge.sh
+
 M=$(svn st | cut -c 1-7 | grep -oh 'M' | head -n 1)
 C=$(svn st | cut -c 1-7 | grep -oh 'C' | head -n 1)
 G=$(svn st | cut -c 1-7 | grep -oh 'G' | head -n 1)
-
-
-date +"%Y-%m-%d %H:%M:%S	$G$C$M	@$rev $branch" >> mergelog
-date +"%Y-%m-%d %H:%M:%S Merged $branch@$rev" >> testresult
 
 cd ../
 rsync -a $cwd/ merged@$rev/
@@ -178,8 +187,13 @@ Regards,
 	(via the mergesprintbranch script)
 EOF
 
+svn revert ietf/meeting
 
-if [ "$ARG_COMMIT" ]; then
+
+echo -e "\nRunning tests"
+ietf/manage.py test --settings=settings_sqlitetest || die "Tests failed"
+
+if [ "$ARG_COMMIT" != 0 ]; then
     echo "Committing the merge:"
     echo ""
     svn commit -m "Merged [$rev] from $who: $comment $fix"
