@@ -65,7 +65,7 @@ class Loader(BaseLoader):
         super(Loader, self).__init__(self, *args, **kwargs)
         self.is_usable = True
 
-    def load_template_source(self, template_name, template_dirs=None):
+    def load_template(self, template_name, template_dirs=None):
         try:
             template = DBTemplate.objects.get(path=template_name)
             if template.type.slug == 'rst':
