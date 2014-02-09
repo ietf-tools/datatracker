@@ -1,3 +1,85 @@
+ietfdb (5.0.1) ietf; urgency=medium
+
+  This is a bugfix release which collects a series of fixes and usability
+  tweaks from the last months.
+
+  * Merged [7215] from rjsparks@nostrum.com: 
+
+    Use idnits on www.ietf.org.  Fixes ticket #1200 
+
+  * Merged [7212] from rjsparks@nostrum.com:
+
+    Removed the "Reason for (re)chartering" line from the charter main
+    document page.  Fixes bug #1294 
+
+  * Merged [7210] from rjsparks@nostrum.com: 
+
+    Allow the IRTF Chair and the ISE to request a conflict review directly
+    through the tracker.  Notify the Secretariat when someone other than the
+    secretariat initiates a conflict review.  Notify IANA when anyone
+    initiates a conflict review.  Fixes tickets #1287 and #1289 
+
+  * Merged [7204] from rjsparks@nostrum.com:
+
+    Adds the IAB-parented sessions to the set of things returned as "areas"
+    Fixes bug #1288 
+
+  * Merged [7077] from rjsparks@nostrum.com:
+
+    Returns "there are no ballots to view yet" rather than 404ing when the
+    ballot link is followed for a document that exists.  It is typical for
+    last call to be issued (which includes a link to the ballot page) well in
+    advance of creating any ballot for a document.  Fixes bug 1233 
+
+  * Merged [7076] from rjsparks@nostrum.com:
+
+    Sets the State(type=draft) to Replaced when a document is replaced using
+    views_draft.replaces.  Sets the state back to Active or Expired when a
+    document is no longer replaced by another document.  Adds tests for the
+    above functionality.  Provides a patch to repair the state of documents
+    pointed to by RelatedDocument(relationship__slug='replaces') objects
+    created by views_draft.replaces before this fix.  Fixes bug 1234 
+
+  * Merged [6361] from rjsparks@nostrum.com:
+
+    Allow the secretariat and ads to change the title of a status change
+    document.  Fixes bug 1141.
+
+    Applied changes to adapt the code from Django 1.2 to 1.6: Provide a
+    quoted string to {% url %} and use request.user.person instead of
+    request.user.get_profile().
+
+  * Fixed problem with nomcom RST templates not being rendered under Django 
+    1.6.
+
+  * Merged [6359] from rjsparks@nostrum.com: 
+
+    Send email to the secretariat when a status change document is put
+    directly into the last-call-requested state.  Fixes bug 1139.
+
+  * Added stream change and state change emails in adopt_draft() -- 
+    otherwise we wouldn't have the state change emails assumed in the previous 
+    commit.  See issue #1246.
+
+  * Removed the extra (misleading) email about WG adoption which is sent 
+    out in addition to the state change emails when a call for addoption (WG) 
+    or adoption (RG) is done using the 'Adopt Draft in Group' form.  The state 
+    change messages should be sufficient, and are not misleading.  Fixes issue 
+    #1246 (and 1290).
+
+  * Handled the case in is_downref() where the src file doesn't have a 
+    std_level or intended_std_level set.
+
+  * Modified ALLOWED_HOSTS to permit some (surprising) alternative 
+    HTTP_HOST names.  Are these a result of queries proxied through other 
+    ietf.org domains?  The numerical address is the mail server address.  We 
+    should find out why that appears, and see if it can be made to appear as 
+    mail.ietf.org instead.
+
+  * Added Matt Larson to the release notification email address list.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Feb 2014 22:26:04 +0100
+
 ietfdb (5.0.0) ietf; urgency=medium
 
   With this release, a journey which started in 2008 with a *major* redesign
@@ -79,7 +161,7 @@ ietfdb (4.84) ietf; urgency=low
 
   * Merged [6701] from rjsparks@nostrum.com:  
     Adds pages to show what a given document refers to and what refers to it.
-    ixes bug #1194 ommit ready for merge 
+     Fixes bug #1194 ommit ready for merge 
 
   * Merged [6672] from rjsparks@nostrum.com:  
     Removed requirement to enter a phone number in various places on an IPR
