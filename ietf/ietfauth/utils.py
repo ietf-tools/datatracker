@@ -46,6 +46,7 @@ def has_role(user, role_names, *args, **kwargs):
 	    "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
 	    "IANA": Q(person=person, name="auth", group__acronym="iana"),
             "RFC Editor": Q(person=person, name="auth", group__acronym="rfceditor"),
+            "ISE" : Q(person=person, name="chair", group__acronym="ise"),
 	    "IAD": Q(person=person, name="admdir", group__acronym="ietf"),
 	    "IETF Chair": Q(person=person, name="chair", group__acronym="ietf"),
 	    "IRTF Chair": Q(person=person, name="chair", group__acronym="irtf"),

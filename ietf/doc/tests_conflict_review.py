@@ -23,7 +23,7 @@ from ietf.iesg.models import TelechatDate
 
 
 class ConflictReviewTests(TestCase):
-    def test_start_review(self):
+    def test_start_review_as_secretary(self):
 
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
         url = urlreverse('conflict_review_start',kwargs=dict(name=doc.name))
@@ -71,10 +71,58 @@ class ConflictReviewTests(TestCase):
 
         self.assertTrue(review_doc.latest_event(DocEvent,type="added_comment").desc.startswith("IETF conflict review requested"))
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith("IETF conflict review initiated"))
+        self.assertTrue('Conflict Review requested' in outbox[-1]['Subject'])
+        self.assertTrue(settings.IANA_EVAL_EMAIL in outbox[-1]['To'])
         
         # verify you can't start a review when a review is already in progress
         r = self.client.post(url,dict(ad="Aread Irector",create_in_state="Needs Shepherd",notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 404)
+
+
+    def test_start_review_as_stream_owner(self):
+
+        doc = Document.objects.get(name='draft-imaginary-independent-submission')
+        url = urlreverse('conflict_review_start',kwargs=dict(name=doc.name))
+
+        login_testing_unauthorized(self, "ise-chair", url)
+
+        # can't start conflict reviews on documents not in a stream
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 404)
+
+
+        # can't start conflict reviews on documents in some other stream
+        doc.stream=StreamName.objects.get(slug='irtf')
+        doc.save()
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 404)
+
+        # successful get 
+        doc.stream=StreamName.objects.get(slug='ise')
+        doc.save()
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form input[name=notify]')),1)
+        self.assertEquals(len(q('form select[name=ad]')),0)
+
+        # successfully starts a review, and notifies the secretariat
+        messages_before = len(outbox)
+        r = self.client.post(url,dict(notify='ipu@ietf.org'))
+        self.assertEquals(r.status_code, 302)
+        review_doc = Document.objects.get(name='conflict-review-imaginary-independent-submission')
+        self.assertEquals(review_doc.get_state('conflrev').slug,'needshep')
+        self.assertEquals(review_doc.rev,u'00')
+        self.assertEquals(review_doc.telechat_date(),None)
+        self.assertEquals(review_doc.ad.name,u'Ietf Chair')
+        self.assertEquals(review_doc.notify,u'ipu@ietf.org')
+        doc = Document.objects.get(name='draft-imaginary-independent-submission')
+        self.assertTrue(doc in [x.target.document for x in review_doc.relateddocument_set.filter(relationship__slug='conflrev')])
+        self.assertEqual(len(outbox), messages_before + 2)
+        self.assertTrue('Conflict Review requested' in outbox[-1]['Subject'])
+        self.assertTrue(any('iesg-secretary@ietf.org' in x['To'] for x in outbox[-2:]))
+        self.assertTrue(any(settings.IANA_EVAL_EMAIL in x['To'] for x in outbox[-2:]))
+
 
     def test_change_state(self):
 
