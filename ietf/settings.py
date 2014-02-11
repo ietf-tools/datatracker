@@ -277,16 +277,23 @@ DOC_HREFS = {
 # Override this in settings_local.py if needed
 CACHE_MIDDLEWARE_SECONDS = 300
 CACHE_MIDDLEWARE_KEY_PREFIX = ''
-if SERVER_MODE == 'production':
-    CACHE_BACKEND= 'file://'+'/a/www/ietf-datatracker/cache/'
-else:
-    # Default to no caching in development/test, so that every developer
-    # doesn't have to set CACHE_BACKEND in settings_local
-    CACHE_BACKEND = 'dummy:///'
 
-# For readonly database operation
-# CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
-# SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+# The default with no CACHES setting is 'django.core.cache.backends.locmem.LocMemCache'
+if SERVER_MODE == 'production':
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            'LOCATION': '127.0.0.1:11211',
+        }
+    }
+else:
+    # Default to no caching in development/test
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
 
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
