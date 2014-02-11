@@ -335,6 +335,8 @@ IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 FIRST_CUTOFF_DAYS = 19 # Days from meeting to cut off dates on submit
 SECOND_CUTOFF_DAYS = 12
 CUTOFF_HOUR = 00                        # midnight UTC
+CUTOFF_WARNING_DAYS = 21                # Number of days before cutoff to start showing the cutoff date
+
 SUBMISSION_START_DAYS = -90
 SUBMISSION_CUTOFF_DAYS = 33
 SUBMISSION_CORRECTION_DAYS = 52

@@ -42,12 +42,16 @@ class UploadForm(forms.Form):
         self.parsed_draft = None
 
     def set_cutoff_warnings(self):
+        from datetime import timedelta
         now = datetime.datetime.utcnow()
         first_cut_off = Meeting.get_first_cut_off()
         second_cut_off = Meeting.get_second_cut_off()
         ietf_monday = Meeting.get_ietf_monday()
 
-        if now.date() >= first_cut_off and now.date() < second_cut_off:  # We are in the first_cut_off
+        if now.date() >= (first_cut_off-timedelta(days=settings.CUTOFF_WARNING_DAYS)) and now.date() < first_cut_off:
+            self.cutoff_warning = ( 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) is %s at %02sh UTC.<br/>' % (first_cut_off, settings.CUTOFF_HOUR) +
+                                    'The pre-meeting cut-off date for revisions to existing documents is %s at %02sh UTC.<br/>' % (second_cut_off, settings.CUTOFF_HOUR) )
+        elif now.date() >= first_cut_off and now.date() < second_cut_off:  # We are in the first_cut_off
             if now.date() == first_cut_off and now.hour < settings.CUTOFF_HOUR:
                 self.cutoff_warning = 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) is %s, at %02sh UTC. After that, you will not be able to submit a new document until %s, at %sh UTC' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, )
             else:  # No 00 version allowed
