@@ -3,11 +3,25 @@ ietfdb (5.0.1) ietf; urgency=medium
   This is a bugfix release which collects a series of fixes and usability
   tweaks from the last months.
 
+  * Merged [7236] from rcross@amsl.com: 
+    Fixed Liaison Add CSRF token error and missing Post and Send button.
+    Fixes ticket #1308.
+
+  * Added a way to control the output of the url and template coverage tests,
+    so they only will be run for verbosity greater than 1, which is controlled
+    by the --verbosity switch.
+
+  * Merged [7214] from rcross@amsl.com: 
+    Changeed old references to pub.ietf.org, to datatracker.ietf.org/secr/.    
+
+  * Merged [7213] from rcross@amsl.com: 
+    Added a missing template for the secretariat apps: unauthorized.html.   
+
+  * Merged [7209] from rcross@amsl.com: 
+    Fixed a typo in secretariat drafts add().   
+
   * Fixed a probem with wrong URLs in atom feeds, caused by caching.  Fixes 
     issue #1307.
-
-  * Added a workaround for missing CSRF tokens in liaison edit form, from
-    rcross@amsl.com
 
   * Added a blank line before new session group in the text agenda, for
     readability.
