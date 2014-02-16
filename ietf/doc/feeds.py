@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import datetime, re
-import debug
 
 from django.conf import settings
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
@@ -21,7 +20,6 @@ class DocumentChangesFeed(Feed):
         return Document.objects.get(docalias__name=name)
 
     def title(self, obj):
-        debug.show('type(obj), obj')
         return "Changes for %s" % obj.display_name()
 
     def link(self, obj):
