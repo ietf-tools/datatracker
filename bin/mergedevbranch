@@ -160,7 +160,7 @@ else
 fi
 
 note "Writing commit script"
-echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'} ${fix/\"/\'}\"" > ../cicmd/commit-${rev}-merge.sh
+echo -e "#!/bin/bash\n\nsvn commit -m \"Merged in [$rev] from $who:\n    ${comment/\"/\'} ${fix/\"/\'}\"" > ../cicmd/commit-${rev}-merge.sh
 chmod +x ../cicmd/commit-${rev}-merge.sh
 
 M=$(svn st | cut -c 1-7 | grep -oh 'M' | head -n 1)
