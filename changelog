@@ -3,36 +3,53 @@ ietfdb (5.0.1) ietf; urgency=medium
   This is a bugfix release which collects a series of fixes and usability
   tweaks from the last months.
 
-  * Merged [7215] from rjsparks@nostrum.com: 
+  * Fixed a probem with wrong URLs in atom feeds, caused by caching.  Fixes 
+    issue #1307.
 
+  * Added a workaround for missing CSRF tokens in liaison edit form, from
+    rcross@amsl.com
+
+  * Added a blank line before new session group in the text agenda, for
+    readability.
+
+  * Added a secret key to settings.py for development use.  NOT for 
+    production use; that needs to go in settings_local.py
+
+  * Added a warning to the draft submission page about upcoming submission 
+    cut-offs.  Added a value in settings.py for the number of days before the 
+    first cut-off to display the waring.
+
+  * Updated the caching settings to use memcached in production.
+
+  * Remove spurious 'yes' in meeting requests page.
+
+  * Merged [7215] from rjsparks@nostrum.com: Use idnits on www.ietf.org
+    Fixes ticket #1200 
+
+  * Merged [7215] from rjsparks@nostrum.com: 
     Use idnits on www.ietf.org.  Fixes ticket #1200 
 
   * Merged [7212] from rjsparks@nostrum.com:
-
     Removed the "Reason for (re)chartering" line from the charter main
     document page.  Fixes bug #1294 
 
   * Merged [7210] from rjsparks@nostrum.com: 
-
     Allow the IRTF Chair and the ISE to request a conflict review directly
     through the tracker.  Notify the Secretariat when someone other than the
     secretariat initiates a conflict review.  Notify IANA when anyone
     initiates a conflict review.  Fixes tickets #1287 and #1289 
 
   * Merged [7204] from rjsparks@nostrum.com:
-
     Adds the IAB-parented sessions to the set of things returned as "areas"
     Fixes bug #1288 
 
   * Merged [7077] from rjsparks@nostrum.com:
-
     Returns "there are no ballots to view yet" rather than 404ing when the
     ballot link is followed for a document that exists.  It is typical for
     last call to be issued (which includes a link to the ballot page) well in
     advance of creating any ballot for a document.  Fixes bug 1233 
 
   * Merged [7076] from rjsparks@nostrum.com:
-
     Sets the State(type=draft) to Replaced when a document is replaced using
     views_draft.replaces.  Sets the state back to Active or Expired when a
     document is no longer replaced by another document.  Adds tests for the
@@ -41,10 +58,8 @@ ietfdb (5.0.1) ietf; urgency=medium
     created by views_draft.replaces before this fix.  Fixes bug 1234 
 
   * Merged [6361] from rjsparks@nostrum.com:
-
     Allow the secretariat and ads to change the title of a status change
     document.  Fixes bug 1141.
-
     Applied changes to adapt the code from Django 1.2 to 1.6: Provide a
     quoted string to {% url %} and use request.user.person instead of
     request.user.get_profile().
@@ -53,7 +68,6 @@ ietfdb (5.0.1) ietf; urgency=medium
     1.6.
 
   * Merged [6359] from rjsparks@nostrum.com: 
-
     Send email to the secretariat when a status change document is put
     directly into the last-call-requested state.  Fixes bug 1139.
 
