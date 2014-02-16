@@ -11,12 +11,14 @@
 {% for item in schedule.assignments.all.distinct %}{% ifchanged  %}
 
 
-{{ item.timeslot.time|date:"l"|upper }}, {{ item.timeslot.time|date:"F j, Y" }}{% endifchanged %}{%       if item.timeslot.type.slug == "reg" %}
+{{ item.timeslot.time|date:"l"|upper }}, {{ item.timeslot.time|date:"F j, Y" }}
+{% endifchanged %}{%       if item.timeslot.type.slug == "reg" %}
 {{ item.timeslot.time_desc  }}  {{ item.timeslot.name  }}{% if schedule.meeting.reg_area %} - {{ schedule.meeting.reg_area }}{% endif %}{% endif %}{%          if item.timeslot.type.slug == "plenary" %}
 {{ item.timeslot.time_desc }}  {{ item.session.name }} - {{ item.timeslot.location.name }}
 
    {{ item.session.agenda_text.strip|indent:"3" }}
 {% endif %}{%          if item.timeslot.type.slug == "session" %}{% if item.session.group  %}{% ifchanged %}
+
 {{ item.timeslot.time_desc }}  {{ item.timeslot.name }}
 {% endifchanged %}{{ item.timeslot.location.name|ljust:14 }}  	{{ item.session.group.parent.acronym|upper|ljust:4 }}	{{ item.session.group.acronym|ljust:10 }}  	{{ item.session.group.name }} {{ item.session.type }}{% if item.session.agenda_note %} - {{ item.session.agenda_note }}{% endif %}
 {% endif %}{% endif %}{% if item.timeslot.type.slug == "break" %}
