@@ -40,8 +40,6 @@ from django.template import TemplateDoesNotExist
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 
-import debug
-
 import ietf.utils.mail
 
 loaded_templates = set()
@@ -111,7 +109,7 @@ def get_url_patterns(module):
                 res.append((item.regex.pattern + ".*" + sub, subitem))
     return res
 
-def check_url_coverage():
+def check_url_coverage(verbosity):
     import ietf.urls
 
     url_patterns = get_url_patterns(ietf.urls)
@@ -137,7 +135,7 @@ def check_url_coverage():
 
     missing = list(set(regex for regex, compiled in patterns) - covered)
 
-    if missing:
+    if missing and verbosity > 1:
         print "The following URL patterns were not tested"
         for pattern in sorted(missing):
             print "     Not tested", pattern
@@ -159,11 +157,11 @@ def get_templates():
                 templates.add(os.path.join(relative_path, file))
     return templates
 
-def check_template_coverage():
+def check_template_coverage(verbosity):
     all_templates = get_templates()
 
     not_loaded = list(all_templates - loaded_templates)
-    if not_loaded:
+    if not_loaded and verbosity > 1:
         print "The following templates were never loaded during test"
         for t in sorted(not_loaded):
             print "     Not loaded", t
@@ -224,8 +222,8 @@ class IetfTestRunner(DiscoverRunner):
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
         if check_coverage and not failures:
-            check_template_coverage()
-            check_url_coverage()
+            check_template_coverage(self.verbosity)
+            check_url_coverage(self.verbosity)
 
             print "0 test failures - coverage shown above"
 
