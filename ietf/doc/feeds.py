@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import datetime, re
+import debug
 
 from django.conf import settings
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
@@ -20,14 +21,13 @@ class DocumentChangesFeed(Feed):
         return Document.objects.get(docalias__name=name)
 
     def title(self, obj):
+        debug.show('type(obj), obj')
         return "Changes for %s" % obj.display_name()
 
     def link(self, obj):
 	if obj is None:
 	    raise FeedDoesNotExist
-        if not hasattr(self, "cached_link"):
-            self.cached_link = urlreverse("doc_history", kwargs=dict(name=obj.canonical_name()))
-	return self.cached_link
+        return urlreverse("doc_history", kwargs=dict(name=obj.canonical_name()))
 
     def subtitle(self, obj):
         return "History of change entries for %s." % obj.display_name()
@@ -50,7 +50,7 @@ class DocumentChangesFeed(Feed):
 	return unicode(item.by)
 
     def item_link(self, item):
-        return self.cached_link + "#history-%s" % item.pk
+        return urlreverse("doc_history", kwargs=dict(name=item.doc.canonical_name())) + "#history-%s" % item.pk
 
 class InLastCallFeed(Feed):
     title = "Documents in Last Call"
