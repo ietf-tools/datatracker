@@ -15,7 +15,7 @@ table.ietf-materials td { padding:0.5em 0; }
 Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 {% endif %}
 <ul>
-<li><a href="https://pub.ietf.org/proceedings/">Meeting Materials Manager</a> (for session chairs only; password required)</li>
+<li><a href="{% url "proceedings" %}">Meeting Materials Manager</a> (for session chairs only; password required)</li>
 <li><a href="/meeting/{{meeting_num}}/requests">Meeting Request/Conflict Table</a></li>
 </ul>
 
