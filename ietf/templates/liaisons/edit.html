@@ -22,7 +22,9 @@ This page depends on Javascript being enabled to work properly. Please enable Ja
 </ul>
 {% endif %}
 
-{{ form }}
+{# Replace the form expansion with an include as a temporary workaround for missing CSRF tokens #}
+{# {{ form }} #}
+{% include "liaisons/liaisonform.html" %}
 
 {% endblock %}
 
