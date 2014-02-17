@@ -1,0 +1,10 @@
+# By saying 'Ready for merge' in the commit message when you commit a change
+# to your branch, the commit will be included in the merge list for the next
+# release.  However, if a commit for some reason haven't is missing that
+# phrase in the commit comment, the branch and revision of the changeset can
+# be added to this file in trunk/ by the merge master, and it will also be
+# included in the merge list.
+
+# --- Add entries at the top ---
+
+personal/rjs/v4.90@7138		Was waiting for additional tests
