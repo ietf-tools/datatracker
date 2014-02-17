@@ -10,6 +10,7 @@ except ImportError:                     # import syslog will fail on Windows box
 
     pass
     
+import sys
 import inspect
 import os.path
 import ietf
@@ -44,4 +45,4 @@ def log(msg):
         file, line, where = "/<UNKNOWN>", 0, ""
     logger("ietf%s(%d)%s: %s" % (file, line, where, msg))
 
-log("IETFdb v%s started" % ietf.__version__)
+log("IETFdb v%s started (as %s)" % (ietf.__version__,sys.argv[0]))
