@@ -105,6 +105,21 @@ from django.utils.log import DEFAULT_LOGGING
 LOGGING = DEFAULT_LOGGING.copy()
 LOGGING['handlers']['mail_admins']['include_html'] = True
 
+# Filter out "Invalid HTTP_HOST" emails
+# Based on http://www.tiwoc.de/blog/2013/03/django-prevent-email-notification-on-suspiciousoperation/
+from django.core.exceptions import SuspiciousOperation
+def skip_suspicious_operations(record):
+    if record.exc_info:
+        exc_value = record.exc_info[1]
+        if isinstance(exc_value, SuspiciousOperation):
+            return False
+    return True
+LOGGING['filters']['skip_suspicious_operations'] = {
+    '()': 'django.utils.log.CallbackFilter',
+    'callback': skip_suspicious_operations,
+}
+LOGGING['handlers']['mail_admins']['filters'] += [ 'skip_suspicious_operations' ]
+
 SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
