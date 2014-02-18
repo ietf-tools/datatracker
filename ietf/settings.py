@@ -393,15 +393,13 @@ USE_ETAGS=True
 
 PRODUCTION_TIMEZONE = "America/Los_Angeles"
 
-# We provide a secret key only for test and development modes.  It's
-# absolutely vital that django fails to start in production mode unless a
-# secret key has been provided elsewhere, not in this file which is
-# publicly available, for instance from the source repository.
-if not SERVER_MODE == 'production':
-    SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
-
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *
 
-    
+# We provide a secret key only for test and development modes.  It's
+# absolutely vital that django fails to start in production mode unless a
+# secret key has been provided elsewhere, not in this file which is
+# publicly available, for instance from the source repository.
+if SERVER_MODE != 'production' and SECRET_KEY not in locals():
+    SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
