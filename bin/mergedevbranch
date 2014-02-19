@@ -126,6 +126,9 @@ else
     die "Could not find a branch matching '$branch'"
 fi
 
+mergelog=$(mktemp)
+svn propget svn:mergeinfo . > $mergelog
+
 if grep "@$rev $branch" mergelog; then die "Changeset $branch@$rev is already in the merge log.  Skipping it."; exit 0; fi
 
 note "Will attempt merge from $branch@$rev"
@@ -160,7 +163,7 @@ else
 fi
 
 note "Writing commit script"
-echo -e "#!/bin/bash\n\nsvn commit -m \"Merged in [$rev] from $who:\n    ${comment/\"/\'} ${fix/\"/\'}\"" > ../cicmd/commit-${rev}-merge.sh
+echo -e "#!/bin/bash\n\nsvn commit -m \"Merged in [$rev] from $who:\n    ${comment//\"/\'} ${fix//\"/\'}\"" > ../cicmd/commit-${rev}-merge.sh
 chmod +x ../cicmd/commit-${rev}-merge.sh
 
 M=$(svn st | cut -c 1-7 | grep -oh 'M' | head -n 1)
@@ -172,8 +175,10 @@ rsync -a $cwd/ merged@$rev/
 cp cicmd/commit-${rev}-merge.sh merged@$rev/commit
 cd -
 
-note "Sending email to changeset author: <$who>"
+echo -e "\nRunning tests"
+ietf/manage.py test --settings=settings_sqlitetest || die "Tests failed.\nThe commit script is ../cicmd/commit-${rev}-merge.sh"
 
+note "Sending email to changeset author: <$who>"
 mail -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c henrik@levkowetz.com <<-EOF
 Hi,
 
@@ -186,12 +191,6 @@ Regards,
 	Henrik
 	(via the mergesprintbranch script)
 EOF
-
-svn revert ietf/meeting
-
-
-echo -e "\nRunning tests"
-ietf/manage.py test --settings=settings_sqlitetest || die "Tests failed"
 
 if [ "$ARG_COMMIT" != 0 ]; then
     echo "Committing the merge:"
