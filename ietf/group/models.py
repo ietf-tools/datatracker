@@ -104,6 +104,9 @@ class Group(GroupInfo):
         group1['comments']     = self.comments
         return group1
 
+    def has_tools_page(self):
+        return self.type_id in ['wg', ] and self.state_id in ['active', 'dormant', 'replaced', 'conclude']
+
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')
     acronym = models.CharField(max_length=40)
