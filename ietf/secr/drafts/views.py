@@ -592,7 +592,7 @@ def add(request):
             request.session['action'] = 'add'
             
             messages.success(request, 'New draft added successfully!')
-            redirect('drafts_authors', id=draft.name)
+            return redirect('drafts_authors', id=draft.name)
 
     else:
         form = AddModelForm()
