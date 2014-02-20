@@ -20,52 +20,67 @@ class ApiTests(TestCase):
         r = self.client.get("/dajaxice/dajaxice.core.js")
         self.assertEqual(r.status_code, 200)
 
-    def test_update_agenda_item(self):
+    def test_update_agenda(self):
         meeting = make_meeting_test_data()
-        session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
-        mars_scheduled = ScheduledSession.objects.get(session=session)
+        schedule = Schedule.objects.get(meeting__number=42,name="test-agenda")
+        mars_session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        ames_session = Session.objects.filter(meeting=meeting, group__acronym="ames").first()
+    
+        mars_scheduled = ScheduledSession.objects.get(session=mars_session)
         mars_slot = mars_scheduled.timeslot
 
-        ames_scheduled = ScheduledSession.objects.get(session__meeting=meeting, session__group__acronym="ames")
+        ames_scheduled = ScheduledSession.objects.get(session=ames_session)
         ames_slot = ames_scheduled.timeslot
 
-        def do_post(to):
-            # move this session from one timeslot to another
-            return self.client.post('/dajaxice/ietf.meeting.update_timeslot/', {
-                'argv': json.dumps({
-                    "schedule_id": mars_scheduled.schedule.pk,
-                    "session_id": session.pk,
-                    "scheduledsession_id": to.pk if to else None,
-                })})
+        def do_unschedule(scheduledsession):
+            url = urlreverse("ietf.meeting.ajax.scheduledsession_json", 
+                             kwargs=dict(num=scheduledsession.session.meeting.number, 
+                                         name=scheduledsession.schedule.name,
+                                         scheduledsession_id=scheduledsession.pk,))
+            return self.client.delete(url)
 
-        # faulty post - not logged in
-        r = do_post(to=ames_scheduled)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue("error" in json.loads(r.content))
-        self.assertEqual(ScheduledSession.objects.get(pk=mars_scheduled.pk).session, session)
+        def do_schedule(schedule,session,timeslot):
+            url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",
+                              kwargs=dict(num=session.meeting.number,
+                                          name=schedule.name,))
+            post_data = '{ "session_id": "%s", "timeslot_id": "%s" }'%(session.pk,timeslot.pk)
+            return self.client.post(url,post_data,content_type='application/x-www-form-urlencoded')
 
-        # faulty post - logged in as non-owner
+        # not logged in
+        # faulty delete 
+        r = do_unschedule(mars_scheduled)
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(ScheduledSession.objects.get(pk=mars_scheduled.pk).session, mars_session)
+        # faulty post
+        r = do_schedule(schedule,ames_session,mars_slot)
+        self.assertEqual(r.status_code, 403)
+
+        # logged in as non-owner
+        # faulty delete
         self.client.login(remote_user="ad")
-        r = do_post(to=ames_scheduled)
-        self.assertEqual(r.status_code, 200)
+        r = do_unschedule(mars_scheduled)
+        self.assertEqual(r.status_code, 403)
         self.assertTrue("error" in json.loads(r.content))
+        # faulty post
+        r = do_schedule(schedule,ames_session,mars_slot)
+        self.assertEqual(r.status_code, 403)
 
-        # move to ames
+        # Put ames in the same timeslot as mars
         self.client.login(remote_user="plain")
-        r = do_post(to=ames_scheduled)
+        r = do_unschedule(ames_scheduled)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("error" not in json.loads(r.content))
 
-        self.assertEqual(ScheduledSession.objects.get(pk=mars_scheduled.pk).session, None)
-        self.assertEqual(ScheduledSession.objects.get(pk=ames_scheduled.pk).session, session)
+        r = do_schedule(schedule,ames_session,mars_slot)
+        self.assertEqual(r.status_code, 201)
 
-        # unschedule
-        self.client.login(remote_user="plain")
-        r = do_post(to=None)
+        # Unschedule mars
+        r = do_unschedule(mars_scheduled)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("error" not in json.loads(r.content))
 
-        self.assertEqual(ScheduledSession.objects.get(pk=ames_scheduled.pk).session, None)
+        self.assertEqual(ScheduledSession.objects.filter(session=mars_session).count(), 0)
+        self.assertEqual(ScheduledSession.objects.get(session=ames_session).timeslot, mars_slot)
 
 
     def test_constraints_json(self):
@@ -106,7 +121,7 @@ class ApiTests(TestCase):
         timeslots_before = meeting.timeslot_set.count()
         url = urlreverse("ietf.meeting.ajax.timeslot_roomsurl", kwargs=dict(num=meeting.number))
 
-        post_data = { "name": "new room", "capacity": "50" }
+        post_data = { "name": "new room", "capacity": "50" , "resources": []}
 
         # unauthorized post
         r = self.client.post(url, post_data)
@@ -116,6 +131,7 @@ class ApiTests(TestCase):
         # create room
         self.client.login(remote_user="secretary")
         r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 302)
         self.assertTrue(meeting.room_set.filter(name="new room"))
 
         timeslots_after = meeting.timeslot_set.count()
@@ -259,8 +275,14 @@ class ApiTests(TestCase):
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 403)
 
+        # TODO - permission protection on this function are not right
+        # Normal users are prevented from changing public/private on their own schedule
+        # The secretariat can't change normal user's agendas settings for them, and the
+        # page at /meeting/<num>/schedule/<name>/details behaves badly for the secretariat
+        # (pushing save seems to do nothing as the POST 401s in the background)
+
         # change agenda
-        self.client.login(remote_user="ad")
+        self.client.login(remote_user="secretary")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
         changed_schedule = Schedule.objects.get(pk=meeting.agenda.pk)

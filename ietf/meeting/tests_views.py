@@ -159,7 +159,7 @@ class EditTests(TestCase):
         self.client.login(remote_user="secretary")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("session_obj" in r.content)
+        self.assertTrue("load_scheduledsessions" in r.content)
 
     def test_save_agenda_as_and_read_permissions(self):
         meeting = make_meeting_test_data()

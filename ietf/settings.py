@@ -19,6 +19,9 @@ LOG_DIR  = '/var/log/datatracker'
 import sys
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
 
+# dajaxice now in subdirectory
+sys.path.append(os.path.abspath(BASE_DIR + "/../django-dajaxice"))
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -137,6 +140,7 @@ ROOT_URLCONF = 'ietf.urls'
 TEMPLATE_DIRS = (
     BASE_DIR + "/templates",
     BASE_DIR + "/secr/templates",
+    BASE_DIR+"/../django-dajaxice/dajaxice/templates",
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (

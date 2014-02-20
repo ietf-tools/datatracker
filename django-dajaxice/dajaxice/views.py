@@ -1,6 +1,7 @@
-import logging, json
+import logging
 
 from django.conf import settings
+import json
 from django.views.generic.base import View
 from django.http import HttpResponse, Http404
 
@@ -50,11 +51,10 @@ class DajaxiceRequest(View):
             try:
                 response = function.call(request, **data)
             except Exception:
-                raise # always give us a backtrace
                 if settings.DEBUG:
                     raise
                 response = dajaxice_config.DAJAXICE_EXCEPTION
 
-            return HttpResponse(response, mimetype="application/x-json")
+            return HttpResponse(response, content_type="application/x-json")
         else:
             raise FunctionNotCallableError(name)

@@ -1,4 +1,4 @@
-from django.conf.urls import *
+from django.conf.urls import patterns, url, include
 from .views import DajaxiceRequest
 
 urlpatterns = patterns('dajaxice.views',

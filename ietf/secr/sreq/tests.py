@@ -5,7 +5,8 @@ from django.core.urlresolvers import reverse
 from ietf.utils import TestCase
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
-from ietf.utils.test_data import make_test_data
+#from ietf.utils.test_data import make_test_data
+from ietf.meeting.test_data import make_meeting_test_data as make_test_data
 
 #from pyquery import PyQuery
 
@@ -13,7 +14,7 @@ SECR_USER='secretary'
 
 class SreqUrlTests(TestCase):
     def test_urls(self):
-        draft = make_test_data()
+        make_test_data()
 
         r = self.client.get("/secr/")
         self.assertEqual(r.status_code, 200)
@@ -21,23 +22,24 @@ class SreqUrlTests(TestCase):
         r = self.client.get("/secr/sreq/")
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.get("/secr/sreq/%s/new/" % draft.group.acronym)
+        testgroup=Group.objects.filter(type_id='wg').first()
+        r = self.client.get("/secr/sreq/%s/new/" % testgroup.acronym)
         self.assertEqual(r.status_code, 200)
 
 class MainTestCase(TestCase):
     def test_main(self):
-        draft = make_test_data()
+        make_test_data()
         url = reverse('sessions')
         r = self.client.get(url, REMOTE_USER=SECR_USER)
         self.assertEqual(r.status_code, 200)
         sched = r.context['scheduled_groups']
         unsched = r.context['unscheduled_groups']
-        self.failUnless(len(sched) == 0)
-        self.failUnless(len(unsched) > 0)
+        self.failUnless(len(unsched) == 0)
+        self.failUnless(len(sched) > 0)
 
 class SubmitRequestCase(TestCase):
     def test_submit_request(self):
-        draft = make_test_data()
+        make_test_data()
         acronym = Group.objects.all()[0].acronym
         url = reverse('sessions_new',kwargs={'acronym':acronym})
         post_data = {'id_num_session':'1',

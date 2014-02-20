@@ -236,7 +236,7 @@ class Room(models.Model):
     meeting = models.ForeignKey(Meeting)
     name = models.CharField(max_length=255)
     capacity = models.IntegerField(null=True, blank=True)
-    resources = models.ManyToManyField(ResourceAssociation)
+    resources = models.ManyToManyField(ResourceAssociation, blank = True)
 
     def __unicode__(self):
         return "%s size: %u" % (self.name, self.capacity)
