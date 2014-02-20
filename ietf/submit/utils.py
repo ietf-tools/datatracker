@@ -243,7 +243,7 @@ def ensure_person_email_info_exists(name, email):
 
         Alias.objects.create(name=person.name, person=person)
         if person.name != person.ascii:
-            Alias.objects.create(name=ascii, person=person)
+            Alias.objects.create(name=person.ascii, person=person)
 
     # make sure we have an email address
     if email:
