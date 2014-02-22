@@ -34,7 +34,7 @@ ADMINS = (
     ('Ryan Cross', 'rcross@amsl.com'),
 )
 
-ALLOWED_HOSTS = [".ietf.org", "4.31.198.44", ]
+ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", ]
 
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
