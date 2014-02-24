@@ -1,3 +1,50 @@
+ietfdb (5.0.2) ietf; urgency=medium
+
+  This is a minor bugfix release.
+
+  * Extend the set of allowed hosts slightly.
+
+  * Changed the use of non-existing variable 'ascii' to 'person.ascii'.  
+    Fixes a server failure for person alias creation during draft submissions.
+
+  * Fixed overflow error for meetings without timeslots, which gave server 
+    errors for meeting/64/agenda.html.
+
+  * Additional tweaks to bin/mergedevbranch.
+
+  * Merged in [7204] from rjsparks@nostrum.com:
+    Adds the IAB-parented sessions to the set of things returned as 
+    \'areas\'.
+    Fixes bug #1288 
+
+  * Reapplied merge of [7209], which although listed in svn:mergeinfo on . 
+    actually doesn't seem to have made it into the repository.
+
+  * Only show a link to the tools page for a group if the tools page is 
+    likely to exist, i.e., the group is a WG and it is or has been active.
+
+  * Added a logging filter to filter out the 'Invalid HTTP_HOST' emails.
+
+  * Changed the SECRET_KEY setting to take account of the settings in 
+    settings_local.
+
+  * Merged in [7138] from rjsparks@nostrum.com:
+    Reworked SMTP Exception handling, adding sending a ticket to the 
+    secretariat when there are errors handing messages off for delivery.
+    Added SMTP exception handling to send-scheduled-mail.
+    This is related to ticket #1208 
+
+  * Added a file to hold a list of changesets which are ready for merge, as 
+    a manually maintained alternative to 'Ready for merge' annotations in 
+    commit messages.
+
+  * Typo fixes.
+
+  * Set version info and settings back to development mode
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Feb 2014 21:41:57 +0100
+
+
 ietfdb (5.0.1) ietf; urgency=medium
 
   This is a bugfix release which collects a series of fixes and usability
