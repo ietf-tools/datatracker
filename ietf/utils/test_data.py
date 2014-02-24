@@ -289,15 +289,15 @@ def make_test_data():
     docalias = DocAlias.objects.create(name='status-change-imaginary-mid-review',document=doc)
 
     # Some things for a status change to affect
-    target_rfc = Document.objects.create(name='draft-ietf-random-thing', type_id='draft', std_level_id='ps')
-    target_rfc.set_state(State.objects.get(slug='rfc',type__slug='draft'))
-    target_rfc.save()
-    docalias = DocAlias.objects.create(name='draft-ietf-random-thing',document=target_rfc)
-    docalias = DocAlias.objects.create(name='rfc9999',document=target_rfc)
-    target_rfc = Document.objects.create(name='draft-ietf-random-otherthing', type_id='draft', std_level_id='inf')
-    target_rfc.set_state(State.objects.get(slug='rfc',type__slug='draft'))
-    target_rfc.save()
-    docalias = DocAlias.objects.create(name='draft-ietf-random-otherthing',document=target_rfc)
-    docalias = DocAlias.objects.create(name='rfc9998',document=target_rfc)
+    def rfc_for_status_change_test_factory(name,rfc_num,std_level_id):
+        target_rfc = Document.objects.create(name=name, type_id='draft', std_level_id=std_level_id)
+        target_rfc.set_state(State.objects.get(slug='rfc',type__slug='draft'))
+        target_rfc.save()
+        docalias = DocAlias.objects.create(name=name,document=target_rfc)
+        docalias = DocAlias.objects.create(name='rfc%d'%rfc_num,document=target_rfc)
+        return target_rfc
+    rfc_for_status_change_test_factory('draft-ietf-random-thing',9999,'ps')
+    rfc_for_status_change_test_factory('draft-ietf-random-otherthing',9998,'inf')
+    rfc_for_status_change_test_factory('draft-was-never-issued',14,'unkn')
 
     return draft
