@@ -430,7 +430,7 @@ def clean_helper(form, formtype):
         for k in sorted(form.data.iterkeys()):
             v = form.data[k]
             if k.startswith('new_relation_row'):
-                if re.match('\d{4}',v):
+                if re.match('\d{1,4}',v):
                     v = 'rfc'+v
                 rfc_fields[k[17:]]=v
             elif k.startswith('statchg_relation_row'):
@@ -444,8 +444,8 @@ def clean_helper(form, formtype):
         errors=[]
         for key in new_relations:
 
-           if not re.match('(?i)rfc\d{4}',key):
-              errors.append(key+" is not a valid RFC - please use the form RFCxxxx\n")
+           if not re.match('(?i)rfc\d{1,4}',key):
+              errors.append(key+" is not a valid RFC - please use the form RFCn\n")
            elif not DocAlias.objects.filter(name=key):
               errors.append(key+" does not exist\n")
 
@@ -536,7 +536,7 @@ def start_rfc_status_change(request,name):
     """Start the RFC status change review process, setting the initial shepherding AD, and possibly putting the review on a telechat."""
 
     if name:
-       if not re.match("(?i)rfc[0-9]{4}",name):
+       if not re.match("(?i)rfc[0-9]{1,4}",name):
            raise Http404
        seed_rfc = get_object_or_404(Document, type="draft", docalias__name=name)
 

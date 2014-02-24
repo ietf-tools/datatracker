@@ -364,18 +364,20 @@ class StatusChangeTests(TestCase):
                                       statchg_relation_row_blah="toexp",
                                       new_relation_row_foo="rfc9998",
                                       statchg_relation_row_foo="tobcp",
+                                      new_relation_row_nob="rfc14",
+                                      statchg_relation_row_nob="tohist",
                                       Submit="Submit"))
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        self.assertEqual(doc.relateddocument_set.count(),2)
-        verify9999 = doc.relateddocument_set.filter(target__name='rfc9999')
-        self.assertTrue(verify9999)
-        self.assertEqual(verify9999.count(),1)
-        self.assertEqual(verify9999[0].relationship.slug,'toexp')
-        verify9998 = doc.relateddocument_set.filter(target__name='rfc9998')
-        self.assertTrue(verify9998)
-        self.assertEqual(verify9998.count(),1)
-        self.assertEqual(verify9998[0].relationship.slug,'tobcp')
+        self.assertEqual(doc.relateddocument_set.count(),3)
+        def verify_relations(doc,target_name,status):
+            target_doc=doc.relateddocument_set.filter(target__name=target_name)
+            self.assertTrue(target_doc)
+            self.assertEqual(target_doc.count(),1)
+            self.assertEqual(target_doc[0].relationship.slug,status)
+        verify_relations(doc,'rfc9999','toexp' )
+        verify_relations(doc,'rfc9998','tobcp' )
+        verify_relations(doc,'rfc14'  ,'tohist')
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Affected RFC list changed.'))       
         
     def setUp(self):
