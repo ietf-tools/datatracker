@@ -2,10 +2,10 @@ ietfdb (5.0.2) ietf; urgency=medium
 
   This is a minor bugfix release.
 
-  * Extend the set of allowed hosts slightly.
+  * Merged [7292] from rjsparks@nostrum.com:
+    Allow 1-3 digit RFCs in status change documents. Fixes bug #1321.
 
-  * Changed the use of non-existing variable 'ascii' to 'person.ascii'.  
-    Fixes a server failure for person alias creation during draft submissions.
+  * Fixed a server failure for person alias creation during draft submissions.
 
   * Fixed overflow error for meetings without timeslots, which gave server 
     errors for meeting/64/agenda.html.
@@ -42,7 +42,7 @@ ietfdb (5.0.2) ietf; urgency=medium
 
   * Set version info and settings back to development mode
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  22 Feb 2014 21:41:57 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Feb 2014 16:53:54 +0100
 
 
 ietfdb (5.0.1) ietf; urgency=medium
