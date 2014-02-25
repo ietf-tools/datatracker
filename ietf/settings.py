@@ -294,21 +294,13 @@ CACHE_MIDDLEWARE_SECONDS = 300
 CACHE_MIDDLEWARE_KEY_PREFIX = ''
 
 # The default with no CACHES setting is 'django.core.cache.backends.locmem.LocMemCache'
-if SERVER_MODE == 'production':
-
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-            'LOCATION': '127.0.0.1:11211',
-        }
+# This setting is possibly overridden further down, after the import of settings_local
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
     }
-else:
-    # Default to no caching in development/test
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        }
-    }
+}
 
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
@@ -416,5 +408,11 @@ from settings_local import *
 # absolutely vital that django fails to start in production mode unless a
 # secret key has been provided elsewhere, not in this file which is
 # publicly available, for instance from the source repository.
-if SERVER_MODE != 'production' and 'SECRET_KEY' not in locals():
-    SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
+if SERVER_MODE != 'production':
+    CACHES = {
+         'default': {
+             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+         }
+    }
+    if 'SECRET_KEY' not in locals():
+        SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
