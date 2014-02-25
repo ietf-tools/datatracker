@@ -416,5 +416,5 @@ from settings_local import *
 # absolutely vital that django fails to start in production mode unless a
 # secret key has been provided elsewhere, not in this file which is
 # publicly available, for instance from the source repository.
-if SERVER_MODE != 'production' and SECRET_KEY not in locals():
+if SERVER_MODE != 'production' and 'SECRET_KEY' not in locals():
     SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
