@@ -523,6 +523,11 @@ def to_iesg(request,name):
         'wg'   : State.objects.get(type='draft-stream-ietf',slug='sub-pub'),
     }
 
+    target_map={ 
+        'draft-iesg'        : 'iesg',
+        'draft-stream-ietf' : 'wg'
+    }
+
     warn={}
     if not doc.intended_std_level:
         warn['intended_std_level'] = True
@@ -558,12 +563,12 @@ def to_iesg(request,name):
                 e.desc = "IESG process started in state <b>%s</b>" % target_state['iesg'].name
                 e.save()
 
-            if not doc.get_state('draft-iesg')==target_state['iesg']:
-                doc.set_state(target_state['iesg'])
-                changes.append("IESG state set to %s" % target_state['iesg'].name)
-            if not doc.get_state('draft-ietf-stream')==target_state['wg']:
-                doc.set_state(target_state['wg'])
-                changes.append("Working group state set to %s" % target_state['wg'].name)
+            for state_type in ['draft-iesg','draft-stream-ietf']:
+                prev_state=doc.get_state(state_type)
+                new_state = target_state[target_map[state_type]]
+                if not prev_state==new_state:
+                    doc.set_state(new_state)
+                    add_state_change_event(doc=doc,by=login,prev_state=prev_state,new_state=new_state)
 
             if not doc.ad == ad :
                 doc.ad = ad
@@ -584,7 +589,6 @@ def to_iesg(request,name):
                 e.type = "changed_document"
                 e.save()
 
-            # Is this still necessary? I remember Henrik planning to have the model take care of this.
             doc.time = datetime.datetime.now()
 
             doc.save()
