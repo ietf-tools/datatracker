@@ -40,7 +40,7 @@ def add_headers(msg):
 	msg['From'] = settings.DEFAULT_FROM_EMAIL
     return msg
 
-class SMTPRefusedRecipients(smtplib.SMTPException):
+class SMTPSomeRefusedRecipients(smtplib.SMTPException):
 
     def __init__(self, message, original_msg, refusals):
         smtplib.SMTPException.__init__(self, message)
@@ -99,11 +99,12 @@ def send_smtp(msg, bcc=None):
                 server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
             unhandled = server.sendmail(frm, to, msg.as_string())
             if unhandled != {}:
-                raise SMTPRefusedRecipients(message="%d addresses were refused"%len(unhandled),original_msg=msg,refusals=unhandled)
+                raise SMTPSomeRefusedRecipients(message="%d addresses were refused"%len(unhandled),original_msg=msg,refusals=unhandled)
         except Exception as e:
             # need to improve log message
             log("Exception while trying to send email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
             if isinstance(e, smtplib.SMTPException):
+                e.original_msg=msg
                 raise 
             else:
                 raise smtplib.SMTPException({'really': sys.exc_info()[0], 'value': sys.exc_info()[1], 'tb': traceback.format_tb(sys.exc_info()[2])})
@@ -271,8 +272,8 @@ def log_smtp_exception(e):
         
 
     log("SMTP Exception: %s : %s" % (extype,value))
-    if isinstance(e,SMTPRefusedRecipients):
-        log("     Refused: %s"%(e.summary_refusals()))
+    if isinstance(e,SMTPSomeRefusedRecipients):
+        log("     SomeRefused: %s"%(e.summary_refusals()))
     log("     Traceback: %s" % tb) 
     return (extype, value, tb)
 
@@ -287,9 +288,9 @@ def smtp_error_logging(thing):
                   To: <action@ietf.org> 
                   From: %s
                   """) % settings.SERVER_EMAIL
-        if isinstance(e,SMTPRefusedRecipients):
+        if isinstance(e,SMTPSomeRefusedRecipients):
             msg += textwrap.dedent("""\
-                      Subject: Recipients were refused while sending mail with Subject: %s
+                      Subject: Some recipients were refused while sending mail with Subject: %s
 
                       This is a message from the datatracker to IETF-Action about an email
                       delivery failure, when sending email from the datatracker.
@@ -301,7 +302,6 @@ def smtp_error_logging(thing):
                       %s
                       --------- END ORIGINAL MESSAGE ---------
                       """) % (e.original_msg.get('Subject', '[no subject]'),e.detailed_refusals(),e.original_msg.as_string())
-                      
         else:
             msg += textwrap.dedent("""\
                       Subject: Datatracker error while sending email
@@ -309,13 +309,23 @@ def smtp_error_logging(thing):
                       This is a message from the datatracker to IETF-Action about an email
                       delivery failure, when sending email from the datatracker.
 
+                      The original message was not delivered to anyone.
+
                       SMTP Exception: %s
 
                       Error Message: %s
+                     
                       """) % (extype,value)
+            if hasattr(e,'original_msg'):
+                msg += textwrap.dedent("""\
+                      The original message follows:
+                      -------- BEGIN ORIGINAL MESSAGE --------
+                      %s
+                      --------- END ORIGINAL MESSAGE ---------
+                      """) % e.original_msg.as_string()
         try:
             send_mail_preformatted(request=None, preformatted=msg)
         except smtplib.SMTPException as ticket_mail_error:
-            log("Exception encountered while send a ticket to the secretariat")
+            log("Exception encountered while sending a ticket to the secretariat")
             (extype,value) = sys.exc_info()[:2]
             log("SMTP Exception: %s : %s" % (extype,value))
