@@ -437,7 +437,10 @@ def clean_helper(form, formtype):
                 status_fields[k[21:]]=v
         for key in rfc_fields:
            if rfc_fields[key]!="":
-             new_relations[rfc_fields[key]]=status_fields[key]
+             if key in status_fields:
+                 new_relations[rfc_fields[key]]=status_fields[key]
+             else:
+                 new_relations[rfc_fields[key]]=None
         
         form.relations = new_relations
 
