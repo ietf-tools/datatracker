@@ -149,6 +149,13 @@ read -p "Continue with diff? [Y/n] "
 note "Diff:"
 svn diff -c $rev $repo/$branch | less
 
+read -p "Additional descriptive text (hit return for none): "
+if [ $REPLY != "" ]; then
+    comment="$REPLY
+
+$comment"
+fi
+
 echo ""
 read -p "Continue with the merge? [Y/n] "
 [ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || exit
