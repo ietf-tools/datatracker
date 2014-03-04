@@ -127,7 +127,7 @@ def build_nonsession(meeting):
                                 time=new_time,
                                 duration=slot.duration,
                                 show_location=slot.show_location)
-        ScheduledSession.create(schedule=schedule,session=session,timeslot=ts)
+        ScheduledSession.objects.create(schedule=schedule,session=session,timeslot=ts)
 
 def get_last_meeting(meeting):
     last_number = int(meeting.number) - 1
