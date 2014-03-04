@@ -5,8 +5,9 @@ from functools import wraps
 
 from ietf.ietfauth.utils import has_role
 from ietf.doc.models import Document
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.meeting.models import Session
+from ietf.secr.utils.meeting import get_timeslot
 
 from itertools import chain
 
@@ -24,13 +25,13 @@ def check_for_cancel(redirect_url):
             return func(request, *args, **kwargs)
         return inner
     return decorator
-    
+
 def check_permissions(func):
     """
     This decorator checks that the user making the request has access to the
     object being requested.  Expects one of the following four keyword
-    arguments: 
-    
+    arguments:
+
     acronym: a group acronym
     session_id: a session id (used for sessions of type other or plenary)
     meeting_id, slide_id
@@ -51,19 +52,20 @@ def check_permissions(func):
             slide = get_object_or_404(Document, name=kwargs['slide_id'])
             session = slide.session_set.all()[0]
             group = session.group
-        
+
         login = request.user.person
-        all_roles = chain(
-            group.role_set.filter(name__in=('chair','secr')),
-            group.parent.role_set.filter(name__in=('ad','chair')))
+        groups = [group]
+        if group.parent:
+            groups.append(group.parent)
+        all_roles = Role.objects.filter(group__in=groups,name__in=('ad','chair','secr'))
         if login in [ r.person for r in all_roles ]:
             return func(request, *args, **kwargs)
-            
+
         # if session is plenary allow ietf/iab chairs
-        if session and session.timeslot_set.filter(type__slug='plenary'):
-            if login.role_set.filter(name='Chair',group__acronym__in=('iesg','iab')):
+        if session and get_timeslot(session).type.slug=='plenary':
+            if login.role_set.filter(name='chair',group__acronym__in=('iesg','iab')):
                 return func(request, *args, **kwargs)
-            
+
         # if we get here access is denied
         return render_to_response('unauthorized.html',{
             'user_name':login,
@@ -80,7 +82,7 @@ def sec_only(func):
         # short circuit.  secretariat user has full access
         if request.user_is_secretariat:
             return func(request, *args, **kwargs)
-        
+
         return render_to_response('unauthorized.html',{
             'user_name':request.user.person}
         )
