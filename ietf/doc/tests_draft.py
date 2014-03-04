@@ -567,12 +567,11 @@ class ExpireIDsTests(TestCase):
 
         clean_up_draft_files()
         
-        # txt files shouldn't be moved (for some reason)
-        self.assertTrue(os.path.exists(os.path.join(self.id_dir, txt)))
-        
-        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, pdf)))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "unknown_ids", pdf)))
+        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
 
+        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, pdf)))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, pdf)))
 
         # expire draft
         draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
@@ -587,26 +586,13 @@ class ExpireIDsTests(TestCase):
         e.time = draft.expires
         e.save()
 
-        # expired without tombstone
         txt = "%s-%s.txt" % (draft.name, draft.rev)
         self.write_draft_file(txt, 5000)
 
         clean_up_draft_files()
         
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "expired_without_tombstone", txt)))
-        
-
-        # expired with tombstone
-        revision_before = draft.rev
-
-        txt = "%s-%s.txt" % (draft.name, draft.rev)
-        self.write_draft_file(txt, 1000) # < 1500 means tombstone
-
-        clean_up_draft_files()
-        
-        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "deleted_tombstones", txt)))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
 
 
 class ExpireLastCallTests(TestCase):

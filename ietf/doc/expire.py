@@ -57,10 +57,10 @@ def in_draft_expire_freeze(when=None):
     d = Meeting.get_second_cut_off()
     # for some reason, the old Perl code started at 9 am
     second_cut_off = datetime.datetime.combine(d, datetime.time(9, 0))
-    
+
     d = Meeting.get_ietf_monday()
     ietf_monday = datetime.datetime.combine(d, datetime.time(0, 0))
-    
+
     return second_cut_off <= when < ietf_monday
 
 def send_expire_warning_for_draft(doc):
@@ -76,7 +76,7 @@ def send_expire_warning_for_draft(doc):
 
     s = doc.get_state("draft-iesg")
     state = s.name if s else "I-D Exists"
-        
+
     frm = None
     request = None
     if to or cc:
@@ -151,7 +151,7 @@ def clean_up_draft_files():
     pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
     files = []
     filename_re = re.compile('^(.*)-(\d\d)$')
-    
+
     def splitext(fn):
         """
         Split the pathname path into a pair (root, ext) such that root + ext
@@ -182,23 +182,16 @@ def clean_up_draft_files():
         def move_file_to(subdir):
             shutil.move(path,
                         os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, subdir, basename))
-            
+
         try:
             doc = Document.objects.get(name=filename, rev=revision)
 
             state = doc.get_state_slug()
 
-            if state == "rfc":
-                if ext != ".txt":
-                    move_file_to("unknown_ids")
-            elif state in ("expired", "repl", "auth-rm", "ietf-rm") and doc.expires and doc.expires.date() < cut_off:
-                # Expired, Replaced, Withdrawn by Author/IETF, and expired
-                if os.path.getsize(path) < 1500:
-                    # we don't make tombstones any more so this should
-                    # go away in the future
-                    move_file_to("deleted_tombstones")
-                else:
-                    move_file_to("expired_without_tombstone")
-            
+            if state in ("rfc","repl"):
+                move_file_to("")
+            elif state in ("expired", "auth-rm", "ietf-rm") and doc.expires and doc.expires.date() < cut_off:
+                move_file_to("")
+
         except Document.DoesNotExist:
             move_file_to("unknown_ids")
