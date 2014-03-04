@@ -10,6 +10,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.search import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent, DocTagName
+from ietf.doc.utils import needed_ballot_positions
 from ietf.person.models import Person
 from ietf.group.models import Group, Role
 from ietf.doc.utils import needed_ballot_positions
@@ -374,7 +375,10 @@ def generate_issue_ballot_mail(request, doc, ballot):
                                  last_call_expires=last_call_expires,
                                  approval_text=approval_text,
                                  ballot_writeup=ballot_writeup,
-                                 approvalneeds=needed_ballot_positions(doc, positions),
+                                 needed_ballot_positions=
+                                   needed_ballot_positions(doc,
+                                     doc.active_ballot().active_ad_positions().values()
+                                   ),
                                  )
                             )
 

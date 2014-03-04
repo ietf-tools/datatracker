@@ -17,7 +17,7 @@ Subject: Evaluation: {{ doc.file_tag }} to {{ doc|std_level_prompt }}
 {% for fmt in inactive_ad_positions %}{{ fmt }}
 {% endfor %}{% endif %}
 
-{{ approvalneeds }}
+{% filter wordwrap:73 %}{{ needed_ballot_positions }}{% endfilter %}
 
 DISCUSSES AND COMMENTS
 ======================
