@@ -12,6 +12,7 @@ from ietf.ipr.search import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent, DocTagName
 from ietf.person.models import Person
 from ietf.group.models import Group, Role
+from ietf.doc.utils import needed_ballot_positions
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
@@ -373,6 +374,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
                                  last_call_expires=last_call_expires,
                                  approval_text=approval_text,
                                  ballot_writeup=ballot_writeup,
+                                 approvalneeds=needed_ballot_positions(doc, positions),
                                  )
                             )
 

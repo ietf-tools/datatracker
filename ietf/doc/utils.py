@@ -79,7 +79,9 @@ def needed_ballot_positions(doc, active_positions):
     if doc.type_id == "draft" and doc.intended_std_level_id in ("bcp", "ps", "ds", "std"):
         # For standards-track, need positions from 2/3 of the
         # non-recused current IESG.
-        needed = int(math.ceil((len(active_positions) - len(recuse)) * 2.0/3.0))
+        active = len(Person.objects.filter(role__name="ad", 
+            role__group__state="active").distinct())
+        needed = int(math.ceil((active - len(recuse)) * 2.0/3.0))
     else:
         if len(yes) < 1:
             return " ".join(answer)

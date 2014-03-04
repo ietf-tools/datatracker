@@ -17,8 +17,7 @@ Subject: Evaluation: {{ doc.file_tag }} to {{ doc|std_level_prompt }}
 {% for fmt in inactive_ad_positions %}{{ fmt }}
 {% endfor %}{% endif %}
 
-"Yes" or "No-Objection" positions from 2/3 of non-recused ADs, 
-with no "Discuss" positions, are needed for approval.
+{{ approvalneeds }}
 
 DISCUSSES AND COMMENTS
 ======================
