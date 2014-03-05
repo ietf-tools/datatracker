@@ -1,3 +1,65 @@
+ietfdb (5.1.0) ietf; urgency=high
+
+  This release contains the datatracker bugfixes and enhancements from the
+  IETF-89 Code Sprint.  Many thanks to everyone that contributed!  There are
+  still some contributions from the sprint in the pipeline; they will be included
+  in later releases.
+
+  * Merged in [7400] from rcross@amsl.com: 
+    Fixed bugs with decorators.check_permissions() to allow upload to top
+    level groups,  and fixed the plenary upload check.
+
+  * Merged in [7398] from rcross@amsl.com:
+    Added X-CSRFToken AJAX request header for certain /secr/ pages needing it.
+
+  * Merged in [7397] from rcross@amsl.com: 
+    Fixed a bug where build_nonsession() not creating ScheduledSession
+    objects.  
+
+  * Merged in [7383] from jmh@joelhalpern.com:
+    Changes counting logic in ballots to use actual number of ADs.
+    Causes ballot email to use utility to generate requirements text 
+    Fixes ticket #924
+
+  * Merged in part of [7375] from jmh@joelhalpern.com:
+    Fixed missing mailto: addresses in the meeting requests page.  Fixes issue 
+    #1126.
+
+  * Merged in part of [7375] from jmh@joelhalpern.com:
+    Now sending draft update notices to IRSG for IRTF stream drafts.  Fixes 
+    issue #1227.
+
+  * Merged in [7396] and [7378] from rcross@amsl.com:
+    Simplified clean_up_draft_files(). Removed references to old draft-archive
+    subdirectories, and fixed for all RFC file types " Fixes ticket #1164
+
+  * Merged in [7386] from tterriberry@mozilla.com: 
+    Describe needed positions in document ballot mail.
+    This uses doc.utils.needed_ballot_positions() to calculate what is needed.
+    Fixes #924.
+
+  * Merged in [7380] from bartosz.balazinski@interdigital.com:
+    Changed the URL for some acoount settings from /cookies to 
+    /account/settings.  Fixes ticket #806
+
+  * Merged in [7368] from rjsparks@nostrum.com:
+    Improves the detail in the messages sent when creating tickets about
+    failed sent email.  Changes a locally defined exception name to look less
+    like one already defined in smtplib.  This is related to ticket #1208. 
+
+  * Merged in [7365] from rjsparks@nostrum.com: 
+    Improve handling of status-change relation form submission when conditions
+    (such as not running javascript) lead to the POST missing required fields.
+
+  * Merged in [7371] from rjsparks@nostrum.com: 
+    Migration to repair missing StateDocEvents from wg chairs using the
+    datatracker to request publication of ietf stream documents.  Incremental
+    improvement to the request publication view to create those StateDocEvents
+    going forward.  This is related to bug #1312 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Mar 2014 18:20:31 +0100
+
+
 ietfdb (5.0.2) ietf; urgency=medium
 
   This is a minor bugfix release.
