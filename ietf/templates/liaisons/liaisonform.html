@@ -44,9 +44,7 @@
 {% if form.edit %}
     <input type="submit" value="Save" name="save" />
 {% else %}
-    {% if not form.get_post_only %}
     <input type="submit" value="Send and Post" name="send" />
-    {% endif %}
     <input type="submit" value="Post Only" name="post_only" />
 {% endif %}
     <div id="cancel-dialog" style="display: none;" title="Cancel {% if form.edit %}editing liaison{% else %}adding new liaison{% endif %}">
