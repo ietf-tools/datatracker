@@ -8,9 +8,11 @@ from ietf.group.models import Group
 
 
 def make_meeting_test_data():
-    make_test_data()
+    if not Group.objects.filter(acronym='mars'):
+        make_test_data()
     system_person = Person.objects.get(name="(System)")
     plainman = Person.objects.get(user__username="plain")
+    secretary = Person.objects.get(user__username="secretary")
 
     meeting = Meeting.objects.get(number="42", type="ietf")
     schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-agenda", visible=True, public=True)

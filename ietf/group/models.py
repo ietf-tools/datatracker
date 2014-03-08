@@ -63,6 +63,9 @@ class Group(GroupInfo):
             role_names = [role_names]
         return user.is_authenticated() and self.role_set.filter(name__in=role_names, person__user=user).exists()
 
+    def is_bof(self):
+        return (self.state.slug in ["bof", "bof-conc"])
+
     def get_chair(self):
         chair = self.role_set.filter(name__slug='chair')[:1]
         return chair and chair[0] or None

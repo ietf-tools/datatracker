@@ -1,4 +1,4 @@
-         <span class="required">*</span> Required Field 
+         <span class="required">*</span> Required Field
          <form id="session-request-form" action="." method="post" name="form_post">{% csrf_token %}
          {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
          <table id="sessions-new-table" cellspacing="1" cellpadding="1" border="0">
@@ -50,12 +50,38 @@
              </table>
            </td>
            </tr>
-           <tr bgcolor="#cccccc">
+           <tr class="bg1"><td>People who need to be present:</td>
+           <td>
+             {{ bepresent_formset.management_form }}
+             <table style="width: 100%;">
+               <tr>
+                 <th style="width: 70%;">Person</th>
+                 <th>Must be present?</th>
+               </tr>
+               {% for essential_person_form in bepresent_formset.forms %}
+               <tr class="{% cycle 'bg3' 'bg2'%}">
+                 <td>{{ essential_person_form.person }}</td>
+                 <td>{{ essential_person_form.bethere }}</td>
+               </tr>
+               {% endfor %}
+             </table>
+           </td>
+           </tr>
+           <tr class="bg2"><td>Resources requested:</td>
+           <td>
+           {{ form.resources }}
+           </td>
+           </tr>
+           <tr class="bg1">
              <td valign="top">Special Requests:<br />&nbsp;<br />i.e. Meetecho, WebEx (please state which, and the reason needed), restrictions on meeting times / days, etc.</td>
              <td>{{ form.comments.errors }}{{ form.comments }}</td>
            </tr>
          </table>
-         
+
          {% include "includes/buttons_save_cancel.html" %}
-      
+
          </form>
+{% block content_end %}
+<script type="text/javascript" src="/js/lib/jquery.tokeninput.js"></script>
+<script type="text/javascript" src="/js/tokenized-field.js"></script>
+{% endblock %}

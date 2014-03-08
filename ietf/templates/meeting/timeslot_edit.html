@@ -20,17 +20,22 @@
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.sortable.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.accordion.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.draggable.js'></script>
+<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.datetime.js'></script>
 
-{% if server_mode and server_mode != "production" %}
-  <script src="https://towtruck.mozillalabs.com/towtruck.js"></script>
-{% endif %}
+<!-- source (MIT License) http://momentjs.com/ https://github.com/moment/moment/ -->
+<script type='text/javascript' src='/js/moment.min.js'></script>
+
+<!-- source (MIT License) : https://github.com/trentrichardson/jQuery-Timepicker-Addon -->
+<script type='text/javascript' src='/js/jquery-ui-timepicker/jquery-ui-timepicker-addon.js'></script>
+<script type='text/javascript' src='/js/jquery-ui-timepicker/jquery-ui-sliderAccess.js.js'></script>
+<link rel='stylesheet' type='text/css' href='/css/jquery-ui-timepicker-addon.css' />
 
 {% dajaxice_js_import %}
 
 <script type='text/javascript' src='/js/spin/dist/spin.min.js'></script>
 <script type='text/javascript' src='/js/agenda/timeslot_edit.js'></script>
-<script type='text/javascript' src='/js/agenda/agenda_helpers.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_objects.js'></script>
+<script type='text/javascript' src='/js/agenda/agenda_helpers.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_listeners.js'></script>
 
 
@@ -41,29 +46,25 @@ function my_js_callback(data){
     alert(data.message);
 }<!-- dajaxice example --> {% endcomment %}
 
+var meeting_number   = "{{ meeting.number }}";
 var meeting_base_url = "{{ meeting_base_url }}";
 var site_base_url = "{{ site_base_url }}";
 total_days = {{time_slices|length}};
 total_rooms = {{rooms|length}};
-function setup_slots(){
 
-{% for ts in timeslots %}
-   make_ss({
-     "timeslot_id":"{{ts.id}}",
-     "room"       :"{{ts.location|slugify}}",
-     "roomtype"   :"{{ts.type.slug}}",
-     "time"       :"{{ts.time|date:'Hi' }}",
-     "date"       :"{{ts.time|date:'Y-m-d'}}",
-     "domid"      :"{{ts.js_identifier}}"});
+first_day = new Date("{% with timeslots|first as day %} {{ day.time }} {% endwith %}"); /* needed for the datepicker */
+
+function setup_slots(promiselist){
+var ts_promise = load_timeslots("{% url "ietf.meeting.ajax.timeslot_slotsurl" meeting.number %}");
+promiselist.push(ts_promise);
+
+{% for day in time_slices %}
+    days.push("{{day}}");
 {% endfor %}
-
    console.log("setup_slots run");
 }
 
 </script>
-<style type='text/css'>
-
-</style>
 {% endblock js %}
 
 
@@ -79,9 +80,10 @@ function setup_slots(){
 <div class="agenda_div">
 
 <table id="meetings" class="ietf-navbar" style="width:100%">
-  <th class="schedule_title"><span id="schedule_name">name: {{meeting.number}}</span>
+  <th class="schedule_title"><div id="pageloaded" style="display:none"><span id="schedule_name">name: {{meeting.number}}</span></div>
   <div id="spinner"><!-- spinney goes here --></div>
   </th>
+      <th><!-- resources --></th>
 {% for day in time_slices %}
   <th colspan="{{date_slices|colWidth:day}}" id="{{day|date:'Y-m-d'}}-btn" class=" day_{{day}} agenda_slot_title">
     <div style="display: none;" class="delete delete_day bottom_left" id="delete_{{day|date:'Y-m-d'}}">X</div>
@@ -99,6 +101,7 @@ function setup_slots(){
         <div class="addbutton" id="add_room">+ROOM</div>
         <div class="addbutton" id="add_day">+DAY</div>
       </th>
+      <th><!-- resources --></th>
     {% for day in time_slices %}
 	  {% for slot in slot_slices|lookup:day %}
 	      <th class="day_{{day}} room_title">
@@ -117,18 +120,28 @@ function setup_slots(){
     {% endfor %}
 
   {% for r in rooms %}
-  <tr id="{{r|to_acceptable_id}}" class="agenda_slot">
+  <tr id="{{r.name|to_acceptable_id}}" class="agenda_slot_row">
     <th class="vert_time">
       <div class="delete delete_room bottom_left"
-	   id="delete_{{r|to_acceptable_id}}"
+	   id="delete_{{r.name|to_acceptable_id}}"
 	   href="{{r.json_url}}"
 	   roomid="{{r.pk}}">X</div>
-      <div class="right room_name">{{r}} <span class="capacity">({{r.capacity}})</span></div>
+      <div class="right room_name"><a class="edit_room editlink"
+      href="/meeting/{{ meeting.number }}/room/{{r.pk}}.html" >{{r.name}} <span class="capacity">({{r.capacity}})</span></a></div>
 
-      <!-- <span class="hide_room light_blue_border">X</span><span class="left">{{r}}</span></th> -->
+      <!-- <span class="hide_room light_blue_border">X</span><span class="left">{{r.name}}</span></th> -->
+    <th class="room_features">
+      <div class="resource_list">
+      {% for resource in r.resources.all %}
+      <span class="resource_image">
+      <img src="/images/{{ resource.icon }}" height=24 alt="{{resource.desc}}" title="{{resource.desc}}"/>
+      </span>
+      {% endfor %}
+      </div>
+    </th>
     {% for day in time_slices %}
       {% for slot in date_slices|lookup:day %}
-        <td id="{{r|slugify}}_{{day}}_{{slot.0|date:'Hi'}}" class="day_{{day}} agenda-column-{{day}}-{{slot.0|date:'Hi'}} agenda_slot {% cycle 'agenda_slot_alt' '' %} agenda_slot_unavailable" ></td>
+        <td slot_time="{{day}} {{slot.0|date:'H:i:s'}}" slot_duration="{{slot.2}}" slot_room="{{r.pk}}" id="{{r.domid}}_{{day}}_{{slot.0|date:'Hi'}}" class="day_{{day}} agenda-column-{{day}}-{{slot.0|date:'Hi'}} agenda_slot {% cycle 'agenda_slot_alt' '' %} agenda_slot_unavailable" ></td>
       {% endfor %}
         <td class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer"></td>
     {% endfor %}
@@ -148,7 +161,9 @@ function setup_slots(){
 <div class="dialog" id="add_day_dialog">
    <table>
       <form action="{{adddayurl}}" method="post">{% csrf_token %}
-        {{ addday.as_table }}
+	{{ addday }}
+	<tr><th><label>Duration</label></th><td><input type="text" id="duration_time"></td></tr>
+	<tr><th></th><td><div id="timespan"></div></td></tr>
         <tr><td><input type="submit" name="addday" value="addday"></td></tr>
       </form>
    </table>

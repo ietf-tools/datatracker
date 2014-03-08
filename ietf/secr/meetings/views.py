@@ -163,11 +163,16 @@ def send_notification(request, sessions):
     Room Name: {6}
     ---------------------------------------------
     '''
+
+    requestinguser = None
+    if request is not None:
+        requestinguser = request.user.person
+
     group = sessions[0].group
     to_email = sessions[0].requested_by.role_email('chair').address
-    cc_list = get_cc_list(group, request.user.person)
+    cc_list = get_cc_list(group, requestinguser)
     from_email = ('"IETF Secretariat"','agenda@ietf.org')
-    if sessions.count() == 1:
+    if len(sessions) == 1:
         subject = '%s - Requested session has been scheduled for IETF %s' % (group.acronym, sessions[0].meeting.number)
     else:
         subject = '%s - Requested sessions have been scheduled for IETF %s' % (group.acronym, sessions[0].meeting.number)
@@ -193,6 +198,8 @@ def send_notification(request, sessions):
     context['agenda_note'] = sessions[0].agenda_note
     context['session'] = get_initial_session(sessions)
     context['session_info'] = session_info
+    context['group'] = group
+    context['login'] = sessions[0].requested_by
 
     send_mail(request,
               to_email,
