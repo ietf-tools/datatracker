@@ -155,6 +155,7 @@ class ApiTests(TestCase):
         self.assertTrue(not meeting.room_set.filter(pk=room.pk))
         self.assertTrue(not TimeSlot.objects.filter(pk__in=timeslots_before))
 
+    # This really belongs in group tests
     def test_group_json(self):
         meeting = make_meeting_test_data()
         group = Group.objects.get(acronym="mars")
@@ -165,6 +166,7 @@ class ApiTests(TestCase):
         info = json.loads(r.content)
         self.assertEqual(info["name"], group.name)
 
+    # This really belongs in person tests
     def test_person_json(self):
         meeting = make_meeting_test_data()
         person = Person.objects.get(user__username="ad")
