@@ -23,7 +23,7 @@ def make_meeting_test_data():
                                    time=datetime.datetime.combine(datetime.date.today(), datetime.time(9, 30)))
     mars_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="mars"),
                                           attendees=10, requested_by=system_person,
-                                          requested_duration=20, status_id="sched",
+                                          requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now())
     ScheduledSession.objects.create(timeslot=slot, session=mars_session, schedule=schedule)
 
@@ -32,7 +32,7 @@ def make_meeting_test_data():
                                    time=datetime.datetime.combine(datetime.date.today(), datetime.time(10, 30)))
     ames_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="ames"),
                                           attendees=10, requested_by=system_person,
-                                          requested_duration=20, status_id="sched",
+                                          requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now())
     ScheduledSession.objects.create(timeslot=slot, session=ames_session, schedule=schedule)
 

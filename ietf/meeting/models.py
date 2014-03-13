@@ -206,11 +206,20 @@ class Meeting(models.Model):
         return ''
 
     def set_official_agenda(self, agenda):
+        # send_notification should be refactored into Session
+        from ietf.secr.meetings.views import send_notification
         if self.agenda != agenda:
             self.agenda = agenda
             self.save()
             if self.agenda is not None:
-                self.agenda.sendEmail()
+                for ss in self.agenda.scheduledsession_set.all():
+                    session = ss.session
+                    if session.status.slug == "schedw":
+                        session.status_id = "sched"
+                        session.scheduled = datetime.datetime.now()
+                        session.save()
+                        # refactoring send_notification will obviate this odd hoop-jump
+                        send_notification(None, Session.objects.filter(id=session.id))
 
     class Meta:
         ordering = ["-date", ]
@@ -603,18 +612,6 @@ class Schedule(models.Model):
     def delete_schedule(self):
         self.scheduledsession_set.all().delete()
         self.delete()
-
-    # send email to every session requester whose session is now scheduled.
-    # mark the sessions as now state scheduled, rather than waiting.
-    def sendEmail(self):
-        for ss in self.scheduledsession_set.all():
-            session = ss.session
-            if session.status.slug == "schedw":
-                session.status_id = "sched"
-                session.scheduled = datetime.datetime.now()
-                session.save()
-                from ietf.secr.meetings.views import send_notification
-                send_notification(None, Session.objects.filter(id=session.id))
 
 # to be renamed ScheduleTimeslotSessionAssignments (stsa)
 class ScheduledSession(models.Model):

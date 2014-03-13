@@ -273,6 +273,13 @@ def add(request):
         if form.is_valid():
             meeting = form.save()
 
+            schedule = Schedule.objects.create(meeting = meeting,
+                                               name    = 'Empty Schedule',
+                                               owner   = Person.objects.get(name='(System)'),
+                                               visible = True,
+                                               public  = True)
+            meeting.set_official_agenda(schedule)
+
             #Create Physical new meeting directory and subdirectories
             make_directories(meeting)
 

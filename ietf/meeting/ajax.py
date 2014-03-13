@@ -53,9 +53,12 @@ def readonly(request, meeting_num, schedule_id):
          'owner_href':  request.build_absolute_uri(schedule.owner.json_url()),
          'read_only':   read_only})
 
-@role_required('Area Director','Secretariat')
 @dajaxice_register
 def update_timeslot_pinned(request, schedule_id, scheduledsession_id, pinned=False):
+
+    if not has_role(request.user,('Area Director','Secretariat')):
+        return json.dumps({'error':'no permission'})
+
     schedule = get_object_or_404(Schedule, pk = int(schedule_id))
     meeting  = schedule.meeting
     cansee,canedit = agenda_permissions(meeting, schedule, request.user)
@@ -75,7 +78,6 @@ def update_timeslot_pinned(request, schedule_id, scheduledsession_id, pinned=Fal
 
     return json.dumps({'message':'valid'})
 
-@role_required('Secretariat')
 @dajaxice_register
 def update_timeslot_purpose(request,
                             meeting_num,
@@ -84,6 +86,9 @@ def update_timeslot_purpose(request,
                             room_id = None,
                             duration= None,
                             time    = None):
+
+    if not has_role(request.user,'Secretariat'):
+        return json.dumps({'error':'no permission'})
 
     meeting = get_meeting(meeting_num)
     ts_id = int(timeslot_id)
