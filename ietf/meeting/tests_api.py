@@ -50,8 +50,16 @@ class ApiTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("error" in json.loads(r.content))
 
+        # Until the next agenda merge, the access permissions on the function under
+        # test only allow the secretariat to make changes.
+        # Tweaking the test data here instead of in make_meeting_test_data to simplify
+        # returning to the intended test scenario after that merge
+        test_schedule = mars_scheduled.schedule
+        test_schedule.owner=Person.objects.get(user__username='secretary')
+        test_schedule.save()
+
         # move to ames
-        self.client.login(remote_user="plain")
+        self.client.login(remote_user="secretary")
         r = do_post(to=ames_scheduled)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("error" not in json.loads(r.content))
@@ -60,7 +68,7 @@ class ApiTests(TestCase):
         self.assertEqual(ScheduledSession.objects.get(pk=ames_scheduled.pk).session, session)
 
         # unschedule
-        self.client.login(remote_user="plain")
+        self.client.login(remote_user="secretary")
         r = do_post(to=None)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("error" not in json.loads(r.content))
