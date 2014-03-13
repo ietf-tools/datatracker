@@ -4,6 +4,7 @@ import datetime
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponseRedirect, HttpResponse
+from django.views.decorators.http import require_POST
 
 from dajaxice.decorators import dajaxice_register
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
@@ -316,47 +317,34 @@ def agenda_add(request, meeting):
     else:
         return redirect(edit_agenda, meeting.number, newagenda.name)
 
-@role_required('Area Director','Secretariat')
+@require_POST
 def agenda_update(request, meeting, schedule):
     # forms are completely useless for update actions that want to
     # accept a subset of values. (huh? we could use required=False)
 
-    #debug.log("99 meeting.agenda: %s / %s / %s" %
-    #          (schedule, update_dict, request.body))
-
     user = request.user
+
+    if not user.is_authenticated():
+        return HttpResponse({'error':'no permission'}, status=403)
 
     cansee,canedit = agenda_permissions(meeting, schedule, request.user)
     read_only = not canedit
 
-    if has_role(user, "Secretariat"):
-        if "public" in request.POST:
-            value1 = True
-            value = request.POST["public"]
-            if value == "0" or value == 0 or value=="false":
-                value1 = False
-            #debug.log("setting public for %s to %s" % (schedule, value1))
-            schedule.public = value1
+    def is_truthy_enough(value):
+        return not (value == "0" or value == 0 or value=="false")
 
-    if "visible" in request.POST and cansee:
-        value1 = True
-        value = request.POST["visible"]
-        if value == "0" or value == 0 or value=="false":
-            value1 = False
-        #debug.log("setting visible for %s to %s" % (schedule, value1))
-        schedule.visible = value1
-    if has_role(user, "Secretariat") and canedit:
-        if "name" in request.POST:
-            value = request.POST["name"]
-            #log.debug("setting name for %s to %s" % (schedule, value))
-            schedule.name = value
-    else:
-        return HttpResponse({'error':'no permission'}, status=401)
+    # TODO: Secretariat should always get canedit
+    if not (canedit or has_role(user, "Secretariat")):
+        return HttpResponse({'error':'no permission'}, status=403)
+    
+    if "public" in request.POST:
+        schedule.public = is_truthy_enough(request.POST["public"])
+
+    if "visible" in request.POST:
+        schedule.visible = is_truthy_enough(request.POST["visible"])
 
     if "name" in request.POST:
-        value = request.POST["name"]
-        #debug.log("setting name for %s to %s" % (schedule, value))
-        schedule.name = value
+        schedule.name = request.POST["name"]
 
     schedule.save()
 

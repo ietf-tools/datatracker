@@ -294,16 +294,13 @@ class ApiTests(TestCase):
             'name': 'new-test-name',
         }
 
-        # unauthorized post
-        self.client.login(remote_user="plain")
+        # unauthorized posts
+        self.client.logout()
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 403)
-
-        # TODO - permission protection on this function are not right
-        # Normal users are prevented from changing public/private on their own schedule
-        # The secretariat can't change normal user's agendas settings for them, and the
-        # page at /meeting/<num>/schedule/<name>/details behaves badly for the secretariat
-        # (pushing save seems to do nothing as the POST 401s in the background)
+        self.client.login(remote_user="ad")
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 403)
 
         # change agenda
         self.client.login(remote_user="secretary")

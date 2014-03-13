@@ -278,7 +278,8 @@ def add(request):
                                                owner   = Person.objects.get(name='(System)'),
                                                visible = True,
                                                public  = True)
-            meeting.set_official_agenda(schedule)
+            meeting.agenda = schedule
+            meeting.save()
 
             #Create Physical new meeting directory and subdirectories
             make_directories(meeting)

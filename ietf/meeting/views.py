@@ -12,7 +12,7 @@ from tempfile import mkstemp
 
 from django import forms
 from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, HttpResponseForbidden, Http404
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.template import RequestContext
@@ -322,11 +322,16 @@ def edit_agenda_properties(request, num=None, name=None):
     schedule = get_schedule(meeting, name)
     form     = AgendaPropertiesForm(instance=schedule)
 
-    return HttpResponse(render_to_string("meeting/properties_edit.html",
-                                         {"schedule":schedule,
-                                          "form":form,
-                                          "meeting":meeting},
-                                         RequestContext(request)), content_type="text/html")
+    cansee, canedit = agenda_permissions(meeting, schedule, request.user)
+
+    if not (canedit or has_role(request.user,'Secretariat')):
+        return HttpResponseForbidden("You may not edit this agenda")
+    else:
+        return HttpResponse(render_to_string("meeting/properties_edit.html",
+                                             {"schedule":schedule,
+                                              "form":form,
+                                              "meeting":meeting},
+                                             RequestContext(request)), content_type="text/html")
 
 ##############################################################################
 # show list of agendas.
