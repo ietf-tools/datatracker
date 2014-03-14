@@ -1,7 +1,8 @@
 import datetime
 
 from ietf.utils.test_data import make_test_data
-from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, ScheduledSession
+from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, ScheduledSession, ResourceAssociation
+from ietf.name.models import RoomResourceName
 from ietf.person.models import Person
 from ietf.doc.models import Document, State
 from ietf.group.models import Group
@@ -16,7 +17,10 @@ def make_meeting_test_data():
 
     meeting = Meeting.objects.get(number="42", type="ietf")
     schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-agenda", visible=True, public=True)
+    pname = RoomResourceName.objects.create(name='projector',slug='proj')
+    projector = ResourceAssociation.objects.create(name=pname,icon="notfound.png",desc="Basic projector")
     room = Room.objects.create(meeting=meeting, name="Test Room", capacity=123)
+    room.resources = [projector]
 
     # mars WG
     slot = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=30 * 60, location=room,
@@ -25,6 +29,7 @@ def make_meeting_test_data():
                                           attendees=10, requested_by=system_person,
                                           requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now())
+    mars_session.resources = [projector]
     ScheduledSession.objects.create(timeslot=slot, session=mars_session, schedule=schedule)
 
     # ames WG
