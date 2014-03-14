@@ -491,7 +491,7 @@ def scheduledsessions_post(request, meeting, schedule):
     if("extendedfrom_id" in newvalues):
         val = int(newvalues["extendedfrom_id"])
         try:
-            ss2 = schedule.scheduledsessions_set.get(pk = val)
+            ss2 = schedule.scheduledsession_set.get(pk = val)
             ss1.extendedfrom = ss2
         except ScheduledSession.DoesNotExist:
             return HttpResponse(json.dumps({'error':'invalid extendedfrom value: %u' % val}),

@@ -47,6 +47,14 @@ class ApiTests(TestCase):
             post_data = '{ "session_id": "%s", "timeslot_id": "%s" }'%(session.pk,timeslot.pk)
             return self.client.post(url,post_data,content_type='application/x-www-form-urlencoded')
 
+        def do_extend(schedule,scheduledsession):
+            session = scheduledsession.session
+            url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",
+                              kwargs=dict(num=session.meeting.number,
+                                          name=schedule.name,))
+            post_data = '{ "session_id": "%s", "timeslot_id": "%s", "extendedfrom_id": "%s" }'%(session.pk,scheduledsession.timeslot.slot_to_the_right.pk,scheduledsession.timeslot.pk)
+            return self.client.post(url,post_data,content_type='application/x-www-form-urlencoded')
+
         # not logged in
         # faulty delete 
         r = do_unschedule(mars_scheduled)
@@ -75,12 +83,23 @@ class ApiTests(TestCase):
         r = do_schedule(schedule,ames_session,mars_slot)
         self.assertEqual(r.status_code, 201)
 
-        # Unschedule mars
+        # Move the two timeslots close enough together for extension to work
+        ames_slot_qs=TimeSlot.objects.filter(id=ames_slot.id)
+        ames_slot_qs.update(time=mars_slot.time+mars_slot.duration+datetime.timedelta(minutes=10))
+        
+        # Extend the mars session
+        r = do_extend(schedule,mars_scheduled)
+        self.assertEqual(r.status_code, 201)
+        self.assertTrue("error" not in json.loads(r.content))
+        self.assertEqual(mars_session.scheduledsession_set.count(),2)
+
+        # Unschedule mars 
         r = do_unschedule(mars_scheduled)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("error" not in json.loads(r.content))
+        # Make sure it got both the original and extended session
+        self.assertEqual(mars_session.scheduledsession_set.count(),0)
 
-        self.assertEqual(ScheduledSession.objects.filter(session=mars_session).count(), 0)
         self.assertEqual(ScheduledSession.objects.get(session=ames_session).timeslot, mars_slot)
 
 
@@ -187,11 +206,12 @@ class ApiTests(TestCase):
         info = json.loads(r.content)
         self.assertEqual(set([x['short_name'] for x in info]),set(['mars','ames']))
 
-        schedule = Schedule.objects.filter(meeting=meeting).first()
+        schedule = meeting.agenda
         url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",kwargs=dict(num=meeting.number,name=schedule.name))
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         info = json.loads(r.content)
-        self.assertEqual(set([x['short_name'] for x in info]),set(['mars','ames']))
+        self.assertEqual(len(info),2)
 
 
     def test_slot_json(self):
