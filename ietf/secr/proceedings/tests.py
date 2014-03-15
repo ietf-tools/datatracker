@@ -1,11 +1,11 @@
-from django.core.urlresolvers import reverse
-from ietf.utils import TestCase
+import debug                            # pyflakes:ignore
 
+from django.core.urlresolvers import reverse
+
+from ietf.utils import TestCase
 from ietf.meeting.models import Meeting
 from ietf.utils.test_data import make_test_data
 
-from pyquery import PyQuery
-import debug                            # pyflakes:ignore
 
 SECR_USER='secretary'
 

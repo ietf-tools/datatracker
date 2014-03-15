@@ -1,14 +1,15 @@
+import os
+
 from django import forms
 from django.conf import settings
-from django.db.models import Max
 from django.template.defaultfilters import filesizeformat
 
 from ietf.doc.models import Document
 from ietf.name.models import DocTypeName
 from ietf.meeting.models import Meeting
 
-import os
-import re
+
+
 # ---------------------------------------------
 # Globals
 # ---------------------------------------------
