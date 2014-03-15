@@ -4,7 +4,6 @@ from pyquery import PyQuery
 
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data
-from ietf.utils.mail import outbox
 
 
 class MailingListTests(TestCase):
