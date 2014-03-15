@@ -1,4 +1,4 @@
-from django.conf.urls import *
+from django.conf.urls import patterns, url
 
 urlpatterns = patterns('ietf.secr.roles.views',
     url(r'^$', 'main', name='roles'),

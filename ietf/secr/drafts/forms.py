@@ -1,16 +1,15 @@
-from django import forms
-from django.forms.formsets import BaseFormSet
-
-from ietf.doc.models import *
-from ietf.name.models import IntendedStdLevelName
-from ietf.group.models import Group
-
-from ietf.secr.utils.ams_utils import get_base, get_revision
-from ietf.secr.groups.forms import RoleForm, get_person
-
 import datetime
 import re
-from os.path import splitext
+import os
+
+from django import forms
+
+from ietf.doc.models import Document, DocAlias, State
+from ietf.name.models import IntendedStdLevelName, DocRelationshipName
+from ietf.group.models import Group
+from ietf.person.models import Person, Email
+from ietf.secr.groups.forms import get_person
+
 
 # ---------------------------------------------
 # Select Choices
@@ -365,7 +364,7 @@ class UploadForm(forms.Form):
             names = []
             for file in (txt,xml,pdf,ps):
                 if file:
-                    base = splitext(file.name)[0]
+                    base = os.path.splitext(file.name)[0]
                     if base not in names:
                         names.append(base)
 
@@ -373,7 +372,7 @@ class UploadForm(forms.Form):
                 raise forms.ValidationError, "All files must have the same base name"
 
             # ensure that the basename is unique
-            base = splitext(txt.name)[0]
+            base = os.path.splitext(txt.name)[0]
             if Document.objects.filter(name=base[:-3]):
                 raise forms.ValidationError, "This document filename already exists: %s" % base[:-3]
 

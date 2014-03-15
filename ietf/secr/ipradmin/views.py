@@ -10,7 +10,7 @@ from django.core.urlresolvers import reverse
 from django.utils.safestring import mark_safe
 from django.shortcuts import redirect
 
-from ietf.secr.lib import template, jsonapi
+from ietf.secr.lib.template import template, jsonapi
 from ietf.secr.ipradmin.managers import IprDetailManager
 from ietf.secr.ipradmin.forms import IprDetailForm, IPRContactFormset
 from ietf.secr.utils.document import get_rfc_num, is_draft

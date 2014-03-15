@@ -1,34 +1,33 @@
-from django.conf import settings
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.core.urlresolvers import reverse
-from django.db.models import get_model, Max, Q
-from django.forms.formsets import formset_factory
-from django.forms.models import inlineformset_factory, modelformset_factory
-from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
-
-from email import *
-from forms import *
-from ietf.meeting.models import Meeting
-from ietf.name.models import StreamName
-from ietf.doc.models import Document, DocumentAuthor
-from ietf.doc.utils import augment_with_start_time
-from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName, SubmissionEvent
-from ietf.utils.draft import Draft
-from ietf.secr.proceedings.proc_utils import get_progress_stats
-from ietf.secr.sreq.views import get_meeting
-from ietf.secr.utils.ams_utils import get_base, get_email
-from ietf.secr.utils.document import get_rfc_num, get_start_date
-
 import datetime
 import glob
 import os
 import shutil
-import textwrap
-import time
+
+from django.conf import settings
+from django.contrib import messages
+from django.db.models import Max
+from django.forms.formsets import formset_factory
+from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.template import RequestContext
+from django.template.loader import render_to_string
+
+#from email import *
+from ietf.doc.models import Document, DocumentAuthor, DocAlias, DocRelationshipName, RelatedDocument, State
+from ietf.doc.models import DocEvent, NewRevisionDocEvent
+from ietf.doc.models import save_document_in_history
+from ietf.meeting.models import Meeting
+from ietf.name.models import StreamName
+from ietf.person.models import Person
+from ietf.secr.drafts.email import announcement_from_form, get_email_initial
+from ietf.secr.drafts.forms import ( AddModelForm, AuthorForm, BaseRevisionModelForm, EditModelForm,
+                                    EmailForm, ExtendForm, ReplaceForm, RevisionModelForm, RfcModelForm,
+                                    RfcObsoletesForm, SearchForm, UploadForm, WithdrawForm )
+from ietf.secr.proceedings.proc_utils import get_progress_stats
+from ietf.secr.sreq.views import get_meeting
+from ietf.secr.utils.ams_utils import get_base
+from ietf.secr.utils.document import get_rfc_num, get_start_date
+from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName, SubmissionEvent
+from ietf.utils.draft import Draft
 
 
 # -------------------------------------------------
@@ -64,14 +63,6 @@ def get_action_details(draft, session):
         
     return result
 
-def get_doc_url(doc):
-    name = doc.name
-    if doc.get_state_slug() == "rfc":
-        aliases = self.docalias_set.filter(name__startswith="rfc")
-        if aliases:
-            name = aliases[0].name
-    return urlreverse('drafts_view', kwargs={ 'id': name })
-        
 def handle_uploaded_file(f):
     '''
     Save uploaded draft files to temporary directory
@@ -395,9 +386,7 @@ def do_withdraw(draft,request):
 # Reporting View Functions
 # -------------------------------------------------
 def report_id_activity(start,end):
-    
-    from django.db.models import Min
-    
+
     # get previous meeting
     meeting = Meeting.objects.filter(date__lt=datetime.datetime.now(),type='ietf').order_by('-date')[0]
     syear,smonth,sday = start.split('-')
@@ -437,9 +426,9 @@ def report_id_activity(start,end):
     monday = Meeting.get_ietf_monday()
     cutoff = monday + datetime.timedelta(days=3)
     ff1_date = cutoff - datetime.timedelta(days=28)
-    ff2_date = cutoff - datetime.timedelta(days=21)
-    ff3_date = cutoff - datetime.timedelta(days=14)
-    ff4_date = cutoff - datetime.timedelta(days=7)
+    #ff2_date = cutoff - datetime.timedelta(days=21)
+    #ff3_date = cutoff - datetime.timedelta(days=14)
+    #ff4_date = cutoff - datetime.timedelta(days=7)
     
     ff_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
                                                            docevent__newrevisiondocevent__rev='00',
