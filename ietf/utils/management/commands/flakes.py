@@ -56,7 +56,10 @@ def check(codeString, filename):
         messages = [message for message in w.messages
                     if lines[message.lineno-1].find('pyflakes:ignore') < 0]
         messages.sort(lambda a, b: cmp(a.lineno, b.lineno))
-
+        if len(messages):
+            sys.stderr.write('F')
+        else:
+            sys.stderr.write('.')
         return messages
 
 
@@ -96,6 +99,7 @@ class Command(BaseCommand):
         if not filenames:
             filenames = getattr(settings, 'PYFLAKES_DEFAULT_ARGS', ['.'])
         warnings = checkPaths(filenames)
+        print ""
         for warning in warnings:
             print warning
 

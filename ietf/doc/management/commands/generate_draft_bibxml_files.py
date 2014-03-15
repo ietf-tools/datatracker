@@ -2,7 +2,6 @@ import sys
 import os
 
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 from django.conf import settings
 from django.template.loader import render_to_string
 

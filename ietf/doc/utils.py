@@ -4,7 +4,9 @@ import math
 from django.conf import settings
 
 from ietf.utils import markup_txt
-from ietf.doc.models import *
+from ietf.doc.models import DocAlias, RelatedDocument, BallotType, DocReminder
+from ietf.doc.models import DocEvent, BallotDocEvent, NewRevisionDocEvent, StateDocEvent
+from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
 

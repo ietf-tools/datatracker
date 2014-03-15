@@ -6,13 +6,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils.html import mark_safe
 
-from ietf.group.models import *
-from ietf.name.models import *
+from ietf.group.models import Group
+from ietf.name.models import *          # pyflakes:ignore
 from ietf.person.models import Email, Person
 from ietf.utils.admin import admin_link
 
 import datetime, os
-import debug
+import debug                            # pyflakes:ignore
 
 class StateType(models.Model):
     slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...

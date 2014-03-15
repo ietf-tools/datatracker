@@ -2,12 +2,15 @@
 
 import datetime
 
-from django.conf import settings
+from django.db.models import Q
 
-from ietf.doc.models import *
+from ietf.doc.models import Document, State, DocEvent, LastCallDocEvent, WriteupDocEvent
+from ietf.doc.models import save_document_in_history
+from ietf.doc.models import IESG_SUBSTATE_TAGS
 from ietf.person.models import Person
 from ietf.doc.utils import add_state_change_event
-from ietf.doc.mails import *
+from ietf.doc.mails import generate_ballot_writeup, generate_approval_mail, generate_last_call_announcement
+from ietf.doc.mails import send_last_call_request, email_last_call_expired
 
 def request_last_call(request, doc):
     if not doc.latest_event(type="changed_ballot_writeup_text"):

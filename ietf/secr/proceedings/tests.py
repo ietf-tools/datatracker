@@ -5,7 +5,7 @@ from ietf.meeting.models import Meeting
 from ietf.utils.test_data import make_test_data
 
 from pyquery import PyQuery
-import debug
+import debug                            # pyflakes:ignore
 
 SECR_USER='secretary'
 

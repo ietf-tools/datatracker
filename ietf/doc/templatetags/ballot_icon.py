@@ -34,12 +34,11 @@ import datetime
 
 from django import template
 from django.core.urlresolvers import reverse as urlreverse
-from django.conf import settings
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 
 from ietf.ietfauth.utils import user_is_person, has_role
-from ietf.doc.models import BallotDocEvent, BallotPositionDocEvent, IESG_BALLOT_ACTIVE_STATES, IESG_SUBSTATE_TAGS
+from ietf.doc.models import BallotPositionDocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.name.models import BallotPositionName
 
 

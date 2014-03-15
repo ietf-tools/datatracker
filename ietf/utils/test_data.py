@@ -10,7 +10,7 @@ from ietf.name.models import *
 from ietf.group.models import *
 from ietf.person.models import *
 
-import debug
+import debug                            # pyflakes:ignore
 
 def create_person(group, role_name, name=None, username=None, email_address=None):
     """Add person/user/email and role."""

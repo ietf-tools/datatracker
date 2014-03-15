@@ -13,7 +13,7 @@ from django.core.cache import cache
 from django.utils.cache import get_cache_key
 from django.shortcuts import get_object_or_404
 
-import debug
+import debug                            # pyflakes:ignore
 
 from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.utils.history import find_history_active_at

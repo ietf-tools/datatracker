@@ -8,8 +8,6 @@ from ietf.utils import log
 from ietf.utils.mail import log_smtp_exception
 import re
 import smtplib
-import sys
-import traceback
 import unicodedata
 
 class SQLLogMiddleware(object):

@@ -8,7 +8,7 @@ from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils import TestCase
 
 from pyquery import PyQuery
-import debug
+import debug                            # pyflakes:ignore
 
 from ietf.doc.models import *
 from ietf.group.models import *

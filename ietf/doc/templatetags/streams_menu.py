@@ -1,6 +1,4 @@
 from django import template
-from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
 from django.contrib.auth.models import AnonymousUser
 
 from ietf.ietfauth.utils import has_role

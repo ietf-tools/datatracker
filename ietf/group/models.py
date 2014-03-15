@@ -10,7 +10,7 @@ from ietf.person.models import Email, Person
 from ietf.group.colors import fg_group_colors, bg_group_colors
 
 import datetime
-import debug
+import debug                            # pyflakes:ignore
 
 class GroupInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)

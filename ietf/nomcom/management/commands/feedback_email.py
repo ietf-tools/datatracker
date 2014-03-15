@@ -8,7 +8,7 @@ from ietf.nomcom.models import NomCom
 from ietf.nomcom.utils import create_feedback_email
 from ietf.nomcom.fields import EncryptedException
 
-import debug
+import debug                            # pyflakes:ignore
 
 class Command(BaseCommand):
     help = (u"Receive nomcom email, encrypt and save it.")

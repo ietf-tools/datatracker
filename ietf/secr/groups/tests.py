@@ -3,7 +3,7 @@ from ietf.utils import TestCase
 from ietf.group.models import Group
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
-import debug
+import debug                            # pyflakes:ignore
 
 SECR_USER='secretary'
 

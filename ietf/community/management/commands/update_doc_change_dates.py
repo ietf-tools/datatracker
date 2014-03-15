@@ -1,7 +1,6 @@
 import sys
 
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 
 from ietf.community.constants import SIGNIFICANT_STATES
 from ietf.community.models import DocumentChangeDates
