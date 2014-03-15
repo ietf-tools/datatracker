@@ -1,18 +1,22 @@
-import os, shutil, json
+import os
+import shutil
+import json
+import datetime
 
-from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
+from django.core.urlresolvers import reverse as urlreverse
 
 from pyquery import PyQuery
 
-from ietf.utils.test_data import make_test_data
-from ietf.doc.models import *
-from ietf.person.models import Person
+from ietf.doc.models import DocEvent, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent
+from ietf.doc.models import Document, DocAlias, State, RelatedDocument
 from ietf.group.models import Group, GroupMilestone
-from ietf.name.models import StreamName
-from ietf.iesg.models import *
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.iesg.agenda import get_agenda_date, agenda_data
+from ietf.iesg.models import TelechatDate
+from ietf.name.models import StreamName
+from ietf.person.models import Person
+from ietf.utils.test_data import make_test_data
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 class IESGTests(TestCase):
     def test_feed(self):
@@ -403,7 +407,6 @@ class RescheduleOnAgendaTests(TestCase):
         e.save()
         
         form_id = draft.pk
-        telechat_date_before = e.telechat_date
         
         url = urlreverse('ietf.iesg.views.agenda_documents')
         

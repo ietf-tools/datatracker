@@ -35,7 +35,6 @@
 import datetime
 
 from django.db import models
-from django.conf import settings
 
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (

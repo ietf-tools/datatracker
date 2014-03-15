@@ -32,8 +32,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from django.conf.urls import patterns, url
-from django.conf import settings
+from django.conf.urls import patterns
 from django.views.generic import RedirectView
 
 urlpatterns = patterns('',

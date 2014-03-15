@@ -1,5 +1,6 @@
 from django.contrib import admin
-from ietf.iesg.models import *
+
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 
 class TelechatAgendaItemAdmin(admin.ModelAdmin):
     pass
