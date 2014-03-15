@@ -6,7 +6,6 @@ from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth import REDIRECT_FIELD_NAME
 
-from ietf.doc.models import Document
 from ietf.person.models import Person
 from ietf.group.models import Role
 

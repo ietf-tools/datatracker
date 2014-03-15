@@ -45,9 +45,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.utils.http import urlquote
 from django.utils.translation import ugettext as _
-from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+from django.core.exceptions import ValidationError
 
-from ietf.person.models import Person, Email, Alias
+from ietf.person.models import Person, Email
 from ietf.group.models import Role
 from ietf.ietfauth.forms import RegistrationForm, PasswordForm, RecoverPasswordForm, TestEmailForm, PersonForm
 
@@ -108,7 +108,6 @@ def profile(request):
     else:
         roles = Role.objects.filter(person=person,group__state='active').order_by('name__name','group__name')
         emails = Email.objects.filter(person=person).order_by('-active','-time')
-        aliases = Alias.objects.filter(person=person)
 
         person_form = PersonForm(instance=person)
 

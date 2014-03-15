@@ -32,7 +32,6 @@
 
 from urlparse import urlsplit
 
-from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
