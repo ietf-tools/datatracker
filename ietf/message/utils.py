@@ -1,7 +1,5 @@
 import re, datetime, email
 
-from django.conf import settings
-
 from ietf.utils.mail import send_mail_text, send_mail_mime
 from ietf.message.models import Message
 
