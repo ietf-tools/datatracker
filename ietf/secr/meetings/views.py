@@ -1,33 +1,35 @@
+import os
+import datetime
+import json
+
 from django.conf import settings
 from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.urlresolvers import reverse
-from django.db.models import Max, Min, Q
+from django.db.models import Max
 from django.forms.formsets import formset_factory
-from django.forms.models import inlineformset_factory, modelformset_factory
+from django.forms.models import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.utils.functional import curry
 
 from ietf.utils.mail import send_mail
-from ietf.meeting.models import Meeting, Session, Room, TimeSlot, Schedule, ScheduledSession
+from ietf.meeting.models import Meeting, Session, Room, TimeSlot, ScheduledSession
 from ietf.meeting.helpers import get_schedule
 from ietf.group.models import Group
-from ietf.name.models import SessionStatusName, TimeSlotTypeName
 from ietf.person.models import Person
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
+from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, ExtraSessionForm, MeetingModelForm,
+    MeetingRoomForm, NewSessionForm, NonSessionEditForm, NonSessionForm, TimeSlotForm,
+    UploadBlueSheetForm, get_next_slot )
 from ietf.secr.proceedings.views import build_choices, handle_upload_file
 from ietf.secr.sreq.forms import GroupSelectForm
-from ietf.secr.sreq.views import get_initial_session, session_conflicts_as_string
+from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.mail import get_cc_list
 from ietf.secr.utils.meeting import get_upload_root, get_session, get_timeslot
 
-from forms import *
 
-import os
-import datetime
-import json
+
 
 # prep for agenda changes
 # --------------------------------------------------
@@ -79,7 +81,6 @@ def build_timeslots(meeting,room=None):
             source_meeting = get_last_meeting(meeting)
 
         delta = meeting.date - source_meeting.date
-        initial = []
         timeslots = []
         time_seen = set()
         for t in source_meeting.timeslot_set.filter(type='session'):
@@ -133,7 +134,7 @@ def get_last_meeting(meeting):
     last_number = int(meeting.number) - 1
     return Meeting.objects.get(number=last_number)
 
-def is_combined(session):
+def is_combined(session, meeting):
     '''
     Check to see if this session is using two combined timeslots
     '''
@@ -590,7 +591,6 @@ def schedule(request, meeting_id, acronym):
     group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(meeting=meeting,group=group,status__in=('schedw','apprw','appr','sched','canceled'))
     legacy_session = get_initial_session(sessions)
-    session_conflicts = session_conflicts_as_string(group, meeting)
     now = datetime.datetime.now()
 
     # build initial

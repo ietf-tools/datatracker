@@ -1,4 +1,4 @@
-from django.conf.urls import *
+from django.conf.urls import patterns, url
 
 urlpatterns = patterns('ietf.secr.meetings.views',
     url(r'^$', 'main', name='meetings'),
