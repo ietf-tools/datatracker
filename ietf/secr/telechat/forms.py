@@ -1,9 +1,10 @@
+from django import forms
+
 from ietf.iesg.models import TelechatAgendaItem
 from ietf.doc.models import State
 from ietf.name.models import BallotPositionName, DocTagName
-from ietf.person.models import Person
 
-from django import forms
+
 
 # -------------------------------------------------
 # Globals
