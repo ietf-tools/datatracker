@@ -6,7 +6,7 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.forms.formsets import formset_factory
 
-from ietf.ipr.models import IprDetail, IprContact, LICENSE_CHOICES, IprUpdate, SELECT_CHOICES, IprDocAlias
+from ietf.ipr.models import IprDetail, IprContact, LICENSE_CHOICES, IprUpdate, IprDocAlias
 
 from ietf.doc.models import DocAlias
 from ietf.secr.utils.document import get_rfc_num
@@ -175,7 +175,7 @@ class IprDetailForm(BetterModelForm):
         for id in ids:
             try:
                 objects.append(model.objects.get(pk=id))
-            except model.DoesNotExist, e:
+            except model.DoesNotExist:
                 raise forms.ValidationError("%s not found for id %d" %(model._meta.verbose_name, id))
         return objects
 
