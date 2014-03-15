@@ -1,33 +1,29 @@
 # ballot management (voting, commenting, writeups, ...) for Area
 # Directors and Secretariat
 
-import re, os, datetime, json
+import datetime, json
 
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
+from django.http import HttpResponseForbidden, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from django import forms
-from django.utils.html import strip_tags
 from django.conf import settings
 
-import debug
+import debug                            # pyflakes:ignore
 
-from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.ietfauth.utils import has_role, role_required
-from ietf.iesg.models import TelechatDate
-from ietf.ipr.models import IprDetail
-from ietf.ipr.search import iprs_from_docs
-from ietf.doc.mails import *
+from ietf.doc.models import *           # pyflakes:ignore
+from ietf.doc.utils import *            # pyflakes:ignore
+from ietf.doc.mails import *            # pyflakes:ignore
+
 from ietf.doc.lastcall import request_last_call
-
-from ietf.doc.utils import *
-from ietf.doc.models import *
-from ietf.name.models import BallotPositionName
-
+from ietf.iesg.models import TelechatDate
+from ietf.ietfauth.utils import has_role, role_required
 from ietf.message.utils import infer_message
+from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
+from ietf.utils.mail import send_mail_text, send_mail_preformatted
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -79,18 +75,6 @@ def position_to_ballot_choice(position):
 
 def position_label(position_value):
     return dict(BALLOT_CHOICES).get(position_value, "")
-
-def get_ballot_info(ballot, area_director):
-    pos = Position.objects.filter(ballot=ballot, ad=area_director)
-    pos = pos[0] if pos else None
-    
-    discuss = IESGDiscuss.objects.filter(ballot=ballot, ad=area_director)
-    discuss = discuss[0] if discuss else None
-    
-    comment = IESGComment.objects.filter(ballot=ballot, ad=area_director)
-    comment = comment[0] if comment else None
-    
-    return (pos, discuss, comment)
 
 # -------------------------------------------------
 class EditPositionForm(forms.Form):
@@ -253,7 +237,7 @@ def send_ballot_comment(request, name, ballot_id):
     doc = get_object_or_404(Document, docalias__name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
-    ad = login = request.user.person
+    ad = request.user.person
 
     return_to_url = request.GET.get('return_to_url')
     if not return_to_url:
@@ -485,7 +469,6 @@ def lastcalltext(request, name):
     s = doc.get_state("draft-iesg")
     can_request_last_call = s.order < 27
     can_make_last_call = s.order < 20
-    can_announce = s.order > 19
     
     need_intended_status = ""
     if not doc.intended_std_level:

@@ -1,12 +1,10 @@
 # expiry of Internet Drafts
 
 from django.conf import settings
-from django.template.loader import render_to_string
-from django.db.models import Q
 
 import datetime, os, shutil, glob, re
 
-from ietf.utils.mail import send_mail, send_mail_subj
+from ietf.utils.mail import send_mail
 from ietf.doc.models import Document, DocEvent, State, save_document_in_history, IESG_SUBSTATE_TAGS
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting
@@ -149,7 +147,6 @@ def clean_up_draft_files():
     cut_off = datetime.date.today()
 
     pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
-    files = []
     filename_re = re.compile('^(.*)-(\d\d)$')
 
     def splitext(fn):

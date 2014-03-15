@@ -1,11 +1,7 @@
 # encoding: utf-8
-import datetime
-from south.db import db
 from south.v2 import DataMigration
-from django.db import models
 
 from ietf.doc.models import StateType, State, BallotType, DocTypeName
-from ietf.name.models import BallotPositionName
 
 class Migration(DataMigration):
 

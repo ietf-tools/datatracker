@@ -7,7 +7,7 @@ from django.conf import settings
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse as urlreverse
 
-import debug
+import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group, Role
 from ietf.doc.models import Document

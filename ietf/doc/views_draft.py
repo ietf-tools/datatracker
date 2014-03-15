@@ -1,37 +1,34 @@
 # changing state and metadata on Internet Drafts
 
-import re, os, datetime, json
-from textwrap import dedent
+import datetime, json
 
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
+
+from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from django import forms
-from django.utils.html import strip_tags
-from django.db.models import Max
 from django.conf import settings
 from django.forms.util import ErrorList
 from django.contrib.auth.decorators import login_required
 from django.template.defaultfilters import pluralize
 
-from ietf.utils.mail import send_mail_text, send_mail_message
-from ietf.ietfauth.utils import role_required
-from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
-from ietf.iesg.models import TelechatDate
-from ietf.doc.mails import *
-from ietf.doc.lastcall import request_last_call
-from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.person.forms import EmailsField
-from ietf.group.models import Group
-from ietf.secr.lib import jsonapi
+from ietf.doc.models import *           # pyflakes:ignore
+from ietf.doc.utils import *            # pyflakes:ignore
+from ietf.doc.mails import *            # pyflakes:ignore
 
-from ietf.doc.models import *
-from ietf.doc.utils import *
-from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
-from ietf.person.models import Person, Email
+from ietf.doc.lastcall import request_last_call
+from ietf.group.models import Group
+from ietf.iesg.models import TelechatDate
+from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
+from ietf.ietfauth.utils import role_required
 from ietf.message.models import Message
+from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
+from ietf.person.forms import EmailsField
+from ietf.person.models import Person, Email
+from ietf.secr.lib import jsonapi
+from ietf.utils.mail import send_mail, send_mail_message
+from ietf.utils.textupload import get_cleaned_text_file_content
 
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
@@ -42,7 +39,7 @@ class ChangeStateForm(forms.Form):
         retclean = self.cleaned_data
         state = self.cleaned_data.get('state', '(None)')
         tag = self.cleaned_data.get('substate','')
-        comment = self.cleaned_data['comment'].strip()
+        comment = self.cleaned_data['comment'].strip() # pyflakes:ignore
         doc = get_object_or_404(Document, docalias__name=self.docname)
         prev = doc.get_state("draft-iesg")
     
@@ -327,7 +324,7 @@ class ReplacesForm(forms.Form):
         for id in ids:
             try:
                 d = DocAlias.objects.get(pk=id)
-            except DocAlias.DoesNotExist, e:
+            except DocAlias.DoesNotExist:
                 raise forms.ValidationError("ERROR: %s not found for id %d" % DocAlias._meta.verbos_name, id)
             if d.document == self.doc:
                 raise forms.ValidationError("ERROR: A draft can't replace itself")

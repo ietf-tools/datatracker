@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2010, All Rights Reserved
 
-from django.http import HttpResponse
-from django.shortcuts import render_to_response as render, get_object_or_404
+from django.shortcuts import render_to_response as render
 from django.template import RequestContext
 
 def settings(request, new_enough = -1, expires_soon = -1, full_draft = ""):

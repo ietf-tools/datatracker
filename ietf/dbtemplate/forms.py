@@ -5,7 +5,7 @@ from django.template import Context
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.template import PlainTemplate, RSTTemplate, DjangoTemplate
 
-import debug
+import debug                            # pyflakes:ignore
 
 class DBTemplateForm(forms.ModelForm):
 
@@ -13,7 +13,7 @@ class DBTemplateForm(forms.ModelForm):
         try:
             content = self.cleaned_data['content']
             if   self.instance.type.slug == 'rst':
-                return_code = RSTTemplate(content).render(Context({}))
+                RSTTemplate(content).render(Context({}))
             elif self.instance.type.slug == 'django':
                 DjangoTemplate(content).render(Context({}))
             elif self.instance.type.slug == 'plain':

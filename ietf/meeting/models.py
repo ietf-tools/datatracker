@@ -6,7 +6,7 @@ import copy
 import os
 import re
 
-import debug
+import debug                            # pyflakes:ignore
 
 from django.db import models
 from django.conf import settings

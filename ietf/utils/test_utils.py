@@ -47,7 +47,7 @@ from django.test.client import Client
 from django.conf import settings
 from django.core.management import call_command
 
-import debug
+import debug                            # pyflakes:ignore
 
 real_database_name = settings.DATABASES["default"]["NAME"]
 

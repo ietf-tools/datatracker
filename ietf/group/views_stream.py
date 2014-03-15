@@ -13,7 +13,7 @@ from ietf.name.models import StreamName
 from ietf.ietfauth.utils import has_role
 from ietf.person.forms import EmailsField
 
-import debug
+import debug                            # pyflakes:ignore
 
 def streams(request):
     streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]

@@ -4,7 +4,7 @@ import datetime
 import os
 import re
 import tarfile
-import debug
+import debug                            # pyflakes:ignore
 import urllib
 import json
 

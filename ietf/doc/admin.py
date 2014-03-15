@@ -3,10 +3,8 @@ from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django import forms
 
-from models import *
-from ietf.person.models import *
+from models import *                    # pyflakes:ignore
 from ietf.doc.utils import get_state_types
-from ietf.utils.admin import admin_link
 
 class StateTypeAdmin(admin.ModelAdmin):
     list_display = ["slug", "label"]

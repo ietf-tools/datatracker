@@ -8,7 +8,7 @@ from django.template import RequestContext
 from django import forms
 from django.utils.html import mark_safe
 
-import debug
+import debug                            # pyflakes:ignore
 
 from ietf.ietfauth.utils import role_required, has_role
 

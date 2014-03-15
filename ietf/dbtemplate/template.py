@@ -2,7 +2,7 @@ import os
 import string
 from docutils.core import publish_string
 from docutils.utils import SystemMessage
-import debug
+import debug                            # pyflakes:ignore
 
 from django.template import Template as DjangoTemplate, TemplateDoesNotExist, TemplateEncodingError
 from django.template.loader import BaseLoader

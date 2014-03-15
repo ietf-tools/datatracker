@@ -1,9 +1,8 @@
 import datetime
 
-from django.db.models import Q
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.doc.models import DocAlias, DocEvent
+from ietf.doc.models import DocAlias
 
 
 class DisplayField(object):

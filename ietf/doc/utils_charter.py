@@ -1,16 +1,13 @@
-import re, datetime, os, textwrap
+import re, datetime, os
 
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.utils.mail import send_mail_text
+from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent, BallotPositionDocEvent
 from ietf.person.models import Person
-from ietf.group.models import GroupEvent, ChangeStateGroupEvent
-from ietf.doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor
-from ietf.doc.models import DocEvent, NewRevisionDocEvent, WriteupDocEvent, BallotPositionDocEvent
 from ietf.utils.history import find_history_active_at
+from ietf.utils.mail import send_mail_text
 
 
 def next_revision(rev):

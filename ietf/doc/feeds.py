@@ -1,15 +1,12 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import datetime, re
-
-from django.conf import settings
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.core.urlresolvers import reverse as urlreverse
 from django.template.defaultfilters import truncatewords, truncatewords_html, date as datefilter, linebreaks
 from django.utils.html import strip_tags
 
-from ietf.doc.models import *
+from ietf.doc.models import Document, State, LastCallDocEvent
 from ietf.doc.utils import augment_events_with_revision
 from ietf.doc.templatetags.ietf_filters import format_textarea
 

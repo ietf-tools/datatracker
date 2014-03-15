@@ -1,8 +1,8 @@
 # Copyright The IETF Trust 2007, 2009, All Rights Reserved
 
-from django.conf.urls import patterns, include, handler404, handler500
+from django.conf.urls import patterns, include
 from django.contrib import admin
-from django.views.generic import RedirectView, TemplateView
+from django.views.generic import TemplateView
 
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
