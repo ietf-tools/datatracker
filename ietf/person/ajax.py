@@ -1,13 +1,7 @@
-import datetime
-import logging
-import sys
 import json
 
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse, Http404
-
-from dajaxice.core import dajaxice_functions
-from dajaxice.decorators import dajaxice_register
+from django.http import HttpResponse
 
 from ietf.person.models import Person
 
