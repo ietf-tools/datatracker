@@ -1,12 +1,17 @@
+# Python imports
+import os
+
+# Django imports
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+
+# Datatracker imports
 from ietf.group.models import Group
 from ietf.meeting.models import Session
-
 from ietf.ietfauth.utils import has_role
 
-import itertools
-import os
+
+
 
 def current_nomcom():
     qs = Group.objects.filter(acronym__startswith='nomcom',state__slug="active").order_by('-time')

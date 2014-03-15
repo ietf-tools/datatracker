@@ -1,8 +1,8 @@
 '''
 Functions to aid unit testing
 '''
-from ietf.person.models import *
-from ietf.group.models import *
+from ietf.person.models import Person
+from ietf.group.models import Role
 
 def reset():
     '''Revert my roles back to production settings'''

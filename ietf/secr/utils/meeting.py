@@ -1,7 +1,9 @@
-from django.conf import settings
-from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot
-
 import os
+
+from django.conf import settings
+
+from ietf.meeting.models import Meeting
+
 
 def get_current_meeting():
     '''Returns the most recent IETF meeting'''
