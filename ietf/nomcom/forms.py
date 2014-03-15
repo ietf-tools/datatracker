@@ -1,27 +1,25 @@
 from django.conf import settings
 from django import forms
 from django.contrib.formtools.preview import FormPreview, AUTO_ID
-from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
-from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 
 from ietf.dbtemplate.forms import DBTemplateForm
-from ietf.utils.mail import send_mail
-from ietf.ietfauth.utils import role_required
-from ietf.utils import fields as custom_fields
 from ietf.group.models import Group, Role
+from ietf.ietfauth.utils import role_required
 from ietf.name.models import RoleName, FeedbackType, NomineePositionState
-from ietf.person.models import Email
-from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
-                               Position, Feedback, ReminderDates
+from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition, 
+                                 Position, Feedback, ReminderDates )
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
                                get_user_email, validate_private_key, validate_public_key,
                                get_or_create_nominee, create_feedback_email)
-from ietf.ietfauth.utils import role_required
+from ietf.person.models import Email
+from ietf.utils import fields as custom_fields
+from ietf.utils.mail import send_mail
+
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
 

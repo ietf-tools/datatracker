@@ -1,10 +1,7 @@
-# encoding: utf-8
-import datetime
-from south.db import db
-from south.v2 import DataMigration
-from django.db import models
-
 import textwrap
+
+from south.v2 import DataMigration
+
 from ietf.dbtemplate.models import DBTemplate
 from ietf.name.models import DBTemplateTypeName
 from ietf.group.models import Group

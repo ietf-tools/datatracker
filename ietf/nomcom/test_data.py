@@ -5,12 +5,11 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.conf import settings
 
+from ietf.group.models import Group, ChangeStateGroupEvent
+from ietf.nomcom.models import NomCom, Position, Nominee
+from ietf.person.models import Email, Person
 from ietf.utils.pipe import pipe
 from ietf.utils.test_data import create_person
-from ietf.group.models import Group, Role, ChangeStateGroupEvent
-from ietf.person.models import Email, Person
-from ietf.name.models import RoleName
-from ietf.nomcom.models import NomCom, Position, Nominee
 
 COMMUNITY_USER = 'plain'
 CHAIR_USER = 'nomcomchair'
