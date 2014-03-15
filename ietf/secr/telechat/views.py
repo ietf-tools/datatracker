@@ -11,9 +11,10 @@ from ietf.doc.utils import get_document_content, add_state_change_event
 from ietf.person.models import Person
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.mails import email_ad, email_state_changed
-from ietf.iesg.models import TelechatDate, TelechatAgendaItem
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem, Telechat
 from ietf.iesg.agenda import agenda_data, get_doc_section
-from ietf.secr.telechat.forms import BallotForm, ChangeStateForm, DateSelectForm, TELECHAT_TAGS, Telechat
+from ietf.secr.telechat.forms import BallotForm, ChangeStateForm, DateSelectForm, TELECHAT_TAGS
+
 
 
 '''
