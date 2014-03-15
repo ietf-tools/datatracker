@@ -1,8 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import re, datetime
+import re
 
-from django.conf import settings
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.template.loader import render_to_string

@@ -1,17 +1,16 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
-import datetime, json
+import datetime
+import json
 from email.utils import parseaddr
 
-from django.conf import settings
-from django.core.urlresolvers import reverse
 from django.core.validators import validate_email, ValidationError
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
 from ietf.liaisons.models import LiaisonStatement
 from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaison,
-                                    can_add_incoming_liaison, LIAISON_EDIT_GROUPS,
+                                    can_add_incoming_liaison, 
                                     is_ietfchair, is_iabchair, is_iab_executive_director,
                                     can_edit_liaison, is_secretariat)
 from ietf.liaisons.forms import liaison_form_factory

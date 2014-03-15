@@ -441,7 +441,7 @@ class LiaisonManagementTests(TestCase):
 
     def test_send_sdo_reminder(self):
         make_test_data()
-        liaison = make_liaison_models()
+        make_liaison_models()
 
         mailbox_before = len(outbox)
         send_sdo_reminder(Group.objects.filter(type="sdo")[0])

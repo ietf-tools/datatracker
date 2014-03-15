@@ -3,7 +3,6 @@ from email.utils import parseaddr
 
 from django import forms
 from django.conf import settings
-from django.db.models import Q
 from django.forms.util import ErrorList
 from django.core.validators import validate_email, ValidationError
 from django.template.loader import render_to_string
