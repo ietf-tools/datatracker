@@ -1,17 +1,9 @@
-import os, shutil, datetime
 
-import django.test
 from django.core.urlresolvers import reverse as urlreverse
 
-from pyquery import PyQuery
-
-from ietf.utils.mail import outbox
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.group.models import Role
 from ietf.utils.test_data import make_test_data
-
-from ietf.name.models import *
-from ietf.group.models import *
-from ietf.person.models import *
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 
 class StreamTests(TestCase):
     def test_streams(self):
