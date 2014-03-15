@@ -1,4 +1,4 @@
-from django.conf.urls import *
+from django.conf.urls import patterns, url
 
 urlpatterns = patterns('ietf.secr.areas.views',
     url(r'^$', 'list_areas', name='areas'),

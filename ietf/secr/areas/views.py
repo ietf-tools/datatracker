@@ -1,21 +1,18 @@
+import datetime
+import json
+ 
 from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.core.urlresolvers import reverse
 from django.forms.formsets import formset_factory
-from django.forms.models import inlineformset_factory, modelformset_factory
-from django.http import HttpResponseRedirect, HttpResponse
+from django.forms.models import inlineformset_factory
+from django.http import HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
-from ietf.group.models import Group, GroupEvent, GroupURL, Role
+from ietf.group.models import Group, GroupEvent, GroupURL, Role, ChangeStateGroupEvent
 from ietf.group.utils import save_group_in_history
-from ietf.name.models import RoleName
-from ietf.person.models import Person, Email
-from forms import *
+from ietf.person.models import Person
+from ietf.secr.areas.forms import AWPAddModelForm, AWPForm, AddAreaModelForm, AreaDirectorForm, AreaForm
 
-import re
-import json
- 
 # --------------------------------------------------
 # AJAX FUNCTIONS
 # --------------------------------------------------
