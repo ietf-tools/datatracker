@@ -1,16 +1,15 @@
 import json
 
-from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponse
 
 from dajaxice.decorators import dajaxice_register
-from ietf.ietfauth.utils import role_required, has_role, user_is_person
-from ietf.name.models import TimeSlotTypeName
 
+from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.meeting.helpers import get_meeting, get_schedule, get_schedule_by_id, agenda_permissions
-from ietf.meeting.views   import edit_timeslots, edit_agenda
 from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint
+from ietf.meeting.views   import edit_timeslots, edit_agenda
+from ietf.name.models import TimeSlotTypeName
 
 import debug                            # pyflakes:ignore
 

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-import datetime
 import sys
-from south.db import db
+
 from south.v2 import DataMigration
-from django.db import models
+
 from ietf.meeting.models import Meeting
 
 def make_essential_person(session, person):

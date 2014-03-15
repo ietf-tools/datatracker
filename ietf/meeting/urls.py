@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.conf.urls import patterns, url, include
+from django.conf.urls import patterns
 from django.views.generic import RedirectView
+
 from ietf.meeting import views
 from ietf.meeting import ajax
 
