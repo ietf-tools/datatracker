@@ -1,5 +1,5 @@
-import os, datetime, shutil
-
+import os
+import shutil
 import urllib
 
 from pyquery import PyQuery
@@ -7,10 +7,10 @@ from pyquery import PyQuery
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.doc.models import DocAlias
+from ietf.ipr.models import IprDetail
+from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data
-from ietf.utils.mail import outbox
-from ietf.ipr.models import *
 
 
 class IprTests(TestCase):
@@ -33,7 +33,7 @@ class IprTests(TestCase):
         self.assertTrue(ipr.title in r.content)
 
     def test_ipr_details(self):
-        draft = make_test_data()
+        make_test_data()
         ipr = IprDetail.objects.get(title="Statement regarding rights")
 
         r = self.client.get(urlreverse("ipr_show", kwargs=dict(ipr_id=ipr.pk)))
@@ -148,7 +148,7 @@ class IprTests(TestCase):
         self.assertTrue("/ipr/%s/" % ipr.pk in r.content)
 
     def test_new_generic(self):
-        draft = make_test_data()
+        make_test_data()
 
         url = urlreverse("ietf.ipr.new.new", kwargs={ "type": "generic" })
 

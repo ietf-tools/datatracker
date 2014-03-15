@@ -1,7 +1,6 @@
 #coding: utf-8
 from django.contrib import admin
-from django.conf import settings
-from ietf.ipr.models import *
+from ietf.ipr.models import IprContact, IprDetail, IprDocAlias, IprNotification, IprUpdate
                 
 class IprContactAdmin(admin.ModelAdmin):
     list_display=('__str__', 'ipr')

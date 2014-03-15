@@ -190,8 +190,7 @@ def new(request, type, update=None, submitter=None):
                 for subfield in ["name", "title", "department", "address1", "address2", "telephone", "fax", "email"]:
                     try:
                         data[ "subm_%s" % subfield ] = data[ "%s_%s" % (src,subfield) ]
-                    except Exception, e:
-                        #log("Caught exception: %s"%e)
+                    except Exception:
                         pass
         form = IprForm(data)
         if form.is_valid():
