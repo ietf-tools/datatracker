@@ -1,27 +1,14 @@
-from django.conf import settings
 from django.contrib import messages
-from django.core.urlresolvers import reverse
-from django.db.models import get_model
-from django.core.exceptions import ObjectDoesNotExist
-from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory
-from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
-from django.template.loader import render_to_string
 
-#from sec.utils.group import get_charter_text
-from ietf.secr.utils.meeting import get_current_meeting
-from ietf.group.models import ChangeStateGroupEvent, GroupEvent, GroupURL, Role
+from ietf.group.models import Group, GroupMilestone, ChangeStateGroupEvent, GroupEvent, GroupURL, Role
 from ietf.group.utils import save_group_in_history, get_charter_text
-from ietf.person.name import name_parts
-from ietf.wginfo.views import fill_in_charter_info
-
-from forms import *
-
-import os
-import datetime
-import json
+from ietf.person.models import Person
+from ietf.secr.groups.forms import GroupModelForm, GroupMilestoneForm, RoleForm, SearchForm
+from ietf.secr.areas.forms import AWPForm
+from ietf.secr.utils.meeting import get_current_meeting
 
 # -------------------------------------------------
 # Helper Functions

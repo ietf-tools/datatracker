@@ -2,7 +2,6 @@
 
 import datetime, json
 
-
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -26,7 +25,7 @@ from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
 from ietf.person.forms import EmailsField
 from ietf.person.models import Person, Email
-from ietf.secr.lib import jsonapi
+from ietf.secr.lib.template import jsonapi
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.textupload import get_cleaned_text_file_content
 

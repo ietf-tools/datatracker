@@ -13,7 +13,7 @@ from django.template.loader import get_template
 from django.utils.text import slugify
 from django.db.models import Max,Count,get_model
 
-from ietf.secr.lib import jsonapi
+from ietf.secr.lib.template import jsonapi
 from ietf.secr.proceedings.proc_utils import *
 from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.utils.decorators import check_permissions, sec_only
