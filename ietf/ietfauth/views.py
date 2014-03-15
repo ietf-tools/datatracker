@@ -47,9 +47,9 @@ from django.utils.http import urlquote
 from django.utils.translation import ugettext as _
 from django.core.exceptions import ValidationError
 
-from ietf.person.models import Person, Email
 from ietf.group.models import Role
 from ietf.ietfauth.forms import RegistrationForm, PasswordForm, RecoverPasswordForm, TestEmailForm, PersonForm
+from ietf.person.models import Person, Email
 
 def index(request):
     return render_to_response('registration/index.html', context_instance=RequestContext(request))
