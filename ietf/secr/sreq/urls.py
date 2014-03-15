@@ -1,4 +1,4 @@
-from django.conf.urls import *
+from django.conf.urls import patterns, url
 
 urlpatterns = patterns('ietf.secr.sreq.views',
     url(r'^$', 'main', name='sessions'),

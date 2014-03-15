@@ -1,28 +1,22 @@
+import datetime
+import os
+
 from django.conf import settings
 from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.urlresolvers import reverse
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
-from ietf.secr.utils.mail import get_ad_email_list, get_chair_email_list, get_cc_list
-from ietf.secr.utils.decorators import check_permissions, sec_only
-from ietf.secr.utils.group import get_my_groups, groups_by_session
-
+from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
-from ietf.utils.mail import send_mail
 from ietf.meeting.models import Meeting, Session, Constraint
-
-from ietf.group.models import Group, Role
 from ietf.name.models import SessionStatusName, ConstraintName
-
-from forms import *
-
-from itertools import chain
-import datetime
-import itertools
+from ietf.secr.sreq.forms import SessionForm, GroupSelectForm, ToolStatusForm
+from ietf.secr.utils.decorators import check_permissions, sec_only
+from ietf.secr.utils.group import groups_by_session
+from ietf.secr.utils.mail import get_ad_email_list, get_chair_email_list, get_cc_list
+from ietf.utils.mail import send_mail
 
 # -------------------------------------------------
 # Globals
@@ -150,7 +144,7 @@ def send_notification(group,meeting,login,session,action):
             cc_list.append(login.role_email(role_name='wg').address)
         subject = '%s - Request for meeting session approval for IETF %s' % (group.acronym, meeting.number)
         template = 'sreq/session_approval_notification.txt'
-        status_text = 'the %s Directors for approval' % group.parent
+        #status_text = 'the %s Directors for approval' % group.parent
     send_mail(None,
               to_email,
               from_email,
@@ -482,7 +476,6 @@ def new(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
     meeting = get_meeting()
     session_conflicts = session_conflicts_as_string(group, meeting)
-    user = request.user
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')

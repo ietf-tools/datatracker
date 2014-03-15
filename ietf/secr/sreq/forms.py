@@ -1,7 +1,7 @@
 from django import forms
 
 from ietf.group.models import Group
-import os
+
 
 # -------------------------------------------------
 # Globals

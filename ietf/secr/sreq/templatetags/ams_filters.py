@@ -1,6 +1,6 @@
 from django import template
 from ietf.person.models import Person
-import datetime
+
 
 register = template.Library()
 
@@ -63,7 +63,7 @@ def smart_login(user):
     Expects a Person object.  If person is a Secretariat returns "on behalf of the"
     '''
     if not isinstance (user, Person):
-        return value
+        return user
     if user.role_set.filter(name='secr',group__acronym='secretariat'):
         return '%s, on behalf of the' % user
     else:
