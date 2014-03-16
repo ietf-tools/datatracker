@@ -4,7 +4,7 @@ from django.db import connection
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponsePermanentRedirect
-from ietf.utils import log
+from ietf.utils.log import log
 from ietf.utils.mail import log_smtp_exception
 import re
 import smtplib

@@ -8,7 +8,7 @@ from django.http import Http404
 from django.conf import settings
 from django import forms
 
-from ietf.utils import log
+from ietf.utils.log import log
 from ietf.utils.mail import send_mail
 from ietf.doc.models import Document, DocAlias
 from ietf.ipr.models import IprDetail, IprDocAlias, IprContact, LICENSE_CHOICES, IprUpdate

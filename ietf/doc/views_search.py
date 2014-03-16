@@ -41,7 +41,7 @@ from django.http import Http404, HttpResponseBadRequest
 from ietf.doc.models import *           # pyflakes:ignore
 
 from ietf.doc.expire import expirable_draft
-from ietf.utils import normalize_draftname
+from ietf.utils.draft_search import normalize_draftname
 #from ietf.person.models import *
 #from ietf.group.models import *
 from ietf.ipr.models import IprDocAlias

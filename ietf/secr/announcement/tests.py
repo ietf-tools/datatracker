@@ -3,7 +3,7 @@ from django.core.urlresolvers import reverse
 
 from pyquery import PyQuery
 
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
 

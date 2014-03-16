@@ -7,7 +7,7 @@ from django.conf import settings
 from ietf.doc.models import Document, DocAlias, RelatedDocument, State, LastCallDocEvent, NewRevisionDocEvent
 from ietf.name.models import DocRelationshipName
 from ietf.idindex.index import all_id_txt, all_id2_txt, id_index_txt
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data
 
 class IndexTests(TestCase):

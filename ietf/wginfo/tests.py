@@ -15,7 +15,7 @@ from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTrans
 from ietf.group.utils import save_group_in_history
 from ietf.name.models import DocTagName, GroupStateName
 from ietf.person.models import Person, Email
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized

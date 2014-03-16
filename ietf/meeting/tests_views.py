@@ -10,7 +10,7 @@ from pyquery import PyQuery
 from ietf.doc.models import Document
 from ietf.meeting.models import Session, TimeSlot
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 
 class MeetingTests(TestCase):
     def setUp(self):

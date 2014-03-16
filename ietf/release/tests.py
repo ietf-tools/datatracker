@@ -5,7 +5,7 @@ when you run "manage.py test".
 Replace this with more appropriate tests for your application.
 """
 
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 
 
 class SimpleTest(TestCase):

@@ -1,6 +1,6 @@
 from django.core.urlresolvers import reverse
 
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
 from ietf.utils.test_data import make_test_data
 

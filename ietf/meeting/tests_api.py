@@ -8,7 +8,7 @@ from ietf.group.models import Group
 from ietf.meeting.models import Schedule, TimeSlot, Session, ScheduledSession, Meeting, Constraint
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.person.models import Person
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 
 
 class ApiTests(TestCase):

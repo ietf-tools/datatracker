@@ -14,7 +14,7 @@ from ietf.doc.views_conflict_review import default_approval_text
 from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 from ietf.utils.test_data  import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized

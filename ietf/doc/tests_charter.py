@@ -13,7 +13,7 @@ from ietf.doc.utils_charter import next_revision, default_review_text, default_a
 from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized

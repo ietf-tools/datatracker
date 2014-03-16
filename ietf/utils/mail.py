@@ -11,7 +11,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
 import ietf
-from ietf.utils import log
+from ietf.utils.log import log
 import sys
 import time
 import copy

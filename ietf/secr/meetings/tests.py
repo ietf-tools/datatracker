@@ -1,5 +1,5 @@
 from django.core.urlresolvers import reverse
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 
 from ietf.meeting.models import Meeting
 from ietf.utils.test_data import make_test_data

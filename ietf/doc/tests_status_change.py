@@ -14,7 +14,7 @@ from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_status_change import default_approval_text
 from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 from ietf.utils.test_data  import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized

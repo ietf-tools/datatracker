@@ -4,7 +4,7 @@ from xml.dom import pulldom, Node
 from django.utils.http import urlquote
 
 from ietf.utils.mail import send_mail_text
-from ietf.utils import log
+from ietf.utils.log import log
 
 from ietf.doc.models import *
 from ietf.person.models import *
