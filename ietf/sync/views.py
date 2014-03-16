@@ -1,18 +1,18 @@
-import subprocess, os, json
+import datetime
+import subprocess
+import os
+import json
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError, HttpResponseRedirect, Http404
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.template.loader import render_to_string
 from django.conf import settings
-from django import forms
-from django.db.models import Q
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.views.decorators.csrf import csrf_exempt
 
+from ietf.doc.models import DeletedEvent, StateDocEvent
 from ietf.ietfauth.utils import role_required, has_role
-from ietf.doc.models import *
-from ietf.sync import iana, rfceditor
 from ietf.sync.discrepancies import find_discrepancies
 from ietf.utils.serialize import object_as_shallow_dict
 
