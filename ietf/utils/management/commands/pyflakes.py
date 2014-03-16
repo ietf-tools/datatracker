@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import ast
 import os
 from pyflakes import checker, messages
@@ -26,7 +27,7 @@ class PySyntaxError(messages.Message):
         self.message_args = (col, message)
 
 
-def check(codeString, filename):
+def check(codeString, filename, verbosity=1):
     """
     Check the Python source given by C{codeString} for flakes.
 
@@ -56,49 +57,52 @@ def check(codeString, filename):
         messages = [message for message in w.messages
                     if lines[message.lineno-1].find('pyflakes:ignore') < 0]
         messages.sort(lambda a, b: cmp(a.lineno, b.lineno))
-        if len(messages):
-            sys.stderr.write('F')
-        else:
-            sys.stderr.write('.')
+        if verbosity > 0:
+            if len(messages):
+                sys.stderr.write('F')
+            else:
+                sys.stderr.write('.')
+        if verbosity > 1:
+            sys.stderr.write("  %s\n" % filename)
         return messages
 
 
-def checkPath(filename):
+def checkPath(filename, verbosity):
     """
     Check the given path, printing out any warnings detected.
 
     @return: the number of warnings printed
     """
     try:
-        return check(file(filename, 'U').read() + '\n', filename)
+        return check(file(filename, 'U').read() + '\n', filename, verbosity)
     except IOError, msg:
         return ["%s: %s" % (filename, msg.args[1])]
     except TypeError:
         pass
 
-def checkPaths(filenames):
+def checkPaths(filenames, verbosity):
     warnings = []
     for arg in filenames:
         if os.path.isdir(arg):
             for dirpath, dirnames, filenames in os.walk(arg):
                 for filename in filenames:
                     if filename.endswith('.py'):
-                        warnings.extend(checkPath(os.path.join(dirpath,
-                                                               filename)))
+                        warnings.extend(checkPath(os.path.join(dirpath, filename), verbosity))
         else:
-            warnings.extend(checkPath(arg))
+            warnings.extend(checkPath(arg, verbosity))
     return warnings
 #### pyflakes.scripts.pyflakes ends.
 
 
 class Command(BaseCommand):
     help = "Run pyflakes syntax checks."
-    args = '[filename [filename [...]]]'
+    args = '[path [path [...]]]'
 
     def handle(self, *filenames, **options):
         if not filenames:
             filenames = getattr(settings, 'PYFLAKES_DEFAULT_ARGS', ['.'])
-        warnings = checkPaths(filenames)
+        verbosity = int(options.get('verbosity'))
+        warnings = checkPaths(filenames, verbosity=verbosity)
         print ""
         for warning in warnings:
             print warning
