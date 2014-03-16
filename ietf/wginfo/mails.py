@@ -61,7 +61,7 @@ def email_milestone_review_reminder(group, grace_period=7):
         return False
 
     to = [group.ad.role_email("ad").formatted_email()]
-    #cc = [r.formatted_email() for r in group.role_set.filter(name="chair")]
+    cc = [r.formatted_email() for r in group.role_set.filter(name="chair")]
 
     now = datetime.datetime.now()
     too_early = True
@@ -84,8 +84,10 @@ def email_milestone_review_reminder(group, grace_period=7):
               "wginfo/reminder_milestones_need_review.txt",
               dict(group=group,
                    milestones=milestones,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse("wg_edit_milestones", kwargs=dict(acronym=group.acronym))
-                   ))
+                   url=settings.IDTRACKER_BASE_URL + urlreverse("wg_edit_milestones", kwargs=dict(acronym=group.acronym)),
+                   cc=cc,
+               )
+             )
 
     return True
 
