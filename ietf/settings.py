@@ -404,6 +404,9 @@ USE_ETAGS=True
 
 PRODUCTION_TIMEZONE = "America/Los_Angeles"
 
+PYFLAKES_DEFAULT_ARGS= ["ietf", ]
+VULTURE_DEFAULT_ARGS= ["ietf", ]
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *            # pyflakes:ignore
