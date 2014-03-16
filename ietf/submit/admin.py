@@ -1,8 +1,8 @@
 from django.core.urlresolvers import reverse as urlreverse
 from django.contrib import admin
-from django.utils.safestring import mark_safe
 
-from ietf.submit.models import *
+
+from ietf.submit.models import Preapproval, Submission
 
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ['id', 'draft_link', 'status_link', 'submission_date',]

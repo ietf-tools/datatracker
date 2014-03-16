@@ -1,6 +1,6 @@
-import re, datetime, hashlib
+import re
+import datetime
 
-from django.conf import settings
 from django.db import models
 
 from ietf.person.models import Person

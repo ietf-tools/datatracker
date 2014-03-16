@@ -1,6 +1,3 @@
-# encoding: utf-8
-import datetime
-from south.db import db
 from south.v2 import DataMigration
 from django.db import models
 
@@ -21,8 +18,6 @@ class Migration(DataMigration):
             10: "grp-appr",
         }
 
-        from django.core.validators import validate_email, ValidationError
-
         for d in orm.Submission.objects.all().iterator():
             if not d.name:
                 # get rid of a few mishaps that seem to have been
@@ -42,7 +37,6 @@ class Migration(DataMigration):
                 parts = (a.first_name or '', a.middle_initial or '', a.last_name or '', a.name_suffix or '')
                 name = u" ".join(x.strip() for x in parts if x.strip())
                 email = a.email_address
-                orig = email
 
                 # clean
                 name = name.replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
