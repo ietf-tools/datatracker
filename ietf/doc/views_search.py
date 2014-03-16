@@ -38,16 +38,17 @@ from django.db.models import Q
 from django.template import RequestContext
 from django.http import Http404, HttpResponseBadRequest
 
-from ietf.doc.models import *           # pyflakes:ignore
-
-from ietf.doc.expire import expirable_draft
-from ietf.utils.draft_search import normalize_draftname
-#from ietf.person.models import *
-#from ietf.group.models import *
-from ietf.ipr.models import IprDocAlias
-from ietf.idindex.index import active_drafts_index_by_group
-
 import debug                            # pyflakes:ignore
+
+from ietf.doc.models import ( Document, DocAlias, State, RelatedDocument, DocEvent,
+    LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
+from ietf.doc.expire import expirable_draft
+from ietf.group.models import Group
+from ietf.idindex.index import active_drafts_index_by_group
+from ietf.ipr.models import IprDocAlias
+from ietf.name.models import DocTagName, DocTypeName, StreamName
+from ietf.person.models import Person
+from ietf.utils.draft_search import normalize_draftname
 
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)

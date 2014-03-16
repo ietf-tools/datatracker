@@ -8,9 +8,9 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from ietf.doc.models import *           # pyflakes:ignore
-from ietf.name.models import *          # pyflakes:ignore
-
+from ietf.doc.models import ( Document, DocAlias, State, DocEvent, BallotDocEvent,
+    BallotPositionDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent,
+    save_document_in_history )
 from ietf.doc.forms import TelechatForm, AdForm, NotifyForm
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.utils import get_document_content, add_state_change_event, update_telechat, close_open_ballots, create_ballot_if_not_open

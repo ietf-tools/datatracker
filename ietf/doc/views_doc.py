@@ -43,9 +43,12 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django import forms
 
-from ietf.doc.models import *           # pyflakes:ignore
-from ietf.doc.utils import *            # pyflakes:ignore
-
+from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent,
+    ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent,
+    IESG_BALLOT_ACTIVE_STATES)
+from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
+    can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
+    needed_ballot_positions, nice_consensus, prettify_std_name)
 from ietf.community.models import CommunityList
 from ietf.doc.mails import email_ad
 from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships

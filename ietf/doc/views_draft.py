@@ -2,22 +2,28 @@
 
 import datetime, json
 
+from django import forms
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.template import RequestContext
-from django import forms
 from django.conf import settings
 from django.forms.util import ErrorList
 from django.contrib.auth.decorators import login_required
 from django.template.defaultfilters import pluralize
 
-from ietf.doc.models import *           # pyflakes:ignore
-from ietf.doc.utils import *            # pyflakes:ignore
-from ietf.doc.mails import *            # pyflakes:ignore
-
+from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
+    StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS,
+    save_document_in_history )
+from ietf.doc.mails import ( email_ad, email_pulled_from_rfc_queue, email_resurrect_requested,
+    email_resurrection_completed, email_state_changed, email_stream_changed,
+    email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
+    generate_publication_request, html_to_text )
+from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
+    get_tags_for_stream_id, nice_consensus,
+    update_reminder, update_telechat )
 from ietf.doc.lastcall import request_last_call
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
 from ietf.ietfauth.utils import role_required
@@ -505,7 +511,7 @@ def get_initial_notify(doc):
     else:
         receivers.append("%s-chairs@%s" % (doc.group.acronym, settings.TOOLS_SERVER))
         for editor in Email.objects.filter(role__name="editor", role__group=doc.group):
-            receivers.append(e.address)
+            receivers.append(editor.address)
 
     receivers.append("%s@%s" % (doc.name, settings.TOOLS_SERVER))
     return ", ".join(receivers)

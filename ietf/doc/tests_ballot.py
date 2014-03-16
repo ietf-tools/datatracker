@@ -1,11 +1,12 @@
 import datetime
 from pyquery import PyQuery
+
 import debug                            # pyflakes:ignore
 
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.doc.models import *           # pyflakes:ignore
-
+from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
+    BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent )
 from ietf.group.models import Group, Role
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person

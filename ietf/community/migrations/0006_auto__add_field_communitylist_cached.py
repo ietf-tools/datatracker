@@ -1,7 +1,4 @@
-
 from south.db import db
-from django.db import models            # pyflakes:ignore
-from ietf.community.models import *     # pyflakes:ignore
 
 class Migration:
     

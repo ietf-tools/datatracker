@@ -13,10 +13,13 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import *           # pyflakes:ignore
-from ietf.doc.utils import *            # pyflakes:ignore
-from ietf.doc.mails import *            # pyflakes:ignore
-
+from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotPositionDocEvent,
+    BallotType, LastCallDocEvent, WriteupDocEvent, save_document_in_history, IESG_SUBSTATE_TAGS )
+from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
+    create_ballot_if_not_open, update_telechat )
+from ietf.doc.mails import ( email_ad, email_ballot_deferred, email_state_changed,
+    extra_automation_headers, generate_last_call_announcement, generate_issue_ballot_mail,
+    generate_ballot_writeup, generate_approval_mail )
 from ietf.doc.lastcall import request_last_call
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required

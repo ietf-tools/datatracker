@@ -8,12 +8,13 @@ from pyquery import PyQuery
 
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.doc.models import *           # pyflakes:ignore
-from ietf.name.models import *          # pyflakes:ignore
-
+from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
+    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent )
+from ietf.group.models import Group
+from ietf.person.models import Person
 from ietf.utils.mail import outbox
-from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
+from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
 
 class SearchTestCase(TestCase):

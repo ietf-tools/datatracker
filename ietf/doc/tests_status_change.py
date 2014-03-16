@@ -8,8 +8,8 @@ from textwrap import wrap
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.doc.models import *           # pyflakes:ignore
-
+from ietf.doc.models import ( Document, DocAlias, State, DocEvent,
+    BallotPositionDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_status_change import default_approval_text
 from ietf.group.models import Person

@@ -9,8 +9,8 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import *           # pyflakes:ignore
-
+from ietf.doc.models import ( Document, DocAlias, DocReminder, DocumentAuthor, DocEvent,
+    ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.name.models import StreamName, IntendedStdLevelName, DocTagName
 from ietf.group.models import Group

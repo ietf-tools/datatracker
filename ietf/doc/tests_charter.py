@@ -7,8 +7,8 @@ from pyquery import PyQuery
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.doc.models import *           # pyflakes:ignore
-
+from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
+    TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils_charter import next_revision, default_review_text, default_action_text
 from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
