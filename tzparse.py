@@ -56,7 +56,7 @@ COPYRIGHT
 
 import re
 import time
-from datetime import datetime as Datetime, timedelta as Timedelta
+from datetime import datetime as Datetime, timedelta as Timedelta # For re-export.  pyflakes:ignore
 import pytz
 
 tzdef = {
