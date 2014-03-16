@@ -103,9 +103,11 @@ class SessionForm(forms.Form):
             if self.initial['length_session3'] != '0' and self.initial['length_session3'] != None:
                 self.fields['third_session'].initial = True
 
-        resources = self.initial['resources']
-        resource_choices = [r.pk for r in resources]
-        self.initial['resources'] = resource_choices
+        if self.initial and 'resources' in self.initial:
+            resources = self.initial['resources']
+            resource_choices = [r.pk for r in resources]
+            #self.initial['resources'] = resource_choices
+            self.fields['resources'].initial = resource_choices
 
     def clean_conflict1(self):
         conflict = self.cleaned_data['conflict1']
