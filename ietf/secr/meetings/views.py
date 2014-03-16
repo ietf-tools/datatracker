@@ -274,7 +274,7 @@ def add(request):
             meeting = form.save()
 
             schedule = Schedule.objects.create(meeting = meeting,
-                                               name    = 'Empty Schedule',
+                                               name    = 'Empty-Schedule',
                                                owner   = Person.objects.get(name='(System)'),
                                                visible = True,
                                                public  = True)
