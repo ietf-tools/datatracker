@@ -325,7 +325,7 @@ def smtp_error_logging(thing):
                       """) % e.original_msg.as_string()
         try:
             send_mail_preformatted(request=None, preformatted=msg)
-        except smtplib.SMTPException as ticket_mail_error:
+        except smtplib.SMTPException:
             log("Exception encountered while sending a ticket to the secretariat")
             (extype,value) = sys.exc_info()[:2]
             log("SMTP Exception: %s : %s" % (extype,value))
