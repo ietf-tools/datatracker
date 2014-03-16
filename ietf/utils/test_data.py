@@ -7,6 +7,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
+from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import IprDetail, IprDocAlias
 from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
@@ -36,12 +37,12 @@ def make_immutable_base_data():
     all tests in a run."""
 
     # telechat dates
-    #t = datetime.date.today()
-    #old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date
-    #date1 = TelechatDate.objects.create(date=t).date
-    #date2 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14)).date
-    #date3 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 2)).date
-    #date4 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 3)).date
+    t = datetime.date.today()
+    old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date        # pyflakes:ignore
+    date1 = TelechatDate.objects.create(date=t).date                                    # pyflakes:ignore
+    date2 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14)).date      # pyflakes:ignore
+    date3 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 2)).date  # pyflakes:ignore
+    date4 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 3)).date  # pyflakes:ignore
 
     # system
     system_person = Person.objects.create(name="(System)", ascii="(System)", address="")
