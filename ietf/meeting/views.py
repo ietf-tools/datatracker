@@ -287,7 +287,7 @@ def edit_agenda(request, num=None, name=None):
         # django 1.3+
         ad.default_hostscheme = site_base_url
 
-    time_slices,date_slices = build_all_agenda_slices(scheduledsessions, True)
+    time_slices,date_slices = build_all_agenda_slices(meeting)
 
     return HttpResponse(render_to_string("meeting/landscape_edit.html",
                                          {"schedule":schedule,
