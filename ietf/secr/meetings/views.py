@@ -95,8 +95,9 @@ def build_timeslots(meeting,room=None):
                                         time=new_time,
                                         location=room,
                                         duration=t.duration)
-                ScheduledSession.objects.create(schedule=schedule,timeslot=t)
-        meeting.create_all_timeslots();
+                # Is this still right? I thought we had already moved away from dangling ScheduledSessions.
+                # ScheduledSession.objects.create(schedule=schedule,timeslot=t)
+        #meeting.create_all_timeslots();
 
 def build_nonsession(meeting):
     '''
@@ -127,7 +128,8 @@ def build_nonsession(meeting):
                                 time=new_time,
                                 duration=slot.duration,
                                 show_location=slot.show_location)
-        ScheduledSession.objects.create(schedule=schedule,session=session,timeslot=ts)
+        if session:
+            ScheduledSession.objects.create(schedule=schedule,session=session,timeslot=ts)
 
 def get_last_meeting(meeting):
     last_number = int(meeting.number) - 1
@@ -815,7 +817,7 @@ def times(request, meeting_id):
                                              time=new_time,
                                              location=room,
                                              duration=duration)
-                ScheduledSession.objects.create(schedule=meeting.agenda,timeslot=ts)
+                #ScheduledSession.objects.create(schedule=meeting.agenda,timeslot=ts)
 
             messages.success(request, 'Timeslots created')
             return redirect('meetings_times', meeting_id=meeting_id)

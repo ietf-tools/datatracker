@@ -179,16 +179,16 @@ class Meeting(models.Model):
 
     # this functions makes a list of timeslices and rooms, and
     # makes sure that all schedules have all of them.
-    def create_all_timeslots(self):
-        alltimeslots = self.timeslot_set.all()
-        for sched in self.schedule_set.all():
-            ts_hash = {}
-            for ss in sched.scheduledsession_set.all():
-                ts_hash[ss.timeslot] = ss
-            for ts in alltimeslots:
-                if not (ts in ts_hash):
-                    ScheduledSession.objects.create(schedule = sched,
-                                                    timeslot = ts)
+#    def create_all_timeslots(self):
+#        alltimeslots = self.timeslot_set.all()
+#        for sched in self.schedule_set.all():
+#            ts_hash = {}
+#            for ss in sched.scheduledsession_set.all():
+#                ts_hash[ss.timeslot] = ss
+#            for ts in alltimeslots:
+#                if not (ts in ts_hash):
+#                    ScheduledSession.objects.create(schedule = sched,
+#                                                    timeslot = ts)
 
     def vtimezone(self):
         if self.time_zone:
@@ -265,7 +265,7 @@ class Room(models.Model):
                                     time=ts.time,
                                     location=self,
                                     duration=ts.duration)
-        self.meeting.create_all_timeslots()
+        #self.meeting.create_all_timeslots()
 
     def domid(self):
         return "room%u" % (self.pk)
@@ -411,7 +411,7 @@ class TimeSlot(models.Model):
             ts.location = room
             ts.save()
 
-        self.meeting.create_all_timeslots()
+        #self.meeting.create_all_timeslots()
 
     """
     This routine deletes all timeslots which are in the same time as this slot.
