@@ -66,7 +66,7 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
    <a name="{{sessions.list.0.group.parent.acronym}}"></a>
    <h2 class="ietf-divider">{{ sessions.grouper }}</h2>
    {% for session in sessions.list|dictsort:"group.acronym" %}
-      {% ifchanged %}
+      {% ifchanged session.group.acronym %}
 	 {% include "meeting/group_materials.html" %}
       {% endifchanged %}
    {% endfor %}
