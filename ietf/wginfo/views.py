@@ -42,6 +42,7 @@ from django.template import RequestContext
 from django.http import HttpResponse
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
+from django.views.decorators.cache import cache_page
 from django.db.models import Q
 
 from ietf.doc.views_search import SearchForm, retrieve_search_results
@@ -418,6 +419,7 @@ def dependencies_dot(request, acronym):
                         content_type='text/plain; charset=UTF-8'
                         )
 
+@cache_page ( 60 * 60 )
 def dependencies_pdf(request, acronym):
 
     group = get_object_or_404(Group, acronym=acronym)
