@@ -1,3 +1,25 @@
+ietfdb (5.1.1) ietf; urgency=medium
+
+  This is a minor bugfix release, in preparation for merging the pyflakes test
+  branch to trunk.
+
+  * Fixed the meeting materials page so as to avoid duplicate materials
+    sections for groups with multiple sessions.
+
+  * Merged [7456] from rjsparks@nostrum.com:
+    Patched meeting/ajax to close permissions vulnerability. Tweaked tests to
+    check the right functionality given the permissions policy currently in
+    trunk.
+
+  * Merged [7447] from rjsparks@nostrum.com: 
+    Cache the dependency graph pdf for an hour.  
+
+  * Merged [7445] from rjsparks@nostrum.com: 
+    Adds dependency graphs for drafts belonging to a group.  Removes links to
+    Bill's dependency tools.  Fixes bug #536. 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Mar 2014 22:49:58 +0100
+
 ietfdb (5.1.0) ietf; urgency=high
 
   This release contains the datatracker bugfixes and enhancements from the
