@@ -2,10 +2,10 @@ ietfdb (5.2.0) ietf; urgency=low
 
   This is a code cleanup release.  It adds a test and a managemement command
   to run pyflakes (pyflakes is a bit like 'lint' for Python) over the
-  datatracker code, and cleans up the code so that it tests clean.  The number
-  of lines changed is large, but the changes to what the code actually does is
-  limited to fixing bugs discovered by pyflakes during the cleanup.  There
-  were around 10 such cases.
+  datatracker code, and provides cleaned-up code so that the new pyflakes test
+  is clean.  The number of lines changed is large, but the changes to what the
+  code actually does is limited to fixing bugs discovered by pyflakes during
+  the cleanup.  There were around 10 such cases.
 
   Most of the changes are related to import statements, as the code otherwise
   was pretty clean already.  In almost all places, bulk imports using '*' has been
@@ -50,7 +50,7 @@ ietfdb (5.2.0) ietf; urgency=low
   order, and in importing in a sequence from the more general down to the more
   specific, aids in the readability of the code.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  16 Mar 2014 20:52:05 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Mar 2014 21:41:16 +0100
 
 
 ietfdb (5.1.1) ietf; urgency=medium
