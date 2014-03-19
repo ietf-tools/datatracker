@@ -1,25 +1,28 @@
 # edit/create view for WGs
 
-import re, os, datetime, shutil
+import re
+import os
+import datetime
+import shutil
 
+from django import forms
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.http import HttpResponseForbidden
 from django.template import RequestContext
-from django import forms
 from django.utils.html import mark_safe
+from django.http import Http404, HttpResponse
 
-import debug
+import debug                            # pyflakes:ignore
 
-from ietf.ietfauth.utils import role_required, has_role
-
-from ietf.doc.models import *
-from ietf.name.models import *
-from ietf.person.models import *
-from ietf.group.models import *
-from ietf.group.utils import save_group_in_history
-from ietf.wginfo.mails import email_secretariat
-from ietf.person.forms import EmailsField
+from ietf.doc.models import DocAlias, DocTagName, Document, State, save_document_in_history
 from ietf.doc.utils import get_tags_for_stream_id
+from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
+    GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
+from ietf.group.utils import save_group_in_history
+from ietf.ietfauth.utils import role_required, has_role
+from ietf.person.forms import EmailsField
+from ietf.person.models import Person, Email
+from ietf.wginfo.mails import email_secretariat
 
 MAX_GROUP_DELEGATES = 3
 
@@ -274,7 +277,6 @@ def edit(request, acronym=None, action="edit"):
             return redirect('group_charter', acronym=wg.acronym)
     else: # form.is_valid()
         if not new_wg:
-            from ietf.person.forms import json_emails
             init = dict(name=wg.name,
                         acronym=wg.acronym,
                         state=wg.state,

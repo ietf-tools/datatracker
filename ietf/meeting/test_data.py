@@ -1,10 +1,10 @@
 import datetime
 
-from ietf.utils.test_data import make_test_data
-from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, ScheduledSession
-from ietf.person.models import Person
 from ietf.doc.models import Document, State
 from ietf.group.models import Group
+from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, ScheduledSession
+from ietf.person.models import Person
+from ietf.utils.test_data import make_test_data
 
 
 def make_meeting_test_data():

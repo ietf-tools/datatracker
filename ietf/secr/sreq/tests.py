@@ -1,10 +1,7 @@
-from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
-from ietf.ietfauth.utils import has_role
 from ietf.utils.test_data import make_test_data
 
 #from pyquery import PyQuery
@@ -26,7 +23,7 @@ class SreqUrlTests(TestCase):
 
 class MainTestCase(TestCase):
     def test_main(self):
-        draft = make_test_data()
+        make_test_data()
         url = reverse('sessions')
         r = self.client.get(url, REMOTE_USER=SECR_USER)
         self.assertEqual(r.status_code, 200)
@@ -37,7 +34,7 @@ class MainTestCase(TestCase):
 
 class SubmitRequestCase(TestCase):
     def test_submit_request(self):
-        draft = make_test_data()
+        make_test_data()
         acronym = Group.objects.all()[0].acronym
         url = reverse('sessions_new',kwargs={'acronym':acronym})
         post_data = {'id_num_session':'1',

@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import os
+# -*- coding: UTF-8-No-BOM -*-
 import tempfile
 import datetime
 

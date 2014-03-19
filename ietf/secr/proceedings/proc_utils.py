@@ -3,26 +3,27 @@ proc_utils.py
 
 This module contains all the functions for generating static proceedings pages
 '''
-from django.conf import settings
-from django.shortcuts import render_to_response
-from ietf.group.models import Group, Role
-from ietf.group.utils import get_charter_text
-from ietf.meeting.helpers import get_schedule, meeting_updated
-from ietf.meeting.models import Session, TimeSlot, Meeting, ScheduledSession
-from ietf.doc.models import Document, RelatedDocument, DocEvent
-from itertools import chain
-from ietf.secr.proceedings.models import Registration
-from ietf.secr.utils.document import get_rfc_num
-from ietf.secr.utils.group import groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_material, get_session
-from models import InterimMeeting    # proxy model
-
 from urllib2 import urlopen
 import datetime
 import glob
 import os
 import shutil
-import stat
+
+from django.conf import settings
+from django.shortcuts import render_to_response
+
+from ietf.doc.models import Document, RelatedDocument, DocEvent
+from ietf.group.models import Group, Role
+from ietf.group.utils import get_charter_text
+from ietf.meeting.helpers import get_schedule
+from ietf.meeting.models import Session, Meeting, ScheduledSession
+from ietf.secr.proceedings.models import InterimMeeting    # proxy model
+from ietf.secr.proceedings.models import Registration
+from ietf.secr.utils.document import get_rfc_num
+from ietf.secr.utils.group import groups_by_session
+from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_material, get_session
+
+
 
 # -------------------------------------------------
 # Helper Functions
@@ -80,9 +81,9 @@ def get_progress_stats(sdate,edate):
     monday = Meeting.get_ietf_monday()
     cutoff = monday + datetime.timedelta(days=3)
     ff1_date = cutoff - datetime.timedelta(days=28)
-    ff2_date = cutoff - datetime.timedelta(days=21)
-    ff3_date = cutoff - datetime.timedelta(days=14)
-    ff4_date = cutoff - datetime.timedelta(days=7)
+    #ff2_date = cutoff - datetime.timedelta(days=21)
+    #ff3_date = cutoff - datetime.timedelta(days=14)
+    #ff4_date = cutoff - datetime.timedelta(days=7)
 
     ff_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
                                                            docevent__newrevisiondocevent__rev='00',

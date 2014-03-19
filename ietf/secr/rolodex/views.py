@@ -1,16 +1,14 @@
 from django.contrib import messages
-from django.core.urlresolvers import reverse
+from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.db.models import Q
-from django.forms.formsets import formset_factory
-from django.forms.models import inlineformset_factory, modelformset_factory
+from django.forms.models import inlineformset_factory
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
 from ietf.person.models import Person, Email, Alias
+from ietf.secr.rolodex.forms import EditPersonForm, EmailForm, NameForm, NewPersonForm, SearchForm
 
-from forms import *
 
 # ---------------------------------------
 # Views 

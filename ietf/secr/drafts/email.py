@@ -1,17 +1,15 @@
+import datetime
+import glob
+import os
+import time
+
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
 
 from ietf.message.models import Message, SendQueue
 from ietf.message.utils import send_scheduled_message_from_send_queue
 from ietf.doc.models import DocumentAuthor
 from ietf.person.models import Person
-from ietf.secr.utils.document import get_start_date
-
-import datetime
-import glob
-import os
-import time
 
 def announcement_from_form(data, **kwargs):
     '''

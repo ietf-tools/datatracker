@@ -1,9 +1,9 @@
-from django import forms
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.http import Http404
 
-from ietf.doc.models import *
+from ietf.doc.models import State, StateType, IESG_SUBSTATE_TAGS
+from ietf.name.models import DocRelationshipName,  DocTagName
 from ietf.doc.utils import get_tags_for_stream_id
 
 def state_help(request, type):

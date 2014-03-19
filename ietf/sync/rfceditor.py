@@ -1,16 +1,22 @@
-import re, urllib, urllib2, json, email, socket, base64
+import re
+import base64
+import datetime
+import urllib
+import urllib2
+import socket
 from xml.dom import pulldom, Node
 
-from django.utils.http import urlquote
+from django.conf import settings
 
-from ietf.utils.mail import send_mail_text
-from ietf.utils import log
-
-from ietf.doc.models import *
-from ietf.person.models import *
-from ietf.name.models import *
-from ietf.doc.utils import add_state_change_event
+from ietf.doc.models import ( Document, DocAlias, State, StateType, DocEvent, DocRelationshipName,
+    DocTagName, DocTypeName, RelatedDocument, save_document_in_history )
 from ietf.doc.expire import move_draft_files_to_archive
+from ietf.doc.utils import add_state_change_event
+from ietf.group.models import Group
+from ietf.name.models import StdLevelName, StreamName
+from ietf.person.models import Person
+from ietf.utils.log import log
+from ietf.utils.mail import send_mail_text
 
 #QUEUE_URL = "http://www.rfc-editor.org/queue2.xml"
 #INDEX_URL = "http://www.rfc-editor.org/rfc/rfc-index.xml"
@@ -34,6 +40,7 @@ def parse_queue(response):
     events = pulldom.parse(response)
     drafts = []
     warnings = []
+    stream = None
 
     for event, node in events:
         if event == pulldom.START_ELEMENT and node.tagName == "entry":
@@ -322,7 +329,6 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
         # attributes take precedence over our local attributes)
 
         # make sure we got the document and alias
-        created = False
         doc = None
         name = "rfc%s" % rfc_number
         a = DocAlias.objects.filter(name=name).select_related("document")
@@ -342,9 +348,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
             # add alias
             DocAlias.objects.get_or_create(name=name, document=doc)
             results.append("created alias %s to %s" % (name, doc.name))
-            created = True
 
-                
         # check attributes
         changed_attributes = {}
         changed_states = []

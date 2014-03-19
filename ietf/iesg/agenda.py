@@ -1,15 +1,15 @@
 # utilities for constructing agendas for IESG telechats
 
-import codecs, re, os, datetime
-
+import codecs
+import datetime
 from collections import OrderedDict
 
-from django.http import Http404
 from django.conf import settings
+from django.http import Http404
 
+from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
-from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent
-from ietf.group.models import Group, GroupMilestone
+
 
 def get_agenda_date(date=None):
     if not date:
@@ -152,7 +152,6 @@ def fill_in_agenda_docs(date, sections, matches=None):
         matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date)
         matches = matches.select_related("stream", "group").distinct()
 
-    docs = []
     for doc in matches:
         if doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
             continue

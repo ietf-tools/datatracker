@@ -2,23 +2,21 @@ import os
 import datetime
 
 from django import forms
-from django.forms.formsets import formset_factory
 from django.conf import settings
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse as urlreverse
 
-import debug
+import debug                            # pyflakes:ignore
 
-from ietf.group.models import Group, Role
+from ietf.group.models import Group
 from ietf.doc.models import Document
 from ietf.meeting.models import Meeting
-from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName
+from ietf.submit.models import Submission, Preapproval
 from ietf.submit.utils import validate_submission_rev, validate_submission_document_date
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
-from ietf.utils.mail import send_mail
 from ietf.utils.draft import Draft
 
 

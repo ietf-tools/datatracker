@@ -1,9 +1,8 @@
 from django.conf.urls import patterns, url
-from django.core.urlresolvers import reverse_lazy
-from django.views.generic import RedirectView, TemplateView
+from django.views.generic import TemplateView
 
-from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, \
-                              EditMembersForm, EditMembersFormPreview
+from ietf.nomcom.forms import ( EditChairForm, EditChairFormPreview, 
+                                EditMembersForm, EditMembersFormPreview )
 
 urlpatterns = patterns('ietf.nomcom.views',
     url(r'^$', 'index'),

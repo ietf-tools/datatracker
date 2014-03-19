@@ -1,16 +1,17 @@
+import datetime
+
 from django.conf import settings
 from django.contrib.auth.models import User
 
+import debug                            # pyflakes:ignore
+
+from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent
+from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import IprDetail, IprDocAlias
 from ietf.meeting.models import Meeting
-from ietf.doc.models import *
-from ietf.doc.utils import *
-from ietf.name.models import *
-from ietf.group.models import *
-from ietf.person.models import *
-
-import debug
+from ietf.name.models import StreamName
+from ietf.person.models import Person, Alias, Email
 
 def create_person(group, role_name, name=None, username=None, email_address=None):
     """Add person/user/email and role."""
@@ -37,11 +38,11 @@ def make_immutable_base_data():
 
     # telechat dates
     t = datetime.date.today()
-    old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date
-    date1 = TelechatDate.objects.create(date=t).date
-    date2 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14)).date
-    date3 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 2)).date
-    date4 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 3)).date
+    old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date        # pyflakes:ignore
+    date1 = TelechatDate.objects.create(date=t).date                                    # pyflakes:ignore
+    date2 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14)).date      # pyflakes:ignore
+    date3 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 2)).date  # pyflakes:ignore
+    date4 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 3)).date  # pyflakes:ignore
 
     # system
     system_person = Person.objects.create(name="(System)", ascii="(System)", address="")
@@ -77,9 +78,9 @@ def make_immutable_base_data():
     rfc_editor = create_group(name="RFC Editor", acronym="rfceditor", type_id="rfcedtyp")
     create_person(rfc_editor, "auth", name="Rfc Editor", username="rfc", email_address="rfc@edit.or")
 
-    iesg = create_group(name="Internet Engineering Steering Group", acronym="iesg", type_id="ietf", parent=ietf)
+    iesg = create_group(name="Internet Engineering Steering Group", acronym="iesg", type_id="ietf", parent=ietf) # pyflakes:ignore
 
-    individ = create_group(name="Individual submissions", acronym="none", type_id="individ")
+    individ = create_group(name="Individual submissions", acronym="none", type_id="individ") # pyflakes:ignore
 
     # one area
     area = create_group(name="Far Future", acronym="farfut", type_id="area", parent=ietf)
@@ -165,7 +166,7 @@ def make_test_data():
     # plain IETF'er
     u = User.objects.create(username="plain")
     plainman = Person.objects.create(name="Plain Man", ascii="Plain Man", user=u)
-    email = Email.objects.create(address="plain@example.com", person=plainman)
+    email = Email.objects.create(address="plain@example.com", person=plainman) # pyflakes:ignore
 
     # group personnel
     create_person(mars_wg, "chair", name="WG Chair Man", username="marschairman")
@@ -294,7 +295,7 @@ def make_test_data():
         target_rfc.set_state(State.objects.get(slug='rfc',type__slug='draft'))
         target_rfc.save()
         docalias = DocAlias.objects.create(name=name,document=target_rfc)
-        docalias = DocAlias.objects.create(name='rfc%d'%rfc_num,document=target_rfc)
+        docalias = DocAlias.objects.create(name='rfc%d'%rfc_num,document=target_rfc) # pyflakes:ignore
         return target_rfc
     rfc_for_status_change_test_factory('draft-ietf-random-thing',9999,'ps')
     rfc_for_status_change_test_factory('draft-ietf-random-otherthing',9998,'inf')

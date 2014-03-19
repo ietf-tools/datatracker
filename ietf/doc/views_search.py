@@ -30,23 +30,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re, datetime
+import datetime
 
 from django import forms
 from django.shortcuts import render_to_response
 from django.db.models import Q
 from django.template import RequestContext
-from django.http import Http404, HttpResponse, HttpResponseBadRequest
+from django.http import Http404, HttpResponseBadRequest
 
+import debug                            # pyflakes:ignore
+
+from ietf.doc.models import ( Document, DocAlias, State, RelatedDocument, DocEvent,
+    LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.expire import expirable_draft
-from ietf.utils import normalize_draftname
-from ietf.doc.models import *
-from ietf.person.models import *
-from ietf.group.models import *
-from ietf.ipr.models import IprDocAlias
+from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
-
-import debug
+from ietf.ipr.models import IprDocAlias
+from ietf.name.models import DocTagName, DocTypeName, StreamName
+from ietf.person.models import Person
+from ietf.utils.draft_search import normalize_draftname
 
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
@@ -81,7 +83,7 @@ class SearchForm(forms.Form):
         active_ads.sort(key=extract_last_name)
         inactive_ads.sort(key=extract_last_name)
 
-        self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.plain_name()) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
+        self.fields['ad'].choices = [('', 'any AD')] + [(ad.pk, ad.plain_name()) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
         self.fields['substate'].choices = [('', 'any substate'), ('0', 'no substate')] + [(n.slug, n.name) for n in DocTagName.objects.filter(slug__in=IESG_SUBSTATE_TAGS)]
 
     def clean_name(self):

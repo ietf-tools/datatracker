@@ -1,13 +1,19 @@
-import re, urllib2, json, email, base64
+import base64
+import datetime
+import email
+import json
+import re
+import urllib2
 
 from django.utils.http import urlquote
 from django.conf import settings
 
-from ietf.doc.models import *
+from ietf.doc.mails import email_ad, email_state_changed
+from ietf.doc.models import Document, DocEvent, State, StateDocEvent, StateType, save_document_in_history
 from ietf.doc.utils import add_state_change_event
-from ietf.doc.mails import email_ad, email_state_changed, email_authors
-from ietf.person.models import *
-from ietf.utils.timezone import *
+from ietf.person.models import Person
+from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timezone, utc_to_local_timezone
+
 
 #PROTOCOLS_URL = "http://www.iana.org/protocols/"
 #CHANGES_URL = "http://datatracker.dev.icann.org:8080/data-tracker/changes"

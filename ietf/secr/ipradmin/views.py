@@ -10,7 +10,7 @@ from django.core.urlresolvers import reverse
 from django.utils.safestring import mark_safe
 from django.shortcuts import redirect
 
-from ietf.secr.lib import template, jsonapi
+from ietf.secr.lib.template import template, jsonapi
 from ietf.secr.ipradmin.managers import IprDetailManager
 from ietf.secr.ipradmin.forms import IprDetailForm, IPRContactFormset
 from ietf.secr.utils.document import get_rfc_num, is_draft
@@ -38,8 +38,6 @@ def admin_list(request):
 
 
 def admin_post(request, ipr_id, from_page, command):
-    updated_ipr_id = 0
-
     ipr_dtl = IprDetail.objects.get(ipr_id=ipr_id)
     ipr_dtl.status = 1
     #assert False, (ipr_dtl.ipr_id, ipr_dtl.is_pending)
@@ -47,7 +45,6 @@ def admin_post(request, ipr_id, from_page, command):
 
     updates = ipr_dtl.updates.filter(processed=0)
     for update in updates:
-        updated_ipr_id = update.updated.ipr_id
         old_ipr = IprDetail.objects.get(ipr_id=update.updated.ipr_id)
         updated_title = re.sub(r' \(\d\)$', '', old_ipr.title)
         lc_updated_title = updated_title.lower()

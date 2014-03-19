@@ -5,13 +5,12 @@ import re
 import tempfile
 
 from email.header import decode_header
-from email.utils import parseaddr
 from email.Iterators import typed_subpart_iterator
 from email import message_from_string
 
 from django.conf import settings
 from django.contrib.sites.models import Site
-from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
@@ -24,7 +23,7 @@ from ietf.utils import unaccent
 from ietf.utils.mail import send_mail_text, send_mail
 from ietf.utils.log import log
 
-import debug
+import debug                            # pyflakes:ignore
 
 MAIN_NOMCOM_TEMPLATE_PATH = '/nomcom/defaults/'
 QUESTIONNAIRE_TEMPLATE = 'position/questionnaire.txt'
@@ -237,7 +236,6 @@ def send_accept_reminder_to_nominee(nominee_position):
     send_mail_text(None, to_email, from_email, subject, body)
 
 def send_questionnaire_reminder_to_nominee(nominee_position):
-    today = datetime.date.today().strftime('%Y%m%d')
     subject = 'Reminder: please complete the Nomcom questionnaires for your nomination.'
     from_email = settings.NOMCOM_FROM_EMAIL
     domain = Site.objects.get_current().domain
@@ -247,8 +245,6 @@ def send_questionnaire_reminder_to_nominee(nominee_position):
     mail_path = nomcom_template_path + NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE
     nominee = nominee_position.nominee
     to_email = nominee.email.address
-
-    hash = get_hash_nominee_position(today, nominee_position.id)
 
     context = {'nominee': nominee,
                'position': position,

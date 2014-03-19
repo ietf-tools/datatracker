@@ -9,7 +9,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 # script
 from django.core.serializers import serialize
-from django.db.models import Q 
 
 def output(name, seq):
     try:

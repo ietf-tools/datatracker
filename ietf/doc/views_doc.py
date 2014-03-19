@@ -30,28 +30,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re, os, datetime, urllib, json
+import os, datetime, urllib, json
 
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.template.defaultfilters import truncatewords_html
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.urlresolvers import reverse as urlreverse, NoReverseMatch
+from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django import forms
 
+from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent,
+    ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent,
+    IESG_BALLOT_ACTIVE_STATES)
+from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
+    can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
+    needed_ballot_positions, nice_consensus, prettify_std_name)
 from ietf.community.models import CommunityList
-from ietf.doc.models import *
-from ietf.doc.utils import *
-from ietf.utils.history import find_history_active_at
-from ietf.ietfauth.utils import *
-from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
-from ietf.ipr.models import IprDocAlias
 from ietf.doc.mails import email_ad
+from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
+from ietf.group.models import Role
+from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, role_required
+from ietf.name.models import StreamName, BallotPositionName
+from ietf.person.models import Email
+from ietf.utils.history import find_history_active_at
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -137,7 +142,6 @@ def document_main(request, name, rev=None):
         split_content = not ( request.GET.get('include_text') or request.COOKIES.get("full_draft", "") == "on" )
 
         iesg_state = doc.get_state("draft-iesg")
-        iesg_substate = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
         iesg_state_summary = doc.friendly_state()
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
         stream_slugs = StreamName.objects.values_list("slug", flat=True)

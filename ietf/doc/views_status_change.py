@@ -8,23 +8,20 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from ietf.doc.utils import add_state_change_event, update_telechat
-from ietf.doc.models import save_document_in_history
-
-from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_document_content
-from ietf.ietfauth.utils import has_role, role_required
-from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.utils.mail import send_mail_preformatted
-from ietf.doc.models import State, Document, DocHistory, DocAlias
-from ietf.doc.models import DocEvent, NewRevisionDocEvent, WriteupDocEvent, TelechatDocEvent, BallotDocEvent, BallotPositionDocEvent
-from ietf.person.models import Person
-from ietf.iesg.models import TelechatDate
-from ietf.group.models import Group
-from ietf.name.models import DocRelationshipName, StdLevelName
-
+from ietf.doc.models import ( Document, DocAlias, State, DocEvent, BallotDocEvent,
+    BallotPositionDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent,
+    save_document_in_history )
 from ietf.doc.forms import TelechatForm, AdForm, NotifyForm
-from ietf.doc.views_ballot import LastCallTextForm
 from ietf.doc.lastcall import request_last_call
+from ietf.doc.utils import get_document_content, add_state_change_event, update_telechat, close_open_ballots, create_ballot_if_not_open
+from ietf.doc.views_ballot import LastCallTextForm
+from ietf.group.models import Group
+from ietf.iesg.models import TelechatDate
+from ietf.ietfauth.utils import has_role, role_required
+from ietf.name.models import DocRelationshipName, StdLevelName
+from ietf.person.models import Person
+from ietf.utils.mail import send_mail_preformatted
+from ietf.utils.textupload import get_cleaned_text_file_content
 
 class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)

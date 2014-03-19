@@ -30,12 +30,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import unittest, os, re
-from django.test.client import Client
-from django.conf import settings
-from ietf.utils.test_utils import split_url, read_testurls, TestCase
-import ietf.urls
-import ietf.utils.test_runner as test_runner
+
+from ietf.utils.test_utils import split_url, TestCase
 
 REDIRECT_TESTS = {
 

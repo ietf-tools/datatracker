@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from ietf.message.models import *
+from ietf.message.models import Message, SendQueue
 
 class MessageAdmin(admin.ModelAdmin):
     list_display = ["subject", "by", "time", "groups"]

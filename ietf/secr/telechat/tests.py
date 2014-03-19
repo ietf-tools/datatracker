@@ -1,13 +1,10 @@
-from django.core.urlresolvers import reverse
-from ietf.utils import TestCase
-
-from ietf.iesg.models import TelechatDate, TelechatAgendaItem
-from ietf.person.models import Person
-from ietf.utils.test_data import make_test_data
-
-from pyquery import PyQuery
-
 import datetime
+
+from django.core.urlresolvers import reverse
+
+from ietf.utils.test_utils import TestCase
+from ietf.iesg.models import TelechatDate
+
 
 SECR_USER='secretary'
 

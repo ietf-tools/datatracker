@@ -1,8 +1,9 @@
 # generation of mails 
 
-import textwrap, datetime, re
+import datetime
+import re
 
-from django.template.loader import render_to_string
+
 from django.utils.html import strip_tags
 from django.utils.text import wrap
 from django.conf import settings
@@ -10,14 +11,14 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
 
-from ietf.group.models import *
+from ietf.group.models import Group
 
 def email_secretariat(request, group, subject, text):
     to = ["iesg-secretary@ietf.org"]
     full_subject = u"Regarding %s %s: %s" % (group.type.name, group.acronym, subject)
     text = strip_tags(text)
 
-    send_mail(request, to, None, subject,
+    send_mail(request, to, None, full_subject,
               "wginfo/email_secretariat.txt",
               dict(text=text,
                    group=group,
@@ -83,8 +84,10 @@ def email_milestone_review_reminder(group, grace_period=7):
               "wginfo/reminder_milestones_need_review.txt",
               dict(group=group,
                    milestones=milestones,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse("wg_edit_milestones", kwargs=dict(acronym=group.acronym))
-                   ))
+                   url=settings.IDTRACKER_BASE_URL + urlreverse("wg_edit_milestones", kwargs=dict(acronym=group.acronym)),
+                   cc=cc,
+               )
+             )
 
     return True
 

@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2008, All Rights Reserved
 
-from django.conf.urls import patterns, include
+from django.conf.urls import patterns
 from django.views.generic import RedirectView
 
 from ietf.wginfo import views, edit, milestones

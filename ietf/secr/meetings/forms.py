@@ -1,14 +1,13 @@
+import datetime
+import re
+
 from django import forms
-from django.db.models import Q
 
 from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session, ScheduledSession
 from ietf.meeting.timedeltafield import TimedeltaFormField, TimedeltaWidget
 from ietf.name.models import TimeSlotTypeName
 
-import datetime
-import itertools
-import re
 
 DAYS_CHOICES = ((-1,'Saturday'),
                 (0,'Sunday'),

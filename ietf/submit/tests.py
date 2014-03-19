@@ -4,7 +4,7 @@ import shutil
 import re
 
 from django.conf import settings
-from django.contrib.auth.models import User
+
 from django.core.urlresolvers import reverse as urlreverse
 from StringIO import StringIO
 from pyquery import PyQuery
@@ -12,13 +12,11 @@ from pyquery import PyQuery
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
-from ietf.utils import TestCase
-
+from ietf.utils.test_utils import TestCase
 from ietf.submit.utils import expirable_submissions, expire_submission
-
-from ietf.person.models import Person, Email
-from ietf.group.models import Group, Role
-from ietf.doc.models import *
+from ietf.person.models import Person
+from ietf.group.models import Group
+from ietf.doc.models import Document, DocEvent, State, BallotDocEvent, BallotPositionDocEvent
 from ietf.submit.models import Submission, Preapproval
 
 class SubmitTests(TestCase):
@@ -315,7 +313,7 @@ class SubmitTests(TestCase):
         self.assertEqual(new_revision.by.name, "Submitter Name")
 
     def test_submit_new_wg_with_dash(self):
-        draft = make_test_data()
+        make_test_data()
 
         group = Group.objects.create(acronym="mars-special", name="Mars Special", type_id="wg", state_id="active")
 
@@ -326,7 +324,7 @@ class SubmitTests(TestCase):
         self.assertEqual(Submission.objects.get(name=name).group.acronym, group.acronym)
 
     def test_submit_new_irtf(self):
-        draft = make_test_data()
+        make_test_data()
 
         group = Group.objects.create(acronym="saturnrg", name="Saturn", type_id="rg", state_id="active")
 
@@ -338,7 +336,7 @@ class SubmitTests(TestCase):
         self.assertEqual(Submission.objects.get(name=name).group.type_id, group.type_id)
 
     def test_submit_new_iab(self):
-        draft = make_test_data()
+        make_test_data()
 
         name = "draft-iab-testing-tests"
 
@@ -348,7 +346,7 @@ class SubmitTests(TestCase):
 
     def test_cancel_submission(self):
         # submit -> cancel
-        draft = make_test_data()
+        make_test_data()
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -370,7 +368,7 @@ class SubmitTests(TestCase):
 
     def test_edit_submission_and_force_post(self):
         # submit -> edit
-        draft = make_test_data()
+        make_test_data()
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -458,7 +456,7 @@ class SubmitTests(TestCase):
 
     def test_search_for_submission_and_edit_as_secretariat(self):
         # submit -> edit
-        draft = make_test_data()
+        make_test_data()
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -503,7 +501,7 @@ class SubmitTests(TestCase):
 
     def test_request_full_url(self):
         # submit -> request full URL to be sent
-        draft = make_test_data()
+        make_test_data()
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -532,7 +530,7 @@ class SubmitTests(TestCase):
         self.assertTrue(name in outbox[-1]["Subject"])
 
     def test_submit_all_file_types(self):
-        draft = make_test_data()
+        make_test_data()
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"

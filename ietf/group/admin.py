@@ -1,7 +1,7 @@
 from functools import update_wrapper
 
-from django.contrib import admin
 from django import template
+from django.contrib import admin
 from django.contrib.admin.util import unquote
 from django.core.exceptions import PermissionDenied
 from django.core.management import load_command_class
@@ -11,7 +11,7 @@ from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
 
-from ietf.group.models import *
+from ietf.group.models import Group, GroupHistory, GroupEvent, GroupURL, GroupMilestone, Role, RoleHistory, ChangeStateGroupEvent
 
 class RoleInline(admin.TabularInline):
     model = Role

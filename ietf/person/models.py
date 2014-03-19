@@ -42,6 +42,7 @@ class PersonInfo(models.Model):
         """Lookup email for role for person, optionally on group which
         may be an object or the group acronym."""
         if group:
+            from ietf.group.models import Group
             if isinstance(group, str) or isinstance(group, unicode):
                 group = Group.objects.get(acronym=group)
             e = Email.objects.filter(person=self, role__group=group, role__name=role_name)

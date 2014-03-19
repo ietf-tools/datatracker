@@ -4,14 +4,14 @@ import datetime
 import os
 import re
 import tarfile
-import debug
 import urllib
 import json
-
 from tempfile import mkstemp
 
+import debug                            # pyflakes:ignore
+
 from django import forms
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponse, Http404
 from django.core.urlresolvers import reverse
 from django.db.models import Q
@@ -24,19 +24,17 @@ from django.db.models import Max
 from django.forms.models import modelform_factory
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from ietf.utils.pipe import pipe
-from ietf.ietfauth.utils import role_required, has_role
 from ietf.doc.models import Document, State
-from ietf.person.models  import Person
-from ietf.meeting.models import Meeting, TimeSlot, Session, Schedule
 from ietf.group.models import Group
-
+from ietf.ietfauth.utils import role_required, has_role
+from ietf.meeting.models import Meeting, TimeSlot, Session, Schedule
 from ietf.meeting.helpers import get_areas
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
-from ietf.meeting.helpers import get_scheduledsessions_from_schedule, get_all_scheduledsessions_from_schedule
+from ietf.meeting.helpers import get_all_scheduledsessions_from_schedule
 from ietf.meeting.helpers import get_modified_from_scheduledsessions
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, meeting_updated
+from ietf.utils.pipe import pipe
 
 @decorator_from_middleware(GZipMiddleware)
 def materials(request, meeting_num=None):
@@ -205,19 +203,8 @@ def edit_agenda(request, num=None, schedule_name=None):
         return agenda_create(request, num, schedule_name)
 
     user  = request.user
-    requestor = "AnonymousUser"
-    if not user.is_anonymous():
-        #print "user: %s" % (user)
-        try:
-            requestor = user.person
-        except Person.DoesNotExist:
-            # if we can not find them, leave them alone, only used for debugging.
-            pass
-
     meeting = get_meeting(num)
-    #sys.stdout.write("requestor: %s for sched_name: %s \n" % ( requestor, schedule_name ))
     schedule = get_schedule(meeting, schedule_name)
-    #sys.stdout.write("2 requestor: %u for sched owned by: %u \n" % ( requestor.id, schedule.owner.id ))
 
     meeting_base_url = request.build_absolute_uri(meeting.base_url())
     site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
@@ -231,8 +218,6 @@ def edit_agenda(request, num=None, schedule_name=None):
     can_see, can_edit = agenda_permissions(meeting, schedule, user)
 
     if not can_see:
-        #sys.stdout.write("visible: %s public: %s owner: %s request from: %s\n" % (
-        #        schedule.visible, schedule.public, schedule.owner, requestor))
         return HttpResponse(render_to_string("meeting/private_agenda.html",
                                              {"schedule":schedule,
                                               "meeting": meeting,

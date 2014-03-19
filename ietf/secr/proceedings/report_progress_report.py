@@ -7,7 +7,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 from ietf.secr.proceedings.proc_utils import gen_progress
 from ietf.meeting.models import Meeting
 import datetime
-import sys
+
 
 now = datetime.date.today()
 meeting = Meeting.objects.filter(date__lte=now).order_by('-date')[0]

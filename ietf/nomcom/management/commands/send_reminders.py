@@ -1,9 +1,10 @@
 import datetime
 import syslog
-from optparse import make_option
+
 from django.core.management.base import BaseCommand
+
 from ietf.nomcom.models import NomCom, NomineePosition
-from nomcom.utils import send_accept_reminder_to_nominee,send_questionnaire_reminder_to_nominee
+from ietf.nomcom.utils import send_accept_reminder_to_nominee,send_questionnaire_reminder_to_nominee
 
 def log(message):
     syslog.syslog(message)

@@ -1,5 +1,3 @@
-from django.db.models import Q
-
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.person.models import Person

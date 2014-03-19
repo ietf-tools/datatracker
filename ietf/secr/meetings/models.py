@@ -1,4 +1,3 @@
-from django.db import models
 #from sec.core.models import Meeting
 """
 import datetime

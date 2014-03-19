@@ -1,3 +1,58 @@
+ietfdb (5.2.0) ietf; urgency=low
+
+  This is a code cleanup release.  It adds a test and a managemement command
+  to run pyflakes (pyflakes is a bit like 'lint' for Python) over the
+  datatracker code, and cleans up the code so that it tests clean.  The number
+  of lines changed is large, but the changes to what the code actually does is
+  limited to fixing bugs discovered by pyflakes during the cleanup.  There
+  were around 10 such cases.
+
+  Most of the changes are related to import statements, as the code otherwise
+  was pretty clean already.  In almost all places, bulk imports using '*' has been
+  replaced by explicit imports, for these reasons:
+
+    * It makes it clear from where an imported name has come, so that a
+      human reader can look for an identifier in the import statements, and
+      see from where it comes, and where he should go to inspect the related
+      code.
+
+    * It makes it clear to the interpreter exactly which symbol is intended,
+      in cases where the same symbol is defined in multiple modules imported
+      using '*' import.  This is not a common case, but it actually turned up
+      a couple of times during the cleanup.  If the '*' imports in question
+      hadn't been turned into explicit imports, only the (somewhat arbitrary)
+      order of the import statements would have determine which instance of a
+      function or class would actually be visible to the following code.  This
+      situation can make the code do something different from what was intended,
+      in a quite devious way.
+
+    * It avoids unintended import of generically named variables from other
+      modules.  Altough having such variables as module globals is a bad
+      practice, it happens, and sometimes unintentionally importing them
+      through a '*' import will make it appear to the interpreter that a
+      statement intended to use an (by mistake undefined) identically named
+      local variable is in fact a valid statement which uses the imported
+      symbol instead.  Without the '*' import, the situation would be
+      correctly flagged by the interpreter.
+
+    * Finally, importing all symbols explicitly makes it possible for pyflakes
+      to do a better job in identifying unused and undefined symbols -- in the
+      presence of '*' imports, this capability becomes much more limited.
+      Several cases of bad code (use of undefined variables) was discovered
+      during the cleanup only after the '*' imports were replaced by explicit
+      imports.
+
+  In many places, the import statements have been reordered to consistently
+  list the generic python library imports first, followed by django imports,
+  then local module imports (these typically live on the same level as ietf/
+  and django/), finally followed by datatracker-specific imports.  Some people
+  find that this kind of consistency in importing, both in keeping a consistent
+  order, and in importing in a sequence from the more general down to the more
+  specific, aids in the readability of the code.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Mar 2014 20:52:05 +0100
+
+
 ietfdb (5.1.1) ietf; urgency=medium
 
   This is a minor bugfix release, in preparation for merging the pyflakes test
@@ -19,6 +74,7 @@ ietfdb (5.1.1) ietf; urgency=medium
     Bill's dependency tools.  Fixes bug #536. 
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  18 Mar 2014 22:49:58 +0100
+
 
 ietfdb (5.1.0) ietf; urgency=high
 

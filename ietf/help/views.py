@@ -5,7 +5,7 @@ import os
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 
-import debug
+import debug                            # pyflakes:ignore
 
 from ietf.doc.models import State, StateType
 

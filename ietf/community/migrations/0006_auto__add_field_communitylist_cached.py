@@ -1,7 +1,4 @@
-
 from south.db import db
-from django.db import models
-from ietf.community.models import *
 
 class Migration:
     

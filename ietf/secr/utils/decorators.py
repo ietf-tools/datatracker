@@ -1,7 +1,7 @@
-from django.core.urlresolvers import reverse
+from functools import wraps
+
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
-from functools import wraps
 
 from ietf.ietfauth.utils import has_role
 from ietf.doc.models import Document
@@ -9,7 +9,6 @@ from ietf.group.models import Group, Role
 from ietf.meeting.models import Session
 from ietf.secr.utils.meeting import get_timeslot
 
-from itertools import chain
 
 def check_for_cancel(redirect_url):
     """

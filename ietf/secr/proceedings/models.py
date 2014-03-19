@@ -1,12 +1,11 @@
+import os
+
 from django.conf import settings
 from django.db import models
-from django.shortcuts import get_object_or_404
 
 from ietf.meeting.models import Meeting
 from ietf.secr.utils.meeting import get_upload_root
 
-import datetime
-import os
 
 class InterimManager(models.Manager):
     '''A custom manager to limit objects to type=interim'''
@@ -68,6 +67,6 @@ class Registration(models.Model):
     country = models.CharField(max_length=2)
     
     def __unicode__(self):
-        return "%s %s" % (fname, lname)
+        return "%s %s" % (self.fname, self.lname)
     class Meta:
         db_table = 'registrations'

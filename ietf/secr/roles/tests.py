@@ -1,12 +1,11 @@
 from django.core.urlresolvers import reverse
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 
 from ietf.group.models import Group
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
 
-from pyquery import PyQuery
-import debug
+import debug                            # pyflakes:ignore
 
 SECR_USER='secretary'
 
@@ -23,7 +22,7 @@ class MainTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_roles_delete(self):
-        draft = make_test_data()
+        make_test_data()
         augment_data()
         group = Group.objects.filter(acronym='mars')[0]
         role = group.role_set.all()[0]
@@ -34,7 +33,7 @@ class MainTestCase(TestCase):
         self.failUnless('deleted successfully' in response.content)
 
     def test_roles_add(self):
-        draft = make_test_data()
+        make_test_data()
         augment_data()
         person = Person.objects.get(name='Aread Irector')
         group = Group.objects.filter(acronym='mars')[0]

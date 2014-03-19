@@ -4,13 +4,11 @@ import os
 
 from django.shortcuts import render_to_response as render, get_object_or_404
 from django.template import RequestContext
-from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404
 from django.conf import settings
 
 from ietf.ipr.models import IprDetail, IprDocAlias, SELECT_CHOICES, LICENSE_CHOICES
 from ietf.ipr.view_sections import section_list_for_ipr
-from ietf.doc.models import Document
 
 def about(request):
     return render("ipr/disclosure.html", {}, context_instance=RequestContext(request))

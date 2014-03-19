@@ -1,24 +1,20 @@
-import unittest
-import StringIO
-import os, shutil
-from datetime import date, timedelta, time
+import datetime
+from pyquery import PyQuery
+
+import debug                            # pyflakes:ignore
 
 from django.core.urlresolvers import reverse as urlreverse
-from django.conf import settings
 
-from pyquery import PyQuery
-import debug
-
-from ietf.doc.models import *
-from ietf.name.models import *
-from ietf.group.models import *
-from ietf.person.models import *
-from ietf.meeting.models import Meeting, MeetingTypeName
-from ietf.iesg.models import TelechatDate
-from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.test_data import make_test_data
+from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
+    BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent )
+from ietf.group.models import Group, Role
+from ietf.name.models import BallotPositionName
+from ietf.person.models import Person
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
-from ietf.utils import TestCase
+from ietf.utils.test_data import make_test_data
+from ietf.utils.test_utils import login_testing_unauthorized
+
 
 class EditPositionTests(TestCase):
     def test_edit_position(self):
@@ -98,7 +94,7 @@ class EditPositionTests(TestCase):
         self.assertTrue(len(q('form input[name=position]')) > 0)
 
         # vote on behalf of AD
-        events_before = draft.docevent_set.count()
+        # events_before = draft.docevent_set.count()
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
         self.assertEqual(r.status_code, 302)
 

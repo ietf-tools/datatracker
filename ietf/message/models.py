@@ -2,7 +2,7 @@ from django.db import models
 
 import datetime
 
-from ietf.person.models import Email, Person
+from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.doc.models import Document
 

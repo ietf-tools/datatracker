@@ -40,7 +40,6 @@ WSGIPythonEggs /var/www/.python-eggs/
 
 import os
 import sys
-import syslog
 
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if not path in sys.path:

@@ -1,7 +1,7 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
 from optparse import make_option
-import sys
+
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
@@ -16,8 +16,6 @@ class Command(BaseCommand):
     args = 'meetingname [owner] schedname'
 
     def handle(self, *labels, **options):
-        from django.conf import settings
-        from django.test.utils import get_runner
 
         meetingname = labels[0]
         schedname   = labels[1]

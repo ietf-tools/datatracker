@@ -1,13 +1,14 @@
-import datetime, shutil
+import os
+import datetime
+import shutil
 
-from django.core.urlresolvers import reverse as urlreverse
+from django.conf import settings
 
+from ietf.doc.models import Document, DocAlias, RelatedDocument, State, LastCallDocEvent, NewRevisionDocEvent
+from ietf.name.models import DocRelationshipName
+from ietf.idindex.index import all_id_txt, all_id2_txt, id_index_txt
+from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data
-from ietf.utils import TestCase
-
-from ietf.doc.models import *
-from ietf.idindex.index import *
-
 
 class IndexTests(TestCase):
     def setUp(self):

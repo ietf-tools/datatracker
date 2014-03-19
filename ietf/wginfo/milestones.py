@@ -1,20 +1,20 @@
 # WG milestone editing views
 
-import re, os, string, datetime, shutil, calendar, json
+import datetime
+import calendar
+import json
 
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
 from django import forms
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
-from django.utils.html import mark_safe, escape
-from django.utils.functional import lazy
-from django.core.urlresolvers import reverse as urlreverse
+from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.template import RequestContext
 
-from ietf.ietfauth.utils import role_required, has_role
 from ietf.doc.models import Document, DocEvent
 from ietf.doc.utils import get_chartering_type
-from ietf.group.models import *
-from ietf.group.utils import save_group_in_history, save_milestone_in_history
+from ietf.group.models import Group, GroupMilestone, MilestoneGroupEvent
+from ietf.group.utils import save_milestone_in_history
+from ietf.ietfauth.utils import role_required, has_role
+from ietf.name.models import GroupMilestoneStateName
 from ietf.wginfo.mails import email_milestones_changed
 
 def json_doc_names(docs):
@@ -68,7 +68,7 @@ class MilestoneForm(forms.Form):
         # set choices for due date
         this_year = datetime.date.today().year
 
-        self.fields["due_month"].choices = [(m, datetime.date(this_year, m, 1).strftime("%B")) for m in range(1, 13)]
+        self.fields["due_month"].choices = [(month, datetime.date(this_year, month, 1).strftime("%B")) for month in range(1, 13)]
 
         years = [ y for y in range(this_year, this_year + 10)]
 

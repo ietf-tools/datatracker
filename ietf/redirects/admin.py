@@ -1,6 +1,6 @@
 #coding: utf-8
 from django.contrib import admin
-from ietf.redirects.models import *
+from ietf.redirects.models import Command, Redirect, Suffix
                 
 class CommandAdmin(admin.ModelAdmin):
     pass

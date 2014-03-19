@@ -1,8 +1,5 @@
 # Copyright The IETF Trust 2011, All Rights Reserved
 
-import datetime, re, os
-
-from django.conf import settings
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.core.urlresolvers import reverse as urlreverse

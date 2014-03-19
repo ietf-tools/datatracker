@@ -1,19 +1,15 @@
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.db.models import Max
-from django.forms.formsets import formset_factory
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
-from ietf.group.models import Group, GroupHistory, Role, RoleHistory
+from ietf.group.models import Group, Role
 from ietf.group.utils import save_group_in_history
 from ietf.secr.groups.forms import RoleForm
 from ietf.secr.sreq.forms import GroupSelectForm
 
-from forms import *
-import re
-import datetime
+#from forms import *
 
 # -------------------------------------------------
 # Helper Functions

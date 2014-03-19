@@ -1,6 +1,5 @@
 import datetime
 
-from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.test_utils import TestCase

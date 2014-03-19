@@ -1,25 +1,21 @@
-import os, shutil, datetime
+import datetime
 import sys
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
     import unittest2 as unittest
 else:
     import unittest
+from pyquery import PyQuery
 
 from django.core.urlresolvers import reverse as urlreverse
 
-from pyquery import PyQuery
-
+from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
+    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent )
+from ietf.group.models import Group
+from ietf.person.models import Person
 from ietf.utils.mail import outbox
-from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
-from ietf.utils import TestCase
-
-from ietf.doc.models import *
-from ietf.name.models import *
-from ietf.group.models import *
-from ietf.person.models import *
-from ietf.meeting.models import Meeting, MeetingTypeName
-from ietf.iesg.models import TelechatDate
+from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.test_utils import TestCase
 
 class SearchTestCase(TestCase):
     def test_search(self):
@@ -98,7 +94,7 @@ class SearchTestCase(TestCase):
         self.assertTrue(draft.title in r.content)
 
     def test_frontpage(self):
-        draft = make_test_data()
+        make_test_data()
         r = self.client.get("/")
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Search Internet-Drafts" in r.content)
@@ -309,7 +305,7 @@ class DocTestCase(TestCase):
 
         doc.set_state(State.objects.get(type="draft-iesg", slug="lc"))
 
-        e = LastCallDocEvent.objects.create(
+        LastCallDocEvent.objects.create(
             doc=doc,
             desc="Last call",
             type="sent_last_call",

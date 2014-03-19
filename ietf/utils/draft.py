@@ -191,14 +191,12 @@ class Draft():
         pages = []
         page = []
         line = ""
-        debug = False
         newpage = False
         sentence = False
         blankcount = 0
         linecount = 0
         # two functions with side effects
         def striplines(p):
-            r = []
             beg = end = 0
             for i in range(len(p)):
                 l = p[i]
@@ -522,7 +520,6 @@ class Draft():
 
         authors = []
         companies = []
-        author_info = []
         companies_seen = []
         self._docheader = ""
 
@@ -533,7 +530,7 @@ class Draft():
         for line in self.lines[:30]:
             self._docheader += line+"\n"
             author_on_line = False
-            company_on_line = False
+
             _debug( "**" + line)
             leading_space = len(re.findall("^ *", line)[0])
             line_len = len(line.rstrip())
@@ -609,7 +606,6 @@ class Draft():
                             company = match.group(1)
                             authors += [ "" ]
                             companies += [ company ]
-                            company_on_line = True
                             #_debug("\nLine:   " + line)
                             #_debug("Format: " + authformat)
                             _debug("Company: '%s'" % company)
@@ -772,7 +768,7 @@ class Draft():
                                                     authors[i] = (fullname, first, middle, surname, suffix)
                                                     companies[i] = None
                                             break
-                            except AssertionError, e:
+                            except AssertionError:
                                 sys.stderr.write("filename: "+self.filename+"\n")
                                 sys.stderr.write("authpat: "+authpat+"\n")
                                 raise
@@ -788,9 +784,7 @@ class Draft():
             _debug("2: authors[%s]: %s" % (i, authors[i]))
             if start and col != None:
                 _debug("\n * %s" % (authors[i], ))
-                done = False
                 nonblank_count = 0
-                keyword = False
                 blanklines = 0
                 email = None
                 for line in self.lines[start+1:]:
@@ -1101,6 +1095,7 @@ def getmeta(fn):
 
 # ----------------------------------------------------------------------
 def _output(docname, fields, outfile=sys.stdout):
+    global company_domain
     if opt_getauthors:
         # Output an (incomplete!) getauthors-compatible format.  Country
         # information is always UNKNOWN, and information about security and
@@ -1165,6 +1160,7 @@ def _printmeta(fn, outfile=sys.stdout):
 # Main
 # ----------------------------------------------------------------------
 
+company_domain = {}
 def _main(outfile=sys.stdout):
     global opt_debug, opt_timestamp, opt_trace, opt_authorinfo, opt_getauthors, files, company_domain, opt_attributes
     # set default values, if any
@@ -1234,6 +1230,7 @@ def _main(outfile=sys.stdout):
         if file == "-":
             file = sys.stdin
         elif file.endswith(".gz"):
+            import gzip
             file = gzip.open(file)
         else:
             file = open(file)

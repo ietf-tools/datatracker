@@ -5,21 +5,19 @@ from pyquery import PyQuery
 from StringIO import StringIO
 from textwrap import wrap
 
-
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.test_data  import make_test_data
-from ietf.utils.mail import outbox
+from ietf.doc.models import ( Document, DocAlias, State, DocEvent,
+    BallotPositionDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_status_change import default_approval_text
-from ietf.utils import TestCase
-
-from ietf.doc.models import Document,DocEvent,NewRevisionDocEvent,BallotPositionDocEvent,TelechatDocEvent,WriteupDocEvent,DocAlias,State
-from ietf.name.models import StreamName
 from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
+from ietf.utils.test_utils import TestCase
+from ietf.utils.mail import outbox
+from ietf.utils.test_data  import make_test_data
+from ietf.utils.test_utils import login_testing_unauthorized
 
 
 class StatusChangeTests(TestCase):

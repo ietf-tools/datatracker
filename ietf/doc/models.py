@@ -1,18 +1,21 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import datetime, os
+
 from django.db import models
 from django.core.urlresolvers import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils.html import mark_safe
 
-from ietf.group.models import *
-from ietf.name.models import *
+import debug                            # pyflakes:ignore
+
+from ietf.group.models import Group
+from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdLevelName, StdLevelName,
+    DocRelationshipName, DocReminderTypeName, BallotPositionName )
 from ietf.person.models import Email, Person
 from ietf.utils.admin import admin_link
 
-import datetime, os
-import debug
 
 class StateType(models.Model):
     slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
@@ -164,8 +167,6 @@ class RelatedDocument(models.Model):
     relationship = models.ForeignKey(DocRelationshipName)
     def action(self):
         return self.relationship.name
-    def inverse_action():
-        return self.relationship.revname
     def __unicode__(self):
         return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 

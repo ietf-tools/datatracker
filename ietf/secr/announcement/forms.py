@@ -1,12 +1,10 @@
 from django import forms
 from django.core.validators import validate_email
 
-from models import *
-from ietf.secr.utils.mail import MultiEmailField
-from ietf.secr.utils.group import current_nomcom
-
-from ietf.message.models import Message
+from ietf.group.models import Group, Role
 from ietf.ietfauth.utils import has_role
+from ietf.message.models import Message
+from ietf.secr.utils.group import current_nomcom
 
 # ---------------------------------------------
 # Globals

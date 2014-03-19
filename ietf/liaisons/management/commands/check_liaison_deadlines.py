@@ -1,9 +1,6 @@
 import datetime
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.template.loader import render_to_string
-from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.liaisons.models import LiaisonStatement
 from ietf.liaisons.mails import possibly_send_deadline_reminder
@@ -20,4 +17,4 @@ class Command(BaseCommand):
         for l in LiaisonStatement.objects.filter(action_taken=False, deadline__gte=cutoff).exclude(deadline=None):
             r = possibly_send_deadline_reminder(l)
             if r:
-                print 'Liaison %05s#: Deadline reminder sent!' % liaison.pk
+                print 'Liaison %05s#: Deadline reminder sent!' % l.pk

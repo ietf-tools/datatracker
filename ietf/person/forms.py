@@ -5,9 +5,9 @@ from django.utils.functional import lazy
 from django import forms
 from django.core.urlresolvers import reverse as urlreverse
 
-import debug
+import debug                            # pyflakes:ignore
 
-from ietf.person.models import *
+from ietf.person.models import Email
 
 def json_emails(emails):
     if isinstance(emails, basestring):

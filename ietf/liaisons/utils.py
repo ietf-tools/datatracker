@@ -1,12 +1,11 @@
 from django.db.models import Q
 
 from ietf.group.models import Group, Role
-from ietf.person.models import Person
 from ietf.liaisons.models import LiaisonStatement
 from ietf.ietfauth.utils import has_role, passes_test_decorator
 
-from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
-                                    get_ietf_chair, get_iab_chair, get_iab_executive_director,
+from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director, is_irtfchair,
+                                    get_ietf_chair, get_iab_chair, get_iab_executive_director, get_irtf_chair,
                                     is_secretariat, can_add_liaison, get_person_for_user, proxy_personify_role)
 
 can_submit_liaison_required = passes_test_decorator(

@@ -8,21 +8,18 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from ietf.doc.utils import add_state_change_event, update_telechat
-from ietf.doc.models import save_document_in_history
-from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_document_content
-from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
-from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.utils.mail import send_mail_preformatted
+from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocAlias, DocEvent,
+    Document, NewRevisionDocEvent, State, TelechatDocEvent, save_document_in_history )
+from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
+    create_ballot_if_not_open, get_document_content, update_telechat )
 from ietf.doc.mails import email_iana
-
-from ietf.doc.models import State, Document, DocHistory, DocAlias
-from ietf.doc.models import DocEvent, NewRevisionDocEvent, WriteupDocEvent, TelechatDocEvent, BallotDocEvent, BallotPositionDocEvent
-from ietf.person.models import Person
-from ietf.iesg.models import TelechatDate
-from ietf.group.models import Role, Group
-
 from ietf.doc.forms import TelechatForm, AdForm, NotifyForm
+from ietf.group.models import Role, Group
+from ietf.iesg.models import TelechatDate
+from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
+from ietf.person.models import Person
+from ietf.utils.mail import send_mail_preformatted
+from ietf.utils.textupload import get_cleaned_text_file_content
 
 class ChangeStateForm(forms.Form):
     review_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev"), label="Conflict review state", empty_label=None, required=True)

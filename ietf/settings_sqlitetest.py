@@ -4,7 +4,7 @@
 #   ./manage.py test --settings=settings_sqlitetest doc.ChangeStateTestCase
 #
 
-from settings import *
+from settings import *                  # pyflakes:ignore
 
 DATABASES = {
     'default': {

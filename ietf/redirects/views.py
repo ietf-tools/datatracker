@@ -84,5 +84,5 @@ def redirect(request, path="", script=""):
 	url += '?' + get.urlencode()
     try:
         return HttpResponsePermanentRedirect(url)
-    except BadHeaderError, e:
+    except BadHeaderError:
         raise Http404

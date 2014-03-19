@@ -32,28 +32,30 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import codecs, re, os, glob, datetime
-import tarfile, StringIO, time
+import os
+import datetime
+import tarfile
+import StringIO
+import time
 import itertools
 import json
 
-from django.core.urlresolvers import reverse as urlreverse
-from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
-from django.template import RequestContext, Context, loader
-from django.shortcuts import render_to_response, get_object_or_404, render, redirect
+
+from django import forms
 from django.conf import settings
 from django.db import models
-from django import forms
+from django.http import HttpResponse
+from django.shortcuts import render_to_response, render, redirect
+from django.template import RequestContext
 
-from ietf.iesg.models import TelechatDate, TelechatAgendaItem
-from ietf.ipr.models import IprDocAlias
+
 from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
-from ietf.group.models import Group, GroupMilestone
-from ietf.person.models import Person
-
 from ietf.doc.utils import update_telechat, augment_events_with_revision
+from ietf.group.models import GroupMilestone
+from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
+from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
-from ietf.iesg.agenda import *
+from ietf.person.models import Person
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))

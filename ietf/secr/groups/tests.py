@@ -1,9 +1,9 @@
 from django.core.urlresolvers import reverse
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
-import debug
+import debug                            # pyflakes:ignore
 
 SECR_USER='secretary'
 
@@ -11,7 +11,7 @@ class GroupsTest(TestCase):
     # ------- Test Search -------- #
     def test_search(self):
         "Test Search"
-        draft = make_test_data()
+        make_test_data()
         group = Group.objects.all()[0]
         url = reverse('groups_search')
         post_data = {'group_acronym':group.acronym,'submit':'Search'}
@@ -40,7 +40,7 @@ class GroupsTest(TestCase):
         self.failUnless('This field is required' in response.content)
 
     def test_add_group_dupe(self):
-        draft = make_test_data()
+        make_test_data()
         group = Group.objects.all()[0]
         area = Group.objects.filter(type='area')[0]
         url = reverse('groups_add')
@@ -58,7 +58,7 @@ class GroupsTest(TestCase):
         self.failUnless('Group with this Acronym already exists' in response.content)
 
     def test_add_group_success(self):
-        draft = make_test_data()
+        make_test_data()
         area = Group.objects.filter(type='area')[0]
         url = reverse('groups_add')
         post_data = {'acronym':'test',
@@ -74,7 +74,7 @@ class GroupsTest(TestCase):
 
     # ------- Test View -------- #
     def test_view(self):
-        draft = make_test_data()
+        make_test_data()
         group = Group.objects.all()[0]
         url = reverse('groups_view', kwargs={'acronym':group.acronym})
         response = self.client.get(url)
@@ -82,7 +82,7 @@ class GroupsTest(TestCase):
 
     # ------- Test Edit -------- #
     def test_edit_valid(self):
-        draft = make_test_data()
+        make_test_data()
         group = Group.objects.filter(acronym='mars')[0]
         area = Group.objects.filter(acronym='farfut')[0]
         ad = Person.objects.get(name='Aread Irector')        
@@ -103,7 +103,7 @@ class GroupsTest(TestCase):
 
     # ------- Test People -------- #
     def test_people_delete(self):
-        draft = make_test_data()
+        make_test_data()
         group = Group.objects.filter(acronym='mars')[0]
         role = group.role_set.all()[0]
         url = reverse('groups_delete_role', kwargs={'acronym':group.acronym,'id':role.id})
@@ -113,7 +113,7 @@ class GroupsTest(TestCase):
         self.failUnless('deleted successfully' in response.content)
 
     def test_people_add(self):
-        draft = make_test_data()
+        make_test_data()
         person = Person.objects.get(name='Aread Irector')
         group = Group.objects.filter(acronym='mars')[0]
         url = reverse('groups_people', kwargs={'acronym':group.acronym})

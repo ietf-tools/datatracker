@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from ietf.liaisons.models import *
+from ietf.liaisons.models import LiaisonStatement
 
 class LiaisonStatementAdmin(admin.ModelAdmin):
     list_display = ['id', 'title', 'from_name', 'to_name', 'submitted', 'purpose', 'related_to']

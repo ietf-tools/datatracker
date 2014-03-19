@@ -7,14 +7,11 @@ import types
 from email.utils import parseaddr
 
 from django import template
-from django.conf import settings
 from django.utils.html import escape, fix_ampersands
-from django.template.defaultfilters import truncatewords_html, linebreaksbr, wordwrap, stringfilter, urlize
+from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, urlize
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
-from django.template import RequestContext
-
 
 register = template.Library()
 
@@ -323,6 +320,7 @@ def wrap_text(text, width=72):
     lines = text.split("\n")
     filled = []
     wrapped = False
+    prev_indent = None
     for line in lines:
         line = line.expandtabs()
         indent = " " * (len(line) - len(line.lstrip()))

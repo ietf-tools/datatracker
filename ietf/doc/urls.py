@@ -33,7 +33,6 @@
 from django.conf.urls import patterns, url, include
 from django.views.generic import RedirectView
 
-from ietf.doc.models import State
 from ietf.doc import views_search, views_draft, views_ballot
 from ietf.doc import views_status_change
 from ietf.doc import views_doc

@@ -7,16 +7,15 @@ import json
 from django.db import IntegrityError
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.contrib.auth.models import User
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils.http import urlquote
 
-from ietf.community.models import CommunityList, Rule, EmailSubscription, ListNotification
+from ietf.community.models import CommunityList, Rule, EmailSubscription
 from ietf.community.forms import RuleForm, DisplayForm, SubscribeForm, UnSubscribeForm
 from ietf.group.models import Group
-from ietf.doc.models import Document, DocEvent, DocAlias
+from ietf.doc.models import DocEvent, DocAlias
 
 
 def _manage_list(request, clist):

@@ -1,44 +1,37 @@
-from django.conf import settings
-from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.core.urlresolvers import reverse
-from django.db.models import Max
-from django.forms.formsets import formset_factory
-from django.forms.models import inlineformset_factory, modelformset_factory
-from django.http import HttpResponseRedirect, HttpResponse, HttpResponseForbidden
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
-from django.template import Context
-from django.template.loader import get_template
-from django.utils.text import slugify
-from django.db.models import Max,Count,get_model
-
-from ietf.secr.lib import jsonapi
-from ietf.secr.proceedings.proc_utils import *
-from ietf.secr.sreq.forms import GroupSelectForm
-from ietf.secr.utils.decorators import check_permissions, sec_only
-from ietf.secr.utils.document import get_rfc_num, get_full_path
-from ietf.secr.utils.group import get_my_groups, groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_material, get_timeslot
-
-from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent, RelatedDocument
-from ietf.group.models import Group
-from ietf.group.utils import get_charter_text
-from ietf.ietfauth.utils import has_role
-from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession
-from ietf.name.models import MeetingTypeName, SessionStatusName
-from ietf.person.models import Person
-
-from forms import *
-from models import InterimMeeting    # proxy model
-
 import datetime
 import glob
 import itertools
 import os
-import re
 import shutil
-import zipfile
+
+from django.conf import settings
+from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.urlresolvers import reverse
+from django.db.models import Max
+from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response, get_object_or_404
+from django.template import RequestContext
+from django.utils.text import slugify
+
+from ietf.secr.lib.template import jsonapi
+from ietf.secr.sreq.forms import GroupSelectForm
+from ietf.secr.utils.decorators import check_permissions, sec_only
+from ietf.secr.utils.document import get_full_path
+from ietf.secr.utils.group import get_my_groups, groups_by_session
+from ietf.secr.utils.meeting import get_upload_root, get_material, get_timeslot
+from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
+from ietf.group.models import Group
+from ietf.ietfauth.utils import has_role
+from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession
+from ietf.secr.proceedings.forms import EditSlideForm, InterimMeetingForm, ReplaceSlideForm, UnifiedUploadForm
+from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas, gen_attendees,
+    gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries, gen_progress, gen_research,
+    gen_training, create_proceedings, create_interim_directory )
+
+from ietf.secr.proceedings.models import InterimMeeting    # proxy model
+
+
 
 # -------------------------------------------------
 # Helper Functions
@@ -273,8 +266,6 @@ def ajax_order_slide(request):
 
     # get all the slides for this session
     session = slide.session_set.all()[0]
-    meeting = session.meeting
-    group = session.group
     qs = session.materials.exclude(states__slug='deleted').filter(type='slides').order_by('order')
 
     # move slide and reorder list
@@ -741,8 +732,6 @@ def select_interim(request):
         groups = get_my_groups(request.user)
         choices = build_choices(groups)
         group_form = GroupSelectForm(choices=choices)
-        irtf_form = None
-        training_form = None
 
     return render_to_response('proceedings/interim_select.html', {
         'group_form': group_form},

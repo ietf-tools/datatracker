@@ -1,18 +1,16 @@
-import os, shutil, datetime
+import os
+import shutil
+import datetime
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 
 from pyquery import PyQuery
 
-from ietf.utils.mail import outbox
-from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils import TestCase
-
 from ietf.doc.models import Document
-from ietf.group.models import Group
-from ietf.meeting.models import Session, TimeSlot, ScheduledSession
+from ietf.meeting.models import Session, TimeSlot
 from ietf.meeting.test_data import make_meeting_test_data
+from ietf.utils.test_utils import TestCase
 
 class MeetingTests(TestCase):
     def setUp(self):

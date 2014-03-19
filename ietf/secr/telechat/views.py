@@ -1,25 +1,21 @@
+import os
+import datetime
+
 from django.contrib import messages
-from django.core.urlresolvers import reverse
-from django.db.models import Count
-from django.forms.models import inlineformset_factory, modelformset_factory
 from django.forms.formsets import formset_factory
-from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
-from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
+from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, WriteupDocEvent, save_document_in_history
 from ietf.doc.utils import get_document_content, add_state_change_event
-from ietf.group.models import Group
-from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.mails import email_ad, email_state_changed
-from ietf.iesg.models import TelechatDate, TelechatAgendaItem
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem, Telechat
 from ietf.iesg.agenda import agenda_data, get_doc_section
+from ietf.secr.telechat.forms import BallotForm, ChangeStateForm, DateSelectForm, TELECHAT_TAGS
 
-from forms import *
-import os
-import datetime
+
 
 '''
 EXPECTED CHANGES:
@@ -165,7 +161,6 @@ def doc_detail(request, date, name):
     if doc.type_id == 'draft':
         state_type = 'draft-iesg'
 
-    started_process = doc.latest_event(type="started_iesg_process")
     login = request.user.person
 
     if doc.active_ballot():
@@ -361,8 +356,8 @@ def minutes(request, date):
     previous = TelechatDate.objects.filter(date__lt=current).order_by("-date")[0].date
     events = DocEvent.objects.filter(type='iesg_approved',time__gte=previous,time__lt=current,doc__type='draft')
     docs = [ e.doc for e in events ]
-    pa_docs = [ d for d in docs if d.intended_std_level.slug not in ('inf','exp','hist') ]
-    da_docs = [ d for d in docs if d.intended_std_level.slug in ('inf','exp','hist') ]
+    pa_docs = [ doc for doc in docs if doc.intended_std_level.slug not in ('inf','exp','hist') ]
+    da_docs = [ doc for doc in docs if doc.intended_std_level.slug in ('inf','exp','hist') ]
 
     agenda = agenda_data(date=date)
 
@@ -387,7 +382,7 @@ def new(request):
         Telechat.objects.create(telechat_date=date)
 
         messages.success(request,'New Telechat Agenda created')
-        return redirect('telechat_doc', date=date, name=name)
+        return redirect('telechat_doc', date=date)
 
 def roll_call(request, date):
 

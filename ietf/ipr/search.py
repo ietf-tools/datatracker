@@ -11,7 +11,7 @@ from django.conf import settings
 
 from ietf.ipr.models import IprDocAlias, IprDetail
 from ietf.ipr.related import related_docs
-from ietf.utils import log, normalize_draftname
+from ietf.utils.draft_search import normalize_draftname
 from ietf.group.models import Group
 from ietf.doc.models import DocAlias
 

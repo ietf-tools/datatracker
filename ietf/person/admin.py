@@ -1,6 +1,8 @@
 from django.contrib import admin
-from models import *
-from name import name_parts
+
+
+from ietf.person.models import Email, Alias, Person
+from ietf.person.name import name_parts
 
 class EmailAdmin(admin.ModelAdmin):
     list_display = ["address", "person", "time", "active", ]

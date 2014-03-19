@@ -5,24 +5,20 @@ import os
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from django.core.validators import validate_email, ValidationError
-from django.contrib.sites.models import Site
-from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponseNotAllowed
+from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.utils.text import get_text_list
-from django.utils.html import escape
 
 from ietf.doc.models import Document
-from ietf.group.models import Group, Role
-from ietf.utils.mail import send_mail
+from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
-from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName
 from ietf.submit.forms import UploadForm, NameEmailForm, EditSubmissionForm, PreapprovalForm
+from ietf.submit.mail import send_full_url, send_approval_request_to_group, send_submission_confirmation, submission_confirmation_email_list, send_manual_post_request
+from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName
 from ietf.submit.utils import approvable_submissions_for_user, preapprovals_for_user, recently_approved_by_user
 from ietf.submit.utils import check_idnits, found_idnits, validate_submission, create_submission_event
 from ietf.submit.utils import post_submission, cancel_submission, rename_submission_files
-from ietf.submit.mail import send_full_url, send_approval_request_to_group, send_submission_confirmation, submission_confirmation_email_list, send_manual_post_request
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 
 def upload_submission(request):

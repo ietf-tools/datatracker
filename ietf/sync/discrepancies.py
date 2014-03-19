@@ -1,4 +1,5 @@
-from ietf.doc.models import *
+from django.db import models
+from ietf.doc.models import Document, State
 
 def find_discrepancies():
     res = []

@@ -5,7 +5,7 @@ unittest). These will both pass when you run "manage.py test".
 Replace these with more appropriate tests for your application.
 """
 
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 
 class SimpleTest(TestCase):
     def test_basic_addition(self):

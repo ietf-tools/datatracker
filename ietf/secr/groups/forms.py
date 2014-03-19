@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.db.models import Q
 
@@ -5,9 +7,7 @@ from ietf.group.models import Group, GroupMilestone, Role
 from ietf.name.models import GroupStateName, GroupTypeName, RoleName
 from ietf.person.models import Person, Email
 
-from ietf.secr.areas.forms import AWPForm
 
-import re
 
 # ---------------------------------------------
 # Select Choices 

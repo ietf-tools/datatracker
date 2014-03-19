@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-from south.utils import datetime_utils as datetime
-from south.db import db
+﻿# -*- coding: utf-8 -*-
 from south.v2 import DataMigration
-from django.db import models
-
 
 class Migration(DataMigration):
 
@@ -26,7 +22,7 @@ class Migration(DataMigration):
         # Can't reliably determine what the old states might have been, so just capture what the state was set to
         for event in orm.DocEvent.objects.filter(type='changed_document',desc="IESG state set to Publication Requested"):
             for new_state in missing_states :
-                e = self.add_state_change_event(orm=orm,doc=event.doc,by=event.by,new_state=new_state,timestamp=event.time)
+                self.add_state_change_event(orm=orm,doc=event.doc,by=event.by,new_state=new_state,timestamp=event.time)
 
     def backwards(self, orm):
         "Write your backwards methods here."

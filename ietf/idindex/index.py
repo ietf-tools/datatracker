@@ -9,7 +9,11 @@ from django.conf import settings
 from django.template.loader import render_to_string
 
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
-from ietf.doc.models import *
+from ietf.doc.models import Document, DocEvent, DocumentAuthor, RelatedDocument, DocAlias, State
+from ietf.doc.models import LastCallDocEvent, NewRevisionDocEvent
+from ietf.doc.models import IESG_SUBSTATE_TAGS
+from ietf.group.models import Group
+from ietf.person.models import Person
 
 def all_id_txt():
     # this returns a lot of data so try to be efficient

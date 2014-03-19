@@ -2,7 +2,8 @@ import os
 
 from django.conf import settings
 
-from ietf.group.models import *
+from ietf.group.models import Group, RoleHistory
+from ietf.person.models import Email
 from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
 
 

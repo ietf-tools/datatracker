@@ -2,7 +2,6 @@
 # coding: latin-1
 
 from types import ModuleType
-import urls, models, views, feeds, admin
 
 # These people will be sent a stack trace if there's an uncaught exception in
 # code any of the modules imported above:

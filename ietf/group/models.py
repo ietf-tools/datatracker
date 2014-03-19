@@ -1,16 +1,15 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import datetime
 from urlparse import urljoin
 
 from django.db import models
-from django.db.models import Q
 
-from ietf.name.models import *
-from ietf.person.models import Email, Person
 from ietf.group.colors import fg_group_colors, bg_group_colors
+from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName
+from ietf.person.models import Email, Person
 
-import datetime
-import debug
+import debug                            # pyflakes:ignore
 
 class GroupInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)

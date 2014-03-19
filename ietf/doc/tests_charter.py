@@ -2,24 +2,21 @@
 
 import os, shutil, datetime
 from StringIO import StringIO
+from pyquery import PyQuery
 
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
+
+from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
+    TelechatDocEvent, WriteupDocEvent )
+from ietf.doc.utils_charter import next_revision, default_review_text, default_action_text
+from ietf.group.models import Group, GroupMilestone
+from ietf.iesg.models import TelechatDate
+from ietf.person.models import Person
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils import TestCase
-
-from pyquery import PyQuery
-
-from ietf.doc.models import *
-from ietf.doc.utils import *
-from ietf.group.models import *
-from ietf.group.utils import *
-from ietf.name.models import *
-from ietf.person.models import *
-from ietf.iesg.models import TelechatDate
-from ietf.doc.utils_charter import *
 
 class EditCharterTests(TestCase):
     def setUp(self):
@@ -332,12 +329,14 @@ class EditCharterTests(TestCase):
                                            desc="Has been copied",
                                            due=due_date,
                                            resolved="")
-        m2 = GroupMilestone.objects.create(group=group,
+        # m2 isn't used -- missing test?
+        m2 = GroupMilestone.objects.create(group=group, # pyflakes:ignore
                                            state_id="active",
                                            desc="To be deleted",
                                            due=due_date,
                                            resolved="")
-        m3 = GroupMilestone.objects.create(group=group,
+        # m3 isn't used -- missing test?
+        m3 = GroupMilestone.objects.create(group=group, # pyflakes:ignore
                                            state_id="charter",
                                            desc="Has been copied",
                                            due=due_date,

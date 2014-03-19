@@ -1,6 +1,7 @@
-from django import forms
-from ietf.secr.areas.models import *
 import re
+
+from django import forms
+
 
 class LiaisonForm(forms.Form):
     liaison_name = forms.CharField(max_length=100,label='Name',help_text="To see a list of people type the first name, or last name, or both.")

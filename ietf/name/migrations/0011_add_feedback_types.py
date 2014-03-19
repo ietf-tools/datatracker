@@ -1,9 +1,7 @@
-# encoding: utf-8
-from south.db import db
 from south.v2 import DataMigration
 
 from name.models import FeedbackType
-from nomcom.models import NomCom
+
 
 class Migration(DataMigration):
 

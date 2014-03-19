@@ -1,23 +1,26 @@
+import os
+import shutil
+import datetime
 import StringIO
-import os, shutil, datetime
+from pyquery import PyQuery
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 
-from pyquery import PyQuery
-import debug
+import debug                            # pyflakes:ignore
 
-from ietf.doc.models import *
-from ietf.doc.utils import *
-from ietf.name.models import *
-from ietf.group.models import *
-from ietf.person.models import *
+from ietf.doc.models import ( Document, DocAlias, DocReminder, DocumentAuthor, DocEvent,
+    ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, WriteupDocEvent )
+from ietf.doc.utils import get_tags_for_stream_id
+from ietf.name.models import StreamName, IntendedStdLevelName, DocTagName
+from ietf.group.models import Group
+from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 
 
 class ChangeStateTests(TestCase):
@@ -280,7 +283,7 @@ class EditInfoTests(TestCase):
             ad=None,
             expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             )
-        doc_alias = DocAlias.objects.create(
+        DocAlias.objects.create(
             document=draft,
             name=draft.name,
             )
@@ -854,7 +857,6 @@ class IndividualInfoFormsTests(TestCase):
         test_file.name = "unnamed"
         r = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 302)
-        doc = Document.objects.get(name=self.docname)
         self.assertTrue(self.doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup").text.startswith('This is a different writeup.'))
 
         # template reset

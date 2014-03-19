@@ -1,20 +1,21 @@
-import unittest, re, json, datetime, StringIO, shutil
+import os
+import json
+import datetime
+import StringIO
+import shutil
 
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
+from ietf.doc.models import Document, DocAlias, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
+from ietf.doc.utils import add_state_change_event
+from ietf.person.models import Person
+from ietf.sync import iana, rfceditor
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils import TestCase
+from ietf.utils.test_utils import TestCase
 
-from ietf.doc.models import *
-from ietf.doc.utils import add_state_change_event
-from ietf.person.models import *
-
-from ietf.sync import iana, rfceditor
-
-from pyquery import PyQuery
 
 class IANASyncTests(TestCase):
     def test_protocol_page_sync(self):
@@ -302,8 +303,6 @@ class RFCSyncTests(TestCase):
         self.assertEqual(pages, "42")
         self.assertEqual(abstract, "This is some interesting text.")
 
-
-        mailbox_before = len(outbox)
         draft_filename = "%s-%s.txt" % (doc.name, doc.rev)
         self.write_draft_file(draft_filename, 5000)
 

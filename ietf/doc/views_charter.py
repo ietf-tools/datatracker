@@ -1,32 +1,36 @@
-import re, os, string, datetime, shutil, textwrap, json
+import os, datetime, shutil, textwrap, json
 
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
 from django.template import RequestContext
 from django import forms
-from django.forms.util import ErrorList
-from django.utils.html import strip_tags, escape
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.conf import settings
 from django.contrib import messages
 
+import debug                            # pyflakes:ignore
+
+from ietf.doc.models import ( Document, DocHistory, State, DocEvent, BallotDocEvent,
+    BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent, TelechatDocEvent,
+    WriteupDocEvent, save_document_in_history )
+from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
+    create_ballot_if_not_open, get_chartering_type, update_telechat )
+from ietf.doc.utils_charter import ( historic_milestones_for_charter,
+    approved_revision, default_review_text, default_action_text, email_state_changed,
+    generate_ballot_writeup, generate_issue_ballot_mail, next_approved_revision, next_revision )
+from ietf.group.models import ChangeStateGroupEvent, MilestoneGroupEvent
+from ietf.group.utils import save_group_in_history, save_milestone_in_history
+from ietf.iesg.models import TelechatDate
+from ietf.ietfauth.utils import has_role, role_required
+from ietf.name.models import GroupStateName
+from ietf.person.models import Person
+from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.utils.history import find_history_active_at
-from ietf.ietfauth.utils import has_role, role_required
-from ietf.iesg.models import TelechatDate
-from ietf.doc.models import *
-from ietf.doc.utils import *
-from ietf.name.models import *
-from ietf.person.models import *
-from ietf.group.models import *
-from ietf.group.utils import save_group_in_history, save_milestone_in_history
 from ietf.wginfo.mails import email_secretariat
-from ietf.doc.utils_charter import *
 
-import debug
 
 class ChangeStateForm(forms.Form):
     charter_state = forms.ModelChoiceField(State.objects.filter(used=True, type="charter", slug__in=["infrev", "intrev", "extrev", "iesgrev"]), label="Charter state", empty_label=None, required=False)
@@ -598,7 +602,6 @@ def approve(request, name):
         new_state = GroupStateName.objects.get(slug="active")
         if group.state != new_state:
             save_group_in_history(group)
-            prev_state = group.state
             group.state = new_state
             group.time = e.time
             group.save()

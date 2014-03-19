@@ -1,24 +1,25 @@
 # old meeting models can be found in ../proceedings/models.py
 
-import pytz, datetime
+import pytz
+import datetime
 from urlparse import urljoin
 import copy
 import os
 import re
 
-import debug
+import debug                            # pyflakes:ignore
 
 from django.db import models
 from django.conf import settings
-from timedeltafield import TimedeltaField
-
 # mostly used by json_dict()
 from django.template.defaultfilters import slugify, date as date_format, time as time_format
 
-from ietf.group.models import Group
-from ietf.person.models import Person
+from timedeltafield import TimedeltaField
+
 from ietf.doc.models import Document
+from ietf.group.models import Group
 from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName
+from ietf.person.models import Person
 
 countries = pytz.country_names.items()
 countries.sort(lambda x,y: cmp(x[1], y[1]))
@@ -215,7 +216,7 @@ class Room(models.Model):
         days, time_slices, slots  = self.meeting.build_timeslices()
         for day in days:
             for ts in slots[day]:
-                ts0 = TimeSlot.objects.create(type_id=ts.type_id,
+                TimeSlot.objects.create(type_id=ts.type_id,
                                     meeting=self.meeting,
                                     name=ts.name,
                                     time=ts.time,

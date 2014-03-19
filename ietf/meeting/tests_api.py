@@ -1,15 +1,14 @@
-import datetime, json
+import datetime
+import json
 from urlparse import urlsplit
 
-from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.utils import TestCase
-from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.meeting.models import Schedule, TimeSlot, Session, ScheduledSession, Meeting, Constraint
-from ietf.meeting.helpers import get_meeting
 from ietf.meeting.test_data import make_meeting_test_data
+from ietf.person.models import Person
+from ietf.utils.test_utils import TestCase
 
 
 class ApiTests(TestCase):
@@ -24,10 +23,10 @@ class ApiTests(TestCase):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         mars_scheduled = ScheduledSession.objects.get(session=session)
-        mars_slot = mars_scheduled.timeslot
+        #mars_slot = mars_scheduled.timeslot ## never used
 
         ames_scheduled = ScheduledSession.objects.get(session__meeting=meeting, session__group__acronym="ames")
-        ames_slot = ames_scheduled.timeslot
+        #ames_slot = ames_scheduled.timeslot ## never used
 
         def do_post(to):
             # move this session from one timeslot to another
@@ -148,7 +147,7 @@ class ApiTests(TestCase):
         self.assertTrue(not TimeSlot.objects.filter(pk__in=timeslots_before))
 
     def test_group_json(self):
-        meeting = make_meeting_test_data()
+        make_meeting_test_data()
         group = Group.objects.get(acronym="mars")
 
         url = urlreverse("ietf.group.ajax.group_json", kwargs=dict(acronym=group.acronym))
@@ -158,7 +157,7 @@ class ApiTests(TestCase):
         self.assertEqual(info["name"], group.name)
 
     def test_person_json(self):
-        meeting = make_meeting_test_data()
+        make_meeting_test_data()
         person = Person.objects.get(user__username="ad")
 
         url = urlreverse("ietf.person.ajax.person_json", kwargs=dict(personid=person.pk))

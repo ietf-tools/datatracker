@@ -46,7 +46,7 @@ from django.views.decorators.cache import cache_page
 from django.db.models import Q
 
 from ietf.doc.views_search import SearchForm, retrieve_search_results
-from ietf.group.models import Group, GroupURL, Role
+from ietf.group.models import Group, Role
 from ietf.doc.models import State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
 from ietf.group.utils import get_charter_text

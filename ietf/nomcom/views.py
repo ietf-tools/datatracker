@@ -1,13 +1,12 @@
- # -*- coding: utf-8 -*-
-
-import datetime, re, json
+import datetime
+import re
 from collections import OrderedDict
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, Http404, HttpResponseRedirect, HttpResponseForbidden
+from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404, render, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string

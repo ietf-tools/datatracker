@@ -1,17 +1,15 @@
 from django.core.urlresolvers import reverse
-from ietf.utils import TestCase
 
-from ietf.doc.models import Document
+from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data
 
-from pyquery import PyQuery
 
 SECR_USER='secretary'
 
 class MainTestCase(TestCase):
     def test_main(self):
         "Main Test"
-        draft = make_test_data()
+        make_test_data()
         url = reverse('ipradmin')
         response = self.client.get(url, REMOTE_USER=SECR_USER)
         self.assertEqual(response.status_code, 301)

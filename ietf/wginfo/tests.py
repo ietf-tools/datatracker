@@ -1,21 +1,27 @@
-import os, unittest, shutil, calendar, json
+import os
+import shutil
+import calendar
+import json
+import datetime
+
+from pyquery import PyQuery
+import debug                            # pyflakes:ignore
 
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
+
+from ietf.doc.models import Document, DocAlias, DocEvent, State
+from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, MilestoneGroupEvent
+from ietf.group.utils import save_group_in_history
+from ietf.name.models import DocTagName, GroupStateName
+from ietf.person.models import Person, Email
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils import TestCase
-
-from pyquery import PyQuery
-import debug
-
-from ietf.doc.models import *
-from ietf.group.models import *
-from ietf.group.utils import *
-from ietf.name.models import *
-from ietf.person.models import *
-from ietf.wginfo.mails import *
+from ietf.wginfo.mails import ( email_milestone_review_reminder, email_milestones_due,
+    email_milestones_overdue, groups_needing_milestones_due_reminder,
+    groups_needing_milestones_overdue_reminder, groups_with_milestones_needing_review )
 
 class GroupPagesTests(TestCase):
     def setUp(self):
@@ -353,13 +359,6 @@ class GroupEditTests(TestCase):
                                   list_archive="archive.mars",
                                   urls="http://mars.mars (MARS site)"
                                   ))
-        if not r.status_code == 302:
-            for line in r.content.splitlines():
-                label = ""
-                if "label" in line:
-                    label = line
-                if 'class="errorlist"' in line:
-                    label = ""
         self.assertEqual(r.status_code, 302)
 
         group = Group.objects.get(acronym="mars")
@@ -548,7 +547,6 @@ class MilestoneTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         events_before = group.groupevent_set.count()
-        due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
 
         # add
         r = self.client.post(url, { 'prefix': "m1",
@@ -678,7 +676,7 @@ class MilestoneTests(TestCase):
         self.assertEqual(group.charter.docevent_set.count(), events_before + 2) # 1 delete, 1 add
 
     def test_send_review_needed_reminders(self):
-        draft = make_test_data()
+        make_test_data()
 
         group = Group.objects.get(acronym="mars")
         person = Person.objects.get(user__username="marschairman")
@@ -723,10 +721,9 @@ class MilestoneTests(TestCase):
         self.assertTrue(m2.desc in unicode(outbox[-1]))
 
     def test_send_milestones_due_reminders(self):
-        draft = make_test_data()
+        make_test_data()
 
         group = Group.objects.get(acronym="mars")
-        person = Person.objects.get(user__username="marschairman")
 
         early_warning_days = 30
 
@@ -768,10 +765,9 @@ class MilestoneTests(TestCase):
         self.assertTrue(m2.desc in unicode(outbox[-1]))
 
     def test_send_milestones_overdue_reminders(self):
-        draft = make_test_data()
+        make_test_data()
 
         group = Group.objects.get(acronym="mars")
-        person = Person.objects.get(user__username="marschairman")
 
         # due dates here aren't aligned on the last day of the month,
         # but everything should still work

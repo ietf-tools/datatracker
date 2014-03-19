@@ -1,19 +1,19 @@
 # Copyright The IETF Trust 2008, All Rights Reserved
 
 from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext, loader
-from django.http import Http404, HttpResponse, HttpResponseForbidden
+from django.template import RequestContext
+from django.http import Http404, HttpResponseForbidden
 from django import forms
 
-from ietf.group.models import *
-from ietf.group.utils import *
-from ietf.doc.models import Document
 from ietf.doc.views_search import SearchForm, retrieve_search_results
-from ietf.name.models import StreamName
+from ietf.group.models import Group, GroupEvent, Role
+from ietf.group.utils import save_group_in_history
 from ietf.ietfauth.utils import has_role
+from ietf.name.models import StreamName
 from ietf.person.forms import EmailsField
+from ietf.person.models import Email
 
-import debug
+import debug                            # pyflakes:ignore
 
 def streams(request):
     streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]

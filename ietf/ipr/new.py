@@ -8,7 +8,7 @@ from django.http import Http404
 from django.conf import settings
 from django import forms
 
-from ietf.utils import log
+from ietf.utils.log import log
 from ietf.utils.mail import send_mail
 from ietf.doc.models import Document, DocAlias
 from ietf.ipr.models import IprDetail, IprDocAlias, IprContact, LICENSE_CHOICES, IprUpdate
@@ -190,8 +190,7 @@ def new(request, type, update=None, submitter=None):
                 for subfield in ["name", "title", "department", "address1", "address2", "telephone", "fax", "email"]:
                     try:
                         data[ "subm_%s" % subfield ] = data[ "%s_%s" % (src,subfield) ]
-                    except Exception, e:
-                        #log("Caught exception: %s"%e)
+                    except Exception:
                         pass
         form = IprForm(data)
         if form.is_valid():

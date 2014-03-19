@@ -1,11 +1,8 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import datetime
-import os
-
 import pytz
 
-from django.http import Http404
 from django.http import HttpRequest
 from django.db.models import Max, Q
 from django.conf import settings
@@ -13,13 +10,12 @@ from django.core.cache import cache
 from django.utils.cache import get_cache_key
 from django.shortcuts import get_object_or_404
 
-import debug
+import debug                            # pyflakes:ignore
 
-from ietf.ietfauth.utils import has_role, user_is_person
-from ietf.utils.history import find_history_active_at
-from ietf.doc.models import Document, State
-from ietf.meeting.models import Meeting
 from ietf.group.models import Group
+from ietf.ietfauth.utils import has_role, user_is_person
+from ietf.meeting.models import Meeting
+from ietf.utils.history import find_history_active_at
 
 def find_ads_for_meeting(meeting):
     ads = []

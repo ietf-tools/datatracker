@@ -3,23 +3,18 @@ import re
 import datetime
 
 from django.conf import settings
-from django.contrib.sites.models import Site
-from django.core.urlresolvers import reverse as urlreverse
-from django.template.loader import render_to_string
 
-from ietf.utils.mail import send_mail, send_mail_message
-from ietf.utils.log import log
-from ietf.utils import unaccent
-from ietf.ietfauth.utils import has_role
-
-from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
-from ietf.doc.models import *
-from ietf.person.models import Person, Alias, Email
+from ietf.doc.models import Document, State, DocAlias, DocEvent, DocumentAuthor, NewRevisionDocEvent, save_document_in_history
 from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
-from ietf.message.models import Message
-from ietf.utils.pipe import pipe
-from ietf.utils.log import log
+from ietf.group.models import Group
+from ietf.ietfauth.utils import has_role
+from ietf.name.models import StreamName
+from ietf.person.models import Person, Alias, Email
 from ietf.submit.mail import announce_to_lists, announce_new_version, announce_to_authors
+from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
+from ietf.utils import unaccent
+from ietf.utils.log import log
+from ietf.utils.pipe import pipe
 
 def check_idnits(path):
     #p = subprocess.Popen([self.idnits, '--submitcheck', '--nitcount', path], stdout=subprocess.PIPE)
