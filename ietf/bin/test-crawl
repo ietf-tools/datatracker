@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, re, datetime, argparse, traceback
+import os, sys, re, datetime, argparse, traceback, tempfile
 
 # boilerplate
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -77,6 +77,12 @@ for url in initial_urls:
     urls[url] = "[initial]"
 
 errors = 0
+count = 0
+
+start_time = datetime.datetime.now()
+fh, fn = tempfile.mkstemp(prefix="test-crawl-", suffix=".log", dir="../")
+logfile = open(fn, "w")
+os.close(fh)
 
 while urls:
     url, referrer = urls.popitem()
@@ -126,7 +132,23 @@ while urls:
         if elapsed.total_seconds() > slow_threshold:
             tags.append("SLOW")
 
-        print r.status_code, "%.3fs" % elapsed.total_seconds(), url, " ".join(tags)
+        acc_time = (timestamp - start_time).total_seconds()
+        acc_secs = (timestamp - start_time).total_seconds()
+        hrs = acc_secs // (60*60)
+        min = (acc_secs % (60*60)) // 60
+        sec = acc_secs % 60
+
+        if (len(visited) % 100) == 1:
+            print ""
+            print "Elapsed  Visited  Queue   Code  Time  Url  ...  Notes"
+
+        logentry = "%s %.3fs %s %s" % (r.status_code, elapsed.total_seconds(), url, " ".join(tags))
+
+        print "%2d:%02d:%02d"%(hrs,min,sec), "%7d" % len(visited), "%6d" % len(urls), "  ", logentry
+        logfile.write(logentry+"\n")
+
+logfile.close()
+sys.stderr.write("Output written to %s" % logfile.name)
 
 if errors > 0:
     sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
