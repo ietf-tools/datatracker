@@ -37,8 +37,6 @@ from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.template.defaultfilters import truncatewords_html
-from django.utils.decorators import decorator_from_middleware
-from django.middleware.gzip import GZipMiddleware
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse as urlreverse, NoReverseMatch
 from django.conf import settings
@@ -80,7 +78,6 @@ def render_document_top(request, doc, tab, name):
                                  name=name))
 
 
-@decorator_from_middleware(GZipMiddleware)
 def document_main(request, name, rev=None):
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
