@@ -4740,3 +4740,84 @@ ietfdb (2.07) ietf; urgency=medium
 
   * Licencing information added.  IETF Trust copyright added as needed.
 
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 May 2008 02:11:25 +0200
+
+ietfdb (2.06) ietf; urgency=medium
+
+  This was a patch release to fix issue #237
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Nov 2007 16:55:04 +0100
+
+ietfdb (2.05) ietf; urgency=medium
+
+  * Fixed problems with the rfc feed.  Fixes #217
+
+  * Added 2 liaison feeds
+
+  * Fixed a number of template and email problems
+
+  * Refactoring and cleanup work
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  31 Oct 2007 08:37:37 +0100
+ietfdb (2.04) ietf; urgency=medium
+
+  * Fixed a number of issues with the meeting agenda page.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2007 22:19:27 +0200
+
+ietfdb (2.03) ietf; urgency=medium
+
+  * Many minor template fixes
+
+  * Added more feeds.
+
+  * Additions to the test framework
+
+  * Tweaks to the announce app.  Closes ticket #202
+
+  * Tweaked an url regex.  Fixes #204.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Jul 2007 00:00:03 +0200
+
+ietfdb (2.02) ietf; urgency=medium
+
+  * Updates to tests, redirects, feeds, and templates to fix various blemishes.
+    Fixes issue #168.
+
+  * Improved error message for empty search result.  Fixes issue #175
+
+  * Handle non-numeric flag values.  Fixes issue #178
+
+  * Removed old footer.  Fixes issue #164
+
+  * Added missing image files.  Fixes issue #156
+
+  * Replaced some hardcoded links with redirects.  Fixes issue #163
+
+  * Fixes for issues #182, #185
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Jul 2007 00:00:04 +0200
+
+ietfdb (2.01) ietf; urgency=high
+
+  This is a minor bugfix release.
+
+  * Added a missing blue ball image used in many pages.
+
+  * Fixed some broken links under /ipr
+
+  * Other minor tweaks
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jun 2007 10:55:52 +0200
+
+ietfdb (2.00) ietf; urgency=medium
+
+  This release is a complete re-write of the CGI/Perl-based IESG datatracker
+  in Python, using the Django framework.  It comprises about 8000 lines of
+  Python code, and 6000 lines of template code.  The work was done as a
+  skunkworks project by Bill Fenner and Henrik Levkowetz from mid-April
+  to mid-May 2007, and continued as an official project from then on.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jun 2007 02:34:50 +0200
+
+
