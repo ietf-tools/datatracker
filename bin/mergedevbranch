@@ -184,7 +184,9 @@ cp cicmd/commit-${rev}-merge.sh merged@$rev/commit
 cd -
 
 echo -e "\nRunning tests"
-ietf/manage.py test --settings=settings_sqlitetest || die "Tests failed.\nThe commit script is ../cicmd/commit-${rev}-merge.sh"
+time ietf/manage.py test --settings=settings_sqlitetest || die "Tests failed.\nThe commit script is ../cicmd/commit-${rev}-merge.sh"
+
+
 
 note "Sending email to changeset author: <$who>"
 mail -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c henrik@levkowetz.com <<-EOF
@@ -199,6 +201,10 @@ Regards,
 	Henrik
 	(via the mergesprintbranch script)
 EOF
+
+echo ""
+read -p "Continue with the commit? [Y/n] "
+[ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || ARG_COMMIT=0
 
 if [ "$ARG_COMMIT" != 0 ]; then
     echo "Committing the merge:"
