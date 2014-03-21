@@ -11,7 +11,7 @@ from ietf.utils.mail import send_mail
 
 management.setup_environ(settings)
 
-target_date=datetime.date(year=2014,month=1,day=20)
+target_date=datetime.date(year=2014,month=1,day=24)
 
 send_mail(request = None, 
           to       = "IETF-Announce <ietf-announce@ietf.org>",
