@@ -1,4 +1,4 @@
-# WG milestone editing views
+# group milestone editing views
 
 import datetime
 import calendar
@@ -110,7 +110,7 @@ class MilestoneForm(forms.Form):
 
 
 @role_required('WG Chair', 'Area Director', 'Secretariat')
-def edit_milestones(request, acronym, milestone_set="current"):
+def edit_milestones(request, group_type, acronym, milestone_set="current"):
     # milestones_set + needs_review: we have several paths into this view
     #  AD/Secr. -> all actions on current + add new
     #  group chair -> limited actions on current + add new for review
@@ -120,7 +120,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
 
     login = request.user.person
 
-    group = get_object_or_404(Group, acronym=acronym)
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
     needs_review = False
     if not has_role(request.user, ("Area Director", "Secretariat")):
@@ -311,7 +311,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
             if milestone_set == "charter":
                 return redirect('doc_view', name=group.charter.canonical_name())
             else:
-                return redirect('group_charter', acronym=group.acronym)
+                return redirect('group_charter', group_type=group.type_id, acronym=group.acronym)
     else:
         for m in milestones:
             forms.append(MilestoneForm(instance=m, needs_review=needs_review))
@@ -335,11 +335,11 @@ def edit_milestones(request, acronym, milestone_set="current"):
                               context_instance=RequestContext(request))
 
 @role_required('WG Chair', 'Area Director', 'Secretariat')
-def reset_charter_milestones(request, acronym):
+def reset_charter_milestones(request, group_type, acronym):
     """Reset charter milestones to the currently in-use milestones."""
     login = request.user.person
 
-    group = get_object_or_404(Group, acronym=acronym)
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
     if (not has_role(request.user, ("Area Director", "Secretariat")) and
         not group.role_set.filter(name="chair", person=login)):
@@ -384,7 +384,7 @@ def reset_charter_milestones(request, acronym):
                                     )
 
 
-        return redirect('wg_edit_charter_milestones', acronym=group.acronym)
+        return redirect('group_edit_charter_milestones', group_type=group.type_id, acronym=group.acronym)
 
     return render_to_response('wginfo/reset_charter_milestones.html',
                               dict(group=group,
@@ -394,6 +394,6 @@ def reset_charter_milestones(request, acronym):
                               context_instance=RequestContext(request))
 
 
-def ajax_search_docs(request, acronym):
+def ajax_search_docs(request, group_type, acronym):
     docs = Document.objects.filter(name__icontains=request.GET.get('q',''), type="draft").order_by('name').distinct()[:20]
     return HttpResponse(json_doc_names(docs), content_type='application/json')

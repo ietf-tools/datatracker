@@ -32,17 +32,21 @@ class GroupPagesTests(TestCase):
     def tearDown(self):
         shutil.rmtree(self.charter_dir)
 
-    def test_active_wgs(self):
+    def test_active_groups(self):
         draft = make_test_data()
         group = draft.group
 
-        url = urlreverse('ietf.wginfo.views.active_wgs')
+        url = urlreverse('ietf.wginfo.views.active_groups', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.parent.name in r.content)
         self.assertTrue(group.acronym in r.content)
         self.assertTrue(group.name in r.content)
         self.assertTrue(group.ad.plain_name() in r.content)
+
+        url = urlreverse('ietf.wginfo.views.active_groups', kwargs=dict(group_type="rg"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
 
     def test_wg_summaries(self):
         draft = make_test_data()
@@ -53,7 +57,7 @@ class GroupPagesTests(TestCase):
         with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
             f.write("This is a charter.")
 
-        url = urlreverse('ietf.wginfo.views.wg_summary_area')
+        url = urlreverse('ietf.wginfo.views.wg_summary_area', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.parent.name in r.content)
@@ -61,14 +65,14 @@ class GroupPagesTests(TestCase):
         self.assertTrue(group.name in r.content)
         self.assertTrue(chair.address in r.content)
 
-        url = urlreverse('ietf.wginfo.views.wg_summary_acronym')
+        url = urlreverse('ietf.wginfo.views.wg_summary_acronym', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.acronym in r.content)
         self.assertTrue(group.name in r.content)
         self.assertTrue(chair.address in r.content)
         
-        url = urlreverse('ietf.wginfo.views.wg_charters')
+        url = urlreverse('ietf.wginfo.views.wg_charters', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.acronym in r.content)
@@ -77,7 +81,7 @@ class GroupPagesTests(TestCase):
         self.assertTrue(chair.address in r.content)
         self.assertTrue("This is a charter." in r.content)
 
-        url = urlreverse('ietf.wginfo.views.wg_charters_by_acronym')
+        url = urlreverse('ietf.wginfo.views.wg_charters_by_acronym', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.acronym in r.content)
@@ -91,7 +95,7 @@ class GroupPagesTests(TestCase):
         group = draft.group
         group.charter.set_state(State.objects.get(used=True, type="charter", slug="intrev"))
 
-        url = urlreverse('ietf.wginfo.views.chartering_wgs')
+        url = urlreverse('ietf.wginfo.views.chartering_wgs', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -103,7 +107,7 @@ class GroupPagesTests(TestCase):
         group.state_id = "bof"
         group.save()
 
-        url = urlreverse('ietf.wginfo.views.bofs')
+        url = urlreverse('ietf.wginfo.views.bofs', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -137,7 +141,7 @@ class GroupPagesTests(TestCase):
             name=draft2.name,
             )
 
-        url = urlreverse('ietf.wginfo.views.group_documents', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('ietf.wginfo.views.group_documents', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.name in r.content)
@@ -147,7 +151,7 @@ class GroupPagesTests(TestCase):
         self.assertTrue(draft2.name in r.content)
 
         # test the txt version too while we're at it
-        url = urlreverse('ietf.wginfo.views.group_documents_txt', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('ietf.wginfo.views.group_documents_txt', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.name in r.content)
@@ -167,7 +171,7 @@ class GroupPagesTests(TestCase):
             due=datetime.date.today() + datetime.timedelta(days=100))
         milestone.docs.add(draft)
 
-        url = urlreverse('ietf.wginfo.views.group_charter', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('ietf.wginfo.views.group_charter', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.name in r.content)
@@ -186,7 +190,7 @@ class GroupPagesTests(TestCase):
             type="added_comment",
             by=Person.objects.get(name="(System)"))
 
-        url = urlreverse('ietf.wginfo.views.history', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('ietf.wginfo.views.history', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(e.desc in r.content)
@@ -225,7 +229,7 @@ class GroupEditTests(TestCase):
     def test_create(self):
         make_test_data()
 
-        url = urlreverse('wg_create')
+        url = urlreverse('group_create', kwargs=dict(group_type="wg"))
         login_testing_unauthorized(self, "secretary", url)
 
         num_wgs = len(Group.objects.filter(type="wg"))
@@ -273,7 +277,7 @@ class GroupEditTests(TestCase):
     def test_create_based_on_existing(self):
         make_test_data()
 
-        url = urlreverse('wg_create')
+        url = urlreverse('group_create', kwargs=dict(group_type="wg"))
         login_testing_unauthorized(self, "secretary", url)
 
         group = Group.objects.get(acronym="mars")
@@ -308,7 +312,7 @@ class GroupEditTests(TestCase):
         make_test_data()
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse('group_edit', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('group_edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -380,7 +384,7 @@ class GroupEditTests(TestCase):
 
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse('wg_conclude', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('ietf.wginfo.edit.conclude', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -435,7 +439,7 @@ class MilestoneTests(TestCase):
     def test_milestone_sets(self):
         m1, m2, group = self.create_test_milestones()
 
-        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('group_edit_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         r = self.client.get(url)
@@ -443,7 +447,7 @@ class MilestoneTests(TestCase):
         self.assertTrue(m1.desc in r.content)
         self.assertTrue(m2.desc not in r.content)
 
-        url = urlreverse('wg_edit_charter_milestones', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('group_edit_charter_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -453,7 +457,7 @@ class MilestoneTests(TestCase):
     def test_add_milestone(self):
         m1, m2, group = self.create_test_milestones()
 
-        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('group_edit_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -505,7 +509,7 @@ class MilestoneTests(TestCase):
     def test_add_milestone_as_chair(self):
         m1, m2, group = self.create_test_milestones()
 
-        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('group_edit_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "marschairman", url)
 
         # normal get
@@ -539,7 +543,7 @@ class MilestoneTests(TestCase):
         m1.state_id = "review"
         m1.save()
 
-        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('group_edit_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "ad", url)
 
         # normal get
@@ -569,7 +573,7 @@ class MilestoneTests(TestCase):
     def test_delete_milestone(self):
         m1, m2, group = self.create_test_milestones()
 
-        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('group_edit_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         milestones_before = GroupMilestone.objects.count()
@@ -597,7 +601,7 @@ class MilestoneTests(TestCase):
     def test_edit_milestone(self):
         m1, m2, group = self.create_test_milestones()
 
-        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('group_edit_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         milestones_before = GroupMilestone.objects.count()
@@ -654,7 +658,7 @@ class MilestoneTests(TestCase):
     def test_reset_charter_milestones(self):
         m1, m2, group = self.create_test_milestones()
 
-        url = urlreverse('wg_reset_charter_milestones', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('group_reset_charter_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -809,7 +813,7 @@ class MilestoneTests(TestCase):
     def test_ajax_search_docs(self):
         draft = make_test_data()
 
-        r = self.client.get(urlreverse("wg_ajax_search_docs", kwargs=dict(acronym=draft.group.acronym)),
+        r = self.client.get(urlreverse("group_ajax_search_docs", kwargs=dict(group_type=draft.group.type_id, acronym=draft.group.acronym)),
                             dict(q=draft.name))
         self.assertEqual(r.status_code, 200)
         data = json.loads(r.content)
@@ -821,7 +825,7 @@ class CustomizeWorkflowTests(TestCase):
 
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse('ietf.wginfo.edit.customize_workflow', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('ietf.wginfo.edit.customize_workflow', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         state = State.objects.get(used=True, type="draft-stream-ietf", slug="wg-lc")

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block title %}
-{% if wg %}
-Edit WG {{ wg.acronym }}
+{% if group %}
+Edit {{ group.type.name }} {{ group.acronym }}
 {% else %}
-Start chartering new WG
+Start chartering new group
 {% endif %}
 {% endblock %}
 
@@ -28,12 +28,12 @@ form.edit #id_urls { height: 4em; }
 {% load ietf_filters %}
 <h1>
 {% if action == "edit" %}
-Edit WG {{ wg.acronym }}
+Edit {{ group.type.name }} {{ group.acronym }}
 {% else %} 
   {% if action == "charter" %}
-Start chartering new WG
+Start chartering new group
   {% else %}
-Create new WG or BoF
+Create new group or BoF
   {% endif %}
 {% endif %}
 </h1>
@@ -68,7 +68,7 @@ so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</
       <td></td>
       <td class="actions">
 	{% if action == "edit" %}
-          <a class="button" href="{% url "group_charter" acronym=wg.acronym %}">Cancel</a>
+          <a class="button" href="{% url "group_charter" group_type=group.type_id acronym=group.acronym %}">Cancel</a>
           <input class="button" type="submit" value="Save"/>
         {% else %} 
            {% if action == "charter" %}

@@ -22,7 +22,7 @@ class GroupChangesFeed(Feed):
     def link(self, obj):
 	if not obj:
 	    raise FeedDoesNotExist
-	return urlreverse('group_charter', kwargs={'acronym': obj.acronym})
+        return urlreverse('group_charter', kwargs=dict(group_type=obj.type_id, acronym=obj.acronym))
 
     def description(self, obj):
 	return self.title(obj)
@@ -40,7 +40,7 @@ class GroupChangesFeed(Feed):
         if isinstance(obj, DocEvent):
             return urlreverse("doc_view", kwargs={'name': obj.doc_id })
         elif isinstance(obj, GroupEvent):
-            return urlreverse('group_charter', kwargs={'acronym': obj.group.acronym })
+            return urlreverse('group_charter', kwargs=dict(group_type=obj.group.type_id, acronym=obj.group.acronym))
 
     def item_pubdate(self, obj):
 	return obj.time

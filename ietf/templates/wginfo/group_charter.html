@@ -26,7 +26,7 @@ is occasionally incorrect.</span>
 
   <tr><td>Acronym:</td><td>{{ group.acronym }}</td></tr>
 
-  {% if group.parent %}
+  {% if group.parent and group.parent.type_id == "area" %}
   <tr><td>{{ group.parent.type.name }}:</td><td>{{ group.parent.name }} ({{ group.parent.acronym }})</td></tr>
   {% endif %}
 
@@ -47,7 +47,7 @@ is occasionally incorrect.</span>
       {% else %}
       none
       {% if user|has_role:"Area Director,Secretariat" %}
-      - <a href="{% url "ietf.wginfo.edit.submit_initial_charter" acronym=group.acronym %}">Submit Charter</a>
+      - <a href="{% url "ietf.wginfo.edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit Charter</a>
       {% endif %}
       {% endif %}
     </td>
@@ -64,6 +64,7 @@ is occasionally incorrect.</span>
   </td>
   </tr>
 
+  {% if group.parent.type_id == "area" %}
   <tr><td>Area Director:</td>
   <td>
     {% if group.areadirector %}
@@ -71,6 +72,7 @@ is occasionally incorrect.</span>
     {% else %}?{% endif %}
   </td>
   </tr>
+  {% endif %}
 
   {% if group.techadvisors %}
   <tr>
@@ -142,7 +144,7 @@ is occasionally incorrect.</span>
 
 {% with group.groupurl_set.all as urls %}
 {% if urls %}
-<p>In addition to the charter maintained by the IETF Secretariat, there is additional information about this working group on the Web at:
+<p>In addition to the charter, there is additional information about this group on the Web at:
   {% for url in urls %}
   <a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}, {% endif %}
   {% endfor %}
@@ -150,7 +152,7 @@ is occasionally incorrect.</span>
 {% endif %}
 {% endwith %}
 
-<h2>Charter for {% if group.state_id == "proposed" %}Proposed{% endif %} Working Group</h2>
+<h2>Charter for {% if group.state_id == "proposed" %}Proposed{% endif %} {{ long_group_type }}</h2>
 
 <p>{{ group.charter_text|escape|format_charter|safe }}</p>
 

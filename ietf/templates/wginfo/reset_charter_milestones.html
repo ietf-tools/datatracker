@@ -29,7 +29,7 @@
 {% endfor %}
 
 <div class="actions">
-  <a href="{% url "wg_edit_charter_milestones" acronym=group.acronym %}">Back</a>
+  <a href="{% url "group_edit_charter_milestones" group_type=group.type_id acronym=group.acronym %}">Back</a>
   <input type="submit" value="Reset charter milestones"/>
 </div>
 </form>
