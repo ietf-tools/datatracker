@@ -260,15 +260,3 @@ def test_email(request):
         r.set_cookie("testmailcc", cookie)
 
     return r
-
-def logout_view(request):
-    try:
-        logout(request)
-        return HttpResponseRedirect('/accounts/loggedout/')
-    except Warning as w:
-        from ietf.utils.log import log
-        log(w)
-        return HttpResponseRedirect('/accounts/loggedout/')
-
-def logged_out(request):
-        return render_to_response('registration/loggedout.html', {'next':'/'}, context_instance=RequestContext(request))

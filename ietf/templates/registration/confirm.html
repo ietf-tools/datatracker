@@ -7,7 +7,7 @@
 <h1>Confirm account creation</h1>
 {% if success %}
 <p>Your account with login name '{{ email }}' has been created, using the password you have selected.</p>
-<p>Now you can <a href="{% url "ietfauth.views.ietf_login" %}">sign in</a></p>
+<p>Now you can <a href="/accounts/login/">sign in</a></p>
 {% else %}
 <p>In order to complete the setup of your account with login name  '{{ email }}', please set a password:</p>
 <form action="" method="post">{% csrf_token %}
