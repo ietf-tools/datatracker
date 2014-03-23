@@ -43,6 +43,7 @@ from django.shortcuts import render_to_response
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.auth.views import login, logout
 from django.utils.http import urlquote
 from django.utils.translation import ugettext as _
 from django.core.exceptions import ValidationError
@@ -63,6 +64,7 @@ def url_login(request, user, passwd):
             return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
     return HttpResponse("Not authenticated?", status=500)
 
+@login_required
 def ietf_login(request):
     if not request.user.is_authenticated():
         return HttpResponse("Not authenticated?", status=500)
@@ -259,3 +261,14 @@ def test_email(request):
 
     return r
 
+def logout_view(request):
+    try:
+        logout(request)
+        return HttpResponseRedirect('/accounts/loggedout/')
+    except Warning as w:
+        from ietf.utils.log import log
+        log(w)
+        return HttpResponseRedirect('/accounts/loggedout/')
+
+def logged_out(request):
+        return render_to_response('registration/loggedout.html', {'next':'/'}, context_instance=RequestContext(request))

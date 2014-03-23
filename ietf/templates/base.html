@@ -58,11 +58,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </div>
 
 {% if user %}
-<div id="ietf-login" class="noprint">{% if user.is_authenticated %}
-{{ user }}
-{% else %}
-<a href="https://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign In</a>
-{% endif %}</div>
+    <div id="ietf-login" class="noprint">
+       {% if request.get_full_path == "/accounts/loggedout/" %}
+       <a href="https://{{ request.get_host }}/accounts/login/" rel="nofollow">Sign In</a>
+       {% else %}
+	  {% if user.is_authenticated %}
+	  {{ user }} | <a href="/accounts/logout/">Sign Out</a>
+	  {% else %}
+	  <a href="https://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign In</a>
+       {% endif %}
+    {% endif %}
+    </div>
 {% endif %}
 
 {% block start_content_table %}

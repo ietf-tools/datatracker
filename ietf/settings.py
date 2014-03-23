@@ -96,7 +96,7 @@ WSGI_APPLICATION = "ietf.wsgi.application"
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
-AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
+AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.ModelBackend', )
 
 #DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
 
