@@ -143,7 +143,6 @@ MIDDLEWARE_CLASSES = (
     'ietf.middleware.SMTPExceptionMiddleware',
     'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.transaction.TransactionMiddleware',
     'ietf.middleware.UnicodeNfkcNormalization',
     'ietf.secr.middleware.secauth.SecAuthMiddleware'
 )
