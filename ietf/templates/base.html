@@ -60,12 +60,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if user %}
     <div id="ietf-login" class="noprint">
        {% if request.get_full_path == "/accounts/loggedout/" %}
-       <a href="https://{{ request.get_host }}/accounts/login/" rel="nofollow">Sign In</a>
+       <a href="https://{{ request.get_host }}/accounts/login/" class="login" rel="nofollow">Sign in</a>
        {% else %}
 	  {% if user.is_authenticated %}
-	  {{ user }} | <a href="/accounts/logout/">Sign Out</a>
+	  {{ user }} | <a href="/accounts/logout/" class="login" rel="nofollow">Sign out</a>
 	  {% else %}
-	  <a href="https://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign In</a>
+	  <a href="https://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" class="login" rel="nofollow">Sign in</a>
        {% endif %}
     {% endif %}
     </div>
