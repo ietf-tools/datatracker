@@ -36,7 +36,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <div class="search-results">
 
 {% if not docs %}
-<h2>No documents match your query.</h2>
+  {% if not skip_no_matches_warning %}
+    <h2>No documents match your query.</h2>
+  {% endif %}
 {% else %}
 
 {% if meta.max %}
