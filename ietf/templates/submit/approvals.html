@@ -37,7 +37,7 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
 
 <h2 id="preapprovals">Pre-approved drafts not yet submitted</h2>
 
-{% if user|has_role:"Secretariat,WG Chair" %}
+{% if user|has_role:"Secretariat,WG Chair,RG Chair" %}
 <p>You can <a href="{% url "submit_add_preapproval" %}">add a pre-approval</a>.</p>
 {% endif %}
 

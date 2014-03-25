@@ -331,7 +331,7 @@ def preapprovals_for_user(user):
     if has_role(user, "Secretariat"):
         return res
 
-    acronyms = [g.acronym for g in Group.objects.filter(role__person__user=user, type="wg")]
+    acronyms = [g.acronym for g in Group.objects.filter(role__person__user=user, type__in=("wg", "rg"))]
 
     res = res.filter(name__regex="draft-[^-]+-(%s)-.*" % "|".join(acronyms))
 
