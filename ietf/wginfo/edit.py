@@ -10,6 +10,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseForbidden
 from django.utils.html import mark_safe
 from django.http import Http404, HttpResponse
+from django.contrib.auth.decorators import login_required
 
 import debug                            # pyflakes:ignore
 
@@ -17,7 +18,7 @@ from ietf.doc.models import DocAlias, DocTagName, Document, State, save_document
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
-from ietf.group.utils import save_group_in_history
+from ietf.group.utils import save_group_in_history, can_manage_group_type
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.person.forms import EmailsField
 from ietf.person.models import Person, Email
@@ -34,7 +35,7 @@ class GroupForm(forms.Form):
     techadv = EmailsField(label="Technical Advisors", required=False)
     delegates = EmailsField(label="Delegates", required=False, help_text=mark_safe("Type in name to search for person<br>Chairs can delegate the authority to update the state of group documents - max %s persons at a given time" % MAX_GROUP_DELEGATES))
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
-    parent = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), label="IETF Area", empty_label="(None)", required=False)
+    parent = forms.ModelChoiceField(Group.objects.filter(state="active").order_by('name'), empty_label="(None)", required=False)
     list_email = forms.CharField(max_length=64, required=False)
     list_subscribe = forms.CharField(max_length=255, required=False)
     list_archive = forms.CharField(max_length=255, required=False)
@@ -43,6 +44,7 @@ class GroupForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group', None)
         self.confirmed = kwargs.pop('confirmed', False)
+        self.group_type = kwargs.pop('group_type', False)
 
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -57,11 +59,19 @@ class GroupForm(forms.Form):
         if self.group:
             self.fields['acronym'].widget.attrs['readonly'] = True
 
+        if self.group_type == "rg":
+            self.fields['ad'].widget = forms.HiddenInput()
+            self.fields['parent'].queryset = self.fields['parent'].queryset.filter(acronym="irtf")
+            self.fields['parent'].widget = forms.HiddenInput()
+        else:
+            self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type="area")
+            self.fields['parent'].label = "IETF Area"
+
     def clean_acronym(self):
         self.confirm_msg = ""
         self.autoenable_confirm = False
 
-        # Changing the acronym of an already existing GROUP will cause 404s all
+        # Changing the acronym of an already existing group will cause 404s all
         # over the place, loose history, and generally muck up a lot of
         # things, so we don't permit it
         if self.group:
@@ -69,15 +79,15 @@ class GroupForm(forms.Form):
 
         acronym = self.cleaned_data['acronym'].strip().lower()
 
-        # be careful with acronyms, requiring confirmation to take existing or override historic
         if not re.match(r'^[a-z][a-z0-9]+$', acronym):
             raise forms.ValidationError("Acronym is invalid, must be at least two characters and only contain lowercase letters and numbers starting with a letter.")
 
+        # be careful with acronyms, requiring confirmation to take existing or override historic
         existing = Group.objects.filter(acronym__iexact=acronym)
         if existing:
             existing = existing[0]
 
-        if existing and existing.type_id == "wg":
+        if existing and existing.type_id == self.group_type:
             if self.confirmed:
                 return acronym # take over confirmed
 
@@ -93,7 +103,7 @@ class GroupForm(forms.Form):
         if existing:
             raise forms.ValidationError("Acronym used for an existing group (%s)." % existing.name)
 
-        old = GroupHistory.objects.filter(acronym__iexact=acronym, type="wg")
+        old = GroupHistory.objects.filter(acronym__iexact=acronym, type__in=("wg", "rg"))
         if old and not self.confirmed:
             self.confirm_msg = "Confirm reusing acronym %s" % old[0].acronym
             self.autoenable_confirm = False
@@ -120,12 +130,19 @@ def format_urls(urls, fs="\n"):
             res.append(u.url)
     return fs.join(res)
 
-def get_or_create_initial_charter(group):
+def get_or_create_initial_charter(group, group_type):
+    if group_type == "rg":
+        top_org = "irtf"
+    else:
+        top_org = "ietf"
+
+    charter_name = "charter-%s-%s" % (top_org, group.acronym)
+
     try:
-        charter = Document.objects.get(docalias__name="charter-ietf-%s" % group.acronym)
+        charter = Document.objects.get(docalias__name=charter_name)
     except Document.DoesNotExist:
         charter = Document(
-            name="charter-ietf-" + group.acronym,
+            name=charter_name,
             type_id="charter",
             title=group.name,
             group=group,
@@ -135,26 +152,29 @@ def get_or_create_initial_charter(group):
         charter.save()
         charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
                 
-       # Create an alias as well
-        DocAlias.objects.create(
-            name=charter.name,
-            document=charter
-        )
+        # Create an alias as well
+        DocAlias.objects.create(name=charter.name, document=charter)
 
     return charter
 
-@role_required('Area Director', 'Secretariat')
+@login_required
 def submit_initial_charter(request, group_type, acronym=None):
+    if not can_manage_group_type(request.user, group_type):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
     group = get_object_or_404(Group, acronym=acronym)
     if not group.charter:
-        group.charter = get_or_create_initial_charter(group)
+        group.charter = get_or_create_initial_charter(group, group_type)
         group.save()
     return redirect('charter_submit', name=group.charter.name, option="initcharter")
         
-@role_required('Area Director', 'Secretariat')
+@login_required
 def edit(request, group_type, acronym=None, action="edit"):
-    """Edit or create a GROUP, notifying parties as
+    """Edit or create a group, notifying parties as
     necessary and logging changes as group events."""
+    if not can_manage_group_type(request.user, group_type):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
     if action == "edit":
         group = get_object_or_404(Group, acronym=acronym)
         new_group = False
@@ -164,10 +184,8 @@ def edit(request, group_type, acronym=None, action="edit"):
     else:
         raise Http404
 
-    login = request.user.person
-
     if request.method == 'POST':
-        form = GroupForm(request.POST, group=group, confirmed=request.POST.get("confirmed", False))
+        form = GroupForm(request.POST, group=group, confirmed=request.POST.get("confirmed", False), group_type=group_type)
         if form.is_valid():
             clean = form.cleaned_data
             if new_group:
@@ -185,7 +203,7 @@ def edit(request, group_type, acronym=None, action="edit"):
 
                 e = ChangeStateGroupEvent(group=group, type="changed_state")
                 e.time = group.time
-                e.by = login
+                e.by = request.user.person
                 e.state_id = clean["state"].slug
                 e.desc = "Group created in state %s" % clean["state"].name
                 e.save()
@@ -193,8 +211,8 @@ def edit(request, group_type, acronym=None, action="edit"):
                 save_group_in_history(group)
 
 
-            if action=="charter" and not group.charter:  # make sure we have a charter
-                group.charter = get_or_create_initial_charter(group)
+            if action == "charter" and not group.charter:  # make sure we have a charter
+                group.charter = get_or_create_initial_charter(group, group_type)
 
             changes = []
                 
@@ -266,7 +284,7 @@ def edit(request, group_type, acronym=None, action="edit"):
 
             if changes and not new_group:
                 for c in changes:
-                    GroupEvent.objects.create(group=group, by=login, type="info_changed", desc=c)
+                    GroupEvent.objects.create(group=group, by=request.user.person, type="info_changed", desc=c)
 
             group.save()
 
@@ -291,28 +309,27 @@ def edit(request, group_type, acronym=None, action="edit"):
                         urls=format_urls(group.groupurl_set.all()),
                         )
         else:
-            init = dict(ad=login.id if has_role(request.user, "Area Director") else None,
+            init = dict(ad=request.user.person.id if group_type == "wg" and has_role(request.user, "Area Director") else None,
                         )
-        form = GroupForm(initial=init, group=group)
+        form = GroupForm(initial=init, group=group, group_type=group_type)
 
     return render(request, 'wginfo/edit.html',
                   dict(group=group,
                        form=form,
-                       action=action,
-                       user=request.user,
-                       login=login))
+                       action=action))
 
 
 
 class ConcludeForm(forms.Form):
     instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True)
 
-@role_required('Area Director','Secretariat')
+@login_required
 def conclude(request, group_type, acronym):
     """Request the closing of group, prompting for instructions."""
     group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
-    login = request.user.person
+    if not can_manage_group_type(request.user, group_type):
+        return HttpResponseForbidden("You don't have permission to access this view")
 
     if request.method == 'POST':
         form = ConcludeForm(request.POST)
@@ -321,7 +338,7 @@ def conclude(request, group_type, acronym):
 
             email_secretariat(request, group, "Request closing of group", instructions)
 
-            e = GroupEvent(group=group, by=login)
+            e = GroupEvent(group=group, by=request.user.person)
             e.type = "requested_close"
             e.desc = "Requested closing group"
             e.save()
@@ -334,12 +351,19 @@ def conclude(request, group_type, acronym):
                   dict(form=form, group=group))
 
 
+@login_required
 def customize_workflow(request, group_type, acronym):
-    MANDATORY_STATES = ('c-adopt', 'wg-doc', 'sub-pub')
-
     group = get_object_or_404(Group, type=group_type, acronym=acronym)
-    if not request.user.is_authenticated() or not (has_role(request.user, "Secretariat") or group.role_set.filter(name="chair", person__user=request.user)):
+    if (not has_role(request.user, "Secretariat") and
+        not group.role_set.filter(name="chair", person__user=request.user)):
         return HttpResponseForbidden("You don't have permission to access this view")
+
+    if group_type == "rg":
+        stream_id = "irtf"
+        MANDATORY_STATES = ('candidat', 'active', 'rfc-edit', 'pub', 'dead')
+    else:
+        stream_id = "ietf"
+        MANDATORY_STATES = ('c-adopt', 'wg-doc', 'sub-pub')
 
     if request.method == 'POST':
         action = request.POST.get("action")
@@ -365,7 +389,7 @@ def customize_workflow(request, group_type, acronym):
             except State.DoesNotExist:
                 return HttpResponse("Invalid state %s" % request.POST.get("state"))
 
-            next_states = State.objects.filter(used=True, type='draft-stream-ietf', pk__in=request.POST.getlist("next_states"))
+            next_states = State.objects.filter(used=True, type='draft-stream-%s' % stream_id, pk__in=request.POST.getlist("next_states"))
             unused = group.unused_states.all()
             if set(next_states.exclude(pk__in=unused)) == set(state.next_states.exclude(pk__in=unused)):
                 # just use the default
@@ -390,15 +414,14 @@ def customize_workflow(request, group_type, acronym):
 
             return redirect("ietf.wginfo.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 
-
     # put some info for the template on tags and states
     unused_tags = group.unused_tags.all().values_list('slug', flat=True)
-    tags = DocTagName.objects.filter(slug__in=get_tags_for_stream_id("ietf"))
+    tags = DocTagName.objects.filter(slug__in=get_tags_for_stream_id(stream_id))
     for t in tags:
         t.used = t.slug not in unused_tags
 
     unused_states = group.unused_states.all().values_list('slug', flat=True)
-    states = State.objects.filter(used=True, type="draft-stream-ietf")
+    states = State.objects.filter(used=True, type="draft-stream-%s" % stream_id)
     transitions = dict((o.state, o) for o in group.groupstatetransitions_set.all())
     for s in states:
         s.used = s.slug not in unused_states

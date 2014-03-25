@@ -12,7 +12,7 @@ h2 a.button { margin-left: 0.5em; font-size: 13px; }
 <div class="ietf-box ietf-group-details">
 
 {% if group.state_id == "conclude" %}
-<span class="ietf-concluded-warning">Note: The data for concluded WGs
+<span class="ietf-concluded-warning">Note: The data for concluded {{ group.type.name }}s
 is occasionally incorrect.</span>
 {% endif %}
 
@@ -162,7 +162,7 @@ is occasionally incorrect.</span>
 
 {% if milestones_in_review %}
 <p>+ {{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
-currently in Area Director review.</p>
+currently in {{ milestone_reviewer }} review.</p>
 {% endif %}
 
 {% endblock %}

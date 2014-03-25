@@ -45,11 +45,11 @@ from django.views.decorators.cache import cache_page
 from django.db.models import Q
 
 from ietf.doc.views_search import SearchForm, retrieve_search_results
-from ietf.group.models import Group, Role
 from ietf.doc.models import State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
-from ietf.group.utils import get_charter_text
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
+from ietf.group.models import Group, Role
+from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type
 from ietf.ietfauth.utils import has_role
 from ietf.utils.pipe import pipe
 
@@ -148,7 +148,8 @@ def active_groups(request, group_type):
         return active_wgs(request)
     elif group_type == "rg":
         return active_rgs(request)
-    raise Http404
+    else:
+        raise Http404
 
 def active_wgs(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
@@ -178,14 +179,14 @@ def bofs(request, group_type):
     groups = Group.objects.filter(type=group_type, state="bof")
     return render(request, 'wginfo/bofs.html',dict(groups=groups))
 
-def chartering_wgs(request, group_type):
+def chartering_groups(request, group_type):
     charter_states = State.objects.filter(used=True, type="charter").exclude(slug__in=("approved", "notrev"))
     groups = Group.objects.filter(type=group_type, charter__states__in=charter_states).select_related("state", "charter")
 
     for g in groups:
         g.chartering_type = get_chartering_type(g.charter)
 
-    return render(request, 'wginfo/chartering_wgs.html',
+    return render(request, 'wginfo/chartering_groups.html',
                   dict(charter_states=charter_states,
                        groups=groups))
 
@@ -195,18 +196,18 @@ def construct_group_menu_context(request, group, selected, others):
     actions = []
 
     is_chair = group.has_role(request.user, "chair")
-    is_ad_or_secretariat = has_role(request.user, ("Area Director", "Secretariat"))
+    can_manage = can_manage_group_type(request.user, group.type_id)
 
-    if group.state_id != "proposed" and (is_chair or is_ad_or_secretariat):
+    if group.state_id != "proposed" and (is_chair or can_manage):
         actions.append((u"Add or edit milestones", urlreverse("group_edit_milestones", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
-    if group.state_id != "conclude" and is_ad_or_secretariat:
+    if group.state_id != "conclude" and can_manage:
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
-    if is_chair or is_ad_or_secretariat:
+    if is_chair or can_manage:
         actions.append((u"Customize workflow", urlreverse("ietf.wginfo.edit.customize_workflow", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
-    if group.state_id in ("active", "dormant") and is_ad_or_secretariat:
+    if group.state_id in ("active", "dormant") and can_manage:
         actions.append((u"Request closing group", urlreverse("ietf.wginfo.edit.conclude", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
     d = {
@@ -307,6 +308,7 @@ def group_charter(request, group_type, acronym):
     return render(request, 'wginfo/group_charter.html',
                   construct_group_menu_context(request, group, "charter", {
                       "milestones_in_review": group.groupmilestone_set.filter(state="review"),
+                      "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
                       "requested_close": requested_close,
                       "long_group_type":long_group_types.get(group_type, "Group")
                   }))

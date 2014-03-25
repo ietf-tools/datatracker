@@ -90,12 +90,12 @@ class GroupPagesTests(TestCase):
         self.assertTrue(chair.address in r.content)
         self.assertTrue("This is a charter." in r.content)
 
-    def test_chartering_wgs(self):
+    def test_chartering_groups(self):
         draft = make_test_data()
         group = draft.group
         group.charter.set_state(State.objects.get(used=True, type="charter", slug="intrev"))
 
-        url = urlreverse('ietf.wginfo.views.chartering_wgs', kwargs=dict(group_type="wg"))
+        url = urlreverse('ietf.wginfo.views.chartering_groups', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

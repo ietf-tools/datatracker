@@ -1,4 +1,4 @@
-{# assumes group, form, needs_review are in the context #}
+{# assumes group, form, needs_review, reviewer are in the context #}
 <input type="hidden" name="prefix" value="{{ form.prefix|default:"" }}"/>
 {{ form.id }}
 
@@ -35,7 +35,7 @@
     <td>Review:</td>
     <td class="accept">
       This milestone is not active yet, awaiting
-      AD acceptance{% if needs_review %}.{% else %}: {{ form.accept }}{% endif %}
+      {{ reviewer }} acceptance{% if needs_review %}.{% else %}: {{ form.accept }}{% endif %}
     </td>
   </tr>
   {% endif %}

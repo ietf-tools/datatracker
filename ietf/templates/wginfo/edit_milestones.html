@@ -51,8 +51,7 @@ tr.milestone.add { font-style: italic; }
 
 {% if needs_review %}
 Note that as {{ group.type.name }} Chair you cannot edit descriptions of existing
-milestones and milestones you add are subject to review by the Area
-Director.
+milestones and milestones you add are subject to review by the {{ reviewer }}.
 {% endif %}
 </p>
 
@@ -86,7 +85,7 @@ this list</a> to the milestones currently in use for the {{ group.acronym }} {{ 
 
 <tr class="edit-milestone{% if form.changed %} changed{% endif %}"><td colspan="2">{% include "wginfo/milestone_form.html" %}</td></tr>
 {% endfor %}
-<tr class="milestone add"><td></td><td>Add {% if milestone_set == "chartering" %}charter{% endif%} milestone {% if needs_review %}for AD review{% endif %}</td></tr>
+<tr class="milestone add"><td></td><td>Add {% if milestone_set == "chartering" %}charter{% endif%} milestone {% if needs_review %}for {{ reviewer }} review{% endif %}</td></tr>
 <tr class="edit-milestone template"><td colspan="2">{% include "wginfo/milestone_form.html" with form=empty_form %}</td></tr>
 </table>
 

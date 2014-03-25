@@ -43,13 +43,14 @@ chairs and delegates, need a Datatracker account to actually do
 so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
 
 <form class="edit" action="" method="post">{% csrf_token %}
+  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
   <table>
     {% for field in form.visible_fields %}
     <tr>
       <th>{{ field.label_tag }} {% if field.field.required %}*{% endif %}</th>
       <td>{{ field }}
-      {% if field.name == "ad" and user|has_role:"Area Director" %}
-      <label><input type="checkbox" name="ad" value="{{ login.pk }}" /> Assign to me</label>
+      {% if field.name == "ad" and request.user|has_role:"Area Director" %}
+      <label><input type="checkbox" name="ad" value="{{ request.user.person.pk }}" /> Assign to me</label>
       {% endif %}
       {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {{ field.errors }}

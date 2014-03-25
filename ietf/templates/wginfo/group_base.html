@@ -74,7 +74,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   | <a href="{{ group.list_archive }}">List Archive &raquo;</a>
   {% endif %}
   {% if group.has_tools_page %}
-  | <a href="http://tools.ietf.org/wg/{{ group.acronym }}/">Tools WG Page &raquo;</a>
+  | <a href="http://tools.ietf.org/{{ group.type_id }}/{{ group.acronym }}/">Tools {{ group.type.name }} Page &raquo;</a>
   {% endif %}
   </div>
 

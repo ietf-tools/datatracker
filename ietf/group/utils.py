@@ -5,6 +5,7 @@ from django.conf import settings
 from ietf.group.models import Group, RoleHistory
 from ietf.person.models import Email
 from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
+from ietf.ietfauth.utils import has_role
 
 
 def save_group_in_history(group):
@@ -98,3 +99,18 @@ def save_milestone_in_history(milestone):
     copy_many_to_many_for_history(h, milestone)
 
     return h
+
+def can_manage_group_type(user, group_type):
+    if group_type == "rg":
+        return has_role(user, ('IRTF Chair', 'Secretariat'))
+    elif group_type == "wg":
+        return has_role(user, ('Area Director', 'Secretariat'))
+
+    return has_role(user, 'Secretariat')
+
+def milestone_reviewer_for_group_type(group_type):
+    if group_type == "rg":
+        return "IRTF Chair"
+    else:
+        return "Area Director"
+

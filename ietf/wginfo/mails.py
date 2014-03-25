@@ -10,8 +10,8 @@ from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
-
 from ietf.group.models import Group
+from ietf.group.utils import milestone_reviewer_for_group_type
 
 def email_secretariat(request, group, subject, text):
     to = ["iesg-secretary@ietf.org"]
@@ -37,10 +37,12 @@ def email_milestones_changed(request, group, changes):
                        u"Milestones changed for %s %s" % (group.acronym, group.type.name),
                        text)
 
-    # first send to AD and chairs
+    # first send to management and chairs
     to = []
     if group.ad:
         to.append(group.ad.role_email("ad").formatted_email())
+    elif group.type_id == "rg":
+        to.append("IRTF Chair <irtf-chair@irtf.org>")
 
     for r in group.role_set.filter(name="chair"):
         to.append(r.formatted_email())
@@ -48,7 +50,7 @@ def email_milestones_changed(request, group, changes):
     if to:
         wrap_up_email(to, u"\n\n".join(c + "." for c in changes))
 
-    # then send to WG
+    # then send to group
     if group.list_email:
         review_re = re.compile("Added .* for review, due")
         to = [ group.list_email ]
@@ -56,11 +58,17 @@ def email_milestones_changed(request, group, changes):
 
 
 def email_milestone_review_reminder(group, grace_period=7):
-    """Email reminders about milestones needing review to AD."""
-    if not group.ad:
+    """Email reminders about milestones needing review to management."""
+    to = []
+
+    if group.ad:
+        to.append(group.ad.role_email("ad").formatted_email())
+    elif group.type_id == "rg":
+        to.append("IRTF Chair <irtf-chair@irtf.org>")
+
+    if not to:
         return False
 
-    to = [group.ad.role_email("ad").formatted_email()]
     cc = [r.formatted_email() for r in group.role_set.filter(name="chair")]
 
     now = datetime.datetime.now()
@@ -84,6 +92,7 @@ def email_milestone_review_reminder(group, grace_period=7):
               "wginfo/reminder_milestones_need_review.txt",
               dict(group=group,
                    milestones=milestones,
+                   reviewer=milestone_reviewer_for_group_type(group.type_id),
                    url=settings.IDTRACKER_BASE_URL + urlreverse("group_edit_milestones", kwargs=dict(group_type=group.type_id, acronym=group.acronym)),
                    cc=cc,
                )
