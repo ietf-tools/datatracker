@@ -14,7 +14,8 @@
              Length of Third Session: {{ form.length_session3.errors }}{{ form.length_session3 }}</td></tr>
            {% endif %}
            <tr class="bg1"><td>Number of Attendees:<span class="required">*</span></td><td>{{ form.attendees.errors }}{{ form.attendees }}</td></tr>
-           <tr class="bg2"><td>Conflicts to Avoid:</td>
+           <tr class="bg2"><td>People who must be present:</td><td>{{ form.bethere.errors }}{{ form.bethere }}</td></tr>
+           <tr class="bg1"><td>Conflicts to Avoid:</td>
            <td>
              <table>
                <tr>
@@ -50,27 +51,10 @@
              </table>
            </td>
            </tr>
-           <tr class="bg1"><td>People who need to be present:</td>
-           <td>
-             {{ bepresent_formset.management_form }}
-             <table style="width: 100%;">
-               <tr>
-                 <th style="width: 70%;">Person</th>
-                 <th>Must be present?</th>
-               </tr>
-               {% for essential_person_form in bepresent_formset.forms %}
-               <tr class="{% cycle 'bg3' 'bg2'%}">
-                 <td>{{ essential_person_form.person }}</td>
-                 <td>{{ essential_person_form.bethere }}</td>
-               </tr>
-               {% endfor %}
-             </table>
-           </td>
-           </tr>
            <tr class="bg2"><td>Resources requested:</td>
-           <td>
-           {{ form.resources }}
-           </td>
+            <td>
+             {{ form.resources }}
+            </td>
            </tr>
            <tr class="bg1">
              <td valign="top">Special Requests:<br />&nbsp;<br />i.e. Meetecho, WebEx (please state which, and the reason needed), restrictions on meeting times / days, etc.</td>
@@ -81,7 +65,3 @@
          {% include "includes/buttons_save_cancel.html" %}
 
          </form>
-{% block content_end %}
-<script type="text/javascript" src="/js/lib/jquery.tokeninput.js"></script>
-<script type="text/javascript" src="/js/tokenized-field.js"></script>
-{% endblock %}

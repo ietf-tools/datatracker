@@ -18,6 +18,7 @@ from ietf.meeting.helpers import get_meeting
 
 from ietf.group.models import Group, Role
 from ietf.name.models import SessionStatusName, ConstraintName
+from ietf.person.models import Email
 
 from forms import *
 
@@ -52,6 +53,14 @@ def get_initial_session(sessions):
     meeting = sessions[0].meeting
     group = sessions[0].group
     conflicts = group.constraint_source_set.filter(meeting=meeting)
+
+    bethere_people = [x.person for x in sessions[0].constraints().filter(name='bethere')]
+    bethere_email = []
+    for person in bethere_people:
+        e = person.email_set.order_by("-active","-time").first()
+        if e:
+           bethere_email.append(e)
+
     # even if there are three sessions requested, the old form has 2 in this field
     initial['num_session'] = sessions.count() if sessions.count() <= 2 else 2
 
@@ -69,6 +78,7 @@ def get_initial_session(sessions):
     initial['conflict3'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflic3') ])
     initial['comments'] = sessions[0].comments
     initial['resources'] = sessions[0].resources.all()
+    initial['bethere'] = bethere_email
     return initial
 
 def get_lock_message():
@@ -238,6 +248,10 @@ def confirm(request, acronym):
     if not querydict:
         raise Http404
     form = querydict.copy()
+    if 'resources' in form:
+        form['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in form['resources'].split(',')]
+    if 'bethere' in form:
+        form['bethere'] = [Email.objects.get(address=addr) for addr in form['bethere'].split(',')]
     meeting = get_meeting()
     group = get_object_or_404(Group,acronym=acronym)
     login = request.user.person
@@ -271,11 +285,18 @@ def confirm(request, acronym):
                                       comments=form['comments'],
                                       status=SessionStatusName.objects.get(slug=slug))
                 session_save(new_session)
+                if 'resources' in form:
+                    new_session.resources = form['resources']
 
         # write constraint records
         save_conflicts(group,meeting,form['conflict1'],'conflict')
         save_conflicts(group,meeting,form['conflict2'],'conflic2')
         save_conflicts(group,meeting,form['conflict3'],'conflic3')
+
+        if 'bethere' in form:
+            bethere_cn = ConstraintName.objects.get(slug='bethere')
+            for email in form['bethere']:
+                Constraint.objects.create(name=bethere_cn,source=group,person=email.person,meeting=new_session.meeting)
 
         # deprecated in new schema
         # log activity
@@ -301,6 +322,7 @@ def confirm(request, acronym):
         RequestContext(request, {}),
     )
 
+#Begin dead code
 def make_essential_person(pk, person, required):
     essential_person = dict()
     essential_person["person"]     = person.email_set.all()[0].pk
@@ -339,6 +361,23 @@ def make_bepresent_formset(group, session, default=True):
 
     formset = MustBePresentFormSet(initial=list_of_essential_people)
     return formset
+# end dead code
+
+#Move this into make_initial
+def add_essential_people(group,initial):
+    # This will be easier when the form uses Person instead of Email
+    people = set()
+    if 'bethere' in initial:
+        people.update(initial['bethere'])
+    for role in group.role_set.filter(name='chair'):
+        e = role.person.email_set.order_by("-active","-time").first()
+        if e:
+            people.add(e)
+    e = group.ad.email_set.order_by("-active","-time").first()
+    if e:
+        people.add(e)
+    initial['bethere'] = list(people)
+    
 
 @check_permissions
 def edit(request, acronym):
@@ -360,6 +399,9 @@ def edit_mtg(request, num, acronym):
     sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
     sessions_count = sessions.count()
     initial = get_initial_session(sessions)
+    if 'resources' in initial:
+        initial['resources'] = [x.pk for x in initial['resources']]
+
     session_conflicts = session_conflicts_as_string(group, meeting)
     login = request.user.person
 
@@ -373,8 +415,7 @@ def edit_mtg(request, num, acronym):
             return redirect('sessions_view', acronym=acronym)
 
         form = SessionForm(request.POST,initial=initial)
-        bepresent_formset = MustBePresentFormSet(request.POST)
-        if form.is_valid() or bepresent_formset.is_valid():
+        if form.is_valid():
             if form.has_changed():
                 # might be cleaner to simply delete and rewrite all records (but maintain submitter?)
                 # adjust duration or add sessions
@@ -449,35 +490,18 @@ def edit_mtg(request, num, acronym):
                                       for a in new_resource_ids]
                     session.resources = new_resources
 
+                if 'bethere' in form.changed_data and set(form.cleaned_data['bethere'])!=set(initial['bethere']):
+                    session.constraints().filter(name='bethere').delete()
+                    bethere_cn = ConstraintName.objects.get(slug='bethere')
+                    for email in form.cleaned_data['bethere']:
+                        Constraint.objects.create(name=bethere_cn,source=group,person=email.person,meeting=session.meeting)
+
                 # deprecated
                 # log activity
                 #add_session_activity(group,'Session Request was updated',meeting,user)
 
                 # send notification
                 send_notification(group,meeting,login,form.cleaned_data,'update')
-
-            for bepresent in bepresent_formset.forms:
-                if bepresent.is_valid() and 'person' in bepresent.cleaned_data:
-                    persons_cleaned = bepresent.cleaned_data['person']
-                    if(len(persons_cleaned) == 0):
-                        continue
-
-                    person = bepresent.cleaned_data['person'][0].person
-                    if 'bethere' in bepresent.changed_data and bepresent.cleaned_data['bethere']=='True':
-                        #print "Maybe adding bethere constraint for %s" % (person)
-                        if session.people_constraints.filter(person = person).count()==0:
-                            # need to create new constraint.
-                            #print "  yes"
-                            nc = session.people_constraints.create(person = person,
-                                                                   meeting = meeting,
-                                                                   name_id = 'bethere',
-                                                                   source = session.group)
-                            nc.save()
-                    else:
-                        #print "Maybe deleting bethere constraint for %s" % (person)
-                        if session.people_constraints.filter(person = person).count() > 0:
-                            #print "  yes"
-                            session.people_constraints.filter(person = person).delete()
 
             # nuke any cache that might be lingering around.
             from ietf.meeting.helpers import session_constraint_expire
@@ -489,13 +513,10 @@ def edit_mtg(request, num, acronym):
     else:
         form = SessionForm(initial=initial)
 
-    bepresent_formset = make_bepresent_formset(group, session, False)
-
     return render_to_response('sreq/edit.html', {
         'meeting': meeting,
         'form': form,
         'group': group,
-        'bepresent_formset' : bepresent_formset,
         'session_conflicts': session_conflicts},
         RequestContext(request, {}),
     )
@@ -600,10 +621,15 @@ def new(request, acronym):
             return redirect('sessions_new', acronym=acronym)
 
         initial = get_initial_session(previous_sessions)
+        add_essential_people(group,initial)
+        if 'resources' in initial:
+            initial['resources'] = [x.pk for x in initial['resources']]
         form = SessionForm(initial=initial)
 
     else:
-        form = SessionForm()
+        initial={}
+        add_essential_people(group,initial)
+        form = SessionForm(initial=initial)
 
     return render_to_response('sreq/new.html', {
         'meeting': meeting,
