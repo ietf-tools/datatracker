@@ -100,6 +100,9 @@ AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
 #DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
 
+# ------------------------------------------------------------------------
+# Django/Python Logging Framework Modifications
+
 # enable HTML error emails
 from django.utils.log import DEFAULT_LOGGING
 LOGGING = DEFAULT_LOGGING.copy()
@@ -119,6 +122,9 @@ LOGGING['filters']['skip_suspicious_operations'] = {
     'callback': skip_suspicious_operations,
 }
 LOGGING['handlers']['mail_admins']['filters'] += [ 'skip_suspicious_operations' ]
+
+# End logging
+# ------------------------------------------------------------------------
 
 SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
