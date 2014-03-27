@@ -183,6 +183,25 @@ function find_and_populate_conflicts(session_obj) {
             });
         }
 
+        if(session_obj.theirconstraints.conflict != null){
+            $.each(session_obj.theirconstraints.conflict, function(i){
+                var conflict = session_obj.theirconstraints.conflict[i];
+                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
+            });
+        }
+        if(session_obj.theirconstraints.conflic2 != null){
+            $.each(session_obj.theirconstraints.conflic2, function(i){
+                var conflict = session_obj.theirconstraints.conflic2[i];
+                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
+            });
+        }
+        if(session_obj.theirconstraints.conflic3 != null){
+            $.each(session_obj.theirconstraints.conflic3, function(i){
+                var conflict = session_obj.theirconstraints.conflic3[i];
+                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
+            });
+        }
+
         /* bethere constraints are processed in another loop */
     }
 }
@@ -649,6 +668,7 @@ function make_ss(json) {
 
 function Session() {
     this.constraints = {};
+    this.theirconstraints = {};
     this.constraint_load_andthen_list = [];
     this.constraints_loaded = false;
     this.last_timeslot_id = null;
@@ -660,6 +680,7 @@ function Session() {
     this.area = "noarea";
     this.special_request = "";
     this.conflicted = false;
+    this.theirconflicted = false;
     this.double_wide = false;
     this.attendees   = undefined;
 }
@@ -865,19 +886,35 @@ Session.prototype.mark_conflict = function(value) {
     this.conflicted = value;
 };
 Session.prototype.add_conflict = function(conflict) {
-    this.conflicted = true;
-    if(this.highest_conflict==undefined) {
-        this.highest_conflict = conflict;
-    } else {
-        var oldhighest = this.highest_conflict;
-        this.highest_conflict = this.highest_conflict.conflict_compare(conflict);
-        if(_conflict_debug) {
-            console.log("add conflict for", this.title,
-                        oldhighest.conflict_type, ">?", conflict.conflict_type,
-                        "=", this.highest_conflict.conflict_type);
+    if (conflict.direction==='ours') {
+        this.conflicted = true;
+        if(this.highest_conflict==undefined) {
+            this.highest_conflict = conflict;
+        } else {
+            var oldhighest = this.highest_conflict;
+            this.highest_conflict = this.highest_conflict.conflict_compare(conflict);
+            if(_conflict_debug) {
+                console.log("add conflict for", this.title,
+                            oldhighest.conflict_type, ">?", conflict.conflict_type,
+                            "=", this.highest_conflict.conflict_type);
+            }
         }
+        this.conflict_level  = this.highest_conflict.conflict_type;
+    } else {
+        this.theirconflicted = true;
+        if(this.highest_theirconflict==undefined) {
+            this.highest_theirconflict = conflict;
+        } else {
+            var oldhighest = this.highest_theirconflict;
+            this.highest_theirconflict = this.highest_theirconflict.conflict_compare(conflict);
+            if(_conflict_debug) {
+                console.log("add conflict for", this.title,
+                            oldhighest.conflict_type, ">?", conflict.conflict_type,
+                            "=", this.highest_theirconflict.conflict_type);
+            }
+        }
+        this.theirconflict_level  = this.highest_theirconflict.conflict_type;
     }
-    this.conflict_level  = this.highest_conflict.conflict_type;
 };
 Session.prototype.clear_conflict = function() {
     this.conflicted = false;
@@ -901,16 +938,26 @@ Session.prototype.show_conflict = function() {
     if(_conflict_debug) {
         console.log("showing conflict for", this.title, this.conflict_level);
     }
-    this.element().addClass("actual_" + this.conflict_level);
+//    this.element().find('.ourconflicts').addClass("actual_" + this.conflict_level);
+//    this.element().find('.theirconflicts').addClass("actual_" + this.conflict_level);
+    var display = { 'conflict':'1' , 'conflic2':'2' , 'conflic3':'3' };
+    if (this.conflicted) {
+        this.element().find('.ourconflicts').text('->'+display[this.conflict_level]);
+    }
+    if (this.theirconflicted) {
+        this.element().find('.theirconflicts').text(display[this.theirconflict_level]+'->');
+    }
 };
 Session.prototype.hide_conflict = function() {
     if(_conflict_debug) {
         console.log("removing conflict for", this.title);
     }
-    this.element().removeClass("actual_conflict");
+//    this.element().removeClass("actual_conflict");
+    this.element().find('.ourconflicts').text('');
+    this.element().find('.theirconflicts').text('');
 };
 Session.prototype.display_conflict = function() {
-    if(this.conflicted) {
+    if(this.conflicted || this.theirconflicted) {
         this.show_conflict();
     } else {
         this.hide_conflict();
@@ -920,6 +967,9 @@ Session.prototype.reset_conflicts = function() {
     this.conflict_level = undefined;
     this.highest_conflict = undefined;
     this.conflicted = false;
+    this.theirconflict_level = undefined;
+    this.highest_theirconflict = undefined;
+    this.theirconflicted = false;
 };
 
 Session.prototype.show_personconflict = function() {
@@ -1106,12 +1156,12 @@ Session.prototype.event_template = function() {
         "' id='session_"+
         this.session_id+
         "' session_id=\""+this.session_id+"\"" +
-        "><tr id='meeting_event_title'><th class='"+
+        "><tr id='meeting_event_title'><td class=\"theirconflicts\"></td><th class='"+
         this.wg_scheme()+" "+
         this.area_scheme() +" meeting_obj'>"+
         this.visible_title()+
         "<span> ("+this.requested_duration+")</span>" +
-        "</th>"+pinned+"</tr></table>"+ area_mark +"</div></div>";
+        "</th><td class=\"ourconflicts\"></td>"+pinned+"</tr></table>"+ area_mark +"</div></div>";
 };
 
 function andthen_alert(object, result, arg) {
@@ -1524,17 +1574,13 @@ Constraint.prototype.show_conflict_view = function() {
 };
 
 Constraint.prototype.build_group_conflict_view = function() {
-    var bothways = "&nbsp;&nbsp;&nbsp;";
-    if(this.bothways) {
-       bothways=" &lt;-&gt;";
-    }
 
     // this is used for the red square highlighting.
     var checkbox_id = "conflict_"+this.dom_id;
     conflict_classes[checkbox_id] = this;
 
     return "<div class='conflict our-"+this.conflict_type+"' id='"+this.dom_id+
-           "'>"+this.othergroup_name+bothways+"</div>";
+           "'>"+this.othergroup_name+"</div>";
 
 };
 
@@ -1593,6 +1639,9 @@ Session.prototype.add_constraint_obj = function(obj) {
     if(this.constraints[listname]==undefined) {
        this.constraints[listname]={};
     }
+    if(this.theirconstraints[listname]==undefined) {
+       this.theirconstraints[listname]={};
+    }
 
     if(listname == "bethere") {
         //console.log("bethere constraint: ", obj);
@@ -1611,18 +1660,23 @@ Session.prototype.add_constraint_obj = function(obj) {
         if(obj.source_href == this.group_href) {
             obj.thisgroup  = this.group;
             obj.othergroup = find_group_by_href(obj.target_href, "constraint src"+obj.href);
+            obj.direction = 'ours';
             ogroupname = obj.target_href;
+            if(this.constraints[listname][ogroupname]) {
+                console.log("Found multiple instances of",this.group_href,listname,ogroupname);
+            }
+            this.constraints[listname][ogroupname] = obj
         } else {
             obj.thisgroup  = this.group;
             obj.othergroup = find_group_by_href(obj.source_href, "constraint dst"+obj.href);
+            obj.direction = 'theirs';
             ogroupname = obj.source_href;
+            if(this.theirconstraints[listname][ogroupname]) {
+                console.log("Found multiple instances of",ogroupname,listname,this.group_href);
+            }
+            this.theirconstraints[listname][ogroupname] = obj
         }
 
-        if(this.constraints[listname][ogroupname]) {
-            this.constraints[listname][ogroupname].bothways = true;
-        } else {
-            this.constraints[listname][ogroupname]=obj;
-        }
     }
 
 };

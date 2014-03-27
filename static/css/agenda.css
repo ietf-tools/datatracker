@@ -847,11 +847,13 @@ table.actual_conflic3 {
     border: solid 1px #203E5F;
 }
 
+/*
 .agenda_row_alt td {
     /* for now, use no alternating theme */
     border-bottom: 1px solid orange;
     margin-bottom: 5px;
 }
+*/
 
 .agenda_slot_plenary {
     /* background-color: #d38f2d;  */ /* dark orange */
