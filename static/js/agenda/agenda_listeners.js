@@ -881,15 +881,42 @@ function group_name_or_empty(constraint) {
 function draw_constraints(session) {
 
     if("conflicts" in session) {
+        var display = { 'conflict':'1' , 'conflic2':'2' , 'conflic3':'3' };
         var group_icons = "";
-
+        var group_set = {};
         $.each(session.conflicts, function(index) {
             conflict = session.conflicts[index];
+            conflict.build_othername();
             if(conflict.conflict_groupP()) {
-                group_icons += "<li class='conflict'>"+conflict.conflict_view();
+                if ( ! (conflict.othergroup_name in group_set) ) {
+                    group_set[conflict.othergroup_name] = {};
+                }
+                group_set[conflict.othergroup_name][conflict.direction]=display[conflict.conflict_type];
+                // This had been in build_group_conflict_view
+                conflict.populate_conflict_classes();
                 highlight_conflict(conflict);
             }
         });
+                
+
+        $.each(group_set, function(index) {
+            group = group_set[index];
+            group_view = "<li class='conflict'>";
+            group_view += "<div class='conflictlevel'>"
+            if ('ours' in group_set[index]) {
+                group_view += group_set[index].ours+"->"
+            }
+            group_view += "</div>"
+            group_view += index;
+            group_view += "<div class='conflictlevel'>"
+            if ('theirs' in group_set[index]) {
+                group_view += "->"+group_set[index].theirs
+            }
+            group_view += "</div>"
+            group_view += "</li>";
+            group_icons += group_view;
+        });
+
         if(group_icons == "") {
             $("#conflict_group_list").html("none");
         } else {

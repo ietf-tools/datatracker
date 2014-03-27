@@ -680,6 +680,7 @@ function Session() {
     this.area = "noarea";
     this.special_request = "";
     this.conflicted = false;
+    this.conflicted_direction = {};
     this.theirconflicted = false;
     this.double_wide = false;
     this.attendees   = undefined;
@@ -886,36 +887,31 @@ Session.prototype.mark_conflict = function(value) {
     this.conflicted = value;
 };
 Session.prototype.add_conflict = function(conflict) {
-    if (conflict.direction==='ours') {
-        this.conflicted = true;
-        if(this.highest_conflict==undefined) {
-            this.highest_conflict = conflict;
-        } else {
-            var oldhighest = this.highest_conflict;
-            this.highest_conflict = this.highest_conflict.conflict_compare(conflict);
-            if(_conflict_debug) {
-                console.log("add conflict for", this.title,
-                            oldhighest.conflict_type, ">?", conflict.conflict_type,
-                            "=", this.highest_conflict.conflict_type);
-            }
-        }
-        this.conflict_level  = this.highest_conflict.conflict_type;
-    } else {
-        this.theirconflicted = true;
-        if(this.highest_theirconflict==undefined) {
-            this.highest_theirconflict = conflict;
-        } else {
-            var oldhighest = this.highest_theirconflict;
-            this.highest_theirconflict = this.highest_theirconflict.conflict_compare(conflict);
-            if(_conflict_debug) {
-                console.log("add conflict for", this.title,
-                            oldhighest.conflict_type, ">?", conflict.conflict_type,
-                            "=", this.highest_theirconflict.conflict_type);
-            }
-        }
-        this.theirconflict_level  = this.highest_theirconflict.conflict_type;
+    this.conflicted = true;
+    if (this.conflicted_direction==undefined) {
+        this.conflicted_direction={};
     }
+    this.conflicted_direction[conflict.direction] = true;
+    if (this.highest_conflict==undefined) {
+        this.highest_conflict={};
+    }
+    if(this.highest_conflict[conflict.direction]==undefined) {
+        this.highest_conflict[conflict.direction] = conflict;
+    } else {
+        var oldhighest = this.highest_conflict[conflict.direction];
+        this.highest_conflict[conflict.direction] = this.highest_conflict[conflict.direction].conflict_compare(conflict);
+        if(_conflict_debug) {
+            console.log("add conflict for", this.title,
+                        oldhighest.conflict_type, ">?", conflict.conflict_type,
+                        "=", this.highest_conflict[conflict.direction].conflict_type);
+        }
+    }
+    if (this.conflict_level==undefined){
+        this.conflict_level={};
+    }
+    this.conflict_level[conflict.direction] = this.highest_conflict[conflict.direction].conflict_type;
 };
+
 Session.prototype.clear_conflict = function() {
     this.conflicted = false;
 };
@@ -936,26 +932,27 @@ Session.prototype.clear_all_conflicts = function(old_column_classes) {
 
 Session.prototype.show_conflict = function() {
     if(_conflict_debug) {
-        console.log("showing conflict for", this.title, this.conflict_level);
+        console.log("showing conflict for", this.title, this.conflict_level['ours'],this.conflict_level['theirs']);
     }
-//    this.element().find('.ourconflicts').addClass("actual_" + this.conflict_level);
-//    this.element().find('.theirconflicts').addClass("actual_" + this.conflict_level);
     var display = { 'conflict':'1' , 'conflic2':'2' , 'conflic3':'3' };
     if (this.conflicted) {
-        this.element().find('.ourconflicts').text('->'+display[this.conflict_level]);
-    }
-    if (this.theirconflicted) {
-        this.element().find('.theirconflicts').text(display[this.theirconflict_level]+'->');
+        if ('ours' in this.conflict_level) {
+            this.element().find('.ourconflicts').text('->'+display[this.conflict_level.ours]);
+        }
+        if ('theirs' in this.conflict_level) {
+            this.element().find('.theirconflicts').text(display[this.conflict_level.theirs]+'->');
+        }
     }
 };
+
 Session.prototype.hide_conflict = function() {
     if(_conflict_debug) {
         console.log("removing conflict for", this.title);
     }
-//    this.element().removeClass("actual_conflict");
     this.element().find('.ourconflicts').text('');
     this.element().find('.theirconflicts').text('');
 };
+
 Session.prototype.display_conflict = function() {
     if(this.conflicted || this.theirconflicted) {
         this.show_conflict();
@@ -963,10 +960,12 @@ Session.prototype.display_conflict = function() {
         this.hide_conflict();
     }
 };
+
 Session.prototype.reset_conflicts = function() {
     this.conflict_level = undefined;
     this.highest_conflict = undefined;
     this.conflicted = false;
+    this.conflicted_direction = undefined;
     this.theirconflict_level = undefined;
     this.highest_theirconflict = undefined;
     this.theirconflicted = false;
@@ -974,7 +973,7 @@ Session.prototype.reset_conflicts = function() {
 
 Session.prototype.show_personconflict = function() {
     if(_conflict_debug) {
-        console.log("showing person conflict for", this.title, this.conflict_level);
+        console.log("showing person conflict for", this.title, this.conflict_level.ours);
     }
     this.personconflict_element().removeClass("hidepersonconflict");
     this.personconflict_element().addClass("showpersonconflict");
@@ -1294,6 +1293,21 @@ Session.prototype.fill_in_constraints = function(constraint_list) {
             session_obj.conflicts.push(session_obj.constraints["conflic3"][index]);
         });
     }
+    if("conflict" in this.theirconstraints) {
+        $.each(this.theirconstraints["conflict"], function(index) {
+            session_obj.conflicts.push(session_obj.theirconstraints["conflict"][index]);
+        });
+    }
+    if("conflic2" in this.theirconstraints) {
+        $.each(this.theirconstraints["conflic2"], function(index) {
+            session_obj.conflicts.push(session_obj.theirconstraints["conflic2"][index]);
+        });
+    }
+    if("conflic3" in this.theirconstraints) {
+        $.each(this.theirconstraints["conflic3"], function(index) {
+            session_obj.conflicts.push(session_obj.theirconstraints["conflic3"][index]);
+        });
+    }
     this.calculate_bethere();
     this.conflicts = sort_conflict_list(this.conflicts)
 };
@@ -1573,16 +1587,34 @@ Constraint.prototype.show_conflict_view = function() {
     //console.log("viewed", this.thisgroup.href);
 };
 
-Constraint.prototype.build_group_conflict_view = function() {
-
+Constraint.prototype.populate_conflict_classes = function() {
     // this is used for the red square highlighting.
     var checkbox_id = "conflict_"+this.dom_id;
     conflict_classes[checkbox_id] = this;
-
-    return "<div class='conflict our-"+this.conflict_type+"' id='"+this.dom_id+
-           "'>"+this.othergroup_name+"</div>";
-
 };
+
+// Made dead by change to how the group view is built out
+//Constraint.prototype.build_group_conflict_view = function() {
+//
+//    var display = { 'conflict':'1' , 'conflic2':'2' , 'conflic3':'3' };
+//
+//    // this is used for the red square highlighting.
+//    var checkbox_id = "conflict_"+this.dom_id;
+//    conflict_classes[checkbox_id] = this;
+//
+//    build  = "<div id='"+this.dom_id+"'>";
+//    if (this.direction=='theirs') {
+//        build += display[this.conflict_type]+"->";
+//    }
+//    build += this.othergroup_name;
+//    if (this.direction=='ours') {
+//        build += "->"+display[this.conflict_type];
+//    }
+//    build += "</div>";
+//
+//    return build
+//
+//};
 
 Constraint.prototype.build_people_conflict_view = function() {
     var area_mark =  "";
@@ -1612,9 +1644,10 @@ Constraint.prototype.conflict_view = function() {
         return this.build_people_conflict_view();
     }
     else {
-        //console.log("conflict_view for", this.href);
-        this.build_othername();
-        return this.build_group_conflict_view();
+        // This function is currently never called for this case
+        console.log("!! unexpected conflict_view for", this.href);
+        //this.build_othername();
+        //return this.build_group_conflict_view();
     }
 };
 

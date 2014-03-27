@@ -502,6 +502,11 @@ div#conflict_table {
   background-color: #89D;
 }
 
+div.conflictlevel {
+    display: inline-block;
+    min-width: 1.5em;
+}
+
 div.our-conflict {
     padding-left: 20px;
     background-image: url('/images/conflict-boxes/narow3.png');
