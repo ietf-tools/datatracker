@@ -14,7 +14,7 @@ Charter submission for {{ group.acronym }} {{ group.type.name }}
 {% block content %}
 <h1>Charter submission for {{ group.acronym }} {{ group.type.name }}</h1>
 
-<p>The text will be submitted as <strong>charter-ietf-{{ group.acronym }}-{{ next_rev }}</strong></p>
+<p>The text will be submitted as <strong>{{ name }}-{{ next_rev }}</strong></p>
 <form class="edit-info" action="" enctype="multipart/form-data" method="post">{% csrf_token %}
   <table>
     {% for field in form.visible_fields %}

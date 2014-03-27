@@ -50,7 +50,6 @@ from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.group.models import Group, Role
 from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type
-from ietf.ietfauth.utils import has_role
 from ietf.utils.pipe import pipe
 
 def roles(group, role_name):
@@ -180,6 +179,9 @@ def bofs(request, group_type):
     return render(request, 'wginfo/bofs.html',dict(groups=groups))
 
 def chartering_groups(request, group_type):
+    if group_type != "wg":
+        raise Http404
+
     charter_states = State.objects.filter(used=True, type="charter").exclude(slug__in=("approved", "notrev"))
     groups = Group.objects.filter(type=group_type, charter__states__in=charter_states).select_related("state", "charter")
 
@@ -305,12 +307,15 @@ def group_charter(request, group_type, acronym):
         rg="Research Group",
         )
 
+    can_manage = can_manage_group_type(request.user, group.type_id)
+
     return render(request, 'wginfo/group_charter.html',
                   construct_group_menu_context(request, group, "charter", {
                       "milestones_in_review": group.groupmilestone_set.filter(state="review"),
                       "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
                       "requested_close": requested_close,
-                      "long_group_type":long_group_types.get(group_type, "Group")
+                      "long_group_type":long_group_types.get(group_type, "Group"),
+                      "can_manage": can_manage,
                   }))
 
 

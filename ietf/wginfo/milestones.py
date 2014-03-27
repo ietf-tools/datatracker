@@ -13,7 +13,6 @@ from ietf.doc.models import Document, DocEvent
 from ietf.doc.utils import get_chartering_type
 from ietf.group.models import Group, GroupMilestone, MilestoneGroupEvent
 from ietf.group.utils import save_milestone_in_history, can_manage_group_type, milestone_reviewer_for_group_type
-from ietf.ietfauth.utils import role_required, has_role
 from ietf.name.models import GroupMilestoneStateName
 from ietf.wginfo.mails import email_milestones_changed
 
@@ -380,7 +379,7 @@ def reset_charter_milestones(request, group_type, acronym):
 
         return redirect('group_edit_charter_milestones', group_type=group.type_id, acronym=group.acronym)
 
-    return render('wginfo/reset_charter_milestones.html',
+    return render(request, 'wginfo/reset_charter_milestones.html',
                   dict(group=group,
                        charter_milestones=charter_milestones,
                        current_milestones=current_milestones,

@@ -19,7 +19,7 @@ from ietf.doc.utils import get_tags_for_stream_id
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
 from ietf.group.utils import save_group_in_history, can_manage_group_type
-from ietf.ietfauth.utils import role_required, has_role
+from ietf.ietfauth.utils import has_role
 from ietf.person.forms import EmailsField
 from ietf.person.models import Person, Email
 from ietf.wginfo.mails import email_secretariat
@@ -166,8 +166,9 @@ def submit_initial_charter(request, group_type, acronym=None):
     if not group.charter:
         group.charter = get_or_create_initial_charter(group, group_type)
         group.save()
+
     return redirect('charter_submit', name=group.charter.name, option="initcharter")
-        
+
 @login_required
 def edit(request, group_type, acronym=None, action="edit"):
     """Edit or create a group, notifying parties as

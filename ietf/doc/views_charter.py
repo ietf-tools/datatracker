@@ -1,6 +1,6 @@
 import os, datetime, shutil, textwrap, json
 
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, Http404
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse as urlreverse
 from django.template import RequestContext
@@ -9,6 +9,7 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 
 import debug                            # pyflakes:ignore
 
@@ -21,7 +22,7 @@ from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     approved_revision, default_review_text, default_action_text, email_state_changed,
     generate_ballot_writeup, generate_issue_ballot_mail, next_approved_revision, next_revision )
 from ietf.group.models import ChangeStateGroupEvent, MilestoneGroupEvent
-from ietf.group.utils import save_group_in_history, save_milestone_in_history
+from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_group_type
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.name.models import GroupStateName
@@ -33,24 +34,33 @@ from ietf.wginfo.mails import email_secretariat
 
 
 class ChangeStateForm(forms.Form):
-    charter_state = forms.ModelChoiceField(State.objects.filter(used=True, type="charter", slug__in=["infrev", "intrev", "extrev", "iesgrev"]), label="Charter state", empty_label=None, required=False)
+    charter_state = forms.ModelChoiceField(State.objects.filter(used=True, type="charter"), label="Charter state", empty_label=None, required=False)
     initial_time = forms.IntegerField(initial=0, label="Review time", help_text="(in weeks)", required=False)
     message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change state without notifying the Secretariat", required=False, label=mark_safe("Message to<br> Secretariat"))
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history", required=False)
     def __init__(self, *args, **kwargs):
         self.hide = kwargs.pop('hide', None)
+        group = kwargs.pop('group')
         super(ChangeStateForm, self).__init__(*args, **kwargs)
+        state_field = self.fields["charter_state"]
+        if group.type_id == "wg":
+            state_field.queryset = state_field.queryset.filter(slug__in=("infrev", "intrev", "extrev", "iesgrev"))
+        else:
+            state_field.queryset = state_field.queryset.filter(slug__in=("notrev", "approved"))
         # hide requested fields
         if self.hide:
             for f in self.hide:
                 self.fields[f].widget = forms.HiddenInput
 
-@role_required("Area Director", "Secretariat")
+@login_required
 def change_state(request, name, option=None):
     """Change state of charter, notifying parties as necessary and
     logging the change as a comment."""
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
+
+    if not can_manage_group_type(request.user, group.type_id):
+        return HttpResponseForbidden("You don't have permission to access this view")
 
     chartering_type = get_chartering_type(charter)
 
@@ -61,13 +71,17 @@ def change_state(request, name, option=None):
     login = request.user.person
 
     if request.method == 'POST':
-        form = ChangeStateForm(request.POST)
+        form = ChangeStateForm(request.POST, group=group)
         if form.is_valid():
             clean = form.cleaned_data
             charter_rev = charter.rev
 
             if option in ("initcharter", "recharter"):
-                charter_state = State.objects.get(used=True, type="charter", slug="infrev")
+                if group.type_id == "wg":
+                    charter_state = State.objects.get(used=True, type="charter", slug="infrev")
+                else:
+                    charter_state = clean['charter_state']
+
                 # make sure we have the latest revision set, if we
                 # abandoned a charter before, we could have reset the
                 # revision to latest approved
@@ -142,6 +156,8 @@ def change_state(request, name, option=None):
                     default_action_text(group, charter, login)
                 elif charter_state.slug == "iesgrev":
                     create_ballot_if_not_open(charter, login, "approve")
+                elif charter_state.slug == "approved":
+                    fix_charter_revision_after_approval(charter, login)
 
             if charter_state.slug == "infrev" and clean["initial_time"] and clean["initial_time"] != 0:
                 e = InitialReviewDocEvent(type="initial_review", by=login, doc=charter)
@@ -151,10 +167,10 @@ def change_state(request, name, option=None):
 
             return redirect('doc_view', name=charter.name)
     else:
-        if option == "recharter":
+        if option == "recharter" and group.type_id == "wg":
             hide = ['initial_time', 'charter_state', 'message']
             init = dict()
-        elif option == "initcharter":
+        elif option == "initcharter" and group.type_id == "wg":
             hide = ['charter_state']
             init = dict(initial_time=1, message='%s has initiated chartering of the proposed %s:\n "%s" (%s).' % (login.plain_name(), group.type.name, group.name, group.acronym))
         elif option == "abandon":
@@ -164,7 +180,7 @@ def change_state(request, name, option=None):
             hide = ['initial_time']
             s = charter.get_state()
             init = dict(charter_state=s.pk if s else None)
-        form = ChangeStateForm(hide=hide, initial=init)
+        form = ChangeStateForm(hide=hide, initial=init, group=group)
 
     prev_charter_state = None
     charter_hists = DocHistory.objects.filter(doc=charter).exclude(states__type="charter", states__slug=charter.get_state_slug()).order_by("-time")[:1]
@@ -352,17 +368,16 @@ class UploadForm(forms.Form):
             else:
                 destination.write(self.cleaned_data['content'].encode("utf-8"))
 
-@role_required('Area Director','Secretariat')
-def submit(request, name=None, acronym=None, option=None):
-    if name:
-        if not name.startswith('charter-'):
-            name = "charter-ietf-" + name
-    elif acronym:
-        name = "charter-ietf-" + acronym
+@login_required
+def submit(request, name=None, option=None):
+    if not name.startswith('charter-'):
+        raise Http404
+
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
 
-    login = request.user.person
+    if not can_manage_group_type(request.user, group.type_id):
+        return HttpResponseForbidden("You don't have permission to access this view")
 
     path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
     not_uploaded_yet = charter.rev.endswith("-00") and not os.path.exists(path)
@@ -386,7 +401,7 @@ def submit(request, name=None, acronym=None, option=None):
 
             charter.rev = next_rev
 
-            e = NewRevisionDocEvent(doc=charter, by=login, type="new_revision")
+            e = NewRevisionDocEvent(doc=charter, by=request.user.person, type="new_revision")
             e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
             e.rev = charter.rev
             e.save()
@@ -423,7 +438,8 @@ def submit(request, name=None, acronym=None, option=None):
     return render_to_response('doc/charter/submit.html',
                               {'form': form,
                                'next_rev': next_rev,
-                               'group': group },
+                               'group': group,
+                               'name': name },
                               context_instance=RequestContext(request))
 
 class AnnouncementTextForm(forms.Form):
@@ -568,6 +584,26 @@ def ballot_writeupnotes(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
+def fix_charter_revision_after_approval(charter, by):
+    # according to spec, 00-02 becomes 01, so copy file and record new revision
+    try:
+        old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+        new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
+        shutil.copy(old, new)
+    except IOError:
+        return HttpResponse("There was an error copying %s to %s" %
+                            ('%s-%s.txt' % (charter.canonical_name(), charter.rev),
+                             '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev))))
+
+    e = NewRevisionDocEvent(doc=charter, by=by, type="new_revision")
+    e.rev = next_approved_revision(charter.rev)
+    e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), e.rev)
+    e.save()
+
+    charter.rev = e.rev
+    charter.time = e.time
+    charter.save()
+
 @role_required("Secretariat")
 def approve(request, name):
     """Approve charter, changing state, fixing revision, copying file to final location."""
@@ -618,24 +654,7 @@ def approve(request, name):
 
         e = add_state_change_event(charter, login, prev_charter_state, new_charter_state)
 
-        # according to spec, 00-02 becomes 01, so copy file and record new revision
-        try:
-            old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-            new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
-            shutil.copy(old, new)
-        except IOError:
-            return HttpResponse("There was an error copying %s to %s" %
-                                ('%s-%s.txt' % (charter.canonical_name(), charter.rev),
-                                 '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev))))
-
-        e = NewRevisionDocEvent(doc=charter, by=login, type="new_revision")
-        e.rev = next_approved_revision(charter.rev)
-        e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), e.rev)
-        e.save()
-
-        charter.rev = e.rev
-        charter.time = e.time
-        charter.save()
+        fix_charter_revision_after_approval(charter, login)
 
         email_secretariat(request, group, "Charter state changed to %s" % new_charter_state.name, change_description)
 
