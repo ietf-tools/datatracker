@@ -206,20 +206,9 @@ class Meeting(models.Model):
         return ''
 
     def set_official_agenda(self, agenda):
-        # send_notification should be refactored into Session
-        from ietf.secr.meetings.views import send_notification
         if self.agenda != agenda:
             self.agenda = agenda
             self.save()
-            if self.agenda is not None:
-                for ss in self.agenda.scheduledsession_set.all():
-                    session = ss.session
-                    if session.status.slug == "schedw":
-                        session.status_id = "sched"
-                        session.scheduled = datetime.datetime.now()
-                        session.save()
-                        # refactoring send_notification will obviate this odd hoop-jump
-                        send_notification(None, Session.objects.filter(id=session.id))
 
     class Meta:
         ordering = ["-date", ]
@@ -1174,3 +1163,4 @@ class Session(models.Model):
         if self.badness_test(1):
             self.badness_log(1, "badgroup: %s badness = %u\n" % (self.group.acronym, badness))
         return badness
+

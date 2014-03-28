@@ -1,0 +1,51 @@
+{% extends "base_site.html" %}
+
+{% block title %}Meetings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../../">Meetings</a>
+  &raquo; <a href="../">{{ meeting.number }}</a>
+  &raquo; {{ schedule.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+     <h2>IETF  {{ meeting.number }}</h2>
+    
+    <div class="button-group">
+       <ul>
+         <li><button onclick="window.location='{% url "meetings_rooms" meeting_id=meeting.number schedule_name=schedule.name %}'">Rooms and Times</button></li>
+         <li><button onclick="window.location='{% url "meetings_select_group" meeting_id=meeting.number schedule_name=schedule.name %}'">Schedule WG Sessions</button></li>
+         <li><button type="button" onclick="window.location='../'">Back</button></li>
+       </ul>
+      </div> <!-- button-group -->
+      
+</div> <!-- module -->
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

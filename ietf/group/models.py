@@ -139,10 +139,10 @@ class GroupMilestoneInfo(models.Model):
     docs = models.ManyToManyField('doc.Document', blank=True)
 
     def __unicode__(self):
-	return self.desc[:20] + "..."
+        return self.desc[:20] + "..."
     class Meta:
         abstract = True
-	ordering = ['due', 'id']
+        ordering = ['due', 'id']
 
 class GroupMilestone(GroupMilestoneInfo):
     time = models.DateTimeField(auto_now=True)
@@ -159,7 +159,7 @@ class GroupStateTransitions(models.Model):
     next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
 
     def __unicode__(self):
-	return u'%s "%s" -> %s' % (self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
+        return u'%s "%s" -> %s' % (self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
 
 GROUP_EVENT_CHOICES = [
     ("changed_state", "Changed state"),
@@ -167,6 +167,7 @@ GROUP_EVENT_CHOICES = [
     ("info_changed", "Changed metadata"),
     ("requested_close", "Requested closing group"),
     ("changed_milestone", "Changed milestone"),
+    ("sent_notification", "Sent notification")
     ]
 
 class GroupEvent(models.Model):

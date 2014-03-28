@@ -7,8 +7,9 @@
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }}
-  &raquo; <a href="../../">Meetings</a>
-  &raquo; <a href="../">{{ meeting.number }}</a>
+  &raquo; <a href="{% url "meetings" %}">Meetings</a>
+  &raquo; <a href="{% url "meetings_view" meeting_id=meeting.number %}">{{ meeting.number }}</a>
+  &raquo; <a href="{% url "meetings_select" meeting_id=meeting.number schedule_name=schedule.name %}">{{ schedule.name }}</a>
   &raquo; Select Group
 {% endblock %}
 
@@ -49,7 +50,7 @@
       <h2>Scheduled Sessions</h2>
         <ul>
           {% for group in scheduled_groups %}
-            <li><a href="{% url "meetings_schedule" meeting_id=meeting.number acronym=group.acronym %}">{{ group.acronym }}</a></li>
+            <li><a href="{% url "meetings_schedule" meeting_id=meeting.number schedule_name=schedule.name acronym=group.acronym %}">{{ group.acronym }}</a></li>
           {% endfor %}
         </ul>
       </div><!-- inline-related-->

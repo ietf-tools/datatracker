@@ -11,8 +11,9 @@
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
-  &raquo; <a href="../../">Meetings</a>
-  &raquo; <a href="../">{{ meeting.number }}</a>
+  &raquo; <a href="{% url "meetings" %}">Meetings</a>
+  &raquo; <a href="{% url "meetings_view" meeting_id=meeting.number %}">{{ meeting.number }}</a>
+  &raquo; <a href="{% url "meetings_select" meeting_id=meeting.number schedule_name=schedule.name %}">{{ schedule.name }}</a>
   &raquo; Rooms and Times
 {% endblock %}
 
@@ -21,9 +22,9 @@
 
 <div id="nav" class="rooms-times-nav">
   <ul id="list-nav">
-    <li id="nav-room" class="leftmost"><a href="{% url "meetings_rooms" meeting_id=meeting.number %}">Rooms</a></li>
-    <li id="nav-time"><a href="{% url "meetings_times" meeting_id=meeting.number %}">Times</a></li>
-    <li id="nav-non-session"><a href="{% url "meetings_non_session" meeting_id=meeting.number %}">Non-Session</a></li>
+    <li id="nav-room" class="leftmost"><a href="{% url "meetings_rooms" meeting_id=meeting.number schedule_name=schedule.name %}">Rooms</a></li>
+    <li id="nav-time"><a href="{% url "meetings_times" meeting_id=meeting.number schedule_name=schedule.name %}">Times</a></li>
+    <li id="nav-non-session"><a href="{% url "meetings_non_session" meeting_id=meeting.number schedule_name=schedule.name %}">Non-Session</a></li>
   </ul>
 </div>
 

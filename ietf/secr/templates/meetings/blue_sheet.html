@@ -8,8 +8,9 @@
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }}
-  &raquo; <a href="../">Meetings</a>
-  &raquo; Blue Sheet
+  &raquo; <a href="../../">Meetings</a>
+  &raquo; <a href="../">{{ meeting.number }}</a>
+  &raquo; Blue Sheets
 {% endblock %}
 
 {% block content %}
@@ -36,7 +37,7 @@
   
     <div class="button-group">
       <ul>
-        <li><button onclick="window.location='../../'">Back</button></li>
+        <li><button onclick="window.location='../'">Back</button></li>
       </ul>
     </div> <!-- button-group -->
 
