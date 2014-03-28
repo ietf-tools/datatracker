@@ -15,11 +15,11 @@ digraph draftdeps {
                 fontcolor=black,
                 label="Colors in\nthis row"];
             key_wgdoc [color="#0AFE47",
-                label="Product of\nthis WG",
+                label="Product of\nthis group",
                 style=filled,
                 wg=this];
             key_otherwgdoc [color="#9999FF",
-                label="Product of\nother WG",
+                label="Product of\nother group",
                 style=filled,
                 wg=blort];
             key_individual [color="#FF800D",
