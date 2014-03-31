@@ -4,7 +4,7 @@ Summarized Agenda for the {{ date }} IESG Teleconference
 
 This agenda was generated at {% now "Y-m-d H:i:s T" %}
 Up-to-date web version of this agenda can be found at:
-http://datatracker.ietf.org/iesg/agenda/
+https://{{ domain }}/iesg/agenda/
 
 {% for num, section in sections %}
 {% if num|sectionlevel == 1 %}

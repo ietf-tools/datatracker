@@ -3,7 +3,7 @@ Hello,
 
 In order to complete your subscription for {% if significant %}significant {% endif %}changes on {{ clist.long_name }}, please follow this link or copy it and paste it in your web browser:
 
-http://{{ domain }}{% if significant %}{% url "confirm_significant_subscription" clist.id to_email today auth %}{% else %}{% url "confirm_subscription" clist.id to_email today auth %}{% endif %}
+https://{{ domain }}{% if significant %}{% url "confirm_significant_subscription" clist.id to_email today auth %}{% else %}{% url "confirm_subscription" clist.id to_email today auth %}{% endif %}
 
 Best regards,
 

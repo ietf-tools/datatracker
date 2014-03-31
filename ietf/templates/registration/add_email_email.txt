@@ -6,7 +6,7 @@ to the user account '{{ user }}' at '{{ domain }}'.
 If you requested this change, please confirm that this is your email
 address by clicking on following link:
 
-   http://{{ domain }}{% url "confirm_new_email" user today email auth %}
+   https://{{ domain }}{% url "confirm_new_email" user today email auth %}
 
 This link will expire in {{ expire }} days.
 

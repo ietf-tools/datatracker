@@ -47,6 +47,7 @@ from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, render, redirect
 from django.template import RequestContext
+from django.contrib.sites.models import Site
 
 
 from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
@@ -189,6 +190,7 @@ def agenda_txt(request, date=None):
     return render_to_response("iesg/agenda.txt", {
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
+            "domain": Site.objects.get_current().domain,
             }, context_instance=RequestContext(request), content_type="text/plain")
 
 def agenda_scribe_template(request, date=None):
@@ -203,6 +205,7 @@ def agenda_scribe_template(request, date=None):
             "date": data["date"],
             "sections": sections,
             "appendix_docs": appendix_docs,
+            "domain": Site.objects.get_current().domain,
             }, context_instance=RequestContext(request) )
 
 @role_required('Area Director', 'Secretariat')

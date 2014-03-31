@@ -13,7 +13,7 @@
           {% endif %}
           {% for ipr in doc.conflictdoc.ipr %}
               {% if ipr.ipr.status == 1 %}
-                  <br>IPR: <a href="http://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title }}</a>
+                  <br>IPR: <a href="https://{{ domain }}/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title }}</a>
               {% endif %}
           {% endfor %} 
       </div>

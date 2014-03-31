@@ -17,7 +17,7 @@
 
       {% for ipr in doc.ipr %}
           {% if ipr.ipr.status == 1 %}
-              <br>IPR: <a href="http://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title }}</a>
+              <br>IPR: <a href="https://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title }}</a>
           {% endif %}
       {% endfor %}
 

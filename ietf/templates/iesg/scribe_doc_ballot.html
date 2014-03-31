@@ -1,6 +1,6 @@
       {% with doc.active_ballot as ballot %}
       {% if ballot %}
-          <br><b>Discusses/comments</b> <a href="http://datatracker.ietf.org/doc/{{doc.canonical_name}}/ballot/">[ballot]</a>:
+          <br><b>Discusses/comments</b> <a href="https://datatracker.ietf.org/doc/{{doc.canonical_name}}/ballot/">[ballot]</a>:
           <ul>
           {% for p in ballot.active_ad_positions.values %}
               {% if p.pos %}
