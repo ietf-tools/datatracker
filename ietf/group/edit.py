@@ -22,7 +22,7 @@ from ietf.group.utils import save_group_in_history, can_manage_group_type
 from ietf.ietfauth.utils import has_role
 from ietf.person.forms import EmailsField
 from ietf.person.models import Person, Email
-from ietf.wginfo.mails import email_secretariat
+from ietf.group.mails import email_secretariat
 
 MAX_GROUP_DELEGATES = 3
 
@@ -170,7 +170,7 @@ def submit_initial_charter(request, group_type, acronym=None):
     return redirect('charter_submit', name=group.charter.name, option="initcharter")
 
 @login_required
-def edit(request, group_type, acronym=None, action="edit"):
+def edit(request, group_type=None, acronym=None, action="edit"):
     """Edit or create a group, notifying parties as
     necessary and logging changes as group events."""
     if not can_manage_group_type(request.user, group_type):
@@ -314,7 +314,7 @@ def edit(request, group_type, acronym=None, action="edit"):
                         )
         form = GroupForm(initial=init, group=group, group_type=group_type)
 
-    return render(request, 'wginfo/edit.html',
+    return render(request, 'group/edit.html',
                   dict(group=group,
                        form=form,
                        action=action))
@@ -348,7 +348,7 @@ def conclude(request, group_type, acronym):
     else:
         form = ConcludeForm()
 
-    return render(request, 'wginfo/conclude.html',
+    return render(request, 'group/conclude.html',
                   dict(form=form, group=group))
 
 
@@ -382,7 +382,7 @@ def customize_workflow(request, group_type, acronym):
 
             # redirect so the back button works correctly, otherwise
             # repeated POSTs fills up the history
-            return redirect("ietf.wginfo.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
+            return redirect("ietf.group.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 
         if action == "setnextstates":
             try:
@@ -399,7 +399,7 @@ def customize_workflow(request, group_type, acronym):
                 transitions, _ = GroupStateTransitions.objects.get_or_create(group=group, state=state)
                 transitions.next_states = next_states
 
-            return redirect("ietf.wginfo.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
+            return redirect("ietf.group.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 
         if action == "settagactive":
             active = request.POST.get("active") == "1"
@@ -413,7 +413,7 @@ def customize_workflow(request, group_type, acronym):
             else:
                 group.unused_tags.add(tag)
 
-            return redirect("ietf.wginfo.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
+            return redirect("ietf.group.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 
     # put some info for the template on tags and states
     unused_tags = group.unused_tags.all().values_list('slug', flat=True)
@@ -437,7 +437,7 @@ def customize_workflow(request, group_type, acronym):
         s.next_states_checkboxes = [(x in n, x in default_n, x) for x in states]
         s.used_next_states = [x for x in n if x.slug not in unused_states]
 
-    return render(request, 'wginfo/customize_workflow.html', {
+    return render(request, 'group/customize_workflow.html', {
             'group': group,
             'states': states,
             'tags': tags,

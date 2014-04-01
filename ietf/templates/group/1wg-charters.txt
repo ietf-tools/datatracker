@@ -1,0 +1,6 @@
+{% autoescape off %}{% load ietf_filters %}{% for area in areas %}{% for group in area.groups %}{{ group.acronym }}
+{% endfor %}{% endfor %}
+
+{% for area in areas %}{% for group in area.groups %}{% include "group/group_entry_with_charter.txt" %}{% endfor %}{% endfor %}{% endautoescape %}
+
+

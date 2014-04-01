@@ -49,6 +49,7 @@ from ietf.doc.models import State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.group.models import Group, Role
+from ietf.name.models import GroupTypeName
 from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type
 from ietf.utils.pipe import pipe
 
@@ -96,7 +97,7 @@ def wg_summary_area(request, group_type):
 
     areas = [a for a in areas if a.groups]
 
-    return render(request, 'wginfo/1wg-summary.txt',
+    return render(request, 'group/1wg-summary.txt',
                   { 'areas': areas },
                   content_type='text/plain; charset=UTF-8')
 
@@ -107,7 +108,7 @@ def wg_summary_acronym(request, group_type):
     groups = Group.objects.filter(type="wg", state="active").order_by("acronym").select_related("parent")
     for group in groups:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-    return render(request, 'wginfo/1wg-summary-by-acronym.txt',
+    return render(request, 'group/1wg-summary-by-acronym.txt',
                   { 'areas': areas,
                     'groups': groups },
                   content_type='text/plain; charset=UTF-8')
@@ -122,7 +123,7 @@ def wg_charters(request, group_type):
         for group in area.groups:
             fill_in_charter_info(group, include_drafts=True)
             group.area = area
-    return render(request, 'wginfo/1wg-charters.txt',
+    return render(request, 'group/1wg-charters.txt',
                   { 'areas': areas },
                   content_type='text/plain; charset=UTF-8')
 
@@ -138,7 +139,7 @@ def wg_charters_by_acronym(request, group_type):
     for group in groups:
         fill_in_charter_info(group, include_drafts=True)
         group.area = areas.get(group.parent_id)
-    return render(request, 'wginfo/1wg-charters-by-acronym.txt',
+    return render(request, 'group/1wg-charters-by-acronym.txt',
                   { 'groups': groups },
                   content_type='text/plain; charset=UTF-8')
 
@@ -162,7 +163,7 @@ def active_wgs(request):
         for group in area.groups:
             group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
 
-    return render(request, 'wginfo/active_wgs.html', { 'areas':areas })
+    return render(request, 'group/active_wgs.html', { 'areas':areas })
 
 def active_rgs(request):
     irtf = Group.objects.get(acronym="irtf")
@@ -172,25 +173,27 @@ def active_rgs(request):
     for group in groups:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
 
-    return render(request, 'wginfo/active_rgs.html', { 'irtf': irtf, 'groups': groups })
+    return render(request, 'group/active_rgs.html', { 'irtf': irtf, 'groups': groups })
     
 def bofs(request, group_type):
     groups = Group.objects.filter(type=group_type, state="bof")
-    return render(request, 'wginfo/bofs.html',dict(groups=groups))
+    return render(request, 'group/bofs.html',dict(groups=groups))
 
-def chartering_groups(request, group_type):
-    if group_type != "wg":
-        raise Http404
-
+def chartering_groups(request):
     charter_states = State.objects.filter(used=True, type="charter").exclude(slug__in=("approved", "notrev"))
-    groups = Group.objects.filter(type=group_type, charter__states__in=charter_states).select_related("state", "charter")
 
-    for g in groups:
-        g.chartering_type = get_chartering_type(g.charter)
+    group_types = GroupTypeName.objects.filter(slug__in=("wg", "rg"))
 
-    return render(request, 'wginfo/chartering_groups.html',
+    for t in group_types:
+        t.chartering_groups = Group.objects.filter(type=t, charter__states__in=charter_states).select_related("state", "charter")
+        t.can_manage = can_manage_group_type(request.user, t)
+
+        for g in t.chartering_groups:
+            g.chartering_type = get_chartering_type(g.charter)
+
+    return render(request, 'group/chartering_groups.html',
                   dict(charter_states=charter_states,
-                       groups=groups))
+                       group_types=group_types))
 
 
 def construct_group_menu_context(request, group, selected, others):
@@ -207,10 +210,10 @@ def construct_group_menu_context(request, group, selected, others):
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
     if is_chair or can_manage:
-        actions.append((u"Customize workflow", urlreverse("ietf.wginfo.edit.customize_workflow", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
+        actions.append((u"Customize workflow", urlreverse("ietf.group.edit.customize_workflow", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
     if group.state_id in ("active", "dormant") and can_manage:
-        actions.append((u"Request closing group", urlreverse("ietf.wginfo.edit.conclude", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
+        actions.append((u"Request closing group", urlreverse("ietf.group.edit.conclude", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
     d = {
         "group": group,
@@ -260,7 +263,7 @@ def group_documents(request, group_type, acronym):
 
     docs, meta, docs_related, meta_related = search_for_group_documents(group)
 
-    return render(request, 'wginfo/group_documents.html',
+    return render(request, 'group/group_documents.html',
                   construct_group_menu_context(request, group, "documents", {
                 'docs': docs,
                 'meta': meta,
@@ -309,7 +312,7 @@ def group_charter(request, group_type, acronym):
 
     can_manage = can_manage_group_type(request.user, group.type_id)
 
-    return render(request, 'wginfo/group_charter.html',
+    return render(request, 'group/group_charter.html',
                   construct_group_menu_context(request, group, "charter", {
                       "milestones_in_review": group.groupmilestone_set.filter(state="review"),
                       "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
@@ -324,7 +327,7 @@ def history(request, group_type, acronym):
 
     events = group.groupevent_set.all().select_related('by').order_by('-time', '-id')
 
-    return render(request, 'wginfo/history.html',
+    return render(request, 'group/history.html',
                   construct_group_menu_context(request, group, "history", {
                 "events": events,
                 }))
@@ -443,7 +446,7 @@ def make_dot(group):
         node.nodename=nodename(node.name)
         node.styles = get_node_styles(node,group)
 
-    return render_to_string('wginfo/dot.txt',
+    return render_to_string('group/dot.txt',
                              dict( nodes=nodes, edges=edges )
                             )
 

@@ -14,7 +14,7 @@ from ietf.doc.utils import get_chartering_type
 from ietf.group.models import Group, GroupMilestone, MilestoneGroupEvent
 from ietf.group.utils import save_milestone_in_history, can_manage_group_type, milestone_reviewer_for_group_type
 from ietf.name.models import GroupMilestoneStateName
-from ietf.wginfo.mails import email_milestones_changed
+from ietf.group.mails import email_milestones_changed
 
 def json_doc_names(docs):
     return json.dumps([{"id": doc.pk, "name": doc.name } for doc in docs])
@@ -317,7 +317,7 @@ def edit_milestones(request, group_type, acronym, milestone_set="current"):
 
     forms.sort(key=lambda f: f.milestone.due if f.milestone else datetime.date.max)
 
-    return render(request, 'wginfo/edit_milestones.html',
+    return render(request, 'group/edit_milestones.html',
                   dict(group=group,
                        title=title,
                        forms=forms,
@@ -379,7 +379,7 @@ def reset_charter_milestones(request, group_type, acronym):
 
         return redirect('group_edit_charter_milestones', group_type=group.type_id, acronym=group.acronym)
 
-    return render(request, 'wginfo/reset_charter_milestones.html',
+    return render(request, 'group/reset_charter_milestones.html',
                   dict(group=group,
                        charter_milestones=charter_milestones,
                        current_milestones=current_milestones,

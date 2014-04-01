@@ -194,7 +194,6 @@ INSTALLED_APPS = (
     'ietf.meeting',
     'ietf.utils',
     'ietf.redirects',
-    'ietf.wginfo',
     'ietf.submit',
     'ietf.sync',
     'ietf.community',

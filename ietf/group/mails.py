@@ -19,7 +19,7 @@ def email_secretariat(request, group, subject, text):
     text = strip_tags(text)
 
     send_mail(request, to, None, full_subject,
-              "wginfo/email_secretariat.txt",
+              "group/email_secretariat.txt",
               dict(text=text,
                    group=group,
                    group_url=settings.IDTRACKER_BASE_URL + urlreverse('group_charter', kwargs=dict(group_type=group.type_id, acronym=group.acronym)),
@@ -89,7 +89,7 @@ def email_milestone_review_reminder(group, grace_period=7):
 
     send_mail(None, to, None,
               subject,
-              "wginfo/reminder_milestones_need_review.txt",
+              "group/reminder_milestones_need_review.txt",
               dict(group=group,
                    milestones=milestones,
                    reviewer=milestone_reviewer_for_group_type(group.type_id),
@@ -116,7 +116,7 @@ def email_milestones_due(group, early_warning_days):
 
     send_mail(None, to, None,
               subject,
-              "wginfo/reminder_milestones_due.txt",
+              "group/reminder_milestones_due.txt",
               dict(group=group,
                    milestones=milestones,
                    today=today,
@@ -143,7 +143,7 @@ def email_milestones_overdue(group):
 
     send_mail(None, to, None,
               subject,
-              "wginfo/reminder_milestones_overdue.txt",
+              "group/reminder_milestones_overdue.txt",
               dict(group=group,
                    milestones=milestones,
                    url=settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(group_type=group.type_id, acronym=group.acronym))

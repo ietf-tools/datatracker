@@ -1,4 +1,4 @@
-{% extends "wginfo/group_base.html" %}
+{% extends "group/group_base.html" %}
 
 {% load ietf_filters %}
 {% block group_subtitle %}Charter{% endblock %}
@@ -47,7 +47,7 @@ is occasionally incorrect.</span>
       {% else %}
       none
       {% if can_manage %}
-      - <a href="{% url "ietf.wginfo.edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit Charter</a>
+      - <a href="{% url "ietf.group.edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit Charter</a>
       {% endif %}
       {% endif %}
     </td>
@@ -158,7 +158,7 @@ is occasionally incorrect.</span>
 
 <h2>{% if group.state_id == "proposed" %}Proposed{% endif %} Milestones</h2>
 
-{% include "wginfo/milestones.html" with milestones=group.milestones %}
+{% include "group/milestones.html" with milestones=group.milestones %}
 
 {% if milestones_in_review %}
 <p>+ {{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}

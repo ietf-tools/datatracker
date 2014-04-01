@@ -11,7 +11,7 @@ from ietf.doc.models import DocEvent
 
 class GroupChangesFeed(Feed):
     feed_type = Atom1Feed
-    description_template = "wginfo/feed_item_description.html"
+    description_template = "group/feed_item_description.html"
 
     def get_object(self, request, acronym):
         return Group.objects.get(acronym=acronym)

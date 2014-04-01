@@ -30,7 +30,7 @@ from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.wginfo.mails import email_secretariat
+from ietf.group.mails import email_secretariat
 
 
 class ChangeStateForm(forms.Form):
@@ -46,7 +46,7 @@ class ChangeStateForm(forms.Form):
         if group.type_id == "wg":
             state_field.queryset = state_field.queryset.filter(slug__in=("infrev", "intrev", "extrev", "iesgrev"))
         else:
-            state_field.queryset = state_field.queryset.filter(slug__in=("notrev", "approved"))
+            state_field.queryset = state_field.queryset.filter(slug__in=("intrev", "extrev", "approved"))
         # hide requested fields
         if self.hide:
             for f in self.hide:
@@ -147,7 +147,7 @@ def change_state(request, name, option=None):
 
                 email_state_changed(request, charter, "State changed to %s." % charter_state)
 
-                if charter_state.slug == "intrev":
+                if charter_state.slug == "intrev" and group.type_id == "wg":
                     if request.POST.get("ballot_wo_extern"):
                         create_ballot_if_not_open(charter, login, "r-wo-ext")
                     else:
@@ -198,13 +198,15 @@ def change_state(request, name, option=None):
     def state_pk(slug):
         return State.objects.get(used=True, type="charter", slug=slug).pk
 
-    info_msg = {
-        state_pk("infrev"): 'The %s "%s" (%s) has been set to Informal IESG review by %s.' % (group.type.name, group.name, group.acronym, login.plain_name()),
-        state_pk("intrev"): 'The %s "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat and inform the IAB.' % (group.type.name, group.name, group.acronym, login.plain_name()),
-        state_pk("extrev"): 'The %s "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (group.type.name, group.name, group.acronym, login.plain_name()),
-        }
+    info_msg = {}
+    if group.type_id == "wg":
+        info_msg[state_pk("infrev")] = 'The %s "%s" (%s) has been set to Informal IESG review by %s.' % (group.type.name, group.name, group.acronym, login.plain_name())
+        info_msg[state_pk("intrev")] = 'The %s "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat and inform the IAB.' % (group.type.name, group.name, group.acronym, login.plain_name())
+        info_msg[state_pk("extrev")] = 'The %s "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (group.type.name, group.name, group.acronym, login.plain_name())
 
-    states_for_ballot_wo_extern = State.objects.filter(used=True, type="charter", slug="intrev").values_list("pk", flat=True)
+    states_for_ballot_wo_extern = State.objects.none()
+    if group.type_id == "wg":
+        states_for_ballot_wo_extern = State.objects.filter(used=True, type="charter", slug="intrev").values_list("pk", flat=True)
 
     return render_to_response('doc/charter/change_state.html',
                               dict(form=form,
