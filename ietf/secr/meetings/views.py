@@ -93,6 +93,9 @@ def build_nonsession(meeting):
     for a new meeting, based on the last meeting
     '''
     last_meeting = get_last_meeting(meeting)
+    if not last_meeting:
+        return None
+    
     delta = meeting.date - last_meeting.date
     system = Person.objects.get(name='(system)')
     schedule = get_schedule(meeting)
@@ -121,8 +124,11 @@ def build_nonsession(meeting):
 
 def get_last_meeting(meeting):
     last_number = int(meeting.number) - 1
-    return Meeting.objects.get(number=last_number)
-
+    try:
+        return Meeting.objects.get(number=last_number)
+    except Meeting.DoesNotExist:
+        return None
+        
 def is_combined(session,meeting,schedule=None):
     '''
     Check to see if this session is using two combined timeslots
@@ -204,11 +210,13 @@ def send_notifications(meeting, groups, person):
         GroupEvent.objects.create(group=group,time=now,type='sent_notification',
                                   by=person,desc='sent scheduled notification for %s' % meeting)
 
-def sort_groups(meeting):
+def sort_groups(meeting,schedule=None):
     '''
     Similar to sreq.views.sort_groups
     Takes a Meeting object and returns a tuple scheduled_groups, unscheduled groups.
     '''
+    if not schedule:
+        schedule = meeting.agenda
     scheduled_groups = []
     unscheduled_groups = []
     #sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched','notmeet','canceled'))
@@ -216,7 +224,7 @@ def sort_groups(meeting):
     groups_with_sessions = [ s.group for s in sessions ]
     gset = set(groups_with_sessions)
     sorted_groups_with_sessions = sorted(gset, key = lambda instance: instance.acronym)
-    scheduled_sessions = ScheduledSession.objects.filter(schedule=meeting.agenda,session__isnull=False)
+    scheduled_sessions = ScheduledSession.objects.filter(schedule=schedule,session__isnull=False)
     groups_with_timeslots = [ x.session.group for x in scheduled_sessions ]
     for group in sorted_groups_with_sessions:
         if group in groups_with_timeslots:
@@ -358,15 +366,15 @@ def edit_meeting(request, meeting_id):
 
     if request.method == 'POST':
         button_text = request.POST.get('submit','')
-        if button_text == 'Save':
-            form = MeetingModelForm(request.POST, instance=meeting)
-            if form.is_valid():
-                form.save()
-                messages.success(request,'The meeting entry was changed successfully')
-                return redirect('meetings_view', meeting_id=meeting_id)
-
-        else:
+        if button_text == 'Cancel':
             return redirect('meetings_view', meeting_id=meeting_id)
+
+        form = MeetingModelForm(request.POST, instance=meeting)
+        if form.is_valid():
+            form.save()
+            messages.success(request,'The meeting entry was changed successfully')
+            return redirect('meetings_view', meeting_id=meeting_id)
+
     else:
         form = MeetingModelForm(instance=meeting)
 
@@ -559,7 +567,7 @@ def notifications(request, meeting_id):
 
     return render_to_response('meetings/notifications.html', {
         'meeting': meeting,
-        'groups': groups,
+        'groups': sorted(groups, key=lambda a: a.acronym),
         'last_notice': last_notice },
         RequestContext(request, {}),
     )
@@ -671,9 +679,8 @@ def schedule(request, meeting_id, schedule_name, acronym):
             return redirect('meetings_select_group', meeting_id=meeting_id,schedule_name=schedule_name)
 
         formset = NewSessionFormset(request.POST,initial=initial)
-        extra_form = ExtraSessionForm(request.POST)
 
-        if formset.is_valid() and extra_form.is_valid():
+        if formset.is_valid():
             # TODO formsets don't have has_changed until Django 1.3
             has_changed = False
             for form in formset.forms:
@@ -728,28 +735,15 @@ def schedule(request, meeting_id, schedule_name, acronym):
                         assign(session,next_slot,meeting,schedule=schedule)
                     # ---------------------------------------
 
-            # notify.  dont send if Tutorial, BOF or indicated on form
-            #notification_message = "No notification has been sent to anyone for this session."
-            #if (has_changed
-            #    and not extra_form.cleaned_data.get('no_notify',False)
-            #    and group.state.slug != 'bof'
-            #    and get_timeslot(session,schedule=schedule)):       # and the session is scheduled, else skip
-
-            #    send_notification(request, sessions)
-            #    notification_message = "Notification sent."
-
             if has_changed:
-                messages.success(request, 'Session(s) Scheduled for %s.  %s' %  (group.acronym, notification_message))
+                messages.success(request, 'Session(s) Scheduled for %s.' % group.acronym )
 
             return redirect('meetings_select_group', meeting_id=meeting_id,schedule_name=schedule_name)
 
-
     else:
         formset = NewSessionFormset(initial=initial)
-        extra_form = ExtraSessionForm()
 
     return render_to_response('meetings/schedule.html', {
-        'extra_form': extra_form,
         'group': group,
         'meeting': meeting,
         'schedule': schedule,
@@ -785,15 +779,15 @@ def select_group(request, meeting_id, schedule_name):
     if request.method == 'POST':
         group = request.POST.get('group',None)
         if group:
-            redirect_url = reverse('meetings_schedule', kwargs={'meeting_id':meeting_id,'acronym':group})
+            redirect_url = reverse('meetings_schedule', kwargs={'meeting_id':meeting_id,'acronym':group,'schedule_name':schedule_name})
         else:
-            redirect_url = reverse('meetings_select_group',kwargs={'meeting_id':meeting_id})
+            redirect_url = reverse('meetings_select_group',kwargs={'meeting_id':meeting_id,'schedule_name':schedule_name})
             messages.error(request, 'No group selected')
 
         return HttpResponseRedirect(redirect_url)
 
     # split groups into scheduled / unscheduled
-    scheduled_groups, unscheduled_groups = sort_groups(meeting)
+    scheduled_groups, unscheduled_groups = sort_groups(meeting,schedule)
 
     # prep group form
     wgs = filter(lambda a: a.type_id in ('wg','ag') and a.state_id=='active', unscheduled_groups)
@@ -947,12 +941,12 @@ def times_delete(request, meeting_id, schedule_name, time):
     parts = [ int(x) for x in time.split(':') ]
     dtime = datetime.datetime(*parts)
 
-    qs = meeting.agenda.scheduledsession_set.filter(timeslot__time=dtime,
-                                                      session__isnull=False)
+    # qs = meeting.agenda.scheduledsession_set.filter(timeslot__time=dtime,
+    #                                                  session__isnull=False)
 
-    if qs:
-        messages.error(request, 'ERROR deleting timeslot.  There is one or more sessions scheduled for this timeslot.')
-        return redirect('meetings_times', meeting_id=meeting_id,schedule_name=schedule_name)
+    #if qs:
+    #    messages.error(request, 'ERROR deleting timeslot.  There is one or more sessions scheduled for this timeslot.')
+    #    return redirect('meetings_times', meeting_id=meeting_id,schedule_name=schedule_name)
 
     TimeSlot.objects.filter(meeting=meeting,time=dtime).delete()
 

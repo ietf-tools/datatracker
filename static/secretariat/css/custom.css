@@ -490,7 +490,7 @@ tr.break td {
     border-top: 2px solid black;
 }
 
-#schedule-selector {
+#id_schedule_selector {
     display: inline;
 }
 

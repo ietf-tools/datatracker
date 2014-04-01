@@ -10,7 +10,7 @@
             <form id="meetings-meta-rooms" action="" method="post">{% csrf_token %}
               {{ formset.management_form }}
               {{ formset.non_form_errors }}
-              <table class="full-width">
+              <table id="id_rooms_table" class="full-width">
                 <thead>
                  <tr>
                    {% for field in formset.forms.0.visible_fields %}

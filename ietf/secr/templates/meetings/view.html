@@ -36,10 +36,10 @@
          <li><button onclick="window.location='{% url "meetings_edit_meeting" meeting_id=meeting.number %}'">Edit</button></li>
          <li><button onclick="window.location='{% url "meetings_notifications" meeting_id=meeting.number %}'">Notifications</button></li>
          <li><button onclick="window.location='{% url "meetings_blue_sheet" meeting_id=meeting.number %}'">Blue Sheets</button></li>
-         <li><form id="schedule-selector">
+         <li><form id="id_schedule_selector">
            <select name="forma" onchange="location = this.options[this.selectedIndex].value;">
+             <option value="">Select a schedule...</option>
              {% for sched in meeting.schedule_set.all %}
-               <option value="">Select a schedule...</option>
                <option value="{{ sched.name }}">{{ sched.name }}</option>
              {% endfor %}
            </select>
