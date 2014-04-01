@@ -589,8 +589,8 @@ def index_all_drafts(request):
 
         names.sort(key=lambda t: t[1])
 
-        names = ['<a href="/doc/' + name + '/">' + name +'</a>'
-                 for name, _ in names if name not in names_to_skip]
+        names = ['<a href="/doc/' + n + '/">' + n +'</a>'
+                 for n, __ in names if n not in names_to_skip]
 
         categories.append((state,
                       heading,

@@ -169,14 +169,14 @@ class Draft():
             filename = ""
             revision = ""
             try:
-                path, base = self.source.rsplit("/", 1)
+                __, base = self.source.rsplit("/", 1)
             except ValueError:
-                path, base = "", self.source
+                base = self.source
             if base.startswith("draft-"):
                 if '.' in base:
-                    name, ext = base.split(".", 1)
+                    name, __ = base.split(".", 1)
                 else:
-                    name, ext = base, ""
+                    name = base
                 revmatch = re.search("\d\d$", name)
                 if revmatch:
                     filename = name[:-3]
@@ -877,7 +877,7 @@ class Draft():
         _debug(" * Final company list: %s" % (companies,))
         _debug(" * Final companies_seen: %s" % (companies_seen,))
         self._author_info = authors        
-        self._authors_with_firm = [ "%s <%s> (%s)"%(full,email,company) for full,first,middle,last,suffix,email,company in authors ]
+        self._authors_with_firm = [ "%s <%s> (%s)"%(full,email,company) for full,first,middle,last,suffix,email,company in authors ] # pyflakes:ignore
         self._authors = [ "%s <%s>"%(full,email) if email else full for full,first,middle,last,suffix,email,company in authors ]
         self._authors.sort()
         _debug(" * Final author list: " + ", ".join(self._authors))

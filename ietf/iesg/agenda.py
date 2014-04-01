@@ -182,12 +182,12 @@ def fill_in_agenda_docs(date, sections, matches=None):
 
             doc.group.txt_link = settings.CHARTER_TXT_URL + "%s-%s.txt" % (doc.canonical_name(), doc.rev)
 
-        num = get_doc_section(doc)
-        if num: #  and num in sections
-            sections[num]["docs"].append(doc)
+        number = get_doc_section(doc)
+        if number: #  and num in sections
+            sections[number]["docs"].append(doc)
 
     # prune empty "For action" sections
-    empty_for_action = [num for num, section in sections.iteritems()
+    empty_for_action = [n for n, section in sections.iteritems()
                         if section["title"] == "For Action" and not section["docs"]]
     for num in empty_for_action:
         del sections[num]

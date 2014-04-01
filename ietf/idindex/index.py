@@ -243,14 +243,14 @@ def active_drafts_index_by_group(extra_values=()):
 
     # put docs into groups
     for d in docs_dict.itervalues():
-        g = groups_dict.get(d["group_id"])
-        if not g:
+        group = groups_dict.get(d["group_id"])
+        if not group:
             continue
 
-        if not hasattr(g, "active_drafts"):
-            g.active_drafts = []
+        if not hasattr(group, "active_drafts"):
+            group.active_drafts = []
 
-        g.active_drafts.append(d)
+        group.active_drafts.append(d)
 
     groups = [g for g in groups_dict.itervalues() if hasattr(g, "active_drafts")]
     groups.sort(key=lambda g: g.acronym)
