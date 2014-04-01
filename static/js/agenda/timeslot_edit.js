@@ -18,10 +18,7 @@
 
 //////////////-GLOBALS----////////////////////////////////////////
 
-var meeting_objs = {};    // contains a list of session objects
-var slot_status = {};     // the status of the slot, in format { room_year-month-day_hour: { free: t/f, timeslotid: id } }
-var slot_objs   = {};
-var group_objs = {};      // list of working groups
+var agenda_globals;
 
 var days = [];
 var legend_status = {};   // agenda area colors.
@@ -59,41 +56,102 @@ $(document).ready(function() {
    This is ran at page load and sets up the entire page.
 */
 function init_timeslot_edit(){
+    agenda_globals = new AgendaGlobals();
     log("initstuff() ran");
-    setup_slots();
+    var directorpromises = [];
+    setup_slots(directorpromises);
+
     log("setup_slots() ran");
-    fill_timeslots();
 
-    resize_listeners();
-    static_listeners();
+    $.when.apply($,directorpromises).done(function() {
+        fill_timeslots();
+        resize_listeners();
 
-    $(".delete_room").unbind('click');
-    $(".delete_room").click(delete_room);
+        static_listeners();
 
-    $("#add_room").unbind('click')
-    $("#add_room").click(add_room);
+        $(".delete_room").unbind('click');
+        $(".delete_room").click(delete_room);
 
-    $(".delete_slot").unbind('click');
-    $(".delete_slot").click(delete_slot);
+        $("#add_room").unbind('click')
+        $("#add_room").click(add_room);
 
-    $("#add_day").unbind('click')
-    $("#add_day").click(add_day);
+        $(".delete_slot").unbind('click');
+        $(".delete_slot").click(delete_slot);
+
+        $("#add_day").unbind('click')
+        $("#add_day").click(add_day);
+        console.log("timeslot editor ready");
+    });
+
+    /* datepicker stuff */
+    create_datetimepicker();
+
+    /* hide the django form stuff we don't need */
+    $("#id_duration").hide();
+    $("label[for*='id_duration']").hide();
+    $("#duration_time").val("01:00");
+    format_datetime();
+
+    $("#pageloaded").show();
+}
+
+function create_datetimepicker(){
+    $("#start_date").datepicker({
+	dateFormat: "yy-mm-dd",
+    });
+    $("#duration_time").timepicker({
+	timeFormat: 'HH:mm',
+	hourMin: 0,
+    	hourMax: 8,
+    	stepMinute:5,
+	defaultValue: "01:00",
+	onSelect: function(selected){
+	    $("input[name*='duration_hours']").val($(this).val().split(':')[0]);
+	    $("input[name*='duration_minutes']").val($(this).val().split(':')[1]);
+	    format_datetime();
+    	}
+    })
+
+    $("#id_time").datetimepicker({
+    	timeFormat: 'HH:mm',
+    	dateFormat: "yy-mm-dd",
+    	defaultValue: first_day,
+    	hourMin: 9,
+    	hourMax: 22,
+    	stepMinute:5,
+    	onSelect: function(selected){
+    	    duration_set($(this).datetimepicker('getDate'));
+	    format_datetime()
+    	}
+    });
+    $("#id_time").datepicker('setDate', first_day);
+}
+
+function format_datetime(){
+    var startDate = $("#id_time").datetimepicker('getDate');
+    var endTime = $("#id_time").datetimepicker('getDate');
+    endTime.setHours(endTime.getHours()+parseInt($("#duration_time").val().split(':')[0]))
+    endTime.setMinutes(endTime.getMinutes()+parseInt($("#duration_time").val().split(':')[1]))
+    $("#timespan").html(moment($("#id_time").datetimepicker('getDate')).format('HH:mm') + " <-> " + moment(endTime).format('HH:mm'));
+}
+
+function duration_set(d){
+    $("input[name*='duration_hours']").val(d.getHours());
+    $("input[name*='duration_minutes']").val(d.getMinutes());
 }
 
 function add_room(event) {
     event.preventDefault();
-    var rooms_url  = $(event.target).attr('href');
 
     $("#add_room_dialog").dialog({
         "title" : "Add new room",
-      buttons : {
-        "Cancel" : function() {
-            $(this).dialog("close");
+        buttons : {
+            "Cancel" : function() {
+                $(this).dialog("close");
+            }
         }
-      }
     });
-
-    $("#room_delete_dialog").dialog("open");
+    $("#add_room_dialog").dialog("open");
 }
 
 function delete_room(event) {
@@ -168,33 +226,29 @@ function delete_slot(event) {
 }
 
 function fill_timeslots() {
-    $.each(slot_status, function(key) {
-        ssid_arr = slot_status[key];
-
-	for(var q = 0; q<ssid_arr.length; q++){
-	    ssid = ssid_arr[q];
-            insert_timeslotedit_cell(ssid);
-	}
+    // add no_timeslot class to all timeslots, it will be removed
+    // when an item is placed into the slot.
+    $(".agenda_slot").addClass("no_timeslot");
+    $.each(agenda_globals.timeslot_bydomid, function(key) {
+        ts = agenda_globals.timeslot_bydomid[key];
+        insert_timeslotedit_cell(ts);
     });
+
+    // now add a create option for every slot which hasn't got a timeslot
+    $.each($(".no_timeslot"),function(slot) {
+        create_timeslotedit_cell(this);
+    });
+
 }
 
-function insert_timeslotedit_cell(ssid) {
-    var domid  = ssid.domid
-    var roomtype=ssid.roomtype
-    var slot_id = ("#"+domid)
-
+function build_select_box(roomtype, domid, slot_id, select_id) {
+    //console.log("updating for", ts);
     roomtypesession="";
     roomtypeother="";
     roomtypeplenary="";
     roomtypereserved="";
     roomtypeclass="";
     roomtypeunavailable="";
-    //console.log("domid: "+domid+" has roomtype: "+roomtype)
-    $(slot_id).removeClass("agenda_slot_unavailable")
-    $(slot_id).removeClass("agenda_slot_other")
-    $(slot_id).removeClass("agenda_slot_session")
-    $(slot_id).removeClass("agenda_slot_plenary")
-    $(slot_id).removeClass("agenda_slot_reserved")
 
     if(roomtype == "session") {
         roomtypesession="selected";
@@ -213,7 +267,6 @@ function insert_timeslotedit_cell(ssid) {
         roomtypeclass="agenda_slot_unavailable";
     }
 
-    var select_id = domid + "_select"
     html = "<form action=\"/some/place\" method=\"post\"><select id='"+select_id+"'>";
     html = html + "<option value='session'     "+roomtypesession+" id='option_"+domid+"_session'>session</option>";
     html = html + "<option value='other'       "+roomtypeother+" id='option_"+domid+"_other'>non-session</option>";
@@ -222,9 +275,26 @@ function insert_timeslotedit_cell(ssid) {
     html = html + "<option value='unavail'     "+roomtypeunavailable+" id='option_"+domid+"_unavail'>unavailable</option>";
     html = html + "</select>";
 
-
     $(slot_id).html(html)
-    $(slot_id).addClass(roomtypeclass)
+    $(slot_id).addClass(roomtypeclass);
+    return roomtypeclass;
+}
+
+
+function insert_timeslotedit_cell(ts) {
+    var roomtype=ts.roomtype;
+    var domid   =ts.domid;
+    var slot_id =("#" + domid);
+
+    $(slot_id).removeClass("agenda_slot_unavailable")
+    $(slot_id).removeClass("agenda_slot_other")
+    $(slot_id).removeClass("agenda_slot_session")
+    $(slot_id).removeClass("agenda_slot_plenary")
+    $(slot_id).removeClass("agenda_slot_reserved")
+    $(slot_id).removeClass("no_timeslot");
+
+    var select_id = domid + "_select";
+    var roomtypeclass = build_select_box(roomtype, domid, slot_id, select_id);
 
     $("#"+select_id).change(function(eventObject) {
 	start_spin();
@@ -239,18 +309,68 @@ function insert_timeslotedit_cell(ssid) {
                 } else {
                     stop_spin();
                     for(var key in json) {
-	                ssid[key]=json[key];
+	                ts[key]=json[key];
                     }
-                    console.log("server replied, updating cell contents: "+ssid.roomtype);
-                    insert_timeslotedit_cell(ssid);
+                    console.log("server replied, updating cell contents: "+ts.roomtype);
+                    insert_timeslotedit_cell(ts);
                 }
             },
 	    {
-		'timeslot_id': ssid.timeslot_id,
+                'meeting_num': meeting_number,
+		'timeslot_id': ts.timeslot_id,
                 'purpose': newpurpose,
 	    });
     });
+}
 
+var __debug_object;
+function create_timeslotedit_cell(slot_id) {
+    var roomtype = "unavailable";
+
+    __debug_object = object;
+
+    var object = $(slot_id);
+    var room = object.attr('slot_room');
+    var time = object.attr('slot_time');
+    var duration=object.attr('slot_duration');
+    var domid= object.attr('id');
+
+    //$(slot_id).removeClass("agenda_slot_unavailable")
+    $(slot_id).removeClass("agenda_slot_other")
+    $(slot_id).removeClass("agenda_slot_session")
+    $(slot_id).removeClass("agenda_slot_plenary")
+    $(slot_id).removeClass("agenda_slot_reserved")
+
+    var select_id = domid + "_select";
+    var roomtypeclass = build_select_box(roomtype, "default", slot_id, select_id);
+
+    $("#"+select_id).change(function(eventObject) {
+	start_spin();
+        var newpurpose = $("#"+select_id).val()
+        console.log("creating setting id: #"+select_id+" to "+newpurpose+" ("+roomtypeclass+")");
+
+        Dajaxice.ietf.meeting.update_timeslot_purpose(
+            function(json) {
+                if(json == "") {
+                    console.log("No reply from server....");
+                } else {
+                    stop_spin();
+                    for(var key in json) {
+	                ts[key]=json[key];
+                    }
+                    console.log("server replied, updating cell contents: "+ts.roomtype);
+                    insert_timeslotedit_cell(ts);
+                }
+            },
+	    {
+		'timeslot_id': "0",            /* 0 indicates to make a new one */
+                'meeting_num': meeting_number,
+                'room_id': room,
+                'time'   : time,
+                'duration':duration,
+                'purpose': newpurpose,
+	    });
+    });
 }
 
 /*

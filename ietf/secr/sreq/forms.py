@@ -1,6 +1,8 @@
 from django import forms
 
 from ietf.group.models import Group
+from ietf.meeting.models import ResourceAssociation
+from ietf.person.forms import EmailsField
 
 
 # -------------------------------------------------
@@ -44,12 +46,11 @@ def join_conflicts(data):
 
 class GroupSelectForm(forms.Form):
     group = forms.ChoiceField()
-    
+
     def __init__(self,*args,**kwargs):
         choices = kwargs.pop('choices')
         super(GroupSelectForm, self).__init__(*args,**kwargs)
         self.fields['group'].widget.choices = choices
-
 
 class SessionForm(forms.Form):
     num_session = forms.ChoiceField(choices=NUM_SESSION_CHOICES)
@@ -65,6 +66,8 @@ class SessionForm(forms.Form):
     wg_selector2 = forms.ChoiceField(choices=WG_CHOICES,required=False)
     wg_selector3 = forms.ChoiceField(choices=WG_CHOICES,required=False)
     third_session = forms.BooleanField(required=False)
+    resources     = forms.MultipleChoiceField(choices=[(x.pk,x.desc) for x in ResourceAssociation.objects.all()], widget=forms.CheckboxSelectMultiple,required=False)
+    bethere       = EmailsField(label="Must be present", required=False)
 
     def __init__(self, *args, **kwargs):
         super(SessionForm, self).__init__(*args, **kwargs)
@@ -85,7 +88,7 @@ class SessionForm(forms.Form):
         if self.initial and 'length_session3' in self.initial:
             if self.initial['length_session3'] != '0' and self.initial['length_session3'] != None:
                 self.fields['third_session'].initial = True
-                
+
     def clean_conflict1(self):
         conflict = self.cleaned_data['conflict1']
         check_conflict(conflict)

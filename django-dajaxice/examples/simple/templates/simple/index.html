@@ -1,0 +1,13 @@
+{% load dajaxice_templatetags %}
+<html>
+<head>
+{% dajaxice_js_import 'nocsrf' %}
+</head>
+<body>
+    <button onclick="Dajaxice.simple.hello(function(d){alert(d.message);})">Hello</button>
+    <button onclick="Dajaxice.simple.bye(function(d){alert(d.message);})">Bye</button>
+    <button onclick="Dajaxice.more.complex.bye(function(d){alert(d.message);})">Complex Bye</button>
+    <button onclick="Dajaxice.simple.lol(function(d){alert(d.message);})">LOL</button>
+    <button onclick="Dajaxice.simple.get_args(function(d){alert(d.message);}, {'foo': 'var'})">GET args</button>
+</body>
+</html>

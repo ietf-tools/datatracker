@@ -35,9 +35,10 @@
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }}
-  &raquo; <a href="../../">Meetings</a>
-  &raquo; <a href="{% url "meetings_view" meeting_id=meeting.number %}">{{ meeting }}</a>
-  &raquo; <a href="{% url "meetings_select_group" meeting_id=meeting.number %}">Select</a>
+  &raquo; <a href="{% url "meetings" %}">Meetings</a>
+  &raquo; <a href="{% url "meetings_view" meeting_id=meeting.number %}">{{ meeting.number }}</a>
+  &raquo; <a href="{% url "meetings_select" meeting_id=meeting.number schedule_name=schedule.name %}">{{ schedule.name }}</a>
+  &raquo; <a href="{% url "meetings_select_group" meeting_id=meeting.number schedule_name=schedule.name %}">Select</a>
   &raquo; {{ group.acronym }}
 {% endblock %}
 
@@ -66,16 +67,11 @@
           {% endfor %}
     </div> <!-- inline-group -->
     
-    <table class="full-width amstable">
-      <col width="200">
-      {{ extra_form }}
-    </table>
-    
       <div class="button-group">
        <ul>
          <li><button type="submit" name="submit" value="Save">Save</button></li>
          <li><button type="button" onclick="if (window.confirm('This group will be permanently removed from the agenda and scheduling tool')) { window.location='{% url "meetings_remove_session" meeting_id=meeting.number acronym=group.acronym %}' };">Remove this group from agenda</button></li>
-         <li><button type="button" onclick="window.location='{% url "meetings_select_group" meeting_id=meeting.number %}'">Back</button></li>
+         <li><button type="button" onclick="window.location='{% url "meetings_select_group" meeting_id=meeting.number schedule_name=schedule.name %}'">Back</button></li>
         </ul>
       </div> <!-- button-group -->
       

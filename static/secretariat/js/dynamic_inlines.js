@@ -59,7 +59,7 @@ $(function() {
     '</ul>'
     $('.inline-group').each(function(i) {
         //prefix is in the name of the input fields before the "-"
-        var prefix = $("input[type='hidden']", this).attr("name").split("-")[0]
+        var prefix = $("input[type='hidden'][name!='csrfmiddlewaretoken']", this).attr("name").split("-")[0]
         $(this).append(html_template.replace("{{prefix}}", prefix))
     })
 })

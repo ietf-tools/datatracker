@@ -26,6 +26,13 @@
           <td>Other WGs that included {{ group }} in their conflict list:</td>
           <td>{% if session_conflicts %}{{ session_conflicts }}{% else %}<i>None so far</i>{% endif %}</td>
         </tr>
+        <tr class="row2">
+          <td>Resources requested:</td>
+          <td>{% if session.resources %}<ul>{% for resource in session.resources %}<li>{{ resource.desc }}</li>{% endfor %}</ul>{% else %}<i>None so far</i>{% endif %}</td>
+        </tr>
+        <tr class="row1">
+          <td>People who must be present:</td>
+          <td>{% if session.bethere %}<ul>{% for email in session.bethere %}<li>{{ email.person }}</li>{% endfor %}</ul>{% else %}<i>None</i>{% endif %}</td>
         {% autoescape off %}
         <tr class="row2"><td>Special Requests:</td><td>{{ session.comments }}</td></tr>
         {% endautoescape %}

@@ -61,25 +61,23 @@ def get_area_list_from_sessions(scheduledsessions, num):
         'session__group__parent__acronym').distinct().values_list(
         'session__group__parent__acronym',flat=True)
 
-def build_all_agenda_slices(scheduledsessions, all = False):
+def build_all_agenda_slices(meeting):
     time_slices = []
     date_slices = {}
 
-    for ss in scheduledsessions:
-        if(all or ss.session != None):# and len(ss.timeslot.session.agenda_note)>1):
-            ymd = ss.timeslot.time.date()
+    for ts in meeting.timeslot_set.exclude(type__in=['reg','break']).order_by('time','name'):
+            ymd = ts.time.date()
 
-            if ymd not in date_slices and ss.timeslot.location != None:
+            if ymd not in date_slices and ts.location != None:
                 date_slices[ymd] = []
                 time_slices.append(ymd)
 
             if ymd in date_slices:
-                if [ss.timeslot.time, ss.timeslot.time+ss.timeslot.duration] not in date_slices[ymd]:   # only keep unique entries
-                    date_slices[ymd].append([ss.timeslot.time, ss.timeslot.time+ss.timeslot.duration])
+                if [ts.time, ts.time+ts.duration] not in date_slices[ymd]:   # only keep unique entries
+                    date_slices[ymd].append([ts.time, ts.time+ts.duration])
 
     time_slices.sort()
     return time_slices,date_slices
-
 
 def get_scheduledsessions_from_schedule(schedule):
    ss = schedule.scheduledsession_set.filter(timeslot__location__isnull = False).exclude(session__isnull = True).order_by('timeslot__time','timeslot__name','session__group__group')

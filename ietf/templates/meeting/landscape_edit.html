@@ -30,7 +30,6 @@
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.sortable.min.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.accordion.min.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.draggable.min.js'></script>
-<!-- <script type='text/javascript' src='/js/jquery-ui-1.8.11.custom.min.js'></script> -->
 
 {% dajaxice_js_import %}
 
@@ -44,14 +43,17 @@
 <script type='text/javascript'>
 
 
-meeting_number = {{ meeting.number }};
-schedule_id    = {{ schedule.id }};
+var meeting_number = "{{ meeting.number }}";
+var schedule_id    = {{ schedule.id }};
+var schedule_owner_href = "{{ schedule.owner_email }}";
+var schedule_name  = "{{ schedule.name }}";
 var meeting_base_url = "{{ meeting_base_url }}";
 var site_base_url = "{{ site_base_url }}";
-total_days = {{time_slices|length}};
-total_rooms = {{rooms|length}};
+var scheduledsession_post_href = "{% url "ietf.meeting.ajax.scheduledsessions_json" meeting.number schedule.name %}";
+var total_days = {{time_slices|length}};
+var total_rooms = {{rooms|length}};
 
-function setup_slots(){
+function setup_slots(promiselist){
 {% for day in time_slices %}
     days.push("{{day}}");
 {% endfor %}
@@ -63,39 +65,15 @@ area_directors["{{ad.group.acronym}}"] = [];
 area_directors["{{ad.group.acronym}}"].push(find_person_by_href("{{ad.person.defurl}}"));
 {% endfor %}
 
-{% autoescape off %}
-{% for s in session_jsons %}
-   session_obj({{s}});
-{% endfor %}
-{% endautoescape %}
+var ts_promise = load_timeslots("{% url "ietf.meeting.ajax.timeslot_slotsurl" meeting.number %}");
+var sess_promise = load_sessions("{% url "ietf.meeting.ajax.sessions_json" meeting.number %}");
+promiselist.push(ts_promise);
+promiselist.push(sess_promise);
 
-{% for s in scheduledsessions %}
-   make_ss({ "scheduledsession_id": "{{s.id}}",
-     "empty": "{{s.empty_str}}",
-     "timeslot_id":"{{s.timeslot.id}}",
-     "session_id" :"{{s.session.id}}",
-     "pinned" :"{{s.pinned}}",
-     {% if s.session %}{% if s.extendedfrom %}"extendedfrom_id":"{{s.extendedfrom.id}}",
-     {% endif %}{% endif %}"room"       :"{{s.timeslot.location.name|slugify}}",
-     {% if s.slot_to_the_right %}"following_timeslot_id":"{{s.slot_to_the_right.id}}",
-     {% endif %}"roomtype"   :"{{s.slottype}}",
-     "time"       :"{{s.timeslot.time|date:'Hi' }}",
-     "date"       :"{{s.timeslot.time|date:'Y-m-d'}}",
-     "domid"      :"{{s.timeslot.js_identifier}}"});
-{% endfor %}
-
-   make_ss({ "scheduledsession_id": 0,
-     "empty": true,
-     "timeslot_id":"Unassigned",
-     "session_id" :null,
-     "room"       :"unassigned",
-     "time"       :null,
-     "date"       :null,
-     "domid"      :"sortable-list"});
+var ss_promise = load_scheduledsessions(ts_promise, sess_promise, scheduledsession_post_href);
+promiselist.push(ss_promise);
 
    console.log("setup_slots run");
-
-   calculate_room_select_box();
 
 {% for area in area_list %}
    legend_status["{{area.upcase_acronym}}"] = true;
@@ -165,7 +143,6 @@ area_directors["{{ad.group.acronym}}"].push(find_person_by_href("{{ad.person.def
 
 <div class="agenda_div">
 
-
 <div id="dialog-confirm" title="" style="display:none">
   <p>
     <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
@@ -189,135 +166,6 @@ area_directors["{{ad.group.acronym}}"].push(find_person_by_href("{{ad.person.def
     <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
     Are you sure you want to put two sessions into the same slot?
   </p>
-</div>
-
-<table id="meetings" class="ietf-navbar" style="width:100%">
-<tr>
-  <th class="schedule_title"><div id="spinner"><!-- spinney goes here --></div></th>
-{% for day in time_slices %}
-  <th colspan="{{date_slices|colWidth:day}}" id="{{day|date:'Y-m-d'}}-btn" class=" day_{{day}} agenda_slot_title agenda_slot_unavailable">
-    <div id="close_{{day|date:'Y-m-d'}}" class="close top_left very_small close_day">x</div>
-    {{day|date:'D'}}&nbsp;({{day}})
-
-  </th>
-  <th class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer" id="">
-    <div class="ui-widget-content ui-resizable" id="resize-{{day|date:'Y-m-d'}}-spacer">
-      <div class="spacer_grip ui-resizable-handle ui-resizable-e"></div>
-    </div>
-</th>
-{% endfor %}
-</tr>
-    <tr>
-      <th class="th_column"><button id="show_all_button" class="styled_button">show all</button></th>
-    {% for day in time_slices %}
-	  {% for slot in date_slices|lookup:day %}
-	      <th class="day_{{day}}-{{slot.0|date:'Hi'}} day_{{day}} room_title ">{{slot.0|date:'Hi'}}-{{slot.1|date:'Hi'}} </th>
-          {% endfor %}
-
-              <th class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer"></th>
-    {% endfor %}
-
-
-
-
-
-  {% for r in rooms %}
-  <tr id="{{r.name|to_acceptable_id}}" class="{% cycle 'agenda_row_alt' '' %} agenda_slot">
-    <th class="vert_time">
-      <div class="close very_small close_room top_left small_button" id="close_{{r.name|to_acceptable_id}}">X</div>
-      <div class="right room_name">{{r.name}} <span class="capacity">({{r.capacity}})</span></div>
-
-      <!-- <span class="hide_room light_blue_border">X</span><span class="left">{{r.name}}</span>-->
-    </th>
-    {% for day in time_slices %}
-      {% for slot in date_slices|lookup:day %}
-        <td id="{{r.name|slugify}}_{{day}}_{{slot.0|date:'Hi'}}" class="day_{{day}} agenda-column-{{day}}-{{slot.0|date:'Hi'}} agenda_slot agenda_slot_unavailable" capacity="{{r.capacity}}" ></td>
-      {% endfor %}
-        <td class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer"></td>
-    {% endfor %}
-  </tr>
-  {% endfor %}
-</table>
-
-
-
-</div>
-
-
-<div id="session-info" class="ui-droppable bucket-list room_title">
-  <div class="agenda_slot_title"><b>Session Information:</b></div>
-
-  <div class="ss_info_box">
-    <div class="ss_info ss_info_left">
-      <table>
-	<tr><td class="ss_info_name_short">Group:</td><td><span id="info_grp"></span>
-            <!-- <button id="agenda_sreq_button" class="right">Edit Request</button> --></tr>
-	<tr><td class="ss_info_name_short">Name:</td> <td d="info_name"></td></tr>
-	<tr><td class="ss_info_name_short">Area:</td> <td><span id="info_area"></span><button id="show_all_area" class="right">Show All</button></td></tr>
-      </table>
-    </div>
-
-    <div class="ss_info ss_info_right">
-      <table>
-	<tr><td class="ss_info_name_long">Duration/Capacity:</td><td class="info_split" id="info_duration"></td> <td class="info_split" id="info_capacity"></td></tr>
-	<tr><td class="ss_info_name_long">Location:</td><td colspan=2 id="info_location"></td></tr>
-	<tr><td class="ss_info_name_long">Responsible AD:</td><td colspan=2 id="info_responsible"></td></tr>
-	<tr><td class="ss_info_name_long">Requested By:</td><td colspan=2 id="info_requestedby"></td></tr>
-      </table>
-    </div>
-
-    <div id="conflict_table">
-      <div id="special_requests">Special Requests</div>
-      <table>
-	<tbody id="conflict_table_body">
-	  <tr class="conflict_list_row">
-            <td class="conflict_list_title">
-              Group conflicts
-            </td>
-	    <td id="conflict_group_list">
-            <ul>
-            </ul>
-            </td>
-          </tr>
-	  <tr class="conflict_list_row">
-            <td class="conflict_list_title">
-              <b>be present</b>
-            </td>
-	    <td id="conflict_people_list">
-            <ul>
-            </ul>
-            </td>
-          </tr>
-	</tbody>
-      </table>
-    </div>
-    <div class="agenda_find_free"><button class="agenda_selected_buttons small_button" id="find_free">Find Free</button></div>
-    <div class="agenda_double_slot button_disabled">
-      <button class="agenda_selected_buttons small_button" disabled
-      id="double_slot">Extend</button>
-    </div>
-    <div id="agenda_pin_slot" class="button_disabled">
-      <button class="agenda_selected_buttons small_button" disabled
-      id="pin_slot">Pin</button>
-    </div>
-    <div class="color_legend">
-      {% for area in area_list %}
-      <span class="{{area.upcase_acronym}}-scheme"><input class='color_checkboxes' type="checkbox" id="{{area.upcase_acronym}}" value="{{area.upcase_acronym}}-value" checked>{{area.upcase_acronym}}</span>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="agenda_save_box">
-
-    <div id="agenda_title"><b>Agenda name: </b><span>{{schedule.name}}</span></div>
-    <div id="agenda_saveas">
-      <form action="{{saveasurl}}" method="post">{% csrf_token %}
-        {{ saveas.as_p }}
-        <input type="submit" name="saveas" value="saveas">
-      </form>
-    </div>
-  </div>
-
 </div>
 
 <!-- some boxes for dialogues -->
@@ -349,14 +197,171 @@ area_directors["{{ad.group.acronym}}"].push(find_person_by_href("{{ad.person.def
   </p>
 </div>
 
-<div id="can-extend-dialog" title="" class="ui-dialog dialog" style="display:none">
+
+<table id="meetings" class="ietf-navbar" style="width:100%">
+<tr>
+  <th class="schedule_title"><div id="pageloaded" style="display:none">loaded</div><div id="spinner"><!-- spinney goes here --></div></th>
+  <th></th>
+{% for day in time_slices %}
+  <th colspan="{{date_slices|colWidth:day}}" id="{{day|date:'Y-m-d'}}-btn" class=" day_{{day}} agenda_slot_title agenda_slot_unavailable">
+    <div id="close_{{day|date:'Y-m-d'}}" class="close top_left very_small close_day">x</div>
+    {{day|date:'D'}}&nbsp;({{day}})
+
+  </th>
+  <th class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer" id="">
+    <div class="ui-widget-content ui-resizable" id="resize-{{day|date:'Y-m-d'}}-spacer">
+      <div class="spacer_grip ui-resizable-handle ui-resizable-e"></div>
+    </div>
+  </th>
+{% endfor %}
+</tr>
+
+<tr>
+      <th class="th_column"><button id="show_all_button" class="styled_button">show all</button></th>
+      <th><!-- resources --></th>
+    {% for day in time_slices %}
+	  {% for slot in date_slices|lookup:day %}
+	      <th class="day_{{day}}-{{slot.0|date:'Hi'}} day_{{day}} room_title ">{{slot.0|date:'Hi'}}-{{slot.1|date:'Hi'}} </th>
+
+          {% endfor %}
+              <th class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer"></th>
+
+    {% endfor %}
+</tr>
+
+
+
+
+  {% for r in rooms %}
+  <tr id="{{r.name|to_acceptable_id}}" class="{% cycle 'agenda_row_alt' '' %} agenda_slot">
+    <th class="vert_time">
+      <div class="close very_small close_room top_left small_button" id="close_{{r.name|to_acceptable_id}}">X</div>
+      <div class="right room_name">{{r.name}} <span class="capacity">({{r.capacity}})</span></div>
+    </th>
+    <th class="room_features">
+      <div class="resource_list">
+      {% for resource in r.resources.all %}
+      <span class="resource_image">
+      <img src="/images/{{ resource.icon }}" height=24 alt="{{resource.desc}}" title="{{resource.desc}}"/>
+      </span>
+      {% endfor %}
+      </div>
+    </th>
+    {% for day in time_slices %}
+      {% for slot in date_slices|lookup:day %}
+        <td id="{{r.domid}}_{{day}}_{{slot.0|date:'Hi'}}" class="day_{{day}} agenda-column-{{day}}-{{slot.0|date:'Hi'}} agenda_slot agenda_slot_unavailable" capacity="{{r.capacity}}" ></td>
+      {% endfor %}
+        <td class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer"></td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+
+
+
 </div>
 
-<div id="can-not-extend-dialog" title="" class="ui-dialog dialog" style="display:none">
-  <p>
-    <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
-    You can not extend this session. The slot is not available.
-  </p>
+
+<div id="session-info" class="ui-droppable bucket-list room_title">
+  <div class="agenda_slot_title"><b>Session Information:</b></div>
+
+  <div class="ss_info_box">
+    <div class="ss_info ss_info_left">
+      <table>
+	<tr><td class="ss_info_name_short">Group:</td><td><span id="info_grp"></span>
+            <!-- <button id="agenda_sreq_button" class="right">Edit Request</button> --></tr>
+	<tr><td class="ss_info_name_short">Name:</td> <td id="info_name"></td></tr>
+	<tr><td class="ss_info_name_short">Area:</td> <td><span id="info_area"></span>
+            <button id="show_all_area" class="right">Show All</button></td></tr>
+        <tr>
+          <td colspan=2>
+            <div class="agenda_nice_button" id="agenda_find_free">
+              <button class="agenda_selected_buttons small_button" id="find_free">Find Free</button>
+            </div>
+            <div class="agenda_nice_button button_disabled" id="agenda_double_slot">
+              <button class="agenda_selected_buttons small_button" disabled id="double_slot">Extend</button>
+            </div>
+            <div id="agenda_pin_slot" class="agenda_nice_button button_disabled">
+              <button class="agenda_selected_buttons small_button" disabled id="pin_slot">Pin</button>
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </div>
+
+    <div class="ss_info ss_info_right">
+      <table>
+	<tr><td class="ss_info_name_long">Duration/Capacity:</td>
+          <td class="info_split"><span id="info_duration"></span>
+            <span style="right"	id="grp_type"></span></td>
+          <td class="info_split" id="info_capacity"></td></tr>
+	<tr><td class="ss_info_name_long">Location:</td><td colspan=2 id="info_location"></td></tr>
+	<tr><td class="ss_info_name_long">Responsible AD:</td><td colspan=2 id="info_responsible"></td></tr>
+	<tr><td class="ss_info_name_long">Requested By:</td><td colspan=2 id="info_requestedby"></td></tr>
+        <tr>
+          <td colspan=3>
+            <div class="agenda_nice_button button_disabled" id="agenda_prev_session">
+              <button class="agenda_selected_buttons small_button" disabled id="prev_session">Prev</button>
+            </div>
+            <div class="agenda_nice_button button_disabled" id="agenda_show">
+              <button class="agenda_selected_buttons small_button" disabled id="show_session">Show</button>
+            </div>
+            <div class="agenda_nice_button button_disabled" id="agenda_next_session">
+              <button class="agenda_selected_buttons small_button" disabled id="next_session">Next</button>
+            </div>
+
+            <div class="request_features" id="agenda_requested_features">
+
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div id="conflict_table">
+      <div id="special_requests">Special Requests</div>
+      <table>
+	<tbody id="conflict_table_body">
+	  <tr class="conflict_list_row">
+            <td class="conflict_list_title">
+              Group conflicts
+            </td>
+	    <td id="conflict_group_list">
+            <ul>
+            </ul>
+            </td>
+          </tr>
+	  <tr class="conflict_list_row">
+            <td class="conflict_list_title">
+              <b>be present</b>
+            </td>
+	    <td id="conflict_people_list">
+            <ul>
+            </ul>
+            </td>
+          </tr>
+	</tbody>
+      </table>
+    </div>
+    <div class="color_legend">
+      {% for area in area_list %}
+      <span class="{{area.upcase_acronym}}-scheme"><input class='color_checkboxes' type="checkbox" id="{{area.upcase_acronym}}" value="{{area.upcase_acronym}}-value" checked>{{area.upcase_acronym}}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="agenda_save_box">
+
+    <div id="agenda_title"><b>Agenda name: </b><span>{{schedule.name}}</span></div>
+    <div id="agenda_saveas">
+      <form action="{{saveasurl}}" method="post">{% csrf_token %}
+        {{ saveas.as_p }}
+        <input id="saveasbutton" type="submit" name="saveas" value="saveas">
+      </form>
+    </div>
+  </div>
+
 </div>
 
 {% endblock %}

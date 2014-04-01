@@ -18,12 +18,17 @@ var bucketlist_id = "sortable-list" // for if/when the id for bucket list change
 function resize_listeners() {
     for(i = 0; i<days.length;i++){
         $("#resize-"+days[i]+"-spacer").resizable({maxHeight:10,
-						   handles: "e, s",
+						   handles: "e",
 						   minWidth:2,
 
 						  });
 
     }
+
+    $("#session-info").resizable({handles: "s",
+				  minWidth:"100%",
+				  containment: "parent"
+				 });
 
 }
 
@@ -45,6 +50,9 @@ function listeners(){
     $('#info_location_select').unbind('change');
     $('#info_location_select').change(info_location_select_change);
 
+    $('#info_location_set').unbind('click');
+    $('#info_location_set').click(info_location_select_set);
+
     $('#info_name_select').unbind('change');
     $('#info_name_select').change(info_name_select_change);
 
@@ -58,10 +66,6 @@ function listeners(){
 
     $('#double_slot').unbind('click');
 
-    /* listener for when one clicks the 'show all' checkbox */
-    $('.cb_all_conflict').unbind('click');
-    $('.cb_all_conflict').click(cb_all_conflict);
-
     /* hiding rooms */
     $(".close_room").unbind('click');
     $(".close_room").click(close_room)
@@ -69,11 +73,6 @@ function listeners(){
     /* hiding days */
     $(".close_day").unbind('click');
     $(".close_day").click(close_day);
-
-    // $("#show_hidden_days").unbind('click');
-    // $("#show_hidden_days").click(show_hidden_days);
-    // $("#show_hidden_rooms").unbind('click');
-    // $("#show_hidden_rooms").click(show_hidden_rooms);
 
     $("#show_all_area").unbind('click');
     $("#show_all_area").click(show_all_area);
@@ -117,6 +116,7 @@ function toggle_dialog(parameters) {
 		$( this ).dialog( "close" );
 		__debug_toggle_result = "yes";
                 parameters.session.double_wide = false;
+                parameters.same_timeslot = true;
 		move_slot(parameters);
             },
 	    //"Swap Slots": function(){
@@ -137,6 +137,7 @@ function resize_th(){
 /* with the hovering rooms the sizes get messed up
    this function looks at the tr's height and resizes the room's height */
     $.each($(".vert_time"), function(k,v){
+        $(v).offset({ left: 2});
 	$(v).height($("#"+v.parentElement.id).height()-2); /* -2 so the grid remains */
     })
 }
@@ -168,16 +169,8 @@ function all_click(event){
 }
 
 /************ click functions *********************************************************************/
-function cb_all_conflict(event){
-    var conflict_clicked = $(event.target).attr('id');
-    try{
-	var conflict_clicked = conflict_clicked.substr(3);
-    }catch(err){
-
-    }
-    $("."+conflict_clicked+" input").click();
-
-
+function update_room_count() {
+   $("#hidden_rooms").html((hidden_rooms.length.toString()+"/"+total_rooms.toString()));
 }
 
 function close_room(event){
@@ -186,7 +179,7 @@ function close_room(event){
     //console.log("close_room",close_room);
     $("#"+close_room).hide("fast");
     hidden_rooms.push("#"+close_room);
-    $("#hidden_rooms").html((hidden_rooms.length.toString()+"/"+total_rooms.toString()));
+    update_room_count();
 }
 
 function show_hidden_rooms(event){
@@ -194,7 +187,11 @@ function show_hidden_rooms(event){
 	$(room).show("fast");
     });
     hidden_rooms = [];
-    $("#hidden_rooms").html(hidden_rooms.length.toString()+"/"+total_rooms.toString());
+    update_room_count();
+}
+
+function update_day_count() {
+    $("#hidden_days").html(hidden_days.length.toString()+"/"+total_days.toString());
 }
 
 function close_day(event){
@@ -203,7 +200,7 @@ function close_day(event){
     close_day = ".day_"+close_day;
     $(close_day).hide("slow");
     hidden_days.push(close_day);
-    $("#hidden_days").html(hidden_days.length.toString()+"/"+total_days.toString());
+    update_day_count();
 }
 
 function show_all(){
@@ -216,8 +213,7 @@ function show_hidden_days(event){
 	$(room).show("fast");
     });
     hidden_days = [];
-    $("#hidden_days").html(hidden_days.length.toString()+"/"+total_days.toString());
-
+    update_day_count();
 }
 
 function show_all_area(event){
@@ -232,6 +228,11 @@ function show_all_area(event){
     });
 }
 
+function show_all_session(event){
+    var session_class = "." + last_session.short_name;
+
+    $(session_class).parent().parent().parent().effect("highlight", {color:"lightcoral"}, 5000);
+}
 
 /************ END click functions *********************************************************************/
 
@@ -250,19 +251,25 @@ function slot_item_hidden(selector){
 
 
 
-var free_slots = [];
 
-function find_empty_slot(){
+function find_empty_slot(session) {
+    var free_slots = [];
 
-    $.each($(".free_slot"), function(index,item){
-	if(!$(item).hasClass("show_conflict_view_highlight")){
-	       free_slots.push(item);
+    $.each(agenda_globals.timeslot_byid, function(id, slot) {
+        if(slot.empty && !slot.unscheduled_box) {
+	    free_slots.push(slot);
 	}
     });
-    var perfect_slots = []; // array of slots that have a capacity higher than the session.
+
+    //console.log("free_slot list", free_slots);
+    var target_capacity = session.attendees;
+
+    // array of slots that have a capacity higher than the session.
+    var perfect_slots = [];
+
     if(free_slots.length > 0){
 	for(var i = 0; i< free_slots.length; i++){
-	    if(parseInt($(free_slots[i]).attr("capacity")) >= parseInt(meeting_objs[current_item.attr('session_id')].attendees) ){
+	    if(free_slots[i].capacity  >= target_capacity) {
 		perfect_slots.push(free_slots[i]);
 	    }
 	}
@@ -272,55 +279,62 @@ function find_empty_slot(){
 	else{
 	    return free_slots[0]; // just return the first one.
 	}
-
     }
     else{
 	return null;
     }
-
 }
 
 function extend_slot(event) {
     // event is just the button push, ignore it.
 
-    session = last_session;
-    slot    = session.slot;
+    session  = last_session;
 
-    console.log("session", session.title, "slot:", slot.scheduledsession_id);
+    console.log("session", session.title, "sslot:", current_scheduledslot.scheduledsession_id);
+
+    /* bind current_timeslot into this function and continuations */
+    var slot = current_timeslot;
 
     // determine if this slot can be extended.
-    if(slot.can_extend_right()) {
+    if(current_timeslot.can_extend_right()) {
         $("#can-extend-dialog").html("Extend "+session.title+" to slot "+slot.following_timeslot.domid);
         $("#can-extend-dialog").dialog({
 	    resizable: true,
 	    modal: true,
+            dialogClass: "extend-dialog",
 	    buttons: {
-                "Yes": function() {
-	            Dajaxice.ietf.meeting.update_timeslot(dajaxice_callback,
-					                  {
-                                                              'schedule_id':schedule_id,
-						              'session_id': session.session_id,
-						              'scheduledsession_id': slot.following_timeslot.scheduledsession_id,
-                                                              'extended_from_id': slot.scheduledsession_id
-					                  });
-                    slot.extendedto = slot.following_timeslot;
-                    slot.extendedto.extendedfrom = slot;
-                    session.double_wide = true;
-                    session.repopulate_event(slot.domid);
-                    session.placed(slot.extendedto, false);
-                    droppable();
-                    listeners();
-		    $( this ).dialog( "close" );
+                "Yes": {
+                    click: function() {
+                        // need to create new scheduledsession
+                        var new_ss = make_ss({ "session_id" : session.session_id,
+                                               "timeslot_id": slot.following_timeslot.timeslot_id,
+                                               "extended_from_id" : current_scheduledslot.scheduledsession_id});
+                        // make_ss also adds to slot_status.
+                        new_ss.saveit();
 
-                    // may have caused some new conflicts!!!!
-                    recalculate_conflicts_for_session(session,
-                                                      [slot.column_class],
-                                                      [slot.column_class, slot.extendedto.column_class]);
-                },
-                Cancel: function() {
-		    $( this ).dialog( "close" );
-		    result = "cancel"
-                }
+                        slot.extendedto = slot.following_timeslot;
+                        slot.extendedto.extendedfrom = slot;
+                        session.double_wide = true;
+                        session.repopulate_event(slot.domid);
+
+                        droppable();
+                        listeners();
+		        $( this ).dialog( "close" );
+
+                        // may have caused some new conflicts!!!!
+                        recalculate_conflicts_for_session(session,
+                                                          [slot.column_class],
+                                                          [slot.column_class, slot.extendedto.column_class]);
+                    },
+                    text: "Yes",
+                    id: "extend-yes"},
+                "Cancel": {
+                    click: function() {
+		        $( this ).dialog( "close" );
+		        result = "cancel"
+                    },
+                    text: "Cancel",
+                    id: "extend-cancel"},
 	    }
         });
     } else {
@@ -329,14 +343,17 @@ function extend_slot(event) {
 }
 
 function find_free(){
-    var empty_slot = find_empty_slot();
-    if(empty_slot != null){
-	$(empty_slot).effect("highlight", {},3000);
-	if(current_item != null){
-	    $(current_item).addClass('ui-effects-transfer');
-	    $(current_item).effect("transfer", {to: $(empty_slot) }, 1000);
-	}
-	$(current_item).removeClass('ui-effects-transfer');
+    if(last_session) {
+        var empty_slot = find_empty_slot(last_session);
+        if(empty_slot != null){
+            var domthing = $("#"+empty_slot.domid);
+	    domthing.effect("highlight", {},3000);
+	    if(current_item != null){
+	        $(current_item).addClass('ui-effects-transfer');
+	        $(current_item).effect("transfer", {to: domthing }, 1000);
+	    }
+	    $(current_item).removeClass('ui-effects-transfer');
+        }
     }
 }
 
@@ -351,8 +368,8 @@ function expand_spacer(target) {
 }
 
 function sort_by_alphaname(a,b) {
-    am = meeting_objs[$(a).attr('session_id')]
-    bm = meeting_objs[$(b).attr('session_id')]
+    am = agenda_globals.meeting_objs[$(a).attr('session_id')]
+    bm = agenda_globals.meeting_objs[$(b).attr('session_id')]
     if(am.title < bm.title) {
         return -1;
     } else {
@@ -360,8 +377,8 @@ function sort_by_alphaname(a,b) {
     }
 }
 function sort_by_area(a,b) {
-    am = meeting_objs[$(a).attr('session_id')]
-    bm = meeting_objs[$(b).attr('session_id')]
+    am = agenda_globals.meeting_objs[$(a).attr('session_id')]
+    bm = agenda_globals.meeting_objs[$(b).attr('session_id')]
     if(am.area < bm.area) {
         return -1;
     } else {
@@ -369,12 +386,12 @@ function sort_by_area(a,b) {
     }
 }
 function sort_by_duration(a,b) {
-    am = meeting_objs[$(a).attr('session_id')]
-    bm = meeting_objs[$(b).attr('session_id')]
-    if(am.duration < bm.duration) {
+    am = agenda_globals.meeting_objs[$(a).attr('session_id')]
+    bm = agenda_globals.meeting_objs[$(b).attr('session_id')]
+    if(am.requested_duration < bm.requested_duration) {
         // sort duration biggest to smallest.
         return 1;
-    } else if(am.duration == bm.duration &&
+    } else if(am.requested_duration == bm.requested_duration &&
               am.title    < bm.title) {
         return 1;
     } else {
@@ -382,8 +399,8 @@ function sort_by_duration(a,b) {
     }
 }
 function sort_by_specialrequest(a,b) {
-    am = meeting_objs[$(a).attr('session_id')]
-    bm = meeting_objs[$(b).attr('session_id')]
+    am = agenda_globals.meeting_objs[$(a).attr('session_id')]
+    bm = agenda_globals.meeting_objs[$(b).attr('session_id')]
     if(am.special_request == '*' && bm.special_request == '') {
         return -1;
     } else if(am.special_request == '' && bm.special_request == '*') {
@@ -425,6 +442,11 @@ function unassigned_sort_change(){
 /* the functionality of these listeners will never change so they do not need to be run twice  */
 function static_listeners(){
     $('#close_ietf_menubar').click(hide_ietf_menu_bar);
+
+    $("#show_hidden_days").unbind('click');
+    $("#show_hidden_days").click(show_hidden_days);
+    $("#show_hidden_rooms").unbind('click');
+    $("#show_hidden_rooms").click(show_hidden_rooms);
 
     $('#unassigned_sort_button').unbind('change');
     $('#unassigned_sort_button').change(unassigned_sort_change);
@@ -490,8 +512,14 @@ var __debug_meeting_click = false;
 var clicked_event;
 var __DEBUG__SESSION_OBJ;
 var __DEBUG__SLOT_OBJ;
+var __debug_click_slot_id;
+var __debug_click_container;
+
+// current_item is the domid that was clicked
+// last_session is the session active.
 var current_item = null;
 var current_timeslot = null;
+var current_scheduledslot = null;
 var current_timeslot_id = null;  // global used by empty_info_table to move picker.
 var meeting_clicked  = false;
 function meeting_event_click(event){
@@ -508,43 +536,47 @@ function meeting_event_click(event){
     event.preventDefault();
     meeting_clicked = true;
 
+    var slot_id = $(event.target).closest('.agenda_slot').attr('id');
+    var container  = $(event.target).closest('.meeting_box_container');
+    __debug_click_slot_id   = slot_id;
+    __debug_click_container = container;
+
+    if(container == undefined) {
+	return;
+    }
+
+    var session_id = container.attr('session_id');
+    var session = agenda_globals.meeting_objs[session_id];
+
+    select_session(session);
+    __DEBUG__SS_OBJ   = current_scheduledslot;
+    __DEBUG__SLOT_OBJ = current_timeslot;
+    __DEBUG__SESSION_OBJ = session;
+}
+
+function select_session(session) {
     if(last_session != null) {
         last_session.unselectit();
     }
+    last_session = session;
+
+    empty_info_table();
+    current_item = session.element();
 
     /* clear set ot conflict views */
     clear_conflict_classes();
     conflict_classes = {};
 
-    var slot_id = $(event.target).closest('.agenda_slot').attr('id');
-    var container  = $(event.target).closest('.meeting_box_container');
-
-    if(container == undefined) {
-        fill_in_session_info(session, true, session.slot);
-        // no async necessary, session is completely loaded
-	//session.load_session_obj(fill_in_session_info, session.slot);
-	return;
+    current_timeslot      = session.slot;
+    if(current_timeslot) {
+        current_timeslot_id   = current_timeslot.timeslot_id;
     }
-
-    var session_id = container.attr('session_id');
-    var session = meeting_objs[session_id];
-    last_session = session;
-
-    session.selectit();
-    current_item = session.element();
-
-    current_timeslot    = session.slot;
-    if(current_timeslot != undefined) {
-        current_timeslot_id = current_timeslot.timeslot_id;
-    }
+    current_scheduledslot = session.scheduledsession;
     if(__debug_meeting_click) {
         console.log("2 meeting_click:", current_timeslot, session);
     }
 
-    empty_info_table();
     fill_in_session_info(session, true, session.slot);
-    __DEBUG__SLOT_OBJ = current_timeslot;
-    __DEBUG__SESSION_OBJ = session;
 }
 
 var last_item = null; // used during location change we make the background color
@@ -557,6 +589,61 @@ function info_location_select_change(){
     last_item = '#'+$('#info_location_select').val();
     $(last_item).addClass("selected_slot");
 }
+
+// called when the "Set" button is called, needs to perform a move, as if
+// it was dragged and dropped.
+function info_location_select_set() {
+    // figure out where the item was, and where it is going to.
+    var session = last_session;
+    var from_slot = session.slot;
+
+    var id = $('#info_location_select').val();
+    var to_slot = agenda_globals.timeslot_byid[id];
+
+    console.log("moved by select box from", from_slot, "to", to_slot);
+
+    move_thing({ "session": session,
+                 "to_slot_id": to_slot.domid,
+                 "to_slot":    to_slot,
+                 "dom_obj":      "#" + to_slot.domid,
+                 "from_slot_id": from_slot.domid,
+                 "from_slot":    from_slot});
+}
+
+function move_thing(parameters) {
+    // hasn't moved don't do anything
+    if(parameters.from_slot_id == parameters.to_slot_id){
+	return;
+    }
+
+    parameters.too_small = false;
+    parameters.slot_occupied = false;
+
+    var room_capacity = parameters.to_slot.capacity;
+
+    if(parameters.session.session_attendees > room_capacity){
+	parameters.too_small = true;
+    }
+
+    bucket_list = (parameters.to_slot_id == bucketlist_id);
+    if(!bucket_list && !parameters.to_slot.empty){
+	parameters.slot_occupied = true
+    }
+
+    if(parameters.too_small || parameters.slot_occupied){
+	toggle_dialog(parameters);
+	return
+    }
+
+    clear_conflict_classes();
+    // clear double wide setting for now.
+    // (could return if necessary)
+    parameters.session.double_wide = false;
+
+    move_slot(parameters);
+}
+
+
 
 var last_session = null;
 var last_name_item = null;
@@ -575,30 +662,33 @@ function info_name_select_change(){
     if(last_item != null) {
         $(last_item).removeClass("selected_slot");
     }
-    if(current_item != null){
-	$(current_item).addClass("selected_slot");
-    }
+
     var slot_id    = $('#info_name_select').val();
     last_name_item = '#'+slot_id;
     console.log("selecting group", slot_id);
 
-    var ssk = meeting_objs[slot_id].slot_status_key;
+    var ssk = agenda_globals.meeting_objs[slot_id].slot_status_key;
     // ssk is null when item is in bucket list.
 
     current_item = "#session_"+slot_id; //slot_status_obj[0].session_id;
+    if(current_item != null){
+	$(current_item).addClass("selected_slot");
+        $(current_item).get(0).scrollIntoView(true);
+    }
 
     if(ssk != null){
-	var slot_status_obj = slot_status[ssk];
-	current_timeslot = slot_status_obj[0].timeslot_id;
+	var slot_status_obj = agenda_globals.slot_status[ssk];
+	current_timeslot    = slot_status_obj[0].timeslot;
+	current_timeslot_id = slot_status_obj[0].timeslot_id;
 	ss = slot_status_obj[0];
-	session = ss.session();
+	session = ss.session;
         last_session = session;
         last_session.selectit();
 	// now set up the call back that might have to retrieve info.
         fill_in_session_info(session, true, ss);
     }
     else {
-	ss = meeting_objs[slot_id];
+	ss = agenda_globals.meeting_objs[slot_id];
         last_session = ss;
         last_session.selectit();
         fill_in_session_info(ss, true, ss.slot);
@@ -640,10 +730,11 @@ function dajaxice_error(a){
 function set_pin_session_button(scheduledsession) {
     $("#pin_slot").unbind('click');
     if(scheduledsession == undefined) {
+        console.log("pin not set, scheduledsession undefined");
         return;
     }
     state = scheduledsession.pinned;
-    console.log("button set to: ",state);
+    //console.log("button set to: ",state);
     if(state) {
         $("#pin_slot").html("unPin");
         $("#agenda_pin_slot").addClass("button_down");
@@ -674,7 +765,7 @@ function update_pin_session(scheduledsession, state) {
         scheduledsession.pinned = state;
         session = scheduledsession.session()
         session.pinned = state;
-        session.repopulate_event(scheduledsession.domid);
+        session.repopulate_event(scheduledsession.domid());
         set_pin_session_button(scheduledsession);
     },
 						 {
@@ -684,23 +775,92 @@ function update_pin_session(scheduledsession, state) {
 						 });
 }
 
+function enable_button(divid, buttonid, func) {
+    $(buttonid).unbind('click');
+    $(buttonid).click(func);
+    $(buttonid).attr('disabled',false);
+
+    $(divid).removeClass("button_disabled");
+    $(divid).addClass("button_enabled");
+}
+
+function disable_button(divid, buttonid) {
+    $(buttonid).unbind('click');
+    $(buttonid).attr('disabled',true);
+
+    $(divid).addClass("button_disabled");
+    $(divid).removeClass("button_enabled");
+}
+
+function highlight_session(session) {
+    var element = session.element()[0];
+    element.scrollIntoView(true);
+    session.element().parent().parent().parent().effect("pulsate", {color:"lightcoral"}, 10000);
+}
+
 function fill_in_session_info(session, success, extra) {
+    var prev_session = null;
+    var next_session = null;
+
     if(session == null || session == "None" || !success){
 	empty_info_table();
+        return;
     }
-    $('#ss_info').html(session.generate_info_table());
-    $('#double_slot').click(extend_slot);
-    $(".agenda_double_slot").removeClass("button_disabled");
-    $(".agenda_double_slot").addClass("button_enabled");
-    $(".agenda_selected_buttons").attr('disabled',false);
+    session.generate_info_table();
+
+    prev_session = session.prev_session;
+    next_session = session.next_session;
 
     if(!read_only) {
+        enable_button("#agenda_double_slot", "#double_slot", extend_slot);
+
         $("#agenda_pin_slot").removeClass("button_disabled");
         $("#agenda_pin_slot").addClass("button_enabled");
-        set_pin_session_button(session.slot);
+        set_pin_session_button(session.scheduledsession);
     } else {
         $("#pin_slot").unbind('click');
     }
+
+    enable_button("#agenda_show", "#show_session", show_all_session);
+
+    if(prev_session) {
+        enable_button("#agenda_prev_session", "#prev_session", function(event) {
+            select_session(prev_session);
+            highlight_session(prev_session);
+        });
+    } else {
+        disable_button("#agenda_prev_session", "#prev_session");
+    }
+    if(next_session) {
+        enable_button("#agenda_next_session", "#next_session", function(event) {
+            select_session(next_session);
+            highlight_session(next_session);
+        });
+    } else {
+        disable_button("#agenda_next_session", "#next_session");
+    }
+
+    $("#agenda_requested_features").html("");
+    // fill in list of resources into #agenda_requested_features
+    if(session.resources != undefined) {
+        $.each(session.resources, function(index) {
+            resource = this;
+
+            $("#agenda_requested_features").html(function(inbox, oldhtml) {
+                return "<div id=\"resource_"+resource.resource_id+"\"class=\"agenda_requested_feature\">"+
+                    "<img height=30 src=\""+
+                    resource.icon+"\" title=\""+
+                    resource.desc+"\" alt=\""+
+                    resource.name+
+                    "\" />"+
+                    "</div>"+
+                    oldhtml
+            });
+
+            console.log(session.title, "asks for resource", resource.desc);
+        });
+    }
+
 
     // here is where we would set up the session request edit button.
     // $(".agenda_sreq_button").html(session.session_req_link);
@@ -721,15 +881,42 @@ function group_name_or_empty(constraint) {
 function draw_constraints(session) {
 
     if("conflicts" in session) {
+        var display = { 'conflict':'1' , 'conflic2':'2' , 'conflic3':'3' };
         var group_icons = "";
-
+        var group_set = {};
         $.each(session.conflicts, function(index) {
             conflict = session.conflicts[index];
+            conflict.build_othername();
             if(conflict.conflict_groupP()) {
-                group_icons += "<li class='conflict'>"+conflict.conflict_view();
+                if ( ! (conflict.othergroup_name in group_set) ) {
+                    group_set[conflict.othergroup_name] = {};
+                }
+                group_set[conflict.othergroup_name][conflict.direction]=display[conflict.conflict_type];
+                // This had been in build_group_conflict_view
+                conflict.populate_conflict_classes();
                 highlight_conflict(conflict);
             }
         });
+                
+
+        $.each(group_set, function(index) {
+            group = group_set[index];
+            group_view = "<li class='conflict'>";
+            group_view += "<div class='conflictlevel'>"
+            if ('ours' in group_set[index]) {
+                group_view += group_set[index].ours+"->"
+            }
+            group_view += "</div>"
+            group_view += index;
+            group_view += "<div class='conflictlevel'>"
+            if ('theirs' in group_set[index]) {
+                group_view += "->"+group_set[index].theirs
+            }
+            group_view += "</div>"
+            group_view += "</li>";
+            group_icons += group_view;
+        });
+
         if(group_icons == "") {
             $("#conflict_group_list").html("none");
         } else {
@@ -823,72 +1010,83 @@ function droppable(){
 } // end droppable()
 
 
-var arr_key_index = null;
 function update_to_slot(session_id, to_slot_id, force){
-    console.log("meeting_id:",session_id);
-    var to_slot = slot_status[to_slot_id];
-
-    var found = false;
-    for(var i=0; i<to_slot.length; i++){
-	if(to_slot[i].empty == "True" || to_slot[i].empty == true){ // we found a empty place to put it.
-	    // setup slot_status info.
-	    to_slot[i].session_id = session_id;
-
-            if(to_slot_id != bucketlist_id) {
-	        to_slot[i].empty = false;
-            }
-
-	    // update meeting_obj
-	    //meeting_objs[session_id].slot_status_key = to_slot[i].domid
-	    arr_key_index = i;
-	    meeting_objs[session_id].placed(to_slot, true);
-	    found = true;
-	    // update from_slot
-
-	    return found;
-	}
+    //console.log("update_to_slot meeting_id:",session_id, to_slot_id);
+    if(to_slot_id == "sortable-list") {
+        /* must be bucket list */
+        return true;
     }
 
-    if(!found && force){
-        var unassigned_slot_obj = new ScheduledSlot();
-        unassigned_slot_obj.scheduledsession_id = to_slot[0].scheduledsession_id;
-        unassigned_slot_obj.timeslot_id         = to_slot[0].timeslot_id;
-        unassigned_slot_obj.session_id          = session_id;
-        // unassigned_slot_obj.session_id          = to_slot[0].session_id;
+    var to_timeslot = agenda_globals.timeslot_bydomid[to_slot_id];
+    if(to_timeslot != undefined && (to_timeslot.empty == true || force)) {
+	// add a new scheduledsession for this, save it.
+        var new_ss = make_ss({ "session_id" : session_id,
+                               "timeslot_id": to_timeslot.timeslot_id});
+        // make_ss also adds to slot_status.
+        var save_promise = new_ss.saveit();
 
-	//console.log("session_id:",session_id);
-	//console.log("to_slot (BEFORE):", to_slot, to_slot.length);
+        if(to_slot_id != bucketlist_id) {
+	    to_timeslot.mark_occupied();
+        }
 
-	to_slot.push(unassigned_slot_obj);
-	//console.log("to_slot (AFTER):", to_slot, to_slot.length);
-	arr_key_index = to_slot.length-1;
-	found = true;
-	return found;
+	// update meeting_obj
+	agenda_globals.meeting_objs[session_id].placed(to_timeslot, true, new_ss);
+
+	return save_promise;
+    } else {
+        console.log("update_to_slot failed", to_timeslot, force, "empty", to_timeslot.empty);
+        return false;
     }
-    return found;
 }
 
+function update_from_slot(session_id, from_slot_id)
+{
+    var from_timeslot      = agenda_globals.timeslot_bydomid[from_slot_id];
 
-function update_from_slot(session_id, from_slot_id){
+    /* this is a list of scheduledsessions */
+    var from_scheduledslots = agenda_globals.slot_status[from_slot_id];
+    var delete_promises = [];
 
-    var from_slot = slot_status[meeting_objs[session_id].slot_status_key]; // remember this is an array...
-    var found = false;
+    // it will be null if it's coming from a bucketlist
+    if(from_slot_id != null && from_scheduledslots != undefined){
+        //console.log("1 from_slot_id", from_slot_id, from_scheduledslots);
+        var count = from_scheduledslots.length;
+        var found = false;
+	for(var k = 0; k<from_scheduledslots.length; k++) {
+            var from_ss = from_scheduledslots[k];
+	    if(from_ss.session_id == session_id){
+                found = true;
 
-    if(from_slot_id != null){ // it will be null if it's coming from a bucketlist
-	for(var k = 0; k<from_slot.length; k++){
-	    if(from_slot[k].session_id == session_id){
-		found = true;
-		from_slot[k].empty = true;
-		from_slot[k].session_id = null;
-		return found;
+                var promise = from_ss.deleteit();
+                delete_promises.push(promise);
+                from_scheduledslots.splice(k,1);
+                count--;
 	    }
 	}
+        if(found && count == 0) {
+            from_timeslot.mark_empty();
+        } else {
+            console.log("not setting fromslot empty", from_timeslot, count, found, session_id, "from_slot_id", from_slot_id);
+        }
+
+        /* remove undefined entries */
+        new_fromslots = [];
+        for(var k =0; k<from_scheduledslots.length; k++) {
+            if(from_scheduledslots[k] != undefined && from_scheduledslots[k].session_id != undefined) {
+                new_fromslots.push(from_scheduledslots[k]);
+            }
+        }
+
+        /* any removed sessions will have been done */
+        agenda_globals.slot_status[from_slot_id] = new_fromslots;
+        //console.log("2 from_slot_id", from_slot_id, new_fromslots);
     }
     else{
-	found = true; // this may be questionable. It deals with the fact that it's coming from a bucketlist.
-	return found;
+        // this may be questionable.
+        // It deals with the fact that it's coming from the bucketlist.
+        delete_promises = [undefined];
     }
-    return found;
+    return delete_promises;
 }
 
 
@@ -897,71 +1095,22 @@ function drop_drop(event, ui){
 
     var session_id = ui.draggable.attr('session_id');   // the session was added as an attribute
     // console.log("UI:", ui, session_id);
-    var session    = meeting_objs[session_id];
+    var session    = agenda_globals.meeting_objs[session_id];
 
     var to_slot_id = $(this).attr('id'); // where we are dragging it.
-    var to_slot = slot_status[to_slot_id]
+    var to_slot = agenda_globals.timeslot_bydomid[to_slot_id]
 
     var from_slot_id = session.slot_status_key;
-    var from_slot = slot_status[session.slot_status_key]; // remember this is an array...
+    var from_slot = agenda_globals.slot_status[session.slot_status_key]; // remember this is an array...
 
-    var room_capacity = parseInt($(this).attr('capacity'));
-    var session_attendees = parseInt(session.attendees);
-
-    var too_small = false;
-    var occupied = false;
-
-
-    if(from_slot_id == to_slot_id){ // hasn't moved don't do anything
-	return
-    }
-
-
-    if(session_attendees > room_capacity){
-	too_small = true;
-    }
-
-    // console.log("from -> to", from_slot_id, to_slot_id);
-
-
-    bucket_list = (to_slot_id == bucketlist_id);
-    if(!check_free({id:to_slot_id}) ){
-	console.log("not free...");
-	if(!bucket_list) {
-	    occupied = true
-	}
-    }
-
-    if(too_small || occupied){
-	toggle_dialog({ "session": session,
-                        "to_slot_id": to_slot_id,
-                        "to_slot":    to_slot,
-                        "from_slot_id": from_slot_id,
-                        "from_slot":    from_slot,
-                        "bucket_list":  bucket_list,
-                        "event":        event,
-                        "ui":           ui,
-                        "dom_obj":      this,
-                        "slot_occupied":     occupied,
-                        "too_small":    too_small});
-	return
-    }
-
-    clear_conflict_classes();
-    // clear double wide setting for now.
-    // (could return if necessary)
-    session.double_wide = false;
-
-    move_slot({"session": session,
-               "to_slot_id": to_slot_id,
-               "to_slot":    to_slot,
-               "from_slot_id":from_slot_id,
-               "from_slot":   from_slot,
-               "bucket_list": bucket_list,
-               "event":       event,
-               "ui":          ui,
-               "dom_obj":     this,
-               "force":       false});
+    move_thing({ "session": session,
+                 "to_slot_id": to_slot_id,
+                 "to_slot":    to_slot,
+                 "from_slot_id": from_slot_id,
+                 "from_slot":    from_slot,
+                 "event":        event,
+                 "ui":           ui,
+                 "dom_obj":      this});
 }
 
 function recalculate_conflicts_for_session(session, old_column_classes, new_column_classes)
@@ -973,8 +1122,8 @@ function recalculate_conflicts_for_session(session, old_column_classes, new_colu
     session.examine_people_conflicts(old_column_classes);
 
     var sk;
-    for(sk in meeting_objs) {
-        var s = meeting_objs[sk];
+    for(sk in agenda_globals.meeting_objs) {
+        var s = agenda_globals.meeting_objs[sk];
 
         for(ocn in old_column_classes) {
             var old_column_class = old_column_classes[ocn];
@@ -1006,7 +1155,7 @@ function recalculate_conflicts_for_session(session, old_column_classes, new_colu
     show_all_conflicts();
 }
 
-var _move_debug = false;
+var __debug_parameters;
 var _LAST_MOVED;
 function move_slot(parameters) {
     /* dom_obj: is a jquery selector of where the slot will be appeneded to
@@ -1014,8 +1163,9 @@ function move_slot(parameters) {
        drop_drop where 'this' is the dom dest.
     */
     var update_to_slot_worked = false;
+    __debug_parameters = parameters;
 
-    if(_move_debug) {
+    if(agenda_globals.__debug_session_move) {
         _LAST_MOVED = parameters.session;
         if(parameters.from_slot != undefined) {
             console.log("from_slot", parameters.from_slot.domid);
@@ -1023,129 +1173,83 @@ function move_slot(parameters) {
             console.log("from_slot was unassigned");
         }
     }
+
+    /* if to slot was marked empty, then remove anything in it (like word "empty") */
+    if(parameters.to_slot.empty && !parameters.to_slot.unscheduled_box) {
+        $(parameters.dom_obj).html("");
+    }
+
     var update_to_slot_worked = false;
     if(parameters.same_timeslot == null){
 	parameters.same_timeslot = false;
     }
+    var save_promise = undefined;
     if(parameters.bucket_list) {
-	update_to_slot_worked = update_to_slot(parameters.session.session_id,
-                                               parameters.to_slot_id, true);
+	save_promise = update_to_slot(parameters.session.session_id,
+                                      parameters.to_slot_id, true);
     }
     else{
-	update_to_slot_worked = update_to_slot(parameters.session.session_id,
-                                               parameters.to_slot_id, parameters.same_timeslot);
+	save_promise = update_to_slot(parameters.session.session_id,
+                                      parameters.to_slot_id, parameters.same_timeslot);
     }
 
-    if(_move_debug) {
-        console.log("update_slot_worked", update_to_slot_worked);
+    if(agenda_globals.__debug_session_move) {
+        console.log("update_to_slot returned promise", save_promise);
     }
-    if(update_to_slot_worked){
-	if(update_from_slot(parameters.session.session_id, parameters.from_slot_id)){
-	    remove_duplicate(parameters.from_slot_id, parameters.session.session_id);
-	    // do something
-	}
-	else{
-            if(_move_debug) {
-	        console.log("issue updateing from_slot");
-	        console.log("parameters.from_slot_id",parameters.from_slot_id, slot_status[parameters.from_slot_id]);
-            }
-	    return;
-	}
+
+    if(save_promise == false){
+	console.log("ERROR updating to_slot", save_promise,
+                    parameters.to_slot_id,
+                    agenda_globals.slot_status[parameters.to_slot_id]);
+	return undefined;
     }
-    else{
-        if(_move_debug) {
-	    console.log("issue updateing to_slot");
-	    console.log("to_slot_id",parameters.to_slot_id, slot_status[parameters.to_slot_id]);
-        }
+
+    var delete_promises = update_from_slot(parameters.session.session_id, parameters.from_slot_id);
+    if(delete_promises.length > 0) {
+	remove_duplicate(parameters.from_slot_id, parameters.session.session_id);
+	// do something else?
+    }
+    else {
+	console.log("ERROR updating from_slot", parameters.from_slot_id, agenda_globals.slot_status[parameters.from_slot_id]);
 	return;
     }
-    parameters.session.slot_status_key = parameters.to_slot[arr_key_index].domid;
+    parameters.session.slot_status_key = parameters.to_slot_id;
 
     var eTemplate = parameters.session.event_template()
-
-    console.log("dom_obj:", parameters.dom_obj);
     $(parameters.dom_obj).append(eTemplate);
 
-    parameters.ui.draggable.remove();
+    if(parameters.ui) {
+        parameters.ui.draggable.remove();
+    }
 
-
+    /* recalculate all the conflict classes given new slot */
+    parameters.session.update_column_classes([parameters.to_slot],
+                                             parameters.bucket_list);
 
     /* set colours */
     $(parameters.dom_obj).removeClass('highlight_free_slot');
-    if(check_free({id:parameters.to_slot_id}) ){
-	$(parameters.dom_obj).addClass('free_slot')
-    }
-    else{
+    if(parameters.to_slot.empty) {
 	$(parameters.dom_obj).removeClass('free_slot')
     }
+    else{
+	$(parameters.dom_obj).addClass('free_slot')
+    }
 
-    if(check_free({id:parameters.from_slot_id}) ){
-	$("#"+parameters.from_slot_id).addClass('free_slot');
+    if(parameters.from_slot != undefined && parameters.from_slot.empty){
+	$("#"+parameters.from_slot_id).removeClass('free_slot');
     }
     else{
-	$("#"+parameters.from_slot_id).removeClass('free_slot');
+	$("#"+parameters.from_slot_id).addClass('free_slot');
     }
     $("#"+bucketlist_id).removeClass('free_slot');
     /******************************************************/
 
-    var scheduledsession = null;
-    for(var i =0; i< parameters.to_slot.length; i++){
-	if (parameters.to_slot[i].session_id == parameters.session.session_id){
-            scheduledsession = parameters.to_slot[i];
-	    break;
-	}
-    }
-
-    if(scheduledsession != null){
-        console.log("moved session",parameters.session.title,"to",scheduledsession);
-        parameters.session.placed(scheduledsession, true);
-        start_spin();
-        if(_move_debug) {
-	    console.log('schedule_id',schedule_id,
-                        'session_id', parameters.session.session_id,
-                        'scheduledsession_id', scheduledsession.scheduledsession_id);
-        }
-
-        if(parameters.session.slot2) {
-            parameters.session.double_wide = false;
-	    Dajaxice.ietf.meeting.update_timeslot(dajaxice_callback,
-					      {
-                                                  'schedule_id':schedule_id,
-						  'session_id': parameters.session.session_id,
-						  'scheduledsession_id': 0,
-					      });
-            parameters.session.slot2 = undefined;
-        }
-
-	if(parameters.same_timeslot){
-	    	Dajaxice.ietf.meeting.update_timeslot(dajaxice_callback,
-					      {
-                                                  'schedule_id':schedule_id,
-						  'session_id': parameters.session.session_id,
-						  'scheduledsession_id': scheduledsession.scheduledsession__id,
-                                                  'extended_from_id': 0,
-						  'duplicate':true
-					      });
-	}else {
-	    Dajaxice.ietf.meeting.update_timeslot(dajaxice_callback,
-						  {
-                                                      'schedule_id':schedule_id,
-						      'session_id': parameters.session.session_id,
-						      'scheduledsession_id': scheduledsession.scheduledsession_id,
-						  });
-	}
-
-        parameters.session.update_column_classes([scheduledsession], parameters.bucket_list);
-    }
-    else{
-        if(_move_debug) {
-	    console.log("issue sending ajax call!!!");
-        }
-    }
-
     droppable();
     listeners();
     sort_unassigned();
+
+    delete_promises.push(save_promise);
+    return $.when.apply($,delete_promises);
 }
 
 /* first thing that happens when we grab a meeting_event */
