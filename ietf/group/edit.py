@@ -48,6 +48,9 @@ class GroupForm(forms.Form):
 
         super(self.__class__, self).__init__(*args, **kwargs)
 
+        if self.group_type == "rg":
+            self.fields["state"].queryset = self.fields["state"].queryset.exclude(slug__in=("bof", "bof-conc"))
+
         # if previous AD is now ex-AD, append that person to the list
         ad_pk = self.initial.get('ad')
         choices = self.fields['ad'].choices
