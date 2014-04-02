@@ -157,6 +157,7 @@ def change_state(request, name, option=None):
                 elif charter_state.slug == "iesgrev":
                     create_ballot_if_not_open(charter, login, "approve")
                 elif charter_state.slug == "approved":
+                    change_group_state_after_charter_approval(group, login)
                     fix_charter_revision_after_approval(charter, login)
 
             if charter_state.slug == "infrev" and clean["initial_time"] and clean["initial_time"] != 0:
@@ -167,19 +168,23 @@ def change_state(request, name, option=None):
 
             return redirect('doc_view', name=charter.name)
     else:
-        if option == "recharter" and group.type_id == "wg":
-            hide = ['initial_time', 'charter_state', 'message']
-            init = dict()
-        elif option == "initcharter" and group.type_id == "wg":
-            hide = ['charter_state']
-            init = dict(initial_time=1, message='%s has initiated chartering of the proposed %s:\n "%s" (%s).' % (login.plain_name(), group.type.name, group.name, group.acronym))
-        elif option == "abandon":
+        hide = ['initial_time']
+        s = charter.get_state()
+        init = dict(charter_state=s.pk if s and option != "recharter" else None)
+
+        if option == "abandon":
             hide = ['initial_time', 'charter_state']
-            init = dict(message='%s has abandoned the chartering effort on the %s:\n "%s" (%s).' % (login.plain_name(), group.type.name, group.name, group.acronym))
-        else:
-            hide = ['initial_time']
-            s = charter.get_state()
-            init = dict(charter_state=s.pk if s else None)
+
+        if group.type_id == "wg":
+            if option == "recharter":
+                hide = ['initial_time', 'charter_state', 'message']
+                init = dict()
+            elif option == "initcharter":
+                hide = ['charter_state']
+                init = dict(initial_time=1, message='%s has initiated chartering of the proposed %s:\n "%s" (%s).' % (login.plain_name(), group.type.name, group.name, group.acronym))
+            elif option == "abandon":
+                hide = ['initial_time', 'charter_state']
+                init = dict(message='%s has abandoned the chartering effort on the %s:\n "%s" (%s).' % (login.plain_name(), group.type.name, group.name, group.acronym))
         form = ChangeStateForm(hide=hide, initial=init, group=group)
 
     prev_charter_state = None
@@ -586,6 +591,26 @@ def ballot_writeupnotes(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
+def change_group_state_after_charter_approval(group, by):
+    new_state = GroupStateName.objects.get(slug="active")
+    if group.state == new_state:
+        return None
+
+    save_group_in_history(group)
+    group.state = new_state
+    group.time = datetime.datetime.now()
+    group.save()
+
+    # create an event for the group state change, too
+    e = ChangeStateGroupEvent(group=group, type="changed_state")
+    e.time = group.time
+    e.by = by
+    e.state_id = "active"
+    e.desc = "Charter approved, group active"
+    e.save()
+
+    return e
+
 def fix_charter_revision_after_approval(charter, by):
     # according to spec, 00-02 becomes 01, so copy file and record new revision
     try:
@@ -637,22 +662,9 @@ def approve(request, name):
 
         change_description = e.desc
 
-        new_state = GroupStateName.objects.get(slug="active")
-        if group.state != new_state:
-            save_group_in_history(group)
-            group.state = new_state
-            group.time = e.time
-            group.save()
-
-            # create an event for the wg state change, too
-            e = ChangeStateGroupEvent(group=group, type="changed_state")
-            e.time = group.time
-            e.by = login
-            e.state_id = "active"
-            e.desc = "Charter approved, group active"
-            e.save()
-
-            change_description += " and %s state has been changed to %s" % (group.type.name, new_state.name)
+        group_state_change_event = change_group_state_after_charter_approval(group, login)
+        if group_state_change_event:
+            change_description += " and group state has been changed to %s" % group.state.name
 
         e = add_state_change_event(charter, login, prev_charter_state, new_charter_state)
 
