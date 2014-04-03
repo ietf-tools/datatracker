@@ -17,9 +17,10 @@ from forms import *
 # -------------------------------------------------
 def check_access(user):
     '''
-    This function takes a Django User object and returns true if the user has access to the
-    Announcement app.  Accepted roles are:
-    Secretariat, IAD, IAB Chair, IETF Chair, RSOC Chair, IAOC Chair, NomCom Chair, RSE Chair
+    This function takes a Django User object and returns true if the user has access to
+    the Announcement app.  Accepted roles are:
+    Secretariat, IAD, IAB Chair, IETF Chair, RSOC Chair, IAOC Chair, NomCom Chair,
+    RSE Chair, ISOC CEO
     '''
     person = user.person
     groups_with_access = ("iab", "rsoc", "ietf", "iaoc", "rse", "mentor")
@@ -36,6 +37,10 @@ def check_access(user):
     if Role.objects.filter(person=person,
                            group__acronym='iab',
                            name='execdir'):
+        return True
+    if Role.objects.filter(person=person,
+                           group__acronym='isoc',
+                           name='ceo'):
         return True
 
     return False
