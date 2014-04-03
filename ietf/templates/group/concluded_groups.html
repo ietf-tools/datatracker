@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Concluded Groups{% endblock %}
+
+{% block morecss %}
+.concluded-groups .active-period { display: inline-block; margin-left: 0.5em; font-style: italic; }
+.note { font-style: italic; }
+{% endblock %}
+
+{% block content %}
+<h1>Concluded Groups</h1>
+
+<p>Note that the information on historical groups may be inaccurate.</p>
+
+{% for t in group_types %}
+  <h2>{{ t.name }}s</h2>
+
+  {% if t.slug == "wg" %}<p class="note">Some additional concluded WGs may
+    be present at <a href="http://tools.ietf.org/wg/concluded">tools.ietf.org/wg/concluded/</a></p>{% endif %}
+
+  {% if not t.concluded_groups %}
+    <p><b>No groups found.</b></p>
+  {% else %}
+    <table class="concluded-groups">
+    {% for g in t.concluded_groups %}
+      <tr>
+        <td>
+          <a href="{% url "group_charter" group_type=g.type_id acronym=g.acronym %}">{{ g.acronym }}</a>
+        </td>
+        <td>{{ g.name }}
+          <span class="active-period">({% if g.start_date %}{{ g.start_date|date:"M. Y" }}{% else %}?{% endif %}
+          -
+            {% if g.conclude_date %}{{ g.conclude_date|date:"M. Y" }}{% else %}?{% endif %})</span>
+        </td>
+      </tr>
+    {% endfor %}
+    </table>
+  {% endif %}
+
+{% endfor %}
+
+{% endblock %}

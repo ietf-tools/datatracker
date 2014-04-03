@@ -101,6 +101,18 @@ class GroupPagesTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('table.ietf-doctable td.acronym a:contains("%s")' % group.acronym)), 1)
 
+    def test_concluded_groups(self):
+        draft = make_test_data()
+        group = draft.group
+        group.state = GroupStateName.objects.get(used=True, slug="conclude")
+        group.save()
+
+        url = urlreverse('ietf.group.info.concluded_groups')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('table.concluded-groups a:contains("%s")' % group.acronym)), 1)
+
     def test_bofs(self):
         draft = make_test_data()
         group = draft.group

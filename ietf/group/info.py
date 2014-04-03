@@ -48,7 +48,7 @@ from ietf.doc.views_search import SearchForm, retrieve_search_results
 from ietf.doc.models import State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
-from ietf.group.models import Group, Role
+from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
 from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type
 from ietf.utils.pipe import pipe
@@ -185,7 +185,7 @@ def chartering_groups(request):
     group_types = GroupTypeName.objects.filter(slug__in=("wg", "rg"))
 
     for t in group_types:
-        t.chartering_groups = Group.objects.filter(type=t, charter__states__in=charter_states).select_related("state", "charter")
+        t.chartering_groups = Group.objects.filter(type=t, charter__states__in=charter_states).select_related("state", "charter").order_by("acronym")
         t.can_manage = can_manage_group_type(request.user, t.slug)
 
         for g in t.chartering_groups:
@@ -195,6 +195,26 @@ def chartering_groups(request):
                   dict(charter_states=charter_states,
                        group_types=group_types))
 
+def concluded_groups(request):
+    group_types = GroupTypeName.objects.filter(slug__in=("wg", "rg"))
+
+    for t in group_types:
+        t.concluded_groups = Group.objects.filter(type=t, state__in=("conclude", "bof-conc")).select_related("state", "charter").order_by("acronym")
+
+        # add start/conclusion date
+        d = dict((g.pk, g) for g in t.concluded_groups)
+
+        for g in t.concluded_groups:
+            g.start_date = g.conclude_date = None
+
+        for e in ChangeStateGroupEvent.objects.filter(group__in=t.concluded_groups, state="active").order_by("-time"):
+            d[e.group_id].start_date = e.time
+
+        for e in ChangeStateGroupEvent.objects.filter(group__in=t.concluded_groups, state="conclude").order_by("time"):
+            d[e.group_id].conclude_date = e.time
+
+    return render(request, 'group/concluded_groups.html',
+                  dict(group_types=group_types))
 
 def construct_group_menu_context(request, group, selected, others):
     """Return context with info for the group menu filled in."""
