@@ -7,6 +7,9 @@
 
 # --- Add entries at the top ---
 
+
+personal/rcross/v5.1.0@7568
+personal/rcross/v5.1.0@7549	Fix tests broken in auth change
 personal/rcross/v5.1.0@7454
 personal/rjs/v5.1.0-dajaxice-patch@7456
 personal/rcross/v5.0.2@7398
