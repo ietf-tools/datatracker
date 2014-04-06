@@ -1,3 +1,52 @@
+ietfdb (5.2.1) ietf; urgency=medium
+
+  This is a minor release, with some bugfixes and some enhancements.  It also
+  contains some reworked secretariat code, which changes part of the authentication
+  handling in preparation for the next release (5.3.0), which will transition
+  the datatracker from using HTTP basic authentication, to Django's built-in
+  authentication scheme.
+
+  * Merged in [7568] from rcross@amsl.com: 
+    Grant ISOC CEO access to announcement tool, change announcement tool from
+    option 'IAB Executive Director' to 'IAB Executive Administrative Manager' 
+
+  * Merged in [7557] from rjsparks@nostrum.com: 
+    Update reference relationships (asyncronously) for new rfcs found when
+    syncing with the rfc index. Fixes ticket #1347.  
+
+  * Added some datatracker development notes from the testing extension
+    (pyflakes etc.) work
+
+  * Merged in [ 7454] and [7549] from rcross@amsl.com:
+    Changes to the secretariat code, to support Django authentication instead
+    of basic http auth, and fixes to the tests to work with the secauth
+    middleware changes.
+
+  * Pyflakes cleanup to be compliant with pyflakes 0.8.1, which seems to find
+    things 0.8.0 didn't find.
+
+  * Changed URLs with explicit scheme from http to https.  Emails that are
+    sent out from the datatracker will now specify URLs with https:, rather
+    than http.
+
+  * Added a fix to exclude empty email addresses from the send list.
+
+  * The ietf/patches directory doesn't work out as intended, and causes 
+    some confusion with the /a/www/ietf-datatracker/patches/ directory on the 
+    production server.
+
+  * Backfilled the changelog file, back to 2.00
+
+  * Merged in [7153] from rjsparks@nostrum.com:
+
+    Fixed a typo in code that looks for the IRTF chair email address while 
+    adding replaces relationships.
+    Made that code slightly more robust.
+    Fixes ticket #1253 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Apr 2014 17:28:49 +0200
+
+
 ietfdb (5.2.0) ietf; urgency=low
 
   This is a code cleanup release.  It adds a test and a managemement command
