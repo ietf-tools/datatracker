@@ -158,7 +158,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(len(q('form input[name=do_action_taken]')), 0)
         
         # log in and get
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

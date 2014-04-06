@@ -18,7 +18,8 @@ class MainTestCase(TestCase):
         "Main Test"
         make_test_data()
         url = reverse('announcement')
-        r = self.client.get(url, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
 class DummyCase(TestCase):
@@ -30,7 +31,8 @@ class UnauthorizedCase(TestCase):
         make_test_data()
         url = reverse('announcement')
         person = Person.objects.filter(role__group__acronym='mars')[0]
-        r = self.client.get(url,REMOTE_USER=person.user)
+        self.client.login(username=person.user.username, password=person.user.username+"+password")
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 403)
     
 class SubmitCase(TestCase):
@@ -39,8 +41,9 @@ class SubmitCase(TestCase):
         make_test_data()
         url = reverse('announcement')
         post_data = {'id_subject':''}
-        #self.client.login(remote_user='rcross')
-        r = self.client.post(url,post_data, REMOTE_USER=SECR_USER)
+        #self.client.login(username='rcross', password='rcross+password")
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
@@ -56,7 +59,8 @@ class SubmitCase(TestCase):
                      'frm':'IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;',
                      'subject':'Test Subject',
                      'body':'This is a test.'}
-        r = self.client.post(url,post_data,follow=True, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.post(url,post_data,follow=True)
         self.assertRedirects(r, redirect)
 	# good enough if we get to confirm page
         #self.assertEqual(len(outbox), 1)

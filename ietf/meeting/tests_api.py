@@ -44,7 +44,7 @@ class ApiTests(TestCase):
         self.assertEqual(ScheduledSession.objects.get(pk=mars_scheduled.pk).session, session)
 
         # faulty post - logged in as non-owner
-        self.client.login(remote_user="ad")
+        self.client.login(username="ad", password="ad+password")
         r = do_post(to=ames_scheduled)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("error" in json.loads(r.content))
@@ -58,7 +58,7 @@ class ApiTests(TestCase):
         test_schedule.save()
 
         # move to ames
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = do_post(to=ames_scheduled)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("error" not in json.loads(r.content))
@@ -67,7 +67,7 @@ class ApiTests(TestCase):
         self.assertEqual(ScheduledSession.objects.get(pk=ames_scheduled.pk).session, session)
 
         # unschedule
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = do_post(to=None)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("error" not in json.loads(r.content))
@@ -121,7 +121,7 @@ class ApiTests(TestCase):
         self.assertTrue(not meeting.room_set.filter(name="new room"))
 
         # create room
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
         self.assertTrue(meeting.room_set.filter(name="new room"))
 
@@ -141,7 +141,7 @@ class ApiTests(TestCase):
         self.assertTrue(meeting.room_set.filter(pk=room.pk))
 
         # delete
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.delete(url)
         self.assertTrue(not meeting.room_set.filter(pk=room.pk))
         self.assertTrue(not TimeSlot.objects.filter(pk__in=timeslots_before))
@@ -189,12 +189,12 @@ class ApiTests(TestCase):
         }
 
         # unauthorized post
-        self.client.login(remote_user="ad")
+        self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 403)
 
         # create room
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
         self.assertTrue(meeting.timeslot_set.filter(time=slot_time))
@@ -207,12 +207,12 @@ class ApiTests(TestCase):
                          kwargs=dict(num=meeting.number, slotid=slot.pk))
 
         # unauthorized delete
-        self.client.login(remote_user="ad")
+        self.client.login(username="ad", password="ad+password")
         r = self.client.delete(url)
         self.assertEqual(r.status_code, 403)
 
         # delete
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         self.client.delete(url)
         self.assertTrue(not meeting.timeslot_set.filter(pk=slot.pk))
 
@@ -236,13 +236,13 @@ class ApiTests(TestCase):
         }
 
         # unauthorized post
-        self.client.login(remote_user="plain")
+        self.client.login(username="plain", password="plain+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 403)
         self.assertTrue(not meeting.schedule_set.filter(name='new-agenda'))
 
         # create new agenda
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
         self.assertTrue(meeting.schedule_set.filter(name='new-agenda'))
@@ -262,12 +262,12 @@ class ApiTests(TestCase):
         }
 
         # unauthorized post
-        self.client.login(remote_user="plain")
+        self.client.login(username="plain", password="plain+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 403)
 
         # change agenda
-        self.client.login(remote_user="ad")
+        self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
         changed_schedule = Schedule.objects.get(pk=meeting.agenda.pk)
@@ -281,12 +281,12 @@ class ApiTests(TestCase):
                          kwargs=dict(num=meeting.number,
                                      schedule_name=meeting.agenda.name))
         # unauthorized delete
-        self.client.login(remote_user="plain")
+        self.client.login(username="plain", password="plain+password")
         r = self.client.delete(url)
         self.assertEqual(r.status_code, 403)
 
         # delete
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.delete(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(not Schedule.objects.filter(pk=meeting.agenda.pk))
@@ -301,12 +301,12 @@ class ApiTests(TestCase):
             "agenda": "",
             }
         # unauthorized post
-        self.client.login(remote_user="ad")
+        self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 403)
 
         # clear
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(not Meeting.objects.get(pk=meeting.pk).agenda)
@@ -340,7 +340,7 @@ class ApiTests(TestCase):
             })}
 
         # Secretariat
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.post('/dajaxice/ietf.meeting.readonly/', data)
         self.assertEqual(r.status_code, 200)
 
@@ -351,7 +351,8 @@ class ApiTests(TestCase):
         self.assertEqual(info['write_perm'], True)
 
         # owner
-        self.client.login(remote_user=meeting.agenda.owner.user.username)
+        self.client.login(username=meeting.agenda.owner.user.username,
+                          password=meeting.agenda.owner.user.username+"+password")
         r = self.client.post('/dajaxice/ietf.meeting.readonly/', data)
         self.assertEqual(r.status_code, 200)
 
@@ -383,7 +384,7 @@ class ApiTests(TestCase):
         # set pinned
         meeting.agenda.owner = Person.objects.get(user__username="secretary")
         meeting.agenda.save()
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(ScheduledSession.objects.get(pk=scheduled.pk).pinned)

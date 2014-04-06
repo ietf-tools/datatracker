@@ -18,7 +18,8 @@ class MainTestCase(TestCase):
         "Main Test"
         augment_data()
         url = reverse('roles')
-        response = self.client.get(url, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     def test_roles_delete(self):
@@ -28,7 +29,8 @@ class MainTestCase(TestCase):
         role = group.role_set.all()[0]
         url = reverse('roles_delete_role', kwargs={'acronym':group.acronym,'id':role.id})
         target = reverse('roles') + '?group=%s' % group.acronym
-        response = self.client.get(url,follow=True, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url,follow=True)
         self.assertRedirects(response, target)
         self.failUnless('deleted successfully' in response.content)
 
@@ -44,7 +46,8 @@ class MainTestCase(TestCase):
                      'person':'Joe Smith - (%s)' % person.id,
                      'email':person.email_set.all()[0].address,
                      'submit':'Add'}
-        response = self.client.post(url,post_data,follow=True, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, target)
         self.failUnless('added successfully' in response.content)
 

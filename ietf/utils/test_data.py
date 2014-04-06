@@ -13,7 +13,7 @@ from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
 from ietf.person.models import Person, Alias, Email
 
-def create_person(group, role_name, name=None, username=None, email_address=None):
+def create_person(group, role_name, name=None, username=None, email_address=None, password=None):
     """Add person/user/email and role."""
     if not name:
         name = group.acronym.capitalize() + " " + role_name.capitalize()
@@ -21,8 +21,12 @@ def create_person(group, role_name, name=None, username=None, email_address=None
         username = group.acronym + "-" + role_name
     if not email_address:
         email_address = username + "@ietf.org"
+    if not password:
+        password = username + "+password"
 
     user = User.objects.create(username=username)
+    user.set_password(password)
+    user.save()
     person = Person.objects.create(name=name, ascii=name, user=user)
     Alias.objects.create(name=name, person=person)
     email = Email.objects.create(address=email_address, person=person)
@@ -165,6 +169,8 @@ def make_test_data():
 
     # plain IETF'er
     u = User.objects.create(username="plain")
+    u.set_password("plain+password")
+    u.save()
     plainman = Person.objects.create(name="Plain Man", ascii="Plain Man", user=u)
     email = Email.objects.create(address="plain@example.com", person=plainman) # pyflakes:ignore
 

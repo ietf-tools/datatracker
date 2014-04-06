@@ -20,7 +20,8 @@ class MainTestCase(TestCase):
         "Main Test"
         make_test_data()
         url = reverse('areas')
-        response = self.client.get(url, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     def test_view(self):
@@ -29,5 +30,6 @@ class MainTestCase(TestCase):
         augment_data()
         areas = Group.objects.filter(type='area',state='active')
         url = reverse('areas_view', kwargs={'name':areas[0].acronym})
-        response = self.client.get(url, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)

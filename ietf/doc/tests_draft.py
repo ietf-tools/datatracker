@@ -141,7 +141,7 @@ class ChangeStateTests(TestCase):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="ad-eval"))
 
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         url = urlreverse('doc_change_state', kwargs=dict(name=draft.name))
 
         mailbox_before = len(outbox)
@@ -820,7 +820,7 @@ class IndividualInfoFormsTests(TestCase):
         url = urlreverse('doc_shepherd_writeup',kwargs=dict(name=self.docname))
   
         # get as a shepherd
-        self.client.login(remote_user="plain")
+        self.client.login(username="plain", password="plain+password")
 
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
@@ -874,14 +874,14 @@ class IndividualInfoFormsTests(TestCase):
 class SubmitToIesgTests(TestCase):
     def verify_permissions(self):
 
-        def verify_fail(remote_user):
-            if remote_user:
-                self.client.login(remote_user=remote_user)
+        def verify_fail(username):
+            if username:
+                self.client.login(username=username, password=username+"+password")
             r = self.client.get(url)
             self.assertEqual(r.status_code,404)
 
-        def verify_can_see(remote_user):
-            self.client.login(remote_user=remote_user)
+        def verify_can_see(username):
+            self.client.login(username=username, password=username+"+password")
             r = self.client.get(url)
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
@@ -897,7 +897,7 @@ class SubmitToIesgTests(TestCase):
         
     def cancel_submission(self):
         url = urlreverse('doc_to_iesg', kwargs=dict(name=self.docname))
-        self.client.login(remote_user='marschairman')
+        self.client.login(username="marschairman", password="marschairman+password")
 
 	r = self.client.post(url, dict(cancel="1"))
         self.assertEqual(r.status_code, 302)
@@ -907,7 +907,7 @@ class SubmitToIesgTests(TestCase):
 
     def confirm_submission(self):
         url = urlreverse('doc_to_iesg', kwargs=dict(name=self.docname))
-        self.client.login(remote_user='marschairman')
+        self.client.login(username="marschairman", password="marschairman+password")
 
         docevent_count_pre = self.doc.docevent_set.count()
         mailbox_before = len(outbox)
