@@ -77,7 +77,7 @@ class GroupsTest(TestCase):
         make_test_data()
         group = Group.objects.all()[0]
         url = reverse('groups_view', kwargs={'acronym':group.acronym})
-        response = self.client.get(url)
+        response = self.client.get(url, REMOTE_USER=SECR_USER)
         self.assertEqual(response.status_code, 200)
 
     # ------- Test Edit -------- #
