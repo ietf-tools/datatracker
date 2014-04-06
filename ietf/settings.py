@@ -319,6 +319,8 @@ IANA_SYNC_PASSWORD = "secret"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "http://www.iana.org/protocols/"
 
+RFC_TEXT_RSYNC_SOURCE="ftp.rfc-editor.org::rfcs-text-only"
+
 RFC_EDITOR_SYNC_PASSWORD="secret"
 RFC_EDITOR_SYNC_NOTIFICATION_URL = "http://www.rfc-editor.org/parser/parser.php"
 RFC_EDITOR_QUEUE_URL = "http://www.rfc-editor.org/queue2.xml"
@@ -375,6 +377,7 @@ IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE = 2000 # in MB
 DOT_BINARY = '/usr/bin/dot'
 UNFLATTEN_BINARY= '/usr/bin/unflatten'
 PS2PDF_BINARY = '/usr/bin/ps2pdf'
+RSYNC_BINARY = '/usr/bin/rsync'
 
 # Account settings
 DAYS_TO_EXPIRE_REGISTRATION_LINK = 3

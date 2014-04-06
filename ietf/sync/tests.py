@@ -306,7 +306,7 @@ class RFCSyncTests(TestCase):
         draft_filename = "%s-%s.txt" % (doc.name, doc.rev)
         self.write_draft_file(draft_filename, 5000)
 
-        changed = rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30))
+        changed,_ = rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30))
 
         doc = Document.objects.get(name=doc.name)
 
@@ -329,7 +329,7 @@ class RFCSyncTests(TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, draft_filename)))
 
         # make sure we can apply it again with no changes
-        changed = rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30))
+        changed,_ = rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30))
         self.assertEqual(len(changed), 0)
 
 

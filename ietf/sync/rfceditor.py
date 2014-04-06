@@ -317,6 +317,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
     system = Person.objects.get(name="(System)")
 
     results = []
+    new_rfcs = []
 
     for rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract in data:
 
@@ -399,6 +400,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
             other_changes = True
 
             results.append("Added RFC published event: %s" % e.time.strftime("%Y-%m-%d"))
+            new_rfcs.append(doc)
 
         for t in ("draft-iesg", "draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"):
             slug = doc.get_state_slug(t)
@@ -461,7 +463,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
             doc.time = datetime.datetime.now()
             doc.save()
 
-    return results
+    return results, new_rfcs
 
 
 def post_approved_draft(url, name):

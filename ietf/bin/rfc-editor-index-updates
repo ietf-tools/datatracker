@@ -2,6 +2,7 @@
 
 import os, sys, re, json, datetime
 import syslog
+import traceback
 
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
@@ -13,6 +14,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 from django.conf import settings
 from optparse import OptionParser
+from django.core.mail import mail_admins
 
 parser = OptionParser()
 parser.add_option("-d", dest="skip_date",
@@ -24,7 +26,9 @@ skip_date = datetime.date.today() - datetime.timedelta(days=365)
 if options.skip_date:
     skip_date = datetime.datetime.strptime(options.skip_date, "%Y-%m-%d").date()
 
+from ietf.utils.pipe import pipe
 from ietf.sync.rfceditor import *
+from ietf.doc.utils import rebuild_reference_relations
 
 syslog.syslog("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_QUEUE_URL)
 
@@ -35,6 +39,28 @@ if len(data) < MIN_INDEX_RESULTS:
     syslog.syslog("Not enough results, only %s" % len(data))
     sys.exit(1)
 
-changed = update_docs_from_rfc_index(data, skip_older_than_date=skip_date)
+changed, new_rfcs  = update_docs_from_rfc_index(data, skip_older_than_date=skip_date)
+
 for c in changed:
     syslog.syslog(c)
+
+# This can be called while processing a notifying POST from the RFC Editor
+# Spawn a child to sync the rfcs and calculate new reference relationships
+# so that the POST
+
+newpid = os.fork()
+
+if newpid == 0:
+    try:
+        pipe("%s -a %s %s" % (settings.RSYNC_BINARY,settings.RFC_TEXT_RSYNC_SOURCE,settings.RFC_PATH))
+        for rfc in new_rfcs:
+            rebuild_reference_relations(rfc)
+            syslog.syslog("Updated references for %s"%rfc.canonical_name())
+    except:
+        subject = "Exception in updating references for new rfcs: %s : %s" % (sys.exc_info()[0],sys.exc_info()[1])
+        msg = "%s\n%s\n----\n%s"%(sys.exc_info()[0],sys.exc_info()[1],traceback.format_tb(sys.exc_info()[2])) 
+        mail_admins(subject,msg,fail_silently=True)
+        syslog.syslog(subject)
+    os._exit(0)
+else:
+    sys.exit(0)
