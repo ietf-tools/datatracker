@@ -11,7 +11,7 @@
     </td>
     <td align="right">
       <br>
-      <span class="login">{% if request.user_is_secretariat %}Secretariat {% endif %}Logged in: {{ request.META.REMOTE_USER }}</span>
+      <span class="login">{% if request.user_is_secretariat %}Secretariat {% endif %}Logged in: {{ user }}</span>
     </td>
   </tr>
 </table>
