@@ -154,7 +154,7 @@ class EditTests(TestCase):
     def test_edit_agenda(self):
         meeting = make_meeting_test_data()
 
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("session_obj" in r.content)
@@ -164,7 +164,7 @@ class EditTests(TestCase):
         url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number))
 
         # save as
-        self.client.login(remote_user="ad")
+        self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, {
             'savename': "foo",
             'saveas': "saveas",
@@ -196,14 +196,14 @@ class EditTests(TestCase):
         schedule.visible = False
         schedule.public = False
         schedule.save()
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
     def test_edit_timeslots(self):
         meeting = make_meeting_test_data()
 
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_timeslots", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(meeting.room_set.all().first().name in r.content)

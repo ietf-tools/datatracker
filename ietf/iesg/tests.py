@@ -410,7 +410,7 @@ class RescheduleOnAgendaTests(TestCase):
         
         url = urlreverse('ietf.iesg.views.agenda_documents')
         
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
 
         # normal get
         r = self.client.get(url)

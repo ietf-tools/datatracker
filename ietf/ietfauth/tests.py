@@ -44,25 +44,34 @@ class IetfAuthTests(TestCase):
     def test_login(self):
         make_test_data()
 
-        # try logging in with a next
-        r = self.client.get('/accounts/login/?next=/foobar', REMOTE_USER="plain")
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], "/accounts/loggedin/")
+        # try logging in without a next
+        r = self.client.get('/accounts/login/')
+        self.assertEqual(r.status_code, 200)
 
-        r = self.client.get('/accounts/loggedin/?next=/foobar', REMOTE_USER="plain")
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], "/foobar")
-
-        # try again without a next
-        r = self.client.get('/accounts/login/', REMOTE_USER="plain")
-        r = self.client.get('/accounts/loggedin/', REMOTE_USER="plain")
+        r = self.client.post('/accounts/login/', {"username":"plain", "password":"plain+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], "/accounts/profile/")
 
+        # try logging out
+        r = self.client.get('/accounts/logout/')        
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.get('/accounts/profile/')
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], "/accounts/login/")
+
+        # try logging in with a next
+        r = self.client.post('/accounts/login/?next=/foobar', {"username":"plain", "password":"plain+password"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], "/foobar")
+
+
     def test_profile(self):
+        make_test_data()
+
         url = urlreverse('ietf.ietfauth.views.profile')
         login_testing_unauthorized(self, "plain", url)
-
+        
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

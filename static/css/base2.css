@@ -404,3 +404,23 @@ span.fieldRequired {
     margin: 1em 0;
 }
 
+
+#login-pane {
+    width: 100%;
+    height: 100%;
+    //	background: rgba(196,196,196,.5);
+}
+
+
+#login-form {
+    width: 24em;
+    padding: 2em;
+    margin-right: auto;
+    margin-left: auto;
+    margin-top: 10em;
+    background: white;
+}
+
+.login {
+    font-style: italic;
+}

@@ -12,7 +12,8 @@ class MainTestCase(TestCase):
         "Main Test"
         make_test_data()
         url = reverse('drafts')
-        response = self.client.get(url, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     def test_view(self):
@@ -20,5 +21,6 @@ class MainTestCase(TestCase):
         make_test_data()
         drafts = Document.objects.filter(type='draft')
         url = reverse('drafts_view', kwargs={'id':drafts[0].name})
-        response = self.client.get(url, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)

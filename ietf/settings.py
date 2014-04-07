@@ -96,7 +96,7 @@ WSGI_APPLICATION = "ietf.wsgi.application"
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
-AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
+AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.ModelBackend', )
 
 #DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
 
@@ -142,14 +142,12 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'ietf.middleware.FillInRemoteUserIfLoggedInMiddleware',
-    'django.contrib.auth.middleware.RemoteUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
     'ietf.middleware.SQLLogMiddleware',
     'ietf.middleware.SMTPExceptionMiddleware',
     'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.transaction.TransactionMiddleware',
     'ietf.middleware.UnicodeNfkcNormalization',
     'ietf.secr.middleware.secauth.SecAuthMiddleware'
 )

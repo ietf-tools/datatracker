@@ -16,7 +16,8 @@ class MainTestCase(TestCase):
         "Main Test"
         augment_data()
         url = reverse('telechat')
-        response = self.client.get(url, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     def test_doc(self):
@@ -25,6 +26,7 @@ class MainTestCase(TestCase):
         d = TelechatDate.objects.all()[0]
         date = d.date.strftime('%Y-%m-%d')
         url = reverse('telechat_doc', kwargs={'date':date})
-        response = self.client.get(url, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 

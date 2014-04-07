@@ -63,6 +63,7 @@ def url_login(request, user, passwd):
             return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
     return HttpResponse("Not authenticated?", status=500)
 
+@login_required
 def ietf_login(request):
     if not request.user.is_authenticated():
         return HttpResponse("Not authenticated?", status=500)
@@ -258,4 +259,3 @@ def test_email(request):
         r.set_cookie("testmailcc", cookie)
 
     return r
-

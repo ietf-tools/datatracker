@@ -137,7 +137,7 @@ class SubmitTests(TestCase):
         self.assertTrue(name in outbox[-1]["Subject"])
 
         # as chair of WG, we should see approval button
-        self.client.login(remote_user="marschairman")
+        self.client.login(username="marschairman", password="marschairman+password")
 
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
@@ -436,7 +436,7 @@ class SubmitTests(TestCase):
         self.assertTrue(name in outbox[-1]["Subject"])
 
         # as Secretariat, we should see the force post button
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
 
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
@@ -482,7 +482,7 @@ class SubmitTests(TestCase):
         self.assertEqual(len(adjust_button), 0)
 
         # as Secretariat, we should get edit button
-        self.client.login(remote_user="secretary")
+        self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(unprivileged_status_url)
         q = PyQuery(r.content)
         adjust_button = q('input[type=submit][value*="Adjust"]')
@@ -607,7 +607,7 @@ class ApprovalsTestCase(TestCase):
         make_test_data()
 
         url = urlreverse('submit_approvals')
-        self.client.login(remote_user="marschairman")
+        self.client.login(username="marschairman", password="marschairman+password")
 
         Preapproval.objects.create(name="draft-ietf-mars-foo", by=Person.objects.get(user__username="marschairman"))
         Preapproval.objects.create(name="draft-ietf-mars-baz", by=Person.objects.get(user__username="marschairman"))

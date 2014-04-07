@@ -12,20 +12,23 @@ class SreqUrlTests(TestCase):
     def test_urls(self):
         draft = make_test_data()
 
-        r = self.client.get("/secr/",REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+
+        r = self.client.get("/secr/")
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.get("/secr/sreq/",REMOTE_USER=SECR_USER)
+        r = self.client.get("/secr/sreq/")
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.get("/secr/sreq/%s/new/" % draft.group.acronym, REMOTE_USER=SECR_USER)
+        r = self.client.get("/secr/sreq/%s/new/" % draft.group.acronym)
         self.assertEqual(r.status_code, 200)
 
 class MainTestCase(TestCase):
     def test_main(self):
         make_test_data()
         url = reverse('sessions')
-        r = self.client.get(url, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         sched = r.context['scheduled_groups']
         unsched = r.context['unscheduled_groups']
@@ -42,8 +45,8 @@ class SubmitRequestCase(TestCase):
                      'id_attendees':'10',
                      'id_conflict1':'',
                      'id_comments':'need projector'}
-        self.client.login(REMOTE_USER=SECR_USER)
-        r = self.client.post(url,post_data,REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
 """
         #assert False, self.client.session..__dict__

@@ -254,12 +254,14 @@ def canonicalize_sitemap(s):
     s = re.sub("\n*\s*(<[a-zA-Z])", "\n\g<1>", s)
     return s
         
-def login_testing_unauthorized(test_case, remote_user, url):
+def login_testing_unauthorized(test_case, username, url, password=None):
     r = test_case.client.get(url)
     test_case.assertTrue(r.status_code in (302, 403))
     if r.status_code == 302:
         test_case.assertTrue("/accounts/login" in r['Location'])
-    test_case.client.login(remote_user=remote_user)
+    if not password:
+        password = username + "+password"
+    return test_case.client.login(username=username, password=password)
 
 class ReverseLazyTest(django.test.TestCase):
     def test_redirect_with_lazy_reverse(self):

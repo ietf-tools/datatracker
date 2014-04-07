@@ -305,15 +305,17 @@ class NomcomViewsTest(TestCase):
         self.change_members([CHAIR_USER, COMMUNITY_USER])
 
         # check member actions
-        self.client.login(remote_user=COMMUNITY_USER)
+        self.client.login(username=COMMUNITY_USER,password=COMMUNITY_USER+"+password")
         self.check_url_status(self.private_index_url, 200)
+        self.client.logout()
 
         # revert edit nomcom members
         login_testing_unauthorized(self, CHAIR_USER, self.edit_members_url)
         self.change_members([CHAIR_USER])
-        self.client.login(remote_user=COMMUNITY_USER)
-        self.check_url_status(self.private_index_url, 403)
+        self.client.logout()
 
+        self.client.login(username=COMMUNITY_USER,password=COMMUNITY_USER+"+password")
+        self.check_url_status(self.private_index_url, 403)
         self.client.logout()
 
     def change_chair(self, user):
@@ -333,9 +335,10 @@ class NomcomViewsTest(TestCase):
         self.change_chair(COMMUNITY_USER)
 
         # check chair actions
-        self.client.login(remote_user=COMMUNITY_USER)
+        self.client.login(username=COMMUNITY_USER,password=COMMUNITY_USER+"+password")
         self.check_url_status(self.edit_members_url, 200)
         self.check_url_status(self.edit_nomcom_url, 200)
+        self.client.logout()
 
         # revert edit nomcom chair
         login_testing_unauthorized(self, SECRETARIAT_USER, self.edit_chair_url)

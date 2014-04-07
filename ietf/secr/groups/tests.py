@@ -5,8 +5,6 @@ from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
 import debug                            # pyflakes:ignore
 
-SECR_USER='secretary'
-
 class GroupsTest(TestCase):
     # ------- Test Search -------- #
     def test_search(self):
@@ -15,7 +13,8 @@ class GroupsTest(TestCase):
         group = Group.objects.all()[0]
         url = reverse('groups_search')
         post_data = {'group_acronym':group.acronym,'submit':'Search'}
-        response = self.client.post(url,post_data,follow=True, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data,follow=True)
         #assert False, response.content
         self.assertEqual(response.status_code, 200)
         self.failUnless(group.acronym in response.content)
@@ -25,7 +24,8 @@ class GroupsTest(TestCase):
         url = reverse('groups_search')
         target = reverse('groups_add')
         post_data = {'submit':'Add'}
-        response = self.client.post(url,post_data,follow=True, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, target)
 
     def test_add_group_invalid(self):
@@ -35,7 +35,8 @@ class GroupsTest(TestCase):
                      'awp-TOTAL_FORMS':'2',
                      'awp-INITIAL_FORMS':'0',
                      'submit':'Save'}
-        response = self.client.post(url,post_data, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data)
         self.assertEqual(response.status_code, 200)
         self.failUnless('This field is required' in response.content)
 
@@ -52,7 +53,8 @@ class GroupsTest(TestCase):
                      'awp-TOTAL_FORMS':'2',
                      'awp-INITIAL_FORMS':'0',
                      'submit':'Save'}
-        response = self.client.post(url,post_data, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data)
         #print response.content
         self.assertEqual(response.status_code, 200)
         self.failUnless('Group with this Acronym already exists' in response.content)
@@ -69,7 +71,8 @@ class GroupsTest(TestCase):
                      'awp-TOTAL_FORMS':'2',
                      'awp-INITIAL_FORMS':'0',
                      'submit':'Save'}
-        response = self.client.post(url,post_data, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data)
         self.assertEqual(response.status_code, 200)
 
     # ------- Test View -------- #
@@ -77,7 +80,8 @@ class GroupsTest(TestCase):
         make_test_data()
         group = Group.objects.all()[0]
         url = reverse('groups_view', kwargs={'acronym':group.acronym})
-        response = self.client.get(url, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     # ------- Test Edit -------- #
@@ -97,7 +101,8 @@ class GroupsTest(TestCase):
                      'groupurl_set-TOTAL_FORMS':'2',
                      'groupurl_set-INITIAL_FORMS':'0',
                      'submit':'Save'}
-        response = self.client.post(url,post_data,follow=True, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, target)
         self.failUnless('changed successfully' in response.content)
 
@@ -108,7 +113,8 @@ class GroupsTest(TestCase):
         role = group.role_set.all()[0]
         url = reverse('groups_delete_role', kwargs={'acronym':group.acronym,'id':role.id})
         target = reverse('groups_people', kwargs={'acronym':group.acronym})
-        response = self.client.get(url,follow=True, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url,follow=True)
         self.assertRedirects(response, target)
         self.failUnless('deleted successfully' in response.content)
 
@@ -121,6 +127,7 @@ class GroupsTest(TestCase):
                      'person':'Joe Smith - (%s)' % person.id,
                      'email':person.email_set.all()[0].address,
                      'submit':'Add'}
-        response = self.client.post(url,post_data,follow=True, REMOTE_USER=SECR_USER)
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, url)
         self.failUnless('added successfully' in response.content)

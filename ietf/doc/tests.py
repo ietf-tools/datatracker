@@ -349,7 +349,7 @@ class AddCommentTestCase(TestCase):
         self.assertTrue(draft.name in outbox[-1]['Subject'])
 
         # Make sure we can also do it as IANA
-        self.client.login(remote_user="iana")
+        self.client.login(username="iana", password="iana+password")
 
         # normal get
         r = self.client.get(url)

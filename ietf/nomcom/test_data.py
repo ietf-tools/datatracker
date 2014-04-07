@@ -113,7 +113,10 @@ def nomcom_test_data():
     create_person(group, "member", username=MEMBER_USER)
 
     # nominee
-    u, _ = User.objects.get_or_create(username=COMMUNITY_USER)
+    u, created = User.objects.get_or_create(username=COMMUNITY_USER)
+    if created:
+        u.set_password(COMMUNITY_USER+"+password")
+        u.save()
     plainman, _ = Person.objects.get_or_create(name="Plain Man", ascii="Plain Man", user=u)
     email, _ = Email.objects.get_or_create(address="plain@example.com", person=plainman)
     nominee, _ = Nominee.objects.get_or_create(email=email, nomcom=nomcom)
