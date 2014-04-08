@@ -265,7 +265,6 @@ AGENDA_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/agenda/%(wg)s.%(ext)
 MINUTES_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/minutes/%(wg)s.%(ext)s'
 SLIDES_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/slides/%(wg)s-*'
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
-IETFWG_DESCRIPTIONS_PATH = '/a/www/www6s/wg-descriptions/'
 IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
 IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
 IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
