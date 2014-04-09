@@ -58,5 +58,5 @@ class Command(BaseCommand):
         overwrite = options.get('overwrite', False)
         verbosity = int(options.get('verbosity'))
         for fn in filenames:
-            import_htpasswd_file(fn)
+            import_htpasswd_file(fn, verbosity=verbosity, overwrite=overwrite)
                     
