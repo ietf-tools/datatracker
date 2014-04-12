@@ -211,7 +211,10 @@ def submission_status(request, submission_id, access_token=None):
 
                 create_submission_event(request, submission, u"Set submitter to \"%s\" and %s" % (submission.submitter, desc))
 
-                return redirect("submit_submission_status_by_hash", submission_id=submission.pk, access_token=access_token)
+                if access_token:
+                    return redirect("submit_submission_status_by_hash", submission_id=submission.pk, access_token=access_token)
+                else:
+                    return redirect("submit_submission_status", submission_id=submission.pk)
 
         elif action == "edit" and submission.state_id == "uploaded":
             if access_token:
