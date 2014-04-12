@@ -122,8 +122,10 @@ fi
 VER=$1
 
 REPO=$(svn info | grep "^Repository Root:" | awk '{ print $3 }')
+RDATE=$(svn info | grep "^Last Changed Date:" | awk '{ print $4 "T" $5 $6 }')
 RURL=$(svn info | grep "^URL:" | awk '{ print $2 }')
 RDIR=${RURL#$REPO}
+
 DIR=${RDIR#/}
 if   [ -z "$DIR" ]; then
     die "Couldn't find anything to release here"
@@ -160,6 +162,11 @@ CHANGE=${REST#*.}
 VER="$(printf %d.%d.%d $MAJOR $MINOR $CHANGE)"
 NEXT=$(( $CHANGE + 1 ))
 DEV="$(printf %d.%d.%d-dev $MAJOR $MINOR $NEXT)"
+
+note "Checking that there's a recent test-crawler log"
+touch -d $RDATE $SRC
+TCLOG=$(ls -t $SRC/test-crawl-*.log | head -n 1)
+[ $TCLOG -nt $SRC ] || die "Looked for $SRC/test-crawl-*.log, but didn't find one newer than the latest repository commit ($RDATE)"
 
 note "Checking that changelog information is available"
 changes=$( sed -n "/^ietfdb ($VER.*)/,/^ -- /p" changelog )
