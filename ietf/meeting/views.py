@@ -18,8 +18,6 @@ from django.db.models import Q
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
-from django.utils.decorators import decorator_from_middleware
-from django.middleware.gzip import GZipMiddleware
 from django.db.models import Max
 from django.forms.models import modelform_factory
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -36,7 +34,6 @@ from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, meeting_updated
 from ietf.utils.pipe import pipe
 
-@decorator_from_middleware(GZipMiddleware)
 def materials(request, meeting_num=None):
     meeting = get_meeting(meeting_num)
 
@@ -158,7 +155,6 @@ def agenda_create(request, num=None, schedule_name=None):
     return redirect(edit_agenda, meeting.number, newschedule.name)
 
 
-@decorator_from_middleware(GZipMiddleware)
 @ensure_csrf_cookie
 def edit_timeslots(request, num=None):
 
@@ -195,7 +191,6 @@ def edit_timeslots(request, num=None):
 ##############################################################################
 #@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
-@decorator_from_middleware(GZipMiddleware)
 @ensure_csrf_cookie
 def edit_agenda(request, num=None, schedule_name=None):
 
@@ -272,7 +267,6 @@ def edit_agenda(request, num=None, schedule_name=None):
 AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
 
 @role_required('Area Director','Secretariat')
-@decorator_from_middleware(GZipMiddleware)
 @ensure_csrf_cookie
 def edit_agenda_properties(request, num=None, schedule_name=None):
 
@@ -291,7 +285,6 @@ def edit_agenda_properties(request, num=None, schedule_name=None):
 #
 
 @role_required('Area Director','Secretariat')
-@decorator_from_middleware(GZipMiddleware)
 @ensure_csrf_cookie
 def edit_agendas(request, num=None, order=None):
 
