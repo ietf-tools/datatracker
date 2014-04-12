@@ -164,9 +164,9 @@ NEXT=$(( $CHANGE + 1 ))
 DEV="$(printf %d.%d.%d-dev $MAJOR $MINOR $NEXT)"
 
 note "Checking that there's a recent test-crawler log"
-touch -d $RDATE $SRC
-TCLOG=$(ls -t $SRC/test-crawl-*.log | head -n 1)
-[ $TCLOG -nt $SRC ] || die "Looked for $SRC/test-crawl-*.log, but didn't find one newer than the latest repository commit ($RDATE)"
+touch -d $RDATE .svn/.latest-commit
+TCLOG=$(ls -t ../test-crawl-*.log | head -n 1)
+[ $TCLOG -nt .svn/.latest-commit ] || die "Looked for ../test-crawl-*.log, but didn't find one newer than the latest repository commit ($RDATE)"
 
 note "Checking that changelog information is available"
 changes=$( sed -n "/^ietfdb ($VER.*)/,/^ -- /p" changelog )
