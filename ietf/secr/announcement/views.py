@@ -6,7 +6,7 @@ from django.template import RequestContext
 from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
 from ietf.secr.announcement.forms import AnnounceForm
-from ietf.secr.utils.decorators import check_for_cancel
+from ietf.secr.utils.decorators import check_for_cancel, clear_non_auth
 from ietf.utils.mail import send_mail_text
 
 # -------------------------------------------------
@@ -89,7 +89,7 @@ def confirm(request):
                        extra=extra)
 
         # clear session
-        request.session.clear()
+        clear_non_auth(request.session)
 
         messages.success(request, 'The announcement was sent.')
         return redirect('announcement')

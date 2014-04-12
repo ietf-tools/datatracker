@@ -10,6 +10,14 @@ from ietf.meeting.models import Session
 from ietf.secr.utils.meeting import get_timeslot
 
 
+def clear_non_auth(session):
+    """
+    Clears non authentication related keys from the session object
+    """
+    for key in session.keys():
+        if not key.startswith('_auth'):
+            del session[key]
+            
 def check_for_cancel(redirect_url):
     """
     Decorator to make a view redirect to the given url if the reuqest is a POST which contains
@@ -19,7 +27,7 @@ def check_for_cancel(redirect_url):
         @wraps(func)
         def inner(request, *args, **kwargs):
             if request.method == 'POST' and request.POST.get('submit',None) == 'Cancel':
-                request.session.clear()
+                clear_non_auth(request.session)
                 return HttpResponseRedirect(redirect_url)
             return func(request, *args, **kwargs)
         return inner

@@ -25,6 +25,7 @@ from ietf.secr.drafts.forms import ( AddModelForm, AuthorForm, BaseRevisionModel
 from ietf.secr.proceedings.proc_utils import get_progress_stats
 from ietf.secr.sreq.views import get_meeting
 from ietf.secr.utils.ams_utils import get_base
+from ietf.secr.utils.decorators import clear_non_auth
 from ietf.secr.utils.document import get_rfc_num, get_start_date
 from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName, SubmissionEvent
 from ietf.utils.draft import Draft
@@ -514,7 +515,7 @@ def add(request):
 
     * form 
     '''
-    request.session.clear()
+    clear_non_auth(request.session)
     
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
@@ -699,7 +700,7 @@ def confirm(request, id):
         if button_text == 'Cancel':
             # TODO do cancel functions from session (ie remove uploaded files?)
             # clear session data
-            request.session.clear()
+            clear_non_auth(request.session)
             return redirect('drafts_view', id=id)
 
         action = request.session['action']
@@ -719,7 +720,7 @@ def confirm(request, id):
         func(draft,request)
         
         # clear session data
-        request.session.clear()
+        clear_non_auth(request.session)
     
         messages.success(request, '%s action performed successfully!' % action)
         return redirect('drafts_view', id=id)
@@ -818,7 +819,7 @@ def email(request, id):
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             # clear session data
-            request.session.clear()
+            clear_non_auth(request.session)
             return redirect('drafts_view', id=id)
 
         form = EmailForm(request.POST)
@@ -1061,7 +1062,7 @@ def search(request):
 
     '''
     results = []
-    request.session.clear()
+    clear_non_auth(request.session)
     
     if request.method == 'POST':
         form = SearchForm(request.POST)
@@ -1172,7 +1173,7 @@ def view(request, id):
     * draft, area, id_tracker_state
     '''
     draft = get_object_or_404(Document, name=id)
-    #request.session.clear()
+    #clear_non_auth(request.session)
 
     # TODO fix in Django 1.2
     # some boolean state variables for use in the view.html template to manage display
