@@ -126,7 +126,7 @@ LOGGING['handlers']['mail_admins']['filters'] += [ 'skip_suspicious_operations' 
 # End logging
 # ------------------------------------------------------------------------
 
-SESSION_COOKIE_AGE = 43200 # 12 hours
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 2 # Age of cookie, in seconds: 2 weeks.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
