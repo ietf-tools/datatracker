@@ -1,3 +1,21 @@
+ietfdb (5.3.0) ietf; urgency=medium
+
+  This release changes user authentication for the datatracker from basic http
+  auth to Django's built-in authentication.  This has the advantage of making it
+  possible to log out, and log in as a different user, which can be useful,
+  and it also changes the password hash storage for each user to a much stronger
+  hash scheme, upon his or her first successful login after the deployment.
+
+  The email-verification roundtrip which is required to create a new login, or
+  change the password of an existing login, is retained.  For the time being,
+  creating an account and updating a password will also be reflected in the
+  htpasswd file which was used for authentication previously; however, since
+  this cancels the advantage of stronger password hashing which django's built-in
+  authentication provides, it should be phased out as soon as possible.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Apr 2014 20:40:33 +0200
+
+
 ietfdb (5.2.1) ietf; urgency=medium
 
   This is a minor release, with some bugfixes and some enhancements.  It also
