@@ -10,7 +10,7 @@
 {% for email in new_emails %}
 <p><b>A confirmation email has been sent to {{email}}. It will be added to your account after you click on the link it contains.</b></p>
 {% endfor %}
-<p>You may <a href="{% url "ietfauth.views.profile" %}">continue editing your profile</a>.</p>
+<p>You may <a href="{% url "ietf.ietfauth.views.profile" %}">continue editing your profile</a>.</p>
 {% else %}
 <p>An error has occured when attempting to update your account.<p>
 {% if error %}<p>{{ error }}</p>{% endif %}
