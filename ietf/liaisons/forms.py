@@ -309,8 +309,6 @@ class IncomingLiaisonForm(LiaisonForm):
         self.fields['organization'].choices = self.hm.get_all_incoming_entities()
 
     def get_post_only(self):
-         # Temporary fix - newer django plumbs when forms are validated differently - fail permissive for now
-        return False
         from_entity = self.get_from_entity()
         if is_secretariat(self.user) or Role.objects.filter(person=self.person, group=from_entity.obj, name="auth"):
             return False
