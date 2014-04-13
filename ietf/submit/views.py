@@ -406,7 +406,7 @@ def add_preapproval(request):
     groups = Group.objects.filter(type="wg").exclude(state="conclude").order_by("acronym").distinct()
 
     if not has_role(request.user, "Secretariat"):
-        groups = groups.filter(role__person__user=request.user)
+        groups = groups.filter(role__person__user=request.user,role__name__in=['ad','chair','delegate','secr'])
 
     if request.method == "POST":
         form = PreapprovalForm(request.POST)
