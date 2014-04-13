@@ -11,7 +11,6 @@ from ietf.doc.models import DocEvent, BallotDocEvent, NewRevisionDocEvent, State
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
-from ietf.person.models import Person
 from ietf.utils import draft
 
 def get_state_types(doc):
@@ -59,6 +58,12 @@ def can_adopt_draft(user, doc):
                                     group__state="active",
                                     person__user=user).exists())
 
+
+def two_thirds_rule( recused=0 ):
+    # For standards-track, need positions from 2/3 of the non-recused current IESG.
+    active = Role.objects.filter(name="ad",group__state="active").count()
+    return int(math.ceil((active - recused) * 2.0/3.0))
+
 def needed_ballot_positions(doc, active_positions):
     '''Returns text answering the question "what does this document
     need to pass?".  The return value is only useful if the document
@@ -81,11 +86,12 @@ def needed_ballot_positions(doc, active_positions):
                 answer.append("Has %d %ss." % (len(blocking), blocking[0].pos.name.upper()))
     needed = 1
     if doc.type_id == "draft" and doc.intended_std_level_id in ("bcp", "ps", "ds", "std"):
-        # For standards-track, need positions from 2/3 of the
-        # non-recused current IESG.
-        active = len(Person.objects.filter(role__name="ad", 
-            role__group__state="active").distinct())
-        needed = int(math.ceil((active - len(recuse)) * 2.0/3.0))
+        needed = two_thirds_rule(recused=len(recuse))
+    elif doc.type_id == "statchg":
+        for rel in doc.relateddocument_set.filter(relationship__slug__in=['tops', 'tois', 'tohist', 'toinf', 'tobcp', 'toexp']):
+            if (rel.target.document.std_level.slug in ['bcp','ps','ds','std']) or (rel.relationship.slug in ['tops','tois','tobcp']):
+                needed = two_thirds_rule(recused=len(recuse))
+                break
     else:
         if len(yes) < 1:
             return " ".join(answer)

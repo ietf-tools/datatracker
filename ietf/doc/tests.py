@@ -244,6 +244,35 @@ class DocTestCase(TestCase):
         r = self.client.get(urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
         self.assertEqual(r.status_code, 200)
         
+    def test_document_ballot_needed_positions(self):
+        make_test_data()
+
+        # draft
+        doc = Document.objects.get(name='draft-ietf-mars-test')
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
+        self.assertTrue('more YES or NO' in r.content)
+        Document.objects.filter(pk=doc.pk).update(intended_std_level='inf')
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
+        self.assertFalse('more YES or NO' in r.content)
+
+        # status change
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
+#        login = self.client.login(username='ad', password='ad+password')
+#        self.assertTrue(login)
+        r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))
+        self.assertEqual(r.status_code, 302)
+        import debug
+        debug.debug = True
+        debug.show('dir(r)')
+        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
+        self.assertFalse('Needs a YES' in r.content)
+        self.assertFalse('more YES or NO' in r.content)
+        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
+        self.assertTrue('more YES or NO' in r.content)
+
     def test_document_json(self):
         doc = make_test_data()
 
