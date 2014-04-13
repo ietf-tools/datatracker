@@ -258,7 +258,7 @@ class DocTestCase(TestCase):
         # status change
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
-        login = self.client.login(username='ad', password='ad+password')
+        self.client.login(username='ad', password='ad+password')
         r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))
         self.assertEqual(r.status_code, 302)
         r = self.client.get(r._headers["location"][1])
