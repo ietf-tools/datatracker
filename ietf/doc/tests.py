@@ -258,17 +258,17 @@ class DocTestCase(TestCase):
         # status change
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
-#        login = self.client.login(username='ad', password='ad+password')
-#        self.assertTrue(login)
+        login = self.client.login(username='ad', password='ad+password')
         r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))
         self.assertEqual(r.status_code, 302)
-        import debug
-        debug.debug = True
-        debug.show('dir(r)')
+        r = self.client.get(r._headers["location"][1])
+        self.assertTrue(">IESG Evaluation<" in r.content)
+
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertFalse('Needs a YES' in r.content)
         self.assertFalse('more YES or NO' in r.content)
+
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertTrue('more YES or NO' in r.content)
