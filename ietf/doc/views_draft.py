@@ -1139,7 +1139,7 @@ def edit_ad(request, name):
                               context_instance = RequestContext(request))
 
 class ConsensusForm(forms.Form):
-    consensus = forms.ChoiceField(choices=(("", "Unknown"), ("Yes", "Yes"), ("No", "No")), required=True)
+    consensus = forms.ChoiceField(choices=(("Unknown", "Unknown"), ("Yes", "Yes"), ("No", "No")), required=True)
 
 def edit_consensus(request, name):
     """Change whether the draft is a consensus document or not."""
@@ -1156,9 +1156,9 @@ def edit_consensus(request, name):
     if request.method == 'POST':
         form = ConsensusForm(request.POST)
         if form.is_valid():
-            if form.cleaned_data["consensus"] != bool(prev_consensus):
+            if form.cleaned_data["consensus"] != prev_consensus:
                 e = ConsensusDocEvent(doc=doc, type="changed_consensus", by=request.user.person)
-                e.consensus = form.cleaned_data["consensus"] == "Yes"
+                e.consensus = {"Unknown":None,"Yes":True,"No":False}[form.cleaned_data["consensus"]]
 
                 e.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(e.consensus),
                                                                      nice_consensus(prev_consensus))
@@ -1168,7 +1168,7 @@ def edit_consensus(request, name):
             return redirect('doc_view', name=doc.name)
 
     else:
-        form = ConsensusForm(initial=dict(consensus=nice_consensus(prev_consensus).replace("Unknown", "")))
+        form = ConsensusForm(initial=dict(consensus=nice_consensus(prev_consensus)))
 
     return render_to_response('doc/draft/change_consensus.html',
                               {'form': form,
@@ -1260,7 +1260,7 @@ def request_publication(request, name):
                                    doc=doc,
                                    message=m,
                                    next_state=next_state,
-                                   consensus_filled_in=consensus_event != None,
+                                   consensus_filled_in= ( (consensus_event != None) and (consensus_event.consensus != None) ),
                                    ),
                               context_instance = RequestContext(request))
 

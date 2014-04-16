@@ -365,6 +365,12 @@ class EditInfoTests(TestCase):
 
         self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, True)
 
+        # reset
+        r = self.client.post(url, dict(consensus="Unknown"))
+        self.assertEqual(r.status_code, 302)
+
+        self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, None)
+
 
 class ResurrectTests(TestCase):
     def test_request_resurrect(self):

@@ -172,7 +172,7 @@ def fill_in_agenda_docs(date, sections, matches=None):
             if doc.stream_id in ("ietf", "irtf", "iab"):
                 doc.consensus = "Unknown"
                 e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-                if e:
+                if e and (e.consensus != None):
                     doc.consensus = "Yes" if e.consensus else "No"
         elif doc.type_id == "conflrev":
             doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
