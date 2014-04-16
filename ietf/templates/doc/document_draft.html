@@ -121,7 +121,7 @@
     <tr>
       <td>Consensus:</td>
       <td>
-        <a title="Whether the document is the result of a community consensus process as defined in RFC 5741" {% if can_edit or can_edit_stream_info %}class="editlink" href="{% url "doc_edit_consensus" name=doc.name %}"{% endif %}>
+        <a title="Whether the document is the result of a community consensus process as defined in RFC 5741" {% if can_edit_consensus %}class="editlink" href="{% url "doc_edit_consensus" name=doc.name %}"{% endif %}>
           {{ consensus }}
         </a>
       </td>

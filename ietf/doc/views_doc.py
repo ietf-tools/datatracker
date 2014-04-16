@@ -262,9 +262,18 @@ def document_main(request, name, rev=None):
 
         can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
         can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd) or has_role(request.user, ["Area Director"])
+        can_edit_consensus = False
 
         consensus = None
-        if doc.stream_id in ("ietf", "irtf", "iab"):
+        if doc.stream_id == "ietf" and iesg_state:
+            show_in_states = set(IESG_BALLOT_ACTIVE_STATES)
+            show_in_states.update(('approved','ann','rfcqueue','pub'))
+            if iesg_state.slug in show_in_states: 
+                can_edit_consensus = can_edit
+                e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+                consensus = nice_consensus(e and e.consensus)
+        elif doc.stream_id in ("irtf", "iab"):
+            can_edit_consensus = can_edit or can_edit_stream_info
             e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
             consensus = nice_consensus(e and e.consensus)
 
@@ -339,6 +348,7 @@ def document_main(request, name, rev=None):
                                        can_edit_stream_info=can_edit_stream_info,
                                        can_edit_shepherd_writeup=can_edit_shepherd_writeup,
                                        can_edit_iana_state=can_edit_iana_state,
+                                       can_edit_consensus=can_edit_consensus,
 
                                        rfc_number=rfc_number,
                                        draft_name=draft_name,
