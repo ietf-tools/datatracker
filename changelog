@@ -1,3 +1,60 @@
+ietfdb (5.3.1) ietf; urgency=medium
+
+  This is a minor release, with a number of bug-fixes and a few enhancements.
+  Notable enhancements are the ability to set the document consens field back
+  to Unknown after it has been set to Yes or No, and an enhancement to the
+  test infrastructure that lets tests of email handling interact with a
+  real recipient SMTP server, instead of ending in a stub.
+
+  Details:
+
+  * Merged in [7591] from rjsparks@nostrum.com:
+    Added a real (if simple) SMTP server to the test framework and tests 
+    handling of exceptions and rejected addresses. Fixes ticket #1314.  
+
+  * Merged [7590] from rjsparks@nostrum.com: 
+    Changed when the consensus field is displayed and who can edit it for IETF
+    stream documents. Fixes bug #1380.  
+
+  * Merged [7589] from rjsparks@nostrum.com: 
+    Functional changes allowing consensus to be set back to Unknown. Fixes
+    ticket #1150.  
+
+  * Merged [7588] from rjsparks@nostrum.com: 
+    Schema migration to allow consensus to be set back to unknown. Related to
+    ticket #1150.  
+
+  * Merged in [7587] from rjsparks@nostrum.com:
+    Anyone with a role in a group could preapprove drafts. Changed that to 
+    an explicit subset of roles. Fixes ticket 998.  
+
+  * Merged in [7586] from rjsparks@nostrum.com:
+    Fixed calculation of needed ballots for status-change documents. Added 
+    needed ballots tests for drafts and status-change docs. Fixes bug 1116.  
+
+  * When we deployed the rewritten public datatracker, we went from django
+    auth to basic http auth.  At that time we also changed the session timeout
+    time to 12 hours, from the default 2 weeks.  I see no need to use a
+    non-default setting now that we're back to using django auth; changing the
+    session timeout time back to 2 weeks.
+
+  * Merged in [7519] from olau@iola.dk:
+    Removed uses of gzip middleware - the decorator thing breaks the ETags 
+    for some reason, as noted in issue #518, and it seems consensus is that we 
+    should do this in Apache instead for the whole site 
+
+  * Merged [7421] from olau@iola.dk: 
+    Fixed a crash bug in the redirection logic that occurs when someone posts
+    a draft without an access token from the email confirmation step 
+
+  * Merged [7416] from olau@iola.dk: 
+    Redo the quickfix to the "Send and Post" button bug (mentioned in issue
+    #1308) so that we still do the validation correctly, but just always show
+    the button (even if it's unusable) 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Apr 2014 23:22:41 +0200
+
+
 ietfdb (5.3.0) ietf; urgency=medium
 
   This release changes user authentication for the datatracker from basic http
