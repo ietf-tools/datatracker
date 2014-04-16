@@ -41,6 +41,7 @@ from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 
 import ietf.utils.mail
+from ietf.utils.test_smtpserver import SMTPTestServerDriver
 
 loaded_templates = set()
 visited_urls = set()
@@ -192,6 +193,8 @@ class IetfTestRunner(DiscoverRunner):
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
             raise EnvironmentError("Refusing to run tests on production server")
         ietf.utils.mail.test_mode = True
+        ietf.utils.mail.SMTP_ADDR['ip4'] = '127.0.0.1'
+        ietf.utils.mail.SMTP_ADDR['port'] = 2025
 
         global old_destroy, old_create, test_database_name
         from django.db import connection
@@ -219,7 +222,13 @@ class IetfTestRunner(DiscoverRunner):
 
         assert not settings.IDTRACKER_BASE_URL.endswith('/')
 
-        failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
+        smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None) 
+        smtpd_driver.start()
+
+        try:
+            failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
+        finally:
+            smtpd_driver.stop()
 
         if check_coverage and not failures:
             check_template_coverage(self.verbosity)

@@ -28,6 +28,8 @@ from contextlib import contextmanager
 test_mode = False
 outbox = []
 
+SMTP_ADDR = { 'ip4':settings.EMAIL_HOST, 'port':settings.EMAIL_PORT}
+
 def empty_outbox():
     outbox[:] = []
 
@@ -63,7 +65,7 @@ def send_smtp(msg, bcc=None):
     Message.  The From address will be used if present or will default
     to the django setting DEFAULT_FROM_EMAIL
 
-    If someone has set test_mode=True, then just append the msg to
+    If someone has set test_mode=True, then append the msg to
     the outbox.
     '''
     add_headers(msg)
@@ -77,14 +79,13 @@ def send_smtp(msg, bcc=None):
     else:
         if test_mode:
             outbox.append(msg)
-            return
         server = None
         try:
             server = smtplib.SMTP()
             #log("SMTP server: %s" % repr(server))
             #if settings.DEBUG:
             #    server.set_debuglevel(1)
-            conn_code, conn_msg = server.connect(settings.EMAIL_HOST, settings.EMAIL_PORT)
+            conn_code, conn_msg = server.connect(SMTP_ADDR['ip4'], SMTP_ADDR['port'])
             #log("SMTP connect: code: %s; msg: %s" % (conn_code, conn_msg))
             if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
                 server.ehlo()
