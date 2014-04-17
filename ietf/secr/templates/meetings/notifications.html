@@ -19,7 +19,7 @@
     <form id="id_notification_form" action="." method="post">{% csrf_token %}
       <p>Send email notifications to all groups that have been scheduled since the last
       notification went out on {{ last_notice.time|date:"Y-m-d" }}:</p>
-      <p id="id_notification_list">{% if not groups %}(none){% endif %}{% for group in groups %}{{ group.acronym }}{% if not forloop.last %},{% endif %}{% endfor %}<p>
+      <p id="id_notification_list">{% if not groups %}(none){% endif %}{% for group in groups %}{{ group.acronym }}{% if not forloop.last %}, {% endif %}{% endfor %}<p>
       <input type="submit" value="Send Now" name="submit" onclick="return window.confirm('Are you sure you want to send notifications?');">
     </form>
     

@@ -87,7 +87,7 @@ def build_timeslots(meeting,room=None):
                 # ScheduledSession.objects.create(schedule=schedule,timeslot=t)
         #meeting.create_all_timeslots();
 
-def build_nonsession(meeting):
+def build_nonsession(meeting,schedule):
     '''
     This function takes a meeting object and creates non-session records
     for a new meeting, based on the last meeting
@@ -95,11 +95,10 @@ def build_nonsession(meeting):
     last_meeting = get_last_meeting(meeting)
     if not last_meeting:
         return None
-    
+
     delta = meeting.date - last_meeting.date
     system = Person.objects.get(name='(system)')
-    schedule = get_schedule(meeting)
-    
+
     for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other','plenary')):
         new_time = slot.time + delta
         session = None
@@ -122,13 +121,36 @@ def build_nonsession(meeting):
         if session:
             ScheduledSession.objects.create(schedule=schedule,session=session,timeslot=ts)
 
+def check_nonsession(meeting,schedule):
+    '''
+    Ensure non-session timeslots exist and have appropriate ScheduledSession objects
+    for the specified schedule.
+    '''
+    slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary'))
+    if not slots:
+        build_nonsession(meeting,schedule)
+        return None
+
+    scheduledsessions = slots.filter(type='plenary').first().scheduledsession_set.all()
+    if not scheduledsessions.filter(schedule=schedule):
+        source = scheduledsessions.first().schedule
+        copy_scheduledsessions(slots,source,schedule)
+
+def copy_scheduledsessions(slots,source,target):
+    '''
+    Copy scheduledsession objects from source schedule to target schedule.  Slots is
+    a queryset of slots
+    '''
+    for ss in ScheduledSession.objects.filter(schedule=source,timeslot__in=slots):
+        ScheduledSession.objects.create(schedule=target,session=ss.session,timeslot=ss.timeslot)
+
 def get_last_meeting(meeting):
     last_number = int(meeting.number) - 1
     try:
         return Meeting.objects.get(number=last_number)
     except Meeting.DoesNotExist:
         return None
-        
+
 def is_combined(session,meeting,schedule=None):
     '''
     Check to see if this session is using two combined timeslots
@@ -178,7 +200,7 @@ def send_notifications(meeting, groups, person):
         # easier to populate template from timeslot perspective. assuming one-to-one timeslot-session
         count = 0
         session_info = ''
-        data = [ (s,get_timeslot(s)) for s in sessions ]
+        data = [ (s,get_timeslot(s)) for s in sessions if get_timeslot(s)]
         for s,t in data:
             count += 1
             session_info += session_info_template.format(group.acronym,
@@ -205,7 +227,7 @@ def send_notifications(meeting, groups, person):
                   template,
                   context,
                   cc=cc_list)
-        
+
         # create sent_notification event
         GroupEvent.objects.create(group=group,time=now,type='sent_notification',
                                   by=person,desc='sent scheduled notification for %s' % meeting)
@@ -408,10 +430,8 @@ def non_session(request, meeting_id, schedule_name):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    
-    # if the Break/Registration records don't exist yet (new meeting) create them
-    if not TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other')):
-        build_nonsession(meeting)
+
+    check_nonsession(meeting,schedule)
 
     slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary')).order_by('-type__name','time')
 
@@ -435,7 +455,7 @@ def non_session(request, meeting_id, schedule_name):
                                                time=new_time,
                                                duration=duration,
                                                show_location=form.cleaned_data['show_location'])
-                                               
+
             # create a dummy Session object to hold materials
             # NOTE: we're setting group to none here, but the set_room page will force user
             # to pick a legitimate group
@@ -448,14 +468,14 @@ def non_session(request, meeting_id, schedule_name):
                                   requested_by=Person.objects.get(name='(system)'),
                                   status_id='sched')
                 session.save()
-            
+
             # create association
             ScheduledSession.objects.create(timeslot=timeslot,
                                             session=session,
-                                            schedule=meeting.agenda)
+                                            schedule=schedule)
 
             messages.success(request, 'Non-Sessions updated successfully')
-            return redirect('meetings_non_session', meeting_id=meeting_id, schedule_name=schedule.name)
+            return redirect('meetings_non_session', meeting_id=meeting_id, schedule_name=schedule_name)
     else:
         form = NonSessionForm(initial={'show_location':True})
 
@@ -472,19 +492,22 @@ def non_session(request, meeting_id, schedule_name):
 
 def non_session_delete(request, meeting_id, schedule_name, slot_id):
     '''
-    This function deletes the non-session TimeSlot.  For "other" and "plenary" timeslot types
-    we need to delete the corresponding Session object as well.  Check for uploaded material
-    first.
+    This function deletes the non-session TimeSlot.  For "other" and "plenary" timeslot
+    types we need to delete the corresponding Session object as well.  Check for uploaded
+    material first.  ScheduledSession objects get deleted as well.
     '''
+    meeting = get_object_or_404(Meeting, number=meeting_id)
+    schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     slot = get_object_or_404(TimeSlot, id=slot_id)
     if slot.type_id in ('other','plenary'):
-        session = get_session(slot,schedule=schedule)
-        if session and session.materials.exclude(states__slug='deleted'):
-            messages.error(request, 'Materials have already been uploaded for "%s".  You must delete those before deleting the timeslot.' % slot.name)
-            return redirect('meetings_non_session', meeting_id=meeting_id, schedule_name=schedule_name)
-
+        scheduledsessions = slot.scheduledsession_set.filter(schedule__meeting=meeting)
+        session_objects = [ x.session for x in scheduledsessions ]
+        for session in session_objects:
+            if session.materials.exclude(states__slug='deleted'):
+                messages.error(request, 'Materials have already been uploaded for "%s".  You must delete those before deleting the timeslot.' % slot.name)
+                return redirect('meetings_non_session', meeting_id=meeting_id, schedule_name=schedule_name)
         else:
-            slot.sessions.all().delete()
+            Session.objects.filter(pk__in=[ x.pk for x in session_objects ]).delete()
     slot.delete()
 
     messages.success(request, 'Non-Session timeslot deleted successfully')
@@ -496,6 +519,7 @@ def non_session_edit(request, meeting_id, schedule_name, slot_id):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     slot = get_object_or_404(TimeSlot, id=slot_id)
+    schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     session = get_session(slot,schedule=schedule)
 
     if request.method == 'POST':
@@ -533,6 +557,7 @@ def non_session_edit(request, meeting_id, schedule_name, slot_id):
     return render_to_response('meetings/non_session_edit.html', {
         'meeting': meeting,
         'form': form,
+        'schedule': schedule,
         'slot': slot},
         RequestContext(request, {}),
     )
@@ -601,7 +626,7 @@ def rooms(request, meeting_id, schedule_name):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    
+
     # if no rooms exist yet (new meeting) formset extra=10
     first_time = not bool(meeting.room_set.all())
     extra = 10 if first_time else 0
@@ -646,7 +671,7 @@ def schedule(request, meeting_id, schedule_name, acronym):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     group = get_object_or_404(Group, acronym=acronym)
-    
+
     sessions = Session.objects.filter(meeting=meeting,group=group,status__in=('schedw','apprw','appr','sched','canceled'))
     legacy_session = get_initial_session(sessions)
     session_conflicts = session_conflicts_as_string(group, meeting)
@@ -759,13 +784,13 @@ def select(request, meeting_id, schedule_name):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    
+
     return render_to_response('meetings/select.html', {
         'meeting': meeting,
         'schedule': schedule},
         RequestContext(request, {}),
     )
-    
+
 def select_group(request, meeting_id, schedule_name):
     '''
     In this view the user can select the group to schedule.  Only those groups that have
@@ -775,7 +800,7 @@ def select_group(request, meeting_id, schedule_name):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    
+
     if request.method == 'POST':
         group = request.POST.get('group',None)
         if group:
@@ -882,7 +907,7 @@ def times_edit(request, meeting_id, schedule_name, time):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    
+
     parts = [ int(x) for x in time.split(':') ]
     dtime = datetime.datetime(*parts)
     timeslots = TimeSlot.objects.filter(meeting=meeting,time=dtime)
@@ -898,10 +923,10 @@ def times_edit(request, meeting_id, schedule_name, time):
             time = form.cleaned_data['time']
             duration = form.cleaned_data['duration']
             name = form.cleaned_data['name']
-            
+
             t = meeting.date + datetime.timedelta(days=int(day))
             new_time = datetime.datetime(t.year,t.month,t.day,time.hour,time.minute)
-            
+
             for timeslot in timeslots:
                 timeslot.time = new_time
                 timeslot.duration = duration
@@ -937,7 +962,7 @@ def times_delete(request, meeting_id, schedule_name, time):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    
+
     parts = [ int(x) for x in time.split(':') ]
     dtime = datetime.datetime(*parts)
 
@@ -981,7 +1006,7 @@ def view(request, meeting_id):
 
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
-    
+
     return render_to_response('meetings/view.html', {
         'meeting': meeting},
         RequestContext(request, {}),
