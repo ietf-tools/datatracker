@@ -64,11 +64,19 @@ ietfdb (5.3.0) ietf; urgency=medium
   hash scheme, upon his or her first successful login after the deployment.
 
   The email-verification roundtrip which is required to create a new login, or
-  change the password of an existing login, is retained.  For the time being,
-  creating an account and updating a password will also be reflected in the
-  htpasswd file which was used for authentication previously; however, since
-  this cancels the advantage of stronger password hashing which django's built-in
-  authentication provides, it should be phased out as soon as possible.
+  change the password of an existing login, is retained.
+
+  For the large majority of users, who either didn't have a password hash in
+  the database before the transition to the Python/Django based database
+  frontend on 16 July 2010, or had a password hash in the database, but have
+  updated their password after 3 July 2012, there should be no impact.
+  Password hashes have been imported as needed from the http auth password
+  hash file.  The few who had a password hash in the system before 16 July
+  2010, and haven't updated their password since 3 July 2012 are encouraged to
+  set a new password using the password reset form at
+	https://datatracker.ietf.org/accounts/reset/ .  
+  If there are issues which prevent a password reset, please email
+  henrik@tools.ietf.org for assistance.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  12 Apr 2014 20:14:17 +0200
 
