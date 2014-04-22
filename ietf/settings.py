@@ -157,6 +157,7 @@ ROOT_URLCONF = 'ietf.urls'
 TEMPLATE_DIRS = (
     BASE_DIR + "/templates",
     BASE_DIR + "/secr/templates",
+    BASE_DIR+"/../django-dajaxice/dajaxice/templates",
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -266,9 +267,6 @@ CONFLICT_REVIEW_TXT_URL = 'http://www.ietf.org/cr/'
 STATUS_CHANGE_PATH = '/a/www/ietf-ftp/status-changes'
 STATUS_CHANGE_TXT_URL = 'http://www.ietf.org/sc/'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
-AGENDA_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/agenda/%(wg)s.%(ext)s'
-MINUTES_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/minutes/%(wg)s.%(ext)s'
-SLIDES_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/slides/%(wg)s-*'
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
 IETFWG_DESCRIPTIONS_PATH = '/a/www/www6s/wg-descriptions/'
 IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
@@ -413,6 +411,30 @@ PRODUCTION_TIMEZONE = "America/Los_Angeles"
 
 PYFLAKES_DEFAULT_ARGS= ["ietf", ]
 VULTURE_DEFAULT_ARGS= ["ietf", ]
+
+# Automatic Scheduling
+#
+# how much to login while running, bigger numbers make it more verbose.
+BADNESS_CALC_LOG   = 0
+#
+# these penalties affect the calculation of how bad the assignments are.
+BADNESS_UNPLACED   = 1000000
+
+# following four are used only during migrations to setup up ConstraintName
+# and penalties are taken from the database afterwards.
+BADNESS_BETHERE    = 200000
+BADNESS_CONFLICT_1 = 100000
+BADNESS_CONFLICT_2 = 10000
+BADNESS_CONFLICT_3 = 1000
+
+BADNESS_TOOSMALL_50  = 5000
+BADNESS_TOOSMALL_100 = 50000
+BADNESS_TOOBIG     = 100
+BADNESS_MUCHTOOBIG = 500
+
+# do not run SELENIUM tests by default
+SELENIUM_TESTS = False
+SELENIUM_TESTS_ONLY = False
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.

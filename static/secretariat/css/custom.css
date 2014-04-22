@@ -490,6 +490,10 @@ tr.break td {
     border-top: 2px solid black;
 }
 
+#id_schedule_selector {
+    display: inline;
+}
+
 /* ==========================================================================
    Proceedings Tool
    ========================================================================== */
@@ -607,6 +611,11 @@ tr.bg1 {
 tr.bg2 {
     background: #EEEEEE;
 }
+
+tr.bg3 {
+    background: #DDDDDD;
+}
+
 
 /*
 table#sessions-new-table td {

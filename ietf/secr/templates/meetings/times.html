@@ -13,6 +13,7 @@
           <th>Time</th>
           <th>Name</th>
           <th></th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -21,7 +22,8 @@
             <td>{{ item.time|date:"D" }}</td>
             <td>{{ item.time|date:"H:i" }} - {{ item.end_time|date:"H:i" }}</td>
             <td>{{ item.name }}</td>
-            <td><a href="{% url "meetings_times_delete" meeting_id=meeting.number time=item.time|date:"Y:m:d:H:i" %}">Delete</a></td>
+            <td><a href="{% url "meetings_times_edit" meeting_id=meeting.number schedule_name=schedule.name time=item.time|date:"Y:m:d:H:i" %}">Edit</a></td>
+            <td><a href="{% url "meetings_times_delete" meeting_id=meeting.number schedule_name=schedule.name time=item.time|date:"Y:m:d:H:i" %}" onclick="return window.confirm('Are you sure you want to delete this timeslot? Any sessions assigned to this timeslot will be unscheduled.');">Delete</a></td>
           </tr>
         {% endfor %}
       </tbody>

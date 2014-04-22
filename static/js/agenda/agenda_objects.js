@@ -20,6 +20,18 @@
 *
 */
 
+function AgendaGlobals() {
+    this.group_objs = {};
+    this.slot_status = {};
+    this.slot_objs   = {};
+    this.meeting_objs = {};
+    this.sessions_objs = {};
+    this.timeslot_bydomid = {};
+    this.timeslot_byid    = {};
+    this.scheduledsession_promise = undefined;
+    this.timeslot_promise = undefined;
+    this.__debug_session_move = false;
+}
 
 function createLine(x1,y1, x2,y2){
     var length = Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
@@ -45,7 +57,7 @@ function empty_callback(inp){
 }
 
 function get_all_constraints(){
-    for(s in meeting_objs){
+    for(s in agenda_globals.meeting_objs){
        show_non_conflicting_spots(s)
     }
 
@@ -53,8 +65,8 @@ function get_all_constraints(){
 
 function show_all_conflicts(){
     console.log("showing all conflicts");
-    for(sk in meeting_objs) {
-        var s = meeting_objs[sk];
+    for(sk in agenda_globals.meeting_objs) {
+        var s = agenda_globals.meeting_objs[sk];
         s.display_conflict();
         s.display_personconflict();
     }
@@ -62,8 +74,8 @@ function show_all_conflicts(){
 
 // not really used anymore -- just for debugging
 function hide_all_conflicts(){
-    for(sk in meeting_objs) {
-        var s = meeting_objs[sk];
+    for(sk in agenda_globals.meeting_objs) {
+        var s = agenda_globals.meeting_objs[sk];
         s.hide_conflict();
     }
 }
@@ -73,8 +85,8 @@ function get_all_conflicts(){
     var one_constraint;
     var sess1;
     //console.log("get_all_conflicts()");
-    for(var s in meeting_objs){
-        sess1 = meeting_objs[s];
+    for(var s in agenda_globals.meeting_objs){
+        sess1 = agenda_globals.meeting_objs[s];
         sess1.clear_conflict();
         sess1.display_conflict();
 
@@ -86,8 +98,8 @@ function get_all_conflicts(){
     var all_constraints = $.when.apply($,all_constraint_promises);
 
     all_constraints.done(function() {
-        for(var s in meeting_objs) {
-            var sess2 = meeting_objs[s];
+        for(var s in agenda_globals.meeting_objs) {
+            var sess2 = agenda_globals.meeting_objs[s];
             sess2.examine_people_conflicts();
         }
     });
@@ -167,6 +179,25 @@ function find_and_populate_conflicts(session_obj) {
         if(session_obj.constraints.conflic3 != null){
             $.each(session_obj.constraints.conflic3, function(i){
                 var conflict = session_obj.constraints.conflic3[i];
+                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
+            });
+        }
+
+        if(session_obj.theirconstraints.conflict != null){
+            $.each(session_obj.theirconstraints.conflict, function(i){
+                var conflict = session_obj.theirconstraints.conflict[i];
+                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
+            });
+        }
+        if(session_obj.theirconstraints.conflic2 != null){
+            $.each(session_obj.theirconstraints.conflic2, function(i){
+                var conflict = session_obj.theirconstraints.conflic2[i];
+                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
+            });
+        }
+        if(session_obj.theirconstraints.conflic3 != null){
+            $.each(session_obj.theirconstraints.conflic3, function(i){
+                var conflict = session_obj.theirconstraints.conflic3[i];
                 calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
             });
         }
@@ -273,80 +304,80 @@ function ColumnClass(room,date,time) {
 
 
 // ++++++++++++++++++
-// ScheduledSlot Object
-// ScheduledSession is DJANGO name for this object, but needs to be renamed.
-// It represents a TimeSlot that can be assigned in this schedule.
-//   { "scheduledsession_id": "{{s.id}}",
-//     "empty": "{{s.empty_str}}",
-//     "timeslot_id":"{{s.timeslot.id}}",
-//     "session_id" :"{{s.session.id}}",
-//     "room"       :"{{s.timeslot.location|slugify}}",
-//     "extendedfrom_id"    :refers to another scheduledsession by ss.id
-//     "time"       :"{{s.timeslot.time|date:'Hi' }}",
-//     "date"       :"{{s.timeslot.time|date:'Y-m-d'}}",
-//     "domid"      :"{{s.timeslot.js_identifier}}"}
-function ScheduledSlot(){
-    this.extendedfrom = undefined;
-    this.extendedto   = undefined;
-    this.extendedfrom_id = false;
+// TimeSlot Object
+//
+//   { "timeslot_id":"{{timeslot.id}}",
+//     "room"       :"{{timeslot.location|slugify}}",
+//     "time"       :"{{timeslot.time|date:'Hi' }}",
+//     "date"       :"{{timeslot.time|date:'Y-m-d'}}",
+//     "domid"      :"{{timeslot.js_identifier}}"}
+function TimeSlot(){
+    this.timeslot_id  = undefined;
+    this.room         = undefined;
+    this.time         = undefined;
+    this.date         = undefined;
+    this.domid        = undefined;
+    this.empty        = true;
+    this.scheduledsessions = [];
+    this.following_timeslot_id = undefined;
+    this.unscheduled_box = false;
 }
 
-ScheduledSlot.prototype.initialize = function(json) {
+TimeSlot.prototype.initialize = function(json) {
     for(var key in json) {
        this[key]=json[key];
     }
+    //console.log("timeslot processing: ", this.timeslot_id,
+    //            this.room, this.date, this.time);
 
-    /* this needs to be an object */
     this.column_class=new ColumnClass(this.room, this.date, this.time);
 
-    var d = new Date(this.date);
-    var t = d.getUTCDay();
+    this.day   = new Date(this.date);
+    this.starttime = parseInt(this.time,10);
+    var t = this.day.getUTCDay();
     if(this.room == "Unassigned"){
        this.short_string = "Unassigned";
     }
     else{
-       this.short_string = daysofweek[t] + ", "+ this.time + ", " + upperCaseWords(this.room);
-    }
-    if(!this.domid) {
-           this.domid = json_to_id(this);
-        //console.log("gen "+timeslot_id+" is domid: "+this.domid);
-    }
-    //console.log("extend "+this.domid+" with "+JSON.stringify(this));
-
-    // translate Python booleans to JS.
-    if(this.pinned == "True") {
-        this.pinned = true;
-    } else {
-        this.pinned = false;
+       this.short_string = daysofweek[t] + ", "+ this.time + ", " + this.room;
     }
 
-    // the key so two sessions in the same timeslot
-    if(slot_status[this.domid] == null) {
-       slot_status[this.domid]=[];
-    }
-    slot_status[this.domid].push(this);
-    //console.log("filling slot_objs", this.scheduledsession_id);
-    slot_objs[this.scheduledsession_id] = this;
+    agenda_globals.timeslot_bydomid[this.domid] = this;
+    agenda_globals.timeslot_byid[this.timeslot_id] = this;
 };
 
-ScheduledSlot.prototype.session = function() {
-    if(this.session_id != undefined) {
-       return meeting_objs[this.session_id];
-    } else {
-       return undefined;
+TimeSlot.prototype.title = function() {
+    return this.room + " "+this.date+" "+this.time;
+};
+TimeSlot.prototype.slot_title = function() {
+    return "id#"+this.timeslot_id+" dom:"+this.domid;
+};
+TimeSlot.prototype.mark_empty = function() {
+    if(agenda_globals.__debug_session_move) {
+        console.log("marking slot empty", this.domid);
+        $("#"+this.domid).html("empty");
     }
+    this.empty = true;
 };
-ScheduledSlot.prototype.slot_title = function() {
-    return "id#"+this.scheduledsession_id+" dom:"+this.domid;
+TimeSlot.prototype.mark_occupied = function() {
+    if(agenda_globals.__debug_session_move) {
+        console.log("marking slot occupied", this.domid);
+
+        // if it was empty before, then clear it (might have word "empty" in it)
+        if(this.empty == true) {
+            $("#"+this.domid).html("");
+        }
+    }
+    this.empty = false;
 };
-ScheduledSlot.prototype.can_extend_right = function() {
+TimeSlot.prototype.can_extend_right = function() {
     if(this.following_timeslot == undefined) {
         if(this.following_timeslot_id != undefined) {
-            this.following_timeslot = slot_objs[this.following_timeslot_id];
+            this.following_timeslot = agenda_globals.timeslot_byid[this.following_timeslot_id];
         }
     }
     if(this.following_timeslot == undefined) {
-        console.log("can_extend_right:",this.scheduledsession_id," no slot to check");
+        console.log("can_extend_right:",this.timeslot_id," no slot to check");
         return false;
     } else {
         console.log("can_extend_right:",
@@ -357,22 +388,279 @@ ScheduledSlot.prototype.can_extend_right = function() {
     }
 };
 
+function make_timeslot(json) {
+    var ts = new TimeSlot();
+    ts.initialize(json);
+    return ts;
+}
+
+/* feed this an array of timeslots */
+function make_timeslots(json, status, jqXHR) {
+    $.each(json, function(index) {
+        var thing = json[index];
+        make_timeslot(thing);
+    });
+}
+
+function load_timeslots(href) {
+    if(agenda_globals.timeslot_promise == undefined) {
+        agenda_globals.timeslot_promise = $.Deferred();
+        var ts_promise = agenda_globals.timeslot_promise;
+
+        var ts = $.ajax(href);
+        ts.success(function(newobj, status, jqXHR) {
+            make_timeslots(newobj);
+            ts_promise.resolve(newobj);
+            console.log("finished timeslot promise");
+        });
+    }
+    return agenda_globals.timeslot_promise;
+}
+
+
+// ++++++++++++++++++
+// ScheduledSlot Object
+// ScheduledSession is DJANGO name for this object, but needs to be renamed.
+// It represents a TimeSlot that can be assigned in this schedule.
+//   { "scheduledsession_id": "{{s.id}}",
+//     "timeslot_id":"{{s.timeslot.id}}",
+//     "session_id" :"{{s.session.id}}",
+//     "extendedfrom_id"    :refers to another scheduledsession by ss.id
+function ScheduledSlot(){
+    this.extendedfrom = undefined;
+    this.extendedto   = undefined;
+    this.extendedfrom_id = false;
+    this.pinned       = false;
+}
+
+ScheduledSlot.prototype.room = function() {
+    return this.timeslot.room;
+};
+
+ScheduledSlot.prototype.time = function() {
+    return this.timeslot.time;
+};
+
+ScheduledSlot.prototype.date = function() {
+    return this.timeslot.date;
+};
+
+ScheduledSlot.prototype.domid = function() {
+    return this.timeslot.domid;
+};
+
+ScheduledSlot.prototype.column_class = function() {
+    return this.timeslot.column_class;
+};
+
+ScheduledSlot.prototype.short_string = function() {
+    return this.timeslot.short_string;
+};
+
+ScheduledSlot.prototype.saveit = function() {
+    var myss = this;
+    stuffjson = new Object();
+    stuffjson.session_id  = this.session_id;
+    stuffjson.timeslot_id = this.timeslot_id;
+    if(this.extendedfrom_id != undefined && this.extendedfrom_id != false) {
+        stuffjson.extendedfrom_id = this.extendedfrom_id;
+    }
+
+    var stuff = JSON.stringify(stuffjson, null, '\t');
+
+    var saveit = $.ajax(scheduledsession_post_href,{
+        "content-type": "text/json",
+        "type": "POST",
+        "data": stuff,
+    });
+    // should do something on success and failure.
+    saveit.done(function(result, status, jqXHR) {
+        myss.initialize(result, "saveit");
+        var session = myss.session;
+        if(session != undefined) {
+            session.placed(myss.timeslot);
+        }
+    });
+
+    // return the promise, in case someone (tests!) needs to know when we are done.
+    return saveit;
+};
+
+function remove_from_slot_status(domid, ss_id) {
+    var found_at;
+    if(agenda_globals.__debug_session_move) {
+        console.log("remove", domid, agenda_globals.slot_status[domid]);
+    }
+    if(agenda_globals.slot_status[domid] != undefined) {
+        $.each(agenda_globals.slot_status[domid], function(index, value) {
+            if(agenda_globals.__debug_session_move) {
+                console.log("  checking", index, value, ss_id);
+            }
+            if(value.scheduledsession_id == ss_id) {
+                found_at = index;
+                return;
+            }
+        });
+        if(found_at != undefined) {
+            agenda_globals.slot_status[domid].splice(found_at, 1);
+            console.log("removed", found_at, agenda_globals.slot_status[domid]);
+        }
+    } else {
+        //console.log("  already empty");
+    }
+};
+
+ScheduledSlot.prototype.deleteit = function() {
+    var deleteit = $.ajax(this.href, {
+        "content-type": "text/json",
+        "type": "DELETE",
+    });
+    // now nuke self!
+    var me = this;
+    delete agenda_globals.slot_objs[this.scheduledsession_id];
+    remove_from_slot_status(this.domid(), this.scheduledsession_id);
+    return deleteit;
+};
+
+function update_if_not_undefined(old, newval) {
+    if(newval != undefined) {
+        return newval;
+    } else {
+        return old;
+    }
+}
+
+ScheduledSlot.prototype.make_unassigned = function() {
+    this.scheduledsession_id = 0;
+    this.empty               = true;
+    this.session_id          = null;
+    this.room                = "unassigned";
+    this.time                = null;
+    this.date                = null;
+    this.timeslot            = new TimeSlot();
+    this.timeslot.initialize({"domid":"sortable-list"});
+    this.timeslot.unscheduled_box = true;
+    this.timeslot.short_string = "Unscheduled";
+
+
+    agenda_globals.slot_status[this.domid()]=[];
+    agenda_globals.slot_status[this.domid()].push(this);
+    agenda_globals.slot_objs[this.scheduledsession_id] = this;
+};
+
+ScheduledSlot.prototype.real_initialize = function(json, extra) {
+    /* do not copy everything over */
+    this.pinned              = update_if_not_undefined(this.pinned, json.pinned);
+    this.scheduledsession_id = update_if_not_undefined(this.scheduledsession_id, json.scheduledsession_id);
+    this.session_id          = update_if_not_undefined(this.session_id, json.session_id);
+    this.timeslot_id         = update_if_not_undefined(this.timeslot_id, json.timeslot_id);
+    this.href                = update_if_not_undefined(this.href, json.href);
+    this.extendedfrom_id     = update_if_not_undefined(this.extendedfrom_id, json.extendedfrom_id);
+
+    //console.log("timeslot_id", this.timeslot_id);
+    this.timeslot            = agenda_globals.timeslot_byid[this.timeslot_id];
+    if(this.timeslot != undefined && this.session_id != undefined) {
+        this.timeslot.mark_occupied();
+    }
+    if(this.session_id != undefined) {
+        this.session = agenda_globals.meeting_objs[this.session_id];
+    }
+
+    // translate Python booleans to JS.
+    if(this.pinned == "True") {
+        this.pinned = true;
+    } else {
+        this.pinned = false;
+    }
+
+    // timeslot should never be null, but if there is old/flaky
+    // data it could happen, so guard against it.
+    if(this.timeslot != undefined) {
+        // do not include in data structures if session_id is nil
+        // the key so two sessions in the same timeslot
+        if(agenda_globals.slot_status[this.domid()] == null) {
+            agenda_globals.slot_status[this.domid()]=[];
+        }
+        if(this.session_id != undefined) {
+            // remove any old duplicate that might exist.
+            remove_from_slot_status(this.domid(), this.scheduledsession_id);
+            if(agenda_globals.__debug_session_move) {
+                console.log(extra, "adding to slot_status", this.domid());
+            }
+
+            agenda_globals.slot_status[this.domid()].push(this);
+            //console.log("filling slot_objs", this.scheduledsession_id);
+        }
+    }
+
+    agenda_globals.slot_objs[this.scheduledsession_id] = this;
+};
+ScheduledSlot.prototype.initialize = ScheduledSlot.prototype.real_initialize;
+
+function load_scheduledsessions(ts_promise, session_promise, href) {
+    if(agenda_globals.scheduledsession_promise == undefined) {
+        agenda_globals.scheduledsession_promise = $.Deferred();
+
+        var ss = $.ajax(href);
+        var ss_loaded = $.when(ss,ts_promise,session_promise);
+
+        ss_loaded.done(function(result, status, jqXHR) {
+            console.log("finished ss promise");
+
+            newobj = result[0]
+            $.each(newobj, function(index) {
+                one = newobj[index];
+                //console.log("ss has:", one);
+                make_ss(one);
+            });
+            agenda_globals.scheduledsession_promise.resolve(newobj);
+        });
+    }
+    return agenda_globals.scheduledsession_promise;
+}
+
+ScheduledSlot.prototype.connect_to_timeslot_session = function() {
+    if(this.timeslot == undefined) {
+        if(this.timeslot_id != undefined) {
+            this.timeslot = agenda_globals.timeslot_byid[this.timeslot_id];
+        } else {
+            /* must be the unassigned one?! */
+            this.timeslot = new TimeSlot();
+            this.timeslot.domid = "sortable-list";
+        }
+    }
+    /* session could be hooked up, but it is now always session() */
+};
+
+ScheduledSlot.prototype.session = function() {
+    if(this.session_id != undefined) {
+       return agenda_globals.meeting_objs[this.session_id];
+    } else {
+        console.log("ss id:", this.scheduledsession_id, "timeslot:", this.timeslot_id, this.timeslot.title(), "has null session");
+        return undefined;
+    }
+};
+ScheduledSlot.prototype.slot_title = function() {
+    return "id#"+this.scheduledsession_id+" dom:"+this.domid();
+};
+
 function make_ss(json) {
     var ss = new ScheduledSlot();
-    ss.initialize(json);
+    ss.initialize(json, "make_ss");
+    return ss;
 }
 
 
 // ++++++++++++++++++
 // Session Objects
 //
-// initialized from landscape_edit.html template with:
-//   session_obj({"title" : "{{ s.short_name }}",
+// initialized by loading a json from /meeting/XX/sessions.json, return JSON that looks like:
+//
+//               {"title" : "{{ s.short_name }}",
 //                "description":"{{ s.group.name }}",
 //                "special_request": "{{ s.special_request_token }}",
 //                "session_id":"{{s.id}}",
 //                "owner": "{{s.owner.owner}}",
-//                "group_id":"{{s.group.id}}",
 //                "area":"{{s.group.parent.acronym|upper}}",
 //                "duration":"{{s.requested_duration.seconds|durationFormat}}"});
 //
@@ -380,6 +668,7 @@ function make_ss(json) {
 
 function Session() {
     this.constraints = {};
+    this.theirconstraints = {};
     this.constraint_load_andthen_list = [];
     this.constraints_loaded = false;
     this.last_timeslot_id = null;
@@ -391,28 +680,43 @@ function Session() {
     this.area = "noarea";
     this.special_request = "";
     this.conflicted = false;
+    this.conflicted_direction = {};
+    this.theirconflicted = false;
     this.double_wide = false;
+    this.attendees   = undefined;
 }
 
 function session_obj(json) {
     session = new Session();
 
     for(var key in json) {
-        if(json[key].length > 0) {
+        //console.log("copying", key, "value: ", json[key]);
+        if(json[key] != undefined && json[key] != "") {
             session[key]=json[key];
         }
     }
     // dict will not pass .length > 0 above.
     session.group = json.group;
 
+    if(session.requested_duration == undefined) {
+        session.requested_duration = session.duration;
+    }
+
+    // make it a number.
+    session.attendees = parseInt(session.attendees);
+
     session.ogroup = session.group;
     if(session.group != undefined) {
         /* it has an inline group object, intern it, and redirect to interned object */
-        //console.log("using embedded group: ",session.group.href);
+        //console.log(session.title, "using embedded group: ",
+        //            session.group.acronym, session.group.href, session.group);
         session.group = load_group_from_json(session.group);
         session.group_href = session.group.href;
+        //console.log(session.title, "2 using embedded group: ",
+        //            session.group.acronym, session.group.href, session.group);
     } else if(session.group_href != undefined) {
-        console.log("session has no embedded group, load by href", session.group_href);
+        console.log("session ",session.session_id,
+                    "has no embedded group, load by href", session.group_href);
         session.group = find_group_by_href(session.group_href, "session_load");
     } else {
         // bogus
@@ -421,15 +725,59 @@ function session_obj(json) {
 
     // keep a list of sessions by name
     // this is mostly used for debug purposes only.
-    if(session_objs[session.title] == undefined) {
-        session_objs[session.title] = [];
+    if(agenda_globals.sessions_objs[session.title] == undefined) {
+        agenda_globals.sessions_objs[session.title] = [];
     }
-    session_objs[session.title].push(session);   // an array since there can be more than one session/wg
+    agenda_globals.sessions_objs[session.title].push(session);   // an array since there can be more than one session/wg
 
-    meeting_objs[session.session_id] = session;
+    agenda_globals.meeting_objs[session.session_id] = session;
 
     return session;
 }
+
+/* feed this an array of sessions */
+function make_sessions(json, status, jqXHR) {
+    $.each(json, function(index) {
+        var thing = json[index];
+        session_obj(thing);
+    });
+}
+
+function load_sessions(href) {
+    if(agenda_globals.session_promise == undefined) {
+        agenda_globals.session_promise = $.Deferred();
+
+        var ss = $.ajax(href);
+        ss.success(function(newobj, status, jqXHR) {
+            console.log("finished session promise");
+            make_sessions(newobj);
+            agenda_globals.session_promise.resolve(newobj);
+        });
+    }
+    return agenda_globals.session_promise;
+}
+
+function count_sessions() {
+    $.each(agenda_globals.sessions_objs, function(title) {
+        //console.log("title", title, this);
+        var lastone  = null;
+        var sessions = agenda_globals.sessions_objs[title];
+        var num_sessions = sessions.length;
+        $.each(sessions, function(index) {
+            //console.log("session", index, this);
+            this.number = index;          // a number
+            this.maxNum = num_sessions;
+
+            this.prev_session = lastone;
+            this.next_session = null;
+            if(index < num_sessions) {
+                this.next_session = sessions[index+1];
+            }
+            lastone = this;
+        });
+    });
+}
+
 
 // augument to jQuery.getJSON( url, [data], [callback] )
 Session.prototype.load_session_obj = function(andthen, arg) {
@@ -494,18 +842,28 @@ Session.prototype.on_bucket_list = function() {
     this.column_class_list = [];
     this.element().parent("div").addClass("meeting_box_bucket_list");
 };
-Session.prototype.placed = function(where, forceslot) {
+Session.prototype.placed = function(where, forceslot, scheduledsession) {
     this.is_placed = true;
 
     // forceslot is set on a move, but unset on initial placement,
     // as placed might be called more than once for a double slot session.
     if(forceslot || this.slot==undefined) {
         this.slot      = where;
+        this.scheduledsession = scheduledsession;
+
+        /* we can not mark old slot as empty, because it
+           might have multiple sessions in it.
+           we can do the opposite: mark it was not empty when we fill it.
+        */
+
+        if(where != undefined) {
+            where.empty = false;
+        }
     }
     if(where != undefined) {
         this.add_column_class(where.column_class);
     }
-    //console.log("session:",session.title, "column_class", ssid.column_class);
+    //console.log("session:",session.title, "column_class", ssid.column_class());
     this.element().parent("div").removeClass("meeting_box_bucket_list");
     this.pinned = where.pinned;
 };
@@ -530,19 +888,30 @@ Session.prototype.mark_conflict = function(value) {
 };
 Session.prototype.add_conflict = function(conflict) {
     this.conflicted = true;
-    if(this.highest_conflict==undefined) {
-        this.highest_conflict = conflict;
+    if (this.conflicted_direction==undefined) {
+        this.conflicted_direction={};
+    }
+    this.conflicted_direction[conflict.direction] = true;
+    if (this.highest_conflict==undefined) {
+        this.highest_conflict={};
+    }
+    if(this.highest_conflict[conflict.direction]==undefined) {
+        this.highest_conflict[conflict.direction] = conflict;
     } else {
-        var oldhighest = this.highest_conflict;
-        this.highest_conflict = this.highest_conflict.conflict_compare(conflict);
+        var oldhighest = this.highest_conflict[conflict.direction];
+        this.highest_conflict[conflict.direction] = this.highest_conflict[conflict.direction].conflict_compare(conflict);
         if(_conflict_debug) {
             console.log("add conflict for", this.title,
                         oldhighest.conflict_type, ">?", conflict.conflict_type,
-                        "=", this.highest_conflict.conflict_type);
+                        "=", this.highest_conflict[conflict.direction].conflict_type);
         }
     }
-    this.conflict_level  = this.highest_conflict.conflict_type;
+    if (this.conflict_level==undefined){
+        this.conflict_level={};
+    }
+    this.conflict_level[conflict.direction] = this.highest_conflict[conflict.direction].conflict_type;
 };
+
 Session.prototype.clear_conflict = function() {
     this.conflicted = false;
 };
@@ -555,40 +924,56 @@ Session.prototype.clear_all_conflicts = function(old_column_classes) {
         $.each(session_obj.constraints.bethere, function(i) {
             var conflict = session_obj.constraints.bethere[i];
             var person = conflict.person;
-            
+
             person.clear_session(session_obj, old_column_classes);
         });
     }
-};    
+};
 
 Session.prototype.show_conflict = function() {
     if(_conflict_debug) {
-        console.log("showing conflict for", this.title, this.conflict_level);
+        console.log("showing conflict for", this.title, this.conflict_level['ours'],this.conflict_level['theirs']);
     }
-    this.element().addClass("actual_" + this.conflict_level);
+    var display = { 'conflict':'1' , 'conflic2':'2' , 'conflic3':'3' };
+    if (this.conflicted) {
+        if ('ours' in this.conflict_level) {
+            this.element().find('.ourconflicts').text('->'+display[this.conflict_level.ours]);
+        }
+        if ('theirs' in this.conflict_level) {
+            this.element().find('.theirconflicts').text(display[this.conflict_level.theirs]+'->');
+        }
+    }
 };
+
 Session.prototype.hide_conflict = function() {
     if(_conflict_debug) {
         console.log("removing conflict for", this.title);
     }
-    this.element().removeClass("actual_conflict");
+    this.element().find('.ourconflicts').text('');
+    this.element().find('.theirconflicts').text('');
 };
+
 Session.prototype.display_conflict = function() {
-    if(this.conflicted) {
+    if(this.conflicted || this.theirconflicted) {
         this.show_conflict();
     } else {
         this.hide_conflict();
     }
 };
+
 Session.prototype.reset_conflicts = function() {
     this.conflict_level = undefined;
     this.highest_conflict = undefined;
     this.conflicted = false;
+    this.conflicted_direction = undefined;
+    this.theirconflict_level = undefined;
+    this.highest_theirconflict = undefined;
+    this.theirconflicted = false;
 };
 
 Session.prototype.show_personconflict = function() {
     if(_conflict_debug) {
-        console.log("showing person conflict for", this.title, this.conflict_level);
+        console.log("showing person conflict for", this.title, this.conflict_level.ours);
     }
     this.personconflict_element().removeClass("hidepersonconflict");
     this.personconflict_element().addClass("showpersonconflict");
@@ -621,7 +1006,7 @@ Session.prototype.examine_people_conflicts = function() {
 
     // reset people conflicts.
     session_obj.person_conflicted = false;
-    
+
     for(ccn in session_obj.column_class_list) {
         var vertical_location = session_obj.column_class_list[ccn].column_tag;
         var room_tag          = session_obj.column_class_list[ccn].room_tag;
@@ -651,6 +1036,17 @@ Session.prototype.area_scheme = function() {
     return this.area.toUpperCase() + "-scheme";
 };
 
+Session.prototype.is_bof = function() {
+    return this.bof == "True";
+}
+Session.prototype.wg_scheme = function() {
+    if(this.is_bof()) {
+        return "bof_style";
+    } else {
+        return "wg_style";
+    }
+};
+
 Session.prototype.add_column_class = function(column_class) {
     if(__column_class_debug) {
         console.log("adding:",column_class, "to ", this.title);
@@ -660,9 +1056,9 @@ Session.prototype.add_column_class = function(column_class) {
 
 var _LAST_MOVED_OLD;
 var _LAST_MOVED_NEW;
-// scheduledsession_list is a list of slots where the session has been located.
+// timeslot_list is a list of slots where the session has been located.
 // bucket_list is a boolean.
-Session.prototype.update_column_classes = function(scheduledsession_list, bucket_list) {
+Session.prototype.update_column_classes = function(timeslot_list, bucket_list) {
 
     // COLUMN CLASSES MUST BE A LIST because of multiple slot use
     console.log("updating column_classes for ", this.title);
@@ -680,9 +1076,10 @@ Session.prototype.update_column_classes = function(scheduledsession_list, bucket
         this.on_bucket_list();
 
     } else {
-        for(ssn in scheduledsession_list) {
-            ss = scheduledsession_list[ssn];
-            this.add_column_class(ss.column_class);
+        for(tsn in timeslot_list) {
+            var ts = timeslot_list[tsn];
+            console.log("timeslot_list", tsn, ts);
+            this.add_column_class(ts.column_class);
         }
         new_column_tag = this.column_class_list[0].column_tag;
     }
@@ -709,8 +1106,8 @@ Session.prototype.update_column_classes = function(scheduledsession_list, bucket
 
 // utility/debug function, draws all events.
 function update_all_templates() {
-    for(key in meeting_objs) {
-        session = meeting_objs[key];
+    for(key in agenda_globals.meeting_objs) {
+        session = agenda_globals.meeting_objs[key];
         var slot = session.slot_status_key;
 	if(slot != null) {
             session.repopulate_event(slot);
@@ -722,29 +1119,34 @@ Session.prototype.event_template = function() {
     // the extra div is present so that the table can have a border which does not
     // affect the total height of the box.  The border otherwise screws up the height,
     // causing things to the right to avoid this box.
+    var area_mark = "";
+    if(this.responsible_ad != undefined) {
+        area_mark = this.responsible_ad.area_mark;
+        if(area_mark == undefined) {
+            area_mark = "ad:" + this.responsible_ad.href;
+        }
+    }
+
     var bucket_list_style = "meeting_box_bucket_list"
     if(this.is_placed) {
         bucket_list_style = "";
+        area_mark = "";        /* no mark for unplaced items: it goes to the wrong place */
     }
     if(this.double_wide) {
         bucket_list_style = bucket_list_style + " meeting_box_double";
     }
 
-    var area_mark = "";
-    if(this.responsible_ad != undefined) {
-        area_mark = this.responsible_ad.area_mark;
-    }
-
-    pinned = "";
+    var pinned = "";
     if(this.pinned) {
         bucket_list_style = bucket_list_style + " meeting_box_pinned";
         pinned="<td class=\"pinned-tack\">P</td>";
     }
 
-    groupacronym = "nogroup";
+    var groupacronym = "nogroup";
     if(this.group != undefined) {
         groupacronym = this.group.acronym;
     }
+    //console.log("acronym", groupacronym, this.group.acronym, this.visible_title());
 
     // see comment in ietf.ccs, and
     // http://stackoverflow.com/questions/5148041/does-firefox-support-position-relative-on-table-elements
@@ -753,11 +1155,12 @@ Session.prototype.event_template = function() {
         "' id='session_"+
         this.session_id+
         "' session_id=\""+this.session_id+"\"" +
-        "><tr id='meeting_event_title'><th class='"+
+        "><tr id='meeting_event_title'><td class=\"theirconflicts\"></td><th class='"+
+        this.wg_scheme()+" "+
         this.area_scheme() +" meeting_obj'>"+
         this.visible_title()+
-        "<span> ("+this.duration+")</span>" +
-        "</th>"+pinned+"</tr></table>"+ area_mark +"</div></div>";
+        "<span> ("+this.requested_duration+")</span>" +
+        "</th><td class=\"ourconflicts\"></td>"+pinned+"</tr></table>"+ area_mark +"</div></div>";
 };
 
 function andthen_alert(object, result, arg) {
@@ -766,6 +1169,12 @@ function andthen_alert(object, result, arg) {
 
 Session.prototype.generate_info_table = function() {
     $("#info_grp").html(name_select_html);
+    if(this.is_bof()) {
+        $("#grp_type").html("BOF");
+    } else {
+        $("#grp_type").html("WG");
+    }
+
     $("#info_name_select").val($("#info_name_select_option_"+this.session_id).val());
     if(this.description.length > 33) {
         $("#info_name").html("<span title=\""+this.description+"\">"+this.description.substring(0,35)+"...</span>");
@@ -795,7 +1204,7 @@ Session.prototype.generate_info_table = function() {
     if(this.slot != undefined) {
         ss = this.slot;
         if(ss.timeslot_id == null){
-            $("#info_location_select").val(meeting_objs[ss.scheduledsession_id]);
+            $("#info_location_select").val(agenda_globals.meeting_objs[ss.scheduledsession_id]);
         }else{
             $("#info_location_select").val(ss.timeslot_id); // ***
         }
@@ -812,8 +1221,8 @@ Session.prototype.generate_info_table = function() {
 };
 
 function load_all_groups() {
-    for(key in meeting_objs) {
-        session = meeting_objs[key];
+    for(key in agenda_globals.meeting_objs) {
+        session = agenda_globals.meeting_objs[key];
         session.group = find_group_by_href(session.group_href, "load all");
     }
 }
@@ -842,6 +1251,7 @@ Session.prototype.retrieve_constraints_by_session = function() {
     return this.constraints_promise;
 };
 
+var __verbose_person_conflicts = false;
 Session.prototype.calculate_bethere = function() {
     var session_obj = this;
 
@@ -849,7 +1259,9 @@ Session.prototype.calculate_bethere = function() {
         $.each(this.constraints["bethere"], function(index) {
             var bethere = session_obj.constraints["bethere"][index];
             find_person_by_href(bethere.person_href).done(function(person) {
-                console.log("person",person.ascii,"attends session",session_obj.group.acronym);
+                if(__verbose_person_conflicts) {
+                    console.log("person",person.ascii,"attends session",session_obj.group.acronym);
+                }
                 person.attend_session(session_obj);
             });
         });
@@ -881,6 +1293,21 @@ Session.prototype.fill_in_constraints = function(constraint_list) {
             session_obj.conflicts.push(session_obj.constraints["conflic3"][index]);
         });
     }
+    if("conflict" in this.theirconstraints) {
+        $.each(this.theirconstraints["conflict"], function(index) {
+            session_obj.conflicts.push(session_obj.theirconstraints["conflict"][index]);
+        });
+    }
+    if("conflic2" in this.theirconstraints) {
+        $.each(this.theirconstraints["conflic2"], function(index) {
+            session_obj.conflicts.push(session_obj.theirconstraints["conflic2"][index]);
+        });
+    }
+    if("conflic3" in this.theirconstraints) {
+        $.each(this.theirconstraints["conflic3"], function(index) {
+            session_obj.conflicts.push(session_obj.theirconstraints["conflic3"][index]);
+        });
+    }
     this.calculate_bethere();
     this.conflicts = sort_conflict_list(this.conflicts)
 };
@@ -888,7 +1315,7 @@ Session.prototype.fill_in_constraints = function(constraint_list) {
 // ++++++++++++++++++
 // Group Objects
 function Group() {
-    this.andthen_list = [];
+    this.andthen_list = [];      /* should be removed, or replaced with promise */
     this.all_sessions = [];
 }
 
@@ -958,7 +1385,7 @@ Group.prototype.del_column_class = function(column_class) {
     }
     for(n in this.column_class_list) {
         if(this.column_class_list[n] == column_class) {
-            delete this.column_class_list[n];
+            this.column_class_list.splice(n,1);
         }
     }
 };
@@ -978,17 +1405,20 @@ Group.prototype.del_column_classes = function(column_class_list) {
 
 var __debug_group_load = false;
 function create_group_by_href(href) {
-    if(group_objs[href] == undefined) {
-       group_objs[href]=new Group();
-        g = group_objs[href];
+    if(agenda_globals.group_objs[href] == undefined) {
+       agenda_globals.group_objs[href]=new Group();
+        var g = agenda_globals.group_objs[href];
+        if(__debug_group_load) {
+            console.log("creating new group for", href);
+        }
         g.loaded = false;
         g.loading= false;
     }
-    return g;
+    return agenda_globals.group_objs[href];
 }
 
 function load_group_by_href(href) {
-    var g = group_objs[href];
+    var g = agenda_globals.group_objs[href];
     if(!g.loaded) {
         g.href = href;
         if(__debug_group_load) {
@@ -1004,7 +1434,7 @@ function load_group_by_href(href) {
 // fields are added to the group object, and the group
 // is marked loaded.  The resulting group object is returned.
 function load_group_from_json(json) {
-    g = create_group_by_href(json.href);
+    var g = create_group_by_href(json.href);
     for(var key in json) {
         if(json[key].length > 0) {
             g[key]=json[key];
@@ -1019,7 +1449,7 @@ var group_references   = 0;
 var group_demand_loads = 0;
 function find_group_by_href(href, msg) {
     group_references++;
-    g=group_objs[href];
+    var g=agenda_globals.group_objs[href];
     if(g == undefined) {
         group_demand_loads++;
         if(__debug_group_load) {
@@ -1157,20 +1587,34 @@ Constraint.prototype.show_conflict_view = function() {
     //console.log("viewed", this.thisgroup.href);
 };
 
-Constraint.prototype.build_group_conflict_view = function() {
-    var bothways = "&nbsp;&nbsp;&nbsp;";
-    if(this.bothways) {
-       bothways=" &lt;-&gt;";
-    }
-
+Constraint.prototype.populate_conflict_classes = function() {
     // this is used for the red square highlighting.
     var checkbox_id = "conflict_"+this.dom_id;
     conflict_classes[checkbox_id] = this;
-
-    return "<div class='conflict our-"+this.conflict_type+"' id='"+this.dom_id+
-           "'>"+this.othergroup_name+bothways+"</div>";
-
 };
+
+// Made dead by change to how the group view is built out
+//Constraint.prototype.build_group_conflict_view = function() {
+//
+//    var display = { 'conflict':'1' , 'conflic2':'2' , 'conflic3':'3' };
+//
+//    // this is used for the red square highlighting.
+//    var checkbox_id = "conflict_"+this.dom_id;
+//    conflict_classes[checkbox_id] = this;
+//
+//    build  = "<div id='"+this.dom_id+"'>";
+//    if (this.direction=='theirs') {
+//        build += display[this.conflict_type]+"->";
+//    }
+//    build += this.othergroup_name;
+//    if (this.direction=='ours') {
+//        build += "->"+display[this.conflict_type];
+//    }
+//    build += "</div>";
+//
+//    return build
+//
+//};
 
 Constraint.prototype.build_people_conflict_view = function() {
     var area_mark =  "";
@@ -1178,7 +1622,7 @@ Constraint.prototype.build_people_conflict_view = function() {
         area_mark = this.person.area_mark_basic;
     }
     return "<div class='conflict our-"+this.conflict_type+"' id='"+this.dom_id+
-           "'>"+this.person.ascii+area_mark+"</div>";
+           "'>"+area_mark+"</div>";
 };
 
 Constraint.prototype.build_othername = function() {
@@ -1200,9 +1644,10 @@ Constraint.prototype.conflict_view = function() {
         return this.build_people_conflict_view();
     }
     else {
-        //console.log("conflict_view for", this.href);
-        this.build_othername();
-        return this.build_group_conflict_view();
+        // This function is currently never called for this case
+        console.log("!! unexpected conflict_view for", this.href);
+        //this.build_othername();
+        //return this.build_group_conflict_view();
     }
 };
 
@@ -1227,6 +1672,9 @@ Session.prototype.add_constraint_obj = function(obj) {
     if(this.constraints[listname]==undefined) {
        this.constraints[listname]={};
     }
+    if(this.theirconstraints[listname]==undefined) {
+       this.theirconstraints[listname]={};
+    }
 
     if(listname == "bethere") {
         //console.log("bethere constraint: ", obj);
@@ -1245,18 +1693,23 @@ Session.prototype.add_constraint_obj = function(obj) {
         if(obj.source_href == this.group_href) {
             obj.thisgroup  = this.group;
             obj.othergroup = find_group_by_href(obj.target_href, "constraint src"+obj.href);
+            obj.direction = 'ours';
             ogroupname = obj.target_href;
+            if(this.constraints[listname][ogroupname]) {
+                console.log("Found multiple instances of",this.group_href,listname,ogroupname);
+            }
+            this.constraints[listname][ogroupname] = obj
         } else {
             obj.thisgroup  = this.group;
             obj.othergroup = find_group_by_href(obj.source_href, "constraint dst"+obj.href);
+            obj.direction = 'theirs';
             ogroupname = obj.source_href;
+            if(this.theirconstraints[listname][ogroupname]) {
+                console.log("Found multiple instances of",ogroupname,listname,this.group_href);
+            }
+            this.theirconstraints[listname][ogroupname] = obj
         }
 
-        if(this.constraints[listname][ogroupname]) {
-            this.constraints[listname][ogroupname].bothways = true;
-        } else {
-            this.constraints[listname][ogroupname]=obj;
-        }
     }
 
 };
@@ -1327,8 +1780,7 @@ function find_person_by_href(href) {
 
 var area_result;
 // this function creates a unique per-area director mark
-function mark_area_directors() {
-    var directorpromises = [];
+function mark_area_directors(directorpromises) {
     $.each(area_directors, function(areaname) {
         var adnum = 1;
         $.each(area_directors[areaname], function(key) {

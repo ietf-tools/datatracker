@@ -46,7 +46,7 @@ th { text-align: right; vertical-align: text-top; }
 <tr><td class="status" colspan="7"><!-- {{session.group.parent.id}} -->{{session.status}}</td></tr>
 {%endifchanged%}
 <tr class="{% if forloop.counter|divisibleby:2 %}even{% else %}odd{% endif %}">
-  <th valign="top">{{session.group.acronym|upper}}</th>
+  <th valign="top"><a href="{% url "ietf.secr.sreq.views.edit_mtg" num=meeting.number acronym=session.group.acronym %}">{{session.group.acronym|upper}}</a></th>
   <td valign="top" align="center">{% if not session.requested_duration %}<i>{{session.status}}</i>{%else%} {{session.requested_duration|stringformat:"s"|slice:"0:4"}} {% endif %}</td>
   <td valign="top" align="center">{{session.attendees}}</td>
   <td valign="top">

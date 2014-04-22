@@ -157,13 +157,18 @@ class EditTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("session_obj" in r.content)
+        self.assertTrue("load_scheduledsessions" in r.content)
 
     def test_save_agenda_as_and_read_permissions(self):
         meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number))
+
+        # try to get non-existing agenda
+        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number, name="foo"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
 
         # save as
+        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number))
         self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, {
             'savename': "foo",
@@ -172,7 +177,7 @@ class EditTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         # get
-        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number, schedule_name="foo"))
+        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number, name="foo"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 

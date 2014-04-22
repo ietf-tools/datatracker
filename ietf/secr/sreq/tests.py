@@ -2,7 +2,8 @@ from django.core.urlresolvers import reverse
 
 from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
-from ietf.utils.test_data import make_test_data
+#from ietf.utils.test_data import make_test_data
+from ietf.meeting.test_data import make_meeting_test_data as make_test_data
 
 #from pyquery import PyQuery
 
@@ -10,7 +11,7 @@ SECR_USER='secretary'
 
 class SreqUrlTests(TestCase):
     def test_urls(self):
-        draft = make_test_data()
+        make_test_data()
 
         self.client.login(username="secretary", password="secretary+password")
 
@@ -20,7 +21,8 @@ class SreqUrlTests(TestCase):
         r = self.client.get("/secr/sreq/")
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.get("/secr/sreq/%s/new/" % draft.group.acronym)
+        testgroup=Group.objects.filter(type_id='wg').first()
+        r = self.client.get("/secr/sreq/%s/new/" % testgroup.acronym)
         self.assertEqual(r.status_code, 200)
 
 class MainTestCase(TestCase):
@@ -32,8 +34,8 @@ class MainTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         sched = r.context['scheduled_groups']
         unsched = r.context['unscheduled_groups']
-        self.failUnless(len(sched) == 0)
-        self.failUnless(len(unsched) > 0)
+        self.failUnless(len(unsched) == 0)
+        self.failUnless(len(sched) > 0)
 
 class SubmitRequestCase(TestCase):
     def test_submit_request(self):

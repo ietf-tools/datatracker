@@ -32,7 +32,11 @@ def display_duration(value):
            '5400':'1.5 Hours',
            '7200':'2 Hours',
            '9000':'2.5 Hours'}
-    return map[value]
+    if value in map:
+        return map[value]
+    else:
+        x=int(value)
+        return "%d Hours %d Minutes %d Seconds"%(x//3600,(x%3600)//60,x%60)
 
 @register.filter
 def get_published_date(doc):

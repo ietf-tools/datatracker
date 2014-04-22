@@ -1,4 +1,4 @@
-         <span class="required">*</span> Required Field 
+         <span class="required">*</span> Required Field
          <form id="session-request-form" action="." method="post" name="form_post">{% csrf_token %}
          {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
          <table id="sessions-new-table" cellspacing="1" cellpadding="1" border="0">
@@ -14,7 +14,8 @@
              Length of Third Session: {{ form.length_session3.errors }}{{ form.length_session3 }}</td></tr>
            {% endif %}
            <tr class="bg1"><td>Number of Attendees:<span class="required">*</span></td><td>{{ form.attendees.errors }}{{ form.attendees }}</td></tr>
-           <tr class="bg2"><td>Conflicts to Avoid:</td>
+           <tr class="bg2"><td>People who must be present:</td><td>{{ form.bethere.errors }}{{ form.bethere }}</td></tr>
+           <tr class="bg1"><td>Conflicts to Avoid:</td>
            <td>
              <table>
                <tr>
@@ -50,12 +51,17 @@
              </table>
            </td>
            </tr>
-           <tr bgcolor="#cccccc">
+           <tr class="bg2"><td>Resources requested:</td>
+            <td>
+             {{ form.resources }}
+            </td>
+           </tr>
+           <tr class="bg1">
              <td valign="top">Special Requests:<br />&nbsp;<br />i.e. Meetecho, WebEx (please state which, and the reason needed), restrictions on meeting times / days, etc.</td>
              <td>{{ form.comments.errors }}{{ form.comments }}</td>
            </tr>
          </table>
-         
+
          {% include "includes/buttons_save_cancel.html" %}
-      
+
          </form>

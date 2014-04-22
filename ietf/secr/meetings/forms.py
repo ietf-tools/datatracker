@@ -90,7 +90,7 @@ class TimeChoiceField(forms.ChoiceField):
 class MeetingModelForm(forms.ModelForm):
     class Meta:
         model = Meeting
-        exclude = ('type',)
+        exclude = ('type', 'agenda')
         
     def clean_number(self):
         number = self.cleaned_data['number']
@@ -109,9 +109,6 @@ class MeetingRoomForm(forms.ModelForm):
     class Meta:
         model = Room
         fields = '__all__'
-
-class ExtraSessionForm(forms.Form):
-    no_notify = forms.BooleanField(required=False, label="Do NOT notify this action")
 
 class NewSessionForm(forms.Form):
     day = forms.ChoiceField(choices=SESSION_DAYS)

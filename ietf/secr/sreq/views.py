@@ -10,13 +10,15 @@ from django.template import RequestContext
 
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
-from ietf.meeting.models import Meeting, Session, Constraint
+from ietf.meeting.models import Meeting, Session, Constraint, ResourceAssociation
+from ietf.meeting.helpers import get_meeting
 from ietf.name.models import SessionStatusName, ConstraintName
 from ietf.secr.sreq.forms import SessionForm, GroupSelectForm, ToolStatusForm
 from ietf.secr.utils.decorators import check_permissions, sec_only
 from ietf.secr.utils.group import groups_by_session
 from ietf.secr.utils.mail import get_ad_email_list, get_chair_email_list, get_cc_list
 from ietf.utils.mail import send_mail
+from ietf.person.models import Email
 
 # -------------------------------------------------
 # Globals
@@ -38,10 +40,21 @@ def get_initial_session(sessions):
     This function takes a queryset of sessions ordered by 'id' for consistency.  It returns
     a dictionary to be used as the initial for a legacy session form
     '''
+    initial = {}
+    if(len(sessions) == 0):
+        return initial
+
     meeting = sessions[0].meeting
     group = sessions[0].group
     conflicts = group.constraint_source_set.filter(meeting=meeting)
-    initial = {}
+
+    bethere_people = [x.person for x in sessions[0].constraints().filter(name='bethere')]
+    bethere_email = []
+    for person in bethere_people:
+        e = person.email_set.order_by("-active","-time").first()
+        if e:
+           bethere_email.append(e)
+
     # even if there are three sessions requested, the old form has 2 in this field
     initial['num_session'] = sessions.count() if sessions.count() <= 2 else 2
 
@@ -58,6 +71,8 @@ def get_initial_session(sessions):
     initial['conflict2'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflic2') ])
     initial['conflict3'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflic3') ])
     initial['comments'] = sessions[0].comments
+    initial['resources'] = sessions[0].resources.all()
+    initial['bethere'] = bethere_email
     return initial
 
 def get_lock_message():
@@ -71,12 +86,6 @@ def get_lock_message():
     except IOError:
         message = "This application is currently locked."
     return message
-
-def get_meeting():
-    '''
-    Function to get the current IETF regular meeting.  Simply returns the meeting with the most recent date
-    '''
-    return Meeting.objects.filter(type='ietf').order_by('-date')[0]
 
 def get_requester_text(person,group):
     '''
@@ -175,7 +184,7 @@ def approve(request, acronym):
 
     if has_role(request.user,'Secretariat') or group.parent.role_set.filter(name='ad',person=request.user.person):
         session.status = SessionStatusName.objects.get(slug='appr')
-        session.save()
+        session_save(session)
 
         messages.success(request, 'Third session approved')
         return redirect('sessions_view', acronym=acronym)
@@ -206,7 +215,7 @@ def cancel(request, acronym):
     # mark sessions as deleted
     for session in sessions:
         session.status_id = 'deleted'
-        session.save()
+        session_save(session)
 
         # clear schedule assignments if already scheduled
         session.scheduledsession_set.all().delete()
@@ -233,6 +242,10 @@ def confirm(request, acronym):
     if not querydict:
         raise Http404
     form = querydict.copy()
+    if 'resources' in form:
+        form['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in form['resources'].split(',')]
+    if 'bethere' in form:
+        form['bethere'] = [Email.objects.get(address=addr) for addr in form['bethere'].split(',')]
     meeting = get_meeting()
     group = get_object_or_404(Group,acronym=acronym)
     login = request.user.person
@@ -265,12 +278,19 @@ def confirm(request, acronym):
                                       requested_duration=datetime.timedelta(0,int(duration)),
                                       comments=form['comments'],
                                       status=SessionStatusName.objects.get(slug=slug))
-                new_session.save()
+                session_save(new_session)
+                if 'resources' in form:
+                    new_session.resources = form['resources']
 
         # write constraint records
         save_conflicts(group,meeting,form['conflict1'],'conflict')
         save_conflicts(group,meeting,form['conflict2'],'conflic2')
         save_conflicts(group,meeting,form['conflict3'],'conflic3')
+
+        if 'bethere' in form:
+            bethere_cn = ConstraintName.objects.get(slug='bethere')
+            for email in form['bethere']:
+                Constraint.objects.create(name=bethere_cn,source=group,person=email.person,meeting=new_session.meeting)
 
         # deprecated in new schema
         # log activity
@@ -296,18 +316,51 @@ def confirm(request, acronym):
         RequestContext(request, {}),
     )
 
+#Move this into make_initial
+def add_essential_people(group,initial):
+    # This will be easier when the form uses Person instead of Email
+    people = set()
+    if 'bethere' in initial:
+        people.update(initial['bethere'])
+    for role in group.role_set.filter(name='chair'):
+        e = role.person.email_set.order_by("-active","-time").first()
+        if e:
+            people.add(e)
+    e = group.ad.email_set.order_by("-active","-time").first()
+    if e:
+        people.add(e)
+    initial['bethere'] = list(people)
+    
+
 @check_permissions
 def edit(request, acronym):
+    return edit_mtg(request, None, acronym)
+
+def session_save(session):
+    session.save()
+    if session.status_id == "schedw" and session.meeting.agenda != None:
+        # send an email to iesg-secretariat to alert to change
+        pass
+
+@check_permissions
+def edit_mtg(request, num, acronym):
     '''
     This view allows the user to edit details of the session request
     '''
-    meeting = get_meeting()
+    meeting = get_meeting(num)
     group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
     sessions_count = sessions.count()
     initial = get_initial_session(sessions)
+    if 'resources' in initial:
+        initial['resources'] = [x.pk for x in initial['resources']]
+
     session_conflicts = session_conflicts_as_string(group, meeting)
     login = request.user.person
+
+    session = Session()
+    if(len(sessions) > 0):
+        session = sessions[0]
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
@@ -323,7 +376,7 @@ def edit(request, acronym):
                 if 'length_session1' in form.changed_data:
                     session = sessions[0]
                     session.requested_duration = datetime.timedelta(0,int(form.cleaned_data['length_session1']))
-                    session.save()
+                    session_save(session)
 
                 # session 2
                 if 'length_session2' in form.changed_data:
@@ -345,7 +398,7 @@ def edit(request, acronym):
                         duration = datetime.timedelta(0,int(form.cleaned_data['length_session2']))
                         session = sessions[1]
                         session.requested_duration = duration
-                        session.save()
+                        session_save(session)
 
                 # session 3
                 if 'length_session3' in form.changed_data:
@@ -367,7 +420,7 @@ def edit(request, acronym):
                         duration = datetime.timedelta(0,int(form.cleaned_data['length_session3']))
                         session = sessions[2]
                         session.requested_duration = duration
-                        session.save()
+                        session_save(session)
 
 
                 if 'attendees' in form.changed_data:
@@ -384,12 +437,28 @@ def edit(request, acronym):
                     Constraint.objects.filter(meeting=meeting,source=group,name='conflic3').delete()
                     save_conflicts(group,meeting,form.cleaned_data['conflict3'],'conflic3')
 
+                if 'resources' in form.changed_data:
+                    new_resource_ids = form.cleaned_data['resources']
+                    new_resources = [ ResourceAssociation.objects.get(pk=a)
+                                      for a in new_resource_ids]
+                    session.resources = new_resources
+
+                if 'bethere' in form.changed_data and set(form.cleaned_data['bethere'])!=set(initial['bethere']):
+                    session.constraints().filter(name='bethere').delete()
+                    bethere_cn = ConstraintName.objects.get(slug='bethere')
+                    for email in form.cleaned_data['bethere']:
+                        Constraint.objects.create(name=bethere_cn,source=group,person=email.person,meeting=session.meeting)
+
                 # deprecated
                 # log activity
                 #add_session_activity(group,'Session Request was updated',meeting,user)
 
                 # send notification
                 send_notification(group,meeting,login,form.cleaned_data,'update')
+
+            # nuke any cache that might be lingering around.
+            from ietf.meeting.helpers import session_constraint_expire
+            session_constraint_expire(session)
 
             messages.success(request, 'Session Request updated')
             return redirect('sessions_view', acronym=acronym)
@@ -504,10 +573,15 @@ def new(request, acronym):
             return redirect('sessions_new', acronym=acronym)
 
         initial = get_initial_session(previous_sessions)
+        add_essential_people(group,initial)
+        if 'resources' in initial:
+            initial['resources'] = [x.pk for x in initial['resources']]
         form = SessionForm(initial=initial)
 
     else:
-        form = SessionForm()
+        initial={}
+        add_essential_people(group,initial)
+        form = SessionForm(initial=initial)
 
     return render_to_response('sreq/new.html', {
         'meeting': meeting,
@@ -543,7 +617,7 @@ def no_session(request, acronym):
                       requested_by=login,
                       requested_duration=0,
                       status=SessionStatusName.objects.get(slug='notmeet'))
-    session.save()
+    session_save(session)
 
     # send notification
     to_email = SESSION_REQUEST_EMAIL
@@ -607,11 +681,11 @@ def tool_status(request):
         RequestContext(request, {}),
     )
 
-def view(request, acronym):
+def view(request, acronym, num = None):
     '''
     This view displays the session request info
     '''
-    meeting = get_meeting()
+    meeting = get_meeting(num)
     group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(~Q(status__in=('canceled','notmeet','deleted')),meeting=meeting,group=group).order_by('id')
 

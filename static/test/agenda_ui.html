@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Agenda JS Unit Testing</title>
+  <link rel="stylesheet" type="text/css" href="/css/yui/yui-20100305.css"></link>
+  <link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
+<style type="text/css">
+.APP-scheme, .meeting_event th.APP-scheme, #APP-groups, #selector-APP { color:#008; background-color: #eef }
+.director-mark-APP {
+   border: 2px solid #008;
+   color:#008;
+   background-color: #eef
+}
+
+.GEN-scheme, .meeting_event th.GEN-scheme, #GEN-groups, #selector-GEN { color:#080; background-color: #efe }
+.director-mark-GEN {
+   border: 2px solid #080;
+   color:#080;
+   background-color: #efe
+}
+
+.INT-scheme, .meeting_event th.INT-scheme, #INT-groups, #selector-INT { color:#088; background-color: #eff }
+.director-mark-INT {
+   border: 2px solid #088;
+   color:#088;
+   background-color: #eff
+}
+
+.IRTF-scheme, .meeting_event th.IRTF-scheme, #IRTF-groups, #selector-IRTF { color:#448; background-color: #ddf }
+.director-mark-IRTF {
+   border: 2px solid #448;
+   color:#448;
+   background-color: #ddf
+}
+
+.OPS-scheme, .meeting_event th.OPS-scheme, #OPS-groups, #selector-OPS { color:#800; background-color: #fee }
+.director-mark-OPS {
+   border: 2px solid #800;
+   color:#800;
+   background-color: #fee
+}
+
+.RAI-scheme, .meeting_event th.RAI-scheme, #RAI-groups, #selector-RAI { color:#808; background-color: #fef }
+.director-mark-RAI {
+   border: 2px solid #808;
+   color:#808;
+   background-color: #fef
+}
+
+.RTG-scheme, .meeting_event th.RTG-scheme, #RTG-groups, #selector-RTG { color:#880; background-color: #ffe }
+.director-mark-RTG {
+   border: 2px solid #880;
+   color:#880;
+   background-color: #ffe
+}
+
+.SEC-scheme, .meeting_event th.SEC-scheme, #SEC-groups, #selector-SEC { color:#488; background-color: #dff }
+.director-mark-SEC {
+   border: 2px solid #488;
+   color:#488;
+   background-color: #dff
+}
+
+.TSV-scheme, .meeting_event th.TSV-scheme, #TSV-groups, #selector-TSV { color:#484; background-color: #dfd }
+.director-mark-TSV {
+   border: 2px solid #484;
+   color:#484;
+   background-color: #dfd
+}
+
+
+</style>
+
+<link rel='stylesheet' type='text/css' href='/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css' />
+<link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
+<link rel='stylesheet' type='text/css' href='/css/agenda.css' />
+
+</head>
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script type="text/javascript" src="/js/lib/jquery-1.8.2.min.js"></script>
+<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery-ui.custom.min.js'></script>
+<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.widget.min.js'></script>
+<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.droppable.min.js'></script>
+<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.sortable.min.js'></script>
+<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.accordion.min.js'></script>
+<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.draggable.min.js'></script>
+<script type='text/javascript' src='/js/spin/dist/spin.min.js'></script>
+
+<div id="unassigned-items">
+  <div id="all_agendas" class="events_bar_buttons">
+    <a href="/meeting/83/agendas/edit">
+      <button class="styled_button">all agendas</button>
+    </a>
+  </div>
+  <div id="hidden_room" class="hide_buttons events_bar_buttons">
+    <div class="very_small left">hidden rooms:<span id="hidden_rooms" >0/11</span></div>
+    <div><button class="small_button" id="show_hidden_rooms">Show</button></div>
+  </div>
+  <div id="hidden_day" class="hide_buttons events_bar_buttons">
+    <div class="very_small left">hidden days:<span id="hidden_days" >0/7</span></div>
+    <div><button class="small_button" id="show_hidden_days">Show</button></div>
+  </div>
+
+  </div>
+
+  <div id="unassigned_order" class="events_bar_buttons">
+    <select id="unassigned_sort_button" class="dialog">
+      <option id="unassigned_alpha" value="alphaname" selected>Alphabetical</option>
+      <option id="unassigned_area" value="area">By Area</option>
+      <option id="unassigned_duration" value="duration">By Duration</option>
+      <option id="unassigned_special" value="special">Special Request</option>
+    </select>
+  </div>
+  <div class="agenda_slot_title" >
+    <div style="ui-icon ui-icon-arrow-1-w" id="close_ietf_menubar">
+      &lt;
+    </div>
+    <b>Unassigned Events:</b>
+    <span id="schedule_name">name: mtg_83</span>
+  </div>
+  <div id="sortable-list" class="ui-droppable bucket-list room_title">
+  </div>
+</div>
+
+<div class="agenda_div">
+
+
+<div id="dialog-confirm" title="" style="display:none">
+  <p>
+    <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
+    Are you sure you want to put two sessions into the same slot?
+  </p>
+</div>
+
+<div id="can-extend-dialog" title="" class="ui-dialog dialog" style="display:none">
+</div>
+
+<div id="can-not-extend-dialog" title="" class="ui-dialog dialog" style="display:none">
+  <p>
+    <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
+    You can not extend this session. The slot is not available.
+  </p>
+</div>
+
+
+<div id="dialog-confirm" title="" style="display:none">
+  <p>
+    <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
+    Are you sure you want to put two sessions into the same slot?
+  </p>
+</div>
+
+<table id="meetings" class="ietf-navbar" style="width:100%">
+<tr>
+  <th class="schedule_title"><div id="spinner"><!-- spinney goes here --></div></th>
+
+  <th colspan="2" id="2013-12-02-btn" class="day_2013-12-02 agenda_slot_title agenda_slot_unavailable">
+    <div id="close_2013-12-02" class="close top_left very_small close_day">x</div>
+    Mon&nbsp;(2013-12-02)
+  </th>
+  <th class="day_2013-12-02 spacer 2013-12-02-spacer" id="">
+    <div class="ui-widget-content ui-resizable" id="resize-2013-12-02-spacer">
+      <div class="spacer_grip ui-resizable-handle ui-resizable-e"></div>
+    </div>
+  </th>
+
+  <th colspan="1" id="2013-12-03-btn" class="day_2013-12-03 agenda_slot_title agenda_slot_unavailable">
+    <div id="close_2013-12-03" class="close top_left very_small close_day">x</div>
+    Tue&nbsp;(2013-12-03)
+
+  </th>
+
+  <th class="day_2013-12-03 spacer 2013-12-03-spacer" id="">
+    <div class="ui-widget-content ui-resizable" id="resize-2013-12-03-spacer">
+      <div class="spacer_grip ui-resizable-handle ui-resizable-e"></div>
+    </div>
+  </th>
+</tr>
+
+
+    <tr>
+      <th class="th_column"><button id="show_all_button" class="styled_button">show all</button></th>
+      <th class="day_2013-12-02-0900 day_2013-12-02 room_title ">0900-1130 </th>
+      <th class="day_2013-12-02-1300 day_2013-12-02 room_title ">1300-1500 </th>
+      
+      <th class="day_2013-12-02 spacer 2013-12-02-spacer"></th>
+      
+      <th class="day_2013-12-03-0900 day_2013-12-03 room_title ">0900-1130 </th>
+      
+      <th class="day_2013-12-03 spacer 2013-12-03-spacer"></th>
+    </tr>
+
+
+  <tr id="room0" class="agenda_row_alt agenda_slot">
+    <th class="vert_time">
+      <div class="close very_small close_room top_left small_button" id="close_room0">X</div>
+      <div class="right room_name">apple <span class="capacity">(61)</span></div>
+
+      <!-- <span class="hide_room light_blue_border">X</span><span class="left">212/213</span>-->
+    </th>
+    
+      
+        <td id="room0_2013-12-02_0900" class="day_2013-12-02 agenda-column-2013-12-02-0900 agenda_slot agenda_slot_unavailable" capacity="62" ></td>
+      
+        <td id="room0_2013-12-02_1300" class="day_2013-12-02 agenda-column-2013-12-02-1300 agenda_slot agenda_slot_unavailable" capacity="63" ></td>
+      
+        <td class="day_2013-12-02 spacer 2013-12-02-spacer"></td>
+      
+        <td id="room0_2013-12-03_0900" class="day_2013-12-03 agenda-column-2013-12-03-0900 agenda_slot agenda_slot_unavailable" capacity="64" ></td>
+
+  </tr>
+
+  <tr id="room1" class="agenda_row_alt agenda_slot">
+    <th class="vert_time">
+      <div class="close very_small close_room top_left small_button" id="close_room1">X</div>
+      <div class="right room_name">orange <span class="capacity">(70)</span></div>
+
+      <!-- <span class="hide_room light_blue_border">X</span><span class="left">212/213</span>-->
+    </th>
+    
+      
+        <td id="room1_2013-12-02_0900" class="day_2013-12-02 agenda-column-2013-12-02-0900 agenda_slot agenda_slot_unavailable" capacity="71" ></td>
+      
+        <td id="room1_2013-12-02_1300" class="day_2013-12-02 agenda-column-2013-12-02-1300 agenda_slot agenda_slot_unavailable" capacity="72" ></td>
+      
+        <td class="day_2013-12-02 spacer 2013-12-02-spacer"></td>
+      
+        <td id="room1_2013-12-03_0900" class="day_2013-12-03 agenda-column-2013-12-03-0900 agenda_slot agenda_slot_unavailable" capacity="73" ></td>
+
+  </tr>
+
+  <tr id="room2" class="agenda_row_alt agenda_slot">
+    <th class="vert_time">
+      <div class="close very_small close_room top_left small_button" id="close_room2">X</div>
+      <div class="right room_name">grape <span class="capacity">(80)</span></div>
+
+      <!-- <span class="hide_room light_blue_border">X</span><span class="left">212/213</span>-->
+    </th>
+    
+      
+        <td id="room2_2013-12-02_0900" class="day_2013-12-02 agenda-column-2013-12-02-0900 agenda_slot agenda_slot_unavailable" capacity="81" ></td>
+      
+        <td id="room2_2013-12-02_1300" class="day_2013-12-02 agenda-column-2013-12-02-1300 agenda_slot agenda_slot_unavailable" capacity="82" ></td>
+      
+        <td class="day_2013-12-02 spacer 2013-12-02-spacer"></td>
+      
+        <td id="room2_2013-12-03_0900" class="day_2013-12-03 agenda-column-2013-12-03-0900 agenda_slot agenda_slot_unavailable" capacity="83" ></td>
+
+  </tr>
+
+  <tr id="room3" class="agenda_row_alt agenda_slot">
+    <th class="vert_time">
+      <div class="close very_small close_room top_left small_button" id="close_room3">X</div>
+      <div class="right room_name">pineapple <span class="capacity">(90)</span></div>
+
+      <!-- <span class="hide_room light_blue_border">X</span><span class="left">212/213</span>-->
+    </th>
+    
+      
+        <td id="room3_2013-12-02_0900" class="day_2013-12-02 agenda-column-2013-12-02-0900 agenda_slot agenda_slot_unavailable" capacity="91" ></td>
+      
+        <td id="room3_2013-12-02_1300" class="day_2013-12-02 agenda-column-2013-12-02-1300 agenda_slot agenda_slot_unavailable" capacity="92" ></td>
+      
+        <td class="day_2013-12-02 spacer 2013-12-02-spacer"></td>
+      
+        <td id="room3_2013-12-03_0900" class="day_2013-12-03 agenda-column-2013-12-03-0900 agenda_slot agenda_slot_unavailable" capacity="93" ></td>
+
+  </tr>
+
+  <tr id="room4" class="agenda_row_alt agenda_slot">
+    <th class="vert_time">
+      <div class="close very_small close_room top_left small_button" id="close_room4">X</div>
+      <div class="right room_name">tomato <span class="capacity">(100)</span></div>
+
+      <!-- <span class="hide_room light_blue_border">X</span><span class="left">212/213</span>-->
+    </th>
+    
+      
+        <td id="room4_2013-12-02_0900" class="day_2013-12-02 agenda-column-2013-12-02-0900 agenda_slot agenda_slot_unavailable" capacity="101" ></td>
+      
+        <td id="room4_2013-12-02_1300" class="day_2013-12-02 agenda-column-2013-12-02-1300 agenda_slot agenda_slot_unavailable" capacity="102" ></td>
+      
+        <td class="day_2013-12-02 spacer 2013-12-02-spacer"></td>
+      
+        <td id="room4_2013-12-03_0900" class="day_2013-12-03 agenda-column-2013-12-03-0900 agenda_slot agenda_slot_unavailable" capacity="103" ></td>
+
+  </tr>
+
+  <tr id="room5" class="agenda_row_alt agenda_slot">
+    <th class="vert_time">
+      <div class="close very_small close_room top_left small_button" id="close_room5">X</div>
+      <div class="right room_name">squash <span class="capacity">(110)</span></div>
+
+      <!-- <span class="hide_room light_blue_border">X</span><span class="left">212/213</span>-->
+    </th>
+    
+      
+        <td id="room5_2013-12-02_0900" class="day_2013-12-02 agenda-column-2013-12-02-0900 agenda_slot agenda_slot_unavailable" capacity="111" ></td>
+      
+        <td id="room5_2013-12-02_1300" class="day_2013-12-02 agenda-column-2013-12-02-1300 agenda_slot agenda_slot_unavailable" capacity="112" ></td>
+      
+        <td class="day_2013-12-02 spacer 2013-12-02-spacer"></td>
+      
+        <td id="room5_2013-12-03_0900" class="day_2013-12-03 agenda-column-2013-12-03-0900 agenda_slot agenda_slot_unavailable" capacity="113" ></td>
+
+  </tr>
+
+  <tr id="room6" class="agenda_row_alt agenda_slot">
+    <th class="vert_time">
+      <div class="close very_small close_room top_left small_button" id="close_room6">X</div>
+      <div class="right room_name">raisin <span class="capacity">(120)</span></div>
+
+      <!-- <span class="hide_room light_blue_border">X</span><span class="left">212/213</span>-->
+    </th>
+    
+      
+        <td id="room6_2013-12-02_0900" class="day_2013-12-02 agenda-column-2013-12-02-0900 agenda_slot agenda_slot_unavailable" capacity="121" ></td>
+      
+        <td id="room6_2013-12-02_1300" class="day_2013-12-02 agenda-column-2013-12-02-1300 agenda_slot agenda_slot_unavailable" capacity="122" ></td>
+      
+        <td class="day_2013-12-02 spacer 2013-12-02-spacer"></td>
+      
+        <td id="room6_2013-12-03_0900" class="day_2013-12-03 agenda-column-2013-12-03-0900 agenda_slot agenda_slot_unavailable" capacity="123" ></td>
+
+  </tr>
+
+  <tr id="room7" class="agenda_row_alt agenda_slot">
+    <th class="vert_time">
+      <div class="close very_small close_room top_left small_button" id="close_room7">X</div>
+      <div class="right room_name">cucumber <span class="capacity">(130)</span></div>
+
+      <!-- <span class="hide_room light_blue_border">X</span><span class="left">212/213</span>-->
+    </th>
+    
+      
+        <td id="room7_2013-12-02_0900" class="day_2013-12-02 agenda-column-2013-12-02-0900 agenda_slot agenda_slot_unavailable" capacity="131" ></td>
+      
+        <td id="room7_2013-12-02_1300" class="day_2013-12-02 agenda-column-2013-12-02-1300 agenda_slot agenda_slot_unavailable" capacity="132" ></td>
+      
+        <td class="day_2013-12-02 spacer 2013-12-02-spacer"></td>
+      
+        <td id="room7_2013-12-03_0900" class="day_2013-12-03 agenda-column-2013-12-03-0900 agenda_slot agenda_slot_unavailable" capacity="133" ></td>
+
+  </tr>
+  
+</table>
+
+
+
+</div>
+
+
+<div id="session-info" class="ui-droppable bucket-list room_title">
+  <div class="agenda_slot_title"><b>Session Information:</b></div>
+
+  <div class="ss_info_box">
+    <div class="ss_info ss_info_left">
+      <table>
+	<tr><td class="ss_info_name_short">Group:</td><td><span id="info_grp"></span>
+            <!-- <button id="agenda_sreq_button" class="right">Edit Request</button> --></tr>
+	<tr><td class="ss_info_name_short">Name:</td> <td id="info_name"></td></tr>
+	<tr><td class="ss_info_name_short">Area:</td> <td><span id="info_area"></span><button id="show_all_area" class="right">Show All</button></td></tr>
+      </table>
+    </div>
+
+    <div class="ss_info ss_info_right">
+      <table>
+	<tr><td class="ss_info_name_long">Duration/Capacity:</td><td class="info_split" id="info_duration"></td> <td class="info_split" id="info_capacity"></td></tr>
+	<tr><td class="ss_info_name_long">Location:</td><td colspan=2 id="info_location"></td></tr>
+	<tr><td class="ss_info_name_long">Responsible AD:</td><td colspan=2 id="info_responsible"></td></tr>
+	<tr><td class="ss_info_name_long">Requested By:</td><td colspan=2 id="info_requestedby"></td></tr>
+      </table>
+    </div>
+
+    <div id="conflict_table">
+      <div id="special_requests">Special Requests</div>
+      <table>
+	<tbody id="conflict_table_body">
+	  <tr class="conflict_list_row">
+            <td class="conflict_list_title">
+              Group conflicts
+            </td>
+	    <td id="conflict_group_list">
+            <ul>
+            </ul>
+            </td>
+          </tr>
+	  <tr class="conflict_list_row">
+            <td class="conflict_list_title">
+              <b>be present</b>
+            </td>
+	    <td id="conflict_people_list">
+            <ul>
+            </ul>
+            </td>
+          </tr>
+	</tbody>
+      </table>
+    </div>
+    <div class="agenda_find_free"><button class="agenda_selected_buttons small_button" id="find_free">Find Free</button></div>
+    <div class="agenda_double_slot button_disabled">
+      <button class="agenda_selected_buttons small_button" disabled
+      id="double_slot">Extend</button>
+    </div>
+    <div id="agenda_pin_slot" class="button_disabled">
+      <button class="agenda_selected_buttons small_button" disabled
+      id="pin_slot">Pin</button>
+    </div>
+    <div class="color_legend">
+      
+      <span class="APP-scheme"><input class='color_checkboxes' type="checkbox" id="APP" value="APP-value" checked>APP</span>
+      
+      <span class="GEN-scheme"><input class='color_checkboxes' type="checkbox" id="GEN" value="GEN-value" checked>GEN</span>
+      
+      <span class="INT-scheme"><input class='color_checkboxes' type="checkbox" id="INT" value="INT-value" checked>INT</span>
+      
+      <span class="IRTF-scheme"><input class='color_checkboxes' type="checkbox" id="IRTF" value="IRTF-value" checked>IRTF</span>
+      
+      <span class="OPS-scheme"><input class='color_checkboxes' type="checkbox" id="OPS" value="OPS-value" checked>OPS</span>
+      
+      <span class="RAI-scheme"><input class='color_checkboxes' type="checkbox" id="RAI" value="RAI-value" checked>RAI</span>
+      
+      <span class="RTG-scheme"><input class='color_checkboxes' type="checkbox" id="RTG" value="RTG-value" checked>RTG</span>
+      
+      <span class="SEC-scheme"><input class='color_checkboxes' type="checkbox" id="SEC" value="SEC-value" checked>SEC</span>
+      
+      <span class="TSV-scheme"><input class='color_checkboxes' type="checkbox" id="TSV" value="TSV-value" checked>TSV</span>
+      
+    </div>
+  </div>
+
+  <div class="agenda_save_box">
+
+    <div id="agenda_title"><b>Agenda name: </b><span>mtg_83</span></div>
+    <div id="agenda_saveas">
+      <form action="/meeting/83/schedule/mtg_83/edit" method="post">
+        <p><label for="id_savename">Savename:</label> <input id="id_savename" type="text" name="savename" maxlength="100" /></p>
+        <input type="submit" name="saveas" value="saveas">
+      </form>
+    </div>
+  </div>
+
+
+</div>
+  <!-- <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-ew">*</div> -->
+</div>
+
+<!-- some boxes for dialogues -->
+<div id="dialog-confirm-two" title="" style="display:none">
+  <p>
+    <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
+    <span class="dialog-confirm-text">Are you sure you want to put two sessions into the same slot?</span>
+  </p>
+</div>
+
+<div id="dialog-confirm-toosmall" title="" style="display:none">
+  <p>
+    <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
+    <span class="dialog-confirm-text">The room you are moving to has a lower
+      room capacity then the requested capacity,<br>
+      Are you sure you want to continue?
+    </span>
+  </p>
+</div>
+
+<div id="dialog-confirm-twotoosmall" title="" style="display:none">
+  <p>
+    <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
+    <span class="dialog-confirm-text">
+      The slot you are moving to already has a session in it, <br>
+      the room is also smaller than the requested amount.<br>
+      Are you sure you want to continue?
+    </span>
+  </p>
+</div>
+
+<div id="can-extend-dialog" title="" class="ui-dialog dialog" style="display:none">
+</div>
+
+<div id="can-not-extend-dialog" title="" class="ui-dialog dialog" style="display:none">
+  <p>
+    <span class="ui-icon ui-icon-alert" style="background: white; float: left; margin: 0 7px 20px 0;"></span>
+    You can not extend this session. The slot is not available.
+  </p>
+</div>
+
+
+
+<script type="text/javascript" src="/js/yui/yui-20100305.js"></script> 
+<script type="text/javascript">
+//<![CDATA[
+YAHOO.util.Event.onContentReady("wgs", function () {
+    var oMenu = new YAHOO.widget.Menu("wgs", { position: "static", hidedelay:  750, lazyload: true });
+    oMenu.render();      
+});      
+
+
+//]]>
+</script>
+
+<script src="/dajaxice/dajaxice.core.js" type="text/javascript" charset="utf-8"></script>
+
+<script type='text/javascript' src='/js/agenda/agenda_edit.js'></script>
+<script type='text/javascript' src='/js/agenda/agenda_helpers.js'></script>
+<script type='text/javascript' src='/js/agenda/agenda_objects.js'></script>
+<script type='text/javascript' src='/js/agenda/agenda_listeners.js'></script>
+<script type='text/javascript' src='/js/test/agenda_funcs.js'></script>
+
+
+
+<script type='text/javascript'>
+
+
+__debug_conflict_calculate = true;
+
+var meeting_number = "83";
+var schedule_id    = 24;
+var schedule_owner_href = "wlo@amsl.com";
+var schedule_name  = "83";
+var scheduledsession_post_href = "/test/agenda_ui.html";
+var meeting_base_url = "http://localhost:8000/meeting/83";
+var site_base_url = "http://localhost:8000";
+var total_days = 7;
+var total_rooms = 11;
+
+function setup_slots(promiselist){
+    days.push("2013-12-02");
+    days.push("2013-12-03");
+
+area_directors["app"] = [];
+area_directors["app"] = [];
+area_directors["gen"] = [];
+area_directors["int"] = [];
+area_directors["int"] = [];
+area_directors["ops"] = [];
+area_directors["ops"] = [];
+area_directors["rai"] = [];
+area_directors["rai"] = [];
+area_directors["rtg"] = [];
+area_directors["rtg"] = [];
+area_directors["sec"] = [];
+area_directors["sec"] = [];
+area_directors["tsv"] = [];
+area_directors["tsv"] = [];
+
+//area_directors["app"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/21684.json"));
+//area_directors["app"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/18321.json"));
+//area_directors["gen"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/21072.json"));
+//area_directors["int"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/100664.json"));
+//area_directors["int"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/20356.json"));
+//area_directors["ops"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/105682.json"));
+//area_directors["ops"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/20959.json"));
+//area_directors["rai"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/103539.json"));
+//area_directors["rai"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/108049.json"));
+//area_directors["rtg"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/2329.json"));
+//area_directors["rtg"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/104198.json"));
+//area_directors["sec"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/19177.json"));
+//area_directors["sec"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/19483.json"));
+//area_directors["tsv"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/105519.json"));
+//area_directors["tsv"].push(find_person_by_href("http://knothole.gatineau.credil.org:8000/person/107190.json"));
+
+   t_slots = three_by_eight_grid();
+   t_sessions = make_6_sessions();
+   place_6_sessions(t_slots, t_sessions);
+   conflict_4_sessions(t_sessions);
+
+   console.log("setup_slots run");
+
+   legend_status["APP"] = true;
+   legend_status["GEN"] = true;
+   legend_status["INT"] = true;
+   legend_status["IRTF"] = true;
+   legend_status["OPS"] = true;
+   legend_status["RAI"] = true;
+   legend_status["RTG"] = true;
+   legend_status["SEC"] = true;
+   legend_status["TSV"] = true;
+}
+
+
+
+
+
+</script>
+<style type='text/css'>
+
+</style>
+
+
+
+
+<div id="ietf-extras"></div>
+
+
+
+
+</body></html>
+
+</body>
+</html>

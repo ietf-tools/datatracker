@@ -191,7 +191,7 @@ def make_directories(meeting):
     '''
     path = get_upload_root(meeting)
     os.umask(0)
-    for leaf in ('slides','agenda','minutes','id','rfc'):
+    for leaf in ('slides','agenda','minutes','id','rfc','bluesheets'):
         target = os.path.join(path,leaf)
         if not os.path.exists(target):
             os.makedirs(target)
