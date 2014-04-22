@@ -1,8 +1,0 @@
-include *.py
-include COPYING
-include AUTHORS
-recursive-include dajaxice *
-recursive-exclude dajaxice *.pyc
-recursive-include examples *
-recursive-exclude examples *.pyc
-recursive-include docs *
