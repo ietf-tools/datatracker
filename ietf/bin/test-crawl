@@ -153,3 +153,6 @@ sys.stderr.write("Output written to %s" % logfile.name)
 if errors > 0:
     sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
     sys.exit(1)
+else:
+    sys.stderr.write("Found no errors.")
+    
