@@ -1,3 +1,38 @@
+ietfdb (5.4.0) ietf; urgency=medium
+
+  This is a feature release which brings in an updated version of the agenda
+  scheduling code.  There are still known bugs and rough edges, but this
+  version has many bugfixes and cleaned up issues, and brings essential
+  imporvements to the agenda scheduling tool.
+
+  * Merged in [7561] from rjsparks@nostrum.com:
+
+    Updates and bugfixes to the agenda editing features
+      - Removes the pattern of using ScheduledSession m2m objects with one of
+        the relationships left as None
+      - Improves scheduled session state handling
+      - Simplifies sending email to scheduled session requestors
+      - Improved timeslot purpose and room editing
+      - Improved access controls to editing forms
+      - Better test coverage for the meeting views
+      - Improvements to the javascript driven by prototyping automated tests
+      - Better initialization of a new meeting
+
+    On the session request form:
+      - Allows specifiying room resources (projectors, meetecho)
+      - Allows specifying what people must be present
+
+    On the schedule editing page:
+      - correctly calculates conflict levels
+      - displays conflicts in and out of each session separately
+      - italicizes BoFs
+      - shows resource and people conflicts
+
+    Adds automated placement as a management command
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Apr 2014 23:22:41 +0200
+
+
 ietfdb (5.3.1) ietf; urgency=medium
 
   This is a minor release, with a number of bug-fixes and a few enhancements.
