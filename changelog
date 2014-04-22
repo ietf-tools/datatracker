@@ -30,7 +30,7 @@ ietfdb (5.4.0) ietf; urgency=medium
 
     Adds automated placement as a management command
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  16 Apr 2014 23:22:41 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Apr 2014 23:58:27 +0200
 
 
 ietfdb (5.3.1) ietf; urgency=medium
