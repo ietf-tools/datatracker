@@ -141,7 +141,7 @@ promiselist.push(ts_promise);
     </th>
     {% for day in time_slices %}
       {% for slot in date_slices|lookup:day %}
-        <td slot_time="{{day}} {{slot.0|date:'H:i:s'}}" slot_duration="{{slot.2}}" slot_room="{{r.pk}}" id="{{r.domid}}_{{day}}_{{slot.0|date:'Hi'}}" class="day_{{day}} agenda-column-{{day}}-{{slot.0|date:'Hi'}} agenda_slot {% cycle 'agenda_slot_alt' '' %} agenda_slot_unavailable" ></td>
+        <td slot_time="{{day}} {{slot.0|date:'H:i:s'}}" slot_duration="{{slot.2}}" slot_room="{{r.pk}}" id="{{r.dom_id}}_{{day}}_{{slot.0|date:'Hi'}}" class="day_{{day}} agenda-column-{{day}}-{{slot.0|date:'Hi'}} agenda_slot {% cycle 'agenda_slot_alt' '' %} agenda_slot_unavailable" ></td>
       {% endfor %}
         <td class="day_{{day}} spacer {{day|date:'Y-m-d'}}-spacer"></td>
     {% endfor %}
