@@ -228,6 +228,7 @@ li.info		{ margin: 0.5em; background-color: #ff8; }
 li.success	{ margin: 0.5em; background-color: #4f4; }
 li.warning	{ margin: 0.5em; background-color: #fc8; color: black;}
 li.error	{ margin: 0.5em; background-color: #f44; }
+li.preformatted { white-space:pre-wrap; }
 
 .errorlist, errorlist li {
 	background: red;
