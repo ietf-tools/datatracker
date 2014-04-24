@@ -9,6 +9,10 @@ ietfdb (5.4.1) ietf; urgency=high
     Replumbed how SMTP Exceptions are handled, which involved refactoring
     several mail functions.
 
+  * Also fixed a bug in the agenda editing code caused by a change of an
+    attribute name in the python code, but not doing the same change in
+    templates using the attribute.
+
  -- Henrik Levkowetz <henrik@levkowetz.com>  25 Apr 2014 00:08:02 +0200
 
 
