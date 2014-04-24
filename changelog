@@ -1,3 +1,17 @@
+ietfdb (5.4.1) ietf; urgency=high
+
+  This is a minor bugfix release, to fix an issue with the mail handling
+  infrastructure where one bad email recipient address for a notification
+  message (about for instance a state change) could cause some actions related
+  to the state change to be skipped:
+
+  * Merged in [7635] from rjsparks@nostrum.com:
+    Replumbed how SMTP Exceptions are handled, which involved refactoring
+    several mail functions.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Apr 2014 00:08:02 +0200
+
+
 ietfdb (5.4.0) ietf; urgency=medium
 
   This is a feature release which brings in an updated version of the agenda
