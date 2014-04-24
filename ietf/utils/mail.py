@@ -7,6 +7,7 @@ from email.MIMEMultipart import MIMEMultipart
 from email import message_from_string
 import smtplib
 from django.conf import settings
+from django.contrib import messages
 from django.core.exceptions import ImproperlyConfigured
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
@@ -169,17 +170,19 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     txt = render_to_string(template, context, context_instance=mail_context(request))
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
-
-def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None):
-    """Send plain text message."""
+def encode_message(txt):
     if isinstance(txt, unicode):
         msg = MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
     else:
         msg = MIMEText(txt)
+    return msg
+
+def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None):
+    """Send plain text message."""
+    msg = encode_message(txt)
     send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc)
         
-def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None):
-    """Send MIME message with content already filled in."""
+def condition_message(to, frm, subject, msg, cc, extra):
     if isinstance(frm, tuple):
 	frm = formataddr(frm)
     if isinstance(to, list) or isinstance(to, tuple):
@@ -200,13 +203,21 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 	for k, v in extra.items():
             if v:
                 msg[k] = v
+
+def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None):
+    """Send MIME message with content already filled in."""
+    
+    condition_message(to, frm, subject, msg, cc, extra)
+
     # start debug server with python -m smtpd -n -c DebuggingServer localhost:2025
     # then put USING_DEBUG_EMAIL_SERVER=True and EMAIL_HOST='localhost'
     # and EMAIL_PORT=2025 in settings_local.py
     debugging = getattr(settings, "USING_DEBUG_EMAIL_SERVER", False) and settings.EMAIL_HOST == 'localhost' and settings.EMAIL_PORT == 2025
 
     if test_mode or debugging or settings.SERVER_MODE == 'production':
-	send_smtp(msg, bcc)
+        with smtp_error_logging(send_smtp) as logging_send:
+            with smtp_error_user_warning(logging_send,request) as send:
+                send(msg, bcc)
     elif settings.SERVER_MODE == 'test':
 	if toUser:
 	    copy_email(msg, to, toUser=True, originalBcc=bcc)
@@ -219,12 +230,12 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     if copy_to and not test_mode and not debugging: # if we're running automated tests, this copy is just annoying
         if bcc:
             msg['X-Tracker-Bcc']=bcc
-        copy_email(msg, copy_to,originalBcc=bcc)
+        with smtp_error_logging(copy_email) as logging_copy:
+            with smtp_error_user_warning(logging_copy,request) as copy:
+                copy(msg, copy_to,originalBcc=bcc)
 
-def send_mail_preformatted(request, preformatted, extra={}, override={}):
-    """Parse preformatted string containing mail with From:, To:, ...,
-    and send it through the standard IETF mail interface (inserting
-    extra headers as needed)."""
+def parse_preformatted(preformatted, extra={}, override={}):
+    """Parse preformatted string containing mail with From:, To:, ...,"""
     msg = message_from_string(preformatted.encode("utf-8"))
 
     for k, v in override.iteritems():
@@ -242,7 +253,15 @@ def send_mail_preformatted(request, preformatted, extra={}, override={}):
 
     bcc = msg['Bcc']
     del msg['Bcc']
-    
+
+    return (msg, headers, bcc)
+
+def send_mail_preformatted(request, preformatted, extra={}, override={}):
+    """Parse preformatted string containing mail with From:, To:, ...,
+    and send it through the standard IETF mail interface (inserting
+    extra headers as needed)."""
+
+    (msg,headers,bcc) = parse_preformatted(preformatted, extra, override)
     send_mail_text(request, msg['To'], msg["From"], msg["Subject"], msg.get_payload(), extra=headers, bcc=bcc)
     return msg
 
@@ -277,6 +296,26 @@ def log_smtp_exception(e):
         log("     SomeRefused: %s"%(e.summary_refusals()))
     log("     Traceback: %s" % tb) 
     return (extype, value, tb)
+
+@contextmanager
+def smtp_error_user_warning(thing,request):
+    try:
+        yield thing
+    except smtplib.SMTPException as e:
+        (extype, value, tb) = log_smtp_exception(e)
+
+        warning =  "An error occured while sending email with\n"
+        warning += "Subject: %s\n" % e.original_msg.get('Subject','[no subject]')
+        warning += "To: %s\n" % e.original_msg.get('To','[no to]')
+        warning += "Cc: %s\n" % e.original_msg.get('Cc','[no cc]')
+        if isinstance(e,SMTPSomeRefusedRecipients):
+            warning += e.detailed_refusals()
+        else:
+            warning += "SMTP Exception: %s\n"%extype
+            warning += "Error Message: %s\n\n"%value
+            warning += "The message was not delivered to anyone."
+        messages.warning(request,warning,extra_tags='preformatted',fail_silently=True)
+        raise
 
 @contextmanager
 def smtp_error_logging(thing):
@@ -324,9 +363,31 @@ def smtp_error_logging(thing):
                       %s
                       --------- END ORIGINAL MESSAGE ---------
                       """) % e.original_msg.as_string()
+
+        send_error_to_secretariat(msg)
+
+def send_error_to_secretariat(raw_msg):
+
+    (parsed_msg , headers , bcc) = parse_preformatted(raw_msg)
+    send_msg = encode_message(parsed_msg.get_payload())
+    cc = None
+    condition_message(parsed_msg['To'], parsed_msg['From'], parsed_msg['Subject'], send_msg, cc, headers)
+
+    debugging = getattr(settings, "USING_DEBUG_EMAIL_SERVER", False) and settings.EMAIL_HOST == 'localhost' and settings.EMAIL_PORT == 2025
+
+    try:
+        if test_mode or debugging or settings.SERVER_MODE == 'production':
+            send_smtp(send_msg, bcc)
         try:
-            send_mail_preformatted(request=None, preformatted=msg)
-        except smtplib.SMTPException:
-            log("Exception encountered while sending a ticket to the secretariat")
-            (extype,value) = sys.exc_info()[:2]
-            log("SMTP Exception: %s : %s" % (extype,value))
+            copy_to = settings.EMAIL_COPY_TO
+        except AttributeError:
+            copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
+        if copy_to and not test_mode and not debugging: # if we're running automated tests, this copy is just annoying
+            if bcc:
+                send_msg['X-Tracker-Bcc']=bcc
+            copy_email(send_msg, copy_to,originalBcc=bcc)
+    except smtplib.SMTPException:
+        log("Exception encountered while sending a ticket to the secretariat")
+        (extype,value) = sys.exc_info()[:2]
+        log("SMTP Exception: %s : %s" % (extype,value))
+    
