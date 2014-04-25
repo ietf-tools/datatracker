@@ -16,6 +16,7 @@ from ietf.doc.models import Document, DocumentAuthor, DocAlias, DocRelationshipN
 from ietf.doc.models import DocEvent, NewRevisionDocEvent
 from ietf.doc.models import save_document_in_history
 from ietf.meeting.models import Meeting
+from ietf.meeting.helpers import get_meeting
 from ietf.name.models import StreamName
 from ietf.person.models import Person
 from ietf.secr.drafts.email import announcement_from_form, get_email_initial
@@ -23,7 +24,6 @@ from ietf.secr.drafts.forms import ( AddModelForm, AuthorForm, BaseRevisionModel
                                     EmailForm, ExtendForm, ReplaceForm, RevisionModelForm, RfcModelForm,
                                     RfcObsoletesForm, SearchForm, UploadForm, WithdrawForm )
 from ietf.secr.proceedings.proc_utils import get_progress_stats
-from ietf.secr.sreq.views import get_meeting
 from ietf.secr.utils.ams_utils import get_base
 from ietf.secr.utils.decorators import clear_non_auth
 from ietf.secr.utils.document import get_rfc_num, get_start_date
