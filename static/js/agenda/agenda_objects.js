@@ -1123,7 +1123,9 @@ Session.prototype.event_template = function() {
     if(this.responsible_ad != undefined) {
         area_mark = this.responsible_ad.area_mark;
         if(area_mark == undefined) {
-            area_mark = "ad:" + this.responsible_ad.href;
+            // This doesn't seem to do the right thing
+            // area_mark = "ad:" + this.responsible_ad.href;
+            area_mark = "";
         }
     }
 

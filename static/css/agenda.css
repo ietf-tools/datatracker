@@ -701,6 +701,10 @@ table.actual_conflic3 {
   background-repeat: no-repeat;
 }
 
+td.ourconflicts, td.theirconflicts {
+   white-space:nowrap;
+}
+
 /* ::-webkit-scrollbar{ */
 /*     width:3px; */
 /* } */

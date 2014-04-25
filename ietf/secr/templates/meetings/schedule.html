@@ -4,22 +4,22 @@
 
 {% block extrahead %}{{ block.super }}
   <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
-  
+
    <script type="text/javascript">
     $(document).ready(function() {
-      $.ajaxSetup ({  
-        cache: false  
+      $.ajaxSetup ({
+        cache: false
       });
-      
+
       $("select[id$='day']").change(function(){
-          var loadUrl = "/meetings/ajax/get-times/";
+          var loadUrl = "/secr/meetings/ajax/get-times/";
           var url = window.location.pathname;
           var parts = url.split("/");
           var id = this.id;
           var new_id = id.replace('day','time');
           var sel = "#"+new_id;
           var day = $(this).val();
-          loadUrl = loadUrl+parts[2]+"/"+day+"/";
+          loadUrl = loadUrl+parts[3]+"/"+day+"/";
           $.getJSON(loadUrl,function(data) {
             $(sel+" option").remove();
             $.each(data,function(i,item) {
@@ -27,10 +27,10 @@
             });
           });
       });
-      
-    
+
+
     });
-    
+
   </script>
 {% endblock %}
 
@@ -46,11 +46,11 @@
 
 <div class="module">
     <h2>Requested Information</h2>
-    
+
     {% if show_request %}
        {% include "includes/sessions_request_view.html" %}
     {% endif %}
-    
+
     <div class="inline-group">
     <h2>Sessions</h2>
 
@@ -66,7 +66,7 @@
             </div> <!-- inline-related -->
           {% endfor %}
     </div> <!-- inline-group -->
-    
+
       <div class="button-group">
        <ul>
          <li><button type="submit" name="submit" value="Save">Save</button></li>
@@ -74,9 +74,9 @@
          <li><button type="button" onclick="window.location='{% url "meetings_select_group" meeting_id=meeting.number schedule_name=schedule.name %}'">Back</button></li>
         </ul>
       </div> <!-- button-group -->
-      
+
       </form>
-      
+
 </div> <!-- module -->
 
 {% endblock %}
