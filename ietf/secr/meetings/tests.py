@@ -88,7 +88,7 @@ class MainTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertEqual(q('#id_notification_list').html(),'ames,mars')
+        self.assertEqual(q('#id_notification_list').html(),'ames, mars')
         
         # test that only changes since last notification show up
         mars_group = Group.objects.get(acronym='mars')

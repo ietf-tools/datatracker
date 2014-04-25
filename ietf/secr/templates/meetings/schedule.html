@@ -12,14 +12,14 @@
       });
       
       $("select[id$='day']").change(function(){
-          var loadUrl = "/meetings/ajax/get-times/";
+          var loadUrl = "/secr/meetings/ajax/get-times/";
           var url = window.location.pathname;
           var parts = url.split("/");
           var id = this.id;
           var new_id = id.replace('day','time');
           var sel = "#"+new_id;
           var day = $(this).val();
-          loadUrl = loadUrl+parts[2]+"/"+day+"/";
+          loadUrl = loadUrl+parts[3]+"/"+day+"/";
           $.getJSON(loadUrl,function(data) {
             $(sel+" option").remove();
             $.each(data,function(i,item) {
