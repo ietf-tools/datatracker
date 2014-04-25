@@ -148,7 +148,7 @@ while urls:
         logfile.write(logentry+"\n")
 
 logfile.close()
-sys.stderr.write("Output written to %s" % logfile.name)
+sys.stderr.write("Output written to %s\n\n" % logfile.name)
 
 if errors > 0:
     sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
