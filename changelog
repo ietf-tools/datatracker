@@ -10,10 +10,21 @@ ietfdb (5.4.1) ietf; urgency=high
     several mail functions.
 
   * Also fixed a bug in the agenda editing code caused by a change of an
-    attribute name in the python code, but not doing the same change in
+    attribute name in the python code but not doing the same change in
     templates using the attribute.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  25 Apr 2014 00:08:02 +0200
+  * Changed the logic for what is the 'current' ietf meeting to disregard 
+    whether there's an agenda for the meeting or not.  This lets people see the 
+    correct session request page for the current meeting.  However, it also 
+    makes the /meeting/agenda.html page fail because there's no schedule 
+    associated with the meeting; so alternative pages saying 'No agenda 
+    available' has been added, too.
+
+  * We're now showing the login link with a http:// scheme instead of 
+    https:// when in debug mode, in order to be able to log in when using 
+    'python manage.py runserver', which only supports http.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Apr 2014 17:11:32 +0200
 
 
 ietfdb (5.4.0) ietf; urgency=medium
