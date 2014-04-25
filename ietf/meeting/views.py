@@ -347,6 +347,10 @@ def agenda(request, num=None, name=None, base=None, ext=None):
     mimetype = {".html":"text/html", ".txt": "text/plain", ".ics":"text/calendar", ".csv":"text/csv"}
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
+    if schedule == None:
+        return HttpResponse(render_to_string("meeting/no-"+base+ext,
+            {'meeting':meeting }, RequestContext(request)), content_type=mimetype[ext])
+
     updated = meeting_updated(meeting)
     return HttpResponse(render_to_string("meeting/"+base+ext,
         {"schedule":schedule, "updated": updated}, RequestContext(request)), content_type=mimetype[ext])
@@ -546,6 +550,9 @@ def ical_agenda(request, num=None, name=None, ext=None):
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
     updated = meeting_updated(meeting)
+
+    if schedule is None:
+        raise Http404
 
     q = request.META.get('QUERY_STRING','') or ""
     filter = set(urllib.unquote(q).lower().split(','))

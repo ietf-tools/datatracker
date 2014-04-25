@@ -106,7 +106,7 @@ def get_wg_list(scheduledsessions):
 
 def get_meeting(num=None):
     if num == None:
-        meeting = Meeting.objects.filter(type="ietf").exclude(agenda=None).order_by("-date")[:1].get()
+        meeting = Meeting.objects.filter(type="ietf").order_by("-date")[:1].get()
     else:
         meeting = get_object_or_404(Meeting, number=num)
     return meeting

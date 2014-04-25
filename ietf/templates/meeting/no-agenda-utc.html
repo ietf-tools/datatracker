@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load ietf_filters %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% load humanize %}
+{% block title %}IETF {{ meeting.number }} Meeting Agenda{% endblock %}
+
+{% block content %}
+<h1>IETF {{ meeting.number }} Meeting Agenda</h1>
+
+<p>{{ meeting.city }}, {{ meeting.date|date:"F j" }} &#8211; {% if meeting.date.month != meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endif %}{{ meeting.end_date|date:"j, Y" }}<br />
+</p>
+
+<h1>There is no Agenda available yet.</h1>
+
+{% endblock %}
