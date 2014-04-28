@@ -174,11 +174,17 @@ def profile(fn):
     else:
         return fn
     
-def traceback():
+def traceback(levels=None):
     if debug:
         indent = ' ' * (_report_indent[0])
-        for s in tb.format_stack()[:-1]:
+        sys.stderr.write("\n%s---- Stack ----\n" % indent)
+        if levels:
+            start = -2-levels
+        else:
+            start = None
+        for s in tb.format_stack()[start:-1]:
             sys.stderr.write("%s%s" % (indent, s))
+        sys.stderr.write("%s---------------\n" % indent)
 
 def info(name):
     if debug:
