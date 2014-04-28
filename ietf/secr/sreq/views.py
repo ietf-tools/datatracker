@@ -332,9 +332,8 @@ def add_essential_people(group,initial):
     initial['bethere'] = list(people)
     
 
-@check_permissions
-def edit(request, acronym):
-    return edit_mtg(request, None, acronym)
+def edit(request, *args, **kwargs):
+    return edit_mtg(request, None, *args, **kwargs)
 
 def session_save(session):
     session.save()
