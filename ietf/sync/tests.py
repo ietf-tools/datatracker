@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import json
 import datetime
@@ -130,7 +131,7 @@ class IANASyncTests(TestCase):
     def test_iana_review_mail(self):
         draft = make_test_data()
 
-        msg = """From: "%(person)s via RT" <drafts-lastcall@iana.org>
+        msg = u"""From: "%(person)s via RT" <drafts-lastcall@iana.org>
 Date: Thu, 10 May 2012 12:00:00 +0000
 Subject: [IANA #12345] Last Call: <%(draft)s-%(rev)s.txt> (Long text) to Informational RFC
 
@@ -147,7 +148,7 @@ IANA Actions that need completion.
 Thanks,
 
 %(person)s
-IANA Fake Test Person
+IANA “Fake Test” Person
 ICANN
 
 (END IANA LAST CALL COMMENTS)
@@ -156,8 +157,8 @@ ICANN
         msg = msg % dict(person=Person.objects.get(user__username="iana").name,
                          draft=draft.name,
                          rev=draft.rev)
-
-        doc_name, review_time, by, comment = iana.parse_review_email(msg)
+ 
+        doc_name, review_time, by, comment = iana.parse_review_email(msg.encode('utf-8'))
 
         self.assertEqual(doc_name, draft.name)
 #        self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 5, 0, 0))
