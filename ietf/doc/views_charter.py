@@ -616,7 +616,7 @@ def approve(request, name):
 
             change_description += " and %s state has been changed to %s" % (group.type.name, new_state.name)
 
-        e = add_state_change_event(charter, login, prev_charter_state, new_charter_state)
+        add_state_change_event(charter, login, prev_charter_state, new_charter_state)
 
         # according to spec, 00-02 becomes 01, so copy file and record new revision
         try:
