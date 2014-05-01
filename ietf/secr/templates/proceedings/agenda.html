@@ -37,10 +37,10 @@
        <td style="width:200px">{% if ss.timeslot.show_location %}{{ss.timeslot.get_location}}{% endif %}</td>
        <td style="width:50px">{{ss.session.group.parent.acronym|upper}}</td>
        <td style="width:100px">
-           {% if ss.session.group.charter %}<a href="http://datatracker.ietf.org{{ss.session.group.charter.get_absolute_url}}">{{ss.session.group.acronym}}</a>
+           {% if ss.session.group.charter %}<a href="{{ss.session.group.charter.get_absolute_url}}">{{ss.session.group.acronym}}</a>
            {% else %}{{ss.session.group.acronym}}{% endif %}</td>
        <td>
-           {% if ss.session.agenda %}<a href="http://datatracker.ietf.org/meeting/{{ meeting.number }}/agenda/{{ ss.session.group.acronym }}/">{{ss.session.group.name}}</a>
+           {% if ss.session.agenda %}<a href="/meeting/{{ meeting.number }}/agenda/{{ ss.session.group.acronym }}/">{{ss.session.group.name}}</a>
            {% else %}{{ss.session.group.name}}{% endif %}
            {% if ss.session.group.state.name = "BOF" %} BOF {% endif %}
            {% if ss.session.agenda_note %}
@@ -53,7 +53,7 @@
        <td style="width:200px">{% if ss.timeslot.show_location %}{{ss.timeslot.get_location}}{% endif %}</td>
        <td></td>
        <td></td>
-       <td>{% if ss.session.agenda %}<a href="http://datatracker.ietf.org{{ ss.session.agenda.get_absolute_url }}">Agenda</a>
+       <td>{% if ss.session.agenda %}<a href="{{ ss.session.agenda.get_absolute_url }}">Agenda</a>
            {% else %}{{ss.session.group.name}}{% endif %}
        </td>
      </tr>

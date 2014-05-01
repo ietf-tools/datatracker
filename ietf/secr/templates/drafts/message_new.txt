@@ -12,7 +12,7 @@ A new Internet-Draft is available from the on-line Internet-Drafts directories.
 {{ draft.abstract }}
 
 A URL for this Internet-Draft is:
-http://www.ietf.org/internet-drafts/{{ draft.filename_with_rev }}
+https://www.ietf.org/internet-drafts/{{ draft.filename_with_rev }}
 
 Internet-Drafts are also available by anonymous FTP at:
 ftp://ftp.ietf.org/internet-drafts/

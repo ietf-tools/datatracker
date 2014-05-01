@@ -36,14 +36,14 @@ and end with
     Agenda
   {% endif %}&nbsp;&nbsp;|&nbsp;&nbsp;
 {% endif %}
-<a href="http://jabber.ietf.org/logs/{{ group.acronym }}/">Jabber Logs</a>&nbsp;&nbsp;|&nbsp;&nbsp;
+<a href="https://jabber.ietf.org/logs/{{ group.acronym }}/">Jabber Logs</a>&nbsp;&nbsp;|&nbsp;&nbsp;
 {% if group.list_archive %}
   <a href="{{ group.list_archive }}">Mailing List Archives</a>
 {% endif %}
 </h3>
 
 {% if group.type.slug == "wg" %}
-<p>Additional information is available at <a href="http://tools.ietf.org/wg/{{ group.acronym }}">tools.ietf.org/wg/{{ group.acronym }}</a>
+<p>Additional information is available at <a href="https://tools.ietf.org/wg/{{ group.acronym }}">tools.ietf.org/wg/{{ group.acronym }}</a>
 {% endif %}
 
 <table width="60%" border="0" cellspacing="2" cellpadding="2">

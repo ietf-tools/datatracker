@@ -33,7 +33,7 @@
           <td>{% if draft.expired_tombstone %}
                 {{ draft.filename }}
                 <div class=alert>This is a last active version - the tombstone was expired.</div>
-              {% else %}<a href="{% if is_development %}http://devr.amsl.com/ftp/{% else %}http://www.ietf.org/internet-drafts/{% endif %}{{ draft.name }}-{{ draft.rev }}.txt">{{ draft.name }}</a>
+              {% else %}<a href="{% if is_development %}http://devr.amsl.com/ftp/{% else %}https://www.ietf.org/internet-drafts/{% endif %}{{ draft.name }}-{{ draft.rev }}.txt">{{ draft.name }}</a>
               {% endif %}
           </td></tr>
         <tr><td>Document Aliases:</td>
