@@ -1,3 +1,33 @@
+ietfdb (5.4.2) ietf; urgency=medium
+
+  * Merged [7673] from rjsparks@nostrum.com: 
+    Made several changes to better handle non-ascii UTF-8 in email messages.
+      - Used multipart mime when including the original message in an error
+	message to the secretariat.  Modified the way IANA review email is parsed.
+	Added non-ascii UTF-8 tests to the IANA review email parser and to the
+	SMTP Exception handling code. 
+      - Changed how edit_mtg() is called, in order to propagate kwargs as kwargs.
+	Removed repeated @check_permissions.
+
+  * Merged [7653] from rcross@amsl.com: 
+    Fixed two issues with proceedings generation.  
+
+  * Merged in [7644] from rjsparks@nostrum.com:
+
+      From rjsparks@nostrum.com:
+      - Fixed layout issue on schedule editing page in Chrome
+      - Fixed errant display of text in unscheduled group bar
+	on the schedule editing page
+      - Changed the instruction text on the special requests
+	field of the session request form
+
+      From rcross@amsl.com:
+      - Improved scheduling of non-session items
+      - Fixed issue with layout of the new notifications page
+      - Fixed crash on notifications page 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 May 2014 02:14:27 +0200
+
 ietfdb (5.4.1) ietf; urgency=high
 
   This is a minor bugfix release, to fix an issue with the mail handling
