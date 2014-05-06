@@ -422,6 +422,11 @@ class StatusChangeSubmitTests(TestCase):
         with open(path,'w') as f:
             f.write('This is the old proposal.')
             f.close()
+        # Put the old proposal into IESG review (exercises ballot tab when looking at an older revision below)
+        state_change_url = urlreverse('status_change_change_state',kwargs=dict(name=doc.name))
+        iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
+        r = self.client.post(state_change_url,dict(new_state=iesgeval_pk))
+        self.assertEqual(r.status_code, 302)
 
         # normal get
         r = self.client.get(url)
@@ -456,6 +461,12 @@ class StatusChangeSubmitTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('textarea')[0].text.strip().startswith("Provide a description"))
+
+        # make sure we can see the old revision
+        url = urlreverse('doc_view',kwargs=dict(name=doc.name,rev='00'))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertTrue("This is the old proposal." in r.content)
 
     def setUp(self):
         make_test_data()

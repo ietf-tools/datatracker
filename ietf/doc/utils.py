@@ -4,8 +4,10 @@ import urllib
 import math
 
 from django.conf import settings
+from django.db.models.query import EmptyQuerySet
 
 from ietf.utils import markup_txt
+from ietf.doc.models import Document, DocHistory
 from ietf.doc.models import DocAlias, RelatedDocument, BallotType, DocReminder
 from ietf.doc.models import DocEvent, BallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
@@ -88,7 +90,13 @@ def needed_ballot_positions(doc, active_positions):
     if doc.type_id == "draft" and doc.intended_std_level_id in ("bcp", "ps", "ds", "std"):
         needed = two_thirds_rule(recused=len(recuse))
     elif doc.type_id == "statchg":
-        for rel in doc.relateddocument_set.filter(relationship__slug__in=['tops', 'tois', 'tohist', 'toinf', 'tobcp', 'toexp']):
+        if isinstance(doc,Document):
+            related_set = doc.relateddocument_set
+        elif isinstance(doc,DocHistory):
+            related_set = doc.relateddochistory_set
+        else:
+            related_set = EmptyQuerySet()
+        for rel in related_set.filter(relationship__slug__in=['tops', 'tois', 'tohist', 'toinf', 'tobcp', 'toexp']):
             if (rel.target.document.std_level.slug in ['bcp','ps','ds','std']) or (rel.relationship.slug in ['tops','tois','tobcp']):
                 needed = two_thirds_rule(recused=len(recuse))
                 break
@@ -111,9 +119,12 @@ def needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
     
-def create_ballot_if_not_open(doc, by, ballot_slug):
+def create_ballot_if_not_open(doc, by, ballot_slug, time=None):
     if not doc.ballot_open(ballot_slug):
-        e = BallotDocEvent(type="created_ballot", by=by, doc=doc)
+        if time:
+            e = BallotDocEvent(type="created_ballot", by=by, doc=doc, time=time)
+        else:
+            e = BallotDocEvent(type="created_ballot", by=by, doc=doc)
         e.ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
         e.desc = u'Created "%s" ballot' % e.ballot_type.name
         e.save()
