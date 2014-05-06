@@ -50,7 +50,7 @@ urlpatterns = patterns('',
     url(r'^all/$', views_search.index_all_drafts, name="index_all_drafts"),
     url(r'^active/$', views_search.index_active_drafts, name="index_active_drafts"),
 
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/((?P<rev>[0-9-]+)/)?$', views_doc.document_main, name="doc_view"),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/(?:(?P<rev>[0-9-]+)/)?$', views_doc.document_main, name="doc_view"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/history/$', views_doc.document_history, name="doc_history"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/writeup/$', views_doc.document_writeup, name="doc_writeup"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/shepherdwriteup/$', views_doc.document_shepherd_writeup, name="doc_shepherd_writeup"),
