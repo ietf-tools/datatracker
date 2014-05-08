@@ -53,9 +53,9 @@ def change_state(request, name, option=None):
                 save_document_in_history(status_change)
 
                 status_change.set_state(new_state)
-                add_state_change_event(status_change, login, prev_state, new_state)
+                e = add_state_change_event(status_change, login, prev_state, new_state)
 
-                status_change.time = datetime.datetime.now()
+                status_change.time = e.time
                 status_change.save()
 
                 if new_state.slug == "iesgeval":
@@ -737,7 +737,7 @@ def last_call(request, name):
                     status_change.set_state(new_state)
                     e = add_state_change_event(status_change, login, prev_state, new_state)
 
-                    status_change.time = e.time
+                    status_change.time = (e and e.time) or datetime.datetime.now()
                     status_change.save()
 
                     request_last_call(request, status_change)

@@ -254,7 +254,7 @@ def doc_detail(request, date, name):
 
                     e = add_state_change_event(doc, login, prev_state, new_state,
                                                prev_tags=prev_tags, new_tags=new_tags)
-                    doc.time = e.time
+                    doc.time = (e and e.time) or datetime.datetime.now()
                     doc.save()
 
                     email_state_changed(request, doc, e.desc)

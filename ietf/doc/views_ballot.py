@@ -64,7 +64,7 @@ def do_undefer_ballot(request, doc):
 
     e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
     
-    doc.time = e.time
+    doc.time = (e and e.time) or datetime.datetime.now()
     doc.save()
 
     update_telechat(request, doc, login, telechat_date)
@@ -360,7 +360,7 @@ def defer_ballot(request, name):
 
         e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
         
-        doc.time = e.time
+        doc.time = (e and e.time) or datetime.datetime.now()
         doc.save()
 
         email_state_changed(request, doc, e.desc)
@@ -450,7 +450,7 @@ def lastcalltext(request, name):
 
                     e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
 
-                    doc.time = e.time
+                    doc.time = (e and e.time) or datetime.datetime.now()
                     doc.save()
 
                     email_state_changed(request, doc, e.desc)
@@ -694,7 +694,7 @@ def approve_ballot(request, name):
         
         e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
 
-        doc.time = e.time
+        doc.time = (e and e.time) or datetime.datetime.now()
         doc.save()
 
         email_state_changed(request, doc, change_description)
@@ -773,7 +773,7 @@ def make_last_call(request, name):
 
             e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
 
-            doc.time = e.time
+            doc.time = (e and e.time) or datetime.datetime.now()
             doc.save()
 
             change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, new_state.name)

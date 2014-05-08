@@ -61,7 +61,7 @@ def expire_last_call(doc):
     system = Person.objects.get(name="(System)")
     e = add_state_change_event(doc, system, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
                     
-    doc.time = e.time
+    doc.time = (e and e.time) or datetime.datetime.now()
     doc.save()
 
     email_last_call_expired(doc)
