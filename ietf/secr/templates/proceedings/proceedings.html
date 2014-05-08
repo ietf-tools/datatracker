@@ -15,7 +15,7 @@ and end with
 {% if meeting.type.slug == "ietf" %}
    <p class="ptitle">{{ meeting }} Proceedings</p>
    <p><a href="index.html#intro">Introduction</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#wgreports">Area, Working Goup &amp; BoF Reports</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#plenary">Plenaries</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#training">Training</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#irtf">Internet Research Task Force</a></p>
-   <h2>{{ group.name }} ({{ group.acronym }}) ({{ group.type }})</h2>
+   <h2>{{ group.name }} ({{ group.acronym }}) ({% if group.state.slug == "bof" %}{{ group.state }}{% else %}{{ group.type }}{% endif %})</h2>
 {% else %}
    <h2>{{ group.name }} ({{ group.acronym }})</h2>
    <h3>Interim Meeting of {{ meeting.date }}</h3>
@@ -42,7 +42,7 @@ and end with
 {% endif %}
 </h3>
 
-{% if group.type.slug == "wg" %}
+{% if group.type.slug == "wg" and group.state.slug != "bof" %}
 <p>Additional information is available at <a href="https://tools.ietf.org/wg/{{ group.acronym }}">tools.ietf.org/wg/{{ group.acronym }}</a>
 {% endif %}
 
