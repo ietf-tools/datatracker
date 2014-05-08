@@ -59,7 +59,7 @@ def change_state(request, name, option=None):
                 status_change.save()
 
                 if new_state.slug == "iesgeval":
-                    create_ballot_if_not_open(status_change, login, "statchg")
+                    create_ballot_if_not_open(status_change, login, "statchg", e.time)
                     ballot = status_change.latest_event(BallotDocEvent, type="created_ballot")
                     if has_role(request.user, "Area Director") and not status_change.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot, type="changed_ballot_position"):
 
