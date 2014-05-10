@@ -107,6 +107,9 @@ class UploadForm(forms.Form):
             if not self.parsed_draft.filename:
                 raise forms.ValidationError("Draft parser could not extract a valid draft name from the .txt file")
 
+            if not self.parsed_draft.get_title():
+                raise forms.ValidationError("Draft parser could not extract a valid title from the .txt file")
+
             # check group
             self.group = self.deduce_group()
 
