@@ -77,7 +77,7 @@ function style_empty_slots(){
 
 }
 
-var __debug_load_events = false;
+var __debug_load_events = true;
 /* this pushes every event into the agendas */
 function load_events(){
     var slot_id;
