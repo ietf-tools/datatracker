@@ -671,11 +671,21 @@ def select(request, meeting_num):
     else:
         irtf_form = None
 
-    # initialize Training form, this select widget needs to have a session id, because it's
-    # utilmately the session that we associate material with
-    if has_role(user,'Secretariat'):
-        ss = ScheduledSession.objects.filter(schedule=meeting.agenda,timeslot__type='other')
-        choices = [ (i.session.id, i.session.name) for i in sorted(ss,key=lambda x: x.session.name) ]
+    # initialize Training form, this select widget needs to have a session id, because
+    # it's utilmately the session that we associate material with
+    other_groups = filter(lambda x: x.type_id not in ('wg','ag','rg'),groups_session)
+    if other_groups:
+        add_choices = []
+        sessions = Session.objects.filter(meeting=meeting,group__in=other_groups)
+        for session in sessions:
+            if session.name.lower().find('plenary') != -1:
+                continue
+            if session.name:
+                name = (session.name[:75] + '..') if len(session.name) > 75 else session.name
+                add_choices.append((session.id,name))
+            else:
+                add_choices.append((session.id,session.group.name))
+        choices = sorted(add_choices,key=lambda x: x[1])
         training_form = GroupSelectForm(choices=choices)
     else:
         training_form = None

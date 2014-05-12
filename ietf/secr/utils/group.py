@@ -49,8 +49,9 @@ def get_my_groups(user,conclude=False):
     states = ['bof','proposed','active']
     if conclude:
         states.extend(['conclude','bof-conc'])
-    all_groups = Group.objects.filter(type__in=('wg','rg','ag','team'),state__in=states).order_by('acronym')
+    types = ['wg','rg','ag','team','iab']
     
+    all_groups = Group.objects.filter(type__in=types,state__in=states).order_by('acronym')
     if user == None or has_role(user,'Secretariat'):
         return all_groups
     

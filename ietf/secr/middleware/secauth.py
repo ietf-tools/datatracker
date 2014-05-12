@@ -45,8 +45,8 @@ class SecAuthMiddleware(object):
             if request.path.startswith('/secr/announcement/'):
                 return login_required(view_func)(request,*view_args,**view_kwargs)
             elif self.is_unrestricted_url(request.path):
-                return role_required('WG Chair','WG Secretary','RG Chair','Area Director',
-                    'Secretariat')(view_func)(request,*view_args,**view_kwargs)
+                return role_required('WG Chair','WG Secretary','RG Chair','IAB Group Chair',
+                    'Area Director','Secretariat')(view_func)(request,*view_args,**view_kwargs)
             else:
                 return role_required('Secretariat')(view_func)(request,*view_args,**view_kwargs)
         else:
