@@ -351,6 +351,22 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(State.objects.get(type="draft-iesg", slug="lc").name in r.content)
 
+    def test_document_nonietf_pubreq_button(self):
+        doc = make_test_data()
+
+        self.client.login(username='iab-chair', password='iab-chair+password')
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('.actions'))
+
+        Document.objects.filter(pk=doc.pk).update(stream='iab')
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue('IESG state' in q('.actions').html())
+
+
 class AddCommentTestCase(TestCase):
     def test_add_comment(self):
         draft = make_test_data()

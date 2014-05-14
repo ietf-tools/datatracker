@@ -311,10 +311,12 @@ def document_main(request, name, rev=None):
             actions.append((label, urlreverse('conflict_review_start', kwargs=dict(name=doc.name))))
 
         if (doc.get_state_slug() != "expired" and doc.stream_id in ("iab", "ise", "irtf")
-            and can_edit_stream_info and not iesg_state):
+            and can_edit_stream_info):
             label = "Request Publication"
             if not doc.intended_std_level:
                 label += " (note that intended status is not set)"
+            if iesg_state and iesg_state.slug != 'dead':
+                label += " (Warning: the IESG state indicates ongoing IESG processing)"
             actions.append((label, urlreverse('doc_request_publication', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() != "expired" and doc.stream_id in ("ietf",):
