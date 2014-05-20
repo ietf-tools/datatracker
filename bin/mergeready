@@ -1,1 +1,261 @@
-/home/henrik/src/mergeready/mergeready
+#!/usr/bin/python
+# -*- python -*-
+"""
+NAME
+	%(program)s - look for SVN commits that are ready to merge
+
+SYNOPSIS
+	%(program)s [OPTIONS] ARGS
+
+DESCRIPTION
+	%(program)s looks in the SVN log for commits which are marked with the
+        phrase 'Commit ready for merge', and compares the resulting list with
+        the 'svn:mergeinfo' property on the current directory, in order to
+        work out which (if any) commits are ready to merge, but not yet
+        merged.  The command requires (and checks) that it's running in a
+        directory named 'trunk', and requires that to be an SVN working copy.
+
+        The files (in the top directory of the working copy) 'ready-for-merge'
+        and 'hold-for-merge' are also consulted for additions and exceptions to
+        the merge list.
+
+        A list of commit date, committer, and branch@revision for each commit
+        which is marked ready for merge, but not yet merged, is then written
+        to standard out.
+
+%(options)s
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@tools.ietf.org>
+
+COPYRIGHT
+	Copyright 2014 Henrik Levkowetz
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the Simplified BSD license as published by the
+        Open Source Initiative at http://opensource.org/licenses/BSD-2-Clause.
+
+"""
+from __future__ import print_function
+
+import sys, os.path, getopt, re
+import debug
+
+version = "0.20"
+program = os.path.basename(sys.argv[0])
+progdir = os.path.dirname(sys.argv[0])
+
+# ----------------------------------------------------------------------
+# Parse options
+
+options = ""
+for line in re.findall("\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(sys.argv[0]).read()):
+    if not options:
+        options += "OPTIONS\n"
+    options += "        %-16s %s\n" % (line[1].replace('"', ''), line[2])
+options = options.strip()
+
+# with ' < 1:' on the next line, this is a no-op:
+if len(sys.argv) < 1:
+    print(__doc__ % locals())
+    sys.exit(1)
+
+try:
+    opts, files = getopt.gnu_getopt(sys.argv[1:], "hvV", ["help", "version","verbose",])
+except Exception, e:
+    print( "%s: %s" % (program, e))
+    sys.exit(1)
+
+# ----------------------------------------------------------------------
+# Handle options
+
+# set default values, if any
+opt_verbose = False
+
+# handle individual options
+for opt, value in opts:
+    if   opt in ["-h", "--help"]: # Output this help, then exit
+        print( __doc__ % locals() )
+        sys.exit(1)
+    elif opt in ["-v", "--version"]: # Output version information, then exit
+        print( program, version )
+        sys.exit(0)
+    elif opt in ["-V", "--verbose"]: # Output version information, then exit
+        opt_verbose = True
+
+# ----------------------------------------------------------------------
+def say(s):
+    sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def note(s):
+    if opt_verbose:
+        sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def die(s, error=1):
+    sys.stderr.write("\n%s: Error: %s\n\n" % (program, s))
+    sys.exit(error)
+
+# ----------------------------------------------------------------------
+# The program itself    
+
+import os
+import json
+
+cwd = os.getcwd()
+
+if cwd.split(os.path.sep)[-1] != 'trunk':
+    die("Expected to run this operation in trunk, but the current\ndirectory is '%s'" % cwd)
+
+# ----------------------------------------------------------------------
+# Some utility functions
+
+def pipe(cmd, inp=None):
+    import shlex
+    from subprocess import Popen, PIPE
+    args = shlex.split(cmd)
+    bufsize = 4096
+    stdin = PIPE if inp else None
+    pipe = Popen(args, stdin=stdin, stdout=PIPE, stderr=PIPE, bufsize=bufsize)
+    out, err = pipe.communicate(inp)
+    code = pipe.returncode
+    if code != 0:
+        raise OSError(err)
+    return out
+
+def split_loginfo(line):
+    parts = line.split()
+    rev = parts[0][1:]
+    who = parts[2]
+    date = parts[4]
+    time = parts[5]
+    when = "%s_%s" % (date, time)
+    return rev, who, when
+
+# ----------------------------------------------------------------------
+
+# Get repository information
+svn_info = {}
+for line in pipe('svn info .').splitlines():
+    if line:
+        key, value = line.strip().split(':', 1)
+        svn_info[key] = value.strip()
+
+repo = svn_info["Repository Root"]
+head = int(svn_info['Revision'])
+
+# Get current mergeinfo from cache and svn
+cachefn = os.path.join(os.environ.get('HOME', '.'), '.mergeinfo')
+
+if os.path.exists(cachefn):
+    with open(cachefn, "r") as file:
+        cache = json.load(file)
+else:
+    sys.stderr.write("No merge info cache file found -- will have to extract all information from SVN.\n"+
+        "This may take some time.\n\n")
+    cache = {}
+mergeinfo = cache[repo] if repo in cache else {}
+
+merged_revs = {}
+write_cache = False
+for line in pipe('svn propget svn:mergeinfo .').splitlines():
+    if line in mergeinfo:
+        merged = mergeinfo[line]
+    else:
+        merged = {}
+        branch, revs = line.strip().split(':',1)
+        for part in revs.split(','):
+            if '-' in part:
+                beg, end = part.split('-')
+                try:
+                    commit_log = pipe('svn log -v -r %s:%s %s%s' % (beg, end, repo, branch))
+                    for logline in commit_log.splitlines():
+                        if re.search('^r[0-9]+ ', logline):
+                            rev, who, when = split_loginfo(logline)
+                            merged[rev] = branch[1:]
+                            write_cache = True
+                except OSError:
+                    pass
+            else:
+                merged[part] = branch[1:]
+                write_cache = True
+        mergeinfo[line] = merged
+    merged_revs.update(merged)
+
+if write_cache:
+    cache[repo] = mergeinfo
+    with open(cachefn, "w") as file:
+        json.dump(cache, file, indent=2, sort_keys=True)
+
+def get_list(repo, filename):
+    list = []
+    with open(filename) as file:
+        for line in file:
+            line = line.strip()
+            if line.startswith('#') or line == "":
+                continue
+            try:
+                changeset = line.split()[0]
+                branch, rev = changeset.split('@')
+                if branch.startswith('/'):
+                    branch = branch[1:]
+                if not (rev in merged_revs and branch == merged_revs[rev]):
+                    list += [(rev, repo, branch),]
+                #elif rev in merged_revs and not branch == merged_revs[rev]:
+                #    sys.stderr.write('Rev %s: %s != %s' % (rev, branch, merged_revs[rev]))                
+                else:
+                    #sys.stderr.write('Already merged: merged_revs[%s]: %s\n' % (rev, merged_revs[rev]))
+                    pass
+            except ValueError as e:
+                sys.stderr.write("Bad changeset specification in %s: '%s': %s\n" % (file.name, changeset, e))
+    return list
+
+def get_ready_commits(repo, tree):
+    list = []
+    commit_log = pipe('svn log -v -r %s:HEAD %s/%s/' % ((head-500), repo, tree))    
+    for line in commit_log.splitlines():
+        if re.search('^r[0-9]+ ', line):
+            rev, who, when = split_loginfo(line)
+            branch = None
+            continue
+        if (line.startswith('   M') or line.startswith('   A')) and branch == None:
+            type, path = line[:4], line[5:]
+            branch = '/'.join(path.split('/')[1:4])
+        elif re.search("(?i)(commit ready (for|to) merge)", line):
+            if not (rev in merged_revs and branch == merged_revs[rev]):
+                list += [(rev, repo, branch),]
+            elif rev in merged_revs and not branch == merged_revs[rev]:
+                sys.stderr.write('Rev %s: %s != %s' % (rev, branch, merged_revs[rev]))                
+            else:
+                pass
+        else:
+            pass
+            
+    return list
+    
+ready  = get_list(repo, 'ready-for-merge')
+hold   = get_list(repo, 'hold-for-merge')
+ready += get_ready_commits(repo, 'personal')
+ready += get_ready_commits(repo, 'branch/amsl')
+
+ready_commits = {}
+for entry in ready:
+    rev, repo, branch = entry
+    loginfo = pipe('svn log -v -r %s %s/%s/' % (rev, repo, branch)).splitlines()
+    try:
+        rev, who, when = split_loginfo(loginfo[1])
+    except IndexError:
+        die("Wrong changeset version in %s@%s ?" % (branch, rev))
+    for line in loginfo[3:]:
+        type, path = line[:4], line[5:]
+        if 'M' in type or 'A' in type:
+            break
+    merge_path = os.path.join(*path.split(os.path.sep)[:4])
+    if not (rev, repo, merge_path) in hold:
+        ready_commits[when] = "%s  %-24s %s@%s" % (when, who+":", merge_path, rev)
+
+keys = ready_commits.keys()
+keys.sort()
+for key in keys:
+    print(ready_commits[key])
