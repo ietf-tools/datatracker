@@ -50,6 +50,7 @@ def has_role(user, role_names, *args, **kwargs):
 	    "IETF Chair": Q(person=person, name="chair", group__acronym="ietf"),
 	    "IRTF Chair": Q(person=person, name="chair", group__acronym="irtf"),
 	    "IAB Chair": Q(person=person, name="chair", group__acronym="iab"),
+            "IAB Group Chair": Q(person=person, name="chair", group__type="iab", group__state="active"),
 	    "WG Chair": Q(person=person,name="chair", group__type="wg", group__state="active"),
 	    "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state="active"),
 	    "RG Chair": Q(person=person,name="chair", group__type="rg", group__state="active"),
