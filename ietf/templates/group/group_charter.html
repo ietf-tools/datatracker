@@ -3,11 +3,6 @@
 {% load ietf_filters %}
 {% block group_subtitle %}Charter{% endblock %}
 
-{% block morecss %}
-{{ block.super }}
-h2 a.button { margin-left: 0.5em; font-size: 13px; }
-{% endblock %}
-
 {% block group_content %}
 <div class="ietf-box ietf-group-details">
 
@@ -39,6 +34,7 @@ is occasionally incorrect.</span>
     </td>
   </tr>
 
+  {% if group.features.has_chartering_process %}
   <tr>
     <td>Charter:</td>
     <td>
@@ -52,77 +48,28 @@ is occasionally incorrect.</span>
       {% endif %}
     </td>
   </tr>
+  {% endif %}
 
   <tr><th colspan="2">Personnel</th></tr>
 
+  {% for slug, label, roles in group.personnel %}
   <tr valign="top">
-    <td>Chair{{ group.chairs|pluralize }}:</td>
+    <td>{{ label }}:</td>
     <td>
-      {% for chair in group.chairs %}
-      <a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }} &lt;{{ chair.email.address }}&gt;</a><br/>
+      {% for r in roles %}
+      <a href="mailto:{{ r.email.address }}">{{ r.person.plain_name }} &lt;{{ r.email.address }}&gt;</a><br/>
       {% endfor %}
   </td>
   </tr>
+  {% endfor %}
 
-  {% if group.parent.type_id == "area" %}
-  <tr><td>Area Director:</td>
-  <td>
-    {% if group.areadirector %}
-    <a href="mailto:{{ group.areadirector.address }}">{{ group.areadirector.person.plain_name }} &lt;{{ group.areadirector.address }}&gt;</a>
-    {% else %}?{% endif %}
-  </td>
-  </tr>
-  {% endif %}
-
-  {% if group.techadvisors %}
-  <tr>
-    <td>Tech Advisor{{ group.techadvisors|pluralize }}:</td>
-    <td>
-      {% for techadvisor in group.techadvisors %}
-      <a href="mailto:{{ techadvisor.email.address }}">{{ techadvisor.person.plain_name }} &lt;{{ techadvisor.email.address }}&gt;</a><br/>
-      {% endfor %}
-    </td>
-  </tr>
-  {% endif %}
-
-  {% if group.editors %}
-  <tr>
-  <td>Editor{{ group.editors|pluralize }}:</td>
-  <td>
-    {% for editor in group.editors %}
-    <a href="mailto:{{ editor.email.address }}">{{ editor.person.plain_name }} &lt;{{ editor.email.address }}&gt;</a><br/>
-    {% endfor %}
-  </td>
-  </tr>
-  {% endif %}
-
-  {% if group.secretaries %}
-  <tr>
-    <td>Secretar{{ group.secretaries|pluralize:"y,ies" }}:</td>
-    <td>
-      {% for secretary in group.secretaries %}
-      <a href="mailto:{{ secretary.email.address }}">{{ secretary.person.plain_name }} &lt;{{ secretary.email.address }}&gt;</a><br/>
-      {% endfor %}
-    </td>
-  </tr>
-  {% endif %}
-
-  {% if group.delegates %}
-  <tr>
-    <td>Delegate{{ group.delegates|pluralize }}:</td>
-    <td>
-      {% for delegate in group.delegates %}
-      <a href="mailto:{{ delegate.email.address }}">{{ delegate.person.plain_name }} &lt;{{ delegate.email.address }}&gt;</a><br/>
-      {% endfor %}
-    </td>
-  </tr>
-  {% endif %}
-  
+  {% if group.list_email %}
   <tr><th colspan="2">Mailing List</th></tr>
 
   <tr><td>Address:</td><td>{{ group.list_email|urlize }}</td></tr>
   <tr><td>To Subscribe:</td><td>{{ group.list_subscribe|urlize }}</td></tr>
   <tr><td>Archive:</td><td>{{ group.list_archive|urlize }}</td></tr>
+  {% endif %}
 
   {% if group.state_id != "conclude" %}
   <tr><th colspan="2">Jabber Chat</th></tr>
@@ -152,17 +99,19 @@ is occasionally incorrect.</span>
 {% endif %}
 {% endwith %}
 
-<h2>Charter for {% if group.state_id == "proposed" %}Proposed{% endif %} {{ long_group_type }}</h2>
+<h2>Charter for {% if group.state_id == "proposed" %}Proposed{% endif %} {{ verbose_group_type }}</h2>
 
-<p>{{ group.charter_text|escape|format_charter|safe }}</p>
+<p>{{ description|linebreaks }}</p>
 
-<h2>{% if group.state_id == "proposed" %}Proposed{% endif %} Milestones</h2>
+{% if group.features.has_milestones %}
+  <h2>{% if group.state_id == "proposed" %}Proposed{% endif %} Milestones</h2>
 
-{% include "group/milestones.html" with milestones=group.milestones %}
+  {% include "group/milestones.html" with milestones=group.milestones %}
 
-{% if milestones_in_review %}
-<p>+ {{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
-currently in {{ milestone_reviewer }} review.</p>
+  {% if milestones_in_review %}
+  <p>+ {{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
+  currently in {{ milestone_reviewer }} review.</p>
+  {% endif %}
 {% endif %}
 
 {% endblock %}

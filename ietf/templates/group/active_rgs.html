@@ -22,7 +22,7 @@
    <table class="ietf-wg-table">
       {% for group in groups %}
       <tr>
-         <td width="10%;"><a href="{% url "ietf.group.info.group_documents" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
+         <td width="10%;"><a href="{% url "ietf.group.info.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
          <td width="50%">{{ group.name }}</td>
          <td width="40%">{% for chair in group.chairs %}<a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</td>
       </tr>

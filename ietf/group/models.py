@@ -17,6 +17,7 @@ class GroupInfo(models.Model):
     state = models.ForeignKey(GroupStateName, null=True)
     type = models.ForeignKey(GroupTypeName, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)
+    description = models.TextField(blank=True)
     ad = models.ForeignKey(Person, verbose_name="AD", blank=True, null=True)
     list_email = models.CharField(max_length=64, blank=True)
     list_subscribe = models.CharField(max_length=255, blank=True)
@@ -78,6 +79,10 @@ class Group(GroupInfo):
     @property
     def bg_color(self):
         return bg_group_colors[self.upcase_acronym]
+
+    def features(self):
+        from ietf.group.features import GroupFeatures
+        return GroupFeatures(self)
 
     def json_url(self):
         return "/group/%s.json" % (self.acronym,)
