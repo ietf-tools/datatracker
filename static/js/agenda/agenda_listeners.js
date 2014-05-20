@@ -308,7 +308,7 @@ function extend_slot(event) {
                         // need to create new scheduledsession
                         var new_ss = make_ss({ "session_id" : session.session_id,
                                                "timeslot_id": slot.following_timeslot.timeslot_id,
-                                               "extended_from_id" : current_scheduledslot.scheduledsession_id});
+                                               "extendedfrom_id" : current_scheduledslot.scheduledsession_id});
                         // make_ss also adds to slot_status.
                         new_ss.saveit();
 
