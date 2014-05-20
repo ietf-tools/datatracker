@@ -326,9 +326,10 @@ def add_essential_people(group,initial):
         e = role.person.email_set.order_by("-active","-time").first()
         if e:
             people.add(e)
-    e = group.ad.email_set.order_by("-active","-time").first()
-    if e:
-        people.add(e)
+    if group.ad:
+        e = group.ad.email_set.order_by("-active","-time").first()
+        if e:
+            people.add(e)
     initial['bethere'] = list(people)
     
 
