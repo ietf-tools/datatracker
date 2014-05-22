@@ -306,7 +306,7 @@ def smtp_error_user_warning(thing,request):
 
         if request:
             warning =  "An error occured while sending email:\n"
-            if (e.original_msg):
+            if getattr(e,'original_msg',None):
                 warning += "Subject: %s\n" % e.original_msg.get('Subject','[no subject]')
                 warning += "To: %s\n" % e.original_msg.get('To','[no to]')
                 warning += "Cc: %s\n" % e.original_msg.get('Cc','[no cc]')
