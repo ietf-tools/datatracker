@@ -26,7 +26,7 @@ def parse_doc_names(s):
 class MilestoneForm(forms.Form):
     id = forms.IntegerField(required=True, widget=forms.HiddenInput)
 
-    desc = forms.CharField(max_length=500, label="Milestone", required=True)
+    desc = forms.CharField(max_length=500, label="Milestone:", required=True)
     due_month = forms.TypedChoiceField(choices=(), required=True, coerce=int)
     due_year = forms.TypedChoiceField(choices=(), required=True, coerce=int)
     resolved_checkbox = forms.BooleanField(required=False, label="Resolved")
@@ -40,6 +40,8 @@ class MilestoneForm(forms.Form):
                                required=False, initial="noaction", widget=forms.RadioSelect)
 
     def __init__(self, *args, **kwargs):
+        kwargs["label_suffix"] = ""
+
         m = self.milestone = kwargs.pop("instance", None)
 
         self.needs_review = kwargs.pop("needs_review", False)
