@@ -54,7 +54,7 @@ class MilestoneForm(forms.Form):
                                           desc=m.desc,
                                           due_month=m.due.month,
                                           due_year=m.due.year,
-                                          resolved_checkbox="on" if m.resolved else False,
+                                          resolved_checkbox=bool(m.resolved),
                                           resolved=m.resolved,
                                           docs=",".join(m.docs.values_list("pk", flat=True)),
                                           delete=False,
