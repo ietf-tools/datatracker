@@ -46,12 +46,13 @@ from django.db.models import Q
 from django.utils.safestring import mark_safe
 
 from ietf.doc.views_search import SearchForm, retrieve_search_results
-from ietf.doc.models import State, DocAlias, RelatedDocument
+from ietf.doc.models import Document, State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
 from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type
+from ietf.group.utils import can_manage_materials, get_group_or_404
 from ietf.utils.pipe import pipe
 
 def roles(group, role_name):
@@ -256,6 +257,9 @@ def concluded_groups(request):
     return render(request, 'group/concluded_groups.html',
                   dict(group_types=group_types))
 
+def get_group_materials(group):
+    return Document.objects.filter(group=group).exclude(states__slug="deleted")#.exclude(session=None).exclude(type="charter")
+
 def construct_group_menu_context(request, group, selected, group_type, others):
     """Return context with info for the group menu filled in."""
     kwargs = dict(acronym=group.acronym)
@@ -264,11 +268,13 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     # entries
     entries = []
-    if group.features().has_documents:
+    if group.features.has_documents:
         entries.append(("Documents", urlreverse("ietf.group.info.group_documents", kwargs=kwargs)))
     entries.append(("Charter", urlreverse("ietf.group.info.group_charter", kwargs=kwargs)))
+    if group.features.has_materials and get_group_materials(group).exists():
+        entries.append(("Materials", urlreverse("ietf.group.info.materials", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
-    if group.features().has_documents:
+    if group.features.has_documents:
         entries.append(("Dependency Graph", urlreverse("ietf.group.info.dependencies_pdf", kwargs=kwargs)))
 
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
@@ -283,14 +289,17 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     is_chair = group.has_role(request.user, "chair")
     can_manage = can_manage_group_type(request.user, group.type_id)
 
-    if group.features().has_milestones:
+    if group.features.has_milestones:
         if group.state_id != "proposed" and (is_chair or can_manage):
             actions.append((u"Add or edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
+
+    if group.features.has_materials and can_manage_materials(request.user, group):
+        actions.append((u"Upload materials", urlreverse("group_upload_materials", kwargs=kwargs)))
 
     if group.state_id != "conclude" and can_manage:
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))
 
-    if group.features().customize_workflow and (is_chair or can_manage):
+    if group.features.customize_workflow and (is_chair or can_manage):
         actions.append((u"Customize workflow", urlreverse("ietf.group.edit.customize_workflow", kwargs=kwargs)))
 
     if group.state_id in ("active", "dormant") and can_manage:
@@ -341,23 +350,17 @@ def search_for_group_documents(group):
 
     return docs, meta, docs_related, meta_related
 
-def get_group_or_404(acronym, group_type):
-    """Helper to overcome the schism between group-type prefixed URLs and generic."""
-    possible_groups = Group.objects.all()
-    if group_type:
-        possible_groups = possible_groups.filter(type=group_type)
-
-    return get_object_or_404(possible_groups, acronym=acronym)
-
 def group_home(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
     kwargs = dict(acronym=group.acronym)
     if group_type:
         kwargs["group_type"] = group_type
-    return HttpResponseRedirect(urlreverse(group.features().default_tab, kwargs=kwargs))
+    return HttpResponseRedirect(urlreverse(group.features.default_tab, kwargs=kwargs))
 
 def group_documents(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
+    if not group.features.has_documents:
+        raise Http404
 
     docs, meta, docs_related, meta_related = search_for_group_documents(group)
 
@@ -372,6 +375,8 @@ def group_documents(request, acronym, group_type=None):
 def group_documents_txt(request, acronym, group_type=None):
     """Return tabulator-separated rows with documents for group."""
     group = get_group_or_404(acronym, group_type)
+    if not group.features.has_documents:
+        raise Http404
 
     docs, meta, docs_related, meta_related = search_for_group_documents(group)
 
@@ -393,7 +398,6 @@ def group_documents_txt(request, acronym, group_type=None):
 
     return HttpResponse(u"\n".join(rows), content_type='text/plain; charset=UTF-8')
 
-
 def group_charter(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
 
@@ -410,10 +414,10 @@ def group_charter(request, acronym, group_type=None):
 
     can_manage = can_manage_group_type(request.user, group.type_id)
 
-    if group.features().has_chartering_process:
+    if group.features.has_chartering_process:
         description = group.charter_text
     else:
-        description = group.description or "No description entered yet."
+        description = group.description or "No description yet."
 
     return render(request, 'group/group_charter.html',
                   construct_group_menu_context(request, group, "charter", group_type, {
@@ -433,10 +437,21 @@ def history(request, acronym, group_type=None):
 
     return render(request, 'group/history.html',
                   construct_group_menu_context(request, group, "history", group_type, {
-                "events": events,
-                }))
-   
- 
+                      "events": events,
+                  }))
+
+def materials(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_materials:
+        raise Http404
+
+    materials = get_group_materials(group).order_by("-time")
+
+    return render(request, 'group/materials.html',
+                  construct_group_menu_context(request, group, "materials", group_type, {
+                      "materials": materials,
+                  }))
+
 def nodename(name):
     return name.replace('-','_')
 
@@ -556,6 +571,8 @@ def make_dot(group):
 
 def dependencies_dot(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
+    if not group.features.has_documents:
+        raise Http404
 
     return HttpResponse(make_dot(group),
                         content_type='text/plain; charset=UTF-8'
@@ -564,6 +581,8 @@ def dependencies_dot(request, acronym, group_type=None):
 @cache_page ( 60 * 60 )
 def dependencies_pdf(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
+    if not group.features.has_documents:
+        raise Http404
 
     dothandle,dotname = mkstemp()  
     os.close(dothandle)

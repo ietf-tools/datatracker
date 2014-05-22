@@ -12,7 +12,8 @@ from django.contrib.auth.decorators import login_required
 from ietf.doc.models import Document, DocEvent
 from ietf.doc.utils import get_chartering_type
 from ietf.group.models import Group, GroupMilestone, MilestoneGroupEvent
-from ietf.group.utils import save_milestone_in_history, can_manage_group_type, milestone_reviewer_for_group_type
+from ietf.group.utils import (save_milestone_in_history, can_manage_group_type, milestone_reviewer_for_group_type,
+                              get_group_or_404)
 from ietf.name.models import GroupMilestoneStateName
 from ietf.group.mails import email_milestones_changed
 
@@ -108,17 +109,19 @@ class MilestoneForm(forms.Form):
         return r
 
 @login_required
-def edit_milestones(request, group_type, acronym, milestone_set="current"):
+def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
     # milestones_set + needs_review: we have several paths into this view
     #  management (IRTF chair/AD/...)/Secr. -> all actions on current + add new
     #  group chair -> limited actions on current + add new for review
     #  (re)charter -> all actions on existing in state charter + add new in state charter
     #
     # For charters we store the history on the charter document to not confuse people.
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_milestones:
+        raise Http404
 
     needs_review = False
-    if not can_manage_group_type(request.user, group_type):
+    if not can_manage_group_type(request.user, group.type_id):
         if group.role_set.filter(name="chair", person__user=request.user):
             if milestone_set == "current":
                 needs_review = True
@@ -332,8 +335,10 @@ def edit_milestones(request, group_type, acronym, milestone_set="current"):
 @login_required
 def reset_charter_milestones(request, group_type, acronym):
     """Reset charter milestones to the currently in-use milestones."""
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
-
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_milestones:
+        raise Http404
+    
     if (not can_manage_group_type(request.user, group_type) and
         not group.role_set.filter(name="chair", person__user=request.user)):
         return HttpResponseForbidden("You are not chair of this group.")

@@ -1,6 +1,7 @@
 import os
 
 from django.conf import settings
+from django.shortcuts import get_object_or_404
 
 from ietf.group.models import Group, RoleHistory
 from ietf.person.models import Email
@@ -106,4 +107,15 @@ def milestone_reviewer_for_group_type(group_type):
         return "IRTF Chair"
     else:
         return "Area Director"
+
+def can_manage_materials(user, group):
+    return group.has_role(user, ("chair", "delegate", "secr")) or has_role(user, 'Secretariat')
+
+def get_group_or_404(acronym, group_type):
+    """Helper to overcome the schism between group-type prefixed URLs and generic."""
+    possible_groups = Group.objects.all()
+    if group_type:
+        possible_groups = possible_groups.filter(type=group_type)
+
+    return get_object_or_404(possible_groups, acronym=acronym)
 

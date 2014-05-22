@@ -7,7 +7,7 @@ import shutil
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, Http404
 from django.utils.html import mark_safe
 from django.http import Http404, HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -18,7 +18,8 @@ from ietf.doc.models import DocAlias, DocTagName, Document, State, save_document
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
-from ietf.group.utils import save_group_in_history, can_manage_group_type
+from ietf.group.utils import (save_group_in_history, can_manage_group_type, can_manage_materials,
+                              get_group_or_404)
 from ietf.ietfauth.utils import has_role
 from ietf.person.forms import EmailsField
 from ietf.person.models import Person, Email
@@ -166,6 +167,9 @@ def submit_initial_charter(request, group_type, acronym=None):
         return HttpResponseForbidden("You don't have permission to access this view")
 
     group = get_object_or_404(Group, acronym=acronym)
+    if not group.features.has_chartering_process:
+        raise Http404
+
     if not group.charter:
         group.charter = get_or_create_initial_charter(group, group_type)
         group.save()
@@ -187,6 +191,9 @@ def edit(request, group_type=None, acronym=None, action="edit"):
         new_group = True
     else:
         raise Http404
+
+    if not group_type and group:
+        group_type = group.type_id
 
     if request.method == 'POST':
         form = GroupForm(request.POST, group=group, confirmed=request.POST.get("confirmed", False), group_type=group_type)
@@ -330,7 +337,7 @@ class ConcludeForm(forms.Form):
 @login_required
 def conclude(request, group_type, acronym):
     """Request the closing of group, prompting for instructions."""
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
+    group = get_group_or_404(acronym, group_type)
 
     if not can_manage_group_type(request.user, group_type):
         return HttpResponseForbidden("You don't have permission to access this view")
@@ -357,7 +364,10 @@ def conclude(request, group_type, acronym):
 
 @login_required
 def customize_workflow(request, group_type, acronym):
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.customize_workflow:
+        raise Http404
+
     if (not has_role(request.user, "Secretariat") and
         not group.role_set.filter(name="chair", person__user=request.user)):
         return HttpResponseForbidden("You don't have permission to access this view")
@@ -445,3 +455,19 @@ def customize_workflow(request, group_type, acronym):
             'states': states,
             'tags': tags,
             })
+
+@login_required
+def upload_materials(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_materials:
+        raise Http404
+
+    if not can_manage_materials(request.user, group):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
+    # FIXME: fill in
+
+    return render(request, 'group/materials.html',
+                  construct_group_menu_context(request, group, "materials", group_type, {
+                      "materials": materials,
+                  }))

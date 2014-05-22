@@ -1,0 +1,27 @@
+{% extends "group/group_base.html" %}
+{% load ietf_filters %}
+
+{% block group_subtitle %}Materials{% endblock %}
+
+{% block morecss %}
+  {{ block.super }}
+  .material { margin-top: 0.5em; }
+{% endblock %}
+
+{% block group_content %}
+{% load ietf_filters %}
+
+  <h2>Materials</h2>
+
+  {% if materials %}
+    {% for d in materials %}
+      <div class="material">
+        <a href="">{{ d.title }}</a>
+        ({{ d.time|date:"Y-m-d" }})
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>No materials uploaded.</p>
+  {% endif %}
+
+{% endblock %}

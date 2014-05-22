@@ -4,7 +4,8 @@ class GroupFeatures(object):
 
     has_milestones = False
     has_chartering_process = False
-    has_documents = False
+    has_documents = False # i.e. drafts/RFCs
+    has_materials = False
     customize_workflow = False
     default_tab = "group_charter"
 
@@ -16,4 +17,4 @@ class GroupFeatures(object):
             self.customize_workflow = True
             self.default_tab = "group_docs"
         elif group.type_id in ("team",):
-            self.has_documents = True
+            self.has_materials = True

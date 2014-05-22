@@ -80,9 +80,12 @@ class Group(GroupInfo):
     def bg_color(self):
         return bg_group_colors[self.upcase_acronym]
 
+    @property
     def features(self):
-        from ietf.group.features import GroupFeatures
-        return GroupFeatures(self)
+        if not hasattr(self, "features_cache"):
+            from ietf.group.features import GroupFeatures
+            self.features_cache = GroupFeatures(self)
+        return self.features_cache
 
     def json_url(self):
         return "/group/%s.json" % (self.acronym,)
