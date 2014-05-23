@@ -85,6 +85,8 @@ class DocumentInfo(models.Model):
             return settings.CONFLICT_REVIEW_PATH
         elif self.type_id == "statchg":
             return settings.STATUS_CHANGE_PATH
+        elif self.type_id == "material":
+            return settings.MATERIALS_PATH
         else:
             raise NotImplemented
 

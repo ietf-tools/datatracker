@@ -265,6 +265,7 @@ AGENDA_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/agenda/%(wg)s.%(ext)
 MINUTES_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/minutes/%(wg)s.%(ext)s'
 SLIDES_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/slides/%(wg)s-*'
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
+MATERIALS_PATH = '/a/www/ietf-ftp/materials/'
 IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
 IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
 IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
@@ -285,6 +286,7 @@ DOC_HREFS = {
     #"liaison": None
     "minutes": "http://www.ietf.org/proceedings/{meeting}/minutes/{doc.external_url}",
     "slides": "http://www.ietf.org/proceedings/{meeting}/slides/{doc.external_url}",
+    "material": "http://www.ietf.org/material/{doc.name}-{doc.rev}",
 }
 
 # Override this in settings_local.py if needed

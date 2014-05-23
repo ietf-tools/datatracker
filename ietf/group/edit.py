@@ -9,12 +9,13 @@ from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseForbidden, Http404
 from django.utils.html import mark_safe
+from django.utils.text import slugify
 from django.http import Http404, HttpResponse
 from django.contrib.auth.decorators import login_required
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import DocAlias, DocTagName, Document, State, save_document_in_history
+from ietf.doc.models import Document, DocAlias, DocTagName, DocTypeName, DocEvent, State, save_document_in_history
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
@@ -456,8 +457,30 @@ def customize_workflow(request, group_type, acronym):
             'tags': tags,
             })
 
+class UploadMaterialForm(forms.Form):
+    title = forms.CharField(max_length=Document._meta.get_field("title").max_length)
+    state = forms.ModelChoiceField(State.objects.filter(type="material"), empty_label=None)
+    material = forms.FileField(label='File', help_text="PDF or text file (ASCII/UTF-8)")
+
+    def __init__(self, *args, **kwargs):
+        action = kwargs.pop("action")
+        doc = kwargs.pop("doc", None)
+
+        super(UploadMaterialForm, self).__init__(*args, **kwargs)
+
+        if action == "new":
+            self.fields["state"].widget = forms.HiddenInput()
+            self.fields["state"].queryset = self.fields["state"].queryset.filter(slug="active")
+        else:
+            self.fields["title"].initial = doc.title
+            self.fields["state"].initial = doc.get_state().pk if doc.get_state() else None
+
+            if action == "edit":
+                del self.fields["material"]
+
+
 @login_required
-def upload_materials(request, acronym, group_type=None):
+def edit_material(request, acronym, action="new", name=None, group_type=None):
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_materials:
         raise Http404
@@ -465,9 +488,64 @@ def upload_materials(request, acronym, group_type=None):
     if not can_manage_materials(request.user, group):
         return HttpResponseForbidden("You don't have permission to access this view")
 
-    # FIXME: fill in
+    existing = None
+    if name and action != "new":
+        existing = get_object_or_404(Document, type="material", name=name)
 
-    return render(request, 'group/materials.html',
-                  construct_group_menu_context(request, group, "materials", group_type, {
-                      "materials": materials,
-                  }))
+    if request.method == 'POST':
+        form = UploadMaterialForm(request.POST, request.FILES, action=action, doc=existing)
+
+        if form.is_valid():
+            if action == "new":
+                d = Document()
+                d.type = DocTypeName.objects.get(slug="material")
+                d.group = group
+                d.rev = "01"
+            else:
+                d = existing
+
+            d.title = form.cleaned_data["title"]
+            d.time = datetime.datetime.now()
+
+            if not d.name:
+                d.name = "material-%s-%s" % (d.group.acronym, slugify(d.title))
+                i = 2
+                while True:
+                    if not Document.objects.filter(name=d.name).exists():
+                        break
+                    d.name = "material-%s-%s-%s" % (d.group.acronym, slugify(d.title), i)
+                    i += 1
+
+            if "material" in form.fields:
+                if action != "new":
+                    d.rev = "%02d" % (int(d.rev) + 1)
+
+                f = form.cleaned_data["material"]
+                file_ext = os.path.splitext(f.name)[1]
+
+                with open(os.path.join(d.get_file_path(), d.name + "-" + d.rev + file_ext), 'wb+') as dest:
+                    for chunk in f.chunks():
+                        dest.write(chunk)
+
+            d.save()
+
+            # FIXME: missing edit title event
+
+            # FIXME: missing changed state event
+            d.set_state(form.cleaned_data["state"])
+
+            # FIXME: wrong, should be new revision event
+            DocEvent.objects.create(doc=d,
+                                    by=request.user.person,
+                                    type='uploaded',
+                                    desc="Uploaded material")
+
+            return redirect("group_materials", acronym=group.acronym)
+    else:
+        form = UploadMaterialForm(action=action, doc=existing)
+
+    return render(request, 'group/edit_material.html', {
+        'group': group,
+        'form': form,
+        'action': action,
+    })

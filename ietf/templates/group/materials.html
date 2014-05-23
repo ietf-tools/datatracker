@@ -5,7 +5,7 @@
 
 {% block morecss %}
   {{ block.super }}
-  .material { margin-top: 0.5em; }
+  .materials .edit-options { float: right; margin-left: 2em; font-style: italic; }
 {% endblock %}
 
 {% block group_content %}
@@ -14,12 +14,31 @@
   <h2>Materials</h2>
 
   {% if materials %}
-    {% for d in materials %}
-      <div class="material">
-        <a href="">{{ d.title }}</a>
-        ({{ d.time|date:"Y-m-d" }})
-      </div>
-    {% endfor %}
+    <table class="ietf-table materials">
+
+      <tr>
+        <th>Title</th>
+        <th>Rev.</th>
+        <th>Date</th>
+      </tr>
+
+      {% for d in materials %}
+        <tr class="{% cycle "evenrow" "oddrow" %}">
+          <td>
+            {% if can_manage_materials %}
+              <span class="edit-options">
+                <a href="{% url "group_edit_material" acronym=group.acronym name=d.name %}">edit</a> |
+                <a href="{% url "group_revise_material" acronym=group.acronym name=d.name %}">revise</a>
+              </span>
+            {% endif %}
+
+            <a class="title-link" href="{{ d.full_url }}">{{ d.title }}</a>
+          </td>
+          <td>{{ d.rev }}</td>
+          <td>{{ d.time|date:"Y-m-d" }}</td>
+        </tr>
+      {% endfor %}
+    </table>
   {% else %}
     <p>No materials uploaded.</p>
   {% endif %}

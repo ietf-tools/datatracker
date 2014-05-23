@@ -35,6 +35,7 @@
 import os
 import itertools
 from tempfile import mkstemp
+import glob
 
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
@@ -258,7 +259,7 @@ def concluded_groups(request):
                   dict(group_types=group_types))
 
 def get_group_materials(group):
-    return Document.objects.filter(group=group).exclude(states__slug="deleted")#.exclude(session=None).exclude(type="charter")
+    return Document.objects.filter(group=group, type="material", session=None).exclude(states__slug="inactive")
 
 def construct_group_menu_context(request, group, selected, group_type, others):
     """Return context with info for the group menu filled in."""
@@ -294,9 +295,9 @@ def construct_group_menu_context(request, group, selected, group_type, others):
             actions.append((u"Add or edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
 
     if group.features.has_materials and can_manage_materials(request.user, group):
-        actions.append((u"Upload materials", urlreverse("group_upload_materials", kwargs=kwargs)))
+        actions.append((u"Upload material", urlreverse("group_new_material", kwargs=kwargs)))
 
-    if group.state_id != "conclude" and can_manage:
+    if group.type_id in ("rg", "wg") and group.state_id != "conclude" and can_manage:
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))
 
     if group.features.customize_workflow and (is_chair or can_manage):
@@ -446,10 +447,18 @@ def materials(request, acronym, group_type=None):
         raise Http404
 
     materials = get_group_materials(group).order_by("-time")
+    for d in materials:
+        extension = ""
+        globs = glob.glob(d.get_file_path() + d.name + "-" + d.rev + ".*")
+        if globs:
+            extension = os.path.splitext(globs[0])[1]
+
+        d.full_url = d.href() + extension
 
     return render(request, 'group/materials.html',
                   construct_group_menu_context(request, group, "materials", group_type, {
                       "materials": materials,
+                      "can_manage_materials": can_manage_materials(request.user, group)
                   }))
 
 def nodename(name):
