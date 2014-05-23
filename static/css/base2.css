@@ -177,7 +177,7 @@ form table th {
   vertical-align: top;
 }
 
-form table .help {
+form table .help, form table .helptext {
   font-style: italic;
   font-size: 11px;
 }
