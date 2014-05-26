@@ -15,8 +15,9 @@ from django.contrib.auth.decorators import login_required
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, DocTagName, DocTypeName, DocEvent, State, save_document_in_history
-from ietf.doc.utils import get_tags_for_stream_id
+from ietf.doc.models import Document, DocAlias, DocTagName, DocTypeName, DocEvent, State
+from ietf.doc.models import NewRevisionDocEvent, save_document_in_history
+from ietf.doc.utils import get_tags_for_stream_id, add_state_change_event
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
 from ietf.group.utils import (save_group_in_history, can_manage_group_type, can_manage_materials,
@@ -471,6 +472,7 @@ class UploadMaterialForm(forms.Form):
         if action == "new":
             self.fields["state"].widget = forms.HiddenInput()
             self.fields["state"].queryset = self.fields["state"].queryset.filter(slug="active")
+            self.fields["state"].initial = self.fields["state"].queryset[0].pk
         else:
             self.fields["title"].initial = doc.title
             self.fields["state"].initial = doc.get_state().pk if doc.get_state() else None
@@ -504,6 +506,10 @@ def edit_material(request, acronym, action="new", name=None, group_type=None):
             else:
                 d = existing
 
+            prev_rev = d.rev
+            prev_title = d.title
+            prev_state = d.get_state()
+
             d.title = form.cleaned_data["title"]
             d.time = datetime.datetime.now()
 
@@ -529,16 +535,23 @@ def edit_material(request, acronym, action="new", name=None, group_type=None):
 
             d.save()
 
-            # FIXME: missing edit title event
+            if not existing or prev_rev != d.rev:
+                e = NewRevisionDocEvent(type="new_revision", doc=d, rev=d.rev)
+                e.time = d.time
+                e.by = request.user.person
+                e.desc = "New version available: <b>%s-%s</b>" % (d.name, d.rev)
+                e.save()
+                
+            if prev_title != d.title:
+                e = DocEvent(doc=d, by=request.user.person, type='changed_document')
+                e.desc = u"Changed title to <b>%s</b>" % d.title
+                if prev_title:
+                    e.desc += u" from %s" % prev_title
+                e.time = d.time
+                e.save()
 
-            # FIXME: missing changed state event
             d.set_state(form.cleaned_data["state"])
-
-            # FIXME: wrong, should be new revision event
-            DocEvent.objects.create(doc=d,
-                                    by=request.user.person,
-                                    type='uploaded',
-                                    desc="Uploaded material")
+            add_state_change_event(d, request.user.person, prev_state, form.cleaned_data["state"])
 
             return redirect("group_materials", acronym=group.acronym)
     else:
