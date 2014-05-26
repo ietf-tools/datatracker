@@ -122,6 +122,9 @@ class DocumentInfo(models.Model):
         """Get state of type, or default state for document type if
         not specified. Uses a local cache to speed multiple state
         reads up."""
+        if self.pk == None: # states is many-to-many so not in database implies no state
+            return None
+
         if state_type == None:
             state_type = self.type_id
 
