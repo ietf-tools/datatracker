@@ -22,4 +22,4 @@ class GroupFeatures(object):
             self.has_materials = True
 
         if self.has_chartering_process:
-            about_page = "group_charter"
+            self.about_page = "group_charter"

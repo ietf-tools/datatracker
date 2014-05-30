@@ -36,6 +36,13 @@ class GroupInfo(models.Model):
             res += " %s (%s)" % (self.type, self.acronym)
         return res
 
+    @property
+    def features(self):
+        if not hasattr(self, "features_cache"):
+            from ietf.group.features import GroupFeatures
+            self.features_cache = GroupFeatures(self)
+        return self.features_cache
+
     def about_url(self):
         # bridge gap between group-type prefixed URLs and /group/ ones
         from django.core.urlresolvers import reverse as urlreverse
@@ -87,13 +94,6 @@ class Group(GroupInfo):
     @property
     def bg_color(self):
         return bg_group_colors[self.upcase_acronym]
-
-    @property
-    def features(self):
-        if not hasattr(self, "features_cache"):
-            from ietf.group.features import GroupFeatures
-            self.features_cache = GroupFeatures(self)
-        return self.features_cache
 
     def json_url(self):
         return "/group/%s.json" % (self.acronym,)
