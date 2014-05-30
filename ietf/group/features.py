@@ -8,6 +8,7 @@ class GroupFeatures(object):
     has_materials = False
     customize_workflow = False
     default_tab = "group_charter"
+    material_types = ["slides"]
 
     def __init__(self, group):
         if group.type_id in ("wg", "rg"):

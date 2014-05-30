@@ -36,6 +36,7 @@ import os
 import itertools
 from tempfile import mkstemp
 import glob
+from collections import OrderedDict
 
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
@@ -259,7 +260,7 @@ def concluded_groups(request):
                   dict(group_types=group_types))
 
 def get_group_materials(group):
-    return Document.objects.filter(group=group, type="material", session=None).exclude(states__slug="inactive")
+    return Document.objects.filter(group=group, type__in=group.features.material_types, session=None).exclude(states__slug="inactive")
 
 def construct_group_menu_context(request, group, selected, group_type, others):
     """Return context with info for the group menu filled in."""
@@ -267,7 +268,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group_type:
         kwargs["group_type"] = group_type
 
-    # entries
+    # menu entries
     entries = []
     if group.features.has_documents:
         entries.append(("Documents", urlreverse("ietf.group.info.group_documents", kwargs=kwargs)))
@@ -295,7 +296,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
             actions.append((u"Add or edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
 
     if group.features.has_materials and can_manage_materials(request.user, group):
-        actions.append((u"Upload material", urlreverse("group_new_material", kwargs=kwargs)))
+        actions.append((u"Upload material", urlreverse("group_choose_material_type", kwargs=kwargs)))
 
     if group.type_id in ("rg", "wg") and group.state_id != "conclude" and can_manage:
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))
@@ -446,8 +447,9 @@ def materials(request, acronym, group_type=None):
     if not group.features.has_materials:
         raise Http404
 
-    materials = get_group_materials(group).order_by("-time")
-    for d in materials:
+    docs = get_group_materials(group).order_by("type", "-time").select_related("type")
+    doc_types = OrderedDict()
+    for d in docs:
         extension = ""
         globs = glob.glob(d.get_file_path() + d.name + "-" + d.rev + ".*")
         if globs:
@@ -455,9 +457,13 @@ def materials(request, acronym, group_type=None):
 
         d.full_url = d.href() + extension
 
+        if d.type not in doc_types:
+            doc_types[d.type] = []
+        doc_types[d.type].append(d)
+
     return render(request, 'group/materials.html',
                   construct_group_menu_context(request, group, "materials", group_type, {
-                      "materials": materials,
+                      "doc_types": doc_types.items(),
                       "can_manage_materials": can_manage_materials(request.user, group)
                   }))
 

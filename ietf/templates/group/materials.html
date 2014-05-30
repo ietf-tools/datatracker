@@ -9,37 +9,41 @@
 {% endblock %}
 
 {% block group_content %}
-{% load ietf_filters %}
+  {% load ietf_filters %}
 
-  <h2>Materials</h2>
+  {% if doc_types %}
+    {% for doc_type, docs in doc_types %}
+      <h2>{{ doc_type.name }}</h2>
 
-  {% if materials %}
-    <table class="ietf-table materials">
+      <table class="ietf-table ietf-doctable materials">
 
-      <tr>
-        <th>Title</th>
-        <th>Rev.</th>
-        <th>Date</th>
-      </tr>
-
-      {% for d in materials %}
-        <tr class="{% cycle "evenrow" "oddrow" %}">
-          <td>
-            {% if can_manage_materials %}
-              <span class="edit-options">
-                <a href="{% url "group_edit_material" acronym=group.acronym name=d.name %}">edit</a> |
-                <a href="{% url "group_revise_material" acronym=group.acronym name=d.name %}">revise</a>
-              </span>
-            {% endif %}
-
-            <a class="title-link" href="{{ d.full_url }}">{{ d.title }}</a>
-          </td>
-          <td>{{ d.rev }}</td>
-          <td>{{ d.time|date:"Y-m-d" }}</td>
+        <tr>
+          <th>Title</th>
+          <th>Rev.</th>
+          <th>Date</th>
         </tr>
-      {% endfor %}
-    </table>
+
+        {% for d in docs %}
+          <tr class="{% cycle "evenrow" "oddrow" %}">
+            <td>
+              {% if can_manage_materials %}
+                <span class="edit-options">
+                  <a href="{% url "group_edit_material" acronym=group.acronym name=d.name %}">edit</a> |
+                  <a href="{% url "group_revise_material" acronym=group.acronym name=d.name %}">revise</a>
+                </span>
+              {% endif %}
+
+              <a class="title-link" href="{{ d.full_url }}">{{ d.title }}</a>
+            </td>
+            <td>{{ d.rev }}</td>
+            <td>{{ d.time|date:"Y-m-d" }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% endfor %}
   {% else %}
+    <h2>Materials</h2>
+
     <p>No materials uploaded.</p>
   {% endif %}
 

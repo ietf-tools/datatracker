@@ -20,8 +20,8 @@ from ietf.doc.models import NewRevisionDocEvent, save_document_in_history
 from ietf.doc.utils import get_tags_for_stream_id, add_state_change_event
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
-from ietf.group.utils import (save_group_in_history, can_manage_group_type, can_manage_materials,
-                              get_group_or_404)
+from ietf.group.utils import save_group_in_history, can_manage_group_type, can_manage_materials
+from ietf.group.utils import get_group_or_404
 from ietf.ietfauth.utils import has_role
 from ietf.person.forms import EmailsField
 from ietf.person.models import Person, Email
@@ -458,16 +458,27 @@ def customize_workflow(request, group_type, acronym):
             'tags': tags,
             })
 
+@login_required
+def choose_material_type(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_materials:
+        raise Http404
+
+    return render(request, 'group/choose_material_type.html', {
+        'group': group,
+        'material_types': DocTypeName.objects.filter(slug__in=group.features.material_types),
+    })
+    
+
 class UploadMaterialForm(forms.Form):
     title = forms.CharField(max_length=Document._meta.get_field("title").max_length)
-    state = forms.ModelChoiceField(State.objects.filter(type="material"), empty_label=None)
+    state = forms.ModelChoiceField(State.objects.all(), empty_label=None)
     material = forms.FileField(label='File', help_text="PDF or text file (ASCII/UTF-8)")
 
-    def __init__(self, *args, **kwargs):
-        action = kwargs.pop("action")
-        doc = kwargs.pop("doc", None)
-
+    def __init__(self, doc_type, action, doc, *args, **kwargs):
         super(UploadMaterialForm, self).__init__(*args, **kwargs)
+
+        self.fields["state"].queryset = self.fields["state"].queryset.filter(type=doc_type)
 
         if action == "new":
             self.fields["state"].widget = forms.HiddenInput()
@@ -482,7 +493,7 @@ class UploadMaterialForm(forms.Form):
 
 
 @login_required
-def edit_material(request, acronym, action="new", name=None, group_type=None):
+def edit_material(request, acronym, action="new", name=None, doc_type=None, group_type=None):
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_materials:
         raise Http404
@@ -490,19 +501,21 @@ def edit_material(request, acronym, action="new", name=None, group_type=None):
     if not can_manage_materials(request.user, group):
         return HttpResponseForbidden("You don't have permission to access this view")
 
+    document_type = get_object_or_404(DocTypeName, slug=doc_type)
+
     existing = None
     if name and action != "new":
         existing = get_object_or_404(Document, type="material", name=name)
 
     if request.method == 'POST':
-        form = UploadMaterialForm(request.POST, request.FILES, action=action, doc=existing)
+        form = UploadMaterialForm(document_type, action, existing, request.POST, request.FILES)
 
         if form.is_valid():
             if action == "new":
                 d = Document()
-                d.type = DocTypeName.objects.get(slug="material")
+                d.type = document_type
                 d.group = group
-                d.rev = "01"
+                d.rev = "00"
             else:
                 d = existing
 
@@ -514,12 +527,12 @@ def edit_material(request, acronym, action="new", name=None, group_type=None):
             d.time = datetime.datetime.now()
 
             if not d.name:
-                d.name = "material-%s-%s" % (d.group.acronym, slugify(d.title))
+                d.name = "%s-%s-%s" % (d.type_id, d.group.acronym, slugify(d.title))
                 i = 2
                 while True:
                     if not Document.objects.filter(name=d.name).exists():
                         break
-                    d.name = "material-%s-%s-%s" % (d.group.acronym, slugify(d.title), i)
+                    d.name = "%s-%s-%s-%s" % (d.type_id, d.group.acronym, slugify(d.title), i)
                     i += 1
 
             if "material" in form.fields:
@@ -555,7 +568,7 @@ def edit_material(request, acronym, action="new", name=None, group_type=None):
 
             return redirect("group_materials", acronym=group.acronym)
     else:
-        form = UploadMaterialForm(action=action, doc=existing)
+        form = UploadMaterialForm(document_type, action, existing)
 
     return render(request, 'group/edit_material.html', {
         'group': group,

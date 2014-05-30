@@ -118,4 +118,3 @@ def get_group_or_404(acronym, group_type):
         possible_groups = possible_groups.filter(type=group_type)
 
     return get_object_or_404(possible_groups, acronym=acronym)
-

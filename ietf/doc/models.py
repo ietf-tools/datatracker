@@ -74,9 +74,10 @@ class DocumentInfo(models.Model):
         return ext.lstrip(".").lower()
 
     def get_file_path(self):
+
         if self.type_id == "draft":
             return settings.INTERNET_DRAFT_PATH
-        elif self.type_id in ("agenda", "minutes", "slides"):
+        elif self.type_id in ("agenda", "minutes", "slides") and self.meeting_related():
             meeting = self.name.split("-")[1]
             return os.path.join(settings.AGENDA_PATH, meeting, self.type_id) + "/"
         elif self.type_id == "charter":
@@ -85,21 +86,27 @@ class DocumentInfo(models.Model):
             return settings.CONFLICT_REVIEW_PATH
         elif self.type_id == "statchg":
             return settings.STATUS_CHANGE_PATH
-        elif self.type_id == "material":
-            return settings.MATERIALS_PATH
         else:
-            raise NotImplemented
+            return settings.DOCUMENT_PATH_PATTERN.format(doc=self)
 
     def href(self):
+        meeting_related = self.meeting_related()
+
+        settings_var = settings.DOC_HREFS
+        if meeting_related:
+            settings_var = settings.MEETING_DOC_HREFS
+
         try:
-            format = settings.DOC_HREFS[self.type_id]
+            format = settings_var[self.type_id]
         except KeyError:
             if len(self.external_url):
                 return self.external_url
             return None
+
         meeting = None
-        if self.type_id in ("agenda", "minutes", "slides"):
+        if meeting_related:
             meeting = self.name.split("-")[1]
+
         return format.format(doc=self,meeting=meeting)
 
     def set_state(self, state):
@@ -162,6 +169,11 @@ class DocumentInfo(models.Model):
             return ballot
         else:
             return None
+
+    def meeting_related(self):
+        return(self.type_id in ("agenda", "minutes", "slides") and (
+            self.name.split("-")[1] == "interim"
+            or self.session_set.exists()))
 
     class Meta:
         abstract = True
