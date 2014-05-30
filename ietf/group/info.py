@@ -272,7 +272,10 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     entries = []
     if group.features.has_documents:
         entries.append(("Documents", urlreverse("ietf.group.info.group_documents", kwargs=kwargs)))
-    entries.append(("Charter", urlreverse("ietf.group.info.group_charter", kwargs=kwargs)))
+    if group.features.has_chartering_process:
+        entries.append(("Charter", urlreverse("group_charter", kwargs=kwargs)))
+    else:
+        entries.append(("About", urlreverse("group_about", kwargs=kwargs)))
     if group.features.has_materials and get_group_materials(group).exists():
         entries.append(("Materials", urlreverse("ietf.group.info.materials", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
@@ -400,7 +403,7 @@ def group_documents_txt(request, acronym, group_type=None):
 
     return HttpResponse(u"\n".join(rows), content_type='text/plain; charset=UTF-8')
 
-def group_charter(request, acronym, group_type=None):
+def group_about(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
 
     fill_in_charter_info(group)
@@ -408,27 +411,14 @@ def group_charter(request, acronym, group_type=None):
     e = group.latest_event(type__in=("changed_state", "requested_close",))
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
 
-    verbose_group_types = {
-        "wg": "Working Group",
-        "rg": "Research Group",
-        "team": "Team",
-    }
-
     can_manage = can_manage_group_type(request.user, group.type_id)
 
-    if group.features.has_chartering_process:
-        description = group.charter_text
-    else:
-        description = group.description or "No description yet."
-
-    return render(request, 'group/group_charter.html',
-                  construct_group_menu_context(request, group, "charter", group_type, {
+    return render(request, 'group/group_about.html',
+                  construct_group_menu_context(request, group, "charter" if group.features.has_chartering_process else "about", group_type, {
                       "milestones_in_review": group.groupmilestone_set.filter(state="review"),
                       "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
                       "requested_close": requested_close,
-                      "verbose_group_type": verbose_group_types.get(group.type_id, "Group"),
                       "can_manage": can_manage,
-                      "description": description,
                   }))
 
 

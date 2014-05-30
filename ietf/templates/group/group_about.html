@@ -99,9 +99,16 @@ is occasionally incorrect.</span>
 {% endif %}
 {% endwith %}
 
-<h2>Charter for {% if group.state_id == "proposed" %}Proposed{% endif %} {{ verbose_group_type }}</h2>
+{% if group.features.has_chartering_process %}
+<h2>Charter for {% if group.state_id == "proposed" %}Proposed{% endif %} {{ group.type.desc.title }}</h2>
 
-<p>{{ description|linebreaks }}</p>
+<p>{{ group.charter_text|linebreaks }}</p>
+{% else %}
+<h2>About</h2>
+
+<p>{{ group.description|default:"No description yet."|linebreaks }}</p>
+{% endif %}
+
 
 {% if group.features.has_milestones %}
   <h2>{% if group.state_id == "proposed" %}Proposed{% endif %} Milestones</h2>

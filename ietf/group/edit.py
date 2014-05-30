@@ -7,10 +7,9 @@ import shutil
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponseForbidden, Http404
+from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect
 from django.utils.html import mark_safe
 from django.utils.text import slugify
-from django.http import Http404, HttpResponse
 from django.contrib.auth.decorators import login_required
 
 import debug                            # pyflakes:ignore
@@ -304,7 +303,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             if action=="charter":
                 return redirect('charter_submit', name=group.charter.name, option="initcharter")
 
-            return redirect('group_charter', group_type=group.type_id, acronym=group.acronym)
+            return HttpResponseRedirect(group.about_url())
     else: # form.is_valid()
         if not new_group:
             init = dict(name=group.name,
@@ -337,11 +336,11 @@ class ConcludeForm(forms.Form):
     instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True)
 
 @login_required
-def conclude(request, group_type, acronym):
+def conclude(request, acronym, group_type=None):
     """Request the closing of group, prompting for instructions."""
     group = get_group_or_404(acronym, group_type)
 
-    if not can_manage_group_type(request.user, group_type):
+    if not can_manage_group_type(request.user, group.type_id):
         return HttpResponseForbidden("You don't have permission to access this view")
 
     if request.method == 'POST':
@@ -356,13 +355,15 @@ def conclude(request, group_type, acronym):
             e.desc = "Requested closing group"
             e.save()
 
-            return redirect('group_charter', group_type=group.type_id, acronym=group.acronym)
+            return redirect(group.features.about_page, group_type=group_type, acronym=group.acronym)
     else:
         form = ConcludeForm()
 
-    return render(request, 'group/conclude.html',
-                  dict(form=form, group=group))
-
+    return render(request, 'group/conclude.html', {
+        'form': form,
+        'group': group,
+        'group_type': group_type,
+    })
 
 @login_required
 def customize_workflow(request, group_type, acronym):

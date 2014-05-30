@@ -5,7 +5,7 @@ import calendar
 import json
 
 from django import forms
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 
@@ -311,7 +311,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
             if milestone_set == "charter":
                 return redirect('doc_view', name=group.charter.canonical_name())
             else:
-                return redirect('group_charter', group_type=group.type_id, acronym=group.acronym)
+                return HttpResponseRedirect(group.about_url())
     else:
         for m in milestones:
             forms.append(MilestoneForm(instance=m, needs_review=needs_review))

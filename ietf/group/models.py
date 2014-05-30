@@ -36,6 +36,14 @@ class GroupInfo(models.Model):
             res += " %s (%s)" % (self.type, self.acronym)
         return res
 
+    def about_url(self):
+        # bridge gap between group-type prefixed URLs and /group/ ones
+        from django.core.urlresolvers import reverse as urlreverse
+        kwargs = { 'acronym': self.acronym }
+        if self.type_id in ("wg", "rg"):
+            kwargs["group_type"] = self.type_id
+        return urlreverse(self.features.about_page, kwargs=kwargs)
+
     class Meta:
         abstract = True
 

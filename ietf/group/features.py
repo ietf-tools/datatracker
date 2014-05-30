@@ -7,7 +7,8 @@ class GroupFeatures(object):
     has_documents = False # i.e. drafts/RFCs
     has_materials = False
     customize_workflow = False
-    default_tab = "group_charter"
+    about_page = "group_about"
+    default_tab = about_page
     material_types = ["slides"]
 
     def __init__(self, group):
@@ -19,3 +20,6 @@ class GroupFeatures(object):
             self.default_tab = "group_docs"
         elif group.type_id in ("team",):
             self.has_materials = True
+
+        if self.has_chartering_process:
+            about_page = "group_charter"

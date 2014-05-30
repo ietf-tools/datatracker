@@ -29,7 +29,7 @@ form.conclude .actions {
     {{ form.as_table }}
     <tr>
       <td colspan="2" class="actions">
-        <a class="button" href="{% url "group_charter" group_type=group.type_id acronym=group.acronym %}">Cancel</a>
+        <a class="button" href="{{ group.about_url }}">Cancel</a>
         <input class="button" type="submit" value="Send request"/>
       </td>
     </tr>

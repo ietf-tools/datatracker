@@ -183,7 +183,7 @@ class GroupPagesTests(TestCase):
             due=datetime.date.today() + datetime.timedelta(days=100))
         milestone.docs.add(draft)
 
-        url = urlreverse('ietf.group.info.group_charter', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        url = group.about_url()
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.name in r.content)

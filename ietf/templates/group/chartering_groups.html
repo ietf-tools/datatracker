@@ -33,7 +33,7 @@
     {% for g in t.chartering_groups %}
       <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
         <td class="acronym">
-          <a href="{% url "group_charter" group_type=g.type_id acronym=g.acronym %}">{{ g.acronym }}</a>
+          <a href="{{ g.about_url }}">{{ g.acronym }}</a>
         </td>
         <td class="title">
           <a href="{% url "doc_view" name=g.charter.name %}">{{ g.name }}</a>
