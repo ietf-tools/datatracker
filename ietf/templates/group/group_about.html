@@ -50,6 +50,19 @@ is occasionally incorrect.</span>
   </tr>
   {% endif %}
 
+  {% with group.groupurl_set.all as urls %}
+    {% if urls %}
+      <tr>
+        <td>More info:</td>
+        <td>
+        {% for url in urls %}
+          <a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}<br>{% endif %}
+        {% endfor %}
+        </td>
+      </tr>
+    {% endif %}
+  {% endwith %}
+
   <tr><th colspan="2">Personnel</th></tr>
 
   {% for slug, label, roles in group.personnel %}
@@ -88,16 +101,6 @@ is occasionally incorrect.</span>
 </table>
 
 </div>
-
-{% with group.groupurl_set.all as urls %}
-{% if urls %}
-<p>In addition to the charter, there is additional information about this group on the Web at:
-  {% for url in urls %}
-  <a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}, {% endif %}
-  {% endfor %}
-</p>
-{% endif %}
-{% endwith %}
 
 {% if group.features.has_chartering_process %}
 <h2>Charter for {% if group.state_id == "proposed" %}Proposed{% endif %} {{ group.type.desc.title }}</h2>
