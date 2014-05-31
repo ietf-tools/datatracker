@@ -41,7 +41,7 @@ form.upload-material .submit-row td { padding-top: 1em; text-align: right; }
     <tr class="submit-row">
       <td colspan="2">
         <a class="button" href="{% url "group_materials" acronym=group.acronym %}">Cancel</a>
-        <input class="submit button" type="submit" value="Save" />
+        <input class="submit button" type="submit" value="{% if action == "edit" %}Save{% else %}Upload{% endif %}" />
       </td>
     </tr>
   </table>

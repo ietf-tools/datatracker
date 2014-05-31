@@ -11,6 +11,7 @@ from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpRespon
 from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.contrib.auth.decorators import login_required
+from django.core.urlresolvers import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
@@ -469,17 +470,23 @@ def choose_material_type(request, acronym, group_type=None):
         'group': group,
         'material_types': DocTypeName.objects.filter(slug__in=group.features.material_types),
     })
-    
+
+def name_for_material(doc_type, group, title):
+    return "%s-%s-%s" % (doc_type.slug, group.acronym, slugify(title))
 
 class UploadMaterialForm(forms.Form):
     title = forms.CharField(max_length=Document._meta.get_field("title").max_length)
     state = forms.ModelChoiceField(State.objects.all(), empty_label=None)
     material = forms.FileField(label='File', help_text="PDF or text file (ASCII/UTF-8)")
 
-    def __init__(self, doc_type, action, doc, *args, **kwargs):
+    def __init__(self, doc_type, action, group, doc, *args, **kwargs):
         super(UploadMaterialForm, self).__init__(*args, **kwargs)
 
         self.fields["state"].queryset = self.fields["state"].queryset.filter(type=doc_type)
+
+        self.doc_type = doc_type
+        self.action = action
+        self.group = group
 
         if action == "new":
             self.fields["state"].widget = forms.HiddenInput()
@@ -488,9 +495,22 @@ class UploadMaterialForm(forms.Form):
         else:
             self.fields["title"].initial = doc.title
             self.fields["state"].initial = doc.get_state().pk if doc.get_state() else None
+            if doc.get_state_slug() == "deleted":
+                self.fields["state"].help_text = "Note: If you wish to revise this document, you may wish to change the state so it's not deleted."
 
             if action == "edit":
                 del self.fields["material"]
+
+    def clean_title(self):
+        title = self.cleaned_data["title"]
+        if self.action == "new":
+            name = name_for_material(self.doc_type, self.group, title)
+            existing = Document.objects.filter(type=self.doc_type, name=name)
+            if existing:
+                url = urlreverse("group_revise_material", kwargs={ 'acronym': self.group.acronym, 'name': existing[0].name })
+                raise forms.ValidationError(mark_safe("Can't upload: %s with name %s already exists. The name is derived from the title so you must either choose another title for what you're uploading or <a href=\"%s\">revise the existing %s</a>." % (self.doc_type.name, name, url, name)))
+
+        return title
 
 
 @login_required
@@ -502,14 +522,15 @@ def edit_material(request, acronym, action="new", name=None, doc_type=None, grou
     if not can_manage_materials(request.user, group):
         return HttpResponseForbidden("You don't have permission to access this view")
 
-    document_type = get_object_or_404(DocTypeName, slug=doc_type)
-
     existing = None
     if name and action != "new":
-        existing = get_object_or_404(Document, type="material", name=name)
+        existing = get_object_or_404(Document, name=name)
+        document_type = existing.type
+    else:
+        document_type = get_object_or_404(DocTypeName, slug=doc_type)
 
     if request.method == 'POST':
-        form = UploadMaterialForm(document_type, action, existing, request.POST, request.FILES)
+        form = UploadMaterialForm(document_type, action, group, existing, request.POST, request.FILES)
 
         if form.is_valid():
             if action == "new":
@@ -517,6 +538,7 @@ def edit_material(request, acronym, action="new", name=None, doc_type=None, grou
                 d.type = document_type
                 d.group = group
                 d.rev = "00"
+                d.name = name_for_material(d.type, d.group, form.cleaned_data["title"])
             else:
                 d = existing
 
@@ -526,15 +548,6 @@ def edit_material(request, acronym, action="new", name=None, doc_type=None, grou
 
             d.title = form.cleaned_data["title"]
             d.time = datetime.datetime.now()
-
-            if not d.name:
-                d.name = "%s-%s-%s" % (d.type_id, d.group.acronym, slugify(d.title))
-                i = 2
-                while True:
-                    if not Document.objects.filter(name=d.name).exists():
-                        break
-                    d.name = "%s-%s-%s-%s" % (d.type_id, d.group.acronym, slugify(d.title), i)
-                    i += 1
 
             if "material" in form.fields:
                 if action != "new":
@@ -569,7 +582,7 @@ def edit_material(request, acronym, action="new", name=None, doc_type=None, grou
 
             return redirect("group_materials", acronym=group.acronym)
     else:
-        form = UploadMaterialForm(document_type, action, existing)
+        form = UploadMaterialForm(document_type, action, group, existing)
 
     return render(request, 'group/edit_material.html', {
         'group': group,
