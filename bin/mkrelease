@@ -161,7 +161,7 @@ MINOR=${REST%%.*}
 CHANGE=${REST#*.}
 VER="$(printf %d.%d.%d $MAJOR $MINOR $CHANGE)"
 NEXT=$(( $CHANGE + 1 ))
-DEV="$(printf %d.%d.%d-dev $MAJOR $MINOR $NEXT)"
+DEV="$(printf %d.%d.%d-dev0 $MAJOR $MINOR $NEXT)"
 
 note "Checking that there's a recent test-crawler log"
 touch -d $RDATE .svn/.latest-commit
@@ -218,6 +218,9 @@ $do sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' \
 note "\nCommitting the updated version and deployment settings"
 $do svn commit $VERFILE $SETTINGS -m "Set version info and settings back to development mode"
 
+note "\nCreating new tag 'tags/dev/$DEV' from $SRC"
+$do svn cp $REPO/$SRC $REPO/tags/dev/$DEV -m "Creating new tag 'tags/dev/$DEV' from $SRC"
+
 $do svn update
 
 echo "
@@ -230,8 +233,11 @@ Release notes:
 
 $changes
 
-The new version is available through SVN checkout, with
+The new version is available for installation through SVN checkout, with
   'svn checkout http://svn.tools.ietf.org/svn/tools/ietfdb/tags/$VER'
+
+For development, check out the new development version instead:
+  'svn checkout http://svn.tools.ietf.org/svn/tools/ietfdb/tags/dev/$DEV'
 
 Regards,
 
