@@ -153,6 +153,10 @@ class LiaisonForm(forms.Form):
                 validate_email(addr)
             except ValidationError:
                 raise forms.ValidationError('Invalid email address: %s' % addr)
+            try:
+                addr.encode('ascii')
+            except UnicodeEncodeError as e:
+                raise forms.ValidationError('Invalid email address: %s (check character %d)' % (addr,e.start))
 
     def clean_response_contact(self):
         value = self.cleaned_data.get('response_contact', None)
