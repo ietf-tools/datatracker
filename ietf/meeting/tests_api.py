@@ -51,7 +51,9 @@ class ApiTests(TestCase):
             url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",
                               kwargs=dict(num=session.meeting.number,
                                           name=schedule.name,))
-            post_data = '{ "session_id": "%s", "timeslot_id": "%s", "extendedfrom_id": "%s" }'%(session.pk,scheduledsession.timeslot.slot_to_the_right.pk,scheduledsession.timeslot.pk)
+            post_data = '{ "session_id": "%s", "timeslot_id": "%s", "extendedfrom_id": "%s" }'%(session.pk,scheduledsession.timeslot.slot_to_the_right.pk,scheduledsession.pk)
+
+
             return self.client.post(url,post_data,content_type='application/x-www-form-urlencoded')
 
         # not logged in
