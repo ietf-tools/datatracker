@@ -562,6 +562,9 @@ def edit_material(request, acronym, action="new", name=None, doc_type=None, grou
 
             d.save()
 
+            if action == "new":
+                DocAlias.objects.get_or_create(name=d.name, document=d)
+
             if not existing or prev_rev != d.rev:
                 e = NewRevisionDocEvent(type="new_revision", doc=d, rev=d.rev)
                 e.time = d.time

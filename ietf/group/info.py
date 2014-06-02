@@ -437,16 +437,9 @@ def materials(request, acronym, group_type=None):
     if not group.features.has_materials:
         raise Http404
 
-    docs = get_group_materials(group).order_by("type", "-time").select_related("type")
+    docs = get_group_materials(group).order_by("type__order", "-time").select_related("type")
     doc_types = OrderedDict()
     for d in docs:
-        extension = ""
-        globs = glob.glob(d.get_file_path() + d.name + "-" + d.rev + ".*")
-        if globs:
-            extension = os.path.splitext(globs[0])[1]
-
-        d.full_url = d.href() + extension
-
         if d.type not in doc_types:
             doc_types[d.type] = []
         doc_types[d.type].append(d)

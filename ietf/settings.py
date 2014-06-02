@@ -283,7 +283,7 @@ DOC_HREFS = {
     # who understands this better can take care of it.
     #"liai-att": None
     #"liaison": None
-    "slides": 'http://www.ietf.org/slides/',
+    "slides": 'http://www.ietf.org/slides/{doc.name}-{doc.rev}',
 }
 
 MEETING_DOC_HREFS = {
