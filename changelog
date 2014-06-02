@@ -63,7 +63,7 @@ ietfdb (5.4.3) ietf; urgency=medium
   * Added a utility command 'mergeready' which lists commits marked as 
     'Commit ready for merge' that have not yet been merged to trunk.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  31 May 2014 10:17:45 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  02 Jun 2014 15:10:37 -0700
 
 
 ietfdb (5.4.2) ietf; urgency=medium
