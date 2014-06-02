@@ -1,3 +1,71 @@
+ietfdb (5.4.3) ietf; urgency=medium
+
+  * Merged in [7772] from rjsparks@nostrum.com:
+    Checks that an email address will survive encoding as part of
+    validating a liaison form. Fixes bug 1410.  
+
+  * Merged in [7766] from rjsparks@nostrum.com:
+    Improves the robustness of the SMTP error handling utilities. Fixes bug 
+    #1409.  
+
+  * Tweaked mkrelease to add a new development tag matching each new 
+    release tag, to make it easier to create personal development branches with 
+    development settings.
+
+  * Merged [7748] from rjsparks@nostrum.com:
+    Adjust when publication request button appears for documents in
+    non-ietf streams. Fixes bug #1402.  
+
+  * Merged [7740] from rjsparks@nostrum.com: 
+    Fixed a crash when requesting sessions for groups that do not have
+    ADs. Applied to production as 2014-05-13-sreq-rg.patch .  
+
+  * Merged [7735] from rjsparks@nostrum.com: 
+    Fixed coloring rows: The js IETF object needs to exist for the
+    code to work. Fixes bug #1303.  
+
+  * Merged [7734] from rcross@amsl.com: 
+    Changes to support IAB group types, including requesting a session
+    and uploading materials.  
+
+  * Merged in [7732] from rjsparks@nostrum.com:
+    Extended ScheduledSession objects were not initialized correctly, so 
+    un-extending did not work. Fixes bug #1401.  
+
+  * Added a file used by bin/mergeready to mark certain releases which has 
+    earlier been marked as ready to merge with a 'hold' indication, instead.
+
+  * Replaced a symlink with the real file -- symlink committed by mistake.
+
+  * Added validation of successful draft title extraction on draft 
+    submission upload, to avoid a later exception when trying to store draft 
+    information for a draft with a null title.
+
+  * Merged in [7726] from rcross@amsl.com:
+    Fix secauth middleware to grant access to WG Secretary, RG Chair and 
+    Area Director.   
+
+  * Merged [7705] from rjsparks@nostrum.com: 
+    Corrected Document vs DocHistory mismatch when working with
+    status-change documents. Corrected creation of BallotDocEvent
+    timestamps. Fixes bug #1396.  
+
+  * Merged [7678] from rcross@amsl.com: 
+    Show correct group type and ommit link to tools.ietf.org on BOF
+    proceedings.  
+
+  * Merged [7677] from rjsparks@nostrum.com: 
+    Protect against cases where add_state_change_event can return
+    None. Fixes bug # 1383.  
+
+  * Fixed a typo (missing space) in a template.  Fixes issue #1398.
+
+  * Added a utility command 'mergeready' which lists commits marked as 
+    'Commit ready for merge' that have not yet been merged to trunk.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  31 May 2014 10:17:45 -0700
+
+
 ietfdb (5.4.2) ietf; urgency=medium
 
   * Merged [7673] from rjsparks@nostrum.com: 
