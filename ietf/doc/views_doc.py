@@ -487,8 +487,13 @@ def document_main(request, name, rev=None):
             # disallow editing meeting-related stuff through this
             # interface for the time being
             can_manage_material = False
+            basename = doc.canonical_name() # meeting materials are unversioned at the moment
+            if doc.external_url:
+                # we need to remove the extension for the globbing below to work
+                basename = os.path.splitext(doc.external_url)[0]
+        else:
+            basename = "%s-%s" % (doc.canonical_name(), doc.rev)
 
-        basename = "%s-%s" % (doc.canonical_name(), doc.rev)
         pathname = os.path.join(doc.get_file_path(), basename)
 
         content = None
@@ -497,10 +502,12 @@ def document_main(request, name, rev=None):
         for g in globs:
             extension = os.path.splitext(g)[1]
             t = os.path.splitext(g)[1].lstrip(".")
-            url = doc.href() + extension
+            url = doc.href()
+            if not url.endswith("/") and not url.endswith(extension):
+                url += extension
 
             if extension == ".txt":
-                content = get_document_content(basename, pathname, split=False)
+                content = get_document_content(basename, pathname + extension, split=False)
                 t = "plain text"
 
             other_types.append((t, url))
