@@ -7,7 +7,9 @@ urlpatterns = patterns('',
     (r'^chartering/$', 'ietf.group.info.chartering_groups'),
     (r'^chartering/create/(?P<group_type>(wg|rg))/$', 'ietf.group.edit.edit', {'action': "charter"}, "group_create"),
     (r'^concluded/$', 'ietf.group.info.concluded_groups'),
-    # FIXME: the things below are duplicated in urls_info.py, need to unify these at some point
+    # FIXME: the things below are duplicated in urls_info.py while we
+    # figure out whether to serve everything from /group/<acronym>,
+    # need to unify these at some point
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/$', 'ietf.group.info.group_home', None, "group_home"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/documents/$', 'ietf.group.info.group_documents', None, "group_docs"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/charter/$', 'ietf.group.info.group_about', None, 'group_charter'),
@@ -25,10 +27,8 @@ urlpatterns = patterns('',
 
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/about/(?P<group_type>.)?$', 'ietf.group.info.group_about', None, 'group_about'),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/$', 'ietf.group.info.materials', None, "group_materials"),
-    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/$', 'ietf.group.edit.choose_material_type', None, "group_choose_material_type"),
-    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/(?P<doc_type>[\w-]+)/$', 'ietf.group.edit.edit_material', { 'action': "new" }, "group_new_material"),
-    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/(?P<name>[^/]+)/edit/$', 'ietf.group.edit.edit_material', { 'action': "edit" }, "group_edit_material"),
-    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/(?P<name>[^/]+)/revise/$', 'ietf.group.edit.edit_material', { 'action': "revise" }, "group_revise_material"),
+    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/$', 'ietf.doc.views_material.choose_material_type'),
+    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/(?P<doc_type>[\w-]+)/$', 'ietf.doc.views_material.edit_material', { 'action': "new" }, "group_new_material"),
 )
 
 

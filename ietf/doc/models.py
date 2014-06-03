@@ -173,7 +173,7 @@ class DocumentInfo(models.Model):
     def meeting_related(self):
         return(self.type_id in ("agenda", "minutes", "slides") and (
             self.name.split("-")[1] == "interim"
-            or self.session_set.exists()))
+            or (self.session_set.exists() if isinstance(self, Document) else self.doc.session_set.exists())))
 
     class Meta:
         abstract = True

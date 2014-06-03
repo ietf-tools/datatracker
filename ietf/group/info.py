@@ -299,7 +299,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
             actions.append((u"Add or edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
 
     if group.features.has_materials and can_manage_materials(request.user, group):
-        actions.append((u"Upload material", urlreverse("group_choose_material_type", kwargs=kwargs)))
+        actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
 
     if group.type_id in ("rg", "wg") and group.state_id != "conclude" and can_manage:
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))

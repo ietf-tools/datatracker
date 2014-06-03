@@ -22,14 +22,14 @@
     <tr>
       <td>Title:</td>
       <td>
-        <a {% if not snapshot and can_manage_material %} class="editlink" href="{% url "status_change_change_state" name=doc.name %}"{% endif %}>{{ doc.title }}</a>
+        <a {% if not snapshot and can_manage_material %} class="editlink" href="{% url "material_edit" name=doc.name action="title" name=doc.name %}"{% endif %}>{{ doc.title }}</a>
       </td>
     </tr>
 
     <tr>
       <td>State:</td>
       <td>
-        <a title="{{ doc.get_state.desc }}"{% if not snapshot and can_manage_material %} class="editlink" href="{% url "status_change_change_state" name=doc.name %}"{% endif %}>{{ doc.get_state.name }}</a>
+        <a title="{{ doc.get_state.desc }}"{% if not snapshot and can_manage_material %} class="editlink" href="{% url "material_edit" name=doc.name action="state" %}"{% endif %}>{{ doc.get_state.name }}</a>
       </td>
     </tr>
 
@@ -51,9 +51,7 @@
 
     {% if not snapshot and can_manage_material %}
     <tr><td colspan="2">
-      <a class="button" href="{% url "group_edit_material" acronym=group.acronym name=d.name %}">Change title/state</a>
-
-      <a class="button" href="{% url "group_revise_material" acronym=group.acronym name=d.name %}">Revise content</a>
+      <a class="button" href="{% url "material_edit" name=doc.name action="revise" %}">Upload New Revision</a>
     </td><tr/>
     {% endif %}
 
