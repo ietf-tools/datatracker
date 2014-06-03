@@ -211,16 +211,13 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
 
 
 def get_document_content(key, filename, split=True, markup=True):
-    f = None
     try:
-        f = open(filename, 'rb')
-        raw_content = f.read()
-    except IOError:
+        with open(filename, 'rb') as f:
+            raw_content = f.read()
+    except IOError as e:
         error = "Error; cannot read ("+key+")"
         return error
-    finally:
-        if f:
-            f.close()
+
     if markup:
         return markup_txt.markup(raw_content, split)
     else:
