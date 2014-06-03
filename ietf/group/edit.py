@@ -9,18 +9,15 @@ from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect
 from django.utils.html import mark_safe
-from django.utils.text import slugify
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, DocTagName, DocTypeName, DocEvent, State
-from ietf.doc.models import NewRevisionDocEvent, save_document_in_history
-from ietf.doc.utils import get_tags_for_stream_id, add_state_change_event
+from ietf.doc.models import Document, DocAlias, DocTagName, State, save_document_in_history
+from ietf.doc.utils import get_tags_for_stream_id
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
-from ietf.group.utils import save_group_in_history, can_manage_group_type, can_manage_materials
+from ietf.group.utils import save_group_in_history, can_manage_group_type
 from ietf.group.utils import get_group_or_404
 from ietf.ietfauth.utils import has_role
 from ietf.person.forms import EmailsField

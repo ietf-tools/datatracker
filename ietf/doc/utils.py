@@ -214,7 +214,7 @@ def get_document_content(key, filename, split=True, markup=True):
     try:
         with open(filename, 'rb') as f:
             raw_content = f.read()
-    except IOError as e:
+    except IOError:
         error = "Error; cannot read ("+key+")"
         return error
 

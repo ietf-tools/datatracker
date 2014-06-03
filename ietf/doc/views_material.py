@@ -1,12 +1,10 @@
 # views for managing group materials (slides, ...)
-import re
 import os
 import datetime
-import shutil
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect
+from django.http import HttpResponseForbidden, Http404
 from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.contrib.auth.decorators import login_required
@@ -19,7 +17,6 @@ from ietf.doc.models import NewRevisionDocEvent, save_document_in_history
 from ietf.doc.utils import add_state_change_event
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
-from ietf.ietfauth.utils import has_role
 
 @login_required
 def choose_material_type(request, acronym):

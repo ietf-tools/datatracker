@@ -35,10 +35,9 @@
 import os
 import itertools
 from tempfile import mkstemp
-import glob
 from collections import OrderedDict
 
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.conf import settings

@@ -5,13 +5,13 @@ import calendar
 import json
 
 from django import forms
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect, Http404
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
 from ietf.doc.models import Document, DocEvent
 from ietf.doc.utils import get_chartering_type
-from ietf.group.models import Group, GroupMilestone, MilestoneGroupEvent
+from ietf.group.models import GroupMilestone, MilestoneGroupEvent
 from ietf.group.utils import (save_milestone_in_history, can_manage_group_type, milestone_reviewer_for_group_type,
                               get_group_or_404)
 from ietf.name.models import GroupMilestoneStateName
