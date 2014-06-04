@@ -192,6 +192,50 @@ class GroupPagesTests(TestCase):
         self.assertTrue(milestone.desc in r.content)
         self.assertTrue(milestone.docs.all()[0].name in r.content)
 
+    def test_group_about(self):
+        draft = make_test_data()
+        group = Group.objects.create(
+            type_id="team",
+            acronym="testteam",
+            name="Test Team",
+            description="The test team is testing.",
+            state_id="active",
+        )
+
+        url = group.about_url()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(group.name in r.content)
+        self.assertTrue(group.acronym in r.content)
+        self.assertTrue(group.description in r.content)
+
+    def test_materials(self):
+        draft = make_test_data()
+        group = Group.objects.create(type_id="team", acronym="testteam", name="Test Team", state_id="active")
+
+        doc = Document.objects.create(
+            name="slides-testteam-test-slides",
+            rev="00",
+            title="Test Slides",
+            group=group,
+            type_id="slides",
+        )
+        doc.set_state(State.objects.get(type="slides", slug="active"))
+        DocAlias.objects.create(name=doc.name, document=doc)
+
+        url = urlreverse("group_materials", kwargs={ 'acronym': group.acronym })
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(doc.title in r.content)
+        self.assertTrue(doc.name in r.content)
+
+        # try deleting the document and check it's gone
+        doc.set_state(State.objects.get(type="slides", slug="deleted"))
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(doc.title not in r.content)
+
     def test_history(self):
         draft = make_test_data()
         group = draft.group
