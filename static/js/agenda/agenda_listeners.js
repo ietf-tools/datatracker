@@ -613,6 +613,7 @@ function info_location_select_set() {
 function move_thing(parameters) {
     // hasn't moved don't do anything
     if(parameters.from_slot_id == parameters.to_slot_id){
+        $(parameters.dom_obj).removeClass('highlight_free_slot');
 	return;
     }
 
@@ -625,8 +626,8 @@ function move_thing(parameters) {
 	parameters.too_small = true;
     }
 
-    bucket_list = (parameters.to_slot_id == bucketlist_id);
-    if(!bucket_list && !parameters.to_slot.empty){
+    parameters.bucket_list = (parameters.to_slot_id == bucketlist_id);
+    if(!parameters.bucket_list && !parameters.to_slot.empty){
 	parameters.slot_occupied = true
     }
 
@@ -1210,8 +1211,8 @@ function move_slot(parameters) {
 	// do something else?
     }
     else {
-	console.log("ERROR updating from_slot", parameters.from_slot_id, agenda_globals.slot_status[parameters.from_slot_id]);
-	return;
+	console.log("WARNING -- nothing to delete when updating from_slot", parameters.from_slot_id, agenda_globals.slot_status[parameters.from_slot_id]);
+	//return;
     }
     parameters.session.slot_status_key = parameters.to_slot_id;
 
