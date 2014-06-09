@@ -25,7 +25,7 @@
     {% if snapshot %}Snapshot of{% endif %}
     {% if doc.get_state_slug != "approved" %}Proposed{% endif %}
     Charter for "{{ group.name }}"
-    (<a {% if group.type.slug == "wg" %}href="{% url "ietf.wginfo.views.group_charter" acronym=group.acronym %}"{% endif %}>{{ group.acronym }}</a>) {{ group.type.name }}
+    (<a {% if group.type_id == "wg" or group.type_id == "rg" %}href="{% url "ietf.group.info.group_charter" group_type=group.type_id acronym=group.acronym %}"{% endif %}>{{ group.acronym }}</a>) {{ group.type.name }}
   </div>
 
   <table id="metatable" width="100%">
@@ -38,7 +38,7 @@
       <td>
         <div>
         <a title="{{ doc.get_state.desc }}"
-            {% if not snapshot and user|has_role:"Area Director,Secretariat" %} 
+            {% if not snapshot and can_manage %}
                class="editlink" href="{% url "charter_change_state" name=doc.name %}"
             {% endif %}>
             {{ doc.get_state.name }}
@@ -69,7 +69,7 @@
 
    <tr>
     <td>Responsible AD:</td>
-    <td><a {% if request.user|has_role:"Area Director,Secretariat" %}class="editlink" href="{% url "charter_edit_ad" name=doc.name %}"{% endif %}>{{ doc.ad|default:"none" }}</a> </td>
+    <td><a {% if user|has_role:"Area Director,Secretariat" %}class="editlink" href="{% url "charter_edit_ad" name=doc.name %}"{% endif %}>{{ doc.ad|default:"none" }}</a> </td>
    </tr>
 
     <tr><td colspan='2'><hr size='1' noshade /></td></tr>
@@ -94,13 +94,13 @@
   </div>
 
   <div class="actions">
-    {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
+    {% if not snapshot and can_manage %}
     {% if chartering  %}
       {% url "charter_startstop_process" name=doc.name option='abandon' as abandon_url %}{% if abandon_url %}<a class="button" href="{{ abandon_url }}">Abandon Effort</a>{% endif %}
 
-    {% if request.user|has_role:"Secretariat" %}
-      {% url "charter_approve" name=doc.name as approve_url %}{% if approve_url %}<a class="button" href="{{ approve_url }}">Approve Charter</a>{% endif %}
-    {% endif %}
+      {% if user|has_role:"Secretariat" %}
+        {% url "charter_approve" name=doc.name as approve_url %}{% if approve_url %}<a class="button" href="{{ approve_url }}">Approve Charter</a>{% endif %}
+      {% endif %}
 
     {% else %}
       {% if group.state_id == "proposed" or group.state_id == "bof" %}
@@ -118,7 +118,7 @@
 
 <h3>Charter {{ doc.canonical_name }}-{{ doc.rev }}
 
-{% if not snapshot and user|has_role:"Area Director,Secretariat" and chartering and group.state_id != "conclude" %}
+{% if not snapshot and can_manage and chartering and group.state_id != "conclude" %}
 <a class="edit" href="{% url "charter_submit" name=doc.name %}">Change charter text</a>
 {% endif %}
 </h3>
@@ -131,13 +131,13 @@
 
 {% if not snapshot and chartering %}
 <h3>Proposed Milestones
-{% if user|has_role:"Area Director,Secretariat" %}
-<a class="edit" href="{% url "wg_edit_charter_milestones" acronym=doc.group.acronym %}">Edit charter milestones</a>
+{% if can_manage %}
+<a class="edit" href="{% url "group_edit_charter_milestones" group_type=doc.group.type_id acronym=doc.group.acronym %}">Edit charter milestones</a>
 {% endif %}
 </h3>
 
 {% if milestones %}
-{% include "wginfo/milestones.html" %}
+{% include "group/milestones.html" %}
 {% else %}
 <p>No milestones for charter found.</p>
 {% endif %}

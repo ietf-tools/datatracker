@@ -1,4 +1,4 @@
-{% extends "wginfo/group_base.html" %}
+{% extends "group/group_base.html" %}
 
 {% block group_subtitle %}Documents{% endblock %}
 
@@ -7,7 +7,7 @@
 
 {% include "doc/search/search_results.html" %}
 
-{% include "doc/search/search_results.html" with docs=docs_related meta=meta_related %}
+{% include "doc/search/search_results.html" with docs=docs_related meta=meta_related skip_no_matches_warning=True %}
 
 </div>
 {% endblock group_content %}

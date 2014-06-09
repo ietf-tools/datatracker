@@ -42,7 +42,7 @@ tr.milestone.add { font-style: italic; }
 <noscript>This page depends on Javascript being enabled to work properly.</noscript>
 
 <p>Links:
-  <a href="{% url "group_charter" acronym=group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>
+  <a href="{% url "group_charter" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>
   - <a href="{% url "doc_view" name=group.charter.canonical_name %}">{{ group.charter.canonical_name }}</a>
 </p>
 
@@ -51,14 +51,13 @@ tr.milestone.add { font-style: italic; }
 
 {% if needs_review %}
 Note that as {{ group.type.name }} Chair you cannot edit descriptions of existing
-milestones and milestones you add are subject to review by the Area
-Director.
+milestones and milestones you add are subject to review by the {{ reviewer }}.
 {% endif %}
 </p>
 
 {% if can_reset %}
 <p>
-You can <a href="{% url "wg_reset_charter_milestones" acronym=group.acronym %}">reset
+You can <a href="{% url "group_reset_charter_milestones" group_type=group.type_id acronym=group.acronym %}">reset
 this list</a> to the milestones currently in use for the {{ group.acronym }} {{ group.type.name }}.
 </p>
 {% endif %}
@@ -84,14 +83,14 @@ this list</a> to the milestones currently in use for the {{ group.acronym }} {{ 
   </td>
 </tr>
 
-<tr class="edit-milestone{% if form.changed %} changed{% endif %}"><td colspan="2">{% include "wginfo/milestone_form.html" %}</td></tr>
+<tr class="edit-milestone{% if form.changed %} changed{% endif %}"><td colspan="2">{% include "group/milestone_form.html" %}</td></tr>
 {% endfor %}
-<tr class="milestone add"><td></td><td>Add {% if milestone_set == "chartering" %}charter{% endif%} milestone {% if needs_review %}for AD review{% endif %}</td></tr>
-<tr class="edit-milestone template"><td colspan="2">{% include "wginfo/milestone_form.html" with form=empty_form %}</td></tr>
+<tr class="milestone add"><td></td><td>Add {% if milestone_set == "chartering" %}charter{% endif%} milestone {% if needs_review %}for {{ reviewer }} review{% endif %}</td></tr>
+<tr class="edit-milestone template"><td colspan="2">{% include "group/milestone_form.html" with form=empty_form %}</td></tr>
 </table>
 
 <div class="actions">
-  <a class="button" href="{% if milestone_set == "charter" %}{% url "doc_view" name=group.charter.canonical_name %}{% else %}{% url "group_charter" acronym=group.acronym %}{% endif %}">Cancel</a>
+  <a class="button" href="{% if milestone_set == "charter" %}{% url "doc_view" name=group.charter.canonical_name %}{% else %}{% url "group_charter" group_type=group.type_id acronym=group.acronym %}{% endif %}">Cancel</a>
   <input class="button" type="submit" data-labelsave="Save" data-labelreview="Review changes" value="Save" style="display:none"/>
   <input type="hidden" name="action" value="save">
 </div>

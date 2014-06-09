@@ -72,10 +72,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   </ul>
   </div></div></li>
   
-  <li style="padding-top:0;"><a href="/wg/">Active WGs</a></li>
-  <li><a href="{% url "ietf.wginfo.views.chartering_wgs" %}">Chartering WGs</a></li>
-  <li><a href="{% url "ietf.wginfo.views.bofs" %}">BoFs</a></li>
-  <li><a href="http://tools.ietf.org/wg/concluded">Concluded WGs</a></li>
+  <li style="padding-top:0;"><a href="{% url "ietf.group.info.active_groups" group_type="wg" %}">Active WGs</a></li>
+  <li style="padding-top:0;"><a href="{% url "ietf.group.info.active_groups" group_type="rg" %}">Active RGs</a></li>
+  <li><a href="{% url "ietf.group.info.chartering_groups" %}">Chartering</a></li>
+  <li><a href="{% url "ietf.group.info.bofs" group_type="wg" %}">BoFs</a></li>
+  <li><a href="{% url "ietf.group.info.concluded_groups" %}">Concluded</a></li>
   <li><a href="http://www.ietf.org/list/nonwg.html">Non-WG Lists</a></li>
  
 

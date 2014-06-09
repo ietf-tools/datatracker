@@ -401,9 +401,9 @@ def approvals(request):
                               context_instance=RequestContext(request))
 
 
-@role_required("Secretariat", "WG Chair")
+@role_required("Secretariat", "WG Chair", "RG Chair")
 def add_preapproval(request):
-    groups = Group.objects.filter(type="wg").exclude(state="conclude").order_by("acronym").distinct()
+    groups = Group.objects.filter(type__in=("wg", "rg")).exclude(state="conclude").order_by("acronym").distinct()
 
     if not has_role(request.user, "Secretariat"):
         groups = groups.filter(role__person__user=request.user,role__name__in=['ad','chair','delegate','secr'])
@@ -427,7 +427,7 @@ def add_preapproval(request):
                                'form': form },
                               context_instance=RequestContext(request))
 
-@role_required("Secretariat", "WG Chair")
+@role_required("Secretariat", "WG Chair", "RG Chair")
 def cancel_preapproval(request, preapproval_id):
     preapproval = get_object_or_404(Preapproval, pk=preapproval_id)
 

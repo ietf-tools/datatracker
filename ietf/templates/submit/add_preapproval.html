@@ -18,8 +18,8 @@ form .actions a { display: inline-block; margin-right: 1em; }
 
 <h2>Add Pre-Approval</h2>
 
-<p>You can register a pre-approved draft name. Then the WG Chair
-approval step of WG -00 submissions is suspended for that draft name
+<p>You can register a pre-approved draft name. Then the chair
+approval step of group -00 submissions is suspended for that draft name
 so a future submission is posted to the data tracker immediately.</p>
 
 <p>When the revision 00 draft is submitted, the pre-approval will not
@@ -33,12 +33,12 @@ later cancel the pre-approval to get rid of it.</p>
 like <code>.txt</code> in the name.</p>
 
 {% if user|has_role:"Secretariat" %}
-<p>Only WG submissions are subject to approval and are thus pre-approvable.</p>
+<p>Only group submissions are subject to approval and are thus pre-approvable.</p>
 {% else %}
-<p>As WG Chair{% if groups|length > 1 %} of {{ groups|length }} groups{% endif %} you can pre-approve draft names on the form:
+<p>As chair{% if groups|length > 1 %} of {{ groups|length }} groups{% endif %} you can pre-approve draft names on the form (click to pre-fill):
   <table>
   {% for g in groups %}
-    <tr><td class="name-template">draft-ietf-{{ g.acronym }}-<i>something</i></td></tr>
+    <tr><td class="name-template">draft-{% if g.type_id == "rg"%}irtf{% else %}ietf{% endif %}-{{ g.acronym }}-<i>something</i></td></tr>
   {% endfor %}
   </table>
 </p>
@@ -56,8 +56,8 @@ like <code>.txt</code> in the name.</p>
 
     <tr>
       <td class="actions" colspan="2">
-      <a href="{% url "submit_approvals" %}#preapprovals">Back</a>
-      <input type="submit" value="Add pre-approval" />
+      <a class="button" href="{% url "submit_approvals" %}#preapprovals">Cancel</a>
+      <input class="button" type="submit" value="Add pre-approval" />
       </td>
     </tr>
   </table>
@@ -68,7 +68,8 @@ like <code>.txt</code> in the name.</p>
 {% block scripts %}
 jQuery(function () {
     jQuery(".name-template").click(function (){
-        jQuery("form.add-preapproval input[name=name]").val(jQuery(this).text().replace("something", ""));
+        // clear text first to make sure the cursor ends up at the end
+        jQuery("form.add-preapproval input[name=name]").text("").focus().val(jQuery(this).text().replace("something", ""));
     });
 });
 {% endblock %}

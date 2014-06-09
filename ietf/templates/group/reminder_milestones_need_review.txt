@@ -1,4 +1,4 @@
-{% autoescape off %}{% filter wordwrap:73 %}{{ milestones|length }} new milestone{{ milestones|pluralize }} in "{{ group.name }}" {% if milestones|length > 1 %}need{% else %}needs{%endif %} an AD review:
+{% autoescape off %}{% filter wordwrap:73 %}{{ milestones|length }} new milestone{{ milestones|pluralize }} in "{{ group.name }}" {% if milestones|length > 1 %}need{% else %}needs{%endif %} review by the {{ reviewer }}:
 
 {% for m in milestones %}"{{ m.desc }}"{% if m.days_ready != None %}
 Waiting for {{ m.days_ready }} day{{ m.days_ready|pluralize }}.{% endif %}

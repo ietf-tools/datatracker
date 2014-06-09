@@ -34,12 +34,13 @@
 <h1>Customize Workflow for {{ group.acronym }} {{ group.type.name }}</h1>
 
 <p>Below you can customize the draft states and tags used in the
-<a href="{% url "group_charter" group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>. Note that some states are
+<a href="{% url "group_charter" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>. Note that some states are
 mandatory for group operation and cannot be deactivated.</p>
 
+{% if group.type_id == "wg" %}
 <p>You can see the default Working Group I-D State Diagram
 in <a href="http://tools.ietf.org/html/rfc6174#section-4.1">Section 4.1 of RFC6174</a>.</p>
-
+{% endif %}
 
 <h3>States</h3>
 

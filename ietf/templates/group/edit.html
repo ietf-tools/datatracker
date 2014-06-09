@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block title %}
-{% if wg %}
-Edit WG {{ wg.acronym }}
+{% if group %}
+Edit {{ group.type.name }} {{ group.acronym }}
 {% else %}
-Start chartering new WG
+Start chartering new group
 {% endif %}
 {% endblock %}
 
@@ -28,12 +28,12 @@ form.edit #id_urls { height: 4em; }
 {% load ietf_filters %}
 <h1>
 {% if action == "edit" %}
-Edit WG {{ wg.acronym }}
+Edit {{ group.type.name }} {{ group.acronym }}
 {% else %} 
   {% if action == "charter" %}
-Start chartering new WG
+Start chartering new group
   {% else %}
-Create new WG or BoF
+Create new group or BoF
   {% endif %}
 {% endif %}
 </h1>
@@ -43,13 +43,14 @@ chairs and delegates, need a Datatracker account to actually do
 so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
 
 <form class="edit" action="" method="post">{% csrf_token %}
+  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
   <table>
     {% for field in form.visible_fields %}
     <tr>
       <th>{{ field.label_tag }} {% if field.field.required %}*{% endif %}</th>
       <td>{{ field }}
-      {% if field.name == "ad" and user|has_role:"Area Director" %}
-      <label><input type="checkbox" name="ad" value="{{ login.pk }}" /> Assign to me</label>
+      {% if field.name == "ad" and request.user|has_role:"Area Director" %}
+      <label><input type="checkbox" name="ad" value="{{ request.user.person.pk }}" /> Assign to me</label>
       {% endif %}
       {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {{ field.errors }}
@@ -68,7 +69,7 @@ so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</
       <td></td>
       <td class="actions">
 	{% if action == "edit" %}
-          <a class="button" href="{% url "group_charter" acronym=wg.acronym %}">Cancel</a>
+          <a class="button" href="{% url "group_charter" group_type=group.type_id acronym=group.acronym %}">Cancel</a>
           <input class="button" type="submit" value="Save"/>
         {% else %} 
            {% if action == "charter" %}

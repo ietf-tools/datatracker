@@ -254,7 +254,7 @@ class EditSubmissionForm(forms.ModelForm):
         return document_date
 
 class PreapprovalForm(forms.Form):
-    name = forms.CharField(max_length=255, required=True, label="Pre-approved name", initial="draft-ietf-")
+    name = forms.CharField(max_length=255, required=True, label="Pre-approved name", initial="draft-")
 
     def clean_name(self):
         n = self.cleaned_data['name'].strip().lower()
@@ -268,7 +268,7 @@ class PreapprovalForm(forms.Form):
         if components[-1] == "00":
             raise forms.ValidationError("Name appears to end with a revision number -00 - do not include the revision.")
         if len(components) < 4:
-            raise forms.ValidationError("Name has less than four dash-delimited components - can't form a valid WG draft name.")
+            raise forms.ValidationError("Name has less than four dash-delimited components - can't form a valid group draft name.")
         if not components[-1]:
             raise forms.ValidationError("Name ends with a dash.")
         acronym = components[2]

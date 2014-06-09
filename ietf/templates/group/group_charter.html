@@ -1,4 +1,4 @@
-{% extends "wginfo/group_base.html" %}
+{% extends "group/group_base.html" %}
 
 {% load ietf_filters %}
 {% block group_subtitle %}Charter{% endblock %}
@@ -12,7 +12,7 @@ h2 a.button { margin-left: 0.5em; font-size: 13px; }
 <div class="ietf-box ietf-group-details">
 
 {% if group.state_id == "conclude" %}
-<span class="ietf-concluded-warning">Note: The data for concluded WGs
+<span class="ietf-concluded-warning">Note: The data for concluded {{ group.type.name }}s
 is occasionally incorrect.</span>
 {% endif %}
 
@@ -26,7 +26,7 @@ is occasionally incorrect.</span>
 
   <tr><td>Acronym:</td><td>{{ group.acronym }}</td></tr>
 
-  {% if group.parent %}
+  {% if group.parent and group.parent.type_id == "area" %}
   <tr><td>{{ group.parent.type.name }}:</td><td>{{ group.parent.name }} ({{ group.parent.acronym }})</td></tr>
   {% endif %}
 
@@ -46,8 +46,8 @@ is occasionally incorrect.</span>
       <a href="{% url "doc_view" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a> ({{ group.charter.get_state.name }})
       {% else %}
       none
-      {% if user|has_role:"Area Director,Secretariat" %}
-      - <a href="{% url "ietf.wginfo.edit.submit_initial_charter" acronym=group.acronym %}">Submit Charter</a>
+      {% if can_manage %}
+      - <a href="{% url "ietf.group.edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit Charter</a>
       {% endif %}
       {% endif %}
     </td>
@@ -64,6 +64,7 @@ is occasionally incorrect.</span>
   </td>
   </tr>
 
+  {% if group.parent.type_id == "area" %}
   <tr><td>Area Director:</td>
   <td>
     {% if group.areadirector %}
@@ -71,6 +72,7 @@ is occasionally incorrect.</span>
     {% else %}?{% endif %}
   </td>
   </tr>
+  {% endif %}
 
   {% if group.techadvisors %}
   <tr>
@@ -142,7 +144,7 @@ is occasionally incorrect.</span>
 
 {% with group.groupurl_set.all as urls %}
 {% if urls %}
-<p>In addition to the charter maintained by the IETF Secretariat, there is additional information about this working group on the Web at:
+<p>In addition to the charter, there is additional information about this group on the Web at:
   {% for url in urls %}
   <a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}, {% endif %}
   {% endfor %}
@@ -150,17 +152,17 @@ is occasionally incorrect.</span>
 {% endif %}
 {% endwith %}
 
-<h2>Charter for {% if group.state_id == "proposed" %}Proposed{% endif %} Working Group</h2>
+<h2>Charter for {% if group.state_id == "proposed" %}Proposed{% endif %} {{ long_group_type }}</h2>
 
 <p>{{ group.charter_text|escape|format_charter|safe }}</p>
 
 <h2>{% if group.state_id == "proposed" %}Proposed{% endif %} Milestones</h2>
 
-{% include "wginfo/milestones.html" with milestones=group.milestones %}
+{% include "group/milestones.html" with milestones=group.milestones %}
 
 {% if milestones_in_review %}
 <p>+ {{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
-currently in Area Director review.</p>
+currently in {{ milestone_reviewer }} review.</p>
 {% endif %}
 
 {% endblock %}

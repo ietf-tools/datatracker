@@ -66,15 +66,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <div class="ietf-navset">
   <div>
-  <a {% if selected == "documents" %}class="selected"{% else %}href="{% url "ietf.wginfo.views.group_documents" acronym=group.acronym %}"{% endif %}>Documents</a> |
-  <a {% if selected == "charter" %}class="selected"{% else %}href="{% url "ietf.wginfo.views.group_charter" acronym=group.acronym %}"{% endif %}>Charter</a> |
-  <a {% if selected == "history" %}class="selected"{% else %}href="{% url "ietf.wginfo.views.history" acronym=group.acronym %}"{% endif %}>History</a>
-  | <a href="{% url 'ietf.wginfo.views.dependencies_pdf' acronym=group.acronym %}">Dependency Graph</a>
+  <a {% if selected == "documents" %}class="selected"{% else %}href="{% url "ietf.group.info.group_documents" group_type=group.type_id acronym=group.acronym %}"{% endif %}>Documents</a> |
+  <a {% if selected == "charter" %}class="selected"{% else %}href="{% url "ietf.group.info.group_charter" group_type=group.type_id acronym=group.acronym %}"{% endif %}>Charter</a> |
+  <a {% if selected == "history" %}class="selected"{% else %}href="{% url "ietf.group.info.history" group_type=group.type_id acronym=group.acronym %}"{% endif %}>History</a>
+  | <a href="{% url 'ietf.group.info.dependencies_pdf' group_type=group.type_id acronym=group.acronym %}">Dependency Graph</a>
   {% if group.list_archive|startswith:"http:" or group.list_archive|startswith:"https:" or group.list_archive|startswith:"ftp:" %}
   | <a href="{{ group.list_archive }}">List Archive &raquo;</a>
   {% endif %}
   {% if group.has_tools_page %}
-  | <a href="http://tools.ietf.org/wg/{{ group.acronym }}/">Tools WG Page &raquo;</a>
+  | <a href="http://tools.ietf.org/{{ group.type_id }}/{{ group.acronym }}/">Tools {{ group.type.name }} Page &raquo;</a>
   {% endif %}
   </div>
 

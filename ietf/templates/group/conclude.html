@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Request closing of {{ wg.acronym }} {{ wg.type.name }}{% endblock %}
+{% block title %}Request closing of {{ group.acronym }} {{ group.type.name }}{% endblock %}
 
 {% block morecss %}
 #id_instructions {
@@ -14,7 +14,7 @@ form.conclude .actions {
 {% endblock %}
 
 {% block content %}
-<h1>Request closing of {{ wg.acronym }} {{ wg.type.name }}</h1>
+<h1>Request closing of {{ group.acronym }} {{ group.type.name }}</h1>
 
 <p>
    Please provide instructions regarding the disposition of each
@@ -29,7 +29,7 @@ form.conclude .actions {
     {{ form.as_table }}
     <tr>
       <td colspan="2" class="actions">
-        <a class="button" href="{% url "group_charter" acronym=wg.acronym %}">Cancel</a>
+        <a class="button" href="{% url "group_charter" group_type=group.type_id acronym=group.acronym %}">Cancel</a>
         <input class="button" type="submit" value="Send request"/>
       </td>
     </tr>

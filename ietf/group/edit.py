@@ -1,4 +1,4 @@
-# edit/create view for WGs
+# edit/create view for groups
 
 import re
 import os
@@ -6,11 +6,11 @@ import datetime
 import shutil
 
 from django import forms
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseForbidden
-from django.template import RequestContext
 from django.utils.html import mark_safe
 from django.http import Http404, HttpResponse
+from django.contrib.auth.decorators import login_required
 
 import debug                            # pyflakes:ignore
 
@@ -18,15 +18,15 @@ from ietf.doc.models import DocAlias, DocTagName, Document, State, save_document
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
-from ietf.group.utils import save_group_in_history
-from ietf.ietfauth.utils import role_required, has_role
+from ietf.group.utils import save_group_in_history, can_manage_group_type
+from ietf.ietfauth.utils import has_role
 from ietf.person.forms import EmailsField
 from ietf.person.models import Person, Email
-from ietf.wginfo.mails import email_secretariat
+from ietf.group.mails import email_secretariat
 
 MAX_GROUP_DELEGATES = 3
 
-class WGForm(forms.Form):
+class GroupForm(forms.Form):
     name = forms.CharField(max_length=255, label="Name", required=True)
     acronym = forms.CharField(max_length=10, label="Acronym", required=True)
     state = forms.ModelChoiceField(GroupStateName.objects.all(), label="State", required=True)
@@ -35,17 +35,21 @@ class WGForm(forms.Form):
     techadv = EmailsField(label="Technical Advisors", required=False)
     delegates = EmailsField(label="Delegates", required=False, help_text=mark_safe("Type in name to search for person<br>Chairs can delegate the authority to update the state of group documents - max %s persons at a given time" % MAX_GROUP_DELEGATES))
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
-    parent = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), label="IETF Area", empty_label="(None)", required=False)
+    parent = forms.ModelChoiceField(Group.objects.filter(state="active").order_by('name'), empty_label="(None)", required=False)
     list_email = forms.CharField(max_length=64, required=False)
     list_subscribe = forms.CharField(max_length=255, required=False)
     list_archive = forms.CharField(max_length=255, required=False)
     urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", help_text="Format: http://site/path (Optional description). Separate multiple entries with newline.", required=False)
 
     def __init__(self, *args, **kwargs):
-        self.wg = kwargs.pop('wg', None)
+        self.group = kwargs.pop('group', None)
         self.confirmed = kwargs.pop('confirmed', False)
+        self.group_type = kwargs.pop('group_type', False)
 
         super(self.__class__, self).__init__(*args, **kwargs)
+
+        if self.group_type == "rg":
+            self.fields["state"].queryset = self.fields["state"].queryset.exclude(slug__in=("bof", "bof-conc"))
 
         # if previous AD is now ex-AD, append that person to the list
         ad_pk = self.initial.get('ad')
@@ -55,50 +59,58 @@ class WGForm(forms.Form):
 
         self.confirm_msg = ""
         self.autoenable_confirm = False
-        if self.wg:
+        if self.group:
             self.fields['acronym'].widget.attrs['readonly'] = True
+
+        if self.group_type == "rg":
+            self.fields['ad'].widget = forms.HiddenInput()
+            self.fields['parent'].queryset = self.fields['parent'].queryset.filter(acronym="irtf")
+            self.fields['parent'].widget = forms.HiddenInput()
+        else:
+            self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type="area")
+            self.fields['parent'].label = "IETF Area"
 
     def clean_acronym(self):
         self.confirm_msg = ""
         self.autoenable_confirm = False
 
-        # Changing the acronym of an already existing WG will cause 404s all
+        # Changing the acronym of an already existing group will cause 404s all
         # over the place, loose history, and generally muck up a lot of
         # things, so we don't permit it
-        if self.wg:
-            return self.wg.acronym # no change permitted
+        if self.group:
+            return self.group.acronym # no change permitted
 
         acronym = self.cleaned_data['acronym'].strip().lower()
 
-        # be careful with acronyms, requiring confirmation to take existing or override historic
         if not re.match(r'^[a-z][a-z0-9]+$', acronym):
             raise forms.ValidationError("Acronym is invalid, must be at least two characters and only contain lowercase letters and numbers starting with a letter.")
 
+        # be careful with acronyms, requiring confirmation to take existing or override historic
         existing = Group.objects.filter(acronym__iexact=acronym)
         if existing:
             existing = existing[0]
 
-        if existing and existing.type_id == "wg":
+        if existing and existing.type_id == self.group_type:
             if self.confirmed:
                 return acronym # take over confirmed
 
             if existing.state_id == "bof":
-                self.confirm_msg = "Turn BoF %s into proposed WG and start chartering it" % existing.acronym
+                self.confirm_msg = "Turn BoF %s into proposed %s and start chartering it" % (existing.acronym, existing.type.name)
                 self.autoenable_confirm = True
                 raise forms.ValidationError("Warning: Acronym used for an existing BoF (%s)." % existing.name)
             else:
-                self.confirm_msg = "Set state of %s WG to proposed and start chartering it" % existing.acronym
+                self.confirm_msg = "Set state of %s %s to proposed and start chartering it" % (existing.acronym, existing.type.name)
                 self.autoenable_confirm = False
-                raise forms.ValidationError("Warning: Acronym used for an existing WG (%s, %s)." % (existing.name, existing.state.name if existing.state else "unknown state"))
+                raise forms.ValidationError("Warning: Acronym used for an existing %s (%s, %s)." % (existing.type.name, existing.name, existing.state.name if existing.state else "unknown state"))
 
         if existing:
             raise forms.ValidationError("Acronym used for an existing group (%s)." % existing.name)
 
-        old = GroupHistory.objects.filter(acronym__iexact=acronym, type="wg")
+        old = GroupHistory.objects.filter(acronym__iexact=acronym, type__in=("wg", "rg"))
         if old and not self.confirmed:
             self.confirm_msg = "Confirm reusing acronym %s" % old[0].acronym
             self.autoenable_confirm = False
-            raise forms.ValidationError("Warning: Acronym used for a historic WG.")
+            raise forms.ValidationError("Warning: Acronym used for a historic group.")
 
         return acronym
 
@@ -121,98 +133,107 @@ def format_urls(urls, fs="\n"):
             res.append(u.url)
     return fs.join(res)
 
-def get_or_create_initial_charter(wg):
+def get_or_create_initial_charter(group, group_type):
+    if group_type == "rg":
+        top_org = "irtf"
+    else:
+        top_org = "ietf"
+
+    charter_name = "charter-%s-%s" % (top_org, group.acronym)
+
     try:
-        charter = Document.objects.get(docalias__name="charter-ietf-%s" % wg.acronym)
+        charter = Document.objects.get(docalias__name=charter_name)
     except Document.DoesNotExist:
         charter = Document(
-            name="charter-ietf-" + wg.acronym,
+            name=charter_name,
             type_id="charter",
-            title=wg.name,
-            group=wg,
-            abstract=wg.name,
+            title=group.name,
+            group=group,
+            abstract=group.name,
             rev="00-00",
         )
         charter.save()
         charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
                 
-       # Create an alias as well
-        DocAlias.objects.create(
-            name=charter.name,
-            document=charter
-        )
+        # Create an alias as well
+        DocAlias.objects.create(name=charter.name, document=charter)
 
     return charter
 
-@role_required('Area Director', 'Secretariat')
-def submit_initial_charter(request, acronym=None):
-    wg = get_object_or_404(Group, acronym=acronym)
-    if not wg.charter:
-        wg.charter = get_or_create_initial_charter(wg)
-        wg.save()
-    return redirect('charter_submit', name=wg.charter.name, option="initcharter")
-        
-@role_required('Area Director', 'Secretariat')
-def edit(request, acronym=None, action="edit"):
-    """Edit or create a WG, notifying parties as
+@login_required
+def submit_initial_charter(request, group_type, acronym=None):
+    if not can_manage_group_type(request.user, group_type):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
+    group = get_object_or_404(Group, acronym=acronym)
+    if not group.charter:
+        group.charter = get_or_create_initial_charter(group, group_type)
+        group.save()
+
+    return redirect('charter_submit', name=group.charter.name, option="initcharter")
+
+@login_required
+def edit(request, group_type=None, acronym=None, action="edit"):
+    """Edit or create a group, notifying parties as
     necessary and logging changes as group events."""
+    if not can_manage_group_type(request.user, group_type):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
     if action == "edit":
-        wg = get_object_or_404(Group, acronym=acronym)
-        new_wg = False
+        group = get_object_or_404(Group, acronym=acronym)
+        new_group = False
     elif action in ("create","charter"):
-        wg = None
-        new_wg = True
+        group = None
+        new_group = True
     else:
         raise Http404
 
-    login = request.user.person
-
     if request.method == 'POST':
-        form = WGForm(request.POST, wg=wg, confirmed=request.POST.get("confirmed", False))
+        form = GroupForm(request.POST, group=group, confirmed=request.POST.get("confirmed", False), group_type=group_type)
         if form.is_valid():
             clean = form.cleaned_data
-            if new_wg:
+            if new_group:
                 try:
-                    wg = Group.objects.get(acronym=clean["acronym"])
-                    save_group_in_history(wg)
-                    wg.time = datetime.datetime.now()
-                    wg.save()
+                    group = Group.objects.get(acronym=clean["acronym"])
+                    save_group_in_history(group)
+                    group.time = datetime.datetime.now()
+                    group.save()
                 except Group.DoesNotExist:
-                    wg = Group.objects.create(name=clean["name"],
+                    group = Group.objects.create(name=clean["name"],
                                               acronym=clean["acronym"],
-                                              type=GroupTypeName.objects.get(slug="wg"),
+                                              type=GroupTypeName.objects.get(slug=group_type),
                                               state=clean["state"]
                                               )
 
-                e = ChangeStateGroupEvent(group=wg, type="changed_state")
-                e.time = wg.time
-                e.by = login
+                e = ChangeStateGroupEvent(group=group, type="changed_state")
+                e.time = group.time
+                e.by = request.user.person
                 e.state_id = clean["state"].slug
                 e.desc = "Group created in state %s" % clean["state"].name
                 e.save()
             else:
-                save_group_in_history(wg)
+                save_group_in_history(group)
 
 
-            if action=="charter" and not wg.charter:  # make sure we have a charter
-                wg.charter = get_or_create_initial_charter(wg)
+            if action == "charter" and not group.charter:  # make sure we have a charter
+                group.charter = get_or_create_initial_charter(group, group_type)
 
             changes = []
                 
             def desc(attr, new, old):
                 entry = "%(attr)s changed to <b>%(new)s</b> from %(old)s"
-                if new_wg:
+                if new_group:
                     entry = "%(attr)s changed to <b>%(new)s</b>"
                     
                 return entry % dict(attr=attr, new=new, old=old)
 
             def diff(attr, name):
-                v = getattr(wg, attr)
+                v = getattr(group, attr)
                 if clean[attr] != v:
                     changes.append(desc(name, clean[attr], v))
-                    setattr(wg, attr, clean[attr])
+                    setattr(group, attr, clean[attr])
 
-            prev_acronym = wg.acronym
+            prev_acronym = group.acronym
 
             # update the attributes, keeping track of what we're doing
             diff('name', "Name")
@@ -224,126 +245,129 @@ def edit(request, acronym=None, action="edit"):
             diff('list_subscribe', "Mailing list subscribe address")
             diff('list_archive', "Mailing list archive")
 
-            if not new_wg and wg.acronym != prev_acronym and wg.charter:
-                save_document_in_history(wg.charter)
+            if not new_group and group.acronym != prev_acronym and group.charter:
+                save_document_in_history(group.charter)
                 DocAlias.objects.get_or_create(
-                    name="charter-ietf-%s" % wg.acronym,
-                    document=wg.charter,
+                    name="charter-ietf-%s" % group.acronym,
+                    document=group.charter,
                     )
-                old = os.path.join(wg.charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (prev_acronym, wg.charter.rev))
+                old = os.path.join(group.charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (prev_acronym, group.charter.rev))
                 if os.path.exists(old):
-                    new = os.path.join(wg.charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
+                    new = os.path.join(group.charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (group.acronym, group.charter.rev))
                     shutil.copy(old, new)
 
             # update roles
             for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors"), ('delegates', 'delegate', "Delegates")]:
                 new = clean[attr]
-                old = Email.objects.filter(role__group=wg, role__name=slug).select_related("person")
+                old = Email.objects.filter(role__group=group, role__name=slug).select_related("person")
                 if set(new) != set(old):
                     changes.append(desc(title,
                                         ", ".join(x.get_name() for x in new),
                                         ", ".join(x.get_name() for x in old)))
-                    wg.role_set.filter(name=slug).delete()
+                    group.role_set.filter(name=slug).delete()
                     for e in new:
-                        Role.objects.get_or_create(name_id=slug, email=e, group=wg, person=e.person)
+                        Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
 
             # update urls
             new_urls = clean['urls']
-            old_urls = format_urls(wg.groupurl_set.order_by('url'), ", ")
+            old_urls = format_urls(group.groupurl_set.order_by('url'), ", ")
             if ", ".join(sorted(new_urls)) != old_urls:
                 changes.append(desc('Urls', ", ".join(sorted(new_urls)), old_urls))
-                wg.groupurl_set.all().delete()
+                group.groupurl_set.all().delete()
                 # Add new ones
                 for u in new_urls:
                     m = re.search('(?P<url>[\w\d:#@%/;$()~_?\+-=\\\.&]+)( \((?P<name>.+)\))?', u)
                     if m:
                         if m.group('name'):
-                            url = GroupURL(url=m.group('url'), name=m.group('name'), group=wg)
+                            url = GroupURL(url=m.group('url'), name=m.group('name'), group=group)
                         else:
-                            url = GroupURL(url=m.group('url'), name='', group=wg)
+                            url = GroupURL(url=m.group('url'), name='', group=group)
                         url.save()
 
-            wg.time = datetime.datetime.now()
+            group.time = datetime.datetime.now()
 
-            if changes and not new_wg:
+            if changes and not new_group:
                 for c in changes:
-                    GroupEvent.objects.create(group=wg, by=login, type="info_changed", desc=c)
+                    GroupEvent.objects.create(group=group, by=request.user.person, type="info_changed", desc=c)
 
-            wg.save()
+            group.save()
 
             if action=="charter":
-                return redirect('charter_submit', name=wg.charter.name, option="initcharter")
+                return redirect('charter_submit', name=group.charter.name, option="initcharter")
 
-            return redirect('group_charter', acronym=wg.acronym)
+            return redirect('group_charter', group_type=group.type_id, acronym=group.acronym)
     else: # form.is_valid()
-        if not new_wg:
-            init = dict(name=wg.name,
-                        acronym=wg.acronym,
-                        state=wg.state,
-                        chairs=Email.objects.filter(role__group=wg, role__name="chair"),
-                        secretaries=Email.objects.filter(role__group=wg, role__name="secr"),
-                        techadv=Email.objects.filter(role__group=wg, role__name="techadv"),
-                        delegates=Email.objects.filter(role__group=wg, role__name="delegate"),
-                        ad=wg.ad_id if wg.ad else None,
-                        parent=wg.parent.id if wg.parent else None,
-                        list_email=wg.list_email if wg.list_email else None,
-                        list_subscribe=wg.list_subscribe if wg.list_subscribe else None,
-                        list_archive=wg.list_archive if wg.list_archive else None,
-                        urls=format_urls(wg.groupurl_set.all()),
+        if not new_group:
+            init = dict(name=group.name,
+                        acronym=group.acronym,
+                        state=group.state,
+                        chairs=Email.objects.filter(role__group=group, role__name="chair"),
+                        secretaries=Email.objects.filter(role__group=group, role__name="secr"),
+                        techadv=Email.objects.filter(role__group=group, role__name="techadv"),
+                        delegates=Email.objects.filter(role__group=group, role__name="delegate"),
+                        ad=group.ad_id if group.ad else None,
+                        parent=group.parent.id if group.parent else None,
+                        list_email=group.list_email if group.list_email else None,
+                        list_subscribe=group.list_subscribe if group.list_subscribe else None,
+                        list_archive=group.list_archive if group.list_archive else None,
+                        urls=format_urls(group.groupurl_set.all()),
                         )
         else:
-            init = dict(ad=login.id if has_role(request.user, "Area Director") else None,
+            init = dict(ad=request.user.person.id if group_type == "wg" and has_role(request.user, "Area Director") else None,
                         )
-        form = WGForm(initial=init, wg=wg)
+        form = GroupForm(initial=init, group=group, group_type=group_type)
 
-    return render_to_response('wginfo/edit.html',
-                              dict(wg=wg,
-                                   form=form,
-                                   action=action,
-                                   user=request.user,
-                                   login=login),
-                              context_instance=RequestContext(request))
+    return render(request, 'group/edit.html',
+                  dict(group=group,
+                       form=form,
+                       action=action))
 
 
 
 class ConcludeForm(forms.Form):
     instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True)
 
-@role_required('Area Director','Secretariat')
-def conclude(request, acronym):
-    """Request the closing of a WG, prompting for instructions."""
-    wg = get_object_or_404(Group, acronym=acronym)
+@login_required
+def conclude(request, group_type, acronym):
+    """Request the closing of group, prompting for instructions."""
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
-    login = request.user.person
+    if not can_manage_group_type(request.user, group_type):
+        return HttpResponseForbidden("You don't have permission to access this view")
 
     if request.method == 'POST':
         form = ConcludeForm(request.POST)
         if form.is_valid():
             instructions = form.cleaned_data['instructions']
 
-            email_secretariat(request, wg, "Request closing of group", instructions)
+            email_secretariat(request, group, "Request closing of group", instructions)
 
-            e = GroupEvent(group=wg, by=login)
+            e = GroupEvent(group=group, by=request.user.person)
             e.type = "requested_close"
             e.desc = "Requested closing group"
             e.save()
 
-            return redirect('group_charter', acronym=wg.acronym)
+            return redirect('group_charter', group_type=group.type_id, acronym=group.acronym)
     else:
         form = ConcludeForm()
 
-    return render_to_response('wginfo/conclude.html',
-                              dict(form=form,
-                                   wg=wg),
-                              context_instance=RequestContext(request))
+    return render(request, 'group/conclude.html',
+                  dict(form=form, group=group))
 
 
-def customize_workflow(request, acronym):
-    MANDATORY_STATES = ('c-adopt', 'wg-doc', 'sub-pub')
-
-    group = get_object_or_404(Group, acronym=acronym, type="wg")
-    if not request.user.is_authenticated() or not (has_role(request.user, "Secretariat") or group.role_set.filter(name="chair", person__user=request.user)):
+@login_required
+def customize_workflow(request, group_type, acronym):
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
+    if (not has_role(request.user, "Secretariat") and
+        not group.role_set.filter(name="chair", person__user=request.user)):
         return HttpResponseForbidden("You don't have permission to access this view")
+
+    if group_type == "rg":
+        stream_id = "irtf"
+        MANDATORY_STATES = ('candidat', 'active', 'rfc-edit', 'pub', 'dead')
+    else:
+        stream_id = "ietf"
+        MANDATORY_STATES = ('c-adopt', 'wg-doc', 'sub-pub')
 
     if request.method == 'POST':
         action = request.POST.get("action")
@@ -361,7 +385,7 @@ def customize_workflow(request, acronym):
 
             # redirect so the back button works correctly, otherwise
             # repeated POSTs fills up the history
-            return redirect("ietf.wginfo.edit.customize_workflow", acronym=group.acronym)
+            return redirect("ietf.group.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 
         if action == "setnextstates":
             try:
@@ -369,7 +393,7 @@ def customize_workflow(request, acronym):
             except State.DoesNotExist:
                 return HttpResponse("Invalid state %s" % request.POST.get("state"))
 
-            next_states = State.objects.filter(used=True, type='draft-stream-ietf', pk__in=request.POST.getlist("next_states"))
+            next_states = State.objects.filter(used=True, type='draft-stream-%s' % stream_id, pk__in=request.POST.getlist("next_states"))
             unused = group.unused_states.all()
             if set(next_states.exclude(pk__in=unused)) == set(state.next_states.exclude(pk__in=unused)):
                 # just use the default
@@ -378,7 +402,7 @@ def customize_workflow(request, acronym):
                 transitions, _ = GroupStateTransitions.objects.get_or_create(group=group, state=state)
                 transitions.next_states = next_states
 
-            return redirect("ietf.wginfo.edit.customize_workflow", acronym=group.acronym)
+            return redirect("ietf.group.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 
         if action == "settagactive":
             active = request.POST.get("active") == "1"
@@ -392,17 +416,16 @@ def customize_workflow(request, acronym):
             else:
                 group.unused_tags.add(tag)
 
-            return redirect("ietf.wginfo.edit.customize_workflow", acronym=group.acronym)
-
+            return redirect("ietf.group.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 
     # put some info for the template on tags and states
     unused_tags = group.unused_tags.all().values_list('slug', flat=True)
-    tags = DocTagName.objects.filter(slug__in=get_tags_for_stream_id("ietf"))
+    tags = DocTagName.objects.filter(slug__in=get_tags_for_stream_id(stream_id))
     for t in tags:
         t.used = t.slug not in unused_tags
 
     unused_states = group.unused_states.all().values_list('slug', flat=True)
-    states = State.objects.filter(used=True, type="draft-stream-ietf")
+    states = State.objects.filter(used=True, type="draft-stream-%s" % stream_id)
     transitions = dict((o.state, o) for o in group.groupstatetransitions_set.all())
     for s in states:
         s.used = s.slug not in unused_states
@@ -417,8 +440,8 @@ def customize_workflow(request, acronym):
         s.next_states_checkboxes = [(x in n, x in default_n, x) for x in states]
         s.used_next_states = [x for x in n if x.slug not in unused_states]
 
-    return render_to_response('wginfo/customize_workflow.html', {
+    return render(request, 'group/customize_workflow.html', {
             'group': group,
             'states': states,
             'tags': tags,
-            }, RequestContext(request))
+            })

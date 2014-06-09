@@ -270,8 +270,12 @@ class Document(DocumentInfo):
             a = self.docalias_set.filter(name__startswith="rfc")
             if a:
                 name = a[0].name
-        elif self.type_id == "charter":
-            return "charter-ietf-%s" % self.chartered_group.acronym
+#         elif self.type_id == "charter":
+#             if self.group.type.slug == "rg":
+#                 top_org = "irtf"
+#             else:
+#                 top_org = "ietf"
+#             return "charter-%s-%s" % (top_org, self.chartered_group.acronym)
         return name
 
     def canonical_docalias(self):

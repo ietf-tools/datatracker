@@ -7,4 +7,4 @@ The following Area Abbreviations are used in this document
 {{ area.acronym|upper }}	 - {{ area.name }}{% endfor %}
 {% for group in groups %}
 {{ group.name }} ({{ group.acronym }}) -- {{ group.parent.acronym|upper }}
-{% include "wginfo/group_entry.txt" %}{% endfor %}{% endautoescape %}
+{% include "group/group_entry.txt" %}{% endfor %}{% endautoescape %}

@@ -51,6 +51,7 @@ from ietf.community.models import CommunityList
 from ietf.doc.mails import email_ad
 from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
 from ietf.group.models import Role
+from ietf.group.utils import can_manage_group_type
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, role_required
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.person.models import Email
@@ -63,10 +64,10 @@ def render_document_top(request, doc, tab, name):
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id in ("draft","conflrev", "statchg"):
         tabs.append(("IESG Evaluation Record", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot,  None if ballot else "IESG Evaluation Ballot has not been created yet"))
-    elif doc.type_id == "charter":
-        tabs.append(("IESG Review", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot, None if ballot else "IEST Review Ballot has not been created yet"))
+    elif doc.type_id == "charter" and doc.group.type_id == "wg":
+        tabs.append(("IESG Review", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot, None if ballot else "IESG Review Ballot has not been created yet"))
 
-    if doc.type_id not in ["conflrev", "statchg"]:
+    if doc.type_id == "draft" or (doc.type_id == "charter" and doc.group.type_id == "wg"):
         tabs.append(("IESG Writeups", "writeup", urlreverse("doc_writeup", kwargs=dict(name=name)), True))
 
     tabs.append(("History", "history", urlreverse("doc_history", kwargs=dict(name=name)), True))
@@ -239,7 +240,7 @@ def document_main(request, name, rev=None):
         elif group.type_id in ("rg", "wg"):
             submission = "%s %s" % (group.acronym, group.type)
             if group.type_id == "wg":
-                submission = "<a href=\"%s\">%s</a>" % (urlreverse("wg_docs", kwargs=dict(acronym=doc.group.acronym)), submission)
+                submission = "<a href=\"%s\">%s</a>" % (urlreverse("group_docs", kwargs=dict(group_type=doc.group.type_id, acronym=doc.group.acronym)), submission)
             if doc.stream_id and doc.get_state_slug("draft-stream-%s" % doc.stream_id) == "c-adopt":
                 submission = "candidate for %s" % submission
 
@@ -410,6 +411,8 @@ def document_main(request, name, rev=None):
         if chartering and not snapshot:
             milestones = doc.group.groupmilestone_set.filter(state="charter")
 
+        can_manage = can_manage_group_type(request.user, doc.group.type_id)
+
         return render_to_response("doc/document_charter.html",
                                   dict(doc=doc,
                                        top=top,
@@ -422,6 +425,7 @@ def document_main(request, name, rev=None):
                                        ballot_summary=ballot_summary,
                                        group=group,
                                        milestones=milestones,
+                                       can_manage=can_manage,
                                        ),
                                   context_instance=RequestContext(request))
 

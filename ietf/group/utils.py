@@ -1,10 +1,9 @@
 import os
 
-from django.conf import settings
-
 from ietf.group.models import Group, RoleHistory
 from ietf.person.models import Email
 from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
+from ietf.ietfauth.utils import has_role
 
 
 def save_group_in_history(group):
@@ -27,28 +26,21 @@ def save_group_in_history(group):
 
 def get_charter_text(group):
     # get file path from settings. Syntesize file name from path, acronym, and suffix
+    c = group.charter
+
+    # find the latest, preferably approved, revision
+    for h in group.charter.history_set.exclude(rev="").order_by("time"):
+        h_appr = "-" not in h.rev
+        c_appr = "-" not in c.rev
+        if (h.rev > c.rev and not (c_appr and not h_appr)) or (h_appr and not c_appr):
+            c = h
+
+    filename = os.path.join(c.get_file_path(), "%s-%s.txt" % (c.canonical_name(), c.rev))
     try:
-        # Try getting charter from new charter tool
-        c = group.charter
-
-        # find the latest, preferably approved, revision
-        for h in group.charter.history_set.exclude(rev="").order_by("time"):
-            h_appr = "-" not in h.rev
-            c_appr = "-" not in c.rev
-            if (h.rev > c.rev and not (c_appr and not h_appr)) or (h_appr and not c_appr):
-                c = h
-
-        filename = os.path.join(c.get_file_path(), "%s-%s.txt" % (c.canonical_name(), c.rev))
         with open(filename) as f:
             return f.read()
     except IOError:
-        try:
-            filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, group.acronym) + ".desc.txt"
-            desc_file = open(filename)
-            desc = desc_file.read()
-        except BaseException:
-            desc = 'Error Loading Work Group Description'
-        return desc
+        return 'Error Loading Group Charter'
 
 def get_area_ads_emails(area):
     if area.acronym == 'none':
@@ -98,3 +90,18 @@ def save_milestone_in_history(milestone):
     copy_many_to_many_for_history(h, milestone)
 
     return h
+
+def can_manage_group_type(user, group_type):
+    if group_type == "rg":
+        return has_role(user, ('IRTF Chair', 'Secretariat'))
+    elif group_type == "wg":
+        return has_role(user, ('Area Director', 'Secretariat'))
+
+    return has_role(user, 'Secretariat')
+
+def milestone_reviewer_for_group_type(group_type):
+    if group_type == "rg":
+        return "IRTF Chair"
+    else:
+        return "Area Director"
+

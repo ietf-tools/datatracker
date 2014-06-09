@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Active IRTF Research Groups{% endblock %}
+
+{% block morecss %}
+.ietf-wg-table { width: 100%; max-width:50em; }
+.ietf-wg-table tr { vertical-align:top; }
+{% endblock morecss %}
+
+{% block content %}
+<h1>Active IRTF Research Groups</h1>
+
+<p>IRTF Chair:</p>
+
+<div style="margin-left:2em;">
+  <a href="mailto:irtf-chair@irtf.org">{{ irtf.chair.person.plain_name }}</a>
+</div>
+
+<p>Active Research Groups:</p>
+
+<div style="margin-left:2em;">
+   <table class="ietf-wg-table">
+      {% for group in groups %}
+      <tr>
+         <td width="10%;"><a href="{% url "ietf.group.info.group_documents" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
+         <td width="50%">{{ group.name }}</td>
+         <td width="40%">{% for chair in group.chairs %}<a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+      </tr>
+      {% endfor %}
+   </table>
+</div>
+
+{% endblock %}

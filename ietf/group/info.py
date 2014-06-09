@@ -36,22 +36,21 @@ import os
 import itertools
 from tempfile import mkstemp
 
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
-from django.template import RequestContext
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from django.views.decorators.cache import cache_page
 from django.db.models import Q
 
 from ietf.doc.views_search import SearchForm, retrieve_search_results
-from ietf.group.models import Group, Role
 from ietf.doc.models import State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
-from ietf.group.utils import get_charter_text
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
-from ietf.ietfauth.utils import has_role
+from ietf.group.models import Group, Role, ChangeStateGroupEvent
+from ietf.name.models import GroupTypeName
+from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type
 from ietf.utils.pipe import pipe
 
 def roles(group, role_name):
@@ -86,7 +85,9 @@ def fill_in_charter_info(group, include_drafts=False):
 def extract_last_name(role):
     return role.person.name_parts()[3]
 
-def wg_summary_area(request):
+def wg_summary_area(request, group_type):
+    if group_type != "wg":
+        raise Http404
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:
         area.ads = sorted(roles(area, "ad"), key=extract_last_name)
@@ -96,21 +97,25 @@ def wg_summary_area(request):
 
     areas = [a for a in areas if a.groups]
 
-    return render_to_response('wginfo/1wg-summary.txt',
-                              { 'areas': areas },
-                              content_type='text/plain; charset=UTF-8')
+    return render(request, 'group/1wg-summary.txt',
+                  { 'areas': areas },
+                  content_type='text/plain; charset=UTF-8')
 
-def wg_summary_acronym(request):
+def wg_summary_acronym(request, group_type):
+    if group_type != "wg":
+        raise Http404
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     groups = Group.objects.filter(type="wg", state="active").order_by("acronym").select_related("parent")
     for group in groups:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-    return render_to_response('wginfo/1wg-summary-by-acronym.txt',
-                              { 'areas': areas,
-                                'groups': groups },
-                              content_type='text/plain; charset=UTF-8')
+    return render(request, 'group/1wg-summary-by-acronym.txt',
+                  { 'areas': areas,
+                    'groups': groups },
+                  content_type='text/plain; charset=UTF-8')
 
-def wg_charters(request):
+def wg_charters(request, group_type):
+    if group_type != "wg":
+        raise Http404
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:
         area.ads = sorted(roles(area, "ad"), key=extract_last_name)
@@ -118,11 +123,13 @@ def wg_charters(request):
         for group in area.groups:
             fill_in_charter_info(group, include_drafts=True)
             group.area = area
-    return render_to_response('wginfo/1wg-charters.txt',
-                              { 'areas': areas },
-                              content_type='text/plain; charset=UTF-8')
+    return render(request, 'group/1wg-charters.txt',
+                  { 'areas': areas },
+                  content_type='text/plain; charset=UTF-8')
 
-def wg_charters_by_acronym(request):
+def wg_charters_by_acronym(request, group_type):
+    if group_type != "wg":
+        raise Http404
     areas = dict((a.id, a) for a in Group.objects.filter(type="area", state="active").order_by("name"))
 
     for area in areas.itervalues():
@@ -132,9 +139,17 @@ def wg_charters_by_acronym(request):
     for group in groups:
         fill_in_charter_info(group, include_drafts=True)
         group.area = areas.get(group.parent_id)
-    return render_to_response('wginfo/1wg-charters-by-acronym.txt',
-                              { 'groups': groups },
-                              content_type='text/plain; charset=UTF-8')
+    return render(request, 'group/1wg-charters-by-acronym.txt',
+                  { 'groups': groups },
+                  content_type='text/plain; charset=UTF-8')
+
+def active_groups(request, group_type):
+    if group_type == "wg":
+        return active_wgs(request)
+    elif group_type == "rg":
+        return active_rgs(request)
+    else:
+        raise Http404
 
 def active_wgs(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
@@ -148,43 +163,77 @@ def active_wgs(request):
         for group in area.groups:
             group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
 
-    return render_to_response('wginfo/active_wgs.html', {'areas':areas}, RequestContext(request))
+    return render(request, 'group/active_wgs.html', { 'areas':areas })
 
-def bofs(request):
-    groups = Group.objects.filter(type="wg", state="bof")
-    return render_to_response('wginfo/bofs.html',dict(groups=groups), RequestContext(request))
+def active_rgs(request):
+    irtf = Group.objects.get(acronym="irtf")
+    irtf.chair = roles(irtf, "chair").first()
 
-def chartering_wgs(request):
+    groups = Group.objects.filter(type="rg", state="active").order_by("acronym")
+    for group in groups:
+        group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
+
+    return render(request, 'group/active_rgs.html', { 'irtf': irtf, 'groups': groups })
+    
+def bofs(request, group_type):
+    groups = Group.objects.filter(type=group_type, state="bof")
+    return render(request, 'group/bofs.html',dict(groups=groups))
+
+def chartering_groups(request):
     charter_states = State.objects.filter(used=True, type="charter").exclude(slug__in=("approved", "notrev"))
-    groups = Group.objects.filter(type="wg", charter__states__in=charter_states).select_related("state", "charter")
 
-    for g in groups:
-        g.chartering_type = get_chartering_type(g.charter)
+    group_types = GroupTypeName.objects.filter(slug__in=("wg", "rg"))
 
-    return render_to_response('wginfo/chartering_wgs.html',
-                              dict(charter_states=charter_states,
-                                   groups=groups),
-                              RequestContext(request))
+    for t in group_types:
+        t.chartering_groups = Group.objects.filter(type=t, charter__states__in=charter_states).select_related("state", "charter").order_by("acronym")
+        t.can_manage = can_manage_group_type(request.user, t.slug)
 
+        for g in t.chartering_groups:
+            g.chartering_type = get_chartering_type(g.charter)
+
+    return render(request, 'group/chartering_groups.html',
+                  dict(charter_states=charter_states,
+                       group_types=group_types))
+
+def concluded_groups(request):
+    group_types = GroupTypeName.objects.filter(slug__in=("wg", "rg"))
+
+    for t in group_types:
+        t.concluded_groups = Group.objects.filter(type=t, state__in=("conclude", "bof-conc")).select_related("state", "charter").order_by("acronym")
+
+        # add start/conclusion date
+        d = dict((g.pk, g) for g in t.concluded_groups)
+
+        for g in t.concluded_groups:
+            g.start_date = g.conclude_date = None
+
+        for e in ChangeStateGroupEvent.objects.filter(group__in=t.concluded_groups, state="active").order_by("-time"):
+            d[e.group_id].start_date = e.time
+
+        for e in ChangeStateGroupEvent.objects.filter(group__in=t.concluded_groups, state="conclude").order_by("time"):
+            d[e.group_id].conclude_date = e.time
+
+    return render(request, 'group/concluded_groups.html',
+                  dict(group_types=group_types))
 
 def construct_group_menu_context(request, group, selected, others):
     """Return context with info for the group menu filled in."""
     actions = []
 
     is_chair = group.has_role(request.user, "chair")
-    is_ad_or_secretariat = has_role(request.user, ("Area Director", "Secretariat"))
+    can_manage = can_manage_group_type(request.user, group.type_id)
 
-    if group.state_id != "proposed" and (is_chair or is_ad_or_secretariat):
-        actions.append((u"Add or edit milestones", urlreverse("wg_edit_milestones", kwargs=dict(acronym=group.acronym))))
+    if group.state_id != "proposed" and (is_chair or can_manage):
+        actions.append((u"Add or edit milestones", urlreverse("group_edit_milestones", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
-    if group.state_id != "conclude" and is_ad_or_secretariat:
-        actions.append((u"Edit group", urlreverse("group_edit", kwargs=dict(acronym=group.acronym))))
+    if group.state_id != "conclude" and can_manage:
+        actions.append((u"Edit group", urlreverse("group_edit", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
-    if is_chair or is_ad_or_secretariat:
-        actions.append((u"Customize workflow", urlreverse("ietf.wginfo.edit.customize_workflow", kwargs=dict(acronym=group.acronym))))
+    if is_chair or can_manage:
+        actions.append((u"Customize workflow", urlreverse("ietf.group.edit.customize_workflow", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
-    if group.state_id in ("active", "dormant") and is_ad_or_secretariat:
-        actions.append((u"Request closing group", urlreverse("wg_conclude", kwargs=dict(acronym=group.acronym))))
+    if group.state_id in ("active", "dormant") and can_manage:
+        actions.append((u"Request closing group", urlreverse("ietf.group.edit.conclude", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
 
     d = {
         "group": group,
@@ -207,8 +256,8 @@ def search_for_group_documents(group):
     docs_related = []
     for d in raw_docs_related:
         parts = d.name.split("-", 2);
-        # canonical form draft-<name|ietf>-wg-etc
-        if len(parts) >= 3 and parts[1] != "ietf" and parts[2].startswith(group.acronym + "-"):
+        # canonical form draft-<name|ietf|irtf>-wg-etc
+        if len(parts) >= 3 and parts[1] not in ("ietf", "irtf") and parts[2].startswith(group.acronym + "-"):
             d.search_heading = "Related Internet-Draft"
             docs_related.append(d)
 
@@ -229,22 +278,22 @@ def search_for_group_documents(group):
 
     return docs, meta, docs_related, meta_related
 
-def group_documents(request, acronym):
-    group = get_object_or_404(Group, type="wg", acronym=acronym)
+def group_documents(request, group_type, acronym):
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
     docs, meta, docs_related, meta_related = search_for_group_documents(group)
 
-    return render_to_response('wginfo/group_documents.html',
-                              construct_group_menu_context(request, group, "documents", {
+    return render(request, 'group/group_documents.html',
+                  construct_group_menu_context(request, group, "documents", {
                 'docs': docs,
                 'meta': meta,
                 'docs_related': docs_related,
                 'meta_related': meta_related
-                }), RequestContext(request))
+                }))
 
-def group_documents_txt(request, acronym):
+def group_documents_txt(request, group_type, acronym):
     """Return tabulator-separated rows with documents for group."""
-    group = get_object_or_404(Group, type="wg", acronym=acronym)
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
     docs, meta, docs_related, meta_related = search_for_group_documents(group)
 
@@ -267,8 +316,8 @@ def group_documents_txt(request, acronym):
     return HttpResponse(u"\n".join(rows), content_type='text/plain; charset=UTF-8')
 
 
-def group_charter(request, acronym):
-    group = get_object_or_404(Group, type="wg", acronym=acronym)
+def group_charter(request, group_type, acronym):
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
     fill_in_charter_info(group, include_drafts=False)
     group.delegates = roles(group, "delegate")
@@ -276,22 +325,32 @@ def group_charter(request, acronym):
     e = group.latest_event(type__in=("changed_state", "requested_close",))
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
 
-    return render_to_response('wginfo/group_charter.html',
-                              construct_group_menu_context(request, group, "charter", {
-                "milestones_in_review": group.groupmilestone_set.filter(state="review"),
-                "requested_close": requested_close,
-                }), RequestContext(request))
+    long_group_types = dict(
+        wg="Working Group",
+        rg="Research Group",
+        )
+
+    can_manage = can_manage_group_type(request.user, group.type_id)
+
+    return render(request, 'group/group_charter.html',
+                  construct_group_menu_context(request, group, "charter", {
+                      "milestones_in_review": group.groupmilestone_set.filter(state="review"),
+                      "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
+                      "requested_close": requested_close,
+                      "long_group_type":long_group_types.get(group_type, "Group"),
+                      "can_manage": can_manage,
+                  }))
 
 
-def history(request, acronym):
+def history(request, group_type, acronym):
     group = get_object_or_404(Group, acronym=acronym)
 
     events = group.groupevent_set.all().select_related('by').order_by('-time', '-id')
 
-    return render_to_response('wginfo/history.html',
-                              construct_group_menu_context(request, group, "history", {
+    return render(request, 'group/history.html',
+                  construct_group_menu_context(request, group, "history", {
                 "events": events,
-                }), RequestContext(request))
+                }))
    
  
 def nodename(name):
@@ -407,11 +466,11 @@ def make_dot(group):
         node.nodename=nodename(node.name)
         node.styles = get_node_styles(node,group)
 
-    return render_to_string('wginfo/dot.txt',
+    return render_to_string('group/dot.txt',
                              dict( nodes=nodes, edges=edges )
                             )
 
-def dependencies_dot(request, acronym):
+def dependencies_dot(request, group_type, acronym):
 
     group = get_object_or_404(Group, acronym=acronym)
 
@@ -420,7 +479,7 @@ def dependencies_dot(request, acronym):
                         )
 
 @cache_page ( 60 * 60 )
-def dependencies_pdf(request, acronym):
+def dependencies_pdf(request, group_type, acronym):
 
     group = get_object_or_404(Group, acronym=acronym)
     

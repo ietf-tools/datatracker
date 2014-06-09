@@ -10,8 +10,8 @@ from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
-
 from ietf.group.models import Group
+from ietf.group.utils import milestone_reviewer_for_group_type
 
 def email_secretariat(request, group, subject, text):
     to = ["iesg-secretary@ietf.org"]
@@ -19,10 +19,10 @@ def email_secretariat(request, group, subject, text):
     text = strip_tags(text)
 
     send_mail(request, to, None, full_subject,
-              "wginfo/email_secretariat.txt",
+              "group/email_secretariat.txt",
               dict(text=text,
                    group=group,
-                   group_url=settings.IDTRACKER_BASE_URL + urlreverse('group_charter', kwargs=dict(acronym=group.acronym)),
+                   group_url=settings.IDTRACKER_BASE_URL + urlreverse('group_charter', kwargs=dict(group_type=group.type_id, acronym=group.acronym)),
                    charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=group.charter.name)),
                    )
               )
@@ -31,16 +31,18 @@ def email_milestones_changed(request, group, changes):
     def wrap_up_email(to, text):
         text = wrap(strip_tags(text), 70)
         text += "\n\n"
-        text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(acronym=group.acronym)))
+        text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(group_type=group.type_id, acronym=group.acronym)))
 
         send_mail_text(request, to, None,
                        u"Milestones changed for %s %s" % (group.acronym, group.type.name),
                        text)
 
-    # first send to AD and chairs
+    # first send to management and chairs
     to = []
     if group.ad:
         to.append(group.ad.role_email("ad").formatted_email())
+    elif group.type_id == "rg":
+        to.append("IRTF Chair <irtf-chair@irtf.org>")
 
     for r in group.role_set.filter(name="chair"):
         to.append(r.formatted_email())
@@ -48,7 +50,7 @@ def email_milestones_changed(request, group, changes):
     if to:
         wrap_up_email(to, u"\n\n".join(c + "." for c in changes))
 
-    # then send to WG
+    # then send to group
     if group.list_email:
         review_re = re.compile("Added .* for review, due")
         to = [ group.list_email ]
@@ -56,11 +58,17 @@ def email_milestones_changed(request, group, changes):
 
 
 def email_milestone_review_reminder(group, grace_period=7):
-    """Email reminders about milestones needing review to AD."""
-    if not group.ad:
+    """Email reminders about milestones needing review to management."""
+    to = []
+
+    if group.ad:
+        to.append(group.ad.role_email("ad").formatted_email())
+    elif group.type_id == "rg":
+        to.append("IRTF Chair <irtf-chair@irtf.org>")
+
+    if not to:
         return False
 
-    to = [group.ad.role_email("ad").formatted_email()]
     cc = [r.formatted_email() for r in group.role_set.filter(name="chair")]
 
     now = datetime.datetime.now()
@@ -81,10 +89,11 @@ def email_milestone_review_reminder(group, grace_period=7):
 
     send_mail(None, to, None,
               subject,
-              "wginfo/reminder_milestones_need_review.txt",
+              "group/reminder_milestones_need_review.txt",
               dict(group=group,
                    milestones=milestones,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse("wg_edit_milestones", kwargs=dict(acronym=group.acronym)),
+                   reviewer=milestone_reviewer_for_group_type(group.type_id),
+                   url=settings.IDTRACKER_BASE_URL + urlreverse("group_edit_milestones", kwargs=dict(group_type=group.type_id, acronym=group.acronym)),
                    cc=cc,
                )
              )
@@ -107,12 +116,12 @@ def email_milestones_due(group, early_warning_days):
 
     send_mail(None, to, None,
               subject,
-              "wginfo/reminder_milestones_due.txt",
+              "group/reminder_milestones_due.txt",
               dict(group=group,
                    milestones=milestones,
                    today=today,
                    early_warning_days=early_warning_days,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(acronym=group.acronym))
+                   url=settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(group_type=group.type_id, acronym=group.acronym))
                    ))
 
 def groups_needing_milestones_due_reminder(early_warning_days):
@@ -134,10 +143,10 @@ def email_milestones_overdue(group):
 
     send_mail(None, to, None,
               subject,
-              "wginfo/reminder_milestones_overdue.txt",
+              "group/reminder_milestones_overdue.txt",
               dict(group=group,
                    milestones=milestones,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(acronym=group.acronym))
+                   url=settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(group_type=group.type_id, acronym=group.acronym))
                    ))
 
 def groups_needing_milestones_overdue_reminder(grace_period=30):

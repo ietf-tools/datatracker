@@ -199,7 +199,6 @@ INSTALLED_APPS = (
     'ietf.meeting',
     'ietf.utils',
     'ietf.redirects',
-    'ietf.wginfo',
     'ietf.submit',
     'ietf.sync',
     'ietf.community',
@@ -268,7 +267,6 @@ STATUS_CHANGE_PATH = '/a/www/ietf-ftp/status-changes'
 STATUS_CHANGE_TXT_URL = 'http://www.ietf.org/sc/'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
-IETFWG_DESCRIPTIONS_PATH = '/a/www/www6s/wg-descriptions/'
 IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
 IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
 IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'

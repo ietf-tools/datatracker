@@ -15,9 +15,9 @@ div.milestones-for-group { margin: 0.5em 0; }
 
 {% for g in ad.groups_needing_review %}
 
-<div class="milestones-for-group">{{ g.name }} ({{ g.acronym }}) <a href="{% url "wg_edit_milestones" acronym=g.acronym %}">has new milestones</a>:</div>
+<div class="milestones-for-group">{{ g.name }} ({{ g.acronym }}) <a href="{% url "group_edit_milestones" group_type=g.type_id acronym=g.acronym %}">has new milestones</a>:</div>
 
-{% include "wginfo/milestones.html" with milestones=g.milestones_needing_review %}
+{% include "group/milestones.html" with milestones=g.milestones_needing_review %}
 
 {% endfor %}
 {% endfor %}

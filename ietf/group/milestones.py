@@ -1,4 +1,4 @@
-# WG milestone editing views
+# group milestone editing views
 
 import datetime
 import calendar
@@ -6,16 +6,15 @@ import json
 
 from django import forms
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 
 from ietf.doc.models import Document, DocEvent
 from ietf.doc.utils import get_chartering_type
 from ietf.group.models import Group, GroupMilestone, MilestoneGroupEvent
-from ietf.group.utils import save_milestone_in_history
-from ietf.ietfauth.utils import role_required, has_role
+from ietf.group.utils import save_milestone_in_history, can_manage_group_type, milestone_reviewer_for_group_type
 from ietf.name.models import GroupMilestoneStateName
-from ietf.wginfo.mails import email_milestones_changed
+from ietf.group.mails import email_milestones_changed
 
 def json_doc_names(docs):
     return json.dumps([{"id": doc.pk, "name": doc.name } for doc in docs])
@@ -108,23 +107,19 @@ class MilestoneForm(forms.Form):
 
         return r
 
-
-@role_required('WG Chair', 'Area Director', 'Secretariat')
-def edit_milestones(request, acronym, milestone_set="current"):
+@login_required
+def edit_milestones(request, group_type, acronym, milestone_set="current"):
     # milestones_set + needs_review: we have several paths into this view
-    #  AD/Secr. -> all actions on current + add new
+    #  management (IRTF chair/AD/...)/Secr. -> all actions on current + add new
     #  group chair -> limited actions on current + add new for review
     #  (re)charter -> all actions on existing in state charter + add new in state charter
     #
     # For charters we store the history on the charter document to not confuse people.
-
-    login = request.user.person
-
-    group = get_object_or_404(Group, acronym=acronym)
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
     needs_review = False
-    if not has_role(request.user, ("Area Director", "Secretariat")):
-        if group.role_set.filter(name="chair", person=login):
+    if not can_manage_group_type(request.user, group_type):
+        if group.role_set.filter(name="chair", person__user=request.user):
             if milestone_set == "current":
                 needs_review = True
         else:
@@ -298,10 +293,10 @@ def edit_milestones(request, acronym, milestone_set="current"):
 
                 if milestone_set == "charter":
                     DocEvent.objects.create(doc=group.charter, type="changed_charter_milestone",
-                                            by=login, desc=change)
+                                            by=request.user.person, desc=change)
                 else:
                     MilestoneGroupEvent.objects.create(group=group, type="changed_milestone",
-                                                       by=login, desc=change, milestone=f.milestone)
+                                                       by=request.user.person, desc=change, milestone=f.milestone)
 
                 changes.append(change)
 
@@ -311,7 +306,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
             if milestone_set == "charter":
                 return redirect('doc_view', name=group.charter.canonical_name())
             else:
-                return redirect('group_charter', acronym=group.acronym)
+                return redirect('group_charter', group_type=group.type_id, acronym=group.acronym)
     else:
         for m in milestones:
             forms.append(MilestoneForm(instance=m, needs_review=needs_review))
@@ -322,27 +317,25 @@ def edit_milestones(request, acronym, milestone_set="current"):
 
     forms.sort(key=lambda f: f.milestone.due if f.milestone else datetime.date.max)
 
-    return render_to_response('wginfo/edit_milestones.html',
-                              dict(group=group,
-                                   title=title,
-                                   forms=forms,
-                                   form_errors=form_errors,
-                                   empty_form=empty_form,
-                                   milestone_set=milestone_set,
-                                   finished_milestone_text=finished_milestone_text,
-                                   needs_review=needs_review,
-                                   can_reset=can_reset),
-                              context_instance=RequestContext(request))
+    return render(request, 'group/edit_milestones.html',
+                  dict(group=group,
+                       title=title,
+                       forms=forms,
+                       form_errors=form_errors,
+                       empty_form=empty_form,
+                       milestone_set=milestone_set,
+                       finished_milestone_text=finished_milestone_text,
+                       needs_review=needs_review,
+                       reviewer=milestone_reviewer_for_group_type(group_type),
+                       can_reset=can_reset))
 
-@role_required('WG Chair', 'Area Director', 'Secretariat')
-def reset_charter_milestones(request, acronym):
+@login_required
+def reset_charter_milestones(request, group_type, acronym):
     """Reset charter milestones to the currently in-use milestones."""
-    login = request.user.person
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
-    group = get_object_or_404(Group, acronym=acronym)
-
-    if (not has_role(request.user, ("Area Director", "Secretariat")) and
-        not group.role_set.filter(name="chair", person=login)):
+    if (not can_manage_group_type(request.user, group_type) and
+        not group.role_set.filter(name="chair", person__user=request.user)):
         return HttpResponseForbidden("You are not chair of this group.")
 
     current_milestones = group.groupmilestone_set.filter(state="active")
@@ -364,7 +357,7 @@ def reset_charter_milestones(request, acronym):
             DocEvent.objects.create(type="changed_charter_milestone",
                                     doc=group.charter,
                                     desc='Deleted milestone "%s"' % m.desc,
-                                    by=login,
+                                    by=request.user.person,
                                     )
 
         # add current
@@ -380,20 +373,19 @@ def reset_charter_milestones(request, acronym):
             DocEvent.objects.create(type="changed_charter_milestone",
                                     doc=group.charter,
                                     desc='Added milestone "%s", due %s, from current group milestones' % (new.desc, new.due.strftime("%B %Y")),
-                                    by=login,
+                                    by=request.user.person,
                                     )
 
 
-        return redirect('wg_edit_charter_milestones', acronym=group.acronym)
+        return redirect('group_edit_charter_milestones', group_type=group.type_id, acronym=group.acronym)
 
-    return render_to_response('wginfo/reset_charter_milestones.html',
-                              dict(group=group,
-                                   charter_milestones=charter_milestones,
-                                   current_milestones=current_milestones,
-                                   ),
-                              context_instance=RequestContext(request))
+    return render(request, 'group/reset_charter_milestones.html',
+                  dict(group=group,
+                       charter_milestones=charter_milestones,
+                       current_milestones=current_milestones,
+                   ))
 
 
-def ajax_search_docs(request, acronym):
+def ajax_search_docs(request, group_type, acronym):
     docs = Document.objects.filter(name__icontains=request.GET.get('q',''), type="draft").order_by('name').distinct()[:20]
     return HttpResponse(json_doc_names(docs), content_type='application/json')
