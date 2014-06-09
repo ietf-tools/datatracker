@@ -4,9 +4,9 @@ ietfdb (5.5.0) ietf; urgency=medium
   IRTF RGs, similar to what is available for IETF WGs.  You'll find the rg pages
   under /rg/, for instance https://datatracker.ietf.org/rg/cfrg .  Having this
   new baseline in place, I'm sure we'll get requests for refinements, but
-  that's the name of the game :-)
+  this should be a reasonable first pass at providing this functionality.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  03 Jun 2014 23:12:44 -0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Jun 2014 14:25:51 -0700
 
 
 ietfdb (5.4.3) ietf; urgency=medium
