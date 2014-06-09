@@ -190,7 +190,7 @@ note "Verifying there's no uncommitted changes..."
 $do svn st | grep "^[AMGRD] " && die "There seems to be uncommitted changes in this working copy"
 
 note "\nUpdating the version info in $VERFILE and making sure'\$Rev\$' is Ok"
-$do sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev)?\"/\"$VER\"/" \
+$do sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev[0-9]*)?\"/\"$VER\"/" \
 	  -e "/^__rev__/s/\".*\"/\"\$Rev:\$\"/" \
 	$VERFILE
 
