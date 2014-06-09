@@ -81,10 +81,12 @@ ietfdb (5.4.2) ietf; urgency=medium
 
   * Merged [7673] from rjsparks@nostrum.com: 
     Made several changes to better handle non-ascii UTF-8 in email messages.
+
       - Used multipart mime when including the original message in an error
-	message to the secretariat.  Modified the way IANA review email is parsed.
+        message to the secretariat.  Modified the way IANA review email is parsed.
 	Added non-ascii UTF-8 tests to the IANA review email parser and to the
 	SMTP Exception handling code. 
+
       - Changed how edit_mtg() is called, in order to propagate kwargs as kwargs.
 	Removed repeated @check_permissions.
 
@@ -95,8 +97,10 @@ ietfdb (5.4.2) ietf; urgency=medium
 
       From rjsparks@nostrum.com:
       - Fixed layout issue on schedule editing page in Chrome
+
       - Fixed errant display of text in unscheduled group bar
-	on the schedule editing page
+        on the schedule editing page
+
       - Changed the instruction text on the special requests
 	field of the session request form
 
@@ -247,7 +251,7 @@ ietfdb (5.3.0) ietf; urgency=medium
   hash file.  The few who had a password hash in the system before 16 July
   2010, and haven't updated their password since 3 July 2012 are encouraged to
   set a new password using the password reset form at
-	https://datatracker.ietf.org/accounts/reset/ .  
+  https://datatracker.ietf.org/accounts/reset/ .  
   If there are issues which prevent a password reset, please email
   henrik@tools.ietf.org for assistance.
 
@@ -681,7 +685,7 @@ ietfdb (4.84) ietf; urgency=low
 
   * Merged [6701] from rjsparks@nostrum.com:  
     Adds pages to show what a given document refers to and what refers to it.
-     Fixes bug #1194 ommit ready for merge 
+    Fixes bug #1194.
 
   * Merged [6672] from rjsparks@nostrum.com:  
     Removed requirement to enter a phone number in various places on an IPR
