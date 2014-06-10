@@ -23,7 +23,7 @@ def email_secretariat(request, group, subject, text):
               dict(text=text,
                    group=group,
                    group_url=settings.IDTRACKER_BASE_URL + urlreverse('group_charter', kwargs=dict(group_type=group.type_id, acronym=group.acronym)),
-                   charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=group.charter.name)),
+                   charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=group.charter.name)) if group.charter else "[no charter]",
                    )
               )
 
