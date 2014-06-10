@@ -43,7 +43,9 @@ tr.milestone.add { font-style: italic; }
 
 <p>Links:
   <a href="{% url "group_charter" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>
+  {% if group.charter %}
   - <a href="{% url "doc_view" name=group.charter.canonical_name %}">{{ group.charter.canonical_name }}</a>
+  {% endif %}
 </p>
 
 
