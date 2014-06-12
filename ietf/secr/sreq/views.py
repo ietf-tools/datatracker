@@ -94,11 +94,11 @@ def get_requester_text(person,group):
     '''
     roles = group.role_set.filter(name__in=('chair','secr'),person=person)
     if roles:
-        return '%s, a %s of the %s working group' % (person, roles[0].name, group.acronym)
+        return '%s, a %s of the %s working group' % (person.ascii, roles[0].name, group.acronym)
     if group.parent.role_set.filter(name='ad',person=person):
-        return '%s, a %s Area Director' % (person, group.parent.acronym.upper())
+        return '%s, a %s Area Director' % (person.ascii, group.parent.acronym.upper())
     if person.role_set.filter(name='secr',group__acronym='secretariat'):
-        return '%s, on behalf of the %s working group' % (person, group.acronym)
+        return '%s, on behalf of the %s working group' % (person.ascii, group.acronym)
 
 def save_conflicts(group, meeting, conflicts, name):
     '''
