@@ -343,7 +343,7 @@ def group_charter(request, group_type, acronym):
 
 
 def history(request, group_type, acronym):
-    group = get_object_or_404(Group, acronym=acronym)
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
     events = group.groupevent_set.all().select_related('by').order_by('-time', '-id')
 
@@ -472,7 +472,7 @@ def make_dot(group):
 
 def dependencies_dot(request, group_type, acronym):
 
-    group = get_object_or_404(Group, acronym=acronym)
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
 
     return HttpResponse(make_dot(group),
                         content_type='text/plain; charset=UTF-8'
@@ -481,7 +481,7 @@ def dependencies_dot(request, group_type, acronym):
 @cache_page ( 60 * 60 )
 def dependencies_pdf(request, group_type, acronym):
 
-    group = get_object_or_404(Group, acronym=acronym)
+    group = get_object_or_404(Group, type=group_type, acronym=acronym)
     
     dothandle,dotname = mkstemp()  
     os.close(dothandle)
