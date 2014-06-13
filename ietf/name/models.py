@@ -73,3 +73,9 @@ class DraftSubmissionStateName(NameModel):
     next_states = models.ManyToManyField('DraftSubmissionStateName', related_name="previous_states", blank=True)
 class RoomResourceName(NameModel):
     "Room resources: Audio Stream, Meetecho, . . ."
+class LiaisonStatementState(NameModel):
+    "Pending, Approved, Dead"
+class LiaisonStatementEventTypeName(NameModel):
+    "Submitted, Modified, Approved, Posted, Killed, Resurrected, MsgIn, MsgOut, Comment"
+class LiaisonStatementTagName(NameModel):
+    "Action Required, Action Taken"
