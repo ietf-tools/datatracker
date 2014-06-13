@@ -1,6 +1,7 @@
 # views for managing group materials (slides, ...)
 import os
 import datetime
+import re
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
@@ -14,7 +15,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, DocTypeName, DocEvent, State
 from ietf.doc.models import NewRevisionDocEvent, save_document_in_history
-from ietf.doc.utils import add_state_change_event
+from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 
@@ -34,6 +35,7 @@ def name_for_material(doc_type, group, title):
 
 class UploadMaterialForm(forms.Form):
     title = forms.CharField(max_length=Document._meta.get_field("title").max_length)
+    name = forms.CharField(max_length=Document._meta.get_field("name").max_length)
     state = forms.ModelChoiceField(State.objects.all(), empty_label=None)
     material = forms.FileField(label='File', help_text="PDF or text file (ASCII/UTF-8)")
 
@@ -50,7 +52,10 @@ class UploadMaterialForm(forms.Form):
             self.fields["state"].widget = forms.HiddenInput()
             self.fields["state"].queryset = self.fields["state"].queryset.filter(slug="active")
             self.fields["state"].initial = self.fields["state"].queryset[0].pk
+            self.fields["name"].initial = u"%s-%s-" % (doc_type.slug, group.acronym)
         else:
+            del self.fields["name"]
+
             self.fields["title"].initial = doc.title
             self.fields["state"].initial = doc.get_state().pk if doc.get_state() else None
             if doc.get_state_slug() == "deleted":
@@ -63,16 +68,20 @@ class UploadMaterialForm(forms.Form):
                 del self.fields["title"]
                 del self.fields["material"]
 
-    def clean_title(self):
-        title = self.cleaned_data["title"]
-        if self.action == "new":
-            name = name_for_material(self.doc_type, self.group, title)
-            existing = Document.objects.filter(type=self.doc_type, name=name)
-            if existing:
-                url = urlreverse("material_edit", kwargs={ 'name': existing[0].name, 'action': 'revise' })
-                raise forms.ValidationError(mark_safe("Can't upload: %s with name %s already exists. The name is derived from the title so you must either choose another title for what you're uploading or <a href=\"%s\">revise the existing %s</a>." % (self.doc_type.name, name, url, name)))
+    def clean_name(self):
+        name = self.cleaned_data["name"].strip().rstrip("-")
 
-        return title
+        check_common_doc_name_rules(name)
+
+        if not re.search("^%s-%s-[a-z0-9]+" % (self.doc_type.slug, self.group.acronym), name):
+            raise forms.ValidationError("The name must start with %s-%s- followed by descriptive dash-separated words." % (self.doc_type.slug, self.group.acronym))
+
+        existing = Document.objects.filter(type=self.doc_type, name=name)
+        if existing:
+            url = urlreverse("material_edit", kwargs={ 'name': existing[0].name, 'action': 'revise' })
+            raise forms.ValidationError(mark_safe("Can't upload: %s with name %s already exists. Choose another title and name for what you're uploading or <a href=\"%s\">revise the existing %s</a>." % (self.doc_type.name, name, url, name)))
+
+        return name
 
 @login_required
 def edit_material(request, name=None, acronym=None, action=None, doc_type=None):

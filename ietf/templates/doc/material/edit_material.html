@@ -5,7 +5,7 @@
 {% block morecss %}
 {{ block.super }}
 form.upload-material td { padding-bottom: 0.6em; }
-form.upload-material #id_title { width: 30em; }
+form.upload-material #id_title, form.upload-material #id_name { width: 30em; }
 form.upload-material .submit-row td { padding-top: 1em; text-align: right; }
 {% endblock %}
 
@@ -31,7 +31,7 @@ form.upload-material .submit-row td { padding-top: 1em; text-align: right; }
   <h3>Upload New Revision</h3>
 {% endif %}
 
-<form class="upload-material" method="post" enctype="multipart/form-data">{% csrf_token %}
+<form class="upload-material" method="post" enctype="multipart/form-data" data-nameprefix="{{ document_type.slug }}-{{ group.acronym }}-">{% csrf_token %}
   <table>
     {{ form.as_table }}
     
@@ -45,3 +45,14 @@ form.upload-material .submit-row td { padding-top: 1em; text-align: right; }
 </form>
 
 {% endblock content %}
+
+{% block scripts %}
+    jQuery(document).ready(function () {
+        jQuery("form.upload-material input#id_title").on("change keyup", function () {
+            var v = jQuery(this).val();
+            var slug = jQuery(this).parents("form").data("nameprefix");
+            slug += v.toLowerCase().replace(/ /g,'-').replace(/[-]+/g, '-').replace(/[^a-z-]+/g,'');
+            jQuery(this).parents("form").find("input#id_name").val(slug);
+        });
+    });
+{% endblock %}

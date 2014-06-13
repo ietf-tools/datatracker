@@ -4,6 +4,7 @@ import urllib
 import math
 
 from django.conf import settings
+from django.forms import ValidationError
 
 from ietf.utils import markup_txt
 from ietf.doc.models import DocAlias, RelatedDocument, BallotType, DocReminder
@@ -377,3 +378,18 @@ def rebuild_reference_relations(doc):
         ret['unfound']=list(unfound) 
 
     return ret
+
+def check_common_doc_name_rules(name):
+    """Check common rules for document names for use in forms, throws
+    ValidationError in case there's a problem."""
+
+    errors = []
+    if re.search("[^a-z0-9-]", name):
+        errors.append("The name may only contain digits, lowercase letters and dashes.")
+    if re.search("--", name):
+        errors.append("Please do not put more than one hyphen between any two words in the name.")
+    if re.search("-[0-9]{2}$", name):
+        errors.append("This name looks like ends in a version number. -00 will be added automatically. Please adjust the end of the name.")
+
+    if errors:
+        raise ValidationError(errors)

@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2011, All Rights Reserved
 
-import os, shutil, datetime
+import os, shutil
 from StringIO import StringIO
 from pyquery import PyQuery
 
@@ -10,7 +10,6 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.doc.models import Document, State, DocAlias
 from ietf.group.models import Group
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
-from ietf.utils.test_data import make_test_data
 
 class GroupMaterialTests(TestCase):
     def setUp(self):
@@ -57,7 +56,7 @@ class GroupMaterialTests(TestCase):
         test_file.name = "unnamed.pdf"
 
         # faulty post
-        r = self.client.post(url, dict(title="", state="", material=test_file))
+        r = self.client.post(url, dict(title="", name="", state="", material=test_file))
 
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -67,6 +66,7 @@ class GroupMaterialTests(TestCase):
 
         # post
         r = self.client.post(url, dict(title="Test File",
+                                       name="slides-%s-test-file" % group.acronym,
                                        state=State.objects.get(type="slides", slug="active").pk,
                                        material=test_file))
         self.assertEqual(r.status_code, 302)
@@ -79,10 +79,11 @@ class GroupMaterialTests(TestCase):
         with open(os.path.join(self.materials_dir, "slides", doc.name + "-" + doc.rev + ".pdf")) as f:
             self.assertEqual(f.read(), content)
 
-        # check that posting same title is prevented
+        # check that posting same name is prevented
         test_file.seek(0)
 
         r = self.client.post(url, dict(title="Test File",
+                                       name=doc.name,
                                        state=State.objects.get(type="slides", slug="active").pk,
                                        material=test_file))
         self.assertEqual(r.status_code, 200)

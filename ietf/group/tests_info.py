@@ -193,7 +193,7 @@ class GroupPagesTests(TestCase):
         self.assertTrue(milestone.docs.all()[0].name in r.content)
 
     def test_group_about(self):
-        draft = make_test_data()
+        make_test_data()
         group = Group.objects.create(
             type_id="team",
             acronym="testteam",
@@ -210,7 +210,7 @@ class GroupPagesTests(TestCase):
         self.assertTrue(group.description in r.content)
 
     def test_materials(self):
-        draft = make_test_data()
+        make_test_data()
         group = Group.objects.create(type_id="team", acronym="testteam", name="Test Team", state_id="active")
 
         doc = Document.objects.create(

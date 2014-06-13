@@ -61,7 +61,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <div id="ietf-login" class="noprint">{% if user.is_authenticated %}
 {{ user }}
 {% else %}
-<a href="https://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign In</a>
+<a href="//{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign In</a>
 {% endif %}</div>
 {% endif %}
 
