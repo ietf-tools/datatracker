@@ -9,6 +9,10 @@ from ietf.doc.models import Document, DocEvent, State, save_document_in_history,
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting
 from ietf.doc.utils import add_state_change_event
+try:
+    from pathlib import Path
+except ImportError:
+    from ietf.utils.path import path as Path
 
 def expirable_draft(draft):
     """Return whether draft is in an expirable state or not. This is
@@ -112,9 +116,9 @@ def move_draft_files_to_archive(doc, rev):
         if os.path.exists(src):
             shutil.move(src, dst)
 
-    file_types = ['txt', 'txt.p7s', 'ps', 'pdf']
-    for t in file_types:
-        move_file("%s-%s.%s" % (doc.name, rev, t))
+    src_dir = Path(settings.INTERNET_DRAFT_PATH)
+    for file in src_dir.glob("%s-%s.*" % (doc.name, rev)):
+        move_file(str(file.name))
 
 def expire_draft(doc):
     # clean up files
