@@ -13,13 +13,13 @@ from ietf.utils.mail import send_mail, send_mail_text
 from ietf.group.models import Group
 from ietf.group.utils import milestone_reviewer_for_group_type
 
-def email_secretariat(request, group, subject, text):
+def email_iesg_secretary_re_charter(request, group, subject, text):
     to = ["iesg-secretary@ietf.org"]
     full_subject = u"Regarding %s %s: %s" % (group.type.name, group.acronym, subject)
     text = strip_tags(text)
 
     send_mail(request, to, None, full_subject,
-              "group/email_secretariat.txt",
+              "group/email_iesg_secretary_re_charter.txt",
               dict(text=text,
                    group=group,
                    group_url=settings.IDTRACKER_BASE_URL + urlreverse('group_charter', kwargs=dict(group_type=group.type_id, acronym=group.acronym)),

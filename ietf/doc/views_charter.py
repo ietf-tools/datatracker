@@ -30,7 +30,7 @@ from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.group.mails import email_secretariat
+from ietf.group.mails import email_iesg_secretary_re_charter
 
 
 class ChangeStateForm(forms.Form):
@@ -143,7 +143,7 @@ def change_state(request, name, option=None):
                 charter.save()
 
                 if message:
-                    email_secretariat(request, group, "Charter state changed to %s" % charter_state.name, message)
+                    email_iesg_secretary_re_charter(request, group, "Charter state changed to %s" % charter_state.name, message)
 
                 email_state_changed(request, charter, "State changed to %s." % charter_state)
 
@@ -670,7 +670,7 @@ def approve(request, name):
 
         fix_charter_revision_after_approval(charter, login)
 
-        email_secretariat(request, group, "Charter state changed to %s" % new_charter_state.name, change_description)
+        email_iesg_secretary_re_charter(request, group, "Charter state changed to %s" % new_charter_state.name, change_description)
 
         # move milestones over
         milestones_to_delete = list(group.groupmilestone_set.filter(state__in=("active", "review")))

@@ -22,7 +22,7 @@ from ietf.group.utils import save_group_in_history, can_manage_group_type
 from ietf.ietfauth.utils import has_role
 from ietf.person.forms import EmailsField
 from ietf.person.models import Person, Email
-from ietf.group.mails import email_secretariat
+from ietf.group.mails import email_iesg_secretary_re_charter
 
 MAX_GROUP_DELEGATES = 3
 
@@ -340,7 +340,7 @@ def conclude(request, group_type, acronym):
         if form.is_valid():
             instructions = form.cleaned_data['instructions']
 
-            email_secretariat(request, group, "Request closing of group", instructions)
+            email_iesg_secretary_re_charter(request, group, "Request closing of group", instructions)
 
             e = GroupEvent(group=group, by=request.user.person)
             e.type = "requested_close"

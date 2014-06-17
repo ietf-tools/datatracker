@@ -360,6 +360,8 @@ def smtp_error_logging(thing):
 
         send_error_to_secretariat(msg)
 
+
+
 def send_error_to_secretariat(msg):
 
     debugging = getattr(settings, "USING_DEBUG_EMAIL_SERVER", False) and settings.EMAIL_HOST == 'localhost' and settings.EMAIL_PORT == 2025
