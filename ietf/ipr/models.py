@@ -6,6 +6,7 @@ from ietf.doc.models import DocAlias
 
 
 LICENSE_CHOICES = (
+    (0, ''),
     (1, 'a) No License Required for Implementers.'),
     (2, 'b) Royalty-Free, Reasonable and Non-Discriminatory License to All Implementers.'),
     (3, 'c) Reasonable and Non-Discriminatory License to All Implementers with Possible Royalty/Fee.'),
