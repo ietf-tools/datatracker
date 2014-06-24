@@ -413,7 +413,7 @@ def search(request):
         results = Group.objects.filter(parent__id=area,type='wg',state__in=('bof','active','proposed')).order_by('name')
         form = SearchForm({'primary_area':area,'state':'','type':'wg'})
     else:
-        form = SearchForm(initial={'state':'active','type':'wg'})
+        form = SearchForm(initial={'state':'active'})
 
     # loop through results and tack on meeting_scheduled because it is no longer an
     # attribute of the meeting model
