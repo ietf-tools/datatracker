@@ -55,7 +55,7 @@ th { text-align: right; vertical-align: text-top; }
   <td valign="top">
     {% if session.group.ad %}<a href="mailto:{{session.group.ad.email_address}}">{{session.group.ad}}</a> {%endif%}
   </td>
-  <td width="30%" valign="top">{%if session.requested_duration%}<span>{% for constraint in session.constraints %}{%ifchanged%}</span><span class="{{constraint.name.slug}}">{%endifchanged%} {{constraint.target.acronym}}{% if constraint.target.parent.id == constraint.source.parent.id%} ({{constraint.target.parent.acronym}}){%endif%}{%if not forloop.last %},{%endif%} {% endfor %}</span>{%endif%}</td>
+  <td width="30%" valign="top">{%if session.requested_duration%}<span>{% for constraint in session.constraints %}{%ifchanged%}</span><span class="{{constraint.name.slug}}">{%endifchanged%} {% if constraint %} {% if not forloop.first %}, {%endif%}{{constraint.brief_display}}{% if constraint.target.parent.id == constraint.source.parent.id%} ({{constraint.target.parent.acronym}}){%endif%} {% endif %} {% endfor %}</span>{%endif%}</td>
   <td width="30%" valign="top">{% if session.comments %}<i><font color="#800000">{{session.comments|linebreaksbr}}</font></i>{% endif %}</td>
 </tr>
 {% endif %}

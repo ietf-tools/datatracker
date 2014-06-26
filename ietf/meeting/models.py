@@ -723,6 +723,16 @@ class Constraint(models.Model):
     def __unicode__(self):
         return u"%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
 
+    def brief_display(self):
+        if self.target and self.person:
+            return u"%s ; %s" % (self.target.acronym, self.person)
+        elif self.target and not self.person:
+            return u"%s " % (self.target.acronym)
+        elif not self.target and self.person:
+            return u"%s " % (self.person)
+
+
+
     @property
     def person_conflicted(self):
         if self.person is None:
