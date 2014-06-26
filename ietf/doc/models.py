@@ -482,7 +482,11 @@ class DocHistoryAuthor(models.Model):
 
 class DocHistory(DocumentInfo):
     doc = models.ForeignKey(Document, related_name="history_set")
-    name = models.CharField(max_length=255) # WG charter canonical names can change if the group acronym changes
+    # the name here is used to capture the canonical name at the time
+    # - it would perhaps be more elegant to simply call the attribute
+    # canonical_name and replace the function on Document with a
+    # property
+    name = models.CharField(max_length=255)
     related = models.ManyToManyField('DocAlias', through=RelatedDocHistory, blank=True)
     authors = models.ManyToManyField(Email, through=DocHistoryAuthor, blank=True)
     def __unicode__(self):
