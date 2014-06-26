@@ -209,7 +209,7 @@ read -p "Continue with the commit? [Y/n] "
 if [ "$ARG_COMMIT" != 0 ]; then
     echo "Committing the merge:"
     echo ""
-    svn commit -m "Merged [$rev] from $who: $comment $fix"
+    svn commit -m "Merged in [$rev] from $who:\n    ${comment//\"/\'} ${fix//\"/\'}"
 else
     echo "This merge has not been committed yet."
     echo "To commit it, run this commit command: ../cicmd/commit-$rev-merge.sh"
