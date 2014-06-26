@@ -1,3 +1,50 @@
+ietfdb (5.5.1) ietf; urgency=medium
+
+  This is a routine bugfix release.  Here is a list of the addressed issues:
+
+  * Merged in [7935] from liudapeng@chinamobile.com:
+    Added display of both WG conflict and person requirements to the
+    session request page. Fixes issue #1384. 
+
+  * Merged in [7924] from rcross@amsl.com:
+    Now permitting IPR updates to not specify an IPR license selection.
+
+  * Merged in [7911] from rcross@amsl.com:
+    Fixed a problem which occurs when non-ascii names are used
+    in session request notification emails.
+
+  * Merged in [7910] from rjsparks@nostrum.com:
+    Now paying attention to group type in all the wginfo functions.
+    Fixes bug #1423.
+
+  * Merged in [7888] from rjsparks@nostrum.com:
+    Fixed a bug where links in personal document tracking list associated with
+    groups which are not WGs or RGs return 500, by only turning WG and RG
+    groups into links. Fixes bug #1421.
+
+  * Merged in [7865] from rjsparks@nostrum.com:
+    Addressed an issue with dragging and dropping unscheduled items back into
+    the unscheduled bin (primary fix provided by Matt Miller). Fixes bug #1386.
+
+  * Merged in [7843] from rcross@amsl.com:
+    Changed the default group type field on the groups search form, from WG to
+    unset.  
+
+  * Changed the code to move drafts from the active draft repository to the 
+    draft archive so that all associated files will be moved, not just those 
+    with specifically listed extensions.  This fixes the problem that .xml 
+    files associated with submitted drafts were moved to the unknown_ids 
+    subdirectory of the archive, instead of into the archive proper.
+
+  * Merged in [7879] and [7880] from olau@iola.dk to fix a couple of issues 
+    with the 5.5.0 release.
+
+  * Fixed a bug in the mkrelease script, introduced by changing the naming 
+    convention for development tags from X.Y.Z-dev to X.Y.Z-dev0 (etc.).
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Jun 2014 13:12:50 -0700
+
+
 ietfdb (5.5.0) ietf; urgency=medium
 
   This is a feature release, which introduces pages and workflow support for
