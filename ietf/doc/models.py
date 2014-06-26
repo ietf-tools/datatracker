@@ -288,7 +288,8 @@ class Document(DocumentInfo):
             if a:
                 name = a[0].name
         elif self.type_id == "charter":
-            return "charter-ietf-%s" % self.chartered_group.acronym
+            from ietf.doc.utils_charter import charter_name_for_group
+            return charter_name_for_group(self.chartered_group)
         return name
 
     def canonical_docalias(self):

@@ -1,9 +1,7 @@
 # edit/create view for groups
 
 import re
-import os
 import datetime
-import shutil
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
@@ -13,8 +11,9 @@ from django.contrib.auth.decorators import login_required
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, DocTagName, State, save_document_in_history
+from ietf.doc.models import Document, DocAlias, DocTagName, State
 from ietf.doc.utils import get_tags_for_stream_id
+from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
 from ietf.group.utils import save_group_in_history, can_manage_group_type
@@ -134,12 +133,7 @@ def format_urls(urls, fs="\n"):
     return fs.join(res)
 
 def get_or_create_initial_charter(group, group_type):
-    if group_type == "rg":
-        top_org = "irtf"
-    else:
-        top_org = "ietf"
-
-    charter_name = "charter-%s-%s" % (top_org, group.acronym)
+    charter_name = charter_name_for_group(group)
 
     try:
         charter = Document.objects.get(docalias__name=charter_name)
@@ -239,8 +233,6 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                     changes.append(desc(name, clean[attr], v))
                     setattr(group, attr, clean[attr])
 
-            prev_acronym = group.acronym
-
             # update the attributes, keeping track of what we're doing
             diff('name', "Name")
             diff('acronym', "Acronym")
@@ -250,17 +242,6 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             diff('list_email', "Mailing list email")
             diff('list_subscribe', "Mailing list subscribe address")
             diff('list_archive', "Mailing list archive")
-
-            if not new_group and group.acronym != prev_acronym and group.charter:
-                save_document_in_history(group.charter)
-                DocAlias.objects.get_or_create(
-                    name="charter-ietf-%s" % group.acronym,
-                    document=group.charter,
-                    )
-                old = os.path.join(group.charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (prev_acronym, group.charter.rev))
-                if os.path.exists(old):
-                    new = os.path.join(group.charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (group.acronym, group.charter.rev))
-                    shutil.copy(old, new)
 
             # update roles
             for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors"), ('delegates', 'delegate', "Delegates")]:
