@@ -50,7 +50,7 @@ if not initial_urls:
 
 visited = set()
 urls = {} # url -> referrer
-
+referrers = {}
 
 def strip_url(url):
     if url.startswith("http://testserver"):
@@ -84,6 +84,16 @@ fh, fn = tempfile.mkstemp(prefix="test-crawl-", suffix=".log", dir="../")
 logfile = open(fn, "w")
 os.close(fh)
 
+def get_referrers(url):
+    ref_list = []
+    while url in referrers:
+        url = referrers[url]
+        if url in ref_list:
+            print ("Circular referral list, discovered at %s" % url)
+            break
+        ref_list.append(url)
+    return ref_list
+
 while urls:
     url, referrer = urls.popitem()
 
@@ -97,7 +107,7 @@ while urls:
         print "was fetching", url
         sys.exit(1)
     except:
-        print 500, "%.3fs" % (datetime.datetime.now() - timestamp).total_seconds(), url, "FAIL (from %s)" % referrer
+        print 500, "%.3fs" % (datetime.datetime.now() - timestamp).total_seconds(), url, "FAIL (from %s)" % (",\n\t".join(get_referrers(url)))
         print "============="
         print traceback.format_exc()
         print "============="
@@ -109,6 +119,7 @@ while urls:
             u = strip_url(r["Location"])
             if u not in visited and u not in urls:
                 urls[u] = referrer # referrer is original referrer, not redirected url
+                referrers[u] = referrer
 
         elif r.status_code == 200:
             ctype = r["Content-Type"]
@@ -120,6 +131,7 @@ while urls:
                     for u in extract_html_urls(r.content):
                         if u not in visited and u not in urls:
                             urls[u] = url
+                            referrers[u] = url
                 except:
                     print "error extracting HTML urls from", url
                     print "============="
