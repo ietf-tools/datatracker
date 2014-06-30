@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from ietf.meeting.models import Meeting, Room, Session, TimeSlot, Constraint
+from ietf.meeting.models import Meeting, Room, Session, TimeSlot, Constraint, Schedule
 
 class RoomAdmin(admin.ModelAdmin):
     list_display = ["id", "meeting", "name", "capacity", ]
@@ -76,3 +76,13 @@ class SessionAdmin(admin.ModelAdmin):
     name_lower.short_description = "constraint name"
 
 admin.site.register(Session, SessionAdmin)
+
+class ScheduleAdmin(admin.ModelAdmin):
+    list_display = ["name", "meeting", "owner", "visible", "public", "badness"]
+    list_filter = ["meeting", ]
+    raw_id_fields = ["meeting", "owner", ]
+    search_fields = ["meeting__number", "name", "owner__name"]
+    ordering = ["meeting", "name"]
+
+admin.site.register(Schedule, ScheduleAdmin)
+
