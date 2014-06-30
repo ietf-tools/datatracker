@@ -1,3 +1,26 @@
+ietfdb (5.5.2) ietf; urgency=medium
+
+  This is a bugfix release which updates the database contents with bindings for
+  breaks and registration timeslots that make the agenda pages come out as
+  intended.
+
+  Changelog:
+
+  * Modified the code which adds non-session entries to a schedule so as to 
+    bind a Session object also to Break and Registration timeslots, through the 
+    Schedule/Timeslot/Session m2m table.  This makes the agenda templates work 
+    as expected.  There's also a migration and a standalone script that fills 
+    in this information for existing schedules.
+
+  * Tweaked the test-crawler to show the complete chain of referrers for a 
+    failing URL.
+
+  * Don't show dash after timeslot names in the ietf agenda if there's no 
+    associated location.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Jun 2014 10:21:41 -0700
+
+
 ietfdb (5.5.1) ietf; urgency=medium
 
   This is a routine bugfix release.  Here is a list of the addressed issues:
