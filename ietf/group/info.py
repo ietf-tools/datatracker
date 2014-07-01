@@ -163,7 +163,7 @@ def active_wgs(request):
         area.urls = area.groupurl_set.all().order_by("name")
         for group in area.groups:
             group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-            # get the url for list subscription
+            # get the url for mailing list subscription
             if group.list_subscribe.startswith('http'):
                 group.list_subscribe_url = group.list_subscribe
             elif group.list_email.endswith('@ietf.org'):
