@@ -178,10 +178,10 @@ M=$(svn st | cut -c 1-7 | grep -oh 'M' | head -n 1)
 C=$(svn st | cut -c 1-7 | grep -oh 'C' | head -n 1)
 G=$(svn st | cut -c 1-7 | grep -oh 'G' | head -n 1)
 
-cd ../
-rsync -a $cwd/ merged@$rev/
-cp cicmd/commit-${rev}-merge.sh merged@$rev/commit
-cd -
+##cd ../
+##rsync -a $cwd/ merged@$rev/
+##cp cicmd/commit-${rev}-merge.sh merged@$rev/commit
+##cd -
 
 echo -e "\nRunning tests"
 time ietf/manage.py test --settings=settings_sqlitetest || die "Tests failed.\nThe commit script is ../cicmd/commit-${rev}-merge.sh"
