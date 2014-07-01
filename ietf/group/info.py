@@ -52,6 +52,7 @@ from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
 from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type
 from ietf.utils.pipe import pipe
+from ietf.settings import MAILING_LIST_INFO_URL
 
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
@@ -162,6 +163,13 @@ def active_wgs(request):
         area.urls = area.groupurl_set.all().order_by("name")
         for group in area.groups:
             group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
+            # get the url for list subscription
+            if group.list_subscribe.startswith('http'):
+                group.list_subscribe_url = group.list_subscribe
+            elif group.list_email.endswith('@ietf.org'):
+                group.list_subscribe_url = MAILING_LIST_INFO_URL % {'list_addr':group.list_email.split('@')[0]}
+            else:
+                group.list_subscribe_url = "mailto:"+group.list_subscribe
 
     return render(request, 'group/active_wgs.html', { 'areas':areas })
 
