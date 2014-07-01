@@ -23,7 +23,12 @@ class PySyntaxError(messages.Message):
     message = 'syntax error in line %d: %s'
 
     def __init__(self, filename, lineno, col, message):
-        super(PySyntaxError, self).__init__(filename, lineno)
+        try:
+            super(PySyntaxError, self).__init__(filename, lineno)
+        except Exception:
+            sys.stderr.write("\nAn exception occurred while processing file %s\n"+
+                "The file could contain syntax errors.\n\n" % filename)
+
         self.message_args = (col, message)
 
 
