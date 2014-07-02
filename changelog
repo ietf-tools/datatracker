@@ -1,3 +1,20 @@
+ietfdb (5.6.0) ietf; urgency=medium
+
+  This release adds group page support also for non-WG/RG groups, extending
+  and generalising the work done recently to add RG pages.  In particular,
+  this provides the Edu team with a place to upload and display educational
+  materials.
+
+  Changelog:
+
+  * Merged in branch/iola/team-support from olau@iola.dk.  This generalises 
+    and extends the group support for WGs and RGs so that also other groups, 
+    such as for instance the Edu Team, can have pages.
+
+  * Miscellaneous other minor changes mostly related to merging, testing and admin.
+  
+ -- Henrik Levkowetz <henrik@levkowetz.com>  02 Jul 2014 12:40:19 -0700
+
 ietfdb (5.5.2) ietf; urgency=medium
 
   This is a bugfix release which updates the database contents with bindings for
