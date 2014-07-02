@@ -1,0 +1,41 @@
+{% extends "group/group_base.html" %}
+{% load ietf_filters %}
+
+{% block group_subtitle %}Materials{% endblock %}
+
+{% block morecss %}
+  {{ block.super }}
+  .materials .edit-options { float: right; margin-left: 2em; font-style: italic; }
+{% endblock %}
+
+{% block group_content %}
+  {% load ietf_filters %}
+
+  {% if doc_types %}
+    {% for doc_type, docs in doc_types %}
+      <h2>{{ doc_type.name }}</h2>
+
+      <table class="ietf-table ietf-doctable materials">
+
+        <tr>
+          <th>Title</th>
+          <th>Rev.</th>
+          <th>Date</th>
+        </tr>
+
+        {% for d in docs %}
+          <tr class="{% cycle "evenrow" "oddrow" %}">
+            <td><a class="title-link" href="{% url "doc_view" name=d.name %}">{{ d.title }}</a></td>
+            <td>{{ d.rev }}</td>
+            <td>{{ d.time|date:"Y-m-d" }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% endfor %}
+  {% else %}
+    <h2>Materials</h2>
+
+    <p>No materials uploaded.</p>
+  {% endif %}
+
+{% endblock %}

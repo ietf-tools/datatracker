@@ -30,7 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os, datetime, urllib, json
+import os, datetime, urllib, json, glob
 
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
@@ -51,7 +51,7 @@ from ietf.community.models import CommunityList
 from ietf.doc.mails import email_ad
 from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
 from ietf.group.models import Role
-from ietf.group.utils import can_manage_group_type
+from ietf.group.utils import can_manage_group_type, can_manage_materials
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, role_required
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.person.models import Email
@@ -240,7 +240,7 @@ def document_main(request, name, rev=None):
         elif group.type_id in ("rg", "wg"):
             submission = "%s %s" % (group.acronym, group.type)
             if group.type_id == "wg":
-                submission = "<a href=\"%s\">%s</a>" % (urlreverse("group_docs", kwargs=dict(group_type=doc.group.type_id, acronym=doc.group.acronym)), submission)
+                submission = "<a href=\"%s\">%s</a>" % (urlreverse("group_home", kwargs=dict(group_type=doc.group.type_id, acronym=doc.group.acronym)), submission)
             if doc.stream_id and doc.get_state_slug("draft-stream-%s" % doc.stream_id) == "c-adopt":
                 submission = "candidate for %s" % submission
 
@@ -487,6 +487,48 @@ def document_main(request, name, rev=None):
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-pend','appr-sent'),
                                        sorted_relations=sorted_relations,
+                                       ),
+                                  context_instance=RequestContext(request))
+
+    if doc.type_id in ("slides", "agenda", "minutes"):
+        can_manage_material = can_manage_materials(request.user, doc.group)
+        if doc.meeting_related():
+            # disallow editing meeting-related stuff through this
+            # interface for the time being
+            can_manage_material = False
+            basename = doc.canonical_name() # meeting materials are unversioned at the moment
+            if doc.external_url:
+                # we need to remove the extension for the globbing below to work
+                basename = os.path.splitext(doc.external_url)[0]
+        else:
+            basename = "%s-%s" % (doc.canonical_name(), doc.rev)
+
+        pathname = os.path.join(doc.get_file_path(), basename)
+
+        content = None
+        other_types = []
+        globs = glob.glob(pathname + ".*")
+        for g in globs:
+            extension = os.path.splitext(g)[1]
+            t = os.path.splitext(g)[1].lstrip(".")
+            url = doc.href()
+            if not url.endswith("/") and not url.endswith(extension):
+                url += extension
+
+            if extension == ".txt":
+                content = get_document_content(basename, pathname + extension, split=False)
+                t = "plain text"
+
+            other_types.append((t, url))
+
+        return render_to_response("doc/document_material.html",
+                                  dict(doc=doc,
+                                       top=top,
+                                       content=content,
+                                       revisions=revisions,
+                                       snapshot=snapshot,
+                                       can_manage_material=can_manage_material,
+                                       other_types=other_types,
                                        ),
                                   context_instance=RequestContext(request))
 

@@ -24,7 +24,7 @@ from ietf.utils.mail import send_mail
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
 
 
-def get_group_or_404(year):
+def get_nomcom_group_or_404(year):
     return get_object_or_404(Group,
                              acronym__icontains=year,
                              state__slug='active',
@@ -121,7 +121,7 @@ class EditMembersFormPreview(FormPreview):
     @method_decorator(role_required("Nomcom Chair", "Nomcom Advisor"))
     def __call__(self, request, *args, **kwargs):
         year = kwargs['year']
-        group = get_group_or_404(year)
+        group = get_nomcom_group_or_404(year)
         self.state['group'] = group
         self.state['rolodex_url'] = ROLODEX_URL
         groups = group.nomcom_set.all()
@@ -225,7 +225,7 @@ class EditChairFormPreview(FormPreview):
     @method_decorator(role_required("Secretariat"))
     def __call__(self, request, *args, **kwargs):
         year = kwargs['year']
-        group = get_group_or_404(year)
+        group = get_nomcom_group_or_404(year)
         self.state['group'] = group
         self.state['rolodex_url'] = ROLODEX_URL
         self.group = group

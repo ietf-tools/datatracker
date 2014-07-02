@@ -22,10 +22,6 @@ def expand_comma(value):
     long comma-separated lists."""
     return value.replace(",", ", ")
 
-@register.filter(name='format_charter')
-def format_charter(value):
-    return value.replace("\n\n", "</p><p>").replace("\n","<br/>\n")
-
 @register.filter
 def indent(value, numspaces=2):
     replacement = "\n" + " " * int(numspaces)

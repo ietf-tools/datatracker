@@ -13,7 +13,7 @@
 {% for ad in group.area.ads %}     {{ ad.person.plain_name }} <{{ ad.email.address }}>
 {% endfor %}
 {% if group.areadirector %} {{ group.area.name }} Advisor:
-     {{ group.areadirector.person.plain_name }} <{{ group.areadirector.address }}>
+     {{ group.areadirector.person.plain_name }} <{{ group.areadirector.email.address }}>
 {% endif %}{% if group.techadvisors %}
  Tech Advisor{{ group.techadvisors|pluralize }}:
 {% for techadvisor in group.techadvisors %}     {{ techadvisor.person.plain_name }} <{{ techadvisor.email.address }}>

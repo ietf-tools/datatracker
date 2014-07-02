@@ -45,7 +45,11 @@
         <tr><td>Email Address:</td><td>{{ group.list_email }}</td></tr>
         <tr><td>Email Subscription:</td><td>{{ group.list_subscribe }}</td></tr>
         <tr><td>Email Archive:</td><td>{{ group.list_archive }}</td></tr>
+        {% if group.features.has_chartering_process %}
         <tr><td>Charter:</td><td><a href="{% url "groups_charter" acronym=group.acronym %}">View Charter</a></td></tr>
+        {% else %}
+        <tr><td>Description:</td><td>{{ group.description }}</td></tr>
+        {% endif %}
         <tr><td>Comments:</td><td>{{ group.comments }}</td></tr>
         <tr><td>Last Modified Date:</td><td>{{ group.time }}</td></tr>
       </table>

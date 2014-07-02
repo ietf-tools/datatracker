@@ -9,6 +9,13 @@ from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import send_mail_text
 
+def charter_name_for_group(group):
+    if group.type_id == "rg":
+        top_org = "irtf"
+    else:
+        top_org = "ietf"
+
+    return "charter-%s-%s" % (top_org, group.acronym)
 
 def next_revision(rev):
     if rev == "":

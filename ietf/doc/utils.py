@@ -5,6 +5,7 @@ import math
 
 from django.conf import settings
 from django.db.models.query import EmptyQuerySet
+from django.forms import ValidationError
 
 from ietf.utils import markup_txt
 from ietf.doc.models import Document, DocHistory
@@ -228,16 +229,13 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
 
 
 def get_document_content(key, filename, split=True, markup=True):
-    f = None
     try:
-        f = open(filename, 'rb')
-        raw_content = f.read()
+        with open(filename, 'rb') as f:
+            raw_content = f.read()
     except IOError:
         error = "Error; cannot read ("+key+")"
         return error
-    finally:
-        if f:
-            f.close()
+
     if markup:
         return markup_txt.markup(raw_content, split)
     else:
@@ -397,3 +395,18 @@ def rebuild_reference_relations(doc):
         ret['unfound']=list(unfound) 
 
     return ret
+
+def check_common_doc_name_rules(name):
+    """Check common rules for document names for use in forms, throws
+    ValidationError in case there's a problem."""
+
+    errors = []
+    if re.search("[^a-z0-9-]", name):
+        errors.append("The name may only contain digits, lowercase letters and dashes.")
+    if re.search("--", name):
+        errors.append("Please do not put more than one hyphen between any two words in the name.")
+    if re.search("-[0-9]{2}$", name):
+        errors.append("This name looks like ends in a version number. -00 will be added automatically. Please adjust the end of the name.")
+
+    if errors:
+        raise ValidationError(errors)

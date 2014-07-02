@@ -11,21 +11,14 @@
 {% block content %}
 {{ top|safe }}
 
-<div class="snapshots">
-  Snapshots:
-  <span class="revisions">
-    {% for rev in revisions %}
-    <a {% if rev != doc.rev %}href="{% url "doc_view" name=doc.name %}{% if not forloop.last %}{{ rev }}/{% endif %}"{% endif %}>{{ rev }}</a>
-    {% endfor %}
-  </span>
-</div>
+{% include "doc/revisions_list.html" %}
 
 <div class="ietf-box metabox">
   <div>
     {% if snapshot %}Snapshot of{% endif %}
     {% if doc.get_state_slug != "approved" %}Proposed{% endif %}
     Charter for "{{ group.name }}"
-    (<a {% if group.type_id == "wg" or group.type_id == "rg" %}href="{% url "ietf.group.info.group_charter" group_type=group.type_id acronym=group.acronym %}"{% endif %}>{{ group.acronym }}</a>) {{ group.type.name }}
+    (<a href="{{ group.about_url }}">{{ group.acronym }}</a>) {{ group.type.name }}
   </div>
 
   <table id="metatable" width="100%">

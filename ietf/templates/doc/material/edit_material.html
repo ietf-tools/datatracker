@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{% if action == "new" or action == "revise" %}Upload{% else %}Edit{% endif %} {{ document_type.name }} for Group {{ group.acronym }}{% endblock %}
+
+{% block morecss %}
+{{ block.super }}
+form.upload-material td { padding-bottom: 0.6em; }
+form.upload-material #id_title, form.upload-material #id_name { width: 30em; }
+form.upload-material .submit-row td { padding-top: 1em; text-align: right; }
+{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+
+<h1>{% if action == "new" or action == "revise" %}Upload{% else %}Edit{% endif %} {{ document_type.name }} for Group {{ group.acronym }}</h1>
+
+{% if action == "new" %}
+  <p>
+    Below you can upload a file for the group
+    <a href="{% url "group_materials" acronym=group.acronym %}">{{ group.acronym }}</a>.
+    The file will appear under the materials tab in the group pages.
+  </p>
+
+  <h3>Upload</h3>
+{% elif action == "revise" %}
+  <p>
+    Below you can upload a new revision of {{ doc_name }} for the group
+    <a href="{% url "group_materials" acronym=group.acronym %}">{{ group.acronym }}</a>.
+  </p>
+
+  <h3>Upload New Revision</h3>
+{% endif %}
+
+<form class="upload-material" method="post" enctype="multipart/form-data" data-nameprefix="{{ document_type.slug }}-{{ group.acronym }}-">{% csrf_token %}
+  <table>
+    {{ form.as_table }}
+    
+    <tr class="submit-row">
+      <td colspan="2">
+        <a class="button" href="{% if doc_name %}{% url "doc_view" name=doc_name %}{% else %}{% url "group_materials" acronym=group.acronym %}{% endif %}">Cancel</a>
+        <input class="submit button" type="submit" value="{% if action == "new" or action == "revise" %}Upload{% else %}Save{% endif %}" />
+      </td>
+    </tr>
+  </table>
+</form>
+
+{% endblock content %}
+
+{% block scripts %}
+    jQuery(document).ready(function () {
+        jQuery("form.upload-material input#id_title").on("change keyup", function () {
+            var v = jQuery(this).val();
+            var slug = jQuery(this).parents("form").data("nameprefix");
+            slug += v.toLowerCase().replace(/ /g,'-').replace(/[-]+/g, '-').replace(/[^a-z-]+/g,'');
+            jQuery(this).parents("form").find("input#id_name").val(slug);
+        });
+    });
+{% endblock %}

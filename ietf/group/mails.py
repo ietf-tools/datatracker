@@ -22,7 +22,7 @@ def email_iesg_secretary_re_charter(request, group, subject, text):
               "group/email_iesg_secretary_re_charter.txt",
               dict(text=text,
                    group=group,
-                   group_url=settings.IDTRACKER_BASE_URL + urlreverse('group_charter', kwargs=dict(group_type=group.type_id, acronym=group.acronym)),
+                   group_url=settings.IDTRACKER_BASE_URL + group.about_url(),
                    charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=group.charter.name)) if group.charter else "[no charter]",
                    )
               )
@@ -31,7 +31,7 @@ def email_milestones_changed(request, group, changes):
     def wrap_up_email(to, text):
         text = wrap(strip_tags(text), 70)
         text += "\n\n"
-        text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(group_type=group.type_id, acronym=group.acronym)))
+        text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + group.about_url())
 
         send_mail_text(request, to, None,
                        u"Milestones changed for %s %s" % (group.acronym, group.type.name),
@@ -121,7 +121,7 @@ def email_milestones_due(group, early_warning_days):
                    milestones=milestones,
                    today=today,
                    early_warning_days=early_warning_days,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+                   url=settings.IDTRACKER_BASE_URL + group.about_url(),
                    ))
 
 def groups_needing_milestones_due_reminder(early_warning_days):
@@ -146,7 +146,7 @@ def email_milestones_overdue(group):
               "group/reminder_milestones_overdue.txt",
               dict(group=group,
                    milestones=milestones,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse("group_charter", kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+                   url=settings.IDTRACKER_BASE_URL + group.about_url(),
                    ))
 
 def groups_needing_milestones_overdue_reminder(grace_period=30):

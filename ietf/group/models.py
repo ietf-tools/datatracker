@@ -17,6 +17,7 @@ class GroupInfo(models.Model):
     state = models.ForeignKey(GroupStateName, null=True)
     type = models.ForeignKey(GroupTypeName, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)
+    description = models.TextField(blank=True)
     ad = models.ForeignKey(Person, verbose_name="AD", blank=True, null=True)
     list_email = models.CharField(max_length=64, blank=True)
     list_subscribe = models.CharField(max_length=255, blank=True)
@@ -34,6 +35,21 @@ class GroupInfo(models.Model):
         if self.type_id in ("wg", "rg", "area"):
             res += " %s (%s)" % (self.type, self.acronym)
         return res
+
+    @property
+    def features(self):
+        if not hasattr(self, "features_cache"):
+            from ietf.group.features import GroupFeatures
+            self.features_cache = GroupFeatures(self)
+        return self.features_cache
+
+    def about_url(self):
+        # bridge gap between group-type prefixed URLs and /group/ ones
+        from django.core.urlresolvers import reverse as urlreverse
+        kwargs = { 'acronym': self.acronym }
+        if self.type_id in ("wg", "rg"):
+            kwargs["group_type"] = self.type_id
+        return urlreverse(self.features.about_page, kwargs=kwargs)
 
     class Meta:
         abstract = True

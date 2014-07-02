@@ -72,7 +72,7 @@ class GroupModelForm(forms.ModelForm):
     
     class Meta:
         model = Group
-        fields = ('acronym','name','type','state','parent','ad','list_email','list_subscribe','list_archive','comments')
+        fields = ('acronym','name','type','state','parent','ad','list_email','list_subscribe','list_archive','description','comments')
     
     def __init__(self, *args, **kwargs):
         super(GroupModelForm, self).__init__(*args, **kwargs)

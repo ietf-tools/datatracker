@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% load ietf_filters %}
+
+{% block title %}{{ doc.canonical_name }}-{{ doc.rev }}{% endblock %}
+
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
+{% endblock %}
+
+{% block content %}
+{{ top|safe }}
+
+{% include "doc/revisions_list.html" %}
+
+<div class="ietf-box metabox">
+  <div>
+    {% if snapshot %}Snapshot of{% endif %} {% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }} for <a href="{{ doc.group.about_url }}">{{ doc.group.acronym }}</a> group
+  </div>
+
+  <table id="metatable" width="100%">
+    <tr>
+      <td>Title:</td>
+      <td>
+        <a {% if not snapshot and can_manage_material %} class="editlink" href="{% url "material_edit" name=doc.name action="title" name=doc.name %}"{% endif %}>{{ doc.title }}</a>
+      </td>
+    </tr>
+
+    <tr>
+      <td>State:</td>
+      <td>
+        <a title="{{ doc.get_state.desc }}"{% if not snapshot and can_manage_material %} class="editlink" href="{% url "material_edit" name=doc.name action="state" %}"{% endif %}>{{ doc.get_state.name }}</a>
+      </td>
+    </tr>
+
+    {% if other_types %}
+    <tr>
+      <td>Other versions:</td>
+      <td>
+        {% for t, url in other_types %}
+          <a href="{{ url }}">{{ t }}</a>{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+    {% endif %}
+
+    <tr>
+      <td>Last updated:</td>
+      <td>{{ doc.time|date:"Y-m-d" }}</td>
+    </tr>
+
+    {% if not snapshot and can_manage_material %}
+    <tr><td colspan="2">
+      <a class="button" href="{% url "material_edit" name=doc.name action="revise" %}">Upload New Revision</a>
+    </td><tr/>
+    {% endif %}
+
+  </table>
+</div>
+
+{% if doc.rev and content != None %}
+  <h3>{{ doc.title }}</h3>
+  
+  <div class="markup_draft">
+    {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
+  </div>
+{% else %}
+  <p>Not available as plain text.</p>
+  
+  {% if other_types %}
+    <p class="download-instead"><a href="{{ other_types.0.1 }}">Download as {{ other_types.0.0.upper }}</a></p>
+  {% endif %}
+{% endif %}
+
+{% endblock %}
+

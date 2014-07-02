@@ -15,6 +15,7 @@ from ietf.utils.mail import send_mail_text, send_mail_mime, outbox
 class PyFlakesTestCase(TestCase):
 
     def test_pyflakes(self):
+        self.maxDiff = None
         path = os.path.join(settings.BASE_DIR)
         warnings = []
         warnings = pyflakes.checkPaths([path], verbosity=0)

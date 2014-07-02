@@ -88,7 +88,7 @@ class WGField(DisplayField):
         if raw or not document.group.type_id in ['wg','rg']:
             return document.group.acronym
         else:
-            return '<a href="%s">%s</a>' % (urlreverse('group_docs', kwargs=dict(group_type=document.group.type_id, acronym=document.group.acronym)), document.group.acronym) if (document.group and document.group.acronym != 'none')  else ''
+            return '<a href="%s">%s</a>' % (urlreverse('group_home', kwargs=dict(group_type=document.group.type_id, acronym=document.group.acronym)), document.group.acronym) if (document.group and document.group.acronym != 'none')  else ''
 
 
 class ADField(DisplayField):

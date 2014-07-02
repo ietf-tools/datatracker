@@ -217,6 +217,22 @@ class DocTestCase(TestCase):
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name='conflict-review-imaginary-irtf-submission')))
         self.assertEqual(r.status_code, 200)
 
+    def test_document_material(self):
+        draft = make_test_data()
+
+        doc = Document.objects.create(
+            name="slides-testteam-test-slides",
+            rev="00",
+            title="Test Slides",
+            group=draft.group,
+            type_id="slides"
+        )
+        doc.set_state(State.objects.get(type="slides", slug="active"))
+        DocAlias.objects.create(name=doc.name, document=doc)
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+
     def test_document_ballot(self):
         doc = make_test_data()
         ballot = doc.active_ballot()

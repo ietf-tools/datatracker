@@ -256,6 +256,7 @@ DATETIME_FORMAT = "Y-m-d H:i"
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
+DOCUMENT_PATH_PATTERN = '/a/www/ietf-ftp/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
@@ -276,7 +277,6 @@ INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
 # Ideally, more of these would be local -- but since we don't support
 # versions right now, we'll point to external websites
 DOC_HREFS = {
-    "agenda": "/meeting/{meeting}/agenda/{doc.group.acronym}/",
     #"charter": "/doc/{doc.name}-{doc.rev}/",
     "charter": "http://www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
     #"draft": "/doc/{doc.name}-{doc.rev}/",
@@ -285,6 +285,11 @@ DOC_HREFS = {
     # who understands this better can take care of it.
     #"liai-att": None
     #"liaison": None
+    "slides": 'http://www.ietf.org/slides/{doc.name}-{doc.rev}',
+}
+
+MEETING_DOC_HREFS = {
+    "agenda": "/meeting/{meeting}/agenda/{doc.group.acronym}/",
     "minutes": "http://www.ietf.org/proceedings/{meeting}/minutes/{doc.external_url}",
     "slides": "http://www.ietf.org/proceedings/{meeting}/slides/{doc.external_url}",
 }

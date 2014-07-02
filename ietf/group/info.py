@@ -35,22 +35,25 @@
 import os
 import itertools
 from tempfile import mkstemp
+from collections import OrderedDict
 
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render
 from django.template.loader import render_to_string
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from django.views.decorators.cache import cache_page
 from django.db.models import Q
+from django.utils.safestring import mark_safe
 
 from ietf.doc.views_search import SearchForm, retrieve_search_results
-from ietf.doc.models import State, DocAlias, RelatedDocument
+from ietf.doc.models import Document, State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
 from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type
+from ietf.group.utils import can_manage_materials, get_group_or_404
 from ietf.utils.pipe import pipe
 
 def roles(group, role_name):
@@ -58,10 +61,31 @@ def roles(group, role_name):
 
 def fill_in_charter_info(group, include_drafts=False):
     group.areadirector = group.ad.role_email("ad", group.parent) if group.ad else None
-    group.chairs = roles(group, "chair")
-    group.techadvisors = roles(group, "techadv")
-    group.editors = roles(group, "editor")
-    group.secretaries = roles(group, "secr")
+
+    personnel = {}
+    for r in Role.objects.filter(group=group).select_related("email", "person", "name"):
+        if r.name_id not in personnel:
+            personnel[r.name_id] = []
+        personnel[r.name_id].append(r)
+
+    if group.parent and group.parent.type_id == "area" and group.ad and "ad" not in personnel:
+        ad_roles = list(Role.objects.filter(group=group.parent, name="ad", person=group.ad))
+        if ad_roles:
+            personnel["ad"] = ad_roles
+
+    group.personnel = []
+    for role_name_slug, roles in personnel.iteritems():
+        label = roles[0].name.name
+        if len(roles) > 1:
+            if label.endswith("y"):
+                label = label[:-1] + "ies"
+            else:
+                label += "s"
+
+        group.personnel.append((role_name_slug, label, roles))
+
+    group.personnel.sort(key=lambda t: t[2][0].name.order)
+
     milestone_state = "charter" if group.state_id == "proposed" else "active"
     group.milestones = group.groupmilestone_set.filter(state=milestone_state).order_by('due')
 
@@ -69,18 +93,6 @@ def fill_in_charter_info(group, include_drafts=False):
         group.charter_text = get_charter_text(group)
     else:
         group.charter_text = u"Not chartered yet."
-
-    if include_drafts:
-        aliases = DocAlias.objects.filter(document__type="draft", document__group=group).select_related('document').order_by("name")
-        group.drafts = []
-        group.rfcs = []
-        for a in aliases:
-            if a.name.startswith("draft"):
-                group.drafts.append(a)
-            else:
-                group.rfcs.append(a)
-                a.rel = RelatedDocument.objects.filter(source=a.document).distinct()
-                a.invrel = RelatedDocument.objects.filter(target=a).distinct()
 
 def extract_last_name(role):
     return role.person.name_parts()[3]
@@ -113,6 +125,32 @@ def wg_summary_acronym(request, group_type):
                     'groups': groups },
                   content_type='text/plain; charset=UTF-8')
 
+def fill_in_wg_roles(group):
+    def get_roles(slug, default):
+        for role_slug, label, roles in group.personnel:
+            if slug == role_slug:
+                return roles
+        return default
+
+    group.chairs = get_roles("chair", [])
+    ads = get_roles("ad", [])
+    group.areadirector = ads[0] if ads else None
+    group.techadvisors = get_roles("techadv", [])
+    group.editors = get_roles("editor", [])
+    group.secretaries = get_roles("secr", [])
+
+def fill_in_wg_drafts(group):
+    aliases = DocAlias.objects.filter(document__type="draft", document__group=group).select_related('document').order_by("name")
+    group.drafts = []
+    group.rfcs = []
+    for a in aliases:
+        if a.name.startswith("draft"):
+            group.drafts.append(a)
+        else:
+            group.rfcs.append(a)
+            a.rel = RelatedDocument.objects.filter(source=a.document).distinct()
+            a.invrel = RelatedDocument.objects.filter(target=a).distinct()
+
 def wg_charters(request, group_type):
     if group_type != "wg":
         raise Http404
@@ -121,7 +159,9 @@ def wg_charters(request, group_type):
         area.ads = sorted(roles(area, "ad"), key=extract_last_name)
         area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("name")
         for group in area.groups:
-            fill_in_charter_info(group, include_drafts=True)
+            fill_in_charter_info(group)
+            fill_in_wg_roles(group)
+            fill_in_wg_drafts(group)
             group.area = area
     return render(request, 'group/1wg-charters.txt',
                   { 'areas': areas },
@@ -137,7 +177,9 @@ def wg_charters_by_acronym(request, group_type):
 
     groups = Group.objects.filter(type="wg", state="active").exclude(parent=None).order_by("acronym")
     for group in groups:
-        fill_in_charter_info(group, include_drafts=True)
+        fill_in_charter_info(group)
+        fill_in_wg_roles(group)
+        fill_in_wg_drafts(group)
         group.area = areas.get(group.parent_id)
     return render(request, 'group/1wg-charters-by-acronym.txt',
                   { 'groups': groups },
@@ -216,29 +258,63 @@ def concluded_groups(request):
     return render(request, 'group/concluded_groups.html',
                   dict(group_types=group_types))
 
-def construct_group_menu_context(request, group, selected, others):
+def get_group_materials(group):
+    return Document.objects.filter(group=group, type__in=group.features.material_types, session=None).exclude(states__slug="deleted")
+
+def construct_group_menu_context(request, group, selected, group_type, others):
     """Return context with info for the group menu filled in."""
+    kwargs = dict(acronym=group.acronym)
+    if group_type:
+        kwargs["group_type"] = group_type
+
+    # menu entries
+    entries = []
+    if group.features.has_documents:
+        entries.append(("Documents", urlreverse("ietf.group.info.group_documents", kwargs=kwargs)))
+    if group.features.has_chartering_process:
+        entries.append(("Charter", urlreverse("group_charter", kwargs=kwargs)))
+    else:
+        entries.append(("About", urlreverse("group_about", kwargs=kwargs)))
+    if group.features.has_materials and get_group_materials(group).exists():
+        entries.append(("Materials", urlreverse("ietf.group.info.materials", kwargs=kwargs)))
+    entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
+    if group.features.has_documents:
+        entries.append(("Dependency Graph", urlreverse("ietf.group.info.dependencies_pdf", kwargs=kwargs)))
+
+    if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
+        entries.append((mark_safe("List Archive &raquo;"), group.list_archive))
+    if group.has_tools_page():
+        entries.append((mark_safe("Tools %s Page &raquo;" % group.type.name), "https://tools.ietf.org/%s/%s/" % (group.type_id, group.acronym)))
+
+
+    # actions
     actions = []
 
     is_chair = group.has_role(request.user, "chair")
     can_manage = can_manage_group_type(request.user, group.type_id)
 
-    if group.state_id != "proposed" and (is_chair or can_manage):
-        actions.append((u"Add or edit milestones", urlreverse("group_edit_milestones", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
+    if group.features.has_milestones:
+        if group.state_id != "proposed" and (is_chair or can_manage):
+            actions.append((u"Add or edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
 
-    if group.state_id != "conclude" and can_manage:
-        actions.append((u"Edit group", urlreverse("group_edit", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
+    if group.features.has_materials and can_manage_materials(request.user, group):
+        actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
 
-    if is_chair or can_manage:
-        actions.append((u"Customize workflow", urlreverse("ietf.group.edit.customize_workflow", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
+    if group.type_id in ("rg", "wg") and group.state_id != "conclude" and can_manage:
+        actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))
+
+    if group.features.customize_workflow and (is_chair or can_manage):
+        actions.append((u"Customize workflow", urlreverse("ietf.group.edit.customize_workflow", kwargs=kwargs)))
 
     if group.state_id in ("active", "dormant") and can_manage:
-        actions.append((u"Request closing group", urlreverse("ietf.group.edit.conclude", kwargs=dict(group_type=group.type_id, acronym=group.acronym))))
+        actions.append((u"Request closing group", urlreverse("ietf.group.edit.conclude", kwargs=kwargs)))
 
     d = {
         "group": group,
-        "selected": selected,
+        "selected_menu_entry": selected,
+        "menu_entries": entries,
         "menu_actions": actions,
+        "group_type": group_type,
         }
 
     d.update(others)
@@ -278,22 +354,33 @@ def search_for_group_documents(group):
 
     return docs, meta, docs_related, meta_related
 
-def group_documents(request, group_type, acronym):
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
+def group_home(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    kwargs = dict(acronym=group.acronym)
+    if group_type:
+        kwargs["group_type"] = group_type
+    return HttpResponseRedirect(urlreverse(group.features.default_tab, kwargs=kwargs))
+
+def group_documents(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_documents:
+        raise Http404
 
     docs, meta, docs_related, meta_related = search_for_group_documents(group)
 
     return render(request, 'group/group_documents.html',
-                  construct_group_menu_context(request, group, "documents", {
+                  construct_group_menu_context(request, group, "documents", group_type, {
                 'docs': docs,
                 'meta': meta,
                 'docs_related': docs_related,
                 'meta_related': meta_related
                 }))
 
-def group_documents_txt(request, group_type, acronym):
+def group_documents_txt(request, acronym, group_type=None):
     """Return tabulator-separated rows with documents for group."""
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_documents:
+        raise Http404
 
     docs, meta, docs_related, meta_related = search_for_group_documents(group)
 
@@ -315,44 +402,53 @@ def group_documents_txt(request, group_type, acronym):
 
     return HttpResponse(u"\n".join(rows), content_type='text/plain; charset=UTF-8')
 
+def group_about(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
 
-def group_charter(request, group_type, acronym):
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
-
-    fill_in_charter_info(group, include_drafts=False)
-    group.delegates = roles(group, "delegate")
+    fill_in_charter_info(group)
 
     e = group.latest_event(type__in=("changed_state", "requested_close",))
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
 
-    long_group_types = dict(
-        wg="Working Group",
-        rg="Research Group",
-        )
-
     can_manage = can_manage_group_type(request.user, group.type_id)
 
-    return render(request, 'group/group_charter.html',
-                  construct_group_menu_context(request, group, "charter", {
+    return render(request, 'group/group_about.html',
+                  construct_group_menu_context(request, group, "charter" if group.features.has_chartering_process else "about", group_type, {
                       "milestones_in_review": group.groupmilestone_set.filter(state="review"),
                       "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
                       "requested_close": requested_close,
-                      "long_group_type":long_group_types.get(group_type, "Group"),
                       "can_manage": can_manage,
                   }))
 
 
-def history(request, group_type, acronym):
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
+def history(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
 
     events = group.groupevent_set.all().select_related('by').order_by('-time', '-id')
 
     return render(request, 'group/history.html',
-                  construct_group_menu_context(request, group, "history", {
-                "events": events,
-                }))
-   
- 
+                  construct_group_menu_context(request, group, "history", group_type, {
+                      "events": events,
+                  }))
+
+def materials(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_materials:
+        raise Http404
+
+    docs = get_group_materials(group).order_by("type__order", "-time").select_related("type")
+    doc_types = OrderedDict()
+    for d in docs:
+        if d.type not in doc_types:
+            doc_types[d.type] = []
+        doc_types[d.type].append(d)
+
+    return render(request, 'group/materials.html',
+                  construct_group_menu_context(request, group, "materials", group_type, {
+                      "doc_types": doc_types.items(),
+                      "can_manage_materials": can_manage_materials(request.user, group)
+                  }))
+
 def nodename(name):
     return name.replace('-','_')
 
@@ -470,19 +566,21 @@ def make_dot(group):
                              dict( nodes=nodes, edges=edges )
                             )
 
-def dependencies_dot(request, group_type, acronym):
-
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
+def dependencies_dot(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_documents:
+        raise Http404
 
     return HttpResponse(make_dot(group),
                         content_type='text/plain; charset=UTF-8'
                         )
 
 @cache_page ( 60 * 60 )
-def dependencies_pdf(request, group_type, acronym):
+def dependencies_pdf(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_documents:
+        raise Http404
 
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
-    
     dothandle,dotname = mkstemp()  
     os.close(dothandle)
     dotfile = open(dotname,"w")

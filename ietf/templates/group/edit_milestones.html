@@ -42,7 +42,7 @@ tr.milestone.add { font-style: italic; }
 <noscript>This page depends on Javascript being enabled to work properly.</noscript>
 
 <p>Links:
-  <a href="{% url "group_charter" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>
+  <a href="{{ g.about_url  }}">{{ group.acronym }} {{ group.type.name }}</a>
   {% if group.charter %}
   - <a href="{% url "doc_view" name=group.charter.canonical_name %}">{{ group.charter.canonical_name }}</a>
   {% endif %}
@@ -92,7 +92,7 @@ this list</a> to the milestones currently in use for the {{ group.acronym }} {{ 
 </table>
 
 <div class="actions">
-  <a class="button" href="{% if milestone_set == "charter" %}{% url "doc_view" name=group.charter.canonical_name %}{% else %}{% url "group_charter" group_type=group.type_id acronym=group.acronym %}{% endif %}">Cancel</a>
+  <a class="button" href="{% if milestone_set == "charter" %}{% url "doc_view" name=group.charter.canonical_name %}{% else %}{{ group.about_url }}{% endif %}">Cancel</a>
   <input class="button" type="submit" data-labelsave="Save" data-labelreview="Review changes" value="Save" style="display:none"/>
   <input type="hidden" name="action" value="save">
 </div>

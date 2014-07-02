@@ -74,9 +74,10 @@ class DocumentInfo(models.Model):
         return ext.lstrip(".").lower()
 
     def get_file_path(self):
+
         if self.type_id == "draft":
             return settings.INTERNET_DRAFT_PATH
-        elif self.type_id in ("agenda", "minutes", "slides"):
+        elif self.type_id in ("agenda", "minutes", "slides") and self.meeting_related():
             meeting = self.name.split("-")[1]
             return os.path.join(settings.AGENDA_PATH, meeting, self.type_id) + "/"
         elif self.type_id == "charter":
@@ -86,18 +87,26 @@ class DocumentInfo(models.Model):
         elif self.type_id == "statchg":
             return settings.STATUS_CHANGE_PATH
         else:
-            raise NotImplemented
+            return settings.DOCUMENT_PATH_PATTERN.format(doc=self)
 
     def href(self):
+        meeting_related = self.meeting_related()
+
+        settings_var = settings.DOC_HREFS
+        if meeting_related:
+            settings_var = settings.MEETING_DOC_HREFS
+
         try:
-            format = settings.DOC_HREFS[self.type_id]
+            format = settings_var[self.type_id]
         except KeyError:
             if len(self.external_url):
                 return self.external_url
             return None
+
         meeting = None
-        if self.type_id in ("agenda", "minutes", "slides"):
+        if meeting_related:
             meeting = self.name.split("-")[1]
+
         return format.format(doc=self,meeting=meeting)
 
     def set_state(self, state):
@@ -120,6 +129,9 @@ class DocumentInfo(models.Model):
         """Get state of type, or default state for document type if
         not specified. Uses a local cache to speed multiple state
         reads up."""
+        if self.pk == None: # states is many-to-many so not in database implies no state
+            return None
+
         if state_type == None:
             state_type = self.type_id
 
@@ -157,6 +169,11 @@ class DocumentInfo(models.Model):
             return ballot
         else:
             return None
+
+    def meeting_related(self):
+        return(self.type_id in ("agenda", "minutes", "slides") and (
+            self.name.split("-")[1] == "interim"
+            or (self.session_set.exists() if isinstance(self, Document) else self.doc.session_set.exists())))
 
     class Meta:
         abstract = True
@@ -270,12 +287,9 @@ class Document(DocumentInfo):
             a = self.docalias_set.filter(name__startswith="rfc")
             if a:
                 name = a[0].name
-#         elif self.type_id == "charter":
-#             if self.group.type.slug == "rg":
-#                 top_org = "irtf"
-#             else:
-#                 top_org = "ietf"
-#             return "charter-%s-%s" % (top_org, self.chartered_group.acronym)
+        elif self.type_id == "charter":
+            from ietf.doc.utils_charter import charter_name_for_group
+            return charter_name_for_group(self.chartered_group)
         return name
 
     def canonical_docalias(self):
@@ -468,7 +482,11 @@ class DocHistoryAuthor(models.Model):
 
 class DocHistory(DocumentInfo):
     doc = models.ForeignKey(Document, related_name="history_set")
-    name = models.CharField(max_length=255) # WG charter canonical names can change if the group acronym changes
+    # the name here is used to capture the canonical name at the time
+    # - it would perhaps be more elegant to simply call the attribute
+    # canonical_name and replace the function on Document with a
+    # property
+    name = models.CharField(max_length=255)
     related = models.ManyToManyField('DocAlias', through=RelatedDocHistory, blank=True)
     authors = models.ManyToManyField(Email, through=DocHistoryAuthor, blank=True)
     def __unicode__(self):

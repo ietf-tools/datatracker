@@ -1,24 +1,23 @@
 # edit/create view for groups
 
 import re
-import os
 import datetime
-import shutil
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect
 from django.utils.html import mark_safe
-from django.http import Http404, HttpResponse
 from django.contrib.auth.decorators import login_required
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import DocAlias, DocTagName, Document, State, save_document_in_history
+from ietf.doc.models import Document, DocAlias, DocTagName, State
 from ietf.doc.utils import get_tags_for_stream_id
+from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
 from ietf.group.utils import save_group_in_history, can_manage_group_type
+from ietf.group.utils import get_group_or_404
 from ietf.ietfauth.utils import has_role
 from ietf.person.forms import EmailsField
 from ietf.person.models import Person, Email
@@ -134,12 +133,7 @@ def format_urls(urls, fs="\n"):
     return fs.join(res)
 
 def get_or_create_initial_charter(group, group_type):
-    if group_type == "rg":
-        top_org = "irtf"
-    else:
-        top_org = "ietf"
-
-    charter_name = "charter-%s-%s" % (top_org, group.acronym)
+    charter_name = charter_name_for_group(group)
 
     try:
         charter = Document.objects.get(docalias__name=charter_name)
@@ -166,6 +160,9 @@ def submit_initial_charter(request, group_type, acronym=None):
         return HttpResponseForbidden("You don't have permission to access this view")
 
     group = get_object_or_404(Group, acronym=acronym)
+    if not group.features.has_chartering_process:
+        raise Http404
+
     if not group.charter:
         group.charter = get_or_create_initial_charter(group, group_type)
         group.save()
@@ -187,6 +184,9 @@ def edit(request, group_type=None, acronym=None, action="edit"):
         new_group = True
     else:
         raise Http404
+
+    if not group_type and group:
+        group_type = group.type_id
 
     if request.method == 'POST':
         form = GroupForm(request.POST, group=group, confirmed=request.POST.get("confirmed", False), group_type=group_type)
@@ -233,8 +233,6 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                     changes.append(desc(name, clean[attr], v))
                     setattr(group, attr, clean[attr])
 
-            prev_acronym = group.acronym
-
             # update the attributes, keeping track of what we're doing
             diff('name', "Name")
             diff('acronym', "Acronym")
@@ -244,17 +242,6 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             diff('list_email', "Mailing list email")
             diff('list_subscribe', "Mailing list subscribe address")
             diff('list_archive', "Mailing list archive")
-
-            if not new_group and group.acronym != prev_acronym and group.charter:
-                save_document_in_history(group.charter)
-                DocAlias.objects.get_or_create(
-                    name="charter-ietf-%s" % group.acronym,
-                    document=group.charter,
-                    )
-                old = os.path.join(group.charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (prev_acronym, group.charter.rev))
-                if os.path.exists(old):
-                    new = os.path.join(group.charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (group.acronym, group.charter.rev))
-                    shutil.copy(old, new)
 
             # update roles
             for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors"), ('delegates', 'delegate', "Delegates")]:
@@ -295,7 +282,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             if action=="charter":
                 return redirect('charter_submit', name=group.charter.name, option="initcharter")
 
-            return redirect('group_charter', group_type=group.type_id, acronym=group.acronym)
+            return HttpResponseRedirect(group.about_url())
     else: # form.is_valid()
         if not new_group:
             init = dict(name=group.name,
@@ -328,11 +315,11 @@ class ConcludeForm(forms.Form):
     instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True)
 
 @login_required
-def conclude(request, group_type, acronym):
+def conclude(request, acronym, group_type=None):
     """Request the closing of group, prompting for instructions."""
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
+    group = get_group_or_404(acronym, group_type)
 
-    if not can_manage_group_type(request.user, group_type):
+    if not can_manage_group_type(request.user, group.type_id):
         return HttpResponseForbidden("You don't have permission to access this view")
 
     if request.method == 'POST':
@@ -347,17 +334,22 @@ def conclude(request, group_type, acronym):
             e.desc = "Requested closing group"
             e.save()
 
-            return redirect('group_charter', group_type=group.type_id, acronym=group.acronym)
+            return redirect(group.features.about_page, group_type=group_type, acronym=group.acronym)
     else:
         form = ConcludeForm()
 
-    return render(request, 'group/conclude.html',
-                  dict(form=form, group=group))
-
+    return render(request, 'group/conclude.html', {
+        'form': form,
+        'group': group,
+        'group_type': group_type,
+    })
 
 @login_required
 def customize_workflow(request, group_type, acronym):
-    group = get_object_or_404(Group, type=group_type, acronym=acronym)
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.customize_workflow:
+        raise Http404
+
     if (not has_role(request.user, "Secretariat") and
         not group.role_set.filter(name="chair", person__user=request.user)):
         return HttpResponseForbidden("You don't have permission to access this view")
