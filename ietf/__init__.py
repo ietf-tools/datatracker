@@ -1,9 +1,9 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-__version__ = "5.5.3-dev0"
+__version__ = "5.6.0"
 
 __date__    = "$Date$"
 
-__rev__     = "$Rev$ (dev) Latest release: Rev. 7977 "
+__rev__     = "$Rev$"
 
 __id__      = "$Id$"
