@@ -30,6 +30,11 @@ class Migration(SchemaMigration):
         ))
         db.create_unique(m2m_table_name, ['liaisonstatement_id', 'group_id'])
 
+        # Adding field 'LiaisonStatement.state'
+        db.add_column(u'liaisons_liaisonstatement', 'state',
+                      self.gf('django.db.models.fields.related.ForeignKey')(default='pending', to=orm['name.LiaisonStatementState']),
+                      keep_default=False)
+
     def backwards(self, orm):
         # Deleting field 'LiaisonStatement.other_identifiers'
         db.delete_column(u'liaisons_liaisonstatement', 'other_identifiers')
@@ -39,6 +44,9 @@ class Migration(SchemaMigration):
 
         # Removing M2M table for field to_groups on 'LiaisonStatement'
         db.delete_table(db.shorten_name(u'liaisons_liaisonstatement_to_groups'))
+
+        # Deleting field 'LiaisonStatement.state'
+        db.delete_column(u'liaisons_liaisonstatement', 'state_id')
 
     models = {
         u'auth.group': {
@@ -163,6 +171,7 @@ class Migration(SchemaMigration):
             'related_to': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['liaisons.LiaisonStatement']", 'null': 'True', 'blank': 'True'}),
             'reply_to': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'response_contacts': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
+            'state': ('django.db.models.fields.related.ForeignKey', [], {'default': "'pending'", 'to': u"orm['name.LiaisonStatementState']"}),
             'submitted': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'technical_contacts': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
@@ -229,6 +238,14 @@ class Migration(SchemaMigration):
         },
         u'name.streamname': {
             'Meta': {'ordering': "['order']", 'object_name': 'StreamName'},
+            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
+            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
+        },
+        u'name.liaisonstatementstate': {
+            'Meta': {'ordering': "['order']", 'object_name': 'LiaisonStatementState'},
             'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),

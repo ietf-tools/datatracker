@@ -222,6 +222,7 @@ class Migration(DataMigration):
             'related_to': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['liaisons.LiaisonStatement']", 'null': 'True', 'blank': 'True'}),
             'reply_to': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'response_contacts': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
+            'state': ('django.db.models.fields.related.ForeignKey', [], {'default': "'pending'", 'to': u"orm['name.LiaisonStatementState']"}),
             'submitted': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'technical_contacts': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
@@ -334,6 +335,14 @@ class Migration(DataMigration):
         },
         u'name.streamname': {
             'Meta': {'ordering': "['order']", 'object_name': 'StreamName'},
+            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
+            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
+        },
+        u'name.liaisonstatementstate': {
+            'Meta': {'ordering': "['order']", 'object_name': 'LiaisonStatementState'},
             'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),

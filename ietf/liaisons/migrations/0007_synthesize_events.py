@@ -1,13 +1,32 @@
 # -*- coding: utf-8 -*-
+import os
+import datetime
+import syslog
 from south.v2 import DataMigration
 
 
 class Migration(DataMigration):
 
+    def create_logger(self):
+        migration_file = os.path.abspath(__file__)
+        self.logger_filename = '%s.txt' % os.path.splitext(migration_file)[0]
+        self.logger = open(self.logger_filename, "a")
+        self.logger.write("\n\n%s\n--------------------\n" % datetime.datetime.now())
+
+    def close_logger(self):
+        self.logger.close()
+        print '%s:' % self.logger_filename
+        syslog.syslog('%s:' % self.logger_filename)
+        for line in open(self.logger_filename, "r"):
+            print line,
+            syslog.syslog(line)
+
     def forwards(self, orm):
+        self.create_logger()
         submitted = orm['name.LiaisonStatementEventTypeName'].objects.get(slug='submit')
         modified = orm['name.LiaisonStatementEventTypeName'].objects.get(slug='modified')
         approved = orm['name.LiaisonStatementEventTypeName'].objects.get(slug='approved')
+        approved_state = orm['name.LiaisonStatementState'].objects.get(slug='approved')
         system_user = orm['person.Person'].objects.get(name="(System)")
         for liaison in orm['liaisons.LiaisonStatement'].objects.all():
             if liaison.submitted:
@@ -18,6 +37,7 @@ class Migration(DataMigration):
                     by=system_user)
                 event.time = liaison.submitted
                 event.save()
+                self.logger.write("Created a liaison submitted event with date: %s\n" % liaison.submitted)
             if liaison.modified:
                 event, _ = orm['liaisons.LiaisonStatementEvent'].objects.get_or_create(
                     time=liaison.modified,
@@ -27,6 +47,7 @@ class Migration(DataMigration):
                     by=system_user)
                 event.time = liaison.modified
                 event.save()
+                self.logger.write("Created a liaison modified event with date: %s\n" % liaison.submitted)
             if liaison.approved:
                 event, _ = orm['liaisons.LiaisonStatementEvent'].objects.get_or_create(
                     time=liaison.approved,
@@ -36,6 +57,10 @@ class Migration(DataMigration):
                     by=system_user)
                 event.time = liaison.approved
                 event.save()
+                liaison.state = approved_state
+                liaison.save()
+                self.logger.write("Created a liaison approved event with date: %s\n" % liaison.submitted)
+        self.close_logger()
 
     def backwards(self, orm):
         "Write your backwards methods here."
@@ -163,6 +188,7 @@ class Migration(DataMigration):
             'related_to': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['liaisons.LiaisonStatement']", 'null': 'True', 'blank': 'True'}),
             'reply_to': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'response_contacts': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
+            'state': ('django.db.models.fields.related.ForeignKey', [], {'default': "'pending'", 'to': u"orm['name.LiaisonStatementState']"}),
             'submitted': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'technical_contacts': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
@@ -275,6 +301,14 @@ class Migration(DataMigration):
         },
         u'name.streamname': {
             'Meta': {'ordering': "['order']", 'object_name': 'StreamName'},
+            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
+            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
+        },
+        u'name.liaisonstatementstate': {
+            'Meta': {'ordering': "['order']", 'object_name': 'LiaisonStatementState'},
             'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),

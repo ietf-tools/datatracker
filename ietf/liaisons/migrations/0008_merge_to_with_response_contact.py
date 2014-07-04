@@ -1,13 +1,33 @@
 # -*- coding: utf-8 -*-
+import syslog
+import os
+import datetime
 from south.v2 import DataMigration
 
 
 class Migration(DataMigration):
 
+    def create_logger(self):
+        migration_file = os.path.abspath(__file__)
+        self.logger_filename = '%s.txt' % os.path.splitext(migration_file)[0]
+        self.logger = open(self.logger_filename, "a")
+        self.logger.write("\n\n%s\n--------------------\n" % datetime.datetime.now())
+
+    def close_logger(self):
+        self.logger.close()
+        print '%s:' % self.logger_filename
+        syslog.syslog('%s:' % self.logger_filename)
+        for line in open(self.logger_filename, "r"):
+            print line,
+            syslog.syslog(line)
+
     def forwards(self, orm):
+        self.create_logger()
         comment = orm['name.LiaisonStatementEventTypeName'].objects.get(slug='comment')
         system_user = orm['person.Person'].objects.get(name="(System)")
-        for liaison in orm['liaisons.LiaisonStatement'].objects.exclude(reply_to=''):
+        liaison_list = orm['liaisons.LiaisonStatement'].objects.exclude(reply_to='')
+        self.logger.write("Migrating %s liaisons that contains reply_to values\n" % liaison_list.count())
+        for liaison in liaison_list:
             if liaison.reply_to in liaison.response_contacts:
                 continue
             orm['liaisons.LiaisonStatementEvent'].objects.get_or_create(
@@ -17,6 +37,8 @@ class Migration(DataMigration):
                 by=system_user)
             liaison.response_contacts += ',%s' % liaison.reply_to
             liaison.save()
+            self.logger.write('Liaison %s modified. Merged reply_to into response_contacts\n' % liaison.pk)
+        self.close_logger()
 
     def backwards(self, orm):
         "Write your backwards methods here."
@@ -144,6 +166,7 @@ class Migration(DataMigration):
             'related_to': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['liaisons.LiaisonStatement']", 'null': 'True', 'blank': 'True'}),
             'reply_to': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'response_contacts': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
+            'state': ('django.db.models.fields.related.ForeignKey', [], {'default': "'pending'", 'to': u"orm['name.LiaisonStatementState']"}),
             'submitted': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'technical_contacts': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
@@ -256,6 +279,14 @@ class Migration(DataMigration):
         },
         u'name.streamname': {
             'Meta': {'ordering': "['order']", 'object_name': 'StreamName'},
+            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
+            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
+        },
+        u'name.liaisonstatementstate': {
+            'Meta': {'ordering': "['order']", 'object_name': 'LiaisonStatementState'},
             'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),

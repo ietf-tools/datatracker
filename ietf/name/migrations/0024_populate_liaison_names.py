@@ -1,29 +1,55 @@
 # -*- coding: utf-8 -*-
+import os
+import syslog
+import datetime
+
 from south.v2 import DataMigration
 
 
 class Migration(DataMigration):
 
+    def log(self, obj, created):
+        if created:
+            self.logger.write('New %s created with pk %s\n' % (obj.__class__.__name__, obj.pk))
+        else:
+            self.logger.write('%s with pk %s already exists\n' % (obj.__class__.__name__, obj.pk))
+
+    def create_logger(self):
+        migration_file = os.path.abspath(__file__)
+        self.logger_filename = '%s.txt' % os.path.splitext(migration_file)[0]
+        self.logger = open(self.logger_filename, "a")
+        self.logger.write("\n\n%s\n--------------------\n" % datetime.datetime.now())
+
+    def close_logger(self):
+        self.logger.close()
+        print '%s:' % self.logger_filename
+        syslog.syslog('%s:' % self.logger_filename)
+        for line in open(self.logger_filename, "r"):
+            print line,
+            syslog.syslog(line)
+
     def forwards(self, orm):
+        self.create_logger()
         # LiaisonStatementState: Pending, Approved, Dead
-        orm.LiaisonStatementState.objects.get_or_create(slug="pending", order=1, name="Pending")
-        orm.LiaisonStatementState.objects.get_or_create(slug="approved", order=2, name="Approved")
-        orm.LiaisonStatementState.objects.get_or_create(slug="dead", order=3, name="Dead")
+        self.log(*orm.LiaisonStatementState.objects.get_or_create(slug="pending", order=1, name="Pending"))
+        self.log(*orm.LiaisonStatementState.objects.get_or_create(slug="approved", order=2, name="Approved"))
+        self.log(*orm.LiaisonStatementState.objects.get_or_create(slug="dead", order=3, name="Dead"))
 
         # LiaisonStatementEventTypeName: Submitted, Modified, Approved, Posted, Killed, Resurrected, MsgIn, MsgOut, Comment
-        orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="submit", order=1, name="Submitted")
-        orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="modified", order=2, name="Modified")
-        orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="approved", order=3, name="Approved")
-        orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="posted", order=4, name="Posted")
-        orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="killed", order=5, name="Killed")
-        orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="resurrec", order=6, name="Resurrected")
-        orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="msgin", order=7, name="MsgIn")
-        orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="msgout", order=8, name="MsgOut")
-        orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="comment", order=9, name="Comment")
+        self.log(*orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="submit", order=1, name="Submitted"))
+        self.log(*orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="modified", order=2, name="Modified"))
+        self.log(*orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="approved", order=3, name="Approved"))
+        self.log(*orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="posted", order=4, name="Posted"))
+        self.log(*orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="killed", order=5, name="Killed"))
+        self.log(*orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="resurrec", order=6, name="Resurrected"))
+        self.log(*orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="msgin", order=7, name="MsgIn"))
+        self.log(*orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="msgout", order=8, name="MsgOut"))
+        self.log(*orm.LiaisonStatementEventTypeName.objects.get_or_create(slug="comment", order=9, name="Comment"))
 
         #LiaisonStatementTagName: Action Required, Action Taken
-        orm.LiaisonStatementTagName.objects.get_or_create(slug="required", order=1, name="Action Required")
-        orm.LiaisonStatementTagName.objects.get_or_create(slug="taken", order=2, name="Action Taken")
+        self.log(*orm.LiaisonStatementTagName.objects.get_or_create(slug="required", order=1, name="Action Required"))
+        self.log(*orm.LiaisonStatementTagName.objects.get_or_create(slug="taken", order=2, name="Action Taken"))
+        self.close_logger()
 
     def backwards(self, orm):
         "Write your backwards methods here."
