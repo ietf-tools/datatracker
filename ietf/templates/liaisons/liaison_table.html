@@ -1,21 +1,24 @@
 {% load ietf_filters %}
 
-<table class="ietf-table" width="100%">
+<table class="ietf-table" width="100%" id="LiaisonListTable">
+<thead>
 <tr>
-  <th width="9%" class="sort{% if sort == "submitted" %} sorted{% endif %}"><a href="?sort=submitted">Date</a></th>
-  <th width="15%" class="sort{% if sort == "from_name" %} sorted{% endif %}"><a href="?sort=from_name">From</a></th>
-  <th width="15%" class="sort{% if sort == "to_name" %} sorted{% endif %}"><a href="?sort=to_name">To</a></th>
-  <th width="9%" class="sort{% if sort == "deadline" %} sorted{% endif %}"><a href="?sort=deadline">Deadline</a></th>
-  <th width="50%" class="sort{% if sort == "title" %} sorted{% endif %}"><a href="?sort=title">Title</a></th>
+  <th width="9%" class="sort{% if sort == "submitted" %} sorted{% endif %}">Date</th>
+  <th width="15%" class="sort{% if sort == "from_name" %} sorted{% endif %}">From</th>
+  <th width="15%" class="sort{% if sort == "to_name" %} sorted{% endif %}">To</th>
+  <th width="9%" class="sort{% if sort == "deadline" %} sorted{% endif %}">Deadline</th>
+  <th width="50%" class="sort{% if sort == "title" %} sorted{% endif %}">Title</th>
 </tr>
+</thead>
 
+<tbody>
 {% for liaison in liaisons %}
 <tr class="{% cycle oddrow,evenrow %}">
   <td style="white-space:nowrap;">{{ liaison.submitted|date:"Y-m-d" }}</td>
-  <td>{{ liaison.from_name }}</td>
+  <td>{{ liaison.from_concat|default:liaison.from_name }}</td>
   <td>
-    {% if liaison.from_contact_id %}
-      {{ liaison.to_name }}
+    {% if liaison.to_concat %}
+      {{ liaison.to_concat }}
     {% else %}
       {{ liaison.to_name|strip_email }}
     {% endif %}
@@ -35,5 +38,5 @@
   </td>
 </tr>
 {% endfor %}
-
+</tbody>
 </table>

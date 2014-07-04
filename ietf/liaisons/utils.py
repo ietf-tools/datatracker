@@ -13,7 +13,7 @@ can_submit_liaison_required = passes_test_decorator(
     "Restricted to participants who are authorized to submit liaison statements on behalf of the various IETF entities")
 
 def approvable_liaison_statements(user):
-    liaisons = LiaisonStatement.objects.filter(approved=None)
+    liaisons = LiaisonStatement.objects.filter(state__slug='pending')
     if has_role(user, "Secretariat"):
         return liaisons
 
@@ -28,7 +28,7 @@ def approvable_liaison_statements(user):
         else:
             group_acronyms.append(x)
 
-    return liaisons.filter(Q(from_group__acronym__in=group_acronyms) | Q(from_group__pk__in=group_ids))
+    return liaisons.filter(Q(from_groups__acronym__in=group_acronyms) | Q(from_groups__pk__in=group_ids))
 
 
 # the following is a biggish object hierarchy abstracting the entity

@@ -4,15 +4,21 @@ from email.utils import parseaddr
 from django import forms
 from django.conf import settings
 from django.forms.util import ErrorList
+from django.db.models import Q
+from django.forms.widgets import RadioFieldRenderer
 from django.core.validators import validate_email, ValidationError
 from django.template.loader import render_to_string
+from django.utils.html import format_html
+from django.utils.encoding import force_text
+from django.utils.safestring import mark_safe
+
 
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
                                     get_person_for_user, is_secretariat, is_sdo_liaison_manager)
 from ietf.liaisons.utils import IETFHM
 from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
                                    ShowAttachmentsWidget, RelatedLiaisonWidget)
-from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
+from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName,  LiaisonStatementEvent
 from ietf.group.models import Group, Role
 from ietf.person.models import Person, Email
 from ietf.doc.models import Document
@@ -468,3 +474,63 @@ def liaison_form_factory(request, **kwargs):
         return IncomingLiaisonForm(user, **kwargs)
     return None
 
+
+class RadioRenderer(RadioFieldRenderer):
+
+    def render(self):
+        output = []
+        for widget in self:
+            output.append(format_html(force_text(widget)))
+        return mark_safe('\n'.join(output))
+
+
+class SearchLiaisonForm(forms.Form):
+
+    text = forms.CharField(required=False)
+    scope = forms.ChoiceField(choices=(("all", "All text fields"), ("title", "Title field")), required=False, initial='title', widget=forms.RadioSelect(renderer=RadioRenderer))
+    source = forms.CharField(required=False)
+    destination = forms.CharField(required=False)
+    start_date = forms.DateField(required=False, help_text="Format: YYYY-MM-DD")
+    end_date = forms.DateField(required=False, help_text="Format: YYYY-MM-DD")
+
+    def get_results(self):
+        results = LiaisonStatement.objects.filter(state__slug='approved').extra(
+            select={
+                '_submitted': 'SELECT time FROM liaisons_liaisonstatementevent WHERE liaisons_liaisonstatement.id = liaisons_liaisonstatementevent.statement_id AND liaisons_liaisonstatementevent.type_id = "submit"',
+                'from_concat': 'SELECT GROUP_CONCAT(name SEPARATOR ", ") FROM group_group JOIN liaisons_liaisonstatement_from_groups WHERE liaisons_liaisonstatement.id = liaisons_liaisonstatement_from_groups.liaisonstatement_id AND liaisons_liaisonstatement_from_groups.group_id = group_group.id',
+                'to_concat': 'SELECT GROUP_CONCAT(name SEPARATOR ", ") FROM group_group JOIN liaisons_liaisonstatement_to_groups WHERE liaisons_liaisonstatement.id = liaisons_liaisonstatement_to_groups.liaisonstatement_id AND liaisons_liaisonstatement_to_groups.group_id = group_group.id',
+            })
+        if self.is_bound:
+            query = self.cleaned_data.get('text')
+            if query:
+                if self.cleaned_data.get('scope') == 'title':
+                    q = Q(title__icontains=query)
+                else:
+                    q = (Q(title__icontains=query) | Q(other_identifiers__icontains=query) | Q(body__icontains=query) | Q(attachments__title__icontains=query) |
+                         Q(response_contacts__icontains=query) | Q(technical_contacts__icontains=query) | Q(action_holder_contacts__icontains=query) |
+                         Q(cc_contacts=query))
+                results = results.filter(q)
+            source = self.cleaned_data.get('source')
+            if source:
+                results = results.filter(Q(from_groups__name__icontains=source) | Q(from_groups__acronym__iexact=source) | Q(from_name__icontains=source))
+            destination = self.cleaned_data.get('destination')
+            if destination:
+                results = results.filter(Q(to_groups__name__icontains=destination) | Q(to_groups__acronym__iexact=destination) | Q(to_name__icontains=destination))
+            start_date = self.cleaned_data.get('start_date')
+            end_date = self.cleaned_data.get('end_date')
+            events = None
+            if start_date:
+                events = LiaisonStatementEvent.objects.filter(type='submit', time__gte=start_date)
+                if end_date:
+                    events = events.filter(time__lte=end_date)
+            elif end_date:
+                events = LiaisonStatementEvent.objects.filter(type='submit', time__lte=end_date)
+            if events:
+                results = results.filter(liaisonstatementevent__in=events)
+
+                
+            destination = self.cleaned_data.get('destination')
+            if destination:
+                results = results.filter(Q(to_groups__name__icontains=destination) | Q(to_groups__acronym__iexact=destination) | Q(to_name__icontains=destination))
+        results = results.distinct().order_by('title')
+        return results

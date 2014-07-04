@@ -36,6 +36,8 @@ class LiaisonStatement(models.Model):
 
     attachments = models.ManyToManyField(Document, through='LiaisonStatementAttachments', blank=True)
 
+    state = models.ForeignKey(LiaisonStatementState, default='pending')
+
     def name(self):
         if self.from_group:
             frm = self.from_group.acronym or self.from_group.name
@@ -49,6 +51,23 @@ class LiaisonStatement(models.Model):
 
     def __unicode__(self):
         return self.title or u"<no title>"
+
+    @property
+    def submitted(self):
+        if getattr(self, '_submitted', None):
+            return self._submitted
+        event = self.liaisonstatementevent_set.filter(type__slug='submit')
+        if event.count():
+            return event[0].time
+        return None
+
+    @property
+    def approved(self):
+        return self.state_id == 'approved'
+
+    @property
+    def action_taken(self):
+        return bool(self.tags.filter(slug='taken').count())
 
 
 class LiaisonStatementAttachments(models.Model):

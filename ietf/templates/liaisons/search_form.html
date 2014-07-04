@@ -1,0 +1,15 @@
+<form id="search_form" class="search_form" action="{% url "liaison_list" %}" method="get">
+
+<table>
+<tr><td><label>Search text:</label></td><td colspan="3">{{ form.text }}</td></tr>
+<tr><td><label>Search text scope:</label></td><td colspan="3">{{ form.scope }}</td></tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr><td><label>Source:</label></td><td>{{ form.source }}</td><td><label>Destination:</label></td><td>{{ form.destination }}</td></tr>
+<tr><td><label>From date:</label><div class="help">{{ form.start_date.help_text }}</div></td><td>{{ form.start_date }}{{ form.errors.start_date }}</td><td><label>To date:</label><div class="help">{{ form.start_date.help_text }}</div></td><td>{{ form.end_date }}{{ form.errors.end_date }}</td></tr>
+</table>
+
+<div class="submit">
+  <input type="submit" class="button" name="search" value="Search"/>
+</div>
+
+</form>

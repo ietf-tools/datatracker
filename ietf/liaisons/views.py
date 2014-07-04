@@ -13,7 +13,7 @@ from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaiso
                                     can_add_incoming_liaison, 
                                     is_ietfchair, is_iabchair, is_iab_executive_director,
                                     can_edit_liaison, is_secretariat)
-from ietf.liaisons.forms import liaison_form_factory
+from ietf.liaisons.forms import liaison_form_factory, SearchLiaisonForm
 from ietf.liaisons.utils import IETFHM, can_submit_liaison_required, approvable_liaison_statements
 from ietf.liaisons.mails import notify_pending_by_email, send_liaison_by_email
 
@@ -85,7 +85,7 @@ def get_info(request):
 def normalize_sort(request):
     sort = request.GET.get('sort', "")
     if sort not in ('submitted', 'deadline', 'title', 'to_name', 'from_name'):
-        sort = "submitted"
+        sort = "id"
 
     # reverse dates
     order_by = "-" + sort if sort in ("submitted", "deadline") else sort
@@ -93,8 +93,15 @@ def normalize_sort(request):
     return sort, order_by
 
 def liaison_list(request):
-    sort, order_by = normalize_sort(request)
-    liaisons = LiaisonStatement.objects.exclude(approved=None).order_by(order_by).prefetch_related("attachments")
+    if request.GET.get('search', None):
+        form = SearchLiaisonForm(data=request.GET)
+        if form.is_valid():
+            result = form.get_results()
+    else:
+        form = SearchLiaisonForm()
+        result = form.get_results()
+
+    liaisons = result
 
     can_send_outgoing = can_add_outgoing_liaison(request.user)
     can_send_incoming = can_add_incoming_liaison(request.user)
@@ -107,7 +114,8 @@ def liaison_list(request):
         "approvable": approvable,
         "can_send_incoming": can_send_incoming,
         "can_send_outgoing": can_send_outgoing,
-        "sort": sort,
+        "with_search": True,
+        "form": form,
     }, context_instance=RequestContext(request))
 
 def ajax_liaison_list(request):
@@ -121,7 +129,7 @@ def ajax_liaison_list(request):
 
 @can_submit_liaison_required
 def liaison_approval_list(request):
-    liaisons = approvable_liaison_statements(request.user).order_by("-submitted")
+    liaisons = approvable_liaison_statements(request.user).order_by("-id")
 
     return render_to_response('liaisons/approval_list.html', {
         "liaisons": liaisons,
@@ -184,7 +192,7 @@ def _find_person_in_emails(liaison, person):
 
 
 def liaison_detail(request, object_id):
-    liaison = get_object_or_404(LiaisonStatement.objects.exclude(approved=None), pk=object_id)
+    liaison = get_object_or_404(LiaisonStatement.objects.filter(state__slug='approved'), pk=object_id)
     can_edit = request.user.is_authenticated() and can_edit_liaison(request.user, liaison)
     can_take_care = _can_take_care(liaison, request.user)
 
@@ -193,7 +201,7 @@ def liaison_detail(request, object_id):
         liaison.save()
         can_take_care = False
 
-    relations = liaison.liaisonstatement_set.exclude(approved=None)
+    relations = liaison.source_of_set.filter(target__state__slug='approved')
 
     return render_to_response("liaisons/detail.html", {
         "liaison": liaison,

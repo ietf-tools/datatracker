@@ -23,7 +23,12 @@
 {% endif %}
 {% endblock %}
 
+{% if with_search %}
+<div class="ietf-box search-form-box">
+{% include "liaisons/search_form.html" %}
+</div>
+{% endif %}
+
 {% include "liaisons/liaison_table.html" %}
 
 {% endblock %}
-
