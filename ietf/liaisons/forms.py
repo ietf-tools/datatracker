@@ -27,10 +27,9 @@ from ietf.doc.models import Document
 class LiaisonForm(forms.Form):
     person = forms.ModelChoiceField(Person.objects.all())
     from_field = forms.ChoiceField(widget=FromWidget, label=u'From')
-    replyto = forms.CharField(label=u'Reply to')
+    response_contacts = forms.CharField(label=u'Response contacts')
     organization = forms.ChoiceField()
     to_poc = forms.CharField(widget=ReadOnlyWidget, label="POC", required=False)
-    response_contact = forms.CharField(required=False, max_length=255)
     technical_contact = forms.CharField(required=False, max_length=255)
     cc1 = forms.CharField(widget=forms.Textarea, label="CC", required=False, help_text='Please insert one email address per line')
     purpose = forms.ChoiceField()
@@ -48,9 +47,9 @@ class LiaisonForm(forms.Form):
                                     required=False)
     related_to = forms.ModelChoiceField(LiaisonStatement.objects.all(), label=u'Related Liaison', widget=RelatedLiaisonWidget, required=False)
 
-    fieldsets = [('From', ('from_field', 'replyto')),
+    fieldsets = [('From', ('from_field', 'response_contacts')),
                  ('To', ('organization', 'to_poc')),
-                 ('Other email addresses', ('response_contact', 'technical_contact', 'cc1')),
+                 ('Other email addresses', ('technical_contact', 'cc1')),
                  ('Purpose', ('purpose', 'deadline_date')),
                  ('References', ('related_to', )),
                  ('Liaison Statement', ('title', 'submitted_date', 'body', 'attachments')),
@@ -75,9 +74,8 @@ class LiaisonForm(forms.Form):
         # now copy in values from instance, like a ModelForm
         if self.instance:
             self.initial["person"] = self.instance.from_contact.person_id if self.instance.from_contact else None
-            self.initial["replyto"] = self.instance.reply_to
+            self.initial["response_contacts"] = self.instance.response_contacts
             self.initial["to_poc"] = self.instance.to_contact
-            self.initial["response_contact"] = self.instance.response_contact
             self.initial["technical_contact"] = self.instance.technical_contact
             self.initial["cc1"] = self.instance.cc
             self.initial["purpose"] = self.instance.purpose.order
@@ -93,7 +91,7 @@ class LiaisonForm(forms.Form):
         self.fields["purpose"].choices = [("", "---------")] + [(str(l.order), l.name) for l in LiaisonStatementPurposeName.objects.all()]
         self.hm = IETFHM
         self.set_from_field()
-        self.set_replyto_field()
+        self.set_response_contacts_field()
         self.set_organization_field()
 
     def __unicode__(self):
@@ -115,8 +113,8 @@ class LiaisonForm(forms.Form):
     def set_from_field(self):
         assert NotImplemented
 
-    def set_replyto_field(self):
-        self.fields['replyto'].initial = self.person.email()[1]
+    def set_response_contacts_field(self):
+        self.fields['response_contacts'].initial = self.person.email()[1]
 
     def set_organization_field(self):
         assert NotImplemented
@@ -164,18 +162,13 @@ class LiaisonForm(forms.Form):
             except UnicodeEncodeError as e:
                 raise forms.ValidationError('Invalid email address: %s (check character %d)' % (addr,e.start))
 
-    def clean_response_contact(self):
-        value = self.cleaned_data.get('response_contact', None)
-        self.check_email(value)
-        return value
-
     def clean_technical_contact(self):
         value = self.cleaned_data.get('technical_contact', None)
         self.check_email(value)
         return value
 
-    def clean_reply_to(self):
-        value = self.cleaned_data.get('reply_to', None)
+    def clean_response_contacts(self):
+        value = self.cleaned_data.get('response_contacts', None)
         self.check_email(value)
         return value
 
@@ -226,8 +219,7 @@ class LiaisonForm(forms.Form):
         l.body = self.cleaned_data["body"].strip()
         l.deadline = self.cleaned_data["deadline_date"]
         l.related_to = self.cleaned_data["related_to"]
-        l.reply_to = self.cleaned_data["replyto"]
-        l.response_contact = self.cleaned_data["response_contact"]
+        l.response_contacts = self.cleaned_data["response_contacts"]
         l.technical_contact = self.cleaned_data["technical_contact"]
         
         now = datetime.datetime.now()
@@ -307,13 +299,13 @@ class IncomingLiaisonForm(LiaisonForm):
         self.fields['from_field'].choices = [('sdo_%s' % i.pk, i.name) for i in sdos.order_by("name")]
         self.fields['from_field'].widget.submitter = unicode(self.person)
 
-    def set_replyto_field(self):
+    def set_response_contacts_field(self):
         e = Email.objects.filter(person=self.person, role__group__state="active", role__name__in=["liaiman", "auth"])
         if e:
             addr = e[0].address
         else:
             addr = self.person.email_address()
-        self.fields['replyto'].initial = addr
+        self.fields['response_contacts'].initial = addr
 
     def set_organization_field(self):
         self.fields['organization'].choices = self.hm.get_all_incoming_entities()
@@ -360,15 +352,15 @@ class OutgoingLiaisonForm(LiaisonForm):
         else:
             self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
         self.fields['from_field'].widget.submitter = unicode(self.person)
-        self.fieldsets[0] = ('From', ('from_field', 'replyto', 'approved'))
+        self.fieldsets[0] = ('From', ('from_field', 'response_contacts', 'approved'))
 
-    def set_replyto_field(self):
+    def set_response_contacts_field(self):
         e = Email.objects.filter(person=self.person, role__group__state="active", role__name__in=["ad", "chair"])
         if e:
             addr = e[0].address
         else:
             addr = self.person.email_address()
-        self.fields['replyto'].initial = addr
+        self.fields['response_contacts'].initial = addr
 
     def set_organization_field(self):
         # If the user is a liaison manager and is nothing more, reduce the To field to his SDOs
@@ -433,15 +425,15 @@ class OutgoingLiaisonForm(LiaisonForm):
 class EditLiaisonForm(LiaisonForm):
 
     from_field = forms.CharField(widget=forms.TextInput, label=u'From')
-    replyto = forms.CharField(label=u'Reply to', widget=forms.TextInput)
+    response_contacts = forms.CharField(label=u'Reply to', widget=forms.TextInput)
     organization = forms.CharField(widget=forms.TextInput)
     to_poc = forms.CharField(widget=forms.TextInput, label="POC", required=False)
     cc1 = forms.CharField(widget=forms.TextInput, label="CC", required=False)
 
     class Meta:
         fields = ('from_raw_body', 'to_body', 'to_poc', 'cc1', 'last_modified_date', 'title',
-                  'response_contact', 'technical_contact', 'body',
-                  'deadline_date', 'purpose', 'replyto', 'related_to')
+                  'technical_contact', 'body',
+                  'deadline_date', 'purpose', 'response_contacts', 'related_to')
 
     def __init__(self, *args, **kwargs):
         super(EditLiaisonForm, self).__init__(*args, **kwargs)
@@ -450,8 +442,8 @@ class EditLiaisonForm(LiaisonForm):
     def set_from_field(self):
         self.fields['from_field'].initial = self.instance.from_name
 
-    def set_replyto_field(self):
-        self.fields['replyto'].initial = self.instance.reply_to
+    def set_response_contacts_field(self):
+        self.fields['response_contacts'].initial = self.instance.response_contacts
 
     def set_organization_field(self):
         self.fields['organization'].initial = self.instance.to_name
