@@ -38,8 +38,25 @@
 <script type="text/javascript">
 $(document).ready(function() 
     { 
+        var widgetIETF = {css: ["evenrow", "oddrow"]};
+        $.tablesorter.addWidget({ 
+            id: "ietf",
+            format: function(table) {
+                var $tr, row = -1, odd;
+                $("tr:visible", table.tBodies[0]).each(function (i) {
+                    $tr = $(this);
+                    if (!$tr.hasClass(table.config.cssChildRow)) row++;
+                    odd = (row % 2 == 0);
+                    $tr.removeClass(
+                    widgetIETF.css[odd ? 0 : 1]).addClass(
+                    widgetIETF.css[odd ? 1 : 0])
+                });
+            }
+        });
+
         $("#LiaisonListTable").tablesorter({
-            sortList: [[0, 1]]
+            sortList: [[0, 1]],
+            widgets: ["ietf"]
         });
     } 
 ); 

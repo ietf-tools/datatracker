@@ -24,6 +24,7 @@
     {% endif %}
   </td>
   <td>
+    {% if liaison.awaiting_action %}<span class="awaiting">Action needed</span>{% endif %}
     {{ liaison.deadline|default:"-"|date:"Y-m-d" }}
   </td>
   <td>

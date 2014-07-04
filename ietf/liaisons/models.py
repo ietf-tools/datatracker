@@ -69,6 +69,12 @@ class LiaisonStatement(models.Model):
     def action_taken(self):
         return bool(self.tags.filter(slug='taken').count())
 
+    @property
+    def awaiting_action(self):
+        if getattr(self, '_awaiting_action', None) != None:
+            return bool(self._awaiting_action)
+        return bool(self.tags.filter(slug='awaiting').count())
+
 
 class LiaisonStatementAttachments(models.Model):
     statement = models.ForeignKey(LiaisonStatement)

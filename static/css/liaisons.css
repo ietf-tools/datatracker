@@ -104,6 +104,16 @@ th.headerSortDown {
     background-image: url(/images/sort-header-filled.png);
 }
 
+td span.awaiting {
+    background-color: #ffcc33;
+    border-radius: 3px;
+    float: right;
+    width: 35px;
+    padding: 4px 8px;
+    text-align: center;
+    font-size: 10px;
+}
+
 .noActionTaken, .actionTaken { padding: 2px 5px; }
 .actionTaken { border: 1px solid green; background-color: #ccffbb; }
 .noActionTaken { border: 1px solid red; background-color: #ffccbb; }
