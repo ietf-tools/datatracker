@@ -32,3 +32,16 @@
 {% include "liaisons/liaison_table.html" %}
 
 {% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="/js/jquery.tablesorter.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() 
+    { 
+        $("#LiaisonListTable").tablesorter({
+            sortList: [[0, 1]]
+        });
+    } 
+); 
+</script>
+{% endblock %}

@@ -89,15 +89,19 @@ span.fieldRequired {
     background-color: #ffcc66;
 }
 
-th.sort a {
-    text-decoration: none;
-    color: white;
-    padding-right: 20px;
-    background: url(/images/sort-header-clear.png) no-repeat right center;
+th.sort {
+    background-image: url(/images/sort-header-clear.png);
+    background-repeat: no-repeat;
+    background-position: right center;
+    cursor: pointer;
 }
 
-th.sorted a {
-    background: url(/images/sort-header-filled.png) no-repeat right center;
+th.headerSortUp {
+    background-image: url(/images/sort-header-up-filled.png);
+}
+
+th.headerSortDown {
+    background-image: url(/images/sort-header-filled.png);
 }
 
 .noActionTaken, .actionTaken { padding: 2px 5px; }
