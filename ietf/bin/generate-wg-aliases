@@ -57,7 +57,6 @@ if __name__ == '__main__':
 
     wgs = Group.objects.filter(type='wg').all()
 
-    print '# WGs'
     # - status = Active
     active_wgs = wgs.filter(state__in=ACTIVE_STATES)
 
@@ -70,7 +69,6 @@ if __name__ == '__main__':
         dump_sublist(afile, vfile, name+'-ads'   , get_group_ads_emails(wg))
         dump_sublist(afile, vfile, name+'-chairs', get_group_chairs_emails(wg))
 
-    print '# RGs'
     # - status = Active
     rgs = Group.objects.filter(type='rg').all()
     active_rgs = rgs.filter(state__in=ACTIVE_STATES)
@@ -86,7 +84,6 @@ if __name__ == '__main__':
 
     # Additionally, for areaz, we should list -ads and -chairs
     # (for every chair in active groups within the area).
-    print '# Areas'
     areas = Group.objects.filter(type='area').all()
     active_areas = areas.filter(state__in=ACTIVE_STATES)
     for area in active_areas:

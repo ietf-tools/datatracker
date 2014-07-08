@@ -111,25 +111,15 @@ if __name__ == '__main__':
 
     interesting_drafts = active_drafts | inactive_recent_drafts
 
-    count = 0
     for draft in interesting_drafts.distinct().iterator():
         # Omit RFCs, we care only about drafts
         if draft.docalias_set.filter(name__startswith='rfc'):
             continue
 
-        count += 1
-        if (count % 100) == 0:
-            sys.stderr.write('.')            
         alias = draft.name
         all = []
         def handle_sublist(afile, vfile, alias, emails):
-            try:
-                all.extend( dump_sublist(afile, vfile, alias, emails) )
-            except TypeError:
-                import debug
-                debug.show('alias')
-                debug.show('emails')
-                raise
+            all.extend( dump_sublist(afile, vfile, alias, emails) )
         #.authors (/and no suffix) = authors
         # First, do no suffix case
         handle_sublist(afile, vfile, alias,             get_draft_authors_emails(draft))
