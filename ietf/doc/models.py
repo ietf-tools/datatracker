@@ -247,22 +247,23 @@ class Document(DocumentInfo):
         if self.type_id == "draft" and self.get_state_slug() == "rfc":
             name = self.canonical_name()
         elif self.type_id in ('slides','agenda','minutes'):
-            session = self.session_set.all()[0]
-            meeting = session.meeting
-            if self.type_id in ('agenda','minutes'):
-                filename = os.path.splitext(self.external_url)[0]
-            else:
-                filename = self.external_url
-            if meeting.type_id == 'ietf':
-                url = '%sproceedings/%s/%s/%s' % (settings.MEDIA_URL,meeting.number,self.type_id,filename)
-            elif meeting.type_id == 'interim':
-                url = "%sproceedings/interim/%s/%s/%s/%s" % (
-                    settings.MEDIA_URL,
-                    meeting.date.strftime('%Y/%m/%d'),
-                    session.group.acronym,
-                    self.type_id,
-                    filename)
-            return url
+            session = self.session_set.first()
+            if session:
+                meeting = session.meeting
+                if self.type_id in ('agenda','minutes'):
+                    filename = os.path.splitext(self.external_url)[0]
+                else:
+                    filename = self.external_url
+                if meeting.type_id == 'ietf':
+                    url = '%sproceedings/%s/%s/%s' % (settings.MEDIA_URL,meeting.number,self.type_id,filename)
+                elif meeting.type_id == 'interim':
+                    url = "%sproceedings/interim/%s/%s/%s/%s" % (
+                        settings.MEDIA_URL,
+                        meeting.date.strftime('%Y/%m/%d'),
+                        session.group.acronym,
+                        self.type_id,
+                        filename)
+                return url
         return urlreverse('doc_view', kwargs={ 'name': name }, urlconf="ietf.urls")
 
 
