@@ -12,7 +12,9 @@ Mailing list alias dumping utilities
 
 """
 
-def rewrite_email_address(email, is_ad):
+from django.conf import settings
+
+def rewrite_email_address(email):
     """ Prettify the email address (and if it's empty, skip it by
     returning None). """
     if not email:
@@ -38,32 +40,35 @@ def rewrite_address_list(l):
         h[address] = True
         yield address
 
-def dump_sublist(alias, f, wg, is_adlist=False):
-    if f:
-        l = f(wg)
-    else:
-        l = wg
-    if not l:
-        return
+def dump_sublist(afile, vfile, alias, emails):
+    if not emails:
+        return emails
     # Nones in the list should be skipped
-    l = filter(None, l)
+    emails = filter(None, emails)
 
     # Make sure emails are sane and eliminate the Nones again for
     # non-sane ones
-    l = [rewrite_email_address(e, is_adlist) for e in l]
-    l = filter(None, l)
+    emails = [rewrite_email_address(e) for e in emails]
+    emails = filter(None, emails)
 
     # And we'll eliminate the duplicates too but preserve order
-    l = list(rewrite_address_list(l))
-    if not l:
-        return
+    emails = list(rewrite_address_list(emails))
+    if not emails:
+        return emails
     try:
-        print '%s: %s' % (alias, ', '.join(l))
+        virtualname = 'xalias-%s' % (alias, )
+        expandname  = 'expand-%s' % (alias)
+        aliasaddr   = '%s@ietf.org' % (alias, )
+
+        vfile.write('%-64s  %s\n' % (aliasaddr, virtualname))
+        afile.write('%-64s  "|%s filter %s"\n' % (virtualname+':', settings.POSTCONFIRM_PATH, expandname))
+        afile.write('%-64s  %s\n' % (expandname+':', ', '.join(emails)))
+
     except UnicodeEncodeError:
         # If there's unicode in email address, something is badly
         # wrong and we just silently punt
         # XXX - is there better approach?
-        print '# Error encoding', alias, repr(l)
-        return
-    return l
+        print '# Error encoding', alias, repr(emails)
+        return []
+    return emails
 

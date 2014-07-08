@@ -70,7 +70,7 @@ def get_group_chairs_emails(wg):
     emails = Email.objects.filter(role__group=wg,
                                   role__name='chair')
     if not emails:
-        return
+        return []
     emails = [e.email_address() for e in emails]
     emails = filter(None, emails)
     return emails

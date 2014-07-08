@@ -439,6 +439,15 @@ BADNESS_MUCHTOOBIG = 500
 SELENIUM_TESTS = False
 SELENIUM_TESTS_ONLY = False
 
+# Path to the email alias lists.  Used by ietf.utils.aliases
+DRAFT_ALIASES_PATH = "/a/postfix/draft-aliases"
+DRAFT_VIRTUAL_PATH = "/a/postfix/draft-virtual"
+
+GROUP_ALIASES_PATH = "/a/postfix/group-aliases"
+GROUP_VIRTUAL_PATH = "/a/postfix/group-virtual"
+
+POSTCONFIRM_PATH   = "/a/postconfirm/test-wrapper"
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *            # pyflakes:ignore
