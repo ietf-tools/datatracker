@@ -274,6 +274,9 @@ IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
 
+# Mailing list info URL for lists hosted on the IETF servers
+MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
+
 # Ideally, more of these would be local -- but since we don't support
 # versions right now, we'll point to external websites
 DOC_HREFS = {
