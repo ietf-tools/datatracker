@@ -15,12 +15,10 @@ from ietf.utils.mail import send_mail_text
 def check_access(user):
     '''
     This function takes a Django User object and returns true if the user has access to
-    the Announcement app.  Accepted roles are:
-    Secretariat, IAD, IAB Chair, IETF Chair, RSOC Chair, IAOC Chair, NomCom Chair,
-    RSE Chair, ISOC CEO
+    the Announcement app.
     '''
     person = user.person
-    groups_with_access = ("iab", "rsoc", "ietf", "iaoc", "rse", "mentor")
+    groups_with_access = ("iab", "rsoc", "ietf", "iaoc", "rse", "mentor","ietf-trust")
     if Role.objects.filter(person=person,
                            group__acronym__in=groups_with_access,
                            name="chair") or has_role(user, ["Secretariat","IAD"]):
