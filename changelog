@@ -1,3 +1,27 @@
+ietfdb (5.6.1) ietf; urgency=medium
+
+  * Added an x_frame_options setting to permit datatracker pages to be 
+    embedded in tools parges, for the tools tutorial.
+
+  * Merged in [8057] from olau@iola.dk:
+    Changed Document.get_absolute_url to handle case of non-meeting-based
+    group materials, fixes #1440 
+
+  * Merged in [8045] from rcross@amsl.com:
+    Added code to grant IETF Trust Chair permissions for Announcement Tool.  
+
+  * Merged in [8003],[8004] and [8005] from fanpeng@chinamobile.com:
+    Added email subscription and web-archive links to the datatracker wg
+    summary page.  Fixes issue #958.
+
+  * Rewrote the draft-alias and group-alias generation scripts to generate 
+    matching aliases and virtual files for postfix.
+
+  * Adjusted the permissions checking in has_role to accept bof chairs and 
+    secretaries.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Jul 2014 02:01:14 -0700
+
 ietfdb (5.6.0) ietf; urgency=medium
 
   This release adds group page support also for non-WG/RG groups, extending
