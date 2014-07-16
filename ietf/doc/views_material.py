@@ -7,7 +7,6 @@ from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseForbidden, Http404
 from django.utils.html import mark_safe
-from django.utils.text import slugify
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse as urlreverse
 
@@ -29,9 +28,6 @@ def choose_material_type(request, acronym):
         'group': group,
         'material_types': DocTypeName.objects.filter(slug__in=group.features.material_types),
     })
-
-def name_for_material(doc_type, group, title):
-    return "%s-%s-%s" % (doc_type.slug, group.acronym, slugify(title))
 
 class UploadMaterialForm(forms.Form):
     title = forms.CharField(max_length=Document._meta.get_field("title").max_length)
@@ -112,7 +108,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 doc.type = document_type
                 doc.group = group
                 doc.rev = "00"
-                doc.name = name_for_material(doc.type, doc.group, form.cleaned_data["title"])
+                doc.name = form.cleaned_data["name"]
                 prev_rev = None
             else:
                 save_document_in_history(doc)

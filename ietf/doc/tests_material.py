@@ -65,7 +65,7 @@ class GroupMaterialTests(TestCase):
         test_file.seek(0)
 
         # post
-        r = self.client.post(url, dict(title="Test File",
+        r = self.client.post(url, dict(title="Test File - with fancy title",
                                        name="slides-%s-test-file" % group.acronym,
                                        state=State.objects.get(type="slides", slug="active").pk,
                                        material=test_file))
@@ -73,7 +73,7 @@ class GroupMaterialTests(TestCase):
 
         doc = Document.objects.get(name="slides-%s-test-file" % group.acronym)
         self.assertEqual(doc.rev, "00")
-        self.assertEqual(doc.title, "Test File")
+        self.assertEqual(doc.title, "Test File - with fancy title")
         self.assertEqual(doc.get_state_slug(), "active")
 
         with open(os.path.join(self.materials_dir, "slides", doc.name + "-" + doc.rev + ".pdf")) as f:
