@@ -31,7 +31,7 @@ class LiaisonForm(forms.Form):
     response_contacts = forms.CharField(label=u'Response contacts')
     organization = forms.ChoiceField()
     to_poc = forms.CharField(widget=ReadOnlyWidget, label="POC", required=False)
-    technical_contact = forms.CharField(required=False, max_length=255)
+    technical_contacts = forms.CharField(required=False, max_length=255)
     cc1 = forms.CharField(widget=forms.Textarea, label="CC", required=False, help_text='Please insert one email address per line')
     purpose = forms.ChoiceField()
     deadline_date = forms.DateField(label='Deadline')
@@ -50,7 +50,7 @@ class LiaisonForm(forms.Form):
 
     fieldsets = [('From', ('from_field', 'response_contacts')),
                  ('To', ('organization', 'to_poc')),
-                 ('Other email addresses', ('technical_contact', 'cc1')),
+                 ('Other email addresses', ('technical_contacts', 'cc1')),
                  ('Purpose', ('purpose', 'deadline_date')),
                  ('References', ('related_to', )),
                  ('Liaison Statement', ('title', 'submitted_date', 'body', 'attachments')),
@@ -76,16 +76,15 @@ class LiaisonForm(forms.Form):
         if self.instance:
             self.initial["person"] = self.instance.from_contact.person_id if self.instance.from_contact else None
             self.initial["response_contacts"] = self.instance.response_contacts
-            self.initial["to_poc"] = self.instance.to_contact
-            self.initial["technical_contact"] = self.instance.technical_contact
-            self.initial["cc1"] = self.instance.cc
+            self.initial["technical_contacts"] = self.instance.technical_contacts
+            self.initial["cc1"] = self.instance.cc_contacts
             self.initial["purpose"] = self.instance.purpose.order
             self.initial["deadline_date"] = self.instance.deadline
             self.initial["submitted_date"] = self.instance.submitted.date() if self.instance.submitted else None
             self.initial["title"] = self.instance.title
             self.initial["body"] = self.instance.body
             self.initial["attachments"] = self.instance.attachments.all()
-            self.initial["related_to"] = self.instance.related_to_id
+            self.initial["related_to"] = [i.target.id for i in self.instance.source_of_set.all()]
             if "approved" in self.fields:
                 self.initial["approved"] = bool(self.instance.approved)
 
@@ -167,8 +166,8 @@ class LiaisonForm(forms.Form):
         related_list = self.data.getlist('related_to')
         return [i for i in related_list if i]
 
-    def clean_technical_contact(self):
-        value = self.cleaned_data.get('technical_contact', None)
+    def clean_technical_contacts(self):
+        value = self.cleaned_data.get('technical_contacts', None)
         self.check_email(value)
         return value
 
@@ -224,7 +223,7 @@ class LiaisonForm(forms.Form):
         l.body = self.cleaned_data["body"].strip()
         l.deadline = self.cleaned_data["deadline_date"]
         l.response_contacts = self.cleaned_data["response_contacts"]
-        l.technical_contact = self.cleaned_data["technical_contact"]
+        l.technical_contacts = self.cleaned_data["technical_contacts"]
         
         now = datetime.datetime.now()
         
@@ -247,9 +246,8 @@ class LiaisonForm(forms.Form):
         organization = self.get_to_entity()
         liaison.to_name = organization.name
         liaison.to_group = organization.obj
-        liaison.to_contact = self.get_poc(organization)
 
-        liaison.cc = self.get_cc(from_entity, organization)
+        liaison.cc_contacts = self.get_cc(from_entity, organization)
 
     def save_attachments(self, instance):
         written = instance.attachments.all().count()
@@ -442,7 +440,7 @@ class EditLiaisonForm(LiaisonForm):
 
     class Meta:
         fields = ('from_raw_body', 'to_body', 'to_poc', 'cc1', 'last_modified_date', 'title',
-                  'technical_contact', 'body',
+                  'technical_contacts', 'body',
                   'deadline_date', 'purpose', 'response_contacts', 'related_to')
 
     def __init__(self, *args, **kwargs):
@@ -461,8 +459,7 @@ class EditLiaisonForm(LiaisonForm):
     def save_extra_fields(self, liaison):
         liaison.from_name = self.cleaned_data.get('from_field')
         liaison.to_name = self.cleaned_data.get('organization')
-        liaison.to_contact = self.cleaned_data['to_poc']
-        liaison.cc = self.cleaned_data['cc1']
+        liaison.cc_contacts = self.cleaned_data['cc1']
 
 def liaison_form_factory(request, **kwargs):
     user = request.user
