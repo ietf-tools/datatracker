@@ -292,8 +292,6 @@ class LiaisonForm(forms.Form):
             exclude_filter = {'pk': self.instance.pk}
         else:
             exclude_filter = {}
-        if LiaisonStatement.objects.exclude(**exclude_filter).filter(title__iexact=title).exists():
-            raise forms.ValidationError('A liaison statement with the same title has previously been submitted.')
         return title
 
 
