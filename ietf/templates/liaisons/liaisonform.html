@@ -20,7 +20,7 @@
 
   {% for field in fieldset.fields %}
     <div id="baseform-fieldname-{{ field.html_name }}"
-         class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
+         class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget {{ field.name }}Field {% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
       <label for="id_{{ field.html_name }}">{{ field.label }}
       {% if field.field.required %}
          <span class="fieldRequired" title="Required">*</span>
