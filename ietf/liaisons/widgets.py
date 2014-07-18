@@ -89,7 +89,7 @@ class RelatedLiaisonWidget(TextInput):
 
     def render(self, name, value, attrs=None):
         html = u''
-        for liaison_id in value:
+        for liaison_id in value or []:
             liaison = LiaisonStatement.objects.get(pk=liaison_id)
             title = liaison.title
             if not title:
