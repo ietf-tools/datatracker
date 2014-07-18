@@ -286,14 +286,6 @@ class LiaisonForm(forms.Form):
             except LiaisonStatement.DoesNotExist:
                 continue
 
-    def clean_title(self):
-        title = self.cleaned_data.get('title', None)
-        if self.instance and self.instance.pk:
-            exclude_filter = {'pk': self.instance.pk}
-        else:
-            exclude_filter = {}
-        return title
-
 
 class IncomingLiaisonForm(LiaisonForm):
 
