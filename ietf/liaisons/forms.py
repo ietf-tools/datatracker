@@ -12,13 +12,14 @@ from django.utils.html import format_html
 from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 
-
+from ietf.name.models import DocRelationshipName
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
                                     get_person_for_user, is_secretariat, is_sdo_liaison_manager)
 from ietf.liaisons.utils import IETFHM
 from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
                                    ShowAttachmentsWidget, RelatedLiaisonWidget)
-from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName,  LiaisonStatementEvent
+from ietf.liaisons.models import (LiaisonStatement, LiaisonStatementPurposeName,  LiaisonStatementEvent,
+                                  RelatedLiaisonStatement)
 from ietf.group.models import Group, Role
 from ietf.person.models import Person, Email
 from ietf.doc.models import Document
@@ -45,7 +46,7 @@ class LiaisonForm(forms.Form):
                                                         require=['id_attach_title', 'id_attach_file'],
                                                         required_label='title and file'),
                                     required=False)
-    related_to = forms.ModelChoiceField(LiaisonStatement.objects.all(), label=u'Related Liaison', widget=RelatedLiaisonWidget, required=False)
+    related_to = forms.ModelMultipleChoiceField(LiaisonStatement.objects.all(), label=u'Related Liaison', widget=RelatedLiaisonWidget, required=False)
 
     fieldsets = [('From', ('from_field', 'response_contacts')),
                  ('To', ('organization', 'to_poc')),
@@ -162,6 +163,10 @@ class LiaisonForm(forms.Form):
             except UnicodeEncodeError as e:
                 raise forms.ValidationError('Invalid email address: %s (check character %d)' % (addr,e.start))
 
+    def clean_related_to(self):
+        related_list = self.data.getlist('related_to')
+        return [i for i in related_list if i]
+
     def clean_technical_contact(self):
         value = self.cleaned_data.get('technical_contact', None)
         self.check_email(value)
@@ -218,21 +223,16 @@ class LiaisonForm(forms.Form):
         l.purpose = LiaisonStatementPurposeName.objects.get(order=self.cleaned_data["purpose"])
         l.body = self.cleaned_data["body"].strip()
         l.deadline = self.cleaned_data["deadline_date"]
-        l.related_to = self.cleaned_data["related_to"]
         l.response_contacts = self.cleaned_data["response_contacts"]
         l.technical_contact = self.cleaned_data["technical_contact"]
         
         now = datetime.datetime.now()
         
-        l.modified = now
-        l.submitted = datetime.datetime.combine(self.cleaned_data["submitted_date"], now.time())
-        if not l.approved:
-            l.approved = now
-
         self.save_extra_fields(l)
         
         l.save() # we have to save here to make sure we get an id for the attachments
         self.save_attachments(l)
+        self.save_related_liaisons(l)
         
         return l
 
@@ -277,6 +277,16 @@ class LiaisonForm(forms.Form):
             attach_file = open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'w')
             attach_file.write(attached_file.read())
             attach_file.close()
+
+    def save_related_liaisons(self, instance):
+        rel = DocRelationshipName.objects.get(slug='refold')
+        for i in self.cleaned_data.get('related_to', []):
+            try:
+                instance.source_of_set.get_or_create(
+                    target=LiaisonStatement.objects.get(id=i),
+                    relationship=rel)
+            except LiaisonStatement.DoesNotExist:
+                continue
 
     def clean_title(self):
         title = self.cleaned_data.get('title', None)
@@ -389,10 +399,10 @@ class OutgoingLiaisonForm(LiaisonForm):
         super(OutgoingLiaisonForm, self).save_extra_fields(liaison)
         from_entity = self.get_from_entity()
         needs_approval = from_entity.needs_approval(self.person)
-        if not needs_approval or self.cleaned_data.get('approved', False):
-            liaison.approved = datetime.datetime.now()
-        else:
-            liaison.approved = None
+         #if not needs_approval or self.cleaned_data.get('approved', False):
+             #liaison.approved = datetime.datetime.now()
+         #else:
+             #liaison.approved = None
 
     def clean_to_poc(self):
         value = self.cleaned_data.get('to_poc', None)

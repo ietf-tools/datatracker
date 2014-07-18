@@ -84,14 +84,13 @@ class ShowAttachmentsWidget(Widget):
 
 class RelatedLiaisonWidget(TextInput):
 
+    def value_from_datadict(self, data, files, name):
+        return [i for i in  data.getlist(name) if i]
+
     def render(self, name, value, attrs=None):
-        if not value:
-            value = ''
-            title = ''
-            noliaison = 'inline'
-            deselect = 'none'
-        else:
-            liaison = LiaisonStatement.objects.get(pk=value)
+        html = u''
+        for liaison_id in value:
+            liaison = LiaisonStatement.objects.get(pk=liaison_id)
             title = liaison.title
             if not title:
                 attachments = liaison.attachments.all()
@@ -101,11 +100,21 @@ class RelatedLiaisonWidget(TextInput):
                     title = 'Liaison #%s' % liaison.pk
             noliaison = 'none'
             deselect = 'inline'
-        html = u'<span class="noRelated" style="display: %s;">No liaison selected</span>' % conditional_escape(noliaison)
-        html += u'<span class="relatedLiaisonWidgetTitle">%s</span>' % conditional_escape(title)
-        html += u'<input type="hidden" name="%s" class="relatedLiaisonWidgetValue" value="%s" /> ' % (conditional_escape(name), conditional_escape(value))
+            html += u'<div>'
+            html += u'<span class="noRelated" style="display: %s;"></span>' % conditional_escape(noliaison)
+            html += u'<span class="relatedLiaisonWidgetTitle">%s</span>' % conditional_escape(title)
+            html += u'<input type="hidden" name="%s" class="relatedLiaisonWidgetValue" value="%s" /> ' % (conditional_escape(name), conditional_escape(liaison_id))
+            html += u'<span style="display: none;" class="listURL">%s</span> ' % urlreverse('ajax_liaison_list')
+            html += u'<div style="display: none;" class="relatedLiaisonWidgetDialog" id="related-dialog" title="Select a liaison statement"></div> '
+            html += '<input type="button" style="display: %s;" class="id_no_%s" id="id_no_%s" value="Deselect liaison statement" />' % (conditional_escape(deselect), conditional_escape(name), conditional_escape(name))
+            html += u'</div>'
+        html += u'<div>'
+        html += u'<span class="noRelated" style="display: inline;"></span>'
+        html += u'<span class="relatedLiaisonWidgetTitle"></span>'
+        html += u'<input type="hidden" name="%s" class="relatedLiaisonWidgetValue" value="" /> ' % conditional_escape(name)
         html += u'<span style="display: none;" class="listURL">%s</span> ' % urlreverse('ajax_liaison_list')
-        html += u'<div style="display: none;" class="relatedLiaisonWidgetDialog" id="related-dialog" title="Select a liaison"></div> '
-        html += '<input type="button" id="id_%s" value="Select liaison" /> ' % conditional_escape(name)
-        html += '<input type="button" style="display: %s;" id="id_no_%s" value="Deselect liaison" />' % (conditional_escape(deselect), conditional_escape(name))
+        html += u'<div style="display: none;" class="relatedLiaisonWidgetDialog" id="related-dialog" title="Select a liaison statement"></div> '
+        html += '<input type="button" class="id_%s" id="id_%s" value="Select liaison statement" /> ' % (conditional_escape(name), conditional_escape(name))
+        html += '<input type="button" style="display: none;" class="id_no_%s" id="id_no_%s" value="Deselect liaison statement" />' % (conditional_escape(name), conditional_escape(name))
+        html += u'</div>'
         return mark_safe(html)

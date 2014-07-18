@@ -119,12 +119,10 @@ def liaison_list(request):
     }, context_instance=RequestContext(request))
 
 def ajax_liaison_list(request):
-    sort, order_by = normalize_sort(request)
-    liaisons = LiaisonStatement.objects.exclude(approved=None).order_by(order_by)
+    liaisons = SearchLiaisonForm().get_results()
 
     return render_to_response('liaisons/liaison_table.html', {
         "liaisons": liaisons,
-        "sort": sort,
     }, context_instance=RequestContext(request))
 
 @can_submit_liaison_required
@@ -147,8 +145,13 @@ def liaison_approval_detail(request, object_id):
         send_liaison_by_email(request, liaison)
         return redirect('liaison_list')
 
+    relations_by = [i.target for i in liaison.source_of_set.filter(target__state__slug='approved')]
+    relations_to = [i.source for i in liaison.target_of_set.filter(source__state__slug='approved')]
+
     return render_to_response('liaisons/approval_detail.html', {
         "liaison": liaison,
+        "relations_to": relations_to,
+        "relations_by": relations_by,
         "is_approving": True,
     }, context_instance=RequestContext(request))
 
@@ -201,13 +204,15 @@ def liaison_detail(request, object_id):
         liaison.save()
         can_take_care = False
 
-    relations = liaison.source_of_set.filter(target__state__slug='approved')
+    relations_by = [i.target for i in liaison.source_of_set.filter(target__state__slug='approved')]
+    relations_to = [i.source for i in liaison.target_of_set.filter(source__state__slug='approved')]
 
     return render_to_response("liaisons/detail.html", {
         "liaison": liaison,
         "can_edit": can_edit,
         "can_take_care": can_take_care,
-        "relations": relations,
+        "relations_to": relations_to,
+        "relations_by": relations_by,
     }, context_instance=RequestContext(request))
 
 def liaison_edit(request, object_id):

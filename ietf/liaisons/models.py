@@ -39,12 +39,12 @@ class LiaisonStatement(models.Model):
     state = models.ForeignKey(LiaisonStatementState, default='pending')
 
     def name(self):
-        if self.from_group:
-            frm = self.from_group.acronym or self.from_group.name
+        if self.from_groups.count():
+            frm = ', '.join([i.acronym or i.name for i in self.from_groups.all()])
         else:
             frm = self.from_name
-        if self.to_group:
-            to = self.to_group.acronym or self.to_group.name
+        if self.to_groups.count():
+            to = ', '.join([i.acronym or i.name for i in self.to_groups.all()])
         else:
             to = self.to_name
         return slugify("liaison" + " " + self.submitted.strftime("%Y-%m-%d") + " " + frm[:50] + " " + to[:50] + " " + self.title[:115])

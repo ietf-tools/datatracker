@@ -138,10 +138,10 @@ jQuery(function () {
         var cancel = form.find('#id_cancel');
         var cancel_dialog = form.find('#cancel-dialog');
         var config = {};
-        var related_trigger = form.find('#id_related_to');
+        var related_trigger = form.find('.id_related_to');
         var related_url = form.find('#id_related_to').parent().find('.listURL').text();
         var related_dialog = form.find('#related-dialog');
-        var unrelate_trigger = form.find('#id_no_related_to');
+        var unrelate_trigger = form.find('.id_no_related_to');
 
         var readConfig = function() {
             var confcontainer = form.find('.formconfig');
@@ -283,20 +283,22 @@ jQuery(function () {
             var link = jQuery(this).text();;
             var pk = jQuery(this).nextAll('.liaisonPK').text();
             var widget = related_trigger.parent();
-            widget.find('.relatedLiaisonWidgetTitle').text(link);
-            widget.find('.relatedLiaisonWidgetValue').val(pk);
-            widget.find('.noRelated').hide();
-            unrelate_trigger.show();
+            var newwidget = widget.clone()
             related_dialog.dialog('close');
+            newwidget.find('.id_related_to').click(selectRelated);
+            newwidget.find('.id_no_related_to').click(selectNoRelated);
+            newwidget.find('.relatedLiaisonWidgetTitle').text(link);
+            newwidget.find('.relatedLiaisonWidgetValue').val(pk);
+            newwidget.find('.noRelated').hide();
+            newwidget.find('.id_related_to').hide();
+            newwidget.find('.id_no_related_to').show();
+            widget.before(newwidget);
             return false;
         };
 
         var selectNoRelated = function() {
             var widget = jQuery(this).parent();
-            widget.find('.relatedLiaisonWidgetTitle').text('');
-            widget.find('.noRelated').show();
-            widget.find('.relatedLiaisonWidgetValue').val('');
-            jQuery(this).hide();
+            widget.remove();
             return false;
         };
 
@@ -315,10 +317,9 @@ jQuery(function () {
                 dataType: 'html',
                 success: function(response){
                     related_dialog.html(response);
-                    related_dialog.find('th a').click(function() {
-                        widget.find('.listURL').text(related_url + jQuery(this).attr('href'));
-                        trigger.click();
-                        return false;
+                    related_dialog.find("#LiaisonListTable").tablesorter({
+                        sortList: [[0, 1]],
+                        widgets: ["ietf"]
                     });
                     related_dialog.find('td a').click(getRelatedLink);
                 }
