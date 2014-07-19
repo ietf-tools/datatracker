@@ -326,12 +326,13 @@ def document_main(request, name, rev=None):
             elif can_edit_stream_info and (not iesg_state or iesg_state.slug == 'watching'):
                 actions.append(("Submit to IESG for Publication", urlreverse('doc_to_iesg', kwargs=dict(name=doc.name))))
 
-        show_add_to_list = False
+        tracking_document = False
         if request.user.is_authenticated():
             try:
                 clist = CommunityList.objects.get(user=request.user)
                 clist.update()
-                show_add_to_list = clist.get_documents().filter(name=doc.name).count() == 0
+                if clist.get_documents().filter(name=doc.name).count() > 0:
+                    tracking_document = True
             except ObjectDoesNotExist:
                 pass
 
@@ -387,7 +388,7 @@ def document_main(request, name, rev=None):
                                        shepherd_writeup=shepherd_writeup,
                                        search_archive=search_archive,
                                        actions=actions,
-                                       show_add_to_list=show_add_to_list,
+                                       tracking_document=tracking_document,
                                        ),
                                   context_instance=RequestContext(request))
 
