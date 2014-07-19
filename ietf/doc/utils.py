@@ -54,6 +54,11 @@ def can_adopt_draft(user, doc):
     if has_role(user, "Secretariat"):
         return True
 
+    #The IRTF chair can adopt a draft into any RG
+    if has_role(user, "IRTF Chair"):
+        return (doc.stream_id in (None, "irtf")
+                and doc.group.type_id == "individ")
+
     return (doc.stream_id in (None, "ietf", "irtf")
             and doc.group.type_id == "individ"
             and Role.objects.filter(name__in=("chair", "delegate", "secr"),

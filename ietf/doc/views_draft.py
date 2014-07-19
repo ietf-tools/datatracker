@@ -1276,6 +1276,11 @@ class AdoptDraftForm(forms.Form):
 
         if has_role(user, "Secretariat"):
             pass # all groups
+        elif has_role(user, "IRTF Chair"):
+            #The IRTF chair can adopt a draft into any RG
+            group_ids = list(Group.objects.filter(type="rg", state="active").values_list('id', flat=True))
+            group_ids.extend(list(Group.objects.filter(type="wg", state="active", role__person__user=user, role__name__in=("chair", "delegate", "secr")).values_list('id', flat=True)))
+            self.fields["group"].queryset = self.fields["group"].queryset.filter(id__in=group_ids).distinct()
         else:
             self.fields["group"].queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=("chair", "delegate", "secr")).distinct()
 
