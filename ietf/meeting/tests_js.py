@@ -26,7 +26,7 @@ def condition_data():
         colors.bg_group_colors['FARFUT'] = 'white'
 
    
-@skipIf(skip_selenium,skip_selenium)
+@skipIf(bool(skip_selenium),skip_selenium)
 class ScheduleEditTests(LiveServerTestCase):
     def setUp(self):
         condition_data()
