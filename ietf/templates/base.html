@@ -37,6 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ietf_filters %}
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <!-- v{{version_num}}, {{ revision_num }}, {{ revision_time }} -->
 <title>{% block title %}No title{% endblock %}{% if server_mode %}{% if server_mode != "production" %} - {{ server_mode|upper }} MODE{% endif %}{% endif %}</title>
 <link rel="stylesheet" type="text/css" href="/css/yui/yui-20100305.css"></link>
