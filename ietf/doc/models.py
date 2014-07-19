@@ -636,6 +636,9 @@ class DocEvent(models.Model):
     doc = models.ForeignKey('doc.Document')
     desc = models.TextField()
 
+    def get_dochistory(self):
+        return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time').first()
+
     def __unicode__(self):
         return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
 
