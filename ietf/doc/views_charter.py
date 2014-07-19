@@ -142,7 +142,7 @@ def change_state(request, name, option=None):
                 charter.time = datetime.datetime.now()
                 charter.save()
 
-                if message:
+                if message or charter_state.slug == "intrev" or charter_state.slug == "extrev":
                     email_iesg_secretary_re_charter(request, group, "Charter state changed to %s" % charter_state.name, message)
 
                 email_state_changed(request, charter, "State changed to %s." % charter_state)
