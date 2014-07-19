@@ -33,6 +33,7 @@
 import datetime
 
 from django import forms
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render_to_response
 from django.db.models import Q
 from django.template import RequestContext
@@ -40,6 +41,7 @@ from django.http import Http404, HttpResponseBadRequest
 
 import debug                            # pyflakes:ignore
 
+from ietf.community.models import CommunityList
 from ietf.doc.models import ( Document, DocAlias, State, RelatedDocument, DocEvent,
     LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.expire import expirable_draft
@@ -399,8 +401,28 @@ def search(request):
         results = []
         meta = { 'by': None, 'advanced': False, 'searching': False }
 
+    # Determine whether each document is being tracked or not, and remember
+    # that so we can display the proper track/untrack option.
+    # We use a slightly cumbersome pair of dictionaries:
+    # - have_doc_status is set if we know anything about the document at all
+    # - doc_is_tracked is set if we are tracking the document
+    # If have_doc_status is False, then we use an empty cell, otherwise
+    # we either use the track or untrack option in the cell, as appropriate.
+    have_doc_status = { }
+    doc_is_tracked = { }
+    if request.user.is_authenticated():
+        try:
+            clist = CommunityList.objects.get(user=request.user)
+            clist.update()
+        except ObjectDoesNotExist:
+            pass
+        for doc in results:
+            if clist.get_documents().filter(name=doc.name).count() > 0:
+                doc_is_tracked[doc.name] = True
+            have_doc_status[doc.name] = True
+
     return render_to_response('doc/search/search.html',
-                              {'form':form, 'docs':results, 'meta':meta, 'show_add_to_list': True },
+                              {'form':form, 'docs':results, 'have_doc_status':have_doc_status, 'doc_is_tracked':doc_is_tracked, 'meta':meta, },
                               context_instance=RequestContext(request))
 
 def frontpage(request):

@@ -80,6 +80,22 @@ $(function () {
         });
     });
 
+    $('.search-results .removefromlist a').click(function(e) {
+        e.preventDefault();
+        var trigger = $(this);
+        $.ajax({
+            url: trigger.attr('href'),
+            type: 'POST',
+            cache: false,
+            dataType: 'json',
+            success: function(response){
+                if (response.success) {
+                    trigger.replaceWith('removed');
+                }
+            }
+        });
+    });
+
     $("a.ballot-icon").click(function (e) {
         e.preventDefault();
 

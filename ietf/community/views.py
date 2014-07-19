@@ -75,7 +75,10 @@ def manage_group_list(request, acronym):
     return _manage_list(request, clist)
 
 
-def add_document(request, document_name):
+def add_track_document(request, document_name):
+    """supports the "Track this document" functionality
+    
+    This is exposed in the document view and in document search results."""
     if not request.user.is_authenticated():
         path = urlquote(request.get_full_path())
         tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
@@ -85,6 +88,19 @@ def add_document(request, document_name):
     clist.update()
     return add_document_to_list(request, clist, doc)
 
+def remove_track_document(request, document_name):
+    """supports the "Untrack this document" functionality
+    
+    This is exposed in the document view and in document search results."""
+    clist = CommunityList.objects.get_or_create(user=request.user)[0]
+    if not clist.check_manager(request.user):
+        path = urlquote(request.get_full_path())
+        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
+        return HttpResponseRedirect('%s?%s=%s' % tup)
+    doc = get_object_or_404(DocAlias, name=document_name).document
+    clist.added_ids.remove(doc)
+    clist.update()
+    return HttpResponse(json.dumps({'success': True}), content_type='text/plain')
 
 def remove_document(request, list_id, document_name):
     clist = get_object_or_404(CommunityList, pk=list_id)
@@ -96,7 +112,6 @@ def remove_document(request, list_id, document_name):
     clist.added_ids.remove(doc)
     clist.update()
     return HttpResponseRedirect(clist.get_manage_url())
-
 
 def add_document_to_list(request, clist, doc):
     if not clist.check_manager(request.user):
