@@ -19,7 +19,7 @@
       <td>
         {% if doc.get_state_slug == "rfc" %}
           RFC - {{ doc.std_level }}
-          ({% if published %}{{ published.time|date:"F Y" }}{% else %}publication date unknown{% endif %}{% if has_errata %}; <a href="http://www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}" rel="nofollow">Errata</a>{% endif %})
+          ({% if published %}{{ published.time|date:"F Y" }}{% else %}publication date unknown{% endif %}{% if has_errata %}; <a href="http://www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}" rel="nofollow">Errata</a>{% else %}; No errata{% endif %})
 
           {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
           {% if updated_by %}<div>Updated by {{ updated_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
@@ -272,8 +272,8 @@
 
 {% else %}
 
-<p>This Internet-Draft is no longer active. Unofficial copies of old Internet-Drafts can be found here:<br/>
-<a href="http://tools.ietf.org/id/{{ doc.name }}">http://tools.ietf.org/id/{{ doc.name }}</a></p>
+<p>This Internet-Draft is no longer active. A copy of the expired Internet-Draft can be found here:<br/>
+<a href="http://www.ietf.org/archive/id/{{ doc.name }}-{{ doc.rev }}.txt">http://www.ietf.org/archive/id/{{ doc.name }}-{{ doc.rev }}.txt</a>
 
 <h4>Abstract</h4>
 
