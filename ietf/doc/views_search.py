@@ -402,7 +402,7 @@ def search(request):
         meta = { 'by': None, 'advanced': False, 'searching': False }
 
     # Determine whether each document is being tracked or not, and remember
-    # that in a dictionary so we can display the proper track/untrack option.
+    # that so we can display the proper track/untrack option.
     # We use a slightly cumbersome pair of dictionaries:
     # - have_doc_status is set if we know anything about the document at all
     # - doc_is_tracked is set if we are tracking the document
