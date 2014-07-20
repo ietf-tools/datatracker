@@ -5,7 +5,6 @@ from django.contrib.auth.decorators import login_required
 from ietf.ietfauth.utils import has_role, role_required
 
 
-
 class SecAuthMiddleware(object):
     """
     Middleware component that performs custom auth check for secretariat
@@ -46,7 +45,7 @@ class SecAuthMiddleware(object):
                 return login_required(view_func)(request,*view_args,**view_kwargs)
             elif self.is_unrestricted_url(request.path):
                 return role_required('WG Chair','WG Secretary','RG Chair','IAB Group Chair',
-                    'Area Director','Secretariat')(view_func)(request,*view_args,**view_kwargs)
+                    'Area Director','Secretariat','Team Chair')(view_func)(request,*view_args,**view_kwargs)
             else:
                 return role_required('Secretariat')(view_func)(request,*view_args,**view_kwargs)
         else:
