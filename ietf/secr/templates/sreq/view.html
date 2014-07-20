@@ -28,7 +28,7 @@
     
       <div class="button-group">
         <ul>
-          <li><button onclick="window.location='edit/'">Edit</button></li>
+          <li><button name="edit" onclick="window.location='edit/'"{% if is_locked %} disabled{% endif %}>Edit</button></li>
           {% if show_approve_button %}
             <li><button onclick="window.location='approve/'">Approve Third Session</button></li>
           {% endif %}
