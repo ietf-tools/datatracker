@@ -177,10 +177,7 @@ def fill_in_agenda_docs(date, sections, matches=None):
         elif doc.type_id == "conflrev":
             doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
         elif doc.type_id == "charter":
-            #if doc.group.state_id not in ("proposed", "active"):
-            #    continue
-
-            doc.group.txt_link = settings.CHARTER_TXT_URL + "%s-%s.txt" % (doc.canonical_name(), doc.rev)
+            pass
 
         number = get_doc_section(doc)
         if number: #  and num in sections
