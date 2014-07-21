@@ -4,3 +4,5 @@ personal/liudapeng/v5.0.2@7399
 personal/rcross/v5.4.1@7771	# Already fixed in [7664], in a slightly more future-safe way
 personal/liudapeng/v5.6.2-dev0@8129
 personal/sunqi/v5.6.2-dev0@8147 # inapplicable due to edits of prior merge.
+personal/liudapeng/v5.6.2-dev0@8148 # needs more work
+personal/liudapeng/v5.6.2-dev0@8149 # needs more work
