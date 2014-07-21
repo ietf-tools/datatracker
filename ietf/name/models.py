@@ -3,7 +3,7 @@
 from django.db import models
 
 class NameModel(models.Model):
-    slug = models.CharField(max_length=8, primary_key=True)
+    slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
     used = models.BooleanField(default=True)
