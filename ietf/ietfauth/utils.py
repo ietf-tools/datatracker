@@ -101,25 +101,28 @@ def is_authorized_in_doc_stream(user, doc):
     if has_role(user, ["Secretariat"]):
         return True
 
-    if not doc.stream or not user.is_authenticated():
+    if not user.is_authenticated():
         return False
 
     # must be authorized in the stream or group
 
     group_req = None
 
+    if (doc.stream.slug == "ietf" or not doc.stream) and has_role(user, ["Area Director"]):
+        return True
+
+    if not doc.stream:
+        return False
+
+    if doc.stream.slug == "ietf" and doc.group.type == "individ":
+        return False
+
     if doc.stream.slug == "ietf":
-        if has_role(user, ["Area Director"]):
-            return True
-        if not doc.group.type == "individ":
-            group_req = Q(group=doc.group)
+        group_req = Q(group=doc.group)
     elif doc.stream.slug == "irtf":
         group_req = Q(group__acronym=doc.stream.slug) | Q(group=doc.group)
     elif doc.stream.slug in ("iab", "ise"):
         group_req = Q(group__acronym=doc.stream.slug)
-
-    if not group_req:
-        return False
 
     return bool(Role.objects.filter(Q(name__in=("chair", "secr", "delegate", "auth"), person__user=user) & group_req))
 
