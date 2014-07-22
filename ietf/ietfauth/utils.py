@@ -55,6 +55,7 @@ def has_role(user, role_names, *args, **kwargs):
 	    "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state__in=["active","bof"]),
 	    "RG Chair": Q(person=person,name="chair", group__type="rg", group__state="active"),
 	    "RG Secretary": Q(person=person,name="secr", group__type="rg", group__state="active"),
+            "Team Chair": Q(person=person,name="chair", group__type="team", group__state="active"),
             "Nomcom Chair": Q(person=person, name="chair", group__type="nomcom", group__state="active", group__acronym__icontains=kwargs.get('year', '0000')),
             "Nomcom Advisor": Q(person=person, name="advisor", group__type="nomcom", group__state="active", group__acronym__icontains=kwargs.get('year', '0000')),
             "Nomcom": Q(person=person, group__type="nomcom", group__state="active", group__acronym__icontains=kwargs.get('year', '0000')),
