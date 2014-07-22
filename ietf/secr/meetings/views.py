@@ -93,7 +93,7 @@ def build_nonsession(meeting,schedule):
     
     delta = meeting.date - last_meeting.date
     system = Person.objects.get(name='(system)')
-    secretariat = Group.objects.get(name='secretariat')
+    secretariat = Group.objects.get(acronym='secretariat')
     
     for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other','plenary')):
         new_time = slot.time + delta
@@ -440,25 +440,24 @@ def non_session(request, meeting_id, schedule_name):
             new_time = datetime.datetime(t.year,t.month,t.day,time.hour,time.minute)
 
             # create TimeSlot object
-            timeslot = TimeSlot.objects.create(type=form.cleaned_data['type'],
+            timeslot = TimeSlot.objects.create(type=type,
                                                meeting=meeting,
                                                name=name,
                                                time=new_time,
                                                duration=duration,
                                                show_location=form.cleaned_data['show_location'])
 
-            # create a dummy Session object to hold materials
-            # NOTE: we're setting group to none here, but the set_room page will force user
-            # to pick a legitimate group
-            session = None
-            if type.slug in ('other','plenary'):
-                session = Session(meeting=meeting,
+            if timeslot.type.slug not in ('other','plenary'):
+                group = Group.objects.get(acronym='secretariat')
+            
+            # create associated Session object
+            session = Session(meeting=meeting,
                                   name=name,
                                   short=short,
                                   group=group,
                                   requested_by=Person.objects.get(name='(system)'),
                                   status_id='sched')
-                session.save()
+            session.save()
             
             # create association
             ScheduledSession.objects.create(timeslot=timeslot,
