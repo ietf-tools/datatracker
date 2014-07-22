@@ -1,3 +1,67 @@
+ietfdb (5.6.2) ietf; urgency=medium
+
+  This release contains the datatracker bugfixes and enhancements from the
+  IETF-90 Code Sprint.  Many thanks to everyone that contributed!
+
+  Contributions that continue to arrive during the week will be merged in
+  to a new release at the end of the week or the beginning of next week.
+
+  * Merged in [8155] from rcross@amsl.com:
+    Allow Team Chairs access to proceedings.  
+
+  * Merged in [8154] from rcross@amsl.com:
+    Fixed a bug where ScheduledSession objects were still being created
+    without a related session.  
+
+  * Merged in [8150] from rjsparks@nostrum.com:
+    Small cleanup refactor removing redundant configuration line in settings
+    for charter text URLs.  
+
+  * Changed the length of the NameModel slug field from 8 to 32 characters. 
+    Added a corresponding migration.
+
+  * Merged in [8146] from sunqi.csnet.thu@gmail.com:
+    Changed the ietfauth file to allow to change the replaces relationship 
+    without setting the doc stream. Fixes ticket #1305.  
+
+  * Merged in [8143] from tterriberry@mozilla.com:
+    Allow IRTF chair to adopt a draft into any RG.  Fixes #1082. 
+
+  * Merged in [8137] from rjsparks@nostrum.com:
+    First automated javascript test using PhantomJS and Selenium.  
+
+  * Merged in personal/shane/v5.6.2-dev0@8144 from shane@time-travellers.org:
+    Added untrack to document and search pages. Fixes #1381.
+
+  * Merged in [8136] from denghui@chinamobile.com:
+    Added display of the relevant draft revision number for ballot comments.
+    Fixes issue #911.  
+
+  * Permit really long sessions, and don't expire sessions on browser 
+    close.  On request from Pete Resnick.
+
+  * Merged in [8122] from gnocuil@gmail.com:
+    Force mailing to secretary when a charter state changed to internal or
+    external review.  Fixes ticket #1444.  
+
+  * Merged in [8121] from fanpeng@chinamobile.com:
+    Added a 'No Errata' indication for RFCs with no errata.  Changed the link
+    to the draft text for expired drafts to use the archive at
+    www.ietf.org/archive/id/ instead of tools.ietf.org/id/. Fixes ticket #1112
+    and #1432.  
+
+  * Added a meta tag to the base template, to specify a page character set.
+
+  * Merged in [8114] from gnocuil@gmail.com:
+    Changed the template to highlight groups from different areas instead of
+    the same area. Fixes ticket #1368.  
+
+  * Merged in [8099] from rjsparks@nostrum.com:
+    Use the name field from the materials upload form. Fixes ticket #1445.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Jul 2014 14:21:25 -0700
+
+
 ietfdb (5.6.1) ietf; urgency=medium
 
   * Added an x_frame_options setting to permit datatracker pages to be 
