@@ -566,11 +566,9 @@ def document_history(request, name):
             if name.startswith("charter"):
                 url = request.build_absolute_uri(urlreverse("charter_with_milestones_txt", kwargs=dict(name=e.doc.name, rev=e.rev)))
             elif name.startswith("conflict-review"):
-                h = find_history_active_at(e.doc, e.time)
-                url = settings.CONFLICT_REVIEW_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
+                url = find_history_active_at(e.doc, e.time).href()
             elif name.startswith("status-change"):
-                h = find_history_active_at(e.doc, e.time)
-                url = settings.STATUS_CHANGE_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
+                url = find_history_active_at(e.doc, e.time).href()
             elif name.startswith("draft") or name.startswith("rfc"):
                 # rfcdiff tool has special support for IDs
                 url = e.doc.name + "-" + e.rev
