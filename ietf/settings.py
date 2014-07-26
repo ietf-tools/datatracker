@@ -122,6 +122,22 @@ LOGGING['filters']['skip_suspicious_operations'] = {
     'callback': skip_suspicious_operations,
 }
 LOGGING['handlers']['mail_admins']['filters'] += [ 'skip_suspicious_operations' ]
+# Filter out UreadablePostError:
+from django.http import UnreadablePostError
+def skip_unreadable_post(record):
+    if record.exc_info:
+        exc_type, exc_value = record.exc_info[:2]
+        if isinstance(exc_value, UnreadablePostError):
+            return False
+    return True
+LOGGING['filters']['skip_unreadable_posts'] = {
+    '()': 'django.utils.log.CallbackFilter',
+    'callback': skip_unreadable_post,
+}
+LOGGING['handlers']['mail_admins']['filters'] += [ 'skip_unreadable_posts' ]
+
+
+
 
 # End logging
 # ------------------------------------------------------------------------
