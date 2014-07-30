@@ -22,16 +22,16 @@ and end with
 {% endif %}
 
 <h3>
-{% if minutes %}
-  <a href="{{ minutes.get_absolute_url }}">Minutes</a>
+{% if materials.minutes %}
+  <a href="{{ materials.minutes.get_absolute_url }}">Minutes</a>
 {% else %}
   Minutes
 {% endif %}&nbsp;&nbsp;|&nbsp;&nbsp;
 {% if meeting.type.slug == "ietf" %}
-  <a href="/audio/ietf{{ meeting.number }}/">Audio Archives</a>&nbsp;&nbsp;|&nbsp;&nbsp;
+  {% comment %}<a href="/audio/ietf{{ meeting.number }}/">Audio Archives</a>&nbsp;&nbsp;|&nbsp;&nbsp; {% endcomment %}
 {% else %}
-  {% if agenda %}
-    <a href="{{ agenda.get_absolute_url }}">Agenda</a>
+  {% if materials.agenda %}
+    <a href="{{ materials.agenda.get_absolute_url }}">Agenda</a>
   {% else %}
     Agenda
   {% endif %}&nbsp;&nbsp;|&nbsp;&nbsp;
@@ -84,10 +84,21 @@ and end with
       {% endif %}
 <br /><br /></td></tr></table>
 
-<h3>Meeting Slides:</h3>
-{% if slides %}
+<h3>Recordings:</h3>
+{% if materials.record %}
 <ul>
-  {% for slide in slides %}
+  {% for record in materials.record %}
+  <li><a href="{{ record.href }}" target="_blank">{{ record.title }}</a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No Recordings Present</p>
+{% endif %}
+
+<h3>Meeting Slides:</h3>
+{% if materials.slides %}
+<ul>
+  {% for slide in materials.slides %}
   <li><a href="{{ slide.get_absolute_url }}" target="_blank">{{ slide.title }}</a></li>
   {% endfor %}
 </ul>

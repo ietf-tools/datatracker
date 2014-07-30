@@ -90,6 +90,9 @@ class DocumentInfo(models.Model):
             return settings.DOCUMENT_PATH_PATTERN.format(doc=self)
 
     def href(self):
+        if self.external_url.startswith == 'http://':
+            return self.external_url
+            
         meeting_related = self.meeting_related()
 
         settings_var = settings.DOC_HREFS
