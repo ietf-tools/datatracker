@@ -163,12 +163,16 @@ class EditTests(TestCase):
         meeting = make_meeting_test_data()
 
         # try to get non-existing agenda
-        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number, name="foo"))
+        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number,
+                                                                       owner=meeting.agenda.owner_email(),
+                                                                       name="foo"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
-        # save as
-        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number))
+        # save as new name (requires valid existing agenda)
+        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number,
+                                                                       owner=meeting.agenda.owner_email(),
+                                                                       name=meeting.agenda.name))
         self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, {
             'savename': "foo",
@@ -177,11 +181,13 @@ class EditTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         # get
-        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number, name="foo"))
+        schedule = meeting.get_schedule_by_name("foo")
+        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number,
+                                                                       owner=schedule.owner_email(),
+                                                                       name="foo"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        schedule = meeting.get_schedule_by_name("foo")
         schedule.visible = True
         schedule.public = False
         schedule.save()

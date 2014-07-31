@@ -3,8 +3,6 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 
-{% load dajaxice_templatetags %}
-
 {% block morecss %}
 {% for area in area_list %}
 .{{ area.upcase_acronym}}-scheme, .meeting_event th.{{ area.upcase_acronym}}-scheme, #{{ area.upcase_acronym }}-groups, #selector-{{ area.upcase_acronym }} { color:{{ area.fg_color }}; background-color: {{ area.bg_color }} }
@@ -31,8 +29,6 @@
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.accordion.min.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.draggable.min.js'></script>
 
-{% dajaxice_js_import %}
-
 <script type='text/javascript' src='/js/spin/dist/spin.min.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_edit.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_helpers.js'></script>
@@ -48,8 +44,9 @@ var schedule_id    = {{ schedule.id }};
 var schedule_owner_href = "{{ schedule.owner_email }}";
 var schedule_name  = "{{ schedule.name }}";
 var meeting_base_url = "{{ meeting_base_url }}";
+var schedule_owner_email = "{{ schedule.owner_email }}";
 var site_base_url = "{{ site_base_url }}";
-var scheduledsession_post_href = "{% url "ietf.meeting.ajax.scheduledsessions_json" meeting.number schedule.name %}";
+var scheduledsession_post_href = "{% url "ietf.meeting.ajax.scheduledsessions_json" meeting.number schedule.owner_email schedule.name %}";
 var total_days = {{time_slices|length}};
 var total_rooms = {{rooms|length}};
 

@@ -3,8 +3,6 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 
-{% load dajaxice_templatetags %}
-
 {% block title %}IETF {{ meeting.number }} Meeting Agenda{% endblock %}
 {% load agenda_custom_tags %}
 {% block pagehead %}
@@ -20,8 +18,6 @@
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.sortable.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.accordion.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.draggable.js'></script>
-
-{% dajaxice_js_import %}
 
 <script type='text/javascript' src='/js/agenda/agenda_listeners.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_helpers.js'></script>
@@ -61,11 +57,11 @@
       <td class="agenda_mark agenda_data"> <span class="styled_button agenda_official_mark {{agenda.official_class}}">{{ agenda.official_token }}</span></td>
       <td class="agenda_data"> <span class="agenda_owner">{{ agenda.owner }}</span> </td>
       <td class="agenda_data">
-        <a href="{% url "ietf.meeting.views.edit_agenda" agenda.meeting.number agenda.name %}"><span class="agenda_name">{{ agenda.name }}</span></a>
+        <a href="{% url "ietf.meeting.views.edit_agenda" agenda.meeting.number agenda.owner_email agenda.name %}"><span class="agenda_name">{{ agenda.name }}</span></a>
       </td>
       <td class="agenda_data"> <span class="agenda_visible {{agenda.visible_class}}">{{ agenda.visible_token }}</span></a></td>
       <td class="agenda_data"> <span class="agenda_public {{agenda.public_class}}">{{ agenda.public_token }}</span></td>
-      <td class="agenda_mark agenda_data"> <a href="{% url "ietf.meeting.views.edit_agenda_properties" agenda.meeting.number agenda.name %}"><span class="styled_button agenda_edit">EDIT</span></a> </td>
+      <td class="agenda_mark agenda_data"> <a href="{% url "ietf.meeting.views.edit_agenda_properties" agenda.meeting.number agenda.owner_email agenda.name %}"><span class="styled_button agenda_edit">EDIT</span></a> </td>
       <td class="agenda_mark agenda_data"> <span class="styled_button agenda_delete">DEL</span> </td>
     </tr>
   {% endfor %}

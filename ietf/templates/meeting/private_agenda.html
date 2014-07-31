@@ -3,8 +3,6 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 
-{% load dajaxice_templatetags %}
-
 {% block morecss %}
 {% for area in area_list %}
 .{{ area.upcase_acronym}}-scheme, .meeting_event th.{{ area.upcase_acronym}}-scheme, #{{ area.upcase_acronym }}-groups, #selector-{{ area.upcase_acronym }} { color:{{ area.fg_color }}; background-color: {{ area.bg_color }} }

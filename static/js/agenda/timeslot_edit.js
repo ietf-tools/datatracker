@@ -16,33 +16,36 @@
 
 
 
-//////////////-GLOBALS----////////////////////////////////////////
+/* ////////////-GLOBALS----/////////////////////////////////////// */
 
 var agenda_globals;
 
 var days = [];
-var legend_status = {};   // agenda area colors.
+var legend_status = {};   /* agenda area colors. */
 
 var duplicate_sessions = {};
 
+/* the following are initialized in the timeslot_edit.html template */
+/* var meeting_slots_href = URL to get/post new timeslots.          */
+
 /********* colors ************************************/
 
-var highlight = "red"; // when we click something and want to highlight it.
-var dragging_color = "blue"; // color when draging events.
-var none_color = '';         // unset the color.
+var highlight = "red";       /* when we click something and want to highlight it. */
+var dragging_color = "blue"; /* color when draging events. */
+var none_color = '';         /* unset the color. */
 var color_droppable_empty_slot = 'rgb(0, 102, 153)';
 
 // these are used for debugging only.
-var last_json_txt   = "";   // last txt from a json call.
-var last_json_reply = [];   // last parsed content
+var last_json_txt   = "";    /* last txt from a json call. */
+var last_json_reply = [];    /* last parsed content */
 
 var hidden_rooms = [];
-var total_rooms = 0; // the number of rooms
+var total_rooms = 0;         /* the number of rooms */
 var hidden_days = [];
-var total_days = 0; // the number of days
+var total_days = 0;          /* the number of days  */
 /****************************************************/
 
-/////////////-END-GLOBALS-///////////////////////////////////////
+/* ///////////-END-GLOBALS-///////////////////////////////////// */
 
 /* refactor this out into the html */
 $(document).ready(function() {
@@ -226,23 +229,22 @@ function delete_slot(event) {
 }
 
 function fill_timeslots() {
-    // add no_timeslot class to all timeslots, it will be removed
-    // when an item is placed into the slot.
+    /* add no_timeslot class to all timeslots, it will be removed */
+    /* when an item is placed into the slot. */
     $(".agenda_slot").addClass("no_timeslot");
     $.each(agenda_globals.timeslot_bydomid, function(key) {
         ts = agenda_globals.timeslot_bydomid[key];
         insert_timeslotedit_cell(ts);
     });
 
-    // now add a create option for every slot which hasn't got a timeslot
+    /* now add a create option for every slot which hasn't got a timeslot */
     $.each($(".no_timeslot"),function(slot) {
         create_timeslotedit_cell(this);
     });
-
 }
 
 function build_select_box(roomtype, domid, slot_id, select_id) {
-    //console.log("updating for", ts);
+    /* console.log("updating for", ts); */
     roomtypesession="";
     roomtypeother="";
     roomtypeplenary="";
@@ -295,31 +297,33 @@ function insert_timeslotedit_cell(ts) {
 
     var select_id = domid + "_select";
     var roomtypeclass = build_select_box(roomtype, domid, slot_id, select_id);
+    /* console.log("Creating box for old ", select_id); */
 
+    $("#"+select_id).off();  /* removes all old events */
     $("#"+select_id).change(function(eventObject) {
 	start_spin();
         var newpurpose = $("#"+select_id).val()
         console.log("setting id: #"+select_id+" to "+newpurpose+" ("+roomtypeclass+")");
 
-        // how does dajaxice relay an error?
-        Dajaxice.ietf.meeting.update_timeslot_purpose(
-            function(json) {
-                if(json == "") {
-                    console.log("No reply from server....");
-                } else {
-                    stop_spin();
-                    for(var key in json) {
-	                ts[key]=json[key];
-                    }
-                    console.log("server replied, updating cell contents: "+ts.roomtype);
-                    insert_timeslotedit_cell(ts);
-                }
-            },
-	    {
-                'meeting_num': meeting_number,
-		'timeslot_id': ts.timeslot_id,
-                'purpose': newpurpose,
-	    });
+        var purpose_struct = { "purpose" : newpurpose };
+        var purpose_update = $.ajax(ts.href, {
+            "content-type": "text/json",
+            "type": "PUT",
+            "data": purpose_struct,
+        });
+
+        purpose_update.success(function(result, status, jqXHR) {
+            if(result.message != "valid") {
+                alert("Update of pinned failed");
+                return;
+            }
+            stop_spin();
+            for(var key in result) {
+	        ts[key]=result[key];
+            }
+            console.log("server replied, updating cell contents: "+ts.roomtype);
+            insert_timeslotedit_cell(ts);
+        });
     });
 }
 
@@ -335,7 +339,7 @@ function create_timeslotedit_cell(slot_id) {
     var duration=object.attr('slot_duration');
     var domid= object.attr('id');
 
-    //$(slot_id).removeClass("agenda_slot_unavailable")
+    /* $(slot_id).removeClass("agenda_slot_unavailable") */
     $(slot_id).removeClass("agenda_slot_other")
     $(slot_id).removeClass("agenda_slot_session")
     $(slot_id).removeClass("agenda_slot_plenary")
@@ -343,33 +347,41 @@ function create_timeslotedit_cell(slot_id) {
 
     var select_id = domid + "_select";
     var roomtypeclass = build_select_box(roomtype, "default", slot_id, select_id);
+    /* console.log("Creating box for new ", $("#"+select_id)); */
 
+    $("#"+select_id).off();  /* removes all old events */
     $("#"+select_id).change(function(eventObject) {
 	start_spin();
         var newpurpose = $("#"+select_id).val()
-        console.log("creating setting id: #"+select_id+" to "+newpurpose+" ("+roomtypeclass+")");
+        /* console.log("creating new slot id: #"+select_id+" to "+newpurpose+" (was "+roomtypeclass+")"); */
+        var ts = {
+            'room_id': room,
+            'time'   : time,
+            'duration':duration,
+            /* 'purpose': newpurpose, */
+            'type': newpurpose,
+	};
 
-        Dajaxice.ietf.meeting.update_timeslot_purpose(
-            function(json) {
-                if(json == "") {
-                    console.log("No reply from server....");
-                } else {
-                    stop_spin();
-                    for(var key in json) {
-	                ts[key]=json[key];
-                    }
-                    console.log("server replied, updating cell contents: "+ts.roomtype);
-                    insert_timeslotedit_cell(ts);
-                }
-            },
-	    {
-		'timeslot_id': "0",            /* 0 indicates to make a new one */
-                'meeting_num': meeting_number,
-                'room_id': room,
-                'time'   : time,
-                'duration':duration,
-                'purpose': newpurpose,
-	    });
+
+        var new_timeslot_promise = $.ajax(meeting_slots_href, {
+            "content-type": "text/json",
+            "type": "POST",
+            "data": ts,
+        });
+
+        new_timeslot_promise.success(function(result, status, jqXHR) {
+            stop_spin();
+            if(jqXHR.status != 201) {
+                __debug_object = jqXHR;
+                alert("creation of new timeslot failed");
+                return;
+            }
+
+            ts_obj = make_timeslot(result);
+            /* change the domid of the unavailable slot to that which we just created */
+            $(slot_id).attr('id', ts_obj.domid);
+            insert_timeslotedit_cell(ts_obj);
+        });
     });
 }
 

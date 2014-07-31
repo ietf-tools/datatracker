@@ -13,13 +13,6 @@ from ietf.utils.mail import outbox
 
 
 class ApiTests(TestCase):
-    def test_dajaxice_core_js(self):
-        # this is vital for Dajaxice to work and we have hacked it
-        # slightly to avoid copying static files around, so make sure
-        # we can fetch it
-        r = self.client.get("/dajaxice/dajaxice.core.js")
-        self.assertEqual(r.status_code, 200)
-
     def test_update_agenda(self):
         meeting = make_meeting_test_data()
         schedule = Schedule.objects.get(meeting__number=42,name="test-agenda")
@@ -35,6 +28,7 @@ class ApiTests(TestCase):
         def do_unschedule(scheduledsession):
             url = urlreverse("ietf.meeting.ajax.scheduledsession_json", 
                              kwargs=dict(num=scheduledsession.session.meeting.number, 
+                                         owner=scheduledsession.schedule.owner_email(),
                                          name=scheduledsession.schedule.name,
                                          scheduledsession_id=scheduledsession.pk,))
             return self.client.delete(url)
@@ -42,6 +36,7 @@ class ApiTests(TestCase):
         def do_schedule(schedule,session,timeslot):
             url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",
                               kwargs=dict(num=session.meeting.number,
+                                          owner=schedule.owner_email(),
                                           name=schedule.name,))
             post_data = '{ "session_id": "%s", "timeslot_id": "%s" }'%(session.pk,timeslot.pk)
             return self.client.post(url,post_data,content_type='application/x-www-form-urlencoded')
@@ -50,6 +45,7 @@ class ApiTests(TestCase):
             session = scheduledsession.session
             url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",
                               kwargs=dict(num=session.meeting.number,
+                                          owner=schedule.owner_email(),
                                           name=schedule.name,))
             post_data = '{ "session_id": "%s", "timeslot_id": "%s", "extendedfrom_id": "%s" }'%(session.pk,scheduledsession.timeslot.slot_to_the_right.pk,scheduledsession.pk)
 
@@ -208,7 +204,8 @@ class ApiTests(TestCase):
         self.assertEqual(set([x['short_name'] for x in info]),set(['mars','ames']))
 
         schedule = meeting.agenda
-        url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",kwargs=dict(num=meeting.number,name=schedule.name))
+        url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",
+                         kwargs=dict(num=meeting.number,owner=schedule.owner_email(),name=schedule.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         info = json.loads(r.content)
@@ -249,7 +246,7 @@ class ApiTests(TestCase):
         # create slot
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.status_code, 201)
         self.assertTrue(meeting.timeslot_set.filter(time=slot_time))
         self.assertEqual(meeting.timeslot_set.count(),prior_slotcount+1)
 
@@ -274,7 +271,9 @@ class ApiTests(TestCase):
         meeting = make_meeting_test_data()
 
         url = urlreverse("ietf.meeting.ajax.agenda_infourl",
-                         kwargs=dict(num=meeting.number, name=meeting.agenda.name))
+                         kwargs=dict(num=meeting.number,
+                                     owner=meeting.agenda.owner_email(),
+                                     name=meeting.agenda.name))
 
         r = self.client.get(url)
         info = json.loads(r.content)
@@ -308,6 +307,7 @@ class ApiTests(TestCase):
 
         url = urlreverse("ietf.meeting.ajax.agenda_infourl",
                          kwargs=dict(num=meeting.number,
+                                     owner=meeting.agenda.owner_email(),
                                      name=meeting.agenda.name))
 
         post_data = {
@@ -336,6 +336,7 @@ class ApiTests(TestCase):
 
         url = urlreverse("ietf.meeting.ajax.agenda_infourl",
                          kwargs=dict(num=meeting.number,
+                                     owner=meeting.agenda.owner_email(),
                                      name=meeting.agenda.name))
         # unauthorized delete
         self.client.login(username="plain", password="plain+password")
@@ -393,115 +394,84 @@ class ApiTests(TestCase):
     def test_read_only(self):
         meeting = make_meeting_test_data()
 
-        data = {
-            'argv': json.dumps({
-                "meeting_num": meeting.number,
-                "schedule_id": meeting.agenda.pk,
-            })}
-
         # Secretariat
         self.client.login(username="secretary", password="secretary+password")
-        r = self.client.post('/dajaxice/ietf.meeting.readonly/', data)
+        url = '/meeting/%s/agenda/%s/%s/permissions' % (meeting.number, meeting.agenda.owner.email_address(), meeting.agenda.name);
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
         info = json.loads(r.content)
         self.assertEqual(info['secretariat'], True)
         self.assertEqual(urlsplit(info['owner_href'])[2], "/person/%s.json" % meeting.agenda.owner_id)
         self.assertEqual(info['read_only'], True)
-        self.assertEqual(info['write_perm'], True)
+        self.assertEqual(info['save_perm'], True)
 
         # owner
         self.client.login(username=meeting.agenda.owner.user.username,
                           password=meeting.agenda.owner.user.username+"+password")
-        r = self.client.post('/dajaxice/ietf.meeting.readonly/', data)
+        url = '/meeting/%s/agenda/%s/%s/permissions' % (meeting.number, meeting.agenda.owner.email_address(), meeting.agenda.name);
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
         info = json.loads(r.content)
         self.assertEqual(info['secretariat'], False)
         self.assertEqual(info['read_only'], False)
-        self.assertEqual(info['write_perm'], False)
+        self.assertEqual(info['save_perm'], False)
 
     def test_update_timeslot_pinned(self):
         meeting = make_meeting_test_data()
         scheduled = ScheduledSession.objects.filter(
             session__meeting=meeting, session__group__acronym="mars").first()
 
-        url = '/dajaxice/ietf.meeting.update_timeslot_pinned/'
+        url = '/meeting/%s/agenda/%s/%s/session/%u.json' % (meeting.number, meeting.agenda.owner_email(), meeting.agenda.name, scheduled.pk)
 
         post_data = {
-            'argv': json.dumps({
-                "schedule_id": meeting.agenda.pk,
-                "scheduledsession_id": scheduled.pk,
-                "pinned": True,
-            })}
+            "pinned": True
+            }
 
-        # unauthorized post
-        r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue("error" in json.loads(r.content))
+        # unauthorized post gets failure (no redirect)
+        r = self.client.put(url, post_data)
+        self.assertEqual(r.status_code, 403,
+                         "post to %s should have failed, no permission, got: %u/%s" %
+                         (url, r.status_code, r.content))
         self.assertTrue(not ScheduledSession.objects.get(pk=scheduled.pk).pinned)
 
         # set pinned
         meeting.agenda.owner = Person.objects.get(user__username="secretary")
         meeting.agenda.save()
+
+        # need to rebuild URL, since the agenda owner has changed.
+        url = '/meeting/%s/agenda/%s/%s/session/%u.json' % (meeting.number, meeting.agenda.owner_email(), meeting.agenda.name, scheduled.pk)
+
         self.client.login(username="secretary", password="secretary+password")
-        r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 200)
+        r = self.client.put(url, post_data)
+        self.assertEqual(r.status_code, 200,
+                         "post to %s should have worked, but got: %u/%s" %
+                         (url, r.status_code, r.content))
         self.assertTrue(ScheduledSession.objects.get(pk=scheduled.pk).pinned)
 
-class UnusedButExposedApiTests(TestCase):
+class TimeSlotEditingApiTests(TestCase):
 
-    def test_manipulate_timeslot_via_dajaxice(self):
+    def test_manipulate_timeslot(self):
         meeting = make_meeting_test_data()
-        slot_time = datetime.date.today()
+        slot = meeting.timeslot_set.all()[0]
+        self.assertEqual(TimeSlot.objects.get(pk=slot.pk).type.name,'Session')
 
-        url = '/dajaxice/ietf.meeting.update_timeslot_purpose/'
-
-        create_post_data = {
-            'argv' : json.dumps({  
-                "meeting_num" : meeting.number,
-                "timeslot_id" : 0,
-                "purpose"     : "plenary",
-                "room_id"     : meeting.room_set.first().id,
-                "time"        : slot_time.strftime("%Y-%m-%d %H:%M:%S"),
-                "duration"    : 3600
-        })}
-
-        prior_timeslot_count = meeting.timeslot_set.count()
-        # Create as nobody should fail
-        r = self.client.post(url, create_post_data)
-        self.assertEqual(r.status_code, 200)
-        info = json.loads(r.content)
-        self.assertTrue('error' in info and info['error']=='no permission')
-        self.assertEqual(meeting.timeslot_set.count(),prior_timeslot_count)
-
-        # Successful create
-        self.client.login(username="secretary", password="secretary+password")
-        r = self.client.post(url, create_post_data)
-        self.assertEqual(r.status_code, 200)
-        info = json.loads(r.content)
-        self.assertFalse('error' in info)
-        self.assertTrue('roomtype' in info)
-        self.assertEqual(info['roomtype'],'plenary')
-        self.assertEqual(meeting.timeslot_set.count(),prior_timeslot_count+1)
+        url = urlreverse("ietf.meeting.ajax.timeslot_sloturl",
+                         kwargs=dict(num=meeting.number, slotid=slot.pk))
 
         modify_post_data = {
-            'argv' : json.dumps({  
-                "meeting_num" : meeting.number,
-                "timeslot_id" : meeting.timeslot_set.get(time=slot_time).id,
-                "purpose"     : "session"
-        })}
+            "purpose"       : "plenary"
+        }
 
         # Fail as non-secretariat
         self.client.login(username="plain", password="plain+password")
         r = self.client.post(url, modify_post_data)
-        self.assertEqual(r.status_code, 200)
-        info = json.loads(r.content)
-        self.assertTrue('error' in info and info['error']=='no permission')
-        self.assertEqual(meeting.timeslot_set.get(time=slot_time).type.name,'Plenary')
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(TimeSlot.objects.get(pk=slot.pk).type.name,'Session')
 
         # Successful change of purpose
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, modify_post_data)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(meeting.timeslot_set.get(time=slot_time).type.name,'Session')
+        self.assertEqual(TimeSlot.objects.get(pk=slot.pk).type.name,'Plenary')
