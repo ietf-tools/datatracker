@@ -10,7 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db.models import Max
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.utils.text import slugify
 
@@ -19,15 +19,15 @@ from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.utils.decorators import check_permissions, sec_only
 from ietf.secr.utils.document import get_full_path
 from ietf.secr.utils.group import get_my_groups, groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_material, get_timeslot
+from ietf.secr.utils.meeting import get_upload_root, get_materials, get_timeslot
 from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession
-from ietf.secr.proceedings.forms import EditSlideForm, InterimMeetingForm, ReplaceSlideForm, UnifiedUploadForm
+from ietf.secr.proceedings.forms import EditSlideForm, InterimMeetingForm, RecordingForm, RecordingEditForm, ReplaceSlideForm, UnifiedUploadForm
 from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas, gen_attendees,
     gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries, gen_progress, gen_research,
-    gen_training, create_proceedings, create_interim_directory )
+    gen_training, create_proceedings, create_interim_directory, create_recording )
 
 from ietf.secr.proceedings.models import InterimMeeting    # proxy model
 
@@ -84,14 +84,14 @@ def get_extras(meeting):
 def get_next_interim_num(acronym,date):
     '''
     This function takes a group acronym and date object and returns the next number to use for an
-    interim meeting.  The format is interim-[year]-[acronym]-[1-9]
+    interim meeting.  The format is interim-[year]-[acronym]-[1-99]
     '''
     base = 'interim-%s-%s-' % (date.year, acronym)
     # can't use count() to calculate the next number in case one was deleted
-    meetings = list(Meeting.objects.filter(type='interim',number__startswith=base).order_by('number'))
+    meetings = Meeting.objects.filter(type='interim',number__startswith=base)
     if meetings:
-        parts = meetings[-1].number.split('-')
-        return base + str(int(parts[-1]) + 1)
+        nums = sorted([ int(x.number.split('-')[-1]) for x in meetings ])
+        return base + str(nums[-1] + 1)
     else:
         return base + '1'
 
@@ -250,6 +250,33 @@ def ajax_generate_proceedings(request, meeting_num):
         RequestContext(request,{}),
     )
 
+@jsonapi
+def ajax_get_sessions(request, meeting_num, acronym):
+    '''
+    Ajax function to get session info for group / meeting
+    returns JSON format response: [{id:session_id, value:session info},...]
+    If there are no sessions an empty list is returned.
+    '''
+    results=[]
+    try:
+        meeting = Meeting.objects.get(number=meeting_num)
+        group = Group.objects.get(acronym=acronym)
+    except ObjectDoesNotExist:
+        return results
+        
+    sessions = Session.objects.filter(meeting=meeting,group=group,status='sched')
+    
+    # order by time scheduled
+    sessions = sorted(sessions,key = lambda x: x.official_scheduledsession().timeslot.time)
+    
+    for n,session in enumerate(sessions,start=1):
+        timeslot = session.official_scheduledsession().timeslot
+        val = '{}: {} {}'.format(n,timeslot.time.strftime('%m-%d %H:%M'),timeslot.location.name)
+        d = {'id':session.id, 'value': val}
+        results.append(d)
+
+    return results
+    
 @jsonapi
 def ajax_order_slide(request):
     '''
@@ -573,6 +600,69 @@ def progress_report(request, meeting_num):
     url = reverse('proceedings_select', kwargs={'meeting_num':meeting_num})
     return HttpResponseRedirect(url)
 
+@sec_only
+def recording(request, meeting_num):
+    '''
+    Enter Session recording info.  Creates Document and associates it with Session
+    '''
+    meeting = get_object_or_404(Meeting, number=meeting_num)
+    recordings = Document.objects.filter(name__startswith='recording-{}'.format(meeting.number),states__slug='active').order_by('group__acronym')
+    
+    if request.method == 'POST':
+        form = RecordingForm(request.POST)
+        if form.is_valid():
+            group = form.cleaned_data['group']
+            external_url =  form.cleaned_data['external_url']
+            session = form.cleaned_data['session']
+            
+            if Document.objects.filter(type='recording',external_url=external_url):
+                messages.error(request, "Recording already exists")
+                return redirect('proceedings_recording', meeting_num=meeting_num)
+            else:
+                create_recording(session,meeting,group,external_url)
+            
+            # rebuild proceedings
+            create_proceedings(meeting,group)
+            
+            messages.success(request,'Recording added')
+            return redirect('proceedings_recording', meeting_num=meeting_num)
+    
+    else:
+        form = RecordingForm()
+    
+    return render_to_response('proceedings/recording.html',{
+        'meeting':meeting,
+        'form':form,
+        'recordings':recordings},
+        RequestContext(request, {}),
+    )
+
+@sec_only
+def recording_edit(request, meeting_num, name):
+    '''
+    Edit recording Document
+    '''
+    recording = get_object_or_404(Document, name=name)
+    meeting = get_object_or_404(Meeting, number=meeting_num)
+    
+    if request.method == 'POST':
+        form = RecordingEditForm(request.POST, instance=recording)
+        if form.is_valid():
+            # save record and rebuild proceedings
+            form.save()
+            create_proceedings(meeting,recording.group)
+            messages.success(request,'Recording saved')
+            return redirect('proceedings_recording', meeting_num=meeting_num)
+    else:
+        form = RecordingEditForm(instance=recording)
+    
+    return render_to_response('proceedings/recording_edit.html',{
+        'meeting':meeting,
+        'form':form,
+        'recording':recording},
+        RequestContext(request, {}),
+    )
+    
 @check_permissions
 def replace_slide(request, slide_id):
     '''
@@ -860,7 +950,7 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
     else:
         form = UnifiedUploadForm(initial={'meeting_id':meeting.id,'acronym':group.acronym,'material_type':'slides'})
 
-    agenda,minutes,slides = get_material(session)
+    materials = get_materials(group,meeting)
 
     # gather DocEvents
     # include deleted material to catch deleted doc events
@@ -877,11 +967,9 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
         'docevents': docevents,
         'meeting': meeting,
         'group': group,
-        'minutes': minutes,
-        'agenda': agenda,
+        'materials': materials,
         'form': form,
         'session_name': session_name,   # for Tutorials, etc
-        'slides':slides,
         'proceedings_url': proceedings_url},
         RequestContext(request, {}),
     )

@@ -3,7 +3,9 @@
 import datetime, os
 
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse as urlreverse
+from django.core.validators import URLValidator
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils.html import mark_safe
@@ -90,6 +92,13 @@ class DocumentInfo(models.Model):
             return settings.DOCUMENT_PATH_PATTERN.format(doc=self)
 
     def href(self):
+        validator = URLValidator()
+        try:
+            validator(self.external_url)
+            return self.external_url
+        except ValidationError:
+            pass
+
         meeting_related = self.meeting_related()
 
         settings_var = settings.DOC_HREFS

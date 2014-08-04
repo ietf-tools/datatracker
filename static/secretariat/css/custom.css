@@ -575,6 +575,10 @@ div.interim-scroll {
     border-left: 1px solid #CCCCCC;
 }
 
+#recording-form #id_external_url {
+    width: 40em;
+}
+
 td.hidden {
     display: none;
 }

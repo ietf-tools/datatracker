@@ -12,22 +12,74 @@ import shutil
 from django.conf import settings
 from django.shortcuts import render_to_response
 
-from ietf.doc.models import Document, RelatedDocument, DocEvent
+from ietf.doc.models import Document, RelatedDocument, DocEvent, NewRevisionDocEvent, State
 from ietf.group.models import Group, Role
 from ietf.group.utils import get_charter_text
 from ietf.meeting.helpers import get_schedule
 from ietf.meeting.models import Session, Meeting, ScheduledSession
+from ietf.person.models import Person
 from ietf.secr.proceedings.models import InterimMeeting    # proxy model
 from ietf.secr.proceedings.models import Registration
 from ietf.secr.utils.document import get_rfc_num
 from ietf.secr.utils.group import groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_material, get_session
-
+from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_materials, get_session
 
 
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
+def check_audio_files(group,meeting):
+    '''
+    Checks for audio files and creates corresponding materials (docs) for the Session
+    Expects audio files in the format ietf[meeting num]-[room]-YYYMMDD-HHMM-*,
+    
+    Example: ietf90-salonb-20140721-1710-pm3.mp3
+    
+    '''
+    for session in Session.objects.filter(group=group,meeting=meeting,status__in=('sched','schedw')):
+        timeslot = session.official_scheduledsession().timeslot
+        room = timeslot.location.name.lower()
+        room = room.replace(' ','')
+        room = room.replace('/','')
+        time = timeslot.time.strftime("%Y%m%d-%H%M")
+        filename = 'ietf{}-{}-{}-*'.format(meeting.number,room,time)
+        path = os.path.join(settings.MEETING_RECORDINGS_DIR,'ietf{}'.format(meeting.number),filename)
+        for file in glob.glob(path):
+            url = 'http://www.ietf.org/audio/ietf{}/{}'.format(meeting.number,os.path.basename(file))
+            doc = Document.objects.filter(external_url=url).first()
+            if not doc:
+                create_recording(session,meeting,group,url)
+
+def create_recording(session,meeting,group,url):
+    '''
+    Creates the Document type=recording, setting external_url and creating
+    NewRevisionDocEvent
+    '''
+    sequence = get_next_sequence(group,meeting,'recording')
+    name = 'recording-{}-{}-{}'.format(meeting.number,group.acronym,sequence)
+    time = session.official_scheduledsession().timeslot.time.strftime('%Y-%m-%d %H:%M')
+    if url.endswith('mp3'):
+        title = 'Audio recording for {}'.format(time)
+    else:
+        title = 'Video recording for {}'.format(time)
+        
+    doc = Document.objects.create(name=name,
+                                  title=title,
+                                  external_url=url,
+                                  group=group,
+                                  rev='00',
+                                  type_id='recording')
+    doc.set_state(State.objects.get(type='recording', slug='active'))
+    
+    # create DocEvent
+    NewRevisionDocEvent.objects.create(type='new_revision',
+                                       by=Person.objects.get(name='(System)'),
+                                       doc=doc,
+                                       rev=doc.rev,
+                                       desc='New revision available',
+                                       time=doc.time)
+    session.materials.add(doc)
+    
 def mycomp(timeslot):
     '''
     This takes a timeslot object and returns a key to sort by the area acronym or None
@@ -141,6 +193,13 @@ def get_progress_stats(sdate,edate):
 
     return data
 
+def get_next_sequence(group,meeting,type):
+    '''
+    Returns the next sequence number to use for a document of type = type.
+    Takes a group=Group object, meeting=Meeting object, type = string
+    '''
+    return Document.objects.filter(name__startswith='{}-{}-{}-'.format(type,meeting.number,group.acronym)).count() + 1
+
 def write_html(path,content):
     f = open(path,'w')
     f.write(content)
@@ -188,14 +247,8 @@ def create_proceedings(meeting, group, is_final=False):
     if meeting.type_id == 'ietf' and int(meeting.number) < 79:
         return
 
-    sessions = Session.objects.filter(meeting=meeting,group=group)
-    if sessions:
-        session = sessions[0]
-        agenda,minutes,slides = get_material(session)
-    else:
-        agenda = None
-        minutes = None
-        slides = None
+    check_audio_files(group,meeting)
+    materials = get_materials(group,meeting)
 
     chairs = group.role_set.filter(name='chair')
     secretaries = group.role_set.filter(name='secr')
@@ -215,7 +268,7 @@ def create_proceedings(meeting, group, is_final=False):
             settings.MEDIA_URL,
             meeting.date.strftime('%Y/%m/%d'),
             group.acronym)
-
+    
     # Only do these tasks if we are running official proceedings generation,
     # otherwise skip them for expediency.  This procedure is called any time meeting
     # materials are uploaded/deleted, and we don't want to do all this work each time.
@@ -313,9 +366,7 @@ def create_proceedings(meeting, group, is_final=False):
         'tas': tas,
         'meeting': meeting,
         'rfcs': rfcs,
-        'slides': slides,
-        'minutes': minutes,
-        'agenda': agenda}
+        'materials': materials}
     )
 
     # save proceedings

@@ -1,0 +1,80 @@
+{% extends "base_site.html" %}
+
+{% block title %}Proceedings{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery-ui-modified.css" />
+{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.8.9.min.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/proceedings-recording.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  {% if meeting.type_id == "interim" %}
+    &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
+    &raquo; <a href="{% url "proceedings_select_interim" %}">Interim Select Group</a>
+    &raquo; <a href="{% url "proceedings_interim" acronym=group.acronym%}">{{ group.acronym }}</a>
+    &raquo; {{ meeting }}
+  {% else %}
+    &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
+    &raquo; <a href="{% url "proceedings_select" meeting_num=meeting.number %}">{{ meeting.number }}</a>
+    &raquo; Recording
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+
+       <h2>Recording Metadata</h2>
+       <form id="recording-form" enctype="multipart/form-data" action="." method="post">{% csrf_token %}
+       <table class="center" id="proceedings-upload-table">
+       {{ form.as_table }}
+       </table>
+
+       {% include "includes/buttons_submit_back.html" %}
+ 
+       </form>
+     <div class="inline-related">
+           <h2>{{ meeting }} - Recordings
+    </h2>
+       <table class="center">
+         <thead>
+           <tr>
+             <th>Group</th>
+             <th>Session</th>
+             <th>Name</th>
+             <th>URL</th>
+             <th>Edit</th>
+           </tr>
+         </thead>
+         <tbody>
+         {% for record in recordings %}
+         <tr>
+           <td>{{ record.group.acronym }}</td>
+           <td>{{ record.session_set.first.official_scheduledsession.timeslot.time|date:"m-d H:i" }}</td>
+           <td>{{ record.name }}</td>
+           <td><a href="{{ record.href }}">{{ record.href }}</a></td>
+           <td><a href="{% url "proceedings_recording_edit" meeting_num=meeting.number name=record.name %}">Edit</a></td>
+         </tr>
+         {% endfor %}
+         </tbody>
+       </table>
+     
+     </div> <!-- inline-group -->
+</div> <!-- module -->
+
+{% if docevents %}
+  <br>
+  <div class="module interim-container">
+    {% include "includes/docevents.html" %}
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/upload_footer.html" %}
+{% endblock %}

@@ -2,26 +2,27 @@ import os
 
 from django.conf import settings
 
-from ietf.meeting.models import Meeting
-
+from ietf.meeting.models import Meeting, Session
 
 def get_current_meeting():
     '''Returns the most recent IETF meeting'''
     return Meeting.objects.filter(type='ietf').order_by('-number')[0]
     
-def get_material(session):
+def get_materials(group,meeting):
     '''
-    This function takes a session object and returns a tuple of active materials:
-    agenda(Document), minutes(Document), slides(list of Documents)
+    Returns the materials as a dictionary with keys = doctype.
+    NOTE, if the group has multiple sessions all materials but recordings will be
+    attached to all sessions.
     '''
-    active_materials = session.materials.exclude(states__slug='deleted')
-    slides = active_materials.filter(type='slides').order_by('order')
-    minutes = active_materials.filter(type='minutes')
-    minutes = minutes[0] if minutes else None
-    agenda = active_materials.filter(type='agenda')
-    agenda = agenda[0] if agenda else None
-    
-    return agenda,minutes,slides
+    materials = dict(slides=[],recording=[])
+    # TODO: status should only be sched, but there is a bug in the scheduler
+    for session in Session.objects.filter(group=group,meeting=meeting,status__in=('sched','schedw')):
+        for doc in session.materials.exclude(states__slug='deleted').order_by('order'):
+            if doc.type.slug in ('minutes','agenda'):
+                materials[doc.type.slug] = doc
+            elif doc not in materials[doc.type.slug]:
+                materials[doc.type.slug].append(doc)
+    return materials
 
 def get_proceedings_path(meeting, group):
     if meeting.type.slug == 'interim':

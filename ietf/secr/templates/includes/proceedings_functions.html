@@ -24,3 +24,8 @@
             &nbsp;&nbsp;<a href="{{ MEDIA_URL }}proceedings/{{ meeting.number }}/progress-report.html">Progress Report</a>
             </li>
           </ul>
+          <p>Use this to input session recording information.</p>
+          <ul class="none">
+            <li><button onclick="window.location='{% url "proceedings_recording" meeting_num=meeting.number %}'">Recordings</button>
+            </li>
+          </ul>
