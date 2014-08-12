@@ -20,7 +20,7 @@ else:
         from selenium.webdriver.common.action_chains import ActionChains
     except ImportError as e:
         skip_selenium = True
-        skip_message = e.message
+        skip_message = str(e)
 
 def condition_data():
         make_meeting_test_data()
