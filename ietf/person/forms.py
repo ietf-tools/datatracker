@@ -24,19 +24,25 @@ class EmailsField(forms.CharField):
         kwargs["max_length"] = 1000
         if not "help_text" in kwargs:
             kwargs["help_text"] = "Type in name to search for person"
+        max_entries = kwargs.pop("max_entries", None)
         super(EmailsField, self).__init__(*args, **kwargs)
         self.widget.attrs["class"] = "tokenized-field"
         self.widget.attrs["data-ajax-url"] = lazy(urlreverse, str)("ajax_search_emails") # make this lazy to prevent initialization problem
+        if max_entries != None:
+            self.widget.attrs["data-max-entries"] = max_entries
 
     def parse_tokenized_value(self, value):
         return Email.objects.filter(address__in=[x.strip() for x in value.split(",") if x.strip()]).select_related("person")
 
     def prepare_value(self, value):
         if not value:
-            return ""
-        if isinstance(value, str) or isinstance(value, unicode):
+            value = ""
+        if isinstance(value, basestring):
             value = self.parse_tokenized_value(value)
-        return json_emails(value)
+
+        self.widget.attrs["data-pre"] = json_emails(value)
+
+        return ",".join(e.address for e in value)
 
     def clean(self, value):
         value = super(EmailsField, self).clean(value)

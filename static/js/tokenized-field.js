@@ -3,15 +3,14 @@ function setupTokenizedField(field) {
         return;                 // don't tokenize hidden template snippets
 
     var pre = [];
-    if (field.val())
-        pre = JSON.parse((field.val() || "").replace(/&quot;/g, '"'));
-    else if (field.data("pre"))
+    if (field.attr("data-pre"))
         pre = JSON.parse((field.attr("data-pre") || "").replace(/&quot;/g, '"'));
 
     field.tokenInput(field.attr("data-ajax-url"), {
         hintText: "",
         preventDuplicates: true,
-        prePopulate: pre
+        prePopulate: pre,
+        tokenLimit: field.attr("data-max-entries")
     });
 }
 
