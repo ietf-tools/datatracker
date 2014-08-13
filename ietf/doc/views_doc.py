@@ -262,7 +262,7 @@ def document_main(request, name, rev=None):
         shepherd_writeup = doc.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
 
         can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
-        can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd) or has_role(request.user, ["Area Director"])
+        can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"])
         can_edit_consensus = False
 
         consensus = None
@@ -660,7 +660,7 @@ def document_shepherd_writeup(request, name):
         writeup_text = "(There is no shepherd's writeup available for this document)"
 
     can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
-    can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd) or has_role(request.user, ["Area Director"])
+    can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"])
 
     return render_to_response("doc/shepherd_writeup.html",
                                dict(doc=doc,

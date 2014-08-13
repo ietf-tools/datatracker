@@ -4,7 +4,7 @@ import datetime, json
 
 from django import forms
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render_to_response, get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from django.conf import settings
@@ -301,10 +301,8 @@ def collect_email_addresses(emails, doc):
             for role in doc.group.parent.role_set.filter(name='chair'):
                 if role.email.address not in emails:
                     emails[role.email.address] = '"%s"' % (role.person.name)
-    if doc.shepherd:
-        address = doc.shepherd.email_address();
-        if address not in emails:
-            emails[address] = '"%s"' % (doc.shepherd.name)
+    if doc.shepherd and doc.shepherd.address not in emails:
+        emails[doc.shepherd.address] = u'"%s"' % (doc.shepherd.person.name or "")
     return emails
 
 class ReplacesForm(forms.Form):
@@ -1045,13 +1043,7 @@ def edit_shepherd_writeup(request, name):
                               context_instance=RequestContext(request))
 
 class ShepherdForm(forms.Form):
-    shepherd = EmailsField(label="Shepherd", required=False)
-
-    def clean_shepherd(self):
-        data = self.cleaned_data['shepherd']
-        if len(data)>1:
-            raise forms.ValidationError("Please choose at most one shepherd.")
-        return data
+    shepherd = EmailsField(label="Shepherd", required=False, max_entries=1)
 
 def edit_shepherd(request, name):
     """Change the shepherd for a Document"""
@@ -1066,34 +1058,26 @@ def edit_shepherd(request, name):
     if request.method == 'POST':
         form = ShepherdForm(request.POST)
         if form.is_valid():
+            save_document_in_history(doc)
 
-            if form.cleaned_data['shepherd']:
-                doc.shepherd = form.cleaned_data['shepherd'][0].person
-            else:
-                doc.shepherd = None
+            doc.shepherd = form.cleaned_data['shepherd'].first()
             doc.save()
    
             login = request.user.person
             c = DocEvent(type="added_comment", doc=doc, by=login)
-            c.desc = "Document shepherd changed to "+ (doc.shepherd.name if doc.shepherd else "(None)")
+            c.desc = "Document shepherd changed to "+ (doc.shepherd.person.name if doc.shepherd else "(None)")
             c.save()
 
             return redirect('doc_view', name=doc.name)
 
     else:
-        current_shepherd = None
-        if doc.shepherd:
-            e = doc.shepherd.email_set.order_by("-active", "-time")
-            if e:
-                current_shepherd=e[0].pk
-        init = { "shepherd": current_shepherd}
+        init = { "shepherd": doc.shepherd_id }
         form = ShepherdForm(initial=init)
 
-    return render_to_response('doc/change_shepherd.html',
-                              {'form':   form,
-                               'doc': doc,
-                              },
-                              context_instance = RequestContext(request))
+    return render(request, 'doc/change_shepherd.html', {
+        'form': form,
+        'doc': doc,
+    })
 
 class AdForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), 

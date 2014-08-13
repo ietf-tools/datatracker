@@ -132,7 +132,7 @@
       <td>Document shepherd:</td>
       <td>
         <a {% if can_edit_stream_info %}class="editlink" href="{% url "doc_edit_shepherd" name=doc.name %}"{% endif %}>
-        {{ doc.shepherd|default:"No shepherd assigned" }}
+        {% if doc.shepherd %}{{ doc.shepherd.person }}{% else %}No shepherd assigned{% endif %}
         </a>
       </td>
     </tr>

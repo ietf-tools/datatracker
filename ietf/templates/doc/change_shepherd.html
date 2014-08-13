@@ -18,7 +18,10 @@ Change the document shepherd for {{ doc.name }}-{{ doc.rev }}
 {% block content %}
 <h1>Change the document shepherd for {{ doc.name }}-{{ doc.rev }}</h1>
 
-<form class="edit-info" action="" enctype="multipart/form-data" method="post">{% csrf_token %}
+<p>The shepherd needs to have a Datatracker account. A new account can be
+  <a href="{% url "create_account" %}">created here</a>.</p>
+
+<form class="edit-info" action="" method="post">{% csrf_token %}
   <table>
     {% for field in form.visible_fields %}
     <tr>
@@ -33,8 +36,8 @@ Change the document shepherd for {{ doc.name }}-{{ doc.rev }}
     <tr>
       <td></td>
       <td class="actions">
-        <a href="{% url "doc_view" name=doc.name %}">Back</a>
-        <input type="submit" value="Submit"/>
+        <a class="button" href="{% url "doc_view" name=doc.name %}">Cancel</a>
+        <input class="button" type="submit" value="Save"/>
       </td>
     </tr>
   </table>

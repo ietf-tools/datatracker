@@ -33,8 +33,8 @@
           <type>{{ entry.type }}</type>
           {% if entry.doc.stream.slug %}<stream>{{ entry.doc.stream.slug }}</stream>{% endif %}
           <group>{{ entry.doc.group.acronym }}</group>
-          {% if entry.doc.shepherd.name %}<shepherd>{{entry.doc.shepherd.name }}</shepherd>{% endif %}
-	  {% if entry.doc.ad.name %}<ad>{{entry.doc.ad.name}}</ad>{% endif %}
+          {% if entry.doc.shepherd %}<shepherd>{{ entry.doc.shepherd.person.name }}</shepherd>{% endif %}
+          {% if entry.doc.ad %}<ad>{{entry.doc.ad.name}}</ad>{% endif %}
           {% for state in entry.doc.states.all %}
           <state type="{{ state.type }}">{{ state.slug }}</state>
           {% endfor %}

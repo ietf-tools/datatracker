@@ -78,7 +78,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </td>
 
 {% if ad_name == None or ad_name != doc.ad.plain_name %}
-<td class="ad">{{ doc.ad|default:"" }}<div class="search-text-shepherd">{{doc.shepherd|default:""}}</div></td>
+<td class="ad">{{ doc.ad|default:"" }}<div class="search-text-shepherd">{% if doc.shepherd %}{{ doc.shepherd.person }}{% endif %}</div></td>
 {% endif %}
 
 </tr>

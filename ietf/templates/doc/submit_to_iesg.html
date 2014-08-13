@@ -29,7 +29,7 @@ Please verify the following information:
 <tr>
     <td>Document Shepherd:</td>
     <td>{% if warn.shepherd %}<img src="/images/warning.png"/>{% endif %}</td>
-    <td>{{doc.shepherd}}</td>
+    <td>{% if doc.shepherd %}{{ doc.shepherd.person }}{% endif %}</td>
 </tr>
 
 <tr>

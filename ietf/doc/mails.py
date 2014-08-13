@@ -431,10 +431,10 @@ def stream_state_email_recipients(doc, extra_recipients=[]):
             res.append(email.formatted_email())
             persons.add(email.person)
 
-    for p in extra_recipients:
-        if not p in persons:
-            res.append(p.formatted_email())
-            persons.add(p)
+    for e in extra_recipients:
+        if e.person not in persons:
+            res.append(e.formatted_email())
+            persons.add(e.person)
 
     return res
 

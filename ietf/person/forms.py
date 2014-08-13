@@ -24,12 +24,12 @@ class EmailsField(forms.CharField):
         kwargs["max_length"] = 1000
         if not "help_text" in kwargs:
             kwargs["help_text"] = "Type in name to search for person"
-        max_entries = kwargs.pop("max_entries", None)
+        self.max_entries = kwargs.pop("max_entries", None)
         super(EmailsField, self).__init__(*args, **kwargs)
         self.widget.attrs["class"] = "tokenized-field"
         self.widget.attrs["data-ajax-url"] = lazy(urlreverse, str)("ajax_search_emails") # make this lazy to prevent initialization problem
-        if max_entries != None:
-            self.widget.attrs["data-max-entries"] = max_entries
+        if self.max_entries != None:
+            self.widget.attrs["data-max-entries"] = self.max_entries
 
     def parse_tokenized_value(self, value):
         return Email.objects.filter(address__in=[x.strip() for x in value.split(",") if x.strip()]).select_related("person")
@@ -46,5 +46,10 @@ class EmailsField(forms.CharField):
 
     def clean(self, value):
         value = super(EmailsField, self).clean(value)
-        return self.parse_tokenized_value(value)
+        emails = self.parse_tokenized_value(value)
+
+        if self.max_entries != None and len(emails) > self.max_entries:
+            raise forms.ValidationError("You can only select at most %s entries." % self.max_entries)
+
+        return emails
 

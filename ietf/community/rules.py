@@ -89,7 +89,7 @@ class ShepherdRule(RuleManager):
     description = 'All I-Ds with a particular document shepherd'
 
     def get_documents(self):
-        return Document.objects.filter(type='draft', states__slug='active').filter(shepherd__name__icontains=self.value).distinct()
+        return Document.objects.filter(type='draft', states__slug='active').filter(shepherd__person__name__icontains=self.value).distinct()
 
 
 # class ReferenceToRFCRule(RuleManager):
