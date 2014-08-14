@@ -19,7 +19,7 @@ from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStat
 from ietf.group.utils import save_group_in_history, can_manage_group_type
 from ietf.group.utils import get_group_or_404
 from ietf.ietfauth.utils import has_role
-from ietf.person.forms import EmailsField
+from ietf.person.fields import EmailsField
 from ietf.person.models import Person, Email
 from ietf.group.mails import email_iesg_secretary_re_charter
 

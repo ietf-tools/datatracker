@@ -10,7 +10,7 @@ from ietf.group.models import Group, GroupEvent, Role
 from ietf.group.utils import save_group_in_history
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import StreamName
-from ietf.person.forms import EmailsField
+from ietf.person.fields import EmailsField
 from ietf.person.models import Email
 
 import debug                            # pyflakes:ignore

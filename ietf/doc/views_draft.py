@@ -29,7 +29,7 @@ from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_p
 from ietf.ietfauth.utils import role_required
 from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
-from ietf.person.forms import EmailsField
+from ietf.person.fields import EmailsField
 from ietf.person.models import Person, Email
 from ietf.secr.lib.template import jsonapi
 from ietf.utils.mail import send_mail, send_mail_message

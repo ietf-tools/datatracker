@@ -2,7 +2,7 @@ from django import forms
 
 from ietf.group.models import Group
 from ietf.meeting.models import ResourceAssociation
-from ietf.person.forms import EmailsField
+from ietf.person.fields import EmailsField
 
 
 # -------------------------------------------------

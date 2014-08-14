@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.db.models import Q
 
 from ietf.person.models import Email
-from ietf.person.forms import json_emails
+from ietf.person.fields import json_emails
 
 def ajax_search_emails(request):
     q = request.GET.get('q', '').strip()

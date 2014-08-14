@@ -8,7 +8,7 @@ from ietf.doc.models import Document, DocAlias, State
 from ietf.name.models import IntendedStdLevelName, DocRelationshipName
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
-from ietf.person.forms import EmailsField
+from ietf.person.fields import EmailsField
 from ietf.secr.groups.forms import get_person
 
 
