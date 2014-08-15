@@ -32,13 +32,14 @@ class EmailsField(forms.CharField):
             self.widget.attrs["data-max-entries"] = self.max_entries
 
     def parse_tokenized_value(self, value):
-        return Email.objects.filter(address__in=[x.strip() for x in value.split(",") if x.strip()]).select_related("person")
+        return [x.strip() for x in value.split(",") if x.strip()]
 
     def prepare_value(self, value):
         if not value:
             value = ""
         if isinstance(value, basestring):
-            value = self.parse_tokenized_value(value)
+            addresses = self.parse_tokenized_value(value)
+            value = Email.objects.filter(address__in=addresses).select_related("person")
 
         self.widget.attrs["data-pre"] = json_emails(value)
 
@@ -46,10 +47,17 @@ class EmailsField(forms.CharField):
 
     def clean(self, value):
         value = super(EmailsField, self).clean(value)
-        emails = self.parse_tokenized_value(value)
+        addresses = self.parse_tokenized_value(value)
+
+        emails = Email.objects.filter(address__in=addresses).select_related("person")
+        found_addresses = [e.address for e in emails]
+
+        failed_addresses = [x for x in addresses if x not in found_addresses]
+        if failed_addresses:
+            raise forms.ValidationError(u"Could not recognize the following email addresses: %s. You can only input addresses already registered in the Datatracker." % ", ".join(failed_addresses))
 
         if self.max_entries != None and len(emails) > self.max_entries:
-            raise forms.ValidationError("You can only select at most %s entries." % self.max_entries)
+            raise forms.ValidationError(u"You can only select at most %s entries." % self.max_entries)
 
         return emails
 
