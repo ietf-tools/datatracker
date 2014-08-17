@@ -1,7 +1,6 @@
 import json
 
 from django.utils.html import escape
-from django.utils.functional import lazy
 from django import forms
 from django.core.urlresolvers import reverse as urlreverse
 
