@@ -28,7 +28,7 @@ class EmailsField(forms.CharField):
         super(EmailsField, self).__init__(*args, **kwargs)
 
         self.widget.attrs["class"] = "tokenized-field"
-        self.widget.attrs["data-ajax-url"] = lazy(urlreverse, str)("ajax_search_emails") # make this lazy to prevent initialization problem
+        self.widget.attrs["data-ajax-url"] = lazy(urlreverse, str)("ajax_search_emails") # do this lazy to prevent form initialization problems
         self.widget.attrs["data-hint-text"] = hint_text
         if self.max_entries != None:
             self.widget.attrs["data-max-entries"] = self.max_entries
@@ -51,7 +51,7 @@ class EmailsField(forms.CharField):
         value = super(EmailsField, self).clean(value)
         addresses = self.parse_tokenized_value(value)
 
-        emails = Email.objects.filter(address__in=addresses).select_related("person")
+        emails = Email.objects.filter(address__in=addresses).exclude(person=None).select_related("person")
         found_addresses = [e.address for e in emails]
 
         failed_addresses = [x for x in addresses if x not in found_addresses]
