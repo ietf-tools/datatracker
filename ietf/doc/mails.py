@@ -32,9 +32,9 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
 
     # These use comprehension to deal with conditions when there might be more than one chair listed for a stream
     if old_stream:
-        to.extend([x.person.formatted_email() for x in Role.objects.filter(group__acronym=old_stream.slug,name='chair')])
+        to.extend([r.formatted_email() for r in Role.objects.filter(group__acronym=old_stream.slug, name='chair')])
     if new_stream:
-        to.extend([x.person.formatted_email() for x in Role.objects.filter(group__acronym=new_stream.slug,name='chair')])
+        to.extend([r.formatted_email() for r in Role.objects.filter(group__acronym=new_stream.slug, name='chair')])
 
     if not to:
         return
