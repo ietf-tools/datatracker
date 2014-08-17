@@ -20,15 +20,15 @@ class EmailsField(forms.CharField):
     representation on the way out and parse the ids coming back as a
     comma-separated list on the way in."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, max_entries=None, hint_text="Type in name or email to search for person and email address", only_users=True,
+                 *args, **kwargs):
         kwargs["max_length"] = 1000
-        self.max_entries = kwargs.pop("max_entries", None)
-        hint_text = kwargs.pop("hint_text", "Type in name or email to search for person and email address")
+        self.max_entries = max_entries
+        self.only_users = only_users
 
         super(EmailsField, self).__init__(*args, **kwargs)
 
         self.widget.attrs["class"] = "tokenized-field"
-        self.widget.attrs["data-ajax-url"] = lazy(urlreverse, str)("ajax_search_emails") # do this lazy to prevent form initialization problems
         self.widget.attrs["data-hint-text"] = hint_text
         if self.max_entries != None:
             self.widget.attrs["data-max-entries"] = self.max_entries
@@ -44,6 +44,11 @@ class EmailsField(forms.CharField):
             value = Email.objects.filter(address__in=addresses).select_related("person")
 
         self.widget.attrs["data-pre"] = json_emails(value)
+        # doing this in the constructor is difficult because the URL
+        # patterns may not have been fully constructed there yet
+        self.widget.attrs["data-ajax-url"] = urlreverse("ajax_search_emails")
+        if self.only_users:
+            self.widget.attrs["data-ajax-url"] += "?user=1" # require a Datatracker account
 
         return ",".join(e.address for e in value)
 
@@ -52,6 +57,9 @@ class EmailsField(forms.CharField):
         addresses = self.parse_tokenized_value(value)
 
         emails = Email.objects.filter(address__in=addresses).exclude(person=None).select_related("person")
+        # there are still a couple of active roles without accounts so don't disallow those yet
+        #if self.only_users:
+        #    emails = emails.exclude(person__user=None)
         found_addresses = [e.address for e in emails]
 
         failed_addresses = [x for x in addresses if x not in found_addresses]
@@ -59,7 +67,7 @@ class EmailsField(forms.CharField):
             raise forms.ValidationError(u"Could not recognize the following email addresses: %s. You can only input addresses already registered in the Datatracker." % ", ".join(failed_addresses))
 
         if self.max_entries != None and len(emails) > self.max_entries:
-            raise forms.ValidationError(u"You can only select at most %s entries." % self.max_entries)
+            raise forms.ValidationError(u"You can select at most %s entries only." % self.max_entries)
 
         return emails
 
