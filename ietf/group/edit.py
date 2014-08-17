@@ -32,7 +32,7 @@ class GroupForm(forms.Form):
     chairs = EmailsField(label="Chairs", required=False)
     secretaries = EmailsField(label="Secretaries", required=False)
     techadv = EmailsField(label="Technical Advisors", required=False)
-    delegates = EmailsField(label="Delegates", required=False, help_text=mark_safe("Type in name to search for person<br>Chairs can delegate the authority to update the state of group documents - max %s persons at a given time" % MAX_GROUP_DELEGATES))
+    delegates = EmailsField(label="Delegates", required=False, help_text=mark_safe("Chairs can delegate the authority to update the state of group documents - max %s persons at a given time" % MAX_GROUP_DELEGATES), max_entries=MAX_GROUP_DELEGATES)
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
     parent = forms.ModelChoiceField(Group.objects.filter(state="active").order_by('name'), empty_label="(None)", required=False)
     list_email = forms.CharField(max_length=64, required=False)

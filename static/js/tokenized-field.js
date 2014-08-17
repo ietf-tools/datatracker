@@ -7,10 +7,11 @@ function setupTokenizedField(field) {
         pre = JSON.parse((field.attr("data-pre") || "").replace(/&quot;/g, '"'));
 
     field.tokenInput(field.attr("data-ajax-url"), {
-        hintText: "",
         preventDuplicates: true,
         prePopulate: pre,
-        tokenLimit: field.attr("data-max-entries")
+        tokenLimit: field.attr("data-max-entries"),
+        noResultsText: "No results - cannot use this entry",
+        hintText: field.attr("data-hint-text")
     });
 }
 
