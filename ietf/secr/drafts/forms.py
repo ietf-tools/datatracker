@@ -8,7 +8,7 @@ from ietf.doc.models import Document, DocAlias, State
 from ietf.name.models import IntendedStdLevelName, DocRelationshipName
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
-from ietf.person.fields import EmailsField
+from ietf.person.fields import AutocompletedEmailField
 from ietf.secr.groups.forms import get_person
 
 
@@ -132,7 +132,7 @@ class EditModelForm(forms.ModelForm):
     iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft-iesg'),required=False)
     group = GroupModelChoiceField(required=True)
     review_by_rfc_editor = forms.BooleanField(required=False)
-    shepherd = EmailsField(required=False, max_entries=1)
+    shepherd = AutocompletedEmailField(required=False)
 
     class Meta:
         model = Document
@@ -189,9 +189,6 @@ class EditModelForm(forms.ModelForm):
         if name and not Document.objects.filter(name=name):
             raise forms.ValidationError("ERROR: Draft does not exist")
         return name
-
-    def clean_shepherd(self):
-        return self.cleaned_data["shepherd"].first()
 
     def clean(self):
         super(EditModelForm, self).clean()

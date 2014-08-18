@@ -2,7 +2,7 @@ from django import forms
 
 from ietf.group.models import Group
 from ietf.meeting.models import ResourceAssociation
-from ietf.person.fields import EmailsField
+from ietf.person.fields import AutocompletedEmailsField
 
 
 # -------------------------------------------------
@@ -67,7 +67,7 @@ class SessionForm(forms.Form):
     wg_selector3 = forms.ChoiceField(choices=WG_CHOICES,required=False)
     third_session = forms.BooleanField(required=False)
     resources     = forms.MultipleChoiceField(choices=[(x.pk,x.desc) for x in ResourceAssociation.objects.all()], widget=forms.CheckboxSelectMultiple,required=False)
-    bethere       = EmailsField(label="Must be present", required=False)
+    bethere       = AutocompletedEmailsField(label="Must be present", required=False)
 
     def __init__(self, *args, **kwargs):
         super(SessionForm, self).__init__(*args, **kwargs)

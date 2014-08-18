@@ -13,7 +13,7 @@ def json_emails(emails):
         emails = Email.objects.filter(address__in=[x.strip() for x in emails.split(",") if x.strip()]).select_related("person")
     return json.dumps([{"id": e.address + "", "name": escape(u"%s <%s>" % (e.person.name, e.address))} for e in emails])
 
-class EmailsField(forms.CharField):
+class AutocompletedEmailsField(forms.CharField):
     """Multi-select field using jquery.tokeninput.js. Since the API of
     tokeninput" is asymmetric, we have to pass it a JSON
     representation on the way out and parse the ids coming back as a
@@ -25,7 +25,7 @@ class EmailsField(forms.CharField):
         self.max_entries = max_entries
         self.only_users = only_users
 
-        super(EmailsField, self).__init__(*args, **kwargs)
+        super(AutocompletedEmailsField, self).__init__(*args, **kwargs)
 
         self.widget.attrs["class"] = "tokenized-field"
         self.widget.attrs["data-hint-text"] = hint_text
@@ -41,6 +41,8 @@ class EmailsField(forms.CharField):
         if isinstance(value, basestring):
             addresses = self.parse_tokenized_value(value)
             value = Email.objects.filter(address__in=addresses).select_related("person")
+        if isinstance(value, Email):
+            value = [value]
 
         self.widget.attrs["data-pre"] = json_emails(value)
         # doing this in the constructor is difficult because the URL
@@ -52,7 +54,7 @@ class EmailsField(forms.CharField):
         return ",".join(e.address for e in value)
 
     def clean(self, value):
-        value = super(EmailsField, self).clean(value)
+        value = super(AutocompletedEmailsField, self).clean(value)
         addresses = self.parse_tokenized_value(value)
 
         emails = Email.objects.filter(address__in=addresses).exclude(person=None).select_related("person")
@@ -70,3 +72,12 @@ class EmailsField(forms.CharField):
 
         return emails
 
+class AutocompletedEmailField(AutocompletedEmailsField):
+    """Version of AutocompletedEmailsField specialized to a single Email."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs["max_entries"] = 1
+        super(AutocompletedEmailField, self).__init__(*args, **kwargs)
+
+    def clean(self, value):
+        return super(AutocompletedEmailField, self).clean(value).first()

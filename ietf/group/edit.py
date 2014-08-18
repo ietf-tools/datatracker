@@ -19,7 +19,7 @@ from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStat
 from ietf.group.utils import save_group_in_history, can_manage_group_type
 from ietf.group.utils import get_group_or_404
 from ietf.ietfauth.utils import has_role
-from ietf.person.fields import EmailsField
+from ietf.person.fields import AutocompletedEmailsField
 from ietf.person.models import Person, Email
 from ietf.group.mails import email_iesg_secretary_re_charter
 
@@ -29,10 +29,10 @@ class GroupForm(forms.Form):
     name = forms.CharField(max_length=255, label="Name", required=True)
     acronym = forms.CharField(max_length=10, label="Acronym", required=True)
     state = forms.ModelChoiceField(GroupStateName.objects.all(), label="State", required=True)
-    chairs = EmailsField(label="Chairs", required=False)
-    secretaries = EmailsField(label="Secretaries", required=False)
-    techadv = EmailsField(label="Technical Advisors", required=False)
-    delegates = EmailsField(label="Delegates", required=False, help_text=mark_safe("Chairs can delegate the authority to update the state of group documents - max %s persons at a given time" % MAX_GROUP_DELEGATES), max_entries=MAX_GROUP_DELEGATES)
+    chairs = AutocompletedEmailsField(label="Chairs", required=False)
+    secretaries = AutocompletedEmailsField(label="Secretaries", required=False)
+    techadv = AutocompletedEmailsField(label="Technical Advisors", required=False)
+    delegates = AutocompletedEmailsField(label="Delegates", required=False, help_text=mark_safe("Chairs can delegate the authority to update the state of group documents - max %s persons at a given time" % MAX_GROUP_DELEGATES), max_entries=MAX_GROUP_DELEGATES)
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
     parent = forms.ModelChoiceField(Group.objects.filter(state="active").order_by('name'), empty_label="(None)", required=False)
     list_email = forms.CharField(max_length=64, required=False)

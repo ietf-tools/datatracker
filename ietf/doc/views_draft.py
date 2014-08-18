@@ -29,7 +29,7 @@ from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_p
 from ietf.ietfauth.utils import role_required
 from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
-from ietf.person.fields import EmailsField
+from ietf.person.fields import AutocompletedEmailField
 from ietf.person.models import Person, Email
 from ietf.secr.lib.template import jsonapi
 from ietf.utils.mail import send_mail, send_mail_message
@@ -1043,7 +1043,7 @@ def edit_shepherd_writeup(request, name):
                               context_instance=RequestContext(request))
 
 class ShepherdForm(forms.Form):
-    shepherd = EmailsField(label="Shepherd", required=False, max_entries=1)
+    shepherd = AutocompletedEmailField(required=False)
 
 def edit_shepherd(request, name):
     """Change the shepherd for a Document"""
@@ -1060,7 +1060,7 @@ def edit_shepherd(request, name):
         if form.is_valid():
             save_document_in_history(doc)
 
-            doc.shepherd = form.cleaned_data['shepherd'].first()
+            doc.shepherd = form.cleaned_data['shepherd']
             doc.save()
    
             login = request.user.person
