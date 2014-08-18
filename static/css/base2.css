@@ -308,6 +308,10 @@ div.info-message-error { border: 1px solid red; background-color: #ffeebb; paddi
     margin-left: 150px;
 }
 
+.baseform .fieldWidget ul.token-input-list {
+    clear: none;
+}
+
 #feedbackformset .fieldWidget {
     margin-left: 0px;
 }

@@ -1,5 +1,14 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/token-input.css"></link>
+{% endblock %}
+
+{% block content_end %}
+<script type="text/javascript" src="/js/lib/jquery.tokeninput.js"></script>
+<script type="text/javascript" src="/js/tokenized-field.js"></script>
+{% endblock %}
+
 {% block nomcom_content %}
 <h3>{% if position %}Edit{% else %}Add{% endif %} position</h3>
 
