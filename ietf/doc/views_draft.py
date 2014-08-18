@@ -1043,7 +1043,7 @@ def edit_shepherd_writeup(request, name):
                               context_instance=RequestContext(request))
 
 class ShepherdForm(forms.Form):
-    shepherd = AutocompletedEmailField(required=False)
+    shepherd = AutocompletedEmailField(required=False, only_users=True)
 
 def edit_shepherd(request, name):
     """Change the shepherd for a Document"""

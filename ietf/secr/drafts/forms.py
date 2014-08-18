@@ -132,7 +132,7 @@ class EditModelForm(forms.ModelForm):
     iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft-iesg'),required=False)
     group = GroupModelChoiceField(required=True)
     review_by_rfc_editor = forms.BooleanField(required=False)
-    shepherd = AutocompletedEmailField(required=False)
+    shepherd = AutocompletedEmailField(required=False, only_users=True)
 
     class Meta:
         model = Document

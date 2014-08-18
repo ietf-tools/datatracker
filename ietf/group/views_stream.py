@@ -31,7 +31,7 @@ def stream_documents(request, acronym):
     return render_to_response('group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta }, context_instance=RequestContext(request))
 
 class StreamEditForm(forms.Form):
-    delegates = AutocompletedEmailsField(label="Delegates", required=False)
+    delegates = AutocompletedEmailsField(required=False, only_users=True)
 
 def stream_edit(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
