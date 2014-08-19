@@ -32,7 +32,7 @@
         </tr>
         <tr class="row1">
           <td>People who must be present:</td>
-          <td>{% if session.bethere %}<ul>{% for email in session.bethere %}<li>{{ email.person }}</li>{% endfor %}</ul>{% else %}<i>None</i>{% endif %}</td>
+          <td>{% if session.bethere %}<ul>{% for person in session.bethere %}<li>{{ person }}</li>{% endfor %}</ul>{% else %}<i>None</i>{% endif %}</td>
         {% autoescape off %}
         <tr class="row2"><td>Special Requests:</td><td>{{ session.comments }}</td></tr>
         {% endautoescape %}

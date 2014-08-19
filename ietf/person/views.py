@@ -17,7 +17,13 @@ def ajax_tokeninput_search(request, model_name):
     else:
         query = Q()
         for t in q:
-            query &= Q(person__alias__name__icontains=t) | Q(address__icontains=t)
+            if model == Email:
+                query &= Q(person__alias__name__icontains=t) | Q(address__icontains=t)
+            elif model == Person:
+                if "@" in t: # allow searching email address if there's a @ in the search term
+                    query &= Q(alias__name__icontains=t) | Q(email__address__icontains=t)
+                else:
+                    query &= Q(alias__name__icontains=t)
 
         objs = model.objects.filter(query)
 

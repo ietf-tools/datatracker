@@ -82,8 +82,7 @@ class AutocompletedPersonsField(forms.CharField):
             #if self.only_users:
             #    objs = objs.exclude(person__user=None)
 
-        found_pks = [e.pk for e in objs]
-
+        found_pks = [str(o.pk) for o in objs]
         failed_pks = [x for x in pks if x not in found_pks]
         if failed_pks:
             raise forms.ValidationError(u"Could not recognize the following {model_name}s: {pks}. You can only input {model_name}s already registered in the Datatracker.".format(pks=", ".join(failed_pks), model_name=self.model.__name__.lower()))
