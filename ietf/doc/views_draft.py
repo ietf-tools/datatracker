@@ -1051,7 +1051,6 @@ def edit_shepherd(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
 
     can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
-
     if not can_edit_stream_info:
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
@@ -1060,21 +1059,63 @@ def edit_shepherd(request, name):
         if form.is_valid():
             save_document_in_history(doc)
 
-            doc.shepherd = form.cleaned_data['shepherd']
-            doc.save()
+            if form.cleaned_data['shepherd'] != doc.shepherd:
+                doc.shepherd = form.cleaned_data['shepherd']
+                doc.save()
    
-            login = request.user.person
-            c = DocEvent(type="added_comment", doc=doc, by=login)
-            c.desc = "Document shepherd changed to "+ (doc.shepherd.person.name if doc.shepherd else "(None)")
-            c.save()
+                c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                c.desc = "Document shepherd changed to "+ (doc.shepherd.person.name if doc.shepherd else "(None)")
+                c.save()
 
             return redirect('doc_view', name=doc.name)
 
     else:
-        init = { "shepherd": doc.shepherd_id }
-        form = ShepherdForm(initial=init)
+        form = ShepherdForm(initial={ "shepherd": doc.shepherd_id })
 
     return render(request, 'doc/change_shepherd.html', {
+        'form': form,
+        'doc': doc,
+    })
+
+class ChangeShepherdEmailForm(forms.Form):
+    shepherd = forms.ModelChoiceField(queryset=Email.objects.all(), label="Shepherd email", empty_label=None)
+
+    def __init__(self, *args, **kwargs):
+        super(ChangeShepherdEmailForm, self).__init__(*args, **kwargs)
+        self.fields["shepherd"].queryset = self.fields["shepherd"].queryset.filter(person__email=self.initial["shepherd"]).distinct()
+    
+def change_shepherd_email(request, name):
+    """Change the shepherd email address for a Document"""
+    doc = get_object_or_404(Document, name=name)
+
+    if not doc.shepherd:
+        raise Http404
+
+    can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
+    is_shepherd = user_is_person(request.user, doc.shepherd and doc.shepherd.person)
+    if not can_edit_stream_info and not is_shepherd:
+        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+
+    initial = { "shepherd": doc.shepherd_id }
+    if request.method == 'POST':
+        form = ChangeShepherdEmailForm(request.POST, initial=initial)
+        if form.is_valid():
+            if form.cleaned_data['shepherd'] != doc.shepherd:
+                save_document_in_history(doc)
+
+                doc.shepherd = form.cleaned_data['shepherd']
+                doc.save()
+   
+                c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                c.desc = "Document shepherd email changed"
+                c.save()
+
+            return redirect('doc_view', name=doc.name)
+
+    else:
+        form = ChangeShepherdEmailForm(initial=initial)
+
+    return render(request, 'doc/change_shepherd_email.html', {
         'form': form,
         'doc': doc,
     })
