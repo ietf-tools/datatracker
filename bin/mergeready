@@ -70,7 +70,7 @@ except Exception, e:
 # Handle options
 
 # set default values, if any
-opt_verbose = False
+opt_verbose = 0
 
 # handle individual options
 for opt, value in opts:
@@ -81,7 +81,7 @@ for opt, value in opts:
         print( program, version )
         sys.exit(0)
     elif opt in ["-V", "--verbose"]: # Output version information, then exit
-        opt_verbose = True
+        opt_verbose += 1
 
 # ----------------------------------------------------------------------
 def say(s):
@@ -190,12 +190,14 @@ if write_cache:
 
 def get_list(repo, filename):
     list = []
+    note("Reading list from '%s'" % filename)
     with open(filename) as file:
         for line in file:
             line = line.strip()
             if line.startswith('#') or line == "":
                 continue
             try:
+                note("   '%s'" % line)
                 changeset = line.split()[0]
                 branch, rev = changeset.split('@')
                 if branch.startswith('/'):
@@ -213,17 +215,22 @@ def get_list(repo, filename):
 
 def get_ready_commits(repo, tree):
     list = []
-    commit_log = pipe('svn log -v -r %s:HEAD %s/%s/' % ((head-500), repo, tree))    
+    note("Getting ready commits from '%s'" % tree)
+    cmd = 'svn log -v -r %s:HEAD %s/%s/' % ((head-500), repo, tree)
+    if opt_verbose > 1:
+        note("Running '%s' ..." % cmd)
+    commit_log = pipe(cmd)
     for line in commit_log.splitlines():
         if re.search('^r[0-9]+ ', line):
             rev, who, when = split_loginfo(line)
             branch = None
             continue
-        if (line.startswith('   M') or line.startswith('   A')) and branch == None:
+        if (line.startswith('   M') or line.startswith('   A') or line.startswith('   D')) and branch == None:
             type, path = line[:4], line[5:]
             branch = '/'.join(path.split('/')[1:4])
         elif re.search("(?i)(commit ready (for|to) merge)", line):
             if not (rev in merged_revs and branch == merged_revs[rev]):
+                note("   %s  %s: %s@%s" % (when, who, branch, rev))
                 list += [(rev, repo, branch),]
             elif rev in merged_revs and not branch == merged_revs[rev]:
                 sys.stderr.write('Rev %s: %s != %s' % (rev, branch, merged_revs[rev]))                
@@ -242,14 +249,17 @@ ready += get_ready_commits(repo, 'branch/amsl')
 ready_commits = {}
 for entry in ready:
     rev, repo, branch = entry
-    loginfo = pipe('svn log -v -r %s %s/%s/' % (rev, repo, branch)).splitlines()
+    cmd = 'svn log -v -r %s %s/%s/' % (rev, repo, branch)
+    if opt_verbose > 1:
+        note("Running '%s' ..." % cmd)
+    loginfo = pipe(cmd).splitlines()
     try:
         rev, who, when = split_loginfo(loginfo[1])
     except IndexError:
         die("Wrong changeset version in %s@%s ?" % (branch, rev))
     for line in loginfo[3:]:
         type, path = line[:4], line[5:]
-        if 'M' in type or 'A' in type:
+        if 'M' in type or 'A' in type or 'D' in type:
             break
     merge_path = os.path.join(*path.split(os.path.sep)[:4])
     if not (rev, repo, merge_path) in hold:
