@@ -6,6 +6,7 @@ import datetime
 import types
 from email.utils import parseaddr
 
+from ietf.doc.models import ConsensusDocEvent
 from django import template
 from django.utils.html import escape, fix_ampersands
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, urlize
@@ -498,3 +499,16 @@ def plural(text, seq, arg=u's'):
 def ics_esc(text):
     text = re.sub(r"([\n,;\\])", r"\\\1", text)
     return text
+
+@register.filter
+def consensus(doc):
+    """Returns document consensus Yes/No/Unknown."""
+    event = doc.latest_event(ConsensusDocEvent,type="changed_consensus")
+    if event:
+        if event.consensus:
+            return "Yes"
+        else:
+            return "No"
+    else:
+        return "Unknown"
+
