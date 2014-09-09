@@ -776,6 +776,18 @@ class Constraint(models.Model):
         ct1['meeting_href'] = urljoin(host_scheme, self.meeting.json_url())
         return ct1
 
+
+class VersionedMaterials(models.Model):
+    session = models.ForeignKey('Session')
+    document = models.ForeignKey(Document)
+    rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
+
+    class Meta:
+        db_table = 'meeting_session_materials'
+
+    def __unicode__(self):
+        return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)
+
 constraint_cache_uses = 0
 constraint_cache_initials = 0
 
@@ -799,7 +811,7 @@ class Session(models.Model):
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(default=datetime.datetime.now)
 
-    materials = models.ManyToManyField(Document, blank=True)
+    materials = models.ManyToManyField(Document, through=VersionedMaterials, blank=True)
     resources = models.ManyToManyField(ResourceAssociation)
 
     unique_constraints_dict = None
@@ -1171,4 +1183,3 @@ class Session(models.Model):
         if self.badness_test(1):
             self.badness_log(1, "badgroup: %s badness = %u\n" % (self.group.acronym, badness))
         return badness
-
