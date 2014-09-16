@@ -6,7 +6,7 @@
 
   <div>
     <a href="{% url "doc_view" name=doc.name %}">{{doc.name}}-{{doc.rev}}</a>
-    <a href="http://www.ietf.org/id/{{doc.name}}-{{doc.rev}}.txt">[txt]</a>
+    <a href="{{doc.href}}">[txt]</a>
 
     <br/>{{ doc.title }}
 
@@ -14,7 +14,7 @@
 
     <div style="padding-left:30px;">
     <a href="{% url "doc_view" name=conflictdoc.name %}">{{ conflictdoc.name }}-{{ conflictdoc.rev }}</a>
-    <a href="http://www.ietf.org/id/{{ conflictdoc.name }}-{{ conflictdoc.rev }}.txt">[txt]</a>
+    <a href="{{ conflictdoc.href }}">[txt]</a>
     <br/>{{ conflictdoc.title }} ({{ conflictdoc.stream }}: {{ conflictdoc.intended_std_level }})
     {% if conflictdoc.note %}
     <br/>Note: {{ conflictdoc.note|linebreaksbr }}

@@ -296,7 +296,7 @@ MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
 # versions right now, we'll point to external websites
 DOC_HREFS = {
     "charter": "http://www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
-    "draft": "http://tools.ietf.org/html/{doc.name}-{doc.rev}",
+    "draft": "http://www.ietf.org/archive/id/{doc.name}-{doc.rev}.txt",
     "slides": "http://www.ietf.org/slides/{doc.name}-{doc.rev}",
     "conflrev": "http://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
     "statchg": "http://www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
