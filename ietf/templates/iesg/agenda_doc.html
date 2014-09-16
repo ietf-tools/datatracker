@@ -9,8 +9,10 @@
     {% with doc.rfc_number as rfc_number %}
     {% if rfc_number %}
     <a href="http://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">[txt]</a>
-    {% else %}
+    {% elif doc.type.slug == 'draft' %}
     <a href="http://www.ietf.org/id/{{doc.name}}-{{doc.rev}}.txt">[txt]</a>
+    {% else %}
+    <a href="{{doc.href}}">[txt]</a>
     {% endif %}
     {% endwith %}
 

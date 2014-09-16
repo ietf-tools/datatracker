@@ -279,11 +279,8 @@ INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 CHARTER_PATH = '/a/www/ietf-ftp/charter/'
-CHARTER_TXT_URL = 'http://www.ietf.org/charter/'
 CONFLICT_REVIEW_PATH = '/a/www/ietf-ftp/conflict-reviews'
-CONFLICT_REVIEW_TXT_URL = 'http://www.ietf.org/cr/'
 STATUS_CHANGE_PATH = '/a/www/ietf-ftp/status-changes'
-STATUS_CHANGE_TXT_URL = 'http://www.ietf.org/sc/'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
 IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
@@ -307,6 +304,8 @@ DOC_HREFS = {
     #"liai-att": None
     #"liaison": None
     "slides": 'http://www.ietf.org/slides/{doc.name}-{doc.rev}',
+    "conflrev": "http://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
+    "statchg": "http://www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
 }
 
 MEETING_DOC_HREFS = {
