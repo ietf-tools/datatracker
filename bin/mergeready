@@ -269,3 +269,5 @@ keys = ready_commits.keys()
 keys.sort()
 for key in keys:
     print(ready_commits[key])
+
+print("\n%s pending merges" % len(keys))
