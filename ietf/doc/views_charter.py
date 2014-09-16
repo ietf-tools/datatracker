@@ -416,6 +416,9 @@ def submit(request, name=None, option=None):
             # Save file on disk
             form.save(group, charter.rev)
 
+            if option in ['initcharter','recharter'] and charter.ad == None:
+                charter.ad = group.ad           
+
             charter.time = datetime.datetime.now()
             charter.save()
 
