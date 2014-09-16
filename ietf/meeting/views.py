@@ -401,6 +401,7 @@ def convert_to_pdf(doc_name):
         return
 
     t,tempname = mkstemp()
+    os.close(t)
     tempfile = open(tempname, "w")
 
     pageend = 0;
@@ -431,6 +432,7 @@ def convert_to_pdf(doc_name):
     infile.close()
     tempfile.close()
     t,psname = mkstemp()
+    os.close(t)
     pipe("enscript --margins 76::76: -B -q -p "+psname + " " +tempname)
     os.unlink(tempname)
     pipe("ps2pdf "+psname+" "+outpath)
@@ -473,6 +475,7 @@ def session_draft_tarfile(request, num, session):
     response['Content-Disposition'] = 'attachment; filename=%s-drafts.tgz'%(session)
     tarstream = tarfile.open('','w:gz',response)
     mfh, mfn = mkstemp()
+    os.close(mfh)
     manifest = open(mfn, "w")
 
     for doc_name in drafts:
@@ -512,6 +515,7 @@ def session_draft_pdf(request, num, session):
     drafts = session_draft_list(num, session);
     curr_page = 1
     pmh, pmn = mkstemp()
+    os.close(pmh)
     pdfmarks = open(pmn, "w")
     pdf_list = ""
 
@@ -528,6 +532,7 @@ def session_draft_pdf(request, num, session):
 
     pdfmarks.close()
     pdfh, pdfn = mkstemp()
+    os.close(pdfh)
     pipe("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=" + pdfn + " " + pdf_list + " " + pmn)
 
     pdf = open(pdfn,"r")

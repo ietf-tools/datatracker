@@ -35,7 +35,7 @@ def patent_file_search(url, q):
             #print "*** Found file", fpath            
             file = codecs.open(fpath, mode='r', encoding='utf-8', errors='replace')
             text = file.read()
-            file.close
+            file.close()
             return q in text
     return False
 

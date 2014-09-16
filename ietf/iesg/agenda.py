@@ -3,6 +3,7 @@
 import codecs
 import datetime
 from collections import OrderedDict
+from contextlib import closing
 
 from django.conf import settings
 from django.http import Http404
@@ -140,7 +141,7 @@ def fill_in_agenda_administrivia(date, sections):
 
     for s, key, filename in extra_info_files:
         try:
-            with codecs.open(filename, 'r', 'utf-8', 'replace') as f:
+            with closing(codecs.open(filename, 'r', 'utf-8', 'replace')) as f:
                 t = f.read().strip()
         except IOError:
             t = u"(Error reading %s)" % filename
