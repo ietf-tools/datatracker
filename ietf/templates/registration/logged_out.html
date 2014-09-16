@@ -6,6 +6,9 @@
 <div id="login-pane">
 <div id="login-form">
 <h1>You have been signed out</h1>
+{% if request.META.HTTP_REFERER %}
+<div id="login-back"><a href="{{request.META.HTTP_REFERER}}">Back</a></div>
+{% endif %}
 </div>
 </div>
 {% endblock %}

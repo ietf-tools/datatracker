@@ -422,6 +422,10 @@ span.fieldRequired {
     background: white;
 }
 
+#login-back {
+    text-align: center;
+}
+
 .login {
     font-style: italic;
 }
