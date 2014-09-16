@@ -295,15 +295,9 @@ MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
 # Ideally, more of these would be local -- but since we don't support
 # versions right now, we'll point to external websites
 DOC_HREFS = {
-    #"charter": "/doc/{doc.name}-{doc.rev}/",
     "charter": "http://www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
-    #"draft": "/doc/{doc.name}-{doc.rev}/",
     "draft": "http://tools.ietf.org/html/{doc.name}-{doc.rev}",
-    # I can't figure out the liaison maze. Hopefully someone
-    # who understands this better can take care of it.
-    #"liai-att": None
-    #"liaison": None
-    "slides": 'http://www.ietf.org/slides/{doc.name}-{doc.rev}',
+    "slides": "http://www.ietf.org/slides/{doc.name}-{doc.rev}",
     "conflrev": "http://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
     "statchg": "http://www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
 }
