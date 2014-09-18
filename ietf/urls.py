@@ -18,9 +18,6 @@ try:
 except KeyError:
     pass
 
-from dajaxice.core import dajaxice_autodiscover
-dajaxice_autodiscover()
-
 sitemaps = {
     'liaison': LiaisonMap,
     'ipr': IPRMap,
@@ -63,8 +60,6 @@ urlpatterns = patterns('',
 
     # Google webmaster tools verification url
     (r'^googlea30ad1dacffb5e5b.html', TemplateView.as_view(template_name='googlea30ad1dacffb5e5b.html')),
-    (r'^%s/dajaxice.core.js' % settings.DAJAXICE_MEDIA_PREFIX, 'ietf.meeting.ajax.dajaxice_core_js'),
-    (r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
 )
 
 if settings.SERVER_MODE in ('development', 'test'):

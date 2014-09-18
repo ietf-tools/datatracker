@@ -21,7 +21,7 @@
 
 
 function delete_agenda(event) {
-    var agenda_url    = $(event.target).closest('tr').attr('href');
+    var agenda_url    = $(event.target).closest('tr').attr('href') + ".json";
     event.preventDefault();
 
     $("#agenda_delete_dialog").dialog({

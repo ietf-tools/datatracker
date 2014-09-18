@@ -3,8 +3,6 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 
-{% load dajaxice_templatetags %}
-
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: Timeslot/Room Availability{% endblock %}
 {% load agenda_custom_tags %}
 {% block pagehead %}
@@ -30,8 +28,6 @@
 <script type='text/javascript' src='/js/jquery-ui-timepicker/jquery-ui-sliderAccess.js.js'></script>
 <link rel='stylesheet' type='text/css' href='/css/jquery-ui-timepicker-addon.css' />
 
-{% dajaxice_js_import %}
-
 <script type='text/javascript' src='/js/spin/dist/spin.min.js'></script>
 <script type='text/javascript' src='/js/agenda/timeslot_edit.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_objects.js'></script>
@@ -41,21 +37,17 @@
 
 <script type='text/javascript'>
 
-{% comment %}
-function my_js_callback(data){
-    alert(data.message);
-}<!-- dajaxice example --> {% endcomment %}
-
 var meeting_number   = "{{ meeting.number }}";
 var meeting_base_url = "{{ meeting_base_url }}";
 var site_base_url = "{{ site_base_url }}";
+var meeting_slots_href = "{% url "ietf.meeting.ajax.timeslot_slotsurl" meeting.number %}";
 total_days = {{time_slices|length}};
 total_rooms = {{rooms|length}};
 
 first_day = new Date("{% with timeslots|first as day %} {{ day.time }} {% endwith %}"); /* needed for the datepicker */
 
 function setup_slots(promiselist){
-var ts_promise = load_timeslots("{% url "ietf.meeting.ajax.timeslot_slotsurl" meeting.number %}");
+var ts_promise = load_timeslots(meeting_slots_href);
 promiselist.push(ts_promise);
 
 {% for day in time_slices %}

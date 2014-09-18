@@ -26,7 +26,7 @@ from ietf.doc.models import Document, State
 from ietf.group.models import Group
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.meeting.models import Meeting, TimeSlot, Session, Schedule, Room
-from ietf.meeting.helpers import get_areas
+from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_scheduledsessions_from_schedule
 from ietf.meeting.helpers import get_modified_from_scheduledsessions
@@ -92,13 +92,14 @@ class SaveAsForm(forms.Form):
     savename = forms.CharField(max_length=100)
 
 @role_required('Area Director','Secretariat')
-def agenda_create(request, num=None, name=None):
-    meeting = get_meeting(num)
-    schedule = get_schedule(meeting, name)
+def agenda_create(request, num=None, owner=None, name=None):
+    meeting  = get_meeting(num)
+    person   = get_person_by_email(owner)
+    schedule = get_schedule_by_name(meeting, person, name)
 
     if schedule is None:
         # here we have to return some ajax to display an error.
-        raise Http404("No meeting information for meeting %s schedule %s available" % (num,name))
+        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
 
     # authorization was enforced by the @group_require decorator above.
 
@@ -152,7 +153,7 @@ def agenda_create(request, num=None, name=None):
 
 
     # now redirect to this new schedule.
-    return redirect(edit_agenda, meeting.number, newschedule.name)
+    return redirect(edit_agenda, meeting.number, newschedule.owner_email(), newschedule.name)
 
 
 @role_required('Secretariat')
@@ -225,14 +226,20 @@ def edit_roomurl(request, num, roomid):
 #@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
 @ensure_csrf_cookie
-def edit_agenda(request, num=None, name=None):
+def edit_agenda(request, num=None, owner=None, name=None):
 
     if request.method == 'POST':
-        return agenda_create(request, num, name)
+        return agenda_create(request, num, owner, name)
 
-    user  = request.user
-    meeting = get_meeting(num)
-    schedule = get_schedule(meeting, name)
+    user     = request.user
+    meeting  = get_meeting(num)
+    person   = get_person_by_email(owner)
+    if name is None:
+        schedule = meeting.agenda
+    else:
+        schedule = get_schedule_by_name(meeting, person, name)
+    if schedule is None:
+        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
 
     meeting_base_url = request.build_absolute_uri(meeting.base_url())
     site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
@@ -241,9 +248,9 @@ def edit_agenda(request, num=None, name=None):
     rooms = rooms.all()
     saveas = SaveAsForm()
     saveasurl=reverse(edit_agenda,
-                      args=[meeting.number, schedule.name])
+                      args=[meeting.number, schedule.owner_email(), schedule.name])
 
-    can_see, can_edit = agenda_permissions(meeting, schedule, user)
+    can_see, can_edit,secretariat = agenda_permissions(meeting, schedule, user)
 
     if not can_see:
         return HttpResponse(render_to_string("meeting/private_agenda.html",
@@ -294,13 +301,15 @@ AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'pu
 
 @role_required('Area Director','Secretariat')
 @ensure_csrf_cookie
-def edit_agenda_properties(request, num=None, name=None):
-
-    meeting = get_meeting(num)
-    schedule = get_schedule(meeting, name)
+def edit_agenda_properties(request, num=None, owner=None, name=None):
+    meeting  = get_meeting(num)
+    person   = get_person_by_email(owner)
+    schedule = get_schedule_by_name(meeting, person, name)
+    if schedule is None:
+        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
     form     = AgendaPropertiesForm(instance=schedule)
 
-    cansee, canedit = agenda_permissions(meeting, schedule, request.user)
+    cansee, canedit, secretariat = agenda_permissions(meeting, schedule, request.user)
 
     if not (canedit or has_role(request.user,'Secretariat')):
         return HttpResponseForbidden("You may not edit this agenda")
@@ -320,7 +329,7 @@ def edit_agenda_properties(request, num=None, name=None):
 def edit_agendas(request, num=None, order=None):
 
     #if request.method == 'POST':
-    #    return agenda_create(request, num, name)
+    #    return agenda_create(request, num, owner, name)
 
     meeting = get_meeting(num)
     user = request.user

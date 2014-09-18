@@ -14,6 +14,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, user_is_person
+from ietf.person.models  import Person
 from ietf.meeting.models import Meeting
 from ietf.utils.history import find_history_active_at
 
@@ -125,6 +126,19 @@ def get_schedule_by_id(meeting, schedid):
         schedule = get_object_or_404(meeting.schedule_set, id=int(schedid))
     return schedule
 
+# seems this belongs in ietf/person/utils.py?
+def get_person_by_email(email):
+    # email == None may actually match people who haven't set an email!
+    if email is None:
+        return None
+    return Person.objects.filter(email__address=email).distinct().first()
+
+def get_schedule_by_name(meeting, owner, name):
+    if owner is not None:
+        return meeting.schedule_set.filter(owner = owner, name = name).first()
+    else:
+        return meeting.schedule_set.filter(name = name).first()
+
 def meeting_updated(meeting):
     meeting_time = datetime.datetime(*(meeting.date.timetuple()[:7]))
     ts = max(meeting.timeslot_set.aggregate(Max('modified'))["modified__max"] or meeting_time,
@@ -137,12 +151,14 @@ def agenda_permissions(meeting, schedule, user):
     # do this in positive logic.
     cansee = False
     canedit = False
+    secretariat = False
 
-    if schedule.public:
+    if has_role(user, 'Secretariat'):
         cansee = True
-    elif has_role(user, 'Secretariat'):
+        secretariat = True
+        # NOTE: secretariat is not superuser for edit!
+    elif schedule.public:
         cansee = True
-        # secretariat is not superuser for edit!
     elif schedule.visible and has_role(user, ['Area Director', 'IAB Chair', 'IRTF Chair']):
         cansee = True
 
@@ -150,7 +166,7 @@ def agenda_permissions(meeting, schedule, user):
         cansee = True
         canedit = True
 
-    return cansee, canedit
+    return cansee, canedit, secretariat
 
 def session_constraint_expire(session):
     from django.core.urlresolvers import reverse

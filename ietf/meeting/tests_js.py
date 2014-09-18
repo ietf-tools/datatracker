@@ -20,7 +20,7 @@ else:
         from selenium.webdriver.common.action_chains import ActionChains
     except ImportError as e:
         skip_selenium = True
-        skip_message = e.message
+        skip_message = str(e)
 
 def condition_data():
         make_meeting_test_data()
@@ -55,7 +55,7 @@ class ScheduleEditTests(LiveServerTestCase):
         self.assertEqual(ScheduledSession.objects.filter(session__meeting__number=42,session__group__acronym='mars').count(),1)
 
         self.login()
-        url = self.absreverse('ietf.meeting.views.edit_agenda',kwargs=dict(num='42',name='test-agenda'))
+        url = self.absreverse('ietf.meeting.views.edit_agenda',kwargs=dict(num='42',name='test-agenda',owner='plain@example.com'))
         self.driver.get(url)
 
         q = PyQuery(self.driver.page_source)

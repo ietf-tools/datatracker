@@ -94,8 +94,6 @@ STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
-DAJAXICE_MEDIA_PREFIX = "dajaxice"
-
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.ModelBackend', )
 
 #DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
@@ -175,7 +173,6 @@ ROOT_URLCONF = 'ietf.urls'
 TEMPLATE_DIRS = (
     BASE_DIR + "/templates",
     BASE_DIR + "/secr/templates",
-    BASE_DIR+"/../django-dajaxice/dajaxice/templates",
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -236,7 +233,6 @@ INSTALLED_APPS = (
     'ietf.secr.sreq',
     'ietf.nomcom',
     'ietf.dbtemplate',
-    'dajaxice',
 )
 
 INTERNAL_IPS = (

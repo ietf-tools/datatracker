@@ -136,7 +136,7 @@ function read_only_result(msg) {
 	$("#read_only").css("display", "none");
     }
 
-    if(msg.write_perm) {
+    if(msg.save_perm) {
         $(".agenda_save_box").css("display", "block");
         if(read_only) {
             $(".agenda_save_box").css("position", "fixed");
@@ -160,23 +160,14 @@ function read_only_result(msg) {
 }
 
 function read_only_check() {
-    Dajaxice.ietf.meeting.readonly(read_only_result,
-                                    {'meeting_num': meeting_number,
-                                     'schedule_id': schedule_id
-                                    });
-}
+    var read_only_url  = meeting_base_url + "/agenda/" + schedule_owner_email + "/" + schedule_name + "/permissions";
+    console.log("Loading readonly status from: ", read_only_url);
+    var read_only_load = $.ajax(read_only_url);
 
-function dajaxice_callback(message) {
-    /* if the message is empty, we got nothing back from the server, which probably
-       means you are offline.
-    */
-    console.log("callback: ",message);
-    if(message == ""){
-	alert("No response from server. Network may be unavailable");
-    }
-    else{
-	stop_spin();
-    }
+    read_only_load.success(function(newobj, status, jqXHR) {
+        last_json_reply = newobj;
+        read_only_result(newobj);
+    });
 }
 
 function print_all_ss(objs){

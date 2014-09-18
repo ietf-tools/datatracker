@@ -1,136 +1,72 @@
 import json
-import datetime
 
 from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse
+from django.http import QueryDict
+from django.http import Http404
 from django.views.decorators.http import require_POST
 
-from dajaxice.decorators import dajaxice_register
-
-from ietf.ietfauth.utils import role_required, has_role, user_is_person
-from ietf.meeting.helpers import get_meeting, get_schedule, get_schedule_by_id, agenda_permissions
+from ietf.ietfauth.utils import role_required, has_role
+from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_person_by_email, get_schedule_by_name
 from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint, ScheduledSession, ResourceAssociation
 from ietf.meeting.views   import edit_timeslots, edit_agenda
-from ietf.name.models import TimeSlotTypeName
 
 import debug                            # pyflakes:ignore
 
-def dajaxice_core_js(request):
-    # this is a slightly weird hack to get, we seem to need this because
-    # we're not using the built-in static files support
-    from dajaxice.finders import DajaxiceStorage
-    return HttpResponse(DajaxiceStorage().dajaxice_core_js(), content_type="application/javascript")
+def is_truthy_enough(value):
+    return not (value == "0" or value == 0 or value=="false")
 
-@dajaxice_register
-def readonly(request, meeting_num, schedule_id):
-    meeting = get_meeting(meeting_num)
-    schedule = get_schedule_by_id(meeting, schedule_id)
+# look up a schedule by number, owner and schedule name, returning an API error if it can not be found
+def get_meeting_schedule(num, owner, name):
+    meeting = get_meeting(num)
+    person   = get_person_by_email(owner)
+    schedule = get_schedule_by_name(meeting, person, name)
 
+    if schedule is None or person is None or meeting is None:
+        meeting_pk = 0
+        person_pk  = 0
+        schedule_pk =0
+        # to make diagnostics more meaningful, log what we found
+        if meeting:
+            meeting_pk = meeting.pk
+        if person:
+            person_pk = person.pk
+        if schedule:
+            schedule_pk=schedule.pk
+        return HttpResponse(json.dumps({'error' : 'invalid meeting=%s/person=%s/schedule=%s' % (num,owner,name),
+                                        'meeting': meeting_pk,
+                                        'person':  person_pk,
+                                        'schedule': schedule_pk}),
+                            content_type="application/json",
+                            status=404);
+    return meeting, person, schedule
+
+
+
+# should asking if an agenda is read-only require any kind of permission?
+def agenda_permission_api(request, num, owner, name):
+    meeting  = get_meeting(num)
+    person   = get_person_by_email(owner)
+    schedule = get_schedule_by_name(meeting, person, name)
+
+    save_perm   = False
     secretariat = False
-    write_perm  = False
+    cansee      = False
+    canedit     = False
+    owner_href  = ""
 
-    cansee,canedit = agenda_permissions(meeting, schedule, request.user)
-    read_only = not canedit
+    if schedule is not None:
+        cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
+        owner_href = request.build_absolute_uri(schedule.owner.json_url())
 
-    user = request.user
-    if has_role(user, "Secretariat"):
-        secretariat = True
-        write_perm  = True
+    if has_role(request.user, "Area Director") or secretariat:
+        save_perm  = True
 
-    if has_role(user, "Area Director"):
-        write_perm  = True
-
-    if user_is_person(user, schedule.owner):
-        read_only = False
-
-    # FIXME: the naming here needs improvement, one can have
-    # read_only == True and write_perm == True?
-
-    return json.dumps(
-        {'secretariat': secretariat,
-         'write_perm':  write_perm,
-         'owner_href':  request.build_absolute_uri(schedule.owner.json_url()),
-         'read_only':   read_only})
-
-@dajaxice_register
-def update_timeslot_pinned(request, schedule_id, scheduledsession_id, pinned=False):
-
-    if not has_role(request.user,('Area Director','Secretariat')):
-        return json.dumps({'error':'no permission'})
-
-    schedule = get_object_or_404(Schedule, pk = int(schedule_id))
-    meeting  = schedule.meeting
-    cansee,canedit = agenda_permissions(meeting, schedule, request.user)
-
-    if not canedit:
-        return json.dumps({'error':'no permission'})
-
-    if scheduledsession_id is not None:
-        ss_id = int(scheduledsession_id)
-
-    if ss_id == 0:
-        return json.dumps({'error':'no permission'})
-
-    ss = get_object_or_404(schedule.scheduledsession_set, pk=ss_id)
-    ss.pinned = pinned
-    ss.save()
-
-    return json.dumps({'message':'valid'})
-
-@dajaxice_register
-def update_timeslot_purpose(request,
-                            meeting_num,
-                            timeslot_id=None,
-                            purpose =None,
-                            room_id = None,
-                            duration= None,
-                            time    = None):
-
-    if not has_role(request.user,'Secretariat'):
-        return json.dumps({'error':'no permission'})
-
-    meeting = get_meeting(meeting_num)
-    ts_id = int(timeslot_id)
-    time_str = time
-    if ts_id == 0:
-        try:
-            time = datetime.datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
-        except:
-            return json.dumps({'error':'invalid time: %s' % (time_str)})
-
-        try:
-            room = meeting.room_set.get(pk = int(room_id))
-        except Room.DoesNotExist:
-            return json.dumps({'error':'invalid room id'})
-
-        timeslot = TimeSlot(meeting=meeting,
-                            location = room,
-                            time = time,
-                            duration = duration)
-    else:
-        try:
-           timeslot = TimeSlot.objects.get(pk=ts_id)
-        except:
-            return json.dumps({'error':'invalid timeslot'})
-
-    try:
-        timeslottypename = TimeSlotTypeName.objects.get(pk = purpose)
-    except:
-        return json.dumps({'error':'invalid timeslot type',
-                           'extra': purpose})
-
-    timeslot.type = timeslottypename
-    try:
-        timeslot.save()
-    except:
-        return json.dumps({'error':'failed to save'})
-
-    try:
-        # really should return 201 created, but dajaxice sucks.
-        json_dict = timeslot.json_dict(request.build_absolute_uri('/'))
-        return json.dumps(json_dict)
-    except:
-        return json.dumps({'error':'failed to save'})
+    return HttpResponse(json.dumps({'secretariat': secretariat,
+                                    'save_perm':   save_perm,
+                                    'read_only':   canedit==False,
+                                    'owner_href':  owner_href}),
+                        content_type="application/json")
 
 #############################################################################
 ## ROOM API
@@ -239,16 +175,43 @@ def timeslot_addslot(request, meeting):
     newslot.meeting = meeting
     newslot.save()
 
-    newslot.create_concurrent_timeslots()
+    # no longer create concurrent timeslots, because they will default, when there is
+    # no timeslots, to unavailable, which can be created later on.
+    # newslot.create_concurrent_timeslots()
 
     # XXX FIXME: timeslot_dayurl is undefined.  Placeholder:
-    timeslot_dayurl = None
+    # timeslot_dayurl = None
     # XXX FIXME: newroom is undefined.  Placeholder:
-    newroom = None
-    if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
-        return redirect(timeslot_dayurl, meeting.number, newroom.pk)
+    # newroom = None
+    values   = newslot.json_dict(request.build_absolute_uri('/'))
+    response = HttpResponse(json.dumps(values),
+                            content_type="application/json",
+                            status=201)
+    response['Location'] = values['href']
+    return response
+
+@role_required('Secretariat')
+def timeslot_updslot(request, meeting, slotid):
+    slot = get_object_or_404(meeting.timeslot_set, pk=slotid)
+
+    # at present, updates to the purpose only is supported.
+    # updates to time or duration would need likely need to be
+    # propogated to the entire vertical part of the grid, and nothing
+    # needs to do that yet.
+    if request.method == 'POST':
+        put_vars = request.POST
+        slot.type_id = put_vars["purpose"]
     else:
-        return redirect(edit_timeslots, meeting.number)
+        put_vars = QueryDict(request.body)
+        slot.type_id = put_vars.get("purpose")
+
+    slot.save()
+
+    # need to return the new object.
+    dict1 = slot.json_dict(request.build_absolute_uri('/'))
+    dict1['message'] = 'valid'
+    return HttpResponse(json.dumps(dict1),
+                        content_type="application/json")
 
 @role_required('Secretariat')
 def timeslot_delslot(request, meeting, slotid):
@@ -276,10 +239,8 @@ def timeslot_sloturl(request, num=None, slotid=None):
         slot = get_object_or_404(meeting.timeslot_set, pk=slotid)
         return HttpResponse(json.dumps(slot.json_dict(request.build_absolute_uri('/'))),
                             content_type="application/json")
-    elif request.method == 'POST':
-        # not yet implemented!
-        #return timeslot_updslot(request, meeting)
-        return HttpResponse(status=406)
+    elif request.method == 'POST' or request.method == 'PUT':
+        return timeslot_updslot(request, meeting, slotid)
     elif request.method == 'DELETE':
         return timeslot_delslot(request, meeting, slotid)
 
@@ -311,9 +272,9 @@ def agenda_add(request, meeting):
     newagenda.save()
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
-        return redirect(agenda_infourl, meeting.number, newagenda.name)
+        return redirect(agenda_infourl, meeting.number, newagenda.owner_email(), newagenda.name)
     else:
-        return redirect(edit_agenda, meeting.number, newagenda.name)
+        return redirect(edit_agenda, meeting.number, newagenda.owner_email(), newagenda.name)
 
 @require_POST
 def agenda_update(request, meeting, schedule):
@@ -325,16 +286,13 @@ def agenda_update(request, meeting, schedule):
     if not user.is_authenticated():
         return HttpResponse({'error':'no permission'}, status=403)
 
-    cansee,canedit = agenda_permissions(meeting, schedule, request.user)
+    cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
     #read_only = not canedit ## not used
 
-    def is_truthy_enough(value):
-        return not (value == "0" or value == 0 or value=="false")
-
     # TODO: Secretariat should always get canedit
-    if not (canedit or has_role(user, "Secretariat")):
+    if not (canedit or secretariat):
         return HttpResponse({'error':'no permission'}, status=403)
-    
+
     if "public" in request.POST:
         schedule.public = is_truthy_enough(request.POST["public"])
 
@@ -355,7 +313,7 @@ def agenda_update(request, meeting, schedule):
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
                             content_type="application/json")
     else:
-        return redirect(edit_agenda, meeting.number, schedule.name)
+        return redirect(edit_agenda, meeting.number, schedule.owner_email(), schedule.name)
 
 @role_required('Secretariat')
 def agenda_del(request, meeting, schedule):
@@ -378,11 +336,13 @@ def agenda_infosurl(request, num=None):
     # unacceptable action
     return HttpResponse(status=406)
 
-def agenda_infourl(request, num=None, name=None):
-    meeting = get_meeting(num)
-    #log.debug("agenda: %s / %s" % (meeting, name))
+def agenda_infourl(request, num=None, owner=None, name=None):
+    meeting  = get_meeting(num)
+    person   = get_person_by_email(owner)
+    schedule = get_schedule_by_name(meeting, person, name)
+    if schedule is None:
+        raise Http404("No meeting information for meeting %s schedule %s available" % (num,name))
 
-    schedule = get_schedule(meeting, name)
     #debug.log("results in agenda: %u / %s" % (schedule.id, request.method))
 
     if request.method == 'GET':
@@ -469,8 +429,9 @@ def sessions_json(request, num):
 ## Scheduledsesion
 #############################################################################
 
+# this creates an entirely *NEW* scheduledsession
 def scheduledsessions_post(request, meeting, schedule):
-    cansee,canedit = agenda_permissions(meeting, schedule, request.user)
+    cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
     if not canedit:
         return HttpResponse(json.dumps({'error':'no permission to modify this agenda'}),
                             status = 403,
@@ -495,7 +456,6 @@ def scheduledsessions_post(request, meeting, schedule):
             return HttpResponse(json.dumps({'error':'invalid extendedfrom value: %u' % val}),
                                 status = 406,
                                 content_type="application/json")
-
     ss1.save()
     ss1_dict = ss1.json_dict(request.build_absolute_uri('/'))
     response = HttpResponse(json.dumps(ss1_dict),
@@ -513,9 +473,8 @@ def scheduledsessions_get(request, num, schedule):
                         content_type="application/json")
 
 # this returns the list of scheduled sessions for the given named agenda
-def scheduledsessions_json(request, num, name):
-    meeting = get_meeting(num)
-    schedule = get_schedule(meeting, name)
+def scheduledsessions_json(request, num, owner, name):
+    meeting, person, schedule = get_meeting_schedule(num, owner, name)
 
     if request.method == 'GET':
         return scheduledsessions_get(request, meeting, schedule)
@@ -526,28 +485,38 @@ def scheduledsessions_json(request, num, name):
                             status = 406,
                             content_type="application/json")
 
-
-def scheduledsession_update(request, meeting, schedule, scheduledsession_id):
-    cansee,canedit = agenda_permissions(meeting, schedule, request.user)
-    if not canedit or True:
-        return HttpResponse(json.dumps({'error':'no permission to update this agenda'}),
-                            status = 403,
-                            content_type="application/json")
-
-
-def scheduledsession_delete(request, meeting, schedule, scheduledsession_id):
-    cansee,canedit = agenda_permissions(meeting, schedule, request.user)
+# accepts both POST and PUT in order to implement Postel Doctrine.
+def scheduledsession_update(request, meeting, schedule, ss):
+    cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
     if not canedit:
         return HttpResponse(json.dumps({'error':'no permission to update this agenda'}),
                             status = 403,
                             content_type="application/json")
 
-    scheduledsessions = schedule.scheduledsession_set.filter(pk = scheduledsession_id)
+    if request.method == 'POST':
+        put_vars = request.POST
+        ss.pinned = is_truthy_enough(put_vars["pinned"])
+    else:
+        put_vars = QueryDict(request.body)
+        ss.pinned = is_truthy_enough(put_vars.get("pinned"))
+
+    ss.save()
+    return HttpResponse(json.dumps({'message':'valid'}),
+                        content_type="application/json")
+
+def scheduledsession_delete(request, meeting, schedule, ss):
+    cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
+    if not canedit:
+        return HttpResponse(json.dumps({'error':'no permission to update this agenda'}),
+                            status = 403,
+                            content_type="application/json")
+
+    # in case there is, somehow, more than one item with the same pk.. XXX
+    scheduledsessions = schedule.scheduledsession_set.filter(pk = ss.pk)
     if len(scheduledsessions) == 0:
         return HttpResponse(json.dumps({'error':'no such object'}),
                             status = 404,
                             content_type="application/json")
-
     count=0
     for ss in scheduledsessions:
         ss.delete()
@@ -557,37 +526,40 @@ def scheduledsession_delete(request, meeting, schedule, scheduledsession_id):
                         status = 200,
                         content_type="application/json")
 
-def scheduledsession_get(request, meeting, schedule, scheduledsession_id):
-    cansee,canedit = agenda_permissions(meeting, schedule, request.user)
+def scheduledsession_get(request, meeting, schedule, ss):
+    cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
 
     if not cansee:
         return HttpResponse(json.dumps({'error':'no permission to see this agenda'}),
                             status = 403,
                             content_type="application/json")
 
-    scheduledsessions = schedule.scheduledsession_set.filter(pk = scheduledsession_id)
-    if len(scheduledsessions) == 0:
-        return HttpResponse(json.dumps({'error':'no such object'}),
-                            status = 404,
-                            content_type="application/json")
-
-    sess1_dict = scheduledsessions[0].json_dict(request.build_absolute_uri('/'))
+    sess1_dict = ss.json_dict(request.build_absolute_uri('/'))
     return HttpResponse(json.dumps(sess1_dict, sort_keys=True, indent=2),
                         content_type="application/json")
 
-# this returns the list of scheduled sessions for the given named agenda
-def scheduledsession_json(request, num, name, scheduledsession_id):
-    meeting = get_meeting(num)
-    schedule = get_schedule(meeting, name)
+# this return a specific session, updates a session or deletes a SPECIFIC scheduled session
+def scheduledsession_json(request, num, owner, name, scheduledsession_id):
+    meeting, person, schedule = get_meeting_schedule(num, owner, name)
 
-    scheduledsession_id = int(scheduledsession_id)
+    scheduledsessions = schedule.scheduledsession_set.filter(pk = scheduledsession_id)
+    if len(scheduledsessions) == 0:
+        return HttpResponse(json.dumps({'error' : 'invalid scheduledsession'}),
+                            content_type="application/json",
+                            status=404);
+    ss = scheduledsessions[0]
 
     if request.method == 'GET':
-        return scheduledsession_get(request, meeting, schedule, scheduledsession_id)
-    elif request.method == 'PUT':
-        return scheduledsession_update(request, meeting, schedule, scheduledsession_id)
+        return scheduledsession_get(request, meeting, schedule, ss)
+    elif request.method == 'PUT' or request.method=='POST':
+        return scheduledsession_update(request, meeting, schedule, ss)
     elif request.method == 'DELETE':
-        return scheduledsession_delete(request, meeting, schedule, scheduledsession_id)
+        return scheduledsession_delete(request, meeting, schedule, ss)
+
+#############################################################################
+## Constraints API
+#############################################################################
+
 
 # Would like to cache for 1 day, but there are invalidation issues.
 #@cache_page(86400)

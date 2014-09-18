@@ -3,8 +3,6 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 
-{% load dajaxice_templatetags %}
-
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: Timeslot/Room Availability{% endblock %}
 {% load agenda_custom_tags %}
 {% block pagehead %}
@@ -29,8 +27,6 @@
 <script type='text/javascript' src='/js/jquery-ui-timepicker/jquery-ui-timepicker-addon.js'></script>
 <script type='text/javascript' src='/js/jquery-ui-timepicker/jquery-ui-sliderAccess.js.js'></script>
 <link rel='stylesheet' type='text/css' href='/css/jquery-ui-timepicker-addon.css' />
-
-{% dajaxice_js_import %}
 
 <script type='text/javascript' src='/js/spin/dist/spin.min.js'></script>
 

@@ -456,7 +456,7 @@ class Schedule(models.Model):
         return u"%s:%s(%s)" % (self.meeting, self.name, self.owner)
 
     def base_url(self):
-        return "/meeting/%s/agenda/%s" % (self.meeting.number, self.name)
+        return "/meeting/%s/agenda/%s/%s" % (self.meeting.number, self.owner_email(), self.name)
 
     # temporary property to pacify the places where Schedule.scheduledsession_set is used
     @property
@@ -674,8 +674,9 @@ class ScheduledSession(models.Model):
             return ""
 
     def json_url(self):
-        return "/meeting/%s/schedule/%s/session/%u.json" % (self.schedule.meeting.number,
-                                                            self.schedule.name, self.id)
+        return "/meeting/%s/agenda/%s/%s/session/%u.json" % (self.schedule.meeting.number,
+                                                             self.schedule.owner_email(),
+                                                             self.schedule.name, self.id)
 
     def json_dict(self, host_scheme):
         ss = dict()

@@ -698,36 +698,6 @@ function info_name_select_change(){
     console.log("selecting new item:", last_session.title);
 }
 
-function XMLHttpGetRequest(url, sync) {
-    var oXMLHttpRequest = new XMLHttpRequest;
-    oXMLHttpRequest.open('GET', url, sync);
-    oXMLHttpRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-    oXMLHttpRequest.setRequestHeader("X-CSRFToken", Dajaxice.get_cookie('csrftoken'));
-
-    return oXMLHttpRequest;
-}
-
-function retrieve_session_by_id(session_id) {
-    var session_obj = {};
-    var oXMLHttpRequest = XMLHttpGetRequest(meeting_base_url+'/session/'+session_id+".json", false);
-    oXMLHttpRequest.send();
-    if(oXMLHttpRequest.readyState == XMLHttpRequest.DONE) {
-        try{
-            last_json_txt = oXMLHttpRequest.responseText;
-            session_obj   = JSON.parse(oXMLHttpRequest.responseText);
-            last_json_reply = session_obj;
-        }
-        catch(exception){
-            console.log("retrieve_session_by_id("+session_id+") exception: "+exception);
-        }
-    }
-    return session_obj;
-}
-
-function dajaxice_error(a){
-    console.log("dajaxice_error");
-}
-
 function set_pin_session_button(scheduledsession) {
     $("#pin_slot").unbind('click');
     if(scheduledsession == undefined) {
@@ -736,6 +706,7 @@ function set_pin_session_button(scheduledsession) {
     }
     state = scheduledsession.pinned;
     //console.log("button set to: ",state);
+    $("#pin_slot").attr('disabled',false);
     if(state) {
         $("#pin_slot").html("unPin");
         $("#agenda_pin_slot").addClass("button_down");
@@ -755,25 +726,11 @@ function set_pin_session_button(scheduledsession) {
 
 function update_pin_session(scheduledsession, state) {
     start_spin();
-    console.log("Calling dajaxice", scheduledsession, state);
-    Dajaxice.ietf.meeting.update_timeslot_pinned(function(message) {
-        console.log("dajaxice callback");
+    scheduledsession.set_pinned(state, function(schedulesession) {
         stop_spin();
-        if(message.message != "valid") {
-            alert("Update of pinned failed");
-            return;
-        }
-        scheduledsession.pinned = state;
-        session = scheduledsession.session()
-        session.pinned = state;
         session.repopulate_event(scheduledsession.domid());
         set_pin_session_button(scheduledsession);
-    },
-						 {
-                                                     'schedule_id': schedule_id,
-						     'scheduledsession_id':  scheduledsession.scheduledsession_id,
-                                                     'pinned': state
-						 });
+    });
 }
 
 function enable_button(divid, buttonid, func) {
@@ -898,7 +855,7 @@ function draw_constraints(session) {
                 highlight_conflict(conflict);
             }
         });
-                
+
 
         $.each(group_set, function(index) {
             group = group_set[index];
