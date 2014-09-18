@@ -4,7 +4,7 @@ from ietf.utils.test_utils import TestCase
 
 from ietf.person.models import Person
 from ietf.group.models import Group, GroupEvent
-from ietf.meeting.models import Meeting, Schedule, Room, TimeSlot, ScheduledSession
+from ietf.meeting.models import Meeting, Room, TimeSlot, ScheduledSession
 from ietf.utils.mail import outbox
 from ietf.meeting.test_data import make_meeting_test_data
 
@@ -43,15 +43,17 @@ class MainTestCase(TestCase):
          
     def test_add_meeting(self):
         "Add Meeting"
+        meeting = make_meeting_test_data()
+        number = int(meeting.number) + 1
+        count = Meeting.objects.count()
         url = reverse('meetings_add')
-        post_data = dict(number=1,city='Toronto',date='2014-07-20',country='CA',
+        post_data = dict(number=number,city='Toronto',date='2014-07-20',country='CA',
                          time_zone='America/New_York',venue_name='Hilton',
                          venue_addr='100 First Ave')
         self.client.login(username='secretary', password='secretary+password')
         response = self.client.post(url, post_data, follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Meeting.objects.count(),1)
-        self.assertEqual(Schedule.objects.count(),1)
+        self.assertEqual(Meeting.objects.count(),count + 1)
 
     def test_edit_meeting(self):
         "Edit Meeting"

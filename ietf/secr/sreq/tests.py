@@ -1,8 +1,4 @@
-import os
-import shutil
-
 from django.core.urlresolvers import reverse
-from django.conf import settings
 
 from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
@@ -66,19 +62,10 @@ class SubmitRequestCase(TestCase):
 """
 
 class LockAppTestCase(TestCase):
-    def setUp(self):
-        self.agenda_dir = os.path.abspath("tmp-agenda-dir")
-        os.mkdir(self.agenda_dir)
-        settings.AGENDA_PATH = self.agenda_dir
-        path = os.path.join(self.agenda_dir,'session_request.lock')
-        with open(path, 'w') as f:
-            f.write('App is locked')
-
-    def tearDown(self):
-        shutil.rmtree(self.agenda_dir)
-        
     def test_edit_request(self):
-        make_test_data()
+        meeting = make_test_data()
+        meeting.session_request_lock_message='locked'
+        meeting.save()
         group = Group.objects.get(acronym='mars')
         url = reverse('sessions_edit',kwargs={'acronym':group.acronym})
         self.client.login(username="secretary", password="secretary+password")
@@ -88,7 +75,9 @@ class LockAppTestCase(TestCase):
         self.assertEqual(len(q(':disabled[name="submit"]')), 1)
     
     def test_view_request(self):
-        make_test_data()
+        meeting = make_test_data()
+        meeting.session_request_lock_message='locked'
+        meeting.save()
         group = Group.objects.get(acronym='mars')
         url = reverse('sessions_view',kwargs={'acronym':group.acronym})
         self.client.login(username="secretary", password="secretary+password")
@@ -98,7 +87,9 @@ class LockAppTestCase(TestCase):
         self.assertEqual(len(q(':disabled[name="edit"]')), 1)
         
     def test_new_request(self):
-        make_test_data()
+        meeting = make_test_data()
+        meeting.session_request_lock_message='locked'
+        meeting.save()
         group = Group.objects.get(acronym='mars')
         url = reverse('sessions_new',kwargs={'acronym':group.acronym})
         self.client.login(username="secretary", password="secretary+password")

@@ -61,7 +61,8 @@ class Meeting(models.Model):
     reg_area = models.CharField(blank=True, max_length=255)
     agenda_note = models.TextField(blank=True, help_text="Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not validated.")
     agenda     = models.ForeignKey('Schedule',null=True,blank=True, related_name='+')
-
+    session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
+    
     def __unicode__(self):
         if self.type_id == "ietf":
             return "IETF-%s" % (self.number)

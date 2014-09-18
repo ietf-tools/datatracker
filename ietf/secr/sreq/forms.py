@@ -133,4 +133,4 @@ class SessionForm(forms.Form):
         
 class ToolStatusForm(forms.Form):
     message = forms.CharField(widget=forms.Textarea(attrs={'rows':'3','cols':'80'}))
-    
+
