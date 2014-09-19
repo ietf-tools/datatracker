@@ -188,7 +188,7 @@ class Migration(SchemaMigration):
             'comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'group': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['group.Group']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'materials': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['doc.Document']", 'symmetrical': 'False', 'through': u"orm['meeting.VersionedMaterials']", 'blank': 'True'}),
+            'materials': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['doc.Document']", 'symmetrical': 'False', 'through': u"orm['meeting.SessionPresentation']", 'blank': 'True'}),
             'meeting': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['meeting.Meeting']"}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
@@ -213,8 +213,8 @@ class Migration(SchemaMigration):
             'time': ('django.db.models.fields.DateTimeField', [], {}),
             'type': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['name.TimeSlotTypeName']"})
         },
-        u'meeting.versionedmaterials': {
-            'Meta': {'object_name': 'VersionedMaterials', 'db_table': "'meeting_session_materials'"},
+        u'meeting.sessionpresentation': {
+            'Meta': {'object_name': 'SessionPresentation', 'db_table': "'meeting_session_materials'"},
             'doc': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['doc.Document']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'rev': ('django.db.models.fields.CharField', [], {'max_length': '16', 'blank': 'True'}),

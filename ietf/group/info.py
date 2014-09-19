@@ -267,7 +267,8 @@ def concluded_groups(request):
                   dict(group_types=group_types))
 
 def get_group_materials(group):
-    return Document.objects.filter(group=group, type__in=group.features.material_types, session=None).exclude(states__slug="deleted")
+#   return Document.objects.filter(group=group, type__in=group.features.material_types, session=None).exclude(states__slug="deleted")
+    return Document.objects.filter(group=group, type__in=group.features.material_types).exclude(states__slug="deleted")
 
 def construct_group_menu_context(request, group, selected, group_type, others):
     """Return context with info for the group menu filled in."""
@@ -450,6 +451,8 @@ def materials(request, acronym, group_type=None):
         if d.type not in doc_types:
             doc_types[d.type] = []
         doc_types[d.type].append(d)
+        # This needs to be better - probably looking at ScheduledSession, and perhaps ignoring future Sessions
+        d.last_presented = d.sessionpresentation_set.order_by('-session__meeting__date').first()
 
     return render(request, 'group/materials.html',
                   construct_group_menu_context(request, group, "materials", group_type, {

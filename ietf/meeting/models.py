@@ -777,7 +777,7 @@ class Constraint(models.Model):
         return ct1
 
 
-class VersionedMaterials(models.Model):
+class SessionPresentation(models.Model):
     session = models.ForeignKey('Session')
     document = models.ForeignKey(Document)
     rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
@@ -811,7 +811,7 @@ class Session(models.Model):
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(default=datetime.datetime.now)
 
-    materials = models.ManyToManyField(Document, through=VersionedMaterials, blank=True)
+    materials = models.ManyToManyField(Document, through=SessionPresentation, blank=True)
     resources = models.ManyToManyField(ResourceAssociation)
 
     unique_constraints_dict = None
