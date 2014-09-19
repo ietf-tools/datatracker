@@ -1,3 +1,49 @@
+ietfdb (5.6.3) ietf; urgency=medium
+
+  This is a bugfix and cleanup release, without any major new features.
+  The most notable improvements are to the agenda scheduling code, where
+  a number of bothersome bugs has been slain, but there are also other
+  nice fixes:
+
+  * Merged in [8229] from rjsparks@nostrum.com, with minor tweaks:
+      From mcr@sandelman.ca:
+	Refactor to remove dajaxice.
+	Modified the URLs that address schedules:
+	  - urls now always start with /agenda, removing the mix of /agenda and 
+	/schedule prefixes
+	  - urls to a given schedule include the schedule owner (by email 
+	address)
+	Corrected issue that prevented deleting sessions.
+	Changed comment mechanism in timeslot_edit.js
+	Migration to change the email address for (System)
+      Fixes bug #1426 
+
+  * Merged in [8211] from rjsparks@nostrum.com:
+    Provide a way to get back to the page the user logged out from. Fixes
+    ticket #1461.  
+
+  * Merged in [8210] from rjsparks@nostrum.com:
+    Default the responsible AD for an initial charter or recharter document to
+    the responsible AD for the group. Fixes ticket #1451.  
+
+  * Merged in [8209] from rjsparks@nostrum.com:
+    Fixed several places where files were not being closed.  
+
+  * Merged in [8208] from rjsparks@nostrum.com:
+    Changed the code to use doc.href rather than manually constructing URLs in
+    several templates. Fixes ticket #1459.  
+
+  * Merged in [8207] from rjsparks@nostrum.com:
+    Cleanup commit before changing working HREF contents.  
+
+  * Merged in [8204] from rjsparks@nostrum.com:
+    Improves how many href urls are constructed. Updates ticket #1459.  
+
+  * Merged in [8166] from rcross@amsl.com:
+    Added the 'proposed' WG state to WG role queries for Chair and Secretary
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Sep 2014 12:28:28 -0700
+
 ietfdb (5.6.2) ietf; urgency=medium
 
   This release contains the datatracker bugfixes and enhancements from the
