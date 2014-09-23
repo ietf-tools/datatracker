@@ -171,6 +171,15 @@ class DocumentInfo(models.Model):
             return None
 
     def meeting_related(self):
+        if self.type_id in ("agenda","minutes",):
+            return (self.name.split("-")[1] == "interim"
+                   or (self.session_set.exists() if isinstance(self, Document) else self.doc.session_set.exists()))
+        elif self.type_id in ("slides",):
+            return (self.name.split("-")[1] == "interim"
+                   or (self.get_state('slides') in ("sessonly","archived") ))
+        else:
+            return False
+
         return(self.type_id in ("agenda", "minutes", "slides") and (
             self.name.split("-")[1] == "interim"
             or (self.session_set.exists() if isinstance(self, Document) else self.doc.session_set.exists())))
