@@ -390,6 +390,8 @@ class Document(DocumentInfo):
             return self.latest_event(type="changed_state", desc__icontains="State changed to <b>IESG Evaluation - Defer</b>")
         elif self.type_id == "conflrev" and self.get_state_slug("conflrev") == "defer":
             return self.latest_event(type="changed_state", desc__icontains="State changed to <b>IESG Evaluation - Defer</b>")
+        elif self.type_id == "statchg" and self.get_state_slug("statchg") == "defer":
+            return self.latest_event(type="changed_state", desc__icontains="State changed to <b>IESG Evaluation - Defer</b>")
         return None
 
     def most_recent_ietflc(self):

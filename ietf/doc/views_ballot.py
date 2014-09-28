@@ -54,8 +54,8 @@ def do_undefer_ballot(request, doc):
     if doc.type_id == 'draft':
         new_state = State.objects.get(used=True, type="draft-iesg", slug='iesg-eva')
         prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-    elif doc.type_id == 'conflrev':
-        new_state = State.objects.get(used=True, type='conflrev',slug='iesgeval')
+    elif doc.type_id in ['conflrev','statchg']:
+        new_state = State.objects.get(used=True, type=doc.type_id, slug='iesgeval')
 
     prev_state = doc.get_state(new_state.type_id if new_state else None)
 
@@ -334,9 +334,9 @@ def clear_ballot(request, name):
 def defer_ballot(request, name):
     """Signal post-pone of ballot, notifying relevant parties."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if doc.type_id not in ('draft','conflrev'):
+    if doc.type_id not in ('draft','conflrev','statchg'):
         raise Http404()
-    interesting_state = dict(draft='draft-iesg',conflrev='conflrev')
+    interesting_state = dict(draft='draft-iesg',conflrev='conflrev',statchg='statchg')
     state = doc.get_state(interesting_state[doc.type_id])
     if not state or state.slug=='defer' or not doc.telechat_date():
         raise Http404()
@@ -353,8 +353,8 @@ def defer_ballot(request, name):
         if doc.type_id == 'draft':
             new_state = State.objects.get(used=True, type="draft-iesg", slug='defer')
             prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-        elif doc.type_id == 'conflrev':
-            new_state = State.objects.get(used=True, type='conflrev', slug='defer')
+        elif doc.type_id in ['conflrev','statchg']:
+            new_state = State.objects.get(used=True, type=doc.type_id, slug='defer')
 
         prev_state = doc.get_state(new_state.type_id if new_state else None)
 
@@ -383,11 +383,11 @@ def defer_ballot(request, name):
 def undefer_ballot(request, name):
     """undo deferral of ballot ballot."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if doc.type_id not in ('draft','conflrev'):
+    if doc.type_id not in ('draft','conflrev','statchg'):
         raise Http404()
     if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
         raise Http404()
-    interesting_state = dict(draft='draft-iesg',conflrev='conflrev')
+    interesting_state = dict(draft='draft-iesg',conflrev='conflrev',statchg='statchg')
     state = doc.get_state(interesting_state[doc.type_id]) 
     if not state or state.slug!='defer':
         raise Http404()

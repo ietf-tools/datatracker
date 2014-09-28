@@ -476,7 +476,7 @@ class DeferUndeferTestCase(TestCase):
         doc = Document.objects.get(name=name)
         self.assertEqual(doc.telechat_date(), second_date)
         self.assertTrue(doc.returning_item())
-        defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'])
+        defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'],statchg=['statchg','defer'])
         if doc.type_id in defer_states:
            self.assertEqual(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
         self.assertTrue(doc.active_defer_event())
@@ -511,7 +511,7 @@ class DeferUndeferTestCase(TestCase):
                              returning_item = True, 
                             )
         e.save()
-        defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'])
+        defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'],statchg=['statchg','defer'])
         if doc.type_id in defer_states:
             doc.set_state(State.objects.get(used=True, type=defer_states[doc.type_id][0],slug=defer_states[doc.type_id][1]))
             doc.save()
@@ -530,7 +530,7 @@ class DeferUndeferTestCase(TestCase):
         doc = Document.objects.get(name=name)
         self.assertEqual(doc.telechat_date(), first_date)
         self.assertTrue(doc.returning_item()) 
-        undefer_states = dict(draft=['draft-iesg','iesg-eva'],conflrev=['conflrev','iesgeval'])
+        undefer_states = dict(draft=['draft-iesg','iesg-eva'],conflrev=['conflrev','iesgeval'],statchg=['statchg','iesgeval'])
         if doc.type_id in undefer_states:
            self.assertEqual(doc.get_state(undefer_states[doc.type_id][0]).slug,undefer_states[doc.type_id][1])
         self.assertFalse(doc.active_defer_event())
@@ -551,11 +551,17 @@ class DeferUndeferTestCase(TestCase):
     def test_defer_conflict_review(self):
         self.helper_test_defer('conflict-review-imaginary-irtf-submission')
 
+    def test_defer_status_change(self):
+        self.helper_test_defer('status-change-imaginary-mid-review')
+
     def test_undefer_draft(self):
         self.helper_test_undefer('draft-ietf-mars-test')
 
     def test_undefer_conflict_review(self):
         self.helper_test_undefer('conflict-review-imaginary-irtf-submission')
+
+    def test_undefer_status_change(self):
+        self.helper_test_undefer('status-change-imaginary-mid-review')
 
     # when charters support being deferred, be sure to test them here
 

@@ -81,7 +81,7 @@
  "model": "name.constraintname", 
  "fields": {
   "order": 0, 
-  "penalty": 0, 
+  "penalty": 100000, 
   "used": true, 
   "name": "Conflicts with", 
   "desc": ""
@@ -92,7 +92,7 @@
  "model": "name.constraintname", 
  "fields": {
   "order": 0, 
-  "penalty": 0, 
+  "penalty": 10000, 
   "used": true, 
   "name": "Conflicts with (secondary)", 
   "desc": ""
@@ -103,7 +103,7 @@
  "model": "name.constraintname", 
  "fields": {
   "order": 0, 
-  "penalty": 0, 
+  "penalty": 1000, 
   "used": true, 
   "name": "Conflicts with (tertiary)", 
   "desc": ""
@@ -114,7 +114,7 @@
  "model": "name.constraintname", 
  "fields": {
   "order": 0, 
-  "penalty": 0, 
+  "penalty": 200000, 
   "used": true, 
   "name": "Person must be present", 
   "desc": ""
@@ -1110,6 +1110,26 @@
  }
 },
 {
+ "pk": "iab", 
+ "model": "name.grouptypename", 
+ "fields": {
+  "order": 0, 
+  "used": true, 
+  "name": "IAB", 
+  "desc": ""
+ }
+},
+{
+ "pk": "isoc", 
+ "model": "name.grouptypename", 
+ "fields": {
+  "order": 0, 
+  "used": true, 
+  "name": "ISOC", 
+  "desc": ""
+ }
+},
+{
  "pk": "ps", 
  "model": "name.intendedstdlevelname", 
  "fields": {
@@ -1270,22 +1290,12 @@
  }
 },
 {
- "pk": "ad", 
+ "pk": "ceo", 
  "model": "name.rolename", 
  "fields": {
   "order": 0, 
   "used": true, 
-  "name": "Area Director", 
-  "desc": ""
- }
-},
-{
- "pk": "pre-ad", 
- "model": "name.rolename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Incoming Area Director", 
+  "name": "CEO", 
   "desc": ""
  }
 },
@@ -1293,39 +1303,19 @@
  "pk": "chair", 
  "model": "name.rolename", 
  "fields": {
-  "order": 0, 
+  "order": 1, 
   "used": true, 
   "name": "Chair", 
   "desc": ""
  }
 },
 {
- "pk": "editor", 
+ "pk": "ad", 
  "model": "name.rolename", 
  "fields": {
-  "order": 0, 
+  "order": 2, 
   "used": true, 
-  "name": "Editor", 
-  "desc": ""
- }
-},
-{
- "pk": "secr", 
- "model": "name.rolename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Secretary", 
-  "desc": ""
- }
-},
-{
- "pk": "techadv", 
- "model": "name.rolename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Tech Advisor", 
+  "name": "Area Director", 
   "desc": ""
  }
 },
@@ -1333,9 +1323,19 @@
  "pk": "execdir", 
  "model": "name.rolename", 
  "fields": {
-  "order": 0, 
+  "order": 2, 
   "used": true, 
   "name": "Executive Director", 
+  "desc": ""
+ }
+},
+{
+ "pk": "pre-ad", 
+ "model": "name.rolename", 
+ "fields": {
+  "order": 3, 
+  "used": true, 
+  "name": "Incoming Area Director", 
   "desc": ""
  }
 },
@@ -1343,9 +1343,19 @@
  "pk": "admdir", 
  "model": "name.rolename", 
  "fields": {
-  "order": 0, 
+  "order": 3, 
   "used": true, 
   "name": "Administrative Director", 
+  "desc": ""
+ }
+},
+{
+ "pk": "techadv", 
+ "model": "name.rolename", 
+ "fields": {
+  "order": 4, 
+  "used": true, 
+  "name": "Tech Advisor", 
   "desc": ""
  }
 },
@@ -1353,9 +1363,29 @@
  "pk": "liaiman", 
  "model": "name.rolename", 
  "fields": {
-  "order": 0, 
+  "order": 4, 
   "used": true, 
   "name": "Liaison Manager", 
+  "desc": ""
+ }
+},
+{
+ "pk": "advisor", 
+ "model": "name.rolename", 
+ "fields": {
+  "order": 4, 
+  "used": true, 
+  "name": "Advisor", 
+  "desc": "Advisor in a group that has explicit membership, such as the NomCom"
+ }
+},
+{
+ "pk": "editor", 
+ "model": "name.rolename", 
+ "fields": {
+  "order": 5, 
+  "used": true, 
+  "name": "Editor", 
   "desc": ""
  }
 },
@@ -1363,9 +1393,19 @@
  "pk": "auth", 
  "model": "name.rolename", 
  "fields": {
-  "order": 0, 
+  "order": 5, 
   "used": true, 
   "name": "Authorized Individual", 
+  "desc": ""
+ }
+},
+{
+ "pk": "secr", 
+ "model": "name.rolename", 
+ "fields": {
+  "order": 6, 
+  "used": true, 
+  "name": "Secretary", 
   "desc": ""
  }
 },
@@ -1373,19 +1413,9 @@
  "pk": "delegate", 
  "model": "name.rolename", 
  "fields": {
-  "order": 0, 
+  "order": 6, 
   "used": true, 
   "name": "Delegate", 
-  "desc": ""
- }
-},
-{
- "pk": "atlarge", 
- "model": "name.rolename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "At Large Member", 
   "desc": ""
  }
 },
@@ -1393,30 +1423,70 @@
  "pk": "member", 
  "model": "name.rolename", 
  "fields": {
-  "order": 0, 
+  "order": 7, 
   "used": true, 
   "name": "Member", 
   "desc": "Regular group member in a group that has explicit membership, such as the NomCom"
  }
 },
 {
+ "pk": "atlarge", 
+ "model": "name.rolename", 
+ "fields": {
+  "order": 10, 
+  "used": true, 
+  "name": "At Large Member", 
+  "desc": ""
+ }
+},
+{
  "pk": "liaison", 
  "model": "name.rolename", 
  "fields": {
-  "order": 0, 
+  "order": 11, 
   "used": true, 
   "name": "Liaison Member", 
   "desc": "Liaison group member in a group that has explicit membership, such as the NomCom"
  }
 },
 {
- "pk": "advisor", 
+ "pk": "announce", 
  "model": "name.rolename", 
+ "fields": {
+  "order": 12, 
+  "used": true, 
+  "name": "List Announcer", 
+  "desc": "Authorised to send announcements to the ietf-announce and other lists"
+ }
+},
+{
+ "pk": "project", 
+ "model": "name.roomresourcename", 
  "fields": {
   "order": 0, 
   "used": true, 
-  "name": "Advisor", 
-  "desc": "Advisor in a group that has explicit membership, such as the NomCom"
+  "name": "LCD projector", 
+  "desc": "The room will have a computer projector"
+ }
+},
+{
+ "pk": "proj2", 
+ "model": "name.roomresourcename", 
+ "fields": {
+  "order": 0, 
+  "used": true, 
+  "name": "second LCD projector", 
+  "desc": "The room will have a second computer projector"
+ }
+},
+{
+ "pk": "meetecho", 
+ "model": "name.roomresourcename", 
+ "fields": {
+  "order": 0, 
+  "used": true, 
+  "name": "Meetecho Remote Partition Support", 
+  "desc": "The room will have a meetecho wrangler"
  }
 },
 {
@@ -1815,7 +1885,7 @@
  "pk": "statchg", 
  "model": "doc.statetype", 
  "fields": {
-  "label": "RFC Status Change"
+  "label": "RFC Status Change state"
  }
 },
 {

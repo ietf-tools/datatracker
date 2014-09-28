@@ -7,7 +7,7 @@
 <div class="action"><a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}">Edit position</a></div>
 {% endif %}
 
-{% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
+{% if doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id == "statchg" %}
 <div class="action">
 {% if deferred %}
   <div><a href="{% url "doc_undefer_ballot" name=doc.name %}">Undefer ballot</a></div>
