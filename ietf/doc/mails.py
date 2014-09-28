@@ -311,6 +311,18 @@ def email_ballot_deferred(request, doc, by, telechat_date):
               "doc/mail/ballot_deferred_email.txt",
               dict(doc=doc,
                    by=by,
+                   action='deferred',
+                   telechat_date=telechat_date))
+
+def email_ballot_undeferred(request, doc, by, telechat_date):
+    to = "iesg@ietf.org"
+    frm = "DraftTracker Mail System <iesg-secretary@ietf.org>"
+    send_mail(request, to, frm,
+              "IESG Undeferred Ballot notification: %s" % doc.file_tag(),
+              "doc/mail/ballot_deferred_email.txt",
+              dict(doc=doc,
+                   by=by,
+                   action='undeferred',
                    telechat_date=telechat_date))
 
 def generate_issue_ballot_mail(request, doc, ballot):

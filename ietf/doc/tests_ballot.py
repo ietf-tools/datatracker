@@ -6,9 +6,10 @@ import debug                            # pyflakes:ignore
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
-    BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent )
+    BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, TelechatDocEvent )
 from ietf.group.models import Group, Role
 from ietf.name.models import BallotPositionName
+from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
@@ -161,52 +162,6 @@ class EditPositionTests(TestCase):
         self.assertTrue(draft.name in m['Subject'])
         self.assertTrue("clearer title" in str(m))
         self.assertTrue("Test!" in str(m))
-
-        
-class DeferBallotTests(TestCase):
-    def test_defer_ballot(self):
-        draft = make_test_data()
-        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
-
-        url = urlreverse('doc_defer_ballot', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "ad", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
-        # defer
-        mailbox_before = len(outbox)
-        
-        r = self.client.post(url, dict())
-        self.assertEqual(r.status_code, 302)
-
-        draft = Document.objects.get(name=draft.name)
-        self.assertEqual(draft.get_state_slug("draft-iesg"), "defer")
-        
-        self.assertEqual(len(outbox), mailbox_before + 2)
-        self.assertTrue("State Update" in outbox[-2]['Subject'])
-        self.assertTrue("Deferred" in outbox[-1]['Subject'])
-        self.assertTrue(draft.file_tag() in outbox[-1]['Subject'])
-
-    def test_undefer_ballot(self):
-        draft = make_test_data()
-        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="defer"))
-
-        url = urlreverse('doc_undefer_ballot', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "ad", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
-        # undefer
-        r = self.client.post(url, dict())
-        self.assertEqual(r.status_code, 302)
-
-        draft = Document.objects.get(name=draft.name)
-        self.assertEqual(draft.get_state_slug("draft-iesg"), "iesg-eva")
-
 
 class BallotWriteupsTests(TestCase):
     def test_edit_last_call_text(self):
@@ -482,3 +437,127 @@ class MakeLastCallTests(TestCase):
         self.assertTrue("Last Call" in outbox[-3]['Subject'])
         self.assertTrue("Last Call" in draft.message_set.order_by("-time")[0].subject)
 
+class DeferUndeferTestCase(TestCase):
+    def helper_test_defer(self,name):
+
+        doc = Document.objects.get(name=name)
+        url = urlreverse('doc_defer_ballot',kwargs=dict(name=doc.name))
+
+        login_testing_unauthorized(self, "ad", url)
+
+        # Verify that you can't defer a document that's not on a telechat
+        r = self.client.post(url,dict())
+        self.assertEqual(r.status_code, 404)
+
+        # Put the document on a telechat
+        dates = TelechatDate.objects.active().order_by("date")
+        first_date = dates[0].date
+        second_date = dates[1].date
+
+        e = TelechatDocEvent(type="scheduled_for_telechat",
+                             doc = doc,
+                             by = Person.objects.get(name="Aread Irector"),
+                             telechat_date = first_date,
+                             returning_item = False, 
+                            )
+        e.save()
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form.defer')),1)
+
+        # defer
+        mailbox_before = len(outbox)
+        self.assertEqual(doc.telechat_date(), first_date)
+        r = self.client.post(url,dict())
+        self.assertEqual(r.status_code, 302)
+        doc = Document.objects.get(name=name)
+        self.assertEqual(doc.telechat_date(), second_date)
+        self.assertTrue(doc.returning_item())
+        defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'])
+        if doc.type_id in defer_states:
+           self.assertEqual(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
+        self.assertTrue(doc.active_defer_event())
+        self.assertEqual(len(outbox), mailbox_before + 2)
+        self.assertTrue("State Update" in outbox[-2]['Subject'])
+        self.assertTrue("Deferred" in outbox[-1]['Subject'])
+        self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])
+
+        # Ensure it's not possible to defer again
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+        r = self.client.post(url,dict())
+        self.assertEqual(r.status_code, 404) 
+
+
+    def helper_test_undefer(self,name):
+
+        doc = Document.objects.get(name=name)
+        url = urlreverse('doc_undefer_ballot',kwargs=dict(name=doc.name))
+
+        login_testing_unauthorized(self, "ad", url)
+
+        # some additional setup
+        dates = TelechatDate.objects.active().order_by("date")
+        first_date = dates[0].date
+        second_date = dates[1].date
+
+        e = TelechatDocEvent(type="scheduled_for_telechat",
+                             doc = doc,
+                             by = Person.objects.get(name="Aread Irector"),
+                             telechat_date = second_date,
+                             returning_item = True, 
+                            )
+        e.save()
+        defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'])
+        if doc.type_id in defer_states:
+            doc.set_state(State.objects.get(used=True, type=defer_states[doc.type_id][0],slug=defer_states[doc.type_id][1]))
+            doc.save()
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form.undefer')),1)
+
+        # undefer
+        mailbox_before = len(outbox)
+        self.assertEqual(doc.telechat_date(), second_date)
+        r = self.client.post(url,dict())
+        self.assertEqual(r.status_code, 302)
+        doc = Document.objects.get(name=name)
+        self.assertEqual(doc.telechat_date(), first_date)
+        self.assertTrue(doc.returning_item()) 
+        undefer_states = dict(draft=['draft-iesg','iesg-eva'],conflrev=['conflrev','iesgeval'])
+        if doc.type_id in undefer_states:
+           self.assertEqual(doc.get_state(undefer_states[doc.type_id][0]).slug,undefer_states[doc.type_id][1])
+        self.assertFalse(doc.active_defer_event())
+        self.assertEqual(len(outbox), mailbox_before + 2)
+        self.assertTrue("State Update" in outbox[-2]['Subject'])
+        self.assertTrue("Undeferred" in outbox[-1]['Subject'])
+        self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])
+
+        # Ensure it's not possible to undefer again
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+        r = self.client.post(url,dict())
+        self.assertEqual(r.status_code, 404) 
+
+    def test_defer_draft(self):
+        self.helper_test_defer('draft-ietf-mars-test')
+
+    def test_defer_conflict_review(self):
+        self.helper_test_defer('conflict-review-imaginary-irtf-submission')
+
+    def test_undefer_draft(self):
+        self.helper_test_undefer('draft-ietf-mars-test')
+
+    def test_undefer_conflict_review(self):
+        self.helper_test_undefer('conflict-review-imaginary-irtf-submission')
+
+    # when charters support being deferred, be sure to test them here
+
+    def setUp(self):
+        make_test_data()

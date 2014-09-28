@@ -387,9 +387,9 @@ class Document(DocumentInfo):
     # isn't this just returning whether the state is currently a defer state for that document type?
     def active_defer_event(self):
         if self.type_id == "draft" and self.get_state_slug("draft-iesg") == "defer":
-            return self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
+            return self.latest_event(type="changed_state", desc__icontains="State changed to <b>IESG Evaluation - Defer</b>")
         elif self.type_id == "conflrev" and self.get_state_slug("conflrev") == "defer":
-            return self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
+            return self.latest_event(type="changed_state", desc__icontains="State changed to <b>IESG Evaluation - Defer</b>")
         return None
 
     def most_recent_ietflc(self):

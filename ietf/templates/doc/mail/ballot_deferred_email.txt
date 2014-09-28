@@ -1,4 +1,4 @@
-{% autoescape off %}{% filter wordwrap:73 %}Ballot of {{ doc.file_tag }} has been deferred by {{ by }}.{% endfilter %}
+{% autoescape off %}{% filter wordwrap:73 %}Ballot of {{ doc.file_tag }} has been {{action}} by {{ by }}.{% endfilter %}
 
 This ballot will be on the IESG agenda of {{ telechat_date }}.
 {% endautoescape %}

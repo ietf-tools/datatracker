@@ -17,9 +17,9 @@ from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotP
     BallotType, LastCallDocEvent, WriteupDocEvent, save_document_in_history, IESG_SUBSTATE_TAGS )
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
-from ietf.doc.mails import ( email_ad, email_ballot_deferred, email_state_changed,
-    extra_automation_headers, generate_last_call_announcement, generate_issue_ballot_mail,
-    generate_ballot_writeup, generate_approval_mail )
+from ietf.doc.mails import ( email_ad, email_ballot_deferred, email_ballot_undeferred, 
+    email_state_changed, extra_automation_headers, generate_last_call_announcement, 
+    generate_issue_ballot_mail, generate_ballot_writeup, generate_approval_mail )
 from ietf.doc.lastcall import request_last_call
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required
@@ -69,6 +69,7 @@ def do_undefer_ballot(request, doc):
 
     update_telechat(request, doc, login, telechat_date)
     email_state_changed(request, doc, e.desc)
+    email_ballot_undeferred(request, doc, login.plain_name(), telechat_date)
     
 def position_to_ballot_choice(position):
     for v, label in BALLOT_CHOICES:
@@ -335,7 +336,9 @@ def defer_ballot(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.type_id not in ('draft','conflrev'):
         raise Http404()
-    if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
+    interesting_state = dict(draft='draft-iesg',conflrev='conflrev')
+    state = doc.get_state(interesting_state[doc.type_id])
+    if not state or state.slug=='defer' or not doc.telechat_date():
         raise Http404()
 
     login = request.user.person
@@ -383,6 +386,10 @@ def undefer_ballot(request, name):
     if doc.type_id not in ('draft','conflrev'):
         raise Http404()
     if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
+        raise Http404()
+    interesting_state = dict(draft='draft-iesg',conflrev='conflrev')
+    state = doc.get_state(interesting_state[doc.type_id]) 
+    if not state or state.slug!='defer':
         raise Http404()
 
     telechat_date = TelechatDate.objects.active().order_by("date")[0].date

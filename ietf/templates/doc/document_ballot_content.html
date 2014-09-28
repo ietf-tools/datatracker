@@ -13,7 +13,9 @@
   <div><a href="{% url "doc_undefer_ballot" name=doc.name %}">Undefer ballot</a></div>
   <div>Ballot deferred by {{ deferred.by }} on {{ deferred.time|date:"Y-m-d" }}.</div>
 {% else %}
-  <div><a href="{% url "doc_defer_ballot" name=doc.name %}">Defer ballot</a></div>
+  {% if doc.telechat_date %}
+    <div><a href="{% url "doc_defer_ballot" name=doc.name %}">Defer ballot</a></div>
+  {% endif %}
 {% endif %}
 {% if user|has_role:"Secretariat" %}
   <div><a href="{% url "doc_clear_ballot" name=doc.name %}">Clear ballot</a></div>
