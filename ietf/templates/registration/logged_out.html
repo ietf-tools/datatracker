@@ -12,3 +12,14 @@
 </div>
 </div>
 {% endblock %}
+
+{% if request.META.HTTP_REFERER %}
+{% block scripts %}
+$(document).ready( function() {
+    $("#login-back a").text('You will be returned to the previous page in 5 seconds');
+    setTimeout(function() {
+        window.location.replace("{{request.META.HTTP_REFERER}}") ;
+    }, 5000);
+});
+{% endblock %}
+{% endif %}
