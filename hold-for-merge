@@ -1,5 +1,6 @@
 # -*- conf-mode -*-
 
+personal/rcross/v5.6.3-dev0@8237	# Includes other merges; merge personal/rcross/v5.6.2-dev0@8216 instead
 personal/liudapeng/v5.5.1-dev0@7925	# alternative resolution desired
 personal/rjs/v5.2.0@7544
 personal/liudapeng/v5.0.2@7399
