@@ -516,11 +516,8 @@ class Schedule(models.Model):
     def delete_scheduledsessions(self):
         self.scheduledsession_set.all().delete()
 
-    # I'm loath to put calls to reverse() in there.
-    # is there a better way?
     def json_url(self):
-        # XXX need to include owner.
-        return "/meeting/%s/agendas/%s.json" % (self.meeting.number, self.name)
+        return "%s.json" % self.base_url()
 
     def json_dict(self, host_scheme):
         sch = dict()
