@@ -228,7 +228,7 @@ def get_ready_commits(repo, tree):
         if (line.startswith('   M') or line.startswith('   A') or line.startswith('   D')) and branch == None:
             type, path = line[:4], line[5:]
             branch = '/'.join(path.split('/')[1:4])
-        elif re.search("(?i)(commit ready (for|to) merge)", line):
+        elif re.search("(?i)((commit|branch) ready (for|to) merge)", line):
             if not (rev in merged_revs and branch == merged_revs[rev]):
                 note("   %s  %s: %s@%s" % (when, who, branch, rev))
                 list += [(rev, repo, branch),]

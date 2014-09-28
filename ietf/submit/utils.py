@@ -159,7 +159,9 @@ def post_submission(request, submission):
 
     update_authors(draft, submission)
 
-    rebuild_reference_relations(draft)
+    trouble = rebuild_reference_relations(draft)
+    if trouble:
+        log('Rebuild_reference_relations trouble: %s'%trouble)
 
     # new revision event
     e = NewRevisionDocEvent(type="new_revision", doc=draft, rev=draft.rev)
