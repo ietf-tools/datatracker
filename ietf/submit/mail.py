@@ -13,7 +13,7 @@ from ietf.utils.accesstoken import generate_access_token
 def submission_confirmation_email_list(submission):
     try:
         doc = Document.objects.get(name=submission.name)
-        email_list = [i.author.formatted_email() for i in doc.documentauthor_set.all()]
+        email_list = [i.author.formatted_email() for i in doc.documentauthor_set.all() if not i.author.invalid_address()]
     except Document.DoesNotExist:
         email_list = [u"%s <%s>" % (author["name"], author["email"])
                       for author in submission.authors_parsed() if author["email"]]

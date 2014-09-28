@@ -13,10 +13,10 @@ from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 from ietf.utils.test_utils import TestCase
-from ietf.submit.utils import expirable_submissions, expire_submission
+from ietf.submit.utils import expirable_submissions, expire_submission, ensure_person_email_info_exists
 from ietf.person.models import Person
 from ietf.group.models import Group
-from ietf.doc.models import Document, DocEvent, State, BallotDocEvent, BallotPositionDocEvent
+from ietf.doc.models import Document, DocEvent, State, BallotDocEvent, BallotPositionDocEvent, DocumentAuthor
 from ietf.submit.models import Submission, Preapproval
 
 class SubmitTests(TestCase):
@@ -179,6 +179,10 @@ class SubmitTests(TestCase):
         draft = make_test_data()
         prev_author = draft.documentauthor_set.all()[0]
 
+        # Make it such that one of the previous authors has an invalid email address
+        bogus_email = ensure_person_email_info_exists('Bogus Person',None)  
+        DocumentAuthor.objects.create(document=draft,author=bogus_email,order=draft.documentauthor_set.latest('order').order+1)
+
         # pretend IANA reviewed it
         draft.set_state(State.objects.get(used=True, type="draft-iana-review", slug="not-ok"))
 
@@ -225,6 +229,8 @@ class SubmitTests(TestCase):
         # submitter and new author can't confirm
         self.assertTrue("author@example.com" not in confirm_email["To"])
         self.assertTrue("submitter@example.com" not in confirm_email["To"])
+        # Verify that mail wasn't sent to know invalid addresses
+        self.assertTrue("unknown-email-" not in confirm_email["To"])
 
         confirm_url = self.extract_confirm_url(confirm_email)
 
