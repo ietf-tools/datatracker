@@ -69,6 +69,9 @@ def extract_html_urls(content):
         if not url.startswith("/"):
             continue
 
+        if url.startswith("//"):
+            continue
+
         yield url
 
 client = django.test.Client()
@@ -167,4 +170,3 @@ if errors > 0:
     sys.exit(1)
 else:
     sys.stderr.write("Found no errors.")
-    
