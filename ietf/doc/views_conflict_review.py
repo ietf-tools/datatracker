@@ -9,11 +9,11 @@ from django.template.loader import render_to_string
 from django.conf import settings
 
 from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocAlias, DocEvent,
-    Document, NewRevisionDocEvent, State, TelechatDocEvent, save_document_in_history )
+    Document, NewRevisionDocEvent, State, save_document_in_history )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, get_document_content, update_telechat )
 from ietf.doc.mails import email_iana
-from ietf.doc.forms import TelechatForm, AdForm, NotifyForm
+from ietf.doc.forms import AdForm, NotifyForm
 from ietf.group.models import Role, Group
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
@@ -512,31 +512,3 @@ def start_review_as_stream_owner(request, name):
                                'doc_to_review': doc_to_review,
                               },
                               context_instance = RequestContext(request))
-
-@role_required("Area Director", "Secretariat")
-def telechat_date(request, name):
-    doc = get_object_or_404(Document, type="conflrev", name=name)
-    login = request.user.person
-
-    e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-    initial_returning_item = bool(e and e.returning_item)
-
-    initial = dict(telechat_date=e.telechat_date if e else None,
-                   returning_item = initial_returning_item,
-                  )
-    if request.method == "POST":
-        form = TelechatForm(request.POST, initial=initial)
-
-        if form.is_valid():
-            update_telechat(request, doc, login, form.cleaned_data['telechat_date'], form.cleaned_data['returning_item'])
-            return redirect("doc_view", name=doc.name)
-    else:
-        form = TelechatForm(initial=initial)
-
-    return render_to_response('doc/edit_telechat_date.html',
-                              dict(doc=doc,
-                                   form=form,
-                                   user=request.user,
-                                   login=login),
-                              context_instance=RequestContext(request))
-

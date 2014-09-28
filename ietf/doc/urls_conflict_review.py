@@ -7,6 +7,10 @@ urlpatterns = patterns('ietf.doc.views_conflict_review',
     url(r'^ad/$',                    "edit_ad",       name='conflict_review_ad'),
     url(r'^approve/$',               "approve",       name='conflict_review_approve'),
     url(r'^start_conflict_review/$', "start_review",  name='conflict_review_start'),
+)
+
+urlpatterns += patterns('ietf.doc.views_doc',
     url(r'^telechat/$',              "telechat_date", name='conflict_review_telechat_date'),
 )
+
 

@@ -14,16 +14,15 @@ from django.contrib.auth.decorators import login_required
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, State, DocEvent, BallotDocEvent,
-    BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent, TelechatDocEvent,
+    BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent, 
     WriteupDocEvent, save_document_in_history )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
-    create_ballot_if_not_open, get_chartering_type, update_telechat )
+    create_ballot_if_not_open, get_chartering_type )
 from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     approved_revision, default_review_text, default_action_text, email_state_changed,
     generate_ballot_writeup, generate_issue_ballot_mail, next_approved_revision, next_revision )
 from ietf.group.models import ChangeStateGroupEvent, MilestoneGroupEvent
 from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_group_type
-from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.name.models import GroupStateName
 from ietf.person.models import Person
@@ -31,7 +30,6 @@ from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.group.mails import email_iesg_secretary_re_charter
-
 
 class ChangeStateForm(forms.Form):
     charter_state = forms.ModelChoiceField(State.objects.filter(used=True, type="charter"), label="Charter state", empty_label=None, required=False)
@@ -224,46 +222,6 @@ def change_state(request, name, option=None):
                                    chartering_type=chartering_type,
                                    info_msg=json.dumps(info_msg),
                                    states_for_ballot_wo_extern=json.dumps(list(states_for_ballot_wo_extern)),
-                                   ),
-                              context_instance=RequestContext(request))
-
-class TelechatForm(forms.Form):
-    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
-
-    def __init__(self, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
-
-        dates = [d.date for d in TelechatDate.objects.active().order_by('date')]
-        init = kwargs['initial'].get("telechat_date")
-        if init and init not in dates:
-            dates.insert(0, init)
-
-        self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, d.strftime("%Y-%m-%d")) for d in dates]
-        
-
-@role_required("Area Director", "Secretariat")
-def telechat_date(request, name):
-    doc = get_object_or_404(Document, type="charter", name=name)
-    login = request.user.person
-
-    e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-
-    initial = dict(telechat_date=e.telechat_date if e else None)
-    if request.method == "POST":
-        form = TelechatForm(request.POST, initial=initial)
-
-        if form.is_valid():
-            update_telechat(request, doc, login, form.cleaned_data['telechat_date'])
-            return redirect("doc_view", name=doc.name)
-    else:
-        form = TelechatForm(initial=initial)
-
-    return render_to_response('doc/charter/edit_telechat_date.html',
-                              dict(doc=doc,
-                                   form=form,
-                                   user=request.user,
-                                   login=login,
-                                   okstates=['intrev','extrev','iesgrev'],
                                    ),
                               context_instance=RequestContext(request))
 

@@ -268,6 +268,8 @@ div.info-message-success { border: 1px solid green; background-color: #eeffbb; p
 div.info-message-warning { border: 1px dashed red; background-color: #ffeeaa; padding: 1em 2em; margin: 1em 0px; }
 div.info-message-error { border: 1px solid red; background-color: #ffeebb; padding: 5px 10px; margin: 1em 0px; color: red; }
 
+/* Prompts */
+div.prompt { border: 1px dashed red; background-color: #ffeeaa; padding: 1em 2em; margin: 1em 0px; }
 
 /* Form styles */
 .baseform {

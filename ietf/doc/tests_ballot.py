@@ -475,7 +475,7 @@ class DeferUndeferTestCase(TestCase):
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name=name)
         self.assertEqual(doc.telechat_date(), second_date)
-        self.assertTrue(doc.returning_item())
+        self.assertFalse(doc.returning_item())
         defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'],statchg=['statchg','defer'])
         if doc.type_id in defer_states:
            self.assertEqual(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])

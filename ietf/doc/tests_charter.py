@@ -138,6 +138,35 @@ class EditCharterTests(TestCase):
         charter = Document.objects.get(name=charter.name)
         self.assertTrue(not charter.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date)
 
+    def test_no_returning_item_for_different_ballot(self):
+        make_test_data()
+
+        group = Group.objects.get(acronym="ames")
+        charter = group.charter
+        url = urlreverse('charter_telechat_date', kwargs=dict(name=charter.name))
+        login_testing_unauthorized(self, "secretary", url)
+        login = Person.objects.get(user__username="secretary")
+
+        # Make it so that the charter has been through internal review, and passed its external review
+        # ballot on a previous telechat 
+        last_week = datetime.date.today()-datetime.timedelta(days=7)
+        BallotDocEvent.objects.create(type='created_ballot',by=login,doc=charter,
+                                      ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
+                                      time=last_week)
+        TelechatDocEvent.objects.create(type='scheduled_for_telechat',doc=charter,by=login,telechat_date=last_week,returning_item=False)
+        BallotDocEvent.objects.create(type='created_ballot',by=login,doc=charter,
+                                      ballot_type=BallotType.objects.get(doc_type=charter.type,slug='approve'))
+        
+        # Put the charter onto a future telechat and verify returning item is not set
+        telechat_date = TelechatDate.objects.active()[1].date
+        r = self.client.post(url, dict(name=group.name, acronym=group.acronym, telechat_date=telechat_date.isoformat()))
+        self.assertEqual(r.status_code, 302)
+        
+        charter = Document.objects.get(name=charter.name)
+        telechat_event = charter.latest_event(TelechatDocEvent, "scheduled_for_telechat")
+        self.assertEqual(telechat_event.telechat_date, telechat_date)
+        self.assertFalse(telechat_event.returning_item)
+
     def test_edit_notify(self):
         make_test_data()
 

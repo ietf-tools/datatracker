@@ -10,7 +10,8 @@ from django.conf import settings
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocReminder, DocumentAuthor, DocEvent,
-    ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, WriteupDocEvent )
+    ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
+    WriteupDocEvent, BallotDocEvent)
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.name.models import StreamName, IntendedStdLevelName, DocTagName
 from ietf.group.models import Group
@@ -255,7 +256,25 @@ class EditInfoTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEqual(draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date, TelechatDate.objects.active()[1].date)
+        telechat_event = draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+        self.assertEqual(telechat_event.telechat_date, TelechatDate.objects.active()[1].date)
+        self.assertFalse(telechat_event.returning_item)
+
+        # change to a telechat that should cause returning item to be auto-detected
+        # First, make it appear that the previous telechat has already passed
+        telechat_event.telechat_date = datetime.date.today()-datetime.timedelta(days=7)
+        telechat_event.save()
+        ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
+        ballot.time = telechat_event.telechat_date
+        ballot.save()
+
+        r = self.client.post(url, data)
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(name=draft.name)
+        telechat_event = draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+        self.assertEqual(telechat_event.telechat_date, TelechatDate.objects.active()[1].date)
+        self.assertTrue(telechat_event.returning_item)
 
         # remove from agenda
         data["telechat_date"] = ""

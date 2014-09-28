@@ -204,14 +204,8 @@ class StatusChangeTests(TestCase):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,telechat_date)
 
-        # move it forward a telechat (this should set the returning item bit)
+        # move it forward a telechat (this should NOT set the returning item bit)
         telechat_date = TelechatDate.objects.active().order_by('date')[1].date
-        r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
-        self.assertEqual(r.status_code,302)
-        doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        self.assertTrue(doc.returning_item())
-
-        # clear the returning item bit
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
@@ -222,6 +216,12 @@ class StatusChangeTests(TestCase):
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertTrue(doc.returning_item())
+
+        # clear the returning item bit
+        r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
+        self.assertEqual(r.status_code,302)
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        self.assertFalse(doc.returning_item())
 
         # Take the doc back off any telechat
         r = self.client.post(url,dict(telechat_date=""))

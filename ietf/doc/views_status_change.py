@@ -9,9 +9,9 @@ from django.template.loader import render_to_string
 from django.conf import settings
 
 from ietf.doc.models import ( Document, DocAlias, State, DocEvent, BallotDocEvent,
-    BallotPositionDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent,
+    BallotPositionDocEvent, NewRevisionDocEvent, WriteupDocEvent,
     save_document_in_history )
-from ietf.doc.forms import TelechatForm, AdForm, NotifyForm
+from ietf.doc.forms import AdForm, NotifyForm
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.utils import get_document_content, add_state_change_event, update_telechat, close_open_ballots, create_ballot_if_not_open
 from ietf.doc.views_ballot import LastCallTextForm
@@ -589,34 +589,6 @@ def start_rfc_status_change(request,name):
                                'relation_slugs': relation_slugs,
                               },
                               context_instance = RequestContext(request))
-
-
-@role_required("Area Director", "Secretariat")
-def telechat_date(request, name):
-    doc = get_object_or_404(Document, type="statchg", name=name)
-    login = request.user.person
-
-    e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-    initial_returning_item = bool(e and e.returning_item)
-
-    initial = dict(telechat_date=e.telechat_date if e else None,
-                   returning_item = initial_returning_item,
-                  )
-    if request.method == "POST":
-        form = TelechatForm(request.POST, initial=initial)
-
-        if form.is_valid():
-            update_telechat(request, doc, login, form.cleaned_data['telechat_date'], form.cleaned_data['returning_item'])
-            return redirect("doc_view", name=doc.name)
-    else:
-        form = TelechatForm(initial=initial)
-
-    return render_to_response('doc/edit_telechat_date.html',
-                              dict(doc=doc,
-                                   form=form,
-                                   user=request.user,
-                                   login=login),
-                              context_instance=RequestContext(request))
 
 @role_required("Area Director", "Secretariat")
 def edit_relations(request, name):

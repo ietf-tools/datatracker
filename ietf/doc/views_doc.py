@@ -46,7 +46,7 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDo
     IESG_BALLOT_ACTIVE_STATES)
 from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
-    needed_ballot_positions, nice_consensus, prettify_std_name)
+    needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot)
 from ietf.community.models import CommunityList
 from ietf.doc.mails import email_ad
 from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
@@ -56,6 +56,7 @@ from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_p
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.person.models import Email
 from ietf.utils.history import find_history_active_at
+from ietf.doc.forms import TelechatForm
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -849,3 +850,50 @@ def add_comment(request, name):
                                    form=form),
                               context_instance=RequestContext(request))
 
+@role_required("Area Director", "Secretariat")
+def telechat_date(request, name):
+    doc = get_object_or_404(Document, name=name)
+    login = request.user.person
+
+    e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+    initial_returning_item = bool(e and e.returning_item)
+
+    prompts = []
+    if e and doc.type.slug != 'charter':
+        if e.telechat_date==datetime.date.today():
+            prompts.append( "This document is currently scheduled for today's telechat. "
+                           +"Please set the returning item bit carefully.")
+
+        elif e.telechat_date<datetime.date.today() and has_same_ballot(doc,e.telechat_date):
+            initial_returning_item = True
+            prompts.append(  "This document appears to have been on a previous telechat with the same ballot, "
+                            +"so the returning item bit has been set. Clear it if that is not appropriate.")
+
+        else:
+            pass
+
+    initial = dict(telechat_date=e.telechat_date if e else None,
+                   returning_item = initial_returning_item,
+                  )
+    if request.method == "POST":
+        form = TelechatForm(request.POST, initial=initial)
+
+        if form.is_valid():
+            if doc.type.slug=='charter':
+                cleaned_returning_item = None
+            else:
+                cleaned_returning_item = form.cleaned_data['returning_item']
+            update_telechat(request, doc, login, form.cleaned_data['telechat_date'],cleaned_returning_item)
+            return redirect('doc_view', name=doc.name)
+    else:
+        form = TelechatForm(initial=initial)
+        if doc.type.slug=='charter':
+            del form.fields['returning_item']
+
+    return render_to_response('doc/edit_telechat_date.html',
+                              dict(doc=doc,
+                                   form=form,
+                                   user=request.user,
+                                   prompts=prompts,
+                                   login=login),
+                              context_instance=RequestContext(request))

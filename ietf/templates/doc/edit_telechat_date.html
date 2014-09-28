@@ -26,4 +26,11 @@ form.telechat-date td.actions {
     </tr>
   </table>
 </form>
+{% if prompts %}
+<div>
+{% for prompt in prompts %}
+    <div class="prompt">{{prompt}}</div>
+{% endfor %}
+</div>
+{% endif %}
 {% endblock %}

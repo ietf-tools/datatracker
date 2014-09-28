@@ -877,49 +877,6 @@ def edit_notices(request, name):
                               },
                               context_instance = RequestContext(request))
 
-class TelechatForm(forms.Form):
-    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
-    returning_item = forms.BooleanField(required=False)
-
-    def __init__(self, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
-
-        dates = [d.date for d in TelechatDate.objects.active().order_by('date')]
-        init = kwargs['initial'].get("telechat_date")
-        if init and init not in dates:
-            dates.insert(0, init)
-
-        self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, d.strftime("%Y-%m-%d")) for d in dates]
-        
-
-@role_required("Area Director", "Secretariat")
-def telechat_date(request, name):
-    doc = get_object_or_404(Document, type="draft", name=name)
-    login = request.user.person
-
-    e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-    initial_returning_item = bool(e and e.returning_item)
-
-    initial = dict(telechat_date=e.telechat_date if e else None,
-                   returning_item = initial_returning_item,
-                  )
-    if request.method == "POST":
-        form = TelechatForm(request.POST, initial=initial)
-
-        if form.is_valid():
-            update_telechat(request, doc, login, form.cleaned_data['telechat_date'],form.cleaned_data['returning_item'])
-            return redirect('doc_view', name=doc.name)
-    else:
-        form = TelechatForm(initial=initial)
-
-    return render_to_response('doc/edit_telechat_date.html',
-                              dict(doc=doc,
-                                   form=form,
-                                   user=request.user,
-                                   login=login),
-                              context_instance=RequestContext(request))
-
-
 class IESGNoteForm(forms.Form):
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
 
