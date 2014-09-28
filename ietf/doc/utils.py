@@ -357,14 +357,15 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
 
     e.save()
 
-def rebuild_reference_relations(doc):
+def rebuild_reference_relations(doc,filename=None):
     if doc.type.slug != 'draft':
         return None
 
-    if doc.get_state_slug() == 'rfc':
-        filename=os.path.join(settings.RFC_PATH,doc.canonical_name()+".txt")
-    else:
-        filename=os.path.join(settings.INTERNET_DRAFT_PATH,doc.filename_with_rev())
+    if not filename:
+        if doc.get_state_slug() == 'rfc':
+            filename=os.path.join(settings.RFC_PATH,doc.canonical_name()+".txt")
+        else:
+            filename=os.path.join(settings.INTERNET_DRAFT_PATH,doc.filename_with_rev())
 
     try:
        refs = draft.Draft(draft._gettext(filename), filename).get_refs()

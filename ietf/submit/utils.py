@@ -159,7 +159,7 @@ def post_submission(request, submission):
 
     update_authors(draft, submission)
 
-    trouble = rebuild_reference_relations(draft)
+    trouble = rebuild_reference_relations(draft, filename=os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev)))
     if trouble:
         log('Rebuild_reference_relations trouble: %s'%trouble)
 
