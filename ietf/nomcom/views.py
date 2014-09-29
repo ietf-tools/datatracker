@@ -565,6 +565,9 @@ def view_feedback_pending(request, year):
         extra_ids = request.POST.get('extra_ids', None)
         extra_step = True
         formset = FullFeedbackFormSet(request.POST)
+        # workaround -- why isn't formset_factory() being used?
+        formset.absolute_max = 2000     
+        formset.validate_max = False
         for form in formset.forms:
             form.set_nomcom(nomcom, request.user)
         if formset.is_valid():
