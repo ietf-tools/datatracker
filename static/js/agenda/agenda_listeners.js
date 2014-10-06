@@ -1009,23 +1009,20 @@ function update_from_slot(session_id, from_slot_id)
     if(from_slot_id != null && from_scheduledslots != undefined){
         //console.log("1 from_slot_id", from_slot_id, from_scheduledslots);
         var count = from_scheduledslots.length;
-        var found = false;
+        var found = [];
 	for(var k = 0; k<from_scheduledslots.length; k++) {
             var from_ss = from_scheduledslots[k];
 	    if(from_ss.session_id == session_id){
-                found = true;
-
-                var promise = from_ss.deleteit();
-                delete_promises.push(promise);
-                from_scheduledslots.splice(k,1);
-                count--;
+                found.push(from_ss)
 	    }
 	}
-        if(found && count == 0) {
-            from_timeslot.mark_empty();
-        } else {
-            console.log("not setting fromslot empty", from_timeslot, count, found, session_id, "from_slot_id", from_slot_id);
+        for (var k = 0; k<found.length; k++) {
+           // This will affect agenda_globals.slot_status[from_slot_id], hence from_scheduledslots
+           delete_promises.push(found[k].deleteit()); 
         }
+        if (from_scheduledslots.length==0){
+            from_timeslot.mark_empty();
+        } 
 
         /* remove undefined entries */
         new_fromslots = [];
