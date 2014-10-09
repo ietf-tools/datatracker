@@ -866,15 +866,6 @@ class MilestoneTests(TestCase):
         self.assertTrue(m1.desc in unicode(outbox[-1]))
         self.assertTrue(m2.desc in unicode(outbox[-1]))
 
-    def test_ajax_search_docs(self):
-        draft = make_test_data()
-
-        r = self.client.get(urlreverse("group_ajax_search_docs", kwargs=dict(group_type=draft.group.type_id, acronym=draft.group.acronym)),
-                            dict(q=draft.name))
-        self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
-        self.assertTrue(data[0]["id"], draft.name)
-
 class CustomizeWorkflowTests(TestCase):
     def test_customize_workflow(self):
         make_test_data()
