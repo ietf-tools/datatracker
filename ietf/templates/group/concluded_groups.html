@@ -25,7 +25,7 @@
     {% for g in t.concluded_groups %}
       <tr>
         <td>
-          <a href="{{ group.about_url }}">{{ g.acronym }}</a>
+          <a href="{{ g.about_url }}">{{ g.acronym }}</a>
         </td>
         <td>{{ g.name }}
           <span class="active-period">({% if g.start_date %}{{ g.start_date|date:"M. Y" }}{% else %}?{% endif %}
