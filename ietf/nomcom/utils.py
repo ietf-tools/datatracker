@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.encoding import smart_str
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.person.models import Email, Person
+from ietf.person.models import Email, Person, Alias
 from ietf.utils.pipe import pipe
 from ietf.utils import unaccent
 from ietf.utils.mail import send_mail_text, send_mail
@@ -280,10 +280,14 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
     # Create person and email if candidate email does't exist and send email
     email, created_email = Email.objects.get_or_create(address=candidate_email)
     if created_email:
-        email.person = Person.objects.create(name=candidate_name,
-                                             ascii=unaccent.asciify(candidate_name),
-                                             address=candidate_email)
+        person = Person.objects.create(name=candidate_name,
+                                       ascii=unaccent.asciify(candidate_name),
+                                       address=candidate_email)
+        email.person = person
         email.save()
+        Alias.objects.create(name=person.name, person=person)
+        if person.name != person.ascii:
+            Alias.objects.create(name=person.ascii, person=person)
 
     # Add the nomination for a particular position
     nominee, created = Nominee.objects.get_or_create(email=email, nomcom=nomcom)
