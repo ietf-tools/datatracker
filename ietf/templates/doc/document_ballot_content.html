@@ -63,12 +63,13 @@
 <h2 id="{{ p.ad.plain_name|slugify }}" class="ad-ballot-comment">{% if p.old_ad %}[{% endif %}{{ p.ad.plain_name }}{% if p.old_ad %}]{% endif %}</h2>
 
 {% if p.pos.blocking and p.discuss %}
-<p><b>{{ p.pos.name }} ({{ p.discuss_time|date:"Y-m-d" }} for -{{ p.get_dochistory.rev }})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
+<p><b>{{ p.pos.name }} ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
+
 <pre>{{ p.discuss|wrap_text:80 }}</pre>
 {% endif %}
 
 {% if p.comment %}
-<p><b>Comment ({{ p.comment_time|date:"Y-m-d" }} for -{{ p.get_dochistory.rev }})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
+<p><b>Comment ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
 <pre>{{ p.comment|wrap_text:80 }}</pre>
 {% endif %}
 {% endfor %}
