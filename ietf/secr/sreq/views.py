@@ -1,7 +1,5 @@
 import datetime
-import os
 
-from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
 from django.http import Http404
@@ -24,16 +22,18 @@ from ietf.person.models import Email
 # Globals
 # -------------------------------------------------
 SESSION_REQUEST_EMAIL = 'session-request@ietf.org'
-LOCKFILE = os.path.join(settings.SECR_PROCEEDINGS_DIR,'session_request.lock')
+
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
 
-def check_app_locked():
+def check_app_locked(meeting=None):
     '''
     This function returns True if the application is locked to non-secretariat users.
     '''
-    return os.path.exists(LOCKFILE)
+    if not meeting:
+        meeting = get_meeting()
+    return bool(meeting.session_request_lock_message)
 
 def get_initial_session(sessions):
     '''
@@ -75,17 +75,13 @@ def get_initial_session(sessions):
     initial['bethere'] = bethere_email
     return initial
 
-def get_lock_message():
+def get_lock_message(meeting=None):
     '''
     Returns the message to display to non-secretariat users when the tool is locked.
     '''
-    try:
-        f = open(LOCKFILE,'r')
-        message = f.read()
-        f.close()
-    except IOError:
-        message = "This application is currently locked."
-    return message
+    if not meeting:
+        meeting = get_meeting()
+    return meeting.session_request_lock_message
 
 def get_requester_text(person,group):
     '''
@@ -355,6 +351,11 @@ def edit_mtg(request, num, acronym):
     if 'resources' in initial:
         initial['resources'] = [x.pk for x in initial['resources']]
 
+    # check if app is locked
+    is_locked = check_app_locked(meeting=meeting)
+    if is_locked:
+        messages.warning(request, "The Session Request Tool is closed")
+        
     session_conflicts = session_conflicts_as_string(group, meeting)
     login = request.user.person
 
@@ -467,6 +468,7 @@ def edit_mtg(request, num, acronym):
         form = SessionForm(initial=initial)
 
     return render_to_response('sreq/edit.html', {
+        'is_locked': is_locked,
         'meeting': meeting,
         'form': form,
         'group': group,
@@ -541,11 +543,16 @@ def new(request, acronym):
     This view gathers details for a new session request.  The user proceeds to confirm()
     to create the request.
     '''
-
     group = get_object_or_404(Group, acronym=acronym)
     meeting = get_meeting()
     session_conflicts = session_conflicts_as_string(group, meeting)
 
+    # check if app is locked
+    is_locked = check_app_locked()
+    if is_locked:
+        messages.warning(request, "The Session Request Tool is closed")
+        return redirect('sessions')
+    
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
@@ -643,27 +650,26 @@ def tool_status(request):
     '''
     This view handles locking and unlocking of the tool to the public.
     '''
-    is_locked = check_app_locked()
-
+    meeting = get_meeting()
+    is_locked = check_app_locked(meeting=meeting)
+    
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
-        if button_text == 'Done':
+        if button_text == 'Back':
             return redirect('sessions')
 
         form = ToolStatusForm(request.POST)
 
         if button_text == 'Lock':
             if form.is_valid():
-                f = open(LOCKFILE,'w')
-                f.write(form.cleaned_data['message'])
-                f.close()
-
+                meeting.session_request_lock_message = form.cleaned_data['message']
+                meeting.save()
                 messages.success(request, 'Session Request Tool is now Locked')
                 return redirect('sessions')
 
         elif button_text == 'Unlock':
-            os.remove(LOCKFILE)
-
+            meeting.session_request_lock_message = ''
+            meeting.save()
             messages.success(request, 'Session Request Tool is now Unlocked')
             return redirect('sessions')
 
@@ -689,9 +695,17 @@ def view(request, acronym, num = None):
     group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(~Q(status__in=('canceled','notmeet','deleted')),meeting=meeting,group=group).order_by('id')
 
+    # check if app is locked
+    is_locked = check_app_locked()
+    if is_locked:
+        messages.warning(request, "The Session Request Tool is closed")
+        
     # if there are no session requests yet, redirect to new session request page
     if not sessions:
-        return redirect('sessions_new', acronym=acronym)
+        if is_locked:
+            return redirect('sessions')
+        else:
+            return redirect('sessions_new', acronym=acronym)
 
     # TODO simulate activity records
     activities = [{'act_date':sessions[0].requested.strftime('%b %d, %Y'),
@@ -718,6 +732,7 @@ def view(request, acronym, num = None):
     session = get_initial_session(sessions)
 
     return render_to_response('sreq/view.html', {
+        'is_locked': is_locked,
         'session': session,
         'activities': activities,
         'meeting': meeting,

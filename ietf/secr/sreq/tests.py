@@ -2,10 +2,11 @@ from django.core.urlresolvers import reverse
 
 from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
+#from ietf.meeting.models import Session
 #from ietf.utils.test_data import make_test_data
 from ietf.meeting.test_data import make_meeting_test_data as make_test_data
 
-#from pyquery import PyQuery
+from pyquery import PyQuery
 
 SECR_USER='secretary'
 
@@ -59,6 +60,42 @@ class SubmitRequestCase(TestCase):
         r = self.client.get(url)
         assert False, r.content
 """
+
+class LockAppTestCase(TestCase):
+    def test_edit_request(self):
+        meeting = make_test_data()
+        meeting.session_request_lock_message='locked'
+        meeting.save()
+        group = Group.objects.get(acronym='mars')
+        url = reverse('sessions_edit',kwargs={'acronym':group.acronym})
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q(':disabled[name="submit"]')), 1)
+    
+    def test_view_request(self):
+        meeting = make_test_data()
+        meeting.session_request_lock_message='locked'
+        meeting.save()
+        group = Group.objects.get(acronym='mars')
+        url = reverse('sessions_view',kwargs={'acronym':group.acronym})
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url,follow=True)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q(':disabled[name="edit"]')), 1)
+        
+    def test_new_request(self):
+        meeting = make_test_data()
+        meeting.session_request_lock_message='locked'
+        meeting.save()
+        group = Group.objects.get(acronym='mars')
+        url = reverse('sessions_new',kwargs={'acronym':group.acronym})
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 302)
+        
 class EditRequestCase(TestCase):
     pass
     
@@ -73,4 +110,4 @@ class RetrievePreviousCase(TestCase):
     # test error if already scheduled
     # test get previous exists/doesn't exist
     # test that groups scheduled and unscheduled add up to total groups
-    # test locking function, access by unauthorized
+    # test access by unauthorized

@@ -13,6 +13,7 @@ from django.template import RequestContext
 from django.utils.functional import curry
 
 from ietf.utils.mail import send_mail
+from ietf.meeting.helpers import get_meeting
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, ScheduledSession, Schedule
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
@@ -25,8 +26,6 @@ from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.mail import get_cc_list
 from ietf.secr.utils.meeting import get_session, get_timeslot
-
-
 
 
 # prep for agenda changes
@@ -295,6 +294,10 @@ def add(request):
                                                visible = True,
                                                public  = True)
             meeting.agenda = schedule
+            
+            # we want to carry session request lock status over from previous meeting
+            previous_meeting = get_meeting( int(meeting.number) - 1 )
+            meeting.session_request_lock_message = previous_meeting.session_request_lock_message
             meeting.save()
 
             #Create Physical new meeting directory and subdirectories

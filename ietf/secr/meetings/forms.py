@@ -90,7 +90,7 @@ class TimeChoiceField(forms.ChoiceField):
 class MeetingModelForm(forms.ModelForm):
     class Meta:
         model = Meeting
-        exclude = ('type', 'agenda')
+        exclude = ('type', 'agenda', 'session_request_lock_message')
         
     def clean_number(self):
         number = self.cleaned_data['number']
