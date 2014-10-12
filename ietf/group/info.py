@@ -376,13 +376,14 @@ def group_documents(request, acronym, group_type=None):
 
     docs, meta, docs_related, meta_related = search_for_group_documents(group)
 
-    return render(request, 'group/group_documents.html',
-                  construct_group_menu_context(request, group, "documents", group_type, {
+    context = construct_group_menu_context(request, group, "documents", group_type, {
                 'docs': docs,
                 'meta': meta,
                 'docs_related': docs_related,
                 'meta_related': meta_related
-                }))
+                })
+
+    return render(request, 'group/group_documents.html', context)
 
 def group_documents_txt(request, acronym, group_type=None):
     """Return tabulator-separated rows with documents for group."""
