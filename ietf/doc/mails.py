@@ -483,3 +483,4 @@ def email_stream_tags_changed(request, doc, added_tags, removed_tags, by, commen
                    removed=removed_tags,
                    by=by,
                    comment=comment))
+

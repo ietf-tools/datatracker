@@ -7,6 +7,7 @@ import datetime
 from django.conf import settings
 from django.db.models.query import EmptyQuerySet
 from django.forms import ValidationError
+from django.utils.html import strip_tags
 
 from ietf.utils import markup_txt
 from ietf.doc.models import Document, DocHistory
@@ -16,6 +17,23 @@ from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
 from ietf.utils import draft
+from ietf.utils.mail import send_mail
+
+#FIXME - it would be better if this lived in ietf/doc/mails.py, but there's
+#        an import order issue to work out.
+def email_update_telechat(request, doc, text):
+    to = set(['iesg@ietf.org','iesg-secretary@ietf.org'])
+    to.update(set([x.strip() for x in doc.notify.replace(';', ',').split(',')]))
+
+    if not to:
+        return
+    
+    text = strip_tags(text)
+    send_mail(request, list(to), None,
+              "Telechat update notice: %s" % doc.file_tag(),
+              "doc/mail/update_telechat.txt",
+              dict(text=text,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
 def get_state_types(doc):
     res = []
@@ -368,6 +386,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
             e.desc = "Removed telechat returning item indication"
 
     e.save()
+    email_update_telechat(request, doc, e.desc)
 
 def rebuild_reference_relations(doc,filename=None):
     if doc.type.slug != 'draft':

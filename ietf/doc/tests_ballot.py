@@ -480,8 +480,9 @@ class DeferUndeferTestCase(TestCase):
         if doc.type_id in defer_states:
            self.assertEqual(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
         self.assertTrue(doc.active_defer_event())
-        self.assertEqual(len(outbox), mailbox_before + 2)
-        self.assertTrue("State Update" in outbox[-2]['Subject'])
+        self.assertEqual(len(outbox), mailbox_before + 3)
+        self.assertTrue("State Update" in outbox[-3]['Subject'])
+        self.assertTrue("Telechat update" in outbox[-2]['Subject'])
         self.assertTrue("Deferred" in outbox[-1]['Subject'])
         self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])
 
@@ -534,7 +535,8 @@ class DeferUndeferTestCase(TestCase):
         if doc.type_id in undefer_states:
            self.assertEqual(doc.get_state(undefer_states[doc.type_id][0]).slug,undefer_states[doc.type_id][1])
         self.assertFalse(doc.active_defer_event())
-        self.assertEqual(len(outbox), mailbox_before + 2)
+        self.assertEqual(len(outbox), mailbox_before + 3)
+        self.assertTrue("Telechat update" in outbox[-3]['Subject'])
         self.assertTrue("State Update" in outbox[-2]['Subject'])
         self.assertTrue("Undeferred" in outbox[-1]['Subject'])
         self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])

@@ -232,7 +232,7 @@ class EditInfoTests(TestCase):
         data = dict(intended_std_level=str(draft.intended_std_level_id),
                     stream=draft.stream_id,
                     ad=str(draft.ad_id),
-                    notify="test@example.com",
+                    notify=draft.notify,
                     note="",
                     )
 
@@ -241,6 +241,7 @@ class EditInfoTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         # add to telechat
+        mailbox_before=len(outbox)
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
         data["telechat_date"] = TelechatDate.objects.active()[0].date.isoformat()
         r = self.client.post(url, data)
@@ -249,8 +250,11 @@ class EditInfoTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
         self.assertEqual(draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date, TelechatDate.objects.active()[0].date)
+        self.assertEqual(len(outbox),mailbox_before+1)
+        self.assertTrue("Telechat update" in outbox[-1]['Subject'])
 
         # change telechat
+        mailbox_before=len(outbox)
         data["telechat_date"] = TelechatDate.objects.active()[1].date.isoformat()
         r = self.client.post(url, data)
         self.assertEqual(r.status_code, 302)
@@ -259,6 +263,8 @@ class EditInfoTests(TestCase):
         telechat_event = draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
         self.assertEqual(telechat_event.telechat_date, TelechatDate.objects.active()[1].date)
         self.assertFalse(telechat_event.returning_item)
+        self.assertEqual(len(outbox),mailbox_before+1)
+        self.assertTrue("Telechat update" in outbox[-1]['Subject'])
 
         # change to a telechat that should cause returning item to be auto-detected
         # First, make it appear that the previous telechat has already passed
@@ -277,12 +283,15 @@ class EditInfoTests(TestCase):
         self.assertTrue(telechat_event.returning_item)
 
         # remove from agenda
+        mailbox_before=len(outbox)
         data["telechat_date"] = ""
         r = self.client.post(url, data)
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date)
+        self.assertEqual(len(outbox),mailbox_before+1)
+        self.assertTrue("Telechat update" in outbox[-1]['Subject'])
 
     def test_start_iesg_process_on_draft(self):
         make_test_data()
