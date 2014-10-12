@@ -1,3 +1,77 @@
+ietfdb (5.6.4) ietf; urgency=medium
+
+  * Merged in [8293] from rjsparks@nostrum.com (Note: Should what is now
+    captured in the STATUSCHANGE_RELATIONS list instead be captured in the
+    database in name_docrelationshipname? ):
+    - Refactored editing the notify field to remove redundant code.
+    - Changed the default notification list to include .all for documents, and
+      the wg list for wg documents.
+    - Allowed recalculating the notification list for all document types.
+    - Improved the calculated notification list value for charters, 
+      conflict-reviews, and status-changes.
+    - Adds shepherds to the notification list when they are assigned to a
+      document.
+    - Adds the working group email list to the notification list when a
+      document is adopted.
+    Fixes issue #1438.
+
+  * Merged in [8285] from rjsparks@nostrum.com:
+    Removed templates that were no longer being used.  
+
+  * Merged in [8271] and [8292] from rjsparks@nostrum.com:
+    Send email when a the telechat date (or returning item bit) changes for a
+    document.  Fixes #1452 
+
+  * Merged in [8262] and [8263] from rjsparks@nostrum.com:
+    - Changes when returning_item is automatically set to match the current
+      IESGs preferences.  Removes several chunks of dead code related to editing
+      telechat dates.  Improves returning item tests.
+    - Refactored multiple edit_telechat functions into one function in
+      doc_views.  Added a helper function for determining if ballots have
+      changed to isolate the implementation.  Fixed the issue with
+      update_agenda setting the returning item bit even when the user
+      explicitly said not to.  Added prompting to encourage proper setting
+      of the returning item bit to the edit_telechat view.
+    Fixes #1209
+
+  * Merged in [8355] from rjsparks@nostrum.com:
+    Add the owners email address to the json path for schedule objects. Fixes
+    ticket #1492.  
+
+  * Merged in [8256] from rjsparks@nostrum.com:
+    Allow defer for status change documents. Fixes bug #1397.  
+
+  * Merged in [8255] from rjsparks@nostrum.com:
+    - Combined defer/undefer tests from doc/tests_ballot and iesg/tests,
+      extending them to demonstrate current reported bugs.
+    - Made doc.active_defer_event() look for the events that are currently being
+      created. This remains brittle.
+    - Added email notifying the IESG of an undefer analagous to the defer email.
+    - Guarded against deferring an already deferred document or undeferring a
+      document that hasn't been deferred.
+    - Guarded against deferring a document that's not scheduled for a telechat.
+    Fixes bugs 1417, 1465, 1417 
+
+  * Merged in [8254] from rjsparks@nostrum.com:
+    Don't send mail to unknown-email-* addresses. Fixes bug #1471.  
+
+  * Merged in [8249] from rjsparks@nostrum.com:
+    Skip sheme-relative urls. Fixes bug #1466.  
+
+  * Merged in [8239] from rjsparks@nostrum.com:
+    Adds javascript to return to a page a few seconds after successfully
+    logging out.  Fixes ticket #1461. 
+
+  * Merged in [8238] from rjsparks@nostrum.com:
+    Look in the right place in the filesystem for the files bits when building
+    reference relations during submit. Fixes bug #1467.  
+
+  * Merged in [8236] from rjsparks@nostrum.com:
+    Log what rebuild_reference_relations returns to diagnose #1467.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Oct 2014 10:58:55 -0700
+
+
 ietfdb (5.6.3) ietf; urgency=medium
 
   This is a bugfix and cleanup release, without any major new features.
