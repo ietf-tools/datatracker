@@ -139,11 +139,27 @@ class StatusChangeTests(TestCase):
 
         # change notice list
         newlist = '"Foo Bar" <foo@bar.baz.com>'
-        r = self.client.post(url,dict(notify=newlist))
+        r = self.client.post(url,dict(notify=newlist,save_addresses="1"))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.notify,newlist)
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Notification list changed'))       
+
+        # Some additional setup so there's something to put in a generated notify list
+        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
+
+        # Ask the form to regenerate the list
+        r = self.client.post(url,dict(regenerate_addresses="1"))
+        self.assertEqual(r.status_code,200)
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        # Regenerate does not save!
+        self.assertEqual(doc.notify,newlist)
+        q = PyQuery(r.content)
+        formlist = q('form input[name=notify]')[0].value
+        self.assertTrue('draft-ietf-random-thing@ietf.org' in formlist)
+        self.assertTrue('draft-ietf-random-otherthing@ietf.org' in formlist)
+        self.assertFalse('foo@bar.baz.com' in formlist)
 
     def test_edit_title(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')

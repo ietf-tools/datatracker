@@ -841,7 +841,9 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.doc = Document.objects.get(name=self.docname)
         self.assertEqual(self.doc.shepherd,plain)
-        self.assertTrue(self.doc.latest_event(DocEvent,type="added_comment").desc.startswith('Document shepherd changed to Plain Man'))
+        comments = '::'.join([x.desc for x in self.doc.docevent_set.filter(time=self.doc.time,type="added_comment")])
+        self.assertTrue('Document shepherd changed to Plain Man' in comments)
+        self.assertTrue('Notification list changed' in comments)
 
         ad = Person.objects.get(name='Aread Irector')
         two_answers = "%s,%s" % (plain_email, ad.email_set.all()[0])
@@ -1021,16 +1023,19 @@ class AdoptDraftTests(TestCase):
         # adopt in mars WG
         mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
+        mars = Group.objects.get(acronym="mars")
         r = self.client.post(url,
                              dict(comment="some comment",
-                                  group=Group.objects.get(acronym="mars").pk,
+                                  group=mars.pk,
                                   weeks="10"))
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(pk=draft.pk)
         self.assertEqual(draft.group.acronym, "mars")
         self.assertEqual(draft.stream_id, "ietf")
-        self.assertEqual(draft.docevent_set.count() - events_before, 4)
+        self.assertEqual(draft.docevent_set.count() - events_before, 5)
+        self.assertTrue(mars.list_email in draft.notify)
+        self.assertTrue('draft-ietf-mars-test.all@tools.ietf.org' in draft.notify)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
         self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))

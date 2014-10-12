@@ -11,7 +11,7 @@ form.edit-info #id_notify {
 {% endblock %}
 
 {% block title %}
-Edit notification addresses for {{titletext}}
+Edit notification addresses for {{titletext}} 
 {% endblock %}
 
 {% block content %}
@@ -33,7 +33,8 @@ Edit notification addresses for {{titletext}}
       <td></td>
       <td class="actions">
         <a href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
-        <input type="submit" value="Submit"/>
+        <input type="submit" name="save_addresses" value="Save" />
+        <input type="submit" name="regenerate_addresses" value="Regenerate Address List" />
       </td>
     </tr>
   </table>

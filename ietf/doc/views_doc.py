@@ -43,20 +43,20 @@ from django import forms
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent,
-    IESG_BALLOT_ACTIVE_STATES)
+    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS )
 from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
-    needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot)
+    needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
+    get_initial_notify, make_notify_changed_event )
 from ietf.community.models import CommunityList
 from ietf.doc.mails import email_ad
-from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group_type, can_manage_materials
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, role_required
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.person.models import Email
 from ietf.utils.history import find_history_active_at
-from ietf.doc.forms import TelechatForm
+from ietf.doc.forms import TelechatForm, NotifyForm
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -289,7 +289,7 @@ def document_main(request, name, rev=None):
         # conflict reviews
         conflict_reviews = [d.document.name for d in doc.related_that("conflrev")]
 
-        status_change_docs = doc.related_that(status_change_relationships)
+        status_change_docs = doc.related_that(STATUSCHANGE_RELATIONS)
         status_changes = [ rel.document for rel in status_change_docs  if rel.document.get_state_slug() in ('appr-sent','appr-pend')]
         proposed_status_changes = [ rel.document for rel in status_change_docs  if rel.document.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')]
 
@@ -897,3 +897,49 @@ def telechat_date(request, name):
                                    prompts=prompts,
                                    login=login),
                               context_instance=RequestContext(request))
+
+@role_required('Area Director', 'Secretariat')
+def edit_notify(request, name):
+    """Change the set of email addresses document change notificaitions go to."""
+
+    login = request.user.person
+    doc = get_object_or_404(Document, name=name)
+    init = { "notify" : doc.notify }
+
+    if request.method == 'POST':
+
+        if "save_addresses" in request.POST:
+            form = NotifyForm(request.POST)
+            if form.is_valid():
+                new_notify = form.cleaned_data['notify']
+                if set(new_notify.split(',')) != set(doc.notify.split(',')):
+                    e = make_notify_changed_event(request, doc, login, new_notify)
+                    doc.notify = new_notify
+                    doc.time = e.time
+                    doc.save()
+                return redirect('doc_view', name=doc.name)
+
+        elif "regenerate_addresses" in request.POST:
+            init = { "notify" : get_initial_notify(doc) }
+            form = NotifyForm(initial=init)
+
+        # Protect from handcrufted POST
+        else:
+            form = NotifyForm(initial=init)
+
+    else:
+
+        init = { "notify" : doc.notify }
+        form = NotifyForm(initial=init)
+
+    if doc.type.slug=='conflrev':
+        conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+        titletext = 'the conflict review of %s' % conflictdoc.canonical_name()
+    else:
+        titletext = '%s' % doc.canonical_name()
+    return render_to_response('doc/edit_notify.html',
+                              {'form':   form,
+                               'doc': doc,
+                               'titletext': titletext,
+                              },
+                              context_instance = RequestContext(request))

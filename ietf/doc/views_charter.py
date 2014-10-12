@@ -5,7 +5,6 @@ from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse as urlreverse
 from django.template import RequestContext
 from django import forms
-from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.conf import settings
 from django.contrib import messages
@@ -223,48 +222,6 @@ def change_state(request, name, option=None):
                                    info_msg=json.dumps(info_msg),
                                    states_for_ballot_wo_extern=json.dumps(list(states_for_ballot_wo_extern)),
                                    ),
-                              context_instance=RequestContext(request))
-
-class NotifyForm(forms.Form):
-    notify = forms.CharField(max_length=255, help_text="List of email addresses to receive state notifications, separated by comma", label="Notification list", required=False)
-
-    def clean_notify(self):
-        return self.cleaned_data["notify"].strip()
-
-@role_required("Area Director", "Secretariat")
-def edit_notify(request, name):
-    doc = get_object_or_404(Document, type="charter", name=name)
-    login = request.user.person
-
-    init = {'notify': doc.notify}
-
-    if request.method == "POST":
-        form = NotifyForm(request.POST, initial=init)
-        if form.is_valid():
-            n = form.cleaned_data["notify"]
-            if n != doc.notify:
-                save_document_in_history(doc)
-
-                e = DocEvent(doc=doc, by=login)
-                e.desc = "Notification list changed to %s" % (escape(n) or "none")
-                if doc.notify:
-                    e.desc += " from %s" % escape(doc.notify)
-                e.type = "changed_document"
-                e.save()
-
-                doc.notify = n
-                doc.time = e.time
-                doc.save()
-
-            return redirect("doc_view", name=doc.name)
-    else:
-        form = NotifyForm(initial=init)
-
-    return render_to_response('doc/charter/edit_notify.html',
-                              dict(doc=doc,
-                                   form=form,
-                                   user=request.user,
-                                   login=login),
                               context_instance=RequestContext(request))
 
 class AdForm(forms.Form):

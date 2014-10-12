@@ -176,12 +176,22 @@ class ConflictReviewTests(TestCase):
 
         # change notice list
         newlist = '"Foo Bar" <foo@bar.baz.com>'
-        r = self.client.post(url,dict(notify=newlist))
+        r = self.client.post(url,dict(notify=newlist,save_addresses="1"))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(doc.notify,newlist)
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Notification list changed'))       
 
+        # Ask the form to regenerate the list
+        r = self.client.post(url,dict(regenerate_addresses="1"))
+        self.assertEqual(r.status_code,200)
+        doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
+        # Regenerate does not save!
+        self.assertEqual(doc.notify,newlist)
+        q = PyQuery(r.content)
+        self.assertTrue('draft-imaginary-irtf-submission@tools.ietf.org' in q('form input[name=notify]')[0].value)
+        self.assertTrue('irtf-chair@ietf.org' in q('form input[name=notify]')[0].value)
+        self.assertTrue('foo@bar.baz.com' not in q('form input[name=notify]')[0].value)
 
     def test_edit_ad(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')

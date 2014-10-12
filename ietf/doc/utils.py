@@ -5,16 +5,19 @@ import math
 import datetime
 
 from django.conf import settings
+from django.db.models import Q
 from django.db.models.query import EmptyQuerySet
 from django.forms import ValidationError
-from django.utils.html import strip_tags
+from django.utils.html import strip_tags, escape
 
 from ietf.utils import markup_txt
 from ietf.doc.models import Document, DocHistory
 from ietf.doc.models import DocAlias, RelatedDocument, BallotType, DocReminder
 from ietf.doc.models import DocEvent, BallotDocEvent, NewRevisionDocEvent, StateDocEvent
+from ietf.doc.models import save_document_in_history, STATUSCHANGE_RELATIONS
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
+from ietf.person.models import Email
 from ietf.ietfauth.utils import has_role
 from ietf.utils import draft
 from ietf.utils.mail import send_mail
@@ -333,6 +336,29 @@ def has_same_ballot(doc, date1, date2=datetime.date.today()):
     ballot2 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date2+datetime.timedelta(days=1))
     return ballot1==ballot2
 
+def make_notify_changed_event(request, doc, by, new_notify, time=None):
+
+    # FOR REVIEW: This preserves the behavior from when
+    # drafts and charters had separate edit_notify
+    # functions. If it should be unified, there should
+    # also be a migration function cause historic
+    # events to match
+    if doc.type.slug=='charter':
+        event_type = 'changed_document'
+        save_document_in_history(doc)
+    else:
+        event_type = 'added_comment'
+
+    e = DocEvent(type=event_type, doc=doc, by=by)
+    e.desc = "Notification list changed to %s" % (escape(new_notify) or "none")
+    if doc.notify:
+        e.desc += " from %s" % escape(doc.notify)
+    if time:
+        e.time = time
+    e.save()
+
+    return e
+
 def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None):
     from ietf.doc.models import TelechatDocEvent
     
@@ -447,3 +473,47 @@ def check_common_doc_name_rules(name):
 
     if errors:
         raise ValidationError(errors)
+
+def get_initial_notify(doc,extra=None):
+    # set change state notice to something sensible
+    receivers = []
+
+    if doc.type.slug=='draft':
+        if doc.group.type_id in ("individ", "area"):
+             for a in doc.authors.all():
+                 receivers.append(a.address)
+        else:
+            receivers.append("%s-chairs@%s" % (doc.group.acronym, settings.TOOLS_SERVER))
+            for editor in Email.objects.filter(role__name="editor", role__group=doc.group):
+                receivers.append(editor.address)
+
+            if doc.group.list_email:
+                receivers.append(doc.group.list_email)
+
+        receivers.append("%s.all@%s" % (doc.name, settings.TOOLS_SERVER))
+
+    elif doc.type.slug=='charter':
+        receivers.extend([role.person.formatted_email() for role in doc.group.role_set.filter(name__slug__in=['ad','chair','secr','techadv'])])
+
+    else:
+        pass
+
+    for relation in doc.relateddocument_set.filter(Q(relationship='conflrev')|Q(relationship__in=STATUSCHANGE_RELATIONS)):
+        if relation.relationship.slug=='conflrev':
+            doc_to_review = relation.target.document
+            receivers.extend([x.person.formatted_email() for x in Role.objects.filter(group__acronym=doc_to_review.stream.slug,name='chair')])
+            receivers.append("%s@%s" % (doc_to_review.name, settings.TOOLS_SERVER))
+        elif relation.relationship.slug in STATUSCHANGE_RELATIONS:
+            affected_doc = relation.target.document
+            if affected_doc.notify:
+                receivers.extend(affected_doc.notify.split(','))
+
+    if doc.shepherd:
+        receivers.append(doc.shepherd.email_address())
+
+    if extra:
+        if isinstance(extra,basestring):
+            extra = extra.split(', ')
+        receivers.extend(extra)
+
+    return ", ".join(set([x.strip() for x in receivers]))

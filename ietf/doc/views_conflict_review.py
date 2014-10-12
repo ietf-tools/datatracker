@@ -13,7 +13,7 @@ from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocAlias, 
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, get_document_content, update_telechat )
 from ietf.doc.mails import email_iana
-from ietf.doc.forms import AdForm, NotifyForm
+from ietf.doc.forms import AdForm 
 from ietf.group.models import Role, Group
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
@@ -204,41 +204,6 @@ def submit(request, name):
                                'conflictdoc' : review.relateddocument_set.get(relationship__slug='conflrev').target.document,
                               },
                               context_instance=RequestContext(request))
-
-
-@role_required("Area Director", "Secretariat")
-def edit_notices(request, name):
-    """Change the set of email addresses document change notificaitions go to."""
-
-    review = get_object_or_404(Document, type="conflrev", name=name)
-
-    if request.method == 'POST':
-        form = NotifyForm(request.POST)
-        if form.is_valid():
-
-            review.notify = form.cleaned_data['notify']
-            review.save()
-
-            login = request.user.person
-            c = DocEvent(type="added_comment", doc=review, by=login)
-            c.desc = "Notification list changed to : "+review.notify
-            c.save()
-
-            return redirect('doc_view', name=review.name)
-
-    else:
-
-        init = { "notify" : review.notify }
-        form = NotifyForm(initial=init)
-
-    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
-    titletext = 'the conflict review of %s-%s' % (conflictdoc.canonical_name(),conflictdoc.rev)
-    return render_to_response('doc/notify.html',
-                              {'form': form,
-                               'doc': review,
-                               'titletext' : titletext
-                              },
-                              context_instance = RequestContext(request))
 
 @role_required("Area Director", "Secretariat")
 def edit_ad(request, name):

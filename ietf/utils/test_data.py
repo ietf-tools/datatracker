@@ -299,6 +299,7 @@ def make_test_data():
     def rfc_for_status_change_test_factory(name,rfc_num,std_level_id):
         target_rfc = Document.objects.create(name=name, type_id='draft', std_level_id=std_level_id)
         target_rfc.set_state(State.objects.get(slug='rfc',type__slug='draft'))
+        target_rfc.notify = "%s@ietf.org"%name
         target_rfc.save()
         docalias = DocAlias.objects.create(name=name,document=target_rfc)
         docalias = DocAlias.objects.create(name='rfc%d'%rfc_num,document=target_rfc) # pyflakes:ignore

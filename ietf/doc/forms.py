@@ -34,4 +34,8 @@ class AdForm(forms.Form):
             self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
 
 class NotifyForm(forms.Form):
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
+    notify = forms.CharField(max_length=255, help_text="List of email addresses to receive state notifications, separated by comma", label="Notification list", required=False)
+
+    def clean_notify(self):
+        addrspecs = [x.strip() for x in self.cleaned_data["notify"].split(',')]
+        return ', '.join(addrspecs)

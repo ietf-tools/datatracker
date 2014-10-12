@@ -21,7 +21,7 @@ from ietf.doc.mails import ( email_ad, email_pulled_from_rfc_queue, email_resurr
     generate_publication_request, html_to_text )
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
     get_tags_for_stream_id, nice_consensus,
-    update_reminder, update_telechat )
+    update_reminder, update_telechat, make_notify_changed_event, get_initial_notify )
 from ietf.doc.lastcall import request_last_call
 from ietf.group.models import Group, Role
 from ietf.iesg.models import TelechatDate
@@ -30,7 +30,7 @@ from ietf.ietfauth.utils import role_required
 from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
 from ietf.person.forms import EmailsField
-from ietf.person.models import Person, Email
+from ietf.person.models import Person
 from ietf.secr.lib.template import jsonapi
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.textupload import get_cleaned_text_file_content
@@ -501,21 +501,6 @@ class EditInfoForm(forms.Form):
     def clean_note(self):
         return self.cleaned_data['note'].replace('\r', '').strip()
 
-
-def get_initial_notify(doc):
-    # set change state notice to something sensible
-    receivers = []
-    if doc.group.type_id in ("individ", "area"):
-        for a in doc.authors.all():
-            receivers.append(a.address)
-    else:
-        receivers.append("%s-chairs@%s" % (doc.group.acronym, settings.TOOLS_SERVER))
-        for editor in Email.objects.filter(role__name="editor", role__group=doc.group):
-            receivers.append(editor.address)
-
-    receivers.append("%s@%s" % (doc.name, settings.TOOLS_SERVER))
-    return ", ".join(receivers)
-
 def to_iesg(request,name):
     """ Submit an IETF stream document to the IESG for publication """ 
     doc = get_object_or_404(Document, docalias__name=name, stream='ietf')
@@ -831,52 +816,6 @@ def resurrect(request, name):
                                    back_url=doc.get_absolute_url()),
                               context_instance=RequestContext(request))
 
-class NotifyForm(forms.Form):
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
-
-
-@role_required('Area Director', 'Secretariat')
-def edit_notices(request, name):
-    """Change the set of email addresses document change notificaitions go to."""
-
-    doc = get_object_or_404(Document, type="draft", name=name)
-
-    if request.method == 'POST':
-
-        if "save_addresses" in request.POST:
-            form = NotifyForm(request.POST)
-            if form.is_valid():
-
-                doc.notify = form.cleaned_data['notify']
-                doc.save()
-
-                login = request.user.person
-                c = DocEvent(type="added_comment", doc=doc, by=login)
-                c.desc = "Notification list changed to : "+doc.notify
-                c.save()
-
-                return redirect('doc_view', name=doc.name)
-
-        elif "regenerate_addresses" in request.POST:
-            init = { "notify" : get_initial_notify(doc) }
-            form = NotifyForm(initial=init)
-
-        # Protect from handcrufted POST
-        else:
-            init = { "notify" : doc.notify }
-            form = NotifyForm(initial=init)
-
-    else:
-
-        init = { "notify" : doc.notify }
-        form = NotifyForm(initial=init)
-
-    return render_to_response('doc/draft/change_notify.html',
-                              {'form':   form,
-                               'doc': doc,
-                              },
-                              context_instance = RequestContext(request))
-
 class IESGNoteForm(forms.Form):
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
 
@@ -1028,12 +967,22 @@ def edit_shepherd(request, name):
                 doc.shepherd = form.cleaned_data['shepherd'][0].person
             else:
                 doc.shepherd = None
-            doc.save()
    
             login = request.user.person
             c = DocEvent(type="added_comment", doc=doc, by=login)
             c.desc = "Document shepherd changed to "+ (doc.shepherd.name if doc.shepherd else "(None)")
             c.save()
+
+            if doc.shepherd.formatted_email() not in doc.notify:
+                addrs = doc.notify
+                if addrs:
+                    addrs += ', '
+                addrs += doc.shepherd.formatted_email()
+                e = make_notify_changed_event(request, doc, login, addrs, c.time)
+                doc.notify = addrs
+
+            doc.time = c.time
+            doc.save()
 
             return redirect('doc_view', name=doc.name)
 
@@ -1290,6 +1239,10 @@ def adopt_draft(request, name):
                     e.desc += " from %s (%s)" % (doc.group.name, doc.group.acronym.upper())
                 e.save()
                 doc.group = group
+
+            new_notify = get_initial_notify(doc,extra=doc.notify)
+            make_notify_changed_event(request, doc, by, new_notify, doc.time)
+            doc.notify = new_notify
 
             doc.save()
 

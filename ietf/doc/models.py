@@ -178,6 +178,8 @@ class DocumentInfo(models.Model):
     class Meta:
         abstract = True
 
+STATUSCHANGE_RELATIONS = ('tops','tois','tohist','toinf','tobcp','toexp')
+
 class RelatedDocument(models.Model):
     source = models.ForeignKey('Document')
     target = models.ForeignKey('DocAlias')

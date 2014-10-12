@@ -181,11 +181,23 @@ class EditCharterTests(TestCase):
 
         # post
         self.assertTrue(not charter.notify)
-        r = self.client.post(url, dict(notify="someone@example.com, someoneelse@example.com"))
+        newlist = "someone@example.com, someoneelse@example.com"
+        r = self.client.post(url, dict(notify=newlist,save_addresses="1"))
         self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
-        self.assertEqual(charter.notify, "someone@example.com, someoneelse@example.com")
+        self.assertEqual(charter.notify, newlist)
+
+        # Ask the form to regenerate the list
+        r = self.client.post(url,dict(regenerate_addresses="1"))
+        self.assertEqual(r.status_code,200)
+        charter= Document.objects.get(name=charter.name)
+        # Regenerate does not save!
+        self.assertEqual(charter.notify,newlist)
+        q = PyQuery(r.content)
+        formlist = q('form input[name=notify]')[0].value
+        self.assertTrue('marschairman@ietf.org' in formlist)
+        self.assertFalse('someone@example.com' in formlist)
 
     def test_edit_ad(self):
         make_test_data()

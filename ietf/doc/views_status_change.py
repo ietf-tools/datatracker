@@ -10,8 +10,8 @@ from django.conf import settings
 
 from ietf.doc.models import ( Document, DocAlias, State, DocEvent, BallotDocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, WriteupDocEvent,
-    save_document_in_history )
-from ietf.doc.forms import AdForm, NotifyForm
+    save_document_in_history, STATUSCHANGE_RELATIONS )
+from ietf.doc.forms import AdForm
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.utils import get_document_content, add_state_change_event, update_telechat, close_open_ballots, create_ballot_if_not_open
 from ietf.doc.views_ballot import LastCallTextForm
@@ -199,38 +199,6 @@ def submit(request, name):
                               },
                               context_instance=RequestContext(request))
 
-@role_required("Area Director", "Secretariat")
-def edit_notices(request, name):
-    """Change the set of email addresses document change notificaitions go to."""
-
-    status_change = get_object_or_404(Document, type="statchg", name=name)
-
-    if request.method == 'POST':
-        form = NotifyForm(request.POST)
-        if form.is_valid():
-
-            status_change.notify = form.cleaned_data['notify']
-            status_change.save()
-
-            login = request.user.person
-            c = DocEvent(type="added_comment", doc=status_change, by=login)
-            c.desc = "Notification list changed to : "+status_change.notify
-            c.save()
-
-            return redirect('doc_view', name=status_change.name)
-
-    else:
-
-        init = { "notify" : status_change.notify }
-        form = NotifyForm(initial=init)
-
-    return render_to_response('doc/notify.html',
-                              {'form': form,
-                               'doc': status_change,
-                               'titletext' : '%s-%s.txt' % (status_change.canonical_name(),status_change.rev)
-                              },
-                              context_instance = RequestContext(request))
-
 class ChangeTitleForm(forms.Form):
     title = forms.CharField(max_length=255, label="Title", required=True)
 
@@ -390,7 +358,7 @@ def approve(request, name):
                 c.desc = "The following approval message was sent\n"+form.cleaned_data['announcement_text']
                 c.save()
 
-            for rel in status_change.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS):
+            for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
                 # Add a document event to each target
                 c = DocEvent(type="added_comment", doc=rel.target.document, by=login)
                 c.desc = "New status of %s approved by the IESG\n%s%s" % (newstatus(rel), settings.IDTRACKER_BASE_URL,reverse('doc_view', kwargs={'name': status_change.name}))
@@ -401,7 +369,7 @@ def approve(request, name):
     else:
 
         init = []
-        for rel in status_change.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS):
+        for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
             init.append({"announcement_text" : default_approval_text(status_change,rel),
                          "label": "Announcement text for %s to %s"%(rel.target.document.canonical_name(),newstatus(rel)),
                        })
@@ -415,8 +383,6 @@ def approve(request, name):
                                    formset = formset,
                                    ),
                               context_instance=RequestContext(request))
-
-RELATION_SLUGS = ('tops','tois','tohist','toinf','tobcp','toexp')
 
 def clean_helper(form, formtype):
         cleaned_data = super(formtype, form).clean()
@@ -449,7 +415,7 @@ def clean_helper(form, formtype):
            elif not DocAlias.objects.filter(name=key):
               errors.append(key+" does not exist\n")
 
-           if new_relations[key] not in RELATION_SLUGS:
+           if new_relations[key] not in STATUSCHANGE_RELATIONS:
               errors.append("Please choose a new status level for "+key+"\n")
 
         if errors:
@@ -542,7 +508,7 @@ def start_rfc_status_change(request,name):
 
     login = request.user.person
 
-    relation_slugs = DocRelationshipName.objects.filter(slug__in=RELATION_SLUGS)
+    relation_slugs = DocRelationshipName.objects.filter(slug__in=STATUSCHANGE_RELATIONS)
 
     if request.method == 'POST':
         form = StartStatusChangeForm(request.POST)
@@ -598,17 +564,17 @@ def edit_relations(request, name):
 
     login = request.user.person
 
-    relation_slugs = DocRelationshipName.objects.filter(slug__in=RELATION_SLUGS)
+    relation_slugs = DocRelationshipName.objects.filter(slug__in=STATUSCHANGE_RELATIONS)
 
     if request.method == 'POST':
         form = EditStatusChangeForm(request.POST)
         if 'Submit' in request.POST and form.is_valid():
     
             old_relations={}
-            for rel in status_change.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS):
+            for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
                 old_relations[rel.target.document.canonical_name()]=rel.relationship.slug
             new_relations=form.cleaned_data['relations']
-            status_change.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS).delete()
+            status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS).delete()
             for key in new_relations:
                 status_change.relateddocument_set.create(target=DocAlias.objects.get(name=key),
                                                          relationship_id=new_relations[key])
@@ -629,7 +595,7 @@ def edit_relations(request, name):
 
     else: 
         relations={}
-        for rel in status_change.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS):
+        for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
             relations[rel.target.document.canonical_name()]=rel.relationship.slug
         init = { "relations":relations, 
                }
@@ -657,8 +623,8 @@ def generate_last_call_text(request, doc):
                                      settings=settings,
                                      requester=requester,
                                      expiration_date=expiration_date.strftime("%Y-%m-%d"),
-                                     changes=['%s from %s to %s\n    (%s)'%(rel.target.name.upper(),rel.target.document.std_level.name,newstatus(rel),rel.target.document.title) for rel in doc.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS)],
-                                     urls=[rel.target.document.get_absolute_url() for rel in doc.relateddocument_set.filter(relationship__slug__in=RELATION_SLUGS)],
+                                     changes=['%s from %s to %s\n    (%s)'%(rel.target.name.upper(),rel.target.document.std_level.name,newstatus(rel),rel.target.document.title) for rel in doc.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS)],
+                                     urls=[rel.target.document.get_absolute_url() for rel in doc.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS)],
                                      cc=cc
                                     )
                                )
