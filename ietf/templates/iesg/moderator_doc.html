@@ -41,6 +41,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
   <i>({{ doc.title }})</i><br>
   <b>
     Intended status: {{ doc.intended_std_level }}<br>
+    Consensus: <a href="{% url "doc_edit_consensus" name=doc.name %}">{{ doc|consensus }}</a><br>
     Token: {{ doc.ad.plain_name }}<br>
     {% if doc.type_id == "draft" %}
     Last call ends: {{ doc.most_recent_ietflc.expires.date|default:"(none)" }}

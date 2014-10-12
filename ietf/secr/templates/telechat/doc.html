@@ -1,4 +1,5 @@
 {% extends "telechat/base_telechat.html" %}
+{% load ietf_filters %}
 
 {% block breadcrumbs %}{{ block.super }} 
   &raquo; {{ date }}
@@ -20,6 +21,7 @@
     {% if conflictdoc %}References: <a href="{{ conflictdoc.get_absolute_url }}">{{ conflictdoc }}</a><br />{% endif %}
     <a href="#writeup">Ballot Writeup</a><br />
     Token: {{ document.ad.name }}<br />
+    {% if document.type_id == "draft" %}Consensus: {{ document|consensus }}<br />{% endif %}
     Number of Open Positions: {{ open_positions }}<br />
     <br />
     <div>
