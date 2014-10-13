@@ -93,7 +93,7 @@ ietfdb (5.6.4) ietf; urgency=medium
   * Merged in [8236] from rjsparks@nostrum.com:
     Log what rebuild_reference_relations returns to diagnose #1467.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  12 Oct 2014 10:58:55 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Oct 2014 13:14:38 -0700
 
 
 ietfdb (5.6.3) ietf; urgency=medium
