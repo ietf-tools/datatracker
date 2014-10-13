@@ -1,5 +1,29 @@
 ietfdb (5.6.4) ietf; urgency=medium
 
+  * Merged in [8359] from rcross@amsl.com:
+    fix get_or_create_nominee() to create Alias for new Person.  
+
+  * Merged in [8156] and [8320] from rcross@amsl.com:
+    Do not allow editing or submitting new session requests when the tool 
+    is locked.  Fixes Ticket #1443.
+
+  * Merged in [8308] from rjsparks@nostrum.com:
+    Build the links to about_url for concluded groups correctly. Fixes bug
+    #1487.  
+
+  * Merged in [8303] from rjsparks@nostrum.com:
+    Only show comment/discuss document version on the ballot page when the
+    text is for a version of the document other than the current one. Fixes
+    bug #1482.  
+
+  * Merged in [8377] from rjsparks@nostrum.com:
+    Removes a modify-while-iterating error, and removes a bug where two
+    different bits of code thought they were responsible for deleting things
+    from a global list.  Fixes bug #1498.  
+
+  * Merged in [8301] from rcross@amsl.com:
+    Changes to support consensus status.   
+
   * Merged in [8293] from rjsparks@nostrum.com (Note: Should what is now
     captured in the STATUSCHANGE_RELATIONS list instead be captured in the
     database in name_docrelationshipname? ):
