@@ -1,12 +1,22 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
+{% load bootstrap3 %}
+
+{% block subtitle %} - {% if position %}Edit{% else %}Add{% endif %} positions{% endblock %}
+
 {% block nomcom_content %}
-<h3>{% if position %}Edit{% else %}Add{% endif %} position</h3>
 
-{% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
+<h2>{% if position %}Edit{% else %}Add{% endif %} position</h2>
 
-<form action="" method="post">{% csrf_token %}
-{{ form }}
-<p><input type="submit" value="{% if position %}Save{% else %}Add{% endif %}" /> <a href="../">Cancel</a></p>
+{% bootstrap_messages %}
+
+<form role="form" method="post">
+	{% csrf_token %}
+	{% bootstrap_form form %}
+
+	{% buttons %}
+		<input class="btn btn-primary" type="submit" value="{% if position %}Save{% else %}Add{% endif %}">
+		<a class="btn btn-default pull-right" href="../">Back</a>
+	{% endbuttons %}
 </form>
-{% endblock nomcom_content %}
+{% endblock %}

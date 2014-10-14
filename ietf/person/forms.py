@@ -23,7 +23,7 @@ class EmailsField(forms.CharField):
     def __init__(self, *args, **kwargs):
         kwargs["max_length"] = 1000
         if not "help_text" in kwargs:
-            kwargs["help_text"] = "Type in name to search for person"
+            kwargs["help_text"] = "Type in name to search for person."
         super(EmailsField, self).__init__(*args, **kwargs)
         self.widget.attrs["class"] = "tokenized-field"
         self.widget.attrs["data-ajax-url"] = lazy(urlreverse, str)("ajax_search_emails") # make this lazy to prevent initialization problem

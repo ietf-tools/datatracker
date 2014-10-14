@@ -1,0 +1,19 @@
+{% for area in areas %}
+	<li class="hidden-nojs dropdown-submenu visible-lg-block">
+		<a href="/wg/#{{ area.acronym }}">{{ area.short_area_name }}</a>
+		<ul class="dropdown-menu" role="menu">
+		{% for g in area.active_groups %}
+			<li><a href="{% url "ietf.group.info.group_home" group_type=g.type_id acronym=g.acronym %}">{{ g.acronym }} &mdash; {{ g.name}}</a></li>
+		{% endfor %}
+		</ul>
+	</li>
+{% endfor %}
+
+<li class="hidden-nojs dropdown-submenu visible-lg-block">
+	<a href="">IRTF</a>
+	<ul class="dropdown-menu" role="menu">
+		{% for group in rgs %}
+			<li><a href="{% url "ietf.group.info.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }} &mdash; {{ group.name}}</a></li>
+		{% endfor %}
+	</ul>
+</li>

@@ -47,20 +47,20 @@ class UploadForm(forms.Form):
         ietf_monday = Meeting.get_ietf_monday()
 
         if now.date() >= (first_cut_off-timedelta(days=settings.CUTOFF_WARNING_DAYS)) and now.date() < first_cut_off:
-            self.cutoff_warning = ( 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) is %s at %02sh UTC.<br/>' % (first_cut_off, settings.CUTOFF_HOUR) +
-                                    'The pre-meeting cut-off date for revisions to existing documents is %s at %02sh UTC.<br/>' % (second_cut_off, settings.CUTOFF_HOUR) )
+            self.cutoff_warning = ( 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) is %s at %02sh UTC.' % (first_cut_off, settings.CUTOFF_HOUR) +
+                                    'The pre-meeting cut-off date for revisions to existing documents is %s at %02sh UTC.' % (second_cut_off, settings.CUTOFF_HOUR) )
         elif now.date() >= first_cut_off and now.date() < second_cut_off:  # We are in the first_cut_off
             if now.date() == first_cut_off and now.hour < settings.CUTOFF_HOUR:
                 self.cutoff_warning = 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) is %s, at %02sh UTC. After that, you will not be able to submit a new document until %s, at %sh UTC' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, )
             else:  # No 00 version allowed
-                self.cutoff_warning = 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) was %s at %sh UTC. You will not be able to submit a new document until %s, at %sh UTC.<br>You can still submit a version -01 or higher Internet-Draft until %sh UTC, %s' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, second_cut_off, )
+                self.cutoff_warning = 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) was %s at %sh UTC. You will not be able to submit a new document until %s, at %sh UTC. You can still submit a version -01 or higher Internet-Draft until %sh UTC, %s' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, second_cut_off, )
                 self.in_first_cut_off = True
         elif now.date() >= second_cut_off and now.date() < ietf_monday:
             if now.date() == second_cut_off and now.hour < settings.CUTOFF_HOUR:  # We are in the first_cut_off yet
-                self.cutoff_warning = 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) was %s at %02sh UTC. You will not be able to submit a new document until %s, at %02sh UTC.<br>The I-D submission tool will be shut down at %02sh UTC today, and reopened at %02sh UTC on %s' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, ietf_monday)
+                self.cutoff_warning = 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) was %s at %02sh UTC. You will not be able to submit a new document until %s, at %02sh UTC. The I-D submission tool will be shut down at %02sh UTC today, and reopened at %02sh UTC on %s' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, ietf_monday)
                 self.in_first_cut_off = True
             else:  # Completely shut down of the tool
-                self.cutoff_warning = 'The cut-off time for the I-D submission was %02dh UTC, %s.<br>The I-D submission tool will be reopened at %02dh local time at the IETF meeting location, %s.' % (settings.CUTOFF_HOUR, second_cut_off, settings.CUTOFF_HOUR, ietf_monday)
+                self.cutoff_warning = 'The cut-off time for the I-D submission was %02dh UTC, %s. The I-D submission tool will be reopened at %02dh local time at the IETF meeting location, %s.' % (settings.CUTOFF_HOUR, second_cut_off, settings.CUTOFF_HOUR, ietf_monday)
                 self.shutdown = True
 
     def clean_file(self, field_name, parser_class):
@@ -116,7 +116,7 @@ class UploadForm(forms.Form):
             # check existing
             existing = Submission.objects.filter(name=self.parsed_draft.filename, rev=self.parsed_draft.revision).exclude(state__in=("posted", "cancel"))
             if existing:
-                raise forms.ValidationError(mark_safe('Submission with same name and revision is currently being processed. <a href="%s">Check the status here</a>' % urlreverse("submit_submission_status", kwargs={ 'submission_id': existing[0].pk })))
+                raise forms.ValidationError(mark_safe('Submission with same name and revision is currently being processed. <a href="%s">Check the status here.</a>' % urlreverse("submit_submission_status", kwargs={ 'submission_id': existing[0].pk })))
 
             # cut-off
             if self.parsed_draft.revision == '00' and self.in_first_cut_off:
@@ -227,7 +227,7 @@ class EditSubmissionForm(forms.ModelForm):
     pages = forms.IntegerField(required=True)
     abstract = forms.CharField(widget=forms.Textarea, required=True)
 
-    note = forms.CharField(label=mark_safe(u'Comment to<br/> the Secretariat'), widget=forms.Textarea, required=False)
+    note = forms.CharField(label=mark_safe(u'Comment to the Secretariat'), widget=forms.Textarea, required=False)
 
     class Meta:
         model = Submission

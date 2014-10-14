@@ -1,25 +1,26 @@
-{% extends "base.html" %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% block title %}Liaison Statements{% endblock %}
+{% extends "ietf.html" %}
 
-{% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/liaisons.css"></link>
-<link rel="alternate" type="application/atom+xml" href="/feed/liaison/recent/" />
-{% endblock %}
+{% block title %}Liaison statements{% endblock %}
 
 {% block content %}
 
 {% block content-title %}
-<h1>Liaison Statements</h1>
+<h1>Liaison statements</h1>
 {% endblock %}
 
 {% block management-links %}
 {% if can_manage %}
-<ul>
-  {% if can_send_incoming %}<li><a href="{% url "add_liaison" %}?incoming">Add new incoming liaison</a></li>{% endif %}
-  {% if can_send_outgoing %}<li><a href="{% url "add_liaison" %}">Add new outgoing liaison</a></li>{% endif %}
-  {% if approvable %}<li><a href="{% url "liaison_approval_list" %}">You have {{ approvable }} pending liaison statement{{ approvable|pluralize }} that need{{ approvable|pluralize:"s," }} your approval</a></li>{% endif %}
-</ul>
+<p class="buttonlist">
+	{% if can_send_incoming %}
+		<a class="btn btn-default" href="{% url "add_liaison" %}?incoming">New incoming liaison</a>
+	{% endif %}
+	{% if can_send_outgoing %}
+		<a class="btn btn-default" href="{% url "add_liaison" %}">New outgoing liaison</a>
+	{% endif %}
+	{% if approvable %}
+	<a class="btn btn-default" href="{% url "liaison_approval_list" %}">Approve pending liaison statement{{ approvable|pluralize }} <span class="badge">{{ approvable }}</span></a>
+	{% endif %}
+</p>
 {% endif %}
 {% endblock %}
 

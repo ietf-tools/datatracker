@@ -39,7 +39,7 @@ def validate_submission(submission):
         for ext in submission.file_types.split(','):
             source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
             if not os.path.exists(source):
-                errors['files'] = '"%s" was not found in the staging area.<br />We recommend you that you cancel this submission and upload your files again.' % os.path.basename(source)
+                errors['files'] = '"%s" was not found in the staging area. We recommend you that you cancel this submission and upload your files again.' % os.path.basename(source)
                 break
 
     if not submission.title:

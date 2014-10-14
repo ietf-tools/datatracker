@@ -14,7 +14,7 @@ except ImportError:
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # a place to put ajax logs if necessary.
-LOG_DIR  = '/var/log/datatracker'
+LOG_DIR = '/var/log/datatracker'
 
 import sys
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
@@ -63,9 +63,9 @@ DATABASES = {
 }
 
 DATABASE_TEST_OPTIONS = {
-        # Comment this out if your database doesn't support InnoDB
-        'init_command': 'SET storage_engine=InnoDB',
-    }
+    # Comment this out if your database doesn't support InnoDB
+    'init_command': 'SET storage_engine=InnoDB',
+}
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -87,10 +87,11 @@ USE_I18N = False
 
 USE_TZ = False
 
-MEDIA_URL = 'http://www.ietf.org/'
+MEDIA_URL = '//www.ietf.org/'
 
 STATIC_URL = "/"
 STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
+STATIC_URL = STATIC_ROOT + '/'
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
@@ -233,7 +234,34 @@ INSTALLED_APPS = (
     'ietf.secr.sreq',
     'ietf.nomcom',
     'ietf.dbtemplate',
+    # FACELIFT: apps for facelift UI
+    'widget_tweaks',
+    'typogrify',
+    'bootstrap3',
+    'mathfilters',
 )
+
+# Settings for django-bootstrap3
+# See http://django-bootstrap3.readthedocs.org/en/latest/settings.html
+BOOTSTRAP3 = {
+    # Label class to use in horizontal forms
+    'horizontal_label_class': 'col-md-2',
+
+    # Field class to use in horiozntal forms
+    'horizontal_field_class': 'col-md-10',
+
+    # Set HTML required attribute on required fields
+    'set_required': True,
+
+    # Set placeholder attributes to label if no placeholder is provided
+    'set_placeholder': False,
+
+    # Class to indicate required
+    'form_required_class': 'bootstrap3-required',
+
+    # Class to indicate error
+    'form_error_class': 'bootstrap3-error',
+}
 
 INTERNAL_IPS = (
 # AMS servers
@@ -246,7 +274,7 @@ INTERNAL_IPS = (
 )
 
 # no slash at end
-IDTRACKER_BASE_URL = "http://datatracker.ietf.org"
+IDTRACKER_BASE_URL = "//datatracker.ietf.org"
 RFCDIFF_PREFIX = "//www.ietf.org/rfcdiff"
 
 # Valid values:
@@ -286,22 +314,22 @@ IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
 
 # Mailing list info URL for lists hosted on the IETF servers
-MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
+MAILING_LIST_INFO_URL = "//www.ietf.org/mailman/listinfo/%(list_addr)s"
 
 # Ideally, more of these would be local -- but since we don't support
 # versions right now, we'll point to external websites
 DOC_HREFS = {
-    "charter": "http://www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
-    "draft": "http://www.ietf.org/archive/id/{doc.name}-{doc.rev}.txt",
-    "slides": "http://www.ietf.org/slides/{doc.name}-{doc.rev}",
-    "conflrev": "http://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
-    "statchg": "http://www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
+    "charter": "//www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
+    "draft": "//www.ietf.org/archive/id/{doc.name}-{doc.rev}.txt",
+    "slides": "//www.ietf.org/slides/{doc.name}-{doc.rev}",
+    "conflrev": "//www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
+    "statchg": "//www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
 }
 
 MEETING_DOC_HREFS = {
     "agenda": "/meeting/{meeting}/agenda/{doc.group.acronym}/",
-    "minutes": "http://www.ietf.org/proceedings/{meeting}/minutes/{doc.external_url}",
-    "slides": "http://www.ietf.org/proceedings/{meeting}/slides/{doc.external_url}",
+    "minutes": "//www.ietf.org/proceedings/{meeting}/minutes/{doc.external_url}",
+    "slides": "//www.ietf.org/proceedings/{meeting}/slides/{doc.external_url}",
 }
 
 # Override this in settings_local.py if needed
@@ -325,15 +353,15 @@ IANA_APPROVE_EMAIL = "drafts-approval@icann.org"
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
-IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
-IANA_SYNC_PROTOCOLS_URL = "http://www.iana.org/protocols/"
+IANA_SYNC_CHANGES_URL = "//datatracker.iana.org:4443/data-tracker/changes"
+IANA_SYNC_PROTOCOLS_URL = "//www.iana.org/protocols/"
 
 RFC_TEXT_RSYNC_SOURCE="ftp.rfc-editor.org::rfcs-text-only"
 
 RFC_EDITOR_SYNC_PASSWORD="secret"
-RFC_EDITOR_SYNC_NOTIFICATION_URL = "http://www.rfc-editor.org/parser/parser.php"
-RFC_EDITOR_QUEUE_URL = "http://www.rfc-editor.org/queue2.xml"
-RFC_EDITOR_INDEX_URL = "http://www.rfc-editor.org/rfc/rfc-index.xml"
+RFC_EDITOR_SYNC_NOTIFICATION_URL = "//www.rfc-editor.org/parser/parser.php"
+RFC_EDITOR_QUEUE_URL = "//www.rfc-editor.org/queue2.xml"
+RFC_EDITOR_INDEX_URL = "//www.rfc-editor.org/rfc/rfc-index.xml"
 
 # Liaison Statement Tool settings
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
@@ -369,7 +397,7 @@ INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
 IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
-IDSUBMIT_STAGING_URL = 'http://www.ietf.org/staging/'
+IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
 
 IDSUBMIT_MAX_PLAIN_DRAFT_SIZE = 6291456  # Max size of the txt draft in bytes
@@ -412,7 +440,7 @@ SECR_AUTH_UNRESTRICTED_URLS = (
     (r'^/secr/sreq/'),
 )
 SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
-SECR_BLUE_SHEET_URL = 'https://datatracker.ietf.org/documents/blue_sheet.rtf'
+SECR_BLUE_SHEET_URL = '//datatracker.ietf.org/documents/blue_sheet.rtf'
 SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
 SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
@@ -449,18 +477,15 @@ BADNESS_MUCHTOOBIG = 500
 SELENIUM_TESTS = False
 SELENIUM_TESTS_ONLY = False
 
-# Path to the email alias lists.  Used by ietf.utils.aliases
-DRAFT_ALIASES_PATH = "/a/postfix/draft-aliases"
-DRAFT_VIRTUAL_PATH = "/a/postfix/draft-virtual"
-
-GROUP_ALIASES_PATH = "/a/postfix/group-aliases"
-GROUP_VIRTUAL_PATH = "/a/postfix/group-virtual"
-
-POSTCONFIRM_PATH   = "/a/postconfirm/test-wrapper"
+# Set debug apps in DEV_APPS settings_local
+DEV_APPS = ()
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *            # pyflakes:ignore
+
+# Add DEV_APPS to INSTALLED_APPS
+INSTALLED_APPS += DEV_APPS
 
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a

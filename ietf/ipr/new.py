@@ -16,19 +16,19 @@ from ietf.ipr.view_sections import section_table
 
 # ----------------------------------------------------------------
 # Create base forms from models
-# ----------------------------------------------------------------    
+# ----------------------------------------------------------------
 
 phone_re = re.compile(r'^\+?[0-9 ]*(\([0-9]+\))?[0-9 -]+( ?x ?[0-9]+)?$')
 phone_error_message = """Phone numbers may have a leading "+", and otherwise only contain numbers [0-9]; dash, period or space; parentheses, and an optional extension number indicated by 'x'."""
 
 class BaseIprForm(forms.ModelForm):
     licensing_option = forms.IntegerField(widget=forms.RadioSelect(choices=LICENSE_CHOICES), required=False)
-    is_pending = forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
-    applies_to_all = forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
+    is_pending = forms.IntegerField(widget=forms.RadioSelect(choices=((1, "Yes"), (2, "No"))), required=False)
+    applies_to_all = forms.IntegerField(widget=forms.RadioSelect(choices=((1, "Yes"), (2, "No"))), required=False)
     class Meta:
         model = IprDetail
         exclude = ('rfc_document', 'id_document_tag') # 'legacy_url_0','legacy_url_1','legacy_title_1','legacy_url_2','legacy_title_2')
-        
+
 class BaseContactForm(forms.ModelForm):
     telephone = forms.RegexField(phone_re, error_message=phone_error_message, required=False)
     fax = forms.RegexField(phone_re, error_message=phone_error_message, required=False)
@@ -68,9 +68,9 @@ def new(request, type, update=None, submitter=None):
 
     class IprForm(BaseIprForm):
         holder_contact = None
-        rfclist = forms.CharField(required=False)
-        draftlist = forms.CharField(required=False)
-        stdonly_license = forms.BooleanField(required=False)
+        rfclist = forms.CharField(label="RFC numbers", required=False)
+        draftlist = forms.CharField(label="Internet-Draft filenames (draft-...)", required=False)
+        stdonly_license = forms.BooleanField(label="Above licensing declaration is limited solely to standards-track IETF documents", required=False)
         hold_contact_is_submitter = forms.BooleanField(required=False)
         ietf_contact_is_submitter = forms.BooleanField(required=False)
         if section_list.get("holder_contact", False):
@@ -98,16 +98,16 @@ def new(request, type, update=None, submitter=None):
             rfclist_initial = ""
             if update:
                 rfclist_initial = " ".join(a.doc_alias.name.upper() for a in IprDocAlias.objects.filter(doc_alias__name__startswith="rfc", ipr=update))
-            self.base_fields["rfclist"] = forms.CharField(required=False, initial=rfclist_initial)
+            self.base_fields["rfclist"] = forms.CharField(label="RFC numbers", required=False, initial=rfclist_initial)
             draftlist_initial = ""
             if update:
                 draftlist_initial = " ".join(a.doc_alias.name + ("-%s" % a.rev if a.rev else "") for a in IprDocAlias.objects.filter(ipr=update).exclude(doc_alias__name__startswith="rfc"))
-            self.base_fields["draftlist"] = forms.CharField(required=False, initial=draftlist_initial)
+            self.base_fields["draftlist"] = forms.CharField(label="Internet-Draft filenames (draft-...)", required=False, initial=draftlist_initial)
             if section_list.get("holder_contact", False):
                 self.base_fields["hold_contact_is_submitter"] = forms.BooleanField(required=False)
             if section_list.get("ietf_contact", False):
                 self.base_fields["ietf_contact_is_submitter"] = forms.BooleanField(required=False)
-            self.base_fields["stdonly_license"] = forms.BooleanField(required=False)
+            self.base_fields["stdonly_license"] = forms.BooleanField(label="Above licensing declaration is limited solely to standards-track IETF documents", required=False)
 
             BaseIprForm.__init__(self, *args, **kw)
         # Special validation code
@@ -184,7 +184,7 @@ def new(request, type, update=None, submitter=None):
         data["generic"] = section_list["generic"]
         data["status"] = "0"
         data["comply"] = "1"
-        
+
         for src in ["hold", "ietf"]:
             if "%s_contact_is_submitter" % src in data:
                 for subfield in ["name", "title", "department", "address1", "address2", "telephone", "fax", "email"]:
@@ -202,7 +202,7 @@ def new(request, type, update=None, submitter=None):
 
             legal_name_genitive = data['legal_name'] + "'" if data['legal_name'].endswith('s') else data['legal_name'] + "'s"
             if type == "generic":
-                instance.title = legal_name_genitive + " General License Statement" 
+                instance.title = legal_name_genitive + " General License Statement"
             elif type == "specific":
                 data["ipr_summary"] = get_ipr_summary(form.cleaned_data)
                 instance.title = legal_name_genitive + """ Statement about IPR related to %(ipr_summary)s""" % data
@@ -295,7 +295,7 @@ def update(request, ipr_id=None):
     """Update a specific IPR disclosure"""
     ipr = get_object_or_404(IprDetail, ipr_id=ipr_id)
     if not ipr.status in [1,3]:
-	raise Http404        
+	raise Http404
     type = "specific"
     if ipr.generic:
 	type = "generic"
@@ -311,8 +311,8 @@ def update(request, ipr_id=None):
 	class UpdateForm(BaseContactForm):
 	    def __init__(self, *args, **kwargs):
                 super(UpdateForm, self).__init__(*args, **kwargs)
-                self.fields["update_auth"] = forms.BooleanField()
-                
+                self.fields["update_auth"] = forms.BooleanField(label="I am authorized to update this IPR disclosure, and I understand that notification of this update will be provided to the submitter of the original IPR disclosure and to the Patent Holder's Contact.")
+
 	if request.method == 'POST':
 	    form = UpdateForm(request.POST)
         else:

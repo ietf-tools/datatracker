@@ -43,24 +43,32 @@ area_short_names = {
     'rai':'RAI'
     }
 
+# FACELIFT: Function is called with "facelift" flavor from the new UI code.
+# The old code (and flavoring) can be remove eventually.
 @register.simple_tag
-def wg_menu():
-    res = cache.get('base_left_wgmenu')
+def wg_menu(flavor=""):
+    res = cache.get('wgmenu' + flavor)
     if res:
         return res
 
     areas = Group.objects.filter(type="area", state="active").order_by('acronym')
-    groups = Group.objects.filter(type="wg", state="active", parent__in=areas).order_by("acronym")
+    wgs = Group.objects.filter(type="wg", state="active", parent__in=areas).order_by("acronym")
+    rgs = Group.objects.filter(type="rg", state="active").order_by("acronym")
 
     for a in areas:
         a.short_area_name = area_short_names.get(a.acronym) or a.name
         if a.short_area_name.endswith(" Area"):
             a.short_area_name = a.short_area_name[:-len(" Area")]
 
-        a.active_groups = [g for g in groups if g.parent_id == a.id]
+        a.active_groups = [g for g in wgs if g.parent_id == a.id]
 
     areas = [a for a in areas if a.active_groups]
 
-    res = render_to_string('base/wg_menu.html', {'areas':areas})
-    cache.set('base_left_wgmenu', res, 30*60)
+    if flavor == "facelift":
+        res = render_to_string('base/menu_wg.html', {'areas':areas, 'rgs':rgs})
+    elif flavor == "modal":
+        res = render_to_string('base/menu_wg_modal.html', {'areas':areas, 'rgs':rgs})
+    else:
+        res = render_to_string('base/wg_menu.html', {'areas':areas, 'rgs':rgs})
+    cache.set('wgmenu' + flavor, res, 30*60)
     return res

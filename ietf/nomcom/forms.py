@@ -11,7 +11,7 @@ from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.group.models import Group, Role
 from ietf.ietfauth.utils import role_required
 from ietf.name.models import RoleName, FeedbackType, NomineePositionState
-from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition, 
+from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition,
                                  Position, Feedback, ReminderDates )
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
                                get_user_email, validate_private_key, validate_public_key,
@@ -381,7 +381,7 @@ class MergeForm(BaseNomcomForm, forms.Form):
 
 
 class NominateForm(BaseNomcomForm, forms.ModelForm):
-    comments = forms.CharField(label="Candidate's Qualifications for the Position:",
+    comments = forms.CharField(label="Candidate's qualifications for the position",
                                widget=forms.Textarea())
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation',
                                       help_text="If you want to get a confirmation mail containing your feedback in cleartext, \
@@ -403,6 +403,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                     'candidate_email', 'candidate_phone',
                     'comments']
 
+        self.fields['nominator_email'].label = 'Nominator email'
         if self.nomcom:
             self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).opened()
             self.fields['comments'].help_text = self.nomcom.initial_text
@@ -464,7 +465,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         # send receipt email to nominator
         if confirmation:
             if author:
-                subject = 'Nomination Receipt'
+                subject = 'Nomination receipt'
                 from_email = settings.NOMCOM_FROM_EMAIL
                 to_email = author.address
                 context = {'nominee': nominee.email.person.name,
@@ -482,15 +483,15 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
 
 class FeedbackForm(BaseNomcomForm, forms.ModelForm):
-    position_name = forms.CharField(label='position',
+    position_name = forms.CharField(label='Position',
                                     widget=forms.TextInput(attrs={'size': '40'}))
-    nominee_name = forms.CharField(label='nominee name',
+    nominee_name = forms.CharField(label='Nominee name',
                                    widget=forms.TextInput(attrs={'size': '40'}))
-    nominee_email = forms.CharField(label='nominee email',
+    nominee_email = forms.CharField(label='Nominee email',
                                     widget=forms.TextInput(attrs={'size': '40'}))
-    nominator_email = forms.CharField(label='commenter email')
+    nominator_email = forms.CharField(label='Commenter email')
 
-    comments = forms.CharField(label='Comments on this candidate',
+    comments = forms.CharField(label='Comments on this nominee',
                                widget=forms.Textarea())
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation',
                                       help_text="If you want to get a confirmation mail containing your feedback in cleartext, \
