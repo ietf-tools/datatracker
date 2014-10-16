@@ -33,6 +33,7 @@ def choose_material_type(request, acronym):
 class UploadMaterialForm(forms.Form):
     title = forms.CharField(max_length=Document._meta.get_field("title").max_length)
     name = forms.CharField(max_length=Document._meta.get_field("name").max_length)
+    abstract = forms.CharField(max_length=Document._meta.get_field("abstract").max_length,widget=forms.Textarea)
     state = forms.ModelChoiceField(State.objects.all(), empty_label=None)
     material = forms.FileField(label='File', help_text="PDF or text file (ASCII/UTF-8)")
 
@@ -120,6 +121,9 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
             if "title" in form.cleaned_data:
                 doc.title = form.cleaned_data["title"]
+
+            if "abstract" in form.cleaned_data:
+                doc.abstract = form.cleaned_data["abstract"]
 
             doc.time = datetime.datetime.now()
 
