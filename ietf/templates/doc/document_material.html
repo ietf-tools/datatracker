@@ -29,7 +29,11 @@
     {% if doc.abstract %}
     <tr>
      <td>Abstract:</td>
-     <td> {{ doc.abstract | format_snippet }} </td>
+     <td> 
+        <a {% if not snapshot and can_manage_material %} class="editlink" href="{% url "material_edit" name=doc.name action="abstract" name=doc.name %}"{% endif %}>
+          {{ doc.abstract | format_snippet }} 
+        </a>
+     </td>
     </tr>
     {% endif %}
 

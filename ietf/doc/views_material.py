@@ -55,16 +55,14 @@ class UploadMaterialForm(forms.Form):
             del self.fields["name"]
 
             self.fields["title"].initial = doc.title
+            self.fields["abstract"].initial = doc.abstract
             self.fields["state"].initial = doc.get_state().pk if doc.get_state() else None
             if doc.get_state_slug() == "deleted":
                 self.fields["state"].help_text = "Note: If you wish to revise this document, you may wish to change the state so it's not deleted."
 
-            if action == "title":
-                del self.fields["state"]
-                del self.fields["material"]
-            elif action == "state":
-                del self.fields["title"]
-                del self.fields["material"]
+            for fieldname in ["title","state","material","abstract"]: 
+                if fieldname != action:
+                    del self.fields[fieldname]
 
     def clean_name(self):
         name = self.cleaned_data["name"].strip().rstrip("-")
