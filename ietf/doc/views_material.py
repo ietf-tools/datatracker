@@ -35,7 +35,7 @@ class UploadMaterialForm(forms.Form):
     name = forms.CharField(max_length=Document._meta.get_field("name").max_length)
     abstract = forms.CharField(max_length=Document._meta.get_field("abstract").max_length,widget=forms.Textarea)
     state = forms.ModelChoiceField(State.objects.all(), empty_label=None)
-    material = forms.FileField(label='File', help_text="PDF or text file (ASCII/UTF-8)")
+    material = forms.FileField(label='File')
 
     def __init__(self, doc_type, action, group, doc, *args, **kwargs):
         super(UploadMaterialForm, self).__init__(*args, **kwargs)
@@ -60,9 +60,10 @@ class UploadMaterialForm(forms.Form):
             if doc.get_state_slug() == "deleted":
                 self.fields["state"].help_text = "Note: If you wish to revise this document, you may wish to change the state so it's not deleted."
 
-            for fieldname in ["title","state","material","abstract"]: 
-                if fieldname != action:
-                    del self.fields[fieldname]
+            if action in ["title","state","abstract"]:
+                for fieldname in ["title","state","material","abstract"]: 
+                    if fieldname != action:
+                        del self.fields[fieldname]
 
     def clean_name(self):
         name = self.cleaned_data["name"].strip().rstrip("-")
