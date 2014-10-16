@@ -22,7 +22,12 @@
     <tr>
       <td>Title:</td>
       <td>
-        <a {% if not snapshot and can_manage_material %} class="editlink" href="{% url "material_edit" name=doc.name action="title" name=doc.name %}"{% endif %}>{{ doc.title }}</a>
+        {% if not snapshot and can_manage_material %}
+            {% url "material_edit" name=doc.name action="title" as editurl %}
+            {{ doc.title | format_editable:editurl }} 
+        {% else %}
+            {{ doc.title }}
+        {% endif %}
       </td>
     </tr>
 
@@ -43,7 +48,12 @@
     <tr>
       <td>State:</td>
       <td>
-        <a title="{{ doc.get_state.desc }}"{% if not snapshot and can_manage_material %} class="editlink" href="{% url "material_edit" name=doc.name action="state" %}"{% endif %}>{{ doc.get_state.name }}</a>
+        {% if not snapshot and can_manage_material %}
+          {% url "material_edit" name=doc.name action="state" as editurl %}
+          {{ doc.get_state.name | format_editable:editurl }}
+        {% else %}
+          {{ doc.get_state.name }}
+        {% endif %}
       </td>
     </tr>
 
@@ -65,9 +75,9 @@
          <a {% if not snapshot and can_manage_material %} class="editlink" href="{% url "material_presentations" name=doc.name %}"{%endif%}>
          {% if presentations %}
            {% for pres in presentations %}{{pres.session.short_name}} at {{pres.session.meeting}} {% if pres.rev != doc.rev %}(version -{{pres.rev}}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
-        {% else %}
+         {% else %}
            None
-        {% endif %}
+         {% endif %}
         </a>
       </td>        
     </tr>
