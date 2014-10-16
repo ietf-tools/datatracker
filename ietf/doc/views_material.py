@@ -17,6 +17,7 @@ from ietf.doc.models import NewRevisionDocEvent, save_document_in_history
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
+from ietf.meeting.models import Session
 
 @login_required
 def choose_material_type(request, acronym):
@@ -167,4 +168,57 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
         'action': action,
         'document_type': document_type,
         'doc_name': doc.name if doc else "",
+    })
+
+class MaterialPresentationForm(forms.Form):
+
+    sesspres = forms.MultipleChoiceField(required=False,widget=forms.CheckboxSelectMultiple,label='Place this document on the agenda for the selected sessions')
+
+    def __init__(self,*args,**kwargs):
+        choices = kwargs.pop('choices')
+        super(MaterialPresentationForm,self).__init__(*args,**kwargs)
+        self.fields['sesspres'].choices=choices
+
+@login_required
+def material_presentations(request, name):
+
+    doc = get_object_or_404(Document, name=name)
+    if not (doc.type_id=='slides' and doc.get_state('slides').slug=='active'):
+        raise Http404
+
+    group = doc.group
+    if not (group.features.has_materials and can_manage_materials(request.user,group)):
+        raise Http404
+
+    # Find all the sessions for meetings that haven't ended that the user could affect
+    # This motif is also in Document.future_presentations - it would be nice to consolodate it somehow
+    candidate_sessions = Session.objects.filter(meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
+    refined_candidates = [ sess for sess in candidate_sessions if sess.meeting.end_date()>=datetime.date.today()]
+    changeable_sessions = [ sess for sess in refined_candidates if can_manage_materials(request.user, sess.group) ]
+    for sess in changeable_sessions:
+        sess.has_presentation = sess.sessionpresentation_set.filter(document=doc)
+    sorted_sessions = sorted(changeable_sessions,key=lambda x:'%s%s%s'%('0' if x.has_presentation else '1',x.meeting,x.short_name))
+
+    choices=[(sess.pk,'%s: %s'%(sess.meeting,sess.short_name)) for sess in sorted_sessions]
+    initial = {'sesspres': [sess.pk for sess in sorted_sessions if sess.has_presentation]}
+
+    if request.method == 'POST':
+        form = MaterialPresentationForm(request.POST,choices=choices)
+        if form.is_valid():
+            print "STUFF",request.POST.get("action","nothing to be gotten")
+            if request.POST.get("action", "") == "Save":
+                new_selections = form.cleaned_data['sesspres']
+                doc.sessionpresentation_set.filter(session_id__in=(set(initial['sesspres'])-set(new_selections))).delete()
+                for sess_pk in set(new_selections)-set(initial['sesspres']):
+                    doc.sessionpresentation_set.create(session_id=sess_pk,rev=doc.rev)
+            return redirect('doc_view',name=doc.name)
+    else:
+        form = MaterialPresentationForm(choices=choices,
+                                        initial=initial,
+                                       )
+
+    return render(request, 'doc/material/material_presentations.html', {
+        'sessions' : sorted_sessions,
+        'doc': doc,
+        'form': form,
     })

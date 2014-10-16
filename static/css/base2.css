@@ -154,7 +154,7 @@ table.ietf-table { border-collapse:collapse; border:1px solid #7f7f7f; }
 .ietf-divider { background: #2647a0; color: white; font-size:116%; padding:0.5em 1em; }
 
 
-table.history .snippet .show-all { color: blue; cursor: pointer; }
+table .snippet .show-all { color: blue; cursor: pointer; }
 
 .error-text {
 	font-size: 1.095em;
