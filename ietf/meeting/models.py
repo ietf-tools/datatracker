@@ -839,10 +839,10 @@ class Session(models.Model):
             return self.meeting.number
 
         ss0name = "(unscheduled)"
-        ss = self.scheduledsession_set.order_by('timeslot__time')
+        ss = self.scheduledsession_set.filter(schedule=self.meeting.agenda).order_by('timeslot__time')
         if ss:
-            ss0name = ss[0].timeslot.time.strftime("%H%M")
-        return u"%s: %s %s[%u]" % (self.meeting, self.group.acronym, ss0name, self.pk)
+            ss0name = ','.join([x.timeslot.time.strftime("%a-%H%M") for x in ss])
+        return u"%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
 
     def is_bof(self):
         return self.group.is_bof();

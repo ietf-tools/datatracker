@@ -173,17 +173,18 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
         'doc_name': doc.name if doc else "",
     })
 
-class MaterialPresentationForm(forms.Form):
+class MaterialVersionForm(forms.Form):
 
-    sesspres = forms.MultipleChoiceField(required=False,widget=forms.CheckboxSelectMultiple,label='Place this document on the agenda for the selected sessions')
+    version = forms.ChoiceField(required=False,
+                                label='Which version of this document will be presented at this session')
 
-    def __init__(self,*args,**kwargs):
+    def __init__(self, *args, **kwargs):
         choices = kwargs.pop('choices')
-        super(MaterialPresentationForm,self).__init__(*args,**kwargs)
-        self.fields['sesspres'].choices=choices
+        super(MaterialVersionForm,self).__init__(*args,**kwargs)
+        self.fields['version'].choices = choices
 
 @login_required
-def material_presentations(request, name):
+def material_presentations(request, name, acronym=None, date=None, seq=None, week_day=None):
 
     doc = get_object_or_404(Document, name=name)
     if not (doc.type_id=='slides' and doc.get_state('slides').slug=='active'):
@@ -197,31 +198,93 @@ def material_presentations(request, name):
     # This motif is also in Document.future_presentations - it would be nice to consolodate it somehow
     candidate_sessions = Session.objects.filter(meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
     refined_candidates = [ sess for sess in candidate_sessions if sess.meeting.end_date()>=datetime.date.today()]
+
+    if acronym:
+        refined_candidates = [ sess for sess in refined_candidates if sess.group.acronym==acronym]
+
+    if date:
+        if len(date)==15:
+            start = datetime.datetime.strptime(date,"%Y-%m-%d-%H%M")
+            refined_candidates = [ sess for sess in refined_candidates if sess.scheduledsession_set.filter(schedule=sess.meeting.agenda,timeslot__time=start) ]
+        else:
+            start = datetime.datetime.strptime(date,"%Y-%m-%d").date()
+            end = start+datetime.timedelta(days=1)
+            refined_candidates = [ sess for sess in refined_candidates if sess.scheduledsession_set.filter(schedule=sess.meeting.agenda,timeslot__time__range=(start,end)) ]
+
+    if week_day:
+        try:
+            dow = ['sun','mon','tue','wed','thu','fri','sat'].index(week_day.lower()[:3]) + 1
+        except ValueError:
+            raise Http404
+        refined_candidates = [ sess for sess in refined_candidates if sess.scheduledsession_set.filter(schedule=sess.meeting.agenda,timeslot__time__week_day=dow) ]
+
     changeable_sessions = [ sess for sess in refined_candidates if can_manage_materials(request.user, sess.group) ]
+
+    if not changeable_sessions:
+        raise Http404
+
     for sess in changeable_sessions:
-        sess.has_presentation = sess.sessionpresentation_set.filter(document=doc)
-    sorted_sessions = sorted(changeable_sessions,key=lambda x:'%s%s%s'%('0' if x.has_presentation else '1',x.meeting,x.short_name))
+        sess.has_presentation = bool(sess.sessionpresentation_set.filter(document=doc))
+        if sess.has_presentation:
+            sess.version = sess.sessionpresentation_set.get(document=doc).rev
 
-    choices=[(sess.pk,'%s: %s'%(sess.meeting,sess.short_name)) for sess in sorted_sessions]
-    initial = {'sesspres': [sess.pk for sess in sorted_sessions if sess.has_presentation]}
+    # Since Python 2.2 sorts are stable, so this series results in a list sorted first by whether
+    # the session has any presentations, then by the meeting 'number', then by session's group 
+    # acronym, then by scheduled time (or the time of the session request if the session isn't 
+    # scheduled).
+    
+    def time_sort_key(session):
+        official_sessions = session.scheduledsession_set.filter(schedule=session.meeting.agenda)
+        if official_sessions:
+            return official_sessions.first().timeslot.time
+        else:
+            return session.requested
 
-    if request.method == 'POST':
-        form = MaterialPresentationForm(request.POST,choices=choices)
-        if form.is_valid():
-            print "STUFF",request.POST.get("action","nothing to be gotten")
-            if request.POST.get("action", "") == "Save":
-                new_selections = form.cleaned_data['sesspres']
-                doc.sessionpresentation_set.filter(session_id__in=(set(initial['sesspres'])-set(new_selections))).delete()
-                for sess_pk in set(new_selections)-set(initial['sesspres']):
-                    doc.sessionpresentation_set.create(session_id=sess_pk,rev=doc.rev)
-            return redirect('doc_view',name=doc.name)
+    time_sorted = sorted(changeable_sessions,key=time_sort_key)
+    acronym_sorted = sorted(time_sorted,key=lambda x: x.group.acronym)
+    meeting_sorted = sorted(acronym_sorted,key=lambda x: x.meeting.number)
+    sorted_sessions = sorted(meeting_sorted,key=lambda x: '0' if x.has_presentation else '1')
+    
+    if seq:
+        iseq = int(seq) - 1
+        if not iseq in range(0,len(sorted_sessions)):
+            raise Http404
+        else:
+            sorted_sessions = [sorted_sessions[iseq]]
+
+    for index,session in enumerate(sorted_sessions):
+        session.sequence = index+1
+
+    if len(sorted_sessions)==1:
+        session = sorted_sessions[0]
+        choices = [('notpresented','Not Presented')]
+        choices.extend([(x,x) for x in doc.docevent_set.filter(type='new_revision').values_list('newrevisiondocevent__rev',flat=True)])
+        initial = {'version' : session.version if hasattr(session,'version') else 'notpresented'}
+
+        if request.method == 'POST':
+            form = MaterialVersionForm(request.POST,choices=choices)
+            if form.is_valid():
+                if request.POST.get("action", "") == "Save":
+                    new_selection = form.cleaned_data['version']
+                    if initial['version'] != new_selection:
+                        if initial['version'] == 'notpresented':
+                            doc.sessionpresentation_set.create(session=session,rev=new_selection)
+                        elif new_selection == 'notpresented':
+                            doc.sessionpresentation_set.filter(session=session).delete()
+                        else:
+                            doc.sessionpresentation_set.filter(session=session).update(rev=new_selection)
+                return redirect('doc_view',name=doc.name)
+        else:
+            form = MaterialVersionForm(choices=choices,initial=initial)
+
+        return render(request, 'doc/material/edit_material_presentations.html', {
+            'session': session,
+            'doc': doc,
+            'form': form,
+            })
+
     else:
-        form = MaterialPresentationForm(choices=choices,
-                                        initial=initial,
-                                       )
-
-    return render(request, 'doc/material/material_presentations.html', {
-        'sessions' : sorted_sessions,
-        'doc': doc,
-        'form': form,
-    })
+        return render(request, 'doc/material/material_presentations.html', {
+            'sessions' : sorted_sessions,
+            'doc': doc,
+        })

@@ -1,23 +1,28 @@
 {% extends "base.html" %}
 
 {% block title %}
-Edit Upcoming Presentations
-{% endblock %}
-
-{% block morecss %}
-{{ block.super }}
-ul#id_sesspres { list-style-type: none; padding: 0px; margin: 0px; }
+Upcoming Presentations
 {% endblock %}
 
 {% block content %}
 {% load ietf_filters %}
 
-<h1>Edit Upcoming Presentations of<br/>{{doc.title}}<br/>{{doc.name}}</h1>
+<h1>Upcoming Presentations of<br/>{{doc.title}}<br/>{{doc.name}}</h1>
 
-<form class="session-presentations" action="" method="post">{% csrf_token %}
-{{form.as_p}}
-<input style="button" type="submit" name="action" value="Save">
-<input style="button" type="submit" name="action" value="Cancel">
-</form>
+<ul>
+{% regroup sessions by has_presentation as is_scheduled_list %}
+  {% for is_scheduled in is_scheduled_list %}
+    <li> {{ is_scheduled.grouper|yesno:"Presentation Scheduled,Presentation Not Scheduled"}}
+      <ul>
+        {% for session in is_scheduled.list %}
+          <li> 
+               <a href="{{session.sequence}}">{{ session }}</a>
+               {% if session.versions %} (version{{session.versions|pluralize}} {{session.versions|join:','}}) {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </li>
+  {% endfor %}
+</ul>
 
 {% endblock content %}
