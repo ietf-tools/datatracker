@@ -196,7 +196,8 @@ def material_presentations(request, name, acronym=None, date=None, seq=None, wee
 
     # Find all the sessions for meetings that haven't ended that the user could affect
     # This motif is also in Document.future_presentations - it would be nice to consolodate it somehow
-    candidate_sessions = Session.objects.filter(meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
+
+    candidate_sessions = Session.objects.exclude(status__in=['canceled','disappr','notmeet','deleted']).filter(meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
     refined_candidates = [ sess for sess in candidate_sessions if sess.meeting.end_date()>=datetime.date.today()]
 
     if acronym:

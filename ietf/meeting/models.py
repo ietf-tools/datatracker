@@ -838,10 +838,13 @@ class Session(models.Model):
         if self.meeting.type_id == "interim":
             return self.meeting.number
 
-        ss0name = "(unscheduled)"
-        ss = self.scheduledsession_set.filter(schedule=self.meeting.agenda).order_by('timeslot__time')
-        if ss:
-            ss0name = ','.join([x.timeslot.time.strftime("%a-%H%M") for x in ss])
+        if self.status.slug in ('canceled','disappr','notmeet','deleted'):
+            ss0name = "(%s)" % self.status.name
+        else:
+            ss0name = "(unscheduled)"
+            ss = self.scheduledsession_set.filter(schedule=self.meeting.agenda).order_by('timeslot__time')
+            if ss:
+                ss0name = ','.join([x.timeslot.time.strftime("%a-%H%M") for x in ss])
         return u"%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
 
     def is_bof(self):
