@@ -512,7 +512,10 @@ def gen_research(context):
     gmet, gnot = groups_by_session(None,meeting)
 
     groups = filter(lambda a: a.type_id=='rg', gmet)
-
+    open_meeting = filter(lambda a: a.type_id=='ag' and a.parent.acronym=='irtf', gmet)
+    if open_meeting:
+        groups = open_meeting + groups
+        
     # append proceedings URL
     for group in groups:
         group.proceedings_url = "%sproceedings/%s/%s.html" % (settings.MEDIA_URL,meeting.number,group.acronym)
