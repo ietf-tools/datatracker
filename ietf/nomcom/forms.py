@@ -10,7 +10,7 @@ from django.template.context import RequestContext
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.group.models import Group, Role
 from ietf.ietfauth.utils import role_required
-from ietf.name.models import RoleName, FeedbackType, NomineePositionState
+from ietf.name.models import RoleName, FeedbackTypeName, NomineePositionStateName
 from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition, 
                                  Position, Feedback, ReminderDates )
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
@@ -363,10 +363,10 @@ class MergeForm(BaseNomcomForm, forms.Form):
                     # if already a nomineeposition object for a position and nominee,
                     # update the nomineepostion of primary nominee with the state
                     if nominee_position.state.slug == 'accepted' or primary_nominee_position.state.slug == 'accepted':
-                        primary_nominee_position.state = NomineePositionState.objects.get(slug='accepted')
+                        primary_nominee_position.state = NomineePositionStateName.objects.get(slug='accepted')
                         primary_nominee_position.save()
                     if nominee_position.state.slug == 'declined' and primary_nominee_position.state.slug == 'pending':
-                        primary_nominee_position.state = NomineePositionState.objects.get(slug='declined')
+                        primary_nominee_position.state = NomineePositionStateName.objects.get(slug='declined')
                         primary_nominee_position.save()
                 else:
                     # It is not allowed two or more nomineeposition objects with same position and nominee
@@ -444,7 +444,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         # Complete nomination data
         feedback = Feedback.objects.create(nomcom=self.nomcom,
                                            comments=comments,
-                                           type=FeedbackType.objects.get(slug='nomina'),
+                                           type=FeedbackTypeName.objects.get(slug='nomina'),
                                            user=self.user)
         feedback.positions.add(position)
         feedback.nominees.add(nominee)
@@ -575,7 +575,7 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
 
         feedback.nomcom = self.nomcom
         feedback.user = self.user
-        feedback.type = FeedbackType.objects.get(slug='comment')
+        feedback.type = FeedbackTypeName.objects.get(slug='comment')
         feedback.save()
         feedback.positions.add(self.position)
         feedback.nominees.add(self.nominee)
@@ -638,7 +638,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
         feedback.nomcom = self.nomcom
         feedback.user = self.user
-        feedback.type = FeedbackType.objects.get(slug='questio')
+        feedback.type = FeedbackTypeName.objects.get(slug='questio')
         feedback.save()
         self.save_m2m()
         feedback.nominees.add(nominee)
@@ -690,7 +690,7 @@ class PrivateKeyForm(BaseNomcomForm, forms.Form):
 
 class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):
 
-    type = forms.ModelChoiceField(queryset=FeedbackType.objects.all().order_by('pk'), widget=forms.RadioSelect, empty_label='Unclassified', required=False)
+    type = forms.ModelChoiceField(queryset=FeedbackTypeName.objects.all().order_by('pk'), widget=forms.RadioSelect, empty_label='Unclassified', required=False)
 
     class Meta:
         model = Feedback
@@ -699,8 +699,8 @@ class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(PendingFeedbackForm, self).__init__(*args, **kwargs)
         try:
-            self.default_type = FeedbackType.objects.get(slug=settings.DEFAULT_FEEDBACK_TYPE)
-        except FeedbackType.DoesNotExist:
+            self.default_type = FeedbackTypeName.objects.get(slug=settings.DEFAULT_FEEDBACK_TYPE)
+        except FeedbackTypeName.DoesNotExist:
             self.default_type = None
 
     def set_nomcom(self, nomcom, user):
@@ -742,7 +742,7 @@ class ReminderDatesForm(forms.ModelForm):
 
 class MutableFeedbackForm(forms.ModelForm):
 
-    type = forms.ModelChoiceField(queryset=FeedbackType.objects.all(), widget=forms.HiddenInput)
+    type = forms.ModelChoiceField(queryset=FeedbackTypeName.objects.all(), widget=forms.HiddenInput)
 
     class Meta:
         model = Feedback

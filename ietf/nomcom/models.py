@@ -124,7 +124,7 @@ class NomineePosition(models.Model):
 
     def save(self, **kwargs):
         if not self.pk and not self.state_id:
-            self.state = NomineePositionState.objects.get(slug='pending')
+            self.state = NomineePositionStateName.objects.get(slug='pending')
         super(NomineePosition, self).save(**kwargs)
 
     def __unicode__(self):

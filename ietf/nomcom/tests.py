@@ -20,7 +20,7 @@ from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comment
                                   COMMUNITY_USER, CHAIR_USER, \
                                   MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN, NOMCOM_YEAR
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
-                               NomineePositionState, Feedback, FeedbackType, \
+                               NomineePositionStateName, Feedback, FeedbackTypeName, \
                                Nomination
 from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, EditMembersForm
 from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee
@@ -139,22 +139,22 @@ class NomcomViewsTest(TestCase):
         # Accept and declined nominations
         nominee_position = NomineePosition.objects.get(position__name='IAOC',
                                                        nominee__email__address=nominees[0])
-        nominee_position.state = NomineePositionState.objects.get(slug='accepted')
+        nominee_position.state = NomineePositionStateName.objects.get(slug='accepted')
         nominee_position.save()
 
         nominee_position = NomineePosition.objects.get(position__name='IAOC',
                                                        nominee__email__address=nominees[1])
-        nominee_position.state = NomineePositionState.objects.get(slug='declined')
+        nominee_position.state = NomineePositionStateName.objects.get(slug='declined')
         nominee_position.save()
 
         nominee_position = NomineePosition.objects.get(position__name='IAB',
                                                        nominee__email__address=nominees[2])
-        nominee_position.state = NomineePositionState.objects.get(slug='declined')
+        nominee_position.state = NomineePositionStateName.objects.get(slug='declined')
         nominee_position.save()
 
         nominee_position = NomineePosition.objects.get(position__name='TSV',
                                                        nominee__email__address=nominees[3])
-        nominee_position.state = NomineePositionState.objects.get(slug='accepted')
+        nominee_position.state = NomineePositionStateName.objects.get(slug='accepted')
         nominee_position.save()
 
         self.client.logout()
@@ -366,7 +366,7 @@ class NomcomViewsTest(TestCase):
         nomcom = get_nomcom_by_year(self.year)
         feedback = Feedback.objects.create(nomcom=nomcom,
                                            comments=comments,
-                                           type=FeedbackType.objects.get(slug='nomina'))
+                                           type=FeedbackTypeName.objects.get(slug='nomina'))
         feedback.positions.add(position)
         feedback.nominees.add(nominee)
 
@@ -468,7 +468,7 @@ class NomcomViewsTest(TestCase):
         NomineePosition.objects.get(position=position, nominee=nominee)
         feedback = Feedback.objects.filter(positions__in=[position],
                                            nominees__in=[nominee],
-                                           type=FeedbackType.objects.get(slug='nomina')).latest('id')
+                                           type=FeedbackTypeName.objects.get(slug='nomina')).latest('id')
         if public:
             self.assertEqual(feedback.author, nominator_email)
 
@@ -531,7 +531,7 @@ class NomcomViewsTest(TestCase):
         ## check objects
         feedback = Feedback.objects.filter(positions__in=[position],
                                            nominees__in=[nominee],
-                                           type=FeedbackType.objects.get(slug='questio')).latest('id')
+                                           type=FeedbackTypeName.objects.get(slug='questio')).latest('id')
 
         ## to check feedback comments are saved like enrypted data
         self.assertNotEqual(feedback.comments, comments)
@@ -602,7 +602,7 @@ class NomcomViewsTest(TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "info-message-error")
             # accept nomination
-            nominee_position.state = NomineePositionState.objects.get(slug='accepted')
+            nominee_position.state = NomineePositionStateName.objects.get(slug='accepted')
             nominee_position.save()
 
         response = self.client.post(feedback_url, test_data)
@@ -612,7 +612,7 @@ class NomcomViewsTest(TestCase):
         ## check objects
         feedback = Feedback.objects.filter(positions__in=[position],
                                            nominees__in=[nominee],
-                                           type=FeedbackType.objects.get(slug='comment')).latest('id')
+                                           type=FeedbackTypeName.objects.get(slug='comment')).latest('id')
         if public:
             self.assertEqual(feedback.author, nominator_email)
 
@@ -648,7 +648,7 @@ class NomineePositionStateSaveTest(TestCase):
         position = Position.objects.get(name='INT')
         nominee_position = NomineePosition.objects.create(position=position,
                                                           nominee=self.nominee,
-                                                          state=NomineePositionState.objects.get(slug='accepted'))
+                                                          state=NomineePositionStateName.objects.get(slug='accepted'))
         self.assertEqual(nominee_position.state.slug, 'accepted')
 
     def test_nomine_position_unique(self):
@@ -681,7 +681,7 @@ class FeedbackTest(TestCase):
         comments = u'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         feedback = Feedback.objects.create(nomcom=nomcom,
                                            comments=comments,
-                                           type=FeedbackType.objects.get(slug='nomina'))
+                                           type=FeedbackTypeName.objects.get(slug='nomina'))
         feedback.positions.add(position)
         feedback.nominees.add(nominee)
 
@@ -713,7 +713,7 @@ class ReminderTest(TestCase):
         np.save()
         n = get_or_create_nominee(self.nomcom,"Nominee 1","nominee1@example.org",iab,None)
         np = n.nomineeposition_set.get(position=iab)
-        np.state = NomineePositionState.objects.get(slug='accepted')
+        np.state = NomineePositionStateName.objects.get(slug='accepted')
         np.time = t_minus_3
         np.save()
         n = get_or_create_nominee(self.nomcom,"Nominee 2","nominee2@example.org",rai,None)
@@ -722,12 +722,12 @@ class ReminderTest(TestCase):
         np.save()
         n = get_or_create_nominee(self.nomcom,"Nominee 2","nominee2@example.org",gen,None)
         np = n.nomineeposition_set.get(position=gen)
-        np.state = NomineePositionState.objects.get(slug='accepted')
+        np.state = NomineePositionStateName.objects.get(slug='accepted')
         np.time = t_minus_4
         np.save()
         feedback = Feedback.objects.create(nomcom=self.nomcom,
                                            comments='some non-empty comments',
-                                           type=FeedbackType.objects.get(slug='questio'),
+                                           type=FeedbackTypeName.objects.get(slug='questio'),
                                            user=User.objects.get(username=CHAIR_USER))
         feedback.positions.add(gen)
         feedback.nominees.add(n)

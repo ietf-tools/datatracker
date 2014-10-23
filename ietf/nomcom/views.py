@@ -16,7 +16,7 @@ from django.forms.models import modelformset_factory, inlineformset_factory
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
-from ietf.name.models import NomineePositionState, FeedbackType
+from ietf.name.models import NomineePositionStateName, FeedbackTypeName
 from ietf.group.models import Group, GroupEvent
 from ietf.message.models import Message
 
@@ -172,7 +172,7 @@ def private_index(request, year):
         nominee_positions = [np for np in nominee_positions if np.questionnaires]
 
     stats = all_nominee_positions.values('position__name', 'position__id').annotate(total=Count('position'))
-    states = list(NomineePositionState.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': u'Questionnaire'}]
+    states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': u'Questionnaire'}]
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
         for state in states:
@@ -206,13 +206,13 @@ def send_reminder_mail(request, year, type):
         mail_path = nomcom_template_path + NOMINEE_ACCEPT_REMINDER_TEMPLATE
         reminder_description = 'accept (or decline) a nomination'
         selected_tab = 'send_accept_reminder'
-        state_description = NomineePositionState.objects.get(slug=interesting_state).name
+        state_description = NomineePositionStateName.objects.get(slug=interesting_state).name
     elif type=='questionnaire':
         interesting_state = 'accepted'
         mail_path = nomcom_template_path + NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE
         reminder_description = 'complete the questionnaire for a nominated position'
         selected_tab = 'send_questionnaire_reminder'
-        state_description =  NomineePositionState.objects.get(slug=interesting_state).name+' but no questionnaire has been received'
+        state_description =  NomineePositionStateName.objects.get(slug=interesting_state).name+' but no questionnaire has been received'
     else:
         raise Http404
 
@@ -480,7 +480,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
     if nominee_position.state.slug != "pending":
         return HttpResponseForbidden("The nomination already was %s" % nominee_position.state)
 
-    state = get_object_or_404(NomineePositionState, slug=state)
+    state = get_object_or_404(NomineePositionStateName, slug=state)
     message = ('warning',
         ("Click on 'Save' to set the state of your nomination to %s to %s (this"+
         "is not a final commitment - you can notify us later if you need to change this)") %
@@ -509,7 +509,7 @@ def view_feedback(request, year):
     nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().distinct()
     independent_feedback_types = []
     feedback_types = []
-    for ft in FeedbackType.objects.all():
+    for ft in FeedbackTypeName.objects.all():
         if ft.slug in settings.NOMINEE_FEEDBACK_TYPES:
             feedback_types.append(ft)
         else:
@@ -545,8 +545,8 @@ def view_feedback_pending(request, year):
     feedbacks = Feedback.objects.filter(type__isnull=True, nomcom=nomcom)
 
     try:
-        default_type = FeedbackType.objects.get(slug=settings.DEFAULT_FEEDBACK_TYPE)
-    except FeedbackType.DoesNotExist:
+        default_type = FeedbackTypeName.objects.get(slug=settings.DEFAULT_FEEDBACK_TYPE)
+    except FeedbackTypeName.DoesNotExist:
         default_type = None
 
     extra_step = False
@@ -625,7 +625,7 @@ def view_feedback_pending(request, year):
         for form in formset.forms:
             form.set_nomcom(nomcom, request.user)
     type_dict = OrderedDict()
-    for t in FeedbackType.objects.all().order_by('pk'):
+    for t in FeedbackTypeName.objects.all().order_by('pk'):
         rest = t.name
         slug = rest[0]
         rest = rest[1:]
@@ -642,7 +642,7 @@ def view_feedback_pending(request, year):
                                'default_type': default_type,
                                'type_dict': type_dict,
                                'extra_ids': extra_ids,
-                               'types': FeedbackType.objects.all().order_by('pk'),
+                               'types': FeedbackTypeName.objects.all().order_by('pk'),
                                'nomcom': nomcom}, RequestContext(request))
 
 
@@ -651,7 +651,7 @@ def view_feedback_pending(request, year):
 def view_feedback_unrelated(request, year):
     nomcom = get_nomcom_by_year(year)
     feedback_types = []
-    for ft in FeedbackType.objects.exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES):
+    for ft in FeedbackTypeName.objects.exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES):
         feedback_types.append({'ft': ft,
                                'feedback': ft.feedback_set.get_by_nomcom(nomcom)})
 
@@ -667,7 +667,7 @@ def view_feedback_unrelated(request, year):
 def view_feedback_nominee(request, year, nominee_id):
     nomcom = get_nomcom_by_year(year)
     nominee = get_object_or_404(Nominee, id=nominee_id)
-    feedback_types = FeedbackType.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
+    feedback_types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
 
     return render_to_response('nomcom/view_feedback_nominee.html',
                               {'year': year,
