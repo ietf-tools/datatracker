@@ -27,37 +27,40 @@ class Migration(SchemaMigration):
         db.alter_column(u'meeting_session', 'status_id', self.gf('django.db.models.fields.CharField')(max_length=32))
 
         # Changing foreign key 'Document.type'
-        db.alter_column(u'doc_document', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        db.alter_column(u'doc_document', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=32, blank=True, null=True))
 
         # Changing foreign key 'Document.stream'
-        db.alter_column(u'doc_document', 'stream_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        db.alter_column(u'doc_document', 'stream_id', self.gf('django.db.models.fields.CharField')(max_length=32, blank=True, null=True))
+
+        # Changing foreign key 'Document.intended_std_level'
+        db.alter_column(u'doc_document', 'intended_std_level_id', self.gf('django.db.models.fields.CharField')(max_length=32, blank=True, null=True))
 
         # Changing foreign key 'Document.std_level'
-        db.alter_column(u'doc_document', 'std_level_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        db.alter_column(u'doc_document', 'std_level_id', self.gf('django.db.models.fields.CharField')(max_length=32, blank=True, null=True))
 
-        # Changing foreign key 'DocumentHistory.type'
-        db.alter_column(u'doc_documenthistory', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        # Changing foreign key 'DocHistorytype'
+        db.alter_column(u'doc_dochistory', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=32, blank=True, null=True))
 
-        # Changing foreign key 'DocumentHistory.stream'
-        db.alter_column(u'doc_documenthistory', 'stream_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        # Changing foreign key 'DocHistorystream'
+        db.alter_column(u'doc_dochistory', 'stream_id', self.gf('django.db.models.fields.CharField')(max_length=32, blank=True, null=True))
 
-        # Changing foreign key 'DocumentHistory.intended_std_level'
-        db.alter_column(u'doc_documenthistory', 'intended_std_level_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        # Changing foreign key 'DocHistoryintended_std_level'
+        db.alter_column(u'doc_dochistory', 'intended_std_level_id', self.gf('django.db.models.fields.CharField')(max_length=32, blank=True, null=True))
 
-        # Changing foreign key 'DocumentHistory.std_level'
-        db.alter_column(u'doc_documenthistory', 'std_level_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        # Changing foreign key 'DocHistorystd_level'
+        db.alter_column(u'doc_dochistory', 'std_level_id', self.gf('django.db.models.fields.CharField')(max_length=32, blank=True, null=True))
 
         # Changing foreign key 'RelatedDocument.relationship'
         db.alter_column(u'doc_relateddocument', 'relationship_id', self.gf('django.db.models.fields.CharField')(max_length=32))
 
-        # Changing foreign key 'RelatedDocHistory.relationship'
+        # Changing foreign key 'RelatedDocHistoryrelationship'
         db.alter_column(u'doc_relateddochistory', 'relationship_id', self.gf('django.db.models.fields.CharField')(max_length=32))
 
         # Changing foreign key 'DocReminder.type'
         db.alter_column(u'doc_docreminder', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=32))
 
         # Changing foreign key 'BallotType.doc_type'
-        db.alter_column(u'doc_ballottype', 'doc_type_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        db.alter_column(u'doc_ballottype', 'doc_type_id', self.gf('django.db.models.fields.CharField')(max_length=32, blank=True, null=True))
 
         # Changing foreign key 'BallotPositionDocEvent.pos'
         db.alter_column(u'doc_ballotpositiondocevent', 'pos_id', self.gf('django.db.models.fields.CharField')(max_length=32))
@@ -66,10 +69,10 @@ class Migration(SchemaMigration):
         db.alter_column(u'dbtemplate_dbtemplate', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=32))
 
         # Changing foreign key 'Group.state'
-        db.alter_column(u'group_group', 'state_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        db.alter_column(u'group_group', 'state_id', self.gf('django.db.models.fields.CharField')(max_length=32, null=True))
 
         # Changing foreign key 'Group.type'
-        db.alter_column(u'group_group', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        db.alter_column(u'group_group', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=32, null=True))
 
         # Changing foreign key 'GroupHistory.state'
         db.alter_column(u'group_grouphistory', 'state_id', self.gf('django.db.models.fields.CharField')(max_length=32))
@@ -92,8 +95,11 @@ class Migration(SchemaMigration):
         # Changing foreign key 'RoleHistory.name'
         db.alter_column(u'group_rolehistory', 'name_id', self.gf('django.db.models.fields.CharField')(max_length=32))
 
+        # Changing foreign key 'NomineePosition.state'
+        db.alter_column(u'nomcom_nomineeposition', 'state_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+
         # Changing foreign key 'Feedback.type'
-        db.alter_column(u'nomcom_feedback', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=32))
+        db.alter_column(u'nomcom_feedback', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=32, blank=True, null=True))
 
 
     def backwards(self, orm):
@@ -120,37 +126,40 @@ class Migration(SchemaMigration):
         db.alter_column(u'meeting_session', 'status_id', self.gf('django.db.models.fields.CharField')(max_length=8))
 
         # Changing foreign key 'Document.type'
-        db.alter_column(u'doc_document', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        db.alter_column(u'doc_document', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=8, blank=True, null=True))
 
         # Changing foreign key 'Document.stream'
-        db.alter_column(u'doc_document', 'stream_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        db.alter_column(u'doc_document', 'stream_id', self.gf('django.db.models.fields.CharField')(max_length=8, blank=True, null=True))
+
+        # Changing foreign key 'Document.intended_std_level'
+        db.alter_column(u'doc_document', 'intended_std_level_id', self.gf('django.db.models.fields.CharField')(max_length=8, blank=True, null=True))
 
         # Changing foreign key 'Document.std_level'
-        db.alter_column(u'doc_document', 'std_level_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        db.alter_column(u'doc_document', 'std_level_id', self.gf('django.db.models.fields.CharField')(max_length=8, blank=True, null=True))
 
-        # Changing foreign key 'DocumentHistory.type'
-        db.alter_column(u'doc_documenthistory', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        # Changing foreign key 'DocHistorytype'
+        db.alter_column(u'doc_dochistory', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=8, blank=True, null=True))
 
-        # Changing foreign key 'DocumentHistory.stream'
-        db.alter_column(u'doc_documenthistory', 'stream_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        # Changing foreign key 'DocHistorystream'
+        db.alter_column(u'doc_dochistory', 'stream_id', self.gf('django.db.models.fields.CharField')(max_length=8, blank=True, null=True))
 
-        # Changing foreign key 'DocumentHistory.intended_std_level'
-        db.alter_column(u'doc_documenthistory', 'intended_std_level_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        # Changing foreign key 'DocHistoryintended_std_level'
+        db.alter_column(u'doc_dochistory', 'intended_std_level_id', self.gf('django.db.models.fields.CharField')(max_length=8, blank=True, null=True))
 
-        # Changing foreign key 'DocumentHistory.std_level'
-        db.alter_column(u'doc_documenthistory', 'std_level_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        # Changing foreign key 'DocHistorystd_level'
+        db.alter_column(u'doc_dochistory', 'std_level_id', self.gf('django.db.models.fields.CharField')(max_length=8, blank=True, null=True))
 
         # Changing foreign key 'RelatedDocument.relationship'
         db.alter_column(u'doc_relateddocument', 'relationship_id', self.gf('django.db.models.fields.CharField')(max_length=8))
 
-        # Changing foreign key 'RelatedDocHistory.relationship'
+        # Changing foreign key 'RelatedDocHistoryrelationship'
         db.alter_column(u'doc_relateddochistory', 'relationship_id', self.gf('django.db.models.fields.CharField')(max_length=8))
 
         # Changing foreign key 'DocReminder.type'
         db.alter_column(u'doc_docreminder', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=8))
 
         # Changing foreign key 'BallotType.doc_type'
-        db.alter_column(u'doc_ballottype', 'doc_type_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        db.alter_column(u'doc_ballottype', 'doc_type_id', self.gf('django.db.models.fields.CharField')(max_length=8, blank=True, null=True))
 
         # Changing foreign key 'BallotPositionDocEvent.pos'
         db.alter_column(u'doc_ballotpositiondocevent', 'pos_id', self.gf('django.db.models.fields.CharField')(max_length=8))
@@ -159,10 +168,10 @@ class Migration(SchemaMigration):
         db.alter_column(u'dbtemplate_dbtemplate', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=8))
 
         # Changing foreign key 'Group.state'
-        db.alter_column(u'group_group', 'state_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        db.alter_column(u'group_group', 'state_id', self.gf('django.db.models.fields.CharField')(max_length=8, null=True))
 
         # Changing foreign key 'Group.type'
-        db.alter_column(u'group_group', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        db.alter_column(u'group_group', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=8, null=True))
 
         # Changing foreign key 'GroupHistory.state'
         db.alter_column(u'group_grouphistory', 'state_id', self.gf('django.db.models.fields.CharField')(max_length=8))
@@ -185,8 +194,11 @@ class Migration(SchemaMigration):
         # Changing foreign key 'RoleHistory.name'
         db.alter_column(u'group_rolehistory', 'name_id', self.gf('django.db.models.fields.CharField')(max_length=8))
 
+        # Changing foreign key 'NomineePosition.state'
+        db.alter_column(u'nomcom_nomineeposition', 'state_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+
         # Changing foreign key 'Feedback.type'
-        db.alter_column(u'nomcom_feedback', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=8))
+        db.alter_column(u'nomcom_feedback', 'type_id', self.gf('django.db.models.fields.CharField')(max_length=8, blank=True, null=True))
 
 
     models = {
