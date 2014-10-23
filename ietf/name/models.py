@@ -60,9 +60,9 @@ class ConstraintName(NameModel):
     penalty = models.IntegerField(default=0, help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)")
 class LiaisonStatementPurposeName(NameModel):
     """For action, For comment, For information, In response, Other"""
-class NomineePositionState(NameModel):
+class NomineePositionStateName(NameModel):
     """Status of a candidate for a position: None, Accepted, Declined"""
-class FeedbackType(NameModel):
+class FeedbackTypeName(NameModel):
     """Type of feedback: questionnaires, nominations, comments"""
 class DBTemplateTypeName(NameModel):
     """reStructuredText, Plain, Django"""

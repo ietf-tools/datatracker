@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8-No-BOM -*-
 import os
 
 from django.db import models
@@ -13,7 +13,7 @@ from south.modelsinspector import add_introspection_rules
 from ietf.nomcom.fields import EncryptedTextField
 from ietf.person.models import Email
 from ietf.group.models import Group
-from ietf.name.models import NomineePositionState, FeedbackType
+from ietf.name.models import NomineePositionStateName, FeedbackTypeName
 from ietf.dbtemplate.models import DBTemplate
 
 from ietf.nomcom.managers import NomineePositionManager, NomineeManager, \
@@ -111,7 +111,7 @@ class NomineePosition(models.Model):
 
     position = models.ForeignKey('Position')
     nominee = models.ForeignKey('Nominee')
-    state = models.ForeignKey(NomineePositionState)
+    state = models.ForeignKey(NomineePositionStateName)
     time = models.DateTimeField(auto_now_add=True)
 
     objects = NomineePositionManager()
@@ -187,7 +187,7 @@ class Feedback(models.Model):
     nominees = models.ManyToManyField('Nominee', blank=True, null=True)
     subject = models.TextField(verbose_name='Subject', blank=True)
     comments = EncryptedTextField(verbose_name='Comments')
-    type = models.ForeignKey(FeedbackType, blank=True, null=True)
+    type = models.ForeignKey(FeedbackTypeName, blank=True, null=True)
     user = models.ForeignKey(User, editable=False, blank=True, null=True)
     time = models.DateTimeField(auto_now_add=True)
 
