@@ -735,6 +735,16 @@
  }
 },
 {
+ "pk": "recording", 
+ "model": "name.doctypename", 
+ "fields": {
+  "order": 0, 
+  "used": true, 
+  "name": "Recording", 
+  "desc": ""
+ }
+},
+{
  "pk": "uploaded", 
  "model": "name.draftsubmissionstatename", 
  "fields": {
@@ -831,7 +841,7 @@
 },
 {
  "pk": "comment", 
- "model": "name.feedbacktype", 
+ "model": "name.feedbacktypename", 
  "fields": {
   "order": 0, 
   "used": true, 
@@ -841,7 +851,7 @@
 },
 {
  "pk": "questio", 
- "model": "name.feedbacktype", 
+ "model": "name.feedbacktypename", 
  "fields": {
   "order": 0, 
   "used": true, 
@@ -851,7 +861,7 @@
 },
 {
  "pk": "nomina", 
- "model": "name.feedbacktype", 
+ "model": "name.feedbacktypename", 
  "fields": {
   "order": 0, 
   "used": true, 
@@ -861,7 +871,7 @@
 },
 {
  "pk": "junk", 
- "model": "name.feedbacktype", 
+ "model": "name.feedbacktypename", 
  "fields": {
   "order": 0, 
   "used": true, 
@@ -1261,7 +1271,7 @@
 },
 {
  "pk": "pending", 
- "model": "name.nomineepositionstate", 
+ "model": "name.nomineepositionstatename", 
  "fields": {
   "order": 0, 
   "used": true, 
@@ -1271,7 +1281,7 @@
 },
 {
  "pk": "accepted", 
- "model": "name.nomineepositionstate", 
+ "model": "name.nomineepositionstatename", 
  "fields": {
   "order": 0, 
   "used": true, 
@@ -1281,7 +1291,7 @@
 },
 {
  "pk": "declined", 
- "model": "name.nomineepositionstate", 
+ "model": "name.nomineepositionstatename", 
  "fields": {
   "order": 0, 
   "used": true, 
@@ -1886,6 +1896,13 @@
  "model": "doc.statetype", 
  "fields": {
   "label": "RFC Status Change state"
+ }
+},
+{
+ "pk": "recording", 
+ "model": "doc.statetype", 
+ "fields": {
+  "label": "Recording State"
  }
 },
 {
@@ -3554,6 +3571,32 @@
   "slug": "deleted", 
   "type": "minutes", 
   "order": 2, 
+  "desc": ""
+ }
+},
+{
+ "pk": 135, 
+ "model": "doc.state", 
+ "fields": {
+  "used": true, 
+  "name": "Active", 
+  "next_states": [], 
+  "slug": "active", 
+  "type": "recording", 
+  "order": 0, 
+  "desc": ""
+ }
+},
+{
+ "pk": 136, 
+ "model": "doc.state", 
+ "fields": {
+  "used": true, 
+  "name": "deleted", 
+  "next_states": [], 
+  "slug": "deleted", 
+  "type": "recording", 
+  "order": 0, 
   "desc": ""
  }
 },
