@@ -3,7 +3,9 @@
 import datetime, os
 
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse as urlreverse
+from django.core.validators import URLValidator
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils.html import mark_safe
@@ -90,6 +92,19 @@ class DocumentInfo(models.Model):
             return settings.DOCUMENT_PATH_PATTERN.format(doc=self)
 
     def href(self):
+        # If self.external_url truly is an url, use it.  This is a change from
+        # the earlier resulution order, but there's at the moment one single
+        # instance which matches this (with correct results), so we won't
+        # break things all over the place.
+        # XXX TODO: move all non-URL 'external_url' values into a field which is
+        # better named, or regularize the filename based on self.name
+        validator = URLValidator()
+        try:
+            validator(self.external_url)
+            return self.external_url
+        except ValidationError:
+            pass
+
         meeting_related = self.meeting_related()
 
         settings_var = settings.DOC_HREFS

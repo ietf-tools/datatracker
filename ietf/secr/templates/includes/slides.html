@@ -11,7 +11,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for slide in slides %}
+    {% for slide in materials.slides %}
        <tr id="slide_{{ forloop.counter }}" class="{% cycle 'row1' 'row2' %}">
          <td><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><a href="{{ slide.get_absolute_url }}" target="_blank">{{ slide.title }}</a></td>
          <td>{{ slide.external_url }}{% if slide.external_url|is_ppt %}<span class="required"> *</span>{% endif %}</td>

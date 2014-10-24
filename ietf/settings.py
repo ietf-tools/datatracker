@@ -284,6 +284,7 @@ IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
 IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
+MEETING_RECORDINGS_DIR = '/a/www/audio'
 
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
@@ -302,6 +303,7 @@ MEETING_DOC_HREFS = {
     "agenda": "/meeting/{meeting}/agenda/{doc.group.acronym}/",
     "minutes": "http://www.ietf.org/proceedings/{meeting}/minutes/{doc.external_url}",
     "slides": "http://www.ietf.org/proceedings/{meeting}/slides/{doc.external_url}",
+    "recording": "{doc.external_url}",
 }
 
 # Override this in settings_local.py if needed

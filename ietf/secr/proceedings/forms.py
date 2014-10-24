@@ -5,9 +5,9 @@ from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 
 from ietf.doc.models import Document
+from ietf.group.models import Group
 from ietf.name.models import DocTypeName
-from ietf.meeting.models import Meeting
-
+from ietf.meeting.models import Meeting, Session
 
 
 # ---------------------------------------------
@@ -21,6 +21,14 @@ VALID_AGENDA_EXTENSIONS = ('.txt','.html','.htm')
 #----------------------------------------------------------
 # Forms
 #----------------------------------------------------------
+
+class AjaxChoiceField(forms.ChoiceField):
+    '''
+    Special ChoiceField to use when populating options with Ajax.  The submitted value
+    is not in the initial choices list so we need to override valid_value().
+    '''
+    def valid_value(self, value):
+        return True
 
 class EditSlideForm(forms.ModelForm):
     class Meta:
@@ -41,6 +49,37 @@ class InterimMeetingForm(forms.Form):
         if qs:
             raise forms.ValidationError('A meeting already exists for this date.')
         return cleaned_data
+
+class RecordingForm(forms.Form):
+    group = forms.CharField(max_length=40)
+    external_url = forms.URLField(label='Url')
+    session = AjaxChoiceField(choices=(('','----'),))
+    
+    def clean_session(self):
+        '''
+        Emulate ModelChoiceField functionality
+        '''
+        id = self.cleaned_data.get('session')
+        try:
+            return Session.objects.get(id=id)
+        except Session.DoesNotExist:
+            raise forms.ValidationError('Invalid Session')
+    
+    def clean_group(self):
+        acronym = self.cleaned_data.get('group')
+        try:
+            return Group.objects.get(acronym=acronym)
+        except Group.DoesNotExist:
+            raise forms.ValidationError('Invalid group name')
+
+class RecordingEditForm(forms.ModelForm):
+    class Meta:
+        model = Document
+        fields = ['external_url']
+        
+    def __init__(self, *args, **kwargs):
+        super(RecordingEditForm, self).__init__(*args, **kwargs)
+        self.fields['external_url'].label='Url'
 
 class ReplaceSlideForm(forms.ModelForm):
     file = forms.FileField(label='Select File')

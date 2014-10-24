@@ -1,0 +1,40 @@
+{% extends "base_site.html" %}
+
+{% block title %}Edit Recording{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  {% if meeting.type_id == "interim" %}
+    &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
+    &raquo; <a href="{% url "proceedings_select_interim" %}">Interim Select Group</a>
+    &raquo; <a href="{% url "proceedings_interim" acronym=group.acronym%}">{{ group.acronym }}</a>
+    &raquo; {{ meeting }}
+    &raquo; <a href="{% url "proceedings_recording" meeting_num=meeting.number %}">Recording</a>
+    &raquo; {{ recording.name }}
+  {% else %}
+    &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
+    &raquo; <a href="{% url "proceedings_select" meeting_num=meeting.number %}">{{ meeting.number }}</a>
+    &raquo; <a href="{% url "proceedings_recording" meeting_num=meeting.number %}">Recording</a>
+    &raquo; {{ recording.name }}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Recording Metadata for Group: {{ form.instance.group.acronym }} | Session: {{ form.instance.session_set.first.official_scheduledsession.timeslot.time }}</h2>
+         <p><h3>Edit Recording Metadata:</h3></p>
+         <form id="recording-form" action="" method="post">{% csrf_token %}
+           <table>
+             {{ form.as_table }}
+           </table>
+
+             {% include "includes/buttons_save_cancel.html" %}
+
+         </form>
+</div> <!-- module -->
+
+{% endblock %}

@@ -51,10 +51,10 @@
              <td></td>
            </tr>
            <tr>
-             {% if minutes %}
-             <td><a href="{{ minutes.get_absolute_url }}" target="_blank">Minutes</td>
-             <td>{{ minutes.external_url }}</td>
-             <td><a href="{% url "proceedings_delete_material" slide_id=minutes.name %}">Delete</a></td>
+             {% if materials.minutes %}
+             <td><a href="{{ materials.minutes.get_absolute_url }}" target="_blank">Minutes</td>
+             <td>{{ materials.minutes.external_url }}</td>
+             <td><a href="{% url "proceedings_delete_material" slide_id=materials.minutes.name %}">Delete</a></td>
              {% else %}
              <td>Minutes</td>
              <td>(not uploaded)</td>
@@ -62,10 +62,10 @@
              {% endif %}
            </tr>
            <tr>
-             {% if agenda %}
-             <td><a href="{{ agenda.get_absolute_url }}" target="_blank">Agenda</a></td>
-             <td>{{ agenda.external_url }}</td>
-             <td><a href="{% url "proceedings_delete_material" slide_id=agenda.name %}">Delete</a></td>
+             {% if materials.agenda %}
+             <td><a href="{{ materials.agenda.get_absolute_url }}" target="_blank">Agenda</a></td>
+             <td>{{ materials.agenda.external_url }}</td>
+             <td><a href="{% url "proceedings_delete_material" slide_id=materials.agenda.name %}">Delete</a></td>
              {% else %}
              <td>Agenda</td>
              <td>(not uploaded)</td>
