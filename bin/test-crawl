@@ -3,7 +3,7 @@
 import os, sys, re, datetime, argparse, traceback, tempfile
 
 # boilerplate
-basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path = [ basedir ] + sys.path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
