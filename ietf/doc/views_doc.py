@@ -862,7 +862,7 @@ def telechat_date(request, name):
     initial_returning_item = bool(e and e.returning_item)
 
     prompts = []
-    if e and doc.type.slug != 'charter':
+    if e and e.telechat_date and doc.type.slug != 'charter':
         if e.telechat_date==datetime.date.today():
             prompts.append( "This document is currently scheduled for today's telechat. "
                            +"Please set the returning item bit carefully.")
