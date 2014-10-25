@@ -48,6 +48,7 @@ ietfdb (5.6.4) ietf; urgency=medium
   * Merged in [8293] from rjsparks@nostrum.com (Note: Should what is now
     captured in the STATUSCHANGE_RELATIONS list instead be captured in the
     database in name_docrelationshipname? ):
+
     - Refactored editing the notify field to remove redundant code.
     - Changed the default notification list to include .all for documents, and
       the wg list for wg documents.
@@ -58,6 +59,7 @@ ietfdb (5.6.4) ietf; urgency=medium
       document.
     - Adds the working group email list to the notification list when a
       document is adopted.
+
     Fixes issue #1438.
 
   * Merged in [8285] from rjsparks@nostrum.com:
@@ -68,6 +70,7 @@ ietfdb (5.6.4) ietf; urgency=medium
     document.  Fixes #1452 
 
   * Merged in [8262] and [8263] from rjsparks@nostrum.com:
+
     - Changes when returning_item is automatically set to match the current
       IESGs preferences.  Removes several chunks of dead code related to editing
       telechat dates.  Improves returning item tests.
@@ -77,6 +80,7 @@ ietfdb (5.6.4) ietf; urgency=medium
       update_agenda setting the returning item bit even when the user
       explicitly said not to.  Added prompting to encourage proper setting
       of the returning item bit to the edit_telechat view.
+
     Fixes #1209
 
   * Merged in [8355] from rjsparks@nostrum.com:
@@ -87,6 +91,7 @@ ietfdb (5.6.4) ietf; urgency=medium
     Allow defer for status change documents. Fixes bug #1397.  
 
   * Merged in [8255] from rjsparks@nostrum.com:
+
     - Combined defer/undefer tests from doc/tests_ballot and iesg/tests,
       extending them to demonstrate current reported bugs.
     - Made doc.active_defer_event() look for the events that are currently being
@@ -95,6 +100,7 @@ ietfdb (5.6.4) ietf; urgency=medium
     - Guarded against deferring an already deferred document or undeferring a
       document that hasn't been deferred.
     - Guarded against deferring a document that's not scheduled for a telechat.
+
     Fixes bugs 1417, 1465, 1417 
 
   * Merged in [8254] from rjsparks@nostrum.com:
@@ -126,15 +132,20 @@ ietfdb (5.6.3) ietf; urgency=medium
 
   * Merged in [8229] from rjsparks@nostrum.com, with minor tweaks:
       From mcr@sandelman.ca:
-	Refactor to remove dajaxice.
-	Modified the URLs that address schedules:
+
+        * Refactor to remove dajaxice.
+
+	* Modified the URLs that address schedules:
+
 	  - urls now always start with /agenda, removing the mix of /agenda and 
-	/schedule prefixes
+	    /schedule prefixes
 	  - urls to a given schedule include the schedule owner (by email 
-	address)
-	Corrected issue that prevented deleting sessions.
-	Changed comment mechanism in timeslot_edit.js
-	Migration to change the email address for (System)
+	    address)
+
+	* Corrected issue that prevented deleting sessions.
+	* Changed comment mechanism in timeslot_edit.js
+	* Migration to change the email address for (System)
+
       Fixes bug #1426 
 
   * Merged in [8211] from rjsparks@nostrum.com:
