@@ -97,7 +97,7 @@ class IndexTests(TestCase):
         self.assertEqual(t[13], draft.title)
         author = draft.documentauthor_set.order_by("order").get()
         self.assertEqual(t[14], "%s <%s>" % (author.author.person.name, author.author.address))
-        self.assertEqual(t[15], "%s <%s>" % (draft.shepherd, draft.shepherd.email_address()))
+        self.assertEqual(t[15], "%s <%s>" % (draft.shepherd.person.name, draft.shepherd.address))
         self.assertEqual(t[16], "%s <%s>" % (draft.ad, draft.ad.email_address()))
 
 

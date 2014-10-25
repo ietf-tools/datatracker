@@ -17,7 +17,8 @@ from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEM
                                get_user_email, validate_private_key, validate_public_key,
                                get_or_create_nominee, create_feedback_email)
 from ietf.person.models import Email
-from ietf.utils import fields as custom_fields
+from ietf.person.fields import AutocompletedEmailField
+from ietf.utils.fields import MultiEmailField
 from ietf.utils.mail import send_mail
 
 
@@ -29,10 +30,6 @@ def get_nomcom_group_or_404(year):
                              acronym__icontains=year,
                              state__slug='active',
                              nomcom__isnull=False)
-
-
-def get_list(string):
-        return map(unicode.strip, string.replace('\r\n', '').split(','))
 
 
 class PositionNomineeField(forms.ChoiceField):
@@ -109,7 +106,7 @@ class BaseNomcomForm(object):
 
 class EditMembersForm(BaseNomcomForm, forms.Form):
 
-    members = custom_fields.MultiEmailField(label="Members email", required=False)
+    members = MultiEmailField(label="Members email", required=False, widget=forms.Textarea)
 
     fieldsets = [('Members', ('members',))]
 
@@ -133,7 +130,7 @@ class EditMembersFormPreview(FormPreview):
 
     def preview_get(self, request):
         "Displays the form"
-        f = self.form(auto_id=AUTO_ID)
+        f = self.form(auto_id=self.get_auto_id(), initial=self.get_initial(request))
         return render_to_response(self.form_template,
                                   {'form': f,
                                   'stage_field': self.unused_name('stage'),
@@ -143,14 +140,14 @@ class EditMembersFormPreview(FormPreview):
                                   'selected': 'edit_members'},
                                   context_instance=RequestContext(request))
 
-    def parse_params(self, *args, **kwargs):
+    def get_initial(self, request):
         members = self.group.role_set.filter(name__slug='member')
-
         if members:
-            self.form.base_fields['members'].initial = ',\r\n'.join([role.email.address for role in members])
+            return { "members": ",\r\n".join(role.email.address for role in members) }
+        return {}
 
     def process_preview(self, request, form, context):
-        members_email = get_list(form.cleaned_data['members'])
+        members_email = form.cleaned_data['members']
 
         members_info = []
         emails_not_found = []
@@ -233,10 +230,11 @@ class EditChairFormPreview(FormPreview):
 
         return super(EditChairFormPreview, self).__call__(request, *args, **kwargs)
 
-    def parse_params(self, *args, **kwargs):
+    def get_initial(self, request):
         chair = self.group.get_chair()
         if chair:
-            self.form.base_fields['chair'].initial = chair.email.address
+            return { "chair": chair.email.address }
+        return {}
 
     def process_preview(self, request, form, context):
         chair_email = form.cleaned_data['chair']
@@ -297,8 +295,8 @@ class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
 
 class MergeForm(BaseNomcomForm, forms.Form):
 
-    secondary_emails = custom_fields.MultiEmailField(label="Secondary email addresses",
-        help_text="Provide a comma separated list of email addresses. Nominations already received with any of these email address will be moved to show under the primary address")
+    secondary_emails = MultiEmailField(label="Secondary email addresses",
+        help_text="Provide a comma separated list of email addresses. Nominations already received with any of these email address will be moved to show under the primary address", widget=forms.Textarea)
     primary_email = forms.EmailField(label="Primary email address",
                                      widget=forms.TextInput(attrs={'size': '40'}))
 
@@ -312,22 +310,21 @@ class MergeForm(BaseNomcomForm, forms.Form):
         email = self.cleaned_data['primary_email']
         nominees = Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(email__address=email)
         if not nominees:
-            msg = "Does not exist a nomiee with this email"
+            msg = "No nominee with this email exists"
             self._errors["primary_email"] = self.error_class([msg])
 
         return email
 
     def clean_secondary_emails(self):
-        data = self.cleaned_data['secondary_emails']
-        emails = get_list(data)
+        emails = self.cleaned_data['secondary_emails']
         for email in emails:
             nominees = Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(email__address=email)
             if not nominees:
-                msg = "Does not exist a nomiee with email %s" % email
+                msg = "No nominee with email %s exists" % email
                 self._errors["primary_email"] = self.error_class([msg])
             break
 
-        return data
+        return emails
 
     def clean(self):
         primary_email = self.cleaned_data.get("primary_email")
@@ -340,7 +337,7 @@ class MergeForm(BaseNomcomForm, forms.Form):
 
     def save(self):
         primary_email = self.cleaned_data.get("primary_email")
-        secondary_emails = get_list(self.cleaned_data.get("secondary_emails"))
+        secondary_emails = self.cleaned_data.get("secondary_emails")
 
         primary_nominee = Nominee.objects.get_by_nomcom(self.nomcom).get(email__address=primary_email)
         while primary_nominee.duplicated:
@@ -658,6 +655,8 @@ class PositionForm(BaseNomcomForm, forms.ModelForm):
 
     fieldsets = [('Position', ('name', 'description',
                                'is_open', 'incumbent'))]
+
+    incumbent = AutocompletedEmailField(required=False)
 
     class Meta:
         model = Position

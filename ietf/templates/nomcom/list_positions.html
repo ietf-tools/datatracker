@@ -11,7 +11,7 @@
         <dt>Description:</dt>
         <dd>{{ position.description }}</dd>
         <dt>Incumbent:</dt>
-        <dd>{{ position.incumbent }}</dd>
+        <dd>{% if position.incumbent %}{{ position.incumbent.person }} &lt;{{ position.incumbent.address }}&gt;{% else %}None{% endif %}</dd>
         <dt>Is open:</dt>
         <dd>{{ position.is_open }}</dd>
         <dt>Templates:</dt>

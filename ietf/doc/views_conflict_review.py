@@ -366,7 +366,7 @@ def start_review_sanity_check(request, name):
 def build_notify_addresses(doc_to_review):
     # Take care to do the right thing during ietf chair and stream owner transitions
     notify_addresses = []
-    notify_addresses.extend([x.person.formatted_email() for x in Role.objects.filter(group__acronym=doc_to_review.stream.slug,name='chair')])
+    notify_addresses.extend([r.formatted_email() for r in Role.objects.filter(group__acronym=doc_to_review.stream.slug, name='chair')])
     notify_addresses.append("%s@%s" % (doc_to_review.name, settings.TOOLS_SERVER))
     return notify_addresses
 

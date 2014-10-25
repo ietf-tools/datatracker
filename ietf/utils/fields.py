@@ -1,23 +1,25 @@
 from django import forms
-from django.core.validators import validate_email, ValidationError
+from django.core.validators import validate_email
 
+class MultiEmailField(forms.Field):
+    def to_python(self, value):
+        "Normalize data to a list of strings."
 
-class MultiEmailField(forms.CharField):
-    widget = forms.widgets.Textarea
-
-    def clean(self, value):
-        super(MultiEmailField, self).clean(value)
+        # Return an empty list if no input was given.
         if not value:
+            return []
+
+        if isinstance(value, basestring):
+            values = value.split(',')
+            return [ x.strip() for x in values if x.strip() ]
+        else:
             return value
 
-        if value.endswith(','):
-            value = value[:-1]
-        emails = [v.strip() for v in value.split(',') if v.strip()]
+    def validate(self, value):
+        "Check if value consists only of valid emails."
 
-        for email in emails:
-            try:
-                validate_email(email)
-            except ValidationError:
-                raise ValidationError("This is not a valid comma separated email list.")
+        # Use the parent's handling of required fields, etc.
+        super(MultiEmailField, self).validate(value)
 
-        return value
+        for email in value:
+            validate_email(email)

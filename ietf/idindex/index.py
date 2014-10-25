@@ -13,7 +13,7 @@ from ietf.doc.models import Document, DocEvent, DocumentAuthor, RelatedDocument,
 from ietf.doc.models import LastCallDocEvent, NewRevisionDocEvent
 from ietf.doc.models import IESG_SUBSTATE_TAGS
 from ietf.group.models import Group
-from ietf.person.models import Person
+from ietf.person.models import Person, Email
 
 def all_id_txt():
     # this returns a lot of data so try to be efficient
@@ -125,8 +125,8 @@ def all_id2_txt():
         else:
             l.append(a.author.person.plain_name())
 
-    shepherds = dict((p.pk, p.formatted_email().replace('"', ''))
-                     for p in Person.objects.filter(shepherd_document_set__type="draft").distinct())
+    shepherds = dict((e.pk, e.formatted_email().replace('"', ''))
+                     for e in Email.objects.filter(shepherd_document_set__type="draft").select_related("person").distinct())
     ads = dict((p.pk, p.formatted_email().replace('"', ''))
                for p in Person.objects.filter(ad_document_set__type="draft").distinct())
 

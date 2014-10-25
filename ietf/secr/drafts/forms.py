@@ -8,6 +8,7 @@ from ietf.doc.models import Document, DocAlias, State
 from ietf.name.models import IntendedStdLevelName, DocRelationshipName
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
+from ietf.person.fields import AutocompletedEmailField
 from ietf.secr.groups.forms import get_person
 
 
@@ -131,7 +132,7 @@ class EditModelForm(forms.ModelForm):
     iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft-iesg'),required=False)
     group = GroupModelChoiceField(required=True)
     review_by_rfc_editor = forms.BooleanField(required=False)
-    shepherd = forms.CharField(max_length=100,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.",required=False)
+    shepherd = AutocompletedEmailField(required=False, only_users=True)
 
     class Meta:
         model = Document
@@ -148,8 +149,6 @@ class EditModelForm(forms.ModelForm):
         self.initial['state'] = self.instance.get_state().pk
         if self.instance.get_state('draft-iesg'):
             self.initial['iesg_state'] = self.instance.get_state('draft-iesg').pk
-        if self.instance.shepherd:
-            self.initial['shepherd'] = "%s - (%s)" % (self.instance.shepherd.name, self.instance.shepherd.id)
 
         # setup special fields
         if self.instance:
@@ -190,16 +189,6 @@ class EditModelForm(forms.ModelForm):
         if name and not Document.objects.filter(name=name):
             raise forms.ValidationError("ERROR: Draft does not exist")
         return name
-
-    # check for id within parenthesis to ensure name was selected from the list
-    def clean_shepherd(self):
-        person = self.cleaned_data.get('shepherd', '')
-        m = re.search(r'(\d+)', person)
-        if person and not m:
-            raise forms.ValidationError("You must select an entry from the list!")
-
-        # return person object
-        return get_person(person)
 
     def clean(self):
         super(EditModelForm, self).clean()

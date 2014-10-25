@@ -154,7 +154,7 @@ def get_fullcc_list(draft):
     
     # add sheperd
     if draft.shepherd:
-        emails[draft.shepherd.email_address()] = '"%s"' % (draft.shepherd.name)
+        emails[draft.shepherd.address] = '"%s"' % (draft.shepherd.person.name)
     
     # use sort so we get consistently ordered lists
     result_list = []

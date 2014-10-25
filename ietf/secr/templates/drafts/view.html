@@ -23,7 +23,7 @@
         <tr><td>Area:</td><td>{% if draft.group.parent %}<a href="{% url "areas_view" name=draft.group.parent.acronym %}">{{ draft.group.parent }}{% endif %}</td></tr>
         <tr><td>Group:</td><td>{% if draft.group %}<a href="{% url "groups_view" acronym=draft.group.acronym %}">{{ draft.group.acronym }}{% endif %}</td></tr>
         <tr><td>Area Director:</td><td>{{ draft.ad }}</td></tr>
-        <tr><td>Shepherd:</td><td>{{ draft.shepherd }}</td></tr>
+        <tr><td>Shepherd:</td><td>{% if draft.shepherd %}{{ draft.shepherd.person }} &lt;{{ draft.shepherd.address }}&gt;{% else %}None{% endif %}</td></tr>
         <tr><td>Notify:</td><td>{{ draft.notify }}</td></tr>
         <tr><td>Document State:</td><td>{{ draft.get_state }}</td></tr>
         <tr><td>IESG State:</td><td>{{ draft.iesg_state }}</td></tr>

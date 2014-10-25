@@ -41,6 +41,8 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django import forms
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS )
@@ -263,7 +265,7 @@ def document_main(request, name, rev=None):
         shepherd_writeup = doc.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
 
         can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
-        can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd) or has_role(request.user, ["Area Director"])
+        can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"])
         can_edit_consensus = False
 
         consensus = None
@@ -351,6 +353,7 @@ def document_main(request, name, rev=None):
                                        can_edit=can_edit,
                                        can_change_stream=can_change_stream,
                                        can_edit_stream_info=can_edit_stream_info,
+                                       is_shepherd = user_is_person(request.user, doc.shepherd and doc.shepherd.person),
                                        can_edit_shepherd_writeup=can_edit_shepherd_writeup,
                                        can_edit_iana_state=can_edit_iana_state,
                                        can_edit_consensus=can_edit_consensus,
@@ -659,7 +662,7 @@ def document_shepherd_writeup(request, name):
         writeup_text = "(There is no shepherd's writeup available for this document)"
 
     can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
-    can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd) or has_role(request.user, ["Area Director"])
+    can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"])
 
     return render_to_response("doc/shepherd_writeup.html",
                                dict(doc=doc,

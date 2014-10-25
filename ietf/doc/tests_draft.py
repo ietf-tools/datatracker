@@ -819,6 +819,9 @@ class IndividualInfoFormsTests(TestCase):
         self.assertTrue(self.doc.latest_event(DocEvent,type="added_comment").desc.startswith('Shepherding AD changed'))
 
     def test_doc_change_shepherd(self):
+        self.doc.shepherd = None
+        self.doc.save()
+
         url = urlreverse('doc_edit_shepherd',kwargs=dict(name=self.docname))
         
         login_testing_unauthorized(self, "plain", url)
@@ -835,22 +838,50 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(len(q('form input[id=id_shepherd]')),1)
 
         # change the shepherd
-        plain = Person.objects.get(name='Plain Man')
-        plain_email = plain.email_set.all()[0]
-        r = self.client.post(url,dict(shepherd=plain_email))
+        plain_email = Email.objects.get(person__name="Plain Man")
+        r = self.client.post(url, dict(shepherd=plain_email.pk))
         self.assertEqual(r.status_code,302)
         self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(self.doc.shepherd,plain)
+        self.assertEqual(self.doc.shepherd, plain_email)
         comments = '::'.join([x.desc for x in self.doc.docevent_set.filter(time=self.doc.time,type="added_comment")])
         self.assertTrue('Document shepherd changed to Plain Man' in comments)
         self.assertTrue('Notification list changed' in comments)
 
+        # test buggy change
         ad = Person.objects.get(name='Aread Irector')
         two_answers = "%s,%s" % (plain_email, ad.email_set.all()[0])
-        r = self.client.post(url,(dict(shepherd=two_answers)))
-        self.assertEqual(r.status_code,200)
+        r = self.client.post(url, dict(shepherd=two_answers))
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
+
+    def test_doc_change_shepherd_email(self):
+        self.doc.shepherd = None
+        self.doc.save()
+
+        url = urlreverse('doc_change_shepherd_email',kwargs=dict(name=self.docname))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+        self.doc.shepherd = Email.objects.get(person__user__username="ad1")
+        self.doc.save()
+
+        login_testing_unauthorized(self, "plain", url)
+
+        self.doc.shepherd = Email.objects.get(person__user__username="plain")
+        self.doc.save()
+
+        new_email = Email.objects.create(address="anotheremail@example.com", person=self.doc.shepherd.person)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        # change the shepherd email
+        r = self.client.post(url, dict(shepherd=new_email))
+        self.assertEqual(r.status_code, 302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertEqual(self.doc.shepherd, new_email)
+        self.assertTrue(self.doc.latest_event(DocEvent, type="added_comment").desc.startswith('Document shepherd email changed'))
 
     def test_doc_view_shepherd_writeup(self):
         url = urlreverse('doc_shepherd_writeup',kwargs=dict(name=self.docname))

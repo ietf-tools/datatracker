@@ -56,15 +56,15 @@ class PersonInfo(models.Model):
             return e[0]
         return None
     def email_address(self):
-        e = self.email_set.filter(active=True).order_by("-time")
+        e = self.email_set.filter(active=True).order_by("-time").first()
         if e:
-            return e[0].address
+            return e.address
         else:
             return ""
     def formatted_email(self):
-        e = self.email_set.order_by("-active", "-time")
+        e = self.email_set.order_by("-active", "-time").first()
         if e:
-            return e[0].formatted_email()
+            return e.formatted_email()
         else:
             return ""
     def full_name_as_key(self):

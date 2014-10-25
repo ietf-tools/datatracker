@@ -1,10 +1,10 @@
 from django import forms
-from django.core.validators import validate_email
 
 from ietf.group.models import Group, Role
 from ietf.ietfauth.utils import has_role
 from ietf.message.models import Message
 from ietf.secr.utils.group import current_nomcom
+from ietf.utils.fields import MultiEmailField
 
 # ---------------------------------------------
 # Globals
@@ -42,33 +42,6 @@ TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
            'Working Group Chairs <wgchairs@ietf.org>',
            'BoF Chairs <bofchairs@ietf.org>',
            'Other...')
-# ---------------------------------------------
-# Custom Fields
-# ---------------------------------------------
-
-class MultiEmailField(forms.Field):
-    def to_python(self, value):
-        "Normalize data to a list of strings."
-
-        # Return an empty list if no input was given.
-        if not value:
-            return []
-
-        import types
-        if isinstance(value, types.StringTypes):
-            values = value.split(',')
-            return [ x.strip() for x in values ]
-        else:
-            return value
-
-    def validate(self, value):
-        "Check if value consists only of valid emails."
-
-        # Use the parent's handling of required fields, etc.
-        super(MultiEmailField, self).validate(value)
-
-        for email in value:
-            validate_email(email)
 
 # ---------------------------------------------
 # Helper Functions

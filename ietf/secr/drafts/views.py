@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.db.models import Max
 from django.forms.formsets import formset_factory
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render_to_response, get_object_or_404, redirect, render
 from django.template import RequestContext
 from django.template.loader import render_to_string
 
@@ -799,10 +799,9 @@ def edit(request, id):
     else:
         form = EditModelForm(instance=draft)
     
-    return render_to_response('drafts/edit.html', {
+    return render(request, 'drafts/edit.html', {
         'form': form,
         'draft': draft},
-        RequestContext(request, {}),
     )
     
 def email(request, id):

@@ -172,7 +172,7 @@ def make_test_data():
     u.set_password("plain+password")
     u.save()
     plainman = Person.objects.create(name="Plain Man", ascii="Plain Man", user=u)
-    email = Email.objects.create(address="plain@example.com", person=plainman) # pyflakes:ignore
+    email = Email.objects.create(address="plain@example.com", person=plainman)
 
     # group personnel
     create_person(mars_wg, "chair", name="WG Chair Man", username="marschairman")
@@ -194,7 +194,7 @@ def make_test_data():
         rev="01",
         pages=2,
         intended_std_level_id="ps",
-        shepherd=plainman,
+        shepherd=email,
         ad=ad,
         expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
         notify="aliens@example.mars",

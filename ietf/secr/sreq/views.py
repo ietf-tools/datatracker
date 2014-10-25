@@ -16,7 +16,7 @@ from ietf.secr.utils.decorators import check_permissions, sec_only
 from ietf.secr.utils.group import groups_by_session
 from ietf.secr.utils.mail import get_ad_email_list, get_chair_email_list, get_cc_list
 from ietf.utils.mail import send_mail
-from ietf.person.models import Email
+from ietf.person.models import Person
 
 # -------------------------------------------------
 # Globals
@@ -48,15 +48,8 @@ def get_initial_session(sessions):
     group = sessions[0].group
     conflicts = group.constraint_source_set.filter(meeting=meeting)
 
-    bethere_people = [x.person for x in sessions[0].constraints().filter(name='bethere')]
-    bethere_email = []
-    for person in bethere_people:
-        e = person.email_set.order_by("-active","-time").first()
-        if e:
-           bethere_email.append(e)
-
     # even if there are three sessions requested, the old form has 2 in this field
-    initial['num_session'] = sessions.count() if sessions.count() <= 2 else 2
+    initial['num_session'] = min(sessions.count(), 2)
 
     # accessing these foreign key fields throw errors if they are unset so we
     # need to catch these
@@ -72,7 +65,7 @@ def get_initial_session(sessions):
     initial['conflict3'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflic3') ])
     initial['comments'] = sessions[0].comments
     initial['resources'] = sessions[0].resources.all()
-    initial['bethere'] = bethere_email
+    initial['bethere'] = [x.person for x in sessions[0].constraints().filter(name='bethere').select_related("person")]
     return initial
 
 def get_lock_message(meeting=None):
@@ -234,6 +227,7 @@ def confirm(request, acronym):
     This view displays details of the new session that has been requested for the user
     to confirm for submission.
     '''
+    # FIXME: this should be using form.is_valid/form.cleaned_data - invalid input will make it crash
     querydict = request.session.get('session_form',None)
     if not querydict:
         raise Http404
@@ -241,7 +235,7 @@ def confirm(request, acronym):
     if 'resources' in form:
         form['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in form['resources'].split(',')]
     if 'bethere' in form:
-        form['bethere'] = [Email.objects.get(address=addr) for addr in form['bethere'].split(',')]
+        form['bethere'] = Person.objects.filter(pk__in=form['bethere'].split(','))
     meeting = get_meeting()
     group = get_object_or_404(Group,acronym=acronym)
     login = request.user.person
@@ -285,8 +279,8 @@ def confirm(request, acronym):
 
         if 'bethere' in form:
             bethere_cn = ConstraintName.objects.get(slug='bethere')
-            for email in form['bethere']:
-                Constraint.objects.create(name=bethere_cn,source=group,person=email.person,meeting=new_session.meeting)
+            for p in form['bethere']:
+                Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=new_session.meeting)
 
         # deprecated in new schema
         # log activity
@@ -318,14 +312,8 @@ def add_essential_people(group,initial):
     people = set()
     if 'bethere' in initial:
         people.update(initial['bethere'])
-    for role in group.role_set.filter(name='chair'):
-        e = role.person.email_set.order_by("-active","-time").first()
-        if e:
-            people.add(e)
-    if group.ad:
-        e = group.ad.email_set.order_by("-active","-time").first()
-        if e:
-            people.add(e)
+    people.update(Person.objects.filter(role__group=group, role__name='chair'))
+    people.add(group.ad)
     initial['bethere'] = list(people)
     
 
@@ -447,8 +435,8 @@ def edit_mtg(request, num, acronym):
                 if 'bethere' in form.changed_data and set(form.cleaned_data['bethere'])!=set(initial['bethere']):
                     session.constraints().filter(name='bethere').delete()
                     bethere_cn = ConstraintName.objects.get(slug='bethere')
-                    for email in form.cleaned_data['bethere']:
-                        Constraint.objects.create(name=bethere_cn,source=group,person=email.person,meeting=session.meeting)
+                    for p in form.cleaned_data['bethere']:
+                        Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=session.meeting)
 
                 # deprecated
                 # log activity

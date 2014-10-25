@@ -10,7 +10,7 @@ from ietf.group.models import Group, GroupEvent, Role
 from ietf.group.utils import save_group_in_history
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import StreamName
-from ietf.person.forms import EmailsField
+from ietf.person.fields import AutocompletedEmailsField
 from ietf.person.models import Email
 
 import debug                            # pyflakes:ignore
@@ -31,7 +31,7 @@ def stream_documents(request, acronym):
     return render_to_response('group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta }, context_instance=RequestContext(request))
 
 class StreamEditForm(forms.Form):
-    delegates = EmailsField(label="Delegates", required=False, help_text=u"Type in name to search for person")
+    delegates = AutocompletedEmailsField(required=False, only_users=True)
 
 def stream_edit(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)

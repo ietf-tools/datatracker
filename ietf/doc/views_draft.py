@@ -4,7 +4,7 @@ import datetime, json
 
 from django import forms
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render_to_response, get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from django.conf import settings
@@ -29,8 +29,8 @@ from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_p
 from ietf.ietfauth.utils import role_required
 from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
-from ietf.person.forms import EmailsField
-from ietf.person.models import Person
+from ietf.person.fields import AutocompletedEmailField
+from ietf.person.models import Person, Email
 from ietf.secr.lib.template import jsonapi
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.textupload import get_cleaned_text_file_content
@@ -301,10 +301,8 @@ def collect_email_addresses(emails, doc):
             for role in doc.group.parent.role_set.filter(name='chair'):
                 if role.email.address not in emails:
                     emails[role.email.address] = '"%s"' % (role.person.name)
-    if doc.shepherd:
-        address = doc.shepherd.email_address();
-        if address not in emails:
-            emails[address] = '"%s"' % (doc.shepherd.name)
+    if doc.shepherd and doc.shepherd.address not in emails:
+        emails[doc.shepherd.address] = u'"%s"' % (doc.shepherd.person.name or "")
     return emails
 
 class ReplacesForm(forms.Form):
@@ -941,13 +939,7 @@ def edit_shepherd_writeup(request, name):
                               context_instance=RequestContext(request))
 
 class ShepherdForm(forms.Form):
-    shepherd = EmailsField(label="Shepherd", required=False)
-
-    def clean_shepherd(self):
-        data = self.cleaned_data['shepherd']
-        if len(data)>1:
-            raise forms.ValidationError("Please choose at most one shepherd.")
-        return data
+    shepherd = AutocompletedEmailField(required=False, only_users=True)
 
 def edit_shepherd(request, name):
     """Change the shepherd for a Document"""
@@ -955,30 +947,29 @@ def edit_shepherd(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
 
     can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
-
     if not can_edit_stream_info:
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     if request.method == 'POST':
         form = ShepherdForm(request.POST)
         if form.is_valid():
+            save_document_in_history(doc)
 
-            if form.cleaned_data['shepherd']:
-                doc.shepherd = form.cleaned_data['shepherd'][0].person
-            else:
-                doc.shepherd = None
+            if form.cleaned_data['shepherd'] != doc.shepherd:
+                doc.shepherd = form.cleaned_data['shepherd']
+                doc.save()
    
-            login = request.user.person
-            c = DocEvent(type="added_comment", doc=doc, by=login)
-            c.desc = "Document shepherd changed to "+ (doc.shepherd.name if doc.shepherd else "(None)")
-            c.save()
+                c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                c.desc = "Document shepherd changed to "+ (doc.shepherd.person.name if doc.shepherd else "(None)")
+                c.save()
 
             if doc.shepherd.formatted_email() not in doc.notify:
+                login = request.user.person
                 addrs = doc.notify
                 if addrs:
                     addrs += ', '
                 addrs += doc.shepherd.formatted_email()
-                e = make_notify_changed_event(request, doc, login, addrs, c.time)
+                make_notify_changed_event(request, doc, login, addrs, c.time)
                 doc.notify = addrs
 
             doc.time = c.time
@@ -987,19 +978,55 @@ def edit_shepherd(request, name):
             return redirect('doc_view', name=doc.name)
 
     else:
-        current_shepherd = None
-        if doc.shepherd:
-            e = doc.shepherd.email_set.order_by("-active", "-time")
-            if e:
-                current_shepherd=e[0].pk
-        init = { "shepherd": current_shepherd}
-        form = ShepherdForm(initial=init)
+        form = ShepherdForm(initial={ "shepherd": doc.shepherd_id })
 
-    return render_to_response('doc/change_shepherd.html',
-                              {'form':   form,
-                               'doc': doc,
-                              },
-                              context_instance = RequestContext(request))
+    return render(request, 'doc/change_shepherd.html', {
+        'form': form,
+        'doc': doc,
+    })
+
+class ChangeShepherdEmailForm(forms.Form):
+    shepherd = forms.ModelChoiceField(queryset=Email.objects.all(), label="Shepherd email", empty_label=None)
+
+    def __init__(self, *args, **kwargs):
+        super(ChangeShepherdEmailForm, self).__init__(*args, **kwargs)
+        self.fields["shepherd"].queryset = self.fields["shepherd"].queryset.filter(person__email=self.initial["shepherd"]).distinct()
+    
+def change_shepherd_email(request, name):
+    """Change the shepherd email address for a Document"""
+    doc = get_object_or_404(Document, name=name)
+
+    if not doc.shepherd:
+        raise Http404
+
+    can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
+    is_shepherd = user_is_person(request.user, doc.shepherd and doc.shepherd.person)
+    if not can_edit_stream_info and not is_shepherd:
+        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+
+    initial = { "shepherd": doc.shepherd_id }
+    if request.method == 'POST':
+        form = ChangeShepherdEmailForm(request.POST, initial=initial)
+        if form.is_valid():
+            if form.cleaned_data['shepherd'] != doc.shepherd:
+                save_document_in_history(doc)
+
+                doc.shepherd = form.cleaned_data['shepherd']
+                doc.save()
+   
+                c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                c.desc = "Document shepherd email changed"
+                c.save()
+
+            return redirect('doc_view', name=doc.name)
+
+    else:
+        form = ChangeShepherdEmailForm(initial=initial)
+
+    return render(request, 'doc/change_shepherd_email.html', {
+        'form': form,
+        'doc': doc,
+    })
 
 class AdForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), 

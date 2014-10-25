@@ -211,8 +211,8 @@ $(document).ready(function() {
           minLength: 3,
           select: function(event, ui) {
               //match number inside paren and then strip paren
-              id = ui.item.label.match(/\(\d+\)/);
-              val = id[0].replace(/[\(\)]/g, "");
+              var id = ui.item.label.match(/\(\d+\)/);
+              var val = id[0].replace(/[\(\)]/g, "");
               //alert(id,val);
               //alert(id.match(/\d+/));
               $.getJSON('/secr/areas/getemails/',{"id":val},function(data) {

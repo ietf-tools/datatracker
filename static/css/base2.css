@@ -310,6 +310,10 @@ div.prompt { border: 1px dashed red; background-color: #ffeeaa; padding: 1em 2em
     margin-left: 150px;
 }
 
+.baseform .fieldWidget ul.token-input-list {
+    clear: none;
+}
+
 #feedbackformset .fieldWidget {
     margin-left: 0px;
 }
