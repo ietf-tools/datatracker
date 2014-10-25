@@ -1,3 +1,22 @@
+ietfdb (5.7.0) ietf; urgency=medium
+
+  This release merges in work from olau@iola.dk which enhances a number of
+  pages in the datatracker where forms contain fields where a person should be
+  chosen, such as for instance when choosing the shepherd of a document, so
+  that they uniformly display choices which show both email address and name.
+
+  Furthermore, changes have been made so as to make the email address
+  uniformly act as reference to the person record.  
+
+  Autocompletion is now consistently provided when looking for the email
+  address or name of the person to choose.  
+
+  This solves a number of issues where it has been difficult to choose the
+  correct Person/Email combination, and where the correct email address to use
+  for an association has been unavailable previously.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Oct 2014 13:53:37 -0700
+
 ietfdb (5.6.5) ietf; urgency=medium
 
   This is a minor release which brings in support for 'recording' documents,
