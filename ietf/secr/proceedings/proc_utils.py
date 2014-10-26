@@ -558,11 +558,12 @@ def gen_progress(context, final=True):
     path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'progress-report.html')
     write_html(path,html.content)
 
+@debug.trace
 def gen_research(context):
     meeting = context['meeting']
     gmet, gnot = groups_by_session(None,meeting)
 
-    groups = filter(lambda a: a.type_id=='rg', gmet)
+    groups = [ g for g in gmet if g.type_id=='rg' or (g.type_id=='ag' and g.parent.acronym=='irtf') ]
 
     # append proceedings URL
     for group in groups:

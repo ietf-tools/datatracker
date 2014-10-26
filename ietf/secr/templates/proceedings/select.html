@@ -15,7 +15,7 @@
           var ajax_load = "<p><h4 align='center'>Generating Proceedings.  This may take a few minutes.</h3><img class='loading' src='{{ SECR_STATIC_URL }}img/ajax-loader.gif' alt='loading...' /></p>";
           var url = window.location.pathname;
           var parts = url.split("/");
-          var loadUrl = "/secr/proceedings/ajax/generate-proceedings/" + parts[2] + "/";
+          var loadUrl = "/secr/proceedings/ajax/generate-proceedings/" + parts[3] + "/";
           $("#private-functions").html(ajax_load).load(loadUrl);
       });
       
