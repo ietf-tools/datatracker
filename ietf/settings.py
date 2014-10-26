@@ -477,4 +477,3 @@ if SERVER_MODE != 'production':
     if 'SECRET_KEY' not in locals():
         SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
 
-# X_FRAME_OPTIONS = "ALLOW-FROM tools.ietf.org"
