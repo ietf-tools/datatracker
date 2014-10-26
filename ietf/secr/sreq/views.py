@@ -273,13 +273,13 @@ def confirm(request, acronym):
                     new_session.resources = form['resources']
 
         # write constraint records
-        save_conflicts(group,meeting,form['conflict1'],'conflict')
-        save_conflicts(group,meeting,form['conflict2'],'conflic2')
-        save_conflicts(group,meeting,form['conflict3'],'conflic3')
+        save_conflicts(group,meeting,form.get('conflict1',''),'conflict')
+        save_conflicts(group,meeting,form.get('conflict2',''),'conflic2')
+        save_conflicts(group,meeting,form.get('conflict3',''),'conflic3')
 
         if 'bethere' in form:
             bethere_cn = ConstraintName.objects.get(slug='bethere')
-            for p in form['bethere']:
+            for p in form.get('bethere', []):
                 Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=new_session.meeting)
 
         # deprecated in new schema
@@ -453,6 +453,8 @@ def edit_mtg(request, num, acronym):
             return redirect('sessions_view', acronym=acronym)
 
     else:
+        if not sessions:
+            return redirect('sessions_new', acronym=acronym)
         form = SessionForm(initial=initial)
 
     return render_to_response('sreq/edit.html', {

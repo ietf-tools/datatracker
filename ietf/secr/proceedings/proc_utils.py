@@ -558,7 +558,6 @@ def gen_progress(context, final=True):
     path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'progress-report.html')
     write_html(path,html.content)
 
-@debug.trace
 def gen_research(context):
     meeting = context['meeting']
     gmet, gnot = groups_by_session(None,meeting)
