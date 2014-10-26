@@ -85,7 +85,6 @@ class EditPositionForm(forms.Form):
     position = forms.ModelChoiceField(queryset=BallotPositionName.objects.all(), widget=forms.RadioSelect, initial="norecord", required=True)
     discuss = forms.CharField(required=False, widget=forms.Textarea)
     comment = forms.CharField(required=False, widget=forms.Textarea)
-    return_to_url = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def __init__(self, *args, **kwargs):
         ballot_type = kwargs.pop("ballot_type")
@@ -107,8 +106,8 @@ def edit_position(request, name, ballot_id):
 
     ad = login = request.user.person
 
-    if 'HTTP_REFERER' in request.META:
-        return_to_url = request.META['HTTP_REFERER']
+    if 'ballot_edit_return_point' in request.session:
+        return_to_url = request.session['ballot_edit_return_point']
     else:
         return_to_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
@@ -130,9 +129,6 @@ def edit_position(request, name, ballot_id):
         if form.is_valid():
             # save the vote
             clean = form.cleaned_data
-
-            if clean['return_to_url']:
-              return_to_url = clean['return_to_url']
 
             pos = BallotPositionDocEvent(doc=doc, by=login)
             pos.type = "changed_ballot_position"
@@ -195,9 +191,9 @@ def edit_position(request, name, ballot_id):
                     e.save() # save them after the position is saved to get later id for sorting order
                         
             if request.POST.get("send_mail"):
-                qstr = "?return_to_url=%s" % return_to_url
+                qstr=""
                 if request.GET.get('ad'):
-                    qstr += "&ad=%s" % request.GET.get('ad')
+                    qstr += "?ad=%s" % request.GET.get('ad')
                 return HttpResponseRedirect(urlreverse("doc_send_ballot_comment", kwargs=dict(name=doc.name, ballot_id=ballot_id)) + qstr)
             elif request.POST.get("Defer"):
                 return redirect("doc_defer_ballot", name=doc)
@@ -211,9 +207,6 @@ def edit_position(request, name, ballot_id):
             initial['position'] = old_pos.pos.slug
             initial['discuss'] = old_pos.discuss
             initial['comment'] = old_pos.comment
-            
-        if return_to_url:
-            initial['return_to_url'] = return_to_url
             
         form = EditPositionForm(initial=initial, ballot_type=ballot.ballot_type)
 
@@ -243,8 +236,9 @@ def send_ballot_comment(request, name, ballot_id):
 
     ad = request.user.person
 
-    return_to_url = request.GET.get('return_to_url')
-    if not return_to_url:
+    if 'ballot_edit_return_point' in request.session:
+        return_to_url = request.session['ballot_edit_return_point']
+    else:
         return_to_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
     if 'HTTP_REFERER' in request.META:

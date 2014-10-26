@@ -757,6 +757,8 @@ def document_ballot(request, name, ballot_id=None):
 
     c = document_ballot_content(request, doc, ballot_id, editable=True)
 
+    request.session['ballot_edit_return_point'] = request.path_info
+
     return render_to_response("doc/document_ballot.html",
                               dict(doc=doc,
                                    top=top,

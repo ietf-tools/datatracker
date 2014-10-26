@@ -179,6 +179,7 @@ def agenda(request, date=None):
         data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace("Roll Call", '<a href="https://www.ietf.org/iesg/internal/rollcall.txt">Roll Call</a>')
         data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace("Minutes", '<a href="https://www.ietf.org/iesg/internal/minutes.txt">Minutes</a>')
 
+    request.session['ballot_edit_return_point'] = request.path_info
     return render_to_response("iesg/agenda.html", {
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
@@ -366,6 +367,7 @@ def agenda_documents(request):
                 "sections": sorted((num, section) for num, section in sections.iteritems()
                                    if "2" <= num < "5")
                 })
+    request.session['ballot_edit_return_point'] = request.path_info
     return render(request, 'iesg/agenda_documents.html', { 'telechats': telechats })
 
 def telechat_docs_tarfile(request, date):
