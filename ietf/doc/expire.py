@@ -114,7 +114,13 @@ def move_draft_files_to_archive(doc, rev):
         dst = os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, f)
 
         if os.path.exists(src):
-            shutil.move(src, dst)
+            try:
+                shutil.move(src, dst)
+            except IOError as e:
+                if "No such file or directory" in str(e):
+                    pass
+                else:
+                    raise
 
     src_dir = Path(settings.INTERNET_DRAFT_PATH)
     for file in src_dir.glob("%s-%s.*" % (doc.name, rev)):
