@@ -548,7 +548,7 @@ def document_history(request, name):
     diff_revisions = []
 
     diffable = [ name.startswith(prefix) for prefix in ["rfc", "draft", "charter", "conflict-review", "status-change", ]]
-    if diffable:
+    if any(diffable):
         diff_documents = [ doc ]
         diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
 
