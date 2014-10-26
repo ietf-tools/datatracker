@@ -4,6 +4,8 @@ import itertools
 import os
 import shutil
 
+import debug                            # pyflakes:ignore
+
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
@@ -849,11 +851,22 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
     session_id all the time but this makes for an ugly URL which most of the time would be
     avoided by using acronym.
     '''
+    def redirection_back(meeting, group):
+        if meeting.type.slug == 'interim':
+            url = reverse('proceedings_interim', kwargs={'acronym':group.acronym})
+        else:
+            url = reverse('proceedings_select', kwargs={'meeting_num':meeting.number})
+        return HttpResponseRedirect(url)
+        
     meeting = get_object_or_404(Meeting, number=meeting_num)
     now = datetime.datetime.now()
     if acronym:
         group = get_object_or_404(Group, acronym=acronym)
         sessions = Session.objects.filter(meeting=meeting,group=group)
+        if not sessions.exists():
+            meeting_name = "IETF %s"%meeting.number if meeting.number.isdigit() else meeting.number
+            messages.warning(request, 'There does not seem to be a %s session in %s.' % (group.acronym, meeting_name))
+            return redirection_back(meeting, group)
         session = sessions[0]
         session_name = ''
     elif session_id:
@@ -865,12 +878,7 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
     if request.method == 'POST':
         button_text = request.POST.get('submit','')
         if button_text == 'Back':
-            if meeting.type.slug == 'interim':
-                url = reverse('proceedings_interim', kwargs={'acronym':group.acronym})
-            else:
-                url = reverse('proceedings_select', kwargs={'meeting_num':meeting_num})
-            return HttpResponseRedirect(url)
-
+            return redirection_back(meeting, group)
         form = UnifiedUploadForm(request.POST,request.FILES)
         if form.is_valid():
             material_type = form.cleaned_data['material_type']
