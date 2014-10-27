@@ -11,6 +11,7 @@ from django.conf import settings
 from django.forms.util import ErrorList
 from django.contrib.auth.decorators import login_required
 from django.template.defaultfilters import pluralize
+from django.contrib import messages
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS,
@@ -953,27 +954,32 @@ def edit_shepherd(request, name):
     if request.method == 'POST':
         form = ShepherdForm(request.POST)
         if form.is_valid():
-            save_document_in_history(doc)
 
             if form.cleaned_data['shepherd'] != doc.shepherd:
+
+                save_document_in_history(doc)
+    
                 doc.shepherd = form.cleaned_data['shepherd']
                 doc.save()
-   
+       
                 c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
                 c.desc = "Document shepherd changed to "+ (doc.shepherd.person.name if doc.shepherd else "(None)")
                 c.save()
+    
+                if doc.shepherd.formatted_email() not in doc.notify:
+                    login = request.user.person
+                    addrs = doc.notify
+                    if addrs:
+                        addrs += ', '
+                    addrs += doc.shepherd.formatted_email()
+                    make_notify_changed_event(request, doc, login, addrs, c.time)
+                    doc.notify = addrs
+    
+                doc.time = c.time
+                doc.save()
 
-            if doc.shepherd.formatted_email() not in doc.notify:
-                login = request.user.person
-                addrs = doc.notify
-                if addrs:
-                    addrs += ', '
-                addrs += doc.shepherd.formatted_email()
-                make_notify_changed_event(request, doc, login, addrs, c.time)
-                doc.notify = addrs
-
-            doc.time = c.time
-            doc.save()
+            else:
+                messages.info(request,"The selected shepherd was already assigned - no changes have been made.")
 
             return redirect('doc_view', name=doc.name)
 

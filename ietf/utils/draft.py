@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.31"
+version = "0.33"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -75,7 +75,10 @@ longform = {
 }
 longform = dict([ (short+" ", longform[short]+" ") for short in longform ])
 
-month_names = [ 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec' ]
+
+month_names = [ 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december' ]
+month_names_abbrev3 = [ n[:3] for n in month_names ]
+month_names_abbrev4 = [ n[:4] for n in month_names ]
 
 # ----------------------------------------------------------------------
 # Functions
@@ -311,6 +314,8 @@ class Draft():
             r'\s{3,}(?P<month>\w+)\s+(?P<day>\d{1,2})(,|\s)+(?P<year>\d{4})',
             r'\s{3,}(?P<day>\d{1,2})(,|\s)+(?P<month>\w+)\s+(?P<year>\d{4})',
             r'\s{3,}(?P<day>\d{1,2})-(?P<month>\w+)-(?P<year>\d{4})',
+            # RFC 3339 date (also ISO date)
+            r'\s{3,}(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})',
             # 'October 2008' - default day to today's.
             r'\s{3,}(?P<month>\w+)\s+(?P<year>\d{4})',
         ]
@@ -326,11 +331,20 @@ class Draft():
         dates.sort()
         for start, match in dates:
                 md = match.groupdict()
-                mon = md['month'][0:3].lower()
+                mon = md['month'].lower()
                 day = int( md.get( 'day', 0 ) )
                 year = int( md['year'] )
                 try:
-                    month = month_names.index( mon ) + 1
+                    if   mon in month_names:
+                        month = month_names.index( mon ) + 1
+                    elif mon in month_names_abbrev3:
+                        month = month_names_abbrev3.index( mon ) + 1
+                    elif mon in month_names_abbrev4:
+                        month = month_names_abbrev4.index( mon ) + 1
+                    elif mon.isdigit() and int(mon) in range(1,13):
+                        month = mon
+                    else:
+                        continue
                     today = datetime.date.today()
                     if day==0:
                         # if the date was given with only month and year, use
@@ -1079,7 +1093,7 @@ def getmeta(fn):
     fields["docaffiliations"] = ", ".join(draft.get_authors_with_firm())
     if opt_debug:
         fields["docheader"] = draft._docheader
-    normrefs, rfcrefs, draftrefs, refs = draft.get_refs()
+    normrefs, rfcrefs, draftrefs, refs = draft.old_get_refs()
     fields["docrfcrefs"] = ", ".join(rfcrefs)
     fields["docdraftrefs"] = ", ".join(draftrefs)
     fields["doccreationdate"] = str(draft.get_creation_date())
