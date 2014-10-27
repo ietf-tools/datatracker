@@ -1,5 +1,6 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 from south.v2 import DataMigration
+import debug
 
 class Migration(DataMigration):
 
@@ -9,14 +10,16 @@ class Migration(DataMigration):
         shepherds.update(orm.DocHistory.objects.values_list("shepherd", flat=True).distinct())
 
         for person_id in shepherds:
-            emails = orm['person.Email'].objects.filter(person=person_id).order_by("-active", "-time")[:1]
-            if not emails:
-                print "ERROR: no emails for", person_id
+            if not person_id is None:
+                emails = orm['person.Email'].objects.filter(person=person_id).order_by("-active", "-time")[:1]
+                if not emails:
+                    print "ERROR: no emails for", person_id
+                    continue
+                    
+                email = emails[0]
 
-            email = emails[0]
-
-            orm.Document.objects.filter(shepherd=person_id, shepherd_email=None).update(shepherd_email=email)
-            orm.DocHistory.objects.filter(shepherd=person_id, shepherd_email=None).update(shepherd_email=email)
+                orm.Document.objects.filter(shepherd=person_id, shepherd_email=None).update(shepherd_email=email)
+                orm.DocHistory.objects.filter(shepherd=person_id, shepherd_email=None).update(shepherd_email=email)
 
     def backwards(self, orm):
         pass
