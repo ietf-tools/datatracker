@@ -342,7 +342,7 @@ class Draft():
                     elif mon in month_names_abbrev4:
                         month = month_names_abbrev4.index( mon ) + 1
                     elif mon.isdigit() and int(mon) in range(1,13):
-                        month = mon
+                        month = int(mon)
                     else:
                         continue
                     today = datetime.date.today()
