@@ -5,7 +5,7 @@
 {% block nomcom_content %}
 
 {% if message %}
-  <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+  <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
 {% endif %}
 
 {% if need_confirmation %}
@@ -13,7 +13,7 @@
     {{ form }}
 
   <div class="submitrow">
-    <input type="submit" value="Save" name="save"/>
+    <input type="submit" value="Save" name="save">
   </div>
 
   </form>

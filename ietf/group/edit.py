@@ -39,7 +39,7 @@ class GroupForm(forms.Form):
     list_email = forms.CharField(max_length=64, required=False)
     list_subscribe = forms.CharField(max_length=255, required=False)
     list_archive = forms.CharField(max_length=255, required=False)
-    urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", help_text="Format: http://site/path (Optional description). Separate multiple entries with newline.", required=False)
+    urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", help_text="Format: https://site/path (Optional description). Separate multiple entries with newline. Prefer HTTPS URLs where possible.", required=False)
 
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group', None)
@@ -60,7 +60,7 @@ class GroupForm(forms.Form):
         self.confirm_msg = ""
         self.autoenable_confirm = False
         if self.group:
-            self.fields['acronym'].widget.attrs['readonly'] = True
+            self.fields['acronym'].widget.attrs['readonly'] = ""
 
         if self.group_type == "rg":
             self.fields['ad'].widget = forms.HiddenInput()
@@ -149,7 +149,7 @@ def get_or_create_initial_charter(group, group_type):
         )
         charter.save()
         charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
-                
+
         # Create an alias as well
         DocAlias.objects.create(name=charter.name, document=charter)
 
@@ -220,12 +220,12 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                 group.charter = get_or_create_initial_charter(group, group_type)
 
             changes = []
-                
+
             def desc(attr, new, old):
                 entry = "%(attr)s changed to <b>%(new)s</b> from %(old)s"
                 if new_group:
                     entry = "%(attr)s changed to <b>%(new)s</b>"
-                    
+
                 return entry % dict(attr=attr, new=new, old=old)
 
             def diff(attr, name):

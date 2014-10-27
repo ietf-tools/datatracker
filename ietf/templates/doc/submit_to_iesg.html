@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "ietf.html" %}
 
 {% block title %}
-Publication Request for {{doc.name}}-{{doc.rev}}
+Publication request for {{doc.name}}-{{doc.rev}}
 {% endblock %}
 
 {% block content %}
@@ -51,30 +51,30 @@ Please verify the following information:
 </tr>
 
 </table>
-</div>
-
-
 
 {% if warn %}
-<div style="margin-top:20px; margin-bottom:20px;">
-<img src="/images/warning.png"/> indicates the document might not be ready for submission. Please check each instance carefully to see if changes need to be made to the document's state before submitting. 
-</div>
+<p class="alert alert-warning"><span class="fa fa-warning"></span> indicates the document might not be ready for submission. Please check each instance carefully to see if changes need to be made to the document's state before submitting.</p>
 {% endif %}
 
-<div> 
+<p>
 Upon submission:
 <ul>
-<li> the document will be placed into the IESG '{{target_state.iesg}}' state</li>
-<li> the document will be placed into the working group '{{target_state.wg}}' state</li>
-{% if not ad == doc.ad %}<li> the responsible AD will be set as above </li>{% endif %}
-{% if not notify == doc.notify %}<li> the document's state change notification list will be set as above </li>{% endif %}
-<li> an entry will be made noting the publication request in the document's history</li>
-<li> an email message will be sent to the working group chairs, the secretariat, and everyone listed above</li>
-</div>
+	<li> the document will be placed into the IESG '{{target_state.iesg}}' state</li>
+	<li> the document will be placed into the working group '{{target_state.wg}}' state</li>
+	{% if not ad == doc.ad %}<li> the responsible AD will be set as above </li>{% endif %}
+	{% if not notify == doc.notify %}<li> the document's state change notification list will be set as above </li>{% endif %}
+	<li> an entry will be made noting the publication request in the document's history</li>
+	<li> an email message will be sent to the working group chairs, the secretariat, and everyone listed above</li>
+</ul>
+</p>
 
-<form action="" method="post">{% csrf_token %}
-  <input type="submit" name="confirm" value="Request Publication"/>
-  <input type="submit" name="cancel" value="Cancel"/>
+<form role="form" method="post">
+	{% csrf_token %}
+	<div class="buttonlist">
+		<input type="submit" class="btn btn-warning" name="confirm" value="Request publication">
+		<input type="submit" class="btn btn-default pull-right" name="cancel" value="Back">
+	</div>
 </form>
+
 
 {% endblock %}

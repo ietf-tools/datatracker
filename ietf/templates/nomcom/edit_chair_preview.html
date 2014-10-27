@@ -22,9 +22,9 @@
   <form action="" method="post">{% csrf_token %}
   {% for field in form %}{{ field.as_hidden }}
   {% endfor %}
-  <input type="hidden" name="{{ stage_field }}" value="2" />
-  <input type="hidden" name="{{ hash_field }}" value="{{ hash_value }}" />
-  <p><input type="submit" value="Submit" /></p>
+  <input type="hidden" name="{{ stage_field }}" value="2">
+  <input type="hidden" name="{{ hash_field }}" value="{{ hash_value }}">
+  <p><input type="submit" value="Submit"></p>
   </form>
 {% endif %}
 
@@ -35,8 +35,8 @@
   <table>
   {{ form }}
   </table>
-  <input type="hidden" name="{{ stage_field }}" value="1" />
-  <p><input type="submit" value="Preview" /></p>
+  <input type="hidden" name="{{ stage_field }}" value="1">
+  <p><input type="submit" value="Preview"></p>
   </form>
 
 
