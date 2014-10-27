@@ -843,9 +843,15 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.doc = Document.objects.get(name=self.docname)
         self.assertEqual(self.doc.shepherd, plain_email)
-        comments = '::'.join([x.desc for x in self.doc.docevent_set.filter(time=self.doc.time,type="added_comment")])
+        comment_events = self.doc.docevent_set.filter(time=self.doc.time,type="added_comment")
+        comments = '::'.join([x.desc for x in comment_events])
         self.assertTrue('Document shepherd changed to Plain Man' in comments)
         self.assertTrue('Notification list changed' in comments)
+
+        # save the form without changing the email (nothing should be saved)
+        r = self.client.post(url, dict(shepherd=plain_email.pk))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(set(comment_events), set(self.doc.docevent_set.filter(time=self.doc.time,type="added_comment")))
 
         # test buggy change
         ad = Person.objects.get(name='Aread Irector')
@@ -881,7 +887,14 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.doc = Document.objects.get(name=self.docname)
         self.assertEqual(self.doc.shepherd, new_email)
-        self.assertTrue(self.doc.latest_event(DocEvent, type="added_comment").desc.startswith('Document shepherd email changed'))
+        comment_event = self.doc.latest_event(DocEvent, type="added_comment")
+        self.assertTrue(comment_event.desc.startswith('Document shepherd email changed'))
+
+        # save the form without changing the email (nothing should be saved)
+        r = self.client.post(url, dict(shepherd=new_email))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(comment_event, self.doc.latest_event(DocEvent, type="added_comment"))
+       
 
     def test_doc_view_shepherd_writeup(self):
         url = urlreverse('doc_shepherd_writeup',kwargs=dict(name=self.docname))

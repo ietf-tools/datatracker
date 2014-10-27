@@ -1023,6 +1023,8 @@ def change_shepherd_email(request, name):
                 c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
                 c.desc = "Document shepherd email changed"
                 c.save()
+            else:
+                messages.info(request,"The selected shepherd address was already assigned - no changes have been made.")
 
             return redirect('doc_view', name=doc.name)
 
