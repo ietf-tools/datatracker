@@ -1,13 +1,12 @@
-{% extends "ietf.html" %}
-
-{% block title %}{{ ipr.title }}{% endblock %}
-
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2009, All Rights Reserved #}
+{% block title %}IPR Details - {{ ipr.title }}{% endblock %}
 {% block content %}
 
 <h1>{{ ipr.title }}</h1>
 
-<p class="alert alert-info">
+<font size="3">
 This IPR disclosure was removed at the submitter's request.
-</p>
+</font>
 
 {% endblock %}

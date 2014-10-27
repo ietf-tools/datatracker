@@ -1,13 +1,9 @@
-{% extends "ietf.html" %}
-
-{% load bootstrap3 %}
+{% extends "base.html" %}
 
 {% block title %}Set up test email address{% endblock %}
 
 {% block content %}
 <h1>Set up test email address</h1>
-
-{% bootstrap_messages %}
 
 <p>Since this server is running in test mode, all email to be sent out
 is intercepted and thrown away.</p>
@@ -18,12 +14,12 @@ cookie in your browser. So make sure cookies are enabled.</p>
 
 <p>Value of <code>testmailcc</code>: {{ cookie }}</p>
 
-<form role-"form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
-
-    {% buttons %}
-	    <button class="btn btn-primary" type="submit">Set cookie</button>
-	{% endbuttons %}
+<form action="" method="post">{% csrf_token %}
+  <table>
+  {{ form.as_table }}
+  </table>
+  <div>
+    <input type="submit" value="Set cookie" />
+  </div>
 </form>
 {% endblock %}

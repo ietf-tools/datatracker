@@ -1,22 +1,18 @@
-{% extends "ietf.html" %}
+{% extends "base.html" %}
 
 {% block title %}Defer ballot for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Defer ballot<br><small>{{ doc }}</small></h1>
+<h1>Defer ballot for {{ doc }}</h1>
 
-<form role="form" method="post">
-	{% csrf_token %}
-	<p class="alert alert-danger">
-		<b>Defer the ballot for {{ doc }}?</b>
-		<br>
-		The ballot will then be put on the IESG agenda of {{ telechat_date }}.
-	</p>
+<form class="defer" action="" method="post">{% csrf_token %}
+  <p>Defer the ballot for {{ doc.file_tag }}?</p>
 
-	<div class="buttonlist">
-		<input type="submit" class="btn btn-danger" value="Defer ballot">
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-	</div>
+  <p>The ballot will then be on the IESG agenda of {{ telechat_date }}.</p>
+  
+  <div class="actions">
+    <a href="{{ back_url }}">Back</a>
+    <input type="submit" value="Defer ballot"/>
+  </div>
 </form>
-
 {% endblock %}

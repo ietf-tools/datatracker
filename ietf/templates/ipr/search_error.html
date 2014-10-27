@@ -1,14 +1,13 @@
-{% extends "ietf.html" %}
-
-{% block title %}IPR search result error{% endblock %}
-
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% block title %}IPR Search Result Error{% endblock %}
 {% block content %}
+<h1>IPR Search Result Error</h1>
 
-<h1>IPR search result error</h1>
-
-<div class="alert alert-danger">
-	<p>Your request was not processed due to the following error(s):</p>
-	<p><i>{{ error }}</i></p>
-</div>
-
+<p>Your request was not processed due to the following error(s):</p>
+   <p>
+      <i>{{ error }}</i>
+   </p>
 {% endblock %}
+
+

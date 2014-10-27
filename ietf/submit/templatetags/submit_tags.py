@@ -17,7 +17,7 @@ def show_submission_files(context, submission):
             exists = True
         elif submission.state_id == "posted":
             continue
-        result.append({'name': '%s' % ext[1:],
+        result.append({'name': '[%s version]' % ext[1:].upper(),
                        'exists': exists,
 		       'url': '%s%s-%s%s' % (settings.IDSUBMIT_STAGING_URL, submission.name, submission.rev, ext)})
     return {'files': result}
@@ -27,16 +27,15 @@ def show_submission_files(context, submission):
 def two_pages_decorated_with_errors(submission, errors):
     pages = submission.first_two_pages or ''
     if 'rev' not in errors.keys():
-        return mark_safe('<pre>%s</pre>' % escape(pages))
-    result = '<pre>\n'
+        return mark_safe('<pre class="twopages">%s</pre>' % escape(pages))
+    result = '<pre class="twopages">\n'
     for line in pages.split('\n'):
         if line.find('%s-%s' % (submission.name, submission.rev)) > -1:
-            result += '<div class="bg-danger"><b>'
+            result += '</pre><pre class="twopages" style="background: red;">'
             result += escape(line)
             result += '\n'
-            result += '</b></div>\n'
+            result += '</pre><pre class="twopages">\n'
         else:
             result += escape(line)
             result += '\n'
-    result += '</pre>pre>\n'
     return mark_safe(result)

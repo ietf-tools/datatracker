@@ -1,8 +1,15 @@
-{% extends "ietf.html" %}
+{% extends "base.html" %}
 
 {% block title %}Documents for {{ ad_name }}{% endblock %}
 
 {% block content %}
 <h1>Documents for {{ ad_name }}</h1>
+
 {% include "doc/search/search_results.html" %}
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="/js/utils.js"></script>
+<script type="text/javascript" src="/js/doc-search.js"></script>
 {% endblock %}
