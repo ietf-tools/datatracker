@@ -1,3 +1,47 @@
+ietfdb (5.7.1) ietf; urgency=medium
+
+  This is a minor bugfix release which empties the merge queue in preparation
+  for the IETF 91 code sprint.  Details below:
+
+  * Merged in [8456] from rcross@amsl.com:
+    Fixed a bug when trying to edit a session request that doesn't exist.
+    Fixed a bug when a submitted session request form does not include conflict
+    input fields.  
+
+  * Merged in [8454] from rcross@amsl.com:
+    Fixed the IRTF proceedings to include Open IRTF Meeting (irtfopen).  
+
+  * Merged in [8452] from rjsparks@nostrum.com:
+    Relax ALLOWED_HOSTS when not running in production. Fixes bug #1373.  
+
+  * Merged in [8444] from rjsparks@nostrum.com:
+    Fixed a condition check problem introduced with adjustments to setting the
+    returning item bit.  Fixes bug #1505.  
+
+  * Merged in [8441] from rjsparks@nostrum.com:
+    Removed the X-Frame-Options configuration.  
+
+  * Merged in [8438] from rjsparks@nostrum.com:
+    Better evaluation of whether a document type is diffable. Fixes bug #1504.
+
+  * Merged in [8305] from rjsparks@nostrum.com:
+    Replaced the return_to_url notion with logic that uses the session object.
+    Related to bug #1430. 
+
+  * Added wgchairs@ietf.org to the release notification email.  Split the 
+    notification email sending into two, in order to limit the number of 
+    addressees for emails going to Mailman lists.
+
+  * Fixed a 500 error that could occur if someone manually entered a
+    proceedings url so as to to upload materials to a nonexistent
+    meeting/group combination.
+
+  * Prevented 500 errors caused by a file move race condition on draft
+    submission confirmation.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Oct 2014 06:15:18 +0000
+
+
 ietfdb (5.7.0) ietf; urgency=medium
 
   This release merges in work from olau@iola.dk which enhances a number of
