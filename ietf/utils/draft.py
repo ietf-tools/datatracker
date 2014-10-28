@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.33"
+version = "0.34"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -508,8 +508,9 @@ class Draft():
 
         def make_authpat(hon, first, last, suffix):
             def dotexp(s):
-                s = re.sub("\. ", ".* ", s)
-                s = re.sub("\.$", ".*", s)
+                s = re.sub(r"\. ",    r"\w* ", s)
+                s = re.sub(r"\.$",    r"\w*", s)
+                s = re.sub(r"\.(\w)", r"\w* \1", s)
                 return s
             first = dotexp(first)
             last = dotexp(last)
@@ -521,15 +522,15 @@ class Draft():
 
             # Double names (e.g., Jean-Michel) are abbreviated as two letter
             # connected by a dash -- let this expand appropriately
-            first = re.sub("^([A-Z])-([A-Z])\.\*", r"\1.*-\2.*", first) 
+            first = re.sub(r"^([A-Z])-([A-Z])\\w\*", r"\1.*-\2.*", first) 
 
             # Some chinese names are shown with double-letter(latin) abbreviated given names, rather than
             # a single-letter(latin) abbreviation:
-            first = re.sub("^([A-Z])[A-Z]+\.\*", r"\1[-\w]+", first) 
+            first = re.sub(r"^([A-Z])[A-Z]+\\w\*", r"\1[-\w]+", first) 
 
             # permit insertion of middle names between first and last, and
             # add possible honorific and suffix information
-            authpat = "(?:^| and )(?:%(hon)s ?)?(%(first)s\S*( +[^ ]+)* +%(last)s)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| %(suffix)s| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "last":last, "suffix":suffix,}
+            authpat = r"(?:^| and )(?:%(hon)s ?)?(%(first)s\S*( +[^ ]+)* +%(last)s)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| %(suffix)s| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "last":last, "suffix":suffix,}
             return authpat
 
         authors = []
@@ -545,7 +546,7 @@ class Draft():
             self._docheader += line+"\n"
             author_on_line = False
 
-            _debug( "**" + line)
+            _debug( " ** " + line)
             leading_space = len(re.findall("^ *", line)[0])
             line_len = len(line.rstrip())
             trailing_space = line_len <= 72 and 72 - line_len or 0
@@ -689,10 +690,15 @@ class Draft():
                     author = "[A-Z].+ " + author
                     first, last = author.rsplit(" ", 1)
             else:
-                first, last = author.rsplit(" ", 1)
-                if "." in first and not ". " in first:
-                    first = first.replace(".", ". ").strip()
-
+                if "." in author:
+                    first, last = author.rsplit(".", 1)
+                    first += "."
+                else:
+                    first, last = author.rsplit(" ", 1)
+                    if "." in first and not ". " in first:
+                        first = first.replace(".", ". ").strip()
+            first = first.strip()
+            last = last.strip()
             prefix_match = re.search(" %(prefix)s$" % aux, first)
             if prefix_match:
                 prefix = prefix_match.group(1)
@@ -770,17 +776,25 @@ class Draft():
                                                     first = given_names
                                                     middle = None
                                                 names = (first, middle, surname, suffix)
+
                                                 if suffix:
                                                     fullname = fullname+" "+suffix
-                                                parts = [ n for n in names if n ]
-                                                revpt = [ n for n in names if n ]
-                                                revpt.reverse()
-                                                if not ((" ".join(parts) == fullname) or (" ".join(revpt) == fullname)):
+                                                for names in [
+                                                        (first, middle, surname, suffix),
+                                                        (first, surname, middle, suffix),
+                                                        (middle, first, surname, suffix),
+                                                        (middle, surname, first, suffix),
+                                                        (surname, first, middle, suffix),
+                                                        (surname, middle, first, suffix),
+                                                    ]:
+                                                    parts = [ n for n in names if n ]
+                                                    if (" ".join(parts) == fullname):
+                                                        authors[i] = (fullname, first, middle, surname, suffix)
+                                                        companies[i] = None
+                                                        break
+                                                else:
                                                     _warn("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
                                                     authors[i] = None
-                                                else:
-                                                    authors[i] = (fullname, first, middle, surname, suffix)
-                                                    companies[i] = None
                                             break
                             except AssertionError:
                                 sys.stderr.write("filename: "+self.filename+"\n")
@@ -819,7 +833,8 @@ class Draft():
     #                 for a in authors:
     #                     if a and a not in companies_seen:
     #                         _debug("Search for: %s"%(r"(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"))
-                    authmatch = [ a for a in authors[i+1:] if a and not a.lower() in companies_seen and (re.search((r"(?i)(^|\W)"+re.sub("[. ]+", ".* ", a)+"(\W|$)"), line.strip()) or acronym_match(a, line.strip()) )]
+                    authmatch = [ a for a in authors[i+1:] if a and not a.lower() in companies_seen and (re.search((r"(?i)(^|\W)"+re.sub("[. ]+", ".*", a)+"(\W|$)"), line.strip()) or acronym_match(a, line.strip()) )]
+
                     if authmatch:
                         _debug("     ? Other author or company ?  : %s" % authmatch)
                         _debug("     Line: "+line.strip())
