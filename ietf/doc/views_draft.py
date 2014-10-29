@@ -877,7 +877,9 @@ def edit_shepherd_writeup(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
 
     can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
-    can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd) or has_role(request.user, ["Area Director"])
+    can_edit_shepherd_writeup = ( can_edit_stream_info
+        or (doc.shepherd and user_is_person(request.user, doc.shepherd.person))
+        or has_role(request.user, ["Area Director"]))
 
     if not can_edit_shepherd_writeup:
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
