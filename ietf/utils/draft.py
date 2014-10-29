@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.34"
+version = "0.35"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -461,7 +461,7 @@ class Draft():
 
         """
         aux = {
-            "honor" : r"(?:[A-Z]\.|Dr\.?|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
+            "honor" : r"(?:[A-Z]\.|Dr\.?|Dr.-Ing.|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
             "prefix": r"([Dd]e|Hadi|van|van de|van der|Ver|von|[Ee]l)",
             "suffix": r"(jr.?|Jr.?|II|2nd|III|3rd|IV|4th)",
             "first" : r"([A-Z][-A-Za-z]*)(( ?\([A-Z][-A-Za-z]*\))?(\.?[- ]{1,2}[A-Za-z]+)*)",
