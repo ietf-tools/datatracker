@@ -1,20 +1,12 @@
-{# widthratio rounds up, is useless #}
-{% load mathfilters %}
-
-{% with cols=areas|length|add:1 %}
-{% with colw=100|div:cols %}
 <div class="table-responsive">
-	<table class="table table-condensed">
+        {% spaceless %}
+        <table class="table table-condensed">
 	    <thead>
 	        <tr>
 	            {% for area in areas %}
-	                <th class="text-center" style="width:{{colw}}%">
-	                    {{area.acronym|upper}}
-		            </th>
+                        <th class="text-center">{{area.acronym|upper}}</th>
 	            {% endfor %}
-	            <th class="text-center" style="width:{{colw}}%">
-	            	IRTF
-            	</th>
+                    <th class="text-center">IRTF</th>
 	        </tr>
 	    </thead>
 	    <tbody>
@@ -46,6 +38,5 @@
 	        </tr>
 	    </tbody>
 	</table>
+        {% endspaceless %}
 </div>
-{% endwith %}
-{% endwith %}
