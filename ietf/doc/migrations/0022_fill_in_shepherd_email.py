@@ -1,6 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
 from south.v2 import DataMigration
-import debug
 
 class Migration(DataMigration):
 
