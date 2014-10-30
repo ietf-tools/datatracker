@@ -12,8 +12,8 @@ LICENSE_CHOICES = (
     (3, 'c) Reasonable and Non-Discriminatory License to All Implementers with Possible Royalty/Fee.'),
     (4, 'd) Licensing Declaration to be Provided Later (implies a willingness'
         ' to commit to the provisions of a), b), or c) above to all implementers;'
-        ' otherwise, the next option "Unwilling to Commit to the Provisions of'
-        ' a), b), or c) Above". - must be selected).'),
+        ' otherwise, the next option - "Unwilling to Commit to the Provisions of'
+        ' a), b), or c) Above" - must be selected).'),
     (5, 'e) Unwilling to Commit to the Provisions of a), b), or c) Above.'),
     (6, 'f) See Text Below for Licensing Declaration.'),
 )
@@ -27,10 +27,10 @@ SELECT_CHOICES = (
     (2, 'NO'),
 )
 STATUS_CHOICES = (
-    ( 0, "Waiting for approval" ), 
-    ( 1, "Approved and Posted" ), 
-    ( 2, "Rejected by Administrator" ), 
-    ( 3, "Removed by Request" ), 
+    ( 0, "Waiting for approval" ),
+    ( 1, "Approved and Posted" ),
+    ( 2, "Rejected by Administrator" ),
+    ( 3, "Removed by Request" ),
 )
 
 class IprDetail(models.Model):
@@ -45,35 +45,35 @@ class IprDetail(models.Model):
     legacy_title_2 = models.CharField(blank=True, null=True, db_column="additional_old_title2", max_length=255)
 
     # Patent holder fieldset
-    legal_name = models.CharField("Legal Name", db_column="p_h_legal_name", max_length=255)
+    legal_name = models.CharField("Legal name", db_column="p_h_legal_name", max_length=255)
 
     # Patent Holder Contact fieldset
     # self.contact.filter(contact_type=1)
 
     # IETF Contact fieldset
     # self.contact.filter(contact_type=3)
-    
+
     # Related IETF Documents fieldset
     rfc_number = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
     id_document_tag = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
-    other_designations = models.CharField(blank=True, max_length=255)
+    other_designations = models.CharField("Designations for other contributions", blank=True, max_length=255)
     document_sections = models.TextField("Specific document sections covered", blank=True, max_length=255, db_column='disclouser_identify')
 
     # Patent Information fieldset
-    patents = models.TextField("Patent Applications", db_column="p_applications", max_length=255)
-    date_applied = models.CharField(max_length=255)
+    patents = models.TextField("Patent, serial, publication, registration, or application/file number(s)", db_column="p_applications", max_length=255)
+    date_applied = models.CharField("Date(s) granted or applied for", max_length=255)
     country = models.CharField(max_length=255)
     notes = models.TextField("Additional notes", db_column="p_notes", blank=True)
-    is_pending = models.IntegerField("Unpublished Pending Patent Application", blank=True, null=True, choices=SELECT_CHOICES, db_column="selecttype")
-    applies_to_all = models.IntegerField("Applies to all IPR owned by Submitter", blank=True, null=True, choices=SELECT_CHOICES, db_column="selectowned")
+    is_pending = models.IntegerField("Unpublished pending patent application", blank=True, null=True, choices=SELECT_CHOICES, db_column="selecttype")
+    applies_to_all = models.IntegerField("Applies to all IPR owned by submitter", blank=True, null=True, choices=SELECT_CHOICES, db_column="selectowned")
 
     # Licensing Declaration fieldset
     licensing_option = models.IntegerField(null=True, blank=True, choices=LICENSE_CHOICES)
     lic_opt_a_sub = models.IntegerField(null=True, editable=False, choices=STDONLY_CHOICES)
     lic_opt_b_sub = models.IntegerField(null=True, editable=False, choices=STDONLY_CHOICES)
     lic_opt_c_sub = models.IntegerField(null=True, editable=False, choices=STDONLY_CHOICES)
-    comments = models.TextField("Licensing Comments", blank=True)
-    lic_checkbox = models.BooleanField("All terms and conditions has been disclosed", default=False)
+    comments = models.TextField("Licensing comments", blank=True)
+    lic_checkbox = models.BooleanField("The individual submitting this template represents and warrants that all terms and conditions that must be satisfied for implementers of any covered IETF specification to obtain a license have been disclosed in this IPR disclosure statement.", default=False)
 
 
     # Other notes fieldset
@@ -119,8 +119,8 @@ class IprContact(models.Model):
     name = models.CharField(max_length=255)
     title = models.CharField(blank=True, max_length=255)
     department = models.CharField(blank=True, max_length=255)
-    address1 = models.CharField(blank=True, max_length=255)
-    address2 = models.CharField(blank=True, max_length=255)
+    address1 = models.CharField("Address", blank=True, max_length=255)
+    address2 = models.CharField("Address (continued)", blank=True, max_length=255)
     telephone = models.CharField(blank=True, max_length=25)
     fax = models.CharField(blank=True, max_length=25)
     email = models.EmailField(max_length=255)

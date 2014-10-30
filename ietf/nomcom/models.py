@@ -38,7 +38,7 @@ class NomCom(models.Model):
                                   upload_to=upload_path_handler, blank=True, null=True)
 
     group = models.ForeignKey(Group)
-    send_questionnaire = models.BooleanField(verbose_name='Send questionnaires automatically"', default=False,
+    send_questionnaire = models.BooleanField(verbose_name='Send questionnaires automatically', default=False,
                                              help_text='If you check this box, questionnaires are sent automatically after nominations')
     reminder_interval = models.PositiveIntegerField(help_text='If the nomcom user sets the interval field then a cron command will \
                                                                send reminders to the nominees who have not responded using \

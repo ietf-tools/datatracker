@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "ietf.html" %}
 
 {% block title %}Ballot for {{ doc.name }} issued{% endblock %}
 
@@ -7,7 +7,7 @@
 
 <p>Ballot has been sent out.</p>
 
-<div class="actions">
-  <a href="{% url "doc_writeup" name=doc.name %}">Back to writeups</a>
+<div class="buttonlist">
+	<a class="btn btn-default" href="{% url "doc_writeup" name=doc.name %}">Back</a>
 </div>
 {% endblock %}

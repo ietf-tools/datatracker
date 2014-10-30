@@ -34,7 +34,7 @@ class AutocompletedPersonsField(forms.CharField):
                  max_entries=None, # max number of selected objs
                  only_users=False, # only select persons who also have a user
                  model=Person, # or Email
-                 hint_text="Type in name to search for person",
+                 hint_text="Type in name to search for person.",
                  *args, **kwargs):
         kwargs["max_length"] = 1000
         self.max_entries = max_entries
@@ -106,7 +106,7 @@ class AutocompletedPersonField(AutocompletedPersonsField):
 class AutocompletedEmailsField(AutocompletedPersonsField):
     """Version of AutocompletedPersonsField with the defaults right for Emails."""
 
-    def __init__(self, model=Email, hint_text="Type in name or email to search for person and email address",
+    def __init__(self, model=Email, hint_text="Type in name or email to search for person and email address.",
                  *args, **kwargs):
         super(AutocompletedEmailsField, self).__init__(model=model, hint_text=hint_text, *args, **kwargs)
 

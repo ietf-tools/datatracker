@@ -56,7 +56,7 @@ def index(request):
             nomcom.ann_url = None
     return render_to_response('nomcom/index.html',
                               {'nomcom_list': nomcom_list,}, RequestContext(request))
-    
+
 
 def year_index(request, year):
     nomcom = get_nomcom_by_year(year)
@@ -70,21 +70,21 @@ def year_index(request, year):
 
 def announcements(request):
     address_re = re.compile("<.*>")
-    
+
     nomcoms = Group.objects.filter(type="nomcom")
 
     regimes = []
-    
+
     for n in nomcoms:
         e = GroupEvent.objects.filter(group=n, type="changed_state", changestategroupevent__state="active").order_by('time')[:1]
         n.start_year = e[0].time.year if e else 0
         e = GroupEvent.objects.filter(group=n, type="changed_state", changestategroupevent__state="conclude").order_by('time')[:1]
         n.end_year = e[0].time.year if e else n.start_year + 1
 
-        r = n.role_set.select_related().filter(name="chair") 
-        chair = None 
-        if r: 
-            chair = r[0] 
+        r = n.role_set.select_related().filter(name="chair")
+        chair = None
+        if r:
+            chair = r[0]
 
         announcements = Message.objects.filter(related_groups=n).order_by('-time')
         for a in announcements:

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "ietf.html" %}
 
 {% block title %}Trigger {{ notification }} sync for {{ org }}{% endblock %}
 
@@ -7,7 +7,8 @@
 
 <p>Update the Datatracker with {{ help_text|safe }} at {{ org }}.</p>
 
-<form class="sync-form" method="post">{% csrf_token %}
-<input type="submit" value="Trigger {{ notification }} sync"/>
+<form method="post">
+	{% csrf_token %}
+	<input class="btn btn-default" type="submit" value="Trigger {{ notification }} sync"/>
 </form>
 {% endblock %}

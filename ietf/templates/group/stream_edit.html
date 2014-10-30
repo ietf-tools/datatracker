@@ -1,55 +1,47 @@
-{% extends "base.html" %}
+{% extends "ietf.html" %}
 
-{% block title %}Manage {{ group.name }} stream{% endblock %}
+{% load ietf_filters %}
+{% load bootstrap3 %}
 
-{% block morecss %}
-form.edit td { padding-bottom: .5em; }
-{% endblock %}
+{% block title %}Manage {{ group.name }} RFC stream{% endblock %}
 
 {% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/token-input.css"></link>
+<link rel="stylesheet" href="/facelift/css/tokenfield-typeahead.min.css">
+<link rel="stylesheet" href="/facelift/css/bootstrap-tokenfield.min.css">
 {% endblock %}
 
 {% block content %}
-{% load ietf_filters %}
-<h1>Manage {{ group.name }} stream</h1>
+<h1>Manage {{ group.name }} RFC stream</h1>
+
+{% bootstrap_messages %}
 
 <p>
-  <b>Chair{{ chairs|pluralize }}:
-  {% for chair in chairs %}
-  {{ chair.person.plain_name }} &lt;{{ chair.address }}&gt;{% if not forloop.last %}, {% endif %}
-  {% endfor %}</b>
+	<b>Chair{{ chairs|pluralize }}:</b>
+	{% for chair in chairs %}
+		{{ chair.person.plain_name }} &lt;{{ chair.address }}&gt;
+		{% if not forloop.last %}, {% endif %}
+	{% endfor %}
 </p>
 
-<p>Delegates can be assigned with permission to do the tasks of the
-chair{{ chairs|pluralize }}. Note that in order to actually do so, the delegates need a
-Datatracker account. New accounts can be
-<a href="{% url "create_account" %}">created here</a>.</p>
+<p>
+	Delegates can be assigned with permission to do the tasks of the
+	chair{{ chairs|pluralize }}. Note that in order to actually do so, the delegates need a
+	datatracker account. New accounts can be <a href="{% url "create_account" %}">created here</a>.
+</p>
 
-<form class="edit" action="" method="post">{% csrf_token %}
-  <table>
-    {% for field in form.visible_fields %}
-    <tr>
-      <th>{{ field.label_tag }} {% if field.field.required %}*{% endif %}</th>
-      <td>{{ field }}
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-      {{ field.errors }}
-      </td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td></td>
-      <td class="actions">
-        <a class="button" href="{% url "ietf.group.views_stream.streams" %}">Cancel</a>
-        <input class="button" type="submit" value="Save"/>
-      </td>
-    </tr>
-  </table>
+<form class="tokenized-form" action="" role="form" method="post">
+	{% csrf_token %}
+	{% bootstrap_form form %}
+
+	{% buttons %}
+		<input type="submit" class="btn btn-primary" value="Save">
+		<a class="btn btn-default pull-right" href="{% url "ietf.group.views_stream.streams" %}{{ group.acronym }}">Back</a>
+	{% endbuttons %}
+
 </form>
 {% endblock %}
 
-{% block content_end %}
-<script type="text/javascript" src="/js/lib/jquery.tokeninput.js"></script>
-<script type="text/javascript" src="/js/lib/json2.js"></script>
-<script type="text/javascript" src="/js/tokenized-field.js"></script>
+{% block js %}
+<script src="/facelift/js/lib/typeahead.bundle.min.js"></script>
+<script src="/facelift/js/lib/bootstrap-tokenfield.min.js"></script>
 {% endblock %}
