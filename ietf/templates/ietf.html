@@ -7,12 +7,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<title>
-			{% block title %}No title{% endblock %}
-			{% if server_mode %}
-				{% ifnotequal server_mode "production" %}∂{% endifnotequal %}
-			{% endif %}
-		</title>
+                <title>{% block title %}No title{% endblock %}{% if server_mode and server_mode != "production" %} &part;{% endif %}</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 
 		<link rel="stylesheet" href="/facelift/css/bootstrap.min.css">
@@ -25,8 +20,8 @@
 
 		{% block pagehead %}{% endblock %}
 
-		<link rel="shortcut icon" href="/facelift/images/ietficon{% ifnotequal server_mode "production" %}-dev{% endifnotequal %}.ico">
-		<link rel="apple-touch-icon-precomposed" href="/facelift/images/ietficon{% ifnotequal server_mode "production" %}-dev{% endifnotequal %}.png">
+                <link rel="shortcut icon" href="/facelift/images/ietficon{% if server_mode != "production" %}-dev{% endif %}.ico">
+                <link rel="apple-touch-icon-precomposed" href="/facelift/images/ietficon{% if server_mode != "production" %}-dev{% endif %}.png">
 	</head>
 
 	{% filter amp|smartypants %}
@@ -67,7 +62,7 @@
 						<a class="navbar-brand" href="/">
 							IETF Datatracker
 							{% if server_mode %}
-								{% ifnotequal server_mode "production" %}∂{% endifnotequal %}
+                                                                {% if server_mode != "production" %}&part;{% endif %}
 							{% endif %}
 						</a>
 					</div>
