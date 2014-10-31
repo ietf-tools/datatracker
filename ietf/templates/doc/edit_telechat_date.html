@@ -9,22 +9,21 @@
 
 {% bootstrap_messages %}
 
+{% for prompt in prompts %}
+        <div class="alert alert-warning">{{ prompt }}</div>
+{% endfor %}
+
 <form role="form" method="post">
 	{% csrf_token %}
 	{% bootstrap_form form %}
 
 	{% buttons %}
-		<button type="submit" class="btn btn-primary">Submit</button>
+                <button type="submit" class="btn btn-primary">Save</button>
 		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
 	{% endbuttons %}
 </form>
 
 {% if prompts %}
-	{% for prompt in prompts %}
-		{# XXX FACELIFT: check what this is #}
-		<div class="prompt">{{prompt}}</div>
-		}
-	{% endfor %}
 {% endif %}
 
 {% endblock %}
