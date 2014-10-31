@@ -37,7 +37,10 @@ def check_audio_files(group,meeting):
     
     '''
     for session in Session.objects.filter(group=group,meeting=meeting,status__in=('sched','schedw')):
-        timeslot = session.official_scheduledsession().timeslot
+        try:
+            timeslot = session.official_scheduledsession().timeslot
+        except IndexError:
+            continue
         room = timeslot.location.name.lower()
         room = room.replace(' ','')
         room = room.replace('/','')
@@ -49,6 +52,7 @@ def check_audio_files(group,meeting):
             doc = Document.objects.filter(external_url=url).first()
             if not doc:
                 create_recording(session,meeting,group,url)
+
 
 def create_recording(session,meeting,group,url):
     '''
