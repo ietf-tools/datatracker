@@ -115,7 +115,7 @@ def edit_position(request, name, ballot_id):
     if has_role(request.user, "Secretariat"):
         ad_id = request.GET.get('ad')
         if not ad_id:
-            raise Http404()
+            raise Http404
         ad = get_object_or_404(Person, pk=ad_id)
 
     old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, ballot=ballot)
@@ -250,12 +250,12 @@ def send_ballot_comment(request, name, ballot_id):
     if not has_role(request.user, "Area Director"):
         ad_id = request.GET.get('ad')
         if not ad_id:
-            raise Http404()
+            raise Http404
         ad = get_object_or_404(Person, pk=ad_id)
 
     pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, ballot=ballot)
     if not pos:
-        raise Http404()
+        raise Http404
 
     subj = []
     d = ""
@@ -329,11 +329,11 @@ def defer_ballot(request, name):
     """Signal post-pone of ballot, notifying relevant parties."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.type_id not in ('draft','conflrev','statchg'):
-        raise Http404()
+        raise Http404
     interesting_state = dict(draft='draft-iesg',conflrev='conflrev',statchg='statchg')
     state = doc.get_state(interesting_state[doc.type_id])
     if not state or state.slug=='defer' or not doc.telechat_date():
-        raise Http404()
+        raise Http404
 
     login = request.user.person
     telechat_date = TelechatDate.objects.active().order_by("date")[1].date
@@ -378,13 +378,13 @@ def undefer_ballot(request, name):
     """undo deferral of ballot ballot."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.type_id not in ('draft','conflrev','statchg'):
-        raise Http404()
+        raise Http404
     if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
-        raise Http404()
+        raise Http404
     interesting_state = dict(draft='draft-iesg',conflrev='conflrev',statchg='statchg')
     state = doc.get_state(interesting_state[doc.type_id]) 
     if not state or state.slug!='defer':
-        raise Http404()
+        raise Http404
 
     telechat_date = TelechatDate.objects.active().order_by("date")[0].date
     
@@ -415,7 +415,7 @@ def lastcalltext(request, name):
     """Editing of the last call text"""
     doc = get_object_or_404(Document, docalias__name=name)
     if not doc.get_state("draft-iesg"):
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
@@ -578,7 +578,7 @@ def ballot_approvaltext(request, name):
     """Editing of approval text"""
     doc = get_object_or_404(Document, docalias__name=name)
     if not doc.get_state("draft-iesg"):
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
@@ -626,7 +626,7 @@ def approve_ballot(request, name):
     """Approve ballot, sending out announcement, changing state."""
     doc = get_object_or_404(Document, docalias__name=name)
     if not doc.get_state("draft-iesg"):
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
