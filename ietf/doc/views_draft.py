@@ -235,9 +235,9 @@ def change_stream(request, name):
             if new_stream != old_stream:
                 if new_stream and new_stream.slug and new_stream.slug == "irtf":
                     if not doc.notify:
-                        doc.notify = "irtf@irtf.org"
-                    elif "irtf@irtf.org" not in doc.notify:
-                        doc.notify += ", irtf@irtf.org"
+                        doc.notify = "irsg@irtf.org"
+                    elif "irsg@irtf.org" not in doc.notify:
+                        doc.notify += ", irsg@irtf.org"
 
                 save_document_in_history(doc)
                 
