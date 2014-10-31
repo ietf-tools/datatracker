@@ -10,10 +10,7 @@ Shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
 <pre>{{writeup}}</pre>
 
 {% if can_edit %}
-	{% url "doc_edit_shepherd_writeup" name=doc.name as doc_edit_url %}
-	{% if doc_edit_url %}
-		<a class="btn btn-primary" href="{{doc_edit_url}}">Edit</a>
-	{% endif %}
+        <a class="btn btn-primary" href="{% url "doc_edit_shepherd_writeup" name=doc.name %}">Edit</a>
 {% endif %}
 <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
 

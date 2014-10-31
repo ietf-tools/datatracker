@@ -64,7 +64,7 @@ def change_state(request, name):
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
     if (not doc.latest_event(type="started_iesg_process")) or doc.get_state_slug() == "expired":
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
@@ -214,7 +214,7 @@ def change_stream(request, name):
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
     if not doc.type_id=='draft':
-        raise Http404()
+        raise Http404
 
     if not (has_role(request.user, ("Area Director", "Secretariat")) or
             (request.user.is_authenticated() and
@@ -505,10 +505,10 @@ def to_iesg(request,name):
     doc = get_object_or_404(Document, docalias__name=name, stream='ietf')
 
     if doc.get_state_slug('draft') == "expired" or doc.get_state_slug('draft-iesg') == 'pub-req' :
-        raise Http404()
+        raise Http404
 
     if not is_authorized_in_doc_stream(request.user, doc):
-        raise Http404()
+        raise Http404
     
     target_state={
         'iesg' : State.objects.get(type='draft-iesg',slug='pub-req'),
@@ -614,7 +614,7 @@ def edit_info(request, name):
     necessary and logging changes as document events."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.get_state_slug() == "expired":
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
@@ -764,7 +764,7 @@ def request_resurrect(request, name):
     """Request resurrect of expired Internet Draft."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.get_state_slug() != "expired":
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
@@ -788,7 +788,7 @@ def resurrect(request, name):
     """Resurrect expired Internet Draft."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.get_state_slug() != "expired":
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 

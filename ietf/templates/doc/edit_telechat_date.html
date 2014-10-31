@@ -9,8 +9,8 @@
 
 {% bootstrap_messages %}
 
-{% for prompt in prompts %}
-        <div class="alert alert-warning">{{ prompt }}</div>
+{% for warning in warnings %}
+        <div class="alert alert-warning">{{ warning }}</div>
 {% endfor %}
 
 <form role="form" method="post">
@@ -22,8 +22,5 @@
 		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
 	{% endbuttons %}
 </form>
-
-{% if prompts %}
-{% endif %}
 
 {% endblock %}
