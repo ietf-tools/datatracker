@@ -851,8 +851,15 @@ class IndividualInfoFormsTests(TestCase):
         # save the form without changing the email (nothing should be saved)
         r = self.client.post(url, dict(shepherd=plain_email.pk))
         self.assertEqual(r.status_code, 302)
+        self.doc = Document.objects.get(name=self.docname)
         self.assertEqual(set(comment_events), set(self.doc.docevent_set.filter(time=self.doc.time,type="added_comment")))
 
+        # Remove the shepherd
+        r = self.client.post(url, dict(shepherd=''))
+        self.assertEqual(r.status_code, 302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertTrue(any(['Document shepherd changed to (None)' in x.desc for x in self.doc.docevent_set.filter(time=self.doc.time,type='added_comment')]))
+        
         # test buggy change
         ad = Person.objects.get(name='Aread Irector')
         two_answers = "%s,%s" % (plain_email, ad.email_set.all()[0])

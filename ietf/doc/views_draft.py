@@ -968,7 +968,7 @@ def edit_shepherd(request, name):
                 c.desc = "Document shepherd changed to "+ (doc.shepherd.person.name if doc.shepherd else "(None)")
                 c.save()
     
-                if doc.shepherd.formatted_email() not in doc.notify:
+                if doc.shepherd and (doc.shepherd.formatted_email() not in doc.notify):
                     login = request.user.person
                     addrs = doc.notify
                     if addrs:
