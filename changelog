@@ -1,3 +1,70 @@
+ietfdb (5.7.2) ietf; urgency=medium
+
+  Another bugfix release, containing a number of fixes for issues related to
+  extraction of meta-information from draft submissions, and also fixes for
+  some other blemishes not discovered at the time of 5.2.1.  This release
+  also enhances the generation of draft author aliases, providing a 
+  {draftname}.shepherd alias which points to the shepherd (if set), and adding
+  the shepherd email address to the {draftname}.all alias.  The email alias
+  changes will take effect as soon as the aliases are activated for @ietf.org
+  (as opposed to @tools.ietf.org).  Details:
+
+  * Addedd a temporary patch for an unwanted exception which occurred when
+    trying to generate proceedings for a session which didn't have an
+    assigned timeslot in an official schedule.  Happens all the time for
+    interims, for example.
+
+  * Merged in [8506] from rjsparks@nostrum.com:
+    Changed the default notify address for IRTF stream documents. Fixes bug
+    #1489.
+
+  * Merged in [8505] from rjsparks@nostrum.com:
+    Added code to allow removing a document shepherd, and test that it works.
+    Fixes bug #1509.  
+
+  * Merged in [8504] from rjsparks@nostrum.com:
+    Added tests that would have caught bug #1508. Added message to
+    edit_shepherd_email to match that added in edit_shepherd.  
+
+  * Merged in [8498] from rjsparks@nostrum.com:
+    Reworked logic flow for editing shepherds. Added message to inform the 
+    user when the shepherd is not changed. Fixes bug #1508.  
+
+  * Changed the signature line of the generate-wg-aliases script so as to show
+    the script path instead of a manually maintained string (which had become
+    outdated) in the signature string at the top of the generated files.
+
+  * Added generation of {draftname}.shepherd aliases for drafts when 
+    generating draft email aliases, and also added the shepherd's email address 
+    to the {draftname}.all alias.  Changed the signature line of the script to 
+    give the script path instead of a manually maintained string (which had 
+    become outdated).
+
+  * Fixed a bug in setting the can_edit_shepherd_writeup flag, triggered by the 
+    change in what Document.shepherd refers to (now, Email, used to be Person).
+
+  * Added 'Dr.-Ing.' to the recognised honorifics in the author extraction 
+    code.
+
+  * Did a number of changes to the author extraction method of class Draft 
+    in order to make it able to match up names with double-word family names on 
+    the first page (A. Foo Bar) with (familyname, given-name) ordering (Foo Bar 
+    Any) in the Authors' Addresses section.  Regression tested against 200+ 
+    known good author extraction results.  A number of stronger restrictions in 
+    regular expressions had to be introduced to avoid regression, which is 
+    probably all to the good.
+
+  * Added support for ISO-format dates (or RFC 3339 dates, if you will) to 
+    the date parsing done for the submission tool.  Also refined the regexes a 
+    bit to avoid false matches on for instance things like 'Juniper 2014'.
+
+  * Merged in [8498] from rjsparks@nostrum.com:
+    Reworked the logic flow for editing shepherds. Added a message to inform the
+    user when the shepherd is not changed. Fixes bug #1508.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Nov 2014 23:16:20 +0000
+
+
 ietfdb (5.7.1) ietf; urgency=medium
 
   This is a minor bugfix release which empties the merge queue in preparation
