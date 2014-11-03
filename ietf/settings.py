@@ -273,7 +273,7 @@ INTERNAL_IPS = (
 )
 
 # no slash at end
-IDTRACKER_BASE_URL = "//datatracker.ietf.org"
+IDTRACKER_BASE_URL = "http://datatracker.ietf.org"
 RFCDIFF_PREFIX = "//www.ietf.org/rfcdiff"
 
 # Valid values:
