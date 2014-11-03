@@ -99,7 +99,7 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('table.ietf-doctable td.acronym a:contains("%s")' % group.acronym)), 1)
+        self.assertEqual(len(q('.content-wrapper a:contains("%s")' % group.acronym)), 1)
 
     def test_concluded_groups(self):
         draft = make_test_data()
@@ -111,7 +111,7 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('table.concluded-groups a:contains("%s")' % group.acronym)), 1)
+        self.assertEqual(len(q('.content-wrapper a:contains("%s")' % group.acronym)), 1)
 
     def test_bofs(self):
         draft = make_test_data()
@@ -123,7 +123,7 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('table.ietf-doctable td.acronym a:contains("%s")' % group.acronym)), 1)
+        self.assertEqual(len(q('.content-wrapper a:contains("%s")' % group.acronym)), 1)
         
     def test_group_documents(self):
         draft = make_test_data()
@@ -302,7 +302,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="foobarbaz")) # No name
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         self.assertEqual(len(Group.objects.filter(type="wg")), num_wgs)
 
         # acronym contains non-alphanumeric
@@ -330,7 +330,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.charter.name, "charter-ietf-testwg")
         self.assertEqual(group.charter.rev, "00-00")
 
-    def test_create_based_on_existing(self):
+    def test_create_based_on_existing_bof(self):
         make_test_data()
 
         url = urlreverse('group_create', kwargs=dict(group_type="wg"))
@@ -342,7 +342,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(name="Test", acronym=group.parent.acronym))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         self.assertEqual(len(q('form input[name="confirmed"]')), 0) # can't confirm us out of this
 
         # try elevating BoF to WG
@@ -352,7 +352,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(name="Test", acronym=group.acronym))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         self.assertEqual(len(q('form input[name="confirmed"]')), 1)
 
         self.assertEqual(Group.objects.get(acronym=group.acronym).state_id, "bof")
@@ -383,7 +383,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="collide"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         # create old acronym
         group.acronym = "oldmars"
@@ -396,7 +396,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="oldmars"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         
         # edit info
         with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
@@ -453,7 +453,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(instructions="")) # No instructions
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         # request conclusion
         mailbox_before = len(outbox)

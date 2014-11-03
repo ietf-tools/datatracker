@@ -158,7 +158,7 @@ class IprTests(TestCase):
             })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("ul.errorlist")) > 0)
+        self.assertTrue(len(q("form .has-error")) > 0)
 
         # successful post
         r = self.client.post(url, {

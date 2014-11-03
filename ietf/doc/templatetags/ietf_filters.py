@@ -8,8 +8,9 @@ from email.utils import parseaddr
 
 from ietf.doc.models import ConsensusDocEvent
 from django import template
+from django.conf import settings
 from django.utils.html import escape, fix_ampersands
-from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, urlize, striptags
+from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags, urlize
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
@@ -528,7 +529,6 @@ def pos_to_label(text):
 
 @register.filter
 def capfirst_allcaps(text):
-    from django.template import defaultfilters
     """Like capfirst, except it doesn't lowercase words in ALL CAPS."""
     result = text
     i = False
@@ -543,10 +543,8 @@ def capfirst_allcaps(text):
 
 @register.filter
 def lower_allcaps(text):
-    from django.template import defaultfilters
     """Like lower, except it doesn't lowercase words in ALL CAPS."""
     result = text
-    i = False
     for token in re.split("(\W+)", striptags(text)):
         if not re.match("^[A-Z]+$", token):
             result = result.replace(token, token.lower())
@@ -561,7 +559,6 @@ def urlize_html(html, autoescape=False):
     """
     try:
         from BeautifulSoup import BeautifulSoup
-        from django.utils.html import urlize
     except ImportError:
         if settings.DEBUG:
             raise template.TemplateSyntaxError, "Error in urlize_html The Python BeautifulSoup libraries aren't installed."

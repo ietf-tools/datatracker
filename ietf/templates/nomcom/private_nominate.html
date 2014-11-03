@@ -17,12 +17,12 @@
 
 {% if nomcom|has_publickey %}
 
-<form role="form" method="post">
+<form id="nominate-form" role="form" method="post">
 	{% csrf_token %}
 	{% bootstrap_form form %}
 	{% buttons %}
-		<input class="btn btn-primary" type="submit" value="Save">
-	{% endbuttons %}
+                <button class="btn btn-primary" type="submit" name="save">Save</button>
+        {% endbuttons %}
 </form>
 
 {% endif %}

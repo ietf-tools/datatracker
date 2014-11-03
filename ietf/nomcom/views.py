@@ -311,8 +311,8 @@ def nominate(request, year, public):
         template = 'nomcom/private_nominate.html'
 
     if not has_publickey:
-            message = ('warning', "This Nomcom is not yet accepting nominations")
-            return render_to_response(template,
+        message = ('warning', "This Nomcom is not yet accepting nominations")
+        return render_to_response(template,
                               {'message': message,
                                'nomcom': nomcom,
                                'year': year,

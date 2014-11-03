@@ -1,4 +1,4 @@
-# -*- coding: UTF-8-No-BOM -*-
+# -*- coding: utf-8 -*-
 import tempfile
 import datetime
 
@@ -214,31 +214,36 @@ class NomcomViewsTest(TestCase):
                      "primary_email": nominees[0]}
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "info-message-error")
+        q = PyQuery(response.content)
+        self.assertTrue(q("form .has-error"))
 
         test_data = {"primary_email": nominees[0],
                      "secondary_emails": ""}
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "info-message-error")
+        q = PyQuery(response.content)
+        self.assertTrue(q("form .has-error"))
 
         test_data = {"primary_email": "",
                      "secondary_emails": nominees[0]}
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "info-message-error")
+        q = PyQuery(response.content)
+        self.assertTrue(q("form .has-error"))
 
         test_data = {"primary_email": "unknown@example.com",
                      "secondary_emails": nominees[0]}
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "info-message-error")
+        q = PyQuery(response.content)
+        self.assertTrue(q("form .has-error"))
 
         test_data = {"primary_email": nominees[0],
                      "secondary_emails": "unknown@example.com"}
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "info-message-error")
+        q = PyQuery(response.content)
+        self.assertTrue(q("form .has-error"))
 
         test_data = {"secondary_emails": """%s,
                                             %s,
@@ -247,7 +252,7 @@ class NomcomViewsTest(TestCase):
 
         response = self.client.post(self.private_merge_url, test_data)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "info-message-success")
+        self.assertContains(response, "alert-success")
 
         self.assertEqual(Nominee.objects.filter(email__address=nominees[1],
                                                 duplicated__isnull=False).count(), 1)
@@ -433,7 +438,8 @@ class NomcomViewsTest(TestCase):
 
         nomcom = get_nomcom_by_year(self.year)
         if not nomcom.public_key:
-            self.assertNotContains(response, "nominateform")
+            q = PyQuery(response.content)
+            self.assertEqual(len(q("#nominate-form")), 0)
 
         # save the cert file in tmp
         nomcom.public_key.storage.location = tempfile.gettempdir()
@@ -441,7 +447,8 @@ class NomcomViewsTest(TestCase):
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "nominateform")
+        q = PyQuery(response.content)
+        self.assertEqual(len(q("#nominate-form")), 1)
 
         position = Position.objects.get(name=position_name)
         candidate_email = nominee_email
@@ -459,7 +466,8 @@ class NomcomViewsTest(TestCase):
 
         response = self.client.post(nominate_url, test_data)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "info-message-success")
+        q = PyQuery(response.content)
+        self.assertContains(response, "alert-success")
 
         # check objects
         email = Email.objects.get(address=candidate_email)
@@ -526,7 +534,7 @@ class NomcomViewsTest(TestCase):
         response = self.client.post(self.add_questionnaire_url, test_data)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "info-message-success")
+        self.assertContains(response, "alert-success")
 
         ## check objects
         feedback = Feedback.objects.filter(positions__in=[position],
@@ -597,17 +605,18 @@ class NomcomViewsTest(TestCase):
         nominee_position = NomineePosition.objects.get(nominee=nominee,
                                                        position=position)
         state = nominee_position.state
-        if not state.slug == 'accepted':
+        if state.slug != 'accepted':
             response = self.client.post(feedback_url, test_data)
             self.assertEqual(response.status_code, 200)
-            self.assertContains(response, "info-message-error")
+            q = PyQuery(response.content)
+            self.assertTrue(q("form .has-error"))
             # accept nomination
             nominee_position.state = NomineePositionStateName.objects.get(slug='accepted')
             nominee_position.save()
 
         response = self.client.post(feedback_url, test_data)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "info-message-success")
+        self.assertContains(response, "alert-success")
 
         ## check objects
         feedback = Feedback.objects.filter(positions__in=[position],
