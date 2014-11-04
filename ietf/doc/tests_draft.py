@@ -853,6 +853,8 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.doc = Document.objects.get(name=self.docname)
         self.assertEqual(set(comment_events), set(self.doc.docevent_set.filter(time=self.doc.time,type="added_comment")))
+        r = self.client.get(url)
+        self.assertTrue(any(['no changes have been made' in m.message for m in r.context['messages']]))
 
         # Remove the shepherd
         r = self.client.post(url, dict(shepherd=''))
