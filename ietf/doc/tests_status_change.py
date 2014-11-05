@@ -347,31 +347,28 @@ class StatusChangeTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('.content-wrapper [type=submit]:contains("Save")')),1)
         # There should be three rows on the form
-        self.assertEqual(len(q('tr[id^=relation_row]')),3)
+        self.assertEqual(len(q('.content-wrapper .row')),3)
 
         # Try to add a relation to an RFC that doesn't exist
         r = self.client.post(url,dict(new_relation_row_blah="rfc9997",
-                                      statchg_relation_row_blah="tois",
-                                      Submit="Submit"))
+                                      statchg_relation_row_blah="tois"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form ul.errorlist')) > 0)
 
        # Try to add a relation leaving the relation type blank
         r = self.client.post(url,dict(new_relation_row_blah="rfc9999",
-                                      statchg_relation_row_blah="",
-                                      Submit="Submit"))
+                                      statchg_relation_row_blah=""))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form ul.errorlist')) > 0)
 
        # Try to add a relation with an unknown relationship type
         r = self.client.post(url,dict(new_relation_row_blah="rfc9999",
-                                      statchg_relation_row_blah="badslug",
-                                      Submit="Submit"))
+                                      statchg_relation_row_blah="badslug"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertTrue(len(q('form ul.errorlist')) > 0)
         
         # Successful change of relations
         r = self.client.post(url,dict(new_relation_row_blah="rfc9999",
@@ -379,8 +376,7 @@ class StatusChangeTests(TestCase):
                                       new_relation_row_foo="rfc9998",
                                       statchg_relation_row_foo="tobcp",
                                       new_relation_row_nob="rfc14",
-                                      statchg_relation_row_nob="tohist",
-                                      Submit="Submit"))
+                                      statchg_relation_row_nob="tohist"))
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.relateddocument_set.count(),3)
