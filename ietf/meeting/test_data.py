@@ -2,7 +2,7 @@ import datetime
 
 from ietf.doc.models import Document, State
 from ietf.group.models import Group
-from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, ScheduledSession, ResourceAssociation
+from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, ScheduledSession, ResourceAssociation, SessionPresentation
 from ietf.name.models import RoomResourceName
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
@@ -46,15 +46,15 @@ def make_meeting_test_data():
 
     doc = Document.objects.create(name='agenda-mars-ietf-42', type_id='agenda', title="Agenda", external_url="agenda-mars")
     doc.set_state(State.objects.get(type=doc.type_id, slug="active"))
-    mars_session.materials.add(doc)
+    mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
 
     doc = Document.objects.create(name='minutes-mars-ietf-42', type_id='minutes', title="Minutes", external_url="minutes-mars")
     doc.set_state(State.objects.get(type=doc.type_id, slug="active"))
-    mars_session.materials.add(doc)
+    mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
 
     doc = Document.objects.create(name='slides-mars-ietf-42', type_id='slides', title="Slideshow", external_url="slides-mars")
     doc.set_state(State.objects.get(type=doc.type_id, slug="active"))
-    mars_session.materials.add(doc)
+    mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
     
     return meeting
 
