@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %} {{meeting}} : {{acronym}} {% endblock %}
+
+{% block morecss %}
+.timeheader {font-size:120%;}
+{% endblock %}
+
+{% block content %}
+<h1> {{ meeting }} : {{ acronym }} : {{ time }} </h1>
+{% if session.name %}
+<h2> {{session.name}} </h2>
+{% endif %}
+
+{% if session.sessionpresentation_set.all.count %}
+<p>Materials:
+<ul>
+{% for pres in session.sessionpresentation_set.all %}
+<li><a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{pres.document.name}}-{{pres.rev}}</a></li>
+{% endfor %}
+</ul>
+</p>
+{% endif %}
+
+{% endblock %}
