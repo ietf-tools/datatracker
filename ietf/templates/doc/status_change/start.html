@@ -14,62 +14,11 @@
 <form class="start-rfc-status-change-review" role="form" method="post">
 	{% csrf_token %}
 
-	<label class="control-label">Affected RFCs</label>
-	{% for rfc,choice_slug in form.relations.items %}
-		<div class="form-group">
-			<div id="relation_row_{{rfc}}" class="row">
-				<div class="col-md-5">
-					<input class="form-control" id="new_relation_row_{{rfc}}" name="new_relation_row_{{rfc}}" type="text" value="{{rfc}}">
-				</div>
-				<div class="col-md-5">
-					<select class="form-control" id="statchg_relation_row_{{rfc}}" name="statchg_relation_row_{{rfc}}">
-						<option value="" {% if choice_slug == "" %}selected{% endif %}>(None)</option>
-						{% for rel in relation_slugs %}
-							<option value="{{rel.slug}}" {% if choice_slug == rel.slug %}selected{%endif%}>{{rel.name}}</option>
-						{% endfor %}
-					</select>
-				</div>
-				<div class="col-md-2">
-					<button class="btn btn-danger" onclick="$('#relation_row_{{rfc}}').remove(); return false;">Delete</button>
-				</div>
-			</div>
-		</div>
-	{% endfor %}
+        <label class="control-label">Affected RFCs</label>
 
-	<div class="form-group">
-		<div id="relation_row_0" class="row">
-			<div class="col-md-5">
-				<input class="form-control" id="new_relation_row_0" name="new_relation_row_0" type="text" placeholder="rfc...">
-				<p class="help-block">Enter new affected RFC.</p>
-			</div>
+        {% include "doc/status_change/edit_related_rows.html" %}
 
-			<div class="col-md-5">
-				<select class="form-control" id="statchg_relation_row_0" name="statchg_relation_row_0">
-					<option value="" {% if choice_slug == "" %}selected{% endif %}>(None)</option>
-					{% for rel in relation_slugs %}
-						<option value="{{rel.slug}}" {% if choice_slug == rel.slug %}selected{%endif%}>{{rel.name}}</option>
-					{% endfor %}
-				</select>
-			</div>
-		</div>
-	</div>
-
-	<div class="row">
-		<div class="col-md-10">
-			<p class="alert alert-danger">
-				{% comment %}XXX FACELIFT:{% endcomment %}
-				<b>Note:</b> With the redesigned UI, you currently must add new affected RFCs one by one, hitting submit each time. Only when the list of affected RFCs is complete and correct, move on to fill out the bottom part of the form (and do a final submit).
-			</p>
-
-			<div class="buttonlist">
-				<button type="submit" class="btn btn-primary" name="submit_response">Submit</button>
-				<a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
-			</div>
-			<p></p>
-		</div>
-	</div>
-
-	<div class="row">
+        <div class="row">
 		<div class="col-md-10">
 			{% bootstrap_form form %}
 
@@ -81,4 +30,8 @@
 	</div>
 
 </form>
+{% endblock %}
+
+{% block js %}
+  <script src="/facelift/js/status-change-edit-relations.js"></script>
 {% endblock %}

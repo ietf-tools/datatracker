@@ -6,55 +6,12 @@
 
 <h1>Edit RFCs affected by status change</h1>
 
-<p class="alert alert-info">
-	{% comment %}XXX FACELIFT:{% endcomment %}
-	<b>Note:</b> With the redesigned UI, you currently must add new RFCs one by one.
-</p>
-
 <form role="form" method="post">
 	{% csrf_token %}
 
-	{% for rfc,choice_slug in form.relations.items %}
-		<div class="form-group">
-			<div id="row_{{rfc}}" class="row">
-				<div class="col-md-5">
-					<input class="form-control" id="new_relation_row_{{rfc}}" name="new_relation_row_{{rfc}}"
-					type="text"	value="{{rfc}}">
-				</div>
-				<div class="col-md-5">
-					<select class="form-control" id="statchg_relation_row_{{rfc}}" name="statchg_relation_row_{{rfc}}">
-						<option value="" {% if choice_slug == "" %}selected{% endif %}>(None)</option>
-						{% for rel in relation_slugs %}
-							<option value="{{rel.slug}}" {% if choice_slug == rel.slug %}selected{%endif%}>{{rel.name}}</option>
-						{% endfor %}
-					</select>
-				</div>
-				<div class="col-md-2">
-					<button class="btn btn-danger" onclick="$('#row_{{rfc}}').remove(); return false;">Delete</button>
-				</div>
-			</div>
-		</div>
-	{% endfor %}
+        {% include "doc/status_change/edit_related_rows.html" %}
 
-	<div class="form-group">
-		<div id="relation_row_0" class="row">
-			<div class="col-md-5">
-				<input id="new_relation_row_0" name="new_relation_row_0" type="text" class="form-control" placeholder="rfc...">
-				<p class="help-block">Enter new affected RFC.</p>
-			</div>
-
-			<div class="col-md-5">
-				<select class="form-control" id="statchg_relation_row_0" name="statchg_relation_row_0">
-					<option value="" {% if choice_slug == "" %}selected{% endif %}>(None)</option>
-					{% for rel in relation_slugs %}
-						<option value="{{rel.slug}}" {% if choice_slug == rel.slug %}selected{%endif%}>{{rel.name}}</option>
-					{% endfor %}
-				</select>
-			</div>
-		</div>
-	</div>
-
-	{% if form.non_field_errors %}
+        {% if form.non_field_errors %}
 		<div class="alert alert-danger">{{ form.non_field_errors }}</div>
 	{% endif %}
 
@@ -64,3 +21,8 @@
 	</div>
 </form>
 {% endblock %}
+
+{% block js %}
+  <script src="/facelift/js/status-change-edit-relations.js"></script>
+{% endblock %}
+

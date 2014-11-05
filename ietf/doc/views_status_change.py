@@ -399,11 +399,11 @@ def clean_helper(form, formtype):
             elif k.startswith('statchg_relation_row'):
                 status_fields[k[21:]]=v
         for key in rfc_fields:
-           if rfc_fields[key]!="":
-             if key in status_fields:
-                 new_relations[rfc_fields[key]]=status_fields[key]
-             else:
-                 new_relations[rfc_fields[key]]=None
+            if rfc_fields[key]!="":
+                if key in status_fields:
+                    new_relations[rfc_fields[key]]=status_fields[key]
+                else:
+                    new_relations[rfc_fields[key]]=None
         
         form.relations = new_relations
 
@@ -568,7 +568,7 @@ def edit_relations(request, name):
 
     if request.method == 'POST':
         form = EditStatusChangeForm(request.POST)
-        if 'Submit' in request.POST and form.is_valid():
+        if form.is_valid():
     
             old_relations={}
             for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
@@ -588,9 +588,6 @@ def edit_relations(request, name):
             c.desc += "\n"
             c.save()
 
-            return HttpResponseRedirect(status_change.get_absolute_url())
-
-        elif 'Cancel' in request.POST:
             return HttpResponseRedirect(status_change.get_absolute_url())
 
     else: 
