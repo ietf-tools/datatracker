@@ -188,8 +188,20 @@ class UploadForm(forms.Form):
                 except Group.DoesNotExist:
                     raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % components[2])
 
+            elif name.startswith("draft-rfc-"):
+                return Group.objects.get(acronym="iesg")
+
+            elif name.startswith("draft-irtf-"):
+                return Group.objects.get(acronym="irtf")
+
             elif name.startswith("draft-iab-"):
                 return Group.objects.get(acronym="iab")
+
+            elif name.startswith("draft-iana-"):
+                return Group.objects.get(acronym="iana")
+
+            elif name.startswith("draft-rfc-editor-") or name.startswith("draft-rfced-") or name.startswith("draft-rfceditor-"):
+                return Group.objects.get(acronym="rfceditor")
 
             else:
                 return None

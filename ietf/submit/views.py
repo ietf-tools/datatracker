@@ -158,7 +158,7 @@ def submission_status(request, submission_id, access_token=None):
     except Preapproval.DoesNotExist:
         preapproval = None
 
-    requires_group_approval = submission.rev == '00' and submission.group and submission.group.type_id in ("wg", "rg") and not preapproval
+    requires_group_approval = submission.rev == '00' and submission.group and submission.group.type_id in ("wg", "rg", "ietf", "irtf", "iab", "iana", "rfcedtyp") and not preapproval
 
     requires_prev_authors_approval = Document.objects.filter(name=submission.name)
 
