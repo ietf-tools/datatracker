@@ -211,6 +211,26 @@ class EditTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    def test_save_agenda_broken_names(self):
+        meeting = make_meeting_test_data()
+
+        # save as new name (requires valid existing agenda)
+        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number,
+                                                                       owner=meeting.agenda.owner_email(),
+                                                                       name=meeting.agenda.name))
+        self.client.login(username="ad", password="ad+password")
+        r = self.client.post(url, {
+            'savename': "/no/this/should/not/work/it/is/too/long",
+            'saveas': "saveas",
+            })
+        self.assertEqual(r.status_code, 404)
+        #r = self.client.post(url, {
+        #    'savename': "/invalid/chars/",
+        #    'saveas': "saveas",
+        #    })
+        #self.assertEqual(r.status_code, 404)
+        
+
     def test_edit_timeslots(self):
         meeting = make_meeting_test_data()
 

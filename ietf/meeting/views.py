@@ -89,7 +89,7 @@ def get_user_agent(request):
     return user_agent
 
 class SaveAsForm(forms.Form):
-    savename = forms.CharField(max_length=100)
+    savename = forms.CharField(max_length=16)
 
 @role_required('Area Director','Secretariat')
 def agenda_create(request, num=None, owner=None, name=None):
@@ -108,6 +108,9 @@ def agenda_create(request, num=None, owner=None, name=None):
         return HttpResponse(status=404)
 
     savedname = saveasform.cleaned_data['savename']
+
+    if not savedname.isalnum():
+        return HttpResponse("Asked to save with invalid name", status=404)
 
     # create the new schedule, and copy the scheduledsessions
     try:
