@@ -1428,7 +1428,7 @@ def change_stream_state(request, name, state_type):
 
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
-        form = ChangeStreamStateForm(initial=dict(new_state=prev_state.pk if prev_state else None),
+        form = ChangeStreamStateForm(initial=dict(new_state=prev_state.pk if prev_state else None, tags= doc.tags.all()),
                                      doc=doc, state_type=state_type)
 
     milestones = doc.groupmilestone_set.all()
