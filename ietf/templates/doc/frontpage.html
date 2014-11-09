@@ -1,15 +1,16 @@
 {% extends "ietf.html" %}
 
-{% block title %}IETF Datatracker{% endblock %}
+{% block title %}IETF Datatracker{% ifnotequal server_mode "production" %} -- Development Mode{% endifnotequal %}{% endblock %}
 
 {% block content %}
 <div class="row">
 	<div class="text-center">
-		<img class="ietflogo" src="/facelift/images/ietflogo{% ifnotequal server_mode "production" %}-dev{% endifnotequal %}.png" alt="IETF">
-		<h1>Datatracker</h1>
-		{% ifnotequal server_mode "production" %}
-			<p>Development Mode<p>
-		{% endifnotequal %}
+		<img class="ietflogo" src="/images/ietflogo.png" alt="IETF">
+		{% ifequal server_mode "production" %}
+		    <h1>IETF Datatracker</h1>
+		{% else %}
+		    <h1><FONT COLOR="FF0000">IETF Datatracker -- Development Mode</FONT></h1>
+		{% endifequal %}
 	</div>
 </div>
 

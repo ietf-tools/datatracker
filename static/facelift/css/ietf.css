@@ -157,3 +157,52 @@ pre { line-height: 1.214;  }
 	visibility: hidden !important;
 }
 .in-nojs { display: block !important; }
+
+/* Development Mode tool bar */
+
+.navbar-dev {
+	background-color: #FF0000;
+	border-color: #CC0000;
+}
+.navbar-dev .navbar-brand {
+	color: #ecf0f1;
+}
+.navbar-dev .navbar-brand:hover, .navbar-default .navbar-brand:focus {
+	color: #ecdbff;
+}
+.navbar-dev .navbar-text {
+	color: #ecf0f1;
+}
+.navbar-dev .navbar-nav > li > a {
+	color: #ecf0f1;
+}
+.navbar-dev .navbar-nav > li > a:hover, .navbar-dev .navbar-nav > li > a:focus {
+	color: #ecdbff;
+}
+.navbar-dev .navbar-nav > .active > a, .navbar-dev .navbar-nav > .active > a:hover, .navbar-dev .navbar-nav > .active > a:focus {
+	color: #ecdbff;
+	background-color: #CC0000;
+}
+.navbar-dev .navbar-nav > .open > a, .navbar-dev .navbar-nav > .open > a:hover, .navbar-dev .navbar-nav > .open > a:focus {
+	color: #ecdbff;
+	background-color: #CC0000;
+}
+.navbar-dev .navbar-toggle {
+	border-color: #CC0000;
+}
+.navbar-dev .navbar-toggle:hover, .navbar-dev .navbar-toggle:focus {
+	background-color: #CC0000;
+}
+.navbar-dev .navbar-toggle .icon-bar {
+	background-color: #ecf0f1;
+}
+.navbar-dev .navbar-collapse,
+.navbar-dev .navbar-form {
+	border-color: #ecf0f1;
+}
+.navbar-dev .navbar-link {
+	color: #ecf0f1;
+}
+.navbar-dev .navbar-link:hover {
+	color: #ecdbff;
+}

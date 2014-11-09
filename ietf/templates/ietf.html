@@ -7,7 +7,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-                <title>{% block title %}No title{% endblock %}{% if server_mode and server_mode != "production" %} &part;{% endif %}</title>
+                <title>{% block title %}No title{% endblock %}{% if server_mode and server_mode != "production" %} &beta;{% endif %}</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 
 		<link rel="stylesheet" href="/facelift/css/bootstrap.min.css">
@@ -20,8 +20,8 @@
 
 		{% block pagehead %}{% endblock %}
 
-                <link rel="shortcut icon" href="/facelift/images/ietficon{% if server_mode != "production" %}-dev{% endif %}.ico">
-                <link rel="apple-touch-icon-precomposed" href="/facelift/images/ietficon{% if server_mode != "production" %}-dev{% endif %}.png">
+                <link rel="shortcut icon" href="/images/ietflogo.png">
+                <link rel="apple-touch-icon-precomposed" href="/images/ietflogo.png">
 	</head>
 
 	{% filter amp|smartypants %}
@@ -50,7 +50,7 @@
 				</div>
 			</div>
 
-			<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+			<nav class="navbar {% if server_mode and server_mode != "production" %}navbar-dev{% else %}navbar-default{% endif %} navbar-fixed-top" role="navigation">
 				<div class="container-fluid">
 					<div class="navbar-header">
 						<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse">
@@ -60,10 +60,7 @@
 							<span class="icon-bar"></span>
 						</button>
 						<a class="navbar-brand" href="/">
-							IETF Datatracker
-							{% if server_mode %}
-                                                                {% if server_mode != "production" %}&part;{% endif %}
-							{% endif %}
+							IETF Datatracker{% if server_mode and server_mode != "production" %} &beta;{% endif %}
 						</a>
 					</div>
 
