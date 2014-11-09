@@ -27,6 +27,11 @@ def email_iesg_secretary_re_charter(request, group, subject, text):
                    )
               )
 
+def email_iesg_secretary_personnel_change(request, group, text):
+    to = ["iesg-secretary@ietf.org"]
+    full_subject = u"Personnel change for %s working group" % (group.acronym)
+    send_mail_text(request, to, None, full_subject,text)
+
 def email_milestones_changed(request, group, changes):
     def wrap_up_email(to, text):
         text = wrap(strip_tags(text), 70)

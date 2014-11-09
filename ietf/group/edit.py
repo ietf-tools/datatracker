@@ -21,7 +21,7 @@ from ietf.group.utils import get_group_or_404
 from ietf.ietfauth.utils import has_role
 from ietf.person.fields import AutocompletedEmailsField
 from ietf.person.models import Person, Email
-from ietf.group.mails import email_iesg_secretary_re_charter
+from ietf.group.mails import email_iesg_secretary_re_charter, email_iesg_secretary_personnel_change
 
 MAX_GROUP_DELEGATES = 3
 
@@ -244,6 +244,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             diff('list_subscribe', "Mailing list subscribe address")
             diff('list_archive', "Mailing list archive")
 
+            personnel_change_text=""
             # update roles
             for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors"), ('delegates', 'delegate', "Delegates")]:
                 new = clean[attr]
@@ -255,6 +256,18 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                     group.role_set.filter(name=slug).delete()
                     for e in new:
                         Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
+                    added = set(new) - set(old)
+                    deleted = set(old) - set(new)
+                    if added:
+                        change_text=title + ' added: ' + ", ".join(x.formatted_email() for x in added)
+                        personnel_change_text+=change_text+"\n"
+                    if deleted:
+                        change_text=title + ' deleted: ' + ", ".join(x.formatted_email() for x in deleted)
+                        personnel_change_text+=change_text+"\n"
+
+            if personnel_change_text!="":
+                print personnel_change_text
+                email_iesg_secretary_personnel_change(request, group, personnel_change_text)
 
             # update urls
             new_urls = clean['urls']
