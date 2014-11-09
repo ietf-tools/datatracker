@@ -12,6 +12,7 @@ import debug                            # pyflakes:ignore
 from django import forms
 from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.template import RequestContext
@@ -88,8 +89,11 @@ def get_user_agent(request):
         user_agent = ""
     return user_agent
 
+def ascii_alphanumeric(string):
+    return re.match(r'^[a-zA-Z0-9]*$', string)
+
 class SaveAsForm(forms.Form):
-    savename = forms.CharField(max_length=100)
+    savename = forms.CharField(max_length=16)
 
 @role_required('Area Director','Secretariat')
 def agenda_create(request, num=None, owner=None, name=None):
@@ -99,22 +103,30 @@ def agenda_create(request, num=None, owner=None, name=None):
 
     if schedule is None:
         # here we have to return some ajax to display an error.
-        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
+        messages.error("Error: No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
+        return redirect(edit_agenda, num=num, owner=owner, name=name)
 
     # authorization was enforced by the @group_require decorator above.
 
     saveasform = SaveAsForm(request.POST)
     if not saveasform.is_valid():
-        return HttpResponse(status=404)
+        messages.info(request, "This name is not valid. Please choose another one.")
+        return redirect(edit_agenda, num=num, owner=owner, name=name)
 
     savedname = saveasform.cleaned_data['savename']
+
+    if not ascii_alphanumeric(savedname):
+        messages.info(request, "This name contains illegal characters. Please choose another one.")
+        return redirect(edit_agenda, num=num, owner=owner, name=name)
 
     # create the new schedule, and copy the scheduledsessions
     try:
         sched = meeting.schedule_set.get(name=savedname, owner=request.user.person)
         if sched:
-            # XXX needs to record a session error and redirect to where?
             return redirect(edit_agenda, meeting.number, sched.name)
+        else:
+            messages.info(request, "Agenda creation failed. Please try again.")
+            return redirect(edit_agenda, num=num, owner=owner, name=name)
 
     except Schedule.DoesNotExist:
         pass

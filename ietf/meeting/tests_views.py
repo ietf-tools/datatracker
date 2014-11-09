@@ -1,6 +1,7 @@
 import os
 import shutil
 import datetime
+import urlparse
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
@@ -179,6 +180,8 @@ class EditTests(TestCase):
             'saveas': "saveas",
             })
         self.assertEqual(r.status_code, 302)
+        # Verify that we actually got redirected to a new place.
+        self.assertNotEqual(urlparse.urlparse(r.url).path, url)
 
         # get
         schedule = meeting.get_schedule_by_name("foo")
@@ -210,6 +213,40 @@ class EditTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+
+    def test_save_agenda_broken_names(self):
+        meeting = make_meeting_test_data()
+
+        # save as new name (requires valid existing agenda)
+        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number,
+                                                                       owner=meeting.agenda.owner_email(),
+                                                                       name=meeting.agenda.name))
+        self.client.login(username="ad", password="ad+password")
+        r = self.client.post(url, {
+            'savename': "/no/this/should/not/work/it/is/too/long",
+            'saveas': "saveas",
+            })
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r.url).path, url)
+        # TODO: Verify that an error message was in fact returned.
+
+        r = self.client.post(url, {
+            'savename': "/invalid/chars/",
+            'saveas': "saveas",
+            })
+        # TODO: Verify that an error message was in fact returned.
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r.url).path, url)
+
+        # Non-ASCII alphanumeric characters
+        r = self.client.post(url, {
+            'savename': u"f\u00E9ling",
+            'saveas': "saveas",
+            })
+        # TODO: Verify that an error message was in fact returned.
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r.url).path, url)
+        
 
     def test_edit_timeslots(self):
         meeting = make_meeting_test_data()
