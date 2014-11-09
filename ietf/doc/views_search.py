@@ -362,7 +362,8 @@ def retrieve_search_results(form, all_types=False):
     meta['by'] = query['by']
     meta['advanced'] = bool(query['by'] or len(meta['checked']))
 
-    meta['headers'] = [{'title': 'Document', 'key':'document'},
+    meta['headers'] = [{'title': 'Add', 'key':'add'},
+                       {'title': 'Document', 'key':'document'},
                        {'title': 'Title', 'key':'title'},
                        {'title': 'Date', 'key':'date'},
                        {'title': 'Status', 'key':'status', 'colspan':'2'},
