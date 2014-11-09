@@ -1209,6 +1209,7 @@ def request_publication(request, name):
 
 class AdoptDraftForm(forms.Form):
     group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=["wg", "rg"], state="active").order_by("-type", "acronym"), required=True, empty_label=None)
+    newstate = forms.ModelChoiceField(queryset=State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc', 'candidat','active']),required=True,label="State")
     comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption")
     weeks = forms.IntegerField(required=False, label="Expected weeks in adoption state")
 
@@ -1218,17 +1219,21 @@ class AdoptDraftForm(forms.Form):
         super(AdoptDraftForm, self).__init__(*args, **kwargs)
 
         if has_role(user, "Secretariat"):
-            pass # all groups
+            state_choices = State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc', 'candidat','active'])
         elif has_role(user, "IRTF Chair"):
             #The IRTF chair can adopt a draft into any RG
             group_ids = list(Group.objects.filter(type="rg", state="active").values_list('id', flat=True))
             group_ids.extend(list(Group.objects.filter(type="wg", state="active", role__person__user=user, role__name__in=("chair", "delegate", "secr")).values_list('id', flat=True)))
             self.fields["group"].queryset = self.fields["group"].queryset.filter(id__in=group_ids).distinct()
+            state_choices = State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc', 'candidat','active'])
         else:
             self.fields["group"].queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=("chair", "delegate", "secr")).distinct()
+            state_choices = State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc'])
 
         self.fields['group'].choices = [(g.pk, '%s - %s' % (g.acronym, g.name)) for g in self.fields["group"].queryset]
 
+        self.fields['newstate'].choices = [(x.pk,x.name) for x in state_choices]
+        self.fields['newstate'].choices.insert(0,('','--------'))
 
 @login_required
 def adopt_draft(request, name):
@@ -1251,10 +1256,10 @@ def adopt_draft(request, name):
             group = form.cleaned_data["group"]
             if group.type.slug == "rg":
                 new_stream = StreamName.objects.get(slug="irtf")                
-                adopt_state_slug = "active"
             else:
                 new_stream = StreamName.objects.get(slug="ietf")                
-                adopt_state_slug = "c-adopt"
+
+            new_state = form.cleaned_data["newstate"]
 
             # stream
             if doc.stream != new_stream:
@@ -1287,7 +1292,6 @@ def adopt_draft(request, name):
 
             # state
             prev_state = doc.get_state("draft-stream-%s" % doc.stream_id)
-            new_state = State.objects.get(slug=adopt_state_slug, type="draft-stream-%s" % doc.stream_id, used=True)
             if new_state != prev_state:
                 doc.set_state(new_state)
                 e = add_state_change_event(doc, by, prev_state, new_state, timestamp=doc.time)

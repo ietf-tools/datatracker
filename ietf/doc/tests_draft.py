@@ -1077,9 +1077,11 @@ class AdoptDraftTests(TestCase):
         mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
         mars = Group.objects.get(acronym="mars")
+        call_issued = State.objects.get(type='draft-stream-ietf',slug='c-adopt')
         r = self.client.post(url,
                              dict(comment="some comment",
                                   group=mars.pk,
+                                  newstate=call_issued.pk,
                                   weeks="10"))
         self.assertEqual(r.status_code, 302)
 
