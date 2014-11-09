@@ -299,7 +299,7 @@ def document_main(request, name, rev=None):
         actions = []
 
         if can_adopt_draft(request.user, doc):
-            actions.append(("Adopt in Group", urlreverse('doc_adopt_draft', kwargs=dict(name=doc.name))))
+            actions.append(("Manage Document Adoption in Group", urlreverse('doc_adopt_draft', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() == "expired" and not resurrected_by and can_edit:
             actions.append(("Request Resurrect", urlreverse('doc_request_resurrect', kwargs=dict(name=doc.name))))

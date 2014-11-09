@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Adopt {{ doc }} in Group{% endblock %}
+{% block title %}Manage Document Adoption of {{ doc }} in Group{% endblock %}
 
 {% block morecss %}
 form.adopt-draft th { width: 8em; }
@@ -11,14 +11,12 @@ p.intro { max-width: 50em; }
 {% endblock %}
 
 {% block content %}
-<h1>Adopt {{ doc }} in Group</h1>
+<h1>Manage Document Adoption of {{ doc }} in Group</h1>
 
-<p class="intro">You can adopt this draft into a group.</p>
+<p class="intro">You can begin managing the group state of this draft.</p>
 
-<p class="intro">For a WG, the draft enters the IETF stream and the
-stream state becomes "Call for Adoption by WG Issued". For an RG, the
-draft enters the IRTF stream and the stream state becomes "Active RG
-Document".</p>
+<p class="intro">For a WG, the draft enters the IETF stream.
+For an RG, the draft enters the IRTF stream.</p>
 
 <form class="adopt-draft" action="" method="post">{% csrf_token %}
   {% for field in form.hidden_fields %}{{ field }}{% endfor %}
@@ -35,7 +33,7 @@ Document".</p>
     <tr>
       <td colspan="2" class="actions">
         <a class="button" href="{{ doc.get_absolute_url }}">Cancel</a>
-        <input class="button" type="submit" value="Adopt Draft"/>
+        <input class="button" type="submit" value="Save"/>
       </td>
     </tr>
   </table>
