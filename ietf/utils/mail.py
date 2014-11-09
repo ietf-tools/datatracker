@@ -18,7 +18,6 @@ import time
 import copy
 import textwrap
 import traceback
-from contextlib import contextmanager
 
 # Testing mode:
 # import ietf.utils.mail
@@ -215,9 +214,13 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     debugging = getattr(settings, "USING_DEBUG_EMAIL_SERVER", False) and settings.EMAIL_HOST == 'localhost' and settings.EMAIL_PORT == 2025
 
     if test_mode or debugging or settings.SERVER_MODE == 'production':
-        with smtp_error_logging(send_smtp) as logging_send:
-            with smtp_error_user_warning(logging_send,request) as send:
-                send(msg, bcc)
+        try:
+            send_smtp(msg,bcc)
+        except smtplib.SMTPException as e:
+            log_smtp_exception(e)
+            build_warning_message(request, e)
+            send_error_email(e)
+            
     elif settings.SERVER_MODE == 'test':
 	if toUser:
 	    copy_email(msg, to, toUser=True, originalBcc=bcc)
@@ -230,9 +233,12 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     if copy_to and not test_mode and not debugging: # if we're running automated tests, this copy is just annoying
         if bcc:
             msg['X-Tracker-Bcc']=bcc
-        with smtp_error_logging(copy_email) as logging_copy:
-            with smtp_error_user_warning(logging_copy,request) as copy:
-                copy(msg, copy_to,originalBcc=bcc)
+        try:
+            copy_email(msg, copy_to, originalBcc=bcc)
+        except smtplib.SMTPException as e:
+            log_smtp_exception(e)
+            build_warning_message(request, e)
+            send_error_email(e)
 
 def parse_preformatted(preformatted, extra={}, override={}):
     """Parse preformatted string containing mail with From:, To:, ...,"""
@@ -276,10 +282,8 @@ def send_mail_message(request, message, extra={}):
     send_mail_text(request, message.to, message.frm, message.subject,
                    message.body, cc=message.cc, bcc=message.bcc, extra=e)
 
-def log_smtp_exception(e):
-
+def exception_components(e):
     # See if it's a non-smtplib exception that we faked
-
     if len(e.args)==1 and isinstance(e.args[0],dict) and e.args[0].has_key('really'):
         orig = e.args[0]
         extype = orig['really']
@@ -289,78 +293,65 @@ def log_smtp_exception(e):
         extype = sys.exc_info()[0]
         value = sys.exc_info()[1]
         tb = traceback.format_tb(sys.exc_info()[2])
+    return (extype, value, tb)
         
-
+def log_smtp_exception(e):
+    (extype, value, tb) = exception_components(e)
     log("SMTP Exception: %s : %s" % (extype,value))
     if isinstance(e,SMTPSomeRefusedRecipients):
         log("     SomeRefused: %s"%(e.summary_refusals()))
     log("     Traceback: %s" % tb) 
-    return (extype, value, tb)
 
-@contextmanager
-def smtp_error_user_warning(thing,request):
-    try:
-        yield thing
-    except smtplib.SMTPException as e:
-        (extype, value, tb) = log_smtp_exception(e)
-
-        if request:
-            warning =  "An error occured while sending email:\n"
-            if getattr(e,'original_msg',None):
-                warning += "Subject: %s\n" % e.original_msg.get('Subject','[no subject]')
-                warning += "To: %s\n" % e.original_msg.get('To','[no to]')
-                warning += "Cc: %s\n" % e.original_msg.get('Cc','[no cc]')
-            if isinstance(e,SMTPSomeRefusedRecipients):
-                warning += e.detailed_refusals()
-            else:
-                warning += "SMTP Exception: %s\n"%extype
-                warning += "Error Message: %s\n\n"%value
-                warning += "The message was not delivered to anyone."
-            messages.warning(request,warning,extra_tags='preformatted',fail_silently=True)
-
-        raise
-
-@contextmanager
-def smtp_error_logging(thing):
-    try:
-        yield thing
-    except smtplib.SMTPException as e:
-        (extype, value, tb) = log_smtp_exception(e)
-
-        msg = MIMEMultipart()
-        msg['To'] = '<action@ietf.org>'
-        msg['From'] = settings.SERVER_EMAIL
+def build_warning_message(request, e):
+    (extype, value, tb) = exception_components(e)
+    if request:
+        warning =  "An error occured while sending email:\n"
+        if getattr(e,'original_msg',None):
+            warning += "Subject: %s\n" % e.original_msg.get('Subject','[no subject]')
+            warning += "To: %s\n" % e.original_msg.get('To','[no to]')
+            warning += "Cc: %s\n" % e.original_msg.get('Cc','[no cc]')
         if isinstance(e,SMTPSomeRefusedRecipients):
-            msg['Subject'] = 'Subject: Some recipients were refused while sending mail with Subject: %s' % e.original_msg.get('Subject','[no subject]')
-            textpart = textwrap.dedent("""\
-                This is a message from the datatracker to IETF-Action about an email
-                delivery failure, when sending email from the datatracker.
-
-                %s
-
-                """) % e.detailed_refusals()
+            warning += e.detailed_refusals()
         else:
-            msg['Subject'] = 'Datatracker error while sending email'
-            textpart = textwrap.dedent("""\
-                This is a message from the datatracker to IETF-Action about an email
-                delivery failure, when sending email from the datatracker.
+            warning += "SMTP Exception: %s\n"%extype
+            warning += "Error Message: %s\n\n"%value
+            warning += "The message was not delivered to anyone."
+        messages.warning(request,warning,extra_tags='preformatted',fail_silently=True)
 
-                The original message was not delivered to anyone.
+def send_error_email(e):
+    (extype, value, tb) = exception_components(e)
+    msg = MIMEMultipart()
+    msg['To'] = '<action@ietf.org>'
+    msg['From'] = settings.SERVER_EMAIL
+    if isinstance(e,SMTPSomeRefusedRecipients):
+        msg['Subject'] = 'Subject: Some recipients were refused while sending mail with Subject: %s' % e.original_msg.get('Subject','[no subject]')
+        textpart = textwrap.dedent("""\
+            This is a message from the datatracker to IETF-Action about an email
+            delivery failure, when sending email from the datatracker.
 
-                SMTP Exception: %s
+            %s
 
-                Error Message: %s
-                     
-                """) % (extype,value)
-        if hasattr(e,'original_msg'):
-            textpart += "The original message follows:\n"
-        msg.attach(MIMEText(textpart,_charset='utf-8'))
-        if hasattr(e,'original_msg'):
-            msg.attach(MIMEMessage(e.original_msg))
+            """) % e.detailed_refusals()
+    else:
+        msg['Subject'] = 'Datatracker error while sending email'
+        textpart = textwrap.dedent("""\
+            This is a message from the datatracker to IETF-Action about an email
+            delivery failure, when sending email from the datatracker.
 
-        send_error_to_secretariat(msg)
+            The original message was not delivered to anyone.
 
+            SMTP Exception: %s
 
+            Error Message: %s
+                 
+            """) % (extype,value)
+    if hasattr(e,'original_msg'):
+        textpart += "The original message follows:\n"
+    msg.attach(MIMEText(textpart,_charset='utf-8'))
+    if hasattr(e,'original_msg'):
+        msg.attach(MIMEMessage(e.original_msg))
+
+    send_error_to_secretariat(msg)
 
 def send_error_to_secretariat(msg):
 
