@@ -23,6 +23,17 @@
 
   <table id="metatable" width="100%">
     <tr>
+      <td>Title:</td>
+      <td>
+        <a
+          {% if not snapshot and can_manage %}
+          class="editlink" href="{% url "charter_change_title" name=doc.name %}"
+          {% endif %}>
+            {{ doc.title }}
+        </a>
+      </td>
+    </tr>
+    <tr>
       <td>WG State:</td>
       <td>{{ group.state.name }}</td>
     </tr>

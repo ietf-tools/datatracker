@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block morecss %}
+form.change-title select {
+  width: 22em;
+}
+
+#id_charter_title, #id_message, #id_comment {
+  width: 40em;
+}
+
+form.change-title .actions {
+  text-align: right;
+  padding-top: 10px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<form class="change-title" action="" method="post">{% csrf_token %}
+  <table>
+    {% for field in form.visible_fields %}
+    <tr>
+      <th>{{ field.label_tag }}</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+
+      {{ field.errors }}
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td colspan="2" class="actions">
+        <a href="{% url "doc_view" name=doc.name %}">Back</a>
+        <input type="submit" value="Save and (possibly) notify Secretariat"/>
+      </td>
+    </tr>
+  </table>
+</form>
+
+{% endblock %}

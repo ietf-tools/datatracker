@@ -4,6 +4,7 @@ from django.conf.urls import patterns, url
 
 urlpatterns = patterns('',
     url(r'^state/$', "ietf.doc.views_charter.change_state", name='charter_change_state'),
+    url(r'^title/$', "ietf.doc.views_charter.change_title", name='charter_change_title'),
     url(r'^(?P<option>initcharter|recharter|abandon)/$', "ietf.doc.views_charter.change_state", name='charter_startstop_process'),
     url(r'^telechat/$', "ietf.doc.views_doc.telechat_date", name='charter_telechat_date'),
     url(r'^notify/$', "ietf.doc.views_doc.edit_notify", name='charter_edit_notify'),
