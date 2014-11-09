@@ -8,12 +8,15 @@ from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response as render
 from django.template import RequestContext
 from django.conf import settings
+from django.db.models import Q
+
 
 from ietf.ipr.models import IprDocAlias, IprDetail
 from ietf.ipr.related import related_docs
 from ietf.utils.draft_search import normalize_draftname
 from ietf.group.models import Group
 from ietf.doc.models import DocAlias
+
 
 def iprs_from_docs(docs):
     iprs = []
@@ -40,7 +43,7 @@ def patent_file_search(url, q):
     return False
 
 def search(request):
-    wgs = Group.objects.filter(type="wg").select_related().order_by("acronym")
+    wgs = Group.objects.filter(Q(type="wg") | Q(type="rg")).select_related().order_by("acronym")
 
     search_type = request.GET.get("option")
     if search_type:
