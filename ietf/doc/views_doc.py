@@ -266,6 +266,7 @@ def document_main(request, name, rev=None):
 
         can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
         can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"])
+        can_edit_notify = can_edit_shepherd_writeup
         can_edit_consensus = False
 
         consensus = None
@@ -355,6 +356,7 @@ def document_main(request, name, rev=None):
                                        can_edit_stream_info=can_edit_stream_info,
                                        is_shepherd = user_is_person(request.user, doc.shepherd and doc.shepherd.person),
                                        can_edit_shepherd_writeup=can_edit_shepherd_writeup,
+                                       can_edit_notify=can_edit_notify,
                                        can_edit_iana_state=can_edit_iana_state,
                                        can_edit_consensus=can_edit_consensus,
 

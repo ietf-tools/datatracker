@@ -220,7 +220,7 @@
     <tr>
       <td>Send notices to:</td>
       <td>
-        <a {% if can_edit %}class="editlink" href="{% url "doc_change_notify" name=doc.name %}"{% endif %}>
+        <a {% if can_edit_notify %}class="editlink" href="{% url "doc_change_notify" name=doc.name %}"{% endif %}>
           {{ doc.notify|default:"No addresses provided"}}
         </a>
       </td>
