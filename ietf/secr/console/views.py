@@ -3,7 +3,9 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 from ietf.doc.models import DocEvent
+from ietf.ietfauth.utils import role_required
 
+@role_required('Secretariat')
 def main(request):
     '''
     Main view for the Console

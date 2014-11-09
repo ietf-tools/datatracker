@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
+from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person, Email, Alias
 from ietf.secr.rolodex.forms import EditPersonForm, EmailForm, NameForm, NewPersonForm, SearchForm
 
@@ -14,6 +15,7 @@ from ietf.secr.rolodex.forms import EditPersonForm, EmailForm, NameForm, NewPers
 # Views 
 # ---------------------------------------
 
+@role_required('Secretariat')
 def add(request):
     """ 
     Add contact information.
@@ -52,6 +54,7 @@ def add(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def add_proceed(request):
     """ 
     Add contact information. (2nd page, allows entry of address, phone and email records)
@@ -111,6 +114,7 @@ def add_proceed(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def delete(request, id):
     """ 
     Delete contact information.
@@ -144,6 +148,7 @@ def delete(request, id):
         RequestContext(request, {}),
     )
     
+@role_required('Secretariat')
 def edit(request, id):
     """ 
     Edit contact information.  Address, Email and Phone records are provided as inlineformsets.
@@ -199,6 +204,7 @@ def edit(request, id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def search(request):
     """ 
     Search Person by any combination of name, email or tag.  email matches
@@ -255,6 +261,7 @@ def search(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def view(request, id):
     """ 
     View contact information.

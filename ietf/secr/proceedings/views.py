@@ -24,7 +24,7 @@ from ietf.secr.utils.group import get_my_groups, groups_by_session
 from ietf.secr.utils.meeting import get_upload_root, get_materials, get_timeslot
 from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
 from ietf.group.models import Group
-from ietf.ietfauth.utils import has_role
+from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession
 from ietf.secr.proceedings.forms import EditSlideForm, InterimMeetingForm, RecordingForm, RecordingEditForm, ReplaceSlideForm, UnifiedUploadForm
 from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas, gen_attendees,
@@ -34,7 +34,10 @@ from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, 
 from ietf.secr.proceedings.models import InterimMeeting    # proxy model
 
 
-
+# -------------------------------------------------
+# Globals 
+# -------------------------------------------------
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair')
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
@@ -312,7 +315,7 @@ def ajax_order_slide(request):
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
-@sec_only
+@role_required('Secretariat')
 def build(request,meeting_num,acronym):
     '''
     This is a utility or test view.  It simply rebuilds the proceedings html for the specified
@@ -364,7 +367,7 @@ def delete_material(request,slide_id):
 
     return HttpResponseRedirect(url)
 
-@sec_only
+@role_required('Secretariat')
 def delete_interim_meeting(request, meeting_num):
     '''
     This view deletes the specified Interim Meeting and any material that has been
@@ -430,6 +433,7 @@ def edit_slide(request, slide_id):
         RequestContext(request, {}),
     )
 
+@role_required(*AUTHORIZED_ROLES)
 def interim(request, acronym):
     '''
     This view presents the user with a list of interim meetings for the specified group.
@@ -475,8 +479,8 @@ def interim(request, acronym):
         RequestContext(request, {}),
     )
 
+@role_required(*AUTHORIZED_ROLES)
 def interim_directory(request, sortby=None):
-
     if sortby == 'group':
         qs = InterimMeeting.objects.all()
         meetings = sorted(qs, key=lambda a: a.group.acronym)
@@ -487,6 +491,7 @@ def interim_directory(request, sortby=None):
     'meetings': meetings},
 )
 
+@role_required(*AUTHORIZED_ROLES)
 def main(request):
     '''
     List IETF Meetings.  If the user is Secratariat list includes all meetings otherwise
@@ -591,7 +596,7 @@ def process_pdfs(request, meeting_num):
     url = reverse('proceedings_select', kwargs={'meeting_num':meeting_num})
     return HttpResponseRedirect(url)
 
-@sec_only
+@role_required('Secretariat')
 def progress_report(request, meeting_num):
     '''
     This function generates the proceedings progress report for use at the Plenary.
@@ -602,7 +607,7 @@ def progress_report(request, meeting_num):
     url = reverse('proceedings_select', kwargs={'meeting_num':meeting_num})
     return HttpResponseRedirect(url)
 
-@sec_only
+@role_required('Secretariat')
 def recording(request, meeting_num):
     '''
     Enter Session recording info.  Creates Document and associates it with Session
@@ -639,7 +644,7 @@ def recording(request, meeting_num):
         RequestContext(request, {}),
     )
 
-@sec_only
+@role_required('Secretariat')
 def recording_edit(request, meeting_num, name):
     '''
     Edit recording Document
@@ -719,6 +724,7 @@ def replace_slide(request, slide_id):
         RequestContext(request, {}),
     )
 
+@role_required(*AUTHORIZED_ROLES)
 def select(request, meeting_num):
     '''
     A screen to select which group you want to upload material for.  Users of this view area
@@ -810,6 +816,7 @@ def select(request, meeting_num):
         RequestContext(request,{}),
     )
 
+@role_required(*AUTHORIZED_ROLES)
 def select_interim(request):
     '''
     A screen to select which group you want to upload Interim material for.  Works for Secretariat staff
@@ -819,7 +826,7 @@ def select_interim(request):
         redirect_url = reverse('proceedings_interim', kwargs={'acronym':request.POST['group']})
         return HttpResponseRedirect(redirect_url)
 
-    if request.user_is_secretariat:
+    if has_role(request.user, "Secretariat"): 
         # initialize working groups form
         choices = build_choices(Group.objects.active_wgs())
         group_form = GroupSelectForm(choices=choices)
@@ -981,35 +988,3 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
         'proceedings_url': proceedings_url},
         RequestContext(request, {}),
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

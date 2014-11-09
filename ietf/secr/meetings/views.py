@@ -12,6 +12,7 @@ from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.utils.functional import curry
 
+from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
 from ietf.meeting.helpers import get_meeting
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, ScheduledSession, Schedule
@@ -266,6 +267,7 @@ def ajax_get_times(request, meeting_id, day):
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
+@role_required('Secretariat')
 def add(request):
     '''
     Add a new IETF Meeting.  Creates Meeting and Proceeding objects.
@@ -315,6 +317,7 @@ def add(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def blue_sheet(request, meeting_id):
     '''
     Blue Sheet view.  The user can generate blue sheets or upload scanned bluesheets
@@ -340,6 +343,7 @@ def blue_sheet(request, meeting_id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def blue_sheet_generate(request, meeting_id):
     '''
     Generate bluesheets
@@ -352,6 +356,7 @@ def blue_sheet_generate(request, meeting_id):
     messages.success(request, 'Blue Sheets generated')
     return redirect('meetings_blue_sheet', meeting_id=meeting.number)
 
+@role_required('Secretariat')
 def blue_sheet_redirect(request):
     '''
     This is the generic blue sheet URL.  It gets the next IETF meeting and redirects
@@ -365,6 +370,7 @@ def blue_sheet_redirect(request):
         meeting = Meeting.objects.filter(type='ietf').order_by('-date')[0]
     return redirect('meetings_blue_sheet', meeting_id=meeting.number)
 
+@role_required('Secretariat')
 def edit_meeting(request, meeting_id):
     '''
     Edit Meeting information.
@@ -400,6 +406,7 @@ def edit_meeting(request, meeting_id):
         RequestContext(request,{}),
     )
 
+@role_required('Secretariat')
 def main(request):
     '''
     In this view the user can choose a meeting to manage or elect to create a new meeting.
@@ -418,6 +425,7 @@ def main(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def non_session(request, meeting_id, schedule_name):
     '''
     Display and add "non-session" time slots, ie. registration, beverage and snack breaks
@@ -483,6 +491,7 @@ def non_session(request, meeting_id, schedule_name):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def non_session_delete(request, meeting_id, schedule_name, slot_id):
     '''
     This function deletes the non-session TimeSlot.  For "other" and "plenary" timeslot
@@ -506,6 +515,7 @@ def non_session_delete(request, meeting_id, schedule_name, slot_id):
     messages.success(request, 'Non-Session timeslot deleted successfully')
     return redirect('meetings_non_session', meeting_id=meeting_id, schedule_name=schedule_name)
 
+@role_required('Secretariat')
 def non_session_edit(request, meeting_id, schedule_name, slot_id):
     '''
     Allows the user to assign a location to this non-session timeslot
@@ -555,6 +565,7 @@ def non_session_edit(request, meeting_id, schedule_name, slot_id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def notifications(request, meeting_id):
     '''
     Send scheduled session email notifications.  Finds all groups with
@@ -590,6 +601,7 @@ def notifications(request, meeting_id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def remove_session(request, meeting_id, acronym):
     '''
     Remove session from agenda.  Disassociate session from timeslot and set status.
@@ -613,6 +625,7 @@ def remove_session(request, meeting_id, acronym):
     messages.success(request, '%s Session removed from agenda' % (group.acronym))
     return redirect('meetings_select_group', meeting_id=meeting.number)
 
+@role_required('Secretariat')
 def rooms(request, meeting_id, schedule_name):
     '''
     Display and edit MeetingRoom records for the specified meeting
@@ -657,6 +670,7 @@ def rooms(request, meeting_id, schedule_name):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def schedule(request, meeting_id, schedule_name, acronym):
     '''
     This view handles scheduling session requests to TimeSlots
@@ -770,6 +784,7 @@ def schedule(request, meeting_id, schedule_name, acronym):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def select(request, meeting_id, schedule_name):
     '''
     Options to edit Rooms & Times or schedule a session
@@ -783,6 +798,7 @@ def select(request, meeting_id, schedule_name):
         RequestContext(request, {}),
     )
     
+@role_required('Secretariat')
 def select_group(request, meeting_id, schedule_name):
     '''
     In this view the user can select the group to schedule.  Only those groups that have
@@ -828,6 +844,7 @@ def select_group(request, meeting_id, schedule_name):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def times(request, meeting_id, schedule_name):
     '''
     Display and edit time slots (TimeSlots).  It doesn't display every TimeSlot
@@ -892,6 +909,7 @@ def times(request, meeting_id, schedule_name):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def times_edit(request, meeting_id, schedule_name, time):
     '''
     This view handles bulk edit of timeslot details.
@@ -946,6 +964,7 @@ def times_edit(request, meeting_id, schedule_name, time):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def times_delete(request, meeting_id, schedule_name, time):
     '''
     This view handles bulk delete of all timeslots matching time (datetime) for the given
@@ -961,6 +980,7 @@ def times_delete(request, meeting_id, schedule_name, time):
     messages.success(request, 'Timeslot deleted')
     return redirect('meetings_times', meeting_id=meeting_id,schedule_name=schedule_name)
 
+@role_required('Secretariat')
 def unschedule(request, meeting_id, schedule_name, session_id):
     '''
     Unschedule given session object
@@ -975,6 +995,7 @@ def unschedule(request, meeting_id, schedule_name, session_id):
     messages.success(request, 'Session unscheduled')
     return redirect('meetings_select_group', meeting_id=meeting_id, schedule_name=schedule_name)
 
+@role_required('Secretariat')
 def view(request, meeting_id):
     '''
     View Meeting information.

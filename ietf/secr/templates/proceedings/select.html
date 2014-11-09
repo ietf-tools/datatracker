@@ -1,4 +1,5 @@
 {% extends "base_site.html" %}
+{% load ietf_filters %}
 
 {% block title %}Proceedings{% endblock %}
 
@@ -80,7 +81,7 @@
            {% endif %}     
         </div> <!-- inline-related -->
         
-        {% if request.user_is_secretariat %}
+        {% if user|has_role:"Secretariat" %}
         <div class="inline-related">
           <h2>Secretariat Only Functions</h2>
           <div id="private-functions">

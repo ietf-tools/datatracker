@@ -10,6 +10,7 @@ from django.template import RequestContext
 
 from ietf.group.models import Group, GroupEvent, GroupURL, Role, ChangeStateGroupEvent
 from ietf.group.utils import save_group_in_history
+from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
 from ietf.secr.areas.forms import AWPAddModelForm, AWPForm, AddAreaModelForm, AreaDirectorForm, AreaForm
 
@@ -49,7 +50,7 @@ def getemails(request):
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
-
+@role_required('Secretariat')
 def add(request):
     """ 
     Add a new IETF Area
@@ -95,6 +96,7 @@ def add(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def edit(request, name):
     """ 
     Edit IETF Areas 
@@ -159,6 +161,7 @@ def edit(request, name):
         RequestContext(request,{}),
     )
 
+@role_required('Secretariat')
 def list_areas(request):
     """ 
     List IETF Areas 
@@ -180,6 +183,7 @@ def list_areas(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def people(request, name):
     """ 
     Edit People associated with Areas, Area Directors.
@@ -229,6 +233,7 @@ def people(request, name):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def modify(request, name):
     """ 
     Handle state changes of Area Directors (enable voting, retire)
@@ -285,6 +290,7 @@ def modify(request, name):
 
         return redirect('areas_view', name=name)
 
+@role_required('Secretariat')
 def view(request, name):
     """ 
     View Area information.

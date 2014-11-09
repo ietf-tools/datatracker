@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
@@ -45,6 +46,7 @@ def check_access(user):
 # --------------------------------------------------
 # this seems to cause some kind of circular problem
 # @check_for_cancel(reverse('home'))
+@login_required
 @check_for_cancel('../')
 def main(request):
     '''
@@ -70,6 +72,7 @@ def main(request):
         RequestContext(request, {}),
     )
 
+@login_required
 @check_for_cancel('../')
 def confirm(request):
 

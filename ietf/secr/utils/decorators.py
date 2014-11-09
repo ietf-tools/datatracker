@@ -83,11 +83,10 @@ def check_permissions(func):
 def sec_only(func):
     """
     This decorator checks that the user making the request is a secretariat user.
-    (Based on the cusotm user_is_secretariat request attribute)
     """
     def wrapper(request, *args, **kwargs):
         # short circuit.  secretariat user has full access
-        if request.user_is_secretariat:
+        if has_role(request.user, "Secretariat"):
             return func(request, *args, **kwargs)
 
         return render_to_response('unauthorized.html',{

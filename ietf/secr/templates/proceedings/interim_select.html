@@ -1,4 +1,5 @@
 {% extends "base_site.html" %}
+{% load ietf_filters %}
 
 {% block title %}Proceedings{% endblock %}
 
@@ -29,7 +30,7 @@
              <input type="submit" name="submit" value="Select" />
            </form>
            {% comment %}
-           {% if request.user_is_secretariat %}
+           {% if user|has_role:"Secretariat" %} 
              <form class="internal-form" action="" method="post">{% csrf_token %}
                <label for="id_group">IRTF Groups</label>
                {{ irtf_form.group }}
