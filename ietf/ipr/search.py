@@ -15,6 +15,9 @@ from ietf.utils.draft_search import normalize_draftname
 from ietf.group.models import Group
 from ietf.doc.models import DocAlias
 
+from itertools import chain
+
+
 def iprs_from_docs(docs):
     iprs = []
     for doc in docs:
@@ -41,6 +44,8 @@ def patent_file_search(url, q):
 
 def search(request):
     wgs = Group.objects.filter(type="wg").select_related().order_by("acronym")
+    rgs = Group.objects.filter(type="rg").select_related().order_by("acronym")
+    wgs = chain(wgs,rgs)
 
     search_type = request.GET.get("option")
     if search_type:
