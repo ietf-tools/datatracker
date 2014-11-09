@@ -1,9 +1,11 @@
 import os
 import shutil
 import datetime
+import urlparse
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
+from django.contrib import messages
 
 from pyquery import PyQuery
 
@@ -179,6 +181,8 @@ class EditTests(TestCase):
             'saveas': "saveas",
             })
         self.assertEqual(r.status_code, 302)
+        # Verify that we actually got redirected to a new place.
+        self.assertNotEqual(urlparse.urlparse(r.url).path, url)
 
         # get
         schedule = meeting.get_schedule_by_name("foo")
@@ -223,12 +227,26 @@ class EditTests(TestCase):
             'savename': "/no/this/should/not/work/it/is/too/long",
             'saveas': "saveas",
             })
-        self.assertEqual(r.status_code, 404)
-        #r = self.client.post(url, {
-        #    'savename': "/invalid/chars/",
-        #    'saveas': "saveas",
-        #    })
-        #self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r.url).path, url)
+        # TODO: Verify that an error message was in fact returned.
+
+        r = self.client.post(url, {
+            'savename': "/invalid/chars/",
+            'saveas': "saveas",
+            })
+        # TODO: Verify that an error message was in fact returned.
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r.url).path, url)
+
+        # Non-ASCII alphanumeric characters
+        r = self.client.post(url, {
+            'savename': u"f\u00E9ling",
+            'saveas': "saveas",
+            })
+        # TODO: Verify that an error message was in fact returned.
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r.url).path, url)
         
 
     def test_edit_timeslots(self):
