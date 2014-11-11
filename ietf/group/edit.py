@@ -266,7 +266,6 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                         personnel_change_text+=change_text+"\n"
 
             if personnel_change_text!="":
-                print personnel_change_text
                 email_iesg_secretary_personnel_change(request, group, personnel_change_text)
 
             # update urls
