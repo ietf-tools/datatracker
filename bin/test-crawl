@@ -87,12 +87,17 @@ fh, fn = tempfile.mkstemp(prefix="test-crawl-", suffix=".log", dir="../")
 logfile = open(fn, "w")
 os.close(fh)
 
+def log(s):
+    print(s)
+    logfile.write(s)
+    logfile.write('\n')
+
 def get_referrers(url):
     ref_list = []
     while url in referrers:
         url = referrers[url]
         if url in ref_list:
-            print ("Circular referral list, discovered at %s" % url)
+            log("Circular referral list, discovered at %s" % url)
             break
         ref_list.append(url)
     return ref_list
@@ -107,13 +112,13 @@ while urls:
         r = client.get(url)
         elapsed = datetime.datetime.now() - timestamp
     except KeyboardInterrupt:
-        print "was fetching", url
+        log(" ... was fetching %s" % url)
         sys.exit(1)
     except:
-        print 500, "%.3fs" % (datetime.datetime.now() - timestamp).total_seconds(), url, "FAIL (from %s)" % (",\n\t".join(get_referrers(url)))
-        print "============="
-        print traceback.format_exc()
-        print "============="
+        log("500 %.3fs %s FAIL (from: [ %s ])" % ((datetime.datetime.now() - timestamp).total_seconds(), url, (",\n\t".join(get_referrers(url)))))
+        log("=============")
+        log(traceback.format_exc())
+        log("=============")
         errors += 1
     else:
         tags = []
@@ -136,10 +141,10 @@ while urls:
                             urls[u] = url
                             referrers[u] = url
                 except:
-                    print "error extracting HTML urls from", url
-                    print "============="
-                    print traceback.format_exc()
-                    print "============="
+                    log("error extracting HTML urls from %s" % url)
+                    log("=============")
+                    log(traceback.format_exc())
+                    log("=============")
         else:
             tags.append(u"FAIL (from %s)" % referrer)
             errors += 1
@@ -154,13 +159,9 @@ while urls:
         sec = acc_secs % 60
 
         if (len(visited) % 100) == 1:
-            print ""
-            print "Elapsed  Visited  Queue   Code  Time  Url  ...  Notes"
+            log("\nElapsed  Visited  Queue   Code  Time  Url  ...  Notes")
 
-        logentry = "%s %.3fs %s %s" % (r.status_code, elapsed.total_seconds(), url, " ".join(tags))
-
-        print "%2d:%02d:%02d"%(hrs,min,sec), "%7d" % len(visited), "%6d" % len(urls), "  ", logentry
-        logfile.write(logentry+"\n")
+        log("%2d:%02d:%02d %7d %6d  %s %.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), r.status_code, elapsed.total_seconds(), url, " ".join(tags)))
 
 logfile.close()
 sys.stderr.write("Output written to %s\n\n" % logfile.name)
