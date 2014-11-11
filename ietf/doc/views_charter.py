@@ -224,6 +224,61 @@ def change_state(request, name, option=None):
                                    ),
                               context_instance=RequestContext(request))
 
+class ChangeTitleForm(forms.Form):
+    charter_title = forms.CharField(widget=forms.TextInput, label="Charter title", help_text="Enter new charter title", required=True)
+    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change the title without notifying the Secretariat", required=False, label=mark_safe("Message to<br> Secretariat"))
+    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history", required=False)
+    def __init__(self, *args, **kwargs):
+        charter = kwargs.pop('charter')
+        super(ChangeTitleForm, self).__init__(*args, **kwargs)
+        charter_title_field = self.fields["charter_title"]
+        charter_title_field.initial = charter.title;
+
+@login_required
+def change_title(request, name, option=None):
+    """Change title of charter, notifying parties as necessary and
+    logging the title as a comment."""
+    charter = get_object_or_404(Document, type="charter", name=name)
+    group = charter.group
+    if not can_manage_group_type(request.user, group.type_id):
+        return HttpResponseForbidden("You don't have permission to access this view")
+    login = request.user.person
+    if request.method == 'POST':
+        form = ChangeTitleForm(request.POST, charter=charter)
+        if form.is_valid():
+            clean = form.cleaned_data
+            charter_rev = charter.rev
+            new_title = clean['charter_title']
+            comment = clean['comment'].rstrip()
+            message = clean['message']
+            prev_title = charter.title
+            if new_title != prev_title:
+                # Charter title changed
+                save_document_in_history(charter)
+                charter.title=new_title
+                charter.rev = charter_rev
+                if not comment:
+                    comment = "Changed charter title from '%s' to '%s'." % (prev_title, new_title)
+                event = DocEvent(type="added_comment", doc=charter, by=login)
+                event.desc = comment
+                event.save()
+                charter.time = datetime.datetime.now()
+                charter.save()
+                if message:
+                    email_iesg_secretary_re_charter(request, group, "Charter title changed to %s" % new_title, message)
+                email_state_changed(request, charter, "Title changed to %s." % new_title)
+            return redirect('doc_view', name=charter.name)
+    else:
+        form = ChangeTitleForm(charter=charter)
+    title = "Change charter title of %s %s" % (group.acronym, group.type.name)
+    return render_to_response('doc/charter/change_title.html',
+                              dict(form=form,
+                                   doc=group.charter,
+                                   login=login,
+                                   title=title,
+                                   ),
+                              context_instance=RequestContext(request))
+
 class AdForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'),
                                 label="Responsible AD", empty_label="(None)", required=True)
