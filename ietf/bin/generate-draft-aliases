@@ -103,8 +103,9 @@ if __name__ == '__main__':
 
     afile.write(signature)
     vfile.write(signature)
+    vfile.write("%s anything\n" % settings.DRAFT_VIRTUAL_DOMAIN)
 
-    drafts = Document.objects.all()
+    drafts = Document.objects.filter(name__startswith='draft-')
 
     # Drafts with active status
     active_drafts = drafts.filter(states__slug='active')
@@ -122,7 +123,7 @@ if __name__ == '__main__':
         alias = draft.name
         all = []
         def handle_sublist(afile, vfile, alias, emails):
-            all.extend( dump_sublist(afile, vfile, alias, emails) )
+            all.extend( dump_sublist(afile, vfile, alias, settings.DRAFT_VIRTUAL_DOMAIN, emails) )
         #.authors (/and no suffix) = authors
         # First, do no suffix case
         handle_sublist(afile, vfile, alias,             get_draft_authors_emails(draft))

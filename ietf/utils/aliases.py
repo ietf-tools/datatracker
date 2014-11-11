@@ -40,7 +40,7 @@ def rewrite_address_list(l):
         h[address] = True
         yield address
 
-def dump_sublist(afile, vfile, alias, emails):
+def dump_sublist(afile, vfile, alias, domain, emails):
     if not emails:
         return emails
     # Nones in the list should be skipped
@@ -56,13 +56,13 @@ def dump_sublist(afile, vfile, alias, emails):
     if not emails:
         return emails
     try:
-        virtualname = 'xalias-%s' % (alias, )
-        expandname  = 'expand-%s' % (alias)
-        aliasaddr   = '%s@ietf.org' % (alias, )
+        aliasaddr   = '%s@ietf.org' % (alias, ) # in virtual, --> filtername
+        filtername  = 'xfilter-%s' % (alias, )  # in aliases, --> | expandname
+        expandname  = 'expand-%s' % (alias, )   # in virtual, --> email list
 
-        vfile.write('%-64s  %s\n' % (aliasaddr, virtualname))
-        afile.write('%-64s  "|%s filter %s"\n' % (virtualname+':', settings.POSTCONFIRM_PATH, expandname))
-        afile.write('%-64s  %s\n' % (expandname+':', ', '.join(emails)))
+        vfile.write('%-64s  %s\n' % (aliasaddr, filtername))
+        afile.write('%-64s  "|%s filter %s %s"\n' % (filtername+':', settings.POSTCONFIRM_PATH, expandname, domain))
+        vfile.write('%-64s  %s\n' % ("%s@%s"%(expandname, domain), ', '.join(emails)))
 
     except UnicodeEncodeError:
         # If there's unicode in email address, something is badly

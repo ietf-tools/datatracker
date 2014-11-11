@@ -455,9 +455,11 @@ SELENIUM_TESTS_ONLY = False
 # Path to the email alias lists.  Used by ietf.utils.aliases
 DRAFT_ALIASES_PATH = "/a/postfix/draft-aliases"
 DRAFT_VIRTUAL_PATH = "/a/postfix/draft-virtual"
+DRAFT_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
 GROUP_ALIASES_PATH = "/a/postfix/group-aliases"
 GROUP_VIRTUAL_PATH = "/a/postfix/group-virtual"
+GROUP_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
 POSTCONFIRM_PATH   = "/a/postconfirm/test-wrapper"
 

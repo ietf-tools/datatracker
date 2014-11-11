@@ -54,6 +54,7 @@ if __name__ == '__main__':
 
     afile.write(signature)
     vfile.write(signature)
+    vfile.write("%s anything\n" % settings.GROUP_VIRTUAL_DOMAIN)
 
     wgs = Group.objects.filter(type='wg').all()
 
@@ -66,8 +67,8 @@ if __name__ == '__main__':
 
     for wg in interesting_wgs.distinct().iterator():
         name = wg.acronym
-        dump_sublist(afile, vfile, name+'-ads'   , get_group_ads_emails(wg))
-        dump_sublist(afile, vfile, name+'-chairs', get_group_chairs_emails(wg))
+        dump_sublist(afile, vfile, name+'-ads',    settings.GROUP_VIRTUAL_DOMAIN, get_group_ads_emails(wg))
+        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, get_group_chairs_emails(wg))
 
     # - status = Active
     rgs = Group.objects.filter(type='rg').all()
@@ -80,7 +81,7 @@ if __name__ == '__main__':
     for rg in interesting_rgs.distinct().iterator():
         name = rg.acronym
         #dump_sublist('%s%s' % (name, '-ads'), get_group_ads_emails, rg, True)
-        dump_sublist(afile, vfile, name+'-chairs', get_group_chairs_emails(rg))
+        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, get_group_chairs_emails(rg))
 
     # Additionally, for areaz, we should list -ads and -chairs
     # (for every chair in active groups within the area).
@@ -88,6 +89,6 @@ if __name__ == '__main__':
     active_areas = areas.filter(state__in=ACTIVE_STATES)
     for area in active_areas:
         name = area.acronym
-        dump_sublist(afile, vfile, name+'-ads'   , get_area_ads_emails(area))
-        dump_sublist(afile, vfile, name+'-chairs', get_area_chairs_emails(area))
+        dump_sublist(afile, vfile, name+'-ads'   , settings.GROUP_VIRTUAL_DOMAIN, get_area_ads_emails(area))
+        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, get_area_chairs_emails(area))
 
