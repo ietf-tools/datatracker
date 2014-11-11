@@ -22,7 +22,7 @@ phone_re = re.compile(r'^\+?[0-9 ]*(\([0-9]+\))?[0-9 -]+( ?x ?[0-9]+)?$')
 phone_error_message = """Phone numbers may have a leading "+", and otherwise only contain numbers [0-9]; dash, period or space; parentheses, and an optional extension number indicated by 'x'."""
 
 class BaseIprForm(forms.ModelForm):
-    licensing_option = forms.IntegerField(widget=forms.RadioSelect(choices=LICENSE_CHOICES), required=False)
+    licensing_option = forms.IntegerField(widget=forms.RadioSelect(choices=LICENSE_CHOICES[1:]), required=False)
     is_pending = forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
     applies_to_all = forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
     class Meta:
