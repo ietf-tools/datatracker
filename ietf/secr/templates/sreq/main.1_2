@@ -1,4 +1,5 @@
 {% extends "base_site.html" %}
+{% load ietf_filters %}
 
 {% block title %}Sessions{% endblock %}
 
@@ -18,7 +19,7 @@
 <div class="module interim-container">
     <h2>
       Sessions Request Tool: IETF {{ meeting.meeting_num }}
-      {% if request.user_is_secretariat %}
+      {% if user|has_role:"Secretariat" %}
           {% if is_locked %}
           <span class="locked"><a href="{% url "sessions_tool_status" %}">Tool Status: Locked</a></span>
           {% else %}

@@ -15,12 +15,14 @@ from ietf.secr.ipradmin.managers import IprDetailManager
 from ietf.secr.ipradmin.forms import IprDetailForm, IPRContactFormset
 from ietf.secr.utils.document import get_rfc_num, is_draft
 
+from ietf.ietfauth.utils import role_required
 from ietf.ipr.models import IprDetail, IprUpdate, IprContact, LICENSE_CHOICES, STDONLY_CHOICES, IprNotification
 from ietf.utils.mail import send_mail_text
 
 from ietf.doc.models import DocAlias
 from ietf.group.models import Role
 
+@role_required('Secretariat')
 @template('ipradmin/list.html')
 def admin_list(request):
     queue_ipr = IprDetailManager.queue_ipr()
@@ -37,6 +39,7 @@ def admin_list(request):
                   third_party_notifications = third_party_notifications)
 
 
+@role_required('Secretariat')
 def admin_post(request, ipr_id, from_page, command):
     ipr_dtl = IprDetail.objects.get(ipr_id=ipr_id)
     ipr_dtl.status = 1
@@ -108,6 +111,7 @@ def send_notifications(post_data, ipr_id, update=False):
     return None 
 
 
+@role_required('Secretariat')
 @template('ipradmin/notify.html')
 def admin_notify(request, ipr_id):
     if request.POST and 'command' in request.POST and 'do_send_notifications' == request.POST['command']:
@@ -332,6 +336,7 @@ def get_wg_email_list(group):
     
     return ', '.join(result)
 
+@role_required('Secretariat')
 @template('ipradmin/delete.html')
 def admin_delete(request, ipr_id):
     ipr_dtl = IprDetail.objects.get(ipr_id=ipr_id)
@@ -339,6 +344,7 @@ def admin_delete(request, ipr_id):
     ipr_dtl.save()
     return redirect('ipradmin_admin_list')
 
+@role_required('Secretariat')
 @template('ipradmin/notify.html')
 def old_submitter_notify(request, ipr_id):
     if request.POST and 'command' in request.POST \
@@ -401,6 +407,7 @@ def old_submitter_notify(request, ipr_id):
     )
 # end old_submitter_notify
 
+@role_required('Secretariat')
 @template('ipradmin/detail.html')
 def admin_detail(request, ipr_id):
     if request.POST and request.POST['command']:
@@ -661,6 +668,7 @@ def admin_detail(request, ipr_id):
     )
 # end admin_detail
 
+@role_required('Secretariat')
 @template('ipradmin/create.html')
 def admin_create(request):
     if request.method == 'POST':
@@ -686,6 +694,7 @@ def admin_create(request):
                 ipr_contact_formset = ipr_contact_formset)
 # end admin_create
 
+@role_required('Secretariat')
 @template('ipradmin/update.html')
 def admin_update(request, ipr_id):
     if request.method == 'POST':

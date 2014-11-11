@@ -5,6 +5,7 @@ from django.template import RequestContext
 
 from ietf.group.models import Group, GroupMilestone, ChangeStateGroupEvent, GroupEvent, GroupURL, Role
 from ietf.group.utils import save_group_in_history, get_charter_text
+from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
 from ietf.secr.groups.forms import GroupModelForm, GroupMilestoneForm, RoleForm, SearchForm
 from ietf.secr.areas.forms import AWPForm
@@ -69,6 +70,7 @@ def get_ads(request):
 # Standard View Functions
 # -------------------------------------------------
 
+@role_required('Secretariat')
 def add(request):
     '''
     Add a new IETF or IRTF Group
@@ -119,6 +121,7 @@ def add(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def blue_dot(request):
     '''
     This is a report view.  It returns a text/plain listing of chairs for active and bof groups.
@@ -144,6 +147,7 @@ def blue_dot(request):
         RequestContext(request, {}), content_type="text/plain",
     )
 
+@role_required('Secretariat')
 def charter(request, acronym):
     """
     View Group Charter
@@ -171,6 +175,7 @@ def charter(request, acronym):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def delete_role(request, acronym, id):
     """
     Handle deleting roles for groups (chair, editor, advisor, secretary)
@@ -193,6 +198,7 @@ def delete_role(request, acronym, id):
     messages.success(request, 'The entry was deleted successfully')
     return redirect('groups_people', acronym=acronym)
 
+@role_required('Secretariat')
 def edit(request, acronym):
     """
     Edit Group details
@@ -269,6 +275,7 @@ def edit(request, acronym):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def edit_gm(request, acronym):
     """
     Edit IETF Group Goal and Milestone details
@@ -305,6 +312,7 @@ def edit_gm(request, acronym):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def people(request, acronym):
     """
     Edit Group Roles (Chairs, Secretary, etc)
@@ -348,6 +356,7 @@ def people(request, acronym):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def search(request):
     """
     Search IETF Groups
@@ -426,6 +435,7 @@ def search(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def view(request, acronym):
     """
     View IETF Group details
@@ -449,6 +459,7 @@ def view(request, acronym):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def view_gm(request, acronym):
     """
     View IETF Group Goals and Milestones details

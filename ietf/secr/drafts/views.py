@@ -15,6 +15,7 @@ from django.template.loader import render_to_string
 from ietf.doc.models import Document, DocumentAuthor, DocAlias, DocRelationshipName, RelatedDocument, State
 from ietf.doc.models import DocEvent, NewRevisionDocEvent
 from ietf.doc.models import save_document_in_history
+from ietf.ietfauth.utils import role_required
 from ietf.meeting.models import Meeting
 from ietf.meeting.helpers import get_meeting
 from ietf.name.models import StreamName
@@ -484,6 +485,7 @@ def report_progress_report(start_date,end_date):
 # -------------------------------------------------
 # Standard View Functions
 # -------------------------------------------------
+@role_required('Secretariat')
 def abstract(request, id):
     '''
     View Internet Draft Abstract
@@ -503,6 +505,7 @@ def abstract(request, id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def add(request):
     '''
     Add Internet Draft
@@ -594,6 +597,7 @@ def add(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def announce(request, id):
     '''
     Schedule announcement of new Internet-Draft to I-D Announce list
@@ -618,6 +622,7 @@ def announce(request, id):
     messages.success(request, 'Announcement scheduled successfully!')
     return redirect('drafts_view', id=id)
 
+@role_required('Secretariat')
 def approvals(request):
     '''
     This view handles setting Initial Approval for drafts
@@ -632,6 +637,7 @@ def approvals(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def author_delete(request, id, oid):
     '''
     This view deletes the specified author(email) from the draft
@@ -640,6 +646,7 @@ def author_delete(request, id, oid):
     messages.success(request, 'The author was deleted successfully')
     return redirect('drafts_authors', id=id)
 
+@role_required('Secretariat')
 def authors(request, id):
     ''' 
     Edit Internet Draft Authors
@@ -687,6 +694,7 @@ def authors(request, id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def confirm(request, id):
     '''
     This view displays changes that will be made and calls appropriate
@@ -737,6 +745,7 @@ def confirm(request, id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def dates(request):
     ''' 
     Manage ID Submission Dates
@@ -756,6 +765,7 @@ def dates(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def edit(request, id):
     '''
     Since there's a lot going on in this function we are summarizing in the docstring.
@@ -804,6 +814,7 @@ def edit(request, id):
         'draft': draft},
     )
     
+@role_required('Secretariat')
 def email(request, id):
     '''
     This function displays the notification message and allows the
@@ -849,6 +860,7 @@ def email(request, id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def extend(request, id):
     '''
     This view handles extending the expiration date for an Internet-Draft
@@ -880,6 +892,7 @@ def extend(request, id):
         RequestContext(request, {}),
     )
     
+@role_required('Secretariat')
 def makerfc(request, id):
     ''' 
     Make RFC out of Internet Draft
@@ -954,6 +967,7 @@ def makerfc(request, id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def nudge_report(request):
     '''
     This view produces the Nudge Report, basically a list of documents that are in the IESG
@@ -967,6 +981,7 @@ def nudge_report(request):
         RequestContext(request, {}),
     )
     
+@role_required('Secretariat')
 def replace(request, id):
     '''
     This view handles replacing one Internet-Draft with another 
@@ -998,6 +1013,7 @@ def replace(request, id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def resurrect(request, id):
     '''
     This view handles resurrection of an Internet-Draft
@@ -1008,6 +1024,7 @@ def resurrect(request, id):
     request.session['action'] = 'resurrect'
     return redirect('drafts_email', id=id)
 
+@role_required('Secretariat')
 def revision(request, id):
     '''
     This function presents the input form for the New Revision action.  If submitted
@@ -1047,6 +1064,7 @@ def revision(request, id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def search(request):
     ''' 
     Search Internet Drafts
@@ -1118,6 +1136,7 @@ def search(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def update(request, id):
     '''
     This view handles the Update action for an Internet-Draft
@@ -1159,6 +1178,7 @@ def update(request, id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def view(request, id):
     ''' 
     View Internet Draft
@@ -1219,6 +1239,7 @@ def view(request, id):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def withdraw(request, id):
     '''
     This view handles withdrawing an Internet-Draft

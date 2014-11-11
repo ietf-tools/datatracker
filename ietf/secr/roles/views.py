@@ -6,6 +6,7 @@ from django.template import RequestContext
 
 from ietf.group.models import Group, Role
 from ietf.group.utils import save_group_in_history
+from ietf.ietfauth.utils import role_required
 from ietf.secr.groups.forms import RoleForm
 from ietf.secr.sreq.forms import GroupSelectForm
 
@@ -41,6 +42,7 @@ def ajax_get_roles(request, acronym):
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
+@role_required('Secretariat')
 def delete_role(request, acronym, id):
     """ 
     Handle deleting roles
@@ -62,6 +64,7 @@ def delete_role(request, acronym, id):
     url = reverse('roles') + '?group=%s' % group.acronym
     return HttpResponseRedirect(url)
 
+@role_required('Secretariat')
 def main(request):
     '''
     Main view for generic Roles App

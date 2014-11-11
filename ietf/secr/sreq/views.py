@@ -7,12 +7,12 @@ from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
 from ietf.group.models import Group
-from ietf.ietfauth.utils import has_role
+from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session, Constraint, ResourceAssociation
 from ietf.meeting.helpers import get_meeting
 from ietf.name.models import SessionStatusName, ConstraintName
 from ietf.secr.sreq.forms import SessionForm, GroupSelectForm, ToolStatusForm
-from ietf.secr.utils.decorators import check_permissions, sec_only
+from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import groups_by_session
 from ietf.secr.utils.mail import get_ad_email_list, get_chair_email_list, get_cc_list
 from ietf.utils.mail import send_mail
@@ -22,6 +22,7 @@ from ietf.person.models import Person
 # Globals
 # -------------------------------------------------
 SESSION_REQUEST_EMAIL = 'session-request@ietf.org'
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair')
 
 # -------------------------------------------------
 # Helper Functions
@@ -222,6 +223,7 @@ def cancel(request, acronym):
     messages.success(request, 'The %s Session Request has been canceled' % group.acronym)
     return redirect('sessions')
 
+@role_required(*AUTHORIZED_ROLES)
 def confirm(request, acronym):
     '''
     This view displays details of the new session that has been requested for the user
@@ -466,6 +468,7 @@ def edit_mtg(request, num, acronym):
         RequestContext(request, {}),
     )
 
+@role_required(*AUTHORIZED_ROLES)
 def main(request):
     '''
     Display list of groups the user has access to.
@@ -635,7 +638,7 @@ def no_session(request, acronym):
     messages.success(request, 'A message was sent to notify not having a session at IETF %s' % meeting.number)
     return redirect('sessions')
 
-@sec_only
+@role_required('Secretariat')
 def tool_status(request):
     '''
     This view handles locking and unlocking of the tool to the public.
@@ -677,6 +680,7 @@ def tool_status(request):
         RequestContext(request, {}),
     )
 
+@role_required(*AUTHORIZED_ROLES)
 def view(request, acronym, num = None):
     '''
     This view displays the session request info

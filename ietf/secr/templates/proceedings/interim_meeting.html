@@ -1,4 +1,5 @@
 {% extends "base_site.html" %}
+{% load ietf_filters %}
 
 {% block title %}Interim Meetings{% endblock %}
 
@@ -22,7 +23,7 @@
        <ul>
          {% for meeting in meetings %}
          <li><a href="{% url "proceedings_upload_unified" meeting_num=meeting.number acronym=group.acronym %}">{{meeting.date}}</a>
-           {% if request.user_is_secretariat %}
+           {% if user|has_role:"Secretariat" %}
              &nbsp;-&nbsp;<a href="{% url "proceedings_delete_interim_meeting" meeting_num=meeting.number %}" onClick="javascript:return confirm('Are you sure you want to delete this meeting?  Any uploaded material will be removed.')">[Delete]</a>
            {% endif %}
          </li>

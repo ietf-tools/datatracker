@@ -1,9 +1,10 @@
 {% extends "base_site.html" %}
+{% load ietf_filters %}
 
 {% block content %}
 <div id="content-main">
 
-{% if request.user_is_secretariat %}
+{% if user|has_role:"Secretariat" %}
 
 <table class="menu" width="100%" cellpadding="5" cellspacing="5" border="0">
   <tr valign="top">

@@ -165,7 +165,6 @@ MIDDLEWARE_CLASSES = (
     'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'ietf.middleware.UnicodeNfkcNormalization',
-    'ietf.secr.middleware.secauth.SecAuthMiddleware'
 )
 
 ROOT_URLCONF = 'ietf.urls'
@@ -405,15 +404,6 @@ BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 CHANGELOG_PATH = '/www/ietf-datatracker/web/changelog'
 
-# Secretariat Tool
-# this is a tuple of regular expressions.  if the incoming URL matches one of
-# these, than non secretariat access is allowed.
-SECR_AUTH_UNRESTRICTED_URLS = (
-    #(r'^/$'),
-    (r'^/secr/announcement/'),
-    (r'^/secr/proceedings/'),
-    (r'^/secr/sreq/'),
-)
 SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
 SECR_BLUE_SHEET_URL = 'https://datatracker.ietf.org/documents/blue_sheet.rtf'
 SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'

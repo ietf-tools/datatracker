@@ -13,6 +13,7 @@ from ietf.doc.lastcall import request_last_call
 from ietf.doc.mails import email_ad, email_state_changed
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem, Telechat
 from ietf.iesg.agenda import agenda_data, get_doc_section
+from ietf.ietfauth.utils import role_required
 from ietf.secr.telechat.forms import BallotForm, ChangeStateForm, DateSelectForm, TELECHAT_TAGS
 
 
@@ -119,6 +120,7 @@ def get_first_doc(agenda):
 # -------------------------------------------------
 # View Functions
 # -------------------------------------------------
+@role_required('Secretariat')
 def bash(request, date):
 
     agenda = agenda_data(date=date)
@@ -129,6 +131,7 @@ def bash(request, date):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def doc(request, date):
     '''
     This view redirects to doc_detail using the first document in the agenda or
@@ -147,6 +150,7 @@ def doc(request, date):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def doc_detail(request, date, name):
     '''
     This view displays the ballot information for the document, and lets the user make
@@ -290,6 +294,7 @@ def doc_detail(request, date, name):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def doc_navigate(request, date, name, nav):
     '''
     This view takes three arguments:
@@ -312,6 +317,7 @@ def doc_navigate(request, date, name, nav):
 
     return redirect('telechat_doc_detail', date=date, name=target)
 
+@role_required('Secretariat')
 def main(request):
     '''
     The is the main view where the user selects an existing telechat or creates a new one.
@@ -330,6 +336,7 @@ def main(request):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def management(request, date):
     '''
     This view displays management issues and lets the user update the status
@@ -345,6 +352,7 @@ def management(request, date):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def minutes(request, date):
     '''
     This view shows a list of documents that were approved since the last telechat
@@ -372,6 +380,7 @@ def minutes(request, date):
         RequestContext(request, {}),
     )
 
+@role_required('Secretariat')
 def new(request):
     '''
     This view creates a new telechat agenda and redirects to the default view
@@ -384,8 +393,8 @@ def new(request):
         messages.success(request,'New Telechat Agenda created')
         return redirect('telechat_doc', date=date)
 
+@role_required('Secretariat')
 def roll_call(request, date):
-
     agenda = agenda_data(date=date)
     ads = Person.objects.filter(role__name='ad', role__group__state="active")
     sorted_ads = sorted(ads, key = lambda a: a.name_parts()[3])
