@@ -1,14 +1,16 @@
 from functools import wraps
 
-from django.http import HttpResponseRedirect
+from django.conf import settings
+from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404
+from django.utils.http import urlquote
 
 from ietf.ietfauth.utils import has_role
 from ietf.doc.models import Document
 from ietf.group.models import Group, Role
 from ietf.meeting.models import Session
 from ietf.secr.utils.meeting import get_timeslot
-
 
 def clear_non_auth(session):
     """
@@ -35,7 +37,7 @@ def check_for_cancel(redirect_url):
 
 def check_permissions(func):
     """
-    This decorator checks that the user making the request has access to the
+    View decorator for checking that the user is logged in and has access to the
     object being requested.  Expects one of the following four keyword
     arguments:
 
@@ -44,6 +46,9 @@ def check_permissions(func):
     meeting_id, slide_id
     """
     def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            return HttpResponseRedirect('%s?%s=%s' % (settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
+        
         session = None
         # short circuit.  secretariat user has full access
         if has_role(request.user,'Secretariat'):
@@ -74,10 +79,8 @@ def check_permissions(func):
                 return func(request, *args, **kwargs)
 
         # if we get here access is denied
-        return render_to_response('unauthorized.html',{
-            'user_name':login,
-            'group_name':group.acronym}
-        )
+        return HttpResponseForbidden("User not authorized to access group: %s" % group.acronym)
+        
     return wraps(func)(wrapper)
 
 def sec_only(func):
