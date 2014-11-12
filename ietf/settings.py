@@ -266,6 +266,8 @@ TEST_GHOSTDRIVER_LOG_PATH = "ghostdriver.log"
 
 TEST_MATERIALS_DIR = "tmp-meeting-materials-dir"
 
+TEST_BLUESHEET_DIR = "tmp-bluesheet-dir"
+
 # WG Chair configuration
 MAX_WG_DELEGATES = 3
 
