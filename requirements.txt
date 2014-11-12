@@ -1,0 +1,11 @@
+MySQL-python>=1.2.5
+argparse>=1.2.1
+cssselect>=0.6.1
+lxml>=3.4.0
+pyflakes>=0.8.1
+pyquery>1.2.4
+python-dateutil>=2.2
+python-magic>=0.4.6
+pytz>=2014.7
+six>=1.8.0
+wsgiref>=0.1.2
