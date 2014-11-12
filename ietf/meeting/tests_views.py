@@ -15,7 +15,7 @@ from ietf.utils.test_utils import TestCase
 
 class MeetingTests(TestCase):
     def setUp(self):
-        self.materials_dir = os.path.abspath("tmp-meeting-materials-dir")
+        self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
         if not os.path.exists(self.materials_dir):
             os.mkdir(self.materials_dir)
         settings.AGENDA_PATH = self.materials_dir

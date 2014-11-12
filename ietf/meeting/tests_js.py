@@ -32,7 +32,7 @@ def condition_data():
 class ScheduleEditTests(LiveServerTestCase):
     def setUp(self):
         condition_data()
-        self.driver = webdriver.PhantomJS()
+        self.driver = webdriver.PhantomJS(service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
         self.driver.set_window_size(1024,768)
 
     def debugSnapshot(self,filename='debug_this.png'):

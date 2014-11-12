@@ -262,6 +262,10 @@ GLOBAL_TEST_FIXTURES = [ 'names','ietf.utils.test_data.make_immutable_base_data'
 
 TEST_DIFF_FAILURE_DIR = "/tmp/test/failure/"
 
+TEST_GHOSTDRIVER_LOG_PATH = "ghostdriver.log"
+
+TEST_MATERIALS_DIR = "tmp-meeting-materials-dir"
+
 # WG Chair configuration
 MAX_WG_DELEGATES = 3
 
