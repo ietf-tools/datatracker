@@ -1,3 +1,73 @@
+ietfdb (5.7.4) ietf; urgency=medium
+
+  This release contains the datatracker bugfixes and enhancements from the
+  IETF-91 Code Sprint.  Many thanks to everyone that contributed!
+
+  * Merged in [8634] from rcross@amsl.com:
+    Removed the 'none selected' option from licensing options of the new IPR
+    form.  
+
+  * Merged in [8624] from rcross@amsl.com:
+    Removed the secauth middleware, replacing it with role_required
+    decorators.
+
+  * Merged in [8623] from suresh.krishnan@ericsson.com:
+    Added code advising the IESG Secretary of personnel changes in WGs. Fixes
+    issue #1357.
+
+  * Merged in [8609] from tterriberry@mozilla.com, with minor changes:
+    Allow changing the title of a charter document.  Fixes #1334 
+
+  * Reworked the generation of draft aliases and WG aliases, after trying 
+    out the output of the previous version for real.
+
+  * Merged in [8622] from harald@alvestrand.no:
+    Adding a missing column header to the search results page.
+
+  * Merged in [8617] from liudapeng@chinamobile.com:
+    Added the possibility of choosing RGs in the search page. Fixes issue
+    #1355.  
+
+  * Merged in [8614] from harald@alvestrand.no:
+    Added validation of the names given to saved meeting schedules.  Fixes
+    issue #1425.
+
+  * Merged in [8611] from rjsparks@nostrum.com:
+    Allow chairs to edit the notification field. Fixes bug #1517.  
+
+  * Merged in [8608] from rjsparks@nostrum.com:
+    Allow chosing the initial state when beginning WG processing of a draft.
+    Fixes bug #1406.  
+
+  * Merged in [8602] from suresh.krishnan@ericsson.com:
+    Retain the currently set of tags when document state is edited.  Fixes
+    issue #1295.
+
+  * Merged in [8585] from rjsparks@nostrum.com:
+    Tests that a message is set when a shepherd is not changed. Related to
+    #1508 and r8504.  
+
+  * Merged in [8584] from rjsparks@nostrum.com:
+    Reworked smtp error warning and logging to not use hard-to-read
+    context_managers. Fixes bug #1390.  
+
+  * Merged in [8573] from rcross@amsl.com:
+    Fixed role_required to permit access to proposed RGs.   
+
+  * Added code to require posting confirmation for some particular draft name
+    prefixes such as 'draft-iesg-', 'draft-iana-', 'draft-rfc-', and some
+    more.
+
+  * Added a requirements.txt file which can be read by pip in order to install
+    the packages needed to make the datatracker work.  Set up a virtualenv,
+    and then run pip install -r requirements.txt in it.
+
+  * Added settings for the PhantomJS ghostdriver.log and the temporary meeting
+    materials and bluesheets directories used during testing, so that it's
+    possible to place them in other places than the working copy.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Nov 2014 03:37:10 +0000
+
 ietfdb (5.7.3) ietf; urgency=medium
 
   * Merged in [8634] from rcross@amsl.com:
