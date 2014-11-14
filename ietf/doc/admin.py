@@ -108,7 +108,7 @@ class DocHistoryAdmin(admin.ModelAdmin):
     raw_id_fields = ['doc', 'authors', 'related', 'group', 'shepherd', 'ad']
 
     def state(self, instance):
-        return self.get_state()
+        return instance.get_state()
 
 admin.site.register(DocHistory, DocHistoryAdmin)
 
