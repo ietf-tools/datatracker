@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 
 from ietf.doc.models import Document, DocEvent
 from ietf.doc.utils import get_chartering_type
+from ietf.doc.fields import AutocompletedDocumentsField
 from ietf.group.models import GroupMilestone, MilestoneGroupEvent
 from ietf.group.utils import (save_milestone_in_history, can_manage_group_type, milestone_reviewer_for_group_type,
                               get_group_or_404)
@@ -34,7 +35,7 @@ class MilestoneForm(forms.Form):
 
     delete = forms.BooleanField(required=False, initial=False)
 
-    docs = forms.CharField(max_length=10000, required=False)
+    docs = AutocompletedDocumentsField(required=False)
 
     accept = forms.ChoiceField(choices=(("accept", "Accept"), ("reject", "Reject and delete"), ("noaction", "No action")),
                                required=False, initial="noaction", widget=forms.RadioSelect)
@@ -94,10 +95,6 @@ class MilestoneForm(forms.Form):
 
         # calculate whether we've changed
         self.changed = self.is_bound and (not self.milestone or any(unicode(self[f].data) != unicode(self.initial[f]) for f in self.fields.iterkeys()))
-
-    def clean_docs(self):
-        s = self.cleaned_data["docs"]
-        return Document.objects.filter(pk__in=[x.strip() for x in s.split(",") if x.strip()], type="draft")
 
     def clean_resolved(self):
         r = self.cleaned_data["resolved"].strip()
@@ -391,8 +388,3 @@ def reset_charter_milestones(request, group_type, acronym):
                        charter_milestones=charter_milestones,
                        current_milestones=current_milestones,
                    ))
-
-
-def ajax_search_docs(request, group_type, acronym):
-    docs = Document.objects.filter(name__icontains=request.GET.get('q',''), type="draft").order_by('name').distinct()[:20]
-    return HttpResponse(json_doc_names(docs), content_type='application/json')

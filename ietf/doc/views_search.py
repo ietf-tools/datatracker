@@ -37,7 +37,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render_to_response
 from django.db.models import Q
 from django.template import RequestContext
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404, HttpResponseBadRequest, HttpResponse
 
 import debug                            # pyflakes:ignore
 
@@ -45,12 +45,14 @@ from ietf.community.models import CommunityList
 from ietf.doc.models import ( Document, DocAlias, State, RelatedDocument, DocEvent,
     LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.expire import expirable_draft
+from ietf.doc.fields import tokeninput_id_doc_name_json
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.ipr.models import IprDocAlias
 from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
 from ietf.utils.draft_search import normalize_draftname
+
 
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
@@ -626,3 +628,28 @@ def index_active_drafts(request):
     groups = active_drafts_index_by_group()
 
     return render_to_response("doc/index_active_drafts.html", { 'groups': groups }, context_instance=RequestContext(request))
+
+def ajax_tokeninput_search_docs(request, model_name, doc_type):
+    if model_name == "docalias":
+        model = DocAlias
+    else:
+        model = Document
+
+    q = [w.strip() for w in request.GET.get('q', '').split() if w.strip()]
+
+    if not q:
+        objs = model.objects.none()
+    else:
+        qs = model.objects.all()
+
+        if model == Document:
+            qs = qs.filter(type=doc_type)
+        elif model == DocAlias:
+            qs = qs.filter(document__type=doc_type)
+
+        for t in q:
+            qs = qs.filter(name__icontains=t)
+
+        objs = qs.distinct().order_by("name")[:20]
+
+    return HttpResponse(tokeninput_id_doc_name_json(objs), content_type='application/json')

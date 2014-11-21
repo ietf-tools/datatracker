@@ -26,7 +26,7 @@
   </tr>
   <tr class="docs">
     <td>Drafts:</td>
-    <td><input name="{{ form.docs.html_name }}" class="tokenized-field" data-ajax-url="{% url "group_ajax_search_docs" group_type=group.type_id acronym=group.acronym %}" data-pre="{{ form.docs_prepopulate }}"/>
+    <td>{{ form.docs }}
     {{ form.docs.errors }}
     </td>
   </tr>

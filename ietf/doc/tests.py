@@ -1,4 +1,5 @@
 import datetime
+import json
 import sys
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
     import unittest2 as unittest
@@ -121,6 +122,32 @@ class SearchTestCase(TestCase):
         r = self.client.get(urlreverse("index_active_drafts"))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in r.content)
+
+    def test_ajax_search_docs(self):
+        draft = make_test_data()
+
+        # Document
+        url = urlreverse("ajax_tokeninput_search_docs", kwargs={
+            "model_name": "document",
+            "doc_type": "draft",
+        })
+        r = self.client.get(url, dict(q=draft.name))
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data[0]["id"], draft.pk)
+
+        # DocAlias
+        doc_alias = draft.docalias_set.get()
+
+        url = urlreverse("ajax_tokeninput_search_docs", kwargs={
+            "model_name": "docalias",
+            "doc_type": "draft",
+        })
+
+        r = self.client.get(url, dict(q=doc_alias.name))
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data[0]["id"], doc_alias.pk)
         
 
 class DocTestCase(TestCase):
