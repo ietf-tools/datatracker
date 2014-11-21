@@ -145,7 +145,7 @@ $(document).ready(function () {
                 if ($(e).attr(v)) {
                     $(e).attr(v, $(e).attr(v).replace(n-1, n));
                 }
-            })
+            });
         });
 
         t = t.replace(n, n+1);
@@ -212,7 +212,7 @@ $(".tokenized-form").submit(function (e) {
  		var format = f.data("format");
 		var t = f.tokenfield("getTokens");
 
-		var v = $.map(t, function(o) { return o["value"]; })
+                var v = $.map(t, function(o) { return o["value"]; });
 		if (format === "json") {
 			v = JSON.stringify(v);
 		} else if (format === "csv") {
@@ -253,7 +253,7 @@ $(".tokenized-field").each(function () {
 		display = "name";
 	}
 	console.log(io, "display", display);
-	$(this).data("display", display)
+        $(this).data("display", display);
 
 	// which field of the JSON are we supposed to return
 	var result = $(this).data("result");
@@ -299,7 +299,7 @@ $(".tokenized-field").each(function () {
 	if (url.indexOf("?") === -1) {
 		url += "?q=";
 	}
-	$(this).data("ajax-url", url)
+        $(this).data("ajax-url", url);
 	console.log(io, "ajax-url", url);
 
 	var bh = new Bloodhound({
@@ -326,10 +326,10 @@ $(".tokenized-field").each(function () {
 		typeahead: [{
 			highlight: true,
 			minLength: 3,
-			hint: true,
+                        hint: true
 		}, {
 			source: bh.ttAdapter(),
-			displayKey: "label",
+                        displayKey: "label"
 		}],
 		beautify: true,
 		delimiter: [',', ';']
