@@ -203,7 +203,7 @@ class DocumentInfo(models.Model):
         """ returns related SessionPresentation objects for meetings that
             have not yet ended. This implementation allows for 2 week meetings """
         candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
-        return [pres for pres in candidate_presentations if pres.session.meeting.end_date()>=datetime.date.today()]
+        return sorted([pres for pres in candidate_presentations if pres.session.meeting.end_date()>=datetime.date.today()], key=lambda x:x.session.meeting.date)
 
     def last_presented(self):
         """ returns related SessionPresentation objects for the most recent meeting in the past"""

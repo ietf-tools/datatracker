@@ -33,8 +33,35 @@
             <td class='snippable'>{{ d.abstract|format_snippet }} </td>
             <td>{{ d.rev }}</td>
             <td>{{ d.time|date:"Y-m-d" }}</td>
-            <td>{% for p in  d.last_presented %}{{p.session.meeting}}{% if d.rev != p.rev %} (-{{ p.rev }}){% endif %}{%if not forloop.last%}, {% endif %}{% endfor %}</td>
-            <td>{% for p in d.future_presentations %}{{p.session.meeting}}{% if d.rev != p.rev %} (-{{p.rev}}){%endif%}{%if not forloop.last%}, {%endif%}{%endfor%}</td>
+            <td>{% regroup d.last_presented by session.meeting as past_pres_list %}
+                {% for p in past_pres_list %}
+                  {{ p.grouper }}
+                   {% if p.list|length > 1 %}
+                       ( {{ p.list|length }} sessions )
+                   {% else %}
+                       {% for pr in p.list %}
+                         {% if pr.rev != d.rev %}
+                           (-{{ pr.rev }})
+                         {% endif %}
+                       {% endfor %}
+                   {% endif %}
+                   {% if not forloop.last %}, {% endif %}
+               {% endfor %}
+            <td>{% regroup d.future_presentations by session.meeting as meeting_pres_list %} 
+                {% for p in meeting_pres_list %}
+                   {{ p.grouper }}
+                   {% if p.list|length > 1 %}
+                       ( {{ p.list|length }} sessions )
+                   {% else %}
+                       {% for pr in p.list %}
+                         {% if pr.rev != d.rev %}
+                           (-{{ pr.rev }})
+                         {% endif %}
+                       {% endfor %}
+                   {% endif %}
+                   {% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </td>
           </tr>
         {% endfor %}
       </table>
