@@ -108,7 +108,7 @@ def milestone_reviewer_for_group_type(group_type):
         return "Area Director"
 
 def can_manage_materials(user, group):
-    return has_role(user, 'Secretariat') or group.has_role(user, ("chair", "delegate", "secr"))
+    return has_role(user, 'Secretariat') or group.has_role(user, ("chair", "delegate", "secr", "matman"))
 
 def get_group_or_404(acronym, group_type):
     """Helper to overcome the schism between group-type prefixed URLs and generic."""
