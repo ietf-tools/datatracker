@@ -183,16 +183,7 @@ class MaterialVersionForm(forms.Form):
         super(MaterialVersionForm,self).__init__(*args,**kwargs)
         self.fields['version'].choices = choices
 
-@login_required
-def material_presentations(request, name, acronym=None, date=None, seq=None, week_day=None):
-
-    doc = get_object_or_404(Document, name=name)
-    if not (doc.type_id=='slides' and doc.get_state('slides').slug=='active'):
-        raise Http404
-
-    group = doc.group
-    if not (group.features.has_materials and can_manage_materials(request.user,group)):
-        raise Http404
+def get_upcoming_manageable_sessions(user, doc, acronym=None, date=None, seq=None, week_day = None):
 
     # Find all the sessions for meetings that haven't ended that the user could affect
     # This motif is also in Document.future_presentations - it would be nice to consolodate it somehow
@@ -219,7 +210,7 @@ def material_presentations(request, name, acronym=None, date=None, seq=None, wee
             raise Http404
         refined_candidates = [ sess for sess in refined_candidates if sess.scheduledsession_set.filter(schedule=sess.meeting.agenda,timeslot__time__week_day=dow) ]
 
-    changeable_sessions = [ sess for sess in refined_candidates if can_manage_materials(request.user, sess.group) ]
+    changeable_sessions = [ sess for sess in refined_candidates if can_manage_materials(user, sess.group) ]
 
     if not changeable_sessions:
         raise Http404
@@ -253,48 +244,77 @@ def material_presentations(request, name, acronym=None, date=None, seq=None, wee
         else:
             sorted_sessions = [sorted_sessions[iseq]]
 
-    for index,session in enumerate(sorted_sessions):
-        session.sequence = index+1
+    return sorted_sessions
 
-    if len(sorted_sessions)==1:
-        session = sorted_sessions[0]
-        choices = [('notpresented','Not Presented')]
-        choices.extend([(x,x) for x in doc.docevent_set.filter(type='new_revision').values_list('newrevisiondocevent__rev',flat=True)])
-        initial = {'version' : session.version if hasattr(session,'version') else 'notpresented'}
+@login_required
+def edit_material_presentations(request, name, acronym=None, date=None, seq=None, week_day=None):
 
-        if request.method == 'POST':
-            form = MaterialVersionForm(request.POST,choices=choices)
-            if form.is_valid():
-                if request.POST.get("action", "") == "Save":
-                    new_selection = form.cleaned_data['version']
-                    if initial['version'] != new_selection:
-                        if initial['version'] == 'notpresented':
-                            doc.sessionpresentation_set.create(session=session,rev=new_selection)
-                            c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
-                            c.desc = "Added version %s to session: %s" % (new_selection,session)
-                            c.save()
-                        elif new_selection == 'notpresented':
-                            doc.sessionpresentation_set.filter(session=session).delete()
-                            c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
-                            c.desc = "Removed from session: %s" % (session)
-                            c.save()
-                        else:
-                            doc.sessionpresentation_set.filter(session=session).update(rev=new_selection)
-                            c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
-                            c.desc = "Revision for session %s changed to  %s" % (session,new_selection)
-                            c.save()
-                return redirect('doc_view',name=doc.name)
-        else:
-            form = MaterialVersionForm(choices=choices,initial=initial)
+    doc = get_object_or_404(Document, name=name)
+    if not (doc.type_id=='slides' and doc.get_state('slides').slug=='active'):
+        raise Http404
 
-        return render(request, 'doc/material/edit_material_presentations.html', {
-            'session': session,
-            'doc': doc,
-            'form': form,
-            })
+    group = doc.group
+    if not (group.features.has_materials and can_manage_materials(request.user,group)):
+        raise Http404
 
+    sorted_sessions = get_upcoming_manageable_sessions(request.user, doc, acronym, date, seq, week_day)
+
+    if len(sorted_sessions)!=1:
+        raise Http404
+
+    session = sorted_sessions[0]
+    choices = [('notpresented','Not Presented')]
+    choices.extend([(x,x) for x in doc.docevent_set.filter(type='new_revision').values_list('newrevisiondocevent__rev',flat=True)])
+    initial = {'version' : session.version if hasattr(session,'version') else 'notpresented'}
+
+    if request.method == 'POST':
+        form = MaterialVersionForm(request.POST,choices=choices)
+        if form.is_valid():
+            if request.POST.get("action", "") == "Save":
+                new_selection = form.cleaned_data['version']
+                if initial['version'] != new_selection:
+                    if initial['version'] == 'notpresented':
+                        doc.sessionpresentation_set.create(session=session,rev=new_selection)
+                        c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                        c.desc = "Added version %s to session: %s" % (new_selection,session)
+                        c.save()
+                    elif new_selection == 'notpresented':
+                        doc.sessionpresentation_set.filter(session=session).delete()
+                        c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                        c.desc = "Removed from session: %s" % (session)
+                        c.save()
+                    else:
+                        doc.sessionpresentation_set.filter(session=session).update(rev=new_selection)
+                        c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                        c.desc = "Revision for session %s changed to  %s" % (session,new_selection)
+                        c.save()
+            return redirect('doc_view',name=doc.name)
     else:
-        return render(request, 'doc/material/material_presentations.html', {
-            'sessions' : sorted_sessions,
-            'doc': doc,
+        form = MaterialVersionForm(choices=choices,initial=initial)
+
+    return render(request, 'doc/material/edit_material_presentations.html', {
+        'session': session,
+        'doc': doc,
+        'form': form,
+        })
+
+@login_required
+def material_presentations(request, name, acronym=None, date=None, seq=None, week_day=None):
+
+    doc = get_object_or_404(Document, name=name)
+    if not (doc.type_id=='slides' and doc.get_state('slides').slug=='active'):
+        raise Http404
+
+    group = doc.group
+    if not (group.features.has_materials and can_manage_materials(request.user,group)):
+        raise Http404
+
+    sorted_sessions = get_upcoming_manageable_sessions(request.user, doc, acronym, date, seq, week_day)
+
+    #for index,session in enumerate(sorted_sessions):
+    #    session.sequence = index+1
+
+    return render(request, 'doc/material/material_presentations.html', {
+        'sessions' : sorted_sessions,
+        'doc': doc,
         })
