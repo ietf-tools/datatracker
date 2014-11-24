@@ -317,4 +317,6 @@ def material_presentations(request, name, acronym=None, date=None, seq=None, wee
     return render(request, 'doc/material/material_presentations.html', {
         'sessions' : sorted_sessions,
         'doc': doc,
+        'date': date,
+        'week_day': week_day,
         })

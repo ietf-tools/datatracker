@@ -18,7 +18,13 @@ Upcoming Presentations
         {% for group in group_list %}
             {% for session in group.list %}
               <li> 
-                   <a href="{% url 'ietf.doc.views_material.edit_material_presentations' name=doc.name acronym=group.grouper.acronym seq=forloop.counter %}">{{ session }}</a>
+                   {% if week_day %}
+                     <a href="{% url 'ietf.doc.views_material.edit_material_presentations' name=doc.name acronym=group.grouper.acronym seq=forloop.counter week_day=week_day %}">{{ session }}</a>
+                   {% elif date %}
+                     <a href="{% url 'ietf.doc.views_material.edit_material_presentations' name=doc.name acronym=group.grouper.acronym seq=forloop.counter date=date %}">{{ session }}</a>
+                   {% else %}
+                     <a href="{% url 'ietf.doc.views_material.edit_material_presentations' name=doc.name acronym=group.grouper.acronym seq=forloop.counter %}">{{ session }}</a>
+                   {% endif %}
                    {% if session.versions %} (version{{session.versions|pluralize}} {{session.versions|join:','}}) {% endif %}
               </li>
             {% endfor %}
