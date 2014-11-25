@@ -45,7 +45,7 @@ from ietf.community.models import CommunityList
 from ietf.doc.models import ( Document, DocAlias, State, RelatedDocument, DocEvent,
     LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.expire import expirable_draft
-from ietf.doc.fields import tokeninput_id_doc_name_json
+from ietf.doc.fields import select2_id_doc_name_json
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.ipr.models import IprDocAlias
@@ -629,7 +629,7 @@ def index_active_drafts(request):
 
     return render_to_response("doc/index_active_drafts.html", { 'groups': groups }, context_instance=RequestContext(request))
 
-def ajax_tokeninput_search_docs(request, model_name, doc_type):
+def ajax_select2_search_docs(request, model_name, doc_type):
     if model_name == "docalias":
         model = DocAlias
     else:
@@ -652,4 +652,4 @@ def ajax_tokeninput_search_docs(request, model_name, doc_type):
 
         objs = qs.distinct().order_by("name")[:20]
 
-    return HttpResponse(tokeninput_id_doc_name_json(objs), content_type='application/json')
+    return HttpResponse(select2_id_doc_name_json(objs), content_type='application/json')

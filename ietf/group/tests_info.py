@@ -1,7 +1,6 @@
 import os
 import shutil
 import calendar
-import json
 import datetime
 
 from pyquery import PyQuery
@@ -530,23 +529,21 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m-1",
                                     'm-1-id': "-1",
                                     'm-1-desc': "", # no description
-                                    'm-1-due_month': str(due.month),
-                                    'm-1-due_year': str(due.year),
+                                    'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
                                     'm-1-docs': ",".join(docs),
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         self.assertEqual(GroupMilestone.objects.count(), milestones_before)
 
         # add
         r = self.client.post(url, { 'prefix': "m-1",
                                     'm-1-id': "-1",
                                     'm-1-desc': "Test 3",
-                                    'm-1-due_month': str(due.month),
-                                    'm-1-due_year': str(due.year),
+                                    'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
                                     'm-1-docs': ",".join(docs),
                                     'action': "save",
@@ -580,8 +577,7 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m-1",
                                     'm-1-id': -1,
                                     'm-1-desc': "Test 3",
-                                    'm-1-due_month': str(due.month),
-                                    'm-1-due_year': str(due.year),
+                                    'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
                                     'm-1-docs': "",
                                     'action': "save",
@@ -612,11 +608,10 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': m1.desc,
-                                    'm1-due_month': str(m1.due.month),
-                                    'm1-due_year': str(m1.due.year),
+                                    'm1-due': m1.due.strftime("%B %Y"),
                                     'm1-resolved': m1.resolved,
                                     'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
-                                    'm1-accept': "accept",
+                                    'm1-review': "accept",
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -639,8 +634,7 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': m1.desc,
-                                    'm1-due_month': str(m1.due.month),
-                                    'm1-due_year': str(m1.due.year),
+                                    'm1-due': m1.due.strftime("%B %Y"),
                                     'm1-resolved': "",
                                     'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
                                     'm1-delete': "checked",
@@ -670,15 +664,14 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': "", # no description
-                                    'm1-due_month': str(due.month),
-                                    'm1-due_year': str(due.year),
+                                    'm1-due': due.strftime("%B %Y"),
                                     'm1-resolved': "",
                                     'm1-docs': ",".join(docs),
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         m = GroupMilestone.objects.get(pk=m1.pk)
         self.assertEqual(GroupMilestone.objects.count(), milestones_before)
         self.assertEqual(m.due, m1.due)
@@ -688,8 +681,7 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': "Test 2 - changed",
-                                    'm1-due_month': str(due.month),
-                                    'm1-due_year': str(due.year),
+                                    'm1-due': due.strftime("%B %Y"),
                                     'm1-resolved': "Done",
                                     'm1-resolved_checkbox': "checked",
                                     'm1-docs': ",".join(docs),

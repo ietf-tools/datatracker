@@ -192,160 +192,59 @@ $(".snippet .show-all").click(function () {
 //	}
 // });
 
+function setupSelect2Field(e) {
+    var url = e.data("ajax-url");
+    if (!url)
+        return;
 
-function to_disp(t) {
-	// typehead/tokenfield don't fully deal with HTML entities
-	return $('<div/>').html(t).text().replace(/[<>"]/g, function (m) {
-		return {
-			'<': '(',
-			'>': ')',
-			'"': ''
-		}[m];
-	});
+    var maxEntries = e.data("max-entries");
+    var multiple = maxEntries != 1;
+    var prefetched = e.data("pre");
+    e.select2({
+        multiple: multiple,
+        minimumInputLength: 2,
+        width: "off",
+        allowClear: true,
+        maximumSelectionSize: maxEntries,
+        ajax: {
+            url: url,
+            dataType: "json",
+            quietMillis: 250,
+            data: function (term, page) {
+                return {
+                    q: term,
+                    p: page
+                };
+            },
+            results: function (results) {
+                return {
+                    results: results,
+                    more: results.length == 10
+                };
+            }
+        },
+        escapeMarkup: function (m) {
+            return m;
+        },
+        initSelection: function (element, cb) {
+            if (!multiple && prefetched.length > 0)
+                cb(prefetched[0]);
+            else
+                cb(prefetched);
+
+        },
+        dropdownCssClass: "bigdrop"
+    });
 }
 
+$(document).ready(function () {
+    $(".select2-field").each(function () {
+        if ($(this).closest(".template").length > 0)
+            return;
 
-$(".tokenized-form").submit(function (e) {
- 	$(this).find(".tokenized-field").each(function () {
- 		var f = $(this);
- 		var io = f.data("io");
- 		var format = f.data("format");
-		var t = f.tokenfield("getTokens");
-
-                var v = $.map(t, function(o) { return o["value"]; });
-		if (format === "json") {
-			v = JSON.stringify(v);
-		} else if (format === "csv") {
-			v = v.join(", ");
-		} else {
-			console.log(io, "unknown format");
-			v = v.join(" ");
-		}
-		f.val(v);
-		if (io) {
-			$(io).val(v);
-		}
- 	});
-});
-
-
-$(".tokenized-field").each(function () {
-	// autocomplete interferes with the token popup
-	$(this).attr("autocomplete", "off");
-
-	// in which field ID are we expected to place the result
-	// (we also read the prefill information from there)
-	var io = $(this).data("io");
-	var raw = "";
-	if (io) {
-		raw = $(io).val();
-	} else {
-		io = "#" + this.id;
-		raw = $(this).val();
-	}
-	console.log("io: ", io);
-	console.log(io, "raw", raw);
-	$(this).data("io", io);
-
-	// which field of the JSON are we supposed to display
-	var display = $(this).data("display");
-	if (!display) {
-		display = "name";
-	}
-	console.log(io, "display", display);
-        $(this).data("display", display);
-
-	// which field of the JSON are we supposed to return
-	var result = $(this).data("result");
-	if (!result) {
-		result = "id";
-	}
-	console.log(io, "result", result);
-	$(this).data("result", result);
-
-	// what kind of data are we returning (json or csv)
-	var format = $(this).data("format");
-	if (!format) {
-		format = "csv";
-	}
-	console.log(io, "format", format);
-	$(this).data("format", format);
-
-	// make tokens to prefill the input
-	if (raw) {
-		raw = $.parseJSON(raw);
-		var pre = [];
-		if (!raw[0] || !raw[0][display]) {
-			$.each(raw, function(k, v) {
-				var obj = {};
-				obj["value"] = k;
-				obj["label"] = to_disp(v);
-				pre.push(obj);
-			});
-		} else {
-			for (var i in raw) {
-				var obj = {};
-				obj["value"] = raw[i][result];
-				obj["label"] = to_disp(raw[i][display]);
-				pre.push(obj);
-			}
-		}
-		$(this).val(pre);
-	}
-	console.log(io, "pre", pre);
-
-	// check if the ajax-url contains a query parameter, add one if not
-	var url = $(this).data("ajax-url");
-	if (url.indexOf("?") === -1) {
-		url += "?q=";
-	}
-        $(this).data("ajax-url", url);
-	console.log(io, "ajax-url", url);
-
-	var bh = new Bloodhound({
-		datumTokenizer: function (d) {
-			return Bloodhound.tokenizers.nonword(d[display]);
-		},
-		queryTokenizer: Bloodhound.tokenizers.nonword,
-		limit: 20,
-		remote: {
-			url: url + "%QUERY",
-			filter: function (data) {
-				return $.map($.grep(data, function (n, i) {
-					return true;
-				}), function (n, i) {
-					n["label"] = to_disp(n[display]);
-					n["value"] = n[result];
-					return n;
-				});
-			}
-		}
-	});
-	bh.initialize();
-	$(this).tokenfield({
-		typeahead: [{
-			highlight: true,
-			minLength: 3,
-                        hint: true
-		}, {
-			source: bh.ttAdapter(),
-                        displayKey: "label"
-		}],
-		beautify: true,
-		delimiter: [',', ';']
-	}).tokenfield("setTokens", pre);
-
-	// only allow tokens from the popup to be added to the field, no free text
-	$(this).on('tokenfield:createtoken', function (event) {
-		var existingTokens = $(this).tokenfield('getTokens');
-		$.each(existingTokens, function(index, token) {
-			if (event.attrs.id === undefined) {
-				event.preventDefault();
-			}
-    	});
+        setupSelect2Field($(this));
     });
 });
-
 
 // Use the Bootstrap3 tooltip plugin for all elements with a title attribute
 $('[title][title!=""]').tooltip();

@@ -7,23 +7,17 @@
 {% bootstrap_messages %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="/facelift/css/tokenfield-typeahead.min.css">
-<link rel="stylesheet" href="/facelift/css/bootstrap-tokenfield.min.css">
+  <link rel="stylesheet" href="/facelift/css/lib/select2.css">
+  <link rel="stylesheet" href="/facelift/css/lib/select2-bootstrap.css">
 {% endblock %}
 
 {% block content %}
 <h1>Change documents replaced by<br><small>{{ doc }}</small></h1>
 
-<form class="tokenized-form" role="form" method="post">
+<form role="form" method="post">
 	{% csrf_token %}
 
-	<div class="form-group">
-		<label>{{ form.replaces.label }}</label>
-		<input type="text" class="form-control tokenized-field" data-ajax-url="{% url "doc_ajax_internet_draft" %}?term=" data-display="label" data-io="#id_replaces" data-format="json">
-		<span class="help-block">Enter draft names, separated with commas.</span>
-	</div>
-
-	{% bootstrap_form form %}
+        {% bootstrap_form form %}
 
 	{% buttons %}
                 <button type="submit" class="btn btn-primary">Save</button>
@@ -34,6 +28,5 @@
 {% endblock %}
 
 {% block js %}
-<script src="/facelift/js/lib/typeahead.bundle.min.js"></script>
-<script src="/facelift/js/lib/bootstrap-tokenfield.min.js"></script>
+  <script src="/facelift/js/lib/select2-3.5.2.min.js"></script>
 {% endblock %}

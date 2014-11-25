@@ -206,3 +206,17 @@ pre { line-height: 1.214;  }
 .navbar-dev .navbar-link:hover {
 	color: #ecdbff;
 }
+
+/* milestone editing */
+#milestones-form .milestone {
+  cursor: pointer;
+}
+#milestones-form .milestone:hover {
+  background-color: #f5f5f5;
+}
+#milestones-form .edit-milestone {
+  display: none;
+}
+#milestones-form .milestone.delete, #milestones-form .edit-milestone.delete, #milestones-form .edit-milestone.delete input {
+  color: #aaa !important;
+}

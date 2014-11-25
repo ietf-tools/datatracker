@@ -1,8 +1,8 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="/facelift/css/tokenfield-typeahead.min.css">
-<link rel="stylesheet" href="/facelift/css/bootstrap-tokenfield.min.css">
+  <link rel="stylesheet" href="/facelift/css/lib/select2.css">
+  <link rel="stylesheet" href="/facelift/css/lib/select2-bootstrap.css">
 {% endblock %}
 
 {% load bootstrap3 %}
@@ -27,6 +27,5 @@
 {% endblock %}
 
 {% block content_end %}
-<script src="/facelift/js/lib/typeahead.bundle.min.js"></script>
-<script src="/facelift/js/lib/bootstrap-tokenfield.min.js"></script>
+  <script src="/facelift/js/lib/select2-3.5.2.min.js"></script>
 {% endblock %}

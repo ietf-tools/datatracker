@@ -12,20 +12,18 @@
 {% endblock %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="/facelift/css/tokenfield-typeahead.min.css">
-<link rel="stylesheet" href="/facelift/css/bootstrap-tokenfield.min.css">
+<link rel="stylesheet" href="/facelift/css/lib/select2.css">
+<link rel="stylesheet" href="/facelift/css/lib/select2-bootstrap.css">
 {% endblock %}
 
 {% block content %}
 <h1>
 {% if action == "edit" %}
 	Edit {{ group.type.name }} {{ group.acronym }}
+{% elif action == "charter" %}
+        Start chartering new group
 {% else %}
-	{% if action == "charter" %}
-		Start chartering new group
-	{% else %}
-		Create new group or BOF
-	{% endif %}
+        Create new group or BOF
 {% endif %}
 </h1>
 
@@ -35,7 +33,7 @@
 chairs and delegates, need a datatracker account to actually do
 so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
 
-<form class="tokenized-form form-horizontal" role="form" method="post">
+<form class="form-horizontal" role="form" method="post">
 	{% csrf_token %}
 	{% bootstrap_form form layout='horizontal' %}
 
@@ -43,18 +41,15 @@ so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</
 		{% if action == "edit" %}
 			<button class="btn btn-primary" type="submit">Submit</button>
 			<a class="btn btn-default pull-right" href="{{ group.about_url }}">Back</a>
-		{% else %}
-			{% if action == "charter" %}
-				<button class="btn btn-primary" type="submit">Start chartering</button>
-			{% else %}
-				<button class="btn btn-primary" type="submit">Create group or BOF</button>
-			{% endif %}
-		{% endif %}
-	{% endbuttons %}
+                {% elif action == "charter" %}
+                        <button class="btn btn-primary" type="submit">Start chartering</button>
+                {% else %}
+                        <button class="btn btn-primary" type="submit">Create group or BOF</button>
+                {% endif %}
+        {% endbuttons %}
 </form>
 {% endblock %}
 
 {% block js %}
-<script src="/facelift/js/lib/typeahead.bundle.min.js"></script>
-<script src="/facelift/js/lib/bootstrap-tokenfield.min.js"></script>
+<script src="/facelift/js/lib/select2-3.5.2.min.js"></script>
 {% endblock %}

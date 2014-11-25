@@ -127,7 +127,7 @@ class SearchTestCase(TestCase):
         draft = make_test_data()
 
         # Document
-        url = urlreverse("ajax_tokeninput_search_docs", kwargs={
+        url = urlreverse("ajax_select2_search_docs", kwargs={
             "model_name": "document",
             "doc_type": "draft",
         })
@@ -139,7 +139,7 @@ class SearchTestCase(TestCase):
         # DocAlias
         doc_alias = draft.docalias_set.get()
 
-        url = urlreverse("ajax_tokeninput_search_docs", kwargs={
+        url = urlreverse("ajax_select2_search_docs", kwargs={
             "model_name": "docalias",
             "doc_type": "draft",
         })

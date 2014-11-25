@@ -1,6 +1,6 @@
 # changing state and metadata on Internet Drafts
 
-import datetime, json
+import datetime
 
 from django import forms
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
@@ -24,13 +24,14 @@ from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify )
 from ietf.doc.lastcall import request_last_call
+from ietf.doc.fields import SearchableDocAliasesField
 from ietf.group.models import Group, Role
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
 from ietf.ietfauth.utils import role_required
 from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
-from ietf.person.fields import AutocompletedEmailField
+from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
 from ietf.secr.lib.template import jsonapi
 from ietf.utils.mail import send_mail, send_mail_message
@@ -307,35 +308,21 @@ def collect_email_addresses(emails, doc):
     return emails
 
 class ReplacesForm(forms.Form):
-    replaces = forms.CharField(max_length=512,widget=forms.HiddenInput)
+    replaces = SearchableDocAliasesField(required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
     def __init__(self, *args, **kwargs):
         self.doc = kwargs.pop('doc')
         super(ReplacesForm, self).__init__(*args, **kwargs)
-        drafts = {}
-        for d in self.doc.related_that_doc("replaces"):
-            drafts[d.id] = d.document.name
-        self.initial['replaces'] = json.dumps(drafts)
+        self.initial['replaces'] = self.doc.related_that_doc("replaces")
 
     def clean_replaces(self):
-        data = self.cleaned_data['replaces'].strip()
-        if data:
-            ids = [int(x) for x in json.loads(data)]
-        else:
-            return []
-        objects = []
-        for id in ids:
-            try:
-                d = DocAlias.objects.get(pk=id)
-            except DocAlias.DoesNotExist:
-                raise forms.ValidationError("ERROR: %s not found for id %d" % DocAlias._meta.verbos_name, id)
+        for d in self.cleaned_data['replaces']:
             if d.document == self.doc:
-                raise forms.ValidationError("ERROR: A draft can't replace itself")
+                raise forms.ValidationError("A draft can't replace itself")
             if d.document.type_id == "draft" and d.document.get_state_slug() == "rfc":
-                raise forms.ValidationError("ERROR: A draft can't replace an RFC")
-            objects.append(d)
-        return objects
+                raise forms.ValidationError("A draft can't replace an RFC")
+        return self.cleaned_data['replaces']
 
 def replaces(request, name):
     """Change 'replaces' set of a Document of type 'draft' , notifying parties 
@@ -942,7 +929,7 @@ def edit_shepherd_writeup(request, name):
                               context_instance=RequestContext(request))
 
 class ShepherdForm(forms.Form):
-    shepherd = AutocompletedEmailField(required=False, only_users=True)
+    shepherd = SearchableEmailField(required=False, only_users=True)
 
 def edit_shepherd(request, name):
     """Change the shepherd for a Document"""
@@ -968,7 +955,7 @@ def edit_shepherd(request, name):
                 c.desc = "Document shepherd changed to "+ (doc.shepherd.person.name if doc.shepherd else "(None)")
                 c.save()
     
-                if doc.shepherd.formatted_email() not in doc.notify:
+                if doc.shepherd and doc.shepherd.formatted_email() not in doc.notify:
                     login = request.user.person
                     addrs = doc.notify
                     if addrs:

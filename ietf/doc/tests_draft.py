@@ -1227,8 +1227,7 @@ class ChangeReplacesTests(TestCase):
         
         # Post that says replacea replaces base a
         self.assertEqual(self.basea.get_state().slug,'active')
-        repljson='{"%d":"%s"}'%(DocAlias.objects.get(name=self.basea.name).id,self.basea.name)
-        r = self.client.post(url, dict(replaces=repljson))
+        r = self.client.post(url, dict(replaces=str(DocAlias.objects.get(name=self.basea.name).id)))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(RelatedDocument.objects.filter(relationship__slug='replaces',source=self.replacea).count(),1) 
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
@@ -1236,23 +1235,20 @@ class ChangeReplacesTests(TestCase):
         # Post that says replaceboth replaces both base a and base b
         url = urlreverse('doc_change_replaces', kwargs=dict(name=self.replaceboth.name))
         self.assertEqual(self.baseb.get_state().slug,'expired')
-        repljson='{"%d":"%s","%d":"%s"}'%(DocAlias.objects.get(name=self.basea.name).id,self.basea.name,
-                                          DocAlias.objects.get(name=self.baseb.name).id,self.baseb.name)
-        r = self.client.post(url, dict(replaces=repljson))
+        r = self.client.post(url, dict(replaces=str(DocAlias.objects.get(name=self.basea.name).id) + "," + str(DocAlias.objects.get(name=self.baseb.name).id)))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'repl')
 
         # Post that undoes replaceboth
-        repljson='{}'
-        r = self.client.post(url, dict(replaces=repljson))
+        r = self.client.post(url, dict(replaces=""))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl') # Because A is still also replaced by replacea
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'expired')
 
         # Post that undoes replacea
         url = urlreverse('doc_change_replaces', kwargs=dict(name=self.replacea.name))
-        r = self.client.post(url, dict(replaces=repljson))
+        r = self.client.post(url, dict(replaces=""))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'active')
 

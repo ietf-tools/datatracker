@@ -5,9 +5,58 @@
 {% block extrahead %}{{ block.super }}
   <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
   <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/sessions.js"></script>
-  <script type="text/javascript" src="/js/lib/jquery.tokeninput.js"></script>
-  <script type="text/javascript" src="/js/tokenized-field.js"></script>
-  <link rel="stylesheet" type="text/css" href="/css/token-input.css"></link>
+
+  <link rel="stylesheet" href="/facelift/css/lib/select2.css">
+  <link rel="stylesheet" href="/facelift/css/lib/select2-bootstrap.css">
+  <script src="/facelift/js/lib/select2-3.5.2.min.js"></script>
+  <script>
+// this is copy-pasted from ietf.js, we should include that here too instead of this
+$(document).ready(function () {
+    $(".select2-field").each(function () {
+        var e = $(this);
+        if (e.data("ajax-url")) {
+            var maxEntries = e.data("max-entries");
+            var multiple = maxEntries != 1;
+            var prefetched = e.data("pre");
+            e.select2({
+                multiple: multiple,
+                minimumInputLength: 2,
+                width: "off",
+                allowClear: true,
+                maximumSelectionSize: maxEntries,
+                ajax: {
+                    url: e.data("ajax-url"),
+                    dataType: "json",
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        return {
+                            q: term,
+                            p: page
+                        };
+                    },
+                    results: function (results) {
+                        return {
+                            results: results,
+                            more: results.length == 10
+                        };
+                    }
+                },
+                escapeMarkup: function (m) {
+                    return m;
+                },
+                initSelection: function (element, cb) {
+                    if (!multiple && prefetched.length > 0)
+                        cb(prefetched[0]);
+                    else
+                        cb(prefetched);
+
+                },
+                dropdownCssClass: "bigdrop"
+            });
+        }
+    });
+});
+  </script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
