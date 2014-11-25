@@ -23,3 +23,31 @@ class MultiEmailField(forms.Field):
 
         for email in value:
             validate_email(email)
+
+def yyyymmdd_to_strftime_format(fmt):
+    return (fmt
+            .replace("yyyy", "%Y")
+            .replace("yy", "%y")
+            .replace("mm", "%m")
+            .replace("m", "%-m")
+            .replace("MM", "%B")
+            .replace("M", "%b")
+            .replace("dd", "%d")
+            .replace("d", "%-d")
+            .replace("MM", "%A")
+            .replace("M", "%a")
+    )
+
+class DatepickerDateField(forms.DateField):
+    """DateField with some glue for triggering JS Bootstrap datepicker."""
+
+    def __init__(self, date_format, picker_settings={}, *args, **kwargs):
+        strftime_format = yyyymmdd_to_strftime_format(date_format)
+        kwargs["input_formats"] = [strftime_format]
+        kwargs["widget"] = forms.DateInput(format=strftime_format)
+        super(DatepickerDateField, self).__init__(*args, **kwargs)
+
+        self.widget.attrs["data-provide"] = "datepicker"
+        self.widget.attrs["data-date-format"] = date_format
+        for k, v in picker_settings.iteritems():
+            self.widget.attrs["data-date-%s" % k] = v
