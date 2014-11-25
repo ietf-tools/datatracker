@@ -25,7 +25,7 @@ from ietf.secr.utils.meeting import get_upload_root, get_materials, get_timeslot
 from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
-from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession
+from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession, SessionPresentation
 from ietf.secr.proceedings.forms import EditSlideForm, InterimMeetingForm, RecordingForm, RecordingEditForm, ReplaceSlideForm, UnifiedUploadForm
 from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas, gen_attendees,
     gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries, gen_progress, gen_research,
@@ -947,9 +947,9 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
             # for the current meeting (until tools support different materials for diff sessions)
             if sessions:
                 for s in sessions:
-                    s.materials.add(doc)
+                    s.sessionpresentation_set.add(SessionPresentation(session=s,document=doc,rev=doc.rev))
             else:
-                session.materials.add(doc)
+                session.sessionpresentation_set.add(SessionPresentation(session=session,document=doc,rev=doc.rev))
 
             # create NewRevisionDocEvent instead of uploaded, per Ole
             NewRevisionDocEvent.objects.create(type='new_revision',

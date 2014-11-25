@@ -16,7 +16,7 @@ from ietf.doc.models import Document, RelatedDocument, DocEvent, NewRevisionDocE
 from ietf.group.models import Group, Role
 from ietf.group.utils import get_charter_text
 from ietf.meeting.helpers import get_schedule
-from ietf.meeting.models import Session, Meeting, ScheduledSession
+from ietf.meeting.models import Session, Meeting, ScheduledSession, SessionPresentation
 from ietf.person.models import Person
 from ietf.secr.proceedings.models import InterimMeeting    # proxy model
 from ietf.secr.proceedings.models import Registration
@@ -82,7 +82,7 @@ def create_recording(session,meeting,group,url):
                                        rev=doc.rev,
                                        desc='New revision available',
                                        time=doc.time)
-    session.materials.add(doc)
+    session.sessionpresentation_set.add(SessionPresentation(session=session,document=doc,rev=doc.rev))
     
 def mycomp(timeslot):
     '''
