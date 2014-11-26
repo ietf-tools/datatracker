@@ -542,6 +542,7 @@ class MilestoneTests(TestCase):
         self.assertEqual(GroupMilestone.objects.count(), milestones_before)
 
         # add
+        mailbox_before = len(outbox)
         r = self.client.post(url, { 'prefix': "m-1",
                                     'm-1-id': "-1",
                                     'm-1-desc': "Test 3",
@@ -561,6 +562,8 @@ class MilestoneTests(TestCase):
         self.assertEqual(m.resolved, "")
         self.assertEqual(set(m.docs.values_list("name", flat=True)), set(docs))
         self.assertTrue("Added milestone" in m.milestonegroupevent_set.all()[0].desc)
+        self.assertEqual(len(outbox),mailbox_before+2)
+        self.assertFalse(any('Review Required' in x['Subject'] for x in outbox[-2:]))
 
     def test_add_milestone_as_chair(self):
         m1, m2, group = self.create_test_milestones()
@@ -577,6 +580,7 @@ class MilestoneTests(TestCase):
         due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
 
         # add
+        mailbox_before = len(outbox)
         r = self.client.post(url, { 'prefix': "m-1",
                                     'm-1-id': -1,
                                     'm-1-desc': "Test 3",
@@ -593,6 +597,9 @@ class MilestoneTests(TestCase):
         self.assertEqual(m.state_id, "review")
         self.assertEqual(group.groupevent_set.count(), events_before + 1)
         self.assertTrue("for review" in m.milestonegroupevent_set.all()[0].desc)
+        self.assertEqual(len(outbox),mailbox_before+1)
+        self.assertTrue('Review Required' in outbox[-1]['Subject'])
+        self.assertFalse(group.list_email in outbox[-1]['To'])
 
     def test_accept_milestone(self):
         m1, m2, group = self.create_test_milestones()

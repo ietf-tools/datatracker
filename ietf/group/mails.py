@@ -34,13 +34,16 @@ def email_iesg_secretary_personnel_change(request, group, text):
 
 def email_milestones_changed(request, group, changes):
     def wrap_up_email(to, text):
+
+        subject = u"Milestones changed for %s %s" % (group.acronym, group.type.name)
+        if re.search("Added .* for review, due",text):
+            subject = u"Review Required - " + subject
+
         text = wrap(strip_tags(text), 70)
         text += "\n\n"
         text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + group.about_url())
 
-        send_mail_text(request, to, None,
-                       u"Milestones changed for %s %s" % (group.acronym, group.type.name),
-                       text)
+        send_mail_text(request, to, None, subject, text)
 
     # first send to management and chairs
     to = []
@@ -59,7 +62,9 @@ def email_milestones_changed(request, group, changes):
     if group.list_email:
         review_re = re.compile("Added .* for review, due")
         to = [ group.list_email ]
-        wrap_up_email(to, u"\n\n".join(c + "." for c in changes if not review_re.match(c)))
+        msg = u"\n\n".join(c + "." for c in changes if not review_re.match(c))
+        if msg:
+            wrap_up_email(to, msg)
 
 
 def email_milestone_review_reminder(group, grace_period=7):
