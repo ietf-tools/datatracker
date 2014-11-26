@@ -50,6 +50,8 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
 def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
+    extra=extra_automation_headers(doc)
+    extra['Cc'] = 'iesg-secretary@ietf.org'
     send_mail(request, ["IANA <iana@iana.org>", "RFC Editor <rfc-editor@rfc-editor.org>"], None,
               "%s changed state from %s to %s" % (doc.name, prev_state.name, next_state.name),
               "doc/mail/pulled_from_rfc_queue_email.txt",
@@ -58,7 +60,7 @@ def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
                    next_state=next_state,
                    comment=comment,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
-              extra=extra_automation_headers(doc))
+              extra=extra)
 
 
 def email_authors(request, doc, subject, text):
