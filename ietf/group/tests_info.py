@@ -342,7 +342,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
-        self.assertEqual(len(q('form input[name="confirmed"]')), 0) # can't confirm us out of this
+        self.assertEqual(len(q('form input[name="confirm_acronym"]')), 0) # can't confirm us out of this
 
         # try elevating BoF to WG
         group.state_id = "bof"
@@ -352,13 +352,13 @@ class GroupEditTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
-        self.assertEqual(len(q('form input[name="confirmed"]')), 1)
+        self.assertEqual(len(q('form input[name="confirm_acronym"]')), 1)
 
         self.assertEqual(Group.objects.get(acronym=group.acronym).state_id, "bof")
 
         # confirm elevation
         state = GroupStateName.objects.get(slug="proposed")
-        r = self.client.post(url, dict(name="Test", acronym=group.acronym, confirmed="1",state=state.pk))
+        r = self.client.post(url, dict(name="Test", acronym=group.acronym, confirm_acronym="1", state=state.pk))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Group.objects.get(acronym=group.acronym).state_id, "proposed")
         self.assertEqual(Group.objects.get(acronym=group.acronym).name, "Test")

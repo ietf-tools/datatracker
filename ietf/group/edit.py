@@ -22,6 +22,7 @@ from ietf.ietfauth.utils import has_role
 from ietf.person.fields import SearchableEmailsField
 from ietf.person.models import Person, Email
 from ietf.group.mails import email_iesg_secretary_re_charter
+from ietf.utils.ordereddict import insert_after_in_ordered_dict
 
 MAX_GROUP_DELEGATES = 3
 
@@ -43,7 +44,6 @@ class GroupForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group', None)
-        self.confirmed = kwargs.pop('confirmed', False)
         self.group_type = kwargs.pop('group_type', False)
 
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -57,8 +57,6 @@ class GroupForm(forms.Form):
         if ad_pk and ad_pk not in [pk for pk, name in choices]:
             self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
 
-        self.confirm_msg = ""
-        self.autoenable_confirm = False
         if self.group:
             self.fields['acronym'].widget.attrs['readonly'] = ""
 
@@ -71,9 +69,6 @@ class GroupForm(forms.Form):
             self.fields['parent'].label = "IETF Area"
 
     def clean_acronym(self):
-        self.confirm_msg = ""
-        self.autoenable_confirm = False
-
         # Changing the acronym of an already existing group will cause 404s all
         # over the place, loose history, and generally muck up a lot of
         # things, so we don't permit it
@@ -90,27 +85,41 @@ class GroupForm(forms.Form):
         if existing:
             existing = existing[0]
 
-        if existing and existing.type_id == self.group_type:
-            if self.confirmed:
-                return acronym # take over confirmed
+        confirmed = self.data.get("confirm_acronym", False)
 
+        def insert_confirm_field(label, initial):
+            # set required to false, we don't need it since we do the
+            # validation of the field in here, and otherwise the
+            # browser and Django may barf
+            insert_after_in_ordered_dict(self.fields, "confirm_acronym", forms.BooleanField(label=label, required=False), after="acronym")
+            # we can't set initial, it's ignored since the form is bound, instead mutate the data
+            self.data = self.data.copy()
+            self.data["confirm_acronym"] = initial
+
+        if existing and existing.type_id == self.group_type:
             if existing.state_id == "bof":
-                self.confirm_msg = "Turn BoF %s into proposed %s and start chartering it" % (existing.acronym, existing.type.name)
-                self.autoenable_confirm = True
-                raise forms.ValidationError("Warning: Acronym used for an existing BoF (%s)." % existing.name)
+                insert_confirm_field(label="Turn BoF %s into proposed %s and start chartering it" % (existing.acronym, existing.type.name), initial=True)
+                if confirmed:
+                    return acronym
+                else:
+                    raise forms.ValidationError("Warning: Acronym used for an existing BoF (%s)." % existing.name)
             else:
-                self.confirm_msg = "Set state of %s %s to proposed and start chartering it" % (existing.acronym, existing.type.name)
-                self.autoenable_confirm = False
-                raise forms.ValidationError("Warning: Acronym used for an existing %s (%s, %s)." % (existing.type.name, existing.name, existing.state.name if existing.state else "unknown state"))
+                insert_confirm_field(label="Set state of %s %s to proposed and start chartering it" % (existing.acronym, existing.type.name), initial=False)
+                if confirmed:
+                    return acronym
+                else:
+                    raise forms.ValidationError("Warning: Acronym used for an existing %s (%s, %s)." % (existing.type.name, existing.name, existing.state.name if existing.state else "unknown state"))
 
         if existing:
             raise forms.ValidationError("Acronym used for an existing group (%s)." % existing.name)
 
         old = GroupHistory.objects.filter(acronym__iexact=acronym, type__in=("wg", "rg"))
-        if old and not self.confirmed:
-            self.confirm_msg = "Confirm reusing acronym %s" % old[0].acronym
-            self.autoenable_confirm = False
-            raise forms.ValidationError("Warning: Acronym used for a historic group.")
+        if old:
+            insert_confirm_field(label="Confirm reusing acronym %s" % old[0].acronym, initial=False)
+            if confirmed:
+                return acronym
+            else:
+                raise forms.ValidationError("Warning: Acronym used for a historic group.")
 
         return acronym
 
@@ -190,7 +199,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
         group_type = group.type_id
 
     if request.method == 'POST':
-        form = GroupForm(request.POST, group=group, confirmed=request.POST.get("confirmed", False), group_type=group_type)
+        form = GroupForm(request.POST, group=group, group_type=group_type)
         if form.is_valid():
             clean = form.cleaned_data
             if new_group:

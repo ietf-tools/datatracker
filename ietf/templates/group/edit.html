@@ -12,8 +12,8 @@
 {% endblock %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="/facelift/css/lib/select2.css">
-<link rel="stylesheet" href="/facelift/css/lib/select2-bootstrap.css">
+  <link rel="stylesheet" href="/facelift/css/lib/select2.css">
+  <link rel="stylesheet" href="/facelift/css/lib/select2-bootstrap.css">
 {% endblock %}
 
 {% block content %}
@@ -51,5 +51,18 @@ so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</
 {% endblock %}
 
 {% block js %}
-<script src="/facelift/js/lib/select2-3.5.2.min.js"></script>
+  <script src="/facelift/js/lib/select2-3.5.2.min.js"></script>
+  <script>
+   $(document).ready(function () {
+       $("#id_acronym").closest(".form-group").each(function() {
+           // fixup styling a bit in case the confirm checkbox is shown
+           if ($(this).next().find("#id_confirm_acronym").length > 0) {
+               $(this).css("margin-bottom", 0);
+               $(this).find(".help-block").css("margin-bottom", 0);
+               if ($(this).hasClass("has-error"))
+                   $(this).next().addClass("has-error");
+           }
+       });
+   });
+  </script>
 {% endblock %}
