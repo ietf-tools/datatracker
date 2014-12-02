@@ -22,7 +22,7 @@ from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comment
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionStateName, Feedback, FeedbackTypeName, \
                                Nomination
-from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, EditMembersForm
+from ietf.nomcom.forms import EditMembersForm, EditMembersFormPreview
 from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 
@@ -54,7 +54,6 @@ class NomcomViewsTest(TestCase):
         self.private_index_url = reverse('nomcom_private_index', kwargs={'year': self.year})
         self.private_merge_url = reverse('nomcom_private_merge', kwargs={'year': self.year})
         self.edit_members_url = reverse('nomcom_edit_members', kwargs={'year': self.year})
-        self.edit_chair_url = reverse('nomcom_edit_chair', kwargs={'year': self.year})
         self.edit_nomcom_url = reverse('nomcom_edit_nomcom', kwargs={'year': self.year})
         self.private_nominate_url = reverse('nomcom_private_nominate', kwargs={'year': self.year})
         self.add_questionnaire_url = reverse('nomcom_private_questionnaire', kwargs={'year': self.year})
@@ -298,7 +297,7 @@ class NomcomViewsTest(TestCase):
         # preview
         self.client.post(self.edit_members_url, test_data)
 
-        hash = EditChairFormPreview(EditChairForm).security_hash(None, EditMembersForm(test_data))
+        hash = EditMembersFormPreview(EditMembersForm).security_hash(None, EditMembersForm(test_data))
         test_data.update({'hash': hash, 'stage': 2})
 
         # submit
@@ -321,33 +320,6 @@ class NomcomViewsTest(TestCase):
 
         self.client.login(username=COMMUNITY_USER,password=COMMUNITY_USER+"+password")
         self.check_url_status(self.private_index_url, 403)
-        self.client.logout()
-
-    def change_chair(self, user):
-        test_data = {'chair': '%s%s' % (user, EMAIL_DOMAIN),
-                     'stage': 1}
-        # preview
-        self.client.post(self.edit_chair_url, test_data)
-
-        hash = EditChairFormPreview(EditChairForm).security_hash(None, EditChairForm(test_data))
-        test_data.update({'hash': hash, 'stage': 2})
-
-        # submit
-        self.client.post(self.edit_chair_url, test_data)
-
-    def test_edit_chair_view(self):
-        self.access_secretariat_url(self.edit_chair_url)
-        self.change_chair(COMMUNITY_USER)
-
-        # check chair actions
-        self.client.login(username=COMMUNITY_USER,password=COMMUNITY_USER+"+password")
-        self.check_url_status(self.edit_members_url, 200)
-        self.check_url_status(self.edit_nomcom_url, 200)
-        self.client.logout()
-
-        # revert edit nomcom chair
-        login_testing_unauthorized(self, SECRETARIAT_USER, self.edit_chair_url)
-        self.change_chair(CHAIR_USER)
         self.client.logout()
 
     def test_edit_nomcom_view(self):

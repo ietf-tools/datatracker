@@ -361,17 +361,19 @@ def feedback(request, year, public):
     positions = Position.objects.get_by_nomcom(nomcom=nomcom).opened()
 
     if public:
-        template = 'nomcom/public_feedback.html'
+        base_template = "nomcom/nomcom_public_base.html"
     else:
-        template = 'nomcom/private_feedback.html'
+        base_template = "nomcom/nomcom_private_base.html"
 
     if not has_publickey:
             message = ('warning', "This Nomcom is not yet accepting comments")
-            return render_to_response(template,
-                              {'message': message,
-                               'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'feedback'}, RequestContext(request))
+            return render(request, 'nomcom/feedback.html', {
+                'message': message,
+                'nomcom': nomcom,
+                'year': year,
+                'selected': 'feedback',
+                'base_template': base_template
+            })
 
     message = None
     if request.method == 'POST':
@@ -385,14 +387,16 @@ def feedback(request, year, public):
         form = FeedbackForm(nomcom=nomcom, user=request.user, public=public,
                             position=position, nominee=nominee)
 
-    return render_to_response(template,
-                              {'form': form,
-                               'message': message,
-                               'nomcom': nomcom,
-                               'year': year,
-                               'positions': positions,
-                               'submit_disabled': submit_disabled,
-                               'selected': 'feedback'}, RequestContext(request))
+    return render(request, 'nomcom/feedback.html', {
+        'form': form,
+        'message': message,
+        'nomcom': nomcom,
+        'year': year,
+        'positions': positions,
+        'submit_disabled': submit_disabled,
+        'selected': 'feedback',
+        'base_template': base_template
+    })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")

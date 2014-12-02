@@ -207,62 +207,6 @@ class EditMembersFormPreview(FormPreview):
         return redirect('nomcom_edit_members', year=self.year)
 
 
-class EditChairForm(BaseNomcomForm, forms.Form):
-
-    chair = forms.EmailField(label="Chair email", required=False,
-                             widget=forms.TextInput(attrs={'size': '40'}))
-
-    fieldsets = [('Chair info', ('chair',))]
-
-
-class EditChairFormPreview(FormPreview):
-    form_template = 'nomcom/edit_chair.html'
-    preview_template = 'nomcom/edit_chair_preview.html'
-
-    @method_decorator(role_required("Secretariat"))
-    def __call__(self, request, *args, **kwargs):
-        year = kwargs['year']
-        group = get_nomcom_group_or_404(year)
-        self.state['group'] = group
-        self.state['rolodex_url'] = ROLODEX_URL
-        self.group = group
-        self.year = year
-
-        return super(EditChairFormPreview, self).__call__(request, *args, **kwargs)
-
-    def get_initial(self, request):
-        chair = self.group.get_chair()
-        if chair:
-            return { "chair": chair.email.address }
-        return {}
-
-    def process_preview(self, request, form, context):
-        chair_email = form.cleaned_data['chair']
-        try:
-            chair_email_obj = Email.objects.get(address=chair_email)
-            chair_person = chair_email_obj.person
-        except Email.DoesNotExist:
-            chair_person = None
-            chair_email_obj = None
-        chair_info = {'email': chair_email,
-                      'email_obj': chair_email_obj,
-                      'person': chair_person}
-
-        self.state.update({'chair_info': chair_info})
-
-    def done(self, request, cleaned_data):
-        chair_info = self.state['chair_info']
-        chair_exclude = self.group.role_set.filter(name__slug='chair').exclude(email__address=chair_info['email'])
-        chair_exclude.delete()
-        if chair_info['email_obj'] and chair_info['person']:
-            Role.objects.get_or_create(name=RoleName.objects.get(slug="chair"),
-                                      group=self.group,
-                                      person=chair_info['person'],
-                                      email=chair_info['email_obj'])
-
-        return redirect('nomcom_edit_chair', year=self.year)
-
-
 class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
 
     fieldsets = [('Edit nomcom settings', ('public_key', 'initial_text',
