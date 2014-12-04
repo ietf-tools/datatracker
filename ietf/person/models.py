@@ -3,10 +3,14 @@
 import datetime
 from urlparse import urljoin
 
+from django.conf import settings
+
 from django.db import models
 from django.contrib.auth.models import User
+from django.template.loader import render_to_string
 
 from ietf.person.name import name_parts, initials
+from ietf.utils.mail import send_mail_preformatted
 
 class PersonInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
@@ -75,6 +79,18 @@ class PersonInfo(models.Model):
 
 class Person(PersonInfo):
     user = models.OneToOneField(User, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        created = not self.pk
+        super(Person, self).save(*args, **kwargs)
+        if created:
+            if Person.objects.filter(name=self.name).count() > 1 :
+                msg = render_to_string('person/mail/possible_duplicates.txt',
+                                       dict(name=self.name,
+                                            persons=Person.objects.filter(name=self.name),
+                                            settings=settings
+                                            ))
+                send_mail_preformatted(None, msg)
 
     #this variable, if not None, may be used by url() to keep the sitefqdn.
     default_hostscheme = None
