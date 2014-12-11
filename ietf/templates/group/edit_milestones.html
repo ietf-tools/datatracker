@@ -10,12 +10,12 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-{% bootstrap_messages %}
-
 {% block content %}
 <h1>{{ title }}</h1>
 
 <noscript>This page depends on Javascript being enabled to work properly.</noscript>
+
+{% bootstrap_messages %}
 
 <p>Links:
   <a href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>
