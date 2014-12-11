@@ -239,3 +239,8 @@ pre { line-height: 1.214;  }
   width: 32em; /* prevent the layout from jumping around */
 }
 
+/* reset charter milestones */
+#reset-charter-milestones .date {
+  display: inline-block;
+  min-width: 5em;
+}
