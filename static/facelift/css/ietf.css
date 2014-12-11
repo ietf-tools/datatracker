@@ -220,3 +220,22 @@ pre { line-height: 1.214;  }
 #milestones-form .milestone.delete, #milestones-form .edit-milestone.delete, #milestones-form .edit-milestone.delete input {
   color: #aaa !important;
 }
+
+/* customize group workflow */
+#group-customize-workflow  .state-table .inactive .name, .state-table .inactive .state, .state-table div.inactive, .tag-table .inactive .name {
+  font-style: italic;
+  color: #666;
+}
+
+#group-customize-workflow .state-table .state {
+  margin-bottom: 0.1em;
+}
+
+#group-customize-workflow .state-table .set-state button, .set-tag button {
+  width: 6.5em; /* prevent the layout from jumping around */
+}
+
+#group-customize-workflow .state-table td.next-states {
+  width: 32em; /* prevent the layout from jumping around */
+}
+
