@@ -24,7 +24,56 @@
 {% endif %}
 {% endblock %}
 
-{% include "liaisons/liaison_table.html" %}
+
+{% load ietf_filters %}
+<table class="table table-condensed table-striped">
+	<thead>
+		<tr>
+			<th>
+				<a href="?sort=submitted">Date {% if sort == "submitted" %}<span class="fa fa-caret-down"></span>{% endif %}</a>
+			</th>
+			<th>
+				<a href="?sort=from_name">From {% if sort == "from_name" %}<span class="fa fa-caret-down"></span>{% endif %}</a>
+			</th>
+			<th>
+				<a href="?sort=to_name">To {% if sort == "to_name" %}<span class="fa fa-caret-down"></span>{% endif %}</a>
+			</th>
+			<th>
+				<a href="?sort=deadline">Deadline {% if sort == "deadline" %}<span class="fa fa-caret-down"></span>{% endif %}</a>
+			</th>
+			<th>
+				<a href="?sort=title">Title {% if sort == "title" %}<span class="fa fa-caret-down"></span>{% endif %}</a>
+			</th>
+		</tr>
+	</thead>
+
+	<tbody>
+		{% for liaison in liaisons %}
+			<tr>
+				<td class="text-nowrap">{{ liaison.submitted|date:"Y-m-d" }}</td>
+				<td>{{ liaison.from_name }}</td>
+				<td>
+					{% if liaison.from_contact_id %}
+						{{ liaison.to_name }}
+					{% else %}
+						{{ liaison.to_name|strip_email }}
+					{% endif %}
+				</td>
+				<td class="text-nowrap">{{ liaison.deadline|default:"-"|date:"Y-m-d" }}</td>
+				<td>
+					{% if not liaison.from_contact_id %}
+						{% for doc in liaison.attachments.all %}
+							<a href="https://datatracker.ietf.org/documents/LIAISON/{{ doc.external_url }}">{{ doc.title }}</a>
+							<br>
+						{% endfor %}
+					{% else %}
+						<a href="{% if liaison.approved %}{% url "liaison_detail" object_id=liaison.pk %}{% else %}{% url "liaison_approval_detail" object_id=liaison.pk %}{% endif %}">{{ liaison.title }}</a>
+					{% endif %}
+				</td>
+			</tr>
+		{% endfor %}
+	</tbody>
+</table>
 
 {% endblock %}
 

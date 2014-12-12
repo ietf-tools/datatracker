@@ -49,4 +49,4 @@ class LiaisonStatement(models.Model):
         return slugify("liaison" + " " + self.submitted.strftime("%Y-%m-%d") + " " + frm[:50] + " " + to[:50] + " " + self.title[:115])
 
     def __unicode__(self):
-        return self.title or u"<no title>"
+        return self.title
