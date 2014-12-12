@@ -25,18 +25,29 @@ class MultiEmailField(forms.Field):
             validate_email(email)
 
 def yyyymmdd_to_strftime_format(fmt):
-    return (fmt
-            .replace("yyyy", "%Y")
-            .replace("yy", "%y")
-            .replace("mm", "%m")
-            .replace("m", "%-m")
-            .replace("MM", "%B")
-            .replace("M", "%b")
-            .replace("dd", "%d")
-            .replace("d", "%-d")
-            .replace("MM", "%A")
-            .replace("M", "%a")
-    )
+    translation_table = sorted([
+        ("yyyy", "%Y"),
+        ("yy", "%y"),
+        ("mm", "%m"),
+        ("m", "%-m"),
+        ("MM", "%B"),
+        ("M", "%b"),
+        ("dd", "%d"),
+        ("d", "%-d"),
+    ], key=lambda t: len(t[0]), reverse=True)
+
+    res = ""
+    remaining = fmt
+    while remaining:
+        for pattern, replacement in translation_table:
+            if remaining.startswith(pattern):
+                res += replacement
+                remaining = remaining[len(pattern):]
+                break
+        else:
+            res += remaining[0]
+            remaining = remaining[1:]
+    return res
 
 class DatepickerDateField(forms.DateField):
     """DateField with some glue for triggering JS Bootstrap datepicker."""
