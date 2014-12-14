@@ -6,10 +6,12 @@ from django.views.generic import TemplateView
 
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
+from ietf import api
 
 from django.conf import settings
 
 admin.autodiscover()
+api.autodiscover()
 
 # sometimes, this code gets called more than once, which is an
 # that seems impossible to work around.
@@ -61,6 +63,12 @@ urlpatterns = patterns('',
     # Google webmaster tools verification url
     (r'^googlea30ad1dacffb5e5b.html', TemplateView.as_view(template_name='googlea30ad1dacffb5e5b.html')),
 )
+
+for n,a in api._api_list:
+    urlpatterns += patterns('',
+        (r'^api/?$', api.top_level),
+        (r'^api/', include(a.urls)),
+    )
 
 if settings.SERVER_MODE in ('development', 'test'):
     urlpatterns += patterns('',
