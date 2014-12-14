@@ -92,7 +92,11 @@ def checkPaths(filenames, verbosity):
             for dirpath, dirnames, filenames in os.walk(arg):
                 for filename in filenames:
                     if filename.endswith('.py'):
-                        warnings.extend(checkPath(os.path.join(dirpath, filename), verbosity))
+                        try:
+                            warnings.extend(checkPath(os.path.join(dirpath, filename), verbosity))
+                        except TypeError as e:
+                            print("Exception while processing dirpath=%s, filename=%s: %s" % (dirpath, filename,e ))
+                            raise
         else:
             warnings.extend(checkPath(arg, verbosity))
     return warnings
