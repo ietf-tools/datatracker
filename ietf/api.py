@@ -30,9 +30,11 @@ for _app in settings.INSTALLED_APPS:
 def top_level(request):
     available_resources = {}
 
+    apitop = settings.RESTAPI_V1_URL_TOP
+
     for name in sorted([ name for name, api in _api_list if len(api._registry) > 0 ]):
         available_resources[name] = {
-            'list_endpoint': '/api/%s/' % name,
+            'list_endpoint': '/%s/%s/' % (apitop, name),
         }
 
     serializer = Serializer()

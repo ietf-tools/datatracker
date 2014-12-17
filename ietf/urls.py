@@ -64,10 +64,14 @@ urlpatterns = patterns('',
     (r'^googlea30ad1dacffb5e5b.html', TemplateView.as_view(template_name='googlea30ad1dacffb5e5b.html')),
 )
 
+# Endpoints for Tastypie's REST API
+apitop = settings.RESTAPI_V1_URL_TOP
+urlpatterns += patterns('',
+    (r'^%s/?$'%apitop, api.top_level),
+)
 for n,a in api._api_list:
     urlpatterns += patterns('',
-        (r'^api/?$', api.top_level),
-        (r'^api/', include(a.urls)),
+        (r'^%s/'%apitop, include(a.urls)),
     )
 
 if settings.SERVER_MODE in ('development', 'test'):

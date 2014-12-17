@@ -3,6 +3,8 @@ from __future__ import print_function
 import debug
 debug.debug = True
 
+from django.conf import settings
+
 from tastypie.test import ResourceTestCase
 from ietf.utils.test_data import make_test_data
 
@@ -32,10 +34,12 @@ class RestApi(ResourceTestCase):
 
     def test_json_api_explore(self):
         make_test_data()
-        self.list_recursively('/api/', format='json')
+        apitop = settings.RESTAPI_V1_URL_TOP
+        self.list_recursively('/%s/'%apitop, format='json')
 
     def test_xml_api_explore(self):
-        self.assertValidXMLResponse(self.api_client.get('/api/doc/', format='xml'))
+        apitop = settings.RESTAPI_V1_URL_TOP
+        self.assertValidXMLResponse(self.api_client.get('/%s/doc/'%apitop, format='xml'))
 
     def test_json_doc_document(self):
         """
@@ -44,7 +48,8 @@ class RestApi(ResourceTestCase):
         than 100 documents in the test-data (the current count is 10)
         """
         make_test_data()
-        r = self.api_client.get('/api/doc/document/', format='json', limit=100)
+        apitop = settings.RESTAPI_V1_URL_TOP
+        r = self.api_client.get('/%s/doc/document/'%apitop, format='json', limit=100)
         doclist = self.deserialize(r)["objects"]
         docs = dict( (doc["name"], doc) for doc in doclist )
         for name in (
@@ -63,11 +68,12 @@ class RestApi(ResourceTestCase):
         of relationships give URLs which are handled without raising exceptions.
         """
         make_test_data()
-        r = self.api_client.get('/api/doc/document/', format='json')
+        apitop = settings.RESTAPI_V1_URL_TOP
+        r = self.api_client.get('/%s/doc/document/'%apitop, format='json')
         doclist = self.deserialize(r)["objects"]
         for doc in doclist:
             for key in doc:
                 value = doc[key]
-                if isinstance(value, basestring) and value.startswith('/api/'):
+                if isinstance(value, basestring) and value.startswith('/%s/'%apitop):
                     self.api_client.get(value, format='json')
                     
