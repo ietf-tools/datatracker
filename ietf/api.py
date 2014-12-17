@@ -33,6 +33,7 @@ for _app in settings.INSTALLED_APPS:
         _root, _name = _app.split('.', 1)
         if _root == 'ietf':
             if not '.' in _name:
+
                 _api = Api(api_name=_name)
                 _module_dict[_name] = _api
                 _api_list.append((_name, _api))
@@ -40,7 +41,7 @@ for _app in settings.INSTALLED_APPS:
 def top_level(request):
     available_resources = {}
 
-    for name in sorted([ name for name, api in _api_list ]):
+    for name in sorted([ name for name, api in _api_list if len(api._registry) > 0 ]):
         available_resources[name] = {
             'list_endpoint': '/api/%s/' % name,
         }
@@ -71,7 +72,6 @@ def autodiscover():
     from django.conf import settings
     from django.utils.importlib import import_module
     from django.utils.module_loading import module_has_submodule
-
 
     for app in settings.INSTALLED_APPS:
         mod = import_module(app)
