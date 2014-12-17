@@ -65,13 +65,12 @@ urlpatterns = patterns('',
 )
 
 # Endpoints for Tastypie's REST API
-apitop = settings.RESTAPI_V1_URL_TOP
 urlpatterns += patterns('',
-    (r'^%s/?$'%apitop, api.top_level),
+    (r'^api/v1/?$', api.top_level),
 )
 for n,a in api._api_list:
     urlpatterns += patterns('',
-        (r'^%s/'%apitop, include(a.urls)),
+        (r'^api/v1/', include(a.urls)),
     )
 
 if settings.SERVER_MODE in ('development', 'test'):

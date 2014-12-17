@@ -459,8 +459,6 @@ GROUP_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
 POSTCONFIRM_PATH   = "/a/postconfirm/test-wrapper"
 
-RESTAPI_V1_URL_TOP = "api/v1"           # no leading or trailing slash
-
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *            # pyflakes:ignore

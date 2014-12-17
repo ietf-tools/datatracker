@@ -4,6 +4,7 @@ import datetime
 
 from django.conf import settings
 from django.http import HttpResponse
+from django.core.urlresolvers import reverse
 
 from tastypie.api import Api
 from tastypie.serializers import Serializer
@@ -30,11 +31,11 @@ for _app in settings.INSTALLED_APPS:
 def top_level(request):
     available_resources = {}
 
-    apitop = settings.RESTAPI_V1_URL_TOP
+    apitop = reverse('ietf.api.top_level')
 
     for name in sorted([ name for name, api in _api_list if len(api._registry) > 0 ]):
         available_resources[name] = {
-            'list_endpoint': '/%s/%s/' % (apitop, name),
+            'list_endpoint': '%s/%s/' % (apitop, name),
         }
 
     serializer = Serializer()
