@@ -14,17 +14,6 @@ from tastypie.fields import ApiField
 
 import debug                            # pyflakes:ignore
 
-# 
-# /json/doc
-# /json/name
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-
 _api_list = []
 
 for _app in settings.INSTALLED_APPS:
