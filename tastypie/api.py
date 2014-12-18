@@ -9,6 +9,7 @@ from tastypie.serializers import Serializer
 from tastypie.utils import trailing_slash, is_valid_jsonp_callback_value
 from tastypie.utils.mime import determine_format, build_content_type
 
+
 class Api(object):
     """
     Implements a registry to tie together the various resources that make up
