@@ -68,7 +68,8 @@ def do_undefer_ballot(request, doc):
     doc.save()
 
     update_telechat(request, doc, login, telechat_date)
-    email_state_changed(request, doc, e.desc)
+    if e:
+        email_state_changed(request, doc, e.desc)
     email_ballot_undeferred(request, doc, login.plain_name(), telechat_date)
     
 def position_to_ballot_choice(position):
@@ -360,7 +361,8 @@ def defer_ballot(request, name):
         doc.time = (e and e.time) or datetime.datetime.now()
         doc.save()
 
-        email_state_changed(request, doc, e.desc)
+        if e:
+            email_state_changed(request, doc, e.desc)
 
         update_telechat(request, doc, login, telechat_date)
         email_ballot_deferred(request, doc, login.plain_name(), telechat_date)
@@ -454,8 +456,9 @@ def lastcalltext(request, name):
                     doc.time = (e and e.time) or datetime.datetime.now()
                     doc.save()
 
-                    email_state_changed(request, doc, e.desc)
-                    email_ad(request, doc, doc.ad, login, e.desc)
+                    if e:
+                        email_state_changed(request, doc, e.desc)
+                        email_ad(request, doc, doc.ad, login, e.desc)
 
                     request_last_call(request, doc)
                     
