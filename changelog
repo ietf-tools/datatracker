@@ -1,3 +1,11 @@
+ietfdb (5.8.1) ietf; urgency=medium
+
+   This is a bugfix release for 5.8.0; it adds one file which was missing
+   from the repository in the 5.8.0 release
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Dec 2014 18:40:16 +0000
+
+
 ietfdb (5.8.0) ietf; urgency=medium
 
    This release introduces a machine-readable API to the datatracker database
