@@ -448,11 +448,28 @@ def format_history_text(text):
     if text.startswith("This was part of a ballot set with:"):
         full = urlize_ietf_docs(full)
 
-    full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(full)))))
+    return format_snippet(full)
+
+@register.filter
+def format_snippet(text): 
+    full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(text)))))
     snippet = truncatewords_html(full, 25)
     if snippet != full:
         return mark_safe(u'<div class="snippet">%s<span class="show-all">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
     return full
+
+@register.filter
+def format_editable_snippet(text,link): 
+    full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(text)))))
+    snippet = truncatewords_html(full, 25)
+    if snippet != full:
+        return mark_safe(u'<div class="snippet">%s<span class="show-all">[show all]</span></div><div style="display:none" class="full">%s' % (format_editable(snippet,link),format_editable(full,link)) )
+    else:
+        return format_editable(full,link)
+
+@register.filter
+def format_editable(text,link): 
+    return mark_safe(u'<a class="editlink" href="%s">%s</a>' % (link,text))
 
 @register.filter
 def textify(text):

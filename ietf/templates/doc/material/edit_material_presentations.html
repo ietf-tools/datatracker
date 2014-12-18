@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}
+Edit Upcoming Presentations
+{% endblock %}
+
+{% block morecss %}
+{{ block.super }}
+ul#id_versions { list-style-type: none; padding: 0px; margin: 0px; }
+{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+
+<h1>Edit Upcoming Presentations of<br/>{{doc.title}}<br/>{{doc.name}}<br/>at {{session}}</h1>
+
+<form method="post">{% csrf_token %}
+{{form.as_p}}
+<input style="button" type="submit" name="action" value="Save"/>
+<input style="button" type="submit" name="action" value="Cancel"/>
+</form>
+
+{% endblock content %}

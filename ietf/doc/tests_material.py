@@ -66,6 +66,7 @@ class GroupMaterialTests(TestCase):
 
         # post
         r = self.client.post(url, dict(title="Test File - with fancy title",
+                                       abstract = "Test Abstract",
                                        name="slides-%s-test-file" % group.acronym,
                                        state=State.objects.get(type="slides", slug="active").pk,
                                        material=test_file))
@@ -125,6 +126,7 @@ class GroupMaterialTests(TestCase):
 
         # post
         r = self.client.post(url, dict(title="New title",
+                                       abstract="New abstract",
                                        state=State.objects.get(type="slides", slug="active").pk,
                                        material=test_file))
         self.assertEqual(r.status_code, 302)
