@@ -31,7 +31,7 @@ ietfdb (5.10.0) ietf; urgency=medium
   reduction in the LOC (lines of code) count by about 2000 lines, at
   the same time as the functionality has improved.  Cool :-)
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  21 Dec 2014 18:57:58 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Dec 2014 21:33:54 +0000
 
 
 ietfdb (5.9.0) ietf; urgency=medium
