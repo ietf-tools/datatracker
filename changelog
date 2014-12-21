@@ -1,3 +1,39 @@
+ietfdb (5.10.0) ietf; urgency=medium
+
+  This release provides work from rcross@amsl.com which refactors and enhances
+  the IPR support in the datatracker.  Here is an overview of the changes:
+
+  * Updated and streamlined the database models representing IPR disclosures,
+    and migrated existing data to the new models.
+
+  * Added a new admin interface with better support for listing IPR
+    disclosures and searching them.
+
+  * Improved the Secretariat's navigation between IPR document views/search
+    results and the administrative pages to edit IPR documents.
+
+  * Introduced the ability for a disclosure submission to indicate it is
+    updating more than one existing disclosure.
+
+  * Improved the Secretariat's management interface for the 'Waiting for
+    Approval' queue, and added the ability to park disclosures that are
+    waiting for approval.
+
+  * Added a Secretariat management interface for rejected and removed
+    disclosures.
+
+  * Implemented simplified forms for Secretariat updates to a disclosure.
+
+  * Added support for managing the email communication necessary for
+    processing a submission.
+
+  The streamlined models and related coding decisions has resulted in a
+  reduction in the LOC (lines of code) count by about 2000 lines, at
+  the same time as the functionality has improved.  Cool :-)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Dec 2014 18:57:58 +0000
+
+
 ietfdb (5.9.0) ietf; urgency=medium
 
   * Merged in [8711] from rjsparks@nostrum.com:
