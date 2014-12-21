@@ -492,10 +492,10 @@ class Document(DocumentInfo):
         else:
             return state.name
 
-    def ipr(self):
-        """Returns the IPR disclosures against this document (as a queryset over IprDocAlias)."""
-        from ietf.ipr.models import IprDocAlias
-        return IprDocAlias.objects.filter(doc_alias__document=self)
+    def ipr(self,states=('posted','removed')):
+        """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""
+        from ietf.ipr.models import IprDocRel
+        return IprDocRel.objects.filter(document__document=self,disclosure__state__in=states)
 
     def related_ipr(self):
         """Returns the IPR disclosures against this document and those documents this

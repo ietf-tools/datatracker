@@ -1,52 +1,52 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "ipr/search_result.html" %}
 {% load ietf_filters %}
-	    {% block search_result %}
-	    <table cellpadding="1" cellspacing="0" border="0">
-	       <tr><td colspan="3"><b>{% block search_header %}Search result on {{ q }}{% endblock %}</b></td></tr>
-	       {% if not count %}
-		  <tr>
-		     <td></td>
-		     <td colspan="2">
-			<b>No IPR disclosures related to a document with the word(s) <i>{{ q }}</i> in the title have been submitted.</b>
-		     </td>
-		  </tr>
-	       {% else %}
-		  <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
+        {% block search_result %}
+        <table cellpadding="1" cellspacing="0" border="0">
+           <tr><td colspan="3"><b>{% block search_header %}Search result on {{ q }}{% endblock %}</b></td></tr>
+           {% if not docs %}
+          <tr>
+             <td></td>
+             <td colspan="2">
+            <b>No IPR disclosures related to a document with the word(s) <i>{{ q }}</i> in the title have been submitted.</b>
+             </td>
+          </tr>
+           {% else %}
+          <tr><td colspan="3">Total number of IPR disclosures found: {{ iprs|length }} </td></tr>
 
-		  {% block iprlist %}
-		     {% for alias in docs %}
-		     <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
-			<tr >
-			   <td colspan="3">
-			      IPR that is related to <b><i>{{ alias.name|rfcspace|lstrip:"0"|rfcnospace }}, "{{ alias.document.title }}"{% if alias.related %}, that was {{ alias.relation|lower }} {{ alias.related.source.name|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ alias.related.source.title }}"{% endif %}
-			      </i><!--,</b> which has the string <b>"<i>{{ q }}</i>"</b> within the document title.-->
-			   </td>
-			</tr>
-			{% if alias.iprs %}
-			   {% for ipr in alias.iprs %}
-			      <tr valign="top">
-				 <td width="100">{{ ipr.submitted_date }}</td>
-				 <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
-				 <td>
-				    {% for item in ipr.updated_by.all %}
-				       {% if item.processed == 1 and item.ipr.status != 2 %}
-					  IPR disclosure ID# {{ item.ipr.ipr_id }} "<a href="{% url "ietf.ipr.views.show" item.ipr.ipr_id %}">{{ item.ipr.title }}</a>" Updates
-				       {% endif %}
-				    {% endfor %}
-				    <a href="{% url "ietf.ipr.views.show" ipr.ipr_id %}">"{{ ipr.title }}"</a>
-				 </td>
-			      </tr>
-			   {% endfor %}
-			{% else %}
-			<tr>
-			   <td></td>
-			   <td colspan="2"><b>No IPR disclosures related to <i>{{ alias.name|rfcspace|lstrip:"0" }}</i> have been submitted</b></td>
-			</tr>
-			{% endif %}
-		     </tbody>
-		     {% endfor %}
-		  {% endblock %}
-	       {% endif %}
-	    </table>
-	    {% endblock %}
+          {% block iprlist %}
+             {% for alias in docs %}
+             <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
+            <tr >
+               <td colspan="3">
+                  IPR that is related to <b><i>{{ alias.name|rfcspace|lstrip:"0"|rfcnospace }}, "{{ alias.document.title }}"{% if alias.related %}, that was {{ alias.relation|lower }} {{ alias.related.source.name|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ alias.related.source.title }}"{% endif %}
+                  </i><!--,</b> which has the string <b>"<i>{{ q }}</i>"</b> within the document title.-->
+               </td>
+            </tr>
+            {% if alias.document.ipr %}
+               {% for ipr in alias.document.ipr %}
+                  <tr valign="top">
+                 <td width="100">{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
+                 <td width="90"><li>ID # {{ ipr.disclosure.id }}</li></td>
+                 <td>
+                    {% for item in ipr.disclosure.updated_by.all %}
+                       {% if item.source.state_id == "posted" %}
+                      IPR disclosure ID# {{ item.ipr.ipr_id }} "<a href="{% url "ietf.ipr.views.show" item.source.id %}">{{ item.source.title }}</a>" Updates
+                       {% endif %}
+                    {% endfor %}
+                    <a href="{% url "ietf.ipr.views.show" ipr.id %}">"{{ ipr.disclosure.title }}"</a>
+                 </td>
+                  </tr>
+               {% endfor %}
+            {% else %}
+            <tr>
+               <td></td>
+               <td colspan="2"><b>No IPR disclosures related to <i>{{ alias.name|rfcspace|lstrip:"0" }}</i> have been submitted</b></td>
+            </tr>
+            {% endif %}
+             </tbody>
+             {% endfor %}
+          {% endblock %}
+           {% endif %}
+        </table>
+        {% endblock %}

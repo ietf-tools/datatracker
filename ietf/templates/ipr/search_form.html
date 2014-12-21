@@ -1,0 +1,65 @@
+{% load ietf_filters %}
+
+<h1>IPR Search</h1>
+<a href="{% url "ietf.ipr.views.showlist" %}">Back to IPR Disclosure Page</a>
+
+<form id="search-form">
+{% if user|has_role:"Secretariat" %}
+<h2>State Filter</h2>
+<div class="ietf-box search-form-box">
+{{ form.state }}
+</div>
+{% endif %}
+
+<h2>Document Search</h2>
+<div class="ietf-box search-form-box">
+    <p>
+      <label>I-D name (draft-...):</label>
+      {{ form.draft.errors }}
+      {{ form.draft }}
+      <button name="submit" value="draft" type="submit">SEARCH</button>
+    </p>
+    <p>
+      <label>RFC Number:</label>
+      {{ form.rfc.errors }}
+      {{ form.rfc }}
+      <button name="submit" value="rfc" type="submit">SEARCH</button>
+    </p>
+</div>
+
+<h2>Keyword Search</h2>
+
+<div class="ietf-box search-form-box">
+  <p>
+     <label>Name of patent owner/applicant:</label>
+     {{ form.holder.errors }}
+     {{ form.holder }}
+     <button name="submit" value="holder" type="submit">SEARCH</button>
+  </p>
+  <p>
+     <label>Characters in patent information (Full/Partial):</label>
+     {{ form.patent.errors }}
+     {{ form.patent }}
+     <button name="submit" value="patent" type="submit">SEARCH</button>
+  </p>
+  <p>
+     <label>Working group name:</label>
+     {{ from.group.errors }}
+     {{ form.group }}
+     <button name="submit" value="group" type="submit">SEARCH</button>
+  </p>
+  <p>
+    <label>Words in document title:</label>
+    {{ form.doctitle.errors }}
+    {{ form.doctitle }}
+    <button name="submit" value="doctitle" type="submit">SEARCH</button>
+  </p>
+  <p>
+    <label>Words in IPR disclosure title:</label>
+    {{ form.iprtitle.errors }}
+    {{ form.iprtitle }}
+    <button name="submit" value="iprtitle" type="submit">SEARCH</button>
+  </p>
+</div>
+
+</form>

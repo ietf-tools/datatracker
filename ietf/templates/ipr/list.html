@@ -1,6 +1,13 @@
 {% extends "base.html" %}
+{% load ietf_filters %}
+
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% block title %}IPR List{% endblock %}
+
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
+{% endblock %}
+
 {% block content %}
 <h1>IETF Page of Intellectual Property Rights Disclosures</h1>
 
@@ -14,12 +21,15 @@ pertain to the implementation or use of the technology described in any IETF doc
 which any license under such rights might or might not be available; nor does it represent that it has made any independent effort to identify any such rights.</p>
 <p><a href="{% url "ietf.ipr.views.about" %}">Click here to submit an IPR disclosure</a></p>
 
-<a href="{% url "ietf.ipr.search.search" %}">Search the IPR Disclosures</a>
+<a href="{% url "ietf.ipr.views.search" %}">Search the IPR Disclosures</a>
+{% if user|has_role:"Secretariat" %}
+<br><a href="{% url "ipr_admin_main" %}">Administrative View</a>
+{% endif %}
 
 <a name="generic"></a>
 <h2>Generic IPR Disclosures</h2>
 <table class="ietf-table" width="820">
-   <tr><th>Date Submitted</th><th width="70">ID #</th><th>Title of IPR Disclosure</th></tr>
+   <tr><th class="date-column">Submitted</th><th class="id-column">ID #</th><th class="title-column">Title of IPR Disclosure</th></tr>
    {% for ipr in generic_disclosures %}
    {% include "ipr/list_item.html" %}
    {% endfor %}
@@ -28,7 +38,7 @@ which any license under such rights might or might not be available; nor does it
 <a name="specific"></a>
 <h2>Specific IPR Disclosures</h2>
 <table class="ietf-table" width="820">
-   <tr><th>Date Submitted</th><th width="70">ID #</th><th>Title of IPR Disclosure</th></tr>
+   <tr><th class="date-column">Submitted</th><th class="id-column">ID #</th><th class="title-column">Title of IPR Disclosure</th></tr>
    {% for ipr in specific_disclosures %}
    {% include "ipr/list_item.html" %}
    {% endfor %}
@@ -37,7 +47,7 @@ which any license under such rights might or might not be available; nor does it
 <a name="notify"></a>
 <h2>Specific Third Party IPR Disclosures</h2>
 <table class="ietf-table" width="820">
-   <tr><th>Date Submitted</th><th width="70">ID #</th><th>Title of IPR Disclosure</th></tr>
+   <tr><th class="date-column">Submitted</th><th class="id-column">ID #</th><th class="title-column">Title of IPR Disclosure</th></tr>
    {% for ipr in thirdpty_disclosures %}
    {% include "ipr/list_item.html" %}
    {% endfor %}

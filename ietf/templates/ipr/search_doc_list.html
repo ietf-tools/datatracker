@@ -8,7 +8,7 @@
 <h3>Please select one of following I-Ds</h3>
 <ul>
 {% for docalias in docs %}
-   <li><a href="?option=document_search&id={{ docalias.name }}">{{ docalias.name }}</a></li>
+   <li><a href="?submit=draft&id={{ docalias.name }}">{{ docalias.name }}</a></li>
 {% endfor %}
 </ul>
 {% endblock %}

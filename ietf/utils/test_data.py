@@ -8,7 +8,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
-from ietf.ipr.models import IprDetail, IprDocAlias
+from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
 from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
 from ietf.person.models import Person, Alias, Email
@@ -233,31 +233,24 @@ def make_test_data():
         )
 
     # IPR
-    ipr = IprDetail.objects.create(
+    ipr = HolderIprDisclosure.objects.create(
+        by=Person.objects.get(name="(System)"),
         title="Statement regarding rights",
-        legal_name="Native Martians United",
-        is_pending=0,
-        applies_to_all=1,
-        licensing_option=1,
-        lic_opt_a_sub=2,
-        lic_opt_b_sub=2,
-        lic_opt_c_sub=2,
-        patents="PTO12345",
-        date_applied="foo",
-        country="Whole World",
-        comments="",
-        lic_checkbox=True,
-        other_notes="",
-        status=1,
-        generic=0,
-        third_party=0,
-        submitted_date=datetime.date.today(),
+        holder_legal_name="Native Martians United",
+        state=IprDisclosureStateName.objects.get(slug='posted'),
+        patent_info='US12345',
+        holder_contact_name='George',
+        holder_contact_email='george@acme.com',
+        holder_contact_info='14 Main Street\nEarth',
+        licensing=IprLicenseTypeName.objects.get(slug='royalty-free'),
+        submitter_name='George',
+        submitter_email='george@acme.com',
         )
 
-    IprDocAlias.objects.create(
-        ipr=ipr,
-        doc_alias=doc_alias,
-        rev="00",
+    IprDocRel.objects.create(
+        disclosure=ipr,
+        document=doc_alias,
+        revisions='00',
         )
     
     # meeting

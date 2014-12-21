@@ -1,0 +1,54 @@
+{% extends "ipr/details_base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+
+{% load ietf_filters %}
+{% load ipr_filters %}
+
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
+{% endblock %}
+
+{% block tab_content %}
+
+<h2>Disclosure history</h2>
+{% if user|has_role:"Area Director,Secretariat,IANA,RFC Editor" %}
+<div class="history-actions">
+  <a class="button" href="{% url "ipr_add_comment" id=ipr.id %}">Add comment</a>
+  <a class="button" href="{% url "ipr_add_email" id=ipr.id %}">Add email</a>
+</div>
+{% endif %}
+
+
+<table class="ietf-table history">
+  <tr><th class="date-column">Date</th><th>Type</th><th>By</th><th>Text</th></tr>
+
+  {% for e in events %}
+  <tr class="{% cycle oddrow,evenrow %}" id="history-{{ e.pk }}">
+    <td class="date-column">{{ e.time|date:"Y-m-d" }}</td>
+    <td>{{ e.type }}
+        {% if e.response_due %}
+          {% if e.response_past_due %}
+            <img src="/images/warning.png" title="Response overdue"/>
+          {% endif %}
+        {% endif %}
+    </td>
+    <td>{{ e.by }}</td>
+    {% if e.message %}
+      <td>{{ e.message|render_message_for_history|format_history_text:"100" }}
+      {% if e.response_due %}
+          <br>Response Due: {{ e.response_due|date:"Y-m-d" }}
+      {% endif %}
+    {% else %}
+      <td>{{ e.desc|format_history_text }}
+    {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% endblock %} <!-- tab_content -->
+
+{% block content_end %}
+<script type="text/javascript" src="/js/history.js"></script>
+<script type="text/javascript" src="/js/snippet.js"></script>
+{% endblock content_end %}

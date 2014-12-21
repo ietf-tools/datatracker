@@ -12,6 +12,7 @@ def infer_message(s):
     m.subject = parsed.get("Subject", "").decode("utf-8")
     m.frm = parsed.get("From", "").decode("utf-8")
     m.to = parsed.get("To", "").decode("utf-8")
+    m.cc = parsed.get("Cc", "").decode("utf-8")
     m.bcc = parsed.get("Bcc", "").decode("utf-8")
     m.reply_to = parsed.get("Reply-to", "").decode("utf-8")
     m.body = parsed.get_payload().decode("utf-8")

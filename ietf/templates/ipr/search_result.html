@@ -1,72 +1,82 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
-{% block morecss %}
-{% endblock %}
+{% load ietf_filters %}
+
 {% block doctype %}{% endblock %}
 {% block title %}IPR Search Result{% endblock %}
-{% block content %}
-{% load ietf_filters %}
-<h1>IPR Disclosures</h1>
-	    {% block search_result %}
-	    <table cellpadding="1" cellspacing="0" border="0">
 
-	       <tr><td colspan="3"><b>{% block search_header %}Patent Owner/Applicant Search Result{% endblock %}</b></td></tr>
-	       {% if not iprs %}
-		  <tr>
-		     <td></td>
-		     <td colspan="2"><b>{% block search_failed %}No IPR disclosures have been submitted by <i>{{ q }}</i>{% endblock %}</b></td>
-		  </tr>
-	       {% else %}
-		  <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
-		  {% block iprlist %}
-		     {% for ipr in iprs %}
-		     <tbody bgcolor="#{% cycle eeeeee,dddddd as bgcolor %}">
-			<tr valign="top">
-			   <td colspan="3">
-			      {% block intro_prefix %}IPR that was submitted by <b><i>{{ q }}</i></b>, and{% endblock %}
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
+{% endblock %}
+
+{% block content %}
+
+{% include "ipr/search_form.html" %}
+<br>
+        {% block search_result %}
+        <table cellpadding="1" cellspacing="0" border="0">
+
+           <tr><td colspan="3"><b>{% block search_header %}Patent Owner/Applicant Search Result{% endblock %}</b></td></tr>
+           {% if not iprs %}
+          <tr>
+             <td></td>
+             <td colspan="2"><b>{% block search_failed %}No IPR disclosures have been submitted by <i>{{ q }}</i>{% endblock %}</b></td>
+          </tr>
+           {% else %}
+          <tr><td colspan="3">Total number of IPR disclosures found: {{ iprs|length }} </td></tr>
+          {% block iprlist %}
+             {% for ipr in iprs %}
+             {% if user|has_role:"Secretariat" %}{% ifchanged %}<tr><td colspan="3"><h3>{{ ipr.state.name }}</h3></td></tr>{% endifchanged %}{% endif %}
+             <tbody bgcolor="#{% cycle eeeeee,dddddd as bgcolor %}">
+            <tr valign="top">
+               <td colspan="3">
+                  {% block intro_prefix %}IPR that was submitted by <b><i>{{ q }}</i></b>, and{% endblock %}
                               {% block related %}
-                                {% with ipr.docs as iprdocaliases %}
-                                  {% if not iprdocaliases %}
+                                {% with ipr.iprdocrel_set.all as iprdocrels %}
+                                  {% if not iprdocrels %}
                                     is not related to a specific IETF contribution.
                                   {% else %}
                                      is related to
-                                     {% for item in iprdocaliases %}
+                                     {% for item in iprdocrels %}
                                        {% if forloop.last and forloop.counter > 1 %}and{% endif %}
-                                       <b><i>{{ item.formatted_name|rfcspace }}, "{{ item.doc_alias.document.title }}"</i></b>{% if not forloop.last and forloop.counter > 1 %},{% endif %}
+                                       <b><i>{{ item.formatted_name|rfcspace }}, "{{ item.document.document.title }}"</i></b>{% if not forloop.last and forloop.counter > 1 %},{% endif %}
                                      {% endfor %}
                                   {% endif %}
                                 {% endwith %}
                               {% endblock %}
-			      {% block intro_suffix %}{% endblock %}
-			   </td>
-			</tr>
-			<tr valign="top">
-			   <td width="100">{{ ipr.submitted_date }}</td>
-			   <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
-			   <td><a href="{% url "ietf.ipr.views.show" ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a></td>
-			</tr>
-			{% for item in ipr.updates.all %}
+                  {% block intro_suffix %}{% endblock %}
+               </td>
+            </tr>
+            <tr valign="top">
+               <td width="100">{{ ipr.time|date:"Y-m-d" }}</td>
+               <td width="90"><li>ID # {{ ipr.id }}</li></td>
+               <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">"{{ ipr.title }}"</a></td>
+            </tr>
+            {% for item in ipr.updates.all %}
                         {% if item != ipr %}
-			<tr valign="top">
-			   <td width="100">{{ item.updated.submitted_date }}</td>
-			   <td width="90"><li>ID # {{ item.updated.ipr_id }}</li></td>
-			   <td>
-			      IPR disclosure ID# {{ ipr.ipr_id }} <a href="{% url "ietf.ipr.views.show" ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a>
-			      Updates <a href="{% url "ietf.ipr.views.show" ipr_id=item.ipr_id %}">{{ item.updated.title }}</a>
-			   </td>
-			</tr>
+            <tr valign="top">
+               <td width="100">{{ item.target.time|date:"Y-m-d" }}</td>
+               <td width="90"><li>ID # {{ item.target.id }}</li></td>
+               <td>
+                  IPR disclosure ID# {{ ipr.id }} <a href="{% url "ietf.ipr.views.show" id=ipr.id %}">"{{ ipr.title }}"</a>
+                  Updates <a href="{% url "ietf.ipr.views.show" id=item.id %}">{{ item.target.title }}</a>
+               </td>
+            </tr>
                         {% endif %}
-			{% endfor %}
-		     </tbody>
-		     {% endfor %}
-		  {% endblock %}
-	       {% endif %}
-	    </table>
-	    {% endblock %}
-	    <hr><br>
+            {% endfor %}
+             </tbody>
+             {% endfor %}
+          {% endblock %}
+           {% endif %}
+        </table>
+        {% endblock %}
+        <hr><br>
 
-	    <a href="{% url "ietf.ipr.search.search" %}">IPR Search Main Page</a><br>
-	    <a href="{% url "ietf.ipr.views.showlist" %}">IPR Disclosure Page</a>
-	    <br>
+        <a href="{% url "ietf.ipr.views.showlist" %}">Back to IPR Disclosure Page</a>
+        <br>
 {% endblock %}
 
+{% block js %}
+<script type="text/javascript" src="/js/lib/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" src="/js/ipr-search.js"></script>
+{% endblock %}

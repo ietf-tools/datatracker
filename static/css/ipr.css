@@ -1,0 +1,165 @@
+table.ipr { margin-top: 1em; }
+.ipr .light td { background: #eeeeee; }
+.ipr .dark td { background: #dddddd; }
+.ipr th { background: #2647a0; color: white; }
+.ipr { width: 101ex; border: 0; border-collapse: collapse; }
+.ipr th, .ipr td { padding: 3px 6px; text-align: left; }
+.ipr tr { vertical-align: top; }
+.ipr td.iprlabel { width: 18ex; }
+.iprdata { font-weight: bold; }
+
+#email-form { background: #dddddd; }
+#ipr-table { background: #F2F2E6; width: 101ex;}
+#ipr-table tr td:first-child { text-align: right; }
+
+#ipr-table input,textarea { width: 80%; }
+.required {
+color: red;
+float: right;
+padding-left: 0.5em;
+font-size: 130%;
+}
+
+.button-group {
+    clear: both;
+    width: auto;
+    height: 2.5em;
+    padding: 4px 7px;
+    background: #F2F2E6;
+    border: 0 solid #ccc;
+    border-top: 1px solid #ccc;
+    margin: 5px 0 0 0;
+    overflow: hidden;
+}
+
+.button-group ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 7px;
+    text-align: center;
+}
+
+.button-group li {
+    display: inline;
+    padding: 5px;
+}
+
+.history-actions {
+margin-bottom: 1em;
+padding-left: 1px;
+}
+
+form.add-email #id_message {
+  width: 600px;
+  height: 300px;
+}
+
+form.add-email .actions {
+  padding-top: 20px;
+}
+
+#id_response_due {
+  width: 150px;
+}
+
+ul#id_direction {
+  list-style-type: none;
+}
+
+ul#id_direction li {
+  display: inline;
+}
+
+.date-column {
+  width: 6.5em;
+}
+
+.id-column {
+  width: 3em;
+}
+
+.column-four {
+  width: 5.5em;
+}
+
+.column-five {
+  width: 7em;
+}
+
+form.send-notification .actions {
+  padding-top: 20px;
+}
+
+form.send-notification textarea {
+  width: 600px;
+  height: 300px;
+}
+
+#id_state li {
+  display:inline;
+  list-style-type: none;
+  padding-right: 20px;
+}
+
+#id_state li label {
+  width: 100px;
+}
+
+.search-form-box input[type!=checkbox] {
+  width: 20em;
+}
+
+#state-form {
+  display: inline;
+}
+
+.ui-selectmenu-button {
+  vertical-align: middle;
+}
+
+#id_contribution ul.token-input-list {
+  width: 332px;
+}
+
+/* add_comment
+   ========================================================================== */
+   
+form.add-comment #id_comment {
+  width: 600px;
+  height: 300px;
+}
+
+form.add-comment .actions {
+  padding-top: 20px;
+}
+
+/* details_edit
+   ========================================================================== */
+   
+.iprdata li { list-style:none;}
+.iprdata input[type=text],input[type=email],textarea { width:80%; }
+.data td { white-space: pre; }
+
+#id_contribution { table-layout:fixed; }
+.mini input { width:60px; }
+
+.required { color: red; float: right; padding-top: 0.7ex; font-size: 130%; }
+.errorlist { background: red; color: white; padding: 0.2ex 0.2ex 0.2ex 0.5ex; border: 0px; margin: 0px; }
+ ul.errorlist { margin: 0px; }
+
+/* search
+   ========================================================================== */
+   
+#search-form { clear:both; margin-top:1em;}
+
+#search-form label { float:left; width: 200px; }
+
+#search-form input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#search-form input[type=number] {
+    -moz-appearance:textfield;
+}

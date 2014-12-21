@@ -73,3 +73,11 @@ class DraftSubmissionStateName(NameModel):
     next_states = models.ManyToManyField('DraftSubmissionStateName', related_name="previous_states", blank=True)
 class RoomResourceName(NameModel):
     "Room resources: Audio Stream, Meetecho, . . ."
+class IprDisclosureStateName(NameModel):
+    """Pending, Parked, Posted, Rejected, Removed"""
+class IprLicenseTypeName(NameModel):
+    """choices a-f from the current form made admin maintainable"""
+class IprEventTypeName(NameModel):
+    """submitted,posted,parked,removed,rejected,msgin,msgoutcomment,private_comment,
+    legacy,update_notify,change_disclosure"""
+    

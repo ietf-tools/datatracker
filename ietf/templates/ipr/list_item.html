@@ -1,46 +1,27 @@
+{% load ietf_filters %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
    <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-      <td>{{ ipr.submitted_date }}</td>
-      <td>{{ ipr.ipr_id }}</td>
-      <td>
-         {% if ipr.status == 1 %}
-           <a href="{% url "ietf.ipr.views.show" ipr.ipr_id %}">{{ ipr.title }}</a>
-	 {% else %}
+      <td class="date-column">{{ ipr.time|date:"Y-m-d" }}</td>
+      <td class="id-column">{{ ipr.id }}</td>
+      <td class="title-column">
+         {% if ipr.state_id == 'posted' %}
+           <a href="{% url "ietf.ipr.views.show" ipr.id %}">{{ ipr.title }}</a>
+         {% else %}
            {{ ipr.title }}
-	   <br/>This IPR disclosure was removed at the request of the submitter.
+       <br/>This IPR disclosure was removed at the request of the submitter.
          {% endif %}
-	 <br />
-	 {% for item in ipr.updates.all %}
-         {% if item.updated.status == 1 %}
-	    Updates ID <a href="{% url "ietf.ipr.views.show" item.updated.ipr_id %}">#{{ item.updated.ipr_id }}</a>.<br/>
+     <br />
+     {% for item in ipr.relatedipr_source_set.all %}
+         {% if item.target.state_id == 'posted' %}
+            Updates ID <a href="{% url "ietf.ipr.views.show" item.target.id %}">#{{ item.target.id }}</a>.<br/>
          {% endif %}
-	 {% endfor %}
-	 {% for item in ipr.updated_by.all %}
-	       {% if item.processed == 1 and item.ipr.status != 2 %}
-	    Updated by ID <a href="{% url "ietf.ipr.views.show" item.ipr.ipr_id %}">#{{ item.ipr.ipr_id }}</a>.<br/> 
-	       {% endif %}
-	 {% endfor %}
+     {% endfor %}
+     {% for item in ipr.relatedipr_target_set.all %}
+        {% comment %}{% if item.processed == 1 and item.ipr.status != 2 %}{% endcomment %}
+        {% if item.source.state_id == "posted" %}
+            Updated by ID <a href="{% url "ietf.ipr.views.show" item.source.id %}">#{{ item.source.id }}</a>.<br/> 
+        {% endif %}
+     {% endfor %}
       </td>
    </tr>
-   {% if ipr.status == 1 %}
-      {% if ipr.legacy_title_1 %}
-         <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-	    <td></td>
-	    <td></td>
-	    <td>
-	       <b>*</b>
-               <a href="{{ ipr.legacy_url_1 }}">{{ ipr.legacy_title_1 }}</a>
-	    </td>
-	 </tr>
-      {% endif %}
-      {% if ipr.legacy_title_2 %}
-         <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-	    <td></td>
-	    <td></td>
-	    <td>
-	       <b>*</b>
-               <a href="{{ ipr.legacy_url_2 }}">{{ ipr.legacy_title_2 }}</a>
-	    </td>
-	 </tr>
-      {% endif %}
-   {% endif %}
+

@@ -1,0 +1,16 @@
+{% extends "ipr/admin_base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+
+{% load ietf_filters %}
+
+{% block tab_content %}
+
+<h2>Pending Disclosures</h2>
+<table id="pending-iprs" class="ietf-table" width="820">
+   <tr><th class="date-column">Submitted</th><th class="id-column">ID #</th><th class="title-column">Title of IPR Disclosure</th><th>Query</th><th>Response Due</th></tr>
+   {% for ipr in iprs %}
+   {% include "ipr/admin_item.html" %}
+   {% endfor %}
+</table>
+
+{% endblock %}  <!-- tab_content -->

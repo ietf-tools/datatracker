@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load ietf_filters %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+
+{% block title %}IPR Details - {{ ipr.title }}{% endblock %}
+
+{% block pagehead %}
+<meta name="description" content="IPR disclosure #{{ipr.ipr_id}}: {{ ipr.title }} ({{ ipr.time|date:"Y" }})" />
+<link rel="stylesheet" type="text/css" href="/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css"></link>
+<link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
+{% endblock %}
+
+{% block content %}
+<h1>{{ ipr.title }}<br/>{{ name }}</h1>
+
+<div id="mytabs" class="yui-navset">
+<ul class="yui-nav">
+  {% for name, t, url, active, tooltip in tabs %}
+  <li {% if t == selected %}class="selected"{% endif %}{% if tooltip %}title="{{tooltip}}"{% endif %}{% if not active %}class="disabled"{% endif %}><a{% if active %} href="{{ url }}"{% endif %}><em>{{ name }}</em></a></li>
+  {% endfor %}
+</ul>
+</div>
+
+{% block tab_content %}
+
+{% endblock %} <!-- tab_content -->
+
+{% endblock %}

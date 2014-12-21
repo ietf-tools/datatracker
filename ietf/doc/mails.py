@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
-from ietf.ipr.search import iprs_from_docs, related_docs
+from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent, DocTagName
 from ietf.doc.utils import needed_ballot_positions
 from ietf.person.models import Person
@@ -112,9 +112,9 @@ def generate_last_call_announcement(request, doc):
 
     doc.filled_title = textwrap.fill(doc.title, width=70, subsequent_indent=" " * 3)
     
-    iprs, _ = iprs_from_docs(related_docs(DocAlias.objects.get(name=doc.canonical_name())))
+    iprs = iprs_from_docs(related_docs(DocAlias.objects.get(name=doc.canonical_name())))
     if iprs:
-        ipr_links = [ urlreverse("ietf.ipr.views.show", kwargs=dict(ipr_id=i.ipr_id)) for i in iprs]
+        ipr_links = [ urlreverse("ietf.ipr.views.show", kwargs=dict(id=i.id)) for i in iprs]
         ipr_links = [ settings.IDTRACKER_BASE_URL+url if not url.startswith("http") else url for url in ipr_links ]
     else:
         ipr_links = None

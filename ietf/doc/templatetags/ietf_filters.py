@@ -9,12 +9,16 @@ from email.utils import parseaddr
 from ietf.doc.models import ConsensusDocEvent
 from django import template
 from django.utils.html import escape, fix_ampersands
+from django.utils.text import wrap
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, urlize
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
 
 register = template.Library()
+
+def collapsebr(html):
+    return re.sub('(<(br ?/|/p)>[ \n]*)(<(br) ?/?>[ \n]*)*(<(br|p) ?/?>[ \n]*)', '\\1\\5', html)
 
 @register.filter(name='expand_comma')
 def expand_comma(value):
@@ -280,7 +284,7 @@ def split(text, splitter=None):
     return text.split(splitter)
 
 @register.filter(name="wrap_long_lines")
-def wrap_long_lines(text):
+def wrap_long_lines(text, width=72):
     """Wraps long lines without loosing the formatting and indentation
        of short lines"""
     if not isinstance(text, (types.StringType,types.UnicodeType)):
@@ -441,26 +445,26 @@ def ad_area(user):
     return None
 
 @register.filter
-def format_history_text(text):
+def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
     full = mark_safe(text)
 
     if text.startswith("This was part of a ballot set with:"):
         full = urlize_ietf_docs(full)
 
-    return format_snippet(full)
+    return format_snippet(full, trunc_words)
 
 @register.filter
-def format_snippet(text): 
-    full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(text)))))
-    snippet = truncatewords_html(full, 25)
+def format_snippet(text, trunc_words=25): 
+    full = mark_safe(keep_spacing(collapsebr(linebreaksbr(urlize(sanitize_html(text))))))
+    snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
         return mark_safe(u'<div class="snippet">%s<span class="show-all">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
     return full
 
 @register.filter
 def format_editable_snippet(text,link): 
-    full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(text)))))
+    full = mark_safe(keep_spacing(collapsebr(linebreaksbr(urlize(sanitize_html(text))))))
     snippet = truncatewords_html(full, 25)
     if snippet != full:
         return mark_safe(u'<div class="snippet">%s<span class="show-all">[show all]</span></div><div style="display:none" class="full">%s' % (format_editable(snippet,link),format_editable(full,link)) )
@@ -528,4 +532,34 @@ def consensus(doc):
             return "No"
     else:
         return "Unknown"
+
+# The function and class below provides a tag version of the builtin wordwrap filter
+# https://djangosnippets.org/snippets/134/
+@register.tag
+def wordwrap(parser, token):
+    """
+    This is a tag version of the Django builtin 'wordwrap' filter.  This is useful
+    if you need to wrap a combination of fixed template text and template variables.
+
+    Usage:
+    
+    {% wordwrap 80 %}
+    some really long text here, including template variable expansion, etc.
+    {% endwordwrap %}
+    """
+    try:
+        tag_name, len = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "The wordwrap tag requires exactly one argument: width."
+    nodelist = parser.parse(('endwordwrap',))
+    parser.delete_first_token()
+    return WordWrapNode(nodelist, len)
+
+class WordWrapNode(template.Node):
+    def __init__(self, nodelist, len):
+        self.nodelist = nodelist
+        self.len = len
+    
+    def render(self, context):
+        return wrap(str(self.nodelist.render(context)), int(self.len))
 

@@ -224,7 +224,6 @@ INSTALLED_APPS = (
     'ietf.secr.areas',
     'ietf.secr.drafts',
     'ietf.secr.groups',
-    'ietf.secr.ipradmin',
     'ietf.secr.meetings',
     'ietf.secr.proceedings',
     'ietf.secr.roles',
@@ -325,7 +324,7 @@ CACHES = {
     }
 }
 
-IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
+IPR_EMAIL_TO = 'ietf-ipr@ietf.org'
 DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
 
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
@@ -476,4 +475,3 @@ if SERVER_MODE != 'production':
     if 'SECRET_KEY' not in locals():
         SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
     ALLOWED_HOSTS = ['*',]
-

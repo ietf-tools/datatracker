@@ -1,0 +1,31 @@
+{% load ietf_filters %}
+The Patent Holder states that its position with respect to licensing any patent claims
+contained in the patent(s) or patent application(s) disclosed above that would necessarily
+be infringed by implementation of the technology required by the relevant IETF
+specification ("Necessary Patent Claims"), for the purpose of implementing such
+specification, is as follows(select one licensing declaration option only):
+
+{% if option == 1 %}
+    No License Required for Implementers.
+{% elif option == 2 %}
+    Royalty-Free, Reasonable and Non-Discriminatory License to All Implementers.
+{% elif option == 3 %}
+    Reasonable and Non-Discriminatory License to All Implementers with Possible
+    Royalty/Fee.
+{% elif option == 4 %}
+    Licensing Declaration to be Provided Later (implies a willingness to commit to the
+    provisions of a), b), or c) above to all implementers; otherwise, the next option 
+    "Unwilling to Commit to the Provisions of a), b), or c) Above" - must be selected)
+{% elif option == 5 %}
+    Unwilling to Commit to the Provisions of a), b), or c) Above
+{% elif option == 6 %}
+    See text box below for licensing declaration.
+{% else %}
+    None selected.
+{% endif %}
+
+{% if extra %}{{ extra|safe|wordwrap:80|indent }}
+
+{% endif %}Licensing information, comments, notes or URL for further information:
+
+{{ info|safe|wordwrap:80|indent }}

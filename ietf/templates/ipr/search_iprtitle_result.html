@@ -1,7 +1,7 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "ipr/search_result.html" %}
 {% load ietf_filters %}
-{% block search_header %}{% if not count %}Search result on {{ q }}{% else %}IPR Disclosure Title Search Result{% endif %}{% endblock %}</b></td></tr>
+{% block search_header %}{% if not iprs %}Search result on {{ q }}{% else %}IPR Disclosure Title Search Result{% endif %}{% endblock %}</b></td></tr>
 {% block intro_prefix %}IPR that{% endblock %}
 {% block intro_suffix %}and has the string <b><i>"{{ q }}"</i></b> within the IPR disclosure title.{% endblock %}
 {% block search_failed %}No IPR disclosures with the word(s) "<i>{{ q }}</i>" in the title have been submitted{% endblock %}

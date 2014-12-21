@@ -2,102 +2,18 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% block title %}IPR Search{% endblock %}
 
-{% block morecss %}
-form { clear:both; margin-top:1em;}
-label { float:left; width: 200px; }
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
 {% endblock %}
+
 {% block content %}
 
-<h1>IPR Search</h1>
-<h2>Document Search</h2>
-<div class="ietf-box search-form-box">
-  <form>
-    <input type="hidden" name="option" value="document_search">  
-    <label>I-D name (draft-...):</label>
-    <input type="text" name="document_search" size="30">
-    <input type="submit" value="SEARCH" >
-  </form>
-
-  <script language="javascript"><!--
-   function IsNumeric(strString) {
-     var strValidChars = "0123456789.-";
-     var strChar;
-     var blnResult = true;
-
-     if (strString.length == 0) return false;
-
-     for (i = 0; i < strString.length && blnResult == true; i++)
-     {
-       strChar = strString.charAt(i);
-       if (strValidChars.indexOf(strChar) == -1)
-       {
-	 blnResult = false;
-       }
-     }
-     return blnResult;
-   }
-
-   function check_numeric(val) {
-     if (IsNumeric(val)) {
-       return true;
-     } else {
-       alert ("Please enter numerics only");
-       return false; 
-     }
-     return false;
-   }
-   // -->
-  </script>
-  <form name="form_rfc_search">
-    <input type="hidden" name="option" value="rfc_search">
-    <label>RFC Number:</label>
-    <input type="text" name="rfc_search" size="8">
-    <input type="submit" value="SEARCH" onClick="return check_numeric(document.form_rfc_search.rfc_search.value);">
-  </form>
-</div>
-
-<h2>Keyword Search</h2>
-
-<div class="ietf-box search_form_box">
-
-  <form>
-     <input type="hidden" name="option" value="patent_search">
-     <label>Name of patent owner/applicant:</label>
-     <input type="text" name="patent_search" size="30">
-     <input type="submit" value="SEARCH">
-  </form>
-  <form>
-     <input type="hidden" name="option" value="patent_info_search"/>
-     <label>Characters in patent information (Full/Partial):</label>
-     <input type="text" name="patent_info_search" size="30"/>
-     <input type="submit" value="SEARCH"/>
-  </form>
-
-  <font size="-1" color="red">* The search string must contain at least three characters, including at least one digit, and include punctuation marks. For best results, please enter the entire string, or as much of it as possible.</font>
-
-  <form>
-     <input type="hidden" name="option" value="wg_search">
-     <label>Working group name:</label>
-     <select name="wg_search">
-       <option value="">--Select WG</option>
-       {% for wg in wgs %}
-         <option value="{{ wg.acronym }}">{{ wg.acronym }}</option>{% endfor %}
-     </select>
-     <input type="submit" value="SEARCH" width="15">
-  </form>
-  <form>
-    <input type="hidden" name="option" value="title_search"/>
-    <label>Words in document title:</label>
-    <input type="text" name="title_search" size="30" />
-    <input type="submit" value="SEARCH" />
-  </form>
-  <form>
-    <input type="hidden" name="option" value="ipr_title_search" />
-    <label>Words in IPR disclosure title:</label>
-    <input type="text" name="ipr_title_search" size="30" />
-    <input type="submit" value="SEARCH" />
-  </form>
-</div>
+{% include "ipr/search_form.html" %}
 
 <p><a href="{% url "ietf.ipr.views.showlist" %}">Back to IPR Disclosure Page</a></p>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="/js/lib/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" src="/js/ipr-search.js"></script>
 {% endblock %}
