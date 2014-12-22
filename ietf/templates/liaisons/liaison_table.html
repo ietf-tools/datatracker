@@ -1,4 +1,6 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load ietf_filters %}
+{% load future %}
 
 <table class="ietf-table" width="100%">
 <tr>
@@ -10,7 +12,7 @@
 </tr>
 
 {% for liaison in liaisons %}
-<tr class="{% cycle oddrow,evenrow %}">
+<tr class="{% cycle 'oddrow','evenrow' %}">
   <td style="white-space:nowrap;">{{ liaison.submitted|date:"Y-m-d" }}</td>
   <td>{{ liaison.from_name }}</td>
   <td>
