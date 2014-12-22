@@ -433,7 +433,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
         if author:
             nomination.nominator_email = author.address
-            feedback.author = author
+            feedback.author = author.address
             feedback.save()
 
         nomination.nominee = nominee
