@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from ietf.meeting.models import Meeting, Room, Session, TimeSlot, Constraint, Schedule, ScheduledSession
+from ietf.meeting.models import Meeting, Room, Session, TimeSlot, Constraint, Schedule, ScheduledSession, ResourceAssociation
 
 class RoomAdmin(admin.ModelAdmin):
     list_display = ["id", "meeting", "name", "capacity", ]
@@ -94,3 +94,6 @@ class ScheduledSessionAdmin(admin.ModelAdmin):
 admin.site.register(ScheduledSession, ScheduledSessionAdmin)
 
 
+class ResourceAssociationAdmin(admin.ModelAdmin):
+    list_display = ["desc", "icon", "desc", ]
+admin.site.register(ResourceAssociation, ResourceAssociationAdmin)
