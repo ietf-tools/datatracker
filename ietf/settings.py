@@ -198,7 +198,6 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'django.contrib.humanize',
     'django.contrib.messages',
-    'south',
     'tastypie',
     'ietf.person',
     'ietf.name',
