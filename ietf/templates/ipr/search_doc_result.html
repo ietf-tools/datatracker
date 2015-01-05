@@ -23,11 +23,13 @@
              </tr>
              {% if doc.iprdocrel_set.all %}
               {% for ipr in doc.iprdocrel_set.all %}
+              {% if ipr.disclosure.state.slug in states %}
                <tr valign="top">
                   <td width="100">{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
                   <td width="90"><li>ID # {{ ipr.disclosure.id }}</li></td>
                               <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">"{{ ipr.disclosure.title }}"</a></td>
                </tr>
+               {% endif %}
               {% endfor %}
              {% else %}
              <tr>

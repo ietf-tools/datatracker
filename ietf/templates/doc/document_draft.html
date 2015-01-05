@@ -231,7 +231,7 @@
 
   <div class="links">
     <a href="mailto:{{ doc.name }}@tools.ietf.org?subject=Mail%20regarding%20{{ doc.name }}" rel="nofollow">Email Authors</a>
-  | <a href="{% url "ipr_search" %}?option=document_search&amp;id={{ doc.name }}" rel="nofollow">IPR Disclosures{% if doc.related_ipr %} ({{doc.related_ipr|length}}){% endif %}</a>
+  | <a href="{% url "ipr_search" %}?submit=draft&amp;id={{ doc.name }}" rel="nofollow">IPR Disclosures{% if doc.related_ipr %} ({{doc.related_ipr|length}}){% endif %}</a>
   | <a href="{% url 'doc_references' doc.canonical_name %}" rel="nofollow">References</a>
   | <a href="{% url 'doc_referenced_by' doc.canonical_name %}" rel="nofollow">Referenced By</a>
   | <a href="http://www.ietf.org/tools/idnits?url=http://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank">Check nits</a>
