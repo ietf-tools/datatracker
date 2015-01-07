@@ -16,7 +16,7 @@ def tokeninput_id_name_json(objs):
 
     formatter = format_email if objs and isinstance(objs[0], Email) else format_person
 
-    return json.dumps([{ "id": o.pk, "name": formatter(o) } for o in objs])
+    return json.dumps([{ "id": o.pk, "name": formatter(o) } for o in objs if o])
 
 class AutocompletedPersonsField(forms.CharField):
     """Tokenizing autocompleted multi-select field for choosing
