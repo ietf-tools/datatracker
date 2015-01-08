@@ -396,7 +396,7 @@ def new(request):
 @role_required('Secretariat')
 def roll_call(request, date):
     agenda = agenda_data(date=date)
-    ads = Person.objects.filter(role__name='ad', role__group__state="active")
+    ads = Person.objects.filter(role__name='ad', role__group__state="active",role__group__type="area")
     sorted_ads = sorted(ads, key = lambda a: a.name_parts()[3])
 
     return render_to_response('telechat/roll_call.html', {
