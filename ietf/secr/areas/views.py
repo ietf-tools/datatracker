@@ -274,9 +274,7 @@ def modify(request, name):
             role.delete()
             
             # update groups that have this AD as primary AD
-            for group in Group.objects.filter(ad=person,type='wg',state__in=('active','bof')):
-                group.ad = None
-                group.save()
+            Role.objects.filter(name__in=('ad','pre-ad'),person=person,group__type='wg',group__state__in=('active','bof')).delete()
             
             messages.success(request, 'The Area Director has been retired successfully!')
 

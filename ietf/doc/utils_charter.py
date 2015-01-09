@@ -125,7 +125,6 @@ def default_action_text(group, charter, by):
                                    secr=group.role_set.filter(name="secr"),
                                    techadv=group.role_set.filter(name="techadv"),
                                    milestones=group.groupmilestone_set.filter(state="charter"),
-                                   ad_email=group.ad.role_email("ad") if group.ad else None,
                                    action_type=action,
                                    ))
 
@@ -145,7 +144,6 @@ def default_review_text(group, charter, by):
                                    secr=group.role_set.filter(name="secr"),
                                    techadv=group.role_set.filter(name="techadv"),
                                    milestones=group.groupmilestone_set.filter(state="charter"),
-                                   ad_email=group.ad.role_email("ad") if group.ad else None,
                                    review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
                                    review_type="new" if group.state_id == "proposed" else "recharter",
                                    )

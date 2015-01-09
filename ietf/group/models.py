@@ -36,19 +36,25 @@ class GroupInfo(models.Model):
             res += " %s (%s)" % (self.type, self.acronym)
         return res
 
+    def ad_role(self):
+        return self.role_set.filter(name='ad').first()
+
     @property
     def ad(self):
-        ad_role = self.role_set.filter(name__slug='ad').first()
+        #assert(False) # These methods are deprecated  - expect them to go away when the _ad field is removed
+        ad_role = self.ad_role()
         return ad_role and ad_role.person
 
     @ad.setter
     def ad(self,value):
-        self.role_set.filter(name__slug='ad').delete()
+        #assert(False)
+        self.role_set.filter(name='ad').delete()
         if value:
             self.role_set.create(name=RoleName.objects.get(slug='ad'), person=value, email=value.role_email('ad'))
 
     @property 
     def ad_id(self):
+        #assert(False)
         return self.ad.id
 
     @property
@@ -127,8 +133,8 @@ class Group(GroupInfo):
             group1['parent_href']  = urljoin(host_scheme, self.parent.json_url())
         # uncomment when people URL handle is created
         try:
-            if self.ad is not None:
-                group1['ad_href']      = urljoin(host_scheme, self.ad.json_url())
+            if self.ad_role() is not None:
+                group1['ad_href']      = urljoin(host_scheme, self.ad_role().person.json_url())
         except Person.DoesNotExist:
             pass
         group1['list_email'] = self.list_email

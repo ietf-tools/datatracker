@@ -37,8 +37,8 @@
             </td>
         </tr>
         <tr><td>Primary Area Director:</td>
-            <td>{% if group.ad %}
-                  <a href="{% url "rolodex_view" id=group.ad.id %}">{{ group.ad }}</a>
+            <td>{% if group.ad_role %}
+                  <a href="{% url "rolodex_view" id=group.ad_role.person.id %}">{{ group.ad_role.person }}</a>
                 {% endif %} 
             </td></tr>
         <tr><td>Meeting Scheduled:</td><td>{{ group.meeting_scheduled}}</td></tr>

@@ -114,7 +114,7 @@ def agenda_json(request, date=None):
                     'rev': doc.rev,
                     'wgname': doc.group.name,
                     'acronym': doc.group.acronym,
-                    'ad': doc.group.ad.name if doc.group.ad else None,
+                    'ad': doc.group.ad_role().person.name if doc.group.ad_role() else None,
                     }
 
                 # consider moving the charters to "docs" like the other documents
@@ -446,8 +446,8 @@ def milestones_needing_review(request):
     # collect milestones, grouped on AD and group
     ads = {}
     for m in GroupMilestone.objects.filter(state="review").exclude(group__state="concluded").distinct().select_related("group"):
-        if m.group.ad:
-            groups = ads.setdefault(m.group.ad, {})
+        if m.group.ad_role():
+            groups = ads.setdefault(m.group.ad_role().person, {})
             milestones = groups.setdefault(m.group, [])
             milestones.append(m)
 

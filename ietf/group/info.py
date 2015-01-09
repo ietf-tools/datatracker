@@ -61,7 +61,7 @@ def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
 
 def fill_in_charter_info(group, include_drafts=False):
-    group.areadirector = group.ad.role_email("ad", group.parent) if group.ad else None
+    group.areadirector = getattr(group.ad_role(),'email',None)
 
     personnel = {}
     for r in Role.objects.filter(group=group).select_related("email", "person", "name"):
@@ -69,8 +69,8 @@ def fill_in_charter_info(group, include_drafts=False):
             personnel[r.name_id] = []
         personnel[r.name_id].append(r)
 
-    if group.parent and group.parent.type_id == "area" and group.ad and "ad" not in personnel:
-        ad_roles = list(Role.objects.filter(group=group.parent, name="ad", person=group.ad))
+    if group.parent and group.parent.type_id == "area" and group.ad_role() and "ad" not in personnel:
+        ad_roles = list(Role.objects.filter(group=group.parent, name="ad", person=group.ad_role().person))
         if ad_roles:
             personnel["ad"] = ad_roles
 
