@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block title %}Active IETF Working Groups{% endblock %}
 
 {% block morecss %}
-.ietf-wg-table { width: 100%; max-width:70em; }
+.ietf-wg-table { width: 100%; max-width:80em; }
 .ietf-wg-table tr { vertical-align:top; }
 {% endblock morecss %}
 
@@ -80,12 +80,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <table class="ietf-wg-table">
          {% for group in area.groups %}
 	 <tr>
-            <td width="8%;"><a href="{% url "ietf.group.info.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
-	    <td width="1%">{% for ad in area.ads %}{% if ad.person_id == group.ad_role.person.id %}<span title="AD for {{ group.acronym }}: {{ ad.person }}" class="square bgcolor{{forloop.counter}}"></span>{% endif %}{% endfor %}</td>
-	    <td width="35%">{{ group.name }}</td>
-	    <td width="15%"><a href="{{ group.list_archive }}"><span title="Click to view list archive">{{ group.list_email }}</span></a></td>
-	    <td width="8%"><a href="{{ group.list_subscribe_url }}">subscribe</a></td>
-	    <td width="33%">{% for chair in group.chairs %}<a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+            <td width="7%;"><a href="{% url "ietf.group.info.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
+	    <td width="1%"><span title="AD for {{ group.acronym }}: {{ group.ad_role.person }}" class="square {% if group.ad_out_of_area %}bgcolor3{% else %}{% for ad in area.ads %}{% if ad.person_id == group.ad_role.person.id %}bgcolor{{forloop.counter}}{% endif %}{% endfor %}{% endif %} "></span></td>
+	    <td width="31%">{{ group.name }}</td>
+	    <td width="13%"><a href="{{ group.list_archive }}"><span title="Click to view list archive">{{ group.list_email }}</span></a></td>
+	    <td width="7%"><a href="{{ group.list_subscribe_url }}">subscribe</a></td>
+	    <td width="41%">{% for chair in group.chairs %}<a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% if group.ad_out_of_area %} (Assigned AD: <a href="mailto:{{ group.ad_role.email.address }}">{{ group.ad_role.person.plain_name }}</a>){%endif%}</td>
 	 </tr>
          {% endfor %}
       </table>
