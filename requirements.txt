@@ -4,6 +4,7 @@ cssselect>=0.6.1
 decorator>=3.4.0
 defusedxml>=0.4.1
 lxml>=3.4.0
+mimeparse>=0.1.3
 pyflakes>=0.8.1
 pyquery>1.2.4
 python-dateutil>=2.2
