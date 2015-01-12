@@ -25,7 +25,7 @@ from ietf.secr.utils.meeting import get_upload_root, get_materials, get_timeslot
 from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
-from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession, SessionPresentation
+from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession
 from ietf.secr.proceedings.forms import EditSlideForm, InterimMeetingForm, RecordingForm, RecordingEditForm, ReplaceSlideForm, UnifiedUploadForm
 from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas,
     gen_attendees, gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries,
