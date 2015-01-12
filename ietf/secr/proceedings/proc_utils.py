@@ -83,7 +83,7 @@ def create_recording(session,meeting,group,url):
                                        desc='New revision available',
                                        time=doc.time)
     session.sessionpresentation_set.add(SessionPresentation(session=session,document=doc,rev=doc.rev))
-    
+
 def mycomp(timeslot):
     '''
     This takes a timeslot object and returns a key to sort by the area acronym or None
@@ -330,20 +330,24 @@ def create_proceedings(meeting, group, is_final=False):
             updated_list = ['RFC %s' % get_rfc_num(x.source) for x in rdocs.filter(relationship='updates')]
             if updated_list:
                 rfc.msg += 'updated by ' + ','.join(updated_list)
-        # ----------------------------------------------------------------------
-        # check for blue sheets
-        pattern = os.path.join(meeting_root,'bluesheets','bluesheets-%s-%s-*' % (meeting.number,group.acronym.lower()))
-        files = glob.glob(pattern)
-        bluesheets = []
-        for name in files:
-            basename = os.path.basename(name)
-            obj = {'name': basename,
-                   'url': url_root + "bluesheets/" + basename}
-            bluesheets.append(obj)
-        bluesheets = sorted(bluesheets, key = lambda x: x['name'])
-        # ----------------------------------------------------------------------
     else:
-        drafts = rfcs = bluesheets = None
+        drafts = rfcs = None
+
+    # ----------------------------------------------------------------------
+    # check for blue sheets
+    if meeting.number.startswith('interim'):
+        pattern = os.path.join(meeting_root,'bluesheets','bluesheets-%s*' % (meeting.number))
+    else:
+        pattern = os.path.join(meeting_root,'bluesheets','bluesheets-%s-%s-*' % (meeting.number,group.acronym.lower()))
+    files = glob.glob(pattern)
+    bluesheets = []
+    for name in files:
+        basename = os.path.basename(name)
+        obj = {'name': basename,
+               'url': url_root + "bluesheets/" + basename}
+        bluesheets.append(obj)
+    bluesheets = sorted(bluesheets, key = lambda x: x['name'])
+
 
     # the simplest way to display the charter is to place it in a <pre> block
     # however, because this forces a fixed-width font, different than the rest of

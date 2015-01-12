@@ -85,10 +85,10 @@ and end with
 <br /><br /></td></tr></table>
 
 <h3>Recordings:</h3>
-{% if materials.record %}
+{% if materials.recording %}
 <ul>
-  {% for record in materials.record %}
-  <li><a href="{{ record.href }}" target="_blank">{{ record.title }}</a></li>
+  {% for recording in materials.recording %}
+  <li><a href="{{ recording.href }}" target="_blank">{{ recording.title }}</a></li>
   {% endfor %}
 </ul>
 {% else %}

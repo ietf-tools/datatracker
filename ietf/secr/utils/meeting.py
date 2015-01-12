@@ -14,7 +14,7 @@ def get_materials(group,meeting):
     NOTE, if the group has multiple sessions all materials but recordings will be
     attached to all sessions.
     '''
-    materials = dict(slides=[],recording=[])
+    materials = dict(slides=[],recording=[],bluesheets=[])
     # TODO: status should only be sched, but there is a bug in the scheduler
     for session in Session.objects.filter(group=group,meeting=meeting,status__in=('sched','schedw')):
         for doc in session.materials.exclude(states__slug='deleted').order_by('order'):
@@ -24,12 +24,25 @@ def get_materials(group,meeting):
                 materials[doc.type.slug].append(doc)
     return materials
 
-def get_proceedings_path(meeting, group):
-    if meeting.type.slug == 'interim':
+def get_proceedings_path(meeting,group):
+    if meeting.type_id == 'ietf':
+        path = os.path.join(get_upload_root(meeting),group.acronym + '.html')
+    elif meeting.type_id == 'interim':
         path = os.path.join(get_upload_root(meeting),'proceedings.html')
-    else:
-        path = os.path.join(get_upload_root(meeting),'%s.html' % group.acronym)
     return path
+
+def get_proceedings_url(meeting,group=None):
+    if meeting.type_id == 'ietf':
+        url = "%sproceedings/%s/" % (settings.MEDIA_URL,meeting.number)
+        if group:
+            url = url + "%s.html" % group.acronym
+
+    elif meeting.type_id == 'interim':
+        url = "%sproceedings/interim/%s/%s/proceedings.html" % (
+            settings.MEDIA_URL,
+            meeting.date.strftime('%Y/%m/%d'),
+            group.acronym)
+    return url
     
 def get_session(timeslot, schedule=None):
     '''
