@@ -237,18 +237,18 @@ class WGEntity(Entity):
             result = [p for p in role_persons_with_fixed_email(self.obj.parent, "ad") if p != person]
         else:
             result = []
-        if self.obj.list_subscribe:
+        if self.obj.list_email:
             result.append(FakePerson(name ='%s Discussion List' % self.obj.name,
-                                     address = self.obj.list_subscribe))
+                                     address = self.obj.list_email))
         return result
 
     def get_from_cc(self, person):
         result = [p for p in role_persons_with_fixed_email(self.obj, "chair") if p != person]
         if self.obj.parent:
             result += role_persons_with_fixed_email(self.obj.parent, "ad")
-        if self.obj.list_subscribe:
+        if self.obj.list_email:
             result.append(FakePerson(name ='%s Discussion List' % self.obj.name,
-                                     address = self.obj.list_subscribe))
+                                     address = self.obj.list_email))
         return result
 
     def needs_approval(self, person=None):
