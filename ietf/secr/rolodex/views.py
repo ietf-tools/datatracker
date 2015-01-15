@@ -40,7 +40,7 @@ def add(request):
             
             # search to see if contact already exists
             name = form.cleaned_data['name']
-            results = Person.objects.filter(name=name)
+            results = Alias.objects.filter(name=name)
             if not results:
                 return HttpResponseRedirect('../add-proceed/')
 
@@ -236,11 +236,9 @@ def search(request):
                 #kwargs['email__address__istartswith'] = email
                 kwargs['person__email__address__istartswith'] = email
             if id:
-                #kwargs['id'] = id
                 kwargs['person__id'] = id
             # perform query
             if kwargs:
-                #qs = Person.objects.filter(**kwargs)
                 qs = Alias.objects.filter(**kwargs).distinct()
                 
             results = qs.order_by('name')
