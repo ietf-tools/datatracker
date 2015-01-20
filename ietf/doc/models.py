@@ -195,24 +195,6 @@ class DocumentInfo(models.Model):
         else:
             return False
 
-    def future_presentations(self):
-        """ returns related SessionPresentation objects for meetings that
-            have not yet ended. This implementation allows for 2 week meetings """
-        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
-        return sorted([pres for pres in candidate_presentations if pres.session.meeting.end_date()>=datetime.date.today()], key=lambda x:x.session.meeting.date)
-
-    def last_presented(self):
-        """ returns related SessionPresentation objects for the most recent meeting in the past"""
-        # Assumes no two meetings have the same start date - if the assumption is violated, one will be chosen arbitrariy
-        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__lte=datetime.date.today())
-        candidate_meetings = set([p.session.meeting for p in candidate_presentations if p.session.meeting.end_date()<datetime.date.today()])
-        if candidate_meetings:
-            mtg = sorted(list(candidate_meetings),key=lambda x:x.date,reverse=True)[0]
-            return self.sessionpresentation_set.filter(session__meeting=mtg)
-        else:
-            return None
-
-
     class Meta:
         abstract = True
 
@@ -505,6 +487,23 @@ class Document(DocumentInfo):
         aliases = IprDocAlias.objects.filter(doc_alias__in=list(self.docalias_set.all())+self.all_related_that_doc(['obs','replaces'])).filter(ipr__status__in=[1,3]).values_list('ipr', flat=True).distinct()
         return aliases
 
+    def future_presentations(self):
+        """ returns related SessionPresentation objects for meetings that
+            have not yet ended. This implementation allows for 2 week meetings """
+        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
+        return sorted([pres for pres in candidate_presentations if pres.session.meeting.end_date()>=datetime.date.today()], key=lambda x:x.session.meeting.date)
+
+    def last_presented(self):
+        """ returns related SessionPresentation objects for the most recent meeting in the past"""
+        # Assumes no two meetings have the same start date - if the assumption is violated, one will be chosen arbitrariy
+        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__lte=datetime.date.today())
+        candidate_meetings = set([p.session.meeting for p in candidate_presentations if p.session.meeting.end_date()<datetime.date.today()])
+        if candidate_meetings:
+            mtg = sorted(list(candidate_meetings),key=lambda x:x.date,reverse=True)[0]
+            return self.sessionpresentation_set.filter(session__meeting=mtg)
+        else:
+            return None
+
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')
     target = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
@@ -541,6 +540,12 @@ class DocHistory(DocumentInfo):
     def latest_event(self, *args, **kwargs):
         kwargs["time__lte"] = self.time
         return self.doc.latest_event(*args, **kwargs)
+
+    def future_presentations(self):
+        return self.doc.future_presentations()
+
+    def last_presented(self):
+        return self.doc.last_presented()
 
     class Meta:
         verbose_name = "document history"
