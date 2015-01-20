@@ -1,5 +1,5 @@
 <td class="ipr">
   {% if doc.type_id == "draft" and doc.ipr %}
-  <a href="{% url "ipr_search" %}?option=document_search&id={{ doc.canonical_name }}" rel="nofollow">IPR: {{ doc.ipr|length }}</a>
+  <a href="{% url "ipr_search" %}?submit=draft&id={{ doc.canonical_name }}" rel="nofollow">IPR: {{ doc.ipr|length }}</a>
   {% endif %}
 </td>
