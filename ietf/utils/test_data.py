@@ -11,7 +11,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
 from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
-from ietf.person.models import Person, Alias, Email
+from ietf.person.models import Person, Email
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None):
     """Add person/user/email and role."""
@@ -28,7 +28,6 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     user.set_password(password)
     user.save()
     person = Person.objects.create(name=name, ascii=name, user=user)
-    Alias.objects.create(name=name, person=person)
     email = Email.objects.create(address=email_address, person=person)
     Role.objects.create(group=group, name_id=role_name, person=person, email=email)
 
@@ -50,7 +49,6 @@ def make_immutable_base_data():
 
     # system
     system_person = Person.objects.create(name="(System)", ascii="(System)", address="")
-    Alias.objects.create(person=system_person, name=system_person.name)
     Email.objects.create(address="", person=system_person)
 
     # high-level groups
@@ -94,7 +92,6 @@ def make_immutable_base_data():
     for i in range(1, 10):
         u = User.objects.create(username="ad%s" % i)
         p = Person.objects.create(name="Ad No%s" % i, ascii="Ad No%s" % i, user=u)
-        Alias.objects.create(name=p.name, person=p)
         email = Email.objects.create(address="ad%s@ietf.org" % i, person=p)
         if i < 6:
             # active

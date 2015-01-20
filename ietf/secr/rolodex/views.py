@@ -98,11 +98,6 @@ def add_proceed(request):
             person.user = user
             person.save()
             
-            # create the Alias
-            Alias.objects.create(person=person,name=name)
-            if person.ascii != person.name:
-                Alias.objects.create(person=person,name=person.ascii)
-            
             messages.success(request, 'The Rolodex entry was added successfully')
             return redirect('rolodex_view', id=person.id)
     else:

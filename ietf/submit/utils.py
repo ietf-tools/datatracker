@@ -9,7 +9,7 @@ from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import StreamName
-from ietf.person.models import Person, Alias, Email
+from ietf.person.models import Person, Email
 from ietf.submit.mail import announce_to_lists, announce_new_version, announce_to_authors
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
 from ietf.utils import unaccent
@@ -237,10 +237,6 @@ def ensure_person_email_info_exists(name, email):
         person.name = name
         person.ascii = unaccent.asciify(person.name)
         person.save()
-
-        Alias.objects.create(name=person.name, person=person)
-        if person.name != person.ascii:
-            Alias.objects.create(name=person.ascii, person=person)
 
     # make sure we have an email address
     if email:
