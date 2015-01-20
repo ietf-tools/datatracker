@@ -737,7 +737,8 @@ def search(request):
                 "iprs": iprs,
                 "docs": docs,
                 "doc": doc,
-                "form":form},
+                "form":form,
+                "states":states},
                 context_instance=RequestContext(request)
             )
 
