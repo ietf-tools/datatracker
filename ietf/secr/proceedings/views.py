@@ -38,7 +38,7 @@ from ietf.secr.proceedings.models import InterimMeeting    # proxy model
 # -------------------------------------------------
 # Globals 
 # -------------------------------------------------
-AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair')
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IRTF Chair','IAB Group Chair','Area Director','Secretariat','Team Chair')
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
