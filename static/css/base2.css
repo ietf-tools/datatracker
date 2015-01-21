@@ -188,6 +188,7 @@ form table .help, form table .helptext {
 .color2 { color: #00ffff; }
 .bgcolor1 { background-color: #ffb000; }
 .bgcolor2 { background-color: #00ffff; }
+.bgcolor3 { background-color: #f00000; }
 .square { width: 0.8ex; height: 0.8ex; margin: 0; padding: 0; display: inline-block; position: relative; top: 0.8ex; }
 .big	{ font-size: 109.5%; margin: 0; padding: 0; }
 .large  { font-size: 120%; margin: 0; padding: 0; }
