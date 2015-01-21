@@ -2,15 +2,16 @@
 To: <iesg-secretary@ietf.org>
 Subject: Possible duplicate Person objects for {{name}}
 
-A new Person object was just created for {{name}}.
+A new Person and/or Alias object was just created for {{name}}.
 
 There are now {{persons|length}} Person objects sharing that name.
 
 Please check to see if they represent the same actual person, and if so, merge the objects as appropriate.
 
-{% for person in persons %}Person {{forloop.counter}} (pk={{person.pk}})
-    time:  {{person.time}}
-    ascii: {{person.ascii}}
-    email: {% for email in person.email_set.all %}{{ email.address }} {% endfor %}
+{% for person in persons %}Person {{forloop.counter}} {{ person.name }} (pk={{person.pk}})
+    time:    {{person.time}}
+    ascii:   {{person.ascii}}
+    email:   {% for email in person.email_set.all %}{{ email.address }} {% endfor %}
+    aliases: {{ person.alias_set.all|join:", " }}
 
 {% endfor %} {% endautoescape %}

@@ -127,6 +127,20 @@ class Alias(models.Model):
     """
     person = models.ForeignKey(Person)
     name = models.CharField(max_length=255, db_index=True)
+
+    def save(self, *args, **kwargs):
+        created = not self.pk
+        super(Alias, self).save(*args, **kwargs)
+        if created:
+            if Alias.objects.filter(name=self.name).exclude(person__name=self.name).count() > 1 :
+                msg = render_to_string('person/mail/possible_duplicates.txt',
+                                       dict(name=self.name,
+                                            persons=Person.objects.filter(alias__name=self.name),
+                                            settings=settings
+                                            ))
+                send_mail_preformatted(None, msg)
+
+
     def __unicode__(self):
         return self.name
     class Meta:
