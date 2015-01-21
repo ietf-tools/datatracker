@@ -32,7 +32,7 @@
 
 import os, datetime, urllib, json, glob
 
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404 , HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
@@ -909,12 +909,15 @@ def telechat_date(request, name):
                                    login=login),
                               context_instance=RequestContext(request))
 
-@role_required('Area Director', 'Secretariat')
 def edit_notify(request, name):
     """Change the set of email addresses document change notificaitions go to."""
 
-    login = request.user.person
+    login = request.user
     doc = get_object_or_404(Document, name=name)
+
+    if not ( is_authorized_in_doc_stream(request.user, doc) or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"]) ):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
     init = { "notify" : doc.notify }
 
     if request.method == 'POST':
@@ -924,7 +927,7 @@ def edit_notify(request, name):
             if form.is_valid():
                 new_notify = form.cleaned_data['notify']
                 if set(new_notify.split(',')) != set(doc.notify.split(',')):
-                    e = make_notify_changed_event(request, doc, login, new_notify)
+                    e = make_notify_changed_event(request, doc, login.person, new_notify)
                     doc.notify = new_notify
                     doc.time = e.time
                     doc.save()
