@@ -132,7 +132,7 @@ class Alias(models.Model):
         created = not self.pk
         super(Alias, self).save(*args, **kwargs)
         if created:
-            if Alias.objects.filter(name=self.name).exclude(person__name=self.name).count() > 1 :
+            if Alias.objects.filter(name=self.name).exclude(person=self.person).count() > 0 :
                 msg = render_to_string('person/mail/possible_duplicates.txt',
                                        dict(name=self.name,
                                             persons=Person.objects.filter(alias__name=self.name),
