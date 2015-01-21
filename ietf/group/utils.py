@@ -61,7 +61,7 @@ def get_group_ads_emails(wg):
         return get_area_ads_emails(wg.parent)
 
     # As fallback, just return the single ad within the wg
-    return [wg.ad and wg.ad.email_address()]
+    return [wg.ad_role() and wg.ad_role().email.address]
 
 def get_group_chairs_emails(wg):
     " Get list of area chairs' emails for a given WG "

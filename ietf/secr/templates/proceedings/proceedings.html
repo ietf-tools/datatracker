@@ -68,10 +68,10 @@ and end with
         <li><a href="mailto:{{ ad.email.address }}">{{ ad.person.name }}</a></li>
       {% endfor %}
       </ul>
-      {% if group.ad %}
-          <h3>{{ group.parent.name }} Advisor</h3>
+      {% if group.ad_role %}
+          <h3>Assigned Area Director</h3>
           <ul>
-              <li><a href="mailto:{{ group.ad.email_address }}">{{ group.ad }}</a></li>
+              <li><a href="mailto:{{ group.ad_role.email.address }}">{{ group.ad_role.person }}</a></li>
           </ul>
       {% endif %}
       {% if tas %}

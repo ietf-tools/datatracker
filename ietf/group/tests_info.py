@@ -42,7 +42,7 @@ class GroupPagesTests(TestCase):
         self.assertTrue(group.parent.name in r.content)
         self.assertTrue(group.acronym in r.content)
         self.assertTrue(group.name in r.content)
-        self.assertTrue(group.ad.plain_name() in r.content)
+        self.assertTrue(group.ad_role().person.plain_name() in r.content)
 
         url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="rg"))
         r = self.client.get(url)
@@ -77,7 +77,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.acronym in r.content)
         self.assertTrue(group.name in r.content)
-        self.assertTrue(group.ad.plain_name() in r.content)
+        self.assertTrue(group.ad_role().person.plain_name() in r.content)
         self.assertTrue(chair.address in r.content)
         self.assertTrue("This is a charter." in r.content)
 
@@ -86,7 +86,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.acronym in r.content)
         self.assertTrue(group.name in r.content)
-        self.assertTrue(group.ad.plain_name() in r.content)
+        self.assertTrue(group.ad_role().person.plain_name() in r.content)
         self.assertTrue(chair.address in r.content)
         self.assertTrue("This is a charter." in r.content)
 
@@ -424,7 +424,7 @@ class GroupEditTests(TestCase):
         group = Group.objects.get(acronym="mars")
         self.assertEqual(group.name, "Mars Not Special Interest Group")
         self.assertEqual(group.parent, area)
-        self.assertEqual(group.ad, ad)
+        self.assertEqual(group.ad_role().person, ad)
         for k in ("chair", "secr", "techadv"):
             self.assertTrue(group.role_set.filter(name=k, email__address="aread@ietf.org"))
         self.assertTrue(group.role_set.filter(name="delegate", email__address="ad2@ietf.org"))
@@ -714,7 +714,7 @@ class MilestoneTests(TestCase):
         self.assertTrue("Changed milestone" in m.milestonegroupevent_set.all()[0].desc)
         self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("Milestones changed" in outbox[-2]["Subject"])
-        self.assertTrue(group.ad.role_email("ad").address in str(outbox[-2]))
+        self.assertTrue(group.ad_role().email.address in str(outbox[-2]))
         self.assertTrue("Milestones changed" in outbox[-1]["Subject"])
         self.assertTrue(group.list_email in str(outbox[-1]))
 

@@ -175,7 +175,7 @@ def make_test_data():
     create_person(mars_wg, "chair", name="WG Chair Man", username="marschairman")
     create_person(mars_wg, "delegate", name="WG Delegate", username="marsdelegate")
     
-    mars_wg.ad = ad
+    mars_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     mars_wg.save()
 
 

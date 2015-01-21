@@ -238,7 +238,6 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             diff('name', "Name")
             diff('acronym', "Acronym")
             diff('state', "State")
-            diff('ad', "Shepherding AD")
             diff('parent', "IETF Area")
             diff('list_email', "Mailing list email")
             diff('list_subscribe', "Mailing list subscribe address")
@@ -246,8 +245,10 @@ def edit(request, group_type=None, acronym=None, action="edit"):
 
             personnel_change_text=""
             # update roles
-            for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors"), ('delegates', 'delegate', "Delegates")]:
+            for attr, slug, title in [('ad','ad','Shepherding AD'), ('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors"), ('delegates', 'delegate', "Delegates")]:
                 new = clean[attr]
+                if attr == 'ad':
+                    new = [ new.role_email('ad'),] if new else []
                 old = Email.objects.filter(role__group=group, role__name=slug).select_related("person")
                 if set(new) != set(old):
                     changes.append(desc(title,
@@ -298,6 +299,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             return HttpResponseRedirect(group.about_url())
     else: # form.is_valid()
         if not new_group:
+            ad_role = group.ad_role()
             init = dict(name=group.name,
                         acronym=group.acronym,
                         state=group.state,
@@ -305,7 +307,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                         secretaries=Email.objects.filter(role__group=group, role__name="secr"),
                         techadv=Email.objects.filter(role__group=group, role__name="techadv"),
                         delegates=Email.objects.filter(role__group=group, role__name="delegate"),
-                        ad=group.ad_id if group.ad else None,
+                        ad=ad_role and ad_role.person and ad_role.person.id,
                         parent=group.parent.id if group.parent else None,
                         list_email=group.list_email if group.list_email else None,
                         list_subscribe=group.list_subscribe if group.list_subscribe else None,

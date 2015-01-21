@@ -11,8 +11,8 @@ Current Status: {{ group.state.name }} {{ group.type.name }}
 {% endif %}{% if techadv %}Technical advisors:
 {% for r in techadv %}  {{ r.person.plain_name }} <{{r.email.address}}>
 {% endfor %}
-{% endif %}{% if group.ad %}Assigned Area Director:
-  {{ group.ad.plain_name }} <{{ ad_email }}>
+{% endif %}{% if group.ad_role %}Assigned Area Director:
+  {{ group.ad_role.person.plain_name }} <{{ group.ad_role.email.address }}>
 
 {% endif %}{% if group.list_email %}Mailing list
   Address: {{ group.list_email }}

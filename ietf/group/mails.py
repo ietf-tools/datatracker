@@ -47,8 +47,8 @@ def email_milestones_changed(request, group, changes):
 
     # first send to management and chairs
     to = []
-    if group.ad:
-        to.append(group.ad.role_email("ad").formatted_email())
+    if group.ad_role():
+        to.append(group.ad_role().email.formatted_email())
     elif group.type_id == "rg":
         to.append("IRTF Chair <irtf-chair@irtf.org>")
 
@@ -71,8 +71,8 @@ def email_milestone_review_reminder(group, grace_period=7):
     """Email reminders about milestones needing review to management."""
     to = []
 
-    if group.ad:
-        to.append(group.ad.role_email("ad").formatted_email())
+    if group.ad_role():
+        to.append(group.ad_role().email.formatted_email())
     elif group.type_id == "rg":
         to.append("IRTF Chair <irtf-chair@irtf.org>")
 

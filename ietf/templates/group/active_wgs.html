@@ -81,7 +81,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          {% for group in area.groups %}
 	 <tr>
             <td width="8%;"><a href="{% url "ietf.group.info.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
-	    <td width="1%">{% for ad in area.ads %}{% if ad.person_id == group.ad_id %}<span title="AD for {{ group.acronym }}: {{ ad.person }}" class="square bgcolor{{forloop.counter}}"></span>{% endif %}{% endfor %}</td>
+	    <td width="1%">{% for ad in area.ads %}{% if ad.person_id == group.ad_role.person.id %}<span title="AD for {{ group.acronym }}: {{ ad.person }}" class="square bgcolor{{forloop.counter}}"></span>{% endif %}{% endfor %}</td>
 	    <td width="35%">{{ group.name }}</td>
 	    <td width="15%"><a href="{{ group.list_archive }}"><span title="Click to view list archive">{{ group.list_email }}</span></a></td>
 	    <td width="8%"><a href="{{ group.list_subscribe_url }}">subscribe</a></td>

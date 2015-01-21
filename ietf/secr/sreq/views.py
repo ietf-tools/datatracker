@@ -314,9 +314,7 @@ def add_essential_people(group,initial):
     people = set()
     if 'bethere' in initial:
         people.update(initial['bethere'])
-    people.update(Person.objects.filter(role__group=group, role__name='chair'))
-    if group.ad:
-        people.add(group.ad)
+    people.update(Person.objects.filter(role__group=group, role__name__in=['chair','ad']))
     initial['bethere'] = list(people)
     
 

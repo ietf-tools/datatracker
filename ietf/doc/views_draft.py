@@ -534,7 +534,7 @@ def to_iesg(request,name):
     notify = doc.notify
     if not notify:
         notify = get_initial_notify(doc)
-    ad = doc.ad or doc.group.ad
+    ad = doc.ad or getattr(doc.group.ad_role(),'person',None)
 
     if request.method == 'POST':
 
