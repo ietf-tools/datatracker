@@ -744,7 +744,7 @@ class BallotDocEvent(DocEvent):
 
     def active_ad_positions(self):
         """Return dict mapping each active AD to a current ballot position (or None if they haven't voted)."""
-        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active"))
+        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area"))
         res = {}
     
         positions = BallotPositionDocEvent.objects.filter(type="changed_ballot_position",ad__in=active_ads, ballot=self).select_related('ad', 'pos').order_by("-time", "-id")
@@ -763,7 +763,7 @@ class BallotDocEvent(DocEvent):
 
         positions = []
         seen = {}
-        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active").distinct())
+        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area").distinct())
         for e in BallotPositionDocEvent.objects.filter(type="changed_ballot_position", ballot=self).select_related('ad', 'pos').order_by("-time", '-id'):
             if e.ad not in seen:
                 e.old_ad = e.ad not in active_ads

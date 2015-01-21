@@ -18,7 +18,7 @@ class GroupInfo(models.Model):
     type = models.ForeignKey(GroupTypeName, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)
     description = models.TextField(blank=True)
-    ad = models.ForeignKey(Person, verbose_name="AD", blank=True, null=True)
+    _ad = models.ForeignKey(Person, verbose_name="AD", blank=True, null=True, db_column="ad_id")
     list_email = models.CharField(max_length=64, blank=True)
     list_subscribe = models.CharField(max_length=255, blank=True)
     list_archive = models.CharField(max_length=255, blank=True)
@@ -35,6 +35,21 @@ class GroupInfo(models.Model):
         if self.type_id in ("wg", "rg", "area"):
             res += " %s (%s)" % (self.type, self.acronym)
         return res
+
+    @property
+    def ad(self):
+        ad_role = self.role_set.filter(name__slug='ad').first()
+        return ad_role and ad_role.person
+
+    @ad.setter
+    def ad(self,value):
+        self.role_set.filter(name__slug='ad').delete()
+        if value:
+            self.role_set.create(name=RoleName.objects.get(slug='ad'), person=value, email=value.role_email('ad'))
+
+    @property 
+    def ad_id(self):
+        return self.ad.id
 
     @property
     def features(self):

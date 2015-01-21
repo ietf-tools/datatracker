@@ -250,7 +250,7 @@ def agenda_moderator_package(request, date=None):
             flattened_sections.append((num, s))
 
     # add ads
-    data["sections"]["7"]["ads"] = sorted(Person.objects.filter(role__name="ad", role__group__state="active"),
+    data["sections"]["7"]["ads"] = sorted(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area"),
                                           key=lambda p: p.name_parts()[3])
 
     return render_to_response("iesg/moderator_package.html", {
@@ -445,10 +445,11 @@ def discusses(request):
 def milestones_needing_review(request):
     # collect milestones, grouped on AD and group
     ads = {}
-    for m in GroupMilestone.objects.filter(state="review").exclude(group__state="concluded").exclude(group__ad=None).distinct().select_related("group", "group__ad"):
-        groups = ads.setdefault(m.group.ad, {})
-        milestones = groups.setdefault(m.group, [])
-        milestones.append(m)
+    for m in GroupMilestone.objects.filter(state="review").exclude(group__state="concluded").distinct().select_related("group"):
+        if m.group.ad:
+            groups = ads.setdefault(m.group.ad, {})
+            milestones = groups.setdefault(m.group, [])
+            milestones.append(m)
 
     ad_list = []
     for ad, groups in ads.iteritems():

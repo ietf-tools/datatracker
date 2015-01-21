@@ -34,7 +34,7 @@ class GroupForm(forms.Form):
     techadv = AutocompletedEmailsField(label="Technical Advisors", required=False, only_users=True)
     delegates = AutocompletedEmailsField(required=False, only_users=True, max_entries=MAX_GROUP_DELEGATES,
                                           help_text=mark_safe("Chairs can delegate the authority to update the state of group documents - max %s persons at a given time" % MAX_GROUP_DELEGATES))
-    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
+    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type='area').order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
     parent = forms.ModelChoiceField(Group.objects.filter(state="active").order_by('name'), empty_label="(None)", required=False)
     list_email = forms.CharField(max_length=64, required=False)
     list_subscribe = forms.CharField(max_length=255, required=False)

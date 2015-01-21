@@ -328,7 +328,7 @@ def email_ballot_undeferred(request, doc, by, telechat_date):
                    telechat_date=telechat_date))
 
 def generate_issue_ballot_mail(request, doc, ballot):
-    active_ads = Person.objects.filter(role__name="ad", role__group__state="active").distinct()
+    active_ads = Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area").distinct()
     
     positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ballot=ballot).order_by("-time", '-id').select_related('ad')
 

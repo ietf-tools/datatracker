@@ -154,7 +154,7 @@ def default_review_text(group, charter, by):
     return e
 
 def generate_issue_ballot_mail(request, doc, ballot):
-    active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active").distinct()
+    active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active", email__role__group__type="area").distinct()
     
     seen = []
     positions = []
