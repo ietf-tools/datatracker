@@ -172,10 +172,11 @@ class IprDisclosureFormBase(forms.ModelForm):
         super(IprDisclosureFormBase, self).clean()
         cleaned_data = self.cleaned_data
         
-        # if same_as_above not checked require submitted
-        if not self.cleaned_data.get('same_as_ii_above'):
-            if not ( self.cleaned_data.get('submitter_name') and self.cleaned_data.get('submitter_email') ):
-                raise forms.ValidationError('Submitter information must be provided in section VII')
+        if not self.instance.pk:
+            # when entering a new disclosure, if same_as_above not checked require submitted
+            if not self.cleaned_data.get('same_as_ii_above'):
+                if not ( self.cleaned_data.get('submitter_name') and self.cleaned_data.get('submitter_email') ):
+                    raise forms.ValidationError('Submitter information must be provided in section VII')
         
         return cleaned_data
 
@@ -189,7 +190,13 @@ class HolderIprDisclosureForm(IprDisclosureFormBase):
         
     def __init__(self, *args, **kwargs):
         super(HolderIprDisclosureForm, self).__init__(*args, **kwargs)
-        if not self.instance.pk:
+        if self.instance.pk:
+            # editing existing disclosure
+            self.fields['patent_info'].required = False
+            self.fields['holder_contact_name'].required = False
+            self.fields['holder_contact_email'].required = False
+        else:
+            # entering new disclosure
             self.fields['licensing'].queryset = IprLicenseTypeName.objects.exclude(slug='none-selected')
             
     def clean(self):
