@@ -28,8 +28,8 @@
     <h5>IPR:</h5>
      <ul>
      {% for ipr in doc.ipr %}
-        {% if ipr.ipr.status == 1 %}
-        <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title }}</a></li>
+        {% if ipr.disclosure.state.slug == "posted" %}
+        <li><a href="/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a></li>
         {% endif %}
      {% endfor %}
      </ul>

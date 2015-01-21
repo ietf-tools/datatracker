@@ -12,8 +12,8 @@
           <br>Note: {{ doc.conflictdoc.note|linebreaksbr }}
           {% endif %}
           {% for ipr in doc.conflictdoc.ipr %}
-              {% if ipr.ipr.status == 1 %}
-                  <br>IPR: <a href="https://{{ domain }}/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title }}</a>
+              {% if ipr.disclosure.state.slug == "posted" %}
+                  <br>IPR: <a href="https://{{ domain }}/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a>
               {% endif %}
           {% endfor %} 
       </div>
