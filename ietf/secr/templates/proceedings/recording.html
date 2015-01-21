@@ -34,7 +34,12 @@
        {{ form.as_table }}
        </table>
 
-       {% include "includes/buttons_submit_back.html" %}
+        <div class="button-group">
+          <ul>
+            <li><button type="submit" name="submit" value="Submit">Submit</button></li>
+            <li><button type="button" onclick="window.location='../'">Back</button></li>
+          </ul>
+        </div> <!-- button-group -->
  
        </form>
      <div class="inline-related">

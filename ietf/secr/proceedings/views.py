@@ -653,6 +653,10 @@ def recording_edit(request, meeting_num, name):
     meeting = get_object_or_404(Meeting, number=meeting_num)
     
     if request.method == 'POST':
+        button_text = request.POST.get('submit', '')
+        if button_text == 'Cancel':
+            return redirect("proceedings_recording", meeting_num=meeting_num)
+            
         form = RecordingEditForm(request.POST, instance=recording)
         if form.is_valid():
             # save record and rebuild proceedings
