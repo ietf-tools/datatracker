@@ -9,7 +9,7 @@ from pyquery import PyQuery
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
-    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent )
+    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, save_document_in_history )
 from ietf.group.models import Group
 from ietf.person.models import Person
 from ietf.utils.mail import outbox
@@ -204,6 +204,35 @@ class DocTestCase(TestCase):
         # unknown draft
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name="draft-xyz123")))
         self.assertEqual(r.status_code, 404)
+
+    def test_document_primary_and_history_views(self):
+        make_test_data()
+
+        # Ensure primary views of both current and historic versions of documents works
+        for docname in ["draft-imaginary-independent-submission",
+                        "conflict-review-imaginary-irtf-submission",
+                        "status-change-imaginary-mid-review",
+                        "charter-ietf-mars",
+                        "agenda-42-mars",
+                        "minutes-42-mars",
+                        "slides-42-mars-1",
+                       ]:
+            doc = Document.objects.get(name=docname)
+            # give it some history
+            save_document_in_history(doc)
+            doc.rev="01"
+            doc.save()
+
+            r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue("%s-01"%docname in r.content)
+    
+            r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name,rev="01")))
+            self.assertEqual(r.status_code, 302)
+     
+            r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name,rev="00")))
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue("%s-00"%docname in r.content)
 
     def test_document_charter(self):
         make_test_data()

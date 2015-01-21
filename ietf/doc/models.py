@@ -168,6 +168,53 @@ class DocumentInfo(models.Model):
         else:
             return None
 
+    def friendly_state(self):
+        """ Return a concise text description of the document's current state."""
+        state = self.get_state()
+        if not state:
+            return "Unknown state"
+    
+        if self.type_id == 'draft':
+            iesg_state = self.get_state("draft-iesg")
+            iesg_state_summary = None
+            if iesg_state:
+                iesg_substate = [t for t in self.tags.all() if t.slug in IESG_SUBSTATE_TAGS]
+                # There really shouldn't be more than one tag in iesg_substate, but this will do something sort-of-sensible if there is
+                iesg_state_summary = iesg_state.name
+                if iesg_substate:
+                     iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
+             
+            if state.slug == "rfc":
+                return "RFC %s (%s)" % (self.rfc_number(), self.std_level)
+            elif state.slug == "repl":
+                rs = self.related_that("replaces")
+                if rs:
+                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('doc_view', kwargs=dict(name=alias.document)), alias.document) for alias in rs))
+                else:
+                    return "Replaced"
+            elif state.slug == "active":
+                if iesg_state:
+                    if iesg_state.slug == "dead":
+                        # Many drafts in the draft-iesg "Dead" state are not dead
+                        # in other state machines; they're just not currently under 
+                        # IESG processing. Show them as "I-D Exists (IESG: Dead)" instead...
+                        return "I-D Exists (IESG: %s)" % iesg_state_summary
+                    elif iesg_state.slug == "lc":
+                        e = self.latest_event(LastCallDocEvent, type="sent_last_call")
+                        if e:
+                            return iesg_state_summary + " (ends %s)" % e.expires.date().isoformat()
+    
+                    return iesg_state_summary
+                else:
+                    return "I-D Exists"
+            else:
+                if iesg_state and iesg_state.slug == "dead":
+                    return state.name + " (IESG: %s)" % iesg_state_summary
+                # Expired/Withdrawn by Submitter/IETF
+                return state.name
+        else:
+            return state.name
+
     def author_list(self):
         return ", ".join(email.address for email in self.authors.all())
 
@@ -194,6 +241,69 @@ class DocumentInfo(models.Model):
                    or (self.get_state('slides') in ("sessonly","archived") ))
         else:
             return False
+
+    def relations_that(self, relationship):
+        """Return the related-document objects that describe a given relationship targeting self."""
+        if isinstance(relationship, str):
+            relationship = [ relationship ]
+        if isinstance(relationship, tuple):
+            relationship = list(relationship)
+        if not isinstance(relationship, list):
+            raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
+        if isinstance(self, Document):
+            return RelatedDocument.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
+        elif isinstance(self, DocHistory):
+            return RelatedDocHistory.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
+        else:
+            return RelatedDocument.objects.none()
+
+    def all_relations_that(self, relationship, related=None):
+        if not related:
+            related = []
+        rels = self.relations_that(relationship)
+        for r in rels:
+            if not r in related:
+                related += [ r ]
+                related = r.source.all_relations_that(relationship, related)
+        return related
+
+    def relations_that_doc(self, relationship):
+        """Return the related-document objects that describe a given relationship from self to other documents."""
+        if isinstance(relationship, str):
+            relationship = [ relationship ]
+        if isinstance(relationship, tuple):
+            relationship = list(relationship)
+        if not isinstance(relationship, list):
+            raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
+        if isinstance(self, Document):
+            return RelatedDocument.objects.filter(source=self, relationship__in=relationship).select_related('target__document')
+        elif isinstance(self, DocHistory):
+            return RelatedDocHistory.objects.filter(source=self, relationship__in=relationship).select_related('target__document')
+        else:
+            return RelatedDocument.objects.none()
+ 
+
+    def all_relations_that_doc(self, relationship, related=None):
+        if not related:
+            related = []
+        rels = self.relations_that_doc(relationship)
+        for r in rels:
+            if not r in related:
+                related += [ r ]
+                related = r.target.document.all_relations_that_doc(relationship, related)
+        return related
+
+    def related_that(self, relationship):
+        return list(set([x.source.docalias_set.get(name=x.source.name) for x in self.relations_that(relationship)]))
+
+    def all_related_that(self, relationship, related=None):
+        return list(set([x.source.docalias_set.get(name=x.source.name) for x in self.all_relations_that(relationship)]))
+
+    def related_that_doc(self, relationship):
+        return list(set([x.target for x in self.relations_that_doc(relationship)]))
+
+    def all_related_that_doc(self, relationship, related=None):
+        return list(set([x.target for x in self.all_relations_that_doc(relationship)]))
 
     class Meta:
         abstract = True
@@ -324,57 +434,6 @@ class Document(DocumentInfo):
             name = name.upper()
         return name
 
-    def relations_that(self, relationship):
-        """Return the related-document objects that describe a given relationship targeting self."""
-        if isinstance(relationship, str):
-            relationship = [ relationship ]
-        if isinstance(relationship, tuple):
-            relationship = list(relationship)
-        if not isinstance(relationship, list):
-            raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
-        return RelatedDocument.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
-
-    def all_relations_that(self, relationship, related=None):
-        if not related:
-            related = []
-        rels = self.relations_that(relationship)
-        for r in rels:
-            if not r in related:
-                related += [ r ]
-                related = r.source.all_relations_that(relationship, related)
-        return related
-
-    def relations_that_doc(self, relationship):
-        """Return the related-document objects that describe a given relationship from self to other documents."""
-        if isinstance(relationship, str):
-            relationship = [ relationship ]
-        if isinstance(relationship, tuple):
-            relationship = list(relationship)
-        if not isinstance(relationship, list):
-            raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
-        return RelatedDocument.objects.filter(source=self, relationship__in=relationship).select_related('target__document')
-
-    def all_relations_that_doc(self, relationship, related=None):
-        if not related:
-            related = []
-        rels = self.relations_that_doc(relationship)
-        for r in rels:
-            if not r in related:
-                related += [ r ]
-                related = r.target.document.all_relations_that_doc(relationship, related)
-        return related
-
-    def related_that(self, relationship):
-        return list(set([x.source.docalias_set.get(name=x.source.name) for x in self.relations_that(relationship)]))
-
-    def all_related_that(self, relationship, related=None):
-        return list(set([x.source.docalias_set.get(name=x.source.name) for x in self.all_relations_that(relationship)]))
-
-    def related_that_doc(self, relationship):
-        return list(set([x.target for x in self.relations_that_doc(relationship)]))
-
-    def all_related_that_doc(self, relationship, related=None):
-        return list(set([x.target for x in self.all_relations_that_doc(relationship)]))
 
     def telechat_date(self, e=None):
         if not e:
@@ -426,53 +485,6 @@ class Document(DocumentInfo):
     def rfc_number(self):
         n = self.canonical_name()
         return n[3:] if n.startswith("rfc") else None
-
-    def friendly_state(self):
-        """ Return a concise text description of the document's current state."""
-        state = self.get_state()
-        if not state:
-            return "Unknown state"
-
-        if self.type_id == 'draft':
-            iesg_state = self.get_state("draft-iesg")
-            iesg_state_summary = None
-            if iesg_state:
-                iesg_substate = [t for t in self.tags.all() if t.slug in IESG_SUBSTATE_TAGS]
-                # There really shouldn't be more than one tag in iesg_substate, but this will do something sort-of-sensible if there is
-                iesg_state_summary = iesg_state.name
-                if iesg_substate:
-                     iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
-             
-            if state.slug == "rfc":
-                return "RFC %s (%s)" % (self.rfc_number(), self.std_level)
-            elif state.slug == "repl":
-                rs = self.related_that("replaces")
-                if rs:
-                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('doc_view', kwargs=dict(name=alias.document)), alias.document) for alias in rs))
-                else:
-                    return "Replaced"
-            elif state.slug == "active":
-                if iesg_state:
-                    if iesg_state.slug == "dead":
-                        # Many drafts in the draft-iesg "Dead" state are not dead
-                        # in other state machines; they're just not currently under 
-                        # IESG processing. Show them as "I-D Exists (IESG: Dead)" instead...
-                        return "I-D Exists (IESG: %s)" % iesg_state_summary
-                    elif iesg_state.slug == "lc":
-                        e = self.latest_event(LastCallDocEvent, type="sent_last_call")
-                        if e:
-                            return iesg_state_summary + " (ends %s)" % e.expires.date().isoformat()
-
-                    return iesg_state_summary
-                else:
-                    return "I-D Exists"
-            else:
-                if iesg_state and iesg_state.slug == "dead":
-                    return state.name + " (IESG: %s)" % iesg_state_summary
-                # Expired/Withdrawn by Submitter/IETF
-                return state.name
-        else:
-            return state.name
 
     def ipr(self,states=('posted','removed')):
         """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""
@@ -547,6 +559,10 @@ class DocHistory(DocumentInfo):
     def last_presented(self):
         return self.doc.last_presented()
 
+    @property
+    def groupmilestone_set(self):
+        return self.doc.groupmilestone_set
+
     class Meta:
         verbose_name = "document history"
         verbose_name_plural = "document histories"
@@ -593,6 +609,8 @@ def save_document_in_history(doc):
                 
     return dochist
         
+
+
 class DocAlias(models.Model):
     """This is used for documents that may appear under multiple names,
     and in particular for RFCs, which for continuity still keep the

@@ -263,12 +263,12 @@ def make_test_data():
         )
 
     # an independent submission before review
-    doc = Document.objects.create(name='draft-imaginary-independent-submission',type_id='draft')
+    doc = Document.objects.create(name='draft-imaginary-independent-submission',type_id='draft',rev='00')
     doc.set_state(State.objects.get(used=True, type="draft", slug="active"))    
     DocAlias.objects.create(name=doc.name, document=doc)
 
     # an irtf submission mid review
-    doc = Document.objects.create(name='draft-imaginary-irtf-submission', type_id='draft')
+    doc = Document.objects.create(name='draft-imaginary-irtf-submission', type_id='draft',rev='00')
     docalias = DocAlias.objects.create(name=doc.name, document=doc)
     doc.stream = StreamName.objects.get(slug='irtf')
     doc.save()
@@ -297,5 +297,14 @@ def make_test_data():
     rfc_for_status_change_test_factory('draft-ietf-random-thing',9999,'ps')
     rfc_for_status_change_test_factory('draft-ietf-random-otherthing',9998,'inf')
     rfc_for_status_change_test_factory('draft-was-never-issued',14,'unkn')
+
+    # Instances of the remaining document types 
+    # (Except liaison, liai-att, and recording  which the code in ietf.doc does not use...)
+    def other_doc_factory(type_id,name):
+        doc = Document.objects.create(type_id=type_id,name=name,rev='00',group=mars_wg)
+        DocAlias.objects.create(name=name,document=doc)
+    other_doc_factory('agenda','agenda-42-mars')
+    other_doc_factory('minutes','minutes-42-mars')
+    other_doc_factory('slides','slides-42-mars-1')
 
     return draft
