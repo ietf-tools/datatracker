@@ -1,4 +1,5 @@
 {% extends "base_site.html" %}
+{% load ietf_filters %}
 
 {% block title %}Proceedings{% endblock %}
 
@@ -71,7 +72,16 @@
              <td>(not uploaded)</td>
              <td></td>
              {% endif %}
+           </tr>
+           {% if materials.bluesheets %}
+             {% for item in materials.bluesheets %}
+             <tr>
+               <td><a href="{{ item.get_absolute_url }}" target="_blank">Bluesheet</a></td>
+               <td>{{ item.external_url }}</td>
+               <td>{% if user|has_role:"Secretariat" %}<a href="{% url "proceedings_delete_material" slide_id=item.name %}">Delete</a>{% endif %}</td>
              </tr>
+             {% endfor %}
+           {% endif %}
          </tbody>
        </table>
      

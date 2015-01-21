@@ -79,9 +79,9 @@ class DocumentInfo(models.Model):
 
         if self.type_id == "draft":
             return settings.INTERNET_DRAFT_PATH
-        elif self.type_id in ("agenda", "minutes", "slides") and self.meeting_related():
-            meeting = self.name.split("-")[1]
-            return os.path.join(settings.AGENDA_PATH, meeting, self.type_id) + "/"
+        elif self.type_id in ("agenda", "minutes", "slides", "bluesheets") and self.meeting_related():
+            meeting = self.session_set.first().meeting
+            return os.path.join(meeting.get_materials_path(), self.type_id) + "/"
         elif self.type_id == "charter":
             return settings.CHARTER_PATH
         elif self.type_id == "conflrev": 
@@ -233,7 +233,7 @@ class DocumentInfo(models.Model):
             return None
 
     def meeting_related(self):
-        if self.type_id in ("agenda","minutes",):
+        if self.type_id in ("agenda","minutes","bluesheets"):
             return (self.name.split("-")[1] == "interim"
                    or (self.session_set.exists() if isinstance(self, Document) else self.doc.session_set.exists()))
         elif self.type_id in ("slides",):
@@ -378,7 +378,7 @@ class Document(DocumentInfo):
         name = self.name
         if self.type_id == "draft" and self.get_state_slug() == "rfc":
             name = self.canonical_name()
-        elif self.type_id in ('slides','agenda','minutes'):
+        elif self.type_id in ('slides','agenda','minutes','bluesheets'):
             session = self.session_set.first()
             if session:
                 meeting = session.meeting

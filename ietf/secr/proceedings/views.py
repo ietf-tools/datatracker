@@ -21,15 +21,16 @@ from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.utils.decorators import check_permissions, sec_only
 from ietf.secr.utils.document import get_full_path
 from ietf.secr.utils.group import get_my_groups, groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_materials, get_timeslot
+from ietf.secr.utils.meeting import get_upload_root, get_materials, get_timeslot, get_proceedings_path, get_proceedings_url
 from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession
 from ietf.secr.proceedings.forms import EditSlideForm, InterimMeetingForm, RecordingForm, RecordingEditForm, ReplaceSlideForm, UnifiedUploadForm
-from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas, gen_attendees,
-    gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries, gen_progress, gen_research,
-    gen_training, create_proceedings, create_interim_directory, create_recording )
+from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas,
+    gen_attendees, gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries,
+    gen_progress, gen_research, gen_training, create_proceedings, create_interim_directory,
+    create_recording )
 
 from ietf.secr.proceedings.models import InterimMeeting    # proxy model
 
@@ -137,27 +138,6 @@ def get_next_order_num(session):
 
     return max_order + 1 if max_order else 1
 
-# --- These could be properties/methods on meeting
-def get_proceedings_path(meeting,group):
-    if meeting.type_id == 'ietf':
-        path = os.path.join(get_upload_root(meeting),group.acronym + '.html')
-    elif meeting.type_id == 'interim':
-        path = os.path.join(get_upload_root(meeting),'proceedings.html')
-    return path
-
-def get_proceedings_url(meeting,group=None):
-    if meeting.type_id == 'ietf':
-        url = "%sproceedings/%s/" % (settings.MEDIA_URL,meeting.number)
-        if group:
-            url = url + "%s.html" % group.acronym
-
-    elif meeting.type_id == 'interim':
-        url = "%sproceedings/interim/%s/%s/proceedings.html" % (
-            settings.MEDIA_URL,
-            meeting.date.strftime('%Y/%m/%d'),
-            group.acronym)
-    return url
-
 def handle_upload_file(file,filename,meeting,subdir):
     '''
     This function takes a file object, a filename and a meeting object and subdir as string.
@@ -173,6 +153,8 @@ def handle_upload_file(file,filename,meeting,subdir):
             os.mkdir(path)
     else:
         path = os.path.join(get_upload_root(meeting),subdir)
+        if not os.path.exists(path):
+            os.makedirs(path)
 
     # agendas and minutes can only have one file instance so delete file if it already exists
     if subdir in ('agenda','minutes'):
@@ -324,7 +306,7 @@ def build(request,meeting_num,acronym):
     meeting = Meeting.objects.get(number=meeting_num)
     group = get_object_or_404(Group,acronym=acronym)
 
-    create_proceedings(meeting,group)
+    create_proceedings(meeting,group,is_final=True)
 
     messages.success(request,'proceedings.html was rebuilt')
     url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})

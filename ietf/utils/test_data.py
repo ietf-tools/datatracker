@@ -262,6 +262,15 @@ def make_test_data():
         reg_area="Lobby",
         )
 
+    # interim meeting
+    Meeting.objects.create(
+        number="interim-2015-mars-1",
+        type_id='interim',
+        date=datetime.date(2015,1,1),
+        city="New York",
+        country="US",
+        )
+
     # an independent submission before review
     doc = Document.objects.create(name='draft-imaginary-independent-submission',type_id='draft',rev='00')
     doc.set_state(State.objects.get(used=True, type="draft", slug="active"))    

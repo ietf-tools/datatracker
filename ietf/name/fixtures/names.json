@@ -745,6 +745,16 @@
  }
 },
 {
+ "pk": "bluesheets", 
+ "model": "name.doctypename", 
+ "fields": {
+  "order": 0, 
+  "used": true, 
+  "name": "Bluesheets", 
+  "desc": ""
+ }
+},
+{
  "pk": "uploaded", 
  "model": "name.draftsubmissionstatename", 
  "fields": {
@@ -1903,6 +1913,13 @@
  "model": "doc.statetype", 
  "fields": {
   "label": "Recording State"
+ }
+},
+{
+ "pk": "bluesheets", 
+ "model": "doc.statetype", 
+ "fields": {
+  "label": "Bluesheet State"
  }
 },
 {
@@ -3798,6 +3815,32 @@
   "type": "statchg", 
   "order": 11, 
   "desc": "The RFC status changes have been abandoned"
+ }
+},
+{
+ "pk": 137, 
+ "model": "doc.state", 
+ "fields": {
+  "used": true, 
+  "name": "Active", 
+  "next_states": [], 
+  "slug": "active", 
+  "type": "bluesheets", 
+  "order": 0, 
+  "desc": ""
+ }
+},
+{
+ "pk": 138, 
+ "model": "doc.state", 
+ "fields": {
+  "used": true, 
+  "name": "Deleted", 
+  "next_states": [], 
+  "slug": "deleted", 
+  "type": "bluesheets", 
+  "order": 1, 
+  "desc": ""
  }
 },
 {

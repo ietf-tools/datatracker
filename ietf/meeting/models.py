@@ -100,6 +100,19 @@ class Meeting(models.Model):
         date = cls.objects.all().filter(type="ietf").order_by('-date')[0].date
         return date + datetime.timedelta(days=-date.weekday(), weeks=1)
 
+    def get_materials_path(self):
+        path = ''
+        if self.type_id == 'ietf':
+            path = os.path.join(settings.AGENDA_PATH,self.number)
+        elif self.type_id == 'interim':
+            path = os.path.join(settings.AGENDA_PATH,
+                            'interim',
+                            self.date.strftime('%Y'),
+                            self.date.strftime('%m'),
+                            self.date.strftime('%d'),
+                            self.session_set.all()[0].group.acronym)
+        return path
+    
     # the various dates are currently computed
     def get_submission_start_date(self):
         return self.date + datetime.timedelta(days=settings.SUBMISSION_START_DAYS)
