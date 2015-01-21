@@ -185,8 +185,7 @@ G=$(svn st | cut -c 1-7 | grep -oh 'G' | head -n 1)
 
 echo -e "\nRunning tests"
 time ietf/manage.py test --settings=settings_sqlitetest || die "Tests failed.\nThe commit script is ../cicmd/commit-${rev}-merge.sh"
-
-
+echo ""
 
 note "Sending email to changeset author: <$who>"
 mail -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c henrik@levkowetz.com <<-EOF
