@@ -33,7 +33,7 @@
 import os, datetime, urllib, json, glob
 
 from django.http import HttpResponse, Http404
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render_to_response, get_object_or_404, redirect, render
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.core.exceptions import ObjectDoesNotExist
@@ -869,19 +869,16 @@ def telechat_date(request, name):
     e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     initial_returning_item = bool(e and e.returning_item)
 
-    prompts = []
+    warnings = []
     if e and e.telechat_date and doc.type.slug != 'charter':
         if e.telechat_date==datetime.date.today():
-            prompts.append( "This document is currently scheduled for today's telechat. "
-                           +"Please set the returning item bit carefully.")
+            warnings.append( "This document is currently scheduled for today's telechat. "
+                            +"Please set the returning item bit carefully.")
 
         elif e.telechat_date<datetime.date.today() and has_same_ballot(doc,e.telechat_date):
             initial_returning_item = True
-            prompts.append(  "This document appears to have been on a previous telechat with the same ballot, "
+            warnings.append(  "This document appears to have been on a previous telechat with the same ballot, "
                             +"so the returning item bit has been set. Clear it if that is not appropriate.")
-
-        else:
-            pass
 
     initial = dict(telechat_date=e.telechat_date if e else None,
                    returning_item = initial_returning_item,
@@ -901,13 +898,12 @@ def telechat_date(request, name):
         if doc.type.slug=='charter':
             del form.fields['returning_item']
 
-    return render_to_response('doc/edit_telechat_date.html',
+    return render(request, 'doc/edit_telechat_date.html',
                               dict(doc=doc,
                                    form=form,
                                    user=request.user,
-                                   prompts=prompts,
-                                   login=login),
-                              context_instance=RequestContext(request))
+                                   warnings=warnings,
+                                   login=login))
 
 @role_required('Area Director', 'Secretariat')
 def edit_notify(request, name):

@@ -10,8 +10,7 @@ from django.db.models import Q
 from django.forms.models import inlineformset_factory
 from django.forms.formsets import formset_factory
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.shortcuts import render_to_response as render, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 
 from ietf.doc.models import DocAlias
@@ -212,7 +211,7 @@ def ajax_rfc_search(request):
 # Views
 # ----------------------------------------------------------------
 def about(request):
-    return render("ipr/disclosure.html", {}, context_instance=RequestContext(request))
+    return render(request, "ipr/disclosure.html", {})
 
 @role_required('Secretariat',)
 def add_comment(request, id):
@@ -239,8 +238,7 @@ def add_comment(request, id):
     else:
         form = AddCommentForm()
   
-    return render('ipr/add_comment.html',dict(ipr=ipr,form=form),
-        context_instance=RequestContext(request))
+    return render(request, 'ipr/add_comment.html',dict(ipr=ipr,form=form))
 
 @role_required('Secretariat',)
 def add_email(request, id):
@@ -276,8 +274,7 @@ def add_email(request, id):
     else:
         form = AddEmailForm(ipr=ipr)
         
-    return render('ipr/add_email.html',dict(ipr=ipr,form=form),
-        context_instance=RequestContext(request))
+    return render(request, 'ipr/add_email.html',dict(ipr=ipr,form=form))
         
 @role_required('Secretariat',)
 def admin(request,state):
@@ -293,12 +290,11 @@ def admin(request,state):
         ('Parked','parked',urlreverse('ipr_admin',kwargs={'state':'parked'}),True)]
     
     template = 'ipr/admin_' + state + '.html'
-    return render(template,  {
+    return render(request, template,  {
         'iprs': iprs,
         'tabs': tabs,
-        'selected': state},
-        context_instance=RequestContext(request)
-    )
+        'selected': state
+    })
 
 @role_required('Secretariat',)
 def edit(request, id, updates=None):
@@ -384,13 +380,12 @@ def edit(request, id, updates=None):
         draft_formset = DraftFormset(instance=ipr, prefix='draft',queryset=dqs)
         rfc_formset = RfcFormset(instance=ipr, prefix='rfc',queryset=rqs)
         
-    return render("ipr/details_edit.html",  {
+    return render(request, "ipr/details_edit.html",  {
         'form': form,
         'draft_formset':draft_formset,
         'rfc_formset':rfc_formset,
-        'type':type},
-        context_instance=RequestContext(request)
-    )
+        'type':type
+    })
 
 @role_required('Secretariat',)
 def email(request, id):
@@ -441,11 +436,10 @@ def email(request, id):
         }
         form = MessageModelForm(initial=initial)
     
-    return render("ipr/email.html",  {
+    return render(request, "ipr/email.html",  {
         'ipr': ipr,
-        'form':form},
-        context_instance=RequestContext(request)
-    )
+        'form':form
+    })
     
 def history(request, id):
     """Show the history for a specific IPR disclosure"""
@@ -457,13 +451,12 @@ def history(request, id):
     tabs = [('Disclosure','disclosure',urlreverse('ipr_show',kwargs={'id':id}),True),
             ('History','history',urlreverse('ipr_history',kwargs={'id':id}),True)]
 
-    return render("ipr/details_history.html",  {
+    return render(request, "ipr/details_history.html",  {
         'events':events,
         'ipr': ipr,
         'tabs':tabs,
-        'selected':'history'},
-        context_instance=RequestContext(request)
-    )
+        'selected':'history'
+    })
 
 def iprs_for_drafts_txt(request):
     docipr = {}
@@ -544,7 +537,7 @@ def new(request, type, updates=None):
                 "ipr/new_update_email.txt",
                 {"ipr": disclosure,})
             
-            return render("ipr/submitted.html", context_instance=RequestContext(request))
+            return render(request, "ipr/submitted.html")
 
     else:
         if updates:
@@ -555,13 +548,12 @@ def new(request, type, updates=None):
         draft_formset = DraftFormset(instance=disclosure, prefix='draft')
         rfc_formset = RfcFormset(instance=disclosure, prefix='rfc')
         
-    return render("ipr/details_edit.html",  {
+    return render(request, "ipr/details_edit.html",  {
         'form': form,
         'draft_formset':draft_formset,
         'rfc_formset':rfc_formset,
-        'type':type},
-        context_instance=RequestContext(request)
-    )
+        'type':type,
+    })
 
 @role_required('Secretariat',)
 def notify(request, id, type):
@@ -597,11 +589,10 @@ def notify(request, id, type):
             initial = [ {'type':'msgout','text':m} for m in get_posted_emails(ipr) ]
         formset = NotifyFormset(initial=initial)
         
-    return render("ipr/notify.html", {
+    return render(request, "ipr/notify.html", {
         'formset': formset,
-        'ipr': ipr},
-        context_instance=RequestContext(request)
-    )
+        'ipr': ipr,
+    })
 
 @role_required('Secretariat',)
 def post(request, id):
@@ -731,44 +722,41 @@ def search(request):
                 iprs = sorted(iprs, key=lambda x: x.state.order)
             else:
                 iprs = sorted(iprs, key=lambda x: (x.time, x.id), reverse=True)
-            
-            return render(template, {
+
+            return render(request, template, {
                 "q": q,
                 "iprs": iprs,
                 "docs": docs,
                 "doc": doc,
                 "form":form,
-                "states":states},
-                context_instance=RequestContext(request)
-            )
+                "states":states
+            })
 
         return HttpResponseRedirect(request.path)
 
     else:
         form = SearchForm(initial={'state':['all']})
-        return render("ipr/search.html", {"form":form }, context_instance=RequestContext(request))
+        return render(request, "ipr/search.html", {"form":form })
 
 def show(request, id):
     """View of individual declaration"""
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
     if not has_role(request.user, 'Secretariat'):
         if ipr.state.slug == 'removed':
-            return render("ipr/removed.html",  {
-                'ipr': ipr},
-                context_instance=RequestContext(request)
-            )
+            return render(request, "ipr/removed.html", {
+                'ipr': ipr
+            })
         elif ipr.state.slug != 'posted':
             raise Http404
 
     tabs = [('Disclosure','disclosure',urlreverse('ipr_show',kwargs={'id':id}),True),
             ('History','history',urlreverse('ipr_history',kwargs={'id':id}),True)]
 
-    return render("ipr/details_view.html",  {
+    return render(request, "ipr/details_view.html",  {
         'ipr': ipr,
         'tabs':tabs,
-        'selected':'disclosure'},
-        context_instance=RequestContext(request)
-    )
+        'selected':'disclosure',
+    })
 
 def showlist(request):
     """List all disclosures by type, posted only"""
@@ -781,12 +769,11 @@ def showlist(request):
     generic = itertools.chain(generic,nondocspecific)
     generic = sorted(generic, key=lambda x: x.time,reverse=True)
     
-    return render("ipr/list.html", {
+    return render(request, "ipr/list.html", {
             'generic_disclosures' : generic,
             'specific_disclosures': specific,
-            'thirdpty_disclosures': thirdpty}, 
-            context_instance=RequestContext(request)
-    )
+            'thirdpty_disclosures': thirdpty,
+    })
 
 @role_required('Secretariat',)
 def state(request, id):
@@ -822,8 +809,7 @@ def state(request, id):
     else:
         form = StateForm(initial={'state':ipr.state.pk,'private':True})
   
-    return render('ipr/state.html',dict(ipr=ipr,form=form),
-        context_instance=RequestContext(request))
+    return render(request, 'ipr/state.html', dict(ipr=ipr, form=form))
 
 # use for link to update specific IPR
 def update(request, id):

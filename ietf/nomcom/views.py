@@ -56,7 +56,7 @@ def index(request):
             nomcom.ann_url = None
     return render_to_response('nomcom/index.html',
                               {'nomcom_list': nomcom_list,}, RequestContext(request))
-    
+
 
 def year_index(request, year):
     nomcom = get_nomcom_by_year(year)
@@ -70,21 +70,21 @@ def year_index(request, year):
 
 def announcements(request):
     address_re = re.compile("<.*>")
-    
+
     nomcoms = Group.objects.filter(type="nomcom")
 
     regimes = []
-    
+
     for n in nomcoms:
         e = GroupEvent.objects.filter(group=n, type="changed_state", changestategroupevent__state="active").order_by('time')[:1]
         n.start_year = e[0].time.year if e else 0
         e = GroupEvent.objects.filter(group=n, type="changed_state", changestategroupevent__state="conclude").order_by('time')[:1]
         n.end_year = e[0].time.year if e else n.start_year + 1
 
-        r = n.role_set.select_related().filter(name="chair") 
-        chair = None 
-        if r: 
-            chair = r[0] 
+        r = n.role_set.select_related().filter(name="chair")
+        chair = None
+        if r:
+            chair = r[0]
 
         announcements = Message.objects.filter(related_groups=n).order_by('-time')
         for a in announcements:
@@ -311,8 +311,8 @@ def nominate(request, year, public):
         template = 'nomcom/private_nominate.html'
 
     if not has_publickey:
-            message = ('warning', "This Nomcom is not yet accepting nominations")
-            return render_to_response(template,
+        message = ('warning', "This Nomcom is not yet accepting nominations")
+        return render_to_response(template,
                               {'message': message,
                                'nomcom': nomcom,
                                'year': year,
@@ -361,17 +361,19 @@ def feedback(request, year, public):
     positions = Position.objects.get_by_nomcom(nomcom=nomcom).opened()
 
     if public:
-        template = 'nomcom/public_feedback.html'
+        base_template = "nomcom/nomcom_public_base.html"
     else:
-        template = 'nomcom/private_feedback.html'
+        base_template = "nomcom/nomcom_private_base.html"
 
     if not has_publickey:
             message = ('warning', "This Nomcom is not yet accepting comments")
-            return render_to_response(template,
-                              {'message': message,
-                               'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'feedback'}, RequestContext(request))
+            return render(request, 'nomcom/feedback.html', {
+                'message': message,
+                'nomcom': nomcom,
+                'year': year,
+                'selected': 'feedback',
+                'base_template': base_template
+            })
 
     message = None
     if request.method == 'POST':
@@ -385,14 +387,16 @@ def feedback(request, year, public):
         form = FeedbackForm(nomcom=nomcom, user=request.user, public=public,
                             position=position, nominee=nominee)
 
-    return render_to_response(template,
-                              {'form': form,
-                               'message': message,
-                               'nomcom': nomcom,
-                               'year': year,
-                               'positions': positions,
-                               'submit_disabled': submit_disabled,
-                               'selected': 'feedback'}, RequestContext(request))
+    return render(request, 'nomcom/feedback.html', {
+        'form': form,
+        'message': message,
+        'nomcom': nomcom,
+        'year': year,
+        'positions': positions,
+        'submit_disabled': submit_disabled,
+        'selected': 'feedback',
+        'base_template': base_template
+    })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")

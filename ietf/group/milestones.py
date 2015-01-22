@@ -2,102 +2,72 @@
 
 import datetime
 import calendar
-import json
 
 from django import forms
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect, Http404
+from django.http import HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
-from ietf.doc.models import Document, DocEvent
+from ietf.doc.models import DocEvent
 from ietf.doc.utils import get_chartering_type
+from ietf.doc.fields import SearchableDocumentsField
 from ietf.group.models import GroupMilestone, MilestoneGroupEvent
 from ietf.group.utils import (save_milestone_in_history, can_manage_group_type, milestone_reviewer_for_group_type,
                               get_group_or_404)
 from ietf.name.models import GroupMilestoneStateName
 from ietf.group.mails import email_milestones_changed
-
-def json_doc_names(docs):
-    return json.dumps([{"id": doc.pk, "name": doc.name } for doc in docs])
-
-def parse_doc_names(s):
-    return Document.objects.filter(pk__in=[x.strip() for x in s.split(",") if x.strip()], type="draft")
+from ietf.utils.fields import DatepickerDateField
 
 class MilestoneForm(forms.Form):
     id = forms.IntegerField(required=True, widget=forms.HiddenInput)
 
-    desc = forms.CharField(max_length=500, label="Milestone:", required=True)
-    due_month = forms.TypedChoiceField(choices=(), required=True, coerce=int)
-    due_year = forms.TypedChoiceField(choices=(), required=True, coerce=int)
+    desc = forms.CharField(max_length=500, label="Milestone", required=True)
+    due = DatepickerDateField(date_format="MM yyyy", picker_settings={"min-view-mode": "months", "autoclose": "1", "view-mode": "years" }, required=True)
+    docs = SearchableDocumentsField(label="Drafts", required=False, help_text="Any drafts that the milestone concerns.")
     resolved_checkbox = forms.BooleanField(required=False, label="Resolved")
-    resolved = forms.CharField(max_length=50, required=False)
+    resolved = forms.CharField(label="Resolved as", max_length=50, required=False)
 
     delete = forms.BooleanField(required=False, initial=False)
 
-    docs = forms.CharField(max_length=10000, required=False)
-
-    accept = forms.ChoiceField(choices=(("accept", "Accept"), ("reject", "Reject and delete"), ("noaction", "No action")),
+    review = forms.ChoiceField(label="Review action", help_text="Choose whether to accept or reject the proposed changes.",
+                               choices=(("accept", "Accept"), ("reject", "Reject and delete"), ("noaction", "No action")),
                                required=False, initial="noaction", widget=forms.RadioSelect)
 
-    def __init__(self, *args, **kwargs):
-        kwargs["label_suffix"] = ""
-
+    def __init__(self, needs_review, reviewer, *args, **kwargs):
         m = self.milestone = kwargs.pop("instance", None)
 
-        self.needs_review = kwargs.pop("needs_review", False)
-        can_review = not self.needs_review
+        can_review = not needs_review
 
         if m:
-            self.needs_review = m.state_id == "review"
+            needs_review = m.state_id == "review"
 
             if not "initial" in kwargs:
                 kwargs["initial"] = {}
             kwargs["initial"].update(dict(id=m.pk,
                                           desc=m.desc,
-                                          due_month=m.due.month,
-                                          due_year=m.due.year,
+                                          due=m.due,
                                           resolved_checkbox=bool(m.resolved),
                                           resolved=m.resolved,
-                                          docs=",".join(m.docs.values_list("pk", flat=True)),
+                                          docs=m.docs.all(),
                                           delete=False,
-                                          accept="noaction" if can_review and self.needs_review else None,
+                                          review="noaction" if can_review and needs_review else "",
                                           ))
 
             kwargs["prefix"] = "m%s" % m.pk
 
         super(MilestoneForm, self).__init__(*args, **kwargs)
 
-        # set choices for due date
-        this_year = datetime.date.today().year
+        self.fields["resolved"].widget.attrs["data-default"] = "Done"
 
-        self.fields["due_month"].choices = [(month, datetime.date(this_year, month, 1).strftime("%B")) for month in range(1, 13)]
+        if needs_review and self.milestone and self.milestone.state_id != "review":
+            self.fields["desc"].widget.attrs["readonly"] = True
 
-        years = [ y for y in range(this_year, this_year + 10)]
+        self.changed = False
 
-        initial = self.initial.get("due_year")
-        if initial and initial not in years:
-            years.insert(0, initial)
+        if not (needs_review and can_review):
+            self.fields["review"].widget = forms.HiddenInput()
 
-        self.fields["due_year"].choices = zip(years, map(str, years))
-
-        # figure out what to prepopulate many-to-many field with
-        pre = ""
-        if not self.is_bound:
-            pre = self.initial.get("docs", "")
-        else:
-            pre = self["docs"].data or ""
-
-        # this is ugly, but putting it on self["docs"] is buggy with a
-        # bound/unbound form in Django 1.2
-        self.docs_names = parse_doc_names(pre)
-        self.docs_prepopulate = json_doc_names(self.docs_names)
-
-        # calculate whether we've changed
-        self.changed = self.is_bound and (not self.milestone or any(unicode(self[f].data) != unicode(self.initial[f]) for f in self.fields.iterkeys()))
-
-    def clean_docs(self):
-        s = self.cleaned_data["docs"]
-        return Document.objects.filter(pk__in=[x.strip() for x in s.split(",") if x.strip()], type="draft")
+        self.needs_review = needs_review
 
     def clean_resolved(self):
         r = self.cleaned_data["resolved"].strip()
@@ -137,14 +107,17 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
         title = "Edit charter milestones for %s %s" % (group.acronym, group.type.name)
         milestones = group.groupmilestone_set.filter(state="charter")
 
+    reviewer = milestone_reviewer_for_group_type(group_type)
+
     forms = []
 
     milestones_dict = dict((str(m.id), m) for m in milestones)
 
     def due_month_year_to_date(c):
-        y = c["due_year"]
-        m = c["due_month"]
-        return datetime.date(y, m, calendar.monthrange(y, m)[1])
+        y = c["due"].year
+        m = c["due"].month
+        first_day, last_day = calendar.monthrange(y, m)
+        return datetime.date(y, m, last_day)
 
     def set_attributes_from_form(f, m):
         c = f.cleaned_data
@@ -156,9 +129,23 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                 m.state = GroupMilestoneStateName.objects.get(slug="active")
         elif milestone_set == "charter":
             m.state = GroupMilestoneStateName.objects.get(slug="charter")
+
         m.desc = c["desc"]
         m.due = due_month_year_to_date(c)
         m.resolved = c["resolved"]
+
+    def milestone_changed(f, m):
+        # we assume that validation has run
+        if not m or not f.is_valid():
+            return True
+
+        c = f.cleaned_data
+        return (c["desc"] != m.desc or
+                due_month_year_to_date(c) != m.due or
+                c["resolved"] != m.resolved or
+                set(c["docs"]) != set(m.docs.all()) or
+                c.get("review") in ("accept", "reject")
+        )
 
     def save_milestone_form(f):
         c = f.cleaned_data
@@ -183,14 +170,14 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
 
             changes = ['Changed %s' % named_milestone]
 
-            if m.state_id == "review" and not needs_review and c["accept"] != "noaction":
+            if m.state_id == "review" and not needs_review and c["review"] != "noaction":
                 if not history:
                     history = save_milestone_in_history(m)
 
-                if c["accept"] == "accept":
+                if c["review"] == "accept":
                     m.state_id = "active"
                     changes.append("set state to active from review, accepting new milestone")
-                elif c["accept"] == "reject":
+                elif c["review"] == "reject":
                     m.state_id = "deleted"
                     changes.append("set state to deleted from review, rejecting new milestone")
 
@@ -260,8 +247,6 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
             elif m.state_id == "review":
                 return 'Added %s for review, due %s' % (named_milestone, m.due.strftime("%B %Y"))
 
-    finished_milestone_text = "Done"
-
     form_errors = False
 
     if request.method == 'POST':
@@ -272,22 +257,23 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
 
             # new milestones have non-existing ids so instance end up as None
             instance = milestones_dict.get(request.POST.get(prefix + "-id", ""), None)
-            f = MilestoneForm(request.POST, prefix=prefix, instance=instance,
-                              needs_review=needs_review)
+            f = MilestoneForm(needs_review, reviewer, request.POST, prefix=prefix, instance=instance)
             forms.append(f)
 
             form_errors = form_errors or not f.is_valid()
 
+            f.changed = milestone_changed(f, f.milestone)
+            if f.is_valid() and f.cleaned_data.get("review") in ("accept", "reject"):
+                f.needs_review = False
+
         action = request.POST.get("action", "review")
         if action == "review":
             for f in forms:
-                if not f.is_valid():
-                    continue
-
-                # let's fill in the form milestone so we can output it in the template
-                if not f.milestone:
-                    f.milestone = GroupMilestone()
-                set_attributes_from_form(f, f.milestone)
+                if f.is_valid():
+                    # let's fill in the form milestone so we can output it in the template
+                    if not f.milestone:
+                        f.milestone = GroupMilestone()
+                    set_attributes_from_form(f, f.milestone)
         elif action == "save" and not form_errors:
             changes = []
             for f in forms:
@@ -314,11 +300,11 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                 return HttpResponseRedirect(group.about_url())
     else:
         for m in milestones:
-            forms.append(MilestoneForm(instance=m, needs_review=needs_review))
+            forms.append(MilestoneForm(needs_review, reviewer, instance=m))
 
     can_reset = milestone_set == "charter" and get_chartering_type(group.charter) == "rechartering"
 
-    empty_form = MilestoneForm(needs_review=needs_review)
+    empty_form = MilestoneForm(needs_review, reviewer)
 
     forms.sort(key=lambda f: f.milestone.due if f.milestone else datetime.date.max)
 
@@ -329,9 +315,8 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                        form_errors=form_errors,
                        empty_form=empty_form,
                        milestone_set=milestone_set,
-                       finished_milestone_text=finished_milestone_text,
                        needs_review=needs_review,
-                       reviewer=milestone_reviewer_for_group_type(group_type),
+                       reviewer=reviewer,
                        can_reset=can_reset))
 
 @login_required
@@ -391,8 +376,3 @@ def reset_charter_milestones(request, group_type, acronym):
                        charter_milestones=charter_milestones,
                        current_milestones=current_milestones,
                    ))
-
-
-def ajax_search_docs(request, group_type, acronym):
-    docs = Document.objects.filter(name__icontains=request.GET.get('q',''), type="draft").order_by('name').distinct()[:20]
-    return HttpResponse(json_doc_names(docs), content_type='application/json')

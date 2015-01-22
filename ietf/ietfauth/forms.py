@@ -217,7 +217,7 @@ class PersonForm(ModelForm):
 
         # Make sure the alias table contains any new and/or old names.
         old_names = set([x.name for x in Alias.objects.filter(person=self.instance)])
-        curr_names = set([x for x in [self.instance.name, 
+        curr_names = set([x for x in [self.instance.name,
                  self.instance.ascii,
                  self.instance.ascii_short,
                  self.data['name'],

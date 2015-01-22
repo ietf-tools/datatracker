@@ -1,4 +1,5 @@
 import datetime
+import json
 import sys
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
     import unittest2 as unittest
@@ -97,7 +98,7 @@ class SearchTestCase(TestCase):
         make_test_data()
         r = self.client.get("/")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Search Internet-Drafts" in r.content)
+        self.assertTrue("Search Documents" in r.content)
 
     def test_drafts_pages(self):
         draft = make_test_data()
@@ -121,6 +122,32 @@ class SearchTestCase(TestCase):
         r = self.client.get(urlreverse("index_active_drafts"))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in r.content)
+
+    def test_ajax_search_docs(self):
+        draft = make_test_data()
+
+        # Document
+        url = urlreverse("ajax_select2_search_docs", kwargs={
+            "model_name": "document",
+            "doc_type": "draft",
+        })
+        r = self.client.get(url, dict(q=draft.name))
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data[0]["id"], draft.pk)
+
+        # DocAlias
+        doc_alias = draft.docalias_set.get()
+
+        url = urlreverse("ajax_select2_search_docs", kwargs={
+            "model_name": "docalias",
+            "doc_type": "draft",
+        })
+
+        r = self.client.get(url, dict(q=doc_alias.name))
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data[0]["id"], doc_alias.pk)
         
 
 class DocTestCase(TestCase):
@@ -373,14 +400,12 @@ class DocTestCase(TestCase):
         self.client.login(username='iab-chair', password='iab-chair+password')
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertFalse(q('.actions'))
+        self.assertTrue("Request publication" not in r.content)
 
         Document.objects.filter(pk=doc.pk).update(stream='iab')
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue('IESG state' in q('.actions').html())
+        self.assertTrue("Request publication" in r.content)
 
 
 class AddCommentTestCase(TestCase):

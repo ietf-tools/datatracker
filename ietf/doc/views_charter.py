@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, State, DocEvent, BallotDocEvent,
-    BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent, 
+    BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent,
     WriteupDocEvent, save_document_in_history )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, get_chartering_type )
@@ -33,7 +33,7 @@ from ietf.group.mails import email_iesg_secretary_re_charter
 class ChangeStateForm(forms.Form):
     charter_state = forms.ModelChoiceField(State.objects.filter(used=True, type="charter"), label="Charter state", empty_label=None, required=False)
     initial_time = forms.IntegerField(initial=0, label="Review time", help_text="(in weeks)", required=False)
-    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change state without notifying the Secretariat", required=False, label=mark_safe("Message to<br> Secretariat"))
+    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change state without notifying the Secretariat", required=False, label=mark_safe("Message to the Secretariat"))
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history", required=False)
     def __init__(self, *args, **kwargs):
         self.hide = kwargs.pop('hide', None)
@@ -47,7 +47,7 @@ class ChangeStateForm(forms.Form):
         # hide requested fields
         if self.hide:
             for f in self.hide:
-                self.fields[f].widget = forms.HiddenInput
+                self.fields[f].widget = forms.HiddenInput()
 
 @login_required
 def change_state(request, name, option=None):
@@ -101,7 +101,7 @@ def change_state(request, name, option=None):
                     e.state_id = group.state.slug
                     e.desc = "Group state changed to %s from %s" % (group.state, oldstate)
                     e.save()
-                    
+
                 else:
                     charter_state = State.objects.get(used=True, type="charter", slug="approved")
                     charter_rev = approved_revision(charter.rev)
@@ -382,12 +382,12 @@ def submit(request, name=None, option=None):
             e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
             e.rev = charter.rev
             e.save()
-            
+
             # Save file on disk
             form.save(group, charter.rev)
 
             if option in ['initcharter','recharter'] and charter.ad == None:
-                charter.ad = group.ad           
+                charter.ad = group.ad
 
             charter.time = datetime.datetime.now()
             charter.save()
@@ -460,7 +460,7 @@ def announcement_text(request, name, ann):
                 e.desc = "%s %s text was changed" % (group.type.name, ann)
                 e.text = t
                 e.save()
-                
+
                 charter.time = e.time
                 charter.save()
 
@@ -495,7 +495,7 @@ class BallotWriteupForm(forms.Form):
 
     def clean_ballot_writeup(self):
         return self.cleaned_data["ballot_writeup"].replace("\r", "")
-        
+
 @role_required('Area Director','Secretariat')
 def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
@@ -508,13 +508,13 @@ def ballot_writeupnotes(request, name):
     login = request.user.person
 
     approval = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
-    
+
     existing = charter.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     if not existing:
         existing = generate_ballot_writeup(request, charter)
 
     reissue = charter.latest_event(DocEvent, type="sent_ballot_announcement")
-        
+
     form = BallotWriteupForm(initial=dict(ballot_writeup=existing.text))
 
     if request.method == 'POST' and ("save_ballot_writeup" in request.POST or "send_ballot" in request.POST):
@@ -699,7 +699,7 @@ def approve(request, name):
         send_mail_preformatted(request, announcement)
 
         return HttpResponseRedirect(charter.get_absolute_url())
-    
+
     return render_to_response('doc/charter/approve.html',
                               dict(charter=charter,
                                    announcement=announcement),

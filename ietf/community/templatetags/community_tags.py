@@ -1,5 +1,6 @@
 from django import template
 from django.template.loader import render_to_string
+from django.conf import settings
 
 from ietf.community.models import CommunityList
 from ietf.group.models import Role
@@ -9,7 +10,7 @@ register = template.Library()
 
 
 class CommunityListNode(template.Node):
-    
+
     def __init__(self, user, var_name):
         self.user = user
         self.var_name = var_name
@@ -57,13 +58,13 @@ def show_field(field, doc):
 
 
 class CommunityListViewNode(template.Node):
-    
+
     def __init__(self, clist):
         self.clist = clist
 
     def render(self, context):
         clist = self.clist.resolve(context)
-        if not clist.cached:
+        if settings.DEBUG or not clist.cached:
             clist.cached = render_to_string('community/raw_view.html',
                                             {'cl': clist,
                                              'dc': clist.get_display_config()})

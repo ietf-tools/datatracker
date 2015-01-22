@@ -13,7 +13,7 @@ from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDis
     ThirdPartyIprDisclosure,RelatedIpr)
 from ietf.ipr.utils import get_genitive, get_ipr_summary
 from ietf.message.models import Message
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 
 
@@ -247,7 +247,7 @@ class IprTests(TestCase):
             })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("ul.errorlist")) > 0)
+        self.assertTrue(len(q("form .has-error")) > 0)
 
         # successful post
         r = self.client.post(url, {
@@ -468,14 +468,11 @@ I would like to revoke this declaration.
     def test_post(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
-        url = urlreverse("ipr_post",kwargs={ "id": ipr.id })
-        # fail if not logged in
+        url = urlreverse("ipr_post", kwargs={ "id": ipr.id })
+        login_testing_unauthorized(self, "secretary", url)
+
         r = self.client.get(url,follow=True)
-        self.assertTrue("Sign In" in r.content)
-        # successful post
-        self.client.login(username="secretary", password="secretary+password")
-        r = self.client.get(url,follow=True)
-        self.assertEqual(r.status_code,200)
+        self.assertEqual(r.status_code, 200)
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
         self.assertEqual(ipr.state.slug,'posted')
 

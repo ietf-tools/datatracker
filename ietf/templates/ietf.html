@@ -1,0 +1,181 @@
+{% load ietf_filters %}
+{% load wg_menu %}
+{% load typogrify_tags %}
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+                <title>{% block title %}No title{% endblock %}{% if server_mode and server_mode != "production" %} &beta;{% endif %}</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<link rel="stylesheet" href="/facelift/css/bootstrap.min.css">
+		<link rel="stylesheet" href="/facelift/css/bootstrap-theme.min.css">
+		<link rel="stylesheet" href="/facelift/css/font-awesome.min.css">
+		<link rel="stylesheet" href="/facelift/css/ietf.css">
+		<style>
+			{% block morecss %}{% endblock %}
+		</style>
+
+		{% block pagehead %}{% endblock %}
+
+                <link rel="shortcut icon" href="/facelift/images/ietficon.ico">
+                <link rel="apple-touch-icon-precomposed" href="/facelift/images/ietficon.png">
+	</head>
+
+	{% filter amp|smartypants %}
+		<body {% block bodyAttrs %}{%endblock%}>
+			<div class="modal fade" id="navmodal" tabindex="-1" role="dialog" {#aria-labelledby="navmodallabel"#} aria-hidden="true">
+				<div class="modal-dialog">
+					<div class="modal-content">
+{% comment %}
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">
+								<span aria-hidden="true">&times;</span>
+								<span class="sr-only">Close</span>
+							</button>
+							<h4 class="modal-title" id="navmodallabel">Area &amp; WG navigation</h4>
+						</div>
+{% endcomment %}
+						<div class="modal-body">
+							{% wg_menu "modal" %}
+						</div>
+{% comment %}
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						</div>
+{% endcomment %}
+					</div>
+				</div>
+			</div>
+
+			<nav class="navbar {% if server_mode and server_mode != "production" %}navbar-dev{% else %}navbar-default{% endif %} navbar-fixed-top" role="navigation">
+				<div class="container-fluid">
+					<div class="navbar-header">
+						<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse">
+							<span class="sr-only">Toggle navigation</span>
+							<span class="icon-bar"></span>
+							<span class="icon-bar"></span>
+							<span class="icon-bar"></span>
+						</button>
+						<a class="navbar-brand" href="/">
+							IETF Datatracker{% if server_mode and server_mode != "production" %} &beta;{% endif %}
+						</a>
+					</div>
+
+					<noscript>
+						<p class="navbar-text"><small>Enable Javascript for full functionality.</small></p>
+					</noscript>
+
+					<div class="collapse navbar-collapse" id="navbar-collapse">
+						<ul class="hidden-nojs nav navbar-nav">
+							{% with "top" as flavor %}
+								{% include "base/menu.html" %}
+							{% endwith %}
+						</ul>
+
+						<form class="navbar-form navbar-right hidden-sm hidden-xs" action="/doc/search/" role="search">
+							<div class="form-group">
+								<input class="form-control" type="text" name="name" placeholder="Search documents">
+								<input type="hidden" name="activedrafts" value="on">
+								<input type="hidden" name="rfcs" value="on">
+							</div>
+						</form>
+					</div>
+				</div>
+			</nav>
+
+			<div class="content container-fluid">
+				{% if messages %}
+					<div class="row">
+						<div class="col-lg-12">
+							{% for message in messages %}
+								<p class="alert alert-info {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</p>
+							{% endfor %}
+						</div>
+					</div>
+				{% endif %}
+
+				<div class="row">
+					<div class="col-xs-3 col-md-2 leftmenu">
+						<ul class="nav nav-pills nav-stacked panel panel-default panel-body">
+							{% with "left" as flavor %}
+								{% include "base/menu.html" %}
+							{% endwith %}
+						</ul>
+					</div>
+                                        <div class="col-xs-9 col-md-10 content-wrapper">
+						<!--[if lt IE 8]>
+						<p id="browsehappy" class="collapse alert alert-warning alert-dismissible">
+							<button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+							<b>You are using an outdated browser.</b> Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.
+						</p>
+						<![endif]-->
+						{% block content %}{% endblock %}
+						{% block content_end %}{% endblock %}
+					</div>
+				</div>
+
+				<footer class="row">
+					<div class="col-md-12 hidden-xs">
+						<div class="text-center">
+							<hr>
+							<ul class="nav nav-pills center-pills">
+								<li><a href="//www.ietf.org/">IETF</a></li>
+								<li><a href="//tools.ietf.org/">IETF Tools</a></li>
+								<li><a href="//www.ietf.org/iesg/">IESG</a></li>
+								<li><a href="//www.iab.org/">IAB</a></li>
+								<li><a href="//www.irtf.org/">IRTF</a></li>
+								<li><a href="//www.rfc-editor.org/">RFC Editor</a></li>
+								<li><a href="//www.iana.org/">IANA</a></li>
+								<li><a href="//iaoc.ietf.org">IASA &amp; IAOC</a></li>
+								<li><a href="//trustee.ietf.org/">IETF Trust</a></li>
+								<li><a class="hidden-sm" href="//www.internetsociety.org/">ISOC</a></li>
+							</ul>
+
+							<p class="small text-muted">
+							{% if version_num %}
+								IETF Datatracker |
+								<a href="/release/{{version_num}}/">Version {{ version_num }}</a>
+								| {{revision_date}} |
+							{% endif %}
+								<a href="//tools.ietf.org/tools/ietfdb/newticket">Report a bug</a>
+							{% if messages %}
+								<ul class="messages">
+								{% for message in messages %}
+									<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+								{% endfor %}
+								</ul>
+							{% endif %}
+							</p>
+						</div>
+					</div>
+				</footer>
+			</div>
+
+			<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+			<script>window.jQuery || document.write('<script src="/facelift/js/lib/jquery-1.11.1.min.js"><\/script>')</script>
+			<script src="/facelift/js/lib/jquery.cookie.min.js"></script>
+			<script src="/facelift/js/lib/bootstrap.min.js"></script>
+			{% block js %}{% endblock %}
+			<script src="/facelift/js/ietf.js"></script>
+			<script>
+				//<![CDATA[
+				{% block scripts %}{% endblock %}
+				{% comment %}
+	            (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+	            function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+	            e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+	            e.src='//www.google-analytics.com/analytics.js';
+	            r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+	            ga('create','UA-XXXXX-X','auto');ga('send','pageview');
+				{% endcomment %}
+				//]]>
+				$(".leftmenu").removeClass("col-xs-3 col-md-2").addClass("col-lg-2 hidden-md hidden-sm hidden-xs ").next().removeClass("col-xs-9 col-md-10").addClass("col-lg-10");
+				$(".hidden-nojs, .in-nojs").removeClass("hidden-nojs in-nojs");
+			</script>
+		</body>
+	{% endfilter %}
+</html>
+

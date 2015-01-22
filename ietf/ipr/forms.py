@@ -1,6 +1,7 @@
 import datetime
 import email
 
+from django.utils.safestring import mark_safe
 from django import forms
 
 from ietf.group.models import Group
@@ -102,20 +103,20 @@ class GenericDisclosureForm(forms.Form):
     """Custom ModelForm-like form to use for new Generic or NonDocSpecific Iprs.
     If patent_info is submitted create a NonDocSpecificIprDisclosure object
     otherwise create a GenericIprDisclosure object."""
-    compliant = forms.BooleanField(required=False)
+    compliant = forms.CharField(label="This disclosure complies with RFC 3979", required=False)
     holder_legal_name = forms.CharField(max_length=255)
     notes = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
     other_designations = forms.CharField(max_length=255,required=False)
-    holder_contact_name = forms.CharField(max_length=255)
-    holder_contact_email = forms.EmailField()
-    holder_contact_info = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
+    holder_contact_name = forms.CharField(label="Name", max_length=255)
+    holder_contact_email = forms.EmailField(label="Email")
+    holder_contact_info = forms.CharField(label="Other Info (address, phone, etc.)", max_length=255,widget=forms.Textarea,required=False)
     submitter_name = forms.CharField(max_length=255,required=False)
     submitter_email = forms.EmailField(required=False)
-    patent_info = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
+    patent_info = forms.CharField(max_length=255,widget=forms.Textarea, required=False, help_text="Patent, Serial, Publication, Registration, or Application/File number(s), Date(s) granted or applied for, Country, and any additional notes")
     has_patent_pending = forms.BooleanField(required=False)
     statement = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
     updates = AutocompletedIprDisclosuresField(required=False)
-    same_as_ii_above = forms.BooleanField(required=False)
+    same_as_ii_above = forms.BooleanField(label="Same as in section II above", required=False)
     
     def __init__(self,*args,**kwargs):
         super(GenericDisclosureForm, self).__init__(*args,**kwargs)
@@ -155,7 +156,7 @@ class GenericDisclosureForm(forms.Form):
 
 class IprDisclosureFormBase(forms.ModelForm):
     """Base form for Holder and ThirdParty disclosures"""
-    updates = AutocompletedIprDisclosuresField(required=False)
+    updates = AutocompletedIprDisclosuresField(required=False, help_text=mark_safe("If this disclosure <strong>updates</strong> other disclosures identify here which ones. Leave this field blank if this disclosure does not update any prior disclosures. Note: Updates to IPR disclosures must only be made by authorized representatives of the original submitters. Updates will automatically be forwarded to the current Patent Holder's Contact and to the Submitter of the original IPR disclosure."))
     same_as_ii_above = forms.BooleanField(required=False)
     
     def __init__(self,*args,**kwargs):
@@ -163,6 +164,22 @@ class IprDisclosureFormBase(forms.ModelForm):
         self.fields['submitter_name'].required = False
         self.fields['submitter_email'].required = False
         self.fields['compliant'].initial = True
+        self.fields['compliant'].label = "This disclosure complies with RFC 3979"
+        if "ietfer_name" in self.fields:
+            self.fields["ietfer_name"].label = "Name"
+        if "ietfer_contact_email" in self.fields:
+            self.fields["ietfer_contact_email"].label = "Email"
+        if "ietfer_contact_info" in self.fields:
+            self.fields["ietfer_contact_info"].label = "Other info"
+            self.fields["ietfer_contact_info"].help_text = "Address, phone, etc."
+        if "patent_info" in self.fields:
+            self.fields["patent_info"].help_text = "Patent, Serial, Publication, Registration, or Application/File number(s), Date(s) granted or applied for, Country, and any additional notes"
+        if "licensing" in self.fields:
+            self.fields["licensing_comments"].label = "Licensing information, comments, notes, or URL for further information"
+        if "submitter_claims_all_terms_disclosed" in self.fields:
+            self.fields["submitter_claims_all_terms_disclosed"].label = "The individual submitting this template represents and warrants that all terms and conditions that must be satisfied for implementers of any covered IETF specification to obtain a license have been disclosed in this IPR disclosure statement"
+        if "same_as_ii_above" in self.fields:
+            self.fields["same_as_ii_above"].label = "Same as in section II above"
     
     class Meta:
         """This will be overridden"""
@@ -267,13 +284,13 @@ class ThirdPartyIprDisclosureForm(IprDisclosureFormBase):
         
 class SearchForm(forms.Form):
     state =    forms.MultipleChoiceField(choices=STATE_CHOICES,widget=forms.CheckboxSelectMultiple,required=False)
-    draft =    forms.CharField(max_length=128,required=False)
-    rfc =      forms.IntegerField(required=False)
-    holder =   forms.CharField(max_length=128,required=False)
-    patent =   forms.CharField(max_length=128,required=False)
-    group =    GroupModelChoiceField(label="Working group name",queryset=Group.objects.filter(type='wg').order_by('acronym'),required=False)
-    doctitle = forms.CharField(max_length=128,required=False)
-    iprtitle = forms.CharField(max_length=128,required=False)
+    draft =    forms.CharField(label="Draft name", max_length=128, required=False)
+    rfc =      forms.IntegerField(label="RFC number", required=False)
+    holder =   forms.CharField(label="Name of patent owner/applicant", max_length=128,required=False)
+    patent =   forms.CharField(label="Text in patent information", max_length=128,required=False)
+    group =    GroupModelChoiceField(label="Working group",queryset=Group.objects.filter(type='wg').order_by('acronym'),required=False, empty_label="(Select WG)")
+    doctitle = forms.CharField(label="Words in document title", max_length=128,required=False)
+    iprtitle = forms.CharField(label="Words in IPR disclosure title", max_length=128,required=False)
 
 class StateForm(forms.Form):
     state = forms.ModelChoiceField(queryset=IprDisclosureStateName.objects,label="New State",empty_label=None)

@@ -1,8 +1,8 @@
-{% extends "base.html" %}
+{% extends "ietf.html" %}
 
 {% block pagehead %}
-<link rel="alternate" type="application/rss+xml" title="Changes on {{ cl.long_name }} RSS Feed" href="../changes/feed/" />
-<link rel="alternate" type="application/rss+xml" title="Significant changes on {{ cl.long_name }} RSS Feed" href="../changes/significant/feed/" />
+	<link rel="alternate" type="application/atom+xml" title="Changes on {{ cl.long_name }}" href="../changes/feed/" />
+	<link rel="alternate" type="application/atom+xml" title="Significant changes on {{ cl.long_name }}" href="../changes/significant/feed/" />
 {% endblock %}
 
 {% block title %}{{ cl.long_name }}{% endblock %}
@@ -10,7 +10,7 @@
 {% block content %}
 <h1>{{ cl.long_name }}</h1>
 <p>
-Subscribe to notification email list:
+Subscribe to notification email lists:
 </p>
 <ul>
   <li><a href="../subscribe/">All changes email list</a></li>

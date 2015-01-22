@@ -1,18 +1,24 @@
-{% extends "base.html" %}
+{% extends "ietf.html" %}
 
 {% block title %}Resurrect {{ doc }}{% endblock %}
 
 {% block content %}
-<form action="" method="post">{% csrf_token %}
-  <h1>Resurrect {{ doc }}</h1>
-  
-  <p>Resurrect {{ doc.file_tag }}?</p>
 
-  <p>This will change the status to Active{% if doc.idinternal.resurrect_requested_by %} and email a notice to {{ doc.idinternal.resurrect_requested_by }}{% endif %}.</p>
+<h1>Resurrect<br><small>{{ doc }}</small></h1>
 
-  <div class="actions">
-    <a href="{{ back_url }}">Back</a>
-    <input type="submit" value="Resurrect"/>
-  </div>
+<p>Resurrect {{ doc }}?</p>
+
+<p>
+	This will change the status to Active {% if doc.idinternal.resurrect_requested_by %} and email a notice to {{ doc.idinternal.resurrect_requested_by }}{% endif %}.
+</p>
+
+<form role="form" method="post">
+	{% csrf_token %}
+
+	<div class="buttonlist">
+		<input class="btn btn-primary" type="submit" value="Resurrect">
+		<a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+	</div>
 </form>
+
 {% endblock %}
