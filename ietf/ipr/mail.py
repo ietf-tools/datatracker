@@ -192,4 +192,5 @@ def process_response_email(msg):
         in_reply_to = to_message
     )
     
+    log(u"Received IPR email from %s" % ietf_message.frm)
     return ietf_message
