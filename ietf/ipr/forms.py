@@ -12,6 +12,7 @@ from ietf.ipr.models import (IprDocRel, IprDisclosureBase, HolderIprDisclosure,
     GenericIprDisclosure, ThirdPartyIprDisclosure, NonDocSpecificIprDisclosure,
     IprLicenseTypeName, IprDisclosureStateName)
 from ietf.message.models import Message
+from ietf.utils.fields import DatepickerDateField
 
 # ----------------------------------------------------------------
 # Globals
@@ -232,7 +233,7 @@ class GenericIprDisclosureForm(IprDisclosureFormBase):
         exclude = [ 'by','docs','state','rel' ]
         
 class MessageModelForm(forms.ModelForm):
-    response_due = forms.DateField(required=False,help_text='The date which a response is due')
+    response_due = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, required=False, help_text='The date which a response is due')
     
     class Meta:
         model = Message
