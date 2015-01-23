@@ -247,3 +247,7 @@ pre { line-height: 1.214;  }
   display: inline-block;
   min-width: 5em;
 }
+
+/* IPR */
+
+.ipr-form .draft-row.template { display: none }

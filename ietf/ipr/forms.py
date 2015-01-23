@@ -5,9 +5,9 @@ from django.utils.safestring import mark_safe
 from django import forms
 
 from ietf.group.models import Group
+from ietf.doc.fields import SearchableDocAliasField
 from ietf.ipr.mail import utc_from_string
-from ietf.ipr.fields import (AutocompletedIprDisclosuresField, AutocompletedDraftField,
-    AutocompletedRfcField)
+from ietf.ipr.fields import SearchableIprDisclosuresField
 from ietf.ipr.models import (IprDocRel, IprDisclosureBase, HolderIprDisclosure,
     GenericIprDisclosure, ThirdPartyIprDisclosure, NonDocSpecificIprDisclosure,
     IprLicenseTypeName, IprDisclosureStateName)
@@ -90,7 +90,7 @@ class AddEmailForm(forms.Form):
         return self.cleaned_data
 
 class DraftForm(forms.ModelForm):
-    document = AutocompletedDraftField(required=False)
+    document = SearchableDocAliasField(label="I-D name/RFC number", required=False, doc_type="draft")
     
     class Meta:
         model = IprDocRel
@@ -103,10 +103,10 @@ class GenericDisclosureForm(forms.Form):
     """Custom ModelForm-like form to use for new Generic or NonDocSpecific Iprs.
     If patent_info is submitted create a NonDocSpecificIprDisclosure object
     otherwise create a GenericIprDisclosure object."""
-    compliant = forms.CharField(label="This disclosure complies with RFC 3979", required=False)
+    compliant = forms.BooleanField(label="This disclosure complies with RFC 3979", required=False)
     holder_legal_name = forms.CharField(max_length=255)
-    notes = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
-    other_designations = forms.CharField(max_length=255,required=False)
+    notes = forms.CharField(label="Additional notes", max_length=255,widget=forms.Textarea,required=False)
+    other_designations = forms.CharField(label="Designations for other contributions", max_length=255,required=False)
     holder_contact_name = forms.CharField(label="Name", max_length=255)
     holder_contact_email = forms.EmailField(label="Email")
     holder_contact_info = forms.CharField(label="Other Info (address, phone, etc.)", max_length=255,widget=forms.Textarea,required=False)
@@ -115,7 +115,7 @@ class GenericDisclosureForm(forms.Form):
     patent_info = forms.CharField(max_length=255,widget=forms.Textarea, required=False, help_text="Patent, Serial, Publication, Registration, or Application/File number(s), Date(s) granted or applied for, Country, and any additional notes")
     has_patent_pending = forms.BooleanField(required=False)
     statement = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
-    updates = AutocompletedIprDisclosuresField(required=False)
+    updates = SearchableIprDisclosuresField(required=False, help_text="If this disclosure <strong>updates</strong> other disclosures identify here which ones. Leave this field blank if this disclosure does not update any prior disclosures. Note: Updates to IPR disclosures must only be made by authorized representatives of the original submitters. Updates will automatically be forwarded to the current Patent Holder's Contact and to the Submitter of the original IPR disclosure.")
     same_as_ii_above = forms.BooleanField(label="Same as in section II above", required=False)
     
     def __init__(self,*args,**kwargs):
@@ -156,7 +156,7 @@ class GenericDisclosureForm(forms.Form):
 
 class IprDisclosureFormBase(forms.ModelForm):
     """Base form for Holder and ThirdParty disclosures"""
-    updates = AutocompletedIprDisclosuresField(required=False, help_text=mark_safe("If this disclosure <strong>updates</strong> other disclosures identify here which ones. Leave this field blank if this disclosure does not update any prior disclosures. Note: Updates to IPR disclosures must only be made by authorized representatives of the original submitters. Updates will automatically be forwarded to the current Patent Holder's Contact and to the Submitter of the original IPR disclosure."))
+    updates = SearchableIprDisclosuresField(required=False, help_text=mark_safe("If this disclosure <strong>updates</strong> other disclosures identify here which ones. Leave this field blank if this disclosure does not update any prior disclosures. Note: Updates to IPR disclosures must only be made by authorized representatives of the original submitters. Updates will automatically be forwarded to the current Patent Holder's Contact and to the Submitter of the original IPR disclosure."))
     same_as_ii_above = forms.BooleanField(required=False)
     
     def __init__(self,*args,**kwargs):
@@ -212,7 +212,7 @@ class HolderIprDisclosureForm(IprDisclosureFormBase):
     def clean(self):
         super(HolderIprDisclosureForm, self).clean()
         cleaned_data = self.cleaned_data
-        if not self.data.get('draft-0-document') and not self.data.get('rfc-0-document') and not cleaned_data.get('other_designations'):
+        if not self.data.get('iprdocrel_set-0-document') and not cleaned_data.get('other_designations'):
             raise forms.ValidationError('You need to specify a contribution in Section IV')
         return cleaned_data
 
@@ -254,12 +254,6 @@ class NotifyForm(forms.Form):
     type = forms.CharField(widget=forms.HiddenInput)
     text = forms.CharField(widget=forms.Textarea)
     
-class RfcForm(DraftForm):
-    document = AutocompletedRfcField(required=False)
-    
-    class Meta(DraftForm.Meta):
-        exclude = ('revisions',)
-
 class ThirdPartyIprDisclosureForm(IprDisclosureFormBase):
     class Meta:
         model = ThirdPartyIprDisclosure
@@ -268,7 +262,7 @@ class ThirdPartyIprDisclosureForm(IprDisclosureFormBase):
     def clean(self):
         super(ThirdPartyIprDisclosureForm, self).clean()
         cleaned_data = self.cleaned_data
-        if not self.data.get('draft-0-document') and not self.data.get('rfc-0-document') and not cleaned_data.get('other_designations'):
+        if not self.data.get('iprdocrel_set-0-document') and not cleaned_data.get('other_designations'):
             raise forms.ValidationError('You need to specify a contribution in Section III')
         return cleaned_data
     

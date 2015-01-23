@@ -182,11 +182,11 @@ from ietf.message.models import Message
 
 class IprDisclosureBase(models.Model):
     by                  = models.ForeignKey(Person) # who was logged in, or System if nobody was logged in
-    compliant           = models.BooleanField(default=True) # complies to RFC3979
+    compliant           = models.BooleanField("Complies to RFC3979", default=True)
     docs                = models.ManyToManyField(DocAlias, through='IprDocRel')
     holder_legal_name   = models.CharField(max_length=255)
-    notes               = models.TextField(blank=True)
-    other_designations  = models.CharField(blank=True, max_length=255)
+    notes               = models.TextField("Additional notes", blank=True)
+    other_designations  = models.CharField("Designations for other contributions", blank=True, max_length=255)
     rel                 = models.ManyToManyField('self', through='RelatedIpr', symmetrical=False)
     state               = models.ForeignKey(IprDisclosureStateName)
     submitter_name      = models.CharField(max_length=255)

@@ -4,12 +4,16 @@ from django.utils.html import escape
 from django import forms
 from django.core.urlresolvers import reverse as urlreverse
 
-import debug                            # pyflakes:ignore
-
 from ietf.doc.models import Document, DocAlias
+from ietf.doc.utils import uppercase_std_abbreviated_name
 
 def select2_id_doc_name_json(objs):
-    return json.dumps([{ "id": o.pk, "text": escape(o.name) } for o in objs])
+    return json.dumps([{ "id": o.pk, "text": escape(uppercase_std_abbreviated_name(o.name)) } for o in objs])
+
+# FIXME: select2 version 4 uses a standard select for the AJAX case -
+# switching to that would allow us to derive from the standard
+# multi-select machinery in Django instead of the manual CharField
+# stuff below
 
 class SearchableDocumentsField(forms.CharField):
     """Server-based multi-select field for choosing documents using
@@ -32,7 +36,7 @@ class SearchableDocumentsField(forms.CharField):
 
         super(SearchableDocumentsField, self).__init__(*args, **kwargs)
 
-        self.widget.attrs["class"] = "select2-field"
+        self.widget.attrs["class"] = "select2-field form-control"
         self.widget.attrs["data-placeholder"] = hint_text
         if self.max_entries != None:
             self.widget.attrs["data-max-entries"] = self.max_entries
@@ -43,6 +47,8 @@ class SearchableDocumentsField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
+        if isinstance(value, (int, long)):
+            value = str(value)
         if isinstance(value, basestring):
             pks = self.parse_select2_value(value)
             value = self.model.objects.filter(pk__in=pks)
@@ -82,7 +88,26 @@ class SearchableDocumentsField(forms.CharField):
 
         return objs
 
+class SearchableDocumentField(SearchableDocumentsField):
+    """Specialized to only return one Document."""
+    def __init__(self, model=Document, *args, **kwargs):
+        kwargs["max_entries"] = 1
+        super(SearchableDocumentField, self).__init__(model=model, *args, **kwargs)
+
+    def clean(self, value):
+        return super(SearchableDocumentField, self).clean(value).first()
+    
 class SearchableDocAliasesField(SearchableDocumentsField):
     def __init__(self, model=DocAlias, *args, **kwargs):
         super(SearchableDocAliasesField, self).__init__(model=model, *args, **kwargs)
+    
+class SearchableDocAliasField(SearchableDocumentsField):
+    """Specialized to only return one DocAlias."""
+    def __init__(self, model=DocAlias, *args, **kwargs):
+        kwargs["max_entries"] = 1
+        super(SearchableDocAliasField, self).__init__(model=model, *args, **kwargs)
+
+    def clean(self, value):
+        return super(SearchableDocAliasField, self).clean(value).first()
+
     

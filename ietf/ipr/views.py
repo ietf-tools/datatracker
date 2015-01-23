@@ -18,9 +18,9 @@ from ietf.group.models import Role, Group
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.ipr.mail import (message_from_message, get_reply_to, get_update_submitter_emails,
     get_update_cc_addrs)
-from ietf.ipr.fields import tokeninput_id_name_json
+from ietf.ipr.fields import select2_id_ipr_title_json
 from ietf.ipr.forms import (HolderIprDisclosureForm, GenericDisclosureForm,
-    ThirdPartyIprDisclosureForm, DraftForm, RfcForm, SearchForm, MessageModelForm,
+    ThirdPartyIprDisclosureForm, DraftForm, SearchForm, MessageModelForm,
     AddCommentForm, AddEmailForm, NotifyForm, StateForm, NonDocSpecificIprDisclosureForm,
     GenericIprDisclosureForm)
 from ietf.ipr.models import (IprDisclosureStateName, IprDisclosureBase,
@@ -173,40 +173,8 @@ def ajax_search(request):
 
     objs = objs.distinct()[:10]
     
-    return HttpResponse(tokeninput_id_name_json(objs), content_type='application/json')
-    
-def ajax_draft_search(request):
-    q = [w.strip() for w in request.GET.get('q', '').split() if w.strip()]
+    return HttpResponse(select2_id_ipr_title_json(objs), content_type='application/json')
 
-    if not q:
-        objs = DocAlias.objects.none()
-    else:
-        query = Q()
-        for t in q:
-            query &= Q(name__icontains=t)
-
-        objs = DocAlias.objects.filter(name__startswith='draft').filter(query)
-
-    objs = objs.distinct()[:10]
-
-    return HttpResponse(tokeninput_id_name_json(objs), content_type='application/json')
-
-def ajax_rfc_search(request):
-    # expects one numeric term
-    q = [w.strip() for w in request.GET.get('q', '').split() if w.strip()]
-
-    if not q:
-        objs = DocAlias.objects.none()
-    else:
-        query = Q()
-        query &= Q(name__startswith='rfc%s' % q[0])
-
-        objs = DocAlias.objects.filter(query)
-
-    objs = objs.distinct()[:10]
-
-    return HttpResponse(tokeninput_id_name_json(objs), content_type='application/json')
-    
 # ----------------------------------------------------------------
 # Views
 # ----------------------------------------------------------------
@@ -302,35 +270,23 @@ def edit(request, id, updates=None):
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
     type = class_to_type[ipr.__class__.__name__]
     
-    # only include extra when initial formset is empty
-    if ipr.iprdocrel_set.filter(document__name__startswith='draft'):
-        draft_extra = 0
-    else:
-        draft_extra = 1
-    if ipr.iprdocrel_set.filter(document__name__startswith='rfc'):
-        rfc_extra = 0
-    else:
-        rfc_extra = 1
-    DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=True, extra=draft_extra)
-    RfcFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=RfcForm, can_delete=True, extra=rfc_extra)
+    DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=True, extra=1)
 
     if request.method == 'POST':
         form = ipr_form_mapping[ipr.__class__.__name__](request.POST,instance=ipr)
-        if not type == 'generic':
-            draft_formset = DraftFormset(request.POST, instance=ipr, prefix='draft')
-            rfc_formset = RfcFormset(request.POST, instance=ipr, prefix='rfc')
+        if type != 'generic':
+            draft_formset = DraftFormset(request.POST, instance=ipr)
         else:
             draft_formset = None
-            rfc_formset = None
-            
+
         if request.user.is_anonymous():
             person = Person.objects.get(name="(System)")
         else:
             person = request.user.person
             
         # check formset validity
-        if not type == 'generic':
-            valid_formsets = draft_formset.is_valid() and rfc_formset.is_valid()
+        if type != 'generic':
+            valid_formsets = draft_formset.is_valid()
         else:
             valid_formsets = True
             
@@ -339,13 +295,9 @@ def edit(request, id, updates=None):
             disclosure = form.save(commit=False)
             disclosure.save()
             
-            if not type == 'generic':
-                # clear and recreate IprDocRels
-                # IprDocRel.objects.filter(disclosure=ipr).delete()
-                draft_formset = DraftFormset(request.POST, instance=disclosure, prefix='draft')
+            if type != 'generic':
+                draft_formset = DraftFormset(request.POST, instance=disclosure)
                 draft_formset.save()
-                rfc_formset = RfcFormset(request.POST, instance=disclosure, prefix='rfc')
-                rfc_formset.save()
 
             set_disclosure_title(disclosure)
             disclosure.save()
@@ -365,25 +317,18 @@ def edit(request, id, updates=None):
             
             messages.success(request,'Disclosure modified')
             return redirect("ipr_show", id=ipr.id)
-        
-        else:
-            # assert False, form.errors
-            pass
+
     else:
         if ipr.updates:
             form = ipr_form_mapping[ipr.__class__.__name__](instance=ipr,initial={'updates':[ x.target for x in ipr.updates ]})
         else:
             form = ipr_form_mapping[ipr.__class__.__name__](instance=ipr)
         #disclosure = IprDisclosureBase()    # dummy disclosure for inlineformset
-        dqs=IprDocRel.objects.filter(document__name__startswith='draft')
-        rqs=IprDocRel.objects.filter(document__name__startswith='rfc')
-        draft_formset = DraftFormset(instance=ipr, prefix='draft',queryset=dqs)
-        rfc_formset = RfcFormset(instance=ipr, prefix='rfc',queryset=rqs)
-        
+        draft_formset = DraftFormset(instance=ipr, queryset=IprDocRel.objects.all())
+
     return render(request, "ipr/details_edit.html",  {
         'form': form,
         'draft_formset':draft_formset,
-        'rfc_formset':rfc_formset,
         'type':type
     })
 
@@ -480,27 +425,25 @@ def iprs_for_drafts_txt(request):
 def new(request, type, updates=None):
     """Submit a new IPR Disclosure.  If the updates field != None, this disclosure
     updates one or more other disclosures."""
-    
-    DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=False, extra=1)
-    RfcFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=RfcForm, can_delete=False, extra=1)
+
+    # 1 to show initially + the template
+    DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=False, extra=1 + 1)
 
     if request.method == 'POST':
         form = ipr_form_mapping[type](request.POST)
-        if not type == 'generic':
-            draft_formset = DraftFormset(request.POST, instance=IprDisclosureBase(), prefix='draft')
-            rfc_formset = RfcFormset(request.POST, instance=IprDisclosureBase(), prefix='rfc')
+        if type != 'generic':
+            draft_formset = DraftFormset(request.POST, instance=IprDisclosureBase())
         else:
             draft_formset = None
-            rfc_formset = None
-            
+
         if request.user.is_anonymous():
             person = Person.objects.get(name="(System)")
         else:
             person = request.user.person
             
         # check formset validity
-        if not type == 'generic':
-            valid_formsets = draft_formset.is_valid() and rfc_formset.is_valid()
+        if type != 'generic':
+            valid_formsets = draft_formset.is_valid()
         else:
             valid_formsets = True
             
@@ -511,11 +454,9 @@ def new(request, type, updates=None):
             disclosure.state = IprDisclosureStateName.objects.get(slug='pending')
             disclosure.save()
             
-            if not type == 'generic':
-                draft_formset = DraftFormset(request.POST, instance=disclosure, prefix='draft')
+            if type != 'generic':
+                draft_formset = DraftFormset(request.POST, instance=disclosure)
                 draft_formset.save()
-                rfc_formset = RfcFormset(request.POST, instance=disclosure, prefix='rfc')
-                rfc_formset.save()
 
             set_disclosure_title(disclosure)
             disclosure.save()
@@ -545,13 +486,11 @@ def new(request, type, updates=None):
         else:
             form = ipr_form_mapping[type]()
         disclosure = IprDisclosureBase()    # dummy disclosure for inlineformset
-        draft_formset = DraftFormset(instance=disclosure, prefix='draft')
-        rfc_formset = RfcFormset(instance=disclosure, prefix='rfc')
-        
+        draft_formset = DraftFormset(instance=disclosure)
+
     return render(request, "ipr/details_edit.html",  {
         'form': form,
         'draft_formset':draft_formset,
-        'rfc_formset':rfc_formset,
         'type':type,
     })
 
