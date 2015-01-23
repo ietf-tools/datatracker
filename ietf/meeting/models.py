@@ -240,7 +240,7 @@ class Room(models.Model):
     resources = models.ManyToManyField(ResourceAssociation, blank = True)
 
     def __unicode__(self):
-        return "%s size: %u" % (self.name, self.capacity)
+        return "%s size: %s" % (self.name, self.capacity)
 
     def delete_timeslots(self):
         for ts in self.timeslot_set.all():
