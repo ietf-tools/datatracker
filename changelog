@@ -121,7 +121,7 @@ ietfdb (5.10.1) ietf; urgency=medium
 
   * Added admin support for meeting.models.ResourceAssociation.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jan 2015 11:06:36 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jan 2015 19:36:37 +0000
 
 
 ietfdb (5.10.0) ietf; urgency=medium
