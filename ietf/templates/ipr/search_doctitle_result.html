@@ -34,7 +34,7 @@
                       IPR disclosure ID# {{ item.source.id }} "<a href="{% url "ietf.ipr.views.show" item.source.id %}">{{ item.source.title }}</a>" Updates
                        {% endif %}
                     {% endfor %}
-                    <a href="{% url "ietf.ipr.views.show" ipr.id %}">"{{ ipr.disclosure.title }}"</a>
+                    <a href="{% url "ietf.ipr.views.show" ipr.disclosure.id %}">"{{ ipr.disclosure.title }}"</a>
                  </td>
                   </tr>
                {% endfor %}

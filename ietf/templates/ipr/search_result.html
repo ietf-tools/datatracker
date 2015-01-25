@@ -59,7 +59,7 @@
                <td width="90"><li>ID # {{ item.target.id }}</li></td>
                <td>
                   IPR disclosure ID# {{ ipr.id }} <a href="{% url "ietf.ipr.views.show" id=ipr.id %}">"{{ ipr.title }}"</a>
-                  Updates <a href="{% url "ietf.ipr.views.show" id=item.id %}">{{ item.target.title }}</a>
+                  Updates <a href="{% url "ietf.ipr.views.show" id=item.target.id %}">{{ item.target.title }}</a>
                </td>
             </tr>
                         {% endif %}
