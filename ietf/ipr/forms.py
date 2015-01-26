@@ -289,5 +289,5 @@ class SearchForm(forms.Form):
 
 class StateForm(forms.Form):
     state = forms.ModelChoiceField(queryset=IprDisclosureStateName.objects,label="New State",empty_label=None)
-    private = forms.BooleanField(required=False,help_text="If this box is checked the comment will not appear in the disclosure's public history view.")
-    comment = forms.CharField(required=False, widget=forms.Textarea)
+    comment = forms.CharField(required=False, widget=forms.Textarea, help_text="You may add a comment to be included in the disclosure history.")
+    private = forms.BooleanField(label="Private comment", required=False, help_text="If this box is checked the comment will not appear in the disclosure's public history view.")
