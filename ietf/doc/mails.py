@@ -189,13 +189,15 @@ def generate_approval_mail_approved(request, doc):
     else:
         made_by = "This document is the product of the %s." % doc.group.name_with_wg
     
-    director = doc.ad
-    other_director = Person.objects.filter(role__group__role__person=director, role__group__role__name="ad").exclude(pk=director.pk)
+    responsible_directors = set([doc.ad,])
+    if doc.group.type_id not in ("individ","area"):
+        responsible_directors.update([x.person for x in Role.objects.filter(group=doc.group.parent,name='ad')])
+    responsible_directors = [x.plain_name() for x in responsible_directors if x]
     
-    if doc.group.type_id not in ("individ", "area") and other_director:
-        contacts = "The IESG contact persons are %s and %s." % (director.plain_name(), other_director[0].plain_name())
+    if len(responsible_directors)>1:
+        contacts = "The IESG contact persons are "+", ".join(responsible_directors[:-1])+" and "+responsible_directors[-1]+"."
     else:
-        contacts = "The IESG contact person is %s." % director.plain_name()
+        contacts = "The IESG contact person is %s." % responsible_directors[0]
 
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
         
