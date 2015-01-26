@@ -393,14 +393,11 @@ def history(request, id):
     if not has_role(request.user, "Secretariat"):
         events = events.exclude(type='private_comment')
         
-    tabs = [('Disclosure','disclosure',urlreverse('ipr_show',kwargs={'id':id}),True),
-            ('History','history',urlreverse('ipr_history',kwargs={'id':id}),True)]
-
     return render(request, "ipr/details_history.html",  {
         'events':events,
         'ipr': ipr,
-        'tabs':tabs,
-        'selected':'history'
+        'tabs': get_details_tabs(ipr, 'History'),
+        'selected_tab_entry':'history'
     })
 
 def iprs_for_drafts_txt(request):
@@ -677,6 +674,14 @@ def search(request):
         form = SearchForm(initial={'state':['all']})
         return render(request, "ipr/search.html", {"form":form })
 
+def get_details_tabs(ipr, selected):
+    return [
+        t + (t[0].lower() == selected.lower(),)
+        for t in [
+        ('Disclosure', urlreverse('ipr_show', kwargs={ 'id': ipr.pk })),
+        ('History', urlreverse('ipr_history', kwargs={ 'id': ipr.pk }))
+    ]]
+
 def show(request, id):
     """View of individual declaration"""
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
@@ -688,13 +693,11 @@ def show(request, id):
         elif ipr.state.slug != 'posted':
             raise Http404
 
-    tabs = [('Disclosure','disclosure',urlreverse('ipr_show',kwargs={'id':id}),True),
-            ('History','history',urlreverse('ipr_history',kwargs={'id':id}),True)]
-
     return render(request, "ipr/details_view.html",  {
         'ipr': ipr,
-        'tabs':tabs,
-        'selected':'disclosure',
+        'tabs': get_details_tabs(ipr, 'Disclosure'),
+        'updates_iprs': ipr.relatedipr_source_set.all(),
+        'updated_by_iprs': ipr.relatedipr_target_set.filter(source__state="posted")
     })
 
 def showlist(request):
