@@ -7,7 +7,7 @@
 {% block content %}
 <h1>Internet-Draft submission </h1>
 
-<ul class="nav nav-tabs">
+<ul class="nav nav-tabs" role="tablist">
 	<li {% if selected == "index" %}class="active"{% endif %}>
 		<a href="{% url "submit_upload_submission" %}">Upload</a>
 	</li>
@@ -24,8 +24,6 @@
 		<a href="{% url "submit_approvals" %}">Approvals</a>
 	</li>
 </ul>
-
-<p></p>
 
 {% block submit_content %}
 {% endblock %}

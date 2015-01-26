@@ -82,8 +82,11 @@ body { padding-top: 70px; }
 .panel-blank { color: #555; }
 .panel-blank > .panel-heading { background-color: #eee; }
 
-/* Style required form field labels - 2217 = &lowast;  */
+/* Required form field labels - 2217 = &lowast;  */
 label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
+
+/* Add some margin to tabs */
+.nav-tabs[role=tablist] { margin-bottom: 0.7em; }
 
 /* Styles needed for the ballot table */
 .position-discuss,
@@ -249,5 +252,7 @@ pre { line-height: 1.214;  }
 }
 
 /* IPR */
+
+#ipr-details dl.dl-horizontal dt { white-space: normal; }
 
 .ipr-form .draft-row.template { display: none }

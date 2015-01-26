@@ -17,7 +17,6 @@
 	<li {% if selected == "requirements" %}class="active"{% endif %}><a href="{% url "nomcom_requirements" year %}">Desired expertise</a></li>
 	<li {% if selected == "questionnaires" %}class="active"{% endif %}><a href="{% url "nomcom_questionnaires" year %}">Questionnaires</a></li>
 </ul>
-<p></p>
 
 {% block nomcom_content %}
 {% endblock %}

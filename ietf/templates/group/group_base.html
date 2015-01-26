@@ -15,15 +15,13 @@
 	{% endif %}
 </h1>
 
-<ul class="nav nav-tabs">
+<ul class="nav nav-tabs" role="tablist">
 	{% for name, url in menu_entries %}
 		<li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
 			<a href="{{ url }}">{{ name }}</a>
 		</li>
 	{% endfor %}
 </ul>
-
-<p></p>
 
 {% if menu_actions %}
 <div class="buttonlist">
