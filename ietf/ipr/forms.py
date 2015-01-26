@@ -46,8 +46,8 @@ class MessageModelChoiceField(forms.ModelChoiceField):
 # Forms
 # ----------------------------------------------------------------
 class AddCommentForm(forms.Form):
-    private = forms.BooleanField(required=False,help_text="If this box is checked the comment will not appear in the disclosure's public history view.")
     comment = forms.CharField(required=True, widget=forms.Textarea)
+    private = forms.BooleanField(label="Private comment", required=False,help_text="If this box is checked the comment will not appear in the disclosure's public history view.")
 
 class AddEmailForm(forms.Form):
     direction = forms.ChoiceField(choices=(("incoming", "Incoming"), ("outgoing", "Outgoing")),
