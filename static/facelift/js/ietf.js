@@ -246,3 +246,9 @@ $(document).ready(function () {
 
 // Use the Bootstrap3 tooltip plugin for all elements with a title attribute
 $('[title][title!=""]').tooltip();
+
+$(document).ready(function () {
+    // add a required class on labels on forms that should have
+    // explicit requirement asterisks
+    $("form.show-required input[required],select[required],textarea[required]").closest(".form-group").find("label").addClass("required");
+});

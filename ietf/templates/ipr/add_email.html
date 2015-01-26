@@ -15,7 +15,7 @@
 
   {% bootstrap_messages %}
 
-  <form class="add-email" method="post">
+  <form role="form" class="add-email" method="post">
     {% csrf_token %}
 
     {% bootstrap_form form %}

@@ -11,7 +11,6 @@
 {% endblock %}
 
 {% block content %}
-  {% bootstrap_messages %}
 
 {% if form.instance|to_class_name == "HolderIprDisclosure" %}
   <h1>The Patent Disclosure and Licensing Declaration Template for Specific IPR Disclosures</h1>
@@ -62,7 +61,9 @@
 	will be posted, but will be marked as "non-compliant".
 </p>
 
-<form class="ipr-form form-horizontal" role="form" method="post">
+{% bootstrap_messages %}
+
+<form class="ipr-form form-horizontal show-required" role="form" method="post">
   {% csrf_token %}
 
   {% if form.errors %}

@@ -1,7 +1,6 @@
 $(document).ready(function() {
     var form = $(".ipr-form");
 
-    form.find("input[required],select[required],textarea[required]").closest(".form-group").find("label").addClass("required");
     var template = form.find('.draft-row.template');
 
     var templateData = template.clone();

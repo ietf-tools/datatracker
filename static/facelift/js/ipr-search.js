@@ -12,6 +12,7 @@ $(document).ready(function() {
         }
     });
 
+    // make enter presses submit through the nearby button
     $("form.ipr-search input,select").keyup(function (e) {
         if (e.which == 13) {
             $(this).next('button[type=submit]').click();

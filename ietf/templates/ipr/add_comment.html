@@ -11,7 +11,7 @@
 
   {% bootstrap_messages %}
 
-  <form class="add-comment" method="post">
+  <form role="form" class="add-comment" method="post">
     {% csrf_token %}
 
     {% bootstrap_form form %}

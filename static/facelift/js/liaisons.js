@@ -309,8 +309,6 @@ $(document).ready(function () {
 
 
         // init form
-        form.find("input[required],select[required],textarea[required]").closest(".form-group").find("label").addClass("required");
-
         organization.change(function() { updateInfo(false, 'to'); });
         organization.change(checkOtherSDO);
         from.change(function() { checkFrom(false); });
