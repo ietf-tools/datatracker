@@ -66,21 +66,6 @@
       of the original IPR disclosure.</p>
   {% endif %}
 
-  {% if updates_iprs %}
-    <h2>Updates</h2>
-
-    {% for item in updates_iprs %}
-      <p>This IPR disclosure updates IPR disclosure ID #{{ item.target.id }},
-        {% if item.target.state.slug == "removed" %}
-          "{{ item.target.title }}", which was removed at the request of the submitter.
-        {% else %}
-          "<a href="{% url "ietf.ipr.views.show" id=item.target.id %}">{{ item.target.title }}</a>".
-
-        {% endif %}
-      </p>
-    {% endfor %}
-  {% endif %}
-
   {% if updated_by_iprs %}
     <h2>Updated by</h2>
 
@@ -90,6 +75,25 @@
         "<a href="{% url "ietf.ipr.views.show" id=item.source.id %}">{{ item.source.title }}</a>".
       </p>
     {% endfor %}
+  {% endif %}
+
+  {% if updates_iprs %}
+    <h2>Updates</h2>
+
+      <dl class="dl-horizontal">
+        <dt>Updates</dt>
+        <dd>
+          {% for item in updates_iprs %}
+            <div>
+              IPR Disclosure ID #{{ item.target.id }},
+              {% if item.target.state.slug == "removed" %}
+                "{{ item.target.title }}" (which was removed at the request of the submitter)
+              {% else %}
+                "<a href="{% url "ietf.ipr.views.show" id=item.target.id %}">{{ item.target.title }}</a>"
+              {% endif %}
+            </div>
+          {% endfor %}
+      </dl>
   {% endif %}
 
   {% if user|has_role:"Secretariat" and ipr.update_notified_date %}
@@ -169,15 +173,15 @@
         <p>A. For granted patents or published pending patent applications, please provide the following information:</p>
 
         <dl class="dl-horizontal">
-          <dt>Patent, Serial, Publication, Registration, or Application/File number(s):</dt>
+          <dt>Patent, Serial, Publication, Registration, or Application/File number(s)</dt>
           <dd>{{ ipr.patent_info|linebreaks }}</dd>
         </dl>
         
         <p>B. Does this disclosure relate to an unpublished pending patent application?:</p>
         
         <dl class="dl-horizontal">
-          <dt>Has patent pending:</dt>
-          <dd>{{ ipr.has_patent_pending|yesno }}</dd>
+          <dt>Has patent pending</dt>
+          <dd>{{ ipr.has_patent_pending|yesno:"Yes,No" }}</dd>
         </dl>
       {% endif %}
 
