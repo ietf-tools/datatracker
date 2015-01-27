@@ -245,23 +245,27 @@ def add_email(request, id):
     return render(request, 'ipr/add_email.html',dict(ipr=ipr,form=form))
         
 @role_required('Secretariat',)
-def admin(request,state):
+def admin(request, state):
     """Administrative disclosure listing.  For non-posted disclosures"""
-    if state == 'removed':
-        states = ('removed','rejected')
-    else:
-        states = [state]
+    states = IprDisclosureStateName.objects.filter(slug__in=[state, "rejected"] if state == "removed" else [state])
+    if not states:
+        raise Http404
+
     iprs = IprDisclosureBase.objects.filter(state__in=states).order_by('-time')
-    
-    tabs = [('Pending','pending',urlreverse('ipr_admin',kwargs={'state':'pending'}),True),
-        ('Removed','removed',urlreverse('ipr_admin',kwargs={'state':'removed'}),True),
-        ('Parked','parked',urlreverse('ipr_admin',kwargs={'state':'parked'}),True)]
-    
-    template = 'ipr/admin_' + state + '.html'
-    return render(request, template,  {
+
+    tabs = [
+        t + (t[0].lower() == state.lower(),)
+        for t in [
+            ('Pending', urlreverse('ipr_admin', kwargs={'state':'pending'})),
+            ('Removed', urlreverse('ipr_admin', kwargs={'state':'removed'})),
+            ('Parked', urlreverse('ipr_admin', kwargs={'state':'parked'})),
+        ]]
+
+    return render(request, 'ipr/admin_list.html',  {
         'iprs': iprs,
         'tabs': tabs,
-        'selected': state
+        'states': states,
+        'administrative_list': state,
     })
 
 @role_required('Secretariat',)

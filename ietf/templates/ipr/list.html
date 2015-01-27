@@ -6,83 +6,53 @@
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
-{% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
-{% endblock %}
-
 {% block content %}
+  <div class="row">
+    <div class="col-sm-10">
 
-<div class="row">
-	<div class="col-sm-10">
+      <h1>Intellectual property rights disclosures</h1>
 
-<h1>Intellectual property rights disclosures</h1>
-
-<div class="alert alert-info">
+      <div class="alert alert-info">
 	<p>
-		This page provides a mechanism for filing disclosures about intellectual property rights (IPR) and for finding out what IPR disclosures have been filed.  The IETF intellectual property rights rules are defined in RFC 3979, <a href="http://www.ietf.org/rfc/rfc3979.txt">"Intellectual Property Rights in IETF Technology."</a>
+	  This page provides a mechanism for filing disclosures about intellectual property rights (IPR) and for finding out what IPR disclosures have been filed.  The IETF intellectual property rights rules are defined in RFC 3979, <a href="http://www.ietf.org/rfc/rfc3979.txt">"Intellectual Property Rights in IETF Technology."</a>
 	</p>
 
         <p>
-		The IETF takes no position regarding the validity or scope of any
-		intellectual property rights or other rights that might be claimed to
-		pertain to the implementation or use of the technology described in any IETF documents or the extent to
-		which any license under such rights might or might not be available; nor does it represent that it has made any independent effort to identify any such rights.
+	  The IETF takes no position regarding the validity or scope of any
+	  intellectual property rights or other rights that might be claimed to
+	  pertain to the implementation or use of the technology described in any IETF documents or the extent to
+	  which any license under such rights might or might not be available; nor does it represent that it has made any independent effort to identify any such rights.
 	</p>
-</div>
+      </div>
 
-<p class="buttonlist">
+      <p class="buttonlist">
 	<a class="btn btn-default" href="{% url "ietf.ipr.views.about" %}">Submit an IPR disclosure</a>
         <a class="btn btn-default" href="{% url "ietf.ipr.views.search" %}">Search IPR disclosures</a>
         {% if user|has_role:"Secretariat" %}
-        <a class="btn btn-default" href="{% url "ipr_admin_main" %}">Administrative View</a>
+          <a class="btn btn-default" href="{% url "ipr_admin_main" %}">Administrative View</a>
         {% endif %}
-</p>
+      </p>
 
-<h2 id="generic">Generic IPR disclosures</h2>
-<table class="table table-condensed table-striped">
-	<thead>
-                <tr><th class="date-column">Date</th><th class="id-column">ID</th><th class="title-column">Title</th></tr>
-        </thead>
-	<tbody>
-		{% for ipr in generic_disclosures %}
-			{% include "ipr/list_item.html" %}
-		{% endfor %}
-	</tbody>
-</table>
+      <h2 id="generic">Generic IPR disclosures</h2>
 
-<h2 id="specific">Specific IPR disclosures</h2>
-<table class="table table-condensed table-striped">
-	<thead>
-                <tr><th class="date-column">Date</th><th class="id-column">ID</th><th class="title-column">Title</th></tr>
-        </thead>
-	<tbody>
-		{% for ipr in specific_disclosures %}
-			{% include "ipr/list_item.html" %}
-		{% endfor %}
-	</tbody>
-</table>
+      {% include "ipr/ipr_table.html" with iprs=generic_disclosures %}
 
-<h2 id="notify">Specific third-party IPR disclosures</h2>
-<table class="table table-condensed table-striped">
-	<thead>
-                <tr><th class="date-column">Date</th><th class="id-column">ID</th><th class="title-column">Title</th></tr>
-        </thead>
-	<tbody>
-		{% for ipr in thirdpty_disclosures %}
-			{% include "ipr/list_item.html" %}
-		{% endfor %}
-	</tbody>
-</table>
+      <h2 id="specific">Specific IPR disclosures</h2>
 
-</div>
-<div class="col-sm-2 hidden-print bs-docs-sidebar" id="affix">
-	<ul class="nav nav-pills nav-stacked small" data-spy="affix">
-		<li><a href="#generic">Generic IPR disclosures</a></li>
-		<li><a href="#specific">Specific IPR disclosures</a></li>
-		<li><a href="#notify">Specific third-party IPR disclosures</a></li>
-	</ul>
-</div>
-</div>
+      {% include "ipr/ipr_table.html" with iprs=specific_disclosures %}
+
+      <h2 id="notify">Specific third-party IPR disclosures</h2>
+
+      {% include "ipr/ipr_table.html" with iprs=thirdpty_disclosures %}
+
+    </div>
+
+    <div class="col-sm-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+	<li><a href="#generic">Generic IPR disclosures</a></li>
+	<li><a href="#specific">Specific IPR disclosures</a></li>
+	<li><a href="#notify">Specific third-party IPR disclosures</a></li>
+      </ul>
+    </div>
+  </div>
 {% endblock %}
-
-

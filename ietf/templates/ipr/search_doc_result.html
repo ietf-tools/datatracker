@@ -19,7 +19,7 @@
         {% for ipr in iprs %}
 	  <tr>
             <td class="text-nowrap">{{ ipr.time|date:"Y-m-d" }}</td>
-            <td class="text-right">{{ ipr.id }}</td>
+            <td>{{ ipr.id }}</td>
             <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a></td>
 	  </tr>
         {% endfor %}
@@ -50,7 +50,7 @@
               {% if ipr.disclosure.state_id in states %}
 		<tr>
                   <td class="text-nowrap">{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
-                  <td class="text-right">{{ ipr.disclosure.id }}</td>
+                  <td>{{ ipr.disclosure.id }}</td>
                   <td><a href="{% url "ietf.ipr.views.show" id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a></td>
                 </tr>
               {% endif %}

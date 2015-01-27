@@ -1,5 +1,7 @@
 $(document).ready(function() {
     // hack the "All States" check box
+    $("#id_state").addClass("list-inline");
+
     $("#id_state input[value!=all]").change(function(e) {
         if (this.checked) {
             $("#id_state input[value=all]").prop('checked',false);

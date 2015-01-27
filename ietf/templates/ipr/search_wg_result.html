@@ -26,7 +26,7 @@
                                 {% for ipr in alias.document.ipr %}
 					<tr>
                                                 <td class="text-nowrap">{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
-                                                <td class="text-right">{{ ipr.disclosure.id }}</td>
+                                                <td>{{ ipr.disclosure.id }}</td>
 						<td>
                                                         {% for item in ipr.disclosure.updates.all %}
                                                                 {% if item.target.state_id == "posted" %}
