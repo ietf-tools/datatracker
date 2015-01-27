@@ -11,7 +11,7 @@ from pyquery import PyQuery
 from ietf.doc.models import Document
 from ietf.meeting.models import Session, TimeSlot
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 class MeetingTests(TestCase):
     def setUp(self):
@@ -97,6 +97,13 @@ class MeetingTests(TestCase):
         agenda_content = r.content
         self.assertTrue(session.group.acronym in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
+
+    def test_agenda_by_room(self):
+        meeting = make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.agenda_by_room",kwargs=dict(num=meeting.number))
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url,kwargs=dict(num=meeting.number))
+        self.assertTrue(all([x in r.content for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
 
     def test_materials(self):
         meeting = make_meeting_test_data()

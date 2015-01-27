@@ -20,6 +20,7 @@ def make_meeting_test_data():
     pname = RoomResourceName.objects.create(name='projector',slug='proj')
     projector = ResourceAssociation.objects.create(name=pname,icon="notfound.png",desc="Basic projector")
     room = Room.objects.create(meeting=meeting, name="Test Room", capacity=123)
+    breakfast_room = Room.objects.create(meeting=meeting, name="Breakfast Room", capacity=40)
     room.resources = [projector]
 
     # mars WG
@@ -40,6 +41,17 @@ def make_meeting_test_data():
                                           requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now())
     ScheduledSession.objects.create(timeslot=slot, session=ames_session, schedule=schedule)
+
+    # IESG breakfast
+    breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", duration=90 * 60,
+                                   location=breakfast_room, 
+                                   time=datetime.datetime.combine(datetime.date.today(),datetime.time(7,0)))
+    iesg_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="iesg"),
+                                          name="IESG Breakfast",
+                                          attendees=25, requested_by=system_person,
+                                          requested_duration=20, status_id="schedw",
+                                          scheduled=datetime.datetime.now())
+    ScheduledSession.objects.create(timeslot=breakfast_slot, session=iesg_session, schedule=schedule)
 
     meeting.agenda = schedule
     meeting.save()

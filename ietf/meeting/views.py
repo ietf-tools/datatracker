@@ -6,6 +6,7 @@ import re
 import tarfile
 import urllib
 from tempfile import mkstemp
+from collections import OrderedDict
 
 import debug                            # pyflakes:ignore
 
@@ -375,6 +376,20 @@ def agenda(request, num=None, name=None, base=None, ext=None):
     updated = meeting_updated(meeting)
     return HttpResponse(render_to_string("meeting/"+base+ext,
         {"schedule":schedule, "updated": updated}, RequestContext(request)), content_type=mimetype[ext])
+
+#TODO - let the IAB in
+@role_required('Area Director','Secretariat')
+@ensure_csrf_cookie
+def agenda_by_room(request,num=None):
+    meeting = get_meeting(num) 
+    schedule = get_schedule(meeting)
+    ss_by_day = OrderedDict()
+    for day in schedule.scheduledsession_set.dates('timeslot__time','day'):
+        ss_by_day[day]=[]
+    for ss in schedule.scheduledsession_set.order_by('timeslot__location','timeslot__time'):
+        day = ss.timeslot.time.date()
+        ss_by_day[day].append(ss)
+    return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"ss_by_day":ss_by_day})
 
 def read_agenda_file(num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
