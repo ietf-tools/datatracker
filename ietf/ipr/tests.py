@@ -435,7 +435,7 @@ I would like to revoke this declaration.
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        x = len(q('table#pending-iprs tr')) - 1     # minus header
+        x = len(q('table.ipr-table tbody tr'))
         self.assertEqual(num,x)
         
     def test_admin_removed(self):
@@ -452,7 +452,7 @@ I would like to revoke this declaration.
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        x = len(q('table#removed-iprs tr')) - 1     # minus header
+        x = len(q('table.ipr-table tbody tr'))
         self.assertEqual(num,x)
         
     def test_admin_parked(self):

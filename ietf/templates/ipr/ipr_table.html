@@ -1,10 +1,10 @@
 {% load ietf_filters %}
-<table class="table table-condensed table-striped">
+<table class="table table-condensed table-striped ipr-table">
   <thead>
     <tr>
-      <th class="date-column">Date</th>
-      <th class="id-column">ID</th>
-      <th class="title-column">Title</th>
+      <th>Date</th>
+      <th>ID</th>
+      <th>Title</th>
       {% if administrative_list == 'pending' %}
         <th>Query</th>
         <th>Response Due</th>
@@ -14,9 +14,9 @@
   <tbody>
     {% for ipr in iprs %}
       <tr>
-        <td class="date-column text-nowrap">{{ ipr.time|date:"Y-m-d" }}</td>
-        <td class="id-column nowrap">{{ ipr.id }}</td>
-        <td class="title-column">
+        <td class="text-nowrap">{{ ipr.time|date:"Y-m-d" }}</td>
+        <td>{{ ipr.id }}</td>
+        <td>
           {% if ipr.state_id == 'posted' or administrative_list %}
             <div><a href="{% url "ietf.ipr.views.show" ipr.id %}">{{ ipr.title }}</a></div>
           {% else %}
