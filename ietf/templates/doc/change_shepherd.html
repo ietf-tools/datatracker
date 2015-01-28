@@ -2,13 +2,11 @@
 
 {% load bootstrap3 %}
 
-{% block title %}
-Change document shepherd for {{ doc.name }}-{{ doc.rev }}
-{% endblock %}
+{% block title %}Change document shepherd for {{ doc.name }}-{{ doc.rev }}{% endblock %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="/facelift/css/lib/select2.css">
-<link rel="stylesheet" href="/facelift/css/lib/select2-bootstrap.css">
+  <link rel="stylesheet" href="/facelift/css/lib/select2.css">
+  <link rel="stylesheet" href="/facelift/css/lib/select2-bootstrap.css">
 {% endblock %}
 
 {% block content %}
@@ -24,12 +22,12 @@ Change document shepherd for {{ doc.name }}-{{ doc.rev }}
 	{% bootstrap_form form %}
 
 	{% buttons %}
-		<button type="submit" class="btn btn-primary">Submit</button>
+                <button type="submit" class="btn btn-primary">Save</button>
                 <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
 	{% endbuttons %}
 </form>
 {% endblock %}
 
 {% block js %}
-<script src="/facelift/js/lib/select2-3.5.2.min.js"></script>
+  <script src="/facelift/js/lib/select2-3.5.2.min.js"></script>
 {% endblock %}
