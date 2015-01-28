@@ -28,8 +28,8 @@
 		</th>
 		<td class="edit"></td>
 		<td>
-			{{ group.name }} {{ group.type.name }}
-			<a href="{{ group.about_url }}">({{ group.acronym }})</a> {{ group.type.name }}
+                        {{ group.name }} {{ group.type.name }}
+                        <a href="{{ group.about_url }}">({{ group.acronym }})</a>
 
                         {% if snapshot %}
 				<span class="label label-warning">Snapshot</span>
@@ -40,9 +40,9 @@
 	<tr>
                 <th>Title</th>
                 <td class="edit">
-			{% if not snapshot and can_manage %}
-                                <a class="btn btn-default btn-xs pull-right" href="{% url "charter_change_title" name=doc.name %}">Edit</a>
-			{% endif %}
+                        {% if not snapshot and can_manage %}
+                          {% doc_edit_button "charter_change_title" name=doc.name %}
+                        {% endif %}
                 </td>
                 <td>{{ doc.title }}</td>
 	</tr>
@@ -57,11 +57,11 @@
 		<th><a href="/doc/help/state/charter/">Charter state</a></th>
 		<td class="edit">
 			{% if not snapshot and can_manage %}
-				<a class="btn btn-default btn-xs pull-right" title="{{ doc.get_state.desc }}" href="{% url "charter_change_state" name=doc.name %}">Edit</a>
-			{% endif %}
+                          {% doc_edit_button "charter_change_state" name=doc.name %}
+                        {% endif %}
 		</td>
 		<td>
-			{{ doc.get_state.name }}
+                  <span title="{{ doc.get_state.desc }}">{{ doc.get_state.name }}</span>
 
 			{% if chartering == "initial" %}
 				<span class="label label-info">Initial chartering</span>
@@ -77,8 +77,8 @@
 		<th>Telechat date</th>
 		<td class="edit">
 			{% if can_manage %}
-				<a class="btn btn-default btn-xs pull-right" href="{% url "charter_telechat_date" name=doc.name %}">Edit</a>
-			{% endif %}
+                          {% doc_edit_button "charter_telechat_date" name=doc.name %}
+                        {% endif %}
 		</td>
 		<td>
 			{% if not telechat %}
@@ -97,8 +97,8 @@
 		<th>Responsible AD</th>
 		<td class="edit">
 			{% if can_manage %}
-				<a class="btn btn-default btn-xs pull-right" href="{% url "charter_edit_ad" name=doc.name %}">Edit</a>
-			{% endif %}
+                          {% doc_edit_button "charter_edit_ad" name=doc.name %}
+                        {% endif %}
 		</td>
 		<td>
 			{{ doc.ad|default:"(None)" }}
@@ -109,7 +109,7 @@
 		<th>Send notices to</th>
 		<td class="edit">
 			{% if can_manage %}
-				<a class="btn btn-default btn-xs pull-right" href="{% url "charter_edit_notify" name=doc.name %}">Edit</a>
+                                {% doc_edit_button "charter_edit_notify" name=doc.name %}
 			{% endif %}
 		</td>
 		<td>

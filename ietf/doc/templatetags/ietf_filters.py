@@ -463,18 +463,11 @@ def format_snippet(text, trunc_words=25):
         return mark_safe(u'<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="fa fa-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
     return full
 
-@register.filter
-def format_editable_snippet(text,link): 
-    full = mark_safe(keep_spacing(collapsebr(linebreaksbr(urlize(sanitize_html(text))))))
-    snippet = truncatewords_html(full, 25)
-    if snippet != full:
-        return mark_safe(u'<div class="snippet">%s<span class="show-all">[show all]</span></div><div style="display:none" class="full">%s' % (format_editable(snippet,link),format_editable(full,link)) )
-    else:
-        return format_editable(full,link)
-
-@register.filter
-def format_editable(text,link): 
-    return mark_safe(u'<a class="editlink" href="%s">%s</a>' % (link,text))
+@register.simple_tag
+def doc_edit_button(url_name, *args, **kwargs):
+    """Given URL name/args/kwargs, looks up the URL just like "url" tag and returns a properly formatted button for the document material tables."""
+    from django.core.urlresolvers import reverse as urlreverse
+    return mark_safe(u'<a class="btn btn-default btn-xs" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
 
 @register.filter
 def textify(text):

@@ -7,7 +7,9 @@
 {% block content %}
 <h1>{{ title }}</h1>
 
-<form role="form" class="change-title" method="post">{% csrf_token %}
+<form role="form" class="change-title" method="post">
+  {% csrf_token %}
+
   {% bootstrap_form form %}
 
   {% buttons %}
