@@ -1,4 +1,4 @@
-# -*- coding: utf-8-No-BOM -*-
+# -*- coding: utf-8 -*-
 import os
 
 from django.db import models
@@ -39,10 +39,10 @@ class NomCom(models.Model):
 
     group = models.ForeignKey(Group)
     send_questionnaire = models.BooleanField(verbose_name='Send questionnaires automatically', default=False,
-                                             help_text='If you check this box, questionnaires are sent automatically after nominations')
+                                             help_text='If you check this box, questionnaires are sent automatically after nominations.')
     reminder_interval = models.PositiveIntegerField(help_text='If the nomcom user sets the interval field then a cron command will \
                                                                send reminders to the nominees who have not responded using \
-                                                               the following formula: (today - nomination_date) % interval == 0',
+                                                               the following formula: (today - nomination_date) % interval == 0.',
                                                                blank=True, null=True)
     initial_text = models.TextField(verbose_name='Help text for nomination form',
                                     blank=True)

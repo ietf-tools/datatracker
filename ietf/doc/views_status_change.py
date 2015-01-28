@@ -25,7 +25,7 @@ from ietf.utils.textupload import get_cleaned_text_file_content
 
 class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)
-    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history", required=False)
+    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False)
 
 
 @role_required("Area Director", "Secretariat")
@@ -109,8 +109,8 @@ def send_status_change_eval_email(request,doc):
     send_mail_preformatted(request,msg)
 
 class UploadForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label="Status change text", help_text="Edit the status change text", required=False)
-    txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file", required=False)
+    content = forms.CharField(widget=forms.Textarea, label="Status change text", help_text="Edit the status change text.", required=False)
+    txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file.", required=False)
 
     def clean_content(self):
         return self.cleaned_data["content"].replace("\r", "")
@@ -306,7 +306,7 @@ def default_approval_text(status_change,relateddoc):
 from django.forms.formsets import formset_factory
 
 class AnnouncementForm(forms.Form):
-    announcement_text = forms.CharField(widget=forms.Textarea, label="Status Change Announcement", help_text="Edit the announcement message", required=True)
+    announcement_text = forms.CharField(widget=forms.Textarea, label="Status Change Announcement", help_text="Edit the announcement message.", required=True)
     label = None
       
     def __init__(self, *args, **kwargs):
@@ -436,12 +436,12 @@ class EditStatusChangeForm(forms.Form):
         return clean_helper(self,EditStatusChangeForm)
 
 class StartStatusChangeForm(forms.Form):
-    document_name = forms.CharField(max_length=255, label="Document name", help_text="A descriptive name such as status-change-md2-to-historic is better than status-change-rfc1319", required=True)
+    document_name = forms.CharField(max_length=255, label="Document name", help_text="A descriptive name such as status-change-md2-to-historic is better than status-change-rfc1319.", required=True)
     title = forms.CharField(max_length=255, label="Title", required=True)
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), 
                                 label="Shepherding AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(type="statchg", slug__in=("needshep", "adrev")), empty_label=None, required=False)
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
+    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
     relations={}
 

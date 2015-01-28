@@ -240,7 +240,7 @@ class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
 class MergeForm(BaseNomcomForm, forms.Form):
 
     secondary_emails = MultiEmailField(label="Secondary email addresses",
-        help_text="Provide a comma separated list of email addresses. Nominations already received with any of these email address will be moved to show under the primary address", widget=forms.Textarea)
+        help_text="Provide a comma separated list of email addresses. Nominations already received with any of these email address will be moved to show under the primary address.", widget=forms.Textarea)
     primary_email = forms.EmailField(label="Primary email address",
                                      widget=forms.TextInput(attrs={'size': '40'}))
 
@@ -325,8 +325,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
     comments = forms.CharField(label="Candidate's qualifications for the position",
                                widget=forms.Textarea())
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation',
-                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, \
-                                                 please check the 'email comments back to me as confirmation'",
+                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
                                       required=False)
 
     fieldsets = [('Candidate Nomination', ('position', 'candidate_name',
@@ -435,8 +434,7 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
     comments = forms.CharField(label='Comments on this nominee',
                                widget=forms.Textarea())
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation',
-                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, \
-                                                 please check the 'email comments back to me as confirmation'",
+                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
                                       required=False)
 
     def __init__(self, *args, **kwargs):

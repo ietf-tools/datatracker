@@ -28,7 +28,7 @@ class LiaisonForm(forms.Form):
     to_poc = forms.CharField(widget=ReadOnlyWidget, label="POC", required=False)
     response_contact = forms.CharField(required=False, max_length=255)
     technical_contact = forms.CharField(required=False, max_length=255)
-    cc1 = forms.CharField(widget=forms.Textarea, label="CC", required=False, help_text='Please insert one email address per line')
+    cc1 = forms.CharField(widget=forms.Textarea, label="CC", required=False, help_text='Please insert one email address per line.')
     purpose = forms.ChoiceField()
     related_to = SearchableLiaisonStatementField(label=u'Related Liaison Statement', required=False)
     deadline_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)

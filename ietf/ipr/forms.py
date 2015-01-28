@@ -113,7 +113,7 @@ class GenericDisclosureForm(forms.Form):
     holder_contact_info = forms.CharField(label="Other Info (address, phone, etc.)", max_length=255,widget=forms.Textarea,required=False)
     submitter_name = forms.CharField(max_length=255,required=False)
     submitter_email = forms.EmailField(required=False)
-    patent_info = forms.CharField(max_length=255,widget=forms.Textarea, required=False, help_text="Patent, Serial, Publication, Registration, or Application/File number(s), Date(s) granted or applied for, Country, and any additional notes")
+    patent_info = forms.CharField(max_length=255,widget=forms.Textarea, required=False, help_text="Patent, Serial, Publication, Registration, or Application/File number(s), Date(s) granted or applied for, Country, and any additional notes.")
     has_patent_pending = forms.BooleanField(required=False)
     statement = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
     updates = SearchableIprDisclosuresField(required=False, help_text="If this disclosure <strong>updates</strong> other disclosures identify here which ones. Leave this field blank if this disclosure does not update any prior disclosures. <strong>Note</strong>: Updates to IPR disclosures must only be made by authorized representatives of the original submitters. Updates will automatically be forwarded to the current Patent Holder's Contact and to the Submitter of the original IPR disclosure.")
@@ -233,7 +233,7 @@ class GenericIprDisclosureForm(IprDisclosureFormBase):
         exclude = [ 'by','docs','state','rel' ]
         
 class MessageModelForm(forms.ModelForm):
-    response_due = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, required=False, help_text='The date which a response is due')
+    response_due = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, required=False, help_text='The date which a response is due.')
     
     class Meta:
         model = Message

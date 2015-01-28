@@ -82,7 +82,7 @@ class AliasModelChoiceField(forms.ModelChoiceField):
 # ---------------------------------------------
 class AddModelForm(forms.ModelForm):
     start_date = forms.DateField()
-    group = GroupModelChoiceField(required=True,help_text='Use group "none" for Individual Submissions')
+    group = GroupModelChoiceField(required=True,help_text='Use group "none" for Individual Submissions.')
 
     class Meta:
         model = Document
@@ -103,7 +103,7 @@ class AuthorForm(forms.Form):
     see an id_email field
     '''
     person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")
-    email = forms.CharField(widget=forms.Select(),help_text="Select an email")
+    email = forms.CharField(widget=forms.Select(),help_text="Select an email.")
 
     # check for id within parenthesis to ensure name was selected from the list
     def clean_person(self):
@@ -372,5 +372,5 @@ class UploadForm(forms.Form):
         return self.cleaned_data
 
 class WithdrawForm(forms.Form):
-    type = forms.CharField(widget=forms.Select(choices=WITHDRAW_CHOICES),help_text='Select which type of withdraw to perform')
+    type = forms.CharField(widget=forms.Select(choices=WITHDRAW_CHOICES),help_text='Select which type of withdraw to perform.')
 
