@@ -1,7 +1,6 @@
-{% extends "base.html" %}
-{% load ietf_filters %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% load humanize %}
+{% extends "ietf.html" %}
+
+{% block title %}IETF {{ meeting.number }} Meeting Agenda: {{ schedule.owner }} / {{ schedule.name }}{% endblock %}
 
 {% block morecss %}
 {% for area in area_list %}
@@ -9,22 +8,15 @@
 {% endfor %}
 {% endblock morecss %}
 
-{% block title %}IETF {{ meeting.number }} Meeting Agenda: {{ schedule.owner }} / {{ schedule.name }}{% endblock %}
-{% load agenda_custom_tags %}
-
 {% block start_content_table %}{% endblock %}
 {% block end_content_table %}{% endblock %}
 
 {% block content %}
-
 <div id="read_only">
-<p>
-You do not have access this agenda. It belongs to {{ schedule.owner }}.
-</p>
-<p>
-<a href="{% url "ietf.meeting.views.edit_agendas" meeting.number %}">List your meetings</a>.
-</p>
-<div class="wrapper custom_text_stuff">
-</div>
+  <p>You do not have access this agenda. It belongs to {{ schedule.owner }}.</p>
 
+  <p><a href="{% url "ietf.meeting.views.edit_agendas" meeting.number %}">List your meetings</a>.</p>
+
+  <div class="wrapper custom_text_stuff"></div>
+</div>
 {% endblock %}

@@ -1,0 +1,12 @@
+{# assumes meeting is in context #}
+<h1>
+  IETF {{ meeting.number }} Meeting Agenda
+  <br>
+  <small>
+    {{ meeting.city }}, {{ meeting.date|date:"F j" }} -
+    {% if meeting.date.month != meeting.end_date.month %}
+      {{ meeting.end_date|date:"F " }}
+    {% endif %}
+    {{ meeting.end_date|date:"j, Y" }}
+  </small>
+</h1>

@@ -369,12 +369,11 @@ def agenda(request, num=None, name=None, base=None, ext=None):
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
     if schedule == None:
-        return HttpResponse(render_to_string("meeting/no-"+base+ext,
-            {'meeting':meeting }, RequestContext(request)), content_type=mimetype[ext])
+        base = base.replace("-utc", "")
+        return render(request, "meeting/no-"+base+ext, {'meeting':meeting }, content_type=mimetype[ext])
 
     updated = meeting_updated(meeting)
-    return HttpResponse(render_to_string("meeting/"+base+ext,
-        {"schedule":schedule, "updated": updated}, RequestContext(request)), content_type=mimetype[ext])
+    return render(request, "meeting/"+base+ext, {"schedule":schedule, "updated": updated}, content_type=mimetype[ext])
 
 def read_agenda_file(num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
