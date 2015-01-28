@@ -1,5 +1,7 @@
 {% extends "nomcom/nomcom_public_base.html" %}
 
+{% load bootstrap3 %}
+
 {% block subtitle %} - Change Nomination {% endblock %}
 
 {% block nomcom_content %}
@@ -9,13 +11,12 @@
 {% endif %}
 
 {% if need_confirmation %}
-  <form action="" method="post">{% csrf_token %}
-    {{ form }}
+  <form role="form" method="post">
+    {% csrf_token %}
 
-  <div class="submitrow">
-    <input type="submit" value="Save" name="save">
-  </div>
-
+    {% buttons %}
+      <button class="btn btn-primary" type="submit">Save</button>
+    {% endbuttons %}
   </form>
 {% endif %}
 
