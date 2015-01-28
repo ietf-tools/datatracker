@@ -250,5 +250,5 @@ $('[title][title!=""]').tooltip();
 $(document).ready(function () {
     // add a required class on labels on forms that should have
     // explicit requirement asterisks
-    $("form.show-required input[required],select[required],textarea[required]").closest(".form-group").find("label").addClass("required");
+    $("form.show-required").find("input[required],select[required],textarea[required]").closest(".form-group").find("label").addClass("required");
 });
