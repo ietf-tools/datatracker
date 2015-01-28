@@ -466,7 +466,7 @@ class DeferUndeferTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('[type=submit][value="Defer ballot"]')),1)
+        self.assertEqual(len(q('[type=submit]:contains("Defer ballot")')),1)
 
         # defer
         mailbox_before = len(outbox)
@@ -521,7 +521,7 @@ class DeferUndeferTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('[type=submit][value="Undefer ballot"]')),1)
+        self.assertEqual(len(q('[type=submit]:contains("Undefer ballot")')),1)
 
         # undefer
         mailbox_before = len(outbox)
