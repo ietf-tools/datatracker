@@ -1,5 +1,7 @@
 {% extends "ietf.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Defer ballot for {{ doc }}{% endblock %}
 
 {% block content %}
@@ -13,10 +15,10 @@
 		The ballot will then be put on the IESG agenda of {{ telechat_date }}.
 	</p>
 
-	<div class="buttonlist">
-		<input type="submit" class="btn btn-danger" value="Defer ballot">
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-	</div>
+        {% buttons %}
+          <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+          <button type="submit" class="btn btn-danger">Defer ballot</button>
+        {% endbuttons %}
 </form>
 
 {% endblock %}
