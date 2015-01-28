@@ -226,7 +226,7 @@ def change_state(request, name, option=None):
 
 class ChangeTitleForm(forms.Form):
     charter_title = forms.CharField(widget=forms.TextInput, label="Charter title", help_text="Enter new charter title", required=True)
-    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change the title without notifying the Secretariat", required=False, label=mark_safe("Message to<br> Secretariat"))
+    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change the title without notifying the Secretariat", required=False, label=mark_safe("Message to Secretariat"))
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history", required=False)
     def __init__(self, *args, **kwargs):
         charter = kwargs.pop('charter')
