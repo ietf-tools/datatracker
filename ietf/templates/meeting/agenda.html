@@ -181,7 +181,7 @@ tr:first-child th.gap {
 		{% endif %}
 
 		{% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
-			{% with item.timeslot.time|date:"D-Hi"|lower|add:"-"|add:item.session.group.acronym|lower as session_id %}
+                        {% with session_id=item.timeslot.time|date:"D-Hi"|lower|add:"-"|add:item.session.group.acronym|lower %}
 			<tr id="row-{{session_id}}">
 				<td class="text-nowrap text-right">
 					{% if "-utc" in request.path %}
@@ -204,7 +204,7 @@ tr:first-child th.gap {
 
 		{% if item.timeslot.type.slug = 'session' or item.timeslot.type.slug == 'plenary' %}
 			{% if item.session.group %}
-				{% with item.timeslot.time|date:"D-Hi"|lower|add:"-"|add:item.session.group.parent.acronym|lower|add:"-"|add:item.session.group.acronym|lower as session_id %}
+                                {% with session_id=item.timeslot.time|date:"D-Hi"|lower|add:"-"|add:item.area|default:"unknown"|lower|add:"-"|add:item.session.group.acronym|lower %}
 				<tr id="row-{{session_id}}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
 
 					{% if item.timeslot.type.slug == 'plenary' %}
