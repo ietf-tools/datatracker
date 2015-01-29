@@ -22,6 +22,6 @@ class Command(BaseCommand):
             msg = open(email, "r").read()
 
         try:
-            message = process_response_email(msg)
+            process_response_email(msg)
         except ValueError as e:
             raise CommandError(e)
