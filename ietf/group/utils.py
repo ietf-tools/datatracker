@@ -56,11 +56,17 @@ def get_group_ads_emails(wg):
     if wg.acronym == 'none':
         return []
 
-    # Make sure the assigned AD is included (in case that is not one of the area ADs
-    ad_emails = set([wg.ad_role() and wg.ad_role().email.address])
+    ad_emails = set()
+
     if wg.parent and wg.parent.acronym != 'none':
         # Include the  _current_ list of ads for the area!
         ad_emails.update(get_area_ads_emails(wg.parent))
+
+    # Make sure the assigned AD is included (in case that is not one of the area ADs)
+    if wg.state.slug=='active':
+        wg_ad_email = wg.ad_role() and wg.ad_role().email.address
+        if wg_ad_email:
+            ad_emails.add(wg_ad_email)
 
     return list(ad_emails)
 
