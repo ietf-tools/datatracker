@@ -97,7 +97,8 @@
 					</div>
 				{% endif %}
 
-				<div class="row">
+                                {% if not hide_menu %} {# ugly hack for the more or less unported meeting agenda edit pages #}
+                                <div class="row">
 					<div class="col-xs-3 col-md-2 leftmenu">
 						<ul class="nav nav-pills nav-stacked panel panel-default panel-body">
 							{% with "left" as flavor %}
@@ -112,10 +113,14 @@
 							<b>You are using an outdated browser.</b> Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.
 						</p>
 						<![endif]-->
-						{% block content %}{% endblock %}
-						{% block content_end %}{% endblock %}
+
+                                {% endif %}
+                                          {% block content %}{% endblock %}
+                                          {% block content_end %}{% endblock %}
+                                {% if not hide_menu %}
 					</div>
 				</div>
+                                {% endif %}
 
 				<footer class="row">
 					<div class="col-md-12 hidden-xs">
