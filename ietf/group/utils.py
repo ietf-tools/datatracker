@@ -56,12 +56,13 @@ def get_group_ads_emails(wg):
     if wg.acronym == 'none':
         return []
 
+    # Make sure the assigned AD is included (in case that is not one of the area ADs
+    ad_emails = set([wg.ad_role() and wg.ad_role().email.address])
     if wg.parent and wg.parent.acronym != 'none':
-        # By default, we should use _current_ list of ads!
-        return get_area_ads_emails(wg.parent)
+        # Include the  _current_ list of ads for the area!
+        ad_emails.update(get_area_ads_emails(wg.parent))
 
-    # As fallback, just return the single ad within the wg
-    return [wg.ad_role() and wg.ad_role().email.address]
+    return list(ad_emails)
 
 def get_group_chairs_emails(wg):
     " Get list of area chairs' emails for a given WG "
