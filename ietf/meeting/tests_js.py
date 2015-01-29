@@ -48,7 +48,7 @@ class ScheduleEditTests(LiveServerTestCase):
         self.driver.get(url)
         self.driver.find_element_by_name('username').send_keys('plain')
         self.driver.find_element_by_name('password').send_keys('plain+password')
-        self.driver.find_element_by_xpath('//input[@value="Sign in"]').click()
+        self.driver.find_element_by_xpath('//button[@type="submit"]').click()
     
     def testUnschedule(self):
         

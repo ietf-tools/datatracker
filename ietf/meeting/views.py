@@ -187,7 +187,7 @@ def edit_timeslots(request, num=None):
     roomsurl  = reverse(timeslot_roomsurl, args=[meeting.number])
     adddayurl = reverse(timeslot_slotsurl, args=[meeting.number])
 
-    return HttpResponse(render_to_string("meeting/timeslot_edit.html",
+    return render(request, "meeting/timeslot_edit.html",
                                          {"timeslots": timeslots,
                                           "meeting_base_url": meeting_base_url,
                                           "site_base_url": site_base_url,
@@ -199,8 +199,9 @@ def edit_timeslots(request, num=None):
                                           "time_slices":time_slices,
                                           "slot_slices": slots,
                                           "date_slices":date_slices,
-                                          "meeting":meeting},
-                                         RequestContext(request)), content_type="text/html")
+                                          "meeting":meeting,
+                                          "hide_menu": True,
+                                      })
 
 class RoomForm(ModelForm):
     class Meta:
@@ -227,12 +228,13 @@ def edit_roomurl(request, num, roomid):
     roomform = RoomForm(instance=room)
     meeting_base_url = request.build_absolute_uri(meeting.base_url())
     site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
-    return HttpResponse(render_to_string("meeting/room_edit.html",
+    return render(request, "meeting/room_edit.html",
                                          {"meeting_base_url": meeting_base_url,
                                           "site_base_url": site_base_url,
                                           "editroom":  roomform,
-                                          "meeting":meeting},
-                                         RequestContext(request)), content_type="text/html")
+                                          "meeting":meeting,
+                                          "hide_menu": True,
+                                      })
 
 ##############################################################################
 #@role_required('Area Director','Secretariat')
@@ -287,7 +289,7 @@ def edit_agenda(request, num=None, owner=None, name=None):
 
     time_slices,date_slices = build_all_agenda_slices(meeting)
 
-    return HttpResponse(render_to_string("meeting/landscape_edit.html",
+    return render(request, "meeting/landscape_edit.html",
                                          {"schedule":schedule,
                                           "saveas": saveas,
                                           "saveasurl": saveasurl,
@@ -302,8 +304,9 @@ def edit_agenda(request, num=None, owner=None, name=None):
                                           "area_directors" : ads,
                                           "wg_list": wg_list ,
                                           "scheduledsessions": scheduledsessions,
-                                          "show_inline": set(["txt","htm","html"]) },
-                                         RequestContext(request)), content_type="text/html")
+                                          "show_inline": set(["txt","htm","html"]),
+                                          "hide_menu": True,
+                                      })
 
 ##############################################################################
 #  show the properties associated with an agenda (visible, public)
@@ -326,11 +329,12 @@ def edit_agenda_properties(request, num=None, owner=None, name=None):
     if not (canedit or has_role(request.user,'Secretariat')):
         return HttpResponseForbidden("You may not edit this agenda")
     else:
-        return HttpResponse(render_to_string("meeting/properties_edit.html",
+        return render(request, "meeting/properties_edit.html",
                                              {"schedule":schedule,
                                               "form":form,
-                                              "meeting":meeting},
-                                             RequestContext(request)), content_type="text/html")
+                                              "meeting":meeting,
+                                              "hide_menu": True,
+                                          })
 
 ##############################################################################
 # show list of agendas.
@@ -352,12 +356,11 @@ def edit_agendas(request, num=None, order=None):
 
     schedules = schedules.order_by('owner', 'name')
 
-    return HttpResponse(render_to_string("meeting/agenda_list.html",
+    return render(request, "meeting/agenda_list.html",
                                          {"meeting":   meeting,
-                                          "schedules": schedules.all()
-                                          },
-                                         RequestContext(request)),
-                        content_type="text/html")
+                                          "schedules": schedules.all(),
+                                          "hide_menu": True,
+                                          })
 
 @ensure_csrf_cookie
 def agenda(request, num=None, name=None, base=None, ext=None):
