@@ -43,8 +43,6 @@ area_short_names = {
     'rai':'RAI'
     }
 
-# FACELIFT: Function is called with "facelift" flavor from the new UI code.
-# The old code (and flavoring) can be remove eventually.
 @register.simple_tag
 def wg_menu(flavor=""):
     res = cache.get('wgmenu' + flavor)
@@ -64,11 +62,9 @@ def wg_menu(flavor=""):
 
     areas = [a for a in areas if a.active_groups]
 
-    if flavor == "facelift":
-        res = render_to_string('base/menu_wg.html', {'areas':areas, 'rgs':rgs})
-    elif flavor == "modal":
+    if flavor == "modal":
         res = render_to_string('base/menu_wg_modal.html', {'areas':areas, 'rgs':rgs})
     else:
-        res = render_to_string('base/wg_menu.html', {'areas':areas, 'rgs':rgs})
+        res = render_to_string('base/menu_wg.html', {'areas':areas, 'rgs':rgs})
     cache.set('wgmenu' + flavor, res, 30*60)
     return res
