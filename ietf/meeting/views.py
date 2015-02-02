@@ -366,8 +366,6 @@ def edit_agendas(request, num=None, order=None):
 def agenda(request, num=None, name=None, base=None, ext=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.html'
-    if 'iPhone' in get_user_agent(request) and ext == ".html":
-        base = 'm_agenda'
     mimetype = {".html":"text/html", ".txt": "text/plain", ".ics":"text/calendar", ".csv":"text/csv"}
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)

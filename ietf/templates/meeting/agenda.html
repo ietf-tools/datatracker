@@ -190,15 +190,20 @@ tr:first-child th.gap {
 						{{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
 					{% endif %}
 				</td>
-				<td colspan="3">
+                                <td class="hidden-xs" colspan="3">
 					{% if item.timeslot.show_location %}
 						<a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 					{% endif %}
 				</td>
-				<td colspan="2">
+                                <td class="visible-xs">
+					{% if item.timeslot.show_location %}
+						<a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+					{% endif %}
+				</td>
+                                <td colspan="2">
 					{{item.timeslot.name}}
 				</td>
-			</tr>
+                        </tr>
 			{% endwith %}
 		{% endif %}
 
@@ -209,20 +214,25 @@ tr:first-child th.gap {
 
 					{% if item.timeslot.type.slug == 'plenary' %}
 						<th class="text-nowrap text-right">
-							{% if "-utc" in request.path %}
+                                                        {% if "-utc" in request.path %}
 								{{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
 							{% else %}
 								{{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
 							{% endif %}
 						</th>
-						<td colspan="3">
+                                                <td class="hidden-xs" colspan="3">
+							{% if item.timeslot.show_location %}
+								<a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+							{% endif %}
+						</td>
+                                                <td class="visible-xs">
 							{% if item.timeslot.show_location %}
 								<a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 							{% endif %}
 						</td>
 
 					{% else %}
-					<td>
+                                        <td class="hidden-xs">
 					</td>
 
 					<td>
@@ -231,7 +241,7 @@ tr:first-child th.gap {
 						{% endif %}
 					</td>
 
-					<td>{{item.session.group.parent.acronym}}</td>
+                                        <td class="hidden-xs">{{item.session.group.parent.acronym}}</td>
 
 					<td>
 						{% if item.session.group.charter %}
@@ -305,7 +315,7 @@ tr:first-child th.gap {
 							</div>
 						</div>
 					</td>
-					<td class="text-nowrap">
+                                        <td class="text-nowrap hidden-xs">
 						{% if item.session.agenda %}
 							<button class="btn btn-default btn-xs" data-toggle="modal" data-target="#modal-{{session_id}}"><span class="fa fa-arrows-alt" title="Show meeting materials"></span></button>
 							<a class="btn btn-default btn-xs" href="/meeting/{{schedule.meeting.number}}/agenda/{{item.session.group.acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="fa fa-file-archive-o"></span></a>
