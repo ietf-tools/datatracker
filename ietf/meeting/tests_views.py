@@ -55,17 +55,6 @@ class MeetingTests(TestCase):
         # the rest of the results don't have as nicely formatted times
         time_interval = time_interval.replace(":", "")
 
-        # mobile
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)),
-                            { '_testiphone': "1" })
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        agenda_content = q("#agenda").html()
-        self.assertTrue(session.group.acronym in agenda_content)
-        self.assertTrue(session.group.name[:10] in agenda_content)
-        self.assertTrue(slot.location.name in agenda_content)
-        self.assertTrue(time_interval in agenda_content)
-
         # text
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".txt")))
         self.assertEqual(r.status_code, 200)
