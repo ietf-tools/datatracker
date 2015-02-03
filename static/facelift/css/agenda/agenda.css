@@ -547,21 +547,21 @@ div.conflictlevel {
 
 div.our-conflict {
     padding-left: 20px;
-    background-image: url('/images/conflict-boxes/narow3.png');
+    background-image: url('images/conflict-boxes/narow3.png');
     background-position: 8px 50%;
     background-repeat: no-repeat;
 }
 
 div.our-conflic2 {
   padding-left: 20px;
-  background-image: url('/images/conflict-boxes/narow2.png');
+  background-image: url('images/conflict-boxes/narow2.png');
   background-position: 8px 50%;
   background-repeat: no-repeat;
 }
 
 div.our-conflic3 {
   padding-left: 20px;
-  background-image: url('/images/conflict-boxes/narow1.png');
+  background-image: url('images/conflict-boxes/narow1.png');
   background-position: 8px 50%;
   background-repeat: no-repeat;
 }
@@ -720,21 +720,21 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#99beff', end
  */
 table.actual_conflict {
   padding-left: 20px;
-  background-image: url('/images/conflict-boxes/narow3.png');
+  background-image: url('images/conflict-boxes/narow3.png');
   background-position: 8px 50%;
   background-repeat: no-repeat;
 }
 
 table.actual_conflic2 {
   padding-left: 20px;
-  background-image: url('/images/conflict-boxes/narow2.png');
+  background-image: url('images/conflict-boxes/narow2.png');
   background-position: 8px 50%;
   background-repeat: no-repeat;
 }
 
 table.actual_conflic3 {
   padding-left: 20px;
-  background-image: url('/images/conflict-boxes/narow1.png');
+  background-image: url('images/conflict-boxes/narow1.png');
   background-position: 8px 50%;
   background-repeat: no-repeat;
 }
@@ -839,7 +839,7 @@ td.ourconflicts, td.theirconflicts {
 }
 
 .highlight_free_slot{
-    background-image: url('/images/green_hatch.png');
+    background-image: url('images/green_hatch.png');
 }
 
 
@@ -854,7 +854,7 @@ td.ourconflicts, td.theirconflicts {
 }
 
 .free_slot{
-    background-image: url('/images/empty.png') no-repeat;
+    /* background-image: url('images/empty.png') no-repeat;*/ /* 404, this file doesn't exist? */
     /* background-color:rgb(0, 102, 153) !important; /* the important tag should fix any precedence issues */
  }
 
@@ -904,7 +904,7 @@ td.ourconflicts, td.theirconflicts {
 
 .agenda_slot_plenary {
     /* background-color: #d38f2d;  */ /* dark orange */
-    background-image: url('/images/orange_hatch.png');
+    background-image: url('images/orange_hatch.png');
 }
 
 .agenda_slot_session {
@@ -1142,7 +1142,7 @@ background: -webkit-linear-gradient(top, #99beff 0%,#1e5799 100%); /* Chrome10+,
 
 /* copied from doc.css, maybe with some modifications. */
 a.editlink {
-  background-image: url("/images/pencil.png");
+  background-image: url("images/pencil.png");
   background-size: 10px;
   background-position: right top;
   background-attachment: scroll;
