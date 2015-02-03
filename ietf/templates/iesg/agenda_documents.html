@@ -56,8 +56,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{% comment %} FACELIFT: We use the same template as the search results now. {% endcomment %}
-					{% for doc in section.docs %}
+                                        {% for doc in section.docs %}
 						{% include "doc/search/search_result_row.html" %}
 					{% endfor %}
 				</tbody>

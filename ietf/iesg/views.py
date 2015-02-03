@@ -57,8 +57,6 @@ from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, 
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.person.models import Person
-
-# FACELIFT:
 from ietf.doc.views_search import fill_in_search_attributes
 
 def review_decisions(request, year=None):
@@ -363,7 +361,7 @@ def agenda_documents(request):
     telechats = []
     for date in dates:
         sections = agenda_sections()
-        # FACELIFT: augment the docs with the search attributes, since we're using
+        # augment the docs with the search attributes, since we're using
         # the search_result_row view to display them (which expects them)
         fill_in_search_attributes(docs_by_date[date])
         fill_in_agenda_docs(date, sections, docs_by_date[date])

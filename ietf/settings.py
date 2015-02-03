@@ -201,6 +201,9 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'south',
     'tastypie',
+    'widget_tweaks',
+    'typogrify',
+    'bootstrap3',
     'ietf.person',
     'ietf.name',
     'ietf.group',
@@ -233,10 +236,6 @@ INSTALLED_APPS = (
     'ietf.secr.sreq',
     'ietf.nomcom',
     'ietf.dbtemplate',
-    # FACELIFT: apps for facelift UI
-    'widget_tweaks',
-    'typogrify',
-    'bootstrap3',
 )
 
 # Settings for django-bootstrap3

@@ -557,8 +557,6 @@ class WordWrapNode(template.Node):
     def render(self, context):
         return wrap(str(self.nodelist.render(context)), int(self.len))
 
-# FACELIFT: The following filters are only used by the facelift UI:
-
 @register.filter
 def pos_to_label(text):
     """Return a valid Bootstrap3 label type for a ballot position."""
