@@ -206,6 +206,8 @@ read -p "Continue with the commit? [Y/n] "
 [ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || ARG_COMMIT=0
 
 if [ "$ARG_COMMIT" != 0 ]; then
+    echo "Ensuring we're up-to-date:"
+    svn up
     echo "Committing the merge:"
     echo ""
     svn commit -m "Merged in [$rev] from $who:
