@@ -69,6 +69,7 @@ def build_all_agenda_slices(meeting):
     for ts in meeting.timeslot_set.exclude(type__in=['reg','break']).order_by('time','name'):
     #for ts in meeting.timeslot_set.exclude(type__in=['reg','break','other']).order_by('time','name'):
     #for ts in meeting.timeslot_set.order_by('time','name'):
+    #for ts in meeting.timeslot_set.filter(type='offagenda').order_by('time','name'):
             ymd = ts.time.date()
 
             if ymd not in date_slices and ts.location != None:
