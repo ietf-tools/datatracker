@@ -31,13 +31,13 @@ def find_ads_for_meeting(meeting):
         if history and history != g:
             #print " history[%u]: %s" % (num, history)
             if history.state_id == "active":
-                for x in history.rolehistory_set.filter(name="ad").select_related('group', 'person', 'email'):
+                for x in history.rolehistory_set.filter(name="ad",group__type='area').select_related('group', 'person', 'email'):
                     #print "xh[%u]: %s" % (num, x)
                     ads.append(x)
         else:
             #print " group[%u]: %s" % (num, g)
             if g.state_id == "active":
-                for x in g.role_set.filter(name="ad").select_related('group', 'person', 'email'):
+                for x in g.role_set.filter(name="ad",group__type='area').select_related('group', 'person', 'email'):
                     #print "xg[%u]: %s (#%u)" % (num, x, x.pk)
                     ads.append(x)
     return ads
