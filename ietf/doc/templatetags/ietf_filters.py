@@ -527,36 +527,6 @@ def consensus(doc):
     else:
         return "Unknown"
 
-# The function and class below provides a tag version of the builtin wordwrap filter
-# https://djangosnippets.org/snippets/134/
-@register.tag
-def wordwrap(parser, token):
-    """
-    This is a tag version of the Django builtin 'wordwrap' filter.  This is useful
-    if you need to wrap a combination of fixed template text and template variables.
-
-    Usage:
-    
-    {% wordwrap 80 %}
-    some really long text here, including template variable expansion, etc.
-    {% endwordwrap %}
-    """
-    try:
-        tag_name, len = token.split_contents()
-    except ValueError:
-        raise template.TemplateSyntaxError, "The wordwrap tag requires exactly one argument: width."
-    nodelist = parser.parse(('endwordwrap',))
-    parser.delete_first_token()
-    return WordWrapNode(nodelist, len)
-
-class WordWrapNode(template.Node):
-    def __init__(self, nodelist, len):
-        self.nodelist = nodelist
-        self.len = len
-    
-    def render(self, context):
-        return wrap(str(self.nodelist.render(context)), int(self.len))
-
 @register.filter
 def pos_to_label(text):
     """Return a valid Bootstrap3 label type for a ballot position."""
