@@ -24,9 +24,9 @@
                 <link rel="apple-touch-icon-precomposed" href="/facelift/images/ietficon.png">
 	</head>
 
-	{% filter amp|smartypants %}
-		<body {% block bodyAttrs %}{%endblock%}>
-			<div class="modal fade" id="navmodal" tabindex="-1" role="dialog" {#aria-labelledby="navmodallabel"#} aria-hidden="true">
+        <body {% block bodyAttrs %}{%endblock%}>
+                {% filter amp|smartypants %}
+                        <div class="modal fade" id="navmodal" tabindex="-1" role="dialog" {#aria-labelledby="navmodallabel"#} aria-hidden="true">
 				<div class="modal-dialog">
 					<div class="modal-content">
 {% comment %}
@@ -179,8 +179,10 @@
 				//]]>
 				$(".leftmenu").removeClass("col-xs-3 col-md-2").addClass("col-lg-2 hidden-md hidden-sm hidden-xs ").next().removeClass("col-xs-9 col-md-10").addClass("col-lg-10");
 				$(".hidden-nojs, .in-nojs").removeClass("hidden-nojs in-nojs");
-			</script>
-		</body>
-	{% endfilter %}
+                        </script>
+
+                {% endfilter %}
+                {% include "debug.html" %}
+        </body>
 </html>
 
