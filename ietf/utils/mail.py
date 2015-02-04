@@ -4,6 +4,7 @@ from email.Utils import make_msgid, formatdate, formataddr, parseaddr, getaddres
 from email.MIMEText import MIMEText
 from email.MIMEMessage import MIMEMessage
 from email.MIMEMultipart import MIMEMultipart
+from email.header import Header
 from email import message_from_string
 import smtplib
 from django.conf import settings
@@ -190,7 +191,25 @@ def condition_message(to, frm, subject, msg, cc, extra):
         cc = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in cc if addr])
     if frm:
 	msg['From'] = frm
-    msg['To'] = to
+
+    # The following is a hack to avoid an issue with how the email module (as of version 4.0.3)
+    # breaks lines when encoding header fields with anything other than the us-ascii codec.
+    # This allows the Header implementation to encode each display name as a separate chunk. 
+    # The resulting encode produces a string that is us-ascii and has a good density of 
+    # "higher-level syntactic breaks"
+    to_hdr = Header(header_name='To')
+    for name, addr in getaddresses([to]):
+        if addr != '' and not addr.startswith('unknown-email-'):
+            if name:
+                to_hdr.append('"%s"' % name)
+            to_hdr.append("<%s>," % addr)
+    to_str = to_hdr.encode()
+    if to_str and to_str[-1] == ',':
+        to_str=to_str[:-1]
+    # It's important to use this string, and not assign the Header object.
+    # Code downstream from this assumes that the msg['To'] will return a string, not an instance
+    msg['To'] = to_str
+
     if cc:
 	msg['Cc'] = cc
     msg['Subject'] = subject
