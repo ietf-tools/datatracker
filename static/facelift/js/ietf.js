@@ -100,7 +100,7 @@ $(document).ready(function () {
 	}
 
 	// search results
-	$('.addtolist a').click(function(e) {
+        $('.community-list-add-remove-doc').click(function(e) {
 		e.preventDefault();
 		var trigger = $(this);
 		$.ajax({
@@ -110,8 +110,10 @@ $(document).ready(function () {
 			dataType: 'json',
 			success: function(response){
 				if (response.success) {
-					trigger.replaceWith('<span class="fa fa-tag text-danger"></span>');
-				}
+                                    trigger.parent().find(".tooltip").remove();
+                                    // it would be neater to swap in remove link
+                                    trigger.replaceWith('<span class="fa fa-tag text-danger"></span>');
+                                }
 			}
 		});
 	});
