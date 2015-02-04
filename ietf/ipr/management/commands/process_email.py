@@ -3,7 +3,6 @@ from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 
-from ietf.utils.log import log
 from ietf.ipr.mail import process_response_email
 
 import debug                            # pyflakes:ignore
@@ -23,7 +22,6 @@ class Command(BaseCommand):
             msg = open(email, "r").read()
 
         try:
-            message = process_response_email(msg)
-            log(u"Received IPR email from %s" % message.frm)
+            process_response_email(msg)
         except ValueError as e:
             raise CommandError(e)
