@@ -13,7 +13,6 @@ def get_user_managed_lists(user):
     if not (user and hasattr(user, "is_authenticated") and user.is_authenticated()):
         return ''
     lists = {'personal': CommunityList.objects.get_or_create(user=user)[0]}
-    print lists
     try:
         person = user.person
         groups = []
