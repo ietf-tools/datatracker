@@ -148,8 +148,10 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
+    ('django.template.loaders.cached.Loader', (
+        'django.template.loaders.filesystem.Loader',
+        'django.template.loaders.app_directories.Loader',
+    )),
     'ietf.dbtemplate.template.Loader',
 )
 
@@ -495,6 +497,9 @@ INSTALLED_APPS += DEV_APPS
 # secret key has been provided elsewhere, not in this file which is
 # publicly available, for instance from the source repository.
 if SERVER_MODE != 'production':
+    # stomp out the cached template loader, it's annoying
+    TEMPLATE_LOADERS = [l for e in TEMPLATE_LOADERS for l in (e[1] if isinstance(e, tuple) and "cached.Loader" in e[0] else (e,))]
+
     CACHES = {
          'default': {
              'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
