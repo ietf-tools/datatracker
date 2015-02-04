@@ -91,7 +91,7 @@ def can_adopt_draft(user, doc):
 
 def two_thirds_rule( recused=0 ):
     # For standards-track, need positions from 2/3 of the non-recused current IESG.
-    active = Role.objects.filter(name="ad",group__state="active").count()
+    active = Role.objects.filter(name="ad",group__type="area",group__state="active").count()
     return int(math.ceil((active - recused) * 2.0/3.0))
 
 def needed_ballot_positions(doc, active_positions):
