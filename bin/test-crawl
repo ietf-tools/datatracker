@@ -2,23 +2,6 @@
 
 import os, sys, re, datetime, argparse, traceback, tempfile
 
-# boilerplate
-basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
-sys.path = [ basedir ] + sys.path
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
-
-import django.test
-from django.conf import settings
-
-# prevent memory from leaking when settings.DEBUG=True
-from django.db import connection
-class DontSaveQueries(object):
-    def append(self, x):
-        pass
-connection.queries = DontSaveQueries()
-
-MAX_URL_LENGTH = 500
-
 # args
 parser = argparse.ArgumentParser(
     description="""Perform a test crawl of the project. For each found URL, the HTTP
@@ -30,8 +13,28 @@ parser.add_argument('--urls', '-u', dest='url_file',
                     help='file with URLs to start the crawl from')
 parser.add_argument('--slow', dest='slow_threshold', type=float, default=1.0,
                     help='responses taking longer than this (in seconds) results in SLOW being printed')
+parser.add_argument('--settings', dest='settings', help='custom settings file')
 
 args = parser.parse_args()
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
+sys.path = [ basedir ] + sys.path
+
+settings_module = args.settings or "ietf.settings"
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module)
+
+import django.test
+
+# prevent memory from leaking when settings.DEBUG=True
+from django.db import connection
+class DontSaveQueries(object):
+    def append(self, x):
+        pass
+connection.queries = DontSaveQueries()
+
+MAX_URL_LENGTH = 500
 
 slow_threshold = args.slow_threshold
 
