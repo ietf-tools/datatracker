@@ -582,7 +582,7 @@ class Schedule(models.Model):
                  .distinct() )
 
     def groups(self):
-        return Group.objects.filter(type__slug__in=['wg', 'rg', 'ag', 'iab'], session__scheduledsession__schedule=self).distinct().order_by('parent__acronym', 'acronym')
+        return Group.objects.filter(type__slug__in=['wg', 'rg', 'ag', 'iab'], session__scheduledsession__schedule=self).exclude(session__scheduledsession__timeslot__type__in=['lead','offagenda']).distinct().order_by('parent__acronym', 'acronym')
 
     # calculate badness of entire schedule
     def calc_badness(self):

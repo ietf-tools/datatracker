@@ -366,6 +366,7 @@ def agenda(request, num=None, name=None, base=None, ext=None):
     ext = ext if ext else '.html'
     if 'iPhone' in get_user_agent(request) and ext == ".html":
         base = 'm_agenda'
+    # This is misleading - urls.py doesn't send ics through here anymore
     mimetype = {".html":"text/html", ".txt": "text/plain", ".ics":"text/calendar", ".csv":"text/csv"}
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
@@ -374,8 +375,9 @@ def agenda(request, num=None, name=None, base=None, ext=None):
             {'meeting':meeting }, RequestContext(request)), content_type=mimetype[ext])
 
     updated = meeting_updated(meeting)
+    filtered_assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
     return HttpResponse(render_to_string("meeting/"+base+ext,
-        {"schedule":schedule, "updated": updated}, RequestContext(request)), content_type=mimetype[ext])
+        {"schedule":schedule, "filtered_assignments":filtered_assignments, "updated": updated}, RequestContext(request)), content_type=mimetype[ext])
 
 #TODO - let the IAB in
 @role_required('Area Director','Secretariat')
@@ -619,7 +621,7 @@ def ical_agenda(request, num=None, name=None, ext=None):
             elif item[0] == '~':
                 include_types |= set([item[1:]])
 
-    assignments = schedule.assignments.filter(
+    assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda']).filter(
         Q(timeslot__type__slug__in = include_types) |
         Q(session__group__acronym__in = include) |
         Q(session__group__parent__acronym__in = include)
