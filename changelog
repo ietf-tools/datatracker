@@ -1,3 +1,46 @@
+ietfdb (5.10.2) ietf; urgency=medium
+
+  * When draft email aliases are generated, the content of the doc.notify
+    field is used to generate the $draft.notify alias, and is also included in
+    the $draft.all alias.  If the notify field contains either the .notify
+    alias or the .all alias, this can create a mail loop.  Changed the alias
+    generation code to expand (or ignore, for .notify) aliases found in the
+    notify field, and changed the code which fills in the notify field with a
+    default value to insert the author, ad, and shepherd aliases instead of
+    the .all alias.
+
+  * Merged in [8970] from olau@iola.dk:
+    Enabled support for a custom settings file for the test crawler and added
+    a simple settings file that enables caching to speed up the crawl (shaves
+    ~35% off most pages, it seems) 
+
+  * Merged in [8961] from rjsparks@nostrum.com:
+    Avoid an issue with python.email breaking To header field values that it
+    has to encode in bad places. Fixes #1589.  
+
+  * Merged in [8949] from rjsparks@nostrum.com:
+    Improvements to the fix to #1592.  
+
+  * Merged in [8948] from rjsparks@nostrum.com:
+    Capture out-of-area ADs in draft and group aliases. Fixes #1592.  
+
+  * Merged in [8924] from rjsparks@nostrum.com:
+    Restrict the gathering of ads for past meetings to groups that are areas.
+
+  * Merged in [8923] from rjsparks@nostrum.com:
+    Improve the approval mail contents concerning IESG contact members. 
+    Fixes #1588.  
+
+  * Merged in [8922] from rjsparks@nostrum.com:
+    Fix needed-to-pas calculation to use new representation of area directors.
+    Fixes #1587.  
+
+  * Merged in [8903] from rcross@amsl.com:
+    Fixed a logging problem in IPR mail handling.   
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Feb 2015 18:33:18 +0000
+
+
 ietfdb (5.10.1) ietf; urgency=medium
 
   This is a release containing a large number of small fixes and enhancements,
