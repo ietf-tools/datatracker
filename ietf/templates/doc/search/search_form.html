@@ -44,7 +44,7 @@
 						{% for doc_type in form.doctypes %}
 							<div class="checkbox">
 								<label class="control-label" for="id_{{doc_type.slug}}">
-								<input type="checkbox" class="advdoctype" {% if doc_type.slug in meta.checked %}checked{% endif %}name="include-{{doc_type.slug}}" id="id_{{doc_type.slug}}"/>{{doc_type|safe|capfirst_allcaps}}
+                                                                <input type="checkbox" class="advdoctype" {% if doc_type.slug in meta.checked %}checked{% endif %} name="include-{{doc_type.slug}}" id="id_{{doc_type.slug}}"/>{{doc_type|safe|capfirst_allcaps}}
 								</label>
 							</div>
 						{% endfor %}
