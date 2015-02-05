@@ -45,11 +45,10 @@
 		<pre>{{ body|wrap_text }}</pre>
 	</div>
 
-	<div class="buttonlist">
-		<input type="submit" class="btn btn-danger" value="Send">
+        {% buttons %}
+                <button type="submit" class="btn btn-danger">Send</button>
 		<a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
-	</div>
-
+        {% endbuttons %}
 </form>
 
 {% endblock %}

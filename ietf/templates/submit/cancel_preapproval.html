@@ -15,10 +15,10 @@
 	{% csrf_token %}
 	<input type="hidden" name="action" value="cancel">
 
-	<div class="buttonlist">
-		<button type="submit" class="btn btn-danger">Cancel pre-approval</button>
+        {% buttons %}
+                <button type="submit" class="btn btn-danger">Cancel pre-approval</button>
 		<a class="btn btn-default pull-right" href="{% url "submit_approvals" %}#preapprovals">Back</a>
-	</div>
+        {% endbuttons %}
 </form>
 
 {% endblock %}

@@ -15,10 +15,10 @@
 		<div class="alert alert-danger">{{ form.non_field_errors }}</div>
 	{% endif %}
 
-	<div class="buttonlist">
+        {% buttons %}
                 <button type="submit" class="btn btn-primary">Save</button>
 		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-	</div>
+        {% endbuttons %}
 </form>
 {% endblock %}
 

@@ -15,10 +15,10 @@
 <form role="form" method="post">
 	{% csrf_token %}
 
-	<div class="buttonlist">
-		<input class="btn btn-primary" type="submit" value="Resurrect">
+        {% buttons %}
+                <input class="btn btn-primary" type="submit" value="Resurrect">
 		<a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
-	</div>
+        {% endbuttons %}
 </form>
 
 {% endblock %}
