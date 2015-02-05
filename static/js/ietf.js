@@ -179,19 +179,6 @@ $(".snippet .show-all").click(function () {
 	$(this).parents(".snippet").addClass("hidden").siblings(".full").removeClass("hidden");
 });
 
-
-// This used to be in js/iesg-discusses.js
-// AND IT'S BROKEN: causes document history to be hidden
-// $("label.btn:has(input)").click(function () {
-//	val = $(this).children().attr("value");
-//	if (val == "all") {
-//		$("tr").show();
-//	} else {
-//		$("tr").filter("." + val).show();
-//		$("tr").not("." + val).hide();
-//	}
-// });
-
 // Store the shown/hidden state for the search form collapsible persistently
 // Not such a great idea after all, comment out for now.
 // $('#searchcollapse').on('hidden.bs.collapse', function() {
