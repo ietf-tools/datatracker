@@ -447,6 +447,10 @@ BADNESS_MUCHTOOBIG = 500
 SELENIUM_TESTS = False
 SELENIUM_TESTS_ONLY = False
 
+# Domain which hosts draft and wg alias lists
+DRAFT_ALIAS_DOMAIN = IETF_DOMAIN
+GROUP_ALIAS_DOMAIN = IETF_DOMAIN
+
 # Path to the email alias lists.  Used by ietf.utils.aliases
 DRAFT_ALIASES_PATH = "/a/postfix/draft-aliases"
 DRAFT_VIRTUAL_PATH = "/a/postfix/draft-virtual"

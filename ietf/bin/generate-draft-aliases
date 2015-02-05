@@ -25,10 +25,8 @@ TODO:
 
 """
 
-DRAFT_EMAIL_SUFFIX='@tools.ietf.org'
-
 # boilerplate (from various other ietf/bin scripts)
-import os, sys
+import os, sys, re
 filename = os.path.abspath(__file__)
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
@@ -72,13 +70,27 @@ def get_draft_notify_emails(draft):
     if not n:
         return []
     l = []
-    draft_email = draft.name + DRAFT_EMAIL_SUFFIX
+    ad_email_alias_regex = "^%s\.ad@(%s|%s)$" % (draft.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+    all_email_alias_regex = "^%s\.all@(%s|%s)$" % (draft.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+    author_email_alias_regex = "^%s@(%s|%s)$" % (draft.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+    notify_email_alias_regex = "^%s\.notify@(%s|%s)$" % (draft.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+    shepherd_email_alias_regex = "^%s\.shepherd@(%s|%s)$" % (draft.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
     for e in n.split(','):
-        # If the draft name itself is listed as notify list element, we
-        # expand it (to make results better verifiable with the old ones)
+        # If one of the directly expandable aliases are listed in the notify
+        # list, we expand it
         e = e.strip()
-        if e == draft_email:
+        if   re.search(ad_email_alias_regex, e):
+            l.extend(get_draft_ad_emails(draft))
+        elif re.search(author_email_alias_regex, e):
             l.extend(get_draft_authors_emails(draft))
+        elif re.search(shepherd_email_alias_regex, e):
+            l.extend(get_draft_shepherd_email(draft))
+        elif re.search(all_email_alias_regex, e):
+            l.extend(get_draft_ad_emails(draft))
+            l.extend(get_draft_authors_emails(draft))
+            l.extend(get_draft_shepherd_email(draft))
+        elif re.search(notify_email_alias_regex, e):
+            pass
         else:
             l.append(e)
     # Alternative: if we don't want to do expansion, just this would be

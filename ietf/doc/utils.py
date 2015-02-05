@@ -483,14 +483,16 @@ def get_initial_notify(doc,extra=None):
              for a in doc.authors.all():
                  receivers.append(a.address)
         else:
-            receivers.append("%s-chairs@%s" % (doc.group.acronym, settings.TOOLS_SERVER))
+            receivers.append("%s-chairs@%s" % (doc.group.acronym, settings.DRAFT_ALIAS_DOMAIN))
             for editor in Email.objects.filter(role__name="editor", role__group=doc.group):
                 receivers.append(editor.address)
 
             if doc.group.list_email:
                 receivers.append(doc.group.list_email)
 
-        receivers.append("%s.all@%s" % (doc.name, settings.TOOLS_SERVER))
+        receivers.append("%s@%s" % (doc.name, settings.DRAFT_ALIAS_DOMAIN))
+        receivers.append("%s.ad@%s" % (doc.name, settings.DRAFT_ALIAS_DOMAIN))
+        receivers.append("%s.shepherd@%s" % (doc.name, settings.DRAFT_ALIAS_DOMAIN))
 
     elif doc.type.slug=='charter':
         receivers.extend([role.person.formatted_email() for role in doc.group.role_set.filter(name__slug__in=['ad','chair','secr','techadv'])])
@@ -502,7 +504,7 @@ def get_initial_notify(doc,extra=None):
         if relation.relationship.slug=='conflrev':
             doc_to_review = relation.target.document
             receivers.extend([x.person.formatted_email() for x in Role.objects.filter(group__acronym=doc_to_review.stream.slug,name='chair')])
-            receivers.append("%s@%s" % (doc_to_review.name, settings.TOOLS_SERVER))
+            receivers.append("%s@%s" % (doc_to_review.name, settings.DRAFT_ALIAS_DOMAIN))
         elif relation.relationship.slug in STATUSCHANGE_RELATIONS:
             affected_doc = relation.target.document
             if affected_doc.notify:
