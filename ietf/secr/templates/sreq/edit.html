@@ -9,54 +9,7 @@
   <link rel="stylesheet" href="/css/lib/select2.css">
   <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
   <script src="/js/lib/select2-3.5.2.min.js"></script>
-  <script>
-// this is copy-pasted from ietf.js, we should include that here too instead of this
-$(document).ready(function () {
-    $(".select2-field").each(function () {
-        var e = $(this);
-        if (e.data("ajax-url")) {
-            var maxEntries = e.data("max-entries");
-            var multiple = maxEntries != 1;
-            var prefetched = e.data("pre");
-            e.select2({
-                multiple: multiple,
-                minimumInputLength: 2,
-                width: "off",
-                allowClear: true,
-                maximumSelectionSize: maxEntries,
-                ajax: {
-                    url: e.data("ajax-url"),
-                    dataType: "json",
-                    quietMillis: 250,
-                    data: function (term, page) {
-                        return {
-                            q: term,
-                            p: page
-                        };
-                    },
-                    results: function (results) {
-                        return {
-                            results: results,
-                            more: results.length == 10
-                        };
-                    }
-                },
-                escapeMarkup: function (m) {
-                    return m;
-                },
-                initSelection: function (element, cb) {
-                    if (!multiple && prefetched.length > 0)
-                        cb(prefetched[0]);
-                    else
-                        cb(prefetched);
-
-                },
-                dropdownCssClass: "bigdrop"
-            });
-        }
-    });
-});
-  </script>
+  <script src="/js/select2-field.js"></script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
