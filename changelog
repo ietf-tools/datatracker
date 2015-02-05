@@ -67,10 +67,13 @@ ietfdb (5.10.1) ietf; urgency=medium
   * Merged in [8854] from rjsparks@nostrum.com:
     This is the second step towards ADs out of GroupInfo into Role.
     The use of group.ad has been scrubbed from the code and templates.
+
     - Those places that set group.ad have been directly manipulate Role 
       objects instead
+
     - Most places that read group.ad now use a new group.ad_role() that 
       returns a Role object, simplifing some views.
+
     Related to #1555 and #1557. 
 
   * Merged in [8853] from rcross@amsl.com:
@@ -81,14 +84,19 @@ ietfdb (5.10.1) ietf; urgency=medium
 
   * Merged in [8851] from rjsparks@nostrum.com:
     This is the first step towards using Role to represent Area directors. It
+
     - Migrates the information captured in GroupInfo.ad to Role objects.
+
     - Renames GroupInfo.ad to GroupInfo._ad (retaining the current column name) 
       to prepare for deletion of that field.
+
     - Provides ad property accessor and setter methods implemented using the 
       group's role_set (so that the existing view code continues to work with 
       minimal changes)
+
     - Improved selection in many querysets that assumed only groups of type 
       'area' would have area directors.
+
     Related to #1557 and #1555. 
 
   * Merged in [8850] from rjsparks@nostrum.com:
