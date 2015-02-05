@@ -498,7 +498,7 @@ INSTALLED_APPS += DEV_APPS
 # publicly available, for instance from the source repository.
 if SERVER_MODE != 'production':
     # stomp out the cached template loader, it's annoying
-    TEMPLATE_LOADERS = [l for e in TEMPLATE_LOADERS for l in (e[1] if isinstance(e, tuple) and "cached.Loader" in e[0] else (e,))]
+    TEMPLATE_LOADERS = tuple(l for e in TEMPLATE_LOADERS for l in (e[1] if isinstance(e, tuple) and "cached.Loader" in e[0] else (e,)))
 
     CACHES = {
          'default': {
