@@ -270,7 +270,8 @@ def edit_agenda(request, num=None, owner=None, name=None):
         return HttpResponse(render_to_string("meeting/private_agenda.html",
                                              {"schedule":schedule,
                                               "meeting": meeting,
-                                              "meeting_base_url":meeting_base_url},
+                                              "meeting_base_url":meeting_base_url,
+                                              "hide_menu": True},
                                              RequestContext(request)), status=403, content_type="text/html")
 
     scheduledsessions = get_all_scheduledsessions_from_schedule(schedule)
