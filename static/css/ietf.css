@@ -213,6 +213,12 @@ pre { line-height: 1.214;  }
 	color: #ecdbff;
 }
 
+/* table on document main tabs  */
+
+.table td.edit {
+  width: 1px; /* make sure it uses as little space as possible */
+}
+
 /* milestone editing */
 #milestones-form .milestone {
   cursor: pointer;
@@ -245,14 +251,29 @@ pre { line-height: 1.214;  }
   width: 32em; /* prevent the layout from jumping around */
 }
 
-/* reset charter milestones */
+/* misc pages */
+
 #reset-charter-milestones .date {
   display: inline-block;
   min-width: 5em;
 }
 
-/* IPR */
+#ipr-details dl.dl-horizontal dt {
+  white-space: normal;
+}
 
-#ipr-details dl.dl-horizontal dt { white-space: normal; }
+.ipr-form .draft-row.template {
+  display: none;
+}
 
-.ipr-form .draft-row.template { display: none }
+form.send-notification textarea {
+  height: 24em;
+}
+
+form.add-email textarea {
+  height: 24em;
+}
+
+table.materials .snippable {
+  width: 25em;
+}

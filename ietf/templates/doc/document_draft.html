@@ -7,10 +7,6 @@
 	<meta name="description" content="{{ doc.title }} {% if doc.get_state_slug == "rfc" %}(RFC {{ rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %}){% else %}(Internet-Draft, {{ doc.time|date:"Y" }}){% endif %}">
 {% endblock %}
 
-{% block morecss %}
-.edit { width: 1px }
-{% endblock %}
-
 {% block title %}
 	{% if doc.get_state_slug == "rfc" %}
 		RFC {{ rfc_number }}
