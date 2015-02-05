@@ -10,7 +10,6 @@ from ietf.doc.models import ConsensusDocEvent
 from django import template
 from django.conf import settings
 from django.utils.html import escape, fix_ampersands
-from django.utils.text import wrap
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags, urlize
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
