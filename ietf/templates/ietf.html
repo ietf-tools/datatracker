@@ -70,10 +70,8 @@
 
 					<div class="collapse navbar-collapse" id="navbar-collapse">
 						<ul class="hidden-nojs nav navbar-nav">
-							{% with "top" as flavor %}
-								{% include "base/menu.html" %}
-							{% endwith %}
-						</ul>
+                                                        {% include "base/menu.html" with flavor="top" %}
+                                                </ul>
 
 						<form class="navbar-form navbar-right hidden-sm hidden-xs" action="/doc/search/" role="search">
 							<div class="form-group">
@@ -101,10 +99,8 @@
                                 <div class="row">
 					<div class="col-xs-3 col-md-2 leftmenu">
 						<ul class="nav nav-pills nav-stacked panel panel-default panel-body">
-							{% with "left" as flavor %}
-								{% include "base/menu.html" %}
-							{% endwith %}
-						</ul>
+                                                        {% include "base/menu.html" with flavor="left" %}
+                                                </ul>
 					</div>
                                         <div class="col-xs-9 col-md-10 content-wrapper">
 						<!--[if lt IE 8]>
