@@ -32,9 +32,6 @@ from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, 
     gen_progress, gen_research, gen_training, create_proceedings, create_interim_directory,
     create_recording )
 
-from ietf.secr.proceedings.models import InterimMeeting    # proxy model
-
-
 # -------------------------------------------------
 # Globals 
 # -------------------------------------------------
@@ -461,17 +458,6 @@ def interim(request, acronym):
         RequestContext(request, {}),
     )
 
-@role_required(*AUTHORIZED_ROLES)
-def interim_directory(request, sortby=None):
-    if sortby == 'group':
-        qs = InterimMeeting.objects.all()
-        meetings = sorted(qs, key=lambda a: a.group.acronym)
-    else:
-        meetings = InterimMeeting.objects.all().order_by('-date')
-
-    return render_to_response('proceedings/interim_directory.html', {
-    'meetings': meetings},
-)
 
 @role_required(*AUTHORIZED_ROLES)
 def main(request):

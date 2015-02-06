@@ -28,7 +28,4 @@ urlpatterns = patterns('ietf.secr.proceedings.views',
     url(r'^interim/(?P<meeting_num>interim-\d{4}-[A-Za-z0-9_\-\+]+)/delete/$', 'delete_interim_meeting',
         name='proceedings_delete_interim_meeting'),
     url(r'^interim/(?P<acronym>[A-Za-z0-9_\-\+]+)/$', 'interim', name='proceedings_interim'),
-    #url(r'^interim/directory/$', 'interim_directory', name='proceedings_interim_directory'),
-    #url(r'^interim/directory/(?P<sortby>(group|date))/$', 'interim_directory',
-    #    name='proceedings_interim_directory_sort'),
 )
