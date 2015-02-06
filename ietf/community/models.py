@@ -69,7 +69,10 @@ class CommunityList(models.Model):
     def get_display_config(self):
         dconfig = getattr(self, '_cached_dconfig', None)
         if not dconfig:
-            self._cached_dconfig = DisplayConfiguration.objects.get_or_create(community_list=self)[0]
+            try:
+                self._cached_dconfig = DisplayConfiguration.objects.get(community_list=self)
+            except DisplayConfiguration.DoesNotExist:
+                self._cached_dconfig = DisplayConfiguration(community_list=self)
             return self._cached_dconfig
         return self._cached_dconfig
 
