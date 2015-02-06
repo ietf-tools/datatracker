@@ -1,25 +1,22 @@
 {% extends "submit/submit_base.html" %}
+
+{% load bootstrap3 %}
+
 {% block title %}Upload{% endblock %}
 
-{% block morecss %}
-  {{ block.super }}
-  form.upload-form h3 { margin: 0; color: #fff; background-color: #2647a0; padding: 0.3em 0.8em; }
-  form.upload-form table { padding: 0.3em 0.8em; }
-  form.upload-form .required { color: #f00; }
-  form.upload-form td { padding-right: 5em; padding-top: 0.4em; padding-bottom: 0.4em; }
-  form.upload-form .ietf-box { margin-bottom: 1em; }
-{% endblock %}
-
 {% block submit_content %}
+
+{% bootstrap_messages %}
+
 {% if form.cutoff_warning %}
 <div class="cutoff-warning">
-  {{ form.cutoff_warning|safe }}
+	{{ form.cutoff_warning|safe }}
 </div>
 {% endif %}
 
-<p>This page is used to submit IETF Internet-Drafts to the
+<p>This page is used to submit Internet-Drafts to the
 Internet-Draft repository. The list of current Internet-Drafts can be
-accessed at <a href="http://www.ietf.org/ietf/1id-abstracts.txt">http://www.ietf.org/ietf/1id-abstracts.txt</a></p>
+accessed at <a href="//www.ietf.org/ietf/1id-abstracts.txt">https://www.ietf.org/ietf/1id-abstracts.txt</a></p>
 
 <p>Internet-Drafts are working documents of the Internet Engineering
 Task Force (IETF), its areas, and its working groups. Note that other
@@ -36,28 +33,18 @@ your draft by email to
 <a href="mailto:internet-drafts@ietf.org">internet-drafts@ietf.org</a>.
 However, be advised that manual processing always takes additional time.</p>
 
-<form class="upload-form" method="post" enctype="multipart/form-data">{% csrf_token %}
-  <div class="ietf-box">
-    <h3>Upload a draft</h3>
+{% include "submit/problem-reports-footer.html" %}
 
-    {{ form.non_field_errors }}
+<h2>Upload an Internet-Draft</h2>
 
-    <table>
-      {% for field in form %}
-        <tr>
-          <td>{{ field.label_tag }} {% if field.field.required %}<span class="required">*</span>{% endif %}</td>
-          <td>{{ field  }} {{ field.errors }}</td>
-        </tr>
-      {% endfor %}
-    </table>
-  </div>
+<form role="form" method="post" enctype="multipart/form-data">
+	{% csrf_token %}
+	{% bootstrap_form form %}
 
-  <div class="upload-submit">
-    <input type="submit" value="Upload" name="upload" />
-  </div>
+	{% buttons %}
+		<input class="btn btn-primary" type="submit" value="Upload" name="upload">
+	{% endbuttons %}
 </form>
 {% endif %}
-
-{% include "submit/problem-reports-footer.html" %}
 
 {% endblock %}

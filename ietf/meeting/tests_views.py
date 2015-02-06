@@ -39,29 +39,21 @@ class MeetingTests(TestCase):
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         slot = TimeSlot.objects.get(scheduledsession__session=session)
 
-        time_interval = "%s-%s" % (slot.time.strftime("%H%M"), (slot.time + slot.duration).strftime("%H%M"))
+        time_interval = "%s-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
 
         # plain
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        agenda_content = q("#agenda").html()
+        agenda_content = q(".content-wrapper").html()
         self.assertTrue(session.group.acronym in agenda_content)
         self.assertTrue(session.group.name in agenda_content)
         self.assertTrue(session.group.parent.acronym.upper() in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
         self.assertTrue(time_interval in agenda_content)
 
-        # mobile
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)),
-                            { '_testiphone': "1" })
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        agenda_content = q("#agenda").html()
-        self.assertTrue(session.group.acronym in agenda_content)
-        self.assertTrue(session.group.name[:10] in agenda_content)
-        self.assertTrue(slot.location.name in agenda_content)
-        self.assertTrue(time_interval in agenda_content)
+        # the rest of the results don't have as nicely formatted times
+        time_interval = time_interval.replace(":", "")
 
         # text
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".txt")))
@@ -125,12 +117,11 @@ class MeetingTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(meeting_num=meeting.number)))
         self.assertEqual(r.status_code, 200)
-        #debug.show('r.content')
         q = PyQuery(r.content)
-        row = q('.ietf-materials b:contains("%s")' % str(session.group.acronym.upper())).closest("tr")
-        self.assertTrue(row.find("a:contains(\"Agenda\")"))
-        self.assertTrue(row.find("a:contains(\"Minutes\")"))
-        self.assertTrue(row.find("a:contains(\"Slideshow\")"))
+        row = q('.content-wrapper td:contains("%s")' % str(session.group.acronym)).closest("tr")
+        self.assertTrue(row.find('a:contains("Agenda")'))
+        self.assertTrue(row.find('a:contains("Minutes")'))
+        self.assertTrue(row.find('a:contains("Slideshow")'))
 
         # FIXME: missing tests of .pdf/.tar generation (some code can
         # probably be lifted from similar tests in iesg/tests.py)

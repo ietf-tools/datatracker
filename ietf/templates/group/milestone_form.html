@@ -1,42 +1,9 @@
 {# assumes group, form, needs_review, reviewer are in the context #}
-<input type="hidden" name="prefix" value="{{ form.prefix|default:"" }}"/>
-{{ form.id }}
 
-<table cellspacing="0" cellpadding="0">
-  <tr>
-    <td>{{ form.desc.label_tag }}</td>
-    <td>
-      <span class="desc">
-        {% if needs_review and form.milestone and form.milestone.state_id != "review" %}
-        {{ form.milestone.desc }} {{ form.desc.as_hidden }}
-        {% else %}
-        {{ form.desc }}
-        {% endif %}
-      </span>
-      <span class="delete">{{ form.delete }} {{ form.delete.label_tag }}</span>
-    </td>
-  </tr>
-  {% if form.desc.errors %}<tr><td></td><td colspan="2">{{ form.desc.errors }}</td></tr>{% endif %}
-  <tr>
-    <td>Due date:</td>
-    <td><span class="due">{{ form.due_month }} {{ form.due_year }}</span> {{ form.due_month.errors }} {{ form.due_year.errors }}
-    <span class="resolved">{{ form.resolved_checkbox }} {{ form.resolved_checkbox.label_tag }} {{ form.resolved }}</span>
-     {{ form.resolved.errors }}
-    </td>
-  </tr>
-  <tr class="docs">
-    <td>Drafts:</td>
-    <td><input name="{{ form.docs.html_name }}" class="tokenized-field" data-ajax-url="{% url "group_ajax_search_docs" group_type=group.type_id acronym=group.acronym %}" data-pre="{{ form.docs_prepopulate }}"/>
-    {{ form.docs.errors }}
-    </td>
-  </tr>
-  {% if form.needs_review %}
-  <tr class="needs-review">
-    <td>Review:</td>
-    <td class="accept">
-      This milestone is not active yet, awaiting
-      {{ reviewer }} acceptance{% if needs_review %}.{% else %}: {{ form.accept }}{% endif %}
-    </td>
-  </tr>
-  {% endif %}
-</table>
+{% load bootstrap3 %}
+
+<div role="form" class="form-horizontal">
+  <input type="hidden" name="prefix" value="{{ form.prefix|default:"" }}"/>
+
+  {% bootstrap_form form layout='horizontal' %}
+</div>

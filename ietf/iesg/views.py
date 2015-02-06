@@ -2,24 +2,24 @@
 
 # Portion Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
-# 
+#
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-# 
+#
 #  * Redistributions in binary form must reproduce the above
 #    copyright notice, this list of conditions and the following
 #    disclaimer in the documentation and/or other materials provided
 #    with the distribution.
-# 
+#
 #  * Neither the name of the Nokia Corporation and/or its
 #    subsidiary(-ies) nor the names of its contributors may be used
 #    to endorse or promote products derived from this software
 #    without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -57,6 +57,7 @@ from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, 
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.person.models import Person
+from ietf.doc.views_search import fill_in_search_attributes
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
@@ -176,8 +177,8 @@ def agenda(request, date=None):
     data = agenda_data(date)
 
     if has_role(request.user, ["Area Director", "IAB Chair", "Secretariat"]):
-        data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace("Roll Call", '<a href="https://www.ietf.org/iesg/internal/rollcall.txt">Roll Call</a>')
-        data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace("Minutes", '<a href="https://www.ietf.org/iesg/internal/minutes.txt">Minutes</a>')
+        data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace("Roll call", '<a href="https://www.ietf.org/iesg/internal/rollcall.txt">Roll Call</a>')
+        data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace("minutes", '<a href="https://www.ietf.org/iesg/internal/minutes.txt">Minutes</a>')
 
     request.session['ballot_edit_return_point'] = request.path_info
     return render_to_response("iesg/agenda.html", {
@@ -303,7 +304,7 @@ class RescheduleForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         dates = kwargs.pop('telechat_dates')
-        
+
         super(self.__class__, self).__init__(*args, **kwargs)
 
         # telechat choices
@@ -360,6 +361,9 @@ def agenda_documents(request):
     telechats = []
     for date in dates:
         sections = agenda_sections()
+        # augment the docs with the search attributes, since we're using
+        # the search_result_row view to display them (which expects them)
+        fill_in_search_attributes(docs_by_date[date])
         fill_in_agenda_docs(date, sections, docs_by_date[date])
 
         telechats.append({

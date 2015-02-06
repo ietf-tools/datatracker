@@ -270,24 +270,23 @@ def edit_material_presentations(request, name, acronym=None, date=None, seq=None
     if request.method == 'POST':
         form = MaterialVersionForm(request.POST,choices=choices)
         if form.is_valid():
-            if request.POST.get("action", "") == "Save":
-                new_selection = form.cleaned_data['version']
-                if initial['version'] != new_selection:
-                    if initial['version'] == 'notpresented':
-                        doc.sessionpresentation_set.create(session=session,rev=new_selection)
-                        c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
-                        c.desc = "Added version %s to session: %s" % (new_selection,session)
-                        c.save()
-                    elif new_selection == 'notpresented':
-                        doc.sessionpresentation_set.filter(session=session).delete()
-                        c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
-                        c.desc = "Removed from session: %s" % (session)
-                        c.save()
-                    else:
-                        doc.sessionpresentation_set.filter(session=session).update(rev=new_selection)
-                        c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
-                        c.desc = "Revision for session %s changed to  %s" % (session,new_selection)
-                        c.save()
+            new_selection = form.cleaned_data['version']
+            if initial['version'] != new_selection:
+                if initial['version'] == 'notpresented':
+                    doc.sessionpresentation_set.create(session=session,rev=new_selection)
+                    c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                    c.desc = "Added version %s to session: %s" % (new_selection,session)
+                    c.save()
+                elif new_selection == 'notpresented':
+                    doc.sessionpresentation_set.filter(session=session).delete()
+                    c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                    c.desc = "Removed from session: %s" % (session)
+                    c.save()
+                else:
+                    doc.sessionpresentation_set.filter(session=session).update(rev=new_selection)
+                    c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                    c.desc = "Revision for session %s changed to  %s" % (session,new_selection)
+                    c.save()
             return redirect('doc_view',name=doc.name)
     else:
         form = MaterialVersionForm(choices=choices,initial=initial)

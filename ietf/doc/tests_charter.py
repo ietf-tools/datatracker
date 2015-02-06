@@ -71,7 +71,7 @@ class EditCharterTests(TestCase):
         r = self.client.post(url, dict(charter_state="-12345"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         self.assertEqual(charter.get_state(), first_state)
         
         # change state
@@ -370,18 +370,16 @@ class EditCharterTests(TestCase):
                                            desc="Has been copied",
                                            due=due_date,
                                            resolved="")
-        # m2 isn't used -- missing test?
-        m2 = GroupMilestone.objects.create(group=group, # pyflakes:ignore
-                                           state_id="active",
-                                           desc="To be deleted",
-                                           due=due_date,
-                                           resolved="")
-        # m3 isn't used -- missing test?
-        m3 = GroupMilestone.objects.create(group=group, # pyflakes:ignore
-                                           state_id="charter",
-                                           desc="Has been copied",
-                                           due=due_date,
-                                           resolved="")
+        GroupMilestone.objects.create(group=group,
+                                      state_id="active",
+                                      desc="To be deleted",
+                                      due=due_date,
+                                      resolved="")
+        GroupMilestone.objects.create(group=group,
+                                      state_id="charter",
+                                      desc="Has been copied",
+                                      due=due_date,
+                                      resolved="")
         m4 = GroupMilestone.objects.create(group=group,
                                            state_id="charter",
                                            desc="New charter milestone",
@@ -392,7 +390,7 @@ class EditCharterTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue("Send out the announcement" in q('input[type=submit]')[0].get('value'))
+        self.assertTrue(q('[type=submit]:contains("Send announcement")'))
         self.assertEqual(len(q('pre')), 1)
 
         # approve

@@ -519,3 +519,9 @@ def get_initial_notify(doc,extra=None):
         receivers.extend(extra)
 
     return ", ".join(set([x.strip() for x in receivers]))
+
+def uppercase_std_abbreviated_name(name):
+    if re.match('(rfc|bcp|std|fyi) ?[0-9]+$', name):
+        return name.upper()
+    else:
+        return name

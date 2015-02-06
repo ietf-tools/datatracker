@@ -87,35 +87,32 @@ def ballot_icon(context, doc):
     positions = list(doc.active_ballot().active_ad_positions().items())
     positions.sort(key=sort_key)
 
-    edit_position_url = ""
-    if has_role(user, "Area Director"):
-        edit_position_url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk))
-
-    title = "IESG positions (click to show more%s)" % (", right-click to edit position" if edit_position_url else "")
-
-    res = ['<a href="%s" data-popup="%s" data-edit="%s" title="%s" class="ballot-icon"><table>' % (
-            urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
+    res = ['<a href="%s" data-toggle="modal" data-target="#modal-%d" title="IESG positions (click to show more)" class="ballot-icon"><table>' % (
             urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
-            edit_position_url,
-            title
-            )]
+            ballot.pk)]
 
     res.append("<tr>")
 
     for i, (ad, pos) in enumerate(positions):
         if i > 0 and i % 5 == 0:
-            res.append("</tr>")
-            res.append("<tr>")
+            res.append("</tr><tr>")
 
         c = "position-%s" % (pos.pos.slug if pos else "norecord")
 
         if user_is_person(user, ad):
             c += " my"
 
-        res.append('<td class="%s" />' % c)
+        res.append('<td class="%s"></td>' % c)
 
-    res.append("</tr>")
-    res.append("</table></a>")
+    # add sufficient table calls to last row to avoid HTML validation warning
+    while (i + 1) % 5 != 0:
+        res.append('<td class="empty"></td>')
+        i = i + 1
+
+    res.append("</tr></table></a>")
+    # XXX FACELIFT: Loading via href will go away in bootstrap 4.
+    # See http://getbootstrap.com/javascript/#modals-usage
+    res.append('<div id="modal-%d" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content"></div></div></div>' % ballot.pk)
 
     return "".join(res)
 
@@ -156,7 +153,7 @@ def state_age_colored(doc):
         except IndexError:
             state_date = datetime.date(1990,1,1)
         days = (datetime.date.today() - state_date).days
-        # loosely based on 
+        # loosely based on
         # http://trac.tools.ietf.org/group/iesg/trac/wiki/PublishPath
         if iesg_state == "lc":
             goal1 = 30
@@ -180,16 +177,17 @@ def state_age_colored(doc):
             goal1 = 14
             goal2 = 28
         if days > goal2:
-            class_name = "ietf-small ietf-highlight-r"
+            class_name = "label label-danger"
         elif days > goal1:
-            class_name = "ietf-small ietf-highlight-y"
+            class_name = "label label-warning"
         else:
             class_name = "ietf-small"
         if days > goal1:
             title = ' title="Goal is &lt;%d days"' % (goal1,)
         else:
             title = ''
-        return mark_safe('<span class="%s"%s>(for&nbsp;%d&nbsp;day%s)</span>' % (
-                class_name, title, days, 's' if days != 1 else ''))
+        return mark_safe('<span class="%s"%s>for %d day%s</span>' % (
+                class_name, title, days,
+                's' if days != 1 else ''))
     else:
         return ""

@@ -1,34 +1,33 @@
-jQuery(function () {
+$(document).ready(function () {
     function setupAttachmentWidget() {
-        var button = jQuery(this);
-        var fieldset = jQuery(this).parents('.fieldset');
+        var button = $(this);
         var config = {};
         var count = 0;
 
         var readConfig = function() {
-            var disabledLabel = fieldset.find('.attachDisabledLabel');
+            var buttonFormGroup = button.parents('.form-group');
+            var disabledLabel = buttonFormGroup.find('.attachDisabledLabel');
 
             if (disabledLabel.length) {
                 config.disabledLabel = disabledLabel.html();
-                var required = '';
-                fieldset.find('.attachRequiredField').each(function(index, field) {
-                    required += '#' + jQuery(field).html() + ',';
+                var required = [];
+                buttonFormGroup.find('.attachRequiredField').each(function(index, field) {
+                    required.push('#' + $(field).text());
                 });
-                var fields = fieldset.find(required);
-                config.basefields = fields;
+                config.basefields = $(required.join(","));
             }
 
-            config.showOn = jQuery('#' + fieldset.find('.showAttachsOn').html());
+            config.showOn = $('#' + buttonFormGroup.find('.showAttachsOn').html());
             config.showOnDisplay = config.showOn.find('.attachedFiles');
             count = config.showOnDisplay.find('.initialAttach').length;
             config.showOnEmpty = config.showOn.find('.showAttachmentsEmpty').html();
-            config.enabledLabel = fieldset.find('.attachEnabledLabel').html();
+            config.enabledLabel = buttonFormGroup.find('.attachEnabledLabel').html();
         };
 
         var setState = function() {
             var enabled = true;
             config.fields.each(function() {
-                if (!jQuery(this).val()) {
+                if (!$(this).val()) {
                     enabled = false;
                     return;
                 }
@@ -48,8 +47,8 @@ jQuery(function () {
                 html = config.showOnDisplay.html() + html;
             }
             config.fields.each(function() {
-                var field = jQuery(this);
-                var container= jQuery(this).parents('.field');
+                var field = $(this);
+                var container= $(this).parents('.form-group');
                 if (container.find(':file').length) {
                     html += ' (' + field.val() + ')';
                 } else {
@@ -60,7 +59,7 @@ jQuery(function () {
                 html += '</span>';
                 container.hide();
             });
-            html += ' <a href="#" class="removeAttach">Remove</a>';
+            html += ' <a href="" class="removeAttach glyphicon glyphicon-remove text-danger"></a>';
             html += '</div>';
             config.showOnDisplay.html(html);
             count += 1;
@@ -73,11 +72,11 @@ jQuery(function () {
         };
 
         var removeAttachment = function() {
-            var link = jQuery(this);
-            var attach = jQuery(this).parent('.attachedFileInfo');
+            var link = $(this);
+            var attach = $(this).parent('.attachedFileInfo');
             var fields = attach.find('.removeField');
             fields.each(function() {
-                jQuery('#' + jQuery(this).html()).remove();
+                $('#' + $(this).html()).remove();
             });
             attach.remove();
             if (!config.showOnDisplay.html()) {
@@ -88,15 +87,15 @@ jQuery(function () {
         };
 
         var initTriggers = function() {
-            config.showOnDisplay.find('a.removeAttach').live('click', removeAttachment);
+            config.showOnDisplay.on('click', 'a.removeAttach', removeAttachment);
             button.click(doAttach);
         };
 
         var initFileInput = function() {
             var fieldids = [];
             config.basefields.each(function(i) {
-                var field = jQuery(this);
-                var oldcontainer= jQuery(this).parents('.field');
+                var field = $(this);
+                var oldcontainer= $(this).parents('.form-group');
                 var newcontainer= oldcontainer.clone();
                 var newfield = newcontainer.find('#' + field.attr('id'));
                 newfield.attr('name', newfield.attr('name') + '_' + count);
@@ -107,23 +106,25 @@ jQuery(function () {
                 newcontainer.show();
                 fieldids.push('#' + newfield.attr('id'));
             });
-            config.fields = jQuery(fieldids.join(","));
+            config.fields = $(fieldids.join(","));
             config.fields.change(setState);
             config.fields.keyup(setState);
         };
 
         var initWidget = function() {
             readConfig();
+
             initFileInput();
             initTriggers();
+
             setState();
         };
 
         initWidget();
     }
 
-    jQuery('form.liaisonform').each(function() {
-        var form = jQuery(this);
+    $('form.liaisons').each(function() {
+        var form = $(this);
         var organization = form.find('#id_organization');
         var from = form.find('#id_from_field');
         var poc = form.find('#id_to_poc');
@@ -135,23 +136,11 @@ jQuery(function () {
         var submission_date = form.find('#id_submitted_date');
         var other_organization = form.find('#id_other_organization');
         var approval = form.find('#id_approved');
-        var cancel = form.find('#id_cancel');
-        var cancel_dialog = form.find('#cancel-dialog');
-        var config = {};
-        var related_trigger = form.find('#id_related_to');
-        var related_url = form.find('#id_related_to').parent().find('.listURL').text();
-        var related_dialog = form.find('#related-dialog');
-        var unrelate_trigger = form.find('#id_no_related_to');
-
-        var readConfig = function() {
-            var confcontainer = form.find('.formconfig');
-            config.info_update_url = confcontainer.find('.info_update_url').text();
-        };
 
         var render_mails_into = function(container, person_list, as_html) {
             var html='';
 
-            jQuery.each(person_list, function(index, person) {
+            $.each(person_list, function(index, person) {
                 if (as_html) {
                     html += person[0] + ' &lt;<a href="mailto:'+person[1]+'">'+person[1]+'</a>&gt;<br />';
                 } else {
@@ -176,9 +165,9 @@ jQuery(function () {
 
         var checkPostOnly = function(post_only) {
             if (post_only) {
-                jQuery("input[name=send]").hide();
+                $("input[name=send]").hide();
             } else {
-                jQuery("input[name=send]").show();
+                $("input[name=send]").show();
             }
         };
 
@@ -197,11 +186,11 @@ jQuery(function () {
             var select = form.find('select[name=from_fake_user]');
             var options = '';
             link.hide();
-            jQuery.each(user_list, function(index, person) {
+            $.each(user_list, function(index, person) {
                 options += '<option value="' + person[0] + '" title="' + person[1][1] + '">'+ person[1][0] + ' &lt;' + person[1][1] + '&gt;</option>';
             });
             select.remove();
-            link.after('<select name="from_fake_user">' + options +'</select>');
+            link.after('<select name="from_fake_user" class="form-control" style="margin-top: 0.5em;">' + options +'</select>');
             form.find('select[name=from_fake_user]').change(updateReplyTo);
             updateReplyTo();
         };
@@ -212,8 +201,8 @@ jQuery(function () {
             if (!entity.is('select') || !to_entity.is('select')) {
                 return false;
             }
-            var url = config.info_update_url;
-            jQuery.ajax({
+            var url = form.data("ajaxInfoUrl");
+            $.ajax({
                 url: url,
                 type: 'GET',
                 cache: false,
@@ -244,86 +233,37 @@ jQuery(function () {
         };
 
         var updatePurpose = function() {
-            var datecontainer = deadline.parents('.field');
-            var othercontainer = other_purpose.parents('.field');
+            var deadlinecontainer = deadline.closest('.form-group');
+            var othercontainer = other_purpose.closest('.form-group');
+
             var selected_id = purpose.val();
-            var deadline_required = datecontainer.find('.fieldRequired');
 
             if (selected_id == '1' || selected_id == '2' || selected_id == '5') {
-                datecontainer.show();
+                deadlinecontainer.show();
             } else {
-                datecontainer.hide();
+                deadlinecontainer.hide();
                 deadline.val('');
             }
 
             if (selected_id == '5') {
                 othercontainer.show();
-                deadline_required.hide();
+                deadlinecontainer.find("label").removeClass("required");
             } else {
                 othercontainer.hide();
                 other_purpose.val('');
-                deadline_required.show();
+                deadlinecontainer.find("label").addClass("required");
             }
         };
 
         var checkOtherSDO = function() {
             var entity = organization.val();
             if (entity=='othersdo') {
-                other_organization.parents('.field').show();
+                other_organization.closest('.form-group').show();
+                other_organization.prop("required", true);
             } else {
-                other_organization.parents('.field').hide();
+                other_organization.closest('.form-group').hide();
+                other_organization.prop("required", false);
             }
-        };
-
-        var cancelForm = function() {
-            cancel_dialog.dialog("open");
-        };
-
-        var getRelatedLink = function() {
-            var link = jQuery(this).text();;
-            var pk = jQuery(this).nextAll('.liaisonPK').text();
-            var widget = related_trigger.parent();
-            widget.find('.relatedLiaisonWidgetTitle').text(link);
-            widget.find('.relatedLiaisonWidgetValue').val(pk);
-            widget.find('.noRelated').hide();
-            unrelate_trigger.show();
-            related_dialog.dialog('close');
-            return false;
-        };
-
-        var selectNoRelated = function() {
-            var widget = jQuery(this).parent();
-            widget.find('.relatedLiaisonWidgetTitle').text('');
-            widget.find('.noRelated').show();
-            widget.find('.relatedLiaisonWidgetValue').val('');
-            jQuery(this).hide();
-            return false;
-        };
-
-        var selectRelated = function() {
-            var trigger = jQuery(this);
-            var widget = jQuery(this).parent();
-            var url = widget.find('.listURL').text();
-            var title = widget.find('.relatedLiaisonWidgetTitle');
-            related_dialog.html('<img src="/images/ajax-loader.gif" />');
-            related_dialog.dialog('open');
-            jQuery.ajax({
-                url: url,
-                type: 'GET',
-                cache: false,
-                async: true,
-                dataType: 'html',
-                success: function(response){
-                    related_dialog.html(response);
-                    related_dialog.find('th a').click(function() {
-                        widget.find('.listURL').text(related_url + jQuery(this).attr('href'));
-                        trigger.click();
-                        return false;
-                    });
-                    related_dialog.find('td a').click(getRelatedLink);
-                }
-            });
-            return false;
         };
 
         var checkFrom = function(first_time) {
@@ -337,10 +277,10 @@ jQuery(function () {
             if (!reduce_options.find('.full_power_on_' + from_entity).length) {
                 to_select.find('optgroup').eq(1).hide();
                 to_select.find('option').each(function() {
-                    if (!reduce_options.find('.reduced_to_set_' + jQuery(this).val()).length) {
-                        jQuery(this).hide();
+                    if (!reduce_options.find('.reduced_to_set_' + $(this).val()).length) {
+                        $(this).hide();
                     } else {
-                        jQuery(this).show();
+                        $(this).show();
                     }
                 });
                 if (!to_select.find('option:selected').is(':visible')) {
@@ -361,78 +301,26 @@ jQuery(function () {
                 if (Math.abs(today-sdate) > 2592000000) {  // 2592000000 = 30 days in milliseconds
                     return confirm('Submission date ' + date_str + ' differ more than 30 days.\n\nDo you want to continue and post this liaison using that submission date?\n');
                 }
+                return true;
             }
+            else
+                return false;
         };
 
-        var initTriggers = function() {
-            organization.change(function() {updateInfo(false, 'to');});
-            organization.change(checkOtherSDO);
-            from.change(function() {checkFrom(false);});
-            reply.keyup(updateFrom);
-            purpose.change(updatePurpose);
-            cancel.click(cancelForm);
-            related_trigger.click(selectRelated);
-            unrelate_trigger.click(selectNoRelated);
-            form.submit(checkSubmissionDate);
-        };
 
-        var updateOnInit = function() {
-            updateFrom();
-            checkFrom(true);
-            updatePurpose();
-            checkOtherSDO();
-        };
+        // init form
+        organization.change(function() { updateInfo(false, 'to'); });
+        organization.change(checkOtherSDO);
+        from.change(function() { checkFrom(false); });
+        reply.keyup(updateFrom);
+        purpose.change(updatePurpose);
+        form.submit(checkSubmissionDate);
 
-        var initDatePicker = function() {
-            deadline.datepicker({
-                dateFormat: jQuery.datepicker.ATOM,
-                changeYear: true
-            });
-            submission_date.datepicker({
-                dateFormat: jQuery.datepicker.ATOM,
-                changeYear: true
-            });
-        };
+        updateFrom();
+        checkFrom(true);
+        updatePurpose();
+        checkOtherSDO();
 
-        var initAttachments = function() {
-            form.find('.addAttachmentWidget').each(setupAttachmentWidget);
-        };
-
-        var initDialogs = function() {
-            cancel_dialog.dialog({
-                resizable: false,
-                height:200,
-                modal: true,
-                autoOpen: false,
-                buttons: {
-                   "Ok": function() {
-                       window.location='..';
-                       jQuery( this ).dialog( "close" );
-                   },
-                   "Cancel": function() {
-                       jQuery( this ).dialog( "close" );
-                   }
-                }
-            });
-
-            related_dialog.dialog({
-                height: 400,
-                width: 800,
-                draggable: true,
-                modal: true,
-                autoOpen: false
-            });
-        };
-
-        var initForm = function() {
-            readConfig();
-            initTriggers();
-            updateOnInit();
-            initDatePicker();
-            initAttachments();
-            initDialogs();
-        };
-
-        initForm();
+        form.find('.addAttachmentWidget').each(setupAttachmentWidget);
     });
 });

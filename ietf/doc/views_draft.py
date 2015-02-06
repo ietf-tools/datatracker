@@ -1,6 +1,6 @@
 # changing state and metadata on Internet Drafts
 
-import datetime, json
+import datetime
 
 from django import forms
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
@@ -24,13 +24,14 @@ from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify )
 from ietf.doc.lastcall import request_last_call
+from ietf.doc.fields import SearchableDocAliasesField
 from ietf.group.models import Group, Role
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
 from ietf.ietfauth.utils import role_required
 from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
-from ietf.person.fields import AutocompletedEmailField
+from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
 from ietf.secr.lib.template import jsonapi
 from ietf.utils.mail import send_mail, send_mail_message
@@ -64,7 +65,7 @@ def change_state(request, name):
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
     if (not doc.latest_event(type="started_iesg_process")) or doc.get_state_slug() == "expired":
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
@@ -214,7 +215,7 @@ def change_stream(request, name):
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
     if not doc.type_id=='draft':
-        raise Http404()
+        raise Http404
 
     if not (has_role(request.user, ("Area Director", "Secretariat")) or
             (request.user.is_authenticated() and
@@ -307,35 +308,21 @@ def collect_email_addresses(emails, doc):
     return emails
 
 class ReplacesForm(forms.Form):
-    replaces = forms.CharField(max_length=512,widget=forms.HiddenInput)
+    replaces = SearchableDocAliasesField(required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
     def __init__(self, *args, **kwargs):
         self.doc = kwargs.pop('doc')
         super(ReplacesForm, self).__init__(*args, **kwargs)
-        drafts = {}
-        for d in self.doc.related_that_doc("replaces"):
-            drafts[d.id] = d.document.name
-        self.initial['replaces'] = json.dumps(drafts)
+        self.initial['replaces'] = self.doc.related_that_doc("replaces")
 
     def clean_replaces(self):
-        data = self.cleaned_data['replaces'].strip()
-        if data:
-            ids = [int(x) for x in json.loads(data)]
-        else:
-            return []
-        objects = []
-        for id in ids:
-            try:
-                d = DocAlias.objects.get(pk=id)
-            except DocAlias.DoesNotExist:
-                raise forms.ValidationError("ERROR: %s not found for id %d" % DocAlias._meta.verbos_name, id)
+        for d in self.cleaned_data['replaces']:
             if d.document == self.doc:
-                raise forms.ValidationError("ERROR: A draft can't replace itself")
+                raise forms.ValidationError("A draft can't replace itself")
             if d.document.type_id == "draft" and d.document.get_state_slug() == "rfc":
-                raise forms.ValidationError("ERROR: A draft can't replace an RFC")
-            objects.append(d)
-        return objects
+                raise forms.ValidationError("A draft can't replace an RFC")
+        return self.cleaned_data['replaces']
 
 def replaces(request, name):
     """Change 'replaces' set of a Document of type 'draft' , notifying parties 
@@ -472,7 +459,7 @@ class EditInfoForm(forms.Form):
     area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active"), empty_label="(None - individual submission)", required=False, label="Assigned to area")
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
+    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
     returning_item = forms.BooleanField(required=False)
@@ -505,10 +492,10 @@ def to_iesg(request,name):
     doc = get_object_or_404(Document, docalias__name=name, stream='ietf')
 
     if doc.get_state_slug('draft') == "expired" or doc.get_state_slug('draft-iesg') == 'pub-req' :
-        raise Http404()
+        raise Http404
 
     if not is_authorized_in_doc_stream(request.user, doc):
-        raise Http404()
+        raise Http404
     
     target_state={
         'iesg' : State.objects.get(type='draft-iesg',slug='pub-req'),
@@ -614,7 +601,7 @@ def edit_info(request, name):
     necessary and logging changes as document events."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.get_state_slug() == "expired":
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
@@ -764,7 +751,7 @@ def request_resurrect(request, name):
     """Request resurrect of expired Internet Draft."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.get_state_slug() != "expired":
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
@@ -788,7 +775,7 @@ def resurrect(request, name):
     """Resurrect expired Internet Draft."""
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.get_state_slug() != "expired":
-        raise Http404()
+        raise Http404
 
     login = request.user.person
 
@@ -863,8 +850,8 @@ def edit_iesg_note(request, name):
                               context_instance=RequestContext(request))
 
 class ShepherdWriteupUploadForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label="Shepherd writeup", help_text="Edit the shepherd writeup", required=False)
-    txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file", required=False)
+    content = forms.CharField(widget=forms.Textarea, label="Shepherd writeup", help_text="Edit the shepherd writeup.", required=False)
+    txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file.", required=False)
 
     def clean_content(self):
         return self.cleaned_data["content"].replace("\r", "")
@@ -942,7 +929,7 @@ def edit_shepherd_writeup(request, name):
                               context_instance=RequestContext(request))
 
 class ShepherdForm(forms.Form):
-    shepherd = AutocompletedEmailField(required=False, only_users=True)
+    shepherd = SearchableEmailField(required=False, only_users=True)
 
 def edit_shepherd(request, name):
     """Change the shepherd for a Document"""
@@ -1210,7 +1197,7 @@ def request_publication(request, name):
 class AdoptDraftForm(forms.Form):
     group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=["wg", "rg"], state="active").order_by("-type", "acronym"), required=True, empty_label=None)
     newstate = forms.ModelChoiceField(queryset=State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc', 'candidat','active']),required=True,label="State")
-    comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption")
+    comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption.")
     weeks = forms.IntegerField(required=False, label="Expected weeks in adoption state")
 
     def __init__(self, *args, **kwargs):
@@ -1323,7 +1310,7 @@ def adopt_draft(request, name):
 class ChangeStreamStateForm(forms.Form):
     new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State', help_text=u"Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication.")
     weeks = forms.IntegerField(label='Expected weeks in state',required=False)
-    comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history")
+    comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history.")
     tags = forms.ModelMultipleChoiceField(queryset=DocTagName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
 
     def __init__(self, *args, **kwargs):

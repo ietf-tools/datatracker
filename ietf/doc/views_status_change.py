@@ -25,7 +25,7 @@ from ietf.utils.textupload import get_cleaned_text_file_content
 
 class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)
-    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history", required=False)
+    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False)
 
 
 @role_required("Area Director", "Secretariat")
@@ -109,8 +109,8 @@ def send_status_change_eval_email(request,doc):
     send_mail_preformatted(request,msg)
 
 class UploadForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label="Status change text", help_text="Edit the status change text", required=False)
-    txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file", required=False)
+    content = forms.CharField(widget=forms.Textarea, label="Status change text", help_text="Edit the status change text.", required=False)
+    txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file.", required=False)
 
     def clean_content(self):
         return self.cleaned_data["content"].replace("\r", "")
@@ -306,7 +306,7 @@ def default_approval_text(status_change,relateddoc):
 from django.forms.formsets import formset_factory
 
 class AnnouncementForm(forms.Form):
-    announcement_text = forms.CharField(widget=forms.Textarea, label="Status Change Announcement", help_text="Edit the announcement message", required=True)
+    announcement_text = forms.CharField(widget=forms.Textarea, label="Status Change Announcement", help_text="Edit the announcement message.", required=True)
     label = None
       
     def __init__(self, *args, **kwargs):
@@ -399,11 +399,11 @@ def clean_helper(form, formtype):
             elif k.startswith('statchg_relation_row'):
                 status_fields[k[21:]]=v
         for key in rfc_fields:
-           if rfc_fields[key]!="":
-             if key in status_fields:
-                 new_relations[rfc_fields[key]]=status_fields[key]
-             else:
-                 new_relations[rfc_fields[key]]=None
+            if rfc_fields[key]!="":
+                if key in status_fields:
+                    new_relations[rfc_fields[key]]=status_fields[key]
+                else:
+                    new_relations[rfc_fields[key]]=None
         
         form.relations = new_relations
 
@@ -436,12 +436,12 @@ class EditStatusChangeForm(forms.Form):
         return clean_helper(self,EditStatusChangeForm)
 
 class StartStatusChangeForm(forms.Form):
-    document_name = forms.CharField(max_length=255, label="Document name", help_text="A descriptive name such as status-change-md2-to-historic is better than status-change-rfc1319", required=True)
+    document_name = forms.CharField(max_length=255, label="Document name", help_text="A descriptive name such as status-change-md2-to-historic is better than status-change-rfc1319.", required=True)
     title = forms.CharField(max_length=255, label="Title", required=True)
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), 
                                 label="Shepherding AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(type="statchg", slug__in=("needshep", "adrev")), empty_label=None, required=False)
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
+    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
     relations={}
 
@@ -568,7 +568,7 @@ def edit_relations(request, name):
 
     if request.method == 'POST':
         form = EditStatusChangeForm(request.POST)
-        if 'Submit' in request.POST and form.is_valid():
+        if form.is_valid():
     
             old_relations={}
             for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
@@ -588,9 +588,6 @@ def edit_relations(request, name):
             c.desc += "\n"
             c.save()
 
-            return HttpResponseRedirect(status_change.get_absolute_url())
-
-        elif 'Cancel' in request.POST:
             return HttpResponseRedirect(status_change.get_absolute_url())
 
     else: 

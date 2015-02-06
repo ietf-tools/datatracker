@@ -11,13 +11,13 @@ from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.group.models import Group, Role
 from ietf.ietfauth.utils import role_required
 from ietf.name.models import RoleName, FeedbackTypeName, NomineePositionStateName
-from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition, 
+from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition,
                                  Position, Feedback, ReminderDates )
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
                                get_user_email, validate_private_key, validate_public_key,
                                get_or_create_nominee, create_feedback_email)
 from ietf.person.models import Email
-from ietf.person.fields import AutocompletedEmailField
+from ietf.person.fields import SearchableEmailField
 from ietf.utils.fields import MultiEmailField
 from ietf.utils.mail import send_mail
 
@@ -207,62 +207,6 @@ class EditMembersFormPreview(FormPreview):
         return redirect('nomcom_edit_members', year=self.year)
 
 
-class EditChairForm(BaseNomcomForm, forms.Form):
-
-    chair = forms.EmailField(label="Chair email", required=False,
-                             widget=forms.TextInput(attrs={'size': '40'}))
-
-    fieldsets = [('Chair info', ('chair',))]
-
-
-class EditChairFormPreview(FormPreview):
-    form_template = 'nomcom/edit_chair.html'
-    preview_template = 'nomcom/edit_chair_preview.html'
-
-    @method_decorator(role_required("Secretariat"))
-    def __call__(self, request, *args, **kwargs):
-        year = kwargs['year']
-        group = get_nomcom_group_or_404(year)
-        self.state['group'] = group
-        self.state['rolodex_url'] = ROLODEX_URL
-        self.group = group
-        self.year = year
-
-        return super(EditChairFormPreview, self).__call__(request, *args, **kwargs)
-
-    def get_initial(self, request):
-        chair = self.group.get_chair()
-        if chair:
-            return { "chair": chair.email.address }
-        return {}
-
-    def process_preview(self, request, form, context):
-        chair_email = form.cleaned_data['chair']
-        try:
-            chair_email_obj = Email.objects.get(address=chair_email)
-            chair_person = chair_email_obj.person
-        except Email.DoesNotExist:
-            chair_person = None
-            chair_email_obj = None
-        chair_info = {'email': chair_email,
-                      'email_obj': chair_email_obj,
-                      'person': chair_person}
-
-        self.state.update({'chair_info': chair_info})
-
-    def done(self, request, cleaned_data):
-        chair_info = self.state['chair_info']
-        chair_exclude = self.group.role_set.filter(name__slug='chair').exclude(email__address=chair_info['email'])
-        chair_exclude.delete()
-        if chair_info['email_obj'] and chair_info['person']:
-            Role.objects.get_or_create(name=RoleName.objects.get(slug="chair"),
-                                      group=self.group,
-                                      person=chair_info['person'],
-                                      email=chair_info['email_obj'])
-
-        return redirect('nomcom_edit_chair', year=self.year)
-
-
 class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
 
     fieldsets = [('Edit nomcom settings', ('public_key', 'initial_text',
@@ -296,7 +240,7 @@ class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
 class MergeForm(BaseNomcomForm, forms.Form):
 
     secondary_emails = MultiEmailField(label="Secondary email addresses",
-        help_text="Provide a comma separated list of email addresses. Nominations already received with any of these email address will be moved to show under the primary address", widget=forms.Textarea)
+        help_text="Provide a comma separated list of email addresses. Nominations already received with any of these email address will be moved to show under the primary address.", widget=forms.Textarea)
     primary_email = forms.EmailField(label="Primary email address",
                                      widget=forms.TextInput(attrs={'size': '40'}))
 
@@ -378,11 +322,10 @@ class MergeForm(BaseNomcomForm, forms.Form):
 
 
 class NominateForm(BaseNomcomForm, forms.ModelForm):
-    comments = forms.CharField(label="Candidate's Qualifications for the Position:",
+    comments = forms.CharField(label="Candidate's qualifications for the position",
                                widget=forms.Textarea())
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation',
-                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, \
-                                                 please check the 'email comments back to me as confirmation'",
+                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
                                       required=False)
 
     fieldsets = [('Candidate Nomination', ('position', 'candidate_name',
@@ -400,6 +343,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                     'candidate_email', 'candidate_phone',
                     'comments']
 
+        self.fields['nominator_email'].label = 'Nominator email'
         if self.nomcom:
             self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).opened()
             self.fields['comments'].help_text = self.nomcom.initial_text
@@ -461,7 +405,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         # send receipt email to nominator
         if confirmation:
             if author:
-                subject = 'Nomination Receipt'
+                subject = 'Nomination receipt'
                 from_email = settings.NOMCOM_FROM_EMAIL
                 to_email = author.address
                 context = {'nominee': nominee.email.person.name,
@@ -479,19 +423,18 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
 
 class FeedbackForm(BaseNomcomForm, forms.ModelForm):
-    position_name = forms.CharField(label='position',
+    position_name = forms.CharField(label='Position',
                                     widget=forms.TextInput(attrs={'size': '40'}))
-    nominee_name = forms.CharField(label='nominee name',
+    nominee_name = forms.CharField(label='Nominee name',
                                    widget=forms.TextInput(attrs={'size': '40'}))
-    nominee_email = forms.CharField(label='nominee email',
+    nominee_email = forms.CharField(label='Nominee email',
                                     widget=forms.TextInput(attrs={'size': '40'}))
-    nominator_email = forms.CharField(label='commenter email')
+    nominator_email = forms.CharField(label='Commenter email')
 
-    comments = forms.CharField(label='Comments on this candidate',
+    comments = forms.CharField(label='Comments on this nominee',
                                widget=forms.Textarea())
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation',
-                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, \
-                                                 please check the 'email comments back to me as confirmation'",
+                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
                                       required=False)
 
     def __init__(self, *args, **kwargs):
@@ -656,7 +599,7 @@ class PositionForm(BaseNomcomForm, forms.ModelForm):
     fieldsets = [('Position', ('name', 'description',
                                'is_open', 'incumbent'))]
 
-    incumbent = AutocompletedEmailField(required=False)
+    incumbent = SearchableEmailField(required=False)
 
     class Meta:
         model = Position
