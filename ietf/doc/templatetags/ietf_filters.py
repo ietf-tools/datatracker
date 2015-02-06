@@ -399,10 +399,11 @@ def unescape(text):
 
 @register.filter(name='new_enough')
 def new_enough(x,request):
+    days = 14
     if "new_enough" in request.COOKIES:
-        days = int(request.COOKIES["new_enough"])
-    else:
-        days = 14
+        value = request.COOKIES["new_enough"]
+        if value.isdigit():
+            days = int(value)
     return x < days
 
 @register.filter(name='expires_soon')
