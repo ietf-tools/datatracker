@@ -5,7 +5,8 @@
 # Requires modelviz.py from
 #  http://code.djangoproject.com/wiki/DjangoGraphviz
 #
-PYTHONPATH=`dirname $PWD`
+cd ${0%/*}/../ietf
+PYTHONPATH=`dirname $PWD`:`dirname $PWD/..`
 export PYTHONPATH
 module=${PWD##*/}
 DJANGO_SETTINGS_MODULE=$module.settings
@@ -18,4 +19,4 @@ do
 	fi
 done
 modelviz.py $* $models > models.dot
-dot -Tpng models.dot
+dot -Tpng models.dot > models.png

@@ -11,8 +11,11 @@ sys.path = [ basedir ] + sys.path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 
+import django
 from django.conf import settings
 from ietf.sync.rfceditor import *
+
+django.setup()
 
 syslog.syslog("Updating RFC Editor queue states from %s" % settings.RFC_EDITOR_QUEUE_URL)
 
