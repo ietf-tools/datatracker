@@ -1,7 +1,14 @@
 # Taken from Python 2.7 with permission from/by the original author.
+import warnings
 import sys
 
 from django.utils import six
+from django.utils.deprecation import RemovedInDjango19Warning
+
+
+warnings.warn("django.utils.importlib will be removed in Django 1.9.",
+    RemovedInDjango19Warning, stacklevel=2)
+
 
 def _resolve_name(name, package, level):
     """Return the absolute name of the module to be imported."""
@@ -12,8 +19,7 @@ def _resolve_name(name, package, level):
         try:
             dot = package.rindex('.', 0, dot)
         except ValueError:
-            raise ValueError("attempted relative import beyond top-level "
-                              "package")
+            raise ValueError("attempted relative import beyond top-level package")
     return "%s.%s" % (package[:dot], name)
 
 

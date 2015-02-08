@@ -3,19 +3,21 @@ from __future__ import unicode_literals
 
 import datetime
 import os
+import unittest
 import warnings
 
 from django import http
 from django.contrib.formtools import preview, utils
-from django.test import TestCase
-from django.test.utils import override_settings
+from django.test import TestCase, override_settings
 from django.utils._os import upath
-from django.utils import unittest
 
-from django.contrib.formtools.tests.forms import *
+from django.contrib.formtools.tests.forms import (
+    HashTestBlankForm, HashTestForm, TestForm,
+)
 
 success_string = "Done was called!"
 success_string_encoded = success_string.encode()
+
 
 class TestFormPreview(preview.FormPreview):
     def get_context(self, request, form):
@@ -28,6 +30,7 @@ class TestFormPreview(preview.FormPreview):
 
     def done(self, request, cleaned_data):
         return http.HttpResponse(success_string)
+
 
 @override_settings(
     TEMPLATE_DIRS=(
@@ -55,7 +58,7 @@ class PreviewTests(TestCase):
         """
         Test contrib.formtools.preview form retrieval.
 
-        Use the client library to see if we can sucessfully retrieve
+        Use the client library to see if we can successfully retrieve
         the form (mostly testing the setup ROOT_URLCONF
         process). Verify that an additional  hidden input field
         is created to manage the stage.
@@ -91,7 +94,7 @@ class PreviewTests(TestCase):
         Use the client library to POST to the form with stage set to 3
         to see if our forms done() method is called. Check first
         without the security hash, verify failure, retry with security
-        hash and verify sucess.
+        hash and verify success.
 
         """
         # Pass strings for form submittal and add stage variable to
@@ -117,7 +120,7 @@ class PreviewTests(TestCase):
         ``bool1``. We need to make sure the hashes are the same in both cases.
 
         """
-        self.test_data.update({'stage':2})
+        self.test_data.update({'stage': 2})
         hash = self.preview.security_hash(None, TestForm(self.test_data))
         self.test_data.update({'hash': hash, 'bool1': 'False'})
         with warnings.catch_warnings(record=True):
@@ -131,14 +134,13 @@ class PreviewTests(TestCase):
         """
         # Pass strings for form submittal and add stage variable to
         # show we previously saw first stage of the form.
-        self.test_data.update({'stage':2})
+        self.test_data.update({'stage': 2})
         response = self.client.post('/preview/', self.test_data)
         self.assertNotEqual(response.content, success_string_encoded)
         hash = utils.form_hmac(TestForm(self.test_data))
         self.test_data.update({'hash': hash})
         response = self.client.post('/preview/', self.test_data)
         self.assertEqual(response.content, success_string_encoded)
-
 
     def test_form_submit_bad_hash(self):
         """
@@ -147,7 +149,7 @@ class PreviewTests(TestCase):
         """
         # Pass strings for form submittal and add stage variable to
         # show we previously saw first stage of the form.
-        self.test_data.update({'stage':2})
+        self.test_data.update({'stage': 2})
         response = self.client.post('/preview/', self.test_data)
         self.assertEqual(response.status_code, 200)
         self.assertNotEqual(response.content, success_string_encoded)

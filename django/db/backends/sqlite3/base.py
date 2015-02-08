@@ -11,11 +11,14 @@ import decimal
 import warnings
 import re
 
+from django.conf import settings
 from django.db import utils
-from django.db.backends import *
+from django.db.backends import (utils as backend_utils, BaseDatabaseFeatures,
+    BaseDatabaseOperations, BaseDatabaseWrapper, BaseDatabaseValidation)
 from django.db.backends.sqlite3.client import DatabaseClient
 from django.db.backends.sqlite3.creation import DatabaseCreation
 from django.db.backends.sqlite3.introspection import DatabaseIntrospection
+from django.db.backends.sqlite3.schema import DatabaseSchemaEditor
 from django.db.models import fields
 from django.db.models.sql import aggregates
 from django.utils.dateparse import parse_date, parse_datetime, parse_time
@@ -42,12 +45,14 @@ except ImportError:
 DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError
 
+
 def parse_datetime_with_timezone_support(value):
     dt = parse_datetime(value)
     # Confirm that dt is naive before overwriting its tzinfo.
     if dt is not None and settings.USE_TZ and timezone.is_naive(dt):
         dt = dt.replace(tzinfo=timezone.utc)
     return dt
+
 
 def adapt_datetime_with_timezone_support(value):
     # Equivalent to DateTimeField.get_db_prep_value. Used only by raw SQL.
@@ -60,6 +65,7 @@ def adapt_datetime_with_timezone_support(value):
             value = timezone.make_aware(value, default_timezone)
         value = value.astimezone(timezone.utc).replace(tzinfo=None)
     return value.isoformat(str(" "))
+
 
 def decoder(conv_func):
     """ The Python sqlite3 interface returns always byte strings.
@@ -74,18 +80,14 @@ Database.register_converter(str("date"), decoder(parse_date))
 Database.register_converter(str("datetime"), decoder(parse_datetime_with_timezone_support))
 Database.register_converter(str("timestamp"), decoder(parse_datetime_with_timezone_support))
 Database.register_converter(str("TIMESTAMP"), decoder(parse_datetime_with_timezone_support))
-Database.register_converter(str("decimal"), decoder(util.typecast_decimal))
+Database.register_converter(str("decimal"), decoder(backend_utils.typecast_decimal))
 
 Database.register_adapter(datetime.datetime, adapt_datetime_with_timezone_support)
-Database.register_adapter(decimal.Decimal, util.rev_typecast_decimal)
-if six.PY2 and Database.version_info >= (2, 4, 1):
-    # Starting in 2.4.1, the str type is not accepted anymore, therefore,
-    # we convert all str objects to Unicode
-    # As registering a adapter for a primitive type causes a small
-    # slow-down, this adapter is only registered for sqlite3 versions
-    # needing it (Python 2.6 and up).
+Database.register_adapter(decimal.Decimal, backend_utils.rev_typecast_decimal)
+if six.PY2:
     Database.register_adapter(str, lambda s: s.decode('utf-8'))
     Database.register_adapter(SafeBytes, lambda s: s.decode('utf-8'))
+
 
 class DatabaseFeatures(BaseDatabaseFeatures):
     # SQLite cannot handle us only partially reading from a cursor's result set
@@ -100,9 +102,17 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_mixed_date_datetime_comparisons = False
     has_bulk_insert = True
     can_combine_inserts_with_and_without_auto_increment_pk = False
+    supports_foreign_keys = False
+    supports_column_check_constraints = False
     autocommits_when_autocommit_is_off = True
+    can_introspect_decimal_field = False
+    can_introspect_positive_integer_field = True
+    can_introspect_small_integer_field = True
+    supports_transactions = True
     atomic_transactions = False
+    can_rollback_ddl = True
     supports_paramstyle_pyformat = False
+    supports_sequence_reset = False
 
     @cached_property
     def uses_savepoints(self):
@@ -117,19 +127,20 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         rule out support for STDDEV. We need to manually check
         whether the call works.
         """
-        cursor = self.connection.cursor()
-        cursor.execute('CREATE TABLE STDDEV_TEST (X INT)')
-        try:
-            cursor.execute('SELECT STDDEV(*) FROM STDDEV_TEST')
-            has_support = True
-        except utils.DatabaseError:
-            has_support = False
-        cursor.execute('DROP TABLE STDDEV_TEST')
+        with self.connection.cursor() as cursor:
+            cursor.execute('CREATE TABLE STDDEV_TEST (X INT)')
+            try:
+                cursor.execute('SELECT STDDEV(*) FROM STDDEV_TEST')
+                has_support = True
+            except utils.DatabaseError:
+                has_support = False
+            cursor.execute('DROP TABLE STDDEV_TEST')
         return has_support
 
     @cached_property
     def has_zoneinfo_database(self):
         return pytz is not None
+
 
 class DatabaseOperations(BaseDatabaseOperations):
     def bulk_batch_size(self, fields, objs):
@@ -206,7 +217,7 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def quote_name(self, name):
         if name.startswith('"') and name.endswith('"'):
-            return name # Quoting once is enough.
+            return name  # Quoting once is enough.
         return '"%s"' % name
 
     def no_limit_value(self):
@@ -258,7 +269,7 @@ class DatabaseOperations(BaseDatabaseOperations):
 
         internal_type = field.get_internal_type()
         if internal_type == 'DecimalField':
-            return util.typecast_decimal(field.format_number(value))
+            return backend_utils.typecast_decimal(field.format_number(value))
         elif internal_type and internal_type.endswith('IntegerField') or internal_type == 'AutoField':
             return int(value)
         elif internal_type == 'DateField':
@@ -278,6 +289,18 @@ class DatabaseOperations(BaseDatabaseOperations):
         ))
         res.extend(["UNION ALL SELECT %s" % ", ".join(["%s"] * len(fields))] * (num_values - 1))
         return " ".join(res)
+
+    def combine_expression(self, connector, sub_expressions):
+        # SQLite doesn't have a power function, so we fake it with a
+        # user-defined function django_power that's registered in connect().
+        if connector == '^':
+            return 'django_power(%s)' % ','.join(sub_expressions)
+        return super(DatabaseOperations, self).combine_expression(connector, sub_expressions)
+
+    def integer_field_range(self, internal_type):
+        # SQLite doesn't enforce any integer constraints
+        return (None, None)
+
 
 class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'sqlite'
@@ -299,6 +322,11 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         'endswith': "LIKE %s ESCAPE '\\'",
         'istartswith': "LIKE %s ESCAPE '\\'",
         'iendswith': "LIKE %s ESCAPE '\\'",
+    }
+
+    pattern_ops = {
+        'startswith': "LIKE %s || '%%%%'",
+        'istartswith': "LIKE UPPER(%s) || '%%%%'",
     }
 
     Database = Database
@@ -334,7 +362,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if 'check_same_thread' in kwargs and kwargs['check_same_thread']:
             warnings.warn(
                 'The `check_same_thread` option was provided and set to '
-                'True. It will be overriden with False. Use the '
+                'True. It will be overridden with False. Use the '
                 '`DatabaseWrapper.allow_thread_sharing` property instead '
                 'for controlling thread shareability.',
                 RuntimeWarning
@@ -350,6 +378,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         conn.create_function("django_datetime_trunc", 3, _sqlite_datetime_trunc)
         conn.create_function("regexp", 2, _sqlite_regexp)
         conn.create_function("django_format_dtdelta", 5, _sqlite_format_dtdelta)
+        conn.create_function("django_power", 2, _sqlite_power)
         return conn
 
     def init_connection_state(self):
@@ -387,7 +416,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             level = ''
         # 'isolation_level' is a misleading API.
         # SQLite always runs at the SERIALIZABLE isolation level.
-        self.connection.isolation_level = level
+        with self.wrap_database_errors:
+            self.connection.isolation_level = level
 
     def check_constraints(self, table_names=None):
         """
@@ -435,7 +465,12 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         """
         self.cursor().execute("BEGIN")
 
+    def schema_editor(self, *args, **kwargs):
+        "Returns a new instance of this backend's SchemaEditor"
+        return DatabaseSchemaEditor(self, *args, **kwargs)
+
 FORMAT_QMARK_REGEX = re.compile(r'(?<!%)%s')
+
 
 class SQLiteCursorWrapper(Database.Cursor):
     """
@@ -456,11 +491,12 @@ class SQLiteCursorWrapper(Database.Cursor):
     def convert_query(self, query):
         return FORMAT_QMARK_REGEX.sub('?', query).replace('%%', '%')
 
+
 def _sqlite_date_extract(lookup_type, dt):
     if dt is None:
         return None
     try:
-        dt = util.typecast_timestamp(dt)
+        dt = backend_utils.typecast_timestamp(dt)
     except (ValueError, TypeError):
         return None
     if lookup_type == 'week_day':
@@ -468,9 +504,10 @@ def _sqlite_date_extract(lookup_type, dt):
     else:
         return getattr(dt, lookup_type)
 
+
 def _sqlite_date_trunc(lookup_type, dt):
     try:
-        dt = util.typecast_timestamp(dt)
+        dt = backend_utils.typecast_timestamp(dt)
     except (ValueError, TypeError):
         return None
     if lookup_type == 'year':
@@ -480,11 +517,12 @@ def _sqlite_date_trunc(lookup_type, dt):
     elif lookup_type == 'day':
         return "%i-%02i-%02i" % (dt.year, dt.month, dt.day)
 
+
 def _sqlite_datetime_extract(lookup_type, dt, tzname):
     if dt is None:
         return None
     try:
-        dt = util.typecast_timestamp(dt)
+        dt = backend_utils.typecast_timestamp(dt)
     except (ValueError, TypeError):
         return None
     if tzname is not None:
@@ -494,9 +532,10 @@ def _sqlite_datetime_extract(lookup_type, dt, tzname):
     else:
         return getattr(dt, lookup_type)
 
+
 def _sqlite_datetime_trunc(lookup_type, dt, tzname):
     try:
-        dt = util.typecast_timestamp(dt)
+        dt = backend_utils.typecast_timestamp(dt)
     except (ValueError, TypeError):
         return None
     if tzname is not None:
@@ -514,9 +553,10 @@ def _sqlite_datetime_trunc(lookup_type, dt, tzname):
     elif lookup_type == 'second':
         return "%i-%02i-%02i %02i:%02i:%02i" % (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
+
 def _sqlite_format_dtdelta(dt, conn, days, secs, usecs):
     try:
-        dt = util.typecast_timestamp(dt)
+        dt = backend_utils.typecast_timestamp(dt)
         delta = datetime.timedelta(int(days), int(secs), int(usecs))
         if conn.strip() == '+':
             dt = dt + delta
@@ -528,5 +568,10 @@ def _sqlite_format_dtdelta(dt, conn, days, secs, usecs):
     # It will be formatted as "%Y-%m-%d" or "%Y-%m-%d %H:%M:%S[.%f]"
     return str(dt)
 
+
 def _sqlite_regexp(re_pattern, re_string):
     return bool(re.search(re_pattern, force_text(re_string))) if re_string is not None else False
+
+
+def _sqlite_power(x, y):
+    return x ** y

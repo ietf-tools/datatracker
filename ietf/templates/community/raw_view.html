@@ -1,4 +1,6 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load community_tags %}
+{% load future %}
 
 {% with cl.get_rfcs_and_drafts as documents %}
 {% with dc.get_active_fields as fields %}
@@ -10,7 +12,7 @@
   {% endfor %}
 </tr>
 {% for doc in documents.1 %}
-<tr class="{% cycle oddrow,evenrow %}">
+<tr class="{% cycle 'oddrow','evenrow' %}">
   {% for field in fields %}
   <td>
     {% show_field field doc %}
@@ -30,7 +32,7 @@
   {% endfor %}
 </tr>
 {% for doc in documents.0 %}
-<tr class="{% cycle oddrow,evenrow %}">
+<tr class="{% cycle 'oddrow','evenrow' %}">
   {% for field in fields %}
   <td>
     {% show_field field doc %}

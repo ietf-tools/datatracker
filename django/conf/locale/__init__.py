@@ -17,6 +17,12 @@ LANG_INFO = {
         'name': 'Arabic',
         'name_local': 'العربيّة',
     },
+    'ast': {
+        'bidi': False,
+        'code': 'ast',
+        'name': 'Asturian',
+        'name_local': 'asturianu',
+    },
     'az': {
         'bidi': True,
         'code': 'az',
@@ -95,6 +101,12 @@ LANG_INFO = {
         'name': 'English',
         'name_local': 'English',
     },
+    'en-au': {
+        'bidi': False,
+        'code': 'en-au',
+        'name': 'Australian English',
+        'name_local': 'Australian English',
+    },
     'en-gb': {
         'bidi': False,
         'code': 'en-gb',
@@ -167,11 +179,11 @@ LANG_INFO = {
         'name': 'French',
         'name_local': 'français',
     },
-    'fy-nl': {
+    'fy': {
         'bidi': False,
-        'code': 'fy-nl',
+        'code': 'fy',
         'name': 'Frisian',
-        'name_local': 'Frisian',
+        'name_local': 'frysk',
     },
     'ga': {
         'bidi': False,
@@ -214,6 +226,12 @@ LANG_INFO = {
         'code': 'ia',
         'name': 'Interlingua',
         'name_local': 'Interlingua',
+    },
+    'io': {
+        'bidi': False,
+        'code': 'io',
+        'name': 'Ido',
+        'name_local': 'ido',
     },
     'id': {
         'bidi': False,
@@ -304,6 +322,12 @@ LANG_INFO = {
         'code': 'mn',
         'name': 'Mongolian',
         'name_local': 'Mongolian',
+    },
+    'mr': {
+        'bidi': False,
+        'code': 'mr',
+        'name': 'Marathi',
+        'name_local': 'मराठी',
     },
     'my': {
         'bidi': False,
@@ -484,6 +508,18 @@ LANG_INFO = {
         'code': 'zh-cn',
         'name': 'Simplified Chinese',
         'name_local': '简体中文',
+    },
+    'zh-hans': {
+        'bidi': False,
+        'code': 'zh-hans',
+        'name': 'Simplified Chinese',
+        'name_local': '简体中文',
+    },
+    'zh-hant': {
+        'bidi': False,
+        'code': 'zh-hant',
+        'name': 'Traditional Chinese',
+        'name_local': '繁體中文',
     },
     'zh-tw': {
         'bidi': False,

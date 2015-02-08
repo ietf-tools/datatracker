@@ -6,7 +6,6 @@ from django.core.urlresolvers import (is_valid_path, get_resolver,
 from django.http import HttpResponseRedirect
 from django.utils.cache import patch_vary_headers
 from django.utils import translation
-from django.utils.datastructures import SortedDict
 
 
 class LocaleMiddleware(object):
@@ -17,9 +16,9 @@ class LocaleMiddleware(object):
     translated to the language the user desires (if the language
     is available, of course).
     """
+    response_redirect_class = HttpResponseRedirect
 
     def __init__(self):
-        self._supported_languages = SortedDict(settings.LANGUAGES)
         self._is_language_prefix_patterns_used = False
         for url_pattern in get_resolver(None).url_patterns:
             if isinstance(url_pattern, LocaleRegexURLResolver):
@@ -35,9 +34,7 @@ class LocaleMiddleware(object):
 
     def process_response(self, request, response):
         language = translation.get_language()
-        language_from_path = translation.get_language_from_path(
-                request.path_info, supported=self._supported_languages
-        )
+        language_from_path = translation.get_language_from_path(request.path_info)
         if (response.status_code == 404 and not language_from_path
                 and self.is_language_prefix_patterns_used()):
             urlconf = getattr(request, 'urlconf', None)
@@ -49,13 +46,9 @@ class LocaleMiddleware(object):
 
             if path_valid:
                 language_url = "%s://%s/%s%s" % (
-                    'https' if request.is_secure() else 'http',
-                    request.get_host(), language, request.get_full_path())
-                return HttpResponseRedirect(language_url)
-
-        # Store language back into session if it is not present
-        if hasattr(request, 'session'):
-            request.session.setdefault('django_language', language)
+                    request.scheme, request.get_host(), language,
+                    request.get_full_path())
+                return self.response_redirect_class(language_url)
 
         if not (self.is_language_prefix_patterns_used()
                 and language_from_path):

@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import copy
 import os
 
 from django import forms
@@ -10,6 +11,14 @@ from django.contrib.auth.models import User
 from django.contrib.auth.tests.utils import skipIfCustomUser
 from django.contrib.formtools.wizard.views import CookieWizardView
 from django.utils._os import upath
+from django.contrib.formtools.tests.models import Poet, Poem
+
+from .forms import temp_storage
+
+
+# On Python 2, __file__ may end with .pyc
+THIS_FILE = upath(__file__.rstrip("c"))
+UPLOADED_FILE_NAME = 'tests.py'
 
 
 class UserForm(forms.ModelForm):
@@ -19,6 +28,7 @@ class UserForm(forms.ModelForm):
 
 
 UserFormSet = forms.models.modelformset_factory(User, form=UserForm, extra=2)
+PoemFormSet = forms.models.inlineformset_factory(Poet, Poem, fields="__all__")
 
 
 class WizardTests(object):
@@ -26,7 +36,19 @@ class WizardTests(object):
 
     def setUp(self):
         self.testuser, created = User.objects.get_or_create(username='testuser1')
+        # Get new step data, since we modify it during the tests.
+        self.wizard_step_data = copy.deepcopy(self.wizard_step_data)
         self.wizard_step_data[0]['form1-user'] = self.testuser.pk
+
+    def tearDown(self):
+        # Ensure that there are no files in the storage which could lead to false
+        # results in the next tests. Deleting the whole storage dir is not really
+        # an option since the storage is defined on the module level and can't be
+        # easily reinitialized. (FIXME: The tests here should use the view classes
+        # directly instead of the test client, then the storage issues would go
+        # away too.)
+        for file in temp_storage.listdir('')[1]:
+            temp_storage.delete(file)
 
     def test_initial_call(self):
         response = self.client.get(self.wizard_url)
@@ -96,10 +118,15 @@ class WizardTests(object):
         self.assertEqual(response.context['wizard']['steps'].current, 'form2')
 
         post_data = self.wizard_step_data[1]
-        post_data['form2-file1'] = open(upath(__file__), 'rb')
-        response = self.client.post(self.wizard_url, post_data)
+        with open(upath(THIS_FILE), 'rb') as post_file:
+            post_data['form2-file1'] = post_file
+            response = self.client.post(self.wizard_url, post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['wizard']['steps'].current, 'form3')
+
+        # Check that the file got uploaded properly.
+        with open(THIS_FILE, 'rb') as f, temp_storage.open(UPLOADED_FILE_NAME) as f2:
+            self.assertEqual(f.read(), f2.read())
 
         response = self.client.post(self.wizard_url, self.wizard_step_data[2])
         self.assertEqual(response.status_code, 200)
@@ -108,10 +135,10 @@ class WizardTests(object):
         response = self.client.post(self.wizard_url, self.wizard_step_data[3])
         self.assertEqual(response.status_code, 200)
 
+        # After the wizard is done no files should exist anymore.
+        self.assertFalse(temp_storage.exists(UPLOADED_FILE_NAME))
+
         all_data = response.context['form_list']
-        with open(upath(__file__), 'rb') as f:
-            self.assertEqual(all_data[1]['file1'].read(), f.read())
-        all_data[1]['file1'].close()
         del all_data[1]['file1']
         self.assertEqual(all_data, [
             {'name': 'Pony', 'thirsty': True, 'user': self.testuser},
@@ -128,10 +155,11 @@ class WizardTests(object):
         self.assertEqual(response.status_code, 200)
 
         post_data = self.wizard_step_data[1]
-        with open(upath(__file__), 'rb') as post_file:
+        with open(THIS_FILE, 'rb') as post_file:
             post_data['form2-file1'] = post_file
             response = self.client.post(self.wizard_url, post_data)
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(temp_storage.exists(UPLOADED_FILE_NAME))
 
         response = self.client.post(self.wizard_url, self.wizard_step_data[2])
         self.assertEqual(response.status_code, 200)
@@ -140,9 +168,9 @@ class WizardTests(object):
         self.assertEqual(response.status_code, 200)
 
         all_data = response.context['all_cleaned_data']
-        with open(upath(__file__), 'rb') as f:
-            self.assertEqual(all_data['file1'].read(), f.read())
-        all_data['file1'].close()
+        self.assertEqual(all_data['file1'].name, UPLOADED_FILE_NAME)
+        self.assertTrue(all_data['file1'].closed)
+        self.assertFalse(temp_storage.exists(UPLOADED_FILE_NAME))
         del all_data['file1']
         self.assertEqual(all_data, {
             'name': 'Pony', 'thirsty': True, 'user': self.testuser,
@@ -159,9 +187,9 @@ class WizardTests(object):
         self.assertEqual(response.status_code, 200)
 
         post_data = self.wizard_step_data[1]
-        post_data['form2-file1'].close()
-        post_data['form2-file1'] = open(upath(__file__), 'rb')
-        response = self.client.post(self.wizard_url, post_data)
+        with open(THIS_FILE, 'rb') as post_file:
+            post_data['form2-file1'] = post_file
+            response = self.client.post(self.wizard_url, post_data)
         self.assertEqual(response.status_code, 200)
 
         response = self.client.post(self.wizard_url, self.wizard_step_data[2])
@@ -187,9 +215,9 @@ class WizardTests(object):
         self.assertEqual(response.context['wizard']['steps'].current, 'form2')
 
         post_data = self.wizard_step_data[1]
-        post_data['form2-file1'].close()
-        post_data['form2-file1'] = open(upath(__file__), 'rb')
-        response = self.client.post(self.wizard_url, post_data)
+        with open(THIS_FILE, 'rb') as post_file:
+            post_data['form2-file1'] = post_file
+            response = self.client.post(self.wizard_url, post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['wizard']['steps'].current, 'form3')
 
@@ -306,7 +334,7 @@ class WizardTestKwargs(TestCase):
         self.wizard_step_data[0]['form1-user'] = self.testuser.pk
 
     def test_template(self):
-        templates = os.path.join(os.path.dirname(upath(__file__)), 'templates')
+        templates = os.path.join(os.path.dirname(THIS_FILE), 'templates')
         with self.settings(
                 TEMPLATE_DIRS=list(settings.TEMPLATE_DIRS) + [templates]):
             response = self.client.get(self.wizard_url)
@@ -405,3 +433,27 @@ class WizardFormKwargsOverrideTests(TestCase):
         self.assertEqual(formset.initial_form_count(), 1)
         self.assertEqual(['staff@example.com'],
             list(formset.queryset.values_list('email', flat=True)))
+
+
+class WizardInlineFormSetTests(TestCase):
+    def setUp(self):
+        self.rf = RequestFactory()
+        self.poet = Poet.objects.create(name='test')
+        self.poem = self.poet.poem_set.create(name='test poem')
+
+    def test_set_instance(self):
+        # Regression test for #21259
+        poet = self.poet
+
+        class InlineFormSetWizard(CookieWizardView):
+            instance = None
+
+            def get_form_instance(self, step):
+                if self.instance is None:
+                    self.instance = poet
+                return self.instance
+
+        view = InlineFormSetWizard.as_view([PoemFormSet])
+        response = view(self.rf.get('/'))
+        formset = response.context_data['wizard']['form']
+        self.assertEqual(formset.instance, self.poet)

@@ -1,4 +1,6 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
+{% load future %}
 
 {% block title %}{{ cl.long_name }}{% endblock %}
 
@@ -35,7 +37,7 @@ In order to add some individual documents to your list you have to:
 <table class="ietf-table">
  <tr><th>Name</th><th>State</th><th>Title</th><th>Remove from list</th></tr>
 {% for doc in cl.added_ids.all %}
-<tr class="{% cycle oddrow,evenrow %}">
+<tr class="{% cycle 'oddrow','evenrow' %}">
   <td>{{ doc.display_name }}</td>
   <td>{{ doc.get_state }}</td>
   <td><a href="{{ doc.get_absolute_url }}"</a>{{ doc.title }}</td>
@@ -51,7 +53,7 @@ In order to add some individual documents to your list you have to:
  <tr><th>Rule</th><th>Value</th><th>Documents</th><th>Remove from list</th></tr>
 {% for rule in cl.rule_set.all %}
 {% with rule.get_callable_rule as callable %}
-<tr class="{% cycle oddrow,evenrow %}">
+<tr class="{% cycle 'oddrow','evenrow' %}">
   <td>{{ callable.description }}</td>
   <td>{{ callable.show_value }}</td>
   <td>{% with rule.cached_ids.count as count %}{{ count }} document{{ count|pluralize }}{% endwith %}</td>

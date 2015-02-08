@@ -10,23 +10,24 @@ Usage::
 To add your own serializers, use the SERIALIZATION_MODULES setting::
 
     SERIALIZATION_MODULES = {
-        "csv" : "path.to.csv.serializer",
-        "txt" : "path.to.txt.serializer",
+        "csv": "path.to.csv.serializer",
+        "txt": "path.to.txt.serializer",
     }
 
 """
 
+import importlib
+
 from django.conf import settings
-from django.utils import importlib
 from django.utils import six
 from django.core.serializers.base import SerializerDoesNotExist
 
 # Built-in serializers
 BUILTIN_SERIALIZERS = {
-    "xml"    : "django.core.serializers.xml_serializer",
-    "python" : "django.core.serializers.python",
-    "json"   : "django.core.serializers.json",
-    "yaml"   : "django.core.serializers.pyyaml",
+    "xml": "django.core.serializers.xml_serializer",
+    "python": "django.core.serializers.python",
+    "json": "django.core.serializers.json",
+    "yaml": "django.core.serializers.pyyaml",
 }
 
 _serializers = {}
@@ -89,6 +90,7 @@ def unregister_serializer(format):
         raise SerializerDoesNotExist(format)
     del _serializers[format]
 
+
 def get_serializer(format):
     if not _serializers:
         _load_serializers()
@@ -96,15 +98,18 @@ def get_serializer(format):
         raise SerializerDoesNotExist(format)
     return _serializers[format].Serializer
 
+
 def get_serializer_formats():
     if not _serializers:
         _load_serializers()
     return list(_serializers)
 
+
 def get_public_serializer_formats():
     if not _serializers:
         _load_serializers()
     return [k for k, v in six.iteritems(_serializers) if not v.Serializer.internal_use_only]
+
 
 def get_deserializer(format):
     if not _serializers:
@@ -112,6 +117,7 @@ def get_deserializer(format):
     if format not in _serializers:
         raise SerializerDoesNotExist(format)
     return _serializers[format].Deserializer
+
 
 def serialize(format, queryset, **options):
     """
@@ -122,15 +128,17 @@ def serialize(format, queryset, **options):
     s.serialize(queryset, **options)
     return s.getvalue()
 
+
 def deserialize(format, stream_or_string, **options):
     """
     Deserialize a stream or a string. Returns an iterator that yields ``(obj,
-    m2m_relation_dict)``, where ``obj`` is a instantiated -- but *unsaved* --
+    m2m_relation_dict)``, where ``obj`` is an instantiated -- but *unsaved* --
     object, and ``m2m_relation_dict`` is a dictionary of ``{m2m_field_name :
     list_of_related_objects}``.
     """
     d = get_deserializer(format)
     return d(stream_or_string, **options)
+
 
 def _load_serializers():
     """

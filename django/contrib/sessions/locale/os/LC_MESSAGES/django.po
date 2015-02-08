@@ -1,14 +1,14 @@
 # This file is distributed under the same license as the Django package.
 #
 # Translators:
-# Soslan Khubulov <soslanx@gmail.com>, 2013
+# Xwybylty Soslan <soslanx@gmail.com>, 2013
 msgid ""
 msgstr ""
-"Project-Id-Version: django-core\n"
+"Project-Id-Version: django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-05-02 16:18+0200\n"
-"PO-Revision-Date: 2013-05-09 05:36+0000\n"
-"Last-Translator: Soslan Khubulov <soslanx@gmail.com>\n"
+"POT-Creation-Date: 2014-05-19 15:12+0200\n"
+"PO-Revision-Date: 2014-05-20 09:41+0000\n"
+"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
 "Language-Team: Ossetic (http://www.transifex.com/projects/p/django/language/"
 "os/)\n"
 "MIME-Version: 1.0\n"
@@ -17,22 +17,26 @@ msgstr ""
 "Language: os\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: models.py:38
+#: contrib/sessions/apps.py:8
+msgid "Sessions"
+msgstr ""
+
+#: contrib/sessions/models.py:38
 msgid "session key"
 msgstr "сессийы амонӕн"
 
-#: models.py:40
+#: contrib/sessions/models.py:40
 msgid "session data"
 msgstr "сессийы рардтӕ"
 
-#: models.py:41
+#: contrib/sessions/models.py:41
 msgid "expire date"
 msgstr "фӕуды афон"
 
-#: models.py:46
+#: contrib/sessions/models.py:46
 msgid "session"
 msgstr "сесси"
 
-#: models.py:47
+#: contrib/sessions/models.py:47
 msgid "sessions"
 msgstr "сесситӕ"

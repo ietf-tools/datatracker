@@ -43,7 +43,7 @@ class BaseGeometryWidget(Widget):
         except (GEOSException, ValueError) as err:
             logger.error(
                 "Error creating geometry from value '%s' (%s)" % (
-                value, err)
+                    value, err)
             )
         return None
 
@@ -63,12 +63,13 @@ class BaseGeometryWidget(Widget):
                 except gdal.OGRException as err:
                     logger.error(
                         "Error transforming geometry from srid '%s' to srid '%s' (%s)" % (
-                        value.srid, self.map_srid, err)
+                            value.srid, self.map_srid, err)
                     )
 
-        context = self.build_attrs(attrs,
+        context = self.build_attrs(
+            attrs,
             name=name,
-            module='geodjango_%s' % name.replace('-','_'),  # JS-safe
+            module='geodjango_%s' % name.replace('-', '_'),  # JS-safe
             serialized=self.serialize(value),
             geom_type=gdal.OGRGeomType(self.attrs['geom_type']),
             STATIC_URL=settings.STATIC_URL,
@@ -79,9 +80,10 @@ class BaseGeometryWidget(Widget):
 
 class OpenLayersWidget(BaseGeometryWidget):
     template_name = 'gis/openlayers.html'
+
     class Media:
         js = (
-            'http://openlayers.org/api/2.11/OpenLayers.js',
+            'http://openlayers.org/api/2.13/OpenLayers.js',
             'gis/js/OLMapWidget.js',
         )
 
@@ -96,10 +98,17 @@ class OSMWidget(BaseGeometryWidget):
 
     class Media:
         js = (
-            'http://openlayers.org/api/2.11/OpenLayers.js',
+            'http://openlayers.org/api/2.13/OpenLayers.js',
             'http://www.openstreetmap.org/openlayers/OpenStreetMap.js',
             'gis/js/OLMapWidget.js',
         )
+
+    def __init__(self, attrs=None):
+        super(OSMWidget, self).__init__()
+        for key in ('default_lon', 'default_lat'):
+            self.attrs[key] = getattr(self, key)
+        if attrs:
+            self.attrs.update(attrs)
 
     @property
     def map_srid(self):
@@ -109,12 +118,3 @@ class OSMWidget(BaseGeometryWidget):
             return 3857
         else:
             return 900913
-
-    def render(self, name, value, attrs=None):
-        default_attrs = {
-            'default_lon': self.default_lon,
-            'default_lat': self.default_lat,
-        }
-        if attrs:
-            default_attrs.update(attrs)
-        return super(OSMWidget, self).render(name, value, default_attrs)

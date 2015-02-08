@@ -2,14 +2,14 @@
 #
 # Translators:
 # Jannis Leidel <jannis@leidel.info>, 2011
-# vvangelovski <vvangelovski@gmail.com>, 2013
+# vvangelovski <vvangelovski@gmail.com>, 2013-2014
 # vvangelovski <vvangelovski@gmail.com>, 2012
 msgid ""
 msgstr ""
-"Project-Id-Version: django-core\n"
+"Project-Id-Version: django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-06-02 00:30-0400\n"
-"PO-Revision-Date: 2013-09-24 08:44+0000\n"
+"POT-Creation-Date: 2014-05-19 15:12+0200\n"
+"PO-Revision-Date: 2014-08-14 22:00+0000\n"
 "Last-Translator: vvangelovski <vvangelovski@gmail.com>\n"
 "Language-Team: Macedonian (http://www.transifex.com/projects/p/django/"
 "language/mk/)\n"
@@ -19,99 +19,49 @@ msgstr ""
 "Language: mk\n"
 "Plural-Forms: nplurals=2; plural=(n % 10 == 1 && n % 100 != 11) ? 0 : 1;\n"
 
-#: views.py:59 views.py:61 views.py:63
-msgid "tag:"
-msgstr "таг:"
+#: contrib/admindocs/apps.py:8
+msgid "Administrative Documentation"
+msgstr "Административна документација"
 
-#: views.py:94 views.py:96 views.py:98
-msgid "filter:"
-msgstr "филтер:"
-
-#: views.py:157 views.py:159 views.py:161
-msgid "view:"
-msgstr "поглед:"
-
-#: views.py:189
-#, python-format
-msgid "App %r not found"
-msgstr "Не е најдена апликацијата %r"
-
-#: views.py:196
-#, python-format
-msgid "Model %(model_name)r not found in app %(app_label)r"
-msgstr "Моделот %(model_name)r не е најден во апликацијата %(app_label)r"
-
-#: views.py:208
-#, python-format
-msgid "the related `%(app_label)s.%(data_type)s` object"
-msgstr "поврзаниот `%(app_label)s.%(data_type)s` објект"
-
-#: views.py:208 views.py:227 views.py:232 views.py:246 views.py:260
-#: views.py:265
-msgid "model:"
-msgstr "модел:"
-
-#: views.py:223 views.py:255
-#, python-format
-msgid "related `%(app_label)s.%(object_name)s` objects"
-msgstr "поврзани `%(app_label)s.%(object_name)s` објекти"
-
-#: views.py:227 views.py:260
-#, python-format
-msgid "all %s"
-msgstr "сите %s"
-
-#: views.py:232 views.py:265
-#, python-format
-msgid "number of %s"
-msgstr "број на %s"
-
-#. Translators: %s is an object type name
-#: views.py:271
-#, python-format
-msgid "Attributes on %s objects"
-msgstr "Атрибути на %s објекти"
-
-#: views.py:363
-#, python-format
-msgid "%s does not appear to be a urlpattern object"
-msgstr "%s не изгледа дека е url објект"
-
-#: templates/admin_doc/bookmarklets.html:6 templates/admin_doc/index.html:6
-#: templates/admin_doc/missing_docutils.html:6
-#: templates/admin_doc/model_detail.html:14
-#: templates/admin_doc/model_index.html:8
-#: templates/admin_doc/template_detail.html:6
-#: templates/admin_doc/template_filter_index.html:7
-#: templates/admin_doc/template_tag_index.html:7
-#: templates/admin_doc/view_detail.html:6
-#: templates/admin_doc/view_index.html:7
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:6
+#: contrib/admindocs/templates/admin_doc/index.html:6
+#: contrib/admindocs/templates/admin_doc/missing_docutils.html:6
+#: contrib/admindocs/templates/admin_doc/model_detail.html:14
+#: contrib/admindocs/templates/admin_doc/model_index.html:8
+#: contrib/admindocs/templates/admin_doc/template_detail.html:6
+#: contrib/admindocs/templates/admin_doc/template_filter_index.html:7
+#: contrib/admindocs/templates/admin_doc/template_tag_index.html:7
+#: contrib/admindocs/templates/admin_doc/view_detail.html:6
+#: contrib/admindocs/templates/admin_doc/view_index.html:7
 msgid "Home"
 msgstr "Дома"
 
-#: templates/admin_doc/bookmarklets.html:7 templates/admin_doc/index.html:7
-#: templates/admin_doc/index.html.py:10 templates/admin_doc/index.html:14
-#: templates/admin_doc/missing_docutils.html:7
-#: templates/admin_doc/missing_docutils.html:14
-#: templates/admin_doc/model_detail.html:15
-#: templates/admin_doc/model_index.html:9
-#: templates/admin_doc/template_detail.html:7
-#: templates/admin_doc/template_filter_index.html:8
-#: templates/admin_doc/template_tag_index.html:8
-#: templates/admin_doc/view_detail.html:7
-#: templates/admin_doc/view_index.html:8
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:7
+#: contrib/admindocs/templates/admin_doc/index.html:7
+#: contrib/admindocs/templates/admin_doc/index.html:10
+#: contrib/admindocs/templates/admin_doc/index.html:14
+#: contrib/admindocs/templates/admin_doc/missing_docutils.html:7
+#: contrib/admindocs/templates/admin_doc/missing_docutils.html:14
+#: contrib/admindocs/templates/admin_doc/model_detail.html:15
+#: contrib/admindocs/templates/admin_doc/model_index.html:9
+#: contrib/admindocs/templates/admin_doc/template_detail.html:7
+#: contrib/admindocs/templates/admin_doc/template_filter_index.html:8
+#: contrib/admindocs/templates/admin_doc/template_tag_index.html:8
+#: contrib/admindocs/templates/admin_doc/view_detail.html:7
+#: contrib/admindocs/templates/admin_doc/view_index.html:8
 msgid "Documentation"
 msgstr "Документација"
 
-#: templates/admin_doc/bookmarklets.html:8 templates/admin_doc/index.html:29
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:8
+#: contrib/admindocs/templates/admin_doc/index.html:29
 msgid "Bookmarklets"
 msgstr "Обележувачи"
 
-#: templates/admin_doc/bookmarklets.html:11
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:11
 msgid "Documentation bookmarklets"
 msgstr "Обележувачи на документација"
 
-#: templates/admin_doc/bookmarklets.html:15
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:15
 msgid ""
 "\n"
 "<p class=\"help\">To install bookmarklets, drag the link to your bookmarks\n"
@@ -132,11 +82,11 @@ msgstr ""
 "сајтот од компјутер кој е означен како „внатрешен“ (разговарајте со вашиот \n"
 "администратор ако не сте сигурни).</p>\n"
 
-#: templates/admin_doc/bookmarklets.html:25
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:25
 msgid "Documentation for this page"
 msgstr "Документација за оваа страница"
 
-#: templates/admin_doc/bookmarklets.html:26
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:26
 msgid ""
 "Jumps you from any page to the documentation for the view that generates "
 "that page."
@@ -144,11 +94,11 @@ msgstr ""
 "Ве носи од било која страница од документацијата до погледот кој ја генерира "
 "таа страница."
 
-#: templates/admin_doc/bookmarklets.html:28
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:28
 msgid "Show object ID"
 msgstr "Прикажи идентификационен број на објектот"
 
-#: templates/admin_doc/bookmarklets.html:29
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:29
 msgid ""
 "Shows the content-type and unique ID for pages that represent a single "
 "object."
@@ -156,38 +106,39 @@ msgstr ""
 "Го прикажува типот на содржината и уникатниот идентификационен број за "
 "страници  кои претставуваат единечен објект."
 
-#: templates/admin_doc/bookmarklets.html:31
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:31
 msgid "Edit this object (current window)"
 msgstr "Уреди го овој објект (во овој прозорец)"
 
-#: templates/admin_doc/bookmarklets.html:32
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:32
 msgid "Jumps to the admin page for pages that represent a single object."
 msgstr ""
-"Скокнува до админ страницата за страници кои претставуваат единечен објект."
+"Скокнува до администрациската страница за страници кои претставуваат "
+"единечен објект."
 
-#: templates/admin_doc/bookmarklets.html:34
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:34
 msgid "Edit this object (new window)"
 msgstr "Уреди го овој објект (во нов прозорец)"
 
-#: templates/admin_doc/bookmarklets.html:35
+#: contrib/admindocs/templates/admin_doc/bookmarklets.html:35
 msgid "As above, but opens the admin page in a new window."
-msgstr "Како погоре, но ја отвара админ страницата во нов прозорец."
+msgstr "Како погоре, но ја отвара администрациската страница во нов прозорец."
 
-#: templates/admin_doc/index.html:17
-#: templates/admin_doc/template_tag_index.html:9
+#: contrib/admindocs/templates/admin_doc/index.html:17
+#: contrib/admindocs/templates/admin_doc/template_tag_index.html:9
 msgid "Tags"
 msgstr "Тагови"
 
-#: templates/admin_doc/index.html:18
+#: contrib/admindocs/templates/admin_doc/index.html:18
 msgid "List of all the template tags and their functions."
 msgstr "Листа на сите шаблонски тагови и нивните функции."
 
-#: templates/admin_doc/index.html:20
-#: templates/admin_doc/template_filter_index.html:9
+#: contrib/admindocs/templates/admin_doc/index.html:20
+#: contrib/admindocs/templates/admin_doc/template_filter_index.html:9
 msgid "Filters"
 msgstr "Филтри"
 
-#: templates/admin_doc/index.html:21
+#: contrib/admindocs/templates/admin_doc/index.html:21
 msgid ""
 "Filters are actions which can be applied to variables in a template to alter "
 "the output."
@@ -195,13 +146,14 @@ msgstr ""
 "Филтри се акции кои може да се применат на променливи во шаблон за менување "
 "на излезниот резултат."
 
-#: templates/admin_doc/index.html:23 templates/admin_doc/model_detail.html:16
-#: templates/admin_doc/model_index.html:10
-#: templates/admin_doc/model_index.html:14
+#: contrib/admindocs/templates/admin_doc/index.html:23
+#: contrib/admindocs/templates/admin_doc/model_detail.html:16
+#: contrib/admindocs/templates/admin_doc/model_index.html:10
+#: contrib/admindocs/templates/admin_doc/model_index.html:14
 msgid "Models"
 msgstr "Модели"
 
-#: templates/admin_doc/index.html:24
+#: contrib/admindocs/templates/admin_doc/index.html:24
 msgid ""
 "Models are descriptions of all the objects in the system and their "
 "associated fields. Each model has a list of fields which can be accessed as "
@@ -210,13 +162,14 @@ msgstr ""
 "Модели се описи на сите објекти во системот и нивните полиња. Секој модел "
 "има листа на полиња до кои може да се пристапи со променливи во шаблони."
 
-#: templates/admin_doc/index.html:26 templates/admin_doc/view_detail.html:8
-#: templates/admin_doc/view_index.html:9
-#: templates/admin_doc/view_index.html:12
+#: contrib/admindocs/templates/admin_doc/index.html:26
+#: contrib/admindocs/templates/admin_doc/view_detail.html:8
+#: contrib/admindocs/templates/admin_doc/view_index.html:9
+#: contrib/admindocs/templates/admin_doc/view_index.html:12
 msgid "Views"
 msgstr "Погледи (вјуа)"
 
-#: templates/admin_doc/index.html:27
+#: contrib/admindocs/templates/admin_doc/index.html:27
 msgid ""
 "Each page on the public site is generated by a view. The view defines which "
 "template is used to generate the page and which objects are available to "
@@ -226,17 +179,17 @@ msgstr ""
 "шаблон се користи за да се генерира страната и кој објекти се достапни за "
 "тој шаблон."
 
-#: templates/admin_doc/index.html:30
+#: contrib/admindocs/templates/admin_doc/index.html:30
 msgid "Tools for your browser to quickly access admin functionality."
 msgstr ""
 "Алатки за вашиот веб прегледувач за брз пристап до администраторските "
 "функционалности."
 
-#: templates/admin_doc/missing_docutils.html:10
+#: contrib/admindocs/templates/admin_doc/missing_docutils.html:10
 msgid "Please install docutils"
 msgstr "Ве молиме инсталирајте docutils"
 
-#: templates/admin_doc/missing_docutils.html:17
+#: contrib/admindocs/templates/admin_doc/missing_docutils.html:17
 #, python-format
 msgid ""
 "The admin documentation system requires Python's <a href=\"%(link)s"
@@ -245,7 +198,7 @@ msgstr ""
 "На админ документацискиот систем му е потребна <a href=\"%(link)s"
 "\">docutils</a> Python библиотеката."
 
-#: templates/admin_doc/missing_docutils.html:19
+#: contrib/admindocs/templates/admin_doc/missing_docutils.html:19
 #, python-format
 msgid ""
 "Please ask your administrators to install <a href=\"%(link)s\">docutils</a>."
@@ -253,76 +206,76 @@ msgstr ""
 "Ве молиме побарајте од вашите администратори да инсталираат <a href="
 "\"%(link)s\">docutils</a>."
 
-#: templates/admin_doc/model_detail.html:21
+#: contrib/admindocs/templates/admin_doc/model_detail.html:21
 #, python-format
 msgid "Model: %(name)s"
 msgstr "Модел %(name)s"
 
-#: templates/admin_doc/model_detail.html:35
+#: contrib/admindocs/templates/admin_doc/model_detail.html:35
 msgid "Field"
 msgstr "Поле"
 
-#: templates/admin_doc/model_detail.html:36
+#: contrib/admindocs/templates/admin_doc/model_detail.html:36
 msgid "Type"
 msgstr "Тип"
 
-#: templates/admin_doc/model_detail.html:37
+#: contrib/admindocs/templates/admin_doc/model_detail.html:37
 msgid "Description"
 msgstr "Опис"
 
-#: templates/admin_doc/model_detail.html:52
-msgid "Back to Models Documentation"
-msgstr "Назад до документација за модели."
+#: contrib/admindocs/templates/admin_doc/model_detail.html:52
+msgid "Back to Model Documentation"
+msgstr "Назад во документација за модели"
 
-#: templates/admin_doc/model_index.html:18
+#: contrib/admindocs/templates/admin_doc/model_index.html:18
 msgid "Model documentation"
 msgstr "Документација за модели"
 
-#: templates/admin_doc/model_index.html:43
+#: contrib/admindocs/templates/admin_doc/model_index.html:43
 msgid "Model groups"
 msgstr "Групи на модели"
 
-#: templates/admin_doc/template_detail.html:8
+#: contrib/admindocs/templates/admin_doc/template_detail.html:8
 msgid "Templates"
 msgstr "Шаблони (темплејти)"
 
-#: templates/admin_doc/template_detail.html:13
+#: contrib/admindocs/templates/admin_doc/template_detail.html:13
 #, python-format
 msgid "Template: %(name)s"
 msgstr "Шаблон: %(name)s"
 
-#: templates/admin_doc/template_detail.html:16
+#: contrib/admindocs/templates/admin_doc/template_detail.html:16
 #, python-format
 msgid "Template: \"%(name)s\""
 msgstr "Шаблон: \"%(name)s\""
 
-#: templates/admin_doc/template_detail.html:20
+#: contrib/admindocs/templates/admin_doc/template_detail.html:18
 #, python-format
-msgid "Search path for template \"%(name)s\" on %(grouper)s:"
-msgstr "Пат за пребарување на шаблон %(name)s\" на %(grouper)s:"
+msgid "Search path for template \"%(name)s\":"
+msgstr "Пребарај ја патеката за шаблонот \"%(name)s\":"
 
-#: templates/admin_doc/template_detail.html:23
+#: contrib/admindocs/templates/admin_doc/template_detail.html:21
 msgid "(does not exist)"
 msgstr "(не постои)"
 
-#: templates/admin_doc/template_detail.html:28
+#: contrib/admindocs/templates/admin_doc/template_detail.html:25
 msgid "Back to Documentation"
 msgstr "Назад во документација"
 
-#: templates/admin_doc/template_filter_index.html:12
+#: contrib/admindocs/templates/admin_doc/template_filter_index.html:12
 msgid "Template filters"
 msgstr "Шаблонски филтри"
 
-#: templates/admin_doc/template_filter_index.html:16
+#: contrib/admindocs/templates/admin_doc/template_filter_index.html:16
 msgid "Template filter documentation"
 msgstr "Документација за шаблонски филтер"
 
-#: templates/admin_doc/template_filter_index.html:22
-#: templates/admin_doc/template_filter_index.html:43
+#: contrib/admindocs/templates/admin_doc/template_filter_index.html:22
+#: contrib/admindocs/templates/admin_doc/template_filter_index.html:43
 msgid "Built-in filters"
 msgstr "Вградени филтри"
 
-#: templates/admin_doc/template_filter_index.html:23
+#: contrib/admindocs/templates/admin_doc/template_filter_index.html:23
 #, python-format
 msgid ""
 "To use these filters, put <code>%(code)s</code> in your template before "
@@ -331,20 +284,20 @@ msgstr ""
 "За да ги користите овие филтри, внесете <code>%(code)s</code> во вашиот "
 "шаблон пред да го користите филтерот."
 
-#: templates/admin_doc/template_tag_index.html:12
+#: contrib/admindocs/templates/admin_doc/template_tag_index.html:12
 msgid "Template tags"
 msgstr "Шаблонски тагови"
 
-#: templates/admin_doc/template_tag_index.html:16
+#: contrib/admindocs/templates/admin_doc/template_tag_index.html:16
 msgid "Template tag documentation"
 msgstr "Документација за шаблонски таг"
 
-#: templates/admin_doc/template_tag_index.html:22
-#: templates/admin_doc/template_tag_index.html:43
+#: contrib/admindocs/templates/admin_doc/template_tag_index.html:22
+#: contrib/admindocs/templates/admin_doc/template_tag_index.html:43
 msgid "Built-in tags"
 msgstr "Вградени тагови"
 
-#: templates/admin_doc/template_tag_index.html:23
+#: contrib/admindocs/templates/admin_doc/template_tag_index.html:23
 #, python-format
 msgid ""
 "To use these tags, put <code>%(code)s</code> in your template before using "
@@ -353,46 +306,122 @@ msgstr ""
 "За да ги користите овие тагови, внесете <code>%(code)s</code> во вашиот "
 "шаблон пред да го користите тагот."
 
-#: templates/admin_doc/view_detail.html:12
+#: contrib/admindocs/templates/admin_doc/view_detail.html:12
 #, python-format
 msgid "View: %(name)s"
 msgstr "Поглед: %(name)s"
 
-#: templates/admin_doc/view_detail.html:23
+#: contrib/admindocs/templates/admin_doc/view_detail.html:23
 msgid "Context:"
 msgstr "Контекст:"
 
-#: templates/admin_doc/view_detail.html:28
+#: contrib/admindocs/templates/admin_doc/view_detail.html:28
 msgid "Templates:"
 msgstr "Шаблони:"
 
-#: templates/admin_doc/view_detail.html:32
+#: contrib/admindocs/templates/admin_doc/view_detail.html:32
 msgid "Back to Views Documentation"
 msgstr "Назад до документација за погледи"
 
-#: templates/admin_doc/view_index.html:16
+#: contrib/admindocs/templates/admin_doc/view_index.html:16
 msgid "View documentation"
 msgstr "Документација за поглед"
 
-#: templates/admin_doc/view_index.html:22
-msgid "Jump to site"
-msgstr "Скокни до сајтот"
+#: contrib/admindocs/templates/admin_doc/view_index.html:22
+msgid "Jump to namespace"
+msgstr "Скокни до именски простор"
 
-#: templates/admin_doc/view_index.html:35
+#: contrib/admindocs/templates/admin_doc/view_index.html:27
+msgid "Empty namespace"
+msgstr "Празен именски простор"
+
+#: contrib/admindocs/templates/admin_doc/view_index.html:40
 #, python-format
-msgid "Views by URL on %(name)s"
-msgstr "Погледи по URL на %(name)s"
+msgid "Views by namespace %(name)s"
+msgstr "Погледи по именски простор %(name)s"
 
-#: templates/admin_doc/view_index.html:40
+#: contrib/admindocs/templates/admin_doc/view_index.html:42
+msgid "Views by empty namespace"
+msgstr "Погледи по празен именски простор"
+
+#: contrib/admindocs/templates/admin_doc/view_index.html:49
 #, python-format
-msgid "View function: %(name)s"
-msgstr "Функција на поглед: %(name)s"
+msgid ""
+"\n"
+"    View function: <code>%(full_name)s</code>. Name: <code>%(url_name)s</"
+"code>.\n"
+msgstr ""
+"\n"
+"    Погледска функција (вју функција): <code>%(full_name)s</code>. Име: "
+"<code>%(url_name)s</code>.\n"
 
-#: tests/test_fields.py:29
+#: contrib/admindocs/tests/test_fields.py:32
 msgid "Boolean (Either True or False)"
 msgstr "Логичка (или точно или неточно)"
 
-#: tests/test_fields.py:39
+#: contrib/admindocs/tests/test_fields.py:42
 #, python-format
 msgid "Field of type: %(field_type)s"
 msgstr "Поле од тип: %(field_type)s"
+
+#: contrib/admindocs/views.py:76 contrib/admindocs/views.py:78
+#: contrib/admindocs/views.py:80
+msgid "tag:"
+msgstr "таг:"
+
+#: contrib/admindocs/views.py:109 contrib/admindocs/views.py:111
+#: contrib/admindocs/views.py:113
+msgid "filter:"
+msgstr "филтер:"
+
+#: contrib/admindocs/views.py:160 contrib/admindocs/views.py:162
+#: contrib/admindocs/views.py:164
+msgid "view:"
+msgstr "поглед:"
+
+#: contrib/admindocs/views.py:191
+#, python-format
+msgid "App %(app_label)r not found"
+msgstr "Апликацијата %(app_label)r не е пронајдена"
+
+#: contrib/admindocs/views.py:195
+#, python-format
+msgid "Model %(model_name)r not found in app %(app_label)r"
+msgstr "Моделот %(model_name)r не е најден во апликацијата %(app_label)r"
+
+#: contrib/admindocs/views.py:208
+#, python-format
+msgid "the related `%(app_label)s.%(data_type)s` object"
+msgstr "поврзаниот `%(app_label)s.%(data_type)s` објект"
+
+#: contrib/admindocs/views.py:212 contrib/admindocs/views.py:232
+#: contrib/admindocs/views.py:237 contrib/admindocs/views.py:251
+#: contrib/admindocs/views.py:265 contrib/admindocs/views.py:270
+msgid "model:"
+msgstr "модел:"
+
+#: contrib/admindocs/views.py:228 contrib/admindocs/views.py:260
+#, python-format
+msgid "related `%(app_label)s.%(object_name)s` objects"
+msgstr "поврзани `%(app_label)s.%(object_name)s` објекти"
+
+#: contrib/admindocs/views.py:232 contrib/admindocs/views.py:265
+#, python-format
+msgid "all %s"
+msgstr "сите %s"
+
+#: contrib/admindocs/views.py:237 contrib/admindocs/views.py:270
+#, python-format
+msgid "number of %s"
+msgstr "број на %s"
+
+#. Translators: %s is an object type name
+#: contrib/admindocs/views.py:275
+#, python-format
+msgid "Attributes on %s objects"
+msgstr "Атрибути на %s објекти"
+
+#: contrib/admindocs/views.py:369
+#, python-format
+msgid "%s does not appear to be a urlpattern object"
+msgstr "%s не изгледа дека е url објект"

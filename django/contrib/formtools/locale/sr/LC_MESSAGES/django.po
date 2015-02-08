@@ -5,10 +5,10 @@
 # Janos Guljas <janos@resenje.org>, 2012
 msgid ""
 msgstr ""
-"Project-Id-Version: django-core\n"
+"Project-Id-Version: django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-16 15:07+0200\n"
-"PO-Revision-Date: 2013-08-17 09:27+0000\n"
+"POT-Creation-Date: 2014-05-19 15:12+0200\n"
+"PO-Revision-Date: 2014-05-20 09:43+0000\n"
 "Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
 "Language-Team: Serbian (http://www.transifex.com/projects/p/django/language/"
 "sr/)\n"
@@ -19,18 +19,22 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: templates/formtools/wizard/wizard_form.html:15
+#: contrib/formtools/apps.py:8
+msgid "Form Tools"
+msgstr ""
+
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:15
 msgid "first step"
 msgstr "први корак"
 
-#: templates/formtools/wizard/wizard_form.html:16
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:16
 msgid "prev step"
 msgstr "претходни корак"
 
-#: templates/formtools/wizard/wizard_form.html:18
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:18
 msgid "submit"
 msgstr "постави"
 
-#: wizard/views.py:275
+#: contrib/formtools/wizard/views.py:276
 msgid "ManagementForm data is missing or has been tampered."
 msgstr ""

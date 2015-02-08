@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
 
 import os
+import re
 
+from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import (UserCreationForm, AuthenticationForm,
@@ -10,8 +12,7 @@ from django.contrib.auth.forms import (UserCreationForm, AuthenticationForm,
 from django.contrib.auth.tests.utils import skipIfCustomUser
 from django.core import mail
 from django.forms.fields import Field, CharField
-from django.test import TestCase
-from django.test.utils import override_settings
+from django.test import TestCase, override_settings
 from django.utils.encoding import force_text
 from django.utils._os import upath
 from django.utils import translation
@@ -30,7 +31,7 @@ class UserCreationFormTest(TestCase):
             'username': 'testclient',
             'password1': 'test123',
             'password2': 'test123',
-            }
+        }
         form = UserCreationForm(data)
         self.assertFalse(form.is_valid())
         self.assertEqual(form["username"].errors,
@@ -41,7 +42,7 @@ class UserCreationFormTest(TestCase):
             'username': 'jsmith!',
             'password1': 'test123',
             'password2': 'test123',
-            }
+        }
         form = UserCreationForm(data)
         self.assertFalse(form.is_valid())
         self.assertEqual(form["username"].errors,
@@ -53,7 +54,7 @@ class UserCreationFormTest(TestCase):
             'username': 'jsmith',
             'password1': 'test123',
             'password2': 'test',
-            }
+        }
         form = UserCreationForm(data)
         self.assertFalse(form.is_valid())
         self.assertEqual(form["password2"].errors,
@@ -80,7 +81,7 @@ class UserCreationFormTest(TestCase):
             'username': 'jsmith@example.com',
             'password1': 'test123',
             'password2': 'test123',
-            }
+        }
         form = UserCreationForm(data)
         self.assertTrue(form.is_valid())
         u = form.save()
@@ -99,12 +100,12 @@ class AuthenticationFormTest(TestCase):
         data = {
             'username': 'jsmith_does_not_exist',
             'password': 'test123',
-            }
+        }
         form = AuthenticationForm(None, data)
         self.assertFalse(form.is_valid())
         self.assertEqual(form.non_field_errors(),
                 [force_text(form.error_messages['invalid_login'] % {
-                   'username': User._meta.get_field('username').verbose_name
+                    'username': User._meta.get_field('username').verbose_name
                 })])
 
     def test_inactive_user(self):
@@ -112,31 +113,64 @@ class AuthenticationFormTest(TestCase):
         data = {
             'username': 'inactive',
             'password': 'password',
-            }
+        }
         form = AuthenticationForm(None, data)
         self.assertFalse(form.is_valid())
         self.assertEqual(form.non_field_errors(),
                          [force_text(form.error_messages['inactive'])])
 
     def test_inactive_user_i18n(self):
-        with self.settings(USE_I18N=True):
-            with translation.override('pt-br', deactivate=True):
-                # The user is inactive.
-                data = {
-                    'username': 'inactive',
-                    'password': 'password',
-                    }
-                form = AuthenticationForm(None, data)
-                self.assertFalse(form.is_valid())
-                self.assertEqual(form.non_field_errors(),
-                                 [force_text(form.error_messages['inactive'])])
+        with self.settings(USE_I18N=True), translation.override('pt-br', deactivate=True):
+            # The user is inactive.
+            data = {
+                'username': 'inactive',
+                'password': 'password',
+            }
+            form = AuthenticationForm(None, data)
+            self.assertFalse(form.is_valid())
+            self.assertEqual(form.non_field_errors(),
+                             [force_text(form.error_messages['inactive'])])
+
+    def test_custom_login_allowed_policy(self):
+        # The user is inactive, but our custom form policy allows them to log in.
+        data = {
+            'username': 'inactive',
+            'password': 'password',
+        }
+
+        class AuthenticationFormWithInactiveUsersOkay(AuthenticationForm):
+            def confirm_login_allowed(self, user):
+                pass
+
+        form = AuthenticationFormWithInactiveUsersOkay(None, data)
+        self.assertTrue(form.is_valid())
+
+        # If we want to disallow some logins according to custom logic,
+        # we should raise a django.forms.ValidationError in the form.
+        class PickyAuthenticationForm(AuthenticationForm):
+            def confirm_login_allowed(self, user):
+                if user.username == "inactive":
+                    raise forms.ValidationError("This user is disallowed.")
+                raise forms.ValidationError("Sorry, nobody's allowed in.")
+
+        form = PickyAuthenticationForm(None, data)
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.non_field_errors(), ['This user is disallowed.'])
+
+        data = {
+            'username': 'testclient',
+            'password': 'password',
+        }
+        form = PickyAuthenticationForm(None, data)
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.non_field_errors(), ["Sorry, nobody's allowed in."])
 
     def test_success(self):
         # The success case
         data = {
             'username': 'testclient',
             'password': 'password',
-            }
+        }
         form = AuthenticationForm(None, data)
         self.assertTrue(form.is_valid())
         self.assertEqual(form.non_field_errors(), [])
@@ -180,7 +214,7 @@ class SetPasswordFormTest(TestCase):
         data = {
             'new_password1': 'abc123',
             'new_password2': 'abc',
-            }
+        }
         form = SetPasswordForm(user, data)
         self.assertFalse(form.is_valid())
         self.assertEqual(form["new_password2"].errors,
@@ -191,7 +225,7 @@ class SetPasswordFormTest(TestCase):
         data = {
             'new_password1': 'abc123',
             'new_password2': 'abc123',
-            }
+        }
         form = SetPasswordForm(user, data)
         self.assertTrue(form.is_valid())
 
@@ -208,7 +242,7 @@ class PasswordChangeFormTest(TestCase):
             'old_password': 'test',
             'new_password1': 'abc123',
             'new_password2': 'abc123',
-            }
+        }
         form = PasswordChangeForm(user, data)
         self.assertFalse(form.is_valid())
         self.assertEqual(form["old_password"].errors,
@@ -221,7 +255,7 @@ class PasswordChangeFormTest(TestCase):
             'old_password': 'password',
             'new_password1': 'abc123',
             'new_password2': 'abc',
-            }
+        }
         form = PasswordChangeForm(user, data)
         self.assertFalse(form.is_valid())
         self.assertEqual(form["new_password2"].errors,
@@ -234,7 +268,7 @@ class PasswordChangeFormTest(TestCase):
             'old_password': 'password',
             'new_password1': 'abc123',
             'new_password2': 'abc123',
-            }
+        }
         form = PasswordChangeForm(user, data)
         self.assertTrue(form.is_valid())
 
@@ -272,7 +306,7 @@ class UserChangeFormTest(TestCase):
                 fields = ('groups',)
 
         # Just check we can create it
-        form = MyUserForm({})
+        MyUserForm({})
 
     def test_unsuable_password(self):
         user = User.objects.get(username='empty_password')
@@ -352,9 +386,9 @@ class PasswordResetFormTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertEqual(form['email'].errors, [_('Enter a valid email address.')])
 
-    def test_nonexistant_email(self):
+    def test_nonexistent_email(self):
         """
-        Test nonexistant email address. This should not fail because it would
+        Test nonexistent email address. This should not fail because it would
         expose information about registered users.
         """
         data = {'email': 'foo@bar.com'}
@@ -416,6 +450,48 @@ class PasswordResetFormTest(TestCase):
         self.assertTrue(form.is_valid())
         form.save()
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_save_plaintext_email(self):
+        """
+        Test the PasswordResetForm.save() method with no html_email_template_name
+        parameter passed in.
+        Test to ensure original behavior is unchanged after the parameter was added.
+        """
+        (user, username, email) = self.create_dummy_user()
+        form = PasswordResetForm({"email": email})
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0].message()
+        self.assertFalse(message.is_multipart())
+        self.assertEqual(message.get_content_type(), 'text/plain')
+        self.assertEqual(message.get('subject'), 'Custom password reset on example.com')
+        self.assertEqual(len(mail.outbox[0].alternatives), 0)
+        self.assertEqual(message.get_all('to'), [email])
+        self.assertTrue(re.match(r'^http://example.com/reset/[\w+/-]', message.get_payload()))
+
+    def test_save_html_email_template_name(self):
+        """
+        Test the PasswordResetFOrm.save() method with html_email_template_name
+        parameter specified.
+        Test to ensure that a multipart email is sent with both text/plain
+        and text/html parts.
+        """
+        (user, username, email) = self.create_dummy_user()
+        form = PasswordResetForm({"email": email})
+        self.assertTrue(form.is_valid())
+        form.save(html_email_template_name='registration/html_password_reset_email.html')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox[0].alternatives), 1)
+        message = mail.outbox[0].message()
+        self.assertEqual(message.get('subject'), 'Custom password reset on example.com')
+        self.assertEqual(len(message.get_payload()), 2)
+        self.assertTrue(message.is_multipart())
+        self.assertEqual(message.get_payload(0).get_content_type(), 'text/plain')
+        self.assertEqual(message.get_payload(1).get_content_type(), 'text/html')
+        self.assertEqual(message.get_all('to'), [email])
+        self.assertTrue(re.match(r'^http://example.com/reset/[\w/-]+', message.get_payload(0).get_payload()))
+        self.assertTrue(re.match(r'^<html><a href="http://example.com/reset/[\w/-]+/">Link</a></html>$', message.get_payload(1).get_payload()))
 
 
 class ReadOnlyPasswordHashTest(TestCase):

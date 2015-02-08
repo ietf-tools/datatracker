@@ -3,12 +3,13 @@
 # Translators:
 # Jannis Leidel <jannis@leidel.info>, 2011
 # Nuno Mariz <nmariz@gmail.com>, 2013
+# Raúl Pedro Fernandes Santos, 2014
 msgid ""
 msgstr ""
-"Project-Id-Version: django-core\n"
+"Project-Id-Version: django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-05-02 16:18+0200\n"
-"PO-Revision-Date: 2013-06-03 15:07+0000\n"
+"POT-Creation-Date: 2014-05-19 15:12+0200\n"
+"PO-Revision-Date: 2014-08-04 09:05+0000\n"
 "Last-Translator: Nuno Mariz <nmariz@gmail.com>\n"
 "Language-Team: Portuguese (http://www.transifex.com/projects/p/django/"
 "language/pt/)\n"
@@ -18,22 +19,26 @@ msgstr ""
 "Language: pt\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: models.py:25
+#: contrib/sites/apps.py:8
+msgid "Sites"
+msgstr "Sites"
+
+#: contrib/sites/models.py:30
 msgid "The domain name cannot contain any spaces or tabs."
 msgstr "O nome do domínio não pode conter espaços ou tabulações."
 
-#: models.py:58
+#: contrib/sites/models.py:67
 msgid "domain name"
 msgstr "nome do domínio"
 
-#: models.py:60
+#: contrib/sites/models.py:69
 msgid "display name"
 msgstr "mostrar nome"
 
-#: models.py:65
+#: contrib/sites/models.py:74
 msgid "site"
 msgstr "site"
 
-#: models.py:66
+#: contrib/sites/models.py:75
 msgid "sites"
 msgstr "sites"

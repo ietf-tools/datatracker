@@ -2,13 +2,13 @@
 #
 # Translators:
 # Jannis Leidel <jannis@leidel.info>, 2011
-# Ramiro Morales <cramm0@gmail.com>, 2012-2013
+# Ramiro Morales <cramm0@gmail.com>, 2012-2014
 msgid ""
 msgstr ""
-"Project-Id-Version: django-core\n"
+"Project-Id-Version: django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-16 15:07+0200\n"
-"PO-Revision-Date: 2013-10-26 20:48+0000\n"
+"POT-Creation-Date: 2014-05-19 15:12+0200\n"
+"PO-Revision-Date: 2014-07-03 10:54+0000\n"
 "Last-Translator: Ramiro Morales <cramm0@gmail.com>\n"
 "Language-Team: Spanish (Argentina) (http://www.transifex.com/projects/p/"
 "django/language/es_AR/)\n"
@@ -18,19 +18,23 @@ msgstr ""
 "Language: es_AR\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: templates/formtools/wizard/wizard_form.html:15
+#: contrib/formtools/apps.py:8
+msgid "Form Tools"
+msgstr "Herramientas de formularios"
+
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:15
 msgid "first step"
 msgstr "primer paso"
 
-#: templates/formtools/wizard/wizard_form.html:16
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:16
 msgid "prev step"
 msgstr "paso previo"
 
-#: templates/formtools/wizard/wizard_form.html:18
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:18
 msgid "submit"
 msgstr "enviar"
 
-#: wizard/views.py:275
+#: contrib/formtools/wizard/views.py:276
 msgid "ManagementForm data is missing or has been tampered."
 msgstr ""
 "Los datos correspondientes al ManagementForm no existen o han sido "

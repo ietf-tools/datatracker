@@ -1,14 +1,10 @@
 from __future__ import unicode_literals
-import re
-import warnings
 
-from django.core.exceptions import ImproperlyConfigured
 from django.core.mail import send_mail
 from django.core import validators
 from django.db import models
 from django.db.models.manager import EmptyManager
-from django.utils.crypto import get_random_string
-from django.utils.http import urlquote
+from django.utils.crypto import get_random_string, salted_hmac
 from django.utils import six
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
@@ -29,10 +25,6 @@ def update_last_login(sender, user, **kwargs):
     user.last_login = timezone.now()
     user.save(update_fields=['last_login'])
 user_logged_in.connect(update_last_login)
-
-
-class SiteProfileNotAvailable(Exception):
-    pass
 
 
 class PermissionManager(models.Manager):
@@ -252,10 +244,17 @@ class AbstractBaseUser(models.Model):
         return is_password_usable(self.password)
 
     def get_full_name(self):
-        raise NotImplementedError()
+        raise NotImplementedError('subclasses of AbstractBaseUser must provide a get_full_name() method')
 
     def get_short_name(self):
-        raise NotImplementedError()
+        raise NotImplementedError('subclasses of AbstractBaseUser must provide a get_short_name() method.')
+
+    def get_session_auth_hash(self):
+        """
+        Returns an HMAC of the password field.
+        """
+        key_salt = "django.contrib.auth.models.AbstractBaseUser.get_session_auth_hash"
+        return salted_hmac(key_salt, self.password).hexdigest()
 
 
 # A few helper functions for common logic between User and AnonymousUser.
@@ -306,7 +305,7 @@ class PermissionsMixin(models.Model):
 
     def get_group_permissions(self, obj=None):
         """
-        Returns a list of permission strings that this user has through his/her
+        Returns a list of permission strings that this user has through their
         groups. This method queries all available auth backends. If an object
         is passed in, only permissions matching this object are returned.
         """
@@ -365,11 +364,11 @@ class AbstractUser(AbstractBaseUser, PermissionsMixin):
 
     Username, password and email are required. Other fields are optional.
     """
-    username = models.CharField(_('username'), max_length=64, unique=True,
-        help_text=_('Required. 64 characters or fewer. Letters, numbers and '
-                    '@/./+/-/_ characters'),
+    username = models.CharField(_('username'), max_length=30, unique=True,
+        help_text=_('Required. 30 characters or fewer. Letters, digits and '
+                    '@/./+/-/_ only.'),
         validators=[
-            validators.RegexValidator(re.compile('^[\w.@+-]+$'), _('Enter a valid username.'), 'invalid')
+            validators.RegexValidator(r'^[\w.@+-]+$', _('Enter a valid username.'), 'invalid')
         ])
     first_name = models.CharField(_('first name'), max_length=30, blank=True)
     last_name = models.CharField(_('last name'), max_length=30, blank=True)
@@ -392,9 +391,6 @@ class AbstractUser(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _('users')
         abstract = True
 
-    def get_absolute_url(self):
-        return "/users/%s/" % urlquote(self.username)
-
     def get_full_name(self):
         """
         Returns the first_name plus the last_name, with a space in between.
@@ -406,43 +402,11 @@ class AbstractUser(AbstractBaseUser, PermissionsMixin):
         "Returns the short name for the user."
         return self.first_name
 
-    def email_user(self, subject, message, from_email=None):
+    def email_user(self, subject, message, from_email=None, **kwargs):
         """
         Sends an email to this User.
         """
-        send_mail(subject, message, from_email, [self.email])
-
-    def get_profile(self):
-        """
-        Returns site-specific profile for this user. Raises
-        SiteProfileNotAvailable if this site does not allow profiles.
-        """
-        warnings.warn("The use of AUTH_PROFILE_MODULE to define user profiles has been deprecated.",
-            DeprecationWarning, stacklevel=2)
-        if not hasattr(self, '_profile_cache'):
-            from django.conf import settings
-            if not getattr(settings, 'AUTH_PROFILE_MODULE', False):
-                raise SiteProfileNotAvailable(
-                    'You need to set AUTH_PROFILE_MODULE in your project '
-                    'settings')
-            try:
-                app_label, model_name = settings.AUTH_PROFILE_MODULE.split('.')
-            except ValueError:
-                raise SiteProfileNotAvailable(
-                    'app_label and model_name should be separated by a dot in '
-                    'the AUTH_PROFILE_MODULE setting')
-            try:
-                model = models.get_model(app_label, model_name)
-                if model is None:
-                    raise SiteProfileNotAvailable(
-                        'Unable to load the profile model, check '
-                        'AUTH_PROFILE_MODULE in your project settings')
-                self._profile_cache = model._default_manager.using(
-                                   self._state.db).get(user__id__exact=self.id)
-                self._profile_cache.user = self
-            except (ImportError, ImproperlyConfigured):
-                raise SiteProfileNotAvailable
-        return self._profile_cache
+        send_mail(subject, message, from_email, [self.email], **kwargs)
 
 
 class User(AbstractUser):
@@ -483,16 +447,16 @@ class AnonymousUser(object):
         return 1  # instances always return the same hash value
 
     def save(self):
-        raise NotImplementedError
+        raise NotImplementedError("Django doesn't provide a DB representation for AnonymousUser.")
 
     def delete(self):
-        raise NotImplementedError
+        raise NotImplementedError("Django doesn't provide a DB representation for AnonymousUser.")
 
     def set_password(self, raw_password):
-        raise NotImplementedError
+        raise NotImplementedError("Django doesn't provide a DB representation for AnonymousUser.")
 
     def check_password(self, raw_password):
-        raise NotImplementedError
+        raise NotImplementedError("Django doesn't provide a DB representation for AnonymousUser.")
 
     def _get_groups(self):
         return self._groups

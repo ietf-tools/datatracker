@@ -7,9 +7,7 @@ import hmac
 import struct
 import hashlib
 import binascii
-import operator
 import time
-from functools import reduce
 
 # Use the system PRNG if possible
 import random
@@ -38,10 +36,13 @@ def salted_hmac(key_salt, value, secret=None):
     if secret is None:
         secret = settings.SECRET_KEY
 
+    key_salt = force_bytes(key_salt)
+    secret = force_bytes(secret)
+
     # We need to generate a derived key from our base key.  We can do this by
     # passing the key_salt and our base key through a pseudo-random function and
     # SHA1 works nicely.
-    key = hashlib.sha1((key_salt + secret).encode('utf-8')).digest()
+    key = hashlib.sha1(key_salt + secret).digest()
 
     # If len(key_salt + secret) > sha_constructor().block_size, the above
     # line is redundant and could be replaced by key = key_salt + secret, since
@@ -72,8 +73,8 @@ def get_random_string(length=12,
                     random.getstate(),
                     time.time(),
                     settings.SECRET_KEY)).encode('utf-8')
-                ).digest())
-    return ''.join([random.choice(allowed_chars) for i in range(length)])
+            ).digest())
+    return ''.join(random.choice(allowed_chars) for i in range(length))
 
 
 def constant_time_compare(val1, val2):
@@ -152,15 +153,15 @@ def pbkdf2(password, salt, iterations, dklen=0, digest=None):
     outer.update(password.translate(hmac.trans_5C))
 
     def F(i):
-        def U():
-            u = salt + struct.pack(b'>I', i)
-            for j in xrange(int(iterations)):
-                dig1, dig2 = inner.copy(), outer.copy()
-                dig1.update(u)
-                dig2.update(dig1.digest())
-                u = dig2.digest()
-                yield _bin_to_long(u)
-        return _long_to_bin(reduce(operator.xor, U()), hex_format_string)
+        u = salt + struct.pack(b'>I', i)
+        result = 0
+        for j in xrange(int(iterations)):
+            dig1, dig2 = inner.copy(), outer.copy()
+            dig1.update(u)
+            dig2.update(dig1.digest())
+            u = dig2.digest()
+            result ^= _bin_to_long(u)
+        return _long_to_bin(result, hex_format_string)
 
-    T = [F(x) for x in range(1, l + 1)]
-    return b''.join(T[:-1]) + T[-1][:r]
+    T = [F(x) for x in range(1, l)]
+    return b''.join(T) + F(l)[:r]

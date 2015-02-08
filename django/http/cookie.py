@@ -1,4 +1,4 @@
-from __future__ import absolute_import, unicode_literals
+from __future__ import unicode_literals
 
 from django.utils.encoding import force_str
 from django.utils import six
@@ -38,7 +38,7 @@ else:
                 # (real val, encoded_val)
                 val, encoded = super(SimpleCookie, self).value_encode(val)
 
-                encoded = encoded.replace(";", "\\073").replace(",","\\054")
+                encoded = encoded.replace(";", "\\073").replace(",", "\\054")
                 # If encoded now contains any quoted chars, we need double quotes
                 # around the whole string.
                 if "\\" in encoded and not encoded.startswith('"'):
@@ -64,6 +64,8 @@ else:
                     M.set(key, real_value, coded_value)
                     dict.__setitem__(self, key, M)
                 except http_cookies.CookieError:
+                    if not hasattr(self, 'bad_cookies'):
+                        self.bad_cookies = set()
                     self.bad_cookies.add(key)
                     dict.__setitem__(self, key, http_cookies.Morsel())
 
