@@ -1,3 +1,27 @@
+ietfdb (5.10.3) ietf; urgency=medium
+
+  This is a minor bugfix release in preparation for the upcoming upgrade from
+  Django 1.6.0 to 1.7.4
+
+  * Merged in [9007] from rjsparks@nostrum.com:
+    Add the csrf_token to the form for editing document titles. Fixes #1597.  
+
+  * Merged in [9005] from rcross@amsl.com:
+
+    - Fixed the group link on the standalone Interim Meeting Proceedings
+      directory page.
+
+    Also removed some dead code.
+
+  * Removed the unnecessary get_and_create() of
+    community.model.DisplayConfiguration on community page GET.
+
+  * Made the cookie handling for the 'new_enough' and 'expires_soon' cookies
+    insensitive to nonnumeric values.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Feb 2015 16:40:01 +0000
+
+
 ietfdb (5.10.2) ietf; urgency=medium
 
   * When draft email aliases are generated, the content of the doc.notify
