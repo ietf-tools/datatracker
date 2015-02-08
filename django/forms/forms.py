@@ -2,18 +2,20 @@
 Form classes
 """
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import unicode_literals
 
+from collections import OrderedDict
 import copy
+import datetime
 import warnings
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.forms.fields import Field, FileField
-from django.forms.util import flatatt, ErrorDict, ErrorList
-from django.forms.widgets import Media, media_property, TextInput, Textarea
-from django.utils.datastructures import SortedDict
-from django.utils.html import conditional_escape, format_html
+from django.forms.utils import flatatt, ErrorDict, ErrorList
+from django.forms.widgets import Media, MediaDefiningClass, TextInput, Textarea
+from django.utils.deprecation import RemovedInDjango18Warning, RemovedInDjango19Warning
 from django.utils.encoding import smart_text, force_text, python_2_unicode_compatible
+from django.utils.html import conditional_escape, format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.utils import six
@@ -21,13 +23,13 @@ from django.utils import six
 
 __all__ = ('BaseForm', 'Form')
 
-NON_FIELD_ERRORS = '__all__'
 
 def pretty_name(name):
     """Converts 'first_name' to 'First name'"""
     if not name:
         return ''
     return name.replace('_', ' ').capitalize()
+
 
 def get_declared_fields(bases, attrs, with_base_fields=True):
     """
@@ -40,6 +42,13 @@ def get_declared_fields(bases, attrs, with_base_fields=True):
     used. The distinction is useful in ModelForm subclassing.
     Also integrates any additional media definitions.
     """
+
+    warnings.warn(
+        "get_declared_fields is deprecated and will be removed in Django 1.9.",
+        RemovedInDjango19Warning,
+        stacklevel=2,
+    )
+
     fields = [(field_name, attrs.pop(field_name)) for field_name, obj in list(six.iteritems(attrs)) if isinstance(obj, Field)]
     fields.sort(key=lambda x: x[1].creation_counter)
 
@@ -55,20 +64,43 @@ def get_declared_fields(bases, attrs, with_base_fields=True):
             if hasattr(base, 'declared_fields'):
                 fields = list(six.iteritems(base.declared_fields)) + fields
 
-    return SortedDict(fields)
+    return OrderedDict(fields)
 
-class DeclarativeFieldsMetaclass(type):
+
+class DeclarativeFieldsMetaclass(MediaDefiningClass):
     """
-    Metaclass that converts Field attributes to a dictionary called
-    'base_fields', taking into account parent class 'base_fields' as well.
+    Metaclass that collects Fields declared on the base classes.
     """
-    def __new__(cls, name, bases, attrs):
-        attrs['base_fields'] = get_declared_fields(bases, attrs)
-        new_class = super(DeclarativeFieldsMetaclass,
-                     cls).__new__(cls, name, bases, attrs)
-        if 'media' not in attrs:
-            new_class.media = media_property(new_class)
+    def __new__(mcs, name, bases, attrs):
+        # Collect fields from current class.
+        current_fields = []
+        for key, value in list(attrs.items()):
+            if isinstance(value, Field):
+                current_fields.append((key, value))
+                attrs.pop(key)
+        current_fields.sort(key=lambda x: x[1].creation_counter)
+        attrs['declared_fields'] = OrderedDict(current_fields)
+
+        new_class = (super(DeclarativeFieldsMetaclass, mcs)
+            .__new__(mcs, name, bases, attrs))
+
+        # Walk through the MRO.
+        declared_fields = OrderedDict()
+        for base in reversed(new_class.__mro__):
+            # Collect fields from base class.
+            if hasattr(base, 'declared_fields'):
+                declared_fields.update(base.declared_fields)
+
+            # Field shadowing.
+            for attr, value in base.__dict__.items():
+                if value is None and attr in declared_fields:
+                    declared_fields.pop(attr)
+
+        new_class.base_fields = declared_fields
+        new_class.declared_fields = declared_fields
+
         return new_class
+
 
 @python_2_unicode_compatible
 class BaseForm(object):
@@ -89,7 +121,7 @@ class BaseForm(object):
         # Translators: This is the default suffix added to form field labels
         self.label_suffix = label_suffix if label_suffix is not None else _(':')
         self.empty_permitted = empty_permitted
-        self._errors = None # Stores the errors after clean() has been called.
+        self._errors = None  # Stores the errors after clean() has been called.
         self._changed_data = None
 
         # The base_fields class attribute is the *class-wide* definition of
@@ -111,7 +143,8 @@ class BaseForm(object):
         try:
             field = self.fields[name]
         except KeyError:
-            raise KeyError('Key %r not found in Form' % name)
+            raise KeyError(
+                "Key %r not found in '%s'" % (name, self.__class__.__name__))
         return BoundField(self, field, name)
 
     @property
@@ -145,7 +178,7 @@ class BaseForm(object):
 
     def _html_output(self, normal_row, error_row, row_ender, help_text_html, errors_on_separate_row):
         "Helper function for outputting HTML. Used by as_table(), as_ul(), as_p()."
-        top_errors = self.non_field_errors() # Errors that should be displayed above all fields.
+        top_errors = self.non_field_errors()  # Errors that should be displayed above all fields.
         output, hidden_fields = [], []
 
         for name, field in self.fields.items():
@@ -160,7 +193,7 @@ class BaseForm(object):
                          for e in bf_errors])
                 hidden_fields.append(six.text_type(bf))
             else:
-                # Create a 'class="..."' atribute if the row should have any
+                # Create a 'class="..."' attribute if the row should have any
                 # CSS classes applied.
                 css_classes = bf.css_classes()
                 if css_classes:
@@ -185,13 +218,14 @@ class BaseForm(object):
                     'label': force_text(label),
                     'field': six.text_type(bf),
                     'help_text': help_text,
-                    'html_class_attr': html_class_attr
+                    'html_class_attr': html_class_attr,
+                    'field_name': bf.html_name,
                 })
 
         if top_errors:
             output.insert(0, error_row % force_text(top_errors))
 
-        if hidden_fields: # Insert any hidden fields in the last row.
+        if hidden_fields:  # Insert any hidden fields in the last row.
             str_hidden = ''.join(hidden_fields)
             if output:
                 last_row = output[-1]
@@ -203,7 +237,7 @@ class BaseForm(object):
                     # not be able to conscript the last row for our purposes,
                     # so insert a new, empty row.
                     last_row = (normal_row % {'errors': '', 'label': '',
-                                              'field': '', 'help_text':'',
+                                              'field': '', 'help_text': '',
                                               'html_class_attr': html_class_attr})
                     output.append(last_row)
                 output[-1] = last_row[:-len(row_ender)] + str_hidden + row_ender
@@ -216,29 +250,29 @@ class BaseForm(object):
     def as_table(self):
         "Returns this form rendered as HTML <tr>s -- excluding the <table></table>."
         return self._html_output(
-            normal_row = '<tr%(html_class_attr)s><th>%(label)s</th><td>%(errors)s%(field)s%(help_text)s</td></tr>',
-            error_row = '<tr><td colspan="2">%s</td></tr>',
-            row_ender = '</td></tr>',
-            help_text_html = '<br /><span class="helptext">%s</span>',
-            errors_on_separate_row = False)
+            normal_row='<tr%(html_class_attr)s><th>%(label)s</th><td>%(errors)s%(field)s%(help_text)s</td></tr>',
+            error_row='<tr><td colspan="2">%s</td></tr>',
+            row_ender='</td></tr>',
+            help_text_html='<br /><span class="helptext">%s</span>',
+            errors_on_separate_row=False)
 
     def as_ul(self):
         "Returns this form rendered as HTML <li>s -- excluding the <ul></ul>."
         return self._html_output(
-            normal_row = '<li%(html_class_attr)s>%(errors)s%(label)s %(field)s%(help_text)s</li>',
-            error_row = '<li>%s</li>',
-            row_ender = '</li>',
-            help_text_html = ' <span class="helptext">%s</span>',
-            errors_on_separate_row = False)
+            normal_row='<li%(html_class_attr)s>%(errors)s%(label)s %(field)s%(help_text)s</li>',
+            error_row='<li>%s</li>',
+            row_ender='</li>',
+            help_text_html=' <span class="helptext">%s</span>',
+            errors_on_separate_row=False)
 
     def as_p(self):
         "Returns this form rendered as HTML <p>s."
         return self._html_output(
-            normal_row = '<p%(html_class_attr)s>%(label)s %(field)s%(help_text)s</p>',
-            error_row = '%s',
-            row_ender = '</p>',
-            help_text_html = ' <span class="helptext">%s</span>',
-            errors_on_separate_row = True)
+            normal_row='<p%(html_class_attr)s>%(label)s %(field)s%(help_text)s</p>',
+            error_row='%s',
+            row_ender='</p>',
+            help_text_html=' <span class="helptext">%s</span>',
+            errors_on_separate_row=True)
 
     def non_field_errors(self):
         """
@@ -257,19 +291,65 @@ class BaseForm(object):
         prefix = self.add_prefix(fieldname)
         return field.widget.value_from_datadict(self.data, self.files, prefix)
 
+    def add_error(self, field, error):
+        """
+        Update the content of `self._errors`.
+
+        The `field` argument is the name of the field to which the errors
+        should be added. If its value is None the errors will be treated as
+        NON_FIELD_ERRORS.
+
+        The `error` argument can be a single error, a list of errors, or a
+        dictionary that maps field names to lists of errors. What we define as
+        an "error" can be either a simple string or an instance of
+        ValidationError with its message attribute set and what we define as
+        list or dictionary can be an actual `list` or `dict` or an instance
+        of ValidationError with its `error_list` or `error_dict` attribute set.
+
+        If `error` is a dictionary, the `field` argument *must* be None and
+        errors will be added to the fields that correspond to the keys of the
+        dictionary.
+        """
+        if not isinstance(error, ValidationError):
+            # Normalize to ValidationError and let its constructor
+            # do the hard work of making sense of the input.
+            error = ValidationError(error)
+
+        if hasattr(error, 'error_dict'):
+            if field is not None:
+                raise TypeError(
+                    "The argument `field` must be `None` when the `error` "
+                    "argument contains errors for multiple fields."
+                )
+            else:
+                error = error.error_dict
+        else:
+            error = {field or NON_FIELD_ERRORS: error.error_list}
+
+        for field, error_list in error.items():
+            if field not in self.errors:
+                if field != NON_FIELD_ERRORS and field not in self.fields:
+                    raise ValueError(
+                        "'%s' has no field named '%s'." % (self.__class__.__name__, field))
+                self._errors[field] = self.error_class()
+            self._errors[field].extend(error_list)
+            if field in self.cleaned_data:
+                del self.cleaned_data[field]
+
     def full_clean(self):
         """
         Cleans all of self.data and populates self._errors and
         self.cleaned_data.
         """
         self._errors = ErrorDict()
-        if not self.is_bound: # Stop further processing.
+        if not self.is_bound:  # Stop further processing.
             return
         self.cleaned_data = {}
         # If the form is permitted to be empty, and none of the form data has
         # changed from the initial data, short circuit any validation.
         if self.empty_permitted and not self.has_changed():
             return
+
         self._clean_fields()
         self._clean_form()
         self._post_clean()
@@ -291,15 +371,16 @@ class BaseForm(object):
                     value = getattr(self, 'clean_%s' % name)()
                     self.cleaned_data[name] = value
             except ValidationError as e:
-                self._errors[name] = self.error_class(e.messages)
-                if name in self.cleaned_data:
-                    del self.cleaned_data[name]
+                self.add_error(name, e)
 
     def _clean_form(self):
         try:
-            self.cleaned_data = self.clean()
+            cleaned_data = self.clean()
         except ValidationError as e:
-            self._errors[NON_FIELD_ERRORS] = self.error_class(e.messages)
+            self.add_error(None, e)
+        else:
+            if cleaned_data is not None:
+                self.cleaned_data = cleaned_data
 
     def _post_clean(self):
         """
@@ -353,7 +434,7 @@ class BaseForm(object):
                 if hasattr(field.widget, '_has_changed'):
                     warnings.warn("The _has_changed method on widgets is deprecated,"
                         " define it at field level instead.",
-                        PendingDeprecationWarning, stacklevel=2)
+                        RemovedInDjango18Warning, stacklevel=2)
                     if field.widget._has_changed(initial_value, data_value):
                         self._changed_data.append(name)
                 elif field._has_changed(initial_value, data_value):
@@ -394,6 +475,7 @@ class BaseForm(object):
         """
         return [field for field in self if not field.is_hidden]
 
+
 class Form(six.with_metaclass(DeclarativeFieldsMetaclass, BaseForm)):
     "A collection of Fields, plus their associated data."
     # This is a separate class from BaseForm in order to abstract the way
@@ -401,6 +483,7 @@ class Form(six.with_metaclass(DeclarativeFieldsMetaclass, BaseForm)):
     # fancy metaclass stuff purely for the semantic sugar -- it allows one
     # to define a form using declarative syntax.
     # BaseForm itself has no way of designating self.fields.
+
 
 @python_2_unicode_compatible
 class BoundField(object):
@@ -431,7 +514,9 @@ class BoundField(object):
         This really is only useful for RadioSelect widgets, so that you can
         iterate over individual radio buttons in a template.
         """
-        for subwidget in self.field.widget.subwidgets(self.html_name, self.value()):
+        id_ = self.field.widget.attrs.get('id') or self.auto_id
+        attrs = {'id': id_} if id_ else {}
+        for subwidget in self.field.widget.subwidgets(self.html_name, self.value(), attrs):
             yield subwidget
 
     def __len__(self):
@@ -472,7 +557,7 @@ class BoundField(object):
             name = self.html_name
         else:
             name = self.html_initial_name
-        return widget.render(name, self.value(), attrs=attrs)
+        return force_text(widget.render(name, self.value(), attrs=attrs))
 
     def as_text(self, attrs=None, **kwargs):
         """
@@ -506,6 +591,11 @@ class BoundField(object):
             data = self.form.initial.get(self.name, self.field.initial)
             if callable(data):
                 data = data()
+                # If this is an auto-generated default date, nix the
+                # microseconds for standardized handling. See #22502.
+                if (isinstance(data, (datetime.datetime, datetime.time)) and
+                        not getattr(self.field.widget, 'supports_microseconds', True)):
+                    data = data.replace(microsecond=0)
         else:
             data = self.field.bound_data(
                 self.data, self.form.initial.get(self.name, self.field.initial)
@@ -577,7 +667,7 @@ class BoundField(object):
         """
         Wrapper around the field widget's `id_for_label` method.
         Useful, for example, for focusing on this field regardless of whether
-        it has a single widget or a MutiWidget.
+        it has a single widget or a MultiWidget.
         """
         widget = self.field.widget
         id_ = widget.attrs.get('id') or self.auto_id

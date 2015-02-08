@@ -2,18 +2,18 @@ from __future__ import unicode_literals
 
 import base64
 import binascii
+from collections import OrderedDict
 import hashlib
+import importlib
 
 from django.dispatch import receiver
 from django.conf import settings
 from django.test.signals import setting_changed
-from django.utils import importlib
-from django.utils.datastructures import SortedDict
 from django.utils.encoding import force_bytes, force_str, force_text
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.crypto import (
     pbkdf2, constant_time_compare, get_random_string)
-from django.utils.module_loading import import_by_path
+from django.utils.module_loading import import_string
 from django.utils.translation import ugettext_noop as _
 
 
@@ -57,7 +57,7 @@ def check_password(password, encoded, setter=None, preferred='default'):
 
     must_update = hasher.algorithm != preferred.algorithm
     if not must_update:
-        must_update = hasher.must_update(encoded)
+        must_update = preferred.must_update(encoded)
     is_correct = hasher.verify(password, encoded)
     if setter and is_correct and must_update:
         setter(password)
@@ -92,12 +92,12 @@ def load_hashers(password_hashers=None):
     if not password_hashers:
         password_hashers = settings.PASSWORD_HASHERS
     for backend in password_hashers:
-        hasher = import_by_path(backend)()
+        hasher = import_string(backend)()
         if not getattr(hasher, 'algorithm'):
             raise ImproperlyConfigured("hasher doesn't specify an "
                                        "algorithm name: %s" % backend)
         hashers.append(hasher)
-    HASHERS = dict([(hasher.algorithm, hasher) for hasher in hashers])
+    HASHERS = dict((hasher.algorithm, hasher) for hasher in hashers)
     PREFERRED_HASHER = hashers[0]
 
 
@@ -174,7 +174,7 @@ class BasePasswordHasher(object):
             if isinstance(self.library, (tuple, list)):
                 name, mod_path = self.library
             else:
-                name = mod_path = self.library
+                mod_path = self.library
             try:
                 module = importlib.import_module(mod_path)
             except ImportError as e:
@@ -186,7 +186,7 @@ class BasePasswordHasher(object):
 
     def salt(self):
         """
-        Generates a cryptographically secure nonce salt in ascii
+        Generates a cryptographically secure nonce salt in ASCII
         """
         return get_random_string()
 
@@ -194,7 +194,7 @@ class BasePasswordHasher(object):
         """
         Checks if the given password is correct
         """
-        raise NotImplementedError()
+        raise NotImplementedError('subclasses of BasePasswordHasher must provide a verify() method')
 
     def encode(self, password, salt):
         """
@@ -203,7 +203,7 @@ class BasePasswordHasher(object):
         The result is normally formatted as "algorithm$salt$hash" and
         must be fewer than 128 characters.
         """
-        raise NotImplementedError()
+        raise NotImplementedError('subclasses of BasePasswordHasher must provide an encode() method')
 
     def safe_summary(self, encoded):
         """
@@ -212,7 +212,7 @@ class BasePasswordHasher(object):
         The result is a dictionary and will be used where the password field
         must be displayed to construct a safe representation of the password.
         """
-        raise NotImplementedError()
+        raise NotImplementedError('subclasses of BasePasswordHasher must provide a safe_summary() method')
 
     def must_update(self, encoded):
         return False
@@ -222,12 +222,12 @@ class PBKDF2PasswordHasher(BasePasswordHasher):
     """
     Secure password hashing using the PBKDF2 algorithm (recommended)
 
-    Configured to use PBKDF2 + HMAC + SHA256 with 12000 iterations.
+    Configured to use PBKDF2 + HMAC + SHA256 with 15000 iterations.
     The result is a 64 byte binary string.  Iterations may be changed
     safely but you must rename the algorithm if you change SHA256.
     """
     algorithm = "pbkdf2_sha256"
-    iterations = 12000
+    iterations = 15000
     digest = hashlib.sha256
 
     def encode(self, password, salt, iterations=None):
@@ -248,7 +248,7 @@ class PBKDF2PasswordHasher(BasePasswordHasher):
     def safe_summary(self, encoded):
         algorithm, iterations, salt, hash = encoded.split('$', 3)
         assert algorithm == self.algorithm
-        return SortedDict([
+        return OrderedDict([
             (_('algorithm'), algorithm),
             (_('iterations'), iterations),
             (_('salt'), mask_hash(salt)),
@@ -322,14 +322,16 @@ class BCryptSHA256PasswordHasher(BasePasswordHasher):
 
         # Ensure that our data is a bytestring
         data = force_bytes(data)
+        # force_bytes() necessary for py-bcrypt compatibility
+        hashpw = force_bytes(bcrypt.hashpw(password, data))
 
-        return constant_time_compare(data, bcrypt.hashpw(password, data))
+        return constant_time_compare(data, hashpw)
 
     def safe_summary(self, encoded):
         algorithm, empty, algostr, work_factor, data = encoded.split('$', 4)
         assert algorithm == self.algorithm
         salt, checksum = data[:22], data[22:]
-        return SortedDict([
+        return OrderedDict([
             (_('algorithm'), algorithm),
             (_('work factor'), work_factor),
             (_('salt'), mask_hash(salt)),
@@ -377,7 +379,7 @@ class SHA1PasswordHasher(BasePasswordHasher):
     def safe_summary(self, encoded):
         algorithm, salt, hash = encoded.split('$', 2)
         assert algorithm == self.algorithm
-        return SortedDict([
+        return OrderedDict([
             (_('algorithm'), algorithm),
             (_('salt'), mask_hash(salt, show=2)),
             (_('hash'), mask_hash(hash)),
@@ -405,7 +407,7 @@ class MD5PasswordHasher(BasePasswordHasher):
     def safe_summary(self, encoded):
         algorithm, salt, hash = encoded.split('$', 2)
         assert algorithm == self.algorithm
-        return SortedDict([
+        return OrderedDict([
             (_('algorithm'), algorithm),
             (_('salt'), mask_hash(salt, show=2)),
             (_('hash'), mask_hash(hash)),
@@ -438,7 +440,7 @@ class UnsaltedSHA1PasswordHasher(BasePasswordHasher):
     def safe_summary(self, encoded):
         assert encoded.startswith('sha1$$')
         hash = encoded[6:]
-        return SortedDict([
+        return OrderedDict([
             (_('algorithm'), self.algorithm),
             (_('hash'), mask_hash(hash)),
         ])
@@ -471,7 +473,7 @@ class UnsaltedMD5PasswordHasher(BasePasswordHasher):
         return constant_time_compare(encoded, encoded_2)
 
     def safe_summary(self, encoded):
-        return SortedDict([
+        return OrderedDict([
             (_('algorithm'), self.algorithm),
             (_('hash'), mask_hash(encoded, show=3)),
         ])
@@ -505,9 +507,8 @@ class CryptPasswordHasher(BasePasswordHasher):
     def safe_summary(self, encoded):
         algorithm, salt, data = encoded.split('$', 2)
         assert algorithm == self.algorithm
-        return SortedDict([
+        return OrderedDict([
             (_('algorithm'), algorithm),
             (_('salt'), salt),
             (_('hash'), mask_hash(data, show=3)),
         ])
-

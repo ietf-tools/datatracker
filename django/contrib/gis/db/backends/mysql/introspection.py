@@ -3,6 +3,7 @@ from MySQLdb.constants import FIELD_TYPE
 from django.contrib.gis.gdal import OGRGeomType
 from django.db.backends.mysql.introspection import DatabaseIntrospection
 
+
 class MySQLIntrospection(DatabaseIntrospection):
     # Updating the data_types_reverse dictionary with the appropriate
     # type for Geometry fields.
@@ -30,3 +31,11 @@ class MySQLIntrospection(DatabaseIntrospection):
             cursor.close()
 
         return field_type, field_params
+
+    def supports_spatial_index(self, cursor, table_name):
+        # Supported with MyISAM, or InnoDB on MySQL 5.7.5+
+        storage_engine = self.get_storage_engine(cursor, table_name)
+        return (
+            (storage_engine == 'InnoDB' and self.connection.mysql_version >= (5, 7, 5)) or
+            storage_engine == 'MyISAM'
+        )

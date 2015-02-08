@@ -1,14 +1,14 @@
 # This file is distributed under the same license as the Django package.
 #
 # Translators:
-# Soslan Khubulov <soslanx@gmail.com>, 2013
+# Xwybylty Soslan <soslanx@gmail.com>, 2013
 msgid ""
 msgstr ""
-"Project-Id-Version: django-core\n"
+"Project-Id-Version: django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-05-02 16:18+0200\n"
-"PO-Revision-Date: 2013-05-09 05:34+0000\n"
-"Last-Translator: Soslan Khubulov <soslanx@gmail.com>\n"
+"POT-Creation-Date: 2014-05-19 15:12+0200\n"
+"PO-Revision-Date: 2014-05-20 09:45+0000\n"
+"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
 "Language-Team: Ossetic (http://www.transifex.com/projects/p/django/language/"
 "os/)\n"
 "MIME-Version: 1.0\n"
@@ -17,22 +17,26 @@ msgstr ""
 "Language: os\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: models.py:9
+#: contrib/redirects/apps.py:8
+msgid "Redirects"
+msgstr ""
+
+#: contrib/redirects/models.py:10
 msgid "redirect from"
 msgstr "арвитӕны формӕ"
 
-#: models.py:10
+#: contrib/redirects/models.py:11
 msgid ""
 "This should be an absolute path, excluding the domain name. Example: '/"
 "events/search/'."
 msgstr ""
 "Ай хъуамӕ уа ӕнӕ домены ном абсолютон фӕт. Цӕвиддон: '/events/search/'."
 
-#: models.py:11
+#: contrib/redirects/models.py:12
 msgid "redirect to"
 msgstr "арвитӕн ардӕм"
 
-#: models.py:12
+#: contrib/redirects/models.py:13
 msgid ""
 "This can be either an absolute path (as above) or a full URL starting with "
 "'http://'."
@@ -40,10 +44,10 @@ msgstr ""
 "Ай гӕнӕн ис уа абсолютон фӕт (куыд уӕлийӕ) кӕнӕ 'http://'-йӕ байдайгӕ "
 "ӕнӕхъӕн URL."
 
-#: models.py:15
+#: contrib/redirects/models.py:16
 msgid "redirect"
 msgstr "арвитӕн"
 
-#: models.py:16
+#: contrib/redirects/models.py:17
 msgid "redirects"
 msgstr "арвитӕнтӕ"

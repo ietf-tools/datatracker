@@ -4,11 +4,11 @@
 # sim0n <sim0n@trypill.org>, 2013
 msgid ""
 msgstr ""
-"Project-Id-Version: django-core\n"
+"Project-Id-Version: django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-05-02 16:18+0200\n"
-"PO-Revision-Date: 2013-11-03 23:26+0000\n"
-"Last-Translator: sim0n <sim0n@trypill.org>\n"
+"POT-Creation-Date: 2014-05-19 15:12+0200\n"
+"PO-Revision-Date: 2014-05-20 09:45+0000\n"
+"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
 "Language-Team: Luxembourgish (http://www.transifex.com/projects/p/django/"
 "language/lb/)\n"
 "MIME-Version: 1.0\n"
@@ -17,6 +17,10 @@ msgstr ""
 "Language: lb\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: tests/base.py:100
+#: contrib/messages/apps.py:8
+msgid "Messages"
+msgstr ""
+
+#: contrib/messages/tests/base.py:105
 msgid "lazy message"
 msgstr "lidderche Message"

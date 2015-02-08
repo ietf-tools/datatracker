@@ -6,6 +6,8 @@ from email.MIMEMessage import MIMEMessage
 from email.MIMEMultipart import MIMEMultipart
 from email.header import Header
 from email import message_from_string
+from email import charset as Charset
+
 import smtplib
 from django.conf import settings
 from django.contrib import messages
@@ -30,6 +32,10 @@ test_mode = False
 outbox = []
 
 SMTP_ADDR = { 'ip4':settings.EMAIL_HOST, 'port':settings.EMAIL_PORT}
+
+# Don't BASE64-encode UTF-8 messages so that we avoid unwanted attention from
+# some spam filters.
+Charset.add_charset('utf-8', Charset.SHORTEST, None, 'utf-8')
 
 def empty_outbox():
     outbox[:] = []

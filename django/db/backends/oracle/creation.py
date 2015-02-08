@@ -3,10 +3,13 @@ import time
 
 from django.conf import settings
 from django.db.backends.creation import BaseDatabaseCreation
+from django.db.utils import DatabaseError
 from django.utils.six.moves import input
+
 
 TEST_DATABASE_PREFIX = 'test_'
 PASSWORD = 'Im_a_lumberjack'
+
 
 class DatabaseCreation(BaseDatabaseCreation):
     # This dictionary maps Field objects to their associated Oracle column
@@ -18,30 +21,37 @@ class DatabaseCreation(BaseDatabaseCreation):
     # output (the "qn_" prefix is stripped before the lookup is performed.
 
     data_types = {
-        'AutoField':                    'NUMBER(11)',
-        'BinaryField':                  'BLOB',
-        'BooleanField':                 'NUMBER(1) CHECK (%(qn_column)s IN (0,1))',
-        'CharField':                    'NVARCHAR2(%(max_length)s)',
-        'CommaSeparatedIntegerField':   'VARCHAR2(%(max_length)s)',
-        'DateField':                    'DATE',
-        'DateTimeField':                'TIMESTAMP',
-        'DecimalField':                 'NUMBER(%(max_digits)s, %(decimal_places)s)',
-        'FileField':                    'NVARCHAR2(%(max_length)s)',
-        'FilePathField':                'NVARCHAR2(%(max_length)s)',
-        'FloatField':                   'DOUBLE PRECISION',
-        'IntegerField':                 'NUMBER(11)',
-        'BigIntegerField':              'NUMBER(19)',
-        'IPAddressField':               'VARCHAR2(15)',
-        'GenericIPAddressField':        'VARCHAR2(39)',
-        'NullBooleanField':             'NUMBER(1) CHECK ((%(qn_column)s IN (0,1)) OR (%(qn_column)s IS NULL))',
-        'OneToOneField':                'NUMBER(11)',
-        'PositiveIntegerField':         'NUMBER(11) CHECK (%(qn_column)s >= 0)',
-        'PositiveSmallIntegerField':    'NUMBER(11) CHECK (%(qn_column)s >= 0)',
-        'SlugField':                    'NVARCHAR2(%(max_length)s)',
-        'SmallIntegerField':            'NUMBER(11)',
-        'TextField':                    'NCLOB',
-        'TimeField':                    'TIMESTAMP',
-        'URLField':                     'VARCHAR2(%(max_length)s)',
+        'AutoField': 'NUMBER(11)',
+        'BinaryField': 'BLOB',
+        'BooleanField': 'NUMBER(1)',
+        'CharField': 'NVARCHAR2(%(max_length)s)',
+        'CommaSeparatedIntegerField': 'VARCHAR2(%(max_length)s)',
+        'DateField': 'DATE',
+        'DateTimeField': 'TIMESTAMP',
+        'DecimalField': 'NUMBER(%(max_digits)s, %(decimal_places)s)',
+        'FileField': 'NVARCHAR2(%(max_length)s)',
+        'FilePathField': 'NVARCHAR2(%(max_length)s)',
+        'FloatField': 'DOUBLE PRECISION',
+        'IntegerField': 'NUMBER(11)',
+        'BigIntegerField': 'NUMBER(19)',
+        'IPAddressField': 'VARCHAR2(15)',
+        'GenericIPAddressField': 'VARCHAR2(39)',
+        'NullBooleanField': 'NUMBER(1)',
+        'OneToOneField': 'NUMBER(11)',
+        'PositiveIntegerField': 'NUMBER(11)',
+        'PositiveSmallIntegerField': 'NUMBER(11)',
+        'SlugField': 'NVARCHAR2(%(max_length)s)',
+        'SmallIntegerField': 'NUMBER(11)',
+        'TextField': 'NCLOB',
+        'TimeField': 'TIMESTAMP',
+        'URLField': 'VARCHAR2(%(max_length)s)',
+    }
+
+    data_type_check_constraints = {
+        'BooleanField': '%(qn_column)s IN (0,1)',
+        'NullBooleanField': '(%(qn_column)s IN (0,1)) OR (%(qn_column)s IS NULL)',
+        'PositiveIntegerField': '%(qn_column)s >= 0',
+        'PositiveSmallIntegerField': '%(qn_column)s >= 0',
     }
 
     def __init__(self, connection):
@@ -71,10 +81,22 @@ class DatabaseCreation(BaseDatabaseCreation):
                 if not autoclobber:
                     confirm = input("It appears the test database, %s, already exists. Type 'yes' to delete it, or 'no' to cancel: " % TEST_NAME)
                 if autoclobber or confirm == 'yes':
+                    if verbosity >= 1:
+                        print("Destroying old test database '%s'..." % self.connection.alias)
                     try:
-                        if verbosity >= 1:
-                            print("Destroying old test database '%s'..." % self.connection.alias)
                         self._execute_test_db_destruction(cursor, parameters, verbosity)
+                    except DatabaseError as e:
+                        if 'ORA-29857' in str(e):
+                            self._handle_objects_preventing_db_destruction(cursor, parameters,
+                                                                           verbosity, autoclobber)
+                        else:
+                            # Ran into a database error that isn't about leftover objects in the tablespace
+                            sys.stderr.write("Got an error destroying the old test database: %s\n" % e)
+                            sys.exit(2)
+                    except Exception as e:
+                        sys.stderr.write("Got an error destroying the old test database: %s\n" % e)
+                        sys.exit(2)
+                    try:
                         self._execute_test_db_creation(cursor, parameters, verbosity)
                     except Exception as e:
                         sys.stderr.write("Got an error recreating the test database: %s\n" % e)
@@ -107,13 +129,52 @@ class DatabaseCreation(BaseDatabaseCreation):
                     print("Tests cancelled.")
                     sys.exit(1)
 
+        self.connection.close()  # done with main user -- test user and tablespaces created
+
         real_settings = settings.DATABASES[self.connection.alias]
         real_settings['SAVED_USER'] = self.connection.settings_dict['SAVED_USER'] = self.connection.settings_dict['USER']
         real_settings['SAVED_PASSWORD'] = self.connection.settings_dict['SAVED_PASSWORD'] = self.connection.settings_dict['PASSWORD']
-        real_settings['TEST_USER'] = real_settings['USER'] = self.connection.settings_dict['TEST_USER'] = self.connection.settings_dict['USER'] = TEST_USER
+        real_test_settings = real_settings['TEST']
+        test_settings = self.connection.settings_dict['TEST']
+        real_test_settings['USER'] = real_settings['USER'] = test_settings['USER'] = self.connection.settings_dict['USER'] = TEST_USER
         real_settings['PASSWORD'] = self.connection.settings_dict['PASSWORD'] = TEST_PASSWD
 
         return self.connection.settings_dict['NAME']
+
+    def _handle_objects_preventing_db_destruction(self, cursor, parameters, verbosity, autoclobber):
+        # There are objects in the test tablespace which prevent dropping it
+        # The easy fix is to drop the test user -- but are we allowed to do so?
+        print("There are objects in the old test database which prevent its destruction.")
+        print("If they belong to the test user, deleting the user will allow the test "
+              "database to be recreated.")
+        print("Otherwise, you will need to find and remove each of these objects, "
+              "or use a different tablespace.\n")
+        if self._test_user_create():
+            if not autoclobber:
+                confirm = input("Type 'yes' to delete user %s: " % parameters['user'])
+            if autoclobber or confirm == 'yes':
+                try:
+                    if verbosity >= 1:
+                        print("Destroying old test user...")
+                    self._destroy_test_user(cursor, parameters, verbosity)
+                except Exception as e:
+                    sys.stderr.write("Got an error destroying the test user: %s\n" % e)
+                    sys.exit(2)
+                try:
+                    if verbosity >= 1:
+                        print("Destroying old test database '%s'..." % self.connection.alias)
+                    self._execute_test_db_destruction(cursor, parameters, verbosity)
+                except Exception as e:
+                    sys.stderr.write("Got an error destroying the test database: %s\n" % e)
+                    sys.exit(2)
+            else:
+                print("Tests cancelled -- test database cannot be recreated.")
+                sys.exit(1)
+        else:
+            print("Django is configured to use pre-existing test user '%s',"
+                  " and will not attempt to delete it.\n" % parameters['user'])
+            print("Tests cancelled -- test database cannot be recreated.")
+            sys.exit(1)
 
     def _destroy_test_db(self, test_database_name, verbosity=1):
         """
@@ -138,7 +199,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         }
 
         cursor = self.connection.cursor()
-        time.sleep(1) # To avoid "database is being accessed by other users" errors.
+        time.sleep(1)  # To avoid "database is being accessed by other users" errors.
         if self._test_user_create():
             if verbosity >= 1:
                 print('Destroying test user...')
@@ -155,11 +216,11 @@ class DatabaseCreation(BaseDatabaseCreation):
         statements = [
             """CREATE TABLESPACE %(tblspace)s
                DATAFILE '%(tblspace)s.dbf' SIZE 20M
-               REUSE AUTOEXTEND ON NEXT 10M MAXSIZE 200M
+               REUSE AUTOEXTEND ON NEXT 10M MAXSIZE 300M
             """,
             """CREATE TEMPORARY TABLESPACE %(tblspace_temp)s
                TEMPFILE '%(tblspace_temp)s.dbf' SIZE 20M
-               REUSE AUTOEXTEND ON NEXT 10M MAXSIZE 100M
+               REUSE AUTOEXTEND ON NEXT 10M MAXSIZE 150M
             """,
         ]
         self._execute_statements(cursor, statements, parameters, verbosity)
@@ -184,7 +245,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         statements = [
             'DROP TABLESPACE %(tblspace)s INCLUDING CONTENTS AND DATAFILES CASCADE CONSTRAINTS',
             'DROP TABLESPACE %(tblspace_temp)s INCLUDING CONTENTS AND DATAFILES CASCADE CONSTRAINTS',
-            ]
+        ]
         self._execute_statements(cursor, statements, parameters, verbosity)
 
     def _destroy_test_user(self, cursor, parameters, verbosity):
@@ -207,56 +268,40 @@ class DatabaseCreation(BaseDatabaseCreation):
                 sys.stderr.write("Failed (%s)\n" % (err))
                 raise
 
+    def _test_settings_get(self, key, default=None, prefixed=None):
+        """
+        Return a value from the test settings dict,
+        or a given default,
+        or a prefixed entry from the main settings dict
+        """
+        settings_dict = self.connection.settings_dict
+        val = settings_dict['TEST'].get(key, default)
+        if val is None:
+            val = TEST_DATABASE_PREFIX + settings_dict[prefixed]
+        return val
+
     def _test_database_name(self):
-        name = TEST_DATABASE_PREFIX + self.connection.settings_dict['NAME']
-        try:
-            if self.connection.settings_dict['TEST_NAME']:
-                name = self.connection.settings_dict['TEST_NAME']
-        except AttributeError:
-            pass
-        return name
+        return self._test_settings_get('NAME', prefixed='NAME')
 
     def _test_database_create(self):
-        return self.connection.settings_dict.get('TEST_CREATE', True)
+        return self._test_settings_get('CREATE_DB', default=True)
 
     def _test_user_create(self):
-        return self.connection.settings_dict.get('TEST_USER_CREATE', True)
+        return self._test_settings_get('CREATE_USER', default=True)
 
     def _test_database_user(self):
-        name = TEST_DATABASE_PREFIX + self.connection.settings_dict['USER']
-        try:
-            if self.connection.settings_dict['TEST_USER']:
-                name = self.connection.settings_dict['TEST_USER']
-        except KeyError:
-            pass
-        return name
+        return self._test_settings_get('USER', prefixed='USER')
 
     def _test_database_passwd(self):
-        name = PASSWORD
-        try:
-            if self.connection.settings_dict['TEST_PASSWD']:
-                name = self.connection.settings_dict['TEST_PASSWD']
-        except KeyError:
-            pass
-        return name
+        return self._test_settings_get('PASSWORD', default=PASSWORD)
 
     def _test_database_tblspace(self):
-        name = TEST_DATABASE_PREFIX + self.connection.settings_dict['NAME']
-        try:
-            if self.connection.settings_dict['TEST_TBLSPACE']:
-                name = self.connection.settings_dict['TEST_TBLSPACE']
-        except KeyError:
-            pass
-        return name
+        return self._test_settings_get('TBLSPACE', prefixed='NAME')
 
     def _test_database_tblspace_tmp(self):
-        name = TEST_DATABASE_PREFIX + self.connection.settings_dict['NAME'] + '_temp'
-        try:
-            if self.connection.settings_dict['TEST_TBLSPACE_TMP']:
-                name = self.connection.settings_dict['TEST_TBLSPACE_TMP']
-        except KeyError:
-            pass
-        return name
+        settings_dict = self.connection.settings_dict
+        return settings_dict['TEST'].get('TBLSPACE_TMP',
+                                         TEST_DATABASE_PREFIX + settings_dict['NAME'] + '_temp')
 
     def _get_test_db_name(self):
         """

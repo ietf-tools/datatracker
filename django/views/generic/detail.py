@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.http import Http404
 from django.utils.translation import ugettext as _
@@ -50,26 +50,30 @@ class SingleObjectMixin(ContextMixin):
         try:
             # Get the single item from the filtered queryset
             obj = queryset.get()
-        except ObjectDoesNotExist:
+        except queryset.model.DoesNotExist:
             raise Http404(_("No %(verbose_name)s found matching the query") %
                           {'verbose_name': queryset.model._meta.verbose_name})
         return obj
 
     def get_queryset(self):
         """
-        Get the queryset to look an object up against. May not be called if
-        `get_object` is overridden.
+        Return the `QuerySet` that will be used to look up the object.
+
+        Note that this method is called by the default implementation of
+        `get_object` and may not be called if `get_object` is overridden.
         """
         if self.queryset is None:
             if self.model:
                 return self.model._default_manager.all()
             else:
-                raise ImproperlyConfigured("%(cls)s is missing a queryset. Define "
-                                           "%(cls)s.model, %(cls)s.queryset, or override "
-                                           "%(cls)s.get_queryset()." % {
-                                                'cls': self.__class__.__name__
-                                        })
-        return self.queryset._clone()
+                raise ImproperlyConfigured(
+                    "%(cls)s is missing a QuerySet. Define "
+                    "%(cls)s.model, %(cls)s.queryset, or override "
+                    "%(cls)s.get_queryset()." % {
+                        'cls': self.__class__.__name__
+                    }
+                )
+        return self.queryset.all()
 
     def get_slug_field(self):
         """
@@ -124,7 +128,7 @@ class SingleObjectTemplateResponseMixin(TemplateResponseMixin):
         * the value of ``template_name`` on the view (if provided)
         * the contents of the ``template_name_field`` field on the
           object instance that the view is operating upon (if available)
-        * ``<app_label>/<object_name><template_name_suffix>.html``
+        * ``<app_label>/<model_name><template_name_suffix>.html``
         """
         try:
             names = super(SingleObjectTemplateResponseMixin, self).get_template_names()

@@ -7,7 +7,7 @@ class MixinManager(object):
         try:
             return getattr(self.__class__, attr, *args)
         except AttributeError:
-            return getattr(self.get_query_set(), attr, *args)
+            return getattr(self.get_queryset(), attr, *args)
 
 
 class NomineePositionQuerySet(QuerySet):
@@ -42,7 +42,7 @@ class NomineePositionQuerySet(QuerySet):
 
 
 class NomineePositionManager(models.Manager, MixinManager):
-    def get_query_set(self):
+    def get_queryset(self):
         return NomineePositionQuerySet(self.model)
 
 
@@ -56,7 +56,7 @@ class NomineeManagerQuerySet(QuerySet):
 
 
 class NomineeManager(models.Manager, MixinManager):
-    def get_query_set(self):
+    def get_queryset(self):
         return NomineeManagerQuerySet(self.model)
 
 
@@ -75,7 +75,7 @@ class PositionQuerySet(QuerySet):
 
 
 class PositionManager(models.Manager, MixinManager):
-    def get_query_set(self):
+    def get_queryset(self):
         return PositionQuerySet(self.model)
 
 
@@ -98,5 +98,5 @@ class FeedbackQuerySet(QuerySet):
 
 
 class FeedbackManager(models.Manager, MixinManager):
-    def get_query_set(self):
+    def get_queryset(self):
         return FeedbackQuerySet(self.model)

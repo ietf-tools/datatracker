@@ -1,481 +1,200 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.db import models, migrations
 import datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
-
-class Migration(SchemaMigration):
-
-    def forwards(self, orm):
-        
-        # Adding model 'Group'
-        db.create_table('group_group', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('time', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=80)),
-            ('state', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.GroupStateName'], null=True)),
-            ('type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.GroupTypeName'], null=True)),
-            ('parent', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'], null=True, blank=True)),
-            ('ad', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Person'], null=True, blank=True)),
-            ('list_email', self.gf('django.db.models.fields.CharField')(max_length=64, blank=True)),
-            ('list_subscribe', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('list_archive', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('comments', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('acronym', self.gf('django.db.models.fields.SlugField')(unique=True, max_length=40, db_index=True)),
-            ('charter', self.gf('django.db.models.fields.related.OneToOneField')(blank=True, related_name='chartered_group', unique=True, null=True, to=orm['doc.Document'])),
-        ))
-        db.send_create_signal('group', ['Group'])
-
-        # Adding M2M table for field unused_states on 'Group'
-        db.create_table('group_group_unused_states', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('group', models.ForeignKey(orm['group.group'], null=False)),
-            ('state', models.ForeignKey(orm['doc.state'], null=False))
-        ))
-        db.create_unique('group_group_unused_states', ['group_id', 'state_id'])
-
-        # Adding M2M table for field unused_tags on 'Group'
-        db.create_table('group_group_unused_tags', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('group', models.ForeignKey(orm['group.group'], null=False)),
-            ('doctagname', models.ForeignKey(orm['name.doctagname'], null=False))
-        ))
-        db.create_unique('group_group_unused_tags', ['group_id', 'doctagname_id'])
-
-        # Adding model 'GroupHistory'
-        db.create_table('group_grouphistory', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('time', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=80)),
-            ('state', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.GroupStateName'], null=True)),
-            ('type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.GroupTypeName'], null=True)),
-            ('parent', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'], null=True, blank=True)),
-            ('ad', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Person'], null=True, blank=True)),
-            ('list_email', self.gf('django.db.models.fields.CharField')(max_length=64, blank=True)),
-            ('list_subscribe', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('list_archive', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('comments', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('group', self.gf('django.db.models.fields.related.ForeignKey')(related_name='history_set', to=orm['group.Group'])),
-            ('acronym', self.gf('django.db.models.fields.CharField')(max_length=40)),
-        ))
-        db.send_create_signal('group', ['GroupHistory'])
-
-        # Adding M2M table for field unused_states on 'GroupHistory'
-        db.create_table('group_grouphistory_unused_states', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('grouphistory', models.ForeignKey(orm['group.grouphistory'], null=False)),
-            ('state', models.ForeignKey(orm['doc.state'], null=False))
-        ))
-        db.create_unique('group_grouphistory_unused_states', ['grouphistory_id', 'state_id'])
-
-        # Adding M2M table for field unused_tags on 'GroupHistory'
-        db.create_table('group_grouphistory_unused_tags', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('grouphistory', models.ForeignKey(orm['group.grouphistory'], null=False)),
-            ('doctagname', models.ForeignKey(orm['name.doctagname'], null=False))
-        ))
-        db.create_unique('group_grouphistory_unused_tags', ['grouphistory_id', 'doctagname_id'])
-
-        # Adding model 'GroupURL'
-        db.create_table('group_groupurl', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'])),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('url', self.gf('django.db.models.fields.URLField')(max_length=200)),
-        ))
-        db.send_create_signal('group', ['GroupURL'])
-
-        # Adding model 'GroupMilestone'
-        db.create_table('group_groupmilestone', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'])),
-            ('desc', self.gf('django.db.models.fields.TextField')()),
-            ('expected_due_date', self.gf('django.db.models.fields.DateField')()),
-            ('done', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('done_date', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
-            ('time', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-        ))
-        db.send_create_signal('group', ['GroupMilestone'])
-
-        # Adding model 'GroupStateTransitions'
-        db.create_table('group_groupstatetransitions', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'])),
-            ('state', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['doc.State'])),
-        ))
-        db.send_create_signal('group', ['GroupStateTransitions'])
-
-        # Adding M2M table for field next_states on 'GroupStateTransitions'
-        db.create_table('group_groupstatetransitions_next_states', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('groupstatetransitions', models.ForeignKey(orm['group.groupstatetransitions'], null=False)),
-            ('state', models.ForeignKey(orm['doc.state'], null=False))
-        ))
-        db.create_unique('group_groupstatetransitions_next_states', ['groupstatetransitions_id', 'state_id'])
-
-        # Adding model 'GroupEvent'
-        db.create_table('group_groupevent', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'])),
-            ('time', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
-            ('type', self.gf('django.db.models.fields.CharField')(max_length=50)),
-            ('by', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Person'])),
-            ('desc', self.gf('django.db.models.fields.TextField')()),
-        ))
-        db.send_create_signal('group', ['GroupEvent'])
-
-        # Adding model 'ChangeStateGroupEvent'
-        db.create_table('group_changestategroupevent', (
-            ('groupevent_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['group.GroupEvent'], unique=True, primary_key=True)),
-            ('state', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.GroupStateName'])),
-        ))
-        db.send_create_signal('group', ['ChangeStateGroupEvent'])
-
-        # Adding model 'Role'
-        db.create_table('group_role', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.RoleName'])),
-            ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'])),
-            ('person', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Person'])),
-            ('email', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Email'])),
-        ))
-        db.send_create_signal('group', ['Role'])
-
-        # Adding model 'RoleHistory'
-        db.create_table('group_rolehistory', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.RoleName'])),
-            ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.GroupHistory'])),
-            ('person', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Person'])),
-            ('email', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Email'])),
-        ))
-        db.send_create_signal('group', ['RoleHistory'])
 
 
-    def backwards(self, orm):
-        
-        # Deleting model 'Group'
-        db.delete_table('group_group')
+class Migration(migrations.Migration):
 
-        # Removing M2M table for field unused_states on 'Group'
-        db.delete_table('group_group_unused_states')
+    dependencies = [
+        ('name', '0001_initial'),
+        ('person', '0001_initial'),
+        ('doc', '0001_initial'),
+    ]
 
-        # Removing M2M table for field unused_tags on 'Group'
-        db.delete_table('group_group_unused_tags')
-
-        # Deleting model 'GroupHistory'
-        db.delete_table('group_grouphistory')
-
-        # Removing M2M table for field unused_states on 'GroupHistory'
-        db.delete_table('group_grouphistory_unused_states')
-
-        # Removing M2M table for field unused_tags on 'GroupHistory'
-        db.delete_table('group_grouphistory_unused_tags')
-
-        # Deleting model 'GroupURL'
-        db.delete_table('group_groupurl')
-
-        # Deleting model 'GroupMilestone'
-        db.delete_table('group_groupmilestone')
-
-        # Deleting model 'GroupStateTransitions'
-        db.delete_table('group_groupstatetransitions')
-
-        # Removing M2M table for field next_states on 'GroupStateTransitions'
-        db.delete_table('group_groupstatetransitions_next_states')
-
-        # Deleting model 'GroupEvent'
-        db.delete_table('group_groupevent')
-
-        # Deleting model 'ChangeStateGroupEvent'
-        db.delete_table('group_changestategroupevent')
-
-        # Deleting model 'Role'
-        db.delete_table('group_role')
-
-        # Deleting model 'RoleHistory'
-        db.delete_table('group_rolehistory')
-
-
-    models = {
-        'auth.group': {
-            'Meta': {'object_name': 'Group'},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '80'}),
-            'permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'})
-        },
-        'auth.permission': {
-            'Meta': {'ordering': "('content_type__app_label', 'content_type__model', 'codename')", 'unique_together': "(('content_type', 'codename'),)", 'object_name': 'Permission'},
-            'codename': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['contenttypes.ContentType']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
-        },
-        'auth.user': {
-            'Meta': {'object_name': 'User'},
-            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
-            'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Group']", 'symmetrical': 'False', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_superuser': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
-            'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'}),
-            'username': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '64'})
-        },
-        'contenttypes.contenttype': {
-            'Meta': {'ordering': "('name',)", 'unique_together': "(('app_label', 'model'),)", 'object_name': 'ContentType', 'db_table': "'django_content_type'"},
-            'app_label': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
-        },
-        'doc.docalias': {
-            'Meta': {'object_name': 'DocAlias'},
-            'document': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['doc.Document']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'})
-        },
-        'doc.document': {
-            'Meta': {'object_name': 'Document'},
-            'abstract': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'ad': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'ad_document_set'", 'null': 'True', 'to': "orm['person.Person']"}),
-            'authors': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['person.Email']", 'symmetrical': 'False', 'through': "orm['doc.DocumentAuthor']", 'blank': 'True'}),
-            'expires': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'external_url': ('django.db.models.fields.URLField', [], {'max_length': '200', 'blank': 'True'}),
-            'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']", 'null': 'True', 'blank': 'True'}),
-            'intended_std_level': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.IntendedStdLevelName']", 'null': 'True', 'blank': 'True'}),
-            'internal_comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'primary_key': 'True'}),
-            'note': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'notify': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '1', 'blank': 'True'}),
-            'pages': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'related': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "'reversely_related_document_set'", 'blank': 'True', 'through': "orm['doc.RelatedDocument']", 'to': "orm['doc.DocAlias']"}),
-            'rev': ('django.db.models.fields.CharField', [], {'max_length': '16', 'blank': 'True'}),
-            'shepherd': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'shepherd_document_set'", 'null': 'True', 'to': "orm['person.Person']"}),
-            'states': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['doc.State']", 'symmetrical': 'False', 'blank': 'True'}),
-            'std_level': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.StdLevelName']", 'null': 'True', 'blank': 'True'}),
-            'stream': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.StreamName']", 'null': 'True', 'blank': 'True'}),
-            'tags': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['name.DocTagName']", 'null': 'True', 'blank': 'True'}),
-            'time': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'title': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.DocTypeName']", 'null': 'True', 'blank': 'True'})
-        },
-        'doc.documentauthor': {
-            'Meta': {'ordering': "['document', 'order']", 'object_name': 'DocumentAuthor'},
-            'author': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Email']"}),
-            'document': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['doc.Document']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '1'})
-        },
-        'doc.relateddocument': {
-            'Meta': {'object_name': 'RelatedDocument'},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.DocRelationshipName']"}),
-            'source': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['doc.Document']"}),
-            'target': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['doc.DocAlias']"})
-        },
-        'doc.state': {
-            'Meta': {'ordering': "['type', 'order']", 'object_name': 'State'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'next_states': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'previous_states'", 'symmetrical': 'False', 'to': "orm['doc.State']"}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['doc.StateType']"}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'doc.statetype': {
-            'Meta': {'object_name': 'StateType'},
-            'label': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '30', 'primary_key': 'True'})
-        },
-        'group.changestategroupevent': {
-            'Meta': {'ordering': "['-time', 'id']", 'object_name': 'ChangeStateGroupEvent', '_ormbases': ['group.GroupEvent']},
-            'groupevent_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['group.GroupEvent']", 'unique': 'True', 'primary_key': 'True'}),
-            'state': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.GroupStateName']"})
-        },
-        'group.group': {
-            'Meta': {'object_name': 'Group'},
-            'acronym': ('django.db.models.fields.SlugField', [], {'unique': 'True', 'max_length': '40', 'db_index': 'True'}),
-            'ad': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']", 'null': 'True', 'blank': 'True'}),
-            'charter': ('django.db.models.fields.related.OneToOneField', [], {'blank': 'True', 'related_name': "'chartered_group'", 'unique': 'True', 'null': 'True', 'to': "orm['doc.Document']"}),
-            'comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'list_archive': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'list_email': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
-            'list_subscribe': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '80'}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']", 'null': 'True', 'blank': 'True'}),
-            'state': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.GroupStateName']", 'null': 'True'}),
-            'time': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.GroupTypeName']", 'null': 'True'}),
-            'unused_states': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['doc.State']", 'symmetrical': 'False', 'blank': 'True'}),
-            'unused_tags': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['name.DocTagName']", 'symmetrical': 'False', 'blank': 'True'})
-        },
-        'group.groupevent': {
-            'Meta': {'ordering': "['-time', 'id']", 'object_name': 'GroupEvent'},
-            'by': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']"}),
-            'desc': ('django.db.models.fields.TextField', [], {}),
-            'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'time': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'type': ('django.db.models.fields.CharField', [], {'max_length': '50'})
-        },
-        'group.grouphistory': {
-            'Meta': {'object_name': 'GroupHistory'},
-            'acronym': ('django.db.models.fields.CharField', [], {'max_length': '40'}),
-            'ad': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']", 'null': 'True', 'blank': 'True'}),
-            'comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'group': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'history_set'", 'to': "orm['group.Group']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'list_archive': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'list_email': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
-            'list_subscribe': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '80'}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']", 'null': 'True', 'blank': 'True'}),
-            'state': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.GroupStateName']", 'null': 'True'}),
-            'time': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.GroupTypeName']", 'null': 'True'}),
-            'unused_states': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['doc.State']", 'symmetrical': 'False', 'blank': 'True'}),
-            'unused_tags': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['name.DocTagName']", 'symmetrical': 'False', 'blank': 'True'})
-        },
-        'group.groupmilestone': {
-            'Meta': {'ordering': "['expected_due_date']", 'object_name': 'GroupMilestone'},
-            'desc': ('django.db.models.fields.TextField', [], {}),
-            'done': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'done_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'expected_due_date': ('django.db.models.fields.DateField', [], {}),
-            'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'time': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'})
-        },
-        'group.groupstatetransitions': {
-            'Meta': {'object_name': 'GroupStateTransitions'},
-            'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'next_states': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'previous_groupstatetransitions_states'", 'symmetrical': 'False', 'to': "orm['doc.State']"}),
-            'state': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['doc.State']"})
-        },
-        'group.groupurl': {
-            'Meta': {'object_name': 'GroupURL'},
-            'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'url': ('django.db.models.fields.URLField', [], {'max_length': '200'})
-        },
-        'group.role': {
-            'Meta': {'object_name': 'Role'},
-            'email': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Email']"}),
-            'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.RoleName']"}),
-            'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']"})
-        },
-        'group.rolehistory': {
-            'Meta': {'object_name': 'RoleHistory'},
-            'email': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Email']"}),
-            'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.GroupHistory']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.RoleName']"}),
-            'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']"})
-        },
-        'name.docrelationshipname': {
-            'Meta': {'ordering': "['order']", 'object_name': 'DocRelationshipName'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'name.doctagname': {
-            'Meta': {'ordering': "['order']", 'object_name': 'DocTagName'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'name.doctypename': {
-            'Meta': {'ordering': "['order']", 'object_name': 'DocTypeName'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'name.groupstatename': {
-            'Meta': {'ordering': "['order']", 'object_name': 'GroupStateName'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'name.grouptypename': {
-            'Meta': {'ordering': "['order']", 'object_name': 'GroupTypeName'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'name.intendedstdlevelname': {
-            'Meta': {'ordering': "['order']", 'object_name': 'IntendedStdLevelName'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'name.rolename': {
-            'Meta': {'ordering': "['order']", 'object_name': 'RoleName'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'name.stdlevelname': {
-            'Meta': {'ordering': "['order']", 'object_name': 'StdLevelName'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'name.streamname': {
-            'Meta': {'ordering': "['order']", 'object_name': 'StreamName'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'person.email': {
-            'Meta': {'object_name': 'Email'},
-            'active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'address': ('django.db.models.fields.CharField', [], {'max_length': '64', 'primary_key': 'True'}),
-            'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']", 'null': 'True'}),
-            'time': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'})
-        },
-        'person.person': {
-            'Meta': {'object_name': 'Person'},
-            'address': ('django.db.models.fields.TextField', [], {'max_length': '255', 'blank': 'True'}),
-            'affiliation': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'ascii': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'ascii_short': ('django.db.models.fields.CharField', [], {'max_length': '32', 'null': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
-            'time': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'user': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.User']", 'unique': 'True', 'null': 'True', 'blank': 'True'})
-        }
-    }
-
-    complete_apps = ['group']
+    operations = [
+        migrations.CreateModel(
+            name='Group',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('time', models.DateTimeField(default=datetime.datetime.now)),
+                ('name', models.CharField(max_length=80)),
+                ('description', models.TextField(blank=True)),
+                ('list_email', models.CharField(max_length=64, blank=True)),
+                ('list_subscribe', models.CharField(max_length=255, blank=True)),
+                ('list_archive', models.CharField(max_length=255, blank=True)),
+                ('comments', models.TextField(blank=True)),
+                ('acronym', models.SlugField(unique=True, max_length=40)),
+                ('ad', models.ForeignKey(verbose_name=b'AD', blank=True, to='person.Person', null=True)),
+                ('charter', models.OneToOneField(related_name='chartered_group', null=True, blank=True, to='doc.Document')),
+                ('parent', models.ForeignKey(blank=True, to='group.Group', null=True)),
+                ('state', models.ForeignKey(to='name.GroupStateName', null=True)),
+                ('type', models.ForeignKey(to='name.GroupTypeName', null=True)),
+                ('unused_states', models.ManyToManyField(help_text=b'Document states that have been disabled for the group', to='doc.State', blank=True)),
+                ('unused_tags', models.ManyToManyField(help_text=b'Document tags that have been disabled for the group', to='name.DocTagName', blank=True)),
+            ],
+            options={
+                'abstract': False,
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='GroupEvent',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('time', models.DateTimeField(default=datetime.datetime.now, help_text=b'When the event happened')),
+                ('type', models.CharField(max_length=50, choices=[(b'changed_state', b'Changed state'), (b'added_comment', b'Added comment'), (b'info_changed', b'Changed metadata'), (b'requested_close', b'Requested closing group'), (b'changed_milestone', b'Changed milestone'), (b'sent_notification', b'Sent notification')])),
+                ('desc', models.TextField()),
+            ],
+            options={
+                'ordering': ['-time', 'id'],
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='ChangeStateGroupEvent',
+            fields=[
+                ('groupevent_ptr', models.OneToOneField(parent_link=True, auto_created=True, primary_key=True, serialize=False, to='group.GroupEvent')),
+                ('state', models.ForeignKey(to='name.GroupStateName')),
+            ],
+            options={
+            },
+            bases=('group.groupevent',),
+        ),
+        migrations.CreateModel(
+            name='GroupHistory',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('time', models.DateTimeField(default=datetime.datetime.now)),
+                ('name', models.CharField(max_length=80)),
+                ('description', models.TextField(blank=True)),
+                ('list_email', models.CharField(max_length=64, blank=True)),
+                ('list_subscribe', models.CharField(max_length=255, blank=True)),
+                ('list_archive', models.CharField(max_length=255, blank=True)),
+                ('comments', models.TextField(blank=True)),
+                ('acronym', models.CharField(max_length=40)),
+                ('ad', models.ForeignKey(verbose_name=b'AD', blank=True, to='person.Person', null=True)),
+                ('group', models.ForeignKey(related_name='history_set', to='group.Group')),
+                ('parent', models.ForeignKey(blank=True, to='group.Group', null=True)),
+                ('state', models.ForeignKey(to='name.GroupStateName', null=True)),
+                ('type', models.ForeignKey(to='name.GroupTypeName', null=True)),
+                ('unused_states', models.ManyToManyField(help_text=b'Document states that have been disabled for the group', to='doc.State', blank=True)),
+                ('unused_tags', models.ManyToManyField(help_text=b'Document tags that have been disabled for the group', to='name.DocTagName', blank=True)),
+            ],
+            options={
+                'verbose_name_plural': 'group histories',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='GroupMilestone',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('desc', models.CharField(max_length=500, verbose_name=b'Description')),
+                ('due', models.DateField()),
+                ('resolved', models.CharField(help_text=b'Explanation of why milestone is resolved (usually "Done"), or empty if still due', max_length=50, blank=True)),
+                ('time', models.DateTimeField(auto_now=True)),
+                ('docs', models.ManyToManyField(to='doc.Document', blank=True)),
+                ('group', models.ForeignKey(to='group.Group')),
+                ('state', models.ForeignKey(to='name.GroupMilestoneStateName')),
+            ],
+            options={
+                'ordering': ['due', 'id'],
+                'abstract': False,
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='GroupMilestoneHistory',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('desc', models.CharField(max_length=500, verbose_name=b'Description')),
+                ('due', models.DateField()),
+                ('resolved', models.CharField(help_text=b'Explanation of why milestone is resolved (usually "Done"), or empty if still due', max_length=50, blank=True)),
+                ('time', models.DateTimeField()),
+                ('docs', models.ManyToManyField(to='doc.Document', blank=True)),
+                ('group', models.ForeignKey(to='group.Group')),
+                ('milestone', models.ForeignKey(related_name='history_set', to='group.GroupMilestone')),
+                ('state', models.ForeignKey(to='name.GroupMilestoneStateName')),
+            ],
+            options={
+                'ordering': ['due', 'id'],
+                'abstract': False,
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='GroupStateTransitions',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('group', models.ForeignKey(to='group.Group')),
+                ('next_states', models.ManyToManyField(related_name='previous_groupstatetransitions_states', to='doc.State')),
+                ('state', models.ForeignKey(help_text=b'State for which the next states should be overridden', to='doc.State')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='GroupURL',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=255)),
+                ('url', models.URLField()),
+                ('group', models.ForeignKey(to='group.Group')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='MilestoneGroupEvent',
+            fields=[
+                ('groupevent_ptr', models.OneToOneField(parent_link=True, auto_created=True, primary_key=True, serialize=False, to='group.GroupEvent')),
+                ('milestone', models.ForeignKey(to='group.GroupMilestone')),
+            ],
+            options={
+            },
+            bases=('group.groupevent',),
+        ),
+        migrations.CreateModel(
+            name='Role',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('email', models.ForeignKey(help_text=b'Email address used by person for this role', to='person.Email')),
+                ('group', models.ForeignKey(to='group.Group')),
+                ('name', models.ForeignKey(to='name.RoleName')),
+                ('person', models.ForeignKey(to='person.Person')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='RoleHistory',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('email', models.ForeignKey(help_text=b'Email address used by person for this role', to='person.Email')),
+                ('group', models.ForeignKey(to='group.GroupHistory')),
+                ('name', models.ForeignKey(to='name.RoleName')),
+                ('person', models.ForeignKey(to='person.Person')),
+            ],
+            options={
+                'verbose_name_plural': 'role histories',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AddField(
+            model_name='groupevent',
+            name='by',
+            field=models.ForeignKey(to='person.Person'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='groupevent',
+            name='group',
+            field=models.ForeignKey(to='group.Group'),
+            preserve_default=True,
+        ),
+    ]

@@ -1,15 +1,15 @@
 # This file is distributed under the same license as the Django package.
 #
 # Translators:
-# André Hagenbruch <ahagenbruch@googlemail.com>, 2012
-# Jannis , 2013
-# Jannis Leidel <jannis@leidel.info>, 2011
+# André Hagenbruch, 2012
+# Jannis Vajen, 2013
+# Jannis Leidel <jannis@leidel.info>, 2011,2014
 msgid ""
 msgstr ""
-"Project-Id-Version: django-core\n"
+"Project-Id-Version: django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-16 15:07+0200\n"
-"PO-Revision-Date: 2013-10-23 08:25+0000\n"
+"POT-Creation-Date: 2014-05-19 15:12+0200\n"
+"PO-Revision-Date: 2014-05-21 07:49+0000\n"
 "Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
 "Language-Team: German (http://www.transifex.com/projects/p/django/language/"
 "de/)\n"
@@ -19,18 +19,22 @@ msgstr ""
 "Language: de\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: templates/formtools/wizard/wizard_form.html:15
+#: contrib/formtools/apps.py:8
+msgid "Form Tools"
+msgstr "Formular-Tools"
+
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:15
 msgid "first step"
 msgstr "Erster Schritt"
 
-#: templates/formtools/wizard/wizard_form.html:16
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:16
 msgid "prev step"
 msgstr "Vorheriger Schritt"
 
-#: templates/formtools/wizard/wizard_form.html:18
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:18
 msgid "submit"
 msgstr "Abschicken"
 
-#: wizard/views.py:275
+#: contrib/formtools/wizard/views.py:276
 msgid "ManagementForm data is missing or has been tampered."
 msgstr "ManagementForm-Daten fehlen oder wurden manipuliert."

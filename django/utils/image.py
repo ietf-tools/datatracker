@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 To provide a shim layer over Pillow/PIL situation until the PIL support is
-removed.
+removed. See #19934.
 
 
 Combinations To Account For
@@ -18,6 +18,8 @@ Combinations To Account For
     * CPython 2.x may *NOT* have _imaging (broken & needs a error message)
     * CPython 3.x doesn't work
     * PyPy will *NOT* have _imaging (but works?)
+    * On some platforms (Homebrew and RHEL6 reported) _imaging isn't available,
+      the needed import is from PIL import _imaging (refs #21355)
 
 Restated, that looks like:
 
@@ -62,7 +64,8 @@ Approach
 
         * The only option here is that we're on Python 2.x or PyPy, of which
           we only care about if we're on CPython.
-        * If we're on CPython, attempt to ``import _imaging``
+        * If we're on CPython, attempt to ``from PIL import _imaging`` and
+          ``import _imaging``
 
             * ``ImportError`` - Bad install, toss an exception
 
@@ -72,7 +75,7 @@ from __future__ import unicode_literals
 import warnings
 
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.translation import ugettext_lazy as _
+from django.utils.deprecation import RemovedInDjango18Warning
 
 
 Image = None
@@ -102,7 +105,7 @@ def _detect_image_library():
         except ImportError as err:
             # Neither worked, so it's likely not installed.
             raise ImproperlyConfigured(
-                _("Neither Pillow nor PIL could be imported: %s") % err
+                "Neither Pillow nor PIL could be imported: %s" % err
             )
 
     # ``Image.alpha_composite`` was added to Pillow in SHA: e414c6 & is not
@@ -121,17 +124,22 @@ def _detect_image_library():
             # produce a fully-working PIL & will create a ``_imaging`` module,
             # we'll attempt to import it to verify their kit works.
             try:
-                import _imaging as PIL_imaging
-            except ImportError as err:
-                raise ImproperlyConfigured(
-                    _("The '_imaging' module for the PIL could not be "
-                      "imported: %s") % err
-                )
+                from PIL import _imaging as PIL_imaging
+            except ImportError:
+                try:
+                    import _imaging as PIL_imaging
+                except ImportError as err:
+                    raise ImproperlyConfigured(
+                        "The '_imaging' module for the PIL could not be "
+                        "imported: %s" % err
+                    )
 
     # Try to import ImageFile as well.
     try:
         from PIL import ImageFile as PILImageFile
     except ImportError:
+        # This import cannot fail unless Pillow/PIL install is completely
+        # broken (e.g. missing Python modules).
         import ImageFile as PILImageFile
 
     # Finally, warn about deprecation...
@@ -139,7 +147,7 @@ def _detect_image_library():
         warnings.warn(
             "Support for the PIL will be removed in Django 1.8. Please " +
             "uninstall it & install Pillow instead.",
-            PendingDeprecationWarning
+            RemovedInDjango18Warning
         )
 
     return PILImage, PIL_imaging, PILImageFile

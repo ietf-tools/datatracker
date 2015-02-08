@@ -4,11 +4,11 @@
 # Fulup <fulup.jakez@gmail.com>, 2012
 msgid ""
 msgstr ""
-"Project-Id-Version: django-core\n"
+"Project-Id-Version: django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-05-02 16:18+0200\n"
-"PO-Revision-Date: 2013-04-29 08:23+0000\n"
-"Last-Translator: claudep <claude@2xlibre.net>\n"
+"POT-Creation-Date: 2014-05-19 15:12+0200\n"
+"PO-Revision-Date: 2014-05-20 09:43+0000\n"
+"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
 "Language-Team: Breton (http://www.transifex.com/projects/p/django/language/"
 "br/)\n"
 "MIME-Version: 1.0\n"
@@ -17,22 +17,26 @@ msgstr ""
 "Language: br\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: models.py:25
+#: contrib/sites/apps.py:8
+msgid "Sites"
+msgstr ""
+
+#: contrib/sites/models.py:30
 msgid "The domain name cannot contain any spaces or tabs."
 msgstr ""
 
-#: models.py:58
+#: contrib/sites/models.py:67
 msgid "domain name"
 msgstr "anv domani"
 
-#: models.py:60
+#: contrib/sites/models.py:69
 msgid "display name"
 msgstr "anv da ziskouez"
 
-#: models.py:65
+#: contrib/sites/models.py:74
 msgid "site"
 msgstr "lec'hienn"
 
-#: models.py:66
+#: contrib/sites/models.py:75
 msgid "sites"
 msgstr "lec'hiennoù"

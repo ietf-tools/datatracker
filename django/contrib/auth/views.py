@@ -2,21 +2,21 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, QueryDict
 from django.template.response import TemplateResponse
-from django.utils.http import base36_to_int, is_safe_url, urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.http import is_safe_url, urlsafe_base64_decode
 from django.utils.translation import ugettext as _
 from django.utils.six.moves.urllib.parse import urlparse, urlunparse
 from django.shortcuts import resolve_url
-from django.utils.encoding import force_bytes, force_text
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 
 # Avoid shadowing the login() and logout() views below.
-from django.contrib.auth import REDIRECT_FIELD_NAME, login as auth_login, logout as auth_logout, get_user_model
+from django.contrib.auth import (REDIRECT_FIELD_NAME, login as auth_login,
+    logout as auth_logout, get_user_model, update_session_auth_hash)
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, PasswordChangeForm
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.sites.models import get_current_site
+from django.contrib.sites.shortcuts import get_current_site
 
 
 @sensitive_post_parameters()
@@ -29,7 +29,8 @@ def login(request, template_name='registration/login.html',
     """
     Displays the login form and handles the login action.
     """
-    redirect_to = request.REQUEST.get(redirect_field_name, '')
+    redirect_to = request.POST.get(redirect_field_name,
+                                   request.GET.get(redirect_field_name, ''))
 
     if request.method == "POST":
         form = authentication_form(request, data=request.POST)
@@ -72,8 +73,10 @@ def logout(request, next_page=None,
     if next_page is not None:
         next_page = resolve_url(next_page)
 
-    if redirect_field_name in request.REQUEST:
-        next_page = request.REQUEST[redirect_field_name]
+    if (redirect_field_name in request.POST or
+            redirect_field_name in request.GET):
+        next_page = request.POST.get(redirect_field_name,
+                                     request.GET.get(redirect_field_name))
         # Security check -- don't allow redirection to a different host.
         if not is_safe_url(url=next_page, host=request.get_host()):
             next_page = request.path
@@ -96,7 +99,7 @@ def logout(request, next_page=None,
 
 def logout_then_login(request, login_url=None, current_app=None, extra_context=None):
     """
-    Logs out the user if he is logged in. Then redirects to the log-in page.
+    Logs out the user if they are logged in. Then redirects to the log-in page.
     """
     if not login_url:
         login_url = settings.LOGIN_URL
@@ -137,7 +140,8 @@ def password_reset(request, is_admin_site=False,
                    post_reset_redirect=None,
                    from_email=None,
                    current_app=None,
-                   extra_context=None):
+                   extra_context=None,
+                   html_email_template_name=None):
     if post_reset_redirect is None:
         post_reset_redirect = reverse('password_reset_done')
     else:
@@ -152,6 +156,7 @@ def password_reset(request, is_admin_site=False,
                 'email_template_name': email_template_name,
                 'subject_template_name': subject_template_name,
                 'request': request,
+                'html_email_template_name': html_email_template_name,
             }
             if is_admin_site:
                 opts = dict(opts, domain_override=request.get_host())
@@ -161,6 +166,7 @@ def password_reset(request, is_admin_site=False,
         form = password_reset_form()
     context = {
         'form': form,
+        'title': _('Password reset'),
     }
     if extra_context is not None:
         context.update(extra_context)
@@ -171,7 +177,9 @@ def password_reset(request, is_admin_site=False,
 def password_reset_done(request,
                         template_name='registration/password_reset_done.html',
                         current_app=None, extra_context=None):
-    context = {}
+    context = {
+        'title': _('Password reset successful'),
+    }
     if extra_context is not None:
         context.update(extra_context)
     return TemplateResponse(request, template_name, context,
@@ -205,18 +213,21 @@ def password_reset_confirm(request, uidb64=None, token=None,
 
     if user is not None and token_generator.check_token(user, token):
         validlink = True
+        title = _('Enter new password')
         if request.method == 'POST':
             form = set_password_form(user, request.POST)
             if form.is_valid():
                 form.save()
                 return HttpResponseRedirect(post_reset_redirect)
         else:
-            form = set_password_form(None)
+            form = set_password_form(user)
     else:
         validlink = False
         form = None
+        title = _('Password reset unsuccessful')
     context = {
         'form': form,
+        'title': title,
         'validlink': validlink,
     }
     if extra_context is not None:
@@ -224,20 +235,13 @@ def password_reset_confirm(request, uidb64=None, token=None,
     return TemplateResponse(request, template_name, context,
                             current_app=current_app)
 
-def password_reset_confirm_uidb36(request, uidb36=None, **kwargs):
-    # Support old password reset URLs that used base36 encoded user IDs.
-    # Remove in Django 1.7
-    try:
-      uidb64 = force_text(urlsafe_base64_encode(force_bytes(base36_to_int(uidb36))))
-    except ValueError:
-      uidb64 = '1' # dummy invalid ID (incorrect padding for base64)
-    return password_reset_confirm(request, uidb64=uidb64, **kwargs)
 
 def password_reset_complete(request,
                             template_name='registration/password_reset_complete.html',
                             current_app=None, extra_context=None):
     context = {
-        'login_url': resolve_url(settings.LOGIN_URL)
+        'login_url': resolve_url(settings.LOGIN_URL),
+        'title': _('Password reset complete'),
     }
     if extra_context is not None:
         context.update(extra_context)
@@ -261,11 +265,17 @@ def password_change(request,
         form = password_change_form(user=request.user, data=request.POST)
         if form.is_valid():
             form.save()
+            # Updating the password logs out all other sessions for the user
+            # except the current one if
+            # django.contrib.auth.middleware.SessionAuthenticationMiddleware
+            # is enabled.
+            update_session_auth_hash(request, form.user)
             return HttpResponseRedirect(post_change_redirect)
     else:
         form = password_change_form(user=request.user)
     context = {
         'form': form,
+        'title': _('Password change'),
     }
     if extra_context is not None:
         context.update(extra_context)
@@ -277,7 +287,9 @@ def password_change(request,
 def password_change_done(request,
                          template_name='registration/password_change_done.html',
                          current_app=None, extra_context=None):
-    context = {}
+    context = {
+        'title': _('Password change successful'),
+    }
     if extra_context is not None:
         context.update(extra_context)
     return TemplateResponse(request, template_name, context,

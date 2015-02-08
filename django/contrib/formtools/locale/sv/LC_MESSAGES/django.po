@@ -3,14 +3,14 @@
 # Translators:
 # Andreas Pelme <andreas@pelme.se>, 2012
 # Jannis Leidel <jannis@leidel.info>, 2011
-# biljettshop <thomas@biljettshop.se>, 2013
+# Thomas Lundqvist <thomas@biljettshop.se>, 2013
 msgid ""
 msgstr ""
-"Project-Id-Version: django-core\n"
+"Project-Id-Version: django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-16 15:07+0200\n"
-"PO-Revision-Date: 2013-10-28 10:07+0000\n"
-"Last-Translator: biljettshop <thomas@biljettshop.se>\n"
+"POT-Creation-Date: 2014-05-19 15:12+0200\n"
+"PO-Revision-Date: 2014-05-20 09:43+0000\n"
+"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
 "Language-Team: Swedish (http://www.transifex.com/projects/p/django/language/"
 "sv/)\n"
 "MIME-Version: 1.0\n"
@@ -19,18 +19,22 @@ msgstr ""
 "Language: sv\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: templates/formtools/wizard/wizard_form.html:15
+#: contrib/formtools/apps.py:8
+msgid "Form Tools"
+msgstr ""
+
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:15
 msgid "first step"
 msgstr "första steget"
 
-#: templates/formtools/wizard/wizard_form.html:16
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:16
 msgid "prev step"
 msgstr "föregående steg"
 
-#: templates/formtools/wizard/wizard_form.html:18
+#: contrib/formtools/templates/formtools/wizard/wizard_form.html:18
 msgid "submit"
 msgstr "spara"
 
-#: wizard/views.py:275
+#: contrib/formtools/wizard/views.py:276
 msgid "ManagementForm data is missing or has been tampered."
-msgstr "ManagementForm data saknas eller har manipulerats"
+msgstr ""

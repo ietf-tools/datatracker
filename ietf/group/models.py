@@ -77,7 +77,7 @@ class GroupInfo(models.Model):
 
 class GroupManager(models.Manager):
     def active_wgs(self):
-        return self.get_query_set().filter(type='wg', state__in=('bof','proposed','active'))
+        return self.get_queryset().filter(type='wg', state__in=('bof','proposed','active'))
 
 class Group(GroupInfo):
     objects = GroupManager()

@@ -1,5 +1,6 @@
-{% extends "base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% extends "base.html" %}
+{% load future %}
 
 {% block title %} {{type.label|cut:"state"|cut:"State"}} Statess{% endblock %}
 
@@ -16,7 +17,7 @@
 </tr>
                                                                                                                
 {% for state in states %}   
-<tr class="{% cycle oddrow,evenrow as cycle1 %}">
+<tr class="{% cycle 'oddrow','evenrow' as cycle1 %}">
           <td>{{ state.name }}</td>
           <td>{{ state.desc|safe }}</td>
           <td><ul>{% for s in state.next_states.all %}<li>{{ s.name }}</li>{%endfor%}</ul></td>

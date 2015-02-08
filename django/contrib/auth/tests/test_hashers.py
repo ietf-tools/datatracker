@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from unittest import skipUnless
+
 from django.conf.global_settings import PASSWORD_HASHERS as default_hashers
 from django.contrib.auth.hashers import (is_password_usable, BasePasswordHasher,
     check_password, make_password, PBKDF2PasswordHasher, load_hashers, PBKDF2SHA1PasswordHasher,
     get_hasher, identify_hasher, UNUSABLE_PASSWORD_PREFIX, UNUSABLE_PASSWORD_SUFFIX_LENGTH)
+from django.test import SimpleTestCase
 from django.utils import six
-from django.utils import unittest
-from django.utils.unittest import skipUnless
 
 
 try:
@@ -21,7 +22,11 @@ except ImportError:
     bcrypt = None
 
 
-class TestUtilsHashPass(unittest.TestCase):
+class PBKDF2SingleIterationHasher(PBKDF2PasswordHasher):
+    iterations = 1
+
+
+class TestUtilsHashPass(SimpleTestCase):
 
     def setUp(self):
         load_hashers(password_hashers=default_hashers)
@@ -42,7 +47,7 @@ class TestUtilsHashPass(unittest.TestCase):
     def test_pkbdf2(self):
         encoded = make_password('lètmein', 'seasalt', 'pbkdf2_sha256')
         self.assertEqual(encoded,
-            'pbkdf2_sha256$12000$seasalt$Ybw8zsFxqja97tY/o6G+Fy1ksY4U/Hw3DRrGED6Up4s=')
+            'pbkdf2_sha256$15000$seasalt$+qoFTwR4r71UCLMhmQUCou/LMu17XwQWfYIVd/xJ1RI=')
         self.assertTrue(is_password_usable(encoded))
         self.assertTrue(check_password('lètmein', encoded))
         self.assertFalse(check_password('lètmeinz', encoded))
@@ -206,14 +211,14 @@ class TestUtilsHashPass(unittest.TestCase):
         hasher = PBKDF2PasswordHasher()
         encoded = hasher.encode('lètmein', 'seasalt2')
         self.assertEqual(encoded,
-            'pbkdf2_sha256$12000$seasalt2$hlDLKsxgkgb1aeOppkM5atCYw5rPzAjCNQZ4NYyUROw=')
+            'pbkdf2_sha256$15000$seasalt2$uSQqI+91wgObKdP6L6S75LLzyxrZRWNcaujEZPA3/nA=')
         self.assertTrue(hasher.verify('lètmein', encoded))
 
     def test_low_level_pbkdf2_sha1(self):
         hasher = PBKDF2SHA1PasswordHasher()
         encoded = hasher.encode('lètmein', 'seasalt2')
         self.assertEqual(encoded,
-            'pbkdf2_sha1$12000$seasalt2$JeMRVfjjgtWw3/HzlnlfqBnQ6CA=')
+            'pbkdf2_sha1$15000$seasalt2$iYDXAPKgMsKMsarvA1MErD518Ug=')
         self.assertTrue(hasher.verify('lètmein', encoded))
 
     def test_upgrade(self):
@@ -221,6 +226,7 @@ class TestUtilsHashPass(unittest.TestCase):
         for algo in ('sha1', 'md5'):
             encoded = make_password('lètmein', hasher=algo)
             state = {'upgraded': False}
+
             def setter(password):
                 state['upgraded'] = True
             self.assertTrue(check_password('lètmein', encoded, setter))
@@ -229,6 +235,7 @@ class TestUtilsHashPass(unittest.TestCase):
     def test_no_upgrade(self):
         encoded = make_password('lètmein')
         state = {'upgraded': False}
+
         def setter():
             state['upgraded'] = True
         self.assertFalse(check_password('WRONG', encoded, setter))
@@ -239,6 +246,7 @@ class TestUtilsHashPass(unittest.TestCase):
         for algo in ('sha1', 'md5'):
             encoded = make_password('lètmein', hasher=algo)
             state = {'upgraded': False}
+
             def setter():
                 state['upgraded'] = True
             self.assertFalse(check_password('WRONG', encoded, setter))
@@ -258,6 +266,7 @@ class TestUtilsHashPass(unittest.TestCase):
             self.assertEqual(iterations, '1')
 
             state = {'upgraded': False}
+
             def setter(password):
                 state['upgraded'] = True
 
@@ -274,6 +283,33 @@ class TestUtilsHashPass(unittest.TestCase):
         finally:
             hasher.iterations = old_iterations
 
+    def test_pbkdf2_upgrade_new_hasher(self):
+        self.assertEqual('pbkdf2_sha256', get_hasher('default').algorithm)
+        hasher = get_hasher('default')
+        self.assertNotEqual(hasher.iterations, 1)
+
+        state = {'upgraded': False}
+
+        def setter(password):
+            state['upgraded'] = True
+
+        with self.settings(PASSWORD_HASHERS=[
+                'django.contrib.auth.tests.test_hashers.PBKDF2SingleIterationHasher']):
+            encoded = make_password('letmein')
+            algo, iterations, salt, hash = encoded.split('$', 3)
+            self.assertEqual(iterations, '1')
+
+            # Check that no upgrade is triggerd
+            self.assertTrue(check_password('letmein', encoded, setter))
+            self.assertFalse(state['upgraded'])
+
+        # Revert to the old iteration count and check if the password would get
+        # updated to the new iteration count.
+        with self.settings(PASSWORD_HASHERS=[
+                'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+                'django.contrib.auth.tests.test_hashers.PBKDF2SingleIterationHasher']):
+            self.assertTrue(check_password('letmein', encoded, setter))
+            self.assertTrue(state['upgraded'])
 
     def test_load_library_no_algorithm(self):
         with self.assertRaises(ValueError) as e:
