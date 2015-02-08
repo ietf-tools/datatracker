@@ -408,10 +408,11 @@ def new_enough(x,request):
 
 @register.filter(name='expires_soon')
 def expires_soon(x,request):
+    days = 14
     if "expires_soon" in request.COOKIES:
-        days = int(request.COOKIES["expires_soon"])
-    else:
-        days = 14
+        value = request.COOKIES["expires_soon"]
+        if value.isdigit():
+            days = int(value)
     return x > -days
 
 @register.filter(name='startswith')
