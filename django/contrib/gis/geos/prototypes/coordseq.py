@@ -3,14 +3,12 @@ from django.contrib.gis.geos.libgeos import GEOM_PTR, CS_PTR
 from django.contrib.gis.geos.prototypes.errcheck import last_arg_byref, GEOSException
 from django.contrib.gis.geos.prototypes.threadsafe import GEOSFunc
 
-
 ## Error-checking routines specific to coordinate sequences. ##
 def check_cs_ptr(result, func, cargs):
     "Error checking on routines that return Geometries."
     if not result:
         raise GEOSException('Error encountered checking Coordinate Sequence returned from GEOS C function "%s".' % func.__name__)
     return result
-
 
 def check_cs_op(result, func, cargs):
     "Checks the status code of a coordinate sequence operation."
@@ -19,13 +17,11 @@ def check_cs_op(result, func, cargs):
     else:
         return result
 
-
 def check_cs_get(result, func, cargs):
     "Checking the coordinate sequence retrieval."
     check_cs_op(result, func, cargs)
     # Object in by reference, return its value.
     return last_arg_byref(cargs)
-
 
 ## Coordinate sequence prototype generation functions. ##
 def cs_int(func):
@@ -34,7 +30,6 @@ def cs_int(func):
     func.restype = c_int
     func.errcheck = check_cs_get
     return func
-
 
 def cs_operation(func, ordinate=False, get=False):
     "For coordinate sequence operations."
@@ -54,7 +49,6 @@ def cs_operation(func, ordinate=False, get=False):
 
     func.restype = c_int
     return func
-
 
 def cs_output(func, argtypes):
     "For routines that return a coordinate sequence."

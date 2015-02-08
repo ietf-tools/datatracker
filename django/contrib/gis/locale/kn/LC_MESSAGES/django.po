@@ -3,10 +3,10 @@
 # Translators:
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: Django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2013-04-24 18:45+0000\n"
+"POT-Creation-Date: 2012-10-15 10:56+0200\n"
+"PO-Revision-Date: 2011-01-19 16:52+0000\n"
 "Last-Translator: Django team\n"
 "Language-Team: Kannada (http://www.transifex.com/projects/p/django/language/"
 "kn/)\n"
@@ -16,80 +16,76 @@ msgstr ""
 "Language: kn\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: contrib/gis/apps.py:8
-msgid "GIS"
+#: views.py:9
+msgid "No feeds are registered."
 msgstr ""
 
-#: contrib/gis/db/models/fields.py:56
+#: views.py:19
+#, python-format
+msgid "Slug %r isn't registered."
+msgstr ""
+
+#: db/models/fields.py:51
 msgid "The base GIS field -- maps to the OpenGIS Specification Geometry type."
 msgstr ""
 
-#: contrib/gis/db/models/fields.py:298
+#: db/models/fields.py:271
 msgid "Point"
 msgstr ""
 
-#: contrib/gis/db/models/fields.py:304
+#: db/models/fields.py:275
 msgid "Line string"
 msgstr ""
 
-#: contrib/gis/db/models/fields.py:310
+#: db/models/fields.py:279
 msgid "Polygon"
 msgstr ""
 
-#: contrib/gis/db/models/fields.py:316
+#: db/models/fields.py:283
 msgid "Multi-point"
 msgstr ""
 
-#: contrib/gis/db/models/fields.py:322
+#: db/models/fields.py:287
 msgid "Multi-line string"
 msgstr ""
 
-#: contrib/gis/db/models/fields.py:328
+#: db/models/fields.py:291
 msgid "Multi polygon"
 msgstr ""
 
-#: contrib/gis/db/models/fields.py:334
+#: db/models/fields.py:295
 msgid "Geometry collection"
 msgstr ""
 
-#: contrib/gis/forms/fields.py:22
+#: forms/fields.py:19
 msgid "No geometry value provided."
 msgstr ""
 
-#: contrib/gis/forms/fields.py:23
+#: forms/fields.py:20
 msgid "Invalid geometry value."
 msgstr ""
 
-#: contrib/gis/forms/fields.py:24
+#: forms/fields.py:21
 msgid "Invalid geometry type."
 msgstr ""
 
-#: contrib/gis/forms/fields.py:25
+#: forms/fields.py:22
 msgid ""
 "An error occurred when transforming the geometry to the SRID of the geometry "
 "form field."
 msgstr ""
 
-#: contrib/gis/sitemaps/views.py:56
+#: sitemaps/views.py:46
 #, python-format
 msgid "No sitemap available for section: %r"
 msgstr ""
 
-#: contrib/gis/sitemaps/views.py:70
+#: sitemaps/views.py:60
 #, python-format
 msgid "Page %s empty"
 msgstr ""
 
-#: contrib/gis/sitemaps/views.py:72
+#: sitemaps/views.py:62
 #, python-format
 msgid "No page '%s'"
-msgstr ""
-
-#: contrib/gis/views.py:10
-msgid "No feeds are registered."
-msgstr ""
-
-#: contrib/gis/views.py:16
-#, python-format
-msgid "Slug %r isn't registered."
 msgstr ""

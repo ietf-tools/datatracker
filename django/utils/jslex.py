@@ -2,7 +2,6 @@
 # Originally from https://bitbucket.org/ned/jslex
 import re
 
-
 class Tok(object):
     """
     A specification for a token class.
@@ -16,7 +15,6 @@ class Tok(object):
         self.regex = regex
         self.next = next
 
-
 def literals(choices, prefix="", suffix=""):
     """
     Create a regex from a space-separated list of literal `choices`.
@@ -25,7 +23,7 @@ def literals(choices, prefix="", suffix=""):
     individually.
 
     """
-    return "|".join(prefix + re.escape(c) + suffix for c in choices.split())
+    return "|".join(prefix+re.escape(c)+suffix for c in choices.split())
 
 
 class Lexer(object):
@@ -43,7 +41,7 @@ class Lexer(object):
                 groupid = "t%d" % tok.id
                 self.toks[groupid] = tok
                 parts.append("(?P<%s>%s)" % (groupid, tok.regex))
-            self.regexes[state] = re.compile("|".join(parts), re.MULTILINE | re.VERBOSE)
+            self.regexes[state] = re.compile("|".join(parts), re.MULTILINE|re.VERBOSE)
 
         self.state = first
 
@@ -82,7 +80,7 @@ class JsLexer(Lexer):
     >>> list(lexer.lex("a = 1"))
     [('id', 'a'), ('ws', ' '), ('punct', '='), ('ws', ' '), ('dnum', '1')]
 
-    This doesn't properly handle non-ASCII characters in the Javascript source.
+    This doesn't properly handle non-Ascii characters in the Javascript source.
     """
 
     # Because these tokens are matched as alternatives in a regex, longer
@@ -99,59 +97,59 @@ class JsLexer(Lexer):
     # http://inimino.org/~inimino/blog/javascript_semicolons
 
     both_before = [
-        Tok("comment", r"/\*(.|\n)*?\*/"),
-        Tok("linecomment", r"//.*?$"),
-        Tok("ws", r"\s+"),
-        Tok("keyword", literals("""
-                           break case catch class const continue debugger
-                           default delete do else enum export extends
-                           finally for function if import in instanceof
-                           new return super switch this throw try typeof
-                           var void while with
-                           """, suffix=r"\b"), next='reg'),
-        Tok("reserved", literals("null true false", suffix=r"\b"), next='div'),
-        Tok("id", r"""
-                  ([a-zA-Z_$   ]|\\u[0-9a-fA-Z]{4})   # first char
-                  ([a-zA-Z_$0-9]|\\u[0-9a-fA-F]{4})*  # rest chars
-                  """, next='div'),
-        Tok("hnum", r"0[xX][0-9a-fA-F]+", next='div'),
-        Tok("onum", r"0[0-7]+"),
-        Tok("dnum", r"""
-                    (   (0|[1-9][0-9]*)     # DecimalIntegerLiteral
-                        \.                  # dot
-                        [0-9]*              # DecimalDigits-opt
-                        ([eE][-+]?[0-9]+)?  # ExponentPart-opt
-                    |
-                        \.                  # dot
-                        [0-9]+              # DecimalDigits
-                        ([eE][-+]?[0-9]+)?  # ExponentPart-opt
-                    |
-                        (0|[1-9][0-9]*)     # DecimalIntegerLiteral
-                        ([eE][-+]?[0-9]+)?  # ExponentPart-opt
-                    )
-                    """, next='div'),
-        Tok("punct", literals("""
-                         >>>= === !== >>> <<= >>= <= >= == != << >> &&
-                         || += -= *= %= &= |= ^=
-                         """), next="reg"),
-        Tok("punct", literals("++ -- ) ]"), next='div'),
-        Tok("punct", literals("{ } ( [ . ; , < > + - * % & | ^ ! ~ ? : ="), next='reg'),
-        Tok("string", r'"([^"\\]|(\\(.|\n)))*?"', next='div'),
-        Tok("string", r"'([^'\\]|(\\(.|\n)))*?'", next='div'),
-    ]
+        Tok("comment",      r"/\*(.|\n)*?\*/"),
+        Tok("linecomment",  r"//.*?$"),
+        Tok("ws",           r"\s+"),
+        Tok("keyword",      literals("""
+                                break case catch class const continue debugger
+                                default delete do else enum export extends
+                                finally for function if import in instanceof
+                                new return super switch this throw try typeof
+                                var void while with
+                                """, suffix=r"\b"), next='reg'),
+        Tok("reserved",     literals("null true false", suffix=r"\b"), next='div'),
+        Tok("id",           r"""
+                            ([a-zA-Z_$   ]|\\u[0-9a-fA-Z]{4})   # first char
+                            ([a-zA-Z_$0-9]|\\u[0-9a-fA-F]{4})*  # rest chars
+                            """, next='div'),
+        Tok("hnum",         r"0[xX][0-9a-fA-F]+", next='div'),
+        Tok("onum",         r"0[0-7]+"),
+        Tok("dnum",         r"""
+                            (   (0|[1-9][0-9]*)     # DecimalIntegerLiteral
+                                \.                  # dot
+                                [0-9]*              # DecimalDigits-opt
+                                ([eE][-+]?[0-9]+)?  # ExponentPart-opt
+                            |
+                                \.                  # dot
+                                [0-9]+              # DecimalDigits
+                                ([eE][-+]?[0-9]+)?  # ExponentPart-opt
+                            |
+                                (0|[1-9][0-9]*)     # DecimalIntegerLiteral
+                                ([eE][-+]?[0-9]+)?  # ExponentPart-opt
+                            )
+                            """, next='div'),
+        Tok("punct",        literals("""
+                                >>>= === !== >>> <<= >>= <= >= == != << >> &&
+                                || += -= *= %= &= |= ^=
+                                """), next="reg"),
+        Tok("punct",        literals("++ -- ) ]"), next='div'),
+        Tok("punct",        literals("{ } ( [ . ; , < > + - * % & | ^ ! ~ ? : ="), next='reg'),
+        Tok("string",       r'"([^"\\]|(\\(.|\n)))*?"', next='div'),
+        Tok("string",       r"'([^'\\]|(\\(.|\n)))*?'", next='div'),
+        ]
 
     both_after = [
-        Tok("other", r"."),
+        Tok("other",        r"."),
     ]
 
     states = {
-        # slash will mean division
-        'div': both_before + [
+        'div': # slash will mean division
+            both_before + [
             Tok("punct", literals("/= /"), next='reg'),
-        ] + both_after,
+            ] + both_after,
 
-        # slash will mean regex
-        'reg': both_before + [
+        'reg':  # slash will mean regex
+            both_before + [
             Tok("regex",
                 r"""
                     /                       # opening slash
@@ -176,8 +174,8 @@ class JsLexer(Lexer):
                     /                       # closing slash
                     [a-zA-Z0-9]*            # trailing flags
                 """, next='div'),
-        ] + both_after,
-    }
+            ] + both_after,
+        }
 
     def __init__(self):
         super(JsLexer, self).__init__(self.states, 'reg')
@@ -205,7 +203,7 @@ def prepare_js_for_gettext(js):
         if name == 'regex':
             # C doesn't grok regexes, and they aren't needed for gettext,
             # so just output a string instead.
-            tok = '"REGEX"'
+            tok = '"REGEX"';
         elif name == 'string':
             # C doesn't have single-quoted strings, so make all strings
             # double-quoted.
@@ -216,6 +214,6 @@ def prepare_js_for_gettext(js):
             # C can't deal with Unicode escapes in identifiers.  We don't
             # need them for gettext anyway, so replace them with something
             # innocuous
-            tok = tok.replace("\\", "U")
+            tok = tok.replace("\\", "U");
         c.append(tok)
     return ''.join(c)

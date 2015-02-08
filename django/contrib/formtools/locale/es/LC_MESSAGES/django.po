@@ -2,15 +2,14 @@
 #
 # Translators:
 # Antoni Aloy <aaloy@apsl.net>, 2012-2013
-# Ernesto Avilés Vzqz <whippiii@gmail.com>, 2014
 # Jannis Leidel <jannis@leidel.info>, 2011
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-07-22 03:05+0000\n"
-"Last-Translator: Ernesto Avilés Vzqz <whippiii@gmail.com>\n"
+"POT-Creation-Date: 2013-08-16 15:07+0200\n"
+"PO-Revision-Date: 2013-09-04 20:33+0000\n"
+"Last-Translator: Antoni Aloy <aaloy@apsl.net>\n"
 "Language-Team: Spanish (http://www.transifex.com/projects/p/django/language/"
 "es/)\n"
 "MIME-Version: 1.0\n"
@@ -19,22 +18,18 @@ msgstr ""
 "Language: es\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: contrib/formtools/apps.py:8
-msgid "Form Tools"
-msgstr "Herramientas de formulario"
-
-#: contrib/formtools/templates/formtools/wizard/wizard_form.html:15
+#: templates/formtools/wizard/wizard_form.html:15
 msgid "first step"
 msgstr "primer paso"
 
-#: contrib/formtools/templates/formtools/wizard/wizard_form.html:16
+#: templates/formtools/wizard/wizard_form.html:16
 msgid "prev step"
 msgstr "paso anterior"
 
-#: contrib/formtools/templates/formtools/wizard/wizard_form.html:18
+#: templates/formtools/wizard/wizard_form.html:18
 msgid "submit"
 msgstr "enviar"
 
-#: contrib/formtools/wizard/views.py:276
+#: wizard/views.py:275
 msgid "ManagementForm data is missing or has been tampered."
-msgstr "Los datos del ManagementForm faltan o han sido estropeados."
+msgstr "Los datos de ManagementForm no están o han sido manipulados"

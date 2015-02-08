@@ -1,8 +1,12 @@
+try:
+    from urllib.parse import parse_qsl, urlparse, urlunparse
+except ImportError:
+    from urlparse import parse_qsl, urlparse, urlunparse
+
 from django import template
-from django.contrib.admin.utils import quote
-from django.core.urlresolvers import Resolver404, get_script_prefix, resolve
+from django.contrib.admin.util import quote
+from django.core.urlresolvers import resolve, Resolver404
 from django.utils.http import urlencode
-from django.utils.six.moves.urllib.parse import parse_qsl, urlparse, urlunparse
 
 register = template.Library()
 
@@ -18,7 +22,7 @@ def admin_urlquote(value):
 
 
 @register.simple_tag(takes_context=True)
-def add_preserved_filters(context, url, popup=False, to_field=None):
+def add_preserved_filters(context, url, popup=False):
     opts = context.get('opts')
     preserved_filters = context.get('preserved_filters')
 
@@ -29,9 +33,8 @@ def add_preserved_filters(context, url, popup=False, to_field=None):
     if opts and preserved_filters:
         preserved_filters = dict(parse_qsl(preserved_filters))
 
-        match_url = '/%s' % url.partition(get_script_prefix())[2]
         try:
-            match = resolve(match_url)
+            match = resolve(url)
         except Resolver404:
             pass
         else:
@@ -45,9 +48,6 @@ def add_preserved_filters(context, url, popup=False, to_field=None):
     if popup:
         from django.contrib.admin.options import IS_POPUP_VAR
         merged_qs[IS_POPUP_VAR] = 1
-    if to_field:
-        from django.contrib.admin.options import TO_FIELD_VAR
-        merged_qs[TO_FIELD_VAR] = to_field
 
     merged_qs.update(parsed_qs)
 

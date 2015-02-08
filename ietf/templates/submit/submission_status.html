@@ -1,7 +1,6 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "submit/submit_base.html" %}
+
 {% load ietf_filters submit_tags %}
-{% load future %}
 
 {% block title %}Status of submission of {{ submission.name }}-{{ submission.rev }}{% endblock %}
 
@@ -267,7 +266,7 @@
   <tr><th>Date</th><th>By</th><th>Text</th></tr>
 
   {% for e in submission.submissionevent_set.all %}
-  <tr class="{% cycle 'oddrow','evenrow' %}">
+  <tr class="{% cycle oddrow,evenrow %}">
     <td>{{ e.time|date:"Y-m-d" }}</td>
     <td>{{ e.by|default:"" }}</td>
     <td>{{ e.desc }}

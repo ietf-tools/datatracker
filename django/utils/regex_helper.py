@@ -26,7 +26,6 @@ ESCAPE_MAPPINGS = {
     "Z": None,
 }
 
-
 class Choice(list):
     """
     Used to represent multiple possibilities at this point in a pattern string.
@@ -34,18 +33,15 @@ class Choice(list):
     code is clear.
     """
 
-
 class Group(list):
     """
     Used to represent a capturing group in the pattern string.
     """
 
-
 class NonCapture(list):
     """
     Used to represent a non-capturing group in the pattern string.
     """
-
 
 def normalize(pattern):
     """
@@ -96,7 +92,7 @@ def normalize(pattern):
                 result.append(".")
             elif ch == '|':
                 # FIXME: One day we'll should do this, but not in 1.0.
-                raise NotImplementedError('Awaiting Implementation')
+                raise NotImplementedError
             elif ch == "^":
                 pass
             elif ch == '$':
@@ -169,7 +165,7 @@ def normalize(pattern):
                 count, ch = get_quantifier(ch, pattern_iter)
                 if ch:
                     # We had to look ahead, but it wasn't need to compute the
-                    # quantifier, so use this character next time around the
+                    # quanitifer, so use this character next time around the
                     # main loop.
                     consume_next = False
 
@@ -202,7 +198,6 @@ def normalize(pattern):
 
     return list(zip(*flatten_result(result)))
 
-
 def next_char(input_iter):
     """
     An iterator that yields the next character from "pattern_iter", respecting
@@ -222,7 +217,6 @@ def next_char(input_iter):
         if representative is None:
             continue
         yield representative, True
-
 
 def walk_to_end(ch, input_iter):
     """
@@ -244,13 +238,12 @@ def walk_to_end(ch, input_iter):
                 return
             nesting -= 1
 
-
 def get_quantifier(ch, input_iter):
     """
     Parse a quantifier from the input, where "ch" is the first character in the
     quantifier.
 
-    Returns the minimum number of occurrences permitted by the quantifier and
+    Returns the minimum number of occurences permitted by the quantifier and
     either None or the next character from the input_iter if the next character
     is not part of the quantifier.
     """
@@ -281,7 +274,6 @@ def get_quantifier(ch, input_iter):
         ch = None
     return int(values[0]), ch
 
-
 def contains(source, inst):
     """
     Returns True if the "source" contains an instance of "inst". False,
@@ -294,7 +286,6 @@ def contains(source, inst):
             if contains(elt, inst):
                 return True
     return False
-
 
 def flatten_result(source):
     """
@@ -348,3 +339,4 @@ def flatten_result(source):
         for i in range(len(result)):
             result[i] += piece
     return result, result_args
+

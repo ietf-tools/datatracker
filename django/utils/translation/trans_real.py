@@ -1,7 +1,7 @@
 """Translation helper functions."""
 from __future__ import unicode_literals
 
-from collections import OrderedDict
+import locale
 import os
 import re
 import sys
@@ -9,20 +9,18 @@ import gettext as gettext_module
 from threading import local
 import warnings
 
-from django.apps import apps
-from django.core.exceptions import AppRegistryNotReady
-from django.dispatch import receiver
-from django.test.signals import setting_changed
-from django.utils.deprecation import RemovedInDjango19Warning
+from django.utils.importlib import import_module
+from django.utils.datastructures import SortedDict
 from django.utils.encoding import force_str, force_text
+from django.utils.functional import memoize
 from django.utils._os import upath
 from django.utils.safestring import mark_safe, SafeData
-from django.utils import six, lru_cache
+from django.utils import six
 from django.utils.six import StringIO
-from django.utils.translation import TranslatorCommentWarning, trim_whitespace, LANGUAGE_SESSION_KEY
+from django.utils.translation import TranslatorCommentWarning
 
 
-# Translations are cached in a dictionary for every language.
+# Translations are cached in a dictionary for every language+app tuple.
 # The active translations are stored by threadid to make them thread local.
 _translations = {}
 _active = local()
@@ -30,9 +28,10 @@ _active = local()
 # The default translation is based on the settings file.
 _default = None
 
-# This is a cache of settings.LANGUAGES in an OrderedDict for easy lookups by
-# key
-_supported = None
+# This is a cache for normalized accept-header languages to prevent multiple
+# file lookups when checking the same locale on repeated requests.
+_accepted = {}
+_checked_languages = {}
 
 # magic gettext number to separate context from message
 CONTEXT_SEPARATOR = "\x04"
@@ -45,30 +44,7 @@ accept_language_re = re.compile(r'''
         (?:\s*,\s*|$)                                 # Multiple accepts per header.
         ''', re.VERBOSE)
 
-language_code_re = re.compile(r'^[a-z]{1,8}(?:-[a-z0-9]{1,8})*$', re.IGNORECASE)
-
 language_code_prefix_re = re.compile(r'^/([\w-]+)(/|$)')
-
-# some browsers use deprecated locales. refs #18419
-_BROWSERS_DEPRECATED_LOCALES = {
-    'zh-cn': 'zh-hans',
-    'zh-tw': 'zh-hant',
-}
-
-_DJANGO_DEPRECATED_LOCALES = _BROWSERS_DEPRECATED_LOCALES
-
-
-@receiver(setting_changed)
-def reset_cache(**kwargs):
-    """
-    Reset global state when LANGUAGES setting has been changed, as some
-    languages should no longer be accepted.
-    """
-    if kwargs['setting'] in ('LANGUAGES', 'LANGUAGE_CODE'):
-        global _supported
-        _supported = None
-        check_for_language.cache_clear()
-        get_supported_language_variant.cache_clear()
 
 
 def to_locale(language, to_lower=False):
@@ -79,24 +55,22 @@ def to_locale(language, to_lower=False):
     p = language.find('-')
     if p >= 0:
         if to_lower:
-            return language[:p].lower() + '_' + language[p + 1:].lower()
+            return language[:p].lower()+'_'+language[p+1:].lower()
         else:
             # Get correct locale for sr-latn
-            if len(language[p + 1:]) > 2:
-                return language[:p].lower() + '_' + language[p + 1].upper() + language[p + 2:].lower()
-            return language[:p].lower() + '_' + language[p + 1:].upper()
+            if len(language[p+1:]) > 2:
+                return language[:p].lower()+'_'+language[p+1].upper()+language[p+2:].lower()
+            return language[:p].lower()+'_'+language[p+1:].upper()
     else:
         return language.lower()
-
 
 def to_language(locale):
     """Turns a locale name (en_US) into a language name (en-us)."""
     p = locale.find('_')
     if p >= 0:
-        return locale[:p].lower() + '-' + locale[p + 1:].lower()
+        return locale[:p].lower()+'-'+locale[p+1:].lower()
     else:
         return locale.lower()
-
 
 class DjangoTranslation(gettext_module.GNUTranslations):
     """
@@ -123,7 +97,6 @@ class DjangoTranslation(gettext_module.GNUTranslations):
 
     def __repr__(self):
         return "<DjangoTranslation lang:%s>" % self.__language
-
 
 def translation(language):
     """
@@ -182,15 +155,10 @@ def translation(language):
                     res.merge(t)
             return res
 
-        try:
-            app_configs = reversed(list(apps.get_app_configs()))
-        except AppRegistryNotReady:
-            raise AppRegistryNotReady(
-                "The translation infrastructure cannot be initialized before the "
-                "apps registry is ready. Check that you don't make non-lazy "
-                "gettext calls at import time.")
-        for app_config in app_configs:
-            apppath = os.path.join(app_config.path, 'locale')
+        for appname in reversed(settings.INSTALLED_APPS):
+            app = import_module(appname)
+            apppath = os.path.join(os.path.dirname(upath(app.__file__)), 'locale')
+
             if os.path.isdir(apppath):
                 res = _merge(apppath)
 
@@ -211,19 +179,13 @@ def translation(language):
 
     return current_translation
 
-
 def activate(language):
     """
-    Fetches the translation object for a given language and installs it as the
-    current translation object for the current thread.
+    Fetches the translation object for a given tuple of application name and
+    language and installs it as the current translation object for the current
+    thread.
     """
-    if language in _DJANGO_DEPRECATED_LOCALES:
-        msg = ("The use of the language code '%s' is deprecated. "
-               "Please use the '%s' translation instead.")
-        warnings.warn(msg % (language, _DJANGO_DEPRECATED_LOCALES[language]),
-                      RemovedInDjango19Warning, stacklevel=2)
     _active.value = translation(language)
-
 
 def deactivate():
     """
@@ -233,7 +195,6 @@ def deactivate():
     if hasattr(_active, "value"):
         del _active.value
 
-
 def deactivate_all():
     """
     Makes the active translation object a NullTranslations() instance. This is
@@ -241,7 +202,6 @@ def deactivate_all():
     for some reason.
     """
     _active.value = gettext_module.NullTranslations()
-
 
 def get_language():
     """Returns the currently selected language."""
@@ -255,7 +215,6 @@ def get_language():
     from django.conf import settings
     return settings.LANGUAGE_CODE
 
-
 def get_language_bidi():
     """
     Returns selected language's BiDi layout.
@@ -267,7 +226,6 @@ def get_language_bidi():
 
     base_lang = get_language().split('-')[0]
     return base_lang in settings.LANGUAGES_BIDI
-
 
 def catalog():
     """
@@ -284,7 +242,6 @@ def catalog():
         from django.conf import settings
         _default = translation(settings.LANGUAGE_CODE)
     return _default
-
 
 def do_translate(message, translation_function):
     """
@@ -309,7 +266,6 @@ def do_translate(message, translation_function):
         return mark_safe(result)
     return result
 
-
 def gettext(message):
     """
     Returns a string of the translation of the message.
@@ -324,16 +280,13 @@ else:
     def ugettext(message):
         return do_translate(message, 'ugettext')
 
-
 def pgettext(context, message):
     msg_with_ctxt = "%s%s%s" % (context, CONTEXT_SEPARATOR, message)
     result = ugettext(msg_with_ctxt)
     if CONTEXT_SEPARATOR in result:
         # Translation not found
-        # force unicode, because lazy version expects unicode
-        result = force_text(message)
+        result = message
     return result
-
 
 def gettext_noop(message):
     """
@@ -343,7 +296,6 @@ def gettext_noop(message):
     later.
     """
     return message
-
 
 def do_ntranslate(singular, plural, number, translation_function):
     global _default
@@ -355,7 +307,6 @@ def do_ntranslate(singular, plural, number, translation_function):
         from django.conf import settings
         _default = translation(settings.LANGUAGE_CODE)
     return getattr(_default, translation_function)(singular, plural, number)
-
 
 def ngettext(singular, plural, number):
     """
@@ -376,7 +327,6 @@ else:
         """
         return do_ntranslate(singular, plural, number, 'ungettext')
 
-
 def npgettext(context, singular, plural, number):
     msgs_with_ctxt = ("%s%s%s" % (context, CONTEXT_SEPARATOR, singular),
                       "%s%s%s" % (context, CONTEXT_SEPARATOR, plural),
@@ -387,7 +337,6 @@ def npgettext(context, singular, plural, number):
         result = ungettext(singular, plural, number)
     return result
 
-
 def all_locale_paths():
     """
     Returns a list of paths to user-provides languages files.
@@ -397,63 +346,47 @@ def all_locale_paths():
         os.path.dirname(upath(sys.modules[settings.__module__].__file__)), 'locale')
     return [globalpath] + list(settings.LOCALE_PATHS)
 
-
-@lru_cache.lru_cache(maxsize=1000)
 def check_for_language(lang_code):
     """
     Checks whether there is a global language file for the given language
     code. This is used to decide whether a user-provided language is
-    available.
-
-    lru_cache should have a maxsize to prevent from memory exhaustion attacks,
-    as the provided language codes are taken from the HTTP request. See also
-    <https://www.djangoproject.com/weblog/2007/oct/26/security-fix/>.
+    available. This is only used for language codes from either the cookies
+    or session and during format localization.
     """
-    # First, a quick check to make sure lang_code is well-formed (#21458)
-    if not language_code_re.search(lang_code):
-        return False
     for path in all_locale_paths():
         if gettext_module.find('django', path, [to_locale(lang_code)]) is not None:
             return True
     return False
+check_for_language = memoize(check_for_language, _checked_languages, 1)
 
-
-@lru_cache.lru_cache(maxsize=1000)
-def get_supported_language_variant(lang_code, strict=False):
+def get_supported_language_variant(lang_code, supported=None, strict=False):
     """
     Returns the language-code that's listed in supported languages, possibly
     selecting a more generic variant. Raises LookupError if nothing found.
 
     If `strict` is False (the default), the function will look for an alternative
     country-specific variant when the currently checked is not found.
-
-    lru_cache should have a maxsize to prevent from memory exhaustion attacks,
-    as the provided language codes are taken from the HTTP request. See also
-    <https://www.djangoproject.com/weblog/2007/oct/26/security-fix/>.
     """
-    global _supported
-    if _supported is None:
+    if supported is None:
         from django.conf import settings
-        _supported = OrderedDict(settings.LANGUAGES)
+        supported = SortedDict(settings.LANGUAGES)
     if lang_code:
-        # some browsers use deprecated language codes -- #18419
-        replacement = _BROWSERS_DEPRECATED_LOCALES.get(lang_code)
-        if lang_code not in _supported and replacement in _supported:
-            return replacement
-        # if fr-ca is not supported, try fr.
+        # if fr-CA is not supported, try fr-ca; if that fails, fallback to fr.
         generic_lang_code = lang_code.split('-')[0]
-        for code in (lang_code, generic_lang_code):
-            if code in _supported and check_for_language(code):
+        variants = (lang_code, lang_code.lower(), generic_lang_code,
+                    generic_lang_code.lower())
+        for code in variants:
+            if code in supported and check_for_language(code):
                 return code
         if not strict:
             # if fr-fr is not supported, try fr-ca.
-            for supported_code in _supported:
-                if supported_code.startswith(generic_lang_code + '-'):
+            for supported_code in supported:
+                if supported_code.startswith((generic_lang_code + '-',
+                                              generic_lang_code.lower() + '-')):
                     return supported_code
     raise LookupError(lang_code)
 
-
-def get_language_from_path(path, strict=False):
+def get_language_from_path(path, supported=None, strict=False):
     """
     Returns the language-code if there is a valid language-code
     found in the `path`.
@@ -461,15 +394,17 @@ def get_language_from_path(path, strict=False):
     If `strict` is False (the default), the function will look for an alternative
     country-specific variant when the currently checked is not found.
     """
+    if supported is None:
+        from django.conf import settings
+        supported = SortedDict(settings.LANGUAGES)
     regex_match = language_code_prefix_re.match(path)
     if not regex_match:
         return None
     lang_code = regex_match.group(1)
     try:
-        return get_supported_language_variant(lang_code, strict=strict)
+        return get_supported_language_variant(lang_code, supported, strict=strict)
     except LookupError:
         return None
-
 
 def get_language_from_request(request, check_path=False):
     """
@@ -481,26 +416,24 @@ def get_language_from_request(request, check_path=False):
     If check_path is True, the URL path prefix will be checked for a language
     code, otherwise this is skipped for backwards compatibility.
     """
+    global _accepted
     from django.conf import settings
-    global _supported
-    if _supported is None:
-        _supported = OrderedDict(settings.LANGUAGES)
+    supported = SortedDict(settings.LANGUAGES)
 
     if check_path:
-        lang_code = get_language_from_path(request.path_info)
+        lang_code = get_language_from_path(request.path_info, supported)
         if lang_code is not None:
             return lang_code
 
     if hasattr(request, 'session'):
-        # for backwards compatibility django_language is also checked (remove in 1.8)
-        lang_code = request.session.get(LANGUAGE_SESSION_KEY, request.session.get('django_language'))
-        if lang_code in _supported and lang_code is not None and check_for_language(lang_code):
+        lang_code = request.session.get('django_language', None)
+        if lang_code in supported and lang_code is not None and check_for_language(lang_code):
             return lang_code
 
     lang_code = request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME)
 
     try:
-        return get_supported_language_variant(lang_code)
+        return get_supported_language_variant(lang_code, supported)
     except LookupError:
         pass
 
@@ -509,29 +442,39 @@ def get_language_from_request(request, check_path=False):
         if accept_lang == '*':
             break
 
-        if not language_code_re.search(accept_lang):
+        # 'normalized' is the root name of the locale in POSIX format (which is
+        # the format used for the directories holding the MO files).
+        normalized = locale.locale_alias.get(to_locale(accept_lang, True))
+        if not normalized:
             continue
+        # Remove the default encoding from locale_alias.
+        normalized = normalized.split('.')[0]
+
+        if normalized in _accepted:
+            # We've seen this locale before and have an MO file for it, so no
+            # need to check again.
+            return _accepted[normalized]
 
         try:
-            return get_supported_language_variant(accept_lang)
+            accept_lang = get_supported_language_variant(accept_lang, supported)
         except LookupError:
             continue
+        else:
+            _accepted[normalized] = accept_lang
+            return accept_lang
 
     try:
-        return get_supported_language_variant(settings.LANGUAGE_CODE)
+        return get_supported_language_variant(settings.LANGUAGE_CODE, supported)
     except LookupError:
         return settings.LANGUAGE_CODE
 
 dot_re = re.compile(r'\S')
-
-
 def blankout(src, char):
     """
     Changes every non-whitespace character to the given char.
     Used in the templatize function.
     """
     return dot_re.sub(char, src)
-
 
 context_re = re.compile(r"""^\s+.*context\s+((?:"[^"]*?")|(?:'[^']*?'))\s*""")
 inline_re = re.compile(r"""^\s*trans\s+((?:"[^"]*?")|(?:'[^']*?'))(\s+.*context\s+((?:"[^"]*?")|(?:'[^']*?')))?\s*""")
@@ -552,23 +495,16 @@ def templatize(src, origin=None):
     from django.template import (Lexer, TOKEN_TEXT, TOKEN_VAR, TOKEN_BLOCK,
             TOKEN_COMMENT, TRANSLATOR_COMMENT_MARK)
     src = force_text(src, settings.FILE_CHARSET)
-    out = StringIO('')
+    out = StringIO()
     message_context = None
     intrans = False
     inplural = False
-    trimmed = False
     singular = []
     plural = []
     incomment = False
     comment = []
     lineno_comment_map = {}
     comment_lineno_cache = None
-
-    def join_tokens(tokens, trim=False):
-        message = ''.join(tokens)
-        if trim:
-            message = trim_whitespace(message)
-        return message
 
     for t in Lexer(src, origin).tokenize():
         if incomment:
@@ -594,26 +530,18 @@ def templatize(src, origin=None):
                 if endbmatch:
                     if inplural:
                         if message_context:
-                            out.write(' npgettext(%r, %r, %r,count) ' % (
-                                message_context,
-                                join_tokens(singular, trimmed),
-                                join_tokens(plural, trimmed)))
+                            out.write(' npgettext(%r, %r, %r,count) ' % (message_context, ''.join(singular), ''.join(plural)))
                         else:
-                            out.write(' ngettext(%r, %r, count) ' % (
-                                join_tokens(singular, trimmed),
-                                join_tokens(plural, trimmed)))
+                            out.write(' ngettext(%r, %r, count) ' % (''.join(singular), ''.join(plural)))
                         for part in singular:
                             out.write(blankout(part, 'S'))
                         for part in plural:
                             out.write(blankout(part, 'P'))
                     else:
                         if message_context:
-                            out.write(' pgettext(%r, %r) ' % (
-                                message_context,
-                                join_tokens(singular, trimmed)))
+                            out.write(' pgettext(%r, %r) ' % (message_context, ''.join(singular)))
                         else:
-                            out.write(' gettext(%r) ' % join_tokens(singular,
-                                                                    trimmed))
+                            out.write(' gettext(%r) ' % ''.join(singular))
                         for part in singular:
                             out.write(blankout(part, 'S'))
                     message_context = None
@@ -696,7 +624,6 @@ def templatize(src, origin=None):
                             message_context = message_context.strip("'")
                     intrans = True
                     inplural = False
-                    trimmed = 'trimmed' in t.split_contents()
                     singular = []
                     plural = []
                 elif cmatches:
@@ -713,7 +640,7 @@ def templatize(src, origin=None):
                     out.write(' _(%s) ' % cmatch.group(1))
                 for p in parts[1:]:
                     if p.find(':_(') >= 0:
-                        out.write(' %s ' % p.split(':', 1)[1])
+                        out.write(' %s ' % p.split(':',1)[1])
                     else:
                         out.write(blankout(p, 'F'))
             elif t.token_type == TOKEN_COMMENT:
@@ -725,7 +652,6 @@ def templatize(src, origin=None):
                 out.write(blankout(t.contents, 'X'))
     return force_str(out.getvalue())
 
-
 def parse_accept_lang_header(lang_string):
     """
     Parses the lang_string, which is the body of an HTTP Accept-Language
@@ -734,20 +660,17 @@ def parse_accept_lang_header(lang_string):
     Any format errors in lang_string results in an empty list being returned.
     """
     result = []
-    pieces = accept_language_re.split(lang_string.lower())
+    pieces = accept_language_re.split(lang_string)
     if pieces[-1]:
         return []
     for i in range(0, len(pieces) - 1, 3):
-        first, lang, priority = pieces[i:i + 3]
+        first, lang, priority = pieces[i : i + 3]
         if first:
             return []
         if priority:
-            try:
-                priority = float(priority)
-            except ValueError:
-                return []
+            priority = float(priority)
         if not priority:        # if priority is 0.0 at this point make it 1.0
-            priority = 1.0
+             priority = 1.0
         result.append((lang, priority))
     result.sort(key=lambda k: k[1], reverse=True)
     return result

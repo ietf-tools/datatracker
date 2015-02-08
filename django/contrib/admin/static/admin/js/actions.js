@@ -1,6 +1,4 @@
 (function($) {
-	var lastChecked;
-
 	$.fn.actions = function(opts) {
 		var options = $.extend({}, $.fn.actions.defaults, opts);
 		var actionCheckboxes = $(this);
@@ -16,15 +14,12 @@
 		},
 		updateCounter = function() {
 			var sel = $(actionCheckboxes).filter(":checked").length;
-			// _actions_icnt is defined in the generated HTML
-			// and contains the total amount of objects in the queryset
 			$(options.counterContainer).html(interpolate(
 			ngettext('%(sel)s of %(cnt)s selected', '%(sel)s of %(cnt)s selected', sel), {
 				sel: sel,
 				cnt: _actions_icnt
 			}, true));
 			$(options.allToggle).prop("checked", function() {
-				var value;
 				if (sel == actionCheckboxes.length) {
 					value = true;
 					showQuestion();
@@ -72,12 +67,12 @@
 			checker($(this).prop("checked"));
 			updateCounter();
 		});
-		$("a", options.acrossQuestions).click(function(event) {
+		$("div.actions span.question a").click(function(event) {
 			event.preventDefault();
 			$(options.acrossInput).val(1);
 			showClear();
 		});
-		$("a", options.acrossClears).click(function(event) {
+		$("div.actions span.clear a").click(function(event) {
 			event.preventDefault();
 			$(options.allToggle).prop("checked", false);
 			clearAcross();
@@ -116,7 +111,7 @@
 		});
 		$('form#changelist-form input[name="_save"]').click(function(event) {
 			var action_changed = false;
-			$('select option:selected', options.actionContainer).each(function() {
+			$('div.actions select option:selected').each(function() {
 				if ($(this).val()) {
 					action_changed = true;
 				}

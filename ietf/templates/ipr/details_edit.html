@@ -1,8 +1,8 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+
 {% load ietf_filters %}
 {% load ipr_filters %}
-{% load future %}
 
 {% block title %}New IPR - Form{% endblock %}
 
@@ -78,7 +78,7 @@ will be posted, but will be marked as "non-compliant".</p>
       <p class="formlegend">Fields marked with "*" are required.</p>
 
       <table class="ipr">
-      <tr class="{% cycle 'dark','light' as row_parity %}"><th colspan=2>Updates</th></tr>
+      <tr class="{% cycle dark,light as row_parity %}"><th colspan=2>Updates</th></tr>
       <tr class="{% cycle row_parity %}"><td colspan=2>If this disclosure <b>updates</b> another disclosure(s) identify here which one(s).
       Leave this field blank if this disclosure does not update any prior disclosures.
       Note: Updates to IPR disclosures must only be made by authorized
@@ -103,9 +103,9 @@ will be posted, but will be marked as "non-compliant".</p>
       <br>
       
       <table class="ipr">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
         <th colspan=2>
-            {% cycle 'I','II','III','IV','V','VI','VII','VIII' as section %}.
+            {% cycle I,II,III,IV,V,VI,VII,VIII as section %}.
             {% if form.instance|to_class_name == "ThirdPartyIprDisclosure" %}Possible{% endif %}
             Patent Holder/Applicant ("Patent Holder")
         </th>
@@ -117,7 +117,7 @@ will be posted, but will be marked as "non-compliant".</p>
 
    {% if form.holder_contact_name %}
       <table class="ipr">
-      <tr class="{% cycle 'dark','light' as row_parity %}">
+      <tr class="{% cycle dark,light as row_parity %}">
         <th colspan="2">
         {% cycle section %}.
         Patent Holder's Contact for License Application
@@ -131,7 +131,7 @@ will be posted, but will be marked as "non-compliant".</p>
 
    {% if form.ietfer_name %}
       <table class="ipr">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
         <th colspan="2" >
         {% cycle section %}.
         Contact Information for the IETF Participant Whose Personal Belief Triggered this Disclosure:       
@@ -151,7 +151,7 @@ will be posted, but will be marked as "non-compliant".</p>
         <col width="15%">
         <col width="15%">
         
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
         <th colspan="4" >
         <span class="required">*</span>
         {% cycle section %}.
@@ -192,7 +192,7 @@ will be posted, but will be marked as "non-compliant".</p>
    
     <!-- Begin Patent Section -->
      <table class="ipr">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
            <th colspan="2" >
            {% cycle section %}.
            Disclosure of Patent Information{% if form.instance|to_class_name == "ThirdPartyIprDicslosure" %}, if known{% endif %} (i.e., patents or
@@ -228,7 +228,7 @@ will be posted, but will be marked as "non-compliant".</p>
       {% if form.licensing %}
       <!-- Not to be shown for third-party disclosures -->
      <table  class="ipr">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
            <th colspan="2" >
            {% cycle section %}.
            Licensing Declaration
@@ -302,7 +302,7 @@ will be posted, but will be marked as "non-compliant".</p>
 
       {% if form.statement %}
       <table  class="ipr">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
            <th colspan="2" >
            {% cycle section %}.
            Statement
@@ -325,7 +325,7 @@ will be posted, but will be marked as "non-compliant".</p>
       {% endif %} <!-- form.statement  (Generic and NonDocSpecific) -->
       
      <table class="ipr">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
            <th colspan="2" >
            {% cycle section %}.
            Contact Information of Submitter of this Form (if different from the Contact Information above)
@@ -337,7 +337,7 @@ will be posted, but will be marked as "non-compliant".</p>
      </table>
 
      <table class="ipr">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
            <th colspan="2" >
            {% cycle section %}.
            Other Notes:

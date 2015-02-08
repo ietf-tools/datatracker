@@ -1,8 +1,6 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% if debug %}
 {% load ietf_filters %}
-{% load future %}
-
 <div id="debug" style="clear: left;">
   <h2>Queries</h2>
   <p>
@@ -24,7 +22,7 @@
     </thead>
     <tbody>
     {% for query in sql_queries %}
-    <tr class="{% cycle 'odd','even' %}">
+    <tr class="{% cycle odd,even %}">
       <td>{{ forloop.counter }}</td>
       <td>{{ query.sql|expand_comma|escape }}</td>
       <td>{{ query.time }}</td>

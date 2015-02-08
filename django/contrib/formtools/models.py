@@ -1,2 +1,1 @@
-# This file is required to pretend formtools has models.
-# Otherwise test models cannot be registered.
+""" models.py (even empty) currently required by the runtests.py to enable unit tests """

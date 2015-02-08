@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
@@ -16,7 +14,7 @@ class SessionManager(models.Manager):
         if session_dict:
             s.save()
         else:
-            s.delete()  # Clear sessions with no data.
+            s.delete() # Clear sessions with no data.
         return s
 
 

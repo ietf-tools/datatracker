@@ -1,15 +1,14 @@
 # This file is distributed under the same license as the Django package.
 #
 # Translators:
-# Baptiste Darthenay <baptiste+transifex@darthenay.fr>, 2014
 # kristjan <kristjan.schmidt@googlemail.com>, 2011
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-05-21 14:05+0000\n"
-"Last-Translator: Baptiste Darthenay <baptiste+transifex@darthenay.fr>\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-04-29 08:25+0000\n"
+"Last-Translator: claudep <claude@2xlibre.net>\n"
 "Language-Team: Esperanto (http://www.transifex.com/projects/p/django/"
 "language/eo/)\n"
 "MIME-Version: 1.0\n"
@@ -18,26 +17,22 @@ msgstr ""
 "Language: eo\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: contrib/sessions/apps.py:8
-msgid "Sessions"
-msgstr "Seancoj"
-
-#: contrib/sessions/models.py:38
+#: models.py:38
 msgid "session key"
 msgstr "seanco-ŝlosilo"
 
-#: contrib/sessions/models.py:40
+#: models.py:40
 msgid "session data"
 msgstr "seanco-datumo"
 
-#: contrib/sessions/models.py:41
+#: models.py:41
 msgid "expire date"
 msgstr "senvalidiĝ-dato"
 
-#: contrib/sessions/models.py:46
+#: models.py:46
 msgid "session"
 msgstr "seanco"
 
-#: contrib/sessions/models.py:47
+#: models.py:47
 msgid "sessions"
 msgstr "seancoj"

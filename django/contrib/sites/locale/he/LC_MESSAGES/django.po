@@ -2,13 +2,13 @@
 #
 # Translators:
 # Jannis Leidel <jannis@leidel.info>, 2011
-# Meir Kriheli <mkriheli@gmail.com>, 2013-2014
+# Meir Kriheli <mkriheli@gmail.com>, 2013
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-05-21 08:48+0000\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-11-02 12:32+0000\n"
 "Last-Translator: Meir Kriheli <mkriheli@gmail.com>\n"
 "Language-Team: Hebrew (http://www.transifex.com/projects/p/django/language/"
 "he/)\n"
@@ -18,26 +18,22 @@ msgstr ""
 "Language: he\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: contrib/sites/apps.py:8
-msgid "Sites"
-msgstr "אתרים"
-
-#: contrib/sites/models.py:30
+#: models.py:25
 msgid "The domain name cannot contain any spaces or tabs."
 msgstr "שם המתחם אינו יכול להכיל רווחים או טאבים."
 
-#: contrib/sites/models.py:67
+#: models.py:58
 msgid "domain name"
 msgstr "שם מתחם"
 
-#: contrib/sites/models.py:69
+#: models.py:60
 msgid "display name"
 msgstr "שם לתצוגה"
 
-#: contrib/sites/models.py:74
+#: models.py:65
 msgid "site"
 msgstr "אתר"
 
-#: contrib/sites/models.py:75
+#: models.py:66
 msgid "sites"
 msgstr "אתרים"

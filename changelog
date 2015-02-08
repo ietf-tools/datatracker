@@ -1,20 +1,3 @@
-ietfdb (5.11.0) ietf; urgency=medium
-
-  This relese upgrades Django from 1.6.4 to 1.7.1, and tastypie from 0.11.1 to
-  0.12.1.  It changes the database migrations infrastructure from that provided
-  by "south", to the builtin replacement newly introduced with Django 1.7.
-
-  There are also a set of changes required by the upgrade, and some fixes
-  to bugs revealed by the improved infrastructure provided by Django 1.7.
-
-  Deployment note:  When deploying this, migrations need some extra care.
-  You should run the following:
-	$ ietf/manage.py migrate --fake doc
-	$ ietf/manage.py migrate --fake community
-	$ ietf/manage.py migrate --fake dbtemplate
-	$ ietf/manage.py migrate
-
-
 ietfdb (5.10.3) ietf; urgency=medium
 
   This is a minor bugfix release in preparation for the upcoming upgrade from

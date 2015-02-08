@@ -3,7 +3,6 @@ from django.conf.urls.static import static
 
 urlpatterns = []
 
-
 def staticfiles_urlpatterns(prefix=None):
     """
     Helper function to return a URL pattern for serving static files.

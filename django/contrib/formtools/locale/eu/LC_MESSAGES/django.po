@@ -4,11 +4,11 @@
 # Aitzol Naberan <anaberan@codesyntax.com>, 2011-2013
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-05-20 09:43+0000\n"
-"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
+"POT-Creation-Date: 2013-08-16 15:07+0200\n"
+"PO-Revision-Date: 2013-10-31 11:33+0000\n"
+"Last-Translator: Aitzol Naberan <anaberan@codesyntax.com>\n"
 "Language-Team: Basque (http://www.transifex.com/projects/p/django/language/"
 "eu/)\n"
 "MIME-Version: 1.0\n"
@@ -17,22 +17,18 @@ msgstr ""
 "Language: eu\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: contrib/formtools/apps.py:8
-msgid "Form Tools"
-msgstr ""
-
-#: contrib/formtools/templates/formtools/wizard/wizard_form.html:15
+#: templates/formtools/wizard/wizard_form.html:15
 msgid "first step"
 msgstr "lehen pausua"
 
-#: contrib/formtools/templates/formtools/wizard/wizard_form.html:16
+#: templates/formtools/wizard/wizard_form.html:16
 msgid "prev step"
 msgstr "aurreko pausua"
 
-#: contrib/formtools/templates/formtools/wizard/wizard_form.html:18
+#: templates/formtools/wizard/wizard_form.html:18
 msgid "submit"
 msgstr "bidali"
 
-#: contrib/formtools/wizard/views.py:276
+#: wizard/views.py:275
 msgid "ManagementForm data is missing or has been tampered."
-msgstr ""
+msgstr "ManagementForm daturik ez dago edo baliogabeak dira."

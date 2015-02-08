@@ -1,7 +1,6 @@
-from optparse import make_option
 import os
-
 from django.core.management.base import NoArgsCommand
+from optparse import make_option
 
 
 class Command(NoArgsCommand):
@@ -18,7 +17,7 @@ class Command(NoArgsCommand):
 
     )
     help = "Runs a Python interactive interpreter. Tries to use IPython or bpython, if one of them is available."
-    requires_system_checks = False
+    requires_model_validation = False
 
     def _ipython_pre_011(self):
         """Start IPython pre-0.11"""
@@ -65,6 +64,11 @@ class Command(NoArgsCommand):
         raise ImportError
 
     def handle_noargs(self, **options):
+        # XXX: (Temporary) workaround for ticket #1796: force early loading of all
+        # models from installed apps.
+        from django.db.models.loading import get_models
+        get_models()
+
         use_plain = options.get('plain', False)
         no_startup = options.get('no_startup', False)
         interface = options.get('interface', None)

@@ -1,24 +1,20 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import unicode_literals
-
 """
 Base classes for writing management commands (named commands which can
 be executed through ``django-admin.py`` or ``manage.py``).
+
 """
+from __future__ import unicode_literals
 
 import os
 import sys
-import warnings
 
 from optparse import make_option, OptionParser
 
 import django
-from django.core import checks
 from django.core.exceptions import ImproperlyConfigured
-from django.core.management.color import color_style, no_style
-from django.utils.deprecation import RemovedInDjango19Warning
+from django.core.management.color import color_style
 from django.utils.encoding import force_str
+from django.utils.six import StringIO
 
 
 class CommandError(Exception):
@@ -117,8 +113,8 @@ class BaseCommand(object):
     ``args``
         A string listing the arguments accepted by the command,
         suitable for use in help messages; e.g., a command which takes
-        a list of application names might set this to '<app_label
-        app_label ...>'.
+        a list of application names might set this to '<appname
+        appname ...>'.
 
     ``can_import_settings``
         A boolean indicating whether the command needs to be able to
@@ -140,26 +136,13 @@ class BaseCommand(object):
         wrapped with ``BEGIN;`` and ``COMMIT;``. Default value is
         ``False``.
 
-    ``requires_system_checks``
-        A boolean; if ``True``, entire Django project will be checked for errors
-        prior to executing the command. Default value is ``True``.
-        To validate an individual application's models
-        rather than all applications' models, call
-        ``self.check(app_configs)`` from ``handle()``, where ``app_configs``
-        is the list of application's configuration provided by the
-        app registry.
-
     ``requires_model_validation``
-        DEPRECATED - This value will only be used if requires_system_checks
-        has not been provided. Defining both ``requires_system_checks`` and
-        ``requires_model_validation`` will result in an error.
-
         A boolean; if ``True``, validation of installed models will be
         performed prior to executing the command. Default value is
         ``True``. To validate an individual application's models
         rather than all applications' models, call
-        ``self.validate(app_config)`` from ``handle()``, where ``app_config``
-        is the application's configuration provided by the app registry.
+        ``self.validate(app)`` from ``handle()``, where ``app`` is the
+        application's Python module.
 
     ``leave_locale_alone``
         A boolean indicating whether the locale set in settings should be
@@ -190,47 +173,18 @@ class BaseCommand(object):
             help='A directory to add to the Python path, e.g. "/home/djangoprojects/myproject".'),
         make_option('--traceback', action='store_true',
             help='Raise on exception'),
-        make_option('--no-color', action='store_true', dest='no_color', default=False,
-            help="Don't colorize the command output."),
     )
     help = ''
     args = ''
 
     # Configuration shortcuts that alter various logic.
     can_import_settings = True
+    requires_model_validation = True
     output_transaction = False  # Whether to wrap the output in a "BEGIN; COMMIT;"
     leave_locale_alone = False
 
-    # Uncomment the following line of code after deprecation plan for
-    # requires_model_validation comes to completion:
-    #
-    # requires_system_checks = True
-
     def __init__(self):
         self.style = color_style()
-
-        # `requires_model_validation` is deprecated in favor of
-        # `requires_system_checks`. If both options are present, an error is
-        # raised. Otherwise the present option is used. If none of them is
-        # defined, the default value (True) is used.
-        has_old_option = hasattr(self, 'requires_model_validation')
-        has_new_option = hasattr(self, 'requires_system_checks')
-
-        if has_old_option:
-            warnings.warn(
-                '"requires_model_validation" is deprecated '
-                'in favor of "requires_system_checks".',
-                RemovedInDjango19Warning)
-        if has_old_option and has_new_option:
-            raise ImproperlyConfigured(
-                'Command %s defines both "requires_model_validation" '
-                'and "requires_system_checks", which is illegal. Use only '
-                '"requires_system_checks".' % self.__class__.__name__)
-
-        self.requires_system_checks = (
-            self.requires_system_checks if has_new_option else
-            self.requires_model_validation if has_old_option else
-            True)
 
     def get_version(self):
         """
@@ -297,20 +251,15 @@ class BaseCommand(object):
 
     def execute(self, *args, **options):
         """
-        Try to execute this command, performing system checks if needed (as
-        controlled by attributes ``self.requires_system_checks`` and
+        Try to execute this command, performing model validation if
+        needed (as controlled by the attribute
         ``self.requires_model_validation``, except if force-skipped).
         """
         self.stdout = OutputWrapper(options.get('stdout', sys.stdout))
-        if options.get('no_color'):
-            self.style = no_style()
-            self.stderr = OutputWrapper(options.get('stderr', sys.stderr))
-            os.environ[str("DJANGO_COLORS")] = str("nocolor")
-        else:
-            self.stderr = OutputWrapper(options.get('stderr', sys.stderr), self.style.ERROR)
+        self.stderr = OutputWrapper(options.get('stderr', sys.stderr), self.style.ERROR)
 
         if self.can_import_settings:
-            from django.conf import settings  # NOQA
+            from django.conf import settings
 
         saved_locale = None
         if not self.leave_locale_alone:
@@ -331,10 +280,8 @@ class BaseCommand(object):
             translation.activate('en-us')
 
         try:
-            if (self.requires_system_checks and
-                    not options.get('skip_validation') and  # This will be removed at the end of deprecation process for `skip_validation`.
-                    not options.get('skip_checks')):
-                self.check()
+            if self.requires_model_validation and not options.get('skip_validation'):
+                self.validate()
             output = self.handle(*args, **options)
             if output:
                 if self.output_transaction:
@@ -346,76 +293,27 @@ class BaseCommand(object):
                         self.stdout.write(self.style.SQL_KEYWORD(connection.ops.start_transaction_sql()))
                 self.stdout.write(output)
                 if self.output_transaction:
-                    self.stdout.write('\n' + self.style.SQL_KEYWORD(connection.ops.end_transaction_sql()))
+                    self.stdout.write('\n' + self.style.SQL_KEYWORD("COMMIT;"))
         finally:
             if saved_locale is not None:
                 translation.activate(saved_locale)
 
-    def validate(self, app_config=None, display_num_errors=False):
-        """ Deprecated. Delegates to ``check``."""
-
-        if app_config is None:
-            app_configs = None
-        else:
-            app_configs = [app_config]
-
-        return self.check(app_configs=app_configs, display_num_errors=display_num_errors)
-
-    def check(self, app_configs=None, tags=None, display_num_errors=False):
+    def validate(self, app=None, display_num_errors=False):
         """
-        Uses the system check framework to validate entire Django project.
-        Raises CommandError for any serious message (error or critical errors).
-        If there are only light messages (like warnings), they are printed to
-        stderr and no exception is raised.
+        Validates the given app, raising CommandError for any errors.
+
+        If app is None, then this will validate all installed apps.
+
         """
-        all_issues = checks.run_checks(app_configs=app_configs, tags=tags)
-
-        msg = ""
-        visible_issue_count = 0  # excludes silenced warnings
-
-        if all_issues:
-            debugs = [e for e in all_issues if e.level < checks.INFO and not e.is_silenced()]
-            infos = [e for e in all_issues if checks.INFO <= e.level < checks.WARNING and not e.is_silenced()]
-            warnings = [e for e in all_issues if checks.WARNING <= e.level < checks.ERROR and not e.is_silenced()]
-            errors = [e for e in all_issues if checks.ERROR <= e.level < checks.CRITICAL]
-            criticals = [e for e in all_issues if checks.CRITICAL <= e.level]
-            sorted_issues = [
-                (criticals, 'CRITICALS'),
-                (errors, 'ERRORS'),
-                (warnings, 'WARNINGS'),
-                (infos, 'INFOS'),
-                (debugs, 'DEBUGS'),
-            ]
-
-            for issues, group_name in sorted_issues:
-                if issues:
-                    visible_issue_count += len(issues)
-                    formatted = (
-                        color_style().ERROR(force_str(e))
-                        if e.is_serious()
-                        else color_style().WARNING(force_str(e))
-                        for e in issues)
-                    formatted = "\n".join(sorted(formatted))
-                    msg += '\n%s:\n%s\n' % (group_name, formatted)
-            if msg:
-                msg = "System check identified some issues:\n%s" % msg
-
+        from django.core.management.validation import get_validation_errors
+        s = StringIO()
+        num_errors = get_validation_errors(s, app)
+        if num_errors:
+            s.seek(0)
+            error_text = s.read()
+            raise CommandError("One or more models did not validate:\n%s" % error_text)
         if display_num_errors:
-            if msg:
-                msg += '\n'
-            msg += "System check identified %s (%s silenced)." % (
-                "no issues" if visible_issue_count == 0 else
-                "1 issue" if visible_issue_count == 1 else
-                "%s issues" % visible_issue_count,
-                len(all_issues) - visible_issue_count,
-            )
-
-        if any(e.is_serious() and not e.is_silenced() for e in all_issues):
-            raise CommandError(msg)
-        elif msg and visible_issue_count:
-            self.stderr.write(msg)
-        elif msg:
-            self.stdout.write(msg)
+            self.stdout.write("%s error%s found" % (num_errors, '' if num_errors == 1 else 's'))
 
     def handle(self, *args, **options):
         """
@@ -423,59 +321,43 @@ class BaseCommand(object):
         this method.
 
         """
-        raise NotImplementedError('subclasses of BaseCommand must provide a handle() method')
+        raise NotImplementedError()
 
 
 class AppCommand(BaseCommand):
     """
-    A management command which takes one or more installed application labels
-    as arguments, and does something with each of them.
+    A management command which takes one or more installed application
+    names as arguments, and does something with each of them.
 
     Rather than implementing ``handle()``, subclasses must implement
-    ``handle_app_config()``, which will be called once for each application.
+    ``handle_app()``, which will be called once for each application.
+
     """
-    args = '<app_label app_label ...>'
+    args = '<appname appname ...>'
 
     def handle(self, *app_labels, **options):
-        from django.apps import apps
+        from django.db import models
         if not app_labels:
-            raise CommandError("Enter at least one application label.")
+            raise CommandError('Enter at least one appname.')
         try:
-            app_configs = [apps.get_app_config(app_label) for app_label in app_labels]
-        except (LookupError, ImportError) as e:
+            app_list = [models.get_app(app_label) for app_label in app_labels]
+        except (ImproperlyConfigured, ImportError) as e:
             raise CommandError("%s. Are you sure your INSTALLED_APPS setting is correct?" % e)
         output = []
-        for app_config in app_configs:
-            app_output = self.handle_app_config(app_config, **options)
+        for app in app_list:
+            app_output = self.handle_app(app, **options)
             if app_output:
                 output.append(app_output)
         return '\n'.join(output)
 
-    def handle_app_config(self, app_config, **options):
+    def handle_app(self, app, **options):
         """
-        Perform the command's actions for app_config, an AppConfig instance
-        corresponding to an application label given on the command line.
+        Perform the command's actions for ``app``, which will be the
+        Python module corresponding to an application name given on
+        the command line.
+
         """
-        try:
-            # During the deprecation path, keep delegating to handle_app if
-            # handle_app_config isn't implemented in a subclass.
-            handle_app = self.handle_app
-        except AttributeError:
-            # Keep only this exception when the deprecation completes.
-            raise NotImplementedError(
-                "Subclasses of AppCommand must provide"
-                "a handle_app_config() method.")
-        else:
-            warnings.warn(
-                "AppCommand.handle_app() is superseded by "
-                "AppCommand.handle_app_config().",
-                RemovedInDjango19Warning, stacklevel=2)
-            if app_config.models_module is None:
-                raise CommandError(
-                    "AppCommand cannot handle app '%s' in legacy mode "
-                    "because it doesn't have a models module."
-                    % app_config.label)
-            return handle_app(app_config.models_module, **options)
+        raise NotImplementedError()
 
 
 class LabelCommand(BaseCommand):
@@ -511,7 +393,7 @@ class LabelCommand(BaseCommand):
         string as given on the command line.
 
         """
-        raise NotImplementedError('subclasses of LabelCommand must provide a handle_label() method')
+        raise NotImplementedError()
 
 
 class NoArgsCommand(BaseCommand):
@@ -537,4 +419,4 @@ class NoArgsCommand(BaseCommand):
         Perform this command's actions.
 
         """
-        raise NotImplementedError('subclasses of NoArgsCommand must provide a handle_noargs() method')
+        raise NotImplementedError()

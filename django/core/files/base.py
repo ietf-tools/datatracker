@@ -3,16 +3,14 @@ from __future__ import unicode_literals
 import os
 from io import BytesIO, StringIO, UnsupportedOperation
 
+from django.utils.encoding import smart_text
 from django.core.files.utils import FileProxyMixin
 from django.utils import six
-from django.utils.encoding import (
-    force_bytes, force_str, python_2_unicode_compatible, smart_text,
-)
-
+from django.utils.encoding import force_bytes, python_2_unicode_compatible
 
 @python_2_unicode_compatible
 class File(FileProxyMixin):
-    DEFAULT_CHUNK_SIZE = 64 * 2 ** 10
+    DEFAULT_CHUNK_SIZE = 64 * 2**10
 
     def __init__(self, file, name=None):
         self.file = file
@@ -26,7 +24,7 @@ class File(FileProxyMixin):
         return smart_text(self.name or '')
 
     def __repr__(self):
-        return force_str("<%s: %s>" % (self.__class__.__name__, self or "None"))
+        return "<%s: %s>" % (self.__class__.__name__, self or "None")
 
     def __bool__(self):
         return bool(self.name)
@@ -105,7 +103,7 @@ class File(FileProxyMixin):
 
                 # If this is the end of a line, yield
                 # otherwise, wait for the next round
-                if line[-1:] in (b'\n', b'\r'):
+                if line[-1] in ('\n', '\r'):
                     yield line
                 else:
                     buffer_ = line
@@ -129,7 +127,6 @@ class File(FileProxyMixin):
 
     def close(self):
         self.file.close()
-
 
 @python_2_unicode_compatible
 class ContentFile(File):

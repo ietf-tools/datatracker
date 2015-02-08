@@ -1,16 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-import warnings
-
-from django.core.management.commands.check import Command as CheckCommand
-from django.utils.deprecation import RemovedInDjango19Warning
+from django.core.management.base import NoArgsCommand
 
 
-class Command(CheckCommand):
-    help = 'Deprecated. Use "check" command instead. ' + CheckCommand.help
+class Command(NoArgsCommand):
+    help = "Validates all installed models."
+
+    requires_model_validation = False
 
     def handle_noargs(self, **options):
-        warnings.warn('"validate" has been deprecated in favor of "check".',
-            RemovedInDjango19Warning)
-        super(Command, self).handle_noargs(**options)
+        self.validate(display_num_errors=True)

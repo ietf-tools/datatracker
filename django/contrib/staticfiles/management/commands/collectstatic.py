@@ -1,16 +1,16 @@
 from __future__ import unicode_literals
 
 import os
-from collections import OrderedDict
+import sys
 from optparse import make_option
 
 from django.core.files.storage import FileSystemStorage
 from django.core.management.base import CommandError, NoArgsCommand
 from django.utils.encoding import smart_text
+from django.utils.datastructures import SortedDict
 from django.utils.six.moves import input
 
-from django.contrib.staticfiles.finders import get_finders
-from django.contrib.staticfiles.storage import staticfiles_storage
+from django.contrib.staticfiles import finders, storage
 
 
 class Command(NoArgsCommand):
@@ -45,7 +45,7 @@ class Command(NoArgsCommand):
                 "'.*' and '*~'."),
     )
     help = "Collect static files in a single location."
-    requires_system_checks = False
+    requires_model_validation = False
 
     def __init__(self, *args, **kwargs):
         super(NoArgsCommand, self).__init__(*args, **kwargs)
@@ -53,7 +53,7 @@ class Command(NoArgsCommand):
         self.symlinked_files = []
         self.unmodified_files = []
         self.post_processed_files = []
-        self.storage = staticfiles_storage
+        self.storage = storage.staticfiles_storage
         try:
             self.storage.path('')
         except NotImplementedError:
@@ -82,8 +82,12 @@ class Command(NoArgsCommand):
 
         Split off from handle_noargs() to facilitate testing.
         """
-        if self.symlink and not self.local:
-            raise CommandError("Can't symlink to a remote destination.")
+        if self.symlink:
+            if sys.platform == 'win32':
+                raise CommandError("Symlinking is not supported by this "
+                                   "platform (%s)." % sys.platform)
+            if not self.local:
+                raise CommandError("Can't symlink to a remote destination.")
 
         if self.clear:
             self.clear_dir('')
@@ -93,8 +97,8 @@ class Command(NoArgsCommand):
         else:
             handler = self.copy_file
 
-        found_files = OrderedDict()
-        for finder in get_finders():
+        found_files = SortedDict()
+        for finder in finders.get_finders():
             for path, storage in finder.list(self.ignore_patterns):
                 # Prefix the relative path if the source storage contains it
                 if getattr(storage, 'prefix', None):
@@ -133,37 +137,32 @@ class Command(NoArgsCommand):
 
     def handle_noargs(self, **options):
         self.set_options(**options)
-
-        message = ['\n']
-        if self.dry_run:
-            message.append(
-                'You have activated the --dry-run option so no files will be modified.\n\n'
-            )
-
-        message.append(
-            'You have requested to collect static files at the destination\n'
-            'location as specified in your settings'
-        )
-
-        if self.is_local_storage() and self.storage.location:
+        # Warn before doing anything more.
+        if (isinstance(self.storage, FileSystemStorage) and
+                self.storage.location):
             destination_path = self.storage.location
-            message.append(':\n\n    %s\n\n' % destination_path)
+            destination_display = ':\n\n    %s' % destination_path
         else:
             destination_path = None
-            message.append('.\n\n')
+            destination_display = '.'
 
         if self.clear:
-            message.append('This will DELETE EXISTING FILES!\n')
+            clear_display = 'This will DELETE EXISTING FILES!'
         else:
-            message.append('This will overwrite existing files!\n')
+            clear_display = 'This will overwrite existing files!'
 
-        message.append(
-            'Are you sure you want to do this?\n\n'
-            "Type 'yes' to continue, or 'no' to cancel: "
-        )
+        if self.interactive:
+            confirm = input("""
+You have requested to collect static files at the destination
+location as specified in your settings%s
 
-        if self.interactive and input(''.join(message)) != 'yes':
-            raise CommandError("Collecting static files cancelled.")
+%s
+Are you sure you want to do this?
+
+Type 'yes' to continue, or 'no' to cancel: """
+% (destination_display, clear_display))
+            if confirm != 'yes':
+                raise CommandError("Collecting static files cancelled.")
 
         collected = self.collect()
         modified_count = len(collected['modified'])
@@ -191,9 +190,6 @@ class Command(NoArgsCommand):
         """
         if self.verbosity >= level:
             self.stdout.write(msg)
-
-    def is_local_storage(self):
-        return isinstance(self.storage, FileSystemStorage)
 
     def clear_dir(self, path):
         """
@@ -277,20 +273,7 @@ class Command(NoArgsCommand):
                 os.makedirs(os.path.dirname(full_path))
             except OSError:
                 pass
-            try:
-                if os.path.lexists(full_path):
-                    os.unlink(full_path)
-                os.symlink(source_path, full_path)
-            except AttributeError:
-                import platform
-                raise CommandError("Symlinking is not supported by Python %s." %
-                                   platform.python_version())
-            except NotImplementedError:
-                import platform
-                raise CommandError("Symlinking is not supported in this "
-                                   "platform (%s)." % platform.platform())
-            except OSError as e:
-                raise CommandError(e)
+            os.symlink(source_path, full_path)
         if prefixed_path not in self.symlinked_files:
             self.symlinked_files.append(prefixed_path)
 
@@ -311,7 +294,13 @@ class Command(NoArgsCommand):
             self.log("Pretending to copy '%s'" % source_path, level=1)
         else:
             self.log("Copying '%s'" % source_path, level=1)
+            if self.local:
+                full_path = self.storage.path(prefixed_path)
+                try:
+                    os.makedirs(os.path.dirname(full_path))
+                except OSError:
+                    pass
             with source_storage.open(path) as source_file:
                 self.storage.save(prefixed_path, source_file)
-        if prefixed_path not in self.copied_files:
+        if not prefixed_path in self.copied_files:
             self.copied_files.append(prefixed_path)

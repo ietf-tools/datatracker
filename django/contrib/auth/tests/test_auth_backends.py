@@ -10,7 +10,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.contrib.auth import authenticate, get_user
 from django.http import HttpRequest
-from django.test import TestCase, override_settings
+from django.test import TestCase
+from django.test.utils import override_settings
 from django.contrib.auth.hashers import MD5PasswordHasher
 
 
@@ -235,6 +236,7 @@ class CustomUserModelBackendAuthenticateTest(TestCase):
         self.assertEqual(test_user, authenticated_user)
 
 
+
 class TestObj(object):
     pass
 
@@ -373,7 +375,7 @@ class NoBackendsTest(TestCase):
 @skipIfCustomUser
 class InActiveUserBackendTest(TestCase):
     """
-    Tests for an inactive user
+    Tests for a inactive user
     """
     backend = 'django.contrib.auth.tests.test_auth_backends.SimpleRowlevelBackend'
 
@@ -426,7 +428,7 @@ class PermissionDeniedBackendTest(TestCase):
         self.assertEqual(authenticate(username='test', password='test'), None)
 
     @override_settings(AUTHENTICATION_BACKENDS=tuple(
-        settings.AUTHENTICATION_BACKENDS) + (backend, ))
+            settings.AUTHENTICATION_BACKENDS) + (backend, ))
     def test_authenticates(self):
         self.assertEqual(authenticate(username='test', password='test'), self.user1)
 
@@ -478,56 +480,3 @@ class ChangedBackendSettingsTest(TestCase):
             # anonymous as the backend is not longer available.
             self.assertIsNotNone(user)
             self.assertTrue(user.is_anonymous())
-
-
-class TypeErrorBackend(object):
-    """
-    Always raises TypeError.
-    """
-    supports_object_permissions = True
-    supports_anonymous_user = True
-    supports_inactive_user = True
-
-    def authenticate(self, username=None, password=None):
-        raise TypeError
-
-
-@skipIfCustomUser
-class TypeErrorBackendTest(TestCase):
-    """
-    Tests that a TypeError within a backend is propagated properly.
-
-    Regression test for ticket #18171
-    """
-    backend = 'django.contrib.auth.tests.test_auth_backends.TypeErrorBackend'
-
-    def setUp(self):
-        self.user1 = User.objects.create_user('test', 'test@example.com', 'test')
-
-    @override_settings(AUTHENTICATION_BACKENDS=(backend, ))
-    def test_type_error_raised(self):
-        self.assertRaises(TypeError, authenticate, username='test', password='test')
-
-
-@skipIfCustomUser
-class ImproperlyConfiguredUserModelTest(TestCase):
-    """
-    Tests that an exception from within get_user_model is propagated and doesn't
-    raise an UnboundLocalError.
-
-    Regression test for ticket #21439
-    """
-    def setUp(self):
-        self.user1 = User.objects.create_user('test', 'test@example.com', 'test')
-        self.client.login(
-            username='test',
-            password='test'
-        )
-
-    @override_settings(AUTH_USER_MODEL='thismodel.doesntexist')
-    def test_does_not_shadow_exception(self):
-        # Prepare a request object
-        request = HttpRequest()
-        request.session = self.client.session
-
-        self.assertRaises(ImproperlyConfigured, get_user, request)

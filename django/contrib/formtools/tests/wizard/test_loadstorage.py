@@ -15,3 +15,4 @@ class TestLoadStorage(TestCase):
             'django.contrib.formtools.wizard.storage.idontexist.IDontExistStorage', 'wizard1')
         self.assertRaises(MissingStorage, get_storage,
             'django.contrib.formtools.wizard.storage.base.IDontExistStorage', 'wizard1')
+

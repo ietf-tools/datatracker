@@ -1,6 +1,5 @@
 """Base email backend class."""
 
-
 class BaseEmailBackend(object):
     """
     Base class for email backend implementations.
@@ -37,4 +36,4 @@ class BaseEmailBackend(object):
         Sends one or more EmailMessage objects and returns the number of email
         messages sent.
         """
-        raise NotImplementedError('subclasses of BaseEmailBackend must override send_messages() method')
+        raise NotImplementedError

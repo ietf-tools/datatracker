@@ -7,7 +7,6 @@ from django.conf import settings
 from django.core.mail import mail_managers
 from django.core import urlresolvers
 from django import http
-from django.utils.deprecation import RemovedInDjango18Warning
 from django.utils.encoding import force_text
 from django.utils.http import urlquote
 from django.utils import six
@@ -86,7 +85,7 @@ class CommonMiddleware(object):
             return
         if new_url[0]:
             newurl = "%s://%s%s" % (
-                request.scheme,
+                'https' if request.is_secure() else 'http',
                 new_url[0], urlquote(new_url[1]))
         else:
             newurl = urlquote(new_url[1])
@@ -111,7 +110,7 @@ class CommonMiddleware(object):
         if settings.SEND_BROKEN_LINK_EMAILS:
             warnings.warn("SEND_BROKEN_LINK_EMAILS is deprecated. "
                 "Use BrokenLinkEmailsMiddleware instead.",
-                RemovedInDjango18Warning, stacklevel=2)
+                PendingDeprecationWarning, stacklevel=2)
             BrokenLinkEmailsMiddleware().process_response(request, response)
 
         if settings.USE_ETAGS:
@@ -123,7 +122,7 @@ class CommonMiddleware(object):
                 etag = '"%s"' % hashlib.md5(response.content).hexdigest()
             if etag is not None:
                 if (200 <= response.status_code < 300
-                        and request.META.get('HTTP_IF_NONE_MATCH') == etag):
+                    and request.META.get('HTTP_IF_NONE_MATCH') == etag):
                     cookies = response.cookies
                     response = http.HttpResponseNotModified()
                     response.cookies = cookies

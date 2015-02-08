@@ -1,10 +1,8 @@
 from django.db.backends.postgresql_psycopg2.introspection import DatabaseIntrospection
 from django.contrib.gis.gdal import OGRGeomType
 
-
 class GeoIntrospectionError(Exception):
     pass
-
 
 class PostGISIntrospection(DatabaseIntrospection):
     # Reverse dictionary for PostGIS geometry types not populated until
@@ -34,14 +32,14 @@ class PostGISIntrospection(DatabaseIntrospection):
         try:
             cursor.execute(oid_sql, ('geometry',))
             GEOM_TYPE = cursor.fetchone()[0]
-            postgis_types = {GEOM_TYPE: 'GeometryField'}
+            postgis_types = { GEOM_TYPE : 'GeometryField' }
             if self.connection.ops.geography:
                 cursor.execute(oid_sql, ('geography',))
                 GEOG_TYPE = cursor.fetchone()[0]
                 # The value for the geography type is actually a tuple
                 # to pass in the `geography=True` keyword to the field
                 # definition.
-                postgis_types[GEOG_TYPE] = ('GeometryField', {'geography': True})
+                postgis_types[GEOG_TYPE] = ('GeometryField', {'geography' : True})
         finally:
             cursor.close()
 
@@ -51,7 +49,7 @@ class PostGISIntrospection(DatabaseIntrospection):
         if not self.postgis_types_reverse:
             # If the PostGIS types reverse dictionary is not populated, do so
             # now.  In order to prevent unnecessary requests upon connection
-            # initialization, the `data_types_reverse` dictionary is not updated
+            # intialization, the `data_types_reverse` dictionary is not updated
             # with the PostGIS custom types until introspection is actually
             # performed -- in other words, when this function is called.
             self.postgis_types_reverse = self.get_postgis_types()
@@ -74,8 +72,7 @@ class PostGISIntrospection(DatabaseIntrospection):
                                'WHERE "f_table_name"=%s AND "f_geometry_column"=%s',
                                (table_name, geo_col))
                 row = cursor.fetchone()
-                if not row:
-                    raise GeoIntrospectionError
+                if not row: raise GeoIntrospectionError
             except GeoIntrospectionError:
                 if self.connection.ops.geography:
                     cursor.execute('SELECT "coord_dimension", "srid", "type" '

@@ -1,6 +1,5 @@
 from django.core.management.base import AppCommand, CommandError
 
-
 class Command(AppCommand):
     help = "RENAMED: see 'sqlcustom'"
 

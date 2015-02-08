@@ -7,8 +7,6 @@ from django.forms.util import ErrorList
 from django.core.validators import validate_email, ValidationError
 from django.template.loader import render_to_string
 
-import debug                            # pyflakes:ignore
-
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
                                     get_person_for_user, is_secretariat, is_sdo_liaison_manager)
 from ietf.liaisons.utils import IETFHM
@@ -127,7 +125,7 @@ class LiaisonForm(forms.Form):
             for fieldset, fields in self.fieldsets:
                 fieldset_dict = dict(name=fieldset, fields=[])
                 for field_name in fields:
-                    if field_name in self.fields:
+                    if field_name in self.fields.keyOrder:
                         fieldset_dict['fields'].append(self[field_name])
                     if not fieldset_dict['fields']:
                         # if there is no fields in this fieldset, we continue to next fieldset

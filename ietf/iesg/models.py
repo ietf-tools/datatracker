@@ -74,7 +74,7 @@ def next_telechat_date():
 
 class TelechatDateManager(models.Manager):
     def active(self):
-        return self.get_queryset().filter(date__gte=datetime.date.today())
+        return self.get_query_set().filter(date__gte=datetime.date.today())
 
 class TelechatDate(models.Model):
     objects = TelechatDateManager()

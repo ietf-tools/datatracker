@@ -5,13 +5,11 @@ from django.db import models
 from django.contrib.gis.db.backends.base import SpatialRefSysMixin
 from django.utils.encoding import python_2_unicode_compatible
 
-
 @python_2_unicode_compatible
-class PostGISGeometryColumns(models.Model):
+class GeometryColumns(models.Model):
     """
     The 'geometry_columns' table from the PostGIS. See the PostGIS
-    documentation at Ch. 4.3.2.
-    On PostGIS 2, this is a view.
+    documentation at Ch. 4.2.2.
     """
     f_table_catalog = models.CharField(max_length=256)
     f_table_schema = models.CharField(max_length=256)
@@ -22,23 +20,22 @@ class PostGISGeometryColumns(models.Model):
     type = models.CharField(max_length=30)
 
     class Meta:
-        app_label = 'gis'
         db_table = 'geometry_columns'
         managed = False
 
     @classmethod
     def table_name_col(cls):
         """
-        Returns the name of the metadata column used to store the feature table
-        name.
+        Returns the name of the metadata column used to store the
+        the feature table name.
         """
         return 'f_table_name'
 
     @classmethod
     def geom_col_name(cls):
         """
-        Returns the name of the metadata column used to store the feature
-        geometry column.
+        Returns the name of the metadata column used to store the
+        the feature geometry column.
         """
         return 'f_geometry_column'
 
@@ -47,8 +44,7 @@ class PostGISGeometryColumns(models.Model):
                (self.f_table_name, self.f_geometry_column,
                 self.coord_dimension, self.type, self.srid)
 
-
-class PostGISSpatialRefSys(models.Model, SpatialRefSysMixin):
+class SpatialRefSys(models.Model, SpatialRefSysMixin):
     """
     The 'spatial_ref_sys' table from PostGIS. See the PostGIS
     documentaiton at Ch. 4.2.1.
@@ -60,7 +56,6 @@ class PostGISSpatialRefSys(models.Model, SpatialRefSysMixin):
     proj4text = models.CharField(max_length=2048)
 
     class Meta:
-        app_label = 'gis'
         db_table = 'spatial_ref_sys'
         managed = False
 

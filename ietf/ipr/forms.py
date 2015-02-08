@@ -93,7 +93,6 @@ class DraftForm(forms.ModelForm):
     
     class Meta:
         model = IprDocRel
-        fields = '__all__'
         widgets = {
             'sections': forms.TextInput(),
         }
@@ -168,7 +167,6 @@ class IprDisclosureFormBase(forms.ModelForm):
     class Meta:
         """This will be overridden"""
         model = IprDisclosureBase
-        fields = '__all__'
         
     def clean(self):
         super(IprDisclosureFormBase, self).clean()

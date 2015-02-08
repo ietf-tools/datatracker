@@ -5,7 +5,6 @@ ORM.
 
 import copy
 
-
 class Node(object):
     """
     A single internal node in the tree graph. A Node should be viewed as a
@@ -27,7 +26,6 @@ class Node(object):
 
     # We need this because of django.db.models.query_utils.Q. Q. __init__() is
     # problematic, but it is a natural Node subclass in all other respects.
-    @classmethod
     def _new_instance(cls, children=None, connector=None, negated=False):
         """
         This is called to create a new instance of this class when we need new
@@ -40,6 +38,7 @@ class Node(object):
         obj = Node(children, connector, negated)
         obj.__class__ = cls
         return obj
+    _new_instance = classmethod(_new_instance)
 
     def __str__(self):
         if self.negated:

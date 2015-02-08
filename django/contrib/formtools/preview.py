@@ -8,8 +8,7 @@ from django.template.context import RequestContext
 from django.utils.crypto import constant_time_compare
 from django.contrib.formtools.utils import form_hmac
 
-AUTO_ID = 'formtools_%s'  # Each form here uses this as its auto_id parameter.
-
+AUTO_ID = 'formtools_%s' # Each form here uses this as its auto_id parameter.
 
 class FormPreview(object):
     preview_template = 'formtools/preview.html'
@@ -40,9 +39,9 @@ class FormPreview(object):
         """
         while 1:
             try:
-                self.form.base_fields[name]
+                f = self.form.base_fields[name]
             except KeyError:
-                break  # This field name isn't being used by the form.
+                break # This field name isn't being used by the form.
             name += '_'
         return name
 
@@ -75,7 +74,7 @@ class FormPreview(object):
         if f.is_valid():
             if not self._check_security_hash(request.POST.get(self.unused_name('hash'), ''),
                                              request, f):
-                return self.failed_hash(request)  # Security hash failed.
+                return self.failed_hash(request) # Security hash failed.
             return self.done(request, f.cleaned_data)
         else:
             return render_to_response(self.form_template,
@@ -101,6 +100,7 @@ class FormPreview(object):
     def get_context(self, request, form):
         "Context for template rendering."
         return {'form': form, 'stage_field': self.unused_name('stage'), 'state': self.state}
+
 
     def parse_params(self, *args, **kwargs):
         """

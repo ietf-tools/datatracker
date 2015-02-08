@@ -2,20 +2,19 @@
 Field classes.
 """
 
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import copy
 import datetime
 import os
 import re
 import sys
-import warnings
 from decimal import Decimal, DecimalException
 from io import BytesIO
 
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.forms.utils import from_current_timezone, to_current_timezone
+from django.forms.util import ErrorList, from_current_timezone, to_current_timezone
 from django.forms.widgets import (
     TextInput, NumberInput, EmailInput, URLInput, HiddenInput,
     MultipleHiddenInput, ClearableFileInput, CheckboxInput, Select,
@@ -25,18 +24,17 @@ from django.forms.widgets import (
 from django.utils import formats
 from django.utils.encoding import smart_text, force_str, force_text
 from django.utils.ipv6 import clean_ipv6_address
-from django.utils.deprecation import RemovedInDjango19Warning
 from django.utils import six
 from django.utils.six.moves.urllib.parse import urlsplit, urlunsplit
 from django.utils.translation import ugettext_lazy as _, ungettext_lazy
 
 # Provide this import for backwards compatibility.
-from django.core.validators import EMPTY_VALUES  # NOQA
+from django.core.validators import EMPTY_VALUES
 
 
 __all__ = (
     'Field', 'CharField', 'IntegerField',
-    'DateField', 'TimeField', 'DateTimeField',
+    'DateField', 'TimeField', 'DateTimeField', 'TimeField',
     'RegexField', 'EmailField', 'FileField', 'ImageField', 'URLField',
     'BooleanField', 'NullBooleanField', 'ChoiceField', 'MultipleChoiceField',
     'ComboField', 'MultiValueField', 'FloatField', 'DecimalField',
@@ -46,9 +44,9 @@ __all__ = (
 
 
 class Field(object):
-    widget = TextInput  # Default widget to use when rendering this type of Field.
-    hidden_widget = HiddenInput  # Default widget to use when rendering this as "hidden".
-    default_validators = []  # Default set of validators
+    widget = TextInput # Default widget to use when rendering this type of Field.
+    hidden_widget = HiddenInput # Default widget to use when rendering this as "hidden".
+    default_validators = [] # Default set of validators
     # Add an 'invalid' entry to default_error_message if you want a specific
     # field error message not raised by the field validators.
     default_error_messages = {
@@ -79,7 +77,7 @@ class Field(object):
         #                   messages that the field will raise.
         # show_hidden_initial -- Boolean that specifies if it is needed to render a
         #                        hidden widget with initial value after widget.
-        # validators -- List of additional validators to use
+        # validators -- List of addtional validators to use
         # localize -- Boolean that specifies if the field should be localized.
         self.required, self.label, self.initial = required, label, initial
         self.show_hidden_initial = show_hidden_initial
@@ -176,13 +174,11 @@ class Field(object):
         Return True if data differs from initial.
         """
         # For purposes of seeing whether something has changed, None is
-        # the same as an empty string, if the data or initial value we get
+        # the same as an empty string, if the data or inital value we get
         # is None, replace it w/ ''.
         initial_value = initial if initial is not None else ''
         try:
             data = self.to_python(data)
-            if hasattr(self, '_coerce'):
-                data = self._coerce(data)
         except ValidationError:
             return True
         data_value = data if data is not None else ''
@@ -213,23 +209,20 @@ class CharField(Field):
 
     def widget_attrs(self, widget):
         attrs = super(CharField, self).widget_attrs(widget)
-        if self.max_length is not None:
+        if self.max_length is not None and isinstance(widget, TextInput):
             # The HTML attribute is maxlength, not max_length.
             attrs.update({'maxlength': str(self.max_length)})
         return attrs
 
 
 class IntegerField(Field):
-    widget = NumberInput
     default_error_messages = {
         'invalid': _('Enter a whole number.'),
     }
 
     def __init__(self, max_value=None, min_value=None, *args, **kwargs):
         self.max_value, self.min_value = max_value, min_value
-        if kwargs.get('localize') and self.widget == NumberInput:
-            # Localized number input is not well supported on most browsers
-            kwargs.setdefault('widget', super(IntegerField, self).widget)
+        kwargs.setdefault('widget', NumberInput if not kwargs.get('localize') else self.widget)
         super(IntegerField, self).__init__(*args, **kwargs)
 
         if max_value is not None:
@@ -284,18 +277,9 @@ class FloatField(IntegerField):
             raise ValidationError(self.error_messages['invalid'], code='invalid')
         return value
 
-    def validate(self, value):
-        super(FloatField, self).validate(value)
-
-        # Check for NaN (which is the only thing not equal to itself) and +/- infinity
-        if value != value or value in (Decimal('Inf'), Decimal('-Inf')):
-            raise ValidationError(self.error_messages['invalid'], code='invalid')
-
-        return value
-
     def widget_attrs(self, widget):
         attrs = super(FloatField, self).widget_attrs(widget)
-        if isinstance(widget, NumberInput) and 'step' not in widget.attrs:
+        if isinstance(widget, NumberInput):
             attrs.setdefault('step', 'any')
         return attrs
 
@@ -383,7 +367,7 @@ class DecimalField(IntegerField):
 
     def widget_attrs(self, widget):
         attrs = super(DecimalField, self).widget_attrs(widget)
-        if isinstance(widget, NumberInput) and 'step' not in widget.attrs:
+        if isinstance(widget, NumberInput):
             if self.decimal_places is not None:
                 # Use exponential notation for small values since they might
                 # be parsed as 0 otherwise. ref #20765
@@ -492,10 +476,6 @@ class DateTimeField(BaseTemporalField):
         if isinstance(value, list):
             # Input comes from a SplitDateTimeWidget, for example. So, it's two
             # components: date and time.
-            warnings.warn(
-                'Using SplitDateTimeWidget with DateTimeField is deprecated. '
-                'Use SplitDateTimeField instead.',
-                RemovedInDjango19Warning, stacklevel=2)
             if len(value) != 2:
                 raise ValidationError(self.error_messages['invalid'], code='invalid')
             if value[0] in self.empty_values and value[1] in self.empty_values:
@@ -516,7 +496,7 @@ class RegexField(CharField):
         'Enter a valid value' is too generic for you.
         """
         # error_message is just kept for backwards compatibility:
-        if error_message is not None:
+        if error_message:
             error_messages = kwargs.get('error_messages') or {}
             error_messages['invalid'] = error_message
             kwargs['error_messages'] = error_messages
@@ -577,7 +557,7 @@ class FileField(Field):
             raise ValidationError(self.error_messages['invalid'], code='invalid')
 
         if self.max_length is not None and len(file_name) > self.max_length:
-            params = {'max': self.max_length, 'length': len(file_name)}
+            params =  {'max': self.max_length, 'length': len(file_name)}
             raise ValidationError(self.error_messages['max_length'], code='max_length', params=params)
         if not file_name:
             raise ValidationError(self.error_messages['invalid'], code='invalid')
@@ -832,10 +812,12 @@ class TypedChoiceField(ChoiceField):
         self.empty_value = kwargs.pop('empty_value', '')
         super(TypedChoiceField, self).__init__(*args, **kwargs)
 
-    def _coerce(self, value):
+    def to_python(self, value):
         """
-        Validate that the value can be coerced to the right type (if not empty).
+        Validates that the value is in self.choices and can be coerced to the
+        right type.
         """
+        value = super(TypedChoiceField, self).to_python(value)
         if value == self.empty_value or value in self.empty_values:
             return self.empty_value
         try:
@@ -847,10 +829,6 @@ class TypedChoiceField(ChoiceField):
                 params={'value': value},
             )
         return value
-
-    def clean(self, value):
-        value = super(TypedChoiceField, self).clean(value)
-        return self._coerce(value)
 
 
 class MultipleChoiceField(ChoiceField):
@@ -890,8 +868,8 @@ class MultipleChoiceField(ChoiceField):
             data = []
         if len(initial) != len(data):
             return True
-        initial_set = set(force_text(value) for value in initial)
-        data_set = set(force_text(value) for value in data)
+        initial_set = set([force_text(value) for value in initial])
+        data_set = set([force_text(value) for value in data])
         return data_set != initial_set
 
 
@@ -901,11 +879,12 @@ class TypedMultipleChoiceField(MultipleChoiceField):
         self.empty_value = kwargs.pop('empty_value', [])
         super(TypedMultipleChoiceField, self).__init__(*args, **kwargs)
 
-    def _coerce(self, value):
+    def to_python(self, value):
         """
         Validates that the values are in self.choices and can be coerced to the
         right type.
         """
+        value = super(TypedMultipleChoiceField, self).to_python(value)
         if value == self.empty_value or value in self.empty_values:
             return self.empty_value
         new_value = []
@@ -919,10 +898,6 @@ class TypedMultipleChoiceField(MultipleChoiceField):
                     params={'value': choice},
                 )
         return new_value
-
-    def clean(self, value):
-        value = super(TypedMultipleChoiceField, self).clean(value)
-        return self._coerce(value)
 
     def validate(self, value):
         if value != self.empty_value:
@@ -974,26 +949,16 @@ class MultiValueField(Field):
     """
     default_error_messages = {
         'invalid': _('Enter a list of values.'),
-        'incomplete': _('Enter a complete value.'),
     }
 
     def __init__(self, fields=(), *args, **kwargs):
-        self.require_all_fields = kwargs.pop('require_all_fields', True)
         super(MultiValueField, self).__init__(*args, **kwargs)
+        # Set 'required' to False on the individual fields, because the
+        # required validation will be handled by MultiValueField, not by those
+        # individual fields.
         for f in fields:
-            f.error_messages.setdefault('incomplete',
-                                        self.error_messages['incomplete'])
-            if self.require_all_fields:
-                # Set 'required' to False on the individual fields, because the
-                # required validation will be handled by MultiValueField, not
-                # by those individual fields.
-                f.required = False
+            f.required = False
         self.fields = fields
-
-    def __deepcopy__(self, memo):
-        result = super(MultiValueField, self).__deepcopy__(memo)
-        result.fields = tuple([x.__deepcopy__(memo) for x in self.fields])
-        return result
 
     def validate(self, value):
         pass
@@ -1008,7 +973,7 @@ class MultiValueField(Field):
         DateField.clean(value[0]) and TimeField.clean(value[1]).
         """
         clean_data = []
-        errors = []
+        errors = ErrorList()
         if not value or isinstance(value, (list, tuple)):
             if not value or not [v for v in value if v not in self.empty_values]:
                 if self.required:
@@ -1022,26 +987,15 @@ class MultiValueField(Field):
                 field_value = value[i]
             except IndexError:
                 field_value = None
-            if field_value in self.empty_values:
-                if self.require_all_fields:
-                    # Raise a 'required' error if the MultiValueField is
-                    # required and any field is empty.
-                    if self.required:
-                        raise ValidationError(self.error_messages['required'], code='required')
-                elif field.required:
-                    # Otherwise, add an 'incomplete' error to the list of
-                    # collected errors and skip field cleaning, if a required
-                    # field is empty.
-                    if field.error_messages['incomplete'] not in errors:
-                        errors.append(field.error_messages['incomplete'])
-                    continue
+            if self.required and field_value in self.empty_values:
+                raise ValidationError(self.error_messages['required'], code='required')
             try:
                 clean_data.append(field.clean(field_value))
             except ValidationError as e:
                 # Collect all validation errors in a single list, which we'll
                 # raise at the end of clean(), rather than raising a single
-                # exception for the first error we encounter. Skip duplicates.
-                errors.extend(m for m in e.error_list if m not in errors)
+                # exception for the first error we encounter.
+                errors.extend(e.error_list)
         if errors:
             raise ValidationError(errors)
 
@@ -1068,11 +1022,7 @@ class MultiValueField(Field):
             if not isinstance(initial, list):
                 initial = self.widget.decompress(initial)
         for field, initial, data in zip(self.fields, initial, data):
-            try:
-                initial = field.to_python(initial)
-            except ValidationError:
-                return True
-            if field._has_changed(initial, data):
+            if field._has_changed(field.to_python(initial), data):
                 return True
         return False
 
@@ -1116,8 +1066,8 @@ class FilePathField(ChoiceField):
                         continue
                     full_file = os.path.join(self.path, f)
                     if (((self.allow_files and os.path.isfile(full_file)) or
-                            (self.allow_folders and os.path.isdir(full_file))) and
-                            (self.match is None or self.match_re.search(f))):
+                        (self.allow_folders and os.path.isdir(full_file))) and
+                        (self.match is None or self.match_re.search(f))):
                         self.choices.append((full_file, f))
             except OSError:
                 pass
@@ -1163,11 +1113,6 @@ class SplitDateTimeField(MultiValueField):
 
 class IPAddressField(CharField):
     default_validators = [validators.validate_ipv4_address]
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn("IPAddressField has been deprecated. Use GenericIPAddressField instead.",
-                      RemovedInDjango19Warning)
-        super(IPAddressField, self).__init__(*args, **kwargs)
 
     def to_python(self, value):
         if value in self.empty_values:

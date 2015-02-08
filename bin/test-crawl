@@ -25,7 +25,6 @@ settings_module = args.settings or "ietf.settings"
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module)
 
-import django
 import django.test
 
 # prevent memory from leaking when settings.DEBUG=True
@@ -78,7 +77,6 @@ def extract_html_urls(content):
 
         yield url
 
-django.setup()
 client = django.test.Client()
 
 for url in initial_urls:

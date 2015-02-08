@@ -4,14 +4,12 @@ Classes to represent the default SQL aggregate functions
 import copy
 
 from django.db.models.fields import IntegerField, FloatField
-from django.db.models.lookups import RegisterLookupMixin
-from django.utils.functional import cached_property
 
+# Fake fields used to identify aggregate types in data-conversion operations.
+ordinal_aggregate_field = IntegerField()
+computed_aggregate_field = FloatField()
 
-__all__ = ['Aggregate', 'Avg', 'Count', 'Max', 'Min', 'StdDev', 'Sum', 'Variance']
-
-
-class Aggregate(RegisterLookupMixin):
+class Aggregate(object):
     """
     Default SQL Aggregate.
     """
@@ -57,22 +55,13 @@ class Aggregate(RegisterLookupMixin):
 
         while tmp and isinstance(tmp, Aggregate):
             if getattr(tmp, 'is_ordinal', False):
-                tmp = self._ordinal_aggregate_field
+                tmp = ordinal_aggregate_field
             elif getattr(tmp, 'is_computed', False):
-                tmp = self._computed_aggregate_field
+                tmp = computed_aggregate_field
             else:
                 tmp = tmp.source
 
         self.field = tmp
-
-    # Two fake fields used to identify aggregate types in data-conversion operations.
-    @cached_property
-    def _ordinal_aggregate_field(self):
-        return IntegerField()
-
-    @cached_property
-    def _computed_aggregate_field(self):
-        return FloatField()
 
     def relabeled_clone(self, change_map):
         clone = copy.copy(self)
@@ -87,9 +76,9 @@ class Aggregate(RegisterLookupMixin):
         if hasattr(self.col, 'as_sql'):
             field_name, params = self.col.as_sql(qn, connection)
         elif isinstance(self.col, (list, tuple)):
-            field_name = '.'.join(qn(c) for c in self.col)
+            field_name = '.'.join([qn(c) for c in self.col])
         else:
-            field_name = qn(self.col)
+            field_name = self.col
 
         substitutions = {
             'function': self.sql_function,
@@ -99,18 +88,10 @@ class Aggregate(RegisterLookupMixin):
 
         return self.sql_template % substitutions, params
 
-    def get_group_by_cols(self):
-        return []
-
-    @property
-    def output_field(self):
-        return self.field
-
 
 class Avg(Aggregate):
     is_computed = True
     sql_function = 'AVG'
-
 
 class Count(Aggregate):
     is_ordinal = True
@@ -120,14 +101,11 @@ class Count(Aggregate):
     def __init__(self, col, distinct=False, **extra):
         super(Count, self).__init__(col, distinct='DISTINCT ' if distinct else '', **extra)
 
-
 class Max(Aggregate):
     sql_function = 'MAX'
 
-
 class Min(Aggregate):
     sql_function = 'MIN'
-
 
 class StdDev(Aggregate):
     is_computed = True
@@ -136,10 +114,8 @@ class StdDev(Aggregate):
         super(StdDev, self).__init__(col, **extra)
         self.sql_function = 'STDDEV_SAMP' if sample else 'STDDEV_POP'
 
-
 class Sum(Aggregate):
     sql_function = 'SUM'
-
 
 class Variance(Aggregate):
     is_computed = True

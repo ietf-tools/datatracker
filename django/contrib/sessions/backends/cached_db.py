@@ -4,9 +4,8 @@ Cached, database-backed sessions.
 
 import logging
 
-from django.conf import settings
 from django.contrib.sessions.backends.db import SessionStore as DBStore
-from django.core.cache import caches
+from django.core.cache import cache
 from django.core.exceptions import SuspiciousOperation
 from django.utils import timezone
 from django.utils.encoding import force_text
@@ -20,7 +19,6 @@ class SessionStore(DBStore):
     """
 
     def __init__(self, session_key=None):
-        self._cache = caches[settings.SESSION_CACHE_ALIAS]
         super(SessionStore, self).__init__(session_key)
 
     @property
@@ -29,7 +27,7 @@ class SessionStore(DBStore):
 
     def load(self):
         try:
-            data = self._cache.get(self.cache_key, None)
+            data = cache.get(self.cache_key, None)
         except Exception:
             # Some backends (e.g. memcache) raise an exception on invalid
             # cache keys. If this happens, reset the session. See #17810.
@@ -44,7 +42,7 @@ class SessionStore(DBStore):
                     expire_date__gt=timezone.now()
                 )
                 data = self.decode(s.session_data)
-                self._cache.set(self.cache_key, data,
+                cache.set(self.cache_key, data,
                     self.get_expiry_age(expiry=s.expire_date))
             except (Session.DoesNotExist, SuspiciousOperation) as e:
                 if isinstance(e, SuspiciousOperation):
@@ -56,13 +54,13 @@ class SessionStore(DBStore):
         return data
 
     def exists(self, session_key):
-        if (KEY_PREFIX + session_key) in self._cache:
+        if (KEY_PREFIX + session_key) in cache:
             return True
         return super(SessionStore, self).exists(session_key)
 
     def save(self, must_create=False):
         super(SessionStore, self).save(must_create)
-        self._cache.set(self.cache_key, self._session, self.get_expiry_age())
+        cache.set(self.cache_key, self._session, self.get_expiry_age())
 
     def delete(self, session_key=None):
         super(SessionStore, self).delete(session_key)
@@ -70,7 +68,7 @@ class SessionStore(DBStore):
             if self.session_key is None:
                 return
             session_key = self.session_key
-        self._cache.delete(KEY_PREFIX + session_key)
+        cache.delete(KEY_PREFIX + session_key)
 
     def flush(self):
         """

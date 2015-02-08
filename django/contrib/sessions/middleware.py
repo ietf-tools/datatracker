@@ -1,19 +1,15 @@
-from importlib import import_module
 import time
 
 from django.conf import settings
 from django.utils.cache import patch_vary_headers
 from django.utils.http import cookie_date
-
+from django.utils.importlib import import_module
 
 class SessionMiddleware(object):
-    def __init__(self):
-        engine = import_module(settings.SESSION_ENGINE)
-        self.SessionStore = engine.SessionStore
-
     def process_request(self, request):
+        engine = import_module(settings.SESSION_ENGINE)
         session_key = request.COOKIES.get(settings.SESSION_COOKIE_NAME, None)
-        request.session = self.SessionStore(session_key)
+        request.session = engine.SessionStore(session_key)
 
     def process_response(self, request, response):
         """

@@ -26,7 +26,6 @@ REASON_BAD_TOKEN = "CSRF token missing or incorrect."
 
 CSRF_KEY_LENGTH = 32
 
-
 def _get_failure_view():
     """
     Returns the view to be used for CSRF rejections
@@ -93,7 +92,8 @@ class CsrfViewMiddleware(object):
         return None
 
     def _reject(self, request, reason):
-        logger.warning('Forbidden (%s): %s', reason, request.path,
+        logger.warning('Forbidden (%s): %s',
+                       reason, request.path,
             extra={
                 'status_code': 403,
                 'request': request,
@@ -148,11 +148,7 @@ class CsrfViewMiddleware(object):
                 # Barth et al. found that the Referer header is missing for
                 # same-domain requests in only about 0.2% of cases or less, so
                 # we can use strict Referer checking.
-                referer = force_text(
-                    request.META.get('HTTP_REFERER'),
-                    strings_only=True,
-                    errors='replace'
-                )
+                referer = request.META.get('HTTP_REFERER')
                 if referer is None:
                     return self._reject(request, REASON_NO_REFERER)
 
@@ -188,7 +184,7 @@ class CsrfViewMiddleware(object):
             return response
 
         # If CSRF_COOKIE is unset, then CsrfViewMiddleware.process_view was
-        # never called, probably because a request middleware returned a response
+        # never called, probaby because a request middleware returned a response
         # (for example, contrib.auth redirecting to a login page).
         if request.META.get("CSRF_COOKIE") is None:
             return response
@@ -200,7 +196,7 @@ class CsrfViewMiddleware(object):
         # the expiry timer.
         response.set_cookie(settings.CSRF_COOKIE_NAME,
                             request.META["CSRF_COOKIE"],
-                            max_age=settings.CSRF_COOKIE_AGE,
+                            max_age = 60 * 60 * 24 * 7 * 52,
                             domain=settings.CSRF_COOKIE_DOMAIN,
                             path=settings.CSRF_COOKIE_PATH,
                             secure=settings.CSRF_COOKIE_SECURE,

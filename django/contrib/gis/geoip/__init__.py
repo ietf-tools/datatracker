@@ -11,11 +11,10 @@
  Grab GeoIP.dat.gz and GeoLiteCity.dat.gz, and unzip them in the directory
  corresponding to settings.GEOIP_PATH.
 """
-__all__ = ['HAS_GEOIP']
+from __future__ import absolute_import
 
 try:
     from .base import GeoIP, GeoIPException
     HAS_GEOIP = True
-    __all__ += ['GeoIP', 'GeoIPException']
-except RuntimeError:  # libgeoip.py raises a RuntimeError if no GeoIP library is found
+except:
     HAS_GEOIP = False

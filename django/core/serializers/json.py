@@ -4,7 +4,6 @@ Serialize data to/from JSON
 
 # Avoid shadowing the standard library json module
 from __future__ import absolute_import
-from __future__ import unicode_literals
 
 import datetime
 import decimal
@@ -16,7 +15,6 @@ from django.core.serializers.python import Serializer as PythonSerializer
 from django.core.serializers.python import Deserializer as PythonDeserializer
 from django.utils import six
 from django.utils.timezone import is_aware
-
 
 class Serializer(PythonSerializer):
     """
@@ -32,9 +30,6 @@ class Serializer(PythonSerializer):
         self.json_kwargs = self.options.copy()
         self.json_kwargs.pop('stream', None)
         self.json_kwargs.pop('fields', None)
-        if self.options.get('indent'):
-            # Prevent trailing spaces
-            self.json_kwargs['separators'] = (',', ': ')
         self.stream.write("[")
 
     def end_serialization(self):
@@ -105,8 +100,11 @@ class DjangoJSONEncoder(json.JSONEncoder):
             return r
         elif isinstance(o, decimal.Decimal):
             return str(o)
+        elif isinstance(o, datetime.timedelta):
+            return o.days * 24*60*60 + o.seconds
         else:
             return super(DjangoJSONEncoder, self).default(o)
 
 # Older, deprecated class name (for backwards compatibility purposes).
 DateTimeAwareJSONEncoder = DjangoJSONEncoder
+

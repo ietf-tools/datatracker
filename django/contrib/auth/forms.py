@@ -1,10 +1,11 @@
 from __future__ import unicode_literals
 
-from collections import OrderedDict
+import warnings
 
 from django import forms
-from django.forms.utils import flatatt
+from django.forms.util import flatatt
 from django.template import loader
+from django.utils.datastructures import SortedDict
 from django.utils.encoding import force_bytes
 from django.utils.html import format_html, format_html_join
 from django.utils.http import urlsafe_base64_encode
@@ -16,16 +17,12 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX, identify_hasher
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.sites.shortcuts import get_current_site
+from django.contrib.sites.models import get_current_site
 
 
 UNMASKED_DIGITS_TO_SHOW = 6
 
-
-def mask_password(password):
-    shown = password[:UNMASKED_DIGITS_TO_SHOW]
-    masked = "*" * max(len(password) - UNMASKED_DIGITS_TO_SHOW, 0)
-    return shown + masked
+mask_password = lambda p: "%s%s" % (p[:UNMASKED_DIGITS_TO_SHOW], "*" * max(len(p) - UNMASKED_DIGITS_TO_SHOW, 0))
 
 
 class ReadOnlyPasswordHashWidget(forms.Widget):
@@ -76,10 +73,10 @@ class UserCreationForm(forms.ModelForm):
         'duplicate_username': _("A user with that username already exists."),
         'password_mismatch': _("The two password fields didn't match."),
     }
-    username = forms.RegexField(label=_("Username"), max_length=30,
+    username = forms.RegexField(label=_("Username"), max_length=64,
         regex=r'^[\w.@+-]+$',
-        help_text=_("Required. 30 characters or fewer. Letters, digits and "
-                    "@/./+/-/_ only."),
+        help_text=_("Required. 64 characters or fewer. Letters, digits and "
+                      "@/./+/-/_ only."),
         error_messages={
             'invalid': _("This value may contain only letters, numbers and "
                          "@/./+/-/_ characters.")})
@@ -126,9 +123,9 @@ class UserCreationForm(forms.ModelForm):
 
 class UserChangeForm(forms.ModelForm):
     username = forms.RegexField(
-        label=_("Username"), max_length=30, regex=r"^[\w.@+-]+$",
-        help_text=_("Required. 30 characters or fewer. Letters, digits and "
-                    "@/./+/-/_ only."),
+        label=_("Username"), max_length=64, regex=r"^[\w.@+-]+$",
+        help_text=_("Required. 64 characters or fewer. Letters, digits and "
+                      "@/./+/-/_ only."),
         error_messages={
             'invalid': _("This value may contain only letters, numbers and "
                          "@/./+/-/_ characters.")})
@@ -196,27 +193,16 @@ class AuthenticationForm(forms.Form):
                     code='invalid_login',
                     params={'username': self.username_field.verbose_name},
                 )
-            else:
-                self.confirm_login_allowed(self.user_cache)
-
+            elif not self.user_cache.is_active:
+                raise forms.ValidationError(
+                    self.error_messages['inactive'],
+                    code='inactive',
+                )
         return self.cleaned_data
 
-    def confirm_login_allowed(self, user):
-        """
-        Controls whether the given User may log in. This is a policy setting,
-        independent of end-user authentication. This default behavior is to
-        allow login by active users, and reject login by inactive users.
-
-        If the given user cannot log in, this method should raise a
-        ``forms.ValidationError``.
-
-        If the given user may log in, this method should return None.
-        """
-        if not user.is_active:
-            raise forms.ValidationError(
-                self.error_messages['inactive'],
-                code='inactive',
-            )
+    def check_for_test_cookie(self):
+        warnings.warn("check_for_test_cookie is deprecated; ensure your login "
+                "view is CSRF-protected.", DeprecationWarning)
 
     def get_user_id(self):
         if self.user_cache:
@@ -234,7 +220,7 @@ class PasswordResetForm(forms.Form):
              subject_template_name='registration/password_reset_subject.txt',
              email_template_name='registration/password_reset_email.html',
              use_https=False, token_generator=default_token_generator,
-             from_email=None, request=None, html_email_template_name=None):
+             from_email=None, request=None):
         """
         Generates a one-use only link for resetting password and sends to the
         user.
@@ -268,18 +254,13 @@ class PasswordResetForm(forms.Form):
             # Email subject *must not* contain newlines
             subject = ''.join(subject.splitlines())
             email = loader.render_to_string(email_template_name, c)
-
-            if html_email_template_name:
-                html_email = loader.render_to_string(html_email_template_name, c)
-            else:
-                html_email = None
-            send_mail(subject, email, from_email, [user.email], html_message=html_email)
+            send_mail(subject, email, from_email, [user.email])
 
 
 class SetPasswordForm(forms.Form):
     """
-    A form that lets a user change set their password without entering the old
-    password
+    A form that lets a user change set his/her password without entering the
+    old password
     """
     error_messages = {
         'password_mismatch': _("The two password fields didn't match."),
@@ -313,8 +294,8 @@ class SetPasswordForm(forms.Form):
 
 class PasswordChangeForm(SetPasswordForm):
     """
-    A form that lets a user change their password by entering their old
-    password.
+    A form that lets a user change his/her password by entering
+    their old password.
     """
     error_messages = dict(SetPasswordForm.error_messages, **{
         'password_incorrect': _("Your old password was entered incorrectly. "
@@ -335,10 +316,10 @@ class PasswordChangeForm(SetPasswordForm):
             )
         return old_password
 
-PasswordChangeForm.base_fields = OrderedDict(
+PasswordChangeForm.base_fields = SortedDict([
     (k, PasswordChangeForm.base_fields[k])
     for k in ['old_password', 'new_password1', 'new_password2']
-)
+])
 
 
 class AdminPasswordChangeForm(forms.Form):

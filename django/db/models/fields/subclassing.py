@@ -7,7 +7,6 @@ to_python() and the other necessary methods and everything will work
 seamlessly.
 """
 
-
 class SubfieldBase(type):
     """
     A metaclass for custom Field subclasses. This ensures the model's attribute
@@ -20,7 +19,6 @@ class SubfieldBase(type):
         )
         return new_class
 
-
 class Creator(object):
     """
     A placeholder class that provides a way to set the attribute on the model.
@@ -30,12 +28,11 @@ class Creator(object):
 
     def __get__(self, obj, type=None):
         if obj is None:
-            return self
+            raise AttributeError('Can only be accessed via an instance.')
         return obj.__dict__[self.field.name]
 
     def __set__(self, obj, value):
         obj.__dict__[self.field.name] = self.field.to_python(value)
-
 
 def make_contrib(superclass, func=None):
     """

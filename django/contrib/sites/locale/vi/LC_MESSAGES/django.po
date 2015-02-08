@@ -2,15 +2,15 @@
 #
 # Translators:
 # Jannis Leidel <jannis@leidel.info>, 2011
-# Thanh Le Viet <lethanhx2k@gmail.com>, 2013
+# Lê Thanh <lethanhx2k@gmail.com>, 2013
 # Tran <hongdiepkien@gmail.com>, 2011
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-05-20 09:43+0000\n"
-"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-05-11 02:20+0000\n"
+"Last-Translator: Lê Thanh <lethanhx2k@gmail.com>\n"
 "Language-Team: Vietnamese (http://www.transifex.com/projects/p/django/"
 "language/vi/)\n"
 "MIME-Version: 1.0\n"
@@ -19,26 +19,22 @@ msgstr ""
 "Language: vi\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: contrib/sites/apps.py:8
-msgid "Sites"
-msgstr ""
-
-#: contrib/sites/models.py:30
+#: models.py:25
 msgid "The domain name cannot contain any spaces or tabs."
 msgstr "Tên miền không gồm kí tự trống hoặc tab"
 
-#: contrib/sites/models.py:67
+#: models.py:58
 msgid "domain name"
 msgstr "Tên miền"
 
-#: contrib/sites/models.py:69
+#: models.py:60
 msgid "display name"
 msgstr "Tên hiển thị"
 
-#: contrib/sites/models.py:74
+#: models.py:65
 msgid "site"
 msgstr "trang web"
 
-#: contrib/sites/models.py:75
+#: models.py:66
 msgid "sites"
 msgstr "các trang web"

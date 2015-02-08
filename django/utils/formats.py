@@ -1,12 +1,10 @@
-from __future__ import absolute_import  # Avoid importing `importlib` from this package.
-
 import decimal
 import datetime
-from importlib import import_module
 import unicodedata
 
 from django.conf import settings
 from django.utils import dateformat, numberformat, datetime_safe
+from django.utils.importlib import import_module
 from django.utils.encoding import force_str
 from django.utils.functional import lazy
 from django.utils.safestring import mark_safe
@@ -30,7 +28,6 @@ ISO_INPUT_FORMATS = {
     ),
 }
 
-
 def reset_format_cache():
     """Clear any cached formats.
 
@@ -41,15 +38,14 @@ def reset_format_cache():
     _format_cache = {}
     _format_modules_cache = {}
 
-
-def iter_format_modules(lang, format_module_path=None):
+def iter_format_modules(lang):
     """
     Does the heavy lifting of finding format modules.
     """
     if check_for_language(lang):
         format_locations = ['django.conf.locale.%s']
-        if format_module_path:
-            format_locations.append(format_module_path + '.%s')
+        if settings.FORMAT_MODULE_PATH:
+            format_locations.append(settings.FORMAT_MODULE_PATH + '.%s')
             format_locations.reverse()
         locale = to_locale(lang)
         locales = [locale]
@@ -62,18 +58,16 @@ def iter_format_modules(lang, format_module_path=None):
                 except ImportError:
                     pass
 
-
 def get_format_modules(lang=None, reverse=False):
     """
     Returns a list of the format modules found
     """
     if lang is None:
         lang = get_language()
-    modules = _format_modules_cache.setdefault(lang, list(iter_format_modules(lang, settings.FORMAT_MODULE_PATH)))
+    modules = _format_modules_cache.setdefault(lang, list(iter_format_modules(lang)))
     if reverse:
         return list(reversed(modules))
     return modules
-
 
 def get_format(format_type, lang=None, use_l10n=None):
     """
@@ -114,7 +108,6 @@ def get_format(format_type, lang=None, use_l10n=None):
 
 get_format_lazy = lazy(get_format, six.text_type, list, tuple)
 
-
 def date_format(value, format=None, use_l10n=None):
     """
     Formats a datetime.date or datetime.datetime object using a
@@ -125,7 +118,6 @@ def date_format(value, format=None, use_l10n=None):
     """
     return dateformat.format(value, get_format(format or 'DATE_FORMAT', use_l10n=use_l10n))
 
-
 def time_format(value, format=None, use_l10n=None):
     """
     Formats a datetime.time object using a localizable format
@@ -134,7 +126,6 @@ def time_format(value, format=None, use_l10n=None):
     be localized (or not), overriding the value of settings.USE_L10N.
     """
     return dateformat.time_format(value, get_format(format or 'TIME_FORMAT', use_l10n=use_l10n))
-
 
 def number_format(value, decimal_pos=None, use_l10n=None, force_grouping=False):
     """
@@ -155,7 +146,6 @@ def number_format(value, decimal_pos=None, use_l10n=None, force_grouping=False):
         get_format('THOUSAND_SEPARATOR', lang, use_l10n=use_l10n),
         force_grouping=force_grouping
     )
-
 
 def localize(value, use_l10n=None):
     """
@@ -178,7 +168,6 @@ def localize(value, use_l10n=None):
     else:
         return value
 
-
 def localize_input(value, default=None):
     """
     Checks if an input value is a localizable type and returns it
@@ -198,7 +187,6 @@ def localize_input(value, default=None):
         format = force_str(default or get_format('TIME_INPUT_FORMATS')[0])
         return value.strftime(format)
     return value
-
 
 def sanitize_separators(value):
     """

@@ -4,11 +4,11 @@
 # Jannis Leidel <jannis@leidel.info>, 2011
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-05-20 09:45+0000\n"
-"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-04-29 08:27+0000\n"
+"Last-Translator: claudep <claude@2xlibre.net>\n"
 "Language-Team: Latvian (http://www.transifex.com/projects/p/django/language/"
 "lv/)\n"
 "MIME-Version: 1.0\n"
@@ -18,15 +18,11 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : "
 "2);\n"
 
-#: contrib/redirects/apps.py:8
-msgid "Redirects"
-msgstr ""
-
-#: contrib/redirects/models.py:10
+#: models.py:9
 msgid "redirect from"
 msgstr "pārvirzīt(redirect) no"
 
-#: contrib/redirects/models.py:11
+#: models.py:10
 msgid ""
 "This should be an absolute path, excluding the domain name. Example: '/"
 "events/search/'."
@@ -34,11 +30,11 @@ msgstr ""
 "Tam jābūt absolūtajam ceļam, atskaitot domēna vārdu. Piemēram: '/notikumi/"
 "meklet/'."
 
-#: contrib/redirects/models.py:12
+#: models.py:11
 msgid "redirect to"
 msgstr "pārvirzīt(redirect) uz"
 
-#: contrib/redirects/models.py:13
+#: models.py:12
 msgid ""
 "This can be either an absolute path (as above) or a full URL starting with "
 "'http://'."
@@ -46,10 +42,10 @@ msgstr ""
 "Šis var būt vai nu absolūtais ceļš (kā augstāk) vai pilnais URL, kas sākas "
 "ar 'http://'."
 
-#: contrib/redirects/models.py:16
+#: models.py:15
 msgid "redirect"
 msgstr "pārvirzīt"
 
-#: contrib/redirects/models.py:17
+#: models.py:16
 msgid "redirects"
 msgstr "pārvirzījumi"

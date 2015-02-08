@@ -2,16 +2,15 @@
 #
 # Translators:
 # Jannis Leidel <jannis@leidel.info>, 2011
-# jensadne <jensadne@pvv.ntnu.no>, 2014
-# Jon <jonklo@gmail.com>, 2013
-# Jon <jonklo@gmail.com>, 2012
+# jonklo <jonklo@gmail.com>, 2013
+# jonklo <jonklo@gmail.com>, 2012
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-07-03 14:31+0000\n"
-"Last-Translator: jensadne <jensadne@pvv.ntnu.no>\n"
+"POT-Creation-Date: 2013-08-16 15:07+0200\n"
+"PO-Revision-Date: 2013-09-02 16:48+0000\n"
+"Last-Translator: jonklo <jonklo@gmail.com>\n"
 "Language-Team: Norwegian Bokmål (http://www.transifex.com/projects/p/django/"
 "language/nb/)\n"
 "MIME-Version: 1.0\n"
@@ -20,22 +19,18 @@ msgstr ""
 "Language: nb\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: contrib/formtools/apps.py:8
-msgid "Form Tools"
-msgstr "Skjema-verktøy"
-
-#: contrib/formtools/templates/formtools/wizard/wizard_form.html:15
+#: templates/formtools/wizard/wizard_form.html:15
 msgid "first step"
 msgstr "første steg"
 
-#: contrib/formtools/templates/formtools/wizard/wizard_form.html:16
+#: templates/formtools/wizard/wizard_form.html:16
 msgid "prev step"
 msgstr "forrige steg"
 
-#: contrib/formtools/templates/formtools/wizard/wizard_form.html:18
+#: templates/formtools/wizard/wizard_form.html:18
 msgid "submit"
 msgstr "lagre"
 
-#: contrib/formtools/wizard/views.py:276
+#: wizard/views.py:275
 msgid "ManagementForm data is missing or has been tampered."
-msgstr "ManagementForm-data mangler eller har blitt endret."
+msgstr "ManagementForm-data mangler eller har blitt tuklet med."

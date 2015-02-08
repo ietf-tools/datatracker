@@ -5,7 +5,8 @@ from django.contrib.messages.tests.base import BaseTests
 from django.contrib.messages.storage.cookie import (CookieStorage,
     MessageEncoder, MessageDecoder)
 from django.contrib.messages.storage.base import Message
-from django.test import TestCase, override_settings
+from django.test import TestCase
+from django.test.utils import override_settings
 from django.utils.safestring import SafeData, mark_safe
 
 
@@ -40,7 +41,7 @@ def stored_cookie_messages_count(storage, response):
     return len(data)
 
 
-@override_settings(SESSION_COOKIE_DOMAIN='.example.com', SESSION_COOKIE_SECURE=True, SESSION_COOKIE_HTTPONLY=True)
+@override_settings(SESSION_COOKIE_DOMAIN='.example.com')
 class CookieTest(BaseTests, TestCase):
     storage_class = CookieStorage
 
@@ -55,10 +56,10 @@ class CookieTest(BaseTests, TestCase):
         # Test that the message actually contains what we expect.
         self.assertEqual(list(storage), example_messages)
 
-    def test_cookie_setings(self):
+    def test_domain(self):
         """
-        Ensure that CookieStorage honors SESSION_COOKIE_DOMAIN, SESSION_COOKIE_SECURE and SESSION_COOKIE_HTTPONLY
-        Refs #15618 and #20972.
+        Ensure that CookieStorage honors SESSION_COOKIE_DOMAIN.
+        Refs #15618.
         """
         # Test before the messages have been consumed
         storage = self.get_storage()
@@ -68,15 +69,13 @@ class CookieTest(BaseTests, TestCase):
         self.assertTrue('test' in response.cookies['messages'].value)
         self.assertEqual(response.cookies['messages']['domain'], '.example.com')
         self.assertEqual(response.cookies['messages']['expires'], '')
-        self.assertEqual(response.cookies['messages']['secure'], True)
-        self.assertEqual(response.cookies['messages']['httponly'], True)
 
-        # Test deletion of the cookie (storing with an empty value) after the messages have been consumed
+        # Test after the messages have been consumed
         storage = self.get_storage()
         response = self.get_response()
         storage.add(constants.INFO, 'test')
         for m in storage:
-            pass  # Iterate through the storage to simulate consumption of messages.
+            pass # Iterate through the storage to simulate consumption of messages.
         storage.update(response)
         self.assertEqual(response.cookies['messages'].value, '')
         self.assertEqual(response.cookies['messages']['domain'], '.example.com')
@@ -125,8 +124,8 @@ class CookieTest(BaseTests, TestCase):
         messages = [
             {
                 'message': Message(constants.INFO, 'Test message'),
-                'message_list': [Message(constants.INFO, 'message %s')
-                                 for x in range(5)] + [{'another-message':
+                'message_list': [Message(constants.INFO, 'message %s') \
+                                 for x in range(5)] + [{'another-message': \
                                  Message(constants.ERROR, 'error')}],
             },
             Message(constants.INFO, 'message %s'),
@@ -153,25 +152,3 @@ class CookieTest(BaseTests, TestCase):
             encode_decode(mark_safe("<b>Hello Django!</b>")), SafeData)
         self.assertNotIsInstance(
             encode_decode("<b>Hello Django!</b>"), SafeData)
-
-    def test_pre_1_5_message_format(self):
-        """
-        For ticket #22426. Tests whether messages that were set in the cookie
-        before the addition of is_safedata are decoded correctly.
-        """
-
-        # Encode the messages using the current encoder.
-        messages = [Message(constants.INFO, 'message %s') for x in range(5)]
-        encoder = MessageEncoder(separators=(',', ':'))
-        encoded_messages = encoder.encode(messages)
-
-        # Remove the is_safedata flag from the messages in order to imitate
-        # the behavior of before 1.5 (monkey patching).
-        encoded_messages = json.loads(encoded_messages)
-        for obj in encoded_messages:
-            obj.pop(1)
-        encoded_messages = json.dumps(encoded_messages, separators=(',', ':'))
-
-        # Decode the messages in the old format (without is_safedata)
-        decoded_messages = json.loads(encoded_messages, cls=MessageDecoder)
-        self.assertEqual(messages, decoded_messages)

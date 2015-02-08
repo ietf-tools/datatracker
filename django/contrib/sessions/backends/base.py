@@ -12,7 +12,7 @@ from django.utils.crypto import get_random_string
 from django.utils.crypto import salted_hmac
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_text
-from django.utils.module_loading import import_string
+from django.utils.module_loading import import_by_path
 
 from django.contrib.sessions.exceptions import SuspiciousSession
 
@@ -20,14 +20,12 @@ from django.contrib.sessions.exceptions import SuspiciousSession
 # on case insensitive file systems.
 VALID_KEY_CHARS = string.ascii_lowercase + string.digits
 
-
 class CreateError(Exception):
     """
     Used internally as a consistent exception type to catch from save (see the
     docstring for SessionBase.save() for details).
     """
     pass
-
 
 class SessionBase(object):
     """
@@ -40,7 +38,7 @@ class SessionBase(object):
         self._session_key = session_key
         self.accessed = False
         self.modified = False
-        self.serializer = import_string(settings.SESSION_SERIALIZER)
+        self.serializer = import_by_path(settings.SESSION_SERIALIZER)
 
     def __contains__(self, key):
         return key in self._session
@@ -286,7 +284,7 @@ class SessionBase(object):
         """
         Returns True if the given session_key already exists.
         """
-        raise NotImplementedError('subclasses of SessionBase must provide an exists() method')
+        raise NotImplementedError
 
     def create(self):
         """
@@ -294,7 +292,7 @@ class SessionBase(object):
         a unique key and will have saved the result once (with empty data)
         before the method returns.
         """
-        raise NotImplementedError('subclasses of SessionBase must provide a create() method')
+        raise NotImplementedError
 
     def save(self, must_create=False):
         """
@@ -302,20 +300,20 @@ class SessionBase(object):
         is created (otherwise a CreateError exception is raised). Otherwise,
         save() can update an existing object with the same key.
         """
-        raise NotImplementedError('subclasses of SessionBase must provide a save() method')
+        raise NotImplementedError
 
     def delete(self, session_key=None):
         """
         Deletes the session data under this key. If the key is None, the
         current session key value is used.
         """
-        raise NotImplementedError('subclasses of SessionBase must provide a delete() method')
+        raise NotImplementedError
 
     def load(self):
         """
         Loads the session data and returns a dictionary.
         """
-        raise NotImplementedError('subclasses of SessionBase must provide a load() method')
+        raise NotImplementedError
 
     @classmethod
     def clear_expired(cls):
@@ -326,4 +324,4 @@ class SessionBase(object):
         NotImplementedError. If it isn't necessary, because the backend has
         a built-in expiration mechanism, it should be a no-op.
         """
-        raise NotImplementedError('This backend does not support clear_expired().')
+        raise NotImplementedError

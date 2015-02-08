@@ -5,3 +5,4 @@ urlpatterns = patterns('',
     (r'^flatpage_root', include('django.contrib.flatpages.urls')),
     (r'^accounts/', include('django.contrib.auth.urls')),
 )
+

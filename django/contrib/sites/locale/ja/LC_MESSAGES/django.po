@@ -2,13 +2,13 @@
 #
 # Translators:
 # Jannis Leidel <jannis@leidel.info>, 2011
-# Shinya Okano <tokibito@gmail.com>, 2013-2014
+# Shinya Okano <tokibito@gmail.com>, 2013
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-06-28 09:50+0000\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-05-29 15:58+0000\n"
 "Last-Translator: Shinya Okano <tokibito@gmail.com>\n"
 "Language-Team: Japanese (http://www.transifex.com/projects/p/django/language/"
 "ja/)\n"
@@ -18,26 +18,22 @@ msgstr ""
 "Language: ja\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: contrib/sites/apps.py:8
-msgid "Sites"
-msgstr "サイト"
-
-#: contrib/sites/models.py:30
+#: models.py:25
 msgid "The domain name cannot contain any spaces or tabs."
 msgstr "ドメイン名にスペース、タブを含めることはできません。"
 
-#: contrib/sites/models.py:67
+#: models.py:58
 msgid "domain name"
 msgstr "ドメイン名"
 
-#: contrib/sites/models.py:69
+#: models.py:60
 msgid "display name"
 msgstr "表示名"
 
-#: contrib/sites/models.py:74
+#: models.py:65
 msgid "site"
 msgstr "サイト"
 
-#: contrib/sites/models.py:75
+#: models.py:66
 msgid "sites"
 msgstr "サイト"

@@ -6,7 +6,6 @@ from django.utils.html import avoid_wrapping
 from django.utils.timezone import is_aware, utc
 from django.utils.translation import ugettext, ungettext_lazy
 
-
 def timesince(d, now=None, reversed=False):
     """
     Takes two datetime objects and returns the time between d and now
@@ -56,7 +55,6 @@ def timesince(d, now=None, reversed=False):
         if count2 != 0:
             result += ugettext(', ') + avoid_wrapping(name2 % count2)
     return result
-
 
 def timeuntil(d, now=None):
     """

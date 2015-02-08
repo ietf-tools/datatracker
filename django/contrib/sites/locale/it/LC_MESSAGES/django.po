@@ -2,15 +2,14 @@
 #
 # Translators:
 # Jannis Leidel <jannis@leidel.info>, 2011
-# Marco Bonetti, 2014
 # Nicola Larosa <transifex@teknico.net>, 2013
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-06-30 11:45+0000\n"
-"Last-Translator: Marco Bonetti\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-04-29 08:23+0000\n"
+"Last-Translator: claudep <claude@2xlibre.net>\n"
 "Language-Team: Italian (http://www.transifex.com/projects/p/django/language/"
 "it/)\n"
 "MIME-Version: 1.0\n"
@@ -19,26 +18,22 @@ msgstr ""
 "Language: it\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: contrib/sites/apps.py:8
-msgid "Sites"
-msgstr "Siti"
-
-#: contrib/sites/models.py:30
+#: models.py:25
 msgid "The domain name cannot contain any spaces or tabs."
 msgstr "Il nome di dominio non può contenere spazi né tab."
 
-#: contrib/sites/models.py:67
+#: models.py:58
 msgid "domain name"
 msgstr "nome di dominio"
 
-#: contrib/sites/models.py:69
+#: models.py:60
 msgid "display name"
 msgstr "nome visualizzato"
 
-#: contrib/sites/models.py:74
+#: models.py:65
 msgid "site"
 msgstr "sito"
 
-#: contrib/sites/models.py:75
+#: models.py:66
 msgid "sites"
 msgstr "siti"

@@ -1,13 +1,10 @@
 # various authentication and authorization utilities
 
-from functools import wraps
-
 from django.utils.http import urlquote
 from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.utils.decorators import available_attrs
 
 from ietf.group.models import Role
 from ietf.person.models import Person
@@ -81,7 +78,6 @@ def passes_test_decorator(test_func, message):
     error. The test function should be on the form fn(user) ->
     true/false."""
     def decorate(view_func):
-        @wraps(view_func, assigned=available_attrs(view_func))
         def inner(request, *args, **kwargs):
             if not request.user.is_authenticated():
                 return HttpResponseRedirect('%s?%s=%s' % (settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
@@ -91,7 +87,6 @@ def passes_test_decorator(test_func, message):
                 return HttpResponseForbidden(message)
         return inner
     return decorate
-
 
 def role_required(*role_names):
     """View decorator for checking that the user is logged in and

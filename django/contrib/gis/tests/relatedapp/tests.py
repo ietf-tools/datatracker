@@ -1,10 +1,9 @@
-from __future__ import unicode_literals
-
-from unittest import skipUnless
+from __future__ import absolute_import
 
 from django.contrib.gis.geos import HAS_GEOS
 from django.contrib.gis.tests.utils import HAS_SPATIAL_DB, mysql, oracle, no_mysql, no_oracle, no_spatialite
 from django.test import TestCase
+from django.utils.unittest import skipUnless
 
 if HAS_GEOS:
     from django.contrib.gis.db.models import Collect, Count, Extent, F, Union
@@ -27,7 +26,7 @@ class RelatedGeoModelTest(TestCase):
         cities = (
             ('Aurora', 'TX', -97.516111, 33.058333),
             ('Roswell', 'NM', -104.528056, 33.387222),
-            ('Kecksburg', 'PA', -79.460734, 40.18476),
+            ('Kecksburg', 'PA',  -79.460734, 40.18476),
         )
 
         for qs in (qs1, qs2, qs3):
@@ -79,8 +78,7 @@ class RelatedGeoModelTest(TestCase):
         # between the Oracle and PostGIS spatial backends on the extent calculation.
         tol = 4
         for ref, e in [(all_extent, e1), (txpa_extent, e2), (all_extent, e3)]:
-            for ref_val, e_val in zip(ref, e):
-                self.assertAlmostEqual(ref_val, e_val, tol)
+            for ref_val, e_val in zip(ref, e): self.assertAlmostEqual(ref_val, e_val, tol)
 
     @no_mysql
     def test04b_related_union_aggregate(self):
@@ -120,7 +118,7 @@ class RelatedGeoModelTest(TestCase):
     def test05_select_related_fk_to_subclass(self):
         "Testing that calling select_related on a query over a model with an FK to a model subclass works"
         # Regression test for #9752.
-        list(DirectoryEntry.objects.all().select_related())
+        l = list(DirectoryEntry.objects.all().select_related())
 
     def test06_f_expressions(self):
         "Testing F() expressions on GeometryFields."
@@ -135,7 +133,7 @@ class RelatedGeoModelTest(TestCase):
         c1 = pcity.location.point
         c2 = c1.transform(2276, clone=True)
         b2 = c2.buffer(100)
-        Parcel.objects.create(name='P1', city=pcity, center1=c1, center2=c2, border1=b1, border2=b2)
+        p1 = Parcel.objects.create(name='P1', city=pcity, center1=c1, center2=c2, border1=b1, border2=b2)
 
         # Now creating a second Parcel where the borders are the same, just
         # in different coordinate systems.  The center points are also the
@@ -143,7 +141,7 @@ class RelatedGeoModelTest(TestCase):
         # actually correspond to the centroid of the border.
         c1 = b1.centroid
         c2 = c1.transform(2276, clone=True)
-        Parcel.objects.create(name='P2', city=pcity, center1=c1, center2=c2, border1=b1, border2=b1)
+        p2 = Parcel.objects.create(name='P2', city=pcity, center1=c1, center2=c2, border1=b1, border2=b1)
 
         # Should return the second Parcel, which has the center within the
         # border.
@@ -207,8 +205,6 @@ class RelatedGeoModelTest(TestCase):
             self.assertEqual(val_dict['id'], c_id)
             self.assertEqual(val_dict['location__id'], l_id)
 
-    # TODO: fix on Oracle -- qs2 returns an empty result for an unknown reason
-    @no_oracle
     def test10_combine(self):
         "Testing the combination of two GeoQuerySets.  See #10807."
         buf1 = City.objects.get(name='Aurora').location.point.buffer(0.1)
@@ -255,10 +251,6 @@ class RelatedGeoModelTest(TestCase):
         self.assertEqual(1, len(vqs))
         self.assertEqual(3, vqs[0]['num_books'])
 
-    # TODO: fix on Oracle -- get the following error because the SQL is ordered
-    # by a geometry object, which Oracle apparently doesn't like:
-    #  ORA-22901: cannot compare nested table or VARRAY or LOB attributes of an object type
-    @no_oracle
     def test13c_count(self):
         "Testing `Count` aggregate with `.values()`.  See #15305."
         qs = Location.objects.filter(id=5).annotate(num_cities=Count('city')).values('id', 'point', 'num_cities')
@@ -270,7 +262,7 @@ class RelatedGeoModelTest(TestCase):
     @no_oracle
     def test13_select_related_null_fk(self):
         "Testing `select_related` on a nullable ForeignKey via `GeoManager`. See #11381."
-        Book.objects.create(title='Without Author')
+        no_author = Book.objects.create(title='Without Author')
         b = Book.objects.select_related('author').get(title='Without Author')
         # Should be `None`, and not a 'dummy' model.
         self.assertEqual(None, b.author)
@@ -301,7 +293,7 @@ class RelatedGeoModelTest(TestCase):
         # This triggers TypeError when `get_default_columns` has no `local_only`
         # keyword.  The TypeError is swallowed if QuerySet is actually
         # evaluated as list generation swallows TypeError in CPython.
-        str(qs.query)
+        sql = str(qs.query)
 
     def test16_annotated_date_queryset(self):
         "Ensure annotated date querysets work if spatial backend is used.  See #14648."

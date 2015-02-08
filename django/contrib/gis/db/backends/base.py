@@ -1,6 +1,6 @@
 """
 Base/mixin classes for the spatial backend database operations and the
-`<Backend>SpatialRefSys` model.
+`SpatialRefSys` model the backend.
 """
 import re
 
@@ -101,7 +101,7 @@ class BaseSpatialOperations(object):
         Returns the database column type for the geometry field on
         the spatial backend.
         """
-        raise NotImplementedError('subclasses of BaseSpatialOperations must provide a geo_db_type() method')
+        raise NotImplementedError
 
     def get_distance(self, f, value, lookup_type):
         """
@@ -117,7 +117,7 @@ class BaseSpatialOperations(object):
         stored procedure call to the transformation function of the spatial
         backend.
         """
-        raise NotImplementedError('subclasses of BaseSpatialOperations must provide a geo_db_placeholder() method')
+        raise NotImplementedError
 
     def get_expression_column(self, evaluator):
         """
@@ -134,21 +134,20 @@ class BaseSpatialOperations(object):
         raise NotImplementedError('Aggregate support not implemented for this spatial backend.')
 
     def spatial_lookup_sql(self, lvalue, lookup_type, value, field):
-        raise NotImplementedError('subclasses of BaseSpatialOperations must a provide spatial_lookup_sql() method')
+        raise NotImplementedError
 
     # Routines for getting the OGC-compliant models.
     def geometry_columns(self):
-        raise NotImplementedError('subclasses of BaseSpatialOperations must a provide geometry_columns() method')
+        raise NotImplementedError
 
     def spatial_ref_sys(self):
-        raise NotImplementedError('subclasses of BaseSpatialOperations must a provide spatial_ref_sys() method')
-
+        raise NotImplementedError
 
 @python_2_unicode_compatible
 class SpatialRefSysMixin(object):
     """
     The SpatialRefSysMixin is a class used by the database-dependent
-    SpatialRefSys objects to reduce redundant code.
+    SpatialRefSys objects to reduce redundnant code.
     """
     # For pulling out the spheroid from the spatial reference string. This
     # regular expression is used only if the user does not have GDAL installed.
@@ -202,10 +201,8 @@ class SpatialRefSysMixin(object):
             return self.srs.ellipsoid
         else:
             m = self.spheroid_regex.match(self.wkt)
-            if m:
-                return (float(m.group('major')), float(m.group('flattening')))
-            else:
-                return None
+            if m: return (float(m.group('major')), float(m.group('flattening')))
+            else: return None
 
     @property
     def name(self):
@@ -304,7 +301,7 @@ class SpatialRefSysMixin(object):
     def get_units(cls, wkt):
         """
         Class method used by GeometryField on initialization to
-        retrieve the units on the given WKT, without having to use
+        retrive the units on the given WKT, without having to use
         any of the database fields.
         """
         if gdal.HAS_GDAL:
@@ -348,5 +345,5 @@ class SpatialRefSysMixin(object):
         """
         try:
             return six.text_type(self.srs)
-        except Exception:
+        except:
             return six.text_type(self.wkt)

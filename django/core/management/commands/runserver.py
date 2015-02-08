@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from optparse import make_option
 from datetime import datetime
 import errno
@@ -10,12 +8,7 @@ import socket
 
 from django.core.management.base import BaseCommand, CommandError
 from django.core.servers.basehttp import run, get_internal_wsgi_application
-from django.db import connections, DEFAULT_DB_ALIAS
-from django.db.migrations.executor import MigrationExecutor
 from django.utils import autoreload
-from django.utils.encoding import force_text, get_system_encoding
-from django.utils import six
-from django.core.exceptions import ImproperlyConfigured
 
 naiveip_re = re.compile(r"""^(?:
 (?P<addr>
@@ -29,7 +22,7 @@ DEFAULT_PORT = "8000"
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--ipv6', '-6', action='store_true', dest='use_ipv6', default=False,
-            help='Tells Django to use an IPv6 address.'),
+            help='Tells Django to use a IPv6 address.'),
         make_option('--nothreading', action='store_false', dest='use_threading', default=True,
             help='Tells Django to NOT use threading.'),
         make_option('--noreload', action='store_false', dest='use_reloader', default=True,
@@ -39,7 +32,7 @@ class Command(BaseCommand):
     args = '[optional port number, or ipaddr:port]'
 
     # Validation is called explicitly each time the server is reloaded.
-    requires_system_checks = False
+    requires_model_validation = False
 
     def get_handler(self, *args, **options):
         """
@@ -101,22 +94,15 @@ class Command(BaseCommand):
         shutdown_message = options.get('shutdown_message', '')
         quit_command = 'CTRL-BREAK' if sys.platform == 'win32' else 'CONTROL-C'
 
-        self.stdout.write("Performing system checks...\n\n")
+        self.stdout.write("Validating models...\n\n")
         self.validate(display_num_errors=True)
-        try:
-            self.check_migrations()
-        except ImproperlyConfigured:
-            pass
-        now = datetime.now().strftime('%B %d, %Y - %X')
-        if six.PY2:
-            now = now.decode(get_system_encoding())
         self.stdout.write((
             "%(started_at)s\n"
             "Django version %(version)s, using settings %(settings)r\n"
             "Starting development server at http://%(addr)s:%(port)s/\n"
             "Quit the server with %(quit_command)s.\n"
         ) % {
-            "started_at": now,
+            "started_at": datetime.now().strftime('%B %d, %Y - %X'),
             "version": self.get_version(),
             "settings": settings.SETTINGS_MODULE,
             "addr": '[%s]' % self.addr if self._raw_ipv6 else self.addr,
@@ -142,7 +128,7 @@ class Command(BaseCommand):
             try:
                 error_text = ERRORS[e.errno]
             except KeyError:
-                error_text = force_text(e)
+                error_text = str(e)
             self.stderr.write("Error: %s" % error_text)
             # Need to use an OS exit because sys.exit doesn't work in a thread
             os._exit(1)
@@ -151,16 +137,6 @@ class Command(BaseCommand):
                 self.stdout.write(shutdown_message)
             sys.exit(0)
 
-    def check_migrations(self):
-        """
-        Checks to see if the set of migrations on disk matches the
-        migrations in the database. Prints a warning if they don't match.
-        """
-        executor = MigrationExecutor(connections[DEFAULT_DB_ALIAS])
-        plan = executor.migration_plan(executor.loader.graph.leaf_nodes())
-        if plan:
-            self.stdout.write(self.style.NOTICE("\nYou have unapplied migrations; your app may not work properly until they are applied."))
-            self.stdout.write(self.style.NOTICE("Run 'python manage.py migrate' to apply them.\n"))
 
 # Kept for backward compatibility
 BaseRunserverCommand = Command

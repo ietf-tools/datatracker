@@ -2,7 +2,6 @@ from django.conf.urls import patterns
 
 from .http import SimpleSitemap
 
-
 class HTTPSSitemap(SimpleSitemap):
     protocol = 'https'
 

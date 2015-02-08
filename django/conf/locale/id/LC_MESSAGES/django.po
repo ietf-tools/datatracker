@@ -3,14 +3,13 @@
 # Translators:
 # Jannis Leidel <jannis@leidel.info>, 2011
 # rodin <romihardiyanto@gmail.com>, 2011
-# rodin <romihardiyanto@gmail.com>, 2013-2014
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-08-23 14:10+0200\n"
-"PO-Revision-Date: 2014-09-08 12:38+0000\n"
-"Last-Translator: rodin <romihardiyanto@gmail.com>\n"
+"POT-Creation-Date: 2013-08-22 09:54+0200\n"
+"PO-Revision-Date: 2013-08-17 08:48+0000\n"
+"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
 "Language-Team: Indonesian (http://www.transifex.com/projects/p/django/"
 "language/id/)\n"
 "MIME-Version: 1.0\n"
@@ -21,15 +20,11 @@ msgstr ""
 
 #: conf/global_settings.py:51
 msgid "Afrikaans"
-msgstr "Afrikaans"
+msgstr ""
 
 #: conf/global_settings.py:52
 msgid "Arabic"
 msgstr "Arab"
-
-#: conf/global_settings.py:53
-msgid "Asturian"
-msgstr "Asturia"
 
 #: conf/global_settings.py:53
 msgid "Azerbaijani"
@@ -41,7 +36,7 @@ msgstr "Bulgaria"
 
 #: conf/global_settings.py:55
 msgid "Belarusian"
-msgstr "Belarusia"
+msgstr ""
 
 #: conf/global_settings.py:56
 msgid "Bengali"
@@ -49,7 +44,7 @@ msgstr "Bengali"
 
 #: conf/global_settings.py:57
 msgid "Breton"
-msgstr "Breton"
+msgstr ""
 
 #: conf/global_settings.py:58
 msgid "Bosnian"
@@ -84,348 +79,320 @@ msgid "English"
 msgstr "Inggris"
 
 #: conf/global_settings.py:66
-msgid "Australian English"
-msgstr ""
-
-#: conf/global_settings.py:67
 msgid "British English"
 msgstr "Inggris Britania"
 
-#: conf/global_settings.py:68
+#: conf/global_settings.py:67
 msgid "Esperanto"
 msgstr "Esperanto"
 
-#: conf/global_settings.py:69
+#: conf/global_settings.py:68
 msgid "Spanish"
 msgstr "Spanyol"
 
-#: conf/global_settings.py:70
+#: conf/global_settings.py:69
 msgid "Argentinian Spanish"
 msgstr "Spanyol Argentina"
 
-#: conf/global_settings.py:71
+#: conf/global_settings.py:70
 msgid "Mexican Spanish"
 msgstr "Spanyol Meksiko"
 
-#: conf/global_settings.py:72
+#: conf/global_settings.py:71
 msgid "Nicaraguan Spanish"
 msgstr "Spanyol Nikaragua"
 
-#: conf/global_settings.py:73
+#: conf/global_settings.py:72
 msgid "Venezuelan Spanish"
-msgstr "Spanyol Venezuela"
+msgstr ""
 
-#: conf/global_settings.py:74
+#: conf/global_settings.py:73
 msgid "Estonian"
 msgstr "Estonia"
 
-#: conf/global_settings.py:75
+#: conf/global_settings.py:74
 msgid "Basque"
 msgstr "Basque"
 
-#: conf/global_settings.py:76
+#: conf/global_settings.py:75
 msgid "Persian"
 msgstr "Persia"
 
-#: conf/global_settings.py:77
+#: conf/global_settings.py:76
 msgid "Finnish"
 msgstr "Finlandia"
 
-#: conf/global_settings.py:78
+#: conf/global_settings.py:77
 msgid "French"
 msgstr "Perancis"
 
-#: conf/global_settings.py:79
+#: conf/global_settings.py:78
 msgid "Frisian"
 msgstr "Frisia"
 
-#: conf/global_settings.py:80
+#: conf/global_settings.py:79
 msgid "Irish"
 msgstr "Irlandia"
 
-#: conf/global_settings.py:81
+#: conf/global_settings.py:80
 msgid "Galician"
 msgstr "Galicia"
 
-#: conf/global_settings.py:82
+#: conf/global_settings.py:81
 msgid "Hebrew"
 msgstr "Ibrani"
 
-#: conf/global_settings.py:83
+#: conf/global_settings.py:82
 msgid "Hindi"
 msgstr "Hindi"
 
-#: conf/global_settings.py:84
+#: conf/global_settings.py:83
 msgid "Croatian"
 msgstr "Kroasia"
 
-#: conf/global_settings.py:85
+#: conf/global_settings.py:84
 msgid "Hungarian"
 msgstr "Hungaria"
 
-#: conf/global_settings.py:86
+#: conf/global_settings.py:85
 msgid "Interlingua"
-msgstr "Interlingua"
+msgstr ""
 
-#: conf/global_settings.py:87
+#: conf/global_settings.py:86
 msgid "Indonesian"
 msgstr "Indonesia"
 
-#: conf/global_settings.py:88
-msgid "Ido"
-msgstr ""
-
-#: conf/global_settings.py:88
+#: conf/global_settings.py:87
 msgid "Icelandic"
 msgstr "Islandia"
 
-#: conf/global_settings.py:89
+#: conf/global_settings.py:88
 msgid "Italian"
 msgstr "Italia"
 
-#: conf/global_settings.py:90
+#: conf/global_settings.py:89
 msgid "Japanese"
 msgstr "Jepang"
 
-#: conf/global_settings.py:91
+#: conf/global_settings.py:90
 msgid "Georgian"
 msgstr "Georgia"
 
-#: conf/global_settings.py:92
+#: conf/global_settings.py:91
 msgid "Kazakh"
 msgstr "Kazakhstan"
 
-#: conf/global_settings.py:93
+#: conf/global_settings.py:92
 msgid "Khmer"
 msgstr "Khmer"
 
-#: conf/global_settings.py:94
+#: conf/global_settings.py:93
 msgid "Kannada"
 msgstr "Kannada"
 
-#: conf/global_settings.py:95
+#: conf/global_settings.py:94
 msgid "Korean"
 msgstr "Korea"
 
-#: conf/global_settings.py:96
+#: conf/global_settings.py:95
 msgid "Luxembourgish"
-msgstr "Luxemburg"
+msgstr ""
 
-#: conf/global_settings.py:97
+#: conf/global_settings.py:96
 msgid "Lithuanian"
 msgstr "Lithuania"
 
-#: conf/global_settings.py:98
+#: conf/global_settings.py:97
 msgid "Latvian"
 msgstr "Latvia"
 
-#: conf/global_settings.py:99
+#: conf/global_settings.py:98
 msgid "Macedonian"
 msgstr "Makedonia"
 
-#: conf/global_settings.py:100
+#: conf/global_settings.py:99
 msgid "Malayalam"
 msgstr "Malayalam"
 
-#: conf/global_settings.py:101
+#: conf/global_settings.py:100
 msgid "Mongolian"
 msgstr "Mongolia"
 
-#: conf/global_settings.py:102
-msgid "Marathi"
+#: conf/global_settings.py:101
+msgid "Burmese"
 msgstr ""
 
 #: conf/global_settings.py:102
-msgid "Burmese"
-msgstr "Burma"
-
-#: conf/global_settings.py:103
 msgid "Norwegian Bokmal"
 msgstr "Norwegia Bokmal"
 
-#: conf/global_settings.py:104
+#: conf/global_settings.py:103
 msgid "Nepali"
 msgstr "Nepal"
 
-#: conf/global_settings.py:105
+#: conf/global_settings.py:104
 msgid "Dutch"
 msgstr "Belanda"
 
-#: conf/global_settings.py:106
+#: conf/global_settings.py:105
 msgid "Norwegian Nynorsk"
 msgstr "Norwegia Nynorsk"
 
-#: conf/global_settings.py:107
+#: conf/global_settings.py:106
 msgid "Ossetic"
-msgstr "Ossetic"
+msgstr ""
 
-#: conf/global_settings.py:108
+#: conf/global_settings.py:107
 msgid "Punjabi"
 msgstr "Punjabi"
 
-#: conf/global_settings.py:109
+#: conf/global_settings.py:108
 msgid "Polish"
 msgstr "Polandia"
 
-#: conf/global_settings.py:110
+#: conf/global_settings.py:109
 msgid "Portuguese"
 msgstr "Portugis"
 
-#: conf/global_settings.py:111
+#: conf/global_settings.py:110
 msgid "Brazilian Portuguese"
 msgstr "Portugis Brazil"
 
-#: conf/global_settings.py:112
+#: conf/global_settings.py:111
 msgid "Romanian"
 msgstr "Romania"
 
-#: conf/global_settings.py:113
+#: conf/global_settings.py:112
 msgid "Russian"
 msgstr "Rusia"
 
-#: conf/global_settings.py:114
+#: conf/global_settings.py:113
 msgid "Slovak"
 msgstr "Slovakia"
 
-#: conf/global_settings.py:115
+#: conf/global_settings.py:114
 msgid "Slovenian"
 msgstr "Slovenia"
 
-#: conf/global_settings.py:116
+#: conf/global_settings.py:115
 msgid "Albanian"
 msgstr "Albania"
 
-#: conf/global_settings.py:117
+#: conf/global_settings.py:116
 msgid "Serbian"
 msgstr "Serbia"
 
-#: conf/global_settings.py:118
+#: conf/global_settings.py:117
 msgid "Serbian Latin"
 msgstr "Serbia Latin"
 
-#: conf/global_settings.py:119
+#: conf/global_settings.py:118
 msgid "Swedish"
 msgstr "Swedia"
 
-#: conf/global_settings.py:120
+#: conf/global_settings.py:119
 msgid "Swahili"
 msgstr "Swahili"
 
-#: conf/global_settings.py:121
+#: conf/global_settings.py:120
 msgid "Tamil"
 msgstr "Tamil"
 
-#: conf/global_settings.py:122
+#: conf/global_settings.py:121
 msgid "Telugu"
 msgstr "Telugu"
 
-#: conf/global_settings.py:123
+#: conf/global_settings.py:122
 msgid "Thai"
 msgstr "Thailand"
 
-#: conf/global_settings.py:124
+#: conf/global_settings.py:123
 msgid "Turkish"
 msgstr "Turki"
 
-#: conf/global_settings.py:125
+#: conf/global_settings.py:124
 msgid "Tatar"
 msgstr "Tatar"
 
-#: conf/global_settings.py:126
+#: conf/global_settings.py:125
 msgid "Udmurt"
-msgstr "Udmurt"
+msgstr ""
 
-#: conf/global_settings.py:127
+#: conf/global_settings.py:126
 msgid "Ukrainian"
 msgstr "Ukrainia"
 
-#: conf/global_settings.py:128
+#: conf/global_settings.py:127
 msgid "Urdu"
 msgstr "Urdu"
 
-#: conf/global_settings.py:129
+#: conf/global_settings.py:128
 msgid "Vietnamese"
 msgstr "Vietnam"
 
-#: conf/global_settings.py:130 conf/global_settings.py:131
+#: conf/global_settings.py:129
 msgid "Simplified Chinese"
-msgstr "Tiongkok Sederhana"
+msgstr "Cina Sederhana"
 
-#: conf/global_settings.py:132 conf/global_settings.py:133
+#: conf/global_settings.py:130
 msgid "Traditional Chinese"
-msgstr "Tiongkok Tradisionil"
-
-#: contrib/sitemaps/apps.py:8
-msgid "Site Maps"
-msgstr ""
-
-#: contrib/staticfiles/apps.py:8
-msgid "Static Files"
-msgstr ""
-
-#: contrib/syndication/apps.py:8
-msgid "Syndication"
-msgstr ""
-
-#: contrib/webdesign/apps.py:8
-msgid "Web Design"
-msgstr ""
+msgstr "Cina Tradisionil"
 
 #: core/validators.py:21
 msgid "Enter a valid value."
 msgstr "Masukkan nilai yang valid."
 
-#: core/validators.py:77 forms/fields.py:675
+#: core/validators.py:53 forms/fields.py:650
 msgid "Enter a valid URL."
 msgstr "Masukkan URL yang valid."
 
-#: core/validators.py:115
+#: core/validators.py:79
 msgid "Enter a valid integer."
 msgstr ""
 
-#: core/validators.py:120
+#: core/validators.py:83
 msgid "Enter a valid email address."
 msgstr "Masukkan alamat email yang valid."
 
-#: core/validators.py:185
+#: core/validators.py:131
 msgid ""
 "Enter a valid 'slug' consisting of letters, numbers, underscores or hyphens."
 msgstr ""
 "Masukkan 'slug' yang terdiri dari huruf, bilangan, garis bawah, atau tanda "
 "minus."
 
-#: core/validators.py:188 core/validators.py:207
+#: core/validators.py:134 core/validators.py:153
 msgid "Enter a valid IPv4 address."
 msgstr "Masukkan alamat IPv4 yang valid."
 
-#: core/validators.py:193 core/validators.py:208
+#: core/validators.py:139 core/validators.py:154
 msgid "Enter a valid IPv6 address."
 msgstr "Masukkan alamat IPv6 yang valid"
 
-#: core/validators.py:203 core/validators.py:206
+#: core/validators.py:149 core/validators.py:152
 msgid "Enter a valid IPv4 or IPv6 address."
 msgstr "Masukkan alamat IPv4 atau IPv6 yang valid"
 
-#: core/validators.py:229 db/models/fields/__init__.py:1070
+#: core/validators.py:175 db/models/fields/__init__.py:712
 msgid "Enter only digits separated by commas."
 msgstr "Hanya masukkan angka yang dipisahkan dengan koma."
 
-#: core/validators.py:236
+#: core/validators.py:181
 #, python-format
 msgid "Ensure this value is %(limit_value)s (it is %(show_value)s)."
 msgstr "Pastikan nilai ini %(limit_value)s (saat ini %(show_value)s)."
 
-#: core/validators.py:255
+#: core/validators.py:196
 #, python-format
 msgid "Ensure this value is less than or equal to %(limit_value)s."
 msgstr "Pastikan nilai ini lebih kecil dari atau sama dengan %(limit_value)s."
 
-#: core/validators.py:262
+#: core/validators.py:202
 #, python-format
 msgid "Ensure this value is greater than or equal to %(limit_value)s."
 msgstr "Pastikan nilai ini lebih besar dari atau sama dengan %(limit_value)s."
 
-#: core/validators.py:271
+#: core/validators.py:210
 #, python-format
 msgid ""
 "Ensure this value has at least %(limit_value)d character (it has "
@@ -434,10 +401,8 @@ msgid_plural ""
 "Ensure this value has at least %(limit_value)d characters (it has "
 "%(show_value)d)."
 msgstr[0] ""
-"Pastikan nilai ini mengandung paling sedikit %(limit_value)d karakter "
-"(sekarang %(show_value)d karakter)."
 
-#: core/validators.py:282
+#: core/validators.py:220
 #, python-format
 msgid ""
 "Ensure this value has at most %(limit_value)d character (it has "
@@ -446,305 +411,291 @@ msgid_plural ""
 "Ensure this value has at most %(limit_value)d characters (it has "
 "%(show_value)d)."
 msgstr[0] ""
-"Pastikan nilai ini mengandung paling banyak %(limit_value)d karakter "
-"(sekarang %(show_value)d karakter)."
 
-#: db/models/base.py:975 forms/models.py:718
+#: db/models/base.py:884
+#, python-format
+msgid "%(field_name)s must be unique for %(date_field)s %(lookup)s."
+msgstr "%(field_name)s harus unik untuk %(date_field)s %(lookup)s."
+
+#: db/models/base.py:907 forms/models.py:686
 msgid "and"
 msgstr "dan"
 
-#: db/models/base.py:977
-#, python-format
-msgid "%(model_name)s with this %(field_labels)s already exists."
-msgstr ""
-
-#: db/models/fields/__init__.py:104
-#, python-format
-msgid "Value %(value)r is not a valid choice."
-msgstr ""
-
-#: db/models/fields/__init__.py:105
-msgid "This field cannot be null."
-msgstr "Field ini tidak boleh null."
-
-#: db/models/fields/__init__.py:106
-msgid "This field cannot be blank."
-msgstr "Field ini tidak boleh kosong."
-
-#: db/models/fields/__init__.py:107
+#: db/models/base.py:908 db/models/fields/__init__.py:83
 #, python-format
 msgid "%(model_name)s with this %(field_label)s already exists."
 msgstr "%(model_name)s dengan %(field_label)s telah ada."
 
-#. Translators: The 'lookup_type' is one of 'date', 'year' or 'month'.
-#. Eg: "Title must be unique for pub_date year"
-#: db/models/fields/__init__.py:111
+#: db/models/fields/__init__.py:80
 #, python-format
-msgid ""
-"%(field_label)s must be unique for %(date_field_label)s %(lookup_type)s."
+msgid "Value %(value)r is not a valid choice."
 msgstr ""
 
-#: db/models/fields/__init__.py:116
+#: db/models/fields/__init__.py:81
+msgid "This field cannot be null."
+msgstr "Field ini tidak boleh null."
+
+#: db/models/fields/__init__.py:82
+msgid "This field cannot be blank."
+msgstr "Field ini tidak boleh kosong."
+
+#: db/models/fields/__init__.py:89
 #, python-format
 msgid "Field of type: %(field_type)s"
 msgstr "Field dengan tipe: %(field_type)s"
 
-#: db/models/fields/__init__.py:847 db/models/fields/__init__.py:1573
+#: db/models/fields/__init__.py:570 db/models/fields/__init__.py:1063
 msgid "Integer"
 msgstr "Bilangan Asli"
 
-#: db/models/fields/__init__.py:851 db/models/fields/__init__.py:1571
+#: db/models/fields/__init__.py:574 db/models/fields/__init__.py:1061
 #, python-format
 msgid "'%(value)s' value must be an integer."
 msgstr ""
 
-#: db/models/fields/__init__.py:926
+#: db/models/fields/__init__.py:625
 #, python-format
 msgid "'%(value)s' value must be either True or False."
 msgstr ""
 
-#: db/models/fields/__init__.py:928
+#: db/models/fields/__init__.py:627
 msgid "Boolean (Either True or False)"
 msgstr "Nilai Boolean (Salah satu dari True atau False)"
 
-#: db/models/fields/__init__.py:1004
+#: db/models/fields/__init__.py:679
 #, python-format
 msgid "String (up to %(max_length)s)"
 msgstr "String (maksimum %(max_length)s)"
 
-#: db/models/fields/__init__.py:1065
+#: db/models/fields/__init__.py:707
 msgid "Comma-separated integers"
 msgstr "Bilangan asli yang dipisahkan dengan koma"
 
-#: db/models/fields/__init__.py:1080
+#: db/models/fields/__init__.py:721
 #, python-format
 msgid ""
 "'%(value)s' value has an invalid date format. It must be in YYYY-MM-DD "
 "format."
 msgstr ""
 
-#: db/models/fields/__init__.py:1082 db/models/fields/__init__.py:1189
+#: db/models/fields/__init__.py:723 db/models/fields/__init__.py:817
 #, python-format
 msgid ""
 "'%(value)s' value has the correct format (YYYY-MM-DD) but it is an invalid "
 "date."
 msgstr ""
 
-#: db/models/fields/__init__.py:1085
+#: db/models/fields/__init__.py:726
 msgid "Date (without time)"
 msgstr "Tanggal (tanpa waktu)"
 
-#: db/models/fields/__init__.py:1187
+#: db/models/fields/__init__.py:815
 #, python-format
 msgid ""
 "'%(value)s' value has an invalid format. It must be in YYYY-MM-DD HH:MM[:ss[."
 "uuuuuu]][TZ] format."
 msgstr ""
 
-#: db/models/fields/__init__.py:1191
+#: db/models/fields/__init__.py:819
 #, python-format
 msgid ""
 "'%(value)s' value has the correct format (YYYY-MM-DD HH:MM[:ss[.uuuuuu]]"
 "[TZ]) but it is an invalid date/time."
 msgstr ""
 
-#: db/models/fields/__init__.py:1195
+#: db/models/fields/__init__.py:823
 msgid "Date (with time)"
 msgstr "Tanggal (dengan waktu)"
 
-#: db/models/fields/__init__.py:1297
+#: db/models/fields/__init__.py:921
 #, python-format
 msgid "'%(value)s' value must be a decimal number."
 msgstr ""
 
-#: db/models/fields/__init__.py:1299
+#: db/models/fields/__init__.py:923
 msgid "Decimal number"
 msgstr "Bilangan desimal"
 
-#: db/models/fields/__init__.py:1444
+#: db/models/fields/__init__.py:983
 msgid "Email address"
 msgstr "Alamat email"
 
-#: db/models/fields/__init__.py:1470
+#: db/models/fields/__init__.py:1002
 msgid "File path"
 msgstr "Lokasi berkas"
 
-#: db/models/fields/__init__.py:1537
+#: db/models/fields/__init__.py:1029
 #, python-format
 msgid "'%(value)s' value must be a float."
 msgstr ""
 
-#: db/models/fields/__init__.py:1539
+#: db/models/fields/__init__.py:1031
 msgid "Floating point number"
 msgstr "Bilangan 'floating point'"
 
-#: db/models/fields/__init__.py:1623
+#: db/models/fields/__init__.py:1098
 msgid "Big (8 byte) integer"
 msgstr "Bilangan asli raksasa (8 byte)"
 
-#: db/models/fields/__init__.py:1638
+#: db/models/fields/__init__.py:1112
 msgid "IPv4 address"
 msgstr "Alamat IPv4"
 
-#: db/models/fields/__init__.py:1668
+#: db/models/fields/__init__.py:1128
 msgid "IP address"
 msgstr "Alamat IP"
 
-#: db/models/fields/__init__.py:1747
+#: db/models/fields/__init__.py:1175
 #, python-format
 msgid "'%(value)s' value must be either None, True or False."
 msgstr ""
 
-#: db/models/fields/__init__.py:1749
+#: db/models/fields/__init__.py:1177
 msgid "Boolean (Either True, False or None)"
 msgstr "Boolean (Salah satu dari True, False, atau None)"
 
-#: db/models/fields/__init__.py:1809
+#: db/models/fields/__init__.py:1229
 msgid "Positive integer"
 msgstr "Bilangan asli positif"
 
-#: db/models/fields/__init__.py:1821
+#: db/models/fields/__init__.py:1240
 msgid "Positive small integer"
 msgstr "Bilangan asli kecil positif"
 
-#: db/models/fields/__init__.py:1834
+#: db/models/fields/__init__.py:1252
 #, python-format
 msgid "Slug (up to %(max_length)s)"
 msgstr "Slug (hingga %(max_length)s karakter)"
 
-#: db/models/fields/__init__.py:1863
+#: db/models/fields/__init__.py:1270
 msgid "Small integer"
 msgstr "Bilangan asli kecil"
 
-#: db/models/fields/__init__.py:1870
+#: db/models/fields/__init__.py:1276
 msgid "Text"
 msgstr "Teks"
 
-#: db/models/fields/__init__.py:1893
+#: db/models/fields/__init__.py:1294
 #, python-format
 msgid ""
 "'%(value)s' value has an invalid format. It must be in HH:MM[:ss[.uuuuuu]] "
 "format."
 msgstr ""
 
-#: db/models/fields/__init__.py:1895
+#: db/models/fields/__init__.py:1296
 #, python-format
 msgid ""
 "'%(value)s' value has the correct format (HH:MM[:ss[.uuuuuu]]) but it is an "
 "invalid time."
 msgstr ""
 
-#: db/models/fields/__init__.py:1898
+#: db/models/fields/__init__.py:1299
 msgid "Time"
 msgstr "Waktu"
 
-#: db/models/fields/__init__.py:1977
+#: db/models/fields/__init__.py:1368
 msgid "URL"
 msgstr "URL"
 
-#: db/models/fields/__init__.py:2000
+#: db/models/fields/__init__.py:1384
 msgid "Raw binary data"
-msgstr "Data biner mentah"
+msgstr ""
 
-#: db/models/fields/files.py:225
+#: db/models/fields/files.py:217
 msgid "File"
 msgstr "Berkas"
 
-#: db/models/fields/files.py:375
+#: db/models/fields/files.py:324
 msgid "Image"
 msgstr "Gambar"
 
-#: db/models/fields/related.py:1580
+#: db/models/fields/related.py:1128
 #, python-format
 msgid "%(model)s instance with pk %(pk)r does not exist."
 msgstr ""
 
-#: db/models/fields/related.py:1582
+#: db/models/fields/related.py:1130
 msgid "Foreign Key (type determined by related field)"
 msgstr "Kunci Asing (tipe tergantung dari bidang yang berkaitan)"
 
-#: db/models/fields/related.py:1773
+#: db/models/fields/related.py:1271
 msgid "One-to-one relationship"
 msgstr "Hubungan satu-ke-satu"
 
-#: db/models/fields/related.py:1843
+#: db/models/fields/related.py:1338
 msgid "Many-to-many relationship"
 msgstr "Hubungan banyak-ke-banyak"
 
-#: forms/fields.py:55
+#: forms/fields.py:56
 msgid "This field is required."
 msgstr "Bidang ini tidak boleh kosong."
 
-#: forms/fields.py:236
+#: forms/fields.py:225
 msgid "Enter a whole number."
 msgstr "Masukkan keseluruhan angka bilangan."
 
-#: forms/fields.py:279 forms/fields.py:316
+#: forms/fields.py:266 forms/fields.py:294
 msgid "Enter a number."
 msgstr "Masukkan sebuah bilangan."
 
-#: forms/fields.py:318
+#: forms/fields.py:296
 #, python-format
 msgid "Ensure that there are no more than %(max)s digit in total."
 msgid_plural "Ensure that there are no more than %(max)s digits in total."
-msgstr[0] "Pastikan jumlah angka pada bilangan tidak melebihi %(max)s angka."
+msgstr[0] ""
 
-#: forms/fields.py:322
+#: forms/fields.py:300
 #, python-format
 msgid "Ensure that there are no more than %(max)s decimal place."
 msgid_plural "Ensure that there are no more than %(max)s decimal places."
-msgstr[0] "Pastikan bilangan tidak memiliki lebih dari %(max)s angka desimal."
+msgstr[0] ""
 
-#: forms/fields.py:326
+#: forms/fields.py:304
 #, python-format
 msgid ""
 "Ensure that there are no more than %(max)s digit before the decimal point."
 msgid_plural ""
 "Ensure that there are no more than %(max)s digits before the decimal point."
 msgstr[0] ""
-"Pastikan jumlah angka sebelum desimal pada bilangan tidak memiliki lebih "
-"dari %(max)s angka."
 
-#: forms/fields.py:437 forms/fields.py:1139
+#: forms/fields.py:415 forms/fields.py:1088
 msgid "Enter a valid date."
 msgstr "Masukkan tanggal yang valid."
 
-#: forms/fields.py:461 forms/fields.py:1140
+#: forms/fields.py:439 forms/fields.py:1089
 msgid "Enter a valid time."
 msgstr "Masukkan waktu yang valid."
 
-#: forms/fields.py:483
+#: forms/fields.py:461
 msgid "Enter a valid date/time."
 msgstr "Masukkan tanggal/waktu yang valid."
 
-#: forms/fields.py:564
+#: forms/fields.py:539
 msgid "No file was submitted. Check the encoding type on the form."
 msgstr "Tidak ada berkas yang dikirimkan. Periksa tipe pengaksaraan formulir."
 
-#: forms/fields.py:565
+#: forms/fields.py:540
 msgid "No file was submitted."
 msgstr "Tidak ada berkas yang dikirimkan."
 
-#: forms/fields.py:566
+#: forms/fields.py:541
 msgid "The submitted file is empty."
 msgstr "Berkas yang dikirimkan kosong."
 
-#: forms/fields.py:568
+#: forms/fields.py:543
 #, python-format
 msgid "Ensure this filename has at most %(max)d character (it has %(length)d)."
 msgid_plural ""
 "Ensure this filename has at most %(max)d characters (it has %(length)d)."
 msgstr[0] ""
-"Pastikan nama berkas ini mengandung paling banyak %(max)d karakter (sekarang "
-"%(length)d karakter)."
 
-#: forms/fields.py:571
+#: forms/fields.py:546
 msgid "Please either submit a file or check the clear checkbox, not both."
 msgstr ""
 "Pilih antara mengirimkan berkas atau menghapus tanda centang pada kotak "
 "centang"
 
-#: forms/fields.py:632
+#: forms/fields.py:607
 msgid ""
 "Upload a valid image. The file you uploaded was either not an image or a "
 "corrupted image."
@@ -752,73 +703,63 @@ msgstr ""
 "Unggah gambar yang valid. Berkas yang Anda unggah bukan merupakan berkas "
 "gambar atau gambarnya rusak."
 
-#: forms/fields.py:782 forms/fields.py:871 forms/models.py:1192
+#: forms/fields.py:757 forms/fields.py:844 forms/models.py:1145
 #, python-format
 msgid "Select a valid choice. %(value)s is not one of the available choices."
 msgstr ""
 "Masukkan pilihan yang valid. %(value)s bukan salah satu dari pilihan yang "
 "tersedia."
 
-#: forms/fields.py:872 forms/fields.py:987 forms/models.py:1191
+#: forms/fields.py:845 forms/fields.py:957 forms/models.py:1144
 msgid "Enter a list of values."
 msgstr "Masukkan beberapa nilai."
 
-#: forms/fields.py:988
-msgid "Enter a complete value."
+#. Translators: This is the default suffix added to form field labels
+#: forms/forms.py:90
+msgid ":"
 msgstr ""
 
-#. Translators: This is the default suffix added to form field labels
-#: forms/forms.py:122
-msgid ":"
-msgstr ":"
-
-#: forms/forms.py:192
+#: forms/forms.py:159
 #, python-format
 msgid "(Hidden field %(name)s) %(error)s"
-msgstr "(Bidang tersembunyi %(name)s) %(error)s"
+msgstr ""
 
 #. Translators: If found as last label character, these punctuation
 #. characters will prevent the default label_suffix to be appended to the
 #. label
-#: forms/forms.py:620
+#: forms/forms.py:527
 msgid ":?.!"
-msgstr ":?.!"
+msgstr ""
 
-#: forms/formsets.py:95
+#: forms/formsets.py:88
 msgid "ManagementForm data is missing or has been tampered with"
 msgstr ""
 
-#: forms/formsets.py:332
+#: forms/formsets.py:321
 #, python-format
 msgid "Please submit %d or fewer forms."
 msgid_plural "Please submit %d or fewer forms."
-msgstr[0] "Pastikan mengirim %d formulir atau lebih sedikit. "
-
-#: forms/formsets.py:339
-#, python-format
-msgid "Please submit %d or more forms."
-msgid_plural "Please submit %d or more forms."
 msgstr[0] ""
 
-#: forms/formsets.py:367 forms/formsets.py:369
+#: forms/formsets.py:350 forms/formsets.py:352
 msgid "Order"
 msgstr "Urutan"
 
-#: forms/formsets.py:371
+#: forms/formsets.py:354
 msgid "Delete"
 msgstr "Hapus"
 
-#: forms/models.py:712
+#: forms/models.py:680
 #, python-format
 msgid "Please correct the duplicate data for %(field)s."
 msgstr "Perbaiki data ganda untuk %(field)s."
 
-#: forms/models.py:716
+#: forms/models.py:684
 #, python-format
 msgid "Please correct the duplicate data for %(field)s, which must be unique."
 msgstr "Perbaiki data ganda untuk %(field)s yang nilainya harus unik."
 
-#: forms/models.py:722
+#: forms/models.py:690
 #, python-format
 msgid ""
 "Please correct the duplicate data for %(field_name)s which must be unique "
@@ -827,33 +768,33 @@ msgstr ""
 "Perbaiki data ganda untuk %(field_name)s yang nilainya harus unik untuk "
 "pencarian %(lookup)s pada %(date_field)s."
 
-#: forms/models.py:730
+#: forms/models.py:698
 msgid "Please correct the duplicate values below."
 msgstr "Perbaiki nilai ganda di bawah ini."
 
-#: forms/models.py:1028
+#: forms/models.py:986
 msgid "The inline foreign key did not match the parent instance primary key."
 msgstr ""
 "Kunci asing 'inline' tidak cocok dengan kunci utama 'instance' milik induk."
 
-#: forms/models.py:1094
+#: forms/models.py:1050
 msgid "Select a valid choice. That choice is not one of the available choices."
 msgstr ""
 "Masukkan pilihan yang valid. Pilihan tersebut bukan salah satu dari pilihan "
 "yang tersedia."
 
-#: forms/models.py:1194
+#: forms/models.py:1147
 #, python-format
 msgid "\"%(pk)s\" is not a valid value for a primary key."
-msgstr "\"%(pk)s\" bukan nilai yang benar untuk kunci utama."
+msgstr ""
 
-#: forms/models.py:1205
+#: forms/models.py:1158
 msgid ""
 "Hold down \"Control\", or \"Command\" on a Mac, to select more than one."
 msgstr ""
 "Tekan \"Control\", atau \"Command\" pada Mac untuk memilih lebih dari satu."
 
-#: forms/utils.py:148
+#: forms/util.py:83
 #, python-format
 msgid ""
 "%(datetime)s couldn't be interpreted in time zone %(current_timezone)s; it "
@@ -862,15 +803,15 @@ msgstr ""
 "%(datetime)s tidak dapat diinterpretasikan pada zona waktu "
 "%(current_timezone)s; mungkin nilainya ambigu atau mungkin tidak ada."
 
-#: forms/widgets.py:350
+#: forms/widgets.py:326
 msgid "Currently"
 msgstr "Saat ini"
 
-#: forms/widgets.py:351
+#: forms/widgets.py:327
 msgid "Change"
 msgstr "Ubah"
 
-#: forms/widgets.py:352
+#: forms/widgets.py:328
 msgid "Clear"
 msgstr "Hapus"
 
@@ -886,62 +827,62 @@ msgstr "Ya"
 msgid "No"
 msgstr "Tidak"
 
-#: template/defaultfilters.py:855
+#: template/defaultfilters.py:784
 msgid "yes,no,maybe"
 msgstr "ya,tidak,mungkin"
 
-#: template/defaultfilters.py:884 template/defaultfilters.py:896
+#: template/defaultfilters.py:812 template/defaultfilters.py:824
 #, python-format
 msgid "%(size)d byte"
 msgid_plural "%(size)d bytes"
 msgstr[0] "%(size)d bita"
 
-#: template/defaultfilters.py:898
+#: template/defaultfilters.py:826
 #, python-format
 msgid "%s KB"
 msgstr "%s KB"
 
-#: template/defaultfilters.py:900
+#: template/defaultfilters.py:828
 #, python-format
 msgid "%s MB"
 msgstr "%s MB"
 
-#: template/defaultfilters.py:902
+#: template/defaultfilters.py:830
 #, python-format
 msgid "%s GB"
 msgstr "%s GB"
 
-#: template/defaultfilters.py:904
+#: template/defaultfilters.py:832
 #, python-format
 msgid "%s TB"
 msgstr "%s TB"
 
-#: template/defaultfilters.py:906
+#: template/defaultfilters.py:834
 #, python-format
 msgid "%s PB"
 msgstr "%s PB"
 
-#: utils/dateformat.py:59
+#: utils/dateformat.py:47
 msgid "p.m."
 msgstr "p.m"
 
-#: utils/dateformat.py:60
+#: utils/dateformat.py:48
 msgid "a.m."
 msgstr "a.m"
 
-#: utils/dateformat.py:65
+#: utils/dateformat.py:53
 msgid "PM"
 msgstr "PM"
 
-#: utils/dateformat.py:66
+#: utils/dateformat.py:54
 msgid "AM"
 msgstr "AM"
 
-#: utils/dateformat.py:149
+#: utils/dateformat.py:103
 msgid "midnight"
 msgstr "tengah malam"
 
-#: utils/dateformat.py:151
+#: utils/dateformat.py:105
 msgid "noon"
 msgstr "siang"
 
@@ -1217,127 +1158,111 @@ msgctxt "alt. month"
 msgid "December"
 msgstr "Desember"
 
-#: utils/ipv6.py:10
+#: utils/image.py:105
+#, python-format
+msgid "Neither Pillow nor PIL could be imported: %s"
+msgstr ""
+
+#: utils/image.py:127
+#, python-format
+msgid "The '_imaging' module for the PIL could not be imported: %s"
+msgstr ""
+
+#: utils/ipv6.py:9
 msgid "This is not a valid IPv6 address."
 msgstr ""
 
-#: utils/text.py:76
+#: utils/text.py:69
 #, python-format
 msgctxt "String to return when truncating text"
 msgid "%(truncated_text)s..."
 msgstr "%(truncated_text)s..."
 
-#: utils/text.py:245
+#: utils/text.py:224
 msgid "or"
 msgstr "atau"
 
 #. Translators: This string is used as a separator between list elements
-#: utils/text.py:264 utils/timesince.py:57
+#: utils/text.py:241 utils/timesince.py:56
 msgid ", "
 msgstr ", "
 
-#: utils/timesince.py:25
+#: utils/timesince.py:24
 #, python-format
 msgid "%d year"
 msgid_plural "%d years"
-msgstr[0] "%d tahun"
+msgstr[0] ""
 
-#: utils/timesince.py:26
+#: utils/timesince.py:25
 #, python-format
 msgid "%d month"
 msgid_plural "%d months"
-msgstr[0] "%d bulan"
+msgstr[0] ""
 
-#: utils/timesince.py:27
+#: utils/timesince.py:26
 #, python-format
 msgid "%d week"
 msgid_plural "%d weeks"
-msgstr[0] "%d minggu"
+msgstr[0] ""
 
-#: utils/timesince.py:28
+#: utils/timesince.py:27
 #, python-format
 msgid "%d day"
 msgid_plural "%d days"
-msgstr[0] "%d hari"
+msgstr[0] ""
 
-#: utils/timesince.py:29
+#: utils/timesince.py:28
 #, python-format
 msgid "%d hour"
 msgid_plural "%d hours"
-msgstr[0] "%d jam"
+msgstr[0] ""
 
-#: utils/timesince.py:30
+#: utils/timesince.py:29
 #, python-format
 msgid "%d minute"
 msgid_plural "%d minutes"
-msgstr[0] "%d menit"
+msgstr[0] ""
 
-#: utils/timesince.py:46
+#: utils/timesince.py:45
 msgid "0 minutes"
-msgstr "0 menit"
-
-#: views/csrf.py:105
-msgid "Forbidden"
 msgstr ""
 
-#: views/csrf.py:106
-msgid "CSRF verification failed. Request aborted."
-msgstr ""
+#: views/static.py:56
+msgid "Directory indexes are not allowed here."
+msgstr "Indeks direktori tidak diizinkan di sini."
 
-#: views/csrf.py:110
-msgid ""
-"You are seeing this message because this HTTPS site requires a 'Referer "
-"header' to be sent by your Web browser, but none was sent. This header is "
-"required for security reasons, to ensure that your browser is not being "
-"hijacked by third parties."
-msgstr ""
+#: views/static.py:58
+#, python-format
+msgid "\"%(path)s\" does not exist"
+msgstr "\"%(path)s\" tidak ada"
 
-#: views/csrf.py:115
-msgid ""
-"If you have configured your browser to disable 'Referer' headers, please re-"
-"enable them, at least for this site, or for HTTPS connections, or for 'same-"
-"origin' requests."
-msgstr ""
+#: views/static.py:99
+#, python-format
+msgid "Index of %(directory)s"
+msgstr "Daftar isi %(directory)s"
 
-#: views/csrf.py:120
-msgid ""
-"You are seeing this message because this site requires a CSRF cookie when "
-"submitting forms. This cookie is required for security reasons, to ensure "
-"that your browser is not being hijacked by third parties."
-msgstr ""
-
-#: views/csrf.py:125
-msgid ""
-"If you have configured your browser to disable cookies, please re-enable "
-"them, at least for this site, or for 'same-origin' requests."
-msgstr ""
-
-#: views/csrf.py:129
-msgid "More information is available with DEBUG=True."
-msgstr ""
-
-#: views/generic/dates.py:43
+#: views/generic/dates.py:42
 msgid "No year specified"
 msgstr "Tidak ada tahun dipilih"
 
-#: views/generic/dates.py:99
+#: views/generic/dates.py:98
 msgid "No month specified"
 msgstr "Tidak ada bulan dipilih"
 
-#: views/generic/dates.py:158
+#: views/generic/dates.py:157
 msgid "No day specified"
 msgstr "Tidak ada hari dipilih"
 
-#: views/generic/dates.py:214
+#: views/generic/dates.py:213
 msgid "No week specified"
 msgstr "Tidak ada minggu dipilih"
 
-#: views/generic/dates.py:369 views/generic/dates.py:397
+#: views/generic/dates.py:368 views/generic/dates.py:396
 #, python-format
 msgid "No %(verbose_name_plural)s available"
 msgstr "Tidak ada %(verbose_name_plural)s tersedia"
 
-#: views/generic/dates.py:650
+#: views/generic/dates.py:649
 #, python-format
 msgid ""
 "Future %(verbose_name_plural)s not available because %(class_name)s."
@@ -1346,7 +1271,7 @@ msgstr ""
 "%(verbose_name_plural)s di masa depan tidak tersedia karena %(class_name)s."
 "allow_future bernilai False."
 
-#: views/generic/dates.py:682
+#: views/generic/dates.py:681
 #, python-format
 msgid "Invalid date string '%(datestr)s' given format '%(format)s'"
 msgstr "Teks tanggal tidak valid '%(datestr)s' dalam format '%(format)s'"
@@ -1356,32 +1281,18 @@ msgstr "Teks tanggal tidak valid '%(datestr)s' dalam format '%(format)s'"
 msgid "No %(verbose_name)s found matching the query"
 msgstr "Tidak ada %(verbose_name)s yang cocok dengan kueri"
 
-#: views/generic/list.py:62
+#: views/generic/list.py:54
 msgid "Page is not 'last', nor can it be converted to an int."
 msgstr ""
 "Laman bukan yang 'terakhir' atau juga tidak dapat dikonversikan ke bilangan "
 "bulat."
 
-#: views/generic/list.py:67
+#: views/generic/list.py:59
 #, python-format
 msgid "Invalid page (%(page_number)s): %(message)s"
-msgstr "Laman tidak valid (%(page_number)s): %(message)s"
+msgstr ""
 
-#: views/generic/list.py:158
+#: views/generic/list.py:150
 #, python-format
 msgid "Empty list and '%(class_name)s.allow_empty' is False."
 msgstr "Daftar kosong dan '%(class_name)s.allow_empty' bernilai False."
-
-#: views/static.py:54
-msgid "Directory indexes are not allowed here."
-msgstr "Indeks direktori tidak diizinkan di sini."
-
-#: views/static.py:56
-#, python-format
-msgid "\"%(path)s\" does not exist"
-msgstr "\"%(path)s\" tidak ada"
-
-#: views/static.py:97
-#, python-format
-msgid "Index of %(directory)s"
-msgstr "Daftar isi %(directory)s"

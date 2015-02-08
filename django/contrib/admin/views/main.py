@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import sys
 import warnings
 
@@ -8,17 +7,16 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.fields import FieldDoesNotExist
 from django.utils import six
-from django.utils.deprecation import RenameMethodsBase, RemovedInDjango18Warning
-from django.utils.encoding import force_text
+from django.utils.datastructures import SortedDict
+from django.utils.deprecation import RenameMethodsBase
+from django.utils.encoding import force_str, force_text
 from django.utils.translation import ugettext, ugettext_lazy
 from django.utils.http import urlencode
 
 from django.contrib.admin import FieldListFilter
-from django.contrib.admin.exceptions import (
-    DisallowedModelAdminLookup, DisallowedModelAdminToField,
-)
-from django.contrib.admin.options import IncorrectLookupParameters, IS_POPUP_VAR, TO_FIELD_VAR
-from django.contrib.admin.utils import (quote, get_fields_from_path,
+from django.contrib.admin.exceptions import DisallowedModelAdminLookup
+from django.contrib.admin.options import IncorrectLookupParameters, IS_POPUP_VAR
+from django.contrib.admin.util import (quote, get_fields_from_path,
     lookup_needs_distinct, prepare_lookup_value)
 
 # Changelist settings
@@ -27,6 +25,7 @@ ORDER_VAR = 'o'
 ORDER_TYPE_VAR = 'ot'
 PAGE_VAR = 'p'
 SEARCH_VAR = 'q'
+TO_FIELD_VAR = 't'
 ERROR_FLAG = 'e'
 
 IGNORED_PARAMS = (
@@ -51,9 +50,9 @@ def _is_changelist_popup(request):
     IS_LEGACY_POPUP_VAR = 'pop'
     if IS_LEGACY_POPUP_VAR in request.GET:
         warnings.warn(
-            "The `%s` GET parameter has been renamed to `%s`." %
-            (IS_LEGACY_POPUP_VAR, IS_POPUP_VAR),
-            RemovedInDjango18Warning, 2)
+        "The `%s` GET parameter has been renamed to `%s`." %
+        (IS_LEGACY_POPUP_VAR, IS_POPUP_VAR),
+        PendingDeprecationWarning, 2)
         return True
 
     return False
@@ -61,7 +60,7 @@ def _is_changelist_popup(request):
 
 class RenameChangeListMethods(RenameMethodsBase):
     renamed_methods = (
-        ('get_query_set', 'get_queryset', RemovedInDjango18Warning),
+        ('get_query_set', 'get_queryset', PendingDeprecationWarning),
     )
 
 
@@ -91,10 +90,7 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
             self.page_num = 0
         self.show_all = ALL_VAR in request.GET
         self.is_popup = _is_changelist_popup(request)
-        to_field = request.GET.get(TO_FIELD_VAR)
-        if to_field and not model_admin.to_field_allowed(request, to_field):
-            raise DisallowedModelAdminToField("The field %s cannot be referenced." % to_field)
-        self.to_field = to_field
+        self.to_field = request.GET.get(TO_FIELD_VAR)
         self.params = dict(request.GET.items())
         if PAGE_VAR in self.params:
             del self.params[PAGE_VAR]
@@ -119,14 +115,14 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
     def root_query_set(self):
         warnings.warn("`ChangeList.root_query_set` is deprecated, "
                       "use `root_queryset` instead.",
-                      RemovedInDjango18Warning, 2)
+                      PendingDeprecationWarning, 2)
         return self.root_queryset
 
     @property
     def query_set(self):
         warnings.warn("`ChangeList.query_set` is deprecated, "
                       "use `queryset` instead.",
-                      RemovedInDjango18Warning, 2)
+                      PendingDeprecationWarning, 2)
         return self.queryset
 
     def get_filters_params(self, params=None):
@@ -135,7 +131,7 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
         """
         if not params:
             params = self.params
-        lookup_params = params.copy()  # a dictionary of the query string
+        lookup_params = params.copy() # a dictionary of the query string
         # Remove all the parameters that are globally and systematically
         # ignored.
         for ignored in IGNORED_PARAMS:
@@ -147,7 +143,14 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
         lookup_params = self.get_filters_params()
         use_distinct = False
 
+        # Normalize the types of keys
         for key, value in lookup_params.items():
+            if not isinstance(key, str):
+                # 'key' will be used as a keyword argument later, so Python
+                # requires it to be a string.
+                del lookup_params[key]
+                lookup_params[force_str(key)] = value
+
             if not self.model_admin.lookup_allowed(key, value):
                 raise DisallowedModelAdminLookup("Filtering by %s not allowed" % key)
 
@@ -196,10 +199,8 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
             six.reraise(IncorrectLookupParameters, IncorrectLookupParameters(e), sys.exc_info()[2])
 
     def get_query_string(self, new_params=None, remove=None):
-        if new_params is None:
-            new_params = {}
-        if remove is None:
-            remove = []
+        if new_params is None: new_params = {}
+        if remove is None: remove = []
         p = self.params.copy()
         for r in remove:
             for k in list(p):
@@ -222,7 +223,7 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
         # Perform a slight optimization:
         # full_result_count is equal to paginator.count if no filters
         # were applied
-        if self.get_filters_params() or self.params.get(SEARCH_VAR):
+        if self.get_filters_params():
             full_result_count = self.root_queryset.count()
         else:
             full_result_count = result_count
@@ -234,7 +235,7 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
             result_list = self.queryset._clone()
         else:
             try:
-                result_list = paginator.page(self.page_num + 1).object_list
+                result_list = paginator.page(self.page_num+1).object_list
             except InvalidPage:
                 raise IncorrectLookupParameters
 
@@ -297,14 +298,10 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
                     field_name = self.list_display[int(idx)]
                     order_field = self.get_ordering_field(field_name)
                     if not order_field:
-                        continue  # No 'admin_order_field', skip it
-                    # reverse order if order_field has already "-" as prefix
-                    if order_field.startswith('-') and pfx == "-":
-                        ordering.append(order_field[1:])
-                    else:
-                        ordering.append(pfx + order_field)
+                        continue # No 'admin_order_field', skip it
+                    ordering.append(pfx + order_field)
                 except (IndexError, ValueError):
-                    continue  # Invalid ordering specified, skip it.
+                    continue # Invalid ordering specified, skip it.
 
         # Add the given query's ordering fields, if any.
         ordering.extend(queryset.query.order_by)
@@ -322,13 +319,13 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
 
     def get_ordering_field_columns(self):
         """
-        Returns an OrderedDict of ordering field column numbers and asc/desc
+        Returns a SortedDict of ordering field column numbers and asc/desc
         """
 
         # We must cope with more than one column having the same underlying sort
         # field, so we base things on column numbers.
         ordering = self._get_default_ordering()
-        ordering_fields = OrderedDict()
+        ordering_fields = SortedDict()
         if ORDER_VAR not in self.params:
             # for ordering specified on ModelAdmin or model Meta, we don't know
             # the right column numbers absolutely, because there might be more
@@ -349,7 +346,7 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
                 try:
                     idx = int(idx)
                 except ValueError:
-                    continue  # skip it
+                    continue # skip it
                 ordering_fields[idx] = 'desc' if pfx == '-' else 'asc'
         return ordering_fields
 

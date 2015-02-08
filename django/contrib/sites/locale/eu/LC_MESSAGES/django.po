@@ -1,15 +1,15 @@
 # This file is distributed under the same license as the Django package.
 #
 # Translators:
-# ander <ander.basaundi@gmail.com>, 2013
+# Ander Martínez <ander.basaundi@gmail.com>, 2013
 # Jannis Leidel <jannis@leidel.info>, 2011
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-05-20 09:43+0000\n"
-"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-06-10 22:10+0000\n"
+"Last-Translator: Ander Martínez <ander.basaundi@gmail.com>\n"
 "Language-Team: Basque (http://www.transifex.com/projects/p/django/language/"
 "eu/)\n"
 "MIME-Version: 1.0\n"
@@ -18,26 +18,22 @@ msgstr ""
 "Language: eu\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: contrib/sites/apps.py:8
-msgid "Sites"
-msgstr ""
-
-#: contrib/sites/models.py:30
+#: models.py:25
 msgid "The domain name cannot contain any spaces or tabs."
 msgstr "Domeinu izenak ezin du zuriunerik edo tabuladorerik eduki."
 
-#: contrib/sites/models.py:67
+#: models.py:58
 msgid "domain name"
 msgstr "dominio izena"
 
-#: contrib/sites/models.py:69
+#: models.py:60
 msgid "display name"
 msgstr "erakusteko izena"
 
-#: contrib/sites/models.py:74
+#: models.py:65
 msgid "site"
 msgstr "web gunea"
 
-#: contrib/sites/models.py:75
+#: models.py:66
 msgid "sites"
 msgstr "web guneak"

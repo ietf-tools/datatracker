@@ -1,12 +1,14 @@
 import os
 
+from django.conf import global_settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.tests.utils import skipIfCustomUser
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.context_processors import PermWrapper, PermLookupDict
 from django.db.models import Q
-from django.test import TestCase, override_settings
+from django.test import TestCase
+from django.test.utils import override_settings
 from django.utils._os import upath
 
 
@@ -76,13 +78,8 @@ class AuthContextProcessorTests(TestCase):
     fixtures = ['context-processors-users.xml']
 
     @override_settings(
-        MIDDLEWARE_CLASSES=(
-            'django.contrib.sessions.middleware.SessionMiddleware',
-            'django.contrib.auth.middleware.AuthenticationMiddleware',
-        ),
-        TEMPLATE_CONTEXT_PROCESSORS=(
-            'django.contrib.auth.context_processors.auth',
-        ),
+        MIDDLEWARE_CLASSES=global_settings.MIDDLEWARE_CLASSES,
+        TEMPLATE_CONTEXT_PROCESSORS=global_settings.TEMPLATE_CONTEXT_PROCESSORS,
     )
     def test_session_not_accessed(self):
         """
@@ -93,13 +90,8 @@ class AuthContextProcessorTests(TestCase):
         self.assertContains(response, "Session not accessed")
 
     @override_settings(
-        MIDDLEWARE_CLASSES=(
-            'django.contrib.sessions.middleware.SessionMiddleware',
-            'django.contrib.auth.middleware.AuthenticationMiddleware',
-        ),
-        TEMPLATE_CONTEXT_PROCESSORS=(
-            'django.contrib.auth.context_processors.auth',
-        ),
+        MIDDLEWARE_CLASSES=global_settings.MIDDLEWARE_CLASSES,
+        TEMPLATE_CONTEXT_PROCESSORS=global_settings.TEMPLATE_CONTEXT_PROCESSORS,
     )
     def test_session_is_accessed(self):
         """
@@ -120,7 +112,7 @@ class AuthContextProcessorTests(TestCase):
         self.assertContains(response, "Has auth permissions")
         self.assertContains(response, "Has auth.add_permission permissions")
         self.assertNotContains(response, "nonexisting")
-
+    
     def test_perm_in_perms_attrs(self):
         u = User.objects.create_user(username='normal', password='secret')
         u.user_permissions.add(
@@ -169,7 +161,7 @@ class AuthContextProcessorTests(TestCase):
         #    Exception RuntimeError: 'maximum recursion depth exceeded while
         #    calling a Python object' in <type 'exceptions.AttributeError'>
         #    ignored"
-        Q(user=response.context['user']) & Q(someflag=True)
+        query = Q(user=response.context['user']) & Q(someflag=True)
 
         # Tests for user equality.  This is hard because User defines
         # equality in a non-duck-typing way

@@ -1,7 +1,6 @@
-import unittest
-from unittest import skipUnless
-
 from django.contrib.gis.gdal import HAS_GDAL
+from django.utils import unittest
+from django.utils.unittest import skipUnless
 
 if HAS_GDAL:
     from django.contrib.gis.gdal import Driver, OGRException
@@ -12,10 +11,10 @@ valid_drivers = ('ESRI Shapefile', 'MapInfo File', 'TIGER', 'S57', 'DGN',
 
 invalid_drivers = ('Foo baz', 'clucka', 'ESRI Shp')
 
-aliases = {'eSrI': 'ESRI Shapefile',
-           'TigER/linE': 'TIGER',
-           'SHAPE': 'ESRI Shapefile',
-           'sHp': 'ESRI Shapefile',
+aliases = {'eSrI' : 'ESRI Shapefile',
+           'TigER/linE' : 'TIGER',
+           'SHAPE' : 'ESRI Shapefile',
+           'sHp' : 'ESRI Shapefile',
            }
 
 

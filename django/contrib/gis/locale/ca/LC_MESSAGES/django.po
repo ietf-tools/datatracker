@@ -2,15 +2,15 @@
 #
 # Translators:
 # Antoni Aloy <aaloy@apsl.net>, 2012
-# Carles Barrobés <carles@barrobes.com>, 2012,2014
+# Carles Barrobés <carles@barrobes.com>, 2012
 # Jannis Leidel <jannis@leidel.info>, 2011
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-08-16 10:56+0000\n"
-"Last-Translator: Carles Barrobés <carles@barrobes.com>\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-04-24 18:54+0000\n"
+"Last-Translator: claudep <claude@2xlibre.net>\n"
 "Language-Team: Catalan (http://www.transifex.com/projects/p/django/language/"
 "ca/)\n"
 "MIME-Version: 1.0\n"
@@ -19,56 +19,61 @@ msgstr ""
 "Language: ca\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: contrib/gis/apps.py:8
-msgid "GIS"
-msgstr "GIS"
+#: views.py:9
+msgid "No feeds are registered."
+msgstr "No s'han registrat canal de contingut"
 
-#: contrib/gis/db/models/fields.py:56
+#: views.py:19
+#, python-format
+msgid "Slug %r isn't registered."
+msgstr "L'slug %r no està registrat"
+
+#: db/models/fields.py:51
 msgid "The base GIS field -- maps to the OpenGIS Specification Geometry type."
 msgstr ""
 "El camp GIS base -- correspon al tipus 'Geometry' de l'especificació OpenGIS."
 
-#: contrib/gis/db/models/fields.py:298
+#: db/models/fields.py:270
 msgid "Point"
 msgstr "Punt"
 
-#: contrib/gis/db/models/fields.py:304
+#: db/models/fields.py:274
 msgid "Line string"
 msgstr "Cadena de línies"
 
-#: contrib/gis/db/models/fields.py:310
+#: db/models/fields.py:278
 msgid "Polygon"
 msgstr "Polígon"
 
-#: contrib/gis/db/models/fields.py:316
+#: db/models/fields.py:282
 msgid "Multi-point"
 msgstr "Multi-punt"
 
-#: contrib/gis/db/models/fields.py:322
+#: db/models/fields.py:286
 msgid "Multi-line string"
 msgstr "Cadena de multi-línies"
 
-#: contrib/gis/db/models/fields.py:328
+#: db/models/fields.py:290
 msgid "Multi polygon"
 msgstr "Multi polígon"
 
-#: contrib/gis/db/models/fields.py:334
+#: db/models/fields.py:294
 msgid "Geometry collection"
 msgstr "Col·leció de geometria"
 
-#: contrib/gis/forms/fields.py:22
+#: forms/fields.py:23
 msgid "No geometry value provided."
 msgstr "No s'ha indicat cap valor de geometria."
 
-#: contrib/gis/forms/fields.py:23
+#: forms/fields.py:24
 msgid "Invalid geometry value."
 msgstr "Valor de geometria invàlid."
 
-#: contrib/gis/forms/fields.py:24
+#: forms/fields.py:25
 msgid "Invalid geometry type."
 msgstr "Tipus de geometria invàlid."
 
-#: contrib/gis/forms/fields.py:25
+#: forms/fields.py:26
 msgid ""
 "An error occurred when transforming the geometry to the SRID of the geometry "
 "form field."
@@ -76,26 +81,17 @@ msgstr ""
 "S'ha produït un error en transformar la geometria al SRID del camp de "
 "geometria del formulari."
 
-#: contrib/gis/sitemaps/views.py:56
+#: sitemaps/views.py:46
 #, python-format
 msgid "No sitemap available for section: %r"
 msgstr "No hi ha un mapa del lloc disponible per a la secció: %r"
 
-#: contrib/gis/sitemaps/views.py:70
+#: sitemaps/views.py:60
 #, python-format
 msgid "Page %s empty"
 msgstr "Pàgina %s buida"
 
-#: contrib/gis/sitemaps/views.py:72
+#: sitemaps/views.py:62
 #, python-format
 msgid "No page '%s'"
 msgstr "No hi ha cap pàgina '%s'"
-
-#: contrib/gis/views.py:10
-msgid "No feeds are registered."
-msgstr "No s'han registrat canal de contingut"
-
-#: contrib/gis/views.py:16
-#, python-format
-msgid "Slug %r isn't registered."
-msgstr "L'slug %r no està registrat"

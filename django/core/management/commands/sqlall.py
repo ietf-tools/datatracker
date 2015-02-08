@@ -18,9 +18,5 @@ class Command(AppCommand):
 
     output_transaction = True
 
-    def handle_app_config(self, app_config, **options):
-        if app_config.models_module is None:
-            return
-        connection = connections[options.get('database')]
-        statements = sql_all(app_config, self.style, connection)
-        return '\n'.join(statements)
+    def handle_app(self, app, **options):
+        return '\n'.join(sql_all(app, self.style, connections[options.get('database')]))

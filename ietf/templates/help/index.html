@@ -1,6 +1,5 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
-{% load future %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
 
 {% block title %} Document State Index{% endblock %}
 
@@ -18,7 +17,7 @@
                                                                                                                
 {% for type in types %}
 {% if type.stategroups != None %}
-<tr class="{% cycle 'oddrow','evenrow' as cycle1 %}">
+<tr class="{% cycle oddrow,evenrow as cycle1 %}">
           <td><a href='{{ type.slug }}/'>{{type.slug}}</td>
           <td>
 	     {% for group in type.stategroups %}

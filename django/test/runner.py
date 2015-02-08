@@ -1,13 +1,12 @@
-from importlib import import_module
 import os
 from optparse import make_option
-import unittest
-from unittest import TestSuite, defaultTestLoader
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.test import SimpleTestCase, TestCase
+from django.test import TestCase
 from django.test.utils import setup_test_environment, teardown_test_environment
+from django.utils import unittest
+from django.utils.unittest import TestSuite, defaultTestLoader
 
 
 class DiscoverRunner(object):
@@ -15,10 +14,8 @@ class DiscoverRunner(object):
     A Django test runner that uses unittest2 test discovery.
     """
 
-    test_suite = TestSuite
-    test_runner = unittest.TextTestRunner
     test_loader = defaultTestLoader
-    reorder_by = (TestCase, SimpleTestCase)
+    reorder_by = (TestCase, )
     option_list = (
         make_option('-t', '--top-level-directory',
             action='store', dest='top_level', default=None,
@@ -26,7 +23,7 @@ class DiscoverRunner(object):
         make_option('-p', '--pattern', action='store', dest='pattern',
             default="test*.py",
             help='The test matching pattern. Defaults to test*.py.'),
-    )
+        )
 
     def __init__(self, pattern=None, top_level=None,
                  verbosity=1, interactive=True, failfast=False,
@@ -45,7 +42,7 @@ class DiscoverRunner(object):
         unittest.installHandler()
 
     def build_suite(self, test_labels=None, extra_tests=None, **kwargs):
-        suite = self.test_suite()
+        suite = TestSuite()
         test_labels = test_labels or ['.']
         extra_tests = extra_tests or []
 
@@ -90,11 +87,12 @@ class DiscoverRunner(object):
                     break
                 kwargs['top_level_dir'] = top_level
 
-            if not (tests and tests.countTestCases()) and is_discoverable(label):
-                # Try discovery if path is a package or directory
+
+            if not (tests and tests.countTestCases()):
+                # if no tests found, it's probably a package; try discovery
                 tests = self.test_loader.discover(start_dir=label, **kwargs)
 
-                # Make unittest forget the top-level dir it calculated from this
+                # make unittest forget the top-level dir it calculated from this
                 # run, to support running tests from two different top-levels.
                 self.test_loader._top_level_dir = None
 
@@ -109,7 +107,7 @@ class DiscoverRunner(object):
         return setup_databases(self.verbosity, self.interactive, **kwargs)
 
     def run_suite(self, suite, **kwargs):
-        return self.test_runner(
+        return unittest.TextTestRunner(
             verbosity=self.verbosity,
             failfast=self.failfast,
         ).run(suite)
@@ -151,26 +149,10 @@ class DiscoverRunner(object):
         return self.suite_result(suite, result)
 
 
-def is_discoverable(label):
-    """
-    Check if a test label points to a python package or file directory.
-
-    Relative labels like "." and ".." are seen as directories.
-    """
-    try:
-        mod = import_module(label)
-    except (ImportError, TypeError):
-        pass
-    else:
-        return hasattr(mod, '__path__')
-
-    return os.path.isdir(os.path.abspath(label))
-
-
 def dependency_ordered(test_databases, dependencies):
     """
     Reorder test_databases into an order that honors the dependencies
-    described in TEST[DEPENDENCIES].
+    described in TEST_DEPENDENCIES.
     """
     ordered_test_databases = []
     resolved_databases = set()
@@ -178,7 +160,7 @@ def dependency_ordered(test_databases, dependencies):
     # Maps db signature to dependencies of all it's aliases
     dependencies_map = {}
 
-    # sanity check - no DB can depend on its own alias
+    # sanity check - no DB can depend on it's own alias
     for sig, (_, aliases) in test_databases:
         all_deps = set()
         for alias in aliases:
@@ -204,7 +186,7 @@ def dependency_ordered(test_databases, dependencies):
 
         if not changed:
             raise ImproperlyConfigured(
-                "Circular dependency in TEST[DEPENDENCIES]")
+                "Circular dependency in TEST_DEPENDENCIES")
         test_databases = deferred
     return ordered_test_databases
 
@@ -219,11 +201,10 @@ def reorder_suite(suite, classes):
     classes[1], etc. Tests with no match in classes are placed last.
     """
     class_count = len(classes)
-    suite_class = type(suite)
-    bins = [suite_class() for i in range(class_count + 1)]
+    bins = [unittest.TestSuite() for i in range(class_count+1)]
     partition_suite(suite, classes, bins)
     for i in range(class_count):
-        bins[0].addTests(bins[i + 1])
+        bins[0].addTests(bins[i+1])
     return bins[0]
 
 
@@ -237,9 +218,8 @@ def partition_suite(suite, classes, bins):
     Tests of type classes[i] are added to bins[i],
     tests with no match found in classes are place in bins[-1]
     """
-    suite_class = type(suite)
     for test in suite:
-        if isinstance(test, suite_class):
+        if isinstance(test, unittest.TestSuite):
             partition_suite(test, classes, bins)
         else:
             for i in range(len(classes)):
@@ -261,11 +241,11 @@ def setup_databases(verbosity, interactive, **kwargs):
     default_sig = connections[DEFAULT_DB_ALIAS].creation.test_db_signature()
     for alias in connections:
         connection = connections[alias]
-        test_settings = connection.settings_dict['TEST']
-        if test_settings['MIRROR']:
+        if connection.settings_dict['TEST_MIRROR']:
             # If the database is marked as a test mirror, save
             # the alias.
-            mirrored_aliases[alias] = test_settings['MIRROR']
+            mirrored_aliases[alias] = (
+                connection.settings_dict['TEST_MIRROR'])
         else:
             # Store a tuple with DB parameters that uniquely identify it.
             # If we have two aliases with the same values for that tuple,
@@ -276,28 +256,27 @@ def setup_databases(verbosity, interactive, **kwargs):
             )
             item[1].add(alias)
 
-            if 'DEPENDENCIES' in test_settings:
-                dependencies[alias] = test_settings['DEPENDENCIES']
+            if 'TEST_DEPENDENCIES' in connection.settings_dict:
+                dependencies[alias] = (
+                    connection.settings_dict['TEST_DEPENDENCIES'])
             else:
                 if alias != DEFAULT_DB_ALIAS and connection.creation.test_db_signature() != default_sig:
-                    dependencies[alias] = test_settings.get('DEPENDENCIES', [DEFAULT_DB_ALIAS])
+                    dependencies[alias] = connection.settings_dict.get(
+                        'TEST_DEPENDENCIES', [DEFAULT_DB_ALIAS])
 
     # Second pass -- actually create the databases.
     old_names = []
     mirrors = []
 
     for signature, (db_name, aliases) in dependency_ordered(
-            test_databases.items(), dependencies):
+        test_databases.items(), dependencies):
         test_db_name = None
         # Actually create the database for the first connection
         for alias in aliases:
             connection = connections[alias]
             if test_db_name is None:
                 test_db_name = connection.creation.create_test_db(
-                    verbosity,
-                    autoclobber=not interactive,
-                    serialize=connection.settings_dict.get("TEST", {}).get("SERIALIZE", True),
-                )
+                        verbosity, autoclobber=not interactive)
                 destroy = True
             else:
                 connection.settings_dict['NAME'] = test_db_name

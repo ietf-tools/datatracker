@@ -9,8 +9,8 @@ from ietf.secr.utils.meeting import get_upload_root
 
 class InterimManager(models.Manager):
     '''A custom manager to limit objects to type=interim'''
-    def get_queryset(self):
-        return super(InterimManager, self).get_queryset().filter(type='interim')
+    def get_query_set(self):
+        return super(InterimManager, self).get_query_set().filter(type='interim')
         
 class InterimMeeting(Meeting):
     '''

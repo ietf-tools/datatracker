@@ -16,8 +16,6 @@ class BaseStorage(object):
         self.prefix = 'wizard_%s' % prefix
         self.request = request
         self.file_storage = file_storage
-        self._files = {}
-        self._tmp_files = []
 
     def init_data(self):
         self.data = {
@@ -28,13 +26,6 @@ class BaseStorage(object):
         }
 
     def reset(self):
-        # Store unused temporary file names in order to delete them
-        # at the end of the response cycle through a callback attached in
-        # `update_response`.
-        wizard_files = self.data[self.step_files_key]
-        for step_files in six.itervalues(wizard_files):
-            for step_file in six.itervalues(step_files):
-                self._tmp_files.append(step_file['tmp_name'])
         self.init_data()
 
     def _get_current_step(self):
@@ -79,24 +70,22 @@ class BaseStorage(object):
 
         if wizard_files and not self.file_storage:
             raise NoFileStorageConfigured(
-                "You need to define 'file_storage' in your "
-                "wizard view in order to handle file uploads.")
+                    "You need to define 'file_storage' in your "
+                    "wizard view in order to handle file uploads.")
 
         files = {}
         for field, field_dict in six.iteritems(wizard_files):
             field_dict = field_dict.copy()
             tmp_name = field_dict.pop('tmp_name')
-            if (step, field) not in self._files:
-                self._files[(step, field)] = UploadedFile(
-                    file=self.file_storage.open(tmp_name), **field_dict)
-            files[field] = self._files[(step, field)]
+            files[field] = UploadedFile(
+                file=self.file_storage.open(tmp_name), **field_dict)
         return files or None
 
     def set_step_files(self, step, files):
         if files and not self.file_storage:
             raise NoFileStorageConfigured(
-                "You need to define 'file_storage' in your "
-                "wizard view in order to handle file uploads.")
+                    "You need to define 'file_storage' in your "
+                    "wizard view in order to handle file uploads.")
 
         if step not in self.data[self.step_files_key]:
             self.data[self.step_files_key][step] = {}
@@ -117,14 +106,4 @@ class BaseStorage(object):
         return self.get_step_files(self.current_step)
 
     def update_response(self, response):
-        def post_render_callback(response):
-            for file in self._files.values():
-                if not file.closed:
-                    file.close()
-            for tmp_file in self._tmp_files:
-                self.file_storage.delete(tmp_file)
-
-        if hasattr(response, 'render'):
-            response.add_post_render_callback(post_render_callback)
-        else:
-            post_render_callback(response)
+        pass

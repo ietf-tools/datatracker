@@ -3,14 +3,14 @@
 # Translators:
 # Eugene MechanisM <contact@mechanism.name>, 2012
 # Jannis Leidel <jannis@leidel.info>, 2011
-# Алексей Борискин <sun.void@gmail.com>, 2012,2014
+# Алексей Борискин <sun.void@gmail.com>, 2012
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-06-15 21:00+0000\n"
-"Last-Translator: Алексей Борискин <sun.void@gmail.com>\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-04-24 18:56+0000\n"
+"Last-Translator: claudep <claude@2xlibre.net>\n"
 "Language-Team: Russian (http://www.transifex.com/projects/p/django/language/"
 "ru/)\n"
 "MIME-Version: 1.0\n"
@@ -20,82 +20,78 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: contrib/gis/apps.py:8
-msgid "GIS"
-msgstr "ГИС"
+#: views.py:9
+msgid "No feeds are registered."
+msgstr "Нет зарегистрированных фидов."
 
-#: contrib/gis/db/models/fields.py:56
+#: views.py:19
+#, python-format
+msgid "Slug %r isn't registered."
+msgstr "Слаг %r не зарегистрирован."
+
+#: db/models/fields.py:51
 msgid "The base GIS field -- maps to the OpenGIS Specification Geometry type."
 msgstr ""
 "Базовое ГИС-поле. Его потомки отражают конкретные геометрические типы по "
 "спецификации OpenGIS."
 
-#: contrib/gis/db/models/fields.py:298
+#: db/models/fields.py:270
 msgid "Point"
 msgstr "Точка"
 
-#: contrib/gis/db/models/fields.py:304
+#: db/models/fields.py:274
 msgid "Line string"
 msgstr "Ломаная"
 
-#: contrib/gis/db/models/fields.py:310
+#: db/models/fields.py:278
 msgid "Polygon"
 msgstr "Многоугольник"
 
-#: contrib/gis/db/models/fields.py:316
+#: db/models/fields.py:282
 msgid "Multi-point"
 msgstr "Набор точек"
 
-#: contrib/gis/db/models/fields.py:322
+#: db/models/fields.py:286
 msgid "Multi-line string"
 msgstr "Набор ломаных"
 
-#: contrib/gis/db/models/fields.py:328
+#: db/models/fields.py:290
 msgid "Multi polygon"
 msgstr "Набор многоугольников"
 
-#: contrib/gis/db/models/fields.py:334
+#: db/models/fields.py:294
 msgid "Geometry collection"
 msgstr "Набор геометрических объектов"
 
-#: contrib/gis/forms/fields.py:22
+#: forms/fields.py:23
 msgid "No geometry value provided."
 msgstr "Не указано значение геометрии."
 
-#: contrib/gis/forms/fields.py:23
+#: forms/fields.py:24
 msgid "Invalid geometry value."
 msgstr "Неверное значение геометрии."
 
-#: contrib/gis/forms/fields.py:24
+#: forms/fields.py:25
 msgid "Invalid geometry type."
 msgstr "Неверный тип геометрии."
 
-#: contrib/gis/forms/fields.py:25
+#: forms/fields.py:26
 msgid ""
 "An error occurred when transforming the geometry to the SRID of the geometry "
 "form field."
 msgstr "Произошла ошибка во время преобразования геометрии в SRID."
 
-#: contrib/gis/sitemaps/views.py:56
+#: sitemaps/views.py:46
 #, python-format
 msgid "No sitemap available for section: %r"
 msgstr "Нет карты сайта для секции: %r"
 
-#: contrib/gis/sitemaps/views.py:70
+#: sitemaps/views.py:60
 #, python-format
 msgid "Page %s empty"
 msgstr "Страница  %s пустая"
 
-#: contrib/gis/sitemaps/views.py:72
+#: sitemaps/views.py:62
 #, python-format
 msgid "No page '%s'"
 msgstr "Нет страницы '%s'"
-
-#: contrib/gis/views.py:10
-msgid "No feeds are registered."
-msgstr "Нет зарегистрированных фидов."
-
-#: contrib/gis/views.py:16
-#, python-format
-msgid "Slug %r isn't registered."
-msgstr "Слаг %r не зарегистрирован."

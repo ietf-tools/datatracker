@@ -27,7 +27,6 @@ def check_password(environ, username, password):
     finally:
         db.close_old_connections()
 
-
 def groups_for_user(environ, username):
     """
     Authorizes a user based on groups

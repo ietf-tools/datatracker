@@ -1,7 +1,6 @@
-import unittest
-from unittest import skipUnless
-
 from django.contrib.gis.gdal import HAS_GDAL
+from django.utils import unittest
+from django.utils.unittest import skipUnless
 
 if HAS_GDAL:
     from django.contrib.gis.gdal import Envelope, OGRException
@@ -18,13 +17,13 @@ class EnvelopeTest(unittest.TestCase):
 
     def setUp(self):
         self.e = Envelope(0, 0, 5, 5)
-
+    
     def test01_init(self):
-        "Testing Envelope initialization."
+        "Testing Envelope initilization."
         e1 = Envelope((0, 0, 5, 5))
-        Envelope(0, 0, 5, 5)
-        Envelope(0, '0', '5', 5)  # Thanks to ww for this
-        Envelope(e1._envelope)
+        e2 = Envelope(0, 0, 5, 5)
+        e3 = Envelope(0, '0', '5', 5) # Thanks to ww for this
+        e4 = Envelope(e1._envelope)
         self.assertRaises(OGRException, Envelope, (5, 5, 0, 0))
         self.assertRaises(OGRException, Envelope, 5, 5, 0, 0)
         self.assertRaises(OGRException, Envelope, (0, 0, 5, 5, 3))

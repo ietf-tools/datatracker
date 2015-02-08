@@ -1,8 +1,8 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "ipr/details_base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+
 {% load ietf_filters %}
 {% load ipr_filters %}
-{% load future %}
 
 {% block pagehead %}
 <link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
@@ -23,7 +23,7 @@
   <tr><th class="date-column">Date</th><th>Type</th><th>By</th><th>Text</th></tr>
 
   {% for e in events %}
-  <tr class="{% cycle 'oddrow','evenrow' %}" id="history-{{ e.pk }}">
+  <tr class="{% cycle oddrow,evenrow %}" id="history-{{ e.pk }}">
     <td class="date-column">{{ e.time|date:"Y-m-d" }}</td>
     <td>{{ e.type }}
         {% if e.response_due %}

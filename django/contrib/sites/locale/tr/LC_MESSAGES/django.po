@@ -1,17 +1,15 @@
 # This file is distributed under the same license as the Django package.
 #
 # Translators:
-# Ahmet Emre Aladağ <emre.aladag@isik.edu.tr>, 2014
-# Burak Yavuz, 2014
-# Caner Başaran <basaran.caner@gmail.com>, 2013
+# Caner BAŞARAN <basaran.caner@gmail.com>, 2013
 # Jannis Leidel <jannis@leidel.info>, 2011
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-09-06 13:04+0000\n"
-"Last-Translator: Burak Yavuz\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-04-29 08:23+0000\n"
+"Last-Translator: claudep <claude@2xlibre.net>\n"
 "Language-Team: Turkish (http://www.transifex.com/projects/p/django/language/"
 "tr/)\n"
 "MIME-Version: 1.0\n"
@@ -20,26 +18,22 @@ msgstr ""
 "Language: tr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: contrib/sites/apps.py:8
-msgid "Sites"
-msgstr "Siteler"
-
-#: contrib/sites/models.py:30
+#: models.py:25
 msgid "The domain name cannot contain any spaces or tabs."
-msgstr "Etki alanı adı, herhangi bir boşluk ya da sekme içeremez."
+msgstr "Alan adı, boşluk ya da sekmeler içeremez."
 
-#: contrib/sites/models.py:67
+#: models.py:58
 msgid "domain name"
-msgstr "etki alanı adı"
+msgstr "alan adı"
 
-#: contrib/sites/models.py:69
+#: models.py:60
 msgid "display name"
 msgstr "görünen isim"
 
-#: contrib/sites/models.py:74
+#: models.py:65
 msgid "site"
 msgstr "site"
 
-#: contrib/sites/models.py:75
+#: models.py:66
 msgid "sites"
 msgstr "siteler"

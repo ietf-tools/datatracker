@@ -7,8 +7,7 @@ circular import difficulties.
 """
 from __future__ import unicode_literals
 
-from django.apps import apps
-from django.db.backends import utils
+from django.db.backends import util
 from django.utils import six
 from django.utils import tree
 
@@ -30,7 +29,6 @@ class QueryWrapper(object):
 
     def as_sql(self, qn=None, connection=None):
         return self.data
-
 
 class Q(tree.Node):
     """
@@ -76,7 +74,6 @@ class Q(tree.Node):
                 clone.children.append(child)
         return clone
 
-
 class DeferredAttribute(object):
     """
     A wrapper for a deferred-loading field. When the value is read from this
@@ -102,14 +99,15 @@ class DeferredAttribute(object):
             try:
                 f = opts.get_field_by_name(self.field_name)[0]
             except FieldDoesNotExist:
-                f = [f for f in opts.fields if f.attname == self.field_name][0]
+                f = [f for f in opts.fields
+                     if f.attname == self.field_name][0]
             name = f.name
             # Let's see if the field is part of the parent chain. If so we
             # might be able to reuse the already loaded value. Refs #18343.
             val = self._check_parent_chain(instance, name)
             if val is None:
                 # We use only() instead of values() here because we want the
-                # various data coercion methods (to_python(), etc.) to be
+                # various data coersion methods (to_python(), etc.) to be
                 # called here.
                 val = getattr(
                     non_deferred_model._base_manager.only(name).using(
@@ -176,7 +174,6 @@ def select_related_descend(field, restricted, requested, load_fields, reverse=Fa
             return False
     return True
 
-
 # This function is needed because data descriptors must be defined on a class
 # object, not an instance, to have any effect.
 
@@ -186,28 +183,22 @@ def deferred_class_factory(model, attrs):
     being replaced with DeferredAttribute objects. The "pk_value" ties the
     deferred attributes to a particular instance of the model.
     """
-    # The app registry wants a unique name for each model, otherwise the new
-    # class won't be created (we get an exception). Therefore, we generate
-    # the name using the passed in attrs. It's OK to reuse an existing class
+    class Meta:
+        proxy = True
+        app_label = model._meta.app_label
+
+    # The app_cache wants a unique name for each model, otherwise the new class
+    # won't be created (we get an old one back). Therefore, we generate the
+    # name using the passed in attrs. It's OK to reuse an existing class
     # object if the attrs are identical.
     name = "%s_Deferred_%s" % (model.__name__, '_'.join(sorted(list(attrs))))
-    name = utils.truncate_name(name, 80, 32)
+    name = util.truncate_name(name, 80, 32)
 
-    try:
-        return apps.get_model(model._meta.app_label, name)
-
-    except LookupError:
-
-        class Meta:
-            proxy = True
-            app_label = model._meta.app_label
-
-        overrides = dict((attr, DeferredAttribute(attr, model)) for attr in attrs)
-        overrides["Meta"] = Meta
-        overrides["__module__"] = model.__module__
-        overrides["_deferred"] = True
-        return type(str(name), (model,), overrides)
-
+    overrides = dict((attr, DeferredAttribute(attr, model)) for attr in attrs)
+    overrides["Meta"] = Meta
+    overrides["__module__"] = model.__module__
+    overrides["_deferred"] = True
+    return type(str(name), (model,), overrides)
 
 # The above function is also used to unpickle model instances with deferred
 # fields.

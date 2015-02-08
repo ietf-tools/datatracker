@@ -1,8 +1,8 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "ipr/details_base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+
 {% load ietf_filters %}
 {% load ipr_filters %}
-{% load future %}
 
 {% block tab_content %}
 
@@ -69,9 +69,9 @@
      
     <!-- Begin Sections -->
     <table class="ipr">
-     <tr class="{% cycle 'dark','light' as row_parity %}">
+     <tr class="{% cycle dark,light as row_parity %}">
         <th colspan="2">
-           {% cycle 'I','II','III','IV','V','VI','VII','VIII' as section %}.
+           {% cycle I,II,III,IV,V,VI,VII,VIII as section %}.
            {% if ipr|to_class_name == "ThirdPartyIprDisclosure" %}Possible{% endif %}
            Patent Holder/Applicant ("Patent Holder")
         </th>
@@ -83,7 +83,7 @@
 
    {% if ipr.holder_contact_name or ipr.holder_contact_info %}
     <table class="ipr">
-     <tr class="{% cycle 'dark','light' as row_parity %}"><th colspan="2">
+     <tr class="{% cycle dark,light as row_parity %}"><th colspan="2">
         {% cycle section %}.
         Patent Holder's Contact for License Application
         </th>
@@ -97,7 +97,7 @@
 
    {% if ipr.ietfer_name or ipr.ietfer_contact_info %}
     <table class="ipr">
-     <tr class="{% cycle 'dark','light' as row_parity %}">
+     <tr class="{% cycle dark,light as row_parity %}">
         <th colspan="2" >
         {% cycle section %}.
         Contact Information for the IETF Participant Whose Personal Belief Triggered this Disclosure:
@@ -116,7 +116,7 @@
 
    {% if ipr.iprdocrel_set.all or ipr.other_designations %}
     <table class="ipr">
-     <tr class="{% cycle 'dark','light' as row_parity %}">
+     <tr class="{% cycle dark,light as row_parity %}">
         <th colspan="2" >
         {% cycle section %}.
         IETF Document or Other Contribution to Which this IPR Disclosure Relates:
@@ -136,7 +136,7 @@
 
    {% if ipr.patent_info %}
      <table class="ipr">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
            <th colspan="2" >
            {% cycle section %}.
            Disclosure of Patent Information (i.e., patents or patent
@@ -172,7 +172,7 @@
    {% if ipr.licensing %}
      <!-- Not to be shown for third-party disclosures -->
      <table  class="ipr">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
            <th colspan="2" >
            {% cycle section %}.
            Licensing Declaration
@@ -243,7 +243,7 @@
 
     {% elif ipr.statement %}
       <table  class="ipr data">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
            <th colspan="2" >
            {% cycle section %}.
            Statement
@@ -257,7 +257,7 @@
     {% endif %}
 
     <table class="ipr">
-     <tr class="{% cycle 'dark','light' as row_parity %}"><th colspan="2">
+     <tr class="{% cycle dark,light as row_parity %}"><th colspan="2">
         {% cycle section %}.
         Contact Information of Submitter of this Form
         </th>
@@ -268,7 +268,7 @@
     
       {% if ipr.notes %}
      <table class="ipr">
-        <tr class="{% cycle 'dark','light' as row_parity %}">
+        <tr class="{% cycle dark,light as row_parity %}">
            <th colspan="2" >
            {% cycle section %}.
            Other Notes:

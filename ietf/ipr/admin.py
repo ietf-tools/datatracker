@@ -12,7 +12,6 @@ from ietf.ipr.models import (IprNotification, IprDisclosureBase, IprDocRel, IprE
 class IprDocRelAdminForm(forms.ModelForm):
     class Meta:
         model = IprDocRel
-        fields = '__all__'
         widgets = {
           'sections':forms.TextInput,
         }

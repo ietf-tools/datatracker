@@ -1,12 +1,11 @@
 from __future__ import unicode_literals
 
-from importlib import import_module
-
 from django import forms, http
 from django.conf import settings
 from django.db import models
 from django.test import TestCase
 from django.template.response import TemplateResponse
+from django.utils.importlib import import_module
 
 from django.contrib.auth.models import User
 
@@ -48,7 +47,7 @@ class CustomKwargsStep1(Step1):
 
     def __init__(self, test=None, *args, **kwargs):
         self.test = test
-        super(CustomKwargsStep1, self).__init__(*args, **kwargs)
+        return super(CustomKwargsStep1, self).__init__(*args, **kwargs)
 
 
 class TestModel(models.Model):
@@ -81,13 +80,11 @@ class TestWizard(WizardView):
             kwargs['test'] = True
         return kwargs
 
-
 class TestWizardWithInitAttrs(TestWizard):
     form_list = [Step1, Step2]
     condition_dict = {'step2': True}
     initial_dict = {'start': {'name': 'value1'}}
     instance_dict = {'start': User()}
-
 
 class FormTests(TestCase):
     def test_form_init(self):

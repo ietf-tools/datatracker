@@ -3,11 +3,9 @@
  GEOSGeometryIndexError.
 """
 
-
 class GEOSException(Exception):
     "The base GEOS exception, indicates a GEOS-related error."
     pass
-
 
 class GEOSIndexError(GEOSException, KeyError):
     """
@@ -17,6 +15,6 @@ class GEOSIndexError(GEOSException, KeyError):
     an Exception is raised.  Fixes ticket #4740.
     """
     # "If, during the method lookup, a method raises an exception, the exception
-    #  will be propagated, unless the exception has an attribute
+    #  will be propagated, unless the exception has an attribute 
     #  `silent_variable_failure` whose value is True." -- Django template docs.
     silent_variable_failure = True

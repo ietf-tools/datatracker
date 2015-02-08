@@ -2,25 +2,23 @@
 Code to manage the creation and SQL rendering of 'where' constraints.
 """
 
-import collections
+from __future__ import absolute_import
+
 import datetime
 from itertools import repeat
-import warnings
 
 from django.conf import settings
 from django.db.models.fields import DateTimeField, Field
 from django.db.models.sql.datastructures import EmptyResultSet, Empty
 from django.db.models.sql.aggregates import Aggregate
-from django.utils.deprecation import RemovedInDjango19Warning
+from django.utils.itercompat import is_iterator
 from django.utils.six.moves import xrange
 from django.utils import timezone
 from django.utils import tree
 
-
 # Connection types
 AND = 'AND'
 OR = 'OR'
-
 
 class EmptyShortCircuit(Exception):
     """
@@ -28,7 +26,6 @@ class EmptyShortCircuit(Exception):
     added to the where-clause.
     """
     pass
-
 
 class WhereNode(tree.Node):
     """
@@ -61,17 +58,17 @@ class WhereNode(tree.Node):
         if not isinstance(data, (list, tuple)):
             return data
         obj, lookup_type, value = data
-        if isinstance(value, collections.Iterator):
+        if is_iterator(value):
             # Consume any generators immediately, so that we can determine
             # emptiness and transform any non-empty values correctly.
             value = list(value)
 
-        # The "value_annotation" parameter is used to pass auxiliary information
+        # The "value_annotation" parameter is used to pass auxilliary information
         # about the value(s) to the query construction. Specifically, datetime
         # and empty values need special handling. Other types could be used
         # here in the future (using Python types is suggested for consistency).
         if (isinstance(value, datetime.datetime)
-                or (isinstance(obj.field, DateTimeField) and lookup_type != 'isnull')):
+            or (isinstance(obj.field, DateTimeField) and lookup_type != 'isnull')):
             value_annotation = datetime.datetime
         elif hasattr(value, 'value_annotation'):
             value_annotation = value.value_annotation
@@ -103,7 +100,7 @@ class WhereNode(tree.Node):
         for child in self.children:
             try:
                 if hasattr(child, 'as_sql'):
-                    sql, params = qn.compile(child)
+                    sql, params = child.as_sql(qn=qn, connection=connection)
                 else:
                     # A leaf node in the tree.
                     sql, params = self.make_atom(child, qn, connection)
@@ -154,16 +151,16 @@ class WhereNode(tree.Node):
                 sql_string = '(%s)' % sql_string
         return sql_string, result_params
 
-    def get_group_by_cols(self):
+    def get_cols(self):
         cols = []
         for child in self.children:
-            if hasattr(child, 'get_group_by_cols'):
-                cols.extend(child.get_group_by_cols())
+            if hasattr(child, 'get_cols'):
+                cols.extend(child.get_cols())
             else:
                 if isinstance(child[0], Constraint):
                     cols.append((child[0].alias, child[0].col))
-                if hasattr(child[3], 'get_group_by_cols'):
-                    cols.extend(child[3].get_group_by_cols())
+                if hasattr(child[3], 'get_cols'):
+                    cols.extend(child[3].get_cols())
         return cols
 
     def make_atom(self, child, qn, connection):
@@ -176,12 +173,9 @@ class WhereNode(tree.Node):
         Returns the string for the SQL fragment and the parameters to use for
         it.
         """
-        warnings.warn(
-            "The make_atom() method will be removed in Django 1.9. Use Lookup class instead.",
-            RemovedInDjango19Warning)
         lvalue, lookup_type, value_annotation, params_or_value = child
         field_internal_type = lvalue.field.get_internal_type() if lvalue.field else None
-
+        
         if isinstance(lvalue, Constraint):
             try:
                 lvalue, params = lvalue.process(lookup_type, params_or_value, connection)
@@ -198,13 +192,13 @@ class WhereNode(tree.Node):
             field_sql, field_params = self.sql_for_columns(lvalue, qn, connection, field_internal_type), []
         else:
             # A smart object with an as_sql() method.
-            field_sql, field_params = qn.compile(lvalue)
+            field_sql, field_params = lvalue.as_sql(qn, connection)
 
         is_datetime_field = value_annotation is datetime.datetime
         cast_sql = connection.ops.datetime_cast_sql() if is_datetime_field else '%s'
 
         if hasattr(params, 'as_sql'):
-            extra, params = qn.compile(params)
+            extra, params = params.as_sql(qn, connection)
             cast_sql = ''
         else:
             extra = ''
@@ -212,7 +206,7 @@ class WhereNode(tree.Node):
         params = field_params + params
 
         if (len(params) == 1 and params[0] == '' and lookup_type == 'exact'
-                and connection.features.interprets_empty_strings_as_nulls):
+            and connection.features.interprets_empty_strings_as_nulls):
             lookup_type = 'isnull'
             value_annotation = True
 
@@ -287,8 +281,6 @@ class WhereNode(tree.Node):
             if hasattr(child, 'relabel_aliases'):
                 # For example another WhereNode
                 child.relabel_aliases(change_map)
-            elif hasattr(child, 'relabeled_clone'):
-                self.children[pos] = child.relabeled_clone(change_map)
             elif isinstance(child, (list, tuple)):
                 # tuple starting with Constraint
                 child = (child[0].relabeled_clone(change_map),) + child[1:]
@@ -312,14 +304,13 @@ class WhereNode(tree.Node):
                 clone.children.append(child)
         return clone
 
-
 class EmptyWhere(WhereNode):
+
     def add(self, data, connector):
         return
 
     def as_sql(self, qn=None, connection=None):
         raise EmptyResultSet
-
 
 class EverythingNode(object):
     """
@@ -354,13 +345,10 @@ class Constraint(object):
     pre-process itself prior to including in the WhereNode.
     """
     def __init__(self, alias, col, field):
-        warnings.warn(
-            "The Constraint class will be removed in Django 1.9. Use Lookup class instead.",
-            RemovedInDjango19Warning)
         self.alias, self.col, self.field = alias, col, field
 
     def prepare(self, lookup_type, value):
-        if self.field and not hasattr(value, 'as_sql'):
+        if self.field:
             return self.field.get_prep_lookup(lookup_type, value)
         return value
 
@@ -397,7 +385,6 @@ class Constraint(object):
             new.alias, new.col, new.field = change_map[self.alias], self.col, self.field
             return new
 
-
 class SubqueryConstraint(object):
     def __init__(self, alias, columns, targets, query_object):
         self.alias = alias
@@ -418,9 +405,7 @@ class SubqueryConstraint(object):
             else:
                 query = query._clone()
             query = query.query
-            if query.can_filter():
-                # If there is no slicing in use, then we can safely drop all ordering
-                query.clear_ordering(True)
+            query.clear_ordering(True)
 
         query_compiler = query.get_compiler(connection=connection)
         return query_compiler.as_subquery_condition(self.alias, self.columns, qn)

@@ -1,6 +1,4 @@
 from django.contrib.gis.gdal import SpatialReference
-from django.db import connections, DEFAULT_DB_ALIAS
-
 
 def add_srs_entry(srs, auth_name='EPSG', auth_srid=None, ref_sys_name=None,
                   database=None):
@@ -9,10 +7,12 @@ def add_srs_entry(srs, auth_name='EPSG', auth_srid=None, ref_sys_name=None,
     to the `spatial_ref_sys` table of the spatial backend.  Doing this enables
     database-level spatial transformations for the backend.  Thus, this utility
     is useful for adding spatial reference systems not included by default with
-    the backend:
+    the backend -- for example, the so-called "Google Maps Mercator Projection"
+    is excluded in PostGIS 1.3 and below, and the following adds it to the
+    `spatial_ref_sys` table:
 
     >>> from django.contrib.gis.utils import add_srs_entry
-    >>> add_srs_entry(3857)
+    >>> add_srs_entry(900913)
 
     Keyword Arguments:
      auth_name:
@@ -29,9 +29,10 @@ def add_srs_entry(srs, auth_name='EPSG', auth_srid=None, ref_sys_name=None,
 
      database:
       The name of the database connection to use; the default is the value
-      of `django.db.DEFAULT_DB_ALIAS` (at the time of this writing, its value
+      of `django.db.DEFAULT_DB_ALIAS` (at the time of this writing, it's value
       is 'default').
     """
+    from django.db import connections, DEFAULT_DB_ALIAS
     if not database:
         database = DEFAULT_DB_ALIAS
     connection = connections[database]
@@ -55,27 +56,25 @@ def add_srs_entry(srs, auth_name='EPSG', auth_srid=None, ref_sys_name=None,
 
     # Initializing the keyword arguments dictionary for both PostGIS
     # and SpatiaLite.
-    kwargs = {'srid': srs.srid,
-              'auth_name': auth_name,
-              'auth_srid': auth_srid or srs.srid,
-              'proj4text': srs.proj4,
+    kwargs = {'srid' : srs.srid,
+              'auth_name' : auth_name,
+              'auth_srid' : auth_srid or srs.srid,
+              'proj4text' : srs.proj4,
               }
 
     # Backend-specific fields for the SpatialRefSys model.
-    srs_field_names = SpatialRefSys._meta.get_all_field_names()
-    if 'srtext' in srs_field_names:
+    if connection.ops.postgis:
         kwargs['srtext'] = srs.wkt
-    if 'ref_sys_name' in srs_field_names:
-        # Spatialite specific
+    if connection.ops.spatialite:
         kwargs['ref_sys_name'] = ref_sys_name or srs.name
 
     # Creating the spatial_ref_sys model.
     try:
         # Try getting via SRID only, because using all kwargs may
         # differ from exact wkt/proj in database.
-        SpatialRefSys.objects.using(database).get(srid=srs.srid)
+        sr = SpatialRefSys.objects.using(database).get(srid=srs.srid)
     except SpatialRefSys.DoesNotExist:
-        SpatialRefSys.objects.using(database).create(**kwargs)
+        sr = SpatialRefSys.objects.using(database).create(**kwargs)
 
 # Alias is for backwards-compatibility purposes.
 add_postgis_srs = add_srs_entry

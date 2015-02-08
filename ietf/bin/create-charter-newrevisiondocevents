@@ -24,14 +24,12 @@ def warn(string):
 import re
 from datetime import datetime as Datetime
 
-import django
 from django.conf import settings
 
 from ietf.utils.path import path as Path
 from ietf.doc.models import Document, NewRevisionDocEvent
 from ietf.person.models import Person
 
-django.setup()
 system_entity = Person.objects.get(name="(System)")
 
 charterdir = Path(settings.CHARTER_PATH)

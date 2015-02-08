@@ -4,11 +4,11 @@
 # Azat Khasanshin <lordofbazuks@gmail.com>, 2011
 msgid ""
 msgstr ""
-"Project-Id-Version: django\n"
+"Project-Id-Version: django-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-05-19 15:12+0200\n"
-"PO-Revision-Date: 2014-05-20 09:45+0000\n"
-"Last-Translator: Jannis Leidel <jannis@leidel.info>\n"
+"POT-Creation-Date: 2013-05-02 16:18+0200\n"
+"PO-Revision-Date: 2013-04-29 08:27+0000\n"
+"Last-Translator: claudep <claude@2xlibre.net>\n"
 "Language-Team: Tatar (http://www.transifex.com/projects/p/django/language/"
 "tt/)\n"
 "MIME-Version: 1.0\n"
@@ -17,26 +17,22 @@ msgstr ""
 "Language: tt\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: contrib/redirects/apps.py:8
-msgid "Redirects"
-msgstr ""
-
-#: contrib/redirects/models.py:10
+#: models.py:9
 msgid "redirect from"
 msgstr "бу сәхифәдән юнәлтергә:"
 
-#: contrib/redirects/models.py:11
+#: models.py:10
 msgid ""
 "This should be an absolute path, excluding the domain name. Example: '/"
 "events/search/'."
 msgstr ""
 "Бу домен исеменнән тыш абсолүт юл булырга тиеш. Мәсәлән: '/events/search/'."
 
-#: contrib/redirects/models.py:12
+#: models.py:11
 msgid "redirect to"
 msgstr "бу сәхифәгә юнәлтергә:"
 
-#: contrib/redirects/models.py:13
+#: models.py:12
 msgid ""
 "This can be either an absolute path (as above) or a full URL starting with "
 "'http://'."
@@ -44,10 +40,10 @@ msgstr ""
 "Бу я абсолүт юл (өстәге кебек), я 'http://' белән башланган тулы URL булырга "
 "тиеш."
 
-#: contrib/redirects/models.py:16
+#: models.py:15
 msgid "redirect"
 msgstr "юнәлтү"
 
-#: contrib/redirects/models.py:17
+#: models.py:16
 msgid "redirects"
 msgstr "юнәлтүләр"

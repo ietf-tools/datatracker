@@ -1,7 +1,6 @@
 from django.core import urlresolvers
 from django.contrib.sitemaps import Sitemap
 
-
 class GeoRSSSitemap(Sitemap):
     """
     A minimal hook to produce sitemaps for GeoRSS feeds.
@@ -28,8 +27,7 @@ class GeoRSSSitemap(Sitemap):
         # Setting up.
         self.feed_dict = feed_dict
         self.locations = []
-        if slug_dict is None:
-            slug_dict = {}
+        if slug_dict is None: slug_dict = {}
         # Getting the feed locations.
         for section in feed_dict.keys():
             if slug_dict.get(section, False):
@@ -44,8 +42,7 @@ class GeoRSSSitemap(Sitemap):
         is placed on each URL element.
         """
         urls = Sitemap.get_urls(self, page=page, site=site)
-        for url in urls:
-            url['geo_format'] = 'georss'
+        for url in urls: url['geo_format'] = 'georss'
         return urls
 
     def items(self):
@@ -53,3 +50,4 @@ class GeoRSSSitemap(Sitemap):
 
     def location(self, obj):
         return urlresolvers.reverse('django.contrib.gis.views.feed', args=(obj,))
+

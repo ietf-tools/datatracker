@@ -1,41 +1,36 @@
 import os
 import sys
-
 from django.db.backends.creation import BaseDatabaseCreation
 from django.utils.six.moves import input
-
 
 class DatabaseCreation(BaseDatabaseCreation):
     # SQLite doesn't actually support most of these types, but it "does the right
     # thing" given more verbose field definitions, so leave them as is so that
     # schema inspection is more useful.
     data_types = {
-        'AutoField': 'integer',
-        'BinaryField': 'BLOB',
-        'BooleanField': 'bool',
-        'CharField': 'varchar(%(max_length)s)',
-        'CommaSeparatedIntegerField': 'varchar(%(max_length)s)',
-        'DateField': 'date',
-        'DateTimeField': 'datetime',
-        'DecimalField': 'decimal',
-        'FileField': 'varchar(%(max_length)s)',
-        'FilePathField': 'varchar(%(max_length)s)',
-        'FloatField': 'real',
-        'IntegerField': 'integer',
-        'BigIntegerField': 'bigint',
-        'IPAddressField': 'char(15)',
-        'GenericIPAddressField': 'char(39)',
-        'NullBooleanField': 'bool',
-        'OneToOneField': 'integer',
-        'PositiveIntegerField': 'integer unsigned',
-        'PositiveSmallIntegerField': 'smallint unsigned',
-        'SlugField': 'varchar(%(max_length)s)',
-        'SmallIntegerField': 'smallint',
-        'TextField': 'text',
-        'TimeField': 'time',
-    }
-    data_types_suffix = {
-        'AutoField': 'AUTOINCREMENT',
+        'AutoField':                    'integer',
+        'BinaryField':                  'BLOB',
+        'BooleanField':                 'bool',
+        'CharField':                    'varchar(%(max_length)s)',
+        'CommaSeparatedIntegerField':   'varchar(%(max_length)s)',
+        'DateField':                    'date',
+        'DateTimeField':                'datetime',
+        'DecimalField':                 'decimal',
+        'FileField':                    'varchar(%(max_length)s)',
+        'FilePathField':                'varchar(%(max_length)s)',
+        'FloatField':                   'real',
+        'IntegerField':                 'integer',
+        'BigIntegerField':              'bigint',
+        'IPAddressField':               'char(15)',
+        'GenericIPAddressField':        'char(39)',
+        'NullBooleanField':             'bool',
+        'OneToOneField':                'integer',
+        'PositiveIntegerField':         'integer unsigned',
+        'PositiveSmallIntegerField':    'smallint unsigned',
+        'SlugField':                    'varchar(%(max_length)s)',
+        'SmallIntegerField':            'smallint',
+        'TextField':                    'text',
+        'TimeField':                    'time',
     }
 
     def sql_for_pending_references(self, model, style, pending_references):
@@ -47,7 +42,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         return []
 
     def _get_test_db_name(self):
-        test_database_name = self.connection.settings_dict['TEST']['NAME']
+        test_database_name = self.connection.settings_dict['TEST_NAME']
         if test_database_name and test_database_name != ':memory:':
             return test_database_name
         return ':memory:'
@@ -83,8 +78,9 @@ class DatabaseCreation(BaseDatabaseCreation):
 
         This takes into account the special cases of ":memory:" and "" for
         SQLite since the databases will be distinct despite having the same
-        TEST NAME. See http://www.sqlite.org/inmemorydb.html
+        TEST_NAME. See http://www.sqlite.org/inmemorydb.html
         """
+        settings_dict = self.connection.settings_dict
         test_dbname = self._get_test_db_name()
         sig = [self.connection.settings_dict['NAME']]
         if test_dbname == ':memory:':
