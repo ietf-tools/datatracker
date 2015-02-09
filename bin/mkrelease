@@ -180,7 +180,7 @@ sed -r -i -e "1,/^ -- /s/([A-Za-z-]+ <[a-z0-9.-]+@[a-z0-9.-]+>  ).*$/\1$(TZ=UTC 
 note " $(grep -m1 "^ -- " changelog)"
 
 note "Verifying that version $VER doesn't already exist..."
-$do svn info $REPO/tags/$VER 2>&1 | $do grep -q "Not a valid URL" || die "The tag '$VER' already exists (or there was an error testing for it)."
+$do svn info $REPO/tags/$VER 2>&1 | $do egrep -q "(Not a valid URL|URL .* non-existent)" || die "The tag '$VER' already exists (or there was an error testing for it)."
 note "  Ok"
 
 note "Committing the changelog..."
