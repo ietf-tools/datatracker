@@ -34,5 +34,8 @@
 import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
+import django
+django.setup()
+
 from ietf.idindex.index import id_index_txt
 print id_index_txt().encode('utf-8'),
