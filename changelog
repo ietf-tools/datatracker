@@ -1,5 +1,7 @@
 ietfdb (5.11.0) ietf; urgency=medium
 
+  **Django 1.7**
+
   This relese upgrades Django from 1.6.4 to 1.7.1, and tastypie from 0.11.1 to
   0.12.1.  It changes the database migrations infrastructure from that provided
   by "south", to the builtin replacement newly introduced with Django 1.7.
@@ -225,6 +227,8 @@ ietfdb (5.10.1) ietf; urgency=medium
 
 ietfdb (5.10.0) ietf; urgency=medium
 
+  **Enhanced IPR Support**
+
   This release provides work from rcross@amsl.com which refactors and enhances
   the IPR support in the datatracker.  Here is an overview of the changes:
 
@@ -260,6 +264,8 @@ ietfdb (5.10.0) ietf; urgency=medium
 
 
 ietfdb (5.9.0) ietf; urgency=medium
+
+  **Enhanced Team Support**
 
   * Merged in [8711] from rjsparks@nostrum.com:
 
@@ -297,6 +303,8 @@ ietfdb (5.8.1) ietf; urgency=medium
 
 
 ietfdb (5.8.0) ietf; urgency=medium
+
+   ** JSON Api **
 
    This release introduces a machine-readable API to the datatracker database
    content, based on Tastypie (https://django-tastypie.readthedocs.org/).
@@ -337,6 +345,8 @@ ietfdb (5.8.0) ietf; urgency=medium
 
 
 ietfdb (5.7.4) ietf; urgency=medium
+
+  **IETF 91 Code Sprint**
 
   This release contains the datatracker bugfixes and enhancements from the
   IETF-91 Code Sprint.  Many thanks to everyone that contributed!
@@ -580,6 +590,8 @@ ietfdb (5.7.1) ietf; urgency=medium
 
 ietfdb (5.7.0) ietf; urgency=medium
 
+  **Enhanced Person-Chooser Widget**
+
   This release merges in work from olau@iola.dk which enhances a number of
   pages in the datatracker where forms contain fields where a person should be
   chosen, such as for instance when choosing the shepherd of a document, so
@@ -775,6 +787,8 @@ ietfdb (5.6.3) ietf; urgency=medium
 
 ietfdb (5.6.2) ietf; urgency=medium
 
+  **IETF 90 Code Sprint**
+
   This release contains the datatracker bugfixes and enhancements from the
   IETF-90 Code Sprint.  Many thanks to everyone that contributed!
 
@@ -863,6 +877,8 @@ ietfdb (5.6.1) ietf; urgency=medium
 
 ietfdb (5.6.0) ietf; urgency=medium
 
+  **Team Pages**
+
   This release adds group page support also for non-WG/RG groups, extending
   and generalising the work done recently to add RG pages.  In particular,
   this provides the Edu team with a place to upload and display educational
@@ -949,6 +965,8 @@ ietfdb (5.5.1) ietf; urgency=medium
 
 
 ietfdb (5.5.0) ietf; urgency=medium
+
+  **Research Group Pages**
 
   This is a feature release, which introduces pages and workflow support for
   IRTF RGs, similar to what is available for IETF WGs.  You'll find the rg pages
@@ -1092,6 +1110,8 @@ ietfdb (5.4.1) ietf; urgency=high
 
 ietfdb (5.4.0) ietf; urgency=medium
 
+  **Enhanced Agenda Scheduling**
+
   This is a feature release which brings in an updated version of the agenda
   scheduling code.  There are still known bugs and rough edges, but this
   version has many bugfixes and cleaned up issues, and brings essential
@@ -1184,6 +1204,8 @@ ietfdb (5.3.1) ietf; urgency=medium
 
 ietfdb (5.3.0) ietf; urgency=medium
 
+  **Django Authentication replaces Basic HTTP Auth**
+
   This release changes user authentication for the datatracker from basic http
   auth to Django's built-in authentication.  This has the advantage of making it
   possible to log out, and log in as a different user, which can be useful,
@@ -1258,6 +1280,8 @@ ietfdb (5.2.1) ietf; urgency=medium
 
 
 ietfdb (5.2.0) ietf; urgency=low
+
+  **PyFlakes**
 
   This is a code cleanup release.  It adds a test and a managemement command
   to run pyflakes (pyflakes is a bit like 'lint' for Python) over the
@@ -1336,6 +1360,8 @@ ietfdb (5.1.1) ietf; urgency=medium
 
 
 ietfdb (5.1.0) ietf; urgency=high
+
+  **IETF 89 Code Sprint**
 
   This release contains the datatracker bugfixes and enhancements from the
   IETF-89 Code Sprint.  Many thanks to everyone that contributed!  There are
@@ -1556,6 +1582,8 @@ ietfdb (5.0.1) ietf; urgency=medium
 
 ietfdb (5.0.0) ietf; urgency=medium
 
+  **Database Schema Conversion Complete**
+
   With this release, a journey which started in 2008 with a *major* redesign
   of the IETF database schema has reached its goal.  We've now converted the
   datatracker completely to the schema designed then, swapping out all the
@@ -1606,6 +1634,8 @@ ietfdb (4.95) ietf; urgency=medium
 
 ietfdb (4.90) ietf; urgency=medium
 
+  **Shim Layer Removal**
+
   This release removes almost all parts of the shim-layer code which was
   used to provide a semblance of the old database schema to user-interface
   code after we moved to a new database schema in the early part of 2012.
@@ -1646,6 +1676,8 @@ ietfdb (4.84) ietf; urgency=low
  -- Henrik Levkowetz <henrik@levkowetz.com>  16 Dec 2013 23:34:37 +0100
 
 ietfdb (4.83) ietf; urgency=high
+
+  **IETF 88 Code Sprint**
 
   This release provides the code from the IETF-88 code sprint, and also
   a number of fixes to things reported during the IETF.
@@ -1927,6 +1959,8 @@ ietfdb (4.81) ietf; urgency=medium
 
 ietfdb (4.80) ietf; urgency=high
 
+  **Agenda Scheduling Tool**
+
   This is a major release which provides the code drop from phase 3 of the
   Agenda Scheduling Tool.  The code has been merged in, and a lot of minor
   alignments done.  Deployment of this will make the phase 3 agenda editing
@@ -2146,6 +2180,8 @@ ietfdb (4.71) ietf; urgency=medium
 
 ietfdb (4.70) ietf; urgency=high
 
+  **NomCom Support**
+
   This release provides a datatracker nomcom app, ported from the earlier
   standalone nomcom app written by henrik.  It includes public nomcom
   pages which provides an interface for members of the community to
@@ -2156,6 +2192,8 @@ ietfdb (4.70) ietf; urgency=high
  -- Henrik Levkowetz <henrik@levkowetz.com>  06 Aug 2013 12:15:56 +0200
 
 ietfdb (4.61) ietf; urgency=medium
+
+  **IETF 87 Code Sprint**
 
   This release provides the code from the IETF-87 code sprint, and also
   a number of fixes to things reported during the IETF, and some enhancements
@@ -2253,6 +2291,8 @@ ietfdb (4.61) ietf; urgency=medium
  -- Henrik Levkowetz <henrik@levkowetz.com>  01 Aug 2013 18:26:21 +0200
 
 ietfdb (4.60) ietf; urgency=high
+
+  **Shimfree Document Pages**
 
   This release provides new shimfree code in /doc/ which replaces code mainly
   from /idrfc/ and /idindex/.  It comprises the first two code drops from the
@@ -2519,12 +2559,14 @@ ietfdb (4.51) ietf; urgency=low
 
 ietfdb (4.50) ietf; urgency=medium
 
-    This is a major feature release, which introduces datatracker support
-    for milestone management.  WG Chairs will, if they are logged in, see
-    an 'Add or edit milestones' button on the WG's Charter page in the
-    datatracker, just below the charter text, and Area Directors and
-    Secretariat staff will see a new link 'Milestones' in the left-hand
-    menu-bar, leading to a page which lists Milestones Needing Review.
+  **Milestone Management**
+
+  This is a major feature release, which introduces datatracker support
+  for milestone management.  WG Chairs will, if they are logged in, see
+  an 'Add or edit milestones' button on the WG's Charter page in the
+  datatracker, just below the charter text, and Area Directors and
+  Secretariat staff will see a new link 'Milestones' in the left-hand
+  menu-bar, leading to a page which lists Milestones Needing Review.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  16 May 2013 00:34:16 +0200
 
@@ -2658,6 +2700,8 @@ ietfdb (4.44) ietf; urgency=medium
 
 
 ietfdb (4.43) ietf; urgency=high
+
+  **IETF 86 Code Sprint**
 
   From Jim Schaad <ietf@augustcellars.com>: 
 
@@ -2820,6 +2864,8 @@ ietfdb (4.41) ietf; urgency=low
 
 ietfdb (4.40) ietf; urgency=high
 
+  **RFC-Editor and IANA Document State Data Exchange**
+
   This release is a major feature release, which provides the means to do
   state synchronization to and from the RFC-Editor and IANA, so that relevant
   state changes to drafts and RFCs at any of the 3 organizations can be
@@ -2887,6 +2933,8 @@ ietfdb (4.37) ietf; urgency=low
  -- Henrik Levkowetz <henrik@levkowetz.com>  16 Dec 2012 19:30:30 +0100
 
 ietfdb (4.36) ietf; urgency=medium
+
+  **IETF 85 Code Sprint**
 
   This release contains the features and bugfixes from the IETF-85 code
   sprint, providing improved WG chair document handling, improved document and
@@ -3241,6 +3289,8 @@ ietfdb (4.34) ietf; urgency=medium
 
 ietfdb (4.33) ietf; urgency=medium
 
+  **IETF 84 Code Sprint**
+
   This is the IETF-84 codesprint release:
 
   * Changeset [4724] from rbarnes@bbn.com:
@@ -3426,6 +3476,8 @@ ietfdb (4.31) ietf; urgency=medium
  -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2012 01:51:26 +0200
 
 ietfdb (4.30) ietf; urgency=medium
+
+  **Community Document Tracking Support**
 
   This is a feature release which provides the community document tracking
   functionality defined in RFC 6293.
@@ -3637,6 +3689,8 @@ ietfdb (4.21) ietf; urgency=medium
 
 ietfdb (4.20) ietf; urgency=medium
 
+  **WG Charter Management**
+
   This release introduces major new functionality for managing WG charters
   as documents.  A large number of related and unrelated fixes has also been
   included, an almost complete list is available below, latest first:
@@ -3793,6 +3847,8 @@ ietfdb (4.02) ietf; urgency=medium
 
 ietfdb (4.01) ietf; urgency=medium
 
+  **IETF 83 Code Sprint**
+
   * Made various fixes to test cases in order to support the new code and
     database setup.
 
@@ -3841,6 +3897,8 @@ ietfdb (4.01) ietf; urgency=medium
 
 ietfdb (4.00) ietf; urgency=medium
 
+  **New Database Schema**
+
   * This is the official release of the 4.00 series releases, which expects
     the redesigned database schema, and thus has an all new models layer.
 
@@ -3851,6 +3909,8 @@ ietfdb (4.00) ietf; urgency=medium
  -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2012 10:33:43 +0100
 
 ietfdb (3.64) ietf; urgency=medium
+
+  **IETF 82 Code Sprint**
 
   This release contains the features and bugfixes from the IETF-82
   code sprint.
@@ -3996,6 +4056,8 @@ ietfdb (3.61) ietf; urgency=medium
 
 ietfdb (3.60) ietf; urgency=medium
 
+  **Self-Service Password Management**
+
   * Added basic automated apache password management functionality.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  26 Aug 2011 21:43:47 +0200
@@ -4020,6 +4082,8 @@ ietfdb (3.58) ietf; urgency=medium
  -- Henrik Levkowetz <henrik@levkowetz.com>  12 Aug 2011 22:42:14 +0200
 
 ietfdb (3.57) ietf; urgency=medium
+
+  **IETF 81 Code Sprint**
 
   * Merged [3254] from suresh.krishnan@ericsson.com: 
     Added a link to the ARO search including the IESG lists 
@@ -4272,6 +4336,8 @@ ietfdb (3.51) ietf; urgency=medium
 
 ietfdb (3.50) ietf; urgency=medium
 
+  **Submission Tool Rewrite**
+
   * For this release, the idsubmit port from esanchez@yaco.es has been merged
     in, which constitute substantial added functionality.  This integrates the
     draft upload functionality with the python/django datatracker; it improves
@@ -4342,6 +4408,8 @@ ietfdb (3.15) ietf; urgency=medium
  -- Henrik Levkowetz <henrik@levkowetz.com>  06 Apr 2011 15:17:11 +0200
 
 ietfdb (3.14) ietf; urgency=medium
+
+  **IETF 80 Code Sprint**
 
   * From lars.eggert@nokia.com: 
     Update jQuery to 1.5.1 and jQuery UI to 1.8.11.
@@ -4579,6 +4647,8 @@ ietfdb (3.10) ietf; urgency=medium
 
 ietfdb (3.09) ietf; urgency=medium
 
+  **IETF 79 Code Sprint**
+
   From suresh.krishnan@ericsson.com: 
 
   * Added the last call e-mail event to the draft history page. 
@@ -4802,6 +4872,8 @@ ietfdb (3.05) ietf; urgency=medium
 
 ietfdb (3.04) ietf; urgency=medium
 
+  **IETF 78 Code Sprint**
+
   * From Adam Roach: Make the selectable WG agenda feature of the datatracker
     IETF Agenda less resource intensive by not preloading all WG agendas.
 
@@ -4863,6 +4935,8 @@ ietfdb (3.01) ietf; urgency=medium
  -- Henrik Levkowetz <henrik@levkowetz.com>  20 Jul 2010 18:41:31 +0200
 
 ietfdb (3.00) ietf; urgency=medium
+
+  **IESG Datatracker Port to Python/Django**
 
   * This release adds the IOLA port of the former Perl IESG datatracker to
     the Python/Django datatracker.  This should make most AD actions on
@@ -5022,6 +5096,8 @@ ietfdb (2.48) ietf; urgency=medium
  -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2010 00:26:41 +0100
 
 ietfdb (2.47) ietf; urgency=medium
+
+  **IETF 77 Code Sprint**
 
   From Suresh: 
 
@@ -5443,6 +5519,8 @@ ietfdb (2.38) ietf; urgency=medium
  -- Henrik Levkowetz <henrik@levkowetz.com>  12 Nov 2009 04:54:00 +0100
 
 ietfdb (2.37) ietf; urgency=medium
+
+  **IETF 76 Code Sprint**
 
   * With this release, the datatracker is changed to run under Django 1.1
     rather than under 0.96, and in this sense it is a major release.  There
@@ -6070,6 +6148,8 @@ ietfdb (2.01) ietf; urgency=high
  -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jun 2007 10:55:52 +0200
 
 ietfdb (2.00) ietf; urgency=medium
+
+  **Public Datatracker Port to Python/Django**
 
   This release is a complete re-write of the CGI/Perl-based IESG datatracker
   in Python, using the Django framework.  It comprises about 8000 lines of

@@ -35,10 +35,12 @@ class ChangeLogEntry:
     email = ""
     date = ""
     time = ""
+    title = ""
 
 def parse(logfile):
     ver_line = "^(\w+) \((\S+)\) (\S+;)? (?:urgency=(\S+))?$"
     sig_line = "^ -- ([^<]+) <([^>]+)>  (.*?) *$"
+    inf_line = r"^  \*\*(.*)\*\* *"
 
     entries = []
     if type(logfile) == type(''):
@@ -59,6 +61,8 @@ def parse(logfile):
             entry.time = parse_date(date)
             entry.logentry = entry.logentry.rstrip()
             entries += [ entry ]
+        elif entry and re.match(inf_line, line):
+            entry.title = re.match(inf_line, line).group(1)
         elif entry:
             entry.logentry += line
         else:

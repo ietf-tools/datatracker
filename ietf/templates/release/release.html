@@ -19,6 +19,8 @@
    </tt>
 </p>
  
+
+
 <h2>Release list:</h2>
 <table style="margin-left: 3em">
 {% for item in releases %}
@@ -26,6 +28,7 @@
     <tr>
        <td style="text-align: right; padding: 0.1em 0.5em;"><a href="/release/{{item.version}}/">{{ item.version }}</a></td>
        <td style="text-align: right; padding: 0.1em 0.5em;">{{ item.date|slice:":11" }}</td>
+       <td style="text-align: left;  padding: 0.1em 0.5em;">{{ item.title }}</td>       
        <!--
        <td style="text-align: right; padding: 0.2em 0.5em;">{{ item.date|slice:"12:20" }}</td>
        <td style="text-align: right; padding: 0.2em 0.5em;">{{ item.date|slice:"21:" }}</td>
