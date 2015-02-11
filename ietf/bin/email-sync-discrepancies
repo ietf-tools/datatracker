@@ -8,7 +8,6 @@ basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
-
 from optparse import OptionParser
 
 parser = OptionParser()
@@ -17,8 +16,10 @@ parser.add_option("-t", "--to", dest="to",
 
 options, args = parser.parse_args()
 
-
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+
+import django
+django.setup()
 
 from ietf.sync.mails import email_discrepancies
 

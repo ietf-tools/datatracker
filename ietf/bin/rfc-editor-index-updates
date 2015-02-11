@@ -11,6 +11,8 @@ basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
+import django
+django.setup()
 
 from django.conf import settings
 from optparse import OptionParser

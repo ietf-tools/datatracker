@@ -4,6 +4,9 @@ import datetime, os
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
+import django
+django.setup()
+
 from ietf.doc.expire import get_soon_to_expire_drafts, send_expire_warning_for_draft
 
 

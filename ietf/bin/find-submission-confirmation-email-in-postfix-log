@@ -27,6 +27,9 @@ import time
 import warnings
 warnings.filterwarnings('ignore', message='the sets module is deprecated', append=True)
 
+import django
+django.setup()
+
 from django.conf import settings
 
 from ietf.utils.path import path as Path

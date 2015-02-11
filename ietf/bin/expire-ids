@@ -5,8 +5,10 @@ import syslog
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
-
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+
+import django
+django.setup()
 
 from ietf.doc.expire import *
 

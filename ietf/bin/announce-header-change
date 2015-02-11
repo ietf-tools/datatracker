@@ -9,14 +9,14 @@ sys.path = [ basedir ] + sys.path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 import django
+django.setup()
+
 from django.core import management
 from django.template.loader import render_to_string
 
 from ietf import settings
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.mail import send_mail
-
-django.setup()
 
 target_date=datetime.date(year=2014,month=1,day=24)
 

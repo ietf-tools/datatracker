@@ -11,12 +11,12 @@ sys.path = [progdir+"/../../"] + sys.path
 os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
 
 import django
+django.setup()
+
 from django.template import Template, Context
 
 from ietf.doc.models import Document
 from ietf.person.models import Person
-
-django.setup()
 
 drafts = Document.objects.filter(type="draft")
 

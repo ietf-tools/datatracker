@@ -33,14 +33,14 @@ sys.path = [ basedir ] + sys.path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 import django
+django.setup()
+
 from django.conf import settings
 
 from ietf.doc.models import Document
 from ietf.group.utils import get_group_chairs_emails, get_group_ads_emails
 from ietf.utils.aliases import *
 import time
-
-django.setup()
 
 def get_draft_ad_emails(draft):
     " Get AD email for the given draft, if any. "

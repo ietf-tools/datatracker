@@ -8,6 +8,9 @@ basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
+import django
+django.setup()
+
 from ietf.group.models import Group
 from ietf.person.models import Person
 from ietf.name.models import SessionStatusName

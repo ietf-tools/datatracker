@@ -11,6 +11,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
 
+import django
+django.setup()
+
 from ietf.group.mails import *
 
 today = datetime.date.today()

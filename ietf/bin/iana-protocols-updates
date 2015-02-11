@@ -11,10 +11,10 @@ sys.path = [ basedir ] + sys.path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 import django
+django.setup()
+
 from django.conf import settings
 from ietf.sync.iana import *
-
-django.setup()
 
 def chunks(l, n):
     """Split list l up in chunks of max size n."""
