@@ -34,8 +34,10 @@
 
 import os
 import itertools
+import re
 from tempfile import mkstemp
 from collections import OrderedDict
+from contextlib import closing
 
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -621,3 +623,21 @@ def dependencies_pdf(request, acronym, group_type=None):
     os.unlink(dotname)
 
     return HttpResponse(pdf, content_type='application/pdf')
+
+def email_aliases(request, acronym=None):
+    group = get_group_or_404(acronym,None) if acronym else None
+
+    if acronym:
+        pattern = re.compile('expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
+    else:
+        pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
+
+    aliases = []
+    with closing(open(settings.GROUP_VIRTUAL_PATH,"r")) as virtual_file:
+        for line in virtual_file.readlines():
+            m = pattern.match(line)
+            if m:
+                aliases.append({'acronym':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
+
+    return render(request,'group/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'group':group})
+

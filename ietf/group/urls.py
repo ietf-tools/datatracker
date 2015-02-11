@@ -7,6 +7,7 @@ urlpatterns = patterns('',
     (r'^chartering/$', 'ietf.group.info.chartering_groups'),
     (r'^chartering/create/(?P<group_type>(wg|rg))/$', 'ietf.group.edit.edit', {'action': "charter"}, "group_create"),
     (r'^concluded/$', 'ietf.group.info.concluded_groups'),
+    (r'^email-aliases/$', 'ietf.group.info.email_aliases'),
     # FIXME: the things below are duplicated in urls_info.py while we
     # figure out whether to serve everything from /group/<acronym>,
     # need to unify these at some point
@@ -29,6 +30,7 @@ urlpatterns = patterns('',
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/$', 'ietf.group.info.materials', None, "group_materials"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/$', 'ietf.doc.views_material.choose_material_type'),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/(?P<doc_type>[\w-]+)/$', 'ietf.doc.views_material.edit_material', { 'action': "new" }, "group_new_material"),
+    (r'^(?P<acronym>[A-Za-z0-9._+-]+)/email-aliases/$', 'ietf.group.info.email_aliases'),
 )
 
 

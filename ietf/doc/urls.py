@@ -46,6 +46,7 @@ urlpatterns = patterns('',
     url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'),
     url(r'^start-rfc-status-change/(?P<name>[A-Za-z0-9._+-]*)$', views_status_change.start_rfc_status_change, name='start_rfc_status_change'), 
     url(r'^iesg/(?P<last_call_only>[A-Za-z0-9.-]+/)?$', views_search.drafts_in_iesg_process, name="drafts_in_iesg_process"),
+    url(r'^email-aliases/$', views_doc.email_aliases),
 
     url(r'^all/$', views_search.index_all_drafts, name="index_all_drafts"),
     url(r'^active/$', views_search.index_active_drafts, name="index_active_drafts"),
@@ -62,6 +63,8 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot/$', views_doc.document_ballot, name="doc_ballot"),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/doc.json$', views_doc.document_json),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/(?P<ballot_id>[0-9]+)/$', views_doc.ballot_popup),
+
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/email-aliases/$', views_doc.email_aliases),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_draft.change_state, name='doc_change_state'), # IESG state
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/(?P<state_type>iana-action|iana-review)/$', views_draft.change_iana_state, name='doc_change_iana_state'),
