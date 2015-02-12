@@ -201,3 +201,40 @@ $(document).ready(function () {
     // explicit requirement asterisks
     $("form.show-required").find("input[required],select[required],textarea[required]").closest(".form-group").find("label").addClass("required");
 });
+
+
+$(document).ready(function () {
+    // load data for the menu
+    $.ajax({
+        url: $(document.body).data("group-menu-data-url"),
+        type: 'GET',
+        dataType: "json",
+        success: function (data) {
+            for (var parentId in data) {
+                var attachTo = $(".group-menu.group-parent-" + parentId);
+                if (attachTo.length == 0)
+                    continue;
+
+                attachTo.find(".dropdown-menu").remove();
+
+                var menu = ['<ul class="dropdown-menu" role="menu">'];
+
+                var groups = data[parentId];
+                for (var i = 0; i < groups.length; ++i) {
+                    var g = groups[i];
+                    menu.push('<li><a href="' + g.url + '">' + g.acronym +' &mdash; ' + g.name + '</a></li>');
+                }
+
+                menu.push('</ul>');
+
+                attachTo.append(menu.join(""));
+            }
+        },
+        error: function (err) {
+            $(".group-menu").removeClass("dropdown-submenu");
+
+            if (console.log)
+                console.log("Could not load menu data");
+        }
+    });
+});

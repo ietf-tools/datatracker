@@ -2,6 +2,7 @@ import os
 import shutil
 import calendar
 import datetime
+import json
 
 from pyquery import PyQuery
 import debug                            # pyflakes:ignore
@@ -934,3 +935,26 @@ class CustomizeWorkflowTests(TestCase):
         self.assertEqual(len(q('form').find('input[name=tag][value="%s"]' % tag.pk).parents("form").find("input[name=active]")), 1)
         group = Group.objects.get(acronym=group.acronym)
         self.assertTrue(tag in group.unused_tags.all())
+
+class AjaxTests(TestCase):
+    def test_group_menu_data(self):
+        make_test_data()
+
+        r = self.client.get(urlreverse("group_menu_data"))
+        self.assertEqual(r.status_code, 200)
+
+        parents = json.loads(r.content)
+
+        area = Group.objects.get(type="area", acronym="farfut")
+        self.assertTrue(str(area.id) in parents)
+
+        mars_wg_data = None
+        for g in parents[str(area.id)]:
+            if g["acronym"] == "mars":
+                mars_wg_data = g
+                break
+        self.assertTrue(mars_wg_data)
+
+        mars_wg = Group.objects.get(acronym="mars")
+        self.assertEqual(mars_wg_data["name"], mars_wg.name)
+

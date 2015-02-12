@@ -3,6 +3,7 @@
 from django.conf.urls import patterns
 
 urlpatterns = patterns('',
+    (r'^groupmenu.json', 'ietf.group.ajax.group_menu_data', None, "group_menu_data"),
     (r'^(?P<acronym>[a-z0-9]+).json$', 'ietf.group.ajax.group_json'),
     (r'^chartering/$', 'ietf.group.info.chartering_groups'),
     (r'^chartering/create/(?P<group_type>(wg|rg))/$', 'ietf.group.edit.edit', {'action': "charter"}, "group_create"),

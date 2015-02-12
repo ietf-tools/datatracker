@@ -31,8 +31,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django import template
-from django.core.cache import cache
 from django.template.loader import render_to_string
+from django.db import models
 
 from ietf.group.models import Group
 
@@ -44,27 +44,18 @@ area_short_names = {
     }
 
 @register.simple_tag
-def wg_menu(flavor=""):
-    res = cache.get('wgmenu' + flavor)
-    if res:
-        return res
+def wg_menu():
+    parents = Group.objects.filter(models.Q(type="area") | models.Q(type="irtf", acronym="irtf"),
+                                   state="active").order_by('type_id', 'acronym')
 
-    areas = Group.objects.filter(type="area", state="active").order_by('acronym')
-    wgs = Group.objects.filter(type="wg", state="active", parent__in=areas).order_by("acronym")
-    rgs = Group.objects.filter(type="rg", state="active").order_by("acronym")
+    for p in parents:
+        p.short_name = area_short_names.get(p.acronym) or p.name
+        if p.short_name.endswith(" Area"):
+            p.short_name = p.short_name[:-len(" Area")]
 
-    for a in areas:
-        a.short_area_name = area_short_names.get(a.acronym) or a.name
-        if a.short_area_name.endswith(" Area"):
-            a.short_area_name = a.short_area_name[:-len(" Area")]
+        if p.type_id == "area":
+            p.menu_url = "/wg/#" + p.acronym
+        elif p.acronym == "irtf":
+            p.menu_url = "/rg/"
 
-        a.active_groups = [g for g in wgs if g.parent_id == a.id]
-
-    areas = [a for a in areas if a.active_groups]
-
-    if flavor == "modal":
-        res = render_to_string('base/menu_wg_modal.html', {'areas':areas, 'rgs':rgs})
-    else:
-        res = render_to_string('base/menu_wg.html', {'areas':areas, 'rgs':rgs})
-    cache.set('wgmenu' + flavor, res, 30*60)
-    return res
+    return render_to_string('base/menu_wg.html', { 'parents': parents })

@@ -24,33 +24,9 @@
                 <link rel="apple-touch-icon-precomposed" href="/images/ietficon.png">
 	</head>
 
-        <body {% block bodyAttrs %}{%endblock%}>
+        <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url "group_menu_data" %}">
                 {% filter amp|smartypants %}
-                        <div class="modal fade" id="navmodal" tabindex="-1" role="dialog" {#aria-labelledby="navmodallabel"#} aria-hidden="true">
-				<div class="modal-dialog">
-					<div class="modal-content">
-{% comment %}
-						<div class="modal-header">
-							<button type="button" class="close" data-dismiss="modal">
-								<span aria-hidden="true">&times;</span>
-								<span class="sr-only">Close</span>
-							</button>
-							<h4 class="modal-title" id="navmodallabel">Area &amp; WG navigation</h4>
-						</div>
-{% endcomment %}
-						<div class="modal-body">
-							{% wg_menu "modal" %}
-						</div>
-{% comment %}
-						<div class="modal-footer">
-							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-						</div>
-{% endcomment %}
-					</div>
-				</div>
-			</div>
-
-			<nav class="navbar {% if server_mode and server_mode != "production" %}navbar-dev{% else %}navbar-default{% endif %} navbar-fixed-top" role="navigation">
+                        <nav class="navbar {% if server_mode and server_mode != "production" %}navbar-dev{% else %}navbar-default{% endif %} navbar-fixed-top" role="navigation">
 				<div class="container-fluid">
 					<div class="navbar-header">
 						<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse">
@@ -178,7 +154,6 @@
                         </script>
 
                 {% endfilter %}
-                {% include "debug.html" %}
         </body>
 </html>
 
