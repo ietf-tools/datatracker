@@ -191,12 +191,12 @@ tr:first-child th.gap {
 					{% endif %}
 				</td>
                                 <td class="hidden-xs" colspan="3">
-					{% if item.timeslot.show_location %}
-						<a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+                                        {% if item.timeslot.show_location and item.timeslot.get_location %}
+                                                <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 					{% endif %}
 				</td>
                                 <td class="visible-xs">
-					{% if item.timeslot.show_location %}
+                                        {% if item.timeslot.show_location and item.timeslot.get_location %}
 						<a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 					{% endif %}
 				</td>
@@ -221,12 +221,12 @@ tr:first-child th.gap {
 							{% endif %}
 						</th>
                                                 <td class="hidden-xs" colspan="3">
-							{% if item.timeslot.show_location %}
+                                                        {% if item.timeslot.show_location and item.timeslot.get_location %}
 								<a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 							{% endif %}
 						</td>
                                                 <td class="visible-xs">
-							{% if item.timeslot.show_location %}
+                                                        {% if item.timeslot.show_location and item.timeslot.get_location %}
 								<a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 							{% endif %}
 						</td>
@@ -236,7 +236,7 @@ tr:first-child th.gap {
 					</td>
 
 					<td>
-						{% if item.timeslot.show_location %}
+                                                {% if item.timeslot.show_location and item.timeslot.get_location %}
 							<a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 						{% endif %}
 					</td>
