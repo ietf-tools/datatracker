@@ -1,6 +1,5 @@
 from django.http import HttpResponseForbidden, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render_to_response
-from django.template import RequestContext
+from django.shortcuts import get_object_or_404, render
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.forms import DBTemplateForm
@@ -15,10 +14,10 @@ def template_list(request, acronym):
         return HttpResponseForbidden("You are not authorized to access this view")
 
     template_list = DBTemplate.objects.filter(group=group)
-    return render_to_response('dbtemplate/template_list.html',
+    return render(request, 'dbtemplate/template_list.html',
         {'template_list': template_list,
          'group': group,
-        }, RequestContext(request))
+        })
 
 
 def template_edit(request, acronym, template_id, base_template='dbtemplate/template_edit.html', formclass=DBTemplateForm, extra_context=None):
@@ -43,4 +42,4 @@ def template_edit(request, acronym, template_id, base_template='dbtemplate/templ
         'form': form,
     }
     context.update(extra_context)
-    return render_to_response(base_template, context, RequestContext(request))
+    return render(request, base_template, context)

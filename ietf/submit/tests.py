@@ -89,7 +89,7 @@ class SubmitTests(TestCase):
         # check the page
         r = self.client.get(status_url)
         q = PyQuery(r.content)
-        post_button = q('input[type=submit][value*="Post"]')
+        post_button = q('[type=submit]:contains("Post")')
         self.assertEqual(len(post_button), 1)
         action = post_button.parents("form").find('input[type=hidden][name="action"]').val()
 
@@ -142,7 +142,7 @@ class SubmitTests(TestCase):
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        approve_button = q('input[type=submit][value*="Approve"]')
+        approve_button = q('[type=submit]:contains("Approve")')
         self.assertEqual(len(approve_button), 1)
 
         action = approve_button.parents("form").find('input[type=hidden][name="action"]').val()
@@ -237,7 +237,7 @@ class SubmitTests(TestCase):
         # go to confirm page
         r = self.client.get(confirm_url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('input[type=submit][value*="Confirm"]')), 1)
+        self.assertEqual(len(q('[type=submit]:contains("Confirm")')), 1)
 
         # confirm
         mailbox_before = len(outbox)
@@ -305,7 +305,7 @@ class SubmitTests(TestCase):
         # go to confirm page
         r = self.client.get(confirm_url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('input[type=submit][value*="Confirm"]')), 1)
+        self.assertEqual(len(q('[type=submit]:contains("Confirm")')), 1)
 
         # confirm
         mailbox_before = len(outbox)
@@ -363,10 +363,10 @@ class SubmitTests(TestCase):
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        cancel_button = q('input[type=submit][value*="Cancel"]')
+        cancel_button = q('[type=submit]:contains("Cancel")')
         self.assertEqual(len(cancel_button), 1)
 
-        action = cancel_button.parents("form").find("input[type=hidden][name=\"action\"]").val()
+        action = cancel_button.parents("form").find('input[type=hidden][name="action"]').val()
 
         # cancel
         r = self.client.post(status_url, dict(action=action))
@@ -385,7 +385,7 @@ class SubmitTests(TestCase):
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        adjust_button = q('input[type=submit][value*="Adjust"]')
+        adjust_button = q('[type=submit]:contains("Adjust")')
         self.assertEqual(len(adjust_button), 1)
 
         action = adjust_button.parents("form").find('input[type=hidden][name="action"]').val()
@@ -447,7 +447,7 @@ class SubmitTests(TestCase):
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        post_button = q('input[type=submit][value*="Force"]')
+        post_button = q('[type=submit]:contains("Force")')
         self.assertEqual(len(post_button), 1)
 
         action = post_button.parents("form").find('input[type=hidden][name="action"]').val()
@@ -482,16 +482,16 @@ class SubmitTests(TestCase):
         # status page as unpriviliged => no edit button
         r = self.client.get(unprivileged_status_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(("status of submission of %s" % name) in r.content.lower())
+        self.assertTrue(("submission status of %s" % name) in r.content.lower())
         q = PyQuery(r.content)
-        adjust_button = q('input[type=submit][value*="Adjust"]')
+        adjust_button = q('[type=submit]:contains("Adjust")')
         self.assertEqual(len(adjust_button), 0)
 
         # as Secretariat, we should get edit button
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(unprivileged_status_url)
         q = PyQuery(r.content)
-        adjust_button = q('input[type=submit][value*="Adjust"]')
+        adjust_button = q('[type=submit]:contains("Adjust")')
         self.assertEqual(len(adjust_button), 1)
 
         action = adjust_button.parents("form").find('input[type=hidden][name="action"]').val()
@@ -521,13 +521,13 @@ class SubmitTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        request_button = q('input[type=submit][value*="Request full access"]')
+        request_button = q('[type=submit]:contains("Request full access")')
         self.assertEqual(len(request_button), 1)
 
         # request URL to be sent
         mailbox_before = len(outbox)
 
-        action = request_button.parents("form").find("input[type=hidden][name=\"action\"]").val()
+        action = request_button.parents("form").find('input[type=hidden][name="action"]').val()
         r = self.client.post(url, dict(action=action))
         self.assertEqual(r.status_code, 200)
 
@@ -650,12 +650,13 @@ class ApprovalsTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('input[type=submit]')), 1)
+        self.assertEqual(len(q('[type=submit]:contains("Save")')), 1)
 
         # faulty post
         r = self.client.post(url, dict(name="draft-test-nonexistingwg-something"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("errorlist" in r.content)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form .has-error")) > 0)
 
         # add
         name = "draft-ietf-mars-foo"
@@ -676,7 +677,7 @@ class ApprovalsTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('input[type=submit]')), 1)
+        self.assertEqual(len(q('[type=submit]:contains("Cancel")')), 1)
 
         # cancel
         r = self.client.post(url, dict(action="cancel"))

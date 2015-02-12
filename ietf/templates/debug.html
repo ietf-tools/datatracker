@@ -4,14 +4,14 @@
 {% load future %}
 
 <div id="debug" style="clear: left;">
-  <h2>Queries</h2>
+  <h3>SQL Queries</h3>
   <p>
-    {{ sql_queries|length }} Queries ({{ sql_queries|timesum }}s)
+    {{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)
     {% if sql_queries|length != 0 %}
-    (<span style="cursor: pointer;" onclick="document.getElementById('debugQueryTable').style.display='';">Show</span>)
+    <a class="btn btn-default btn-sm" onclick="document.getElementById('debug-query-table').style.display='';">Show</a>
     {% endif %}
   </p>
-  <table id="debugQueryTable" style="display: none;">
+  <table class="table table-condensed table-striped" id="debug-query-table" style="display: none;">
     <col width="1"></col>
     <col></col>
     <col width="1"></col>
@@ -24,7 +24,7 @@
     </thead>
     <tbody>
     {% for query in sql_queries %}
-    <tr class="{% cycle 'odd','even' %}">
+    <tr>
       <td>{{ forloop.counter }}</td>
       <td>{{ query.sql|expand_comma|escape }}</td>
       <td>{{ query.time }}</td>

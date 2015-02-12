@@ -16,12 +16,12 @@ class LiaisonStatement(models.Model):
 
     related_to = models.ForeignKey('LiaisonStatement', blank=True, null=True)
 
-    from_group = models.ForeignKey(Group, related_name="liaisonstatement_from_set", null=True, blank=True, help_text="Sender group, if it exists")
-    from_name = models.CharField(max_length=255, help_text="Name of the sender body")
+    from_group = models.ForeignKey(Group, related_name="liaisonstatement_from_set", null=True, blank=True, help_text="Sender group, if it exists.")
+    from_name = models.CharField(max_length=255, help_text="Name of the sender body.")
     from_contact = models.ForeignKey(Email, blank=True, null=True)
-    to_group = models.ForeignKey(Group, related_name="liaisonstatement_to_set", null=True, blank=True, help_text="Recipient group, if it exists")
-    to_name = models.CharField(max_length=255, help_text="Name of the recipient body")
-    to_contact = models.CharField(blank=True, max_length=255, help_text="Contacts at recipient body")
+    to_group = models.ForeignKey(Group, related_name="liaisonstatement_to_set", null=True, blank=True, help_text="Recipient group, if it exists.")
+    to_name = models.CharField(max_length=255, help_text="Name of the recipient body.")
+    to_contact = models.CharField(blank=True, max_length=255, help_text="Contacts at recipient body.")
 
     reply_to = models.CharField(blank=True, max_length=255)
 
@@ -49,4 +49,4 @@ class LiaisonStatement(models.Model):
         return slugify("liaison" + " " + self.submitted.strftime("%Y-%m-%d") + " " + frm[:50] + " " + to[:50] + " " + self.title[:115])
 
     def __unicode__(self):
-        return self.title or u"<no title>"
+        return self.title

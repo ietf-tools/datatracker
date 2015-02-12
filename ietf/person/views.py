@@ -2,9 +2,9 @@ from django.http import HttpResponse
 from django.db.models import Q
 
 from ietf.person.models import Email, Person
-from ietf.person.fields import tokeninput_id_name_json
+from ietf.person.fields import select2_id_name_json
 
-def ajax_tokeninput_search(request, model_name):
+def ajax_select2_search(request, model_name):
     if model_name == "email":
         model = Email
     else:
@@ -39,6 +39,11 @@ def ajax_tokeninput_search(request, model_name):
         if only_users:
             objs = objs.exclude(user=None)
 
-    objs = objs.distinct()[:10]
+    try:
+        page = int(request.GET.get("p", 1)) - 1
+    except ValueError:
+        page = 0
 
-    return HttpResponse(tokeninput_id_name_json(objs), content_type='application/json')
+    objs = objs.distinct()[page:page + 10]
+
+    return HttpResponse(select2_id_name_json(objs), content_type='application/json')

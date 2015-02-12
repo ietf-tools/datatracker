@@ -13,11 +13,13 @@ from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_l
                                     get_person_for_user, is_secretariat, is_sdo_liaison_manager)
 from ietf.liaisons.utils import IETFHM
 from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
-                                   ShowAttachmentsWidget, RelatedLiaisonWidget)
+                                   ShowAttachmentsWidget)
 from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
+from ietf.liaisons.fields import SearchableLiaisonStatementField
 from ietf.group.models import Group, Role
 from ietf.person.models import Person, Email
 from ietf.doc.models import Document
+from ietf.utils.fields import DatepickerDateField
 
 
 class LiaisonForm(forms.Form):
@@ -28,10 +30,11 @@ class LiaisonForm(forms.Form):
     to_poc = forms.CharField(widget=ReadOnlyWidget, label="POC", required=False)
     response_contact = forms.CharField(required=False, max_length=255)
     technical_contact = forms.CharField(required=False, max_length=255)
-    cc1 = forms.CharField(widget=forms.Textarea, label="CC", required=False, help_text='Please insert one email address per line')
+    cc1 = forms.CharField(widget=forms.Textarea, label="CC", required=False, help_text='Please insert one email address per line.')
     purpose = forms.ChoiceField()
-    deadline_date = forms.DateField(label='Deadline')
-    submitted_date = forms.DateField(label='Submission date', initial=datetime.date.today())
+    related_to = SearchableLiaisonStatementField(label=u'Related Liaison Statement', required=False)
+    deadline_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
+    submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=datetime.date.today())
     title = forms.CharField(label=u'Title')
     body = forms.CharField(widget=forms.Textarea, required=False)
     attachments = forms.CharField(label='Attachments', widget=ShowAttachmentsWidget, required=False)
@@ -42,13 +45,12 @@ class LiaisonForm(forms.Form):
                                                         require=['id_attach_title', 'id_attach_file'],
                                                         required_label='title and file'),
                                     required=False)
-    related_to = forms.ModelChoiceField(LiaisonStatement.objects.all(), label=u'Related Liaison', widget=RelatedLiaisonWidget, required=False)
 
     fieldsets = [('From', ('from_field', 'replyto')),
                  ('To', ('organization', 'to_poc')),
                  ('Other email addresses', ('response_contact', 'technical_contact', 'cc1')),
                  ('Purpose', ('purpose', 'deadline_date')),
-                 ('References', ('related_to', )),
+                 ('Reference', ('related_to', )),
                  ('Liaison Statement', ('title', 'submitted_date', 'body', 'attachments')),
                  ('Add attachment', ('attach_title', 'attach_file', 'attach_button')),
                 ]
@@ -82,7 +84,7 @@ class LiaisonForm(forms.Form):
             self.initial["title"] = self.instance.title
             self.initial["body"] = self.instance.body
             self.initial["attachments"] = self.instance.attachments.all()
-            self.initial["related_to"] = self.instance.related_to_id
+            self.initial["related_to"] = self.instance.related_to
             if "approved" in self.fields:
                 self.initial["approved"] = bool(self.instance.approved)
 

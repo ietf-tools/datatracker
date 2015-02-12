@@ -305,7 +305,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     if group.features.has_milestones:
         if group.state_id != "proposed" and (is_chair or can_manage):
-            actions.append((u"Add or edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
+            actions.append((u"Edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
 
     if group.features.has_materials and can_manage_materials(request.user, group):
         actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))

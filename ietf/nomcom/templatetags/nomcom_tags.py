@@ -41,12 +41,8 @@ def add_num_nominations(user, position, nominee):
                                     nominees__in=[nominee],
                                     author=author,
                                     type='comment').count()
-    if count:
-        mark = """<span style="white-space: pre; color: red;">*</span>"""
-    else:
-        mark = """<span style="white-space: pre;"> </span> """
 
-    return '<span title="%d earlier comments from you on %s as %s">%s</span>&nbsp;' % (count, nominee.email.address, position, mark)
+    return '<span class="badge" title="%d earlier comments from you on %s as %s">%s</span>&nbsp;' % (count, nominee.email.address, position, count)
 
 
 @register.filter
@@ -76,7 +72,7 @@ def decrypt(string, request, year, plain=False):
     code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
                             encrypted_file.name), key)
     if code != 0:
-        log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
+        log("openssl error: %s:\n  Error %s: %s" %(command, code, error))
 
     os.unlink(encrypted_file.name)
 

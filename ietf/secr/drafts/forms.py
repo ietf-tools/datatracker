@@ -8,7 +8,7 @@ from ietf.doc.models import Document, DocAlias, State
 from ietf.name.models import IntendedStdLevelName, DocRelationshipName
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
-from ietf.person.fields import AutocompletedEmailField
+from ietf.person.fields import SearchableEmailField
 from ietf.secr.groups.forms import get_person
 
 
@@ -82,7 +82,7 @@ class AliasModelChoiceField(forms.ModelChoiceField):
 # ---------------------------------------------
 class AddModelForm(forms.ModelForm):
     start_date = forms.DateField()
-    group = GroupModelChoiceField(required=True,help_text='Use group "none" for Individual Submissions')
+    group = GroupModelChoiceField(required=True,help_text='Use group "none" for Individual Submissions.')
 
     class Meta:
         model = Document
@@ -103,7 +103,7 @@ class AuthorForm(forms.Form):
     see an id_email field
     '''
     person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")
-    email = forms.CharField(widget=forms.Select(),help_text="Select an email")
+    email = forms.CharField(widget=forms.Select(),help_text="Select an email.")
 
     # check for id within parenthesis to ensure name was selected from the list
     def clean_person(self):
@@ -132,7 +132,7 @@ class EditModelForm(forms.ModelForm):
     iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft-iesg'),required=False)
     group = GroupModelChoiceField(required=True)
     review_by_rfc_editor = forms.BooleanField(required=False)
-    shepherd = AutocompletedEmailField(required=False, only_users=True)
+    shepherd = SearchableEmailField(required=False, only_users=True)
 
     class Meta:
         model = Document
@@ -372,5 +372,5 @@ class UploadForm(forms.Form):
         return self.cleaned_data
 
 class WithdrawForm(forms.Form):
-    type = forms.CharField(widget=forms.Select(choices=WITHDRAW_CHOICES),help_text='Select which type of withdraw to perform')
+    type = forms.CharField(widget=forms.Select(choices=WITHDRAW_CHOICES),help_text='Select which type of withdraw to perform.')
 
