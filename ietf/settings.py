@@ -399,8 +399,6 @@ DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
 HTPASSWD_COMMAND = "/usr/bin/htpasswd2"
 HTPASSWD_FILE = "/www/htpasswd"
 
-SOUTH_TESTS_MIGRATE = False
-
 # Generation of bibxml files for xml2rfc
 BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
 
