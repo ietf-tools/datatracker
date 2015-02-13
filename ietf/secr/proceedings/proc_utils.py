@@ -41,6 +41,8 @@ def check_audio_files(group,meeting):
             timeslot = session.official_scheduledsession().timeslot
         except IndexError:
             continue
+        if not (timeslot.location and timeslot.time):
+            continue
         room = timeslot.location.name.lower()
         room = room.replace(' ','')
         room = room.replace('/','')
