@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# -*- Python -*-
+#
+
+import os, sys
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
+
+import django
+django.setup()
+
+import argparse
+import pprint
+from django.contrib import admin
+from django.contrib.auth.models import User
+from ietf.person.models import Person
+
+parser = argparse.ArgumentParser()
+parser.add_argument("source",type=int)
+parser.add_argument("target",type=int)
+args = parser.parse_args()
+
+source = Person.objects.get(pk=args.source)
+target = Person.objects.get(pk=args.target)
+
+print "Merging person {}({}) to {}({})".format(source.name,source.pk,target.name,target.pk)
+response = raw_input('Ok to continue y/n? ')
+if response.lower() != 'y':
+    sys.exit()
+
+# merge emails
+for email in source.email_set.all():
+    print "Merging email: {}".format(email.address)
+    email.person = target
+    email.save()
+
+# merge aliases
+target_aliases = [ a.name for a in target.alias_set.all() ]
+for alias in source.alias_set.all():
+    if alias.name in target_aliases:
+        alias.delete()
+    else:
+        print "Merging alias: {}".format(alias.name)
+        alias.person = target
+        alias.save()
+
+# check for any remaining relationships and delete if none
+objs = [source]
+opts = Person._meta
+user = User.objects.filter(is_superuser=True).first()
+admin_site = admin.site
+using = 'default'
+
+deletable_objects, perms_needed, protected = admin.utils.get_deleted_objects(
+    objs, opts, user, admin_site, using)
+    
+if len(deletable_objects) > 1:
+    print "Not Deleting Person: {}({})".format(source.name,source.pk)
+    print "Related objects remain:"
+    pprint.pprint(deletable_objects[1])
+
+else:
+    print "Deleting Person: {}({})".format(source.name,source.pk)
+    source.delete()
