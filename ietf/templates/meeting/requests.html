@@ -8,7 +8,7 @@
 
 {% block content %}
 <div class="row">
-	<div class="col-sm-10">
+        <div class="col-md-10">
 
 <h1 class="title">IETF {{ meeting.number }} timeslot requests<br>
 <small>{{meeting.city}}, {{meeting.country}} -- {{meeting.venue_name}}</small>
@@ -16,7 +16,7 @@
 
 {% regroup sessions by group.parent as area_sessions %}
 {% for area in area_sessions %}
-	<h2 id="{{area.grouper.acronym}}">
+        <h2 class="anchor-target" id="{{area.grouper.acronym}}">
 			{{area.grouper.acronym|upper}} <small>{{area.grouper.name}}</small>
 	</h2>
 	<p class="alert alert-info">
@@ -106,7 +106,7 @@
 	</table>
 {% endfor %}
 </div>
-<div class="col-sm-2 hidden-print bs-docs-sidebar" id="affix">
+<div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
 	<ul class="nav nav-pills nav-stacked small" data-spy="affix">
 		{% for area in area_sessions %}
 			<li><a href="#{{area.grouper.acronym}}">{{ area.grouper.acronym|upper }}</a></li>

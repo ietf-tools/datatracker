@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="row">
-	<div class="col-sm-10">
+        <div class="col-md-10">
 
 <h1>Active IETF working groups</h1>
 
@@ -14,7 +14,7 @@
 <a class="btn btn-default" href="//www.ietf.org/dyn/wg/charter/history/">Historic charters</a>
 
 {% for area in areas %}
-	<h2 id="{{area.acronym}}">{{ area.name }} ({{ area.acronym }})</h2>
+        <h2 class="anchor-target" id="{{area.acronym}}">{{ area.name }} ({{ area.acronym }})</h2>
 
         {% if area.ads %}
 		<h3>{{ area.acronym }} Area Director{{ area.ads|pluralize }} (AD{{ area.ads|pluralize }})</h3>
@@ -78,7 +78,7 @@
 {% endfor %}
 
 </div>
-<div class="col-sm-2 hidden-print bs-docs-sidebar" id="affix">
+<div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
 	<ul class="nav nav-pills nav-stacked small" data-spy="affix">
 		{% for area in areas %}
 		<li><a href="#{{area.acronym}}">{{ area.name }}</a></li>

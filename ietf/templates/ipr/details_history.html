@@ -29,7 +29,7 @@
 
     <tbody>
       {% for e in events %}
-        <tr id="history-{{ e.pk }}">
+        <tr class="anchor-target" id="history-{{ e.pk }}">
           <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
           <td>{{ e.type }}
             {% if e.response_due and e.response_past_due %}

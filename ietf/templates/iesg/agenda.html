@@ -29,7 +29,7 @@ Will hopefully be fixed in later versions, so this can be removed.
 
 {% block content %}
 <div class="row">
-	<div class="col-sm-10">
+        <div class="col-md-10">
 
 <h1>IESG agenda: {{ date }} </h1>
 
@@ -40,9 +40,9 @@ Will hopefully be fixed in later versions, so this can be removed.
 
 {% for num, section in sections %}
 
-{% if num|sectionlevel == 1 %}<h2 id="{{num}}">{{ num }}. {{ section.title|safe }}</h2>{% endif %}
-{% if num|sectionlevel == 2 %}<h3 id="{{num}}">{{ num }} {{ section.title|safe }}</h3>{% endif %}
-{% if num|sectionlevel == 3 %}<h4 id="{{num}}">{{ num }} {{ section.title|safe }}</h4>{% endif %}
+{% if num|sectionlevel == 1 %}<h2 class="anchor-target" id="{{num}}">{{ num }}. {{ section.title|safe }}</h2>{% endif %}
+{% if num|sectionlevel == 2 %}<h3 class="anchor-target" id="{{num}}">{{ num }} {{ section.title|safe }}</h3>{% endif %}
+{% if num|sectionlevel == 3 %}<h4 class="anchor-target" id="{{num}}">{{ num }} {{ section.title|safe }}</h4>{% endif %}
 
 {% if num == "1.4" %}
 <pre>
@@ -130,7 +130,7 @@ Will hopefully be fixed in later versions, so this can be removed.
 {% endfor %}
 </div>
 
-<div class="col-sm-2 hidden-print bs-docs-sidebar" id="affix">
+<div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
 	<ul class="nav nav-pills nav-stacked small" data-spy="affix">
 		{% for num, section in sections %}
 			{% if num|sectionlevel <= 1 %}

@@ -70,6 +70,17 @@ body { padding-top: 70px; }
 .nav-stacked>li>a { padding: 2px 8px; }
 .leftmenu .nav { overflow-wrap: break-word }
 
+/* Hack to make anchor-targets take up a bit more space vertically
+ to work around the position fixed navbar which otherwise covers them */
+.anchor-target:before {
+  content: '';
+  display: block;
+  position: relative;
+  width: 0;
+  height: 50px;
+  margin-top: -50px;
+}
+
 /* Style navbar buttons */
 .navbar-btn { color:#777; }
 .navbar-btn:hover { color: #333; }

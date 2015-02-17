@@ -8,7 +8,7 @@
 
 {% block content %}
 <div class="row">
-	<div class="col-sm-10">
+        <div class="col-md-10">
 
 
 <h1>IAB/IESG Nominating Committee</h1>
@@ -19,7 +19,7 @@
 </p>
 
 {% for regime in regimes %}
-	<h2 id="{{ regime.group.start_year }}">Messages from {{ regime.group.start_year }}/{{ regime.group.end_year }}</h2>
+        <h2 class="anchor-target" id="{{ regime.group.start_year }}">Messages from {{ regime.group.start_year }}/{{ regime.group.end_year }}</h2>
 
 	{# use person email address here rather than the generic nomcom-chair@ietf.org #}
 	<p>
@@ -49,7 +49,7 @@
 
 
 {# somebody ought to import these announcements in the DB instead of this mess #}
-<h2 id="2003">Messages from 2003/2004</h2>
+<h2 class="anchor-target" id="2003">Messages from 2003/2004</h2>
 <p><b>Committee chair:</b> <a href="mailto:richdr@microsoft.com">Rich Draves</a></p>
 <table class="table table-condensed table-striped">
 	<thead>
@@ -78,7 +78,7 @@
 </table>
 
 
-<h2 id="2002">Messages from 2002/2003</h2>
+<h2 class="anchor-target" id="2002">Messages from 2002/2003</h2>
 <p><b>Committee chair:</b> <a href="mailto:PRoberts@MEGISTO.com">Phil Roberts</a></p>
 <table class="table table-condensed table-striped">
 	<thead>
@@ -101,13 +101,13 @@
 </table>
 
 
-<h2 id="historical">Historical information</h2>
+<h2 class="anchor-target" id="historical">Historical information</h2>
 <ul>
 	<li><a href="//www.ietf.org/nomcom/committee.html">IAB/IESG Nominating Committee Members (by year)</a></li>
 </ul>
 
 
-<h2 id="references">References</h2>
+<h2 class="anchor-target" id="references">References</h2>
 <ul>
 	<li><a href="//www.ietf.org/rfc/rfc2026.txt">The Internet Standards Process (RFC 2026)</a></li>
 	<li><a href="//www.ietf.org/rfc/rfc3777.txt">IAB and IESG Selection, Confirmation, and Recall Process: Operation of the Nominating and Recall </a>Committees (RFC 3777) (Also BCP10)</a>
@@ -116,7 +116,7 @@
 
 
 </div>
-<div class="col-sm-2 hidden-print bs-docs-sidebar" id="affix">
+<div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
 	<ul class="nav nav-pills nav-stacked small" data-spy="affix">
 		{% for regime in regimes %}
 			<li><a href="#{{ regime.group.start_year }}">{{ regime.group.start_year }}/{{ regime.group.end_year }}</a></li>

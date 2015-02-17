@@ -7,7 +7,7 @@
 {% block submit_content %}
 
 {% if user.is_authenticated %}
-	<h2 id="approvals">Submissions you can approve</h2>
+        <h2 class="anchor-target" id="approvals">Submissions you can approve</h2>
 
 	{% if not approvals %}
 		<p>You don't have any submissions to approve.</p>
@@ -30,7 +30,7 @@
 		</table>
 	{% endif %}
 
-	<h2 id="preapprovals">Pre-approved drafts not yet submitted</h2>
+        <h2 class="anchor-target" id="preapprovals">Pre-approved drafts not yet submitted</h2>
 
 	{% if user|has_role:"Secretariat,WG Chair,RG Chair" %}
 		<p><a class="btn btn-default" href="{% url "submit_add_preapproval" %}">Add pre-approval</a></p>
@@ -61,7 +61,7 @@
 		</table>
 	{% endif %}
 
-	<h2 id="recently-approved">Approved drafts within the past {{ days }} days</h2>
+        <h2 class="anchor-target" id="recently-approved">Approved drafts within the past {{ days }} days</h2>
 
 	{% if not recently_approved %}
 		<p>No drafts approved.</p>

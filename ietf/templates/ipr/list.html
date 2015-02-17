@@ -8,7 +8,7 @@
 
 {% block content %}
   <div class="row">
-    <div class="col-sm-10">
+    <div class="col-md-10">
 
       <h1>Intellectual property rights disclosures</h1>
 
@@ -33,21 +33,21 @@
         {% endif %}
       </p>
 
-      <h2 id="generic">Generic IPR disclosures</h2>
+      <h2 class="anchor-target" id="generic">Generic IPR disclosures</h2>
 
       {% include "ipr/ipr_table.html" with iprs=generic_disclosures %}
 
-      <h2 id="specific">Specific IPR disclosures</h2>
+      <h2 class="anchor-target" id="specific">Specific IPR disclosures</h2>
 
       {% include "ipr/ipr_table.html" with iprs=specific_disclosures %}
 
-      <h2 id="notify">Specific third-party IPR disclosures</h2>
+      <h2 class="anchor-target" id="notify">Specific third-party IPR disclosures</h2>
 
       {% include "ipr/ipr_table.html" with iprs=thirdpty_disclosures %}
 
     </div>
 
-    <div class="col-sm-2 hidden-print bs-docs-sidebar" id="affix">
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
 	<li><a href="#generic">Generic IPR disclosures</a></li>
 	<li><a href="#specific">Specific IPR disclosures</a></li>

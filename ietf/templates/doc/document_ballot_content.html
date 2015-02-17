@@ -75,7 +75,7 @@
 
 		{% for n, positions in position_groups %}
 			{% for p in positions|dictsort:"ad.last_name" %}
-				<h4 id="{{ p.ad.plain_name|slugify }}">
+                                <h4 class="anchor-target" id="{{ p.ad.plain_name|slugify }}">
 					{% if p.old_ad %}<span class="text-muted">{% endif %}
 						{{ p.ad.plain_name }}
 					{% if p.old_ad %}</span>{% endif %}

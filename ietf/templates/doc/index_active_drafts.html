@@ -20,7 +20,7 @@ for download).</p>
 </p>
 
 {% for group in groups %}
-	<h2 id="{{ group.acronym }}">{{ group.name }} ({{ group.acronym }})</h2>
+        <h2 class="anchor-target" id="{{ group.acronym }}">{{ group.name }} ({{ group.acronym }})</h2>
 	{% for d in group.active_drafts %}
 		<p>
 			<b>{{ d.title }}.</b><br>

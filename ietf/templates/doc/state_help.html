@@ -19,7 +19,7 @@
 	</thead>
 	<tbody>
 		{% for state in states %}
-		<tr id="{{ state.slug }}">
+                <tr class="anchor-target" id="{{ state.slug }}">
 			<th>{{ state.name }}</th>
 			<td>{{ state.desc|safe|linebreaksbr }}</td>
 			{% if has_next_states %}
@@ -47,7 +47,7 @@
 
 		<tbody>
 			{% for tag in tags %}
-				<tr id="{{ tag.slug }}">
+                                <tr class="anchor-target" id="{{ tag.slug }}">
 					<td>{{ tag.name }}</td>
 					<td>{{ tag.desc|linebreaksbr }}</td>
 				</tr>

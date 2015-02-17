@@ -15,7 +15,7 @@
 	</thead>
 	<tbody>
 		{% for rel in relations %}
-			<tr id="{{ rel.slug }}">
+                        <tr class="anchor-target" id="{{ rel.slug }}">
 				<td class="name">{{ rel.name }}</td>
 				<td class="desc">{{ rel.desc|linebreaksbr }}</td>
 				<td class="revname">{{ rel.revname }}</td>

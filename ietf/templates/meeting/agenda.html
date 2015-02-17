@@ -148,7 +148,7 @@ tr:first-child th.gap {
 		{% ifchanged item.timeslot.time|date:"Y-m-d" %}
 			<tr><th class="gap" colspan="6"></th></tr>
 			<tr class="warning">
-				<th colspan="6" id="{{item.timeslot.time|slugify}}">
+                                <th colspan="6" class="anchor-target" id="{{item.timeslot.time|slugify}}">
 					{% if "-utc" in request.path %}
 						{{ item.timeslot.utc_start_time|date:"l, F j, Y" }} (UTC)
 					{% else %}
