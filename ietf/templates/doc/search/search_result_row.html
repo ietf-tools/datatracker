@@ -28,9 +28,7 @@
 	<br>
 	<b>{{ doc.title }}</b>
 	{% if doc.has_errata %}
-		<a href="//www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">
-			<span class="label label-danger">Errata</span>
-		</a>
+                <a class="label label-danger" href="//www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
 	{% endif %}
 
 	{% if doc.pages %}
