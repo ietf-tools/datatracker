@@ -4,6 +4,10 @@
 
 {% block title %}History for {{ doc.name }}-{{ doc.rev }}{% endblock %}
 
+{% block morecss %}
+  form.diff-form button[type=submit] { margin-left: 2em; }
+{% endblock %}
+
 {% block pagehead %}
 	<link rel="alternate" type="application/atom+xml" href="/feed/document-changes/{{ doc.name }}/" />
 {% endblock %}
@@ -14,7 +18,7 @@
 {% if diff_revisions and diff_revisions|length > 1 %}
 	<h2>Revision differences</h2>
 
-	<form class="form-horizontal" role="form" action="{{rfcdiff_prefix}}" method="get" target="_blank">
+        <form class="form-horizontal diff-form" role="form" action="{{rfcdiff_prefix}}" method="get" target="_blank">
 
 		<div class="form-group">
 			<div class="col-sm-2 ">
@@ -66,17 +70,12 @@
 					<label class="btn btn-default">
 						<input type="radio" name="difftype" value="--hwdiff"> Wdiff
 					</label>
-				</div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">Submit</button>
 			</div>
 		</div>
-
-		<div class="form-group">
-			<div class="col-sm-offset-2 col-sm-10">
-				<button type="submit" class="btn btn-primary">Submit</button>
-			</div>
-		</div>
-
-	</form>
+        </form>
 {% endif %}
 
 <h2>Document history</h2>
