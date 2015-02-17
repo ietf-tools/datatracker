@@ -1,17 +1,17 @@
 {% extends "ietf.html" %}
 
 {% block title %}
-Shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
+  Shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
 {% endblock %}
 
 {% block content %}
-<h1>Shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
+  <h1>Shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
 
-<pre>{{writeup}}</pre>
+  <pre>{{writeup}}</pre>
 
-{% if can_edit %}
-        <a class="btn btn-primary" href="{% url "doc_edit_shepherd_writeup" name=doc.name %}">Edit</a>
-{% endif %}
-<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+  {% if can_edit %}
+    <a class="btn btn-primary" href="{% url "doc_edit_shepherd_writeup" name=doc.name %}">Edit</a>
+  {% endif %}
+  <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
 
 {% endblock %}

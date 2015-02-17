@@ -3,11 +3,11 @@
 {% block title %}Search documents{% endblock %}
 
 {% block content %}
-<h1>Search documents</h1>
+  <h1>Search documents</h1>
 
-{% include "doc/search/search_form.html" %}
+  {% include "doc/search/search_form.html" %}
 
-{% if meta.searching %}
-	{% include "doc/search/search_results.html" %}
-{% endif %}
+  {% if meta.searching %}
+    {% include "doc/search/search_results.html" %}
+  {% endif %}
 {% endblock content %}

@@ -6,21 +6,21 @@
 
 {% block content %}
 
-<h1>Resurrect<br><small>{{ doc }}</small></h1>
+  <h1>Resurrect<br><small>{{ doc }}</small></h1>
 
-<p>Resurrect {{ doc }}?</p>
+  <p>Resurrect {{ doc }}?</p>
 
-<p>
-	This will change the status to Active {% if doc.idinternal.resurrect_requested_by %} and email a notice to {{ doc.idinternal.resurrect_requested_by }}{% endif %}.
-</p>
+  <p>
+    This will change the status to Active {% if doc.idinternal.resurrect_requested_by %} and email a notice to {{ doc.idinternal.resurrect_requested_by }}{% endif %}.
+  </p>
 
-<form role="form" method="post">
-	{% csrf_token %}
+  <form role="form" method="post">
+    {% csrf_token %}
 
-        {% buttons %}
-                <input class="btn btn-primary" type="submit" value="Resurrect">
-		<a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
-        {% endbuttons %}
-</form>
+    {% buttons %}
+      <button class="btn btn-primary" type="submit">Resurrect</button>
+      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

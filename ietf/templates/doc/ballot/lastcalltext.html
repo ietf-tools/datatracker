@@ -6,31 +6,31 @@
 {% block title %}Last call text for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Last call text<br><small>{{ doc }}</small></h1>
+  <h1>Last call text<br><small>{{ doc }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form last_call_form %}
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form last_call_form %}
 
-	{% if can_request_last_call and need_intended_status %}
-		<span class="help-block">
-			You need to select intended status of {{ need_intended_status }} and regenerate last call text to request last call.
-		</span>
-	{% endif %}
+    {% if can_request_last_call and need_intended_status %}
+      <span class="help-block">
+        You need to select intended status of {{ need_intended_status }} and regenerate last call text to request last call.
+      </span>
+    {% endif %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary" name="save_last_call_text">Save text</button>
-		{% if can_request_last_call and not need_intended_status %}
-			<button type="submit" class="btn btn-warning" name="send_last_call_request">Save text & request last call</button>
-		{% endif %}
-		<button type="submit" class="btn btn-warning" name="regenerate_last_call_text">Regenerate text</button>
-		{% if user|has_role:"Secretariat" and can_make_last_call %}
-			<a class="btn btn-danger" href="{% url "doc_make_last_call" name=doc.name %}">Issue last call</a>
-		{% endif %}
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="save_last_call_text">Save text</button>
+      {% if can_request_last_call and not need_intended_status %}
+        <button type="submit" class="btn btn-warning" name="send_last_call_request">Save text & request last call</button>
+      {% endif %}
+      <button type="submit" class="btn btn-warning" name="regenerate_last_call_text">Regenerate text</button>
+      {% if user|has_role:"Secretariat" and can_make_last_call %}
+        <a class="btn btn-danger" href="{% url "doc_make_last_call" name=doc.name %}">Issue last call</a>
+      {% endif %}
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock%}

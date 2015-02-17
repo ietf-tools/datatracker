@@ -7,22 +7,22 @@
 {% block title %}Begin IETF conflict review for {{doc_to_review.canonical_name}}-{{doc_to_review.rev}}{% endblock %}
 
 {% block content %}
-<h1>Begin IETF conflict review<br><small>{{doc_to_review.canonical_name}}-{{doc_to_review.rev}}</small></h1>
+  <h1>Begin IETF conflict review<br><small>{{doc_to_review.canonical_name}}-{{doc_to_review.rev}}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-{% if user|has_role:"Secretariat" %}
-<p><a class="btn btn-info" href="{% url "state_help" type="conflict-review" %}">Help on states</a></p>
-{% endif %}
+  {% if user|has_role:"Secretariat" %}
+    <p><a class="btn btn-info" href="{% url "state_help" type="conflict-review" %}">Help on states</a></p>
+  {% endif %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary">Submit</button>
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc_to_review.name %}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc_to_review.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

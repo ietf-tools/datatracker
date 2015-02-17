@@ -6,25 +6,25 @@
 
 {% block content %}
 
-{% if success %}
-	<h1>Account creation successful</h1>
+  {% if success %}
+    <h1>Account creation successful</h1>
 
-	<p>Your account with login name {{ email }} has been created, using the password you have selected.</p>
-	<a type="a" class="btn btn-primary" href="/accounts/login/" rel="nofollow">Sign in</a>
+    <p>Your account with login name {{ email }} has been created, using the password you have selected.</p>
+    <a type="a" class="btn btn-primary" href="/accounts/login/" rel="nofollow">Sign in</a>
 
-{% else %}
-	<h1>Complete account creation</h1>
+  {% else %}
+    <h1>Complete account creation</h1>
 
-	{% bootstrap_messages %}
+    {% bootstrap_messages %}
 
-	<p>In order to complete the setup of your account with login name {{ email }}, please choose a password:</p>
-	<form role="form" method="post">
-		{% csrf_token %}
-		{% bootstrap_form form %}
+    <p>In order to complete the setup of your account with login name {{ email }}, please choose a password:</p>
+    <form role="form" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
 
-		{% buttons %}
-			<button type="submit" class="btn btn-primary">Set password</button>
-		{% endbuttons %}
-	</form>
-{% endif %}
+      {% buttons %}
+        <button type="submit" class="btn btn-primary">Set password</button>
+      {% endbuttons %}
+    </form>
+  {% endif %}
 {% endblock %}

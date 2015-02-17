@@ -5,17 +5,17 @@
 {% block title %}Change IANA state for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Change IANA state<br><small>{{ doc }}</small></h1>
+  <h1>Change IANA state<br><small>{{ doc }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary">Submit</button>
-		<a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}

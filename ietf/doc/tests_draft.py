@@ -413,7 +413,7 @@ class ResurrectTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[type=submit]')), 1)
+        self.assertEqual(len(q('form [type=submit]')), 1)
 
 
         # request resurrect
@@ -448,7 +448,7 @@ class ResurrectTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[type=submit]')), 1)
+        self.assertEqual(len(q('form [type=submit]')), 1)
 
         # complete resurrect
         events_before = draft.docevent_set.count()

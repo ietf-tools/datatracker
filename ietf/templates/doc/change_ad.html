@@ -5,18 +5,18 @@
 {% block title %}Change shepherding AD for {{titletext}}{% endblock %}
 
 {% block content %}
-<h1>Change shepherding AD<br><small>{{titletext}}</small></h1>
+  <h1>Change shepherding AD<br><small>{{titletext}}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" enctype="multipart/form-data" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary">Submit</button>
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

@@ -4,22 +4,22 @@
 
 {% block nomcom_content %}
 
-<h2>Questionnaires</h2>
+  <h2>Questionnaires</h2>
 
-<ul class="nav nav-tabs" role="tablist">
-	{% for position in positions %}
-		<li {% if forloop.first %}class="active"{% endif %}>
-			<a data-toggle="tab" role="tab" href="#{{ position.name|slugify }}">{{ position.name }}</a>
-		</li>
-	{% endfor %}
-</ul>
+  <ul class="nav nav-tabs" role="tablist">
+    {% for position in positions %}
+      <li {% if forloop.first %}class="active"{% endif %}>
+        <a data-toggle="tab" role="tab" href="#{{ position.name|slugify }}">{{ position.name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
 
-<div class="tab-content">
-	{% for position in positions %}
-		<div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ position.name|slugify }}">
-			<h3>{{ position.description }}</h3>
-			{{ position.get_questionnaire|linebreaks}}
-		</div>
-	{% endfor %}
-</div>
+  <div class="tab-content">
+    {% for position in positions %}
+      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ position.name|slugify }}">
+        <h3>{{ position.description }}</h3>
+        {{ position.get_questionnaire|linebreaks}}
+      </div>
+    {% endfor %}
+  </div>
 {% endblock %}

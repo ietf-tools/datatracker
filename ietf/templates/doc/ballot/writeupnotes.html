@@ -6,23 +6,23 @@
 
 {% block content %}
 
-<h1>Ballot writeup and notes<br><small>{{ doc }}</small></h1>
+  <h1>Ballot writeup and notes<br><small>{{ doc }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form ballot_writeup_form %}
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form ballot_writeup_form %}
 
-	<span class="help-block">
-		Technical summary, Working Group summary, document quality, personnel, RFC Editor note, IRTF note, IESG note, IANA note. This text will be appended to all announcements and messages to the IRTF or RFC Editor.
-	</span>
+    <span class="help-block">
+      Technical summary, Working Group summary, document quality, personnel, RFC Editor note, IRTF note, IESG note, IANA note. This text will be appended to all announcements and messages to the IRTF or RFC Editor.
+    </span>
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary" name="save_ballot_writeup">Save</button>
-		<button type="submit" class="btn btn-warning" name="issue_ballot">Save & {% if ballot_issued %}re-{% endif %}issue ballot</button>
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="save_ballot_writeup">Save</button>
+      <button type="submit" class="btn btn-warning" name="issue_ballot">Save & {% if ballot_issued %}re-{% endif %}issue ballot</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock%}

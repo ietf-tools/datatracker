@@ -1,51 +1,51 @@
 {% extends "ietf.html" %}
 
 {% block title %}
-References from {{doc.canonical_name}}
+  References from {{doc.canonical_name}}
 {% endblock %}
 
 {% block content %}
-<h1>References from {{doc.canonical_name}}</h1>
+  <h1>References from {{doc.canonical_name}}</h1>
 
-<p class="alert alert-info">
-	This is an experimental product. These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
-</p>
-<p>
-<a class="btn btn-default" href="{% url 'relationship_subset_help' subset='reference' %}">Reference type help</a>
-</p>
+  <p class="alert alert-info">
+    This is an experimental product. These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
+  </p>
+  <p>
+    <a class="btn btn-default" href="{% url 'relationship_subset_help' subset='reference' %}">Reference type help</a>
+  </p>
 
-<table class="table table-condensed table-striped">
-	<thead>
-		<tr>
-			<th>Document</th>
-			<th>Title</th>
-			<th>Status</th>
-			<th>Type</th>
-			<th>Downref</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for ref in refs %}
-			{% with ref.target.name as name %}
-				<tr>
-					<td><a href="{% url 'doc_view' name=name %}">{{name}}</a></td>
-					<td>
-						<b>{{ref.target.document.title}}</b><br>
-						<a class="btn btn-default btn-xs" href="{% url 'doc_references' name %}">Refs</a>
-						<a class="btn btn-default btn-xs" href="{% url 'doc_referenced_by' name %}">Ref'd by</a>
-					</td>
-					<td>
-						{% ifequal ref.target.document.get_state.slug 'rfc' %}
-							{% with ref.target.document.std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
-						{% else %}
-							{% with ref.target.document.intended_std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
-						{% endifequal %}
-					</td>
-					<td>{{ref.relationship.name}}</td>
-					<td>{{ref.is_downref|default:''}}</td>
-				</tr>
-			{% endwith %}
-		{% endfor %}
-</table>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Type</th>
+        <th>Downref</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ref in refs %}
+        {% with ref.target.name as name %}
+          <tr>
+            <td><a href="{% url 'doc_view' name=name %}">{{name}}</a></td>
+            <td>
+	      <b>{{ref.target.document.title}}</b><br>
+	      <a class="btn btn-default btn-xs" href="{% url 'doc_references' name %}">Refs</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'doc_referenced_by' name %}">Ref'd by</a>
+            </td>
+            <td>
+	      {% ifequal ref.target.document.get_state.slug 'rfc' %}
+	        {% with ref.target.document.std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
+	{% else %}
+	        {% with ref.target.document.intended_std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
+	      {% endifequal %}
+            </td>
+            <td>{{ref.relationship.name}}</td>
+            <td>{{ref.is_downref|default:''}}</td>
+          </tr>
+        {% endwith %}
+      {% endfor %}
+  </table>
 
 {% endblock %}

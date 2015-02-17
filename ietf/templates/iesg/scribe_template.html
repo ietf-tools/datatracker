@@ -6,18 +6,18 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions 
 are met:
 
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
+* Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
 
- * Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided
-   with the distribution.
+* Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following
+disclaimer in the documentation and/or other materials provided
+with the distribution.
 
- * Neither the name of the Nokia Corporation and/or its
-   subsidiary(-ies) nor the names of its contributors may be used
-   to endorse or promote products derived from this software
-   without specific prior written permission.
+* Neither the name of the Nokia Corporation and/or its
+subsidiary(-ies) nor the names of its contributors may be used
+to endorse or promote products derived from this software
+without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -31,61 +31,61 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->{% endcomment %}{% comment %}
-Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
-{% endcomment %}<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+                   Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
+                   {% endcomment %}<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <!-- Please don't change the doctype.  It messes up things for the scribe. -->
 <html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>IESG Agenda - Scribe Template</title>
-</head>
-<body>
-{% load ietf_filters %}{% filter compress_empty_lines %}
-<h1>Scribe template for IESG Narrative Minutes, {{ date }}</h1>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>IESG Agenda - Scribe Template</title>
+  </head>
+  <body>
+    {% load ietf_filters %}{% filter compress_empty_lines %}
+    <h1>Scribe template for IESG Narrative Minutes, {{ date }}</h1>
 
-{% for num, section in sections %}
-  <p><b>{{ num }}{% if num|sectionlevel == 1 %}.{% endif %} {{ section.title|safe }}</b></p>
+    {% for num, section in sections %}
+      <p><b>{{ num }}{% if num|sectionlevel == 1 %}.{% endif %} {{ section.title|safe }}</b></p>
 
-  {% if "docs" in section %}
-  <ul>{% for doc in section.docs %}
-{% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/scribe_doc.html" %}{% endif %}
-{% if doc.type_id == "conflrev" %}{% include "iesg/scribe_conflict_doc.html" %}{% endif %}
-  {% empty %}
-    <li>(none)</li>{% endfor %}
-  </ul>
-  {% endif %}
-{% endfor %}
-
-<hr>
-<h2>Appendix: Snapshot of discusses/comments</h2>
-
-<p>(at {% now "Y-m-d H:i:s T" %})</p>
-
-{% for doc in appendix_docs %}
-    <!-- ============================================================ -->
-    <p><b>{{ doc.name }}</b></p>
-
-    {% with doc.active_ballot as ballot %}
-    {% if ballot %}
-    <ul>{% for p in ballot.active_ad_positions.values %}
-      {% if p.pos and p.discuss %}
-      <li>
-        <a name="{{ doc.name }}+{{ p.ad.plain_name|slugify }}+discuss">{{ p.ad.plain_name }}: Discuss [{{ p.discuss_time }}]</a>:
-        <br><pre>{{ p.discuss|wrap_text:80 }}</pre>
-      </li>
+      {% if "docs" in section %}
+        <ul>{% for doc in section.docs %}
+          {% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/scribe_doc.html" %}{% endif %}
+          {% if doc.type_id == "conflrev" %}{% include "iesg/scribe_conflict_doc.html" %}{% endif %}
+        {% empty %}
+          <li>(none)</li>{% endfor %}
+        </ul>
       {% endif %}
-      {% if p.pos and p.comment %}
-      <li>
-        <a name="{{ doc.name }}+{{ p.ad.plain_name|slugify }}+comment">{{ p.ad.plain_name }}: Comment [{{ p.comment_time }}]</a>:
-        <br><pre>{{ p.comment|wrap_text:80 }}</pre>
-      </li>
-      {% endif %}{% endfor %}
-    </ul>
-    {% endif %}
-    {% endwith %}
+    {% endfor %}
 
-{% endfor %}
+    <hr>
+    <h2>Appendix: Snapshot of discusses/comments</h2>
 
-{% endfilter %}
-</body>
+    <p>(at {% now "Y-m-d H:i:s T" %})</p>
+
+    {% for doc in appendix_docs %}
+      <!-- ============================================================ -->
+      <p><b>{{ doc.name }}</b></p>
+
+      {% with doc.active_ballot as ballot %}
+        {% if ballot %}
+          <ul>{% for p in ballot.active_ad_positions.values %}
+            {% if p.pos and p.discuss %}
+              <li>
+                <a name="{{ doc.name }}+{{ p.ad.plain_name|slugify }}+discuss">{{ p.ad.plain_name }}: Discuss [{{ p.discuss_time }}]</a>:
+                <br><pre>{{ p.discuss|wrap_text:80 }}</pre>
+              </li>
+            {% endif %}
+            {% if p.pos and p.comment %}
+              <li>
+                <a name="{{ doc.name }}+{{ p.ad.plain_name|slugify }}+comment">{{ p.ad.plain_name }}: Comment [{{ p.comment_time }}]</a>:
+                <br><pre>{{ p.comment|wrap_text:80 }}</pre>
+              </li>
+            {% endif %}{% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+    {% endfor %}
+
+    {% endfilter %}
+  </body>
 </html>

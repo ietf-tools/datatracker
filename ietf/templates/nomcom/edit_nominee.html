@@ -7,21 +7,21 @@
 
 {% block nomcom_content %}
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<h2>Edit email<br><small>{{ nominee }}</small></h2>
+  <h2>Edit email<br><small>{{ nominee }}</small></h2>
 
-{% if message %}
-	<p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
-{% endif %}
+  {% if message %}
+    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
+  {% endif %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
-	{% buttons %}
-		<input class="btn btn-primary" type="submit" value="Save">
-		<a class="btn btn-default pull-right" href="{% url "nomcom_private_index" year %}">Back</a>
-	{% endbuttons %}
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="Save">
+      <a class="btn btn-default pull-right" href="{% url "nomcom_private_index" year %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

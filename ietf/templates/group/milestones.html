@@ -1,29 +1,29 @@
 {# assumes milestones is in context #}
 
 <table class="table table-condensed table-striped ietf">
-	<thead>
-		<tr>
-			<th>Date</th>
-			<th>Milestone</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for milestone in milestones reversed %}
-			<tr>
-				<td class="text-nowrap">
-					{% if milestone.resolved %}
-						<span class="label label-success">{{ milestone.resolved }}</span>
-					{% else %}
-						{{ milestone.due|date:"M Y" }}
-					{% endif %}
-				</td>
-				<td>
-					{{ milestone.desc }}
-					{% for d in milestone.docs.all %}
-						<br><a href="{% url "doc_view" name=d.name %}">{{ d.name }}</a>
-					{% endfor %}
-				</td>
-			</tr>
-		{% endfor %}
-	</tbody>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Milestone</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for milestone in milestones reversed %}
+      <tr>
+        <td class="text-nowrap">
+	  {% if milestone.resolved %}
+	    <span class="label label-success">{{ milestone.resolved }}</span>
+	  {% else %}
+	    {{ milestone.due|date:"M Y" }}
+	  {% endif %}
+        </td>
+        <td>
+	  {{ milestone.desc }}
+	  {% for d in milestone.docs.all %}
+	    <br><a href="{% url "doc_view" name=d.name %}">{{ d.name }}</a>
+	  {% endfor %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
 </table>

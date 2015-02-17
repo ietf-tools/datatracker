@@ -6,45 +6,45 @@
 
 {% block submit_content %}
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-{% if form.cutoff_warning %}
-<div class="cutoff-warning">
-	{{ form.cutoff_warning|safe }}
-</div>
-{% endif %}
+  {% if form.cutoff_warning %}
+    <div class="cutoff-warning">
+      {{ form.cutoff_warning|safe }}
+    </div>
+  {% endif %}
 
-<p>This page is used to submit Internet-Drafts to the
-Internet-Draft repository. The list of current Internet-Drafts can be
-accessed at <a href="//www.ietf.org/ietf/1id-abstracts.txt">https://www.ietf.org/ietf/1id-abstracts.txt</a></p>
+  <p>This page is used to submit Internet-Drafts to the
+    Internet-Draft repository. The list of current Internet-Drafts can be
+    accessed at <a href="//www.ietf.org/ietf/1id-abstracts.txt">https://www.ietf.org/ietf/1id-abstracts.txt</a></p>
 
-<p>Internet-Drafts are working documents of the Internet Engineering
-Task Force (IETF), its areas, and its working groups. Note that other
-groups may also distribute working documents as Internet-Drafts.</p>
+  <p>Internet-Drafts are working documents of the Internet Engineering
+    Task Force (IETF), its areas, and its working groups. Note that other
+    groups may also distribute working documents as Internet-Drafts.</p>
 
-<p>Internet-Drafts are draft documents, and are valid for a maximum of
-six months. They may be updated, replaced, or obsoleted by other
-documents at any time.</p>
+  <p>Internet-Drafts are draft documents, and are valid for a maximum of
+    six months. They may be updated, replaced, or obsoleted by other
+    documents at any time.</p>
 
-{% if not form.shutdown %}
-<p>If you run into problems when submitting an Internet-Draft
-using this and the following pages, you may alternatively submit
-your draft by email to
-<a href="mailto:internet-drafts@ietf.org">internet-drafts@ietf.org</a>.
-However, be advised that manual processing always takes additional time.</p>
+  {% if not form.shutdown %}
+    <p>If you run into problems when submitting an Internet-Draft
+      using this and the following pages, you may alternatively submit
+      your draft by email to
+      <a href="mailto:internet-drafts@ietf.org">internet-drafts@ietf.org</a>.
+      However, be advised that manual processing always takes additional time.</p>
 
-{% include "submit/problem-reports-footer.html" %}
+    {% include "submit/problem-reports-footer.html" %}
 
-<h2>Upload an Internet-Draft</h2>
+      <h2>Upload an Internet-Draft</h2>
 
-<form role="form" method="post" enctype="multipart/form-data">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+      <form role="form" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% bootstrap_form form %}
 
-	{% buttons %}
-		<input class="btn btn-primary" type="submit" value="Upload" name="upload">
-	{% endbuttons %}
-</form>
-{% endif %}
+        {% buttons %}
+          <input class="btn btn-primary" type="submit" value="Upload" name="upload">
+        {% endbuttons %}
+      </form>
+  {% endif %}
 
 {% endblock %}

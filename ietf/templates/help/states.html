@@ -4,29 +4,29 @@
 
 {% block content %}
 
-<h1>{{type.label|cut:"state"|cut:"State"}} states</h1>
+  <h1>{{type.label|cut:"state"|cut:"State"}} states</h1>
 
 
-<table class="table table-condensed table-striped">
-	<thead>
-		<tr>
-			<th>State</th>
-			<th>Description</th>
-			<th>Next states</th>
-		</tr>
-	</thead>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>State</th>
+        <th>Description</th>
+        <th>Next states</th>
+      </tr>
+    </thead>
 
-	<tbody>
-		{% for state in states %}
-			<tr>
-				<th>{{ state.name }}</th>
-				<td>{{ state.desc|safe }}</td>
-				<td><ul>{% for s in state.next_states.all %}<li>{{ s.name }}</li>{%endfor%}</ul></td>
-			</tr>
-		{% endfor %}
+    <tbody>
+      {% for state in states %}
+        <tr>
+          <th>{{ state.name }}</th>
+          <td>{{ state.desc|safe }}</td>
+          <td><ul>{% for s in state.next_states.all %}<li>{{ s.name }}</li>{%endfor%}</ul></td>
+        </tr>
+      {% endfor %}
 
-	</tbody>
-</table>
+    </tbody>
+  </table>
 
 
 {% endblock %}

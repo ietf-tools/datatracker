@@ -4,131 +4,131 @@
 
 {% block group_content %}
 
-{% if group.state_id == "conclude" %}
-	<p class="alert alert-warning"><b>Note:</b> The data for concluded {{ group.type.name }}s is occasionally incorrect.</p>
-{% endif %}
+  {% if group.state_id == "conclude" %}
+    <p class="alert alert-warning"><b>Note:</b> The data for concluded {{ group.type.name }}s is occasionally incorrect.</p>
+  {% endif %}
 
-<table class="table table-condensed">
-	<tr>
-		<th rowspan="7">{{ group.type.name }}</th>
-	</tr>
+  <table class="table table-condensed">
+    <tr>
+      <th rowspan="7">{{ group.type.name }}</th>
+    </tr>
 
-	<tr>
-		<th>Name</th>
-		<td>{{ group.name }}</td>
-	</tr>
+    <tr>
+      <th>Name</th>
+      <td>{{ group.name }}</td>
+    </tr>
 
-	<tr>
-		<th>Acronym</th>
-		<td>{{ group.acronym }}</td>
-	</tr>
+    <tr>
+      <th>Acronym</th>
+      <td>{{ group.acronym }}</td>
+    </tr>
 
-	<tr>
-		{% if group.parent and group.parent.type_id == "area" %}
-			<th>{{ group.parent.type.name }}</th>
-			<td>{{ group.parent.name }} ({{ group.parent.acronym }})</td>
-		{% endif %}
-	</tr>
+    <tr>
+      {% if group.parent and group.parent.type_id == "area" %}
+        <th>{{ group.parent.type.name }}</th>
+        <td>{{ group.parent.name }} ({{ group.parent.acronym }})</td>
+      {% endif %}
+    </tr>
 
-	<tr>
-		<th>State</th>
-		<td>
-			{{ group.state.name }}
-			{% if requested_close %}
-				<div class="label label-info">In the process of being closed</div>
-			{% endif %}
-		</td>
-	</tr>
+    <tr>
+      <th>State</th>
+      <td>
+        {{ group.state.name }}
+        {% if requested_close %}
+          <div class="label label-info">In the process of being closed</div>
+        {% endif %}
+      </td>
+    </tr>
 
-	<tr>
-		{% if group.features.has_chartering_process %}
-			<th>Charter</th>
-			<td>
-			{% if group.charter %}
-				<a href="{% url "doc_view" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a>
-				<span class="label label-info">{{ group.charter.get_state.name }}</span>
-			{% else %}
-				(None)
-				{% if user|has_role:"Area Director,Secretariat" %}
-					<a class="btn btn-warning btn-xs" href="{% url "ietf.group.edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit charter</a>
-				{% endif %}
-			{% endif %}
-			</td>
-		{% endif %}
-	</tr>
+    <tr>
+      {% if group.features.has_chartering_process %}
+        <th>Charter</th>
+        <td>
+          {% if group.charter %}
+            <a href="{% url "doc_view" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a>
+            <span class="label label-info">{{ group.charter.get_state.name }}</span>
+          {% else %}
+            (None)
+            {% if user|has_role:"Area Director,Secretariat" %}
+              <a class="btn btn-warning btn-xs" href="{% url "ietf.group.edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit charter</a>
+            {% endif %}
+          {% endif %}
+        </td>
+      {% endif %}
+    </tr>
 
-	<tr>
-		{% with group.groupurl_set.all as urls %}
-			{% if urls %}
-				<th>More info</th>
-				<td>
-					{% for url in urls %}
-						<a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}<br>{% endif %}
-					{% endfor %}
-				</td>
-			{% endif %}
-		{% endwith %}
-	</tr>
+    <tr>
+      {% with group.groupurl_set.all as urls %}
+        {% if urls %}
+          <th>More info</th>
+          <td>
+            {% for url in urls %}
+              <a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}<br>{% endif %}
+            {% endfor %}
+          </td>
+        {% endif %}
+      {% endwith %}
+    </tr>
 
-	<tr><th rowspan="{{group.personnel|length|add:"1"}}">Personnel</th></tr>
-	{% for slug, label, roles in group.personnel %}
-		<tr>
-			<th>{{ label }}</th>
-			<td>
-				{% for r in roles %}
-					<span class="fa fa-envelope-o"></span>
-					<a href="mailto:{{ r.email.address }}">{{ r.person.plain_name }}</a>
-					<br>
-				{% endfor %}
-			</td>
-		</tr>
-	{% endfor %}
+    <tr><th rowspan="{{group.personnel|length|add:"1"}}">Personnel</th></tr>
+    {% for slug, label, roles in group.personnel %}
+      <tr>
+        <th>{{ label }}</th>
+        <td>
+          {% for r in roles %}
+            <span class="fa fa-envelope-o"></span>
+            <a href="mailto:{{ r.email.address }}">{{ r.person.plain_name }}</a>
+            <br>
+          {% endfor %}
+        </td>
+      </tr>
+    {% endfor %}
 
-	{% if group.list_email %}
-		<tr><th rowspan="4">Mailing list</th></tr>
+    {% if group.list_email %}
+      <tr><th rowspan="4">Mailing list</th></tr>
 
-		<tr><th>Address</th><td>{{ group.list_email|urlize }}</td></tr>
-		<tr><th>To subscribe</th><td>{{ group.list_subscribe|urlize }}</td></tr>
-		<tr><th>Archive</th><td>{{ group.list_archive|urlize }}</td></tr>
-	{% endif %}
+      <tr><th>Address</th><td>{{ group.list_email|urlize }}</td></tr>
+      <tr><th>To subscribe</th><td>{{ group.list_subscribe|urlize }}</td></tr>
+      <tr><th>Archive</th><td>{{ group.list_archive|urlize }}</td></tr>
+    {% endif %}
 
-	{% if group.state_id != "conclude" %}
-	<tr><th rowspan="3">Jabber chat</th></tr>
+    {% if group.state_id != "conclude" %}
+      <tr><th rowspan="3">Jabber chat</th></tr>
 
-	<tr>
-		<th>Room address</th>
-		<td><a href="xmpp://{{ group.acronym }}@jabber.ietf.org">xmpp://{{ group.acronym }}@jabber.ietf.org</a></td>
-	</tr>
+      <tr>
+        <th>Room address</th>
+        <td><a href="xmpp://{{ group.acronym }}@jabber.ietf.org">xmpp://{{ group.acronym }}@jabber.ietf.org</a></td>
+      </tr>
 
-	<tr>
-		<th>Logs</th>
-		<td><a href="//jabber.ietf.org/logs/{{ group.acronym }}/">https://jabber.ietf.org/logs/{{ group.acronym }}/</a></td>
-	</tr>
-	{% endif %}
-</table>
+      <tr>
+        <th>Logs</th>
+        <td><a href="//jabber.ietf.org/logs/{{ group.acronym }}/">https://jabber.ietf.org/logs/{{ group.acronym }}/</a></td>
+      </tr>
+    {% endif %}
+  </table>
 
-{% if group.features.has_chartering_process %}
-	<h2>Charter for {% if group.state_id == "proposed" %}proposed{% endif %} {{ group.type.desc.title }}</h2>
-	<p>{{ group.charter_text|linebreaks }}</p>
-{% else %}
-	<h2>About</h2>
-	<p>{{ group.description|default:"No description yet."|linebreaks }}</p>
-{% endif %}
+  {% if group.features.has_chartering_process %}
+    <h2>Charter for {% if group.state_id == "proposed" %}proposed{% endif %} {{ group.type.desc.title }}</h2>
+    <p>{{ group.charter_text|linebreaks }}</p>
+  {% else %}
+    <h2>About</h2>
+    <p>{{ group.description|default:"No description yet."|linebreaks }}</p>
+  {% endif %}
 
-{% if group.features.has_milestones %}
-	<h2>
-		{% if group.state_id == "proposed" %}
-			Proposed milestones
-		{% else %}
-			Milestones
-		{% endif %}
-	</h2>
-	{% include "group/milestones.html" with milestones=group.milestones %}
+  {% if group.features.has_milestones %}
+    <h2>
+      {% if group.state_id == "proposed" %}
+        Proposed milestones
+      {% else %}
+        Milestones
+      {% endif %}
+    </h2>
+    {% include "group/milestones.html" with milestones=group.milestones %}
 
-	{% if milestones_in_review %}
-		<p>{{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
-		currently in {{ milestone_reviewer }} review.</p>
-	{% endif %}
-{% endif %}
+    {% if milestones_in_review %}
+      <p>{{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
+        currently in {{ milestone_reviewer }} review.</p>
+    {% endif %}
+  {% endif %}
 
 {% endblock %}

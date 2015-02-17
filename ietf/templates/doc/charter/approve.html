@@ -5,16 +5,16 @@
 {% block title %}Approve {{ charter.canonical_name }}{% endblock %}
 
 {% block content %}
-<h1>Approve {{ charter.canonical_name }}-{{ charter.rev }}</h1>
+  <h1>Approve {{ charter.canonical_name }}-{{ charter.rev }}</h1>
 
-<form role="form" method="post">
-	{% csrf_token %}
-	<pre>{{ announcement }}</pre>
+  <form role="form" method="post">
+    {% csrf_token %}
+    <pre>{{ announcement }}</pre>
 
-        {% buttons %}
-          <button type="submit" class="btn btn-primary">Send announcement, close ballot & update revision</button>
-          <a class="btn btn-default" href="{% url "charter_edit_announcement" name=charter.canonical_name ann="action" %}?next=approve">Edit/regenerate announcement</a>
-          <a class="btn btn-default pull-right" href="{% url "doc_view" name=charter.name %}">Back</a>
-        {% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Send announcement, close ballot & update revision</button>
+      <a class="btn btn-default" href="{% url "charter_edit_announcement" name=charter.canonical_name ann="action" %}?next=approve">Edit/regenerate announcement</a>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=charter.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}

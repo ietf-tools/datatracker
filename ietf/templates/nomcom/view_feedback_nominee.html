@@ -6,54 +6,54 @@
 
 {% block nomcom_content %}
 
-<h2>Feedback about {{ nominee }} </h2>
+  <h2>Feedback about {{ nominee }} </h2>
 
-<ul class="nav nav-tabs" role="tablist">
-	{% for ft in feedback_types %}
-		<li {% if forloop.first %}class="active"{% endif %}><a href="#{{ ft.slug }}" role="tab" data-toggle="tab">{{ ft.name }}</a></li>
-	{% endfor %}
-</ul>
+  <ul class="nav nav-tabs" role="tablist">
+    {% for ft in feedback_types %}
+      <li {% if forloop.first %}class="active"{% endif %}><a href="#{{ ft.slug }}" role="tab" data-toggle="tab">{{ ft.name }}</a></li>
+    {% endfor %}
+  </ul>
 
-<div class="tab-content">
-	{% for ft in feedback_types %}
-		<div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ ft.slug }}">
-			{% for feedback in nominee.feedback_set.all %}
-				{% if feedback.type.slug == ft.slug %}
-					{% if forloop.first %}<p></p>{% else %}<hr>{% endif %}
-					<dl class="dl-horizontal">
-						<dt>From</dt>
-						<dd>{{ feedback.author|formatted_email|default:"Anonymous" }}</dd>
-						<dt>Date</dt>
-						<dd>{{ feedback.time|date:"Y-m-d" }})</dd>
+  <div class="tab-content">
+    {% for ft in feedback_types %}
+      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ ft.slug }}">
+        {% for feedback in nominee.feedback_set.all %}
+          {% if feedback.type.slug == ft.slug %}
+            {% if forloop.first %}<p></p>{% else %}<hr>{% endif %}
+            <dl class="dl-horizontal">
+              <dt>From</dt>
+              <dd>{{ feedback.author|formatted_email|default:"Anonymous" }}</dd>
+              <dt>Date</dt>
+              <dd>{{ feedback.time|date:"Y-m-d" }})</dd>
 
-						{% if ft.slug == "nomina" %}
-							{% for fn in feedback.nomination_set.all %}
-								{% if fn.candidate_name %}
-									<dt>Nominee</dt>
-									<dd>{{ fn.candidate_name }}</dd>
-								{% endif %}
-								{% if fn.candidate_phone %}
-									<dt>Nominee phone</dt>
-									<dd>{{ fn.candidate_phone }}</dd>
-								{% endif %}
-							{% endfor %}
-						{% endif %}
+              {% if ft.slug == "nomina" %}
+                {% for fn in feedback.nomination_set.all %}
+                  {% if fn.candidate_name %}
+                    <dt>Nominee</dt>
+                    <dd>{{ fn.candidate_name }}</dd>
+                  {% endif %}
+                  {% if fn.candidate_phone %}
+                    <dt>Nominee phone</dt>
+                    <dd>{{ fn.candidate_phone }}</dd>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
 
-						<dt>Positions</dt>
-						<dd>{{ feedback.positions.all|join:"," }}</dd>
-						{% if feedback.subject %}
-							<dt>Subject</dt>
-							<dd>{{ feedback.subject }}</dd>
-						{% endif %}
-						<dt>Body</dt>
-						<dd>{% decrypt feedback.comments request year 1 %}</dd>
-					</dl>
-				{% endif %}
-			{% endfor %}
-		</div>
-	{% endfor %}
-</div>
+              <dt>Positions</dt>
+              <dd>{{ feedback.positions.all|join:"," }}</dd>
+              {% if feedback.subject %}
+                <dt>Subject</dt>
+                <dd>{{ feedback.subject }}</dd>
+              {% endif %}
+              <dt>Body</dt>
+              <dd>{% decrypt feedback.comments request year 1 %}</dd>
+            </dl>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
 
-<a class="btn btn-default" href="{% url "nomcom_view_feedback" year %}">Back</a>
+  <a class="btn btn-default" href="{% url "nomcom_view_feedback" year %}">Back</a>
 
 {% endblock %}

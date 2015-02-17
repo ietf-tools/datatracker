@@ -6,32 +6,32 @@
 
 {% block content %}
 
-<h1>{{ group.name}} ({{ group.acronym }})
-	{% if group.state_id == "dormant" or group.state_id == "conclude" %}
-		<span class="label label-warning">Concluded {{ group.type.name }}</span>
-	{% endif %}
-	{% if group.state_id == "proposed" %}
-		<span class="label label-info">Proposed {{ group.type.name }}</span>
-	{% endif %}
-</h1>
+  <h1>{{ group.name}} ({{ group.acronym }})
+    {% if group.state_id == "dormant" or group.state_id == "conclude" %}
+      <span class="label label-warning">Concluded {{ group.type.name }}</span>
+    {% endif %}
+    {% if group.state_id == "proposed" %}
+      <span class="label label-info">Proposed {{ group.type.name }}</span>
+    {% endif %}
+  </h1>
 
-<ul class="nav nav-tabs" role="tablist">
-	{% for name, url in menu_entries %}
-		<li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
-			<a href="{{ url }}">{{ name }}</a>
-		</li>
-	{% endfor %}
-</ul>
+  <ul class="nav nav-tabs" role="tablist">
+    {% for name, url in menu_entries %}
+      <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
+        <a href="{{ url }}">{{ name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
 
-{% if menu_actions %}
-<div class="buttonlist">
-	{% for name, url in menu_actions %}
-		<a class="btn {% if name == "Request closing group" %}btn-warning{% else %}btn-default{% endif %}" href="{{ url }}">{{ name }}</a>
-	{% endfor %}
-</div>
-{% endif %}
+  {% if menu_actions %}
+    <div class="buttonlist">
+      {% for name, url in menu_actions %}
+        <a class="btn {% if name == "Request closing group" %}btn-warning{% else %}btn-default{% endif %}" href="{{ url }}">{{ name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
 
-{% block group_content %}
-{% endblock group_content %}
+  {% block group_content %}
+  {% endblock group_content %}
 
 {% endblock content %}

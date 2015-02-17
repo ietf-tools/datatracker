@@ -6,22 +6,22 @@
 
 {% block content %}
 
-<h1>Edit RFCs affected by status change</h1>
+  <h1>Edit RFCs affected by status change</h1>
 
-<form role="form" method="post">
-	{% csrf_token %}
+  <form role="form" method="post">
+    {% csrf_token %}
 
-        {% include "doc/status_change/edit_related_rows.html" %}
+    {% include "doc/status_change/edit_related_rows.html" %}
 
-        {% if form.non_field_errors %}
-		<div class="alert alert-danger">{{ form.non_field_errors }}</div>
-	{% endif %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
 
-        {% buttons %}
-                <button type="submit" class="btn btn-primary">Save</button>
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-        {% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}
 
 {% block js %}

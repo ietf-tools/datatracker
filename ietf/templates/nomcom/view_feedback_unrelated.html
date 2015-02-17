@@ -6,18 +6,18 @@
 
 {% block nomcom_content %}
 
-<h2>Feedback not related to nominees</h2>
+  <h2>Feedback not related to nominees</h2>
 
-<ul class="nav nav-tabs" role="tablist">
-  {% for ft in feedback_types %}
-    <li {% if forloop.first %}class="active"{% endif %}><a href="#{{ ft.ft.slug }}" role="tab" data-toggle="tab">{{ ft.ft.name }}</a></li>
-  {% endfor %}
-</ul>
+  <ul class="nav nav-tabs" role="tablist">
+    {% for ft in feedback_types %}
+      <li {% if forloop.first %}class="active"{% endif %}><a href="#{{ ft.ft.slug }}" role="tab" data-toggle="tab">{{ ft.ft.name }}</a></li>
+    {% endfor %}
+  </ul>
 
-<div class="tab-content">
-  {% for ft in feedback_types %}
-    <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ ft.ft.slug }}">
-      {% for feedback in ft.feedback %}
+  <div class="tab-content">
+    {% for ft in feedback_types %}
+      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ ft.ft.slug }}">
+        {% for feedback in ft.feedback %}
           {% if forloop.first %}<p></p>{% else %}<hr>{% endif %}
           <dl class="dl-horizontal">
             <dt>From</dt>
@@ -43,12 +43,12 @@
             <dt>Body</dt>
             <dd>{% decrypt feedback.comments request year 1 %}</dd>
           </dl>
-      {% endfor %}
-    </div>
-  {% endfor %}
-</div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
 
-<p>
-  <a class="btn btn-default" href="{% url "nomcom_view_feedback" year %}">Back</a>
-</p>
+  <p>
+    <a class="btn btn-default" href="{% url "nomcom_view_feedback" year %}">Back</a>
+  </p>
 {% endblock %}

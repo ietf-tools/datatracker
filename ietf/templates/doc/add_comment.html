@@ -5,19 +5,19 @@
 {% block title %}Add comment for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Add comment<br><small>{{ doc }}</small></h1>
+  <h1>Add comment<br><small>{{ doc }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
-	<p class="help-block">The comment will be added to the history trail.</p>
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <p class="help-block">The comment will be added to the history trail.</p>
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary">Submit</button>
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

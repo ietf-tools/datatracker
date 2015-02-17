@@ -1,33 +1,33 @@
-      {% with doc.active_ballot as ballot %}
-      {% if ballot %}
-          <br><b>Discusses/comments</b> <a href="https://datatracker.ietf.org/doc/{{doc.canonical_name}}/ballot/">[ballot]</a>:
-          <ul>
-          {% for p in ballot.active_ad_positions.values %}
-              {% if p.pos %}
-                  {% if p.discuss %}
-                      <li>
-                      <a href="#{{ doc.name }}+{{ p.ad|slugify }}+discuss">{{ p.ad }}: Discuss [{{ p.discuss_time }}]</a>:
-                      <br>{{ p.discuss }}
-                      </li>
-                  {% endif %}
-                  {% if p.comment %}
-                      <li>
-                      <a href="#{{ doc.name }}+{{ p.ad|slugify }}+comment">{{ p.ad }}: Comment [{{ p.comment_time }}]</a>:
-                      <br>{{ p.comment }}
-                      </li>
-                  {% endif %}
-              {% endif %}
-          {% endfor %}
-          </ul>
-      {% endif %}
-      {% endwith %}
+{% with doc.active_ballot as ballot %}
+  {% if ballot %}
+    <br><b>Discusses/comments</b> <a href="https://datatracker.ietf.org/doc/{{doc.canonical_name}}/ballot/">[ballot]</a>:
+    <ul>
+      {% for p in ballot.active_ad_positions.values %}
+        {% if p.pos %}
+          {% if p.discuss %}
+            <li>
+              <a href="#{{ doc.name }}+{{ p.ad|slugify }}+discuss">{{ p.ad }}: Discuss [{{ p.discuss_time }}]</a>:
+              <br>{{ p.discuss }}
+            </li>
+          {% endif %}
+          {% if p.comment %}
+            <li>
+              <a href="#{{ doc.name }}+{{ p.ad|slugify }}+comment">{{ p.ad }}: Comment [{{ p.comment_time }}]</a>:
+              <br>{{ p.comment }}
+            </li>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
 
-      <p><b>Telechat:</b></p>
+<p><b>Telechat:</b></p>
 
-      <ul>
-          <li>...</li>
-          <li>...</li>
-          <li>...</li>
-          <li>...</li>
-          <li>...</li>
-      </ul>
+<ul>
+  <li>...</li>
+  <li>...</li>
+  <li>...</li>
+  <li>...</li>
+  <li>...</li>
+</ul>

@@ -5,25 +5,25 @@
 
 {% block group_content %}
 
-<table class="table table-condensed table-striped ietf">
-	<thead>
-		<tr>
-			<th>Date</th>
-			<th>By</th>
-			<th>Action</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for e in events %}
-			<tr>
-				<td class="text-nowrap">{{ e.time|date:"Y-m-d"}}</td>
-				<td>
-					{{ e.by.plain_name }}
-				</td>
-				<td>{{ e.desc|format_history_text }}</td>
-			</tr>
-		{% endfor %}
-	</tbody>
-</table>
+  <table class="table table-condensed table-striped ietf">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>By</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in events %}
+        <tr>
+          <td class="text-nowrap">{{ e.time|date:"Y-m-d"}}</td>
+          <td>
+	    {{ e.by.plain_name }}
+          </td>
+          <td>{{ e.desc|format_history_text }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
 {% endblock %}

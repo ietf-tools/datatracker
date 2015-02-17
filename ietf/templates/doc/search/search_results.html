@@ -1,57 +1,57 @@
 {% load ietf_filters %}
 
 {% if not docs and not skip_no_matches_warning %}
-	<div class="alert alert-info">
-		No documents match your query.
-	</div>
+  <div class="alert alert-info">
+    No documents match your query.
+  </div>
 {% else %}
 
-{% if meta.max %}
-	<div class="alert alert-warning">
-		Too many documents match your query! Returning only a partial result.
-	</div>
-{% endif %}
+  {% if meta.max %}
+    <div class="alert alert-warning">
+      Too many documents match your query! Returning only a partial result.
+    </div>
+  {% endif %}
 
-<table class="table table-condensed table-striped">
-	<thead>
-		<tr>
-			<th>
-			{% if show_add_to_list and user.is_authenticated %}
-				<span class="fa fa-bookmark"></span>
-			{% endif %}
-			</th>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>
+	  {% if show_add_to_list and user.is_authenticated %}
+	    <span class="fa fa-bookmark"></span>
+	  {% endif %}
+        </th>
 
-			{% for h in meta.headers %}
-				{% if h.title != "Title" %}
-					<th class="{{ h.key }}">
-					{% if "sort_url" in h %}
-						<a href="{{ h.sort_url }}">{{ h.title }}
-						{% if h.sorted %}<span class="fa fa-caret-down"></span>{% endif %}
-						</a>
-					{% else %}
-						{{ h.title }}
-					{% endif %}
-					</th>
-				{% endif %}
-			{% endfor %}
-		</tr>
-	</thead>
+        {% for h in meta.headers %}
+          {% if h.title != "Title" %}
+            <th class="{{ h.key }}">
+	      {% if "sort_url" in h %}
+	        <a href="{{ h.sort_url }}">{{ h.title }}
+	          {% if h.sorted %}<span class="fa fa-caret-down"></span>{% endif %}
+	        </a>
+	      {% else %}
+	        {{ h.title }}
+	      {% endif %}
+            </th>
+          {% endif %}
+        {% endfor %}
+      </tr>
+    </thead>
 
-	{% regroup docs by search_heading as grouped_docs %}
+    {% regroup docs by search_heading as grouped_docs %}
 
-	<tbody>
-	{% for doc_group in grouped_docs %}
-		<tr class="warning">
-			<th></th>
-			<th colspan="{{ meta.headers|length|add:"-1" }}">
-				{{ doc_group.grouper|plural:doc_group.list }}
-			</th>
-		</tr>
+    <tbody>
+      {% for doc_group in grouped_docs %}
+        <tr class="warning">
+          <th></th>
+          <th colspan="{{ meta.headers|length|add:"-1" }}">
+	    {{ doc_group.grouper|plural:doc_group.list }}
+          </th>
+        </tr>
 
-		{% for doc in doc_group.list %}
-			{% include "doc/search/search_result_row.html" %}
-		{% endfor %}
-	{% endfor %}
-	</tbody>
-</table>
+        {% for doc in doc_group.list %}
+          {% include "doc/search/search_result_row.html" %}
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
 {% endif %}

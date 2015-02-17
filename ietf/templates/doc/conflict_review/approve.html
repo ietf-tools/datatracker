@@ -5,18 +5,18 @@
 {% block title %}Approve {{ review.canonical_name }}{% endblock %}
 
 {% block content %}
-<h1>Approve {{ review.canonical_name }}</h1>
+  <h1>Approve {{ review.canonical_name }}</h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-warning">Send announcement & close ballot</button>
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=review.name %}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-warning">Send announcement & close ballot</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=review.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

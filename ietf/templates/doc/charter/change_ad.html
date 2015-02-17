@@ -3,22 +3,22 @@
 {% load bootstrap3 %}
 
 {% block title %}
-Change responsible AD for {{ charter.canonical_name }}-{{ charter.rev }}
+  Change responsible AD for {{ charter.canonical_name }}-{{ charter.rev }}
 {% endblock %}
 
 {% block content %}
-<h1>Change responsible AD<br><small>{{ charter.canonical_name }}-{{ charter.rev }}</small></h1>
+  <h1>Change responsible AD<br><small>{{ charter.canonical_name }}-{{ charter.rev }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" enctype="multipart/form-data" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary">Submit</button>
-        <a class="btn btn-default pull-right" href="{% url "doc_view" name=charter.canonical_name %}">Back</a>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=charter.canonical_name %}">Back</a>
     {% endbuttons %}
-</form>
+  </form>
 
 {% endblock %}

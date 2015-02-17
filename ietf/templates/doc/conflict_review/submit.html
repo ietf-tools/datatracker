@@ -3,26 +3,26 @@
 {% load bootstrap3 %}
 
 {% block title %}
-Edit conflict review for {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}
+  Edit conflict review for {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}
 {% endblock %}
 
 {% block content %}
-<h1>Edit conflict review<br><small>{{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}</small></h1>
+  <h1>Edit conflict review<br><small>{{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<p class="alert alert-info">The text will be submitted as <strong>{{ review.canonical_name }}-{{ next_rev }}</strong></p>
+  <p class="alert alert-info">The text will be submitted as <strong>{{ review.canonical_name }}-{{ next_rev }}</strong></p>
 
-<form role="form" enctype="multipart/form-data" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary" name="submit_response">Submit</button>
-		<button type="submit" class="btn btn-warning" name="reset_text">Reset to template text</button>
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=review.canonical_name %}">Back</a>
-	{% endbuttons %}
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="submit_response">Submit</button>
+      <button type="submit" class="btn btn-warning" name="reset_text">Reset to template text</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=review.canonical_name %}">Back</a>
+    {% endbuttons %}
 
-</form>
+  </form>
 
 {% endblock %}

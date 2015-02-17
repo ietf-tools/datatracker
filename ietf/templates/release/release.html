@@ -3,31 +3,31 @@
 {% block title %}Release information{% endblock %}
 
 {% block content %}
-<h1>
-<a href="//trac.tools.ietf.org/tools/ietfdb/browser/tags/{{entry.version}}">
-Version {{ entry.version }}</a>
-<br><small>Released {{ entry.date }}</small>
-</h1>
+  <h1>
+    <a href="//trac.tools.ietf.org/tools/ietfdb/browser/tags/{{entry.version}}">
+      Version {{ entry.version }}</a>
+    <br><small>Released {{ entry.date }}</small>
+  </h1>
 
-<ul class="pager">
-	<li class="previous {% if not entry.prev %}disabled{% endif %}">
-		<a href="{% if entry.prev %}/release/{{entry.prev.version}}/{% else %}#{% endif %}"><span class="fa fa-long-arrow-left"></span> Previous release</a>
-	</li>
-	<li class="next {% if not entry.next %}disabled{% endif %}">
-		<a href="{% if entry.next %}/release/{{entry.next.version}}/{% else %}#{% endif %}">Next release <span class="fa fa-long-arrow-right"></span></a>
-	</li>
-</ul>
+  <ul class="pager">
+    <li class="previous {% if not entry.prev %}disabled{% endif %}">
+      <a href="{% if entry.prev %}/release/{{entry.prev.version}}/{% else %}#{% endif %}"><span class="fa fa-long-arrow-left"></span> Previous release</a>
+    </li>
+    <li class="next {% if not entry.next %}disabled{% endif %}">
+      <a href="{% if entry.next %}/release/{{entry.next.version}}/{% else %}#{% endif %}">Next release <span class="fa fa-long-arrow-right"></span></a>
+    </li>
+  </ul>
 
-<h2>{{ entry.version }} release notes</h2>
+  <h2>{{ entry.version }} release notes</h2>
 
-<pre>{{entry.logentry|safe}}</pre>
+  <pre>{{entry.logentry|safe}}</pre>
 
-<h2>All releases</h2>
+  <h2>All releases</h2>
 
-{% for item in releases %}
+  {% for item in releases %}
     {% ifchanged %}<h3>{{ item.date|slice:"7:11" }}</h3>{% endifchanged %}
-        <div><a href="/release/{{item.version}}/">{{ item.version }}</a> from {{ item.date|slice:":11" }} {% if item.title %}- {{ item.title }}{% endif %}</div>
-{% endfor %}
+    <div><a href="/release/{{item.version}}/">{{ item.version }}</a> from {{ item.date|slice:":11" }} {% if item.title %}- {{ item.title }}{% endif %}</div>
+  {% endfor %}
 
-</div>
+    </div>
 {% endblock %}

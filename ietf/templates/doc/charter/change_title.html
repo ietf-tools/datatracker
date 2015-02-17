@@ -5,17 +5,17 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<h1>{{ title }}</h1>
+  <h1>{{ title }}</h1>
 
-<form role="form" class="change-title" method="post">
-  {% csrf_token %}
+  <form role="form" class="change-title" method="post">
+    {% csrf_token %}
 
-  {% bootstrap_form form %}
+    {% bootstrap_form form %}
 
-  {% buttons %}
-    <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-    <button class="btn btn-primary" type="submit">Save and (possibly) notify Secretariat</button>
-  {% endbuttons %}
-</form>
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+      <button class="btn btn-primary" type="submit">Save and (possibly) notify Secretariat</button>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

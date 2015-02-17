@@ -1,11 +1,11 @@
 {% extends "ipr/search_result.html" %}
 
 {% block search_header %}
-        {% if not iprs %}
-		Search result on {{ q }}
-	{% else %}
-		IPR disclosure title search result
-	{% endif %}
+  {% if not iprs %}
+    Search result on {{ q }}
+  {% else %}
+    IPR disclosure title search result
+  {% endif %}
 {% endblock %}
 
 {% block intro_prefix %}IPR that{% endblock %}

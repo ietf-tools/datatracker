@@ -6,38 +6,40 @@
 
 
 {% block content %}
-<h1>Change {{ state_type.label }}<br><small>{{ doc }}</small></h1>
+  <h1>Change {{ state_type.label }}<br><small>{{ doc }}</small></h1>
 
-{% if next_states %}
-	<p>
-		<b>Move document to {{ next_states|pluralize:"to one of" }} the recommended next state{{ next_states|pluralize }}:</b>
-	</p>
-	<p class="buttonlist">
-		{% for state in next_states %}
-			<button class="btn btn-default next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
-		{% endfor %}
-		<a class="btn btn-info pull-right" href="{% url "state_help" type=state_type.slug %}">Help on states</a>
-	</p>
-{% endif %}
+  {% if next_states %}
+    <p>
+      <b>Move document to {{ next_states|pluralize:"to one of" }} the recommended next state{{ next_states|pluralize }}:</b>
+    </p>
+    <p class="buttonlist">
+      {% for state in next_states %}
+        <button class="btn btn-default next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
+      {% endfor %}
+      <a class="btn btn-info pull-right" href="{% url "state_help" type=state_type.slug %}">Help on states</a>
+    </p>
+  {% endif %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
-	{% buttons %}
-		<button type="submit" class="btn btn-primary">Submit</button>
-		<a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-	{% endbuttons %}
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}
 
-{% block scripts %}
-$(document).ready(function () {
-	$("button.next-state").click(function (e) {
-		var s = $(this).data("state");
-		if (s) {
-			e.preventDefault();
-			$("#id_new_state").val(s);
-		}
-	});
-});
+{% block js %}
+  <script>
+   $(document).ready(function () {
+      $("button.next-state").click(function (e) {
+          var s = $(this).data("state");
+          if (s) {
+              e.preventDefault();
+              $("#id_new_state").val(s);
+          }
+      });
+   });
+  </script>
 {% endblock %}

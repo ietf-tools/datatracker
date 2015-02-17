@@ -10,22 +10,22 @@
 {% endblock %}
 
 {% block content %}
-<h1>Change document shepherd<br><small>{{ doc.name }}-{{ doc.rev }}</small></h1>
+  <h1>Change document shepherd<br><small>{{ doc.name }}-{{ doc.rev }}</small></h1>
 
-<p>The shepherd needs to have a Datatracker account. A new account can be
-  <a href="{% url "create_account" %}">created here</a>.</p>
+  <p>The shepherd needs to have a Datatracker account. A new account can be
+    <a href="{% url "create_account" %}">created here</a>.</p>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" enctype="multipart/form-data" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+    <form role="form" enctype="multipart/form-data" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
 
-	{% buttons %}
-                <button type="submit" class="btn btn-primary">Save</button>
-                <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-	{% endbuttons %}
-</form>
+      {% buttons %}
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+      {% endbuttons %}
+    </form>
 {% endblock %}
 
 {% block js %}

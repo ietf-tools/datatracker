@@ -5,29 +5,29 @@
 {% block title %}Other RFC streams{% endblock %}
 
 {% block content %}
-<h1>Other RFC streams</h1>
+  <h1>Other RFC streams</h1>
 
-<table class="table table-condensed table-striped">
-	<thead>
-		<th>Stream</th>
-		<th>Owner</th>
-		<th>Stream manager</th>
-	</thead>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <th>Stream</th>
+      <th>Owner</th>
+      <th>Stream manager</th>
+    </thead>
 
-	<tbody>
-		{% for stream in streams %}
-			<tr>
-				<td class="text-nowrap"><a href="/stream/{{stream.acronym}}/">{{ stream.acronym }}</a></td>
-				<td>{{ stream.name }}</td>
-				<td>
-					{% with stream.get_chair as role %}
-						<a href="mailto:{{role.person.email_address}}">{{role.person}}</a>
-						({{role.name}})
-					{% endwith %}
-				</td>
-			</tr>
-			{% endfor %}
-	</tbody>
-</table>
+    <tbody>
+      {% for stream in streams %}
+        <tr>
+          <td class="text-nowrap"><a href="/stream/{{stream.acronym}}/">{{ stream.acronym }}</a></td>
+          <td>{{ stream.name }}</td>
+          <td>
+	    {% with stream.get_chair as role %}
+	      <a href="mailto:{{role.person.email_address}}">{{role.person}}</a>
+	      ({{role.name}})
+	    {% endwith %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}
 

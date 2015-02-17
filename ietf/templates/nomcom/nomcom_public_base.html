@@ -6,19 +6,19 @@
 
 {% block content %}
 
-<h1>NomCom {{ year }}</h1>
+  <h1>NomCom {{ year }}</h1>
 
-<ul class="nav nav-tabs" role="tablist">
-	<li {% if selected == "index" %}class="active"{% endif %}><a href="{% url "nomcom_year_index" year %}">Home</a></li>
-	{% if nomcom|has_publickey %}
-		<li {% if selected == "nominate" %}class="active"{% endif %}><a href="{% url "nomcom_public_nominate" year %}">Nominate</a></li>
-		<li {% if selected == "feedback" %}class="active"{% endif %}><a href="{% url "nomcom_public_feedback" year %}">Provide feedback</a></li>
-	{% endif %}
-	<li {% if selected == "requirements" %}class="active"{% endif %}><a href="{% url "nomcom_requirements" year %}">Desired expertise</a></li>
-	<li {% if selected == "questionnaires" %}class="active"{% endif %}><a href="{% url "nomcom_questionnaires" year %}">Questionnaires</a></li>
-</ul>
+  <ul class="nav nav-tabs" role="tablist">
+    <li {% if selected == "index" %}class="active"{% endif %}><a href="{% url "nomcom_year_index" year %}">Home</a></li>
+    {% if nomcom|has_publickey %}
+      <li {% if selected == "nominate" %}class="active"{% endif %}><a href="{% url "nomcom_public_nominate" year %}">Nominate</a></li>
+      <li {% if selected == "feedback" %}class="active"{% endif %}><a href="{% url "nomcom_public_feedback" year %}">Provide feedback</a></li>
+    {% endif %}
+    <li {% if selected == "requirements" %}class="active"{% endif %}><a href="{% url "nomcom_requirements" year %}">Desired expertise</a></li>
+    <li {% if selected == "questionnaires" %}class="active"{% endif %}><a href="{% url "nomcom_questionnaires" year %}">Questionnaires</a></li>
+  </ul>
 
-{% block nomcom_content %}
-{% endblock %}
+  {% block nomcom_content %}
+  {% endblock %}
 
 {% endblock %}

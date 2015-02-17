@@ -7,50 +7,50 @@
 {% block title %}Send ballot position for {{ ad }}{% endblock %}
 
 {% block content %}
-<h1>Send ballot position for {{ ad }}</h1>
+  <h1>Send ballot position for {{ ad }}</h1>
 
-<form role="form" method="post">
-	{% csrf_token %}
+  <form role="form" method="post">
+    {% csrf_token %}
 
-	<div class="form-group">
-		<label>From</label>
-		<input class="form-control" type="text" placeholder="{{ frm }}" disabled>
-	</div>
+    <div class="form-group">
+      <label>From</label>
+      <input class="form-control" type="text" placeholder="{{ frm }}" disabled>
+    </div>
 
-	<div class="form-group">
-		<label>To</label>
-		<input class="form-control" type="text" placeholder="{{ to }}" disabled>
-	</div>
+    <div class="form-group">
+      <label>To</label>
+      <input class="form-control" type="text" placeholder="{{ to }}" disabled>
+    </div>
 
-	<div class="form-group">
-		<label>Cc</label>
-		<input class="form-control" type="email" name="cc">
-		<span class="help-block">Separate email addresses with commas.</span>
-	</div>
+    <div class="form-group">
+      <label>Cc</label>
+      <input class="form-control" type="email" name="cc">
+      <span class="help-block">Separate email addresses with commas.</span>
+    </div>
 
-	{% if doc.notify %}
-		<div class="checkbox">
-			<label>
-				<input type="checkbox" name="cc_state_change" value="1" checked>
-				<b>Cc:</b> {{ doc.notify }}
-			</label>
-		</div>
-	{% endif %}
+    {% if doc.notify %}
+      <div class="checkbox">
+        <label>
+          <input type="checkbox" name="cc_state_change" value="1" checked>
+          <b>Cc:</b> {{ doc.notify }}
+        </label>
+      </div>
+    {% endif %}
 
-	<div class="form-group">
-		<label>Subject</label>
-		<input class="form-control" type="text" placeholder="{{ subject }}" disabled>
-	</div>
+    <div class="form-group">
+      <label>Subject</label>
+      <input class="form-control" type="text" placeholder="{{ subject }}" disabled>
+    </div>
 
-	<div class="form-group">
-		<label>Body</label>
-		<pre>{{ body|wrap_text }}</pre>
-	</div>
+    <div class="form-group">
+      <label>Body</label>
+      <pre>{{ body|wrap_text }}</pre>
+    </div>
 
-        {% buttons %}
-                <button type="submit" class="btn btn-danger">Send</button>
-		<a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
-        {% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-danger">Send</button>
+      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

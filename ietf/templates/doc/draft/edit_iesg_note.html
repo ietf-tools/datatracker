@@ -5,18 +5,18 @@
 {% block title %}Edit IESG note for {{ doc.name }}{% endblock %}
 
 {% block content %}
-<h1>Edit IESG note<br><small>{{ doc.name }}</small></h1>
+  <h1>Edit IESG note<br><small>{{ doc.name }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-                <button type="submit" class="btn btn-primary">Save</button>
-		<a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

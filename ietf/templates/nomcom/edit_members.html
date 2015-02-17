@@ -5,18 +5,18 @@
 {% block subtitle %} - Edit members{% endblock %}
 
 {% block nomcom_content %}
-<h2>Edit members</h2>
+  <h2>Edit members</h2>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
-	<input type="hidden" name="{{ stage_field }}" value="1">
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <input type="hidden" name="{{ stage_field }}" value="1">
 
-	{% buttons %}
-		<input class="btn btn-primary" type="submit" value="Preview">
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="Preview">
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

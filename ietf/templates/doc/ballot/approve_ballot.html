@@ -5,21 +5,21 @@
 {% block title %}Approve ballot for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Approve ballot<br><small>{{ doc }}</small></h1>
+  <h1>Approve ballot<br><small>{{ doc }}</small></h1>
 
-<form role="form" method="post">
-	{% csrf_token %}
-	<pre>{{ announcement }}</pre>
+  <form role="form" method="post">
+    {% csrf_token %}
+    <pre>{{ announcement }}</pre>
 
-        {% buttons %}
-                {% if action == "to_announcement_list" %}
-			<button class="btn btn-warning" type="submit">Notify RFC Editor, send announcement & close ballot</button>
-		{% elif action == "to_rfc_editor" %}
-			<button class="btn btn-warning" type="submit">Email RFC Editor & close ballot</button>
-		{% elif action == "do_not_publish" %}
-			<button class="btn btn-warning" type="submit">Email RFC Editor (DNP) & close ballot"/>
-		{% endif %}
-		<a class="btn btn-default pull-right" href="{% url "doc_ballot_approvaltext" name=doc.name %}">Back</a>
-        {% endbuttons %}
-</form>
+    {% buttons %}
+      {% if action == "to_announcement_list" %}
+        <button class="btn btn-warning" type="submit">Notify RFC Editor, send announcement & close ballot</button>
+      {% elif action == "to_rfc_editor" %}
+        <button class="btn btn-warning" type="submit">Email RFC Editor & close ballot</button>
+      {% elif action == "do_not_publish" %}
+        <button class="btn btn-warning" type="submit">Email RFC Editor (DNP) & close ballot"/>
+      {% endif %}
+      <a class="btn btn-default pull-right" href="{% url "doc_ballot_approvaltext" name=doc.name %}">Back</a>
+      {% endbuttons %}
+  </form>
 {% endblock %}

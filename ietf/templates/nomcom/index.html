@@ -3,38 +3,38 @@
 {% block title %}IAB/IESG NomComs{% endblock %}
 
 {% block content %}
-<h1>IAB/IESG NomComs</h1>
+  <h1>IAB/IESG NomComs</h1>
 
-<table class="table table-condensed table-striped">
-	<thead>
-		<tr>
-			<th>Year</th>
-			<th>Chair</th>
-			<th>Announcements</th>
-			<th>Pages</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for nomcom in nomcom_list|dictsortreversed:"label" %}
-			<tr>
-				<td>{{ nomcom.label }}</td>
-				<td >
-					{% with nomcom.get_chair as role %}
-					<a href="mailto:{{role.person.email_address}}">{{role.person}}</a>
-					{% endwith %}
-				</td>
-				<td>
-					{% if nomcom.ann_url %}
-					<a href="{{ nomcom.ann_url }}">Announcements</a>
-					{% endif %}
-				</td>
-				<td>
-					{% if nomcom.url %}
-					<a href="{{ nomcom.url }}">Pages</a>
-					{% endif %}
-				</td>
-			</tr>
-		{% endfor %}
-	</tbody>
-</table>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>Chair</th>
+        <th>Announcements</th>
+        <th>Pages</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for nomcom in nomcom_list|dictsortreversed:"label" %}
+        <tr>
+          <td>{{ nomcom.label }}</td>
+          <td >
+	    {% with nomcom.get_chair as role %}
+	      <a href="mailto:{{role.person.email_address}}">{{role.person}}</a>
+	    {% endwith %}
+          </td>
+          <td>
+	    {% if nomcom.ann_url %}
+	      <a href="{{ nomcom.ann_url }}">Announcements</a>
+	    {% endif %}
+          </td>
+          <td>
+	    {% if nomcom.url %}
+	      <a href="{{ nomcom.url }}">Pages</a>
+	    {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}

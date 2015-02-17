@@ -5,17 +5,17 @@
 {% block title %}Approve {{doc.canonical_name }}{% endblock %}
 
 {% block content %}
-<h1>Approve<br><small>{{ doc.canonical_name }}</small></h1>
+  <h1>Approve<br><small>{{ doc.canonical_name }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_formset formset %}
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_formset formset %}
 
-	{% buttons %}
-        <button type="submit" class="btn btn-primary" >Send announcement & close ballot</button>
-        <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" >Send announcement & close ballot</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}

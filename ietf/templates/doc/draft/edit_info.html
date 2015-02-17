@@ -6,17 +6,17 @@
 {% block title %}Edit info for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Edit info<br><small>{{ doc }}</small></h1>
+  <h1>Edit info<br><small>{{ doc }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button class="btn btn-primary" type="submit">Submit</button>
-		<a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button class="btn btn-primary" type="submit">Submit</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}

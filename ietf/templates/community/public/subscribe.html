@@ -6,24 +6,24 @@
 
 {% block content %}
 
-{% if success %}
-	<h1>Subscription successful</h1>
+  {% if success %}
+    <h1>Subscription successful</h1>
 
-	<p>We have sent an email to your email address with instructions to complete your subscription.</p>
-{% else %}
-	<h1>Subscribe to {{ cl.long_name }}</h1>
+    <p>We have sent an email to your email address with instructions to complete your subscription.</p>
+  {% else %}
+    <h1>Subscribe to {{ cl.long_name }}</h1>
 
-	{% bootstrap_messages %}
+    {% bootstrap_messages %}
 
-	<p>Subscribe to the email list for notifications of {% if significant %}significant {% endif %}changes on {{ cl.long_name }}.</p>
+    <p>Subscribe to the email list for notifications of {% if significant %}significant {% endif %}changes on {{ cl.long_name }}.</p>
 
-	<form role="form" method="post">
-		{% csrf_token %}
-		{% bootstrap_form form %}
+    <form role="form" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
 
-		{% buttons %}
-			<button type="submit" class="btn btn-primary">Subscribe</button>
-		{% endbuttons %}
-	</form>
-{% endif %}
+      {% buttons %}
+        <button type="submit" class="btn btn-primary">Subscribe</button>
+      {% endbuttons %}
+    </form>
+  {% endif %}
 {% endblock %}

@@ -5,33 +5,33 @@
 {% block title %}Writeups for {{ doc.name }}-{{ doc.rev }}{% endblock %}
 
 {% block content %}
-{{ top|safe }}
+  {{ top|safe }}
 
-{% for title, subtitle, writeups in sections %}
-	<h2>
-		{{ title|capfirst_allcaps }}
-		{% if subtitle %}
-			<br><small>{{ subtitle|safe }}</small>
-		{% endif %}
-	</h2>
+  {% for title, subtitle, writeups in sections %}
+    <h2>
+      {{ title|capfirst_allcaps }}
+      {% if subtitle %}
+        <br><small>{{ subtitle|safe }}</small>
+      {% endif %}
+    </h2>
 
-	{% for name, text, url in writeups %}
-		{% if text %}
-			<pre>{{ text|urlize }}</pre>
-		{% endif %}
+    {% for name, text, url in writeups %}
+      {% if text %}
+        <pre>{{ text|urlize }}</pre>
+      {% endif %}
 
-		<p>
-		{% if can_edit %}
-			<a href="{{ url }}" class="btn btn-primary">
-			{% if text %}
-				Edit
-			{% else %}
-				Generate
-			{% endif %}
-			{{ name|lower_allcaps }}
-			</a>
-		{% endif %}
-		</p>
-	{% endfor %}
-{% endfor %}
+      <p>
+        {% if can_edit %}
+          <a href="{{ url }}" class="btn btn-primary">
+            {% if text %}
+              Edit
+            {% else %}
+              Generate
+            {% endif %}
+            {{ name|lower_allcaps }}
+          </a>
+        {% endif %}
+      </p>
+    {% endfor %}
+  {% endfor %}
 {% endblock content %}

@@ -3,24 +3,24 @@
   {% for fieldset in form.get_fieldsets %}
     {% if fieldset.name %}
       <div class="fieldset">
-      <h2>{{ fieldset.name }}</h2>
+        <h2>{{ fieldset.name }}</h2>
     {% endif %}
 
     {% for field in fieldset.fields %}
       <div id="baseform-fieldname-{{ field.html_name }}"
-          {% if field.field.widget.is_hidden %}style="display: none;"{% endif %}
-          class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
-        <label for="id_{{ field.html_name }}">{{ field.label }}
-        {% if field.field.required %}
-          <span class="fieldRequired" title="Required">*</span>
-        {% endif %}
-        </label>
-        <div class="fieldWidget">
-        <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
-        {{ field }}
-	<pre>{{ field.errors }}</pre>
-        </div>
-        <div class="endfield"></div>
+           {% if field.field.widget.is_hidden %}style="display: none;"{% endif %}
+           class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
+           <label for="id_{{ field.html_name }}">{{ field.label }}
+             {% if field.field.required %}
+               <span class="fieldRequired" title="Required">*</span>
+             {% endif %}
+           </label>
+           <div class="fieldWidget">
+             <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
+             {{ field }}
+	     <pre>{{ field.errors }}</pre>
+           </div>
+           <div class="endfield"></div>
       </div>
     {% endfor %}
 

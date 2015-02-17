@@ -1,7 +1,7 @@
 {% load ietf_filters %}
 {% if editable_streams %}
-<li class="sect">Streams</li>
+  <li class="sect">Streams</li>
   {% for stream in editable_streams %}
-  <li{% if forloop.last %} style="margin-bottom: 2px;"{% endif %}><a href="{% url "ietf.group.views_stream.stream_edit" stream.slug %}">{{ stream.name }} stream</a></li>
+    <li{% if forloop.last %} style="margin-bottom: 2px;"{% endif %}><a href="{% url "ietf.group.views_stream.stream_edit" stream.slug %}">{{ stream.name }} stream</a></li>
   {% endfor %}
 {% endif %}

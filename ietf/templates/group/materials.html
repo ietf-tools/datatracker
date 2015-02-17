@@ -28,34 +28,34 @@
             <td>{{ d.rev }}</td>
             <td>{{ d.time|date:"Y-m-d" }}</td>
             <td>{% regroup d.last_presented by session.meeting as past_pres_list %}
-                {% for p in past_pres_list %}
-                  {{ p.grouper }}
-                   {% if p.list|length > 1 %}
-                       ({{ p.list|length }} sessions)
-                   {% else %}
-                       {% for pr in p.list %}
-                         {% if pr.rev != d.rev %}
-                           (-{{ pr.rev }})
-                         {% endif %}
-                       {% endfor %}
-                   {% endif %}
-                   {% if not forloop.last %}, {% endif %}
-               {% endfor %}
-            <td>{% regroup d.future_presentations by session.meeting as meeting_pres_list %} 
+              {% for p in past_pres_list %}
+                {{ p.grouper }}
+                {% if p.list|length > 1 %}
+                  ({{ p.list|length }} sessions)
+                {% else %}
+                  {% for pr in p.list %}
+                    {% if pr.rev != d.rev %}
+                      (-{{ pr.rev }})
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+                {% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              <td>{% regroup d.future_presentations by session.meeting as meeting_pres_list %} 
                 {% for p in meeting_pres_list %}
-                   {{ p.grouper }}
-                   {% if p.list|length > 1 %}
-                       ({{ p.list|length }} sessions)
-                   {% else %}
-                       {% for pr in p.list %}
-                         {% if pr.rev != d.rev %}
-                           (-{{ pr.rev }})
-                         {% endif %}
-                       {% endfor %}
-                   {% endif %}
-                   {% if not forloop.last %}, {% endif %}
+                  {{ p.grouper }}
+                  {% if p.list|length > 1 %}
+                    ({{ p.list|length }} sessions)
+                  {% else %}
+                    {% for pr in p.list %}
+                      {% if pr.rev != d.rev %}
+                        (-{{ pr.rev }})
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                  {% if not forloop.last %}, {% endif %}
                 {% endfor %}
-            </td>
+              </td>
           </tr>
         {% endfor %}
       </table>

@@ -1,64 +1,64 @@
 {% extends "ietf.html" %}
 
 {% block title %}
-References to {{alias_name}}
+  References to {{alias_name}}
 {% endblock %}
 
 {% block content %}
-<h1>References to {{alias_name}}</h1>
+  <h1>References to {{alias_name}}</h1>
 
-<p class="alert alert-info">
-	This is an experimental product. These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
-</p>
+  <p class="alert alert-info">
+    This is an experimental product. These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
+  </p>
 
-<p>
-Showing RFCs and active Internet-Drafts, sorted by <a href="{% url 'relationship_subset_help' subset='reference' %}">reference type</a>, then document name.
-</p>
+  <p>
+    Showing RFCs and active Internet-Drafts, sorted by <a href="{% url 'relationship_subset_help' subset='reference' %}">reference type</a>, then document name.
+  </p>
 
-{% if numdocs %}
-	<div class="alert alert-warning">
-		<p>Showing only the first 250 of {{ numdocs }} documents.</p>
-		<p><a class="btn btn-default" href="?full=True">Show all</a></p>
-	</div>
-{% endif %}
+  {% if numdocs %}
+    <div class="alert alert-warning">
+      <p>Showing only the first 250 of {{ numdocs }} documents.</p>
+      <p><a class="btn btn-default" href="?full=True">Show all</a></p>
+    </div>
+  {% endif %}
 
-<table class="table table-condensed table-striped">
-	<thead>
-		<tr>
-			<th>Document</th>
-			<th>Title</th>
-			<th>Status</th>
-			<th>Type</th>
-			<th>Downref</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for ref in refs %}
-			{% with ref.source.canonical_name as name %}
-				<tr>
-					<td>
-						<a href="{% url 'doc_view' name=name %}">{{name}}</a>
-						{% if ref.target.name != alias_name %}
-							<br><span class="label label-info">As {{ref.target.name}}</span>
-						{% endif %}
-					</td>
-					<td>
-						<b>{{ref.source.title}}</b><br>
-						<a class="btn btn-default btn-xs" href="{% url 'doc_references' name %}">Refs</a>
-						<a class="btn btn-default btn-xs" href="{% url 'doc_referenced_by' name %}">Ref'd by</a>
-					</td>
-					<td>
-						{% ifequal ref.source.get_state.slug 'rfc' %}
-							{% with ref.source.std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
-						{% else %}
-							{% with ref.source.intended_std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
-						{% endifequal %}
-					</td>
-					<td>{{ref.relationship.name}}</td>
-					<td>{{ref.is_downref|default:''}}</td>
-				</tr>
-			{% endwith %}
-		{% endfor %}
-	</tbody>
-</table>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Type</th>
+        <th>Downref</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ref in refs %}
+        {% with ref.source.canonical_name as name %}
+          <tr>
+            <td>
+	      <a href="{% url 'doc_view' name=name %}">{{name}}</a>
+	      {% if ref.target.name != alias_name %}
+	        <br><span class="label label-info">As {{ref.target.name}}</span>
+	      {% endif %}
+            </td>
+            <td>
+	      <b>{{ref.source.title}}</b><br>
+	      <a class="btn btn-default btn-xs" href="{% url 'doc_references' name %}">Refs</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'doc_referenced_by' name %}">Ref'd by</a>
+            </td>
+            <td>
+	      {% ifequal ref.source.get_state.slug 'rfc' %}
+	        {% with ref.source.std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
+	{% else %}
+	        {% with ref.source.intended_std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
+	      {% endifequal %}
+            </td>
+            <td>{{ref.relationship.name}}</td>
+            <td>{{ref.is_downref|default:''}}</td>
+          </tr>
+        {% endwith %}
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}

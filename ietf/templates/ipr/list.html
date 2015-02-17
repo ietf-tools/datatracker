@@ -13,20 +13,20 @@
       <h1>Intellectual property rights disclosures</h1>
 
       <div class="alert alert-info">
-	<p>
+        <p>
 	  This page provides a mechanism for filing disclosures about intellectual property rights (IPR) and for finding out what IPR disclosures have been filed.  The IETF intellectual property rights rules are defined in RFC 3979, <a href="http://www.ietf.org/rfc/rfc3979.txt">"Intellectual Property Rights in IETF Technology."</a>
-	</p>
+        </p>
 
         <p>
 	  The IETF takes no position regarding the validity or scope of any
 	  intellectual property rights or other rights that might be claimed to
 	  pertain to the implementation or use of the technology described in any IETF documents or the extent to
 	  which any license under such rights might or might not be available; nor does it represent that it has made any independent effort to identify any such rights.
-	</p>
+        </p>
       </div>
 
       <p class="buttonlist">
-	<a class="btn btn-default" href="{% url "ietf.ipr.views.about" %}">Submit an IPR disclosure</a>
+        <a class="btn btn-default" href="{% url "ietf.ipr.views.about" %}">Submit an IPR disclosure</a>
         <a class="btn btn-default" href="{% url "ietf.ipr.views.search" %}">Search IPR disclosures</a>
         {% if user|has_role:"Secretariat" %}
           <a class="btn btn-default" href="{% url "ipr_admin_main" %}">Administrative View</a>
@@ -49,9 +49,9 @@
 
     <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
-	<li><a href="#generic">Generic IPR disclosures</a></li>
-	<li><a href="#specific">Specific IPR disclosures</a></li>
-	<li><a href="#notify">Specific third-party IPR disclosures</a></li>
+        <li><a href="#generic">Generic IPR disclosures</a></li>
+        <li><a href="#specific">Specific IPR disclosures</a></li>
+        <li><a href="#notify">Specific third-party IPR disclosures</a></li>
       </ul>
     </div>
   </div>

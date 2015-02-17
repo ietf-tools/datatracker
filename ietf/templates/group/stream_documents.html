@@ -5,13 +5,13 @@
 {% block title %}{{ stream }} stream documents{% endblock %}
 
 {% block content %}
-<h1>{{ stream }} stream documents</h1>
+  <h1>{{ stream }} stream documents</h1>
 
-{% if editable %}
-<p>
-	<a class="btn btn-default" href="{% url "ietf.group.views_stream.stream_edit" stream.slug %}">Assign delegates</a>
-</p>
-{% endif %}
+  {% if editable %}
+    <p>
+      <a class="btn btn-default" href="{% url "ietf.group.views_stream.stream_edit" stream.slug %}">Assign delegates</a>
+    </p>
+  {% endif %}
 
-{% include "doc/search/search_results.html" %}
+  {% include "doc/search/search_results.html" %}
 {% endblock %}

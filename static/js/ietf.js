@@ -14,7 +14,7 @@ jQuery.ajaxSetup({
 
 // Remember the state of the "browsehappy" alert
 $('#browsehappy .close').click(function(e) {
-	e.preventDefault();
+    e.preventDefault();
     $.cookie('browsehappy', 'closed', { path: '/' });
 });
 
@@ -25,98 +25,98 @@ if(typeof $.cookie('browsehappy') === 'undefined') {
 // See http://stackoverflow.com/questions/8878033/how-to-make-twitter-bootstrap-menu-dropdown-on-hover-rather-than-click
 // Tweaked here, so it only expands on hover for non-collapsed navbars, and works for submenus
 function hoverin() {
-	var navbar = $(this).closest('.navbar');
-	if (navbar.size() === 0 || navbar.find('.navbar-toggle').is(':hidden')) {
-		$(this).addClass('open');
-	}
+    var navbar = $(this).closest('.navbar');
+    if (navbar.size() === 0 || navbar.find('.navbar-toggle').is(':hidden')) {
+	$(this).addClass('open');
+    }
 }
 
 function hoverout() {
-	var navbar = $(this).closest('.navbar');
-	if (navbar.size() === 0|| navbar.find('.navbar-toggle').is(':hidden')) {
-		$(this).removeClass('open');
-	}
+    var navbar = $(this).closest('.navbar');
+    if (navbar.size() === 0|| navbar.find('.navbar-toggle').is(':hidden')) {
+	$(this).removeClass('open');
+    }
 }
 
 if (!('ontouchstart' in document.documentElement)) {
-	$('ul.nav li.dropdown, ul.nav li.dropdown-submenu').hover(hoverin, hoverout);
+    $('ul.nav li.dropdown, ul.nav li.dropdown-submenu').hover(hoverin, hoverout);
 }
 
 // This used to be in doc-search.js; consolidate all JS in one file.
 $(document).ready(function () {
-	// search form
-	var form = $("#search_form");
+    // search form
+    var form = $("#search_form");
 
-	function anyAdvancedActive() {
-		var advanced = false;
-		var by = form.find("input[name=by]:checked");
+    function anyAdvancedActive() {
+	var advanced = false;
+	var by = form.find("input[name=by]:checked");
 
-		if (by.length > 0) {
-			by.closest(".search_field").find("input,select").not("input[name=by]").each(function () {
-				if ($.trim(this.value)) {
-					advanced = true;
-				}
-			});
+	if (by.length > 0) {
+	    by.closest(".search_field").find("input,select").not("input[name=by]").each(function () {
+		if ($.trim(this.value)) {
+		    advanced = true;
 		}
+	    });
+	}
 
-		var additional_doctypes = form.find("input.advdoctype:checked");
-		if (additional_doctypes.length > 0) {
-			advanced = true;
-                }
-                return advanced;
+	var additional_doctypes = form.find("input.advdoctype:checked");
+	if (additional_doctypes.length > 0) {
+	    advanced = true;
         }
+        return advanced;
+    }
 
-	function toggleSubmit() {
-		var nameSearch = $.trim($("#id_name").val());
-		form.find("button[type=submit]").get(0).disabled = !nameSearch && !anyAdvancedActive();
-	}
+    function toggleSubmit() {
+	var nameSearch = $.trim($("#id_name").val());
+	form.find("button[type=submit]").get(0).disabled = !nameSearch && !anyAdvancedActive();
+    }
 
-	function updateAdvanced() {
-		form.find("input[name=by]:checked").closest(".search_field").find("input,select").not("input[name=by]").each(function () {
-			this.disabled = false;
-			this.focus();
-		});
-
-		form.find("input[name=by]").not(":checked").closest(".search_field").find("input,select").not("input[name=by]").each(function () {
-			this.disabled = true;
-		});
-
-		toggleSubmit();
-	}
-
-	if (form.length > 0) {
-		form.find(".search_field input[name=by]").closest(".search_field").find("label,input").click(updateAdvanced);
-
-		form.find(".search_field input,select")
-			.change(toggleSubmit).click(toggleSubmit).keyup(toggleSubmit);
-
-		form.find(".toggle_advanced").click(function () {
-			var advanced = $(this).next();
-			advanced.find('.search_field input[type="radio"]').attr("checked", false);
-			updateAdvanced();
-		});
-
-		updateAdvanced();
-	}
-
-	// search results
-        $('.community-list-add-remove-doc').click(function(e) {
-		e.preventDefault();
-		var trigger = $(this);
-		$.ajax({
-			url: trigger.attr('href'),
-			type: 'GET',
-			cache: false,
-			dataType: 'json',
-			success: function(response){
-				if (response.success) {
-                                    trigger.parent().find(".tooltip").remove();
-                                    // it would be neater to swap in remove link
-                                    trigger.replaceWith('<span class="fa fa-tag text-danger"></span>');
-                                }
-			}
-		});
+    function updateAdvanced() {
+	form.find("input[name=by]:checked").closest(".search_field").find("input,select").not("input[name=by]").each(function () {
+	    this.disabled = false;
+	    this.focus();
 	});
+
+	form.find("input[name=by]").not(":checked").closest(".search_field").find("input,select").not("input[name=by]").each(function () {
+	    this.disabled = true;
+	});
+
+	toggleSubmit();
+    }
+
+    if (form.length > 0) {
+	form.find(".search_field input[name=by]").closest(".search_field").find("label,input").click(updateAdvanced);
+
+	form.find(".search_field input,select")
+	    .change(toggleSubmit).click(toggleSubmit).keyup(toggleSubmit);
+
+	form.find(".toggle_advanced").click(function () {
+	    var advanced = $(this).next();
+	    advanced.find('.search_field input[type="radio"]').attr("checked", false);
+	    updateAdvanced();
+	});
+
+	updateAdvanced();
+    }
+
+    // search results
+    $('.community-list-add-remove-doc').click(function(e) {
+	e.preventDefault();
+	var trigger = $(this);
+	$.ajax({
+	    url: trigger.attr('href'),
+	    type: 'GET',
+	    cache: false,
+	    dataType: 'json',
+	    success: function(response){
+		if (response.success) {
+                    trigger.parent().find(".tooltip").remove();
+                    // it would be neater to swap in remove link
+                    trigger.replaceWith('<span class="fa fa-tag text-danger"></span>');
+                }
+	    }
+	});
+    });
 });
 
 
@@ -141,7 +141,7 @@ $(document).ready(function () {
     });
 
     $("form.idsubmit #cancel-submission").submit(function () {
-       return confirm("Cancel this submission?");
+        return confirm("Cancel this submission?");
     });
 
     $("form.idsubmit #add-author").click(function (e) {
@@ -176,7 +176,7 @@ $(document).ready(function () {
 });
 
 $(".snippet .show-all").click(function () {
-	$(this).parents(".snippet").addClass("hidden").siblings(".full").removeClass("hidden");
+    $(this).parents(".snippet").addClass("hidden").siblings(".full").removeClass("hidden");
 });
 
 // Store the shown/hidden state for the search form collapsible persistently

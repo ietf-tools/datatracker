@@ -6,21 +6,21 @@
 
 {% block submit_content %}
 
-<h2>Cancel pre-approval</h2>
+  <h2>Cancel pre-approval</h2>
 
-<p>
-	Pre-approval of <b>{{ preapproval.name }}</b> by <b>{{ preapproval.by }}</b>
-	on <b>{{ preapproval.time }}</b>.
-</p>
+  <p>
+    Pre-approval of <b>{{ preapproval.name }}</b> by <b>{{ preapproval.by }}</b>
+    on <b>{{ preapproval.time }}</b>.
+  </p>
 
-<form class="actions" method="post">
-	{% csrf_token %}
-	<input type="hidden" name="action" value="cancel">
+  <form class="actions" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="cancel">
 
-        {% buttons %}
-                <button type="submit" class="btn btn-danger">Cancel pre-approval</button>
-		<a class="btn btn-default pull-right" href="{% url "submit_approvals" %}#preapprovals">Back</a>
-        {% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-danger">Cancel pre-approval</button>
+      <a class="btn btn-default pull-right" href="{% url "submit_approvals" %}#preapprovals">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

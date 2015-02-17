@@ -3,23 +3,23 @@
 {% load bootstrap3 %}
 
 {% block title %}
-Edit shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
+  Edit shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
 {% endblock %}
 
 {% block content %}
-<h1>Edit shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
+  <h1>Edit shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" enctype="multipart/form-data" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary" name="submit_response">Submit</button>
-		<button type="submit" class="btn btn-warning" name="reset_text">Reset to template text</button>
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="submit_response">Submit</button>
+      <button type="submit" class="btn btn-warning" name="reset_text">Reset to template text</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

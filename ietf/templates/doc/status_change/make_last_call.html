@@ -10,38 +10,37 @@
 
 {% block content %}
 
-<h1>Make last call<br><small>{{doc.name}}</small></h1>
+  <h1>Make last call<br><small>{{doc.name}}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<div class="form-group">
-	<label>Last call text</label>
-	<pre>{{ announcement }}</pre>
-</div>
+  <div class="form-group">
+    <label>Last call text</label>
+    <pre>{{ announcement }}</pre>
+  </div>
 
-<form role="form" enctype="multipart/form-data" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary">Submit</button>
-		<button type="reset" class="btn btn-warning">Reset</button>
-		<a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <button type="reset" class="btn btn-warning">Reset</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}
 
 
 {% block js %}
   <script src="/js/lib/bootstrap-datepicker.js"></script>
-{% endblock %}
-
-{% block scripts %}
-$('#id_last_call_sent_date, #id_last_call_expiration_date').datepicker({
-	format: "yyyy-mm-dd",
-	todayBtn: "linked",
-	todayHighlight: true,
-}).wrap('<div class="input-group"></div>').parent().prepend('<span class="input-group-addon"><span class="fa fa-calendar"></span></span>');
+  <script>
+   $('#id_last_call_sent_date, #id_last_call_expiration_date').datepicker({
+       format: "yyyy-mm-dd",
+       todayBtn: "linked",
+       todayHighlight: true
+   }).wrap('<div class="input-group"></div>').parent().prepend('<span class="input-group-addon"><span class="fa fa-calendar"></span></span>');
+  </script>
 {% endblock %}
 
 

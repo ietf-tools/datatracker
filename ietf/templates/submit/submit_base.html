@@ -1,31 +1,31 @@
 {% extends "ietf.html" %}
 
 {% block pagehead %}
-{{ block.super }}
+  {{ block.super }}
 {% endblock %}
 
 {% block content %}
-<h1>Internet-Draft submission </h1>
+  <h1>Internet-Draft submission </h1>
 
-<ul class="nav nav-tabs" role="tablist">
-	<li {% if selected == "index" %}class="active"{% endif %}>
-		<a href="{% url "submit_upload_submission" %}">Upload</a>
-	</li>
-	<li {% if selected == "status" %}class="active"{% endif %}>
-		<a href="{% url "submit_search_submission" %}">Status</a>
-	</li>
-	<li {% if selected == "instructions" %}class="active"{% endif %}>
-		<a href="{% url "submit_tool_instructions" %}">Instructions</a>
-	</li>
-	<li {% if selected == "notewell" %}class="active"{% endif %}>
-		<a href="{% url "submit_note_well" %}">Note Well</a>
-	</li>
-	<li {% if selected == "approvals" %}class="active"{% endif %}>
-		<a href="{% url "submit_approvals" %}">Approvals</a>
-	</li>
-</ul>
+  <ul class="nav nav-tabs" role="tablist">
+    <li {% if selected == "index" %}class="active"{% endif %}>
+      <a href="{% url "submit_upload_submission" %}">Upload</a>
+    </li>
+    <li {% if selected == "status" %}class="active"{% endif %}>
+      <a href="{% url "submit_search_submission" %}">Status</a>
+    </li>
+    <li {% if selected == "instructions" %}class="active"{% endif %}>
+      <a href="{% url "submit_tool_instructions" %}">Instructions</a>
+    </li>
+    <li {% if selected == "notewell" %}class="active"{% endif %}>
+      <a href="{% url "submit_note_well" %}">Note Well</a>
+    </li>
+    <li {% if selected == "approvals" %}class="active"{% endif %}>
+      <a href="{% url "submit_approvals" %}">Approvals</a>
+    </li>
+  </ul>
 
-{% block submit_content %}
-{% endblock %}
+  {% block submit_content %}
+  {% endblock %}
 
 {% endblock %}

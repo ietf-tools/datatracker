@@ -7,24 +7,24 @@
 
 {% block nomcom_content %}
 
-<h2>Candidate nomination</h2>
+  <h2>Candidate nomination</h2>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-{% if message %}
-	<p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
-{% endif %}
+  {% if message %}
+    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
+  {% endif %}
 
-{% if nomcom|has_publickey %}
+  {% if nomcom|has_publickey %}
 
-<form id="nominate-form" role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
-	{% buttons %}
-                <button class="btn btn-primary" type="submit" name="save">Save</button>
-        {% endbuttons %}
-</form>
+    <form id="nominate-form" role="form" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+      {% buttons %}
+        <button class="btn btn-primary" type="submit" name="save">Save</button>
+      {% endbuttons %}
+    </form>
 
-{% endif %}
+  {% endif %}
 
 {% endblock %}

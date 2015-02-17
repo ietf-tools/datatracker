@@ -3,19 +3,19 @@
 {% block title %}Profile update{% endblock %}
 
 {% block content %}
-{% if success %}
-	<h1>Profile update successful</h1>
+  {% if success %}
+    <h1>Profile update successful</h1>
 
-	<p>Your account has been successfully updated to reflect the changes you submitted.</p>
-	{% for email in new_emails %}
-		<p class="alert alert-info"><b>A confirmation email has been sent to {{email}}.</b> The email will be activated after you click on the link it contains.</p>
-	{% endfor %}
-	<a class="btn btn-default" href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
-{% else %}
-	<h1>Profile update unsuccessful</h1>
-	<p >An error has occurred when attempting to update your account.<p>
-	{% if error %}
-		<p class="alert alert-danger">{{ error }}</p>
-	{% endif %}
-{% endif %}
+    <p>Your account has been successfully updated to reflect the changes you submitted.</p>
+    {% for email in new_emails %}
+      <p class="alert alert-info"><b>A confirmation email has been sent to {{email}}.</b> The email will be activated after you click on the link it contains.</p>
+    {% endfor %}
+    <a class="btn btn-default" href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
+  {% else %}
+    <h1>Profile update unsuccessful</h1>
+    <p >An error has occurred when attempting to update your account.<p>
+      {% if error %}
+        <p class="alert alert-danger">{{ error }}</p>
+      {% endif %}
+  {% endif %}
 {% endblock %}

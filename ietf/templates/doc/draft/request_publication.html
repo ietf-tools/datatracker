@@ -5,49 +5,49 @@
 {% block title %}Request publication for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Request publication<br><small>{{ doc }}</small></h1>
+  <h1>Request publication<br><small>{{ doc }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<p class="alert alert-info">
-	Send a publication request to the RFC Editor for {{ doc }} and move it to the <i>{{ next_state.name }}</i> stream state.
-	Please edit the message and remove any parts in brackets you do not
-fill in. For independent submissions, see the <a
+  <p class="alert alert-info">
+    Send a publication request to the RFC Editor for {{ doc }} and move it to the <i>{{ next_state.name }}</i> stream state.
+    Please edit the message and remove any parts in brackets you do not
+    fill in. For independent submissions, see the <a
 href="http://www.rfc-editor.org/indsubs.html">guidelines</a>.
-</p>
+  </p>
 
-{% if not doc.intended_std_level %}
-	<p class="alert alert-warning">
-		<b>Note:</b> Intended RFC status is not set for the document.
-	</p>
-{% endif %}
+  {% if not doc.intended_std_level %}
+    <p class="alert alert-warning">
+      <b>Note:</b> Intended RFC status is not set for the document.
+    </p>
+  {% endif %}
 
-{% if doc.stream_id != "ise" and not consensus_filled_in %}
-	<p class="alert alert-warning">
-		<b>Note:</b> Consensus status is not set for the document.
-	</p>
-{% endif %}
+  {% if doc.stream_id != "ise" and not consensus_filled_in %}
+    <p class="alert alert-warning">
+      <b>Note:</b> Consensus status is not set for the document.
+    </p>
+  {% endif %}
 
-<form role="form" method="post">
-	{% csrf_token %}
+  <form role="form" method="post">
+    {% csrf_token %}
 
-	<div class="form-group">
-		<label>From</label>
-		<input class="form-control" type="text" placeholder="{{ message.frm }}" disabled>
-	</div>
+    <div class="form-group">
+      <label>From</label>
+      <input class="form-control" type="text" placeholder="{{ message.frm }}" disabled>
+    </div>
 
-	<div class="form-group">
-		<label>To</label>
-		<input class="form-control" type="text" placeholder="{{ message.to }}" disabled>
-	</div>
+    <div class="form-group">
+      <label>To</label>
+      <input class="form-control" type="text" placeholder="{{ message.to }}" disabled>
+    </div>
 
-	{% bootstrap_form form %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-danger">Email RFC Editor</button>
-		<button type="reset" class="btn btn-warning">Reset</button>
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-danger">Email RFC Editor</button>
+      <button type="reset" class="btn btn-warning">Reset</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

@@ -4,71 +4,71 @@
 {% load ietf_filters %}
 
 {% block pagehead %}
-	<link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">
+  <link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">
 {% endblock %}
 
 {% block title %}Documents on future IESG telechat agendas{% endblock %}
 
 {% block content %}
-<h1>Documents on future IESG telechat agendas</h1>
+  <h1>Documents on future IESG telechat agendas</h1>
 
-{% if user|has_role:"Secretariat" %}
-	<form role="form" class="form-inline" method="post">
-	{% csrf_token %}
-{% endif %}
+  {% if user|has_role:"Secretariat" %}
+    <form role="form" class="form-inline" method="post">
+      {% csrf_token %}
+  {% endif %}
 
-{% for t in telechats %}
-	<h2>IESG telechat {{t.date}}</h2>
-	<p>
-		<a class="btn btn-default" role="button" href="/iesg/agenda/">
-			<span class="fa fa-list"></span>
-			Full IESG agenda
-		</a>
+  {% for t in telechats %}
+    <h2>IESG telechat {{t.date}}</h2>
+    <p>
+      <a class="btn btn-default" role="button" href="/iesg/agenda/">
+        <span class="fa fa-list"></span>
+        Full IESG agenda
+      </a>
 
-		<a class="btn btn-default" role="button" href="/iesg/agenda/telechat-{{t.date|date:"Y"}}-{{t.date|date:"m"}}-{{t.date|date:"d"}}-docs.tgz">
-			<span class="fa fa-download"></span>
-			Download documents
-		</a>
-	</p>
+      <a class="btn btn-default" role="button" href="/iesg/agenda/telechat-{{t.date|date:"Y"}}-{{t.date|date:"m"}}-{{t.date|date:"d"}}-docs.tgz">
+        <span class="fa fa-download"></span>
+        Download documents
+      </a>
+    </p>
 
-	{% for num, section in t.sections %}
-		{% if "docs" not in section or section.docs %}
-			{% if num|sectionlevel == 1 %}<h3>{{ num }}. {{ section.title|safe }}</h3>{% endif %}
-			{% if num|sectionlevel == 2 %}<h4>{{ num }} {{ section.title|safe }}</h4>{% endif %}
-			{% if num|sectionlevel == 3 %}<h5>{{ num }} {{ section.title|safe }}</h5>{% endif %}
-		{% endif %}
+    {% for num, section in t.sections %}
+      {% if "docs" not in section or section.docs %}
+        {% if num|sectionlevel == 1 %}<h3>{{ num }}. {{ section.title|safe }}</h3>{% endif %}
+        {% if num|sectionlevel == 2 %}<h4>{{ num }} {{ section.title|safe }}</h4>{% endif %}
+        {% if num|sectionlevel == 3 %}<h5>{{ num }} {{ section.title|safe }}</h5>{% endif %}
+      {% endif %}
 
-		{% if "docs" in section and section.docs %}
-			<table class="table table-condensed table-striped ietf">
-				<thead>
-					<tr>
-						<th>
-						{% if show_add_to_list and user.is_authenticated %}
-							<span class="fa fa-bookmark"></span>
-						{% endif %}
-						</th>
+      {% if "docs" in section and section.docs %}
+        <table class="table table-condensed table-striped ietf">
+          <thead>
+            <tr>
+	      <th>
+	        {% if show_add_to_list and user.is_authenticated %}
+	          <span class="fa fa-bookmark"></span>
+	        {% endif %}
+	      </th>
 
-						<th>Document</th>
-						<th>Date</th>
-						<th>Status</th>
-						<th>IPR</th>
-						<th>AD / Shepherd</th>
-					</tr>
-				</thead>
-				<tbody>
-                                        {% for doc in section.docs %}
-						{% include "doc/search/search_result_row.html" %}
-					{% endfor %}
-				</tbody>
-			</table>
-		{% endif %}
-	{% endfor %}
-	<hr>
-{% endfor %}
+	      <th>Document</th>
+	      <th>Date</th>
+	      <th>Status</th>
+	      <th>IPR</th>
+	      <th>AD / Shepherd</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in section.docs %}
+              {% include "doc/search/search_result_row.html" %}
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    {% endfor %}
+    <hr>
+  {% endfor %}
 
-{% if user|has_role:"Secretariat" %}
-	<input title="Save reschedule changes done with the drop-down boxes below" type="submit" value="Save reschedules" class="btn btn-primary">
-	</form>
-{% endif %}
+  {% if user|has_role:"Secretariat" %}
+    <input title="Save reschedule changes done with the drop-down boxes below" type="submit" value="Save reschedules" class="btn btn-primary">
+    </form>
+  {% endif %}
 
 {% endblock content %}

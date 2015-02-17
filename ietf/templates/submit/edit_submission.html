@@ -8,81 +8,81 @@
 
 {% block submit_content %}
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<div class="modal fade" id="twopages" tabindex="-1" role="dialog" aria-labelledby="twopageslabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</h4>
-			</div>
-			<div class="modal-body">
-				{{ submission|two_pages_decorated_with_errors:errors }}
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-			</div>
-		</div>
-	</div>
-</div>
+  <div class="modal fade" id="twopages" tabindex="-1" role="dialog" aria-labelledby="twopageslabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+	  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	  <h4 class="modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</h4>
+        </div>
+        <div class="modal-body">
+	  {{ submission|two_pages_decorated_with_errors:errors }}
+        </div>
+        <div class="modal-footer">
+	  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 
-<h2>Adjust meta-data of submitted {{ submission.name }}</h2>
+  <h2>Adjust meta-data of submitted {{ submission.name }}</h2>
 
-<table class="table table-condensed table-striped">
-	<tr>
-		<th>Document</th>
-		<td>
-			{{ submission.name }}
-			<button class="btn btn-default btn-xs pull-right" data-toggle="modal" data-target="#twopages">View first two pages</button>
-			{% show_submission_files submission %}
-		</td>
-	</tr>
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th>Document</th>
+      <td>
+        {{ submission.name }}
+        <button class="btn btn-default btn-xs pull-right" data-toggle="modal" data-target="#twopages">View first two pages</button>
+        {% show_submission_files submission %}
+      </td>
+    </tr>
 
-	<tr><th>Submission date</th><td>{{ submission.submission_date }}</td></tr>
+    <tr><th>Submission date</th><td>{{ submission.submission_date }}</td></tr>
 
-	<tr>
-		<th>Group</th>
-		<td>{{ submission.group|default:"Individual Submission" }}
-			{% if errors.group %}<p class="text-danger"><b>{{ errors.group }}</b> (Note: the Secretariat will be notified of this)</p>{% endif %}
-		</td>
-	</tr>
+    <tr>
+      <th>Group</th>
+      <td>{{ submission.group|default:"Individual Submission" }}
+        {% if errors.group %}<p class="text-danger"><b>{{ errors.group }}</b> (Note: the Secretariat will be notified of this)</p>{% endif %}
+      </td>
+    </tr>
 
-	<tr><th>File size</th><td>{{ submission.file_size|filesizeformat }}</td></tr>
-</table>
+    <tr><th>File size</th><td>{{ submission.file_size|filesizeformat }}</td></tr>
+  </table>
 
-<h3>Adjust meta-data</h3>
+  <h3>Adjust meta-data</h3>
 
-{% if form_errors %}
-	<div class="alert alert-danger">
-		Please fix the errors in the form below.
-	</div>
-{% endif %}
+  {% if form_errors %}
+    <div class="alert alert-danger">
+      Please fix the errors in the form below.
+    </div>
+  {% endif %}
 
-<form class="idsubmit" role="form" method="post">
-	{% csrf_token %}
+  <form class="idsubmit" role="form" method="post">
+    {% csrf_token %}
 
-	{% bootstrap_form edit_form %}
+    {% bootstrap_form edit_form %}
 
-	<h3>Submitter</h3>
-	{% include "submit/submitter_form.html" %}
+    <h3>Submitter</h3>
+    {% include "submit/submitter_form.html" %}
 
-	{% for form in author_forms %}
-		<div {% if forloop.last %}id="cloner"{% endif %}>
-			<h3>Author {{ forloop.counter }}</h3>
-			{% bootstrap_form form %}
-			<input type="hidden" name="authors-prefix" value="{{ form.prefix  }}">
-		</div>
-	{% endfor %}
+    {% for form in author_forms %}
+      <div {% if forloop.last %}id="cloner"{% endif %}>
+        <h3>Author {{ forloop.counter }}</h3>
+        {% bootstrap_form form %}
+        <input type="hidden" name="authors-prefix" value="{{ form.prefix  }}">
+      </div>
+    {% endfor %}
 
-	{% buttons %}
-		<input class="btn btn-default" type="button" value="Add another author" id="add-author">
-		<input class="btn btn-primary" type="submit" value="Submit for manual posting">
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <input class="btn btn-default" type="button" value="Add another author" id="add-author">
+      <input class="btn btn-primary" type="submit" value="Submit for manual posting">
+    {% endbuttons %}
+  </form>
 
-<p>
-	{% include "submit/problem-reports-footer.html" %}
-</p>
+  <p>
+    {% include "submit/problem-reports-footer.html" %}
+  </p>
 {% endblock %}

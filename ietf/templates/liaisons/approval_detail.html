@@ -1,10 +1,10 @@
 {% extends "liaisons/detail.html" %}
 
 {% block content %}
-{{ block.super }}
+  {{ block.super }}
 
-<form role="form" method="post">
-	{% csrf_token %}
-	<input class="btn btn-primary" type="submit" value="Approve" name='do_approval' />
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+    <input class="btn btn-primary" type="submit" value="Approve" name='do_approval' />
+  </form>
 {% endblock %}

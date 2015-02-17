@@ -6,18 +6,18 @@
 
 {% block nomcom_content %}
 
-{% if message %}
-  <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
-{% endif %}
+  {% if message %}
+    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
+  {% endif %}
 
-{% if need_confirmation %}
-  <form role="form" method="post">
-    {% csrf_token %}
+  {% if need_confirmation %}
+    <form role="form" method="post">
+      {% csrf_token %}
 
-    {% buttons %}
-      <button class="btn btn-primary" type="submit">Save</button>
-    {% endbuttons %}
-  </form>
-{% endif %}
+      {% buttons %}
+        <button class="btn btn-primary" type="submit">Save</button>
+      {% endbuttons %}
+    </form>
+  {% endif %}
 
 {% endblock %}

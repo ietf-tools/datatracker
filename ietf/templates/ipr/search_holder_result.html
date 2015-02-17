@@ -1,11 +1,11 @@
 {% extends "ipr/search_result.html" %}
 
 {% block search_header %}
-        {% if not iprs %}
-		Search result on {{ q }}
-	{% else %}
-		Patent owner/applicant search result
-	{% endif %}
+  {% if not iprs %}
+    Search result on {{ q }}
+  {% else %}
+    Patent owner/applicant search result
+  {% endif %}
 {% endblock %}
 
 {% block intro_prefix %}IPR that was submitted by <i>{{ q }}</i> and{% endblock %}

@@ -5,24 +5,24 @@
 {% block title %}Make last call for {{ doc.name }}{% endblock %}
 
 {% block content %}
-<h1>Make last call<br><small>{{ doc.name }}</small></h1>
+  <h1>Make last call<br><small>{{ doc.name }}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<p class="alert alert-info">
-	<b>Last call for:</b>
-	{{ doc.name }} ({{ doc.group.acronym }}) to {{ doc.intended_std_level.name }}
-</p>
+  <p class="alert alert-info">
+    <b>Last call for:</b>
+    {{ doc.name }} ({{ doc.group.acronym }}) to {{ doc.intended_std_level.name }}
+  </p>
 
-<form role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary">Make last call</button>
-		<button type="reset" class="btn btn-warning">Reset</button>
-		<a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Make last call</button>
+      <button type="reset" class="btn btn-warning">Reset</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

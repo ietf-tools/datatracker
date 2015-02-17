@@ -4,7 +4,7 @@
 
 {% block group_content %}
 
-{% include "doc/search/search_results.html" %}
-{% include "doc/search/search_results.html" with docs=docs_related meta=meta_related skip_no_matches_warning=True %}
+  {% include "doc/search/search_results.html" %}
+  {% include "doc/search/search_results.html" with docs=docs_related meta=meta_related skip_no_matches_warning=True %}
 
 {% endblock group_content %}

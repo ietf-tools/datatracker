@@ -4,11 +4,11 @@
 {% load ietf_filters %}
 
 {% block title %}
-{% if group %}
-	Edit {{ group.type.name }} {{ group.acronym }}
-{% else %}
-	Start chartering new group
-{% endif %}
+  {% if group %}
+    Edit {{ group.type.name }} {{ group.acronym }}
+  {% else %}
+    Start chartering new group
+  {% endif %}
 {% endblock %}
 
 {% block pagehead %}
@@ -17,37 +17,37 @@
 {% endblock %}
 
 {% block content %}
-<h1>
-{% if action == "edit" %}
-	Edit {{ group.type.name }} {{ group.acronym }}
-{% elif action == "charter" %}
-        Start chartering new group
-{% else %}
-        Create new group or BOF
-{% endif %}
-</h1>
+  <h1>
+    {% if action == "edit" %}
+      Edit {{ group.type.name }} {{ group.acronym }}
+    {% elif action == "charter" %}
+      Start chartering new group
+    {% else %}
+      Create new group or BOF
+    {% endif %}
+  </h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<p class="alert alert-info">Note that persons with authorization to manage information, e.g.
-chairs and delegates, need a datatracker account to actually do
-so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
+  <p class="alert alert-info">Note that persons with authorization to manage information, e.g.
+    chairs and delegates, need a datatracker account to actually do
+    so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
 
-<form class="form-horizontal" role="form" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form layout='horizontal' %}
+  <form class="form-horizontal" role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form layout='horizontal' %}
 
-	{% buttons layout='horizontal' %}
-		{% if action == "edit" %}
-			<button class="btn btn-primary" type="submit">Submit</button>
-			<a class="btn btn-default pull-right" href="{{ group.about_url }}">Back</a>
-                {% elif action == "charter" %}
-                        <button class="btn btn-primary" type="submit">Start chartering</button>
-                {% else %}
-                        <button class="btn btn-primary" type="submit">Create group or BOF</button>
-                {% endif %}
-        {% endbuttons %}
-</form>
+    {% buttons layout='horizontal' %}
+      {% if action == "edit" %}
+        <button class="btn btn-primary" type="submit">Submit</button>
+        <a class="btn btn-default pull-right" href="{{ group.about_url }}">Back</a>
+      {% elif action == "charter" %}
+        <button class="btn btn-primary" type="submit">Start chartering</button>
+      {% else %}
+        <button class="btn btn-primary" type="submit">Create group or BOF</button>
+      {% endif %}
+    {% endbuttons %}
+  </form>
 {% endblock %}
 
 {% block js %}

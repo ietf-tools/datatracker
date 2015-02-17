@@ -3,64 +3,64 @@
 {% block title %}Concluded groups{% endblock %}
 
 {% block content %}
-<h1>Concluded groups</h1>
+  <h1>Concluded groups</h1>
 
-<p class="alert alert-info">Note that the information on historical groups may be inaccurate.</p>
+  <p class="alert alert-info">Note that the information on historical groups may be inaccurate.</p>
 
-{% for t in group_types %}
-	<h2>{{ t.name }}s</h2>
+  {% for t in group_types %}
+    <h2>{{ t.name }}s</h2>
 
-	{% if t.slug == "wg" %}
-		<p>
-			Some additional concluded WGs may
-			be present <a href="//tools.ietf.org/wg/concluded">here</a>.
-		</p>
-	{% elif t.slug == "rg" %}
-		<p>
-			The information below is incomplete and misses a few older RGs.
-			Please check the <a href="//irtf.org/groups">IRTF site</a>
-			for more complete information.
-		</p>
-	{% endif %}
+    {% if t.slug == "wg" %}
+      <p>
+        Some additional concluded WGs may
+        be present <a href="//tools.ietf.org/wg/concluded">here</a>.
+      </p>
+    {% elif t.slug == "rg" %}
+      <p>
+        The information below is incomplete and misses a few older RGs.
+        Please check the <a href="//irtf.org/groups">IRTF site</a>
+        for more complete information.
+      </p>
+    {% endif %}
 
-	{% if not t.concluded_groups %}
-		<p><b>No groups found.</b></p>
-	{% else %}
-		<table class="table table-condensed table-striped">
-			<thead>
-				<tr>
-					<th>Group</th>
-					<th>Name</th>
-					<th>Start</th>
-					<th>Concluded</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for g in t.concluded_groups %}
-					<tr>
-						<td>
-							<a href="{{ g.about_url }}">{{ g.acronym }}</a>
-						</td>
-						<td>{{ g.name }}</td>
-						<td>
-							{% if g.start_date %}
-								{{ g.start_date|date:"M. Y" }}
-							{% else %}
-								<span class="text-muted">?</span>
-							{% endif %}
-						</td>
-						<td>
-							{% if g.conclude_date %}
-								{{ g.conclude_date|date:"M. Y" }}
-							{% else %}
-								<span class="text-muted">?</span>
-							{% endif %}
-						</td>
-					</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	{% endif %}
-{% endfor %}
+    {% if not t.concluded_groups %}
+      <p><b>No groups found.</b></p>
+    {% else %}
+      <table class="table table-condensed table-striped">
+        <thead>
+          <tr>
+            <th>Group</th>
+            <th>Name</th>
+            <th>Start</th>
+            <th>Concluded</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in t.concluded_groups %}
+            <tr>
+              <td>
+	        <a href="{{ g.about_url }}">{{ g.acronym }}</a>
+              </td>
+              <td>{{ g.name }}</td>
+              <td>
+	        {% if g.start_date %}
+	          {{ g.start_date|date:"M. Y" }}
+	        {% else %}
+	          <span class="text-muted">?</span>
+	        {% endif %}
+              </td>
+              <td>
+	        {% if g.conclude_date %}
+	          {{ g.conclude_date|date:"M. Y" }}
+	        {% else %}
+	          <span class="text-muted">?</span>
+	        {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  {% endfor %}
 
 {% endblock %}

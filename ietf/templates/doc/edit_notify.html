@@ -3,23 +3,23 @@
 {% load bootstrap3 %}
 
 {% block title %}
-Edit notification addresses for {{titletext}}
+  Edit notification addresses for {{titletext}}
 {% endblock %}
 
 {% block content %}
-<h1>Edit notification addresses<br><small>{{titletext}}</small></h1>
+  <h1>Edit notification addresses<br><small>{{titletext}}</small></h1>
 
-{% bootstrap_messages %}
+  {% bootstrap_messages %}
 
-<form role="form" enctype="multipart/form-data" method="post">
-	{% csrf_token %}
-	{% bootstrap_form form %}
+  <form role="form" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-	{% buttons %}
-		<button type="submit" class="btn btn-primary" name="save_addresses">Submit</button>
-		<input type="submit" class="btn btn-warning" name="regenerate_addresses" value="Regenerate address list">
-		<a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
-	{% endbuttons %}
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="save_addresses">Submit</button>
+      <input type="submit" class="btn btn-warning" name="regenerate_addresses" value="Regenerate address list">
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}
