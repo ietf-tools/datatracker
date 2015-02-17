@@ -448,7 +448,7 @@ def edit_mtg(request, num, acronym):
 
             # nuke any cache that might be lingering around.
             from ietf.meeting.helpers import session_constraint_expire
-            session_constraint_expire(session)
+            session_constraint_expire(request,session)
 
             messages.success(request, 'Session Request updated')
             return redirect('sessions_view', acronym=acronym)
