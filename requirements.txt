@@ -1,5 +1,6 @@
 MySQL-python>=1.2.5
 argparse>=1.2.1
+coverage>=3.7.1
 cssselect>=0.6.1
 decorator>=3.4.0
 defusedxml>=0.4.1
