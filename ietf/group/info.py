@@ -623,8 +623,8 @@ def dependencies_pdf(request, acronym, group_type=None):
 
     return HttpResponse(pdf, content_type='application/pdf')
 
-def email_aliases(request, acronym=None):
-    group = get_group_or_404(acronym,None) if acronym else None
+def email_aliases(request, acronym=None, group_type=None):
+    group = get_group_or_404(acronym,group_type) if acronym else None
 
     if acronym:
         pattern = re.compile('expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
@@ -636,7 +636,8 @@ def email_aliases(request, acronym=None):
         for line in virtual_file.readlines():
             m = pattern.match(line)
             if m:
-                aliases.append({'acronym':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
+                if acronym or not group_type or Group.objects.filter(acronym=m.group(1),type__slug=group_type):
+                    aliases.append({'acronym':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
 
     return render(request,'group/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'group':group})
 
