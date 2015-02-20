@@ -34,7 +34,6 @@
 
 import socket, re, os, time, importlib
 import warnings
-import coverage
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist
@@ -187,9 +186,6 @@ def save_test_results(failures, test_labels):
 
 
 class IetfTestRunner(DiscoverRunner):
-    def test_code_coverage(self):
-        pass
-
     def run_tests(self, test_labels, extra_tests=None, **kwargs):
         # Tests that involve switching back and forth between the real
         # database and the test database are way too dangerous to run
@@ -207,20 +203,11 @@ class IetfTestRunner(DiscoverRunner):
         old_destroy = connection.creation.__class__.destroy_test_db
         connection.creation.__class__.destroy_test_db = safe_destroy_0_1
 
-        do_template_coverage = not test_labels
-        do_url_coverage = not test_labels
-        do_code_coverage = True
-        
-        if do_template_coverage:
+        check_coverage = not test_labels
+
+        if check_coverage:
             settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
-        if do_url_coverage:
             settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
-        if do_code_coverage:
-            import ietf.settings as config
-            sources = [ os.path.dirname(config.__file__), ]
-            code_coverage = coverage.coverage(source=sources, cover_pylib=False,
-                omit = ['^0*'])
-            code_coverage.start()
 
         if not test_labels: # we only want to run our own tests
             test_labels = [app for app in settings.INSTALLED_APPS if app.startswith("ietf")]
@@ -243,20 +230,10 @@ class IetfTestRunner(DiscoverRunner):
         finally:
             smtpd_driver.stop()
 
-        if do_template_coverage and not failures:
+        if check_coverage and not failures:
             check_template_coverage(self.verbosity)
-        if do_url_coverage and not failures:
             check_url_coverage(self.verbosity)
-        if do_code_coverage and not failures:
-            code_coverage.stop()
-            code_coverage.save()
-            code_coverage_pct = code_coverage.report(file="coverage.txt")
-            print("Code coverage: %6.3f%%.  Details written to coverage.txt" % code_coverage_pct)
-#             with open("sysinfo.txt", "w") as file:
-#                 import pprint
-#                 pprint.pprint(code_coverage.sysinfo(), file)
-#                 print("Sysinfo written to sysinfo.txt")
-        if (do_template_coverage or do_url_coverage or do_code_coverage) and not failures:
+
             print "0 test failures - coverage shown above"
 
         save_test_results(failures, test_labels)
