@@ -30,10 +30,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os, datetime, urllib, json, glob
+import os, datetime, urllib, json, glob, re
 
 from django.http import HttpResponse, Http404 , HttpResponseForbidden
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render, render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.core.exceptions import ObjectDoesNotExist
@@ -957,3 +957,19 @@ def edit_notify(request, name):
                                'titletext': titletext,
                               },
                               context_instance = RequestContext(request))
+
+def email_aliases(request,name=''):
+    doc = get_object_or_404(Document, name=name) if name else None
+    if name:
+        pattern = re.compile('^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
+    else:
+        pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
+    aliases = []
+    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+        for line in virtual_file.readlines():
+            m = pattern.match(line)
+            if m:
+                aliases.append({'doc_name':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
+
+    return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
+
