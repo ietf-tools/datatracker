@@ -49,7 +49,12 @@ class MainTestCase(TestCase):
         url = reverse('meetings_add')
         post_data = dict(number=number,city='Toronto',date='2014-07-20',country='CA',
                          time_zone='America/New_York',venue_name='Hilton',
-                         venue_addr='100 First Ave')
+                         venue_addr='100 First Ave',
+                         idsubmit_cutoff_day_offset_00=13,
+                         idsubmit_cutoff_day_offset_01=20,
+                         idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
+                         idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
+                     )
         self.client.login(username='secretary', password='secretary+password')
         response = self.client.post(url, post_data, follow=True)
         self.assertEqual(response.status_code, 200)
@@ -59,9 +64,15 @@ class MainTestCase(TestCase):
         "Edit Meeting"
         Meeting.objects.create(number=1,
                                type_id='ietf',
-                               date=datetime.datetime(2014,7,20))
+                               date=datetime.datetime(2014,7,20),
+                           )
         url = reverse('meetings_edit_meeting',kwargs={'meeting_id':1})
-        post_data = dict(number='1',date='2014-07-20',city='Toronto')
+        post_data = dict(number='1',date='2014-07-20',city='Toronto',
+                         idsubmit_cutoff_day_offset_00=13,
+                         idsubmit_cutoff_day_offset_01=20,
+                         idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
+                         idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
+                    )
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url, post_data,follow=True)
         self.assertEqual(response.status_code, 200)

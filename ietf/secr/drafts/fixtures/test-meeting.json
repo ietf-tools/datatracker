@@ -13,6 +13,10 @@
             "date": "2010-11-07", 
             "type": "ietf", 
             "venue_addr": ""
+            "idsubmit_cutoff_day_offset_00": 20,
+            "idsubmit_cutoff_day_offset_01": 13,
+            "idsubmit_cutoff_time_utc": "23:59:59",
+            "idsubmit_cutoff_warning_days": "21 days, 0:00:00",
         }
     }, 
     {
@@ -29,6 +33,10 @@
             "date": "2011-03-27", 
             "type": "ietf", 
             "venue_addr": ""
+            "idsubmit_cutoff_day_offset_00": 20,
+            "idsubmit_cutoff_day_offset_01": 13,
+            "idsubmit_cutoff_time_utc": "23:59:59",
+            "idsubmit_cutoff_warning_days": "21 days, 0:00:00",
         }
     }, 
     {
@@ -45,6 +53,10 @@
             "date": "2011-07-24", 
             "type": "ietf", 
             "venue_addr": ""
+            "idsubmit_cutoff_day_offset_00": 20,
+            "idsubmit_cutoff_day_offset_01": 13,
+            "idsubmit_cutoff_time_utc": "23:59:59",
+            "idsubmit_cutoff_warning_days": "21 days, 0:00:00",
         }
     }, 
     {
@@ -61,6 +73,10 @@
             "date": "2011-11-13", 
             "type": "ietf", 
             "venue_addr": ""
+            "idsubmit_cutoff_day_offset_00": 20,
+            "idsubmit_cutoff_day_offset_01": 13,
+            "idsubmit_cutoff_time_utc": "23:59:59",
+            "idsubmit_cutoff_warning_days": "21 days, 0:00:00",
         }
     }, 
     {
@@ -77,6 +93,10 @@
             "date": "2012-03-25", 
             "type": "ietf", 
             "venue_addr": ""
+            "idsubmit_cutoff_day_offset_00": 20,
+            "idsubmit_cutoff_day_offset_01": 13,
+            "idsubmit_cutoff_time_utc": "23:59:59",
+            "idsubmit_cutoff_warning_days": "21 days, 0:00:00",
         }
     }
 ]

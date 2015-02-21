@@ -19,6 +19,8 @@ LOG_DIR  = '/var/log/datatracker'
 import sys
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
 
+import datetime
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -362,14 +364,15 @@ IDSUBMIT_TO_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 
-FIRST_CUTOFF_DAYS = 19 # Days from meeting to cut off dates on submit
-SECOND_CUTOFF_DAYS = 12
-CUTOFF_HOUR = 00                        # midnight UTC
-CUTOFF_WARNING_DAYS = 21                # Number of days before cutoff to start showing the cutoff date
+# Days from meeting to day of cut off dates on submit -- cutoff_time_utc is added to this
+IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00 = 20
+IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_01 = 13
+IDSUBMIT_DEFAULT_CUTOFF_TIME_UTC = datetime.timedelta(hours=23, minutes=59, seconds=59)
+IDSUBMIT_DEFAULT_CUTOFF_WARNING_DAYS = datetime.timedelta(days=21)
 
-SUBMISSION_START_DAYS = -90
-SUBMISSION_CUTOFF_DAYS = 33
-SUBMISSION_CORRECTION_DAYS = 52
+MEETING_MATERIALS_SUBMISSION_START_DAYS = -90
+MEETING_MATERIALS_SUBMISSION_CUTOFF_DAYS = 33
+MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS = 52
 
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 

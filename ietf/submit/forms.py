@@ -1,5 +1,6 @@
 import os
 import datetime
+import pytz
 
 from django import forms
 from django.conf import settings
@@ -40,29 +41,36 @@ class UploadForm(forms.Form):
         self.parsed_draft = None
 
     def set_cutoff_warnings(self):
-        from datetime import timedelta
-        now = datetime.datetime.utcnow()
-        first_cut_off = Meeting.get_first_cut_off()
-        second_cut_off = Meeting.get_second_cut_off()
-        ietf_monday = Meeting.get_ietf_monday()
-
-        if now.date() >= (first_cut_off-timedelta(days=settings.CUTOFF_WARNING_DAYS)) and now.date() < first_cut_off:
-            self.cutoff_warning = ( 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) is %s at %02sh UTC.<br/>' % (first_cut_off, settings.CUTOFF_HOUR) +
-                                    'The pre-meeting cut-off date for revisions to existing documents is %s at %02sh UTC.<br/>' % (second_cut_off, settings.CUTOFF_HOUR) )
-        elif now.date() >= first_cut_off and now.date() < second_cut_off:  # We are in the first_cut_off
-            if now.date() == first_cut_off and now.hour < settings.CUTOFF_HOUR:
-                self.cutoff_warning = 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) is %s, at %02sh UTC. After that, you will not be able to submit a new document until %s, at %sh UTC' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, )
+        now = datetime.datetime.now(pytz.utc)
+        meeting = Meeting.get_current_meeting()
+        #
+        cutoff_00 = meeting.get_00_cutoff()
+        cutoff_01 = meeting.get_01_cutoff()
+        reopen    = meeting.get_reopen_time()
+        #
+        cutoff_00_str = cutoff_00.strftime("%Y-%m-%d %H:%M %Z")
+        cutoff_01_str = cutoff_01.strftime("%Y-%m-%d %H:%M %Z")
+        reopen_str    = reopen.strftime("%Y-%m-%d %H:%M %Z")
+        if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now <= cutoff_00:
+            self.cutoff_warning = ( 'The last submission time for new documents (i.e., version -00 Internet-Drafts) before %s is %s.<br/><br/>' % (meeting, cutoff_00_str) +
+                                    'The last submission time for revisions to existing documents before %s is %s.<br/>' % (meeting, cutoff_01_str) )
+        elif now.date() >= cutoff_00.date() and now <= cutoff_01:
+            # We are in the first_cut_off
+            if now < cutoff_00:
+                self.cutoff_warning = (
+                    'The last submission time for new documents (i.e., version -00 Internet-Drafts) before the meeting is %s.<br/>'
+                    'After that, you will not be able to submit a new document until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
             else:  # No 00 version allowed
-                self.cutoff_warning = 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) was %s at %sh UTC. You will not be able to submit a new document until %s, at %sh UTC.<br>You can still submit a version -01 or higher Internet-Draft until %sh UTC, %s' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, second_cut_off, )
+                self.cutoff_warning = (
+                    'The last submission time for new documents (i.e., version -00 Internet-Drafts) was %s.<br/>'
+                    'You will not be able to submit a new document until after %s (IETF-meeting local time).<br/><br>'
+                    'You can still submit a version -01 or higher Internet-Draft until %s' % (cutoff_00_str, reopen_str, cutoff_01_str, ))
                 self.in_first_cut_off = True
-        elif now.date() >= second_cut_off and now.date() < ietf_monday:
-            if now.date() == second_cut_off and now.hour < settings.CUTOFF_HOUR:  # We are in the first_cut_off yet
-                self.cutoff_warning = 'The pre-meeting cut-off date for new documents (i.e., version -00 Internet-Drafts) was %s at %02sh UTC. You will not be able to submit a new document until %s, at %02sh UTC.<br>The I-D submission tool will be shut down at %02sh UTC today, and reopened at %02sh UTC on %s' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, ietf_monday)
-                self.in_first_cut_off = True
-            else:  # Completely shut down of the tool
-                self.cutoff_warning = 'The cut-off time for the I-D submission was %02dh UTC, %s.<br>The I-D submission tool will be reopened at %02dh local time at the IETF meeting location, %s.' % (settings.CUTOFF_HOUR, second_cut_off, settings.CUTOFF_HOUR, ietf_monday)
-                self.shutdown = True
-
+        elif now > cutoff_01 and now < reopen:
+            self.cutoff_warning = (
+                'The last submission time for the I-D submission was %s.<br/><br>'
+                'The I-D submission tool will be reopened after %s (IETF-meeting local time).' % (cutoff_01_str, reopen_str))
+            self.shutdown = True
     def clean_file(self, field_name, parser_class):
         f = self.cleaned_data[field_name]
         if not f:

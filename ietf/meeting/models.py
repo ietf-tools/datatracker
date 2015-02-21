@@ -15,6 +15,7 @@ from django.conf import settings
 # mostly used by json_dict()
 #from django.template.defaultfilters import slugify, date as date_format, time as time_format
 from django.template.defaultfilters import date as date_format
+import timedelta
 
 from timedeltafield import TimedeltaField
 
@@ -55,6 +56,19 @@ class Meeting(models.Model):
     # more than one timezone, and the pytz module doesn't provide timezone
     # lookup information for all relevant city/country combinations.
     time_zone = models.CharField(blank=True, max_length=255, choices=timezones)
+    idsubmit_cutoff_day_offset_00 = models.IntegerField(blank=True,
+        default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00,
+        help_text = "The number of days before the meeting start date when the submission of -00 drafts will be closed.")
+    idsubmit_cutoff_day_offset_01 = models.IntegerField(blank=True,
+        default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_01,
+        help_text = "The number of days before the meeting start date when the submission of -01 drafts etc. will be closed.")        
+    idsubmit_cutoff_time_utc  = timedelta.fields.TimedeltaField(blank=True,
+        default=settings.IDSUBMIT_DEFAULT_CUTOFF_TIME_UTC,
+        help_text = "The time of day (UTC) after which submission will be closed.  Use for example 23 hours, 59 minutes, 59 seconds.")
+    idsubmit_cutoff_warning_days  = timedelta.fields.TimedeltaField(blank=True,
+        default=settings.IDSUBMIT_DEFAULT_CUTOFF_WARNING_DAYS,
+        help_text = "How long before the 00 cutoff to start showing cutoff warnings.  Use for example 21 days or 3 weeks.")
+    #
     venue_name = models.CharField(blank=True, max_length=255)
     venue_addr = models.TextField(blank=True)
     break_area = models.CharField(blank=True, max_length=255)
@@ -83,17 +97,38 @@ class Meeting(models.Model):
     def end_date(self):
         return self.get_meeting_date(5)
 
+    def get_00_cutoff(self):
+        start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
+        cutoff_date = start_date - datetime.timedelta(days=self.idsubmit_cutoff_day_offset_00)
+        cutoff_time = cutoff_date + self.idsubmit_cutoff_time_utc
+        return cutoff_time
+
+    def get_01_cutoff(self):
+        start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
+        cutoff_date = start_date - datetime.timedelta(days=self.idsubmit_cutoff_day_offset_01)
+        cutoff_time = cutoff_date + self.idsubmit_cutoff_time_utc
+        return cutoff_time
+
+    def get_reopen_time(self):
+        start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day)
+        local_tz = pytz.timezone(self.time_zone)
+        local_date = local_tz.localize(start_date)
+        reopen_time = local_date + self.idsubmit_cutoff_time_utc
+        return reopen_time
+
+    @classmethod
+    def get_current_meeting(cls, type="ietf"):
+        return cls.objects.all().filter(type=type).order_by('-date').first()
+
     @classmethod
     def get_first_cut_off(cls):
-        date = cls.objects.all().filter(type="ietf").order_by('-date')[0].date
-        offset = datetime.timedelta(days=settings.FIRST_CUTOFF_DAYS)
-        return date - offset
+        meeting = cls.get_current_meeting()
+        return meeting.get_00_cutoff()
 
     @classmethod
     def get_second_cut_off(cls):
-        date = cls.objects.all().filter(type="ietf").order_by('-date')[0].date
-        offset = datetime.timedelta(days=settings.SECOND_CUTOFF_DAYS)
-        return date - offset
+        meeting = cls.get_current_meeting()
+        return meeting.get_01_cutoff()
 
     @classmethod
     def get_ietf_monday(cls):
@@ -115,11 +150,11 @@ class Meeting(models.Model):
     
     # the various dates are currently computed
     def get_submission_start_date(self):
-        return self.date + datetime.timedelta(days=settings.SUBMISSION_START_DAYS)
+        return self.date + datetime.timedelta(days=settings.MEETING_MATERIALS_SUBMISSION_START_DAYS)
     def get_submission_cut_off_date(self):
-        return self.date + datetime.timedelta(days=settings.SUBMISSION_CUTOFF_DAYS)
+        return self.date + datetime.timedelta(days=settings.MEETING_MATERIALS_SUBMISSION_CUTOFF_DAYS)
     def get_submission_correction_date(self):
-        return self.date + datetime.timedelta(days=settings.SUBMISSION_CORRECTION_DAYS)
+        return self.date + datetime.timedelta(days=settings.MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS)
 
     def get_schedule_by_name(self, name):
         return self.schedule_set.filter(name=name).first()
