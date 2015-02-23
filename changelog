@@ -54,7 +54,7 @@ ietfdb (5.11.1) ietf; urgency=medium
   * Added title annotations to major release entries in the changelog back 
     to 2010, and changelog parsing and release page support for the same.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  23 Feb 2015 12:30:25 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Feb 2015 20:49:11 +0000
 
 
 ietfdb (5.11.0) ietf; urgency=medium
