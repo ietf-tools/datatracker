@@ -1,3 +1,62 @@
+ietfdb (5.11.1) ietf; urgency=medium
+
+  This is a minor release, providing bugfixes and some enhancements.
+  Worth mentioning is pages which lets one view and search the draft- and
+  wg- email alias lists, the ability to control draft submission cutoff
+  individually per meeting, improved presentation of the submission cutoff
+  times, and release content annotations for major releases back to 2010
+  on the release overview page.  Details below:
+
+  * Added a slightly tweaked version of timedelta, in order to support 
+    handling of TimedeltaFields.
+
+  * Made the selector for Agenda.groups() match that of Agenda.area_list() 
+    by adding parent__isnull=False.  Without this, the two won't match if split 
+    by area.  Fixes issue #1607.
+
+  * Added 4 new fields to the meeting class, to hold draft submission 
+    cutoff information for the meeting.  On request, changed the presentation 
+    of the cutoff times to show the last submission time, rather than the 
+    beginning of the cutoff time. Changed the cutoff hour format to support 
+    full timedelta information, not just a given hour (this was necessary in 
+    order to be able to set the requested 23:59:59 submission stop time).
+
+  * Merged in [9083] from rjsparks@nostrum.com:
+    Added dealing with /wg/foo/email-aliases, /wg/email-aliases, and 
+    similar for /rg. Added an initial test suite for all invocations of the 
+    email_alias views.  
+
+  * Merged in [9070] from rjsparks@nostrum.com:
+    Adds pages to view the draft and group email aliases, either as a 
+    whole, or per document or group.  
+
+  * Added newly generated .ics timezone snippets, from
+    http://www.ietf.org/timezones/tzdata-latest.tar.gz.  This updates the .ics
+    files to use timezone information current as of 13 Feb 2015.
+
+  * Modified the vzic makefile to generate new zoneinfo data by fetching 
+    the latest tzdata file from ietf.org/timezones/tzdata-latest.tar.gz and 
+    running vzic to update the .ics files as needed.
+
+  * Don't create empty Alias records. Fixes issue #1603.
+
+  * Added a guard against crashing because of missing timeslot location or 
+    time in check_audio_files(), which is called by create_proceedings() after 
+    changes to meeting materials.  Fixes issue 1604.
+
+  * Added back a functioning get_fieldsets() method, which was removed 
+    instead of corrected in the Django 1.7 upgrade.
+
+  * Added a missing table column to the WG document page for the case when 
+    the user isn't logged in.  Addresses issue #1601 (but add links in the 
+    column are still missing).
+
+  * Added title annotations to major release entries in the changelog back 
+    to 2010, and changelog parsing and release page support for the same.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Feb 2015 12:30:25 -0800
+
+
 ietfdb (5.11.0) ietf; urgency=medium
 
   **Django 1.7**
