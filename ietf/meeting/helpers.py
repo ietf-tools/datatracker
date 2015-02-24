@@ -168,13 +168,14 @@ def agenda_permissions(meeting, schedule, user):
 
     return cansee, canedit, secretariat
 
-def session_constraint_expire(session):
+def session_constraint_expire(request,session):
     from django.core.urlresolvers import reverse
     from ajax import session_constraints
     path = reverse(session_constraints, args=[session.meeting.number, session.pk])
-    request = HttpRequest()
-    request.path = path
-    key = get_cache_key(request)
+    temp_request = HttpRequest()
+    temp_request.path = path
+    temp_request.META['HTTP_HOST'] = request.META['HTTP_HOST']
+    key = get_cache_key(temp_request)
     if key is not None and cache.has_key(key):
         cache.delete(key)
 
