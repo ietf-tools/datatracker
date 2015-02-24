@@ -101,7 +101,8 @@ def mycomp(timeslot):
 def get_progress_stats(sdate,edate):
     '''
     This function takes a date range and produces a dictionary of statistics / objects for use
-    in a progress report.
+    in a progress report.  Generally the end date will be the date of the last meeting
+    and the start date will be the date of the meeting before that.
     '''
     data = {}
     data['sdate'] = sdate
@@ -111,12 +112,12 @@ def get_progress_stats(sdate,edate):
     new_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
                                                             docevent__newrevisiondocevent__rev='00',
                                                             docevent__time__gte=sdate,
-                                                            docevent__time__lte=edate)
+                                                            docevent__time__lt=edate)
     data['new'] = new_docs.count()
     data['updated'] = 0
     data['updated_more'] = 0
     for d in new_docs:
-        updates = d.docevent_set.filter(type='new_revision',time__gte=sdate,time__lte=edate).count()
+        updates = d.docevent_set.filter(type='new_revision',time__gte=sdate,time__lt=edate).count()
         if updates > 1:
             data['updated'] += 1
         if updates > 2:
@@ -124,7 +125,7 @@ def get_progress_stats(sdate,edate):
 
     # calculate total documents updated, not counting new, rev=00
     result = set()
-    events = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lte=edate)
+    events = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lt=edate)
     for e in events.filter(type='new_revision').exclude(newrevisiondocevent__rev='00'):
         result.add(e.doc)
     data['total_updated'] = len(result)
@@ -136,23 +137,17 @@ def get_progress_stats(sdate,edate):
     data['approved'] = events.filter(type='iesg_approved').count()
 
     # get 4 weeks
-    monday = Meeting.get_ietf_monday()
-    cutoff = monday + datetime.timedelta(days=3)
-    ff1_date = cutoff - datetime.timedelta(days=28)
-    #ff2_date = cutoff - datetime.timedelta(days=21)
-    #ff3_date = cutoff - datetime.timedelta(days=14)
-    #ff4_date = cutoff - datetime.timedelta(days=7)
-
+    ff1_date = edate - datetime.timedelta(days=28)
     ff_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
                                                            docevent__newrevisiondocevent__rev='00',
                                                            docevent__time__gte=ff1_date,
-                                                           docevent__time__lte=cutoff)
+                                                           docevent__time__lt=edate)
     ff_new_count = ff_docs.count()
     ff_new_percent = format(ff_new_count / float(data['new']),'.0%')
 
     # calculate total documents updated in final four weeks, not counting new, rev=00
     result = set()
-    events = DocEvent.objects.filter(doc__type='draft',time__gte=ff1_date,time__lte=cutoff)
+    events = DocEvent.objects.filter(doc__type='draft',time__gte=ff1_date,time__lt=edate)
     for e in events.filter(type='new_revision').exclude(newrevisiondocevent__rev='00'):
         result.add(e.doc)
     ff_update_count = len(result)
@@ -164,28 +159,28 @@ def get_progress_stats(sdate,edate):
     data['ff_update_percent'] = ff_update_percent
 
     # Progress Report Section
-    data['docevents'] = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lte=edate)
+    data['docevents'] = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lt=edate)
     data['action_events'] = data['docevents'].filter(type='iesg_approved')
     data['lc_events'] = data['docevents'].filter(type='sent_last_call')
 
     data['new_groups'] = Group.objects.filter(type='wg',
                                               groupevent__changestategroupevent__state='active',
                                               groupevent__time__gte=sdate,
-                                              groupevent__time__lte=edate)
+                                              groupevent__time__lt=edate)
 
     data['concluded_groups'] = Group.objects.filter(type='wg',
                                                     groupevent__changestategroupevent__state='conclude',
                                                     groupevent__time__gte=sdate,
-                                                    groupevent__time__lte=edate)
+                                                    groupevent__time__lt=edate)
 
     data['new_docs'] = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
                                                                     docevent__time__gte=sdate,
-                                                                    docevent__time__lte=edate).distinct()
+                                                                    docevent__time__lt=edate).distinct()
 
     data['rfcs'] = DocEvent.objects.filter(type='published_rfc',
                                            doc__type='draft',
                                            time__gte=sdate,
-                                           time__lte=edate)
+                                           time__lt=edate)
 
     # attach the ftp URL for use in the template
     for event in data['rfcs']:
@@ -553,12 +548,11 @@ def gen_progress(context, final=True):
     '''
     meeting = context['meeting']
 
-    # proceedings are run sometime after the meeting, so end date = the previous meeting
+    # proceedings are run sometime after the meeting, so end date = the passed meeting
     # date and start date = the date of the meeting before that
-    now = datetime.date.today()
-    meetings = Meeting.objects.filter(type='ietf',date__lt=now).order_by('-date')
-    start_date = meetings[1].date
-    end_date = meetings[0].date
+    previous_meetings = Meeting.objects.filter(type='ietf',date__lt=meeting.date).order_by('-date')
+    start_date = previous_meetings[0].date
+    end_date = meeting.date
     data = get_progress_stats(start_date,end_date)
     data['meeting'] = meeting
     data['final'] = final
