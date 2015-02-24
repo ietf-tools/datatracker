@@ -231,7 +231,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             def diff(attr, name):
                 v = getattr(group, attr)
                 if clean[attr] != v:
-                    changes.append(desc(name, clean[attr], v))
+                    changes.append((attr, clean[attr], desc(name, clean[attr], v)))
                     setattr(group, attr, clean[attr])
 
             # update the attributes, keeping track of what we're doing
@@ -251,9 +251,9 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                     new = [ new.role_email('ad'),] if new else []
                 old = Email.objects.filter(role__group=group, role__name=slug).select_related("person")
                 if set(new) != set(old):
-                    changes.append(desc(title,
+                    changes.append((attr, new, desc(title,
                                         ", ".join(x.get_name() for x in new),
-                                        ", ".join(x.get_name() for x in old)))
+                                        ", ".join(x.get_name() for x in old))))
                     group.role_set.filter(name=slug).delete()
                     for e in new:
                         Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
@@ -273,7 +273,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             new_urls = clean['urls']
             old_urls = format_urls(group.groupurl_set.order_by('url'), ", ")
             if ", ".join(sorted(new_urls)) != old_urls:
-                changes.append(desc('Urls', ", ".join(sorted(new_urls)), old_urls))
+                changes.append(('urls', new_urls, desc('Urls', ", ".join(sorted(new_urls)), old_urls)))
                 group.groupurl_set.all().delete()
                 # Add new ones
                 for u in new_urls:
@@ -288,8 +288,11 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             group.time = datetime.datetime.now()
 
             if changes and not new_group:
-                for c in changes:
-                    GroupEvent.objects.create(group=group, by=request.user.person, type="info_changed", desc=c)
+                for attr, new, desc in changes:
+                    if attr == 'state':
+                        ChangeStateGroupEvent.objects.create(group=group, time=group.time, state=new, by=request.user.person, type="changed_state", desc=desc)
+                    else:
+                        GroupEvent.objects.create(group=group, time=group.time, by=request.user.person, type="info_changed", desc=desc)
 
             group.save()
 
