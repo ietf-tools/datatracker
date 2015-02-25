@@ -375,7 +375,7 @@ IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 
 # Days from meeting to day of cut off dates on submit -- cutoff_time_utc is added to this
-IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00 = 20
+IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00 = 13
 IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_01 = 13
 IDSUBMIT_DEFAULT_CUTOFF_TIME_UTC = datetime.timedelta(hours=23, minutes=59, seconds=59)
 IDSUBMIT_DEFAULT_CUTOFF_WARNING_DAYS = datetime.timedelta(days=21)
