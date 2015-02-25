@@ -1,3 +1,24 @@
+ietfdb (5.11.2) ietf; urgency=medium
+
+  This is a minor release with a few additional bugfixes:
+
+  * Merged in [9121] from rcross@amsl.com:
+    Resolved some issues with the proceedings progress repport.
+
+  * Merged in [9099] from rcross@amsl.com:
+    Added an ietf/bin script, merge-person-records.   
+
+  * Merged in [9097] from rcross@amsl.com:
+    Editing session request causes KeyError.  Fixes #1605.
+
+  * Changed the handling of the group edit form so as to generate a 
+    ChangeStateGroupEvent for state changes, instead of a generic GroupEvent of 
+    type 'info_changed'.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Feb 2015 09:06:43 +0000
+
+
 ietfdb (5.11.1) ietf; urgency=medium
 
   This is a minor release, providing bugfixes and some enhancements.
