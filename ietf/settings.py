@@ -268,6 +268,16 @@ TEST_MATERIALS_DIR = "tmp-meeting-materials-dir"
 
 TEST_BLUESHEET_DIR = "tmp-bluesheet-dir"
 
+TEST_CODE_COVERAGE_EXCLUDE = [
+    "*/tests*",
+    "*/0*",
+    "*/admin.py",
+    "*/migrations/*",
+    "*/test_runner.py"
+]
+TEST_CODE_COVERAGE_MASTER_FILE = "coverage-master.json"
+TEST_CODE_COVERAGE_LATEST_FILE = "coverage-latest.json"
+
 # WG Chair configuration
 MAX_WG_DELEGATES = 3
 

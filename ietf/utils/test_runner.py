@@ -32,14 +32,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import socket, re, os, time, importlib
+
+import re
+import os
+import sys
+import time
+import json
+import pytz
+import importlib
+import socket
 import warnings
+import coverage
+import datetime
+from coverage.report import Reporter
+from coverage.results import Numbers
+from coverage.misc import NotPython
+from optparse import make_option
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist
+from django.test import TestCase
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 
+import debug                            # pyflakes:ignore
+
+import ietf
 import ietf.utils.mail
 from ietf.utils.test_smtpserver import SMTPTestServerDriver
 
@@ -110,36 +128,6 @@ def get_url_patterns(module):
                 res.append((item.regex.pattern + ".*" + sub, subitem))
     return res
 
-def check_url_coverage(verbosity):
-    import ietf.urls
-
-    url_patterns = get_url_patterns(ietf.urls)
-
-    # skip some patterns that we don't bother with
-    def ignore_pattern(regex, pattern):
-        import django.views.static
-        return (regex in ("^_test500/$", "^accounts/testemail/$")
-                or regex.startswith("^admin/")
-                or getattr(pattern.callback, "__name__", "") == "RedirectView"
-                or getattr(pattern.callback, "__name__", "") == "TemplateView"
-                or pattern.callback == django.views.static.serve)
-
-    patterns = [(regex, re.compile(regex)) for regex, pattern in url_patterns
-                if not ignore_pattern(regex, pattern)]
-
-    covered = set()
-    for url in visited_urls:
-        for regex, compiled in patterns:
-            if regex not in covered and compiled.match(url[1:]): # strip leading /
-                covered.add(regex)
-                break
-
-    missing = list(set(regex for regex, compiled in patterns) - covered)
-
-    if missing and verbosity > 1:
-        print "The following URL patterns were not tested"
-        for pattern in sorted(missing):
-            print "     Not tested", pattern
 
 def get_templates():
     templates = set()
@@ -156,23 +144,14 @@ def get_templates():
                 templates.add(file)
             else:
                 templates.add(os.path.join(relative_path, file))
+
     return templates
-
-def check_template_coverage(verbosity):
-    all_templates = get_templates()
-
-    not_loaded = list(all_templates - loaded_templates)
-    if not_loaded and verbosity > 1:
-        print "The following templates were never loaded during test"
-        for t in sorted(not_loaded):
-            print "     Not loaded", t
 
 def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
-    import ietf.settings as config
-    topdir = os.path.dirname(os.path.dirname(config.__file__))
+    topdir = os.path.dirname(os.path.dirname(settings.BASE_DIR))
     tfile = open(os.path.join(topdir,"testresult"), "a")
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
     if failures:
@@ -185,32 +164,171 @@ def save_test_results(failures, test_labels):
     tfile.close()
 
 
+class CoverageReporter(Reporter):
+    def report(self):
+        self.find_code_units(None)
+
+        total = Numbers()
+        result = {"coverage": 0.0, "covered": {}}
+        for cu in self.code_units:
+            try:
+                analysis = self.coverage._analyze(cu)
+                nums = analysis.numbers
+                result["covered"][cu.name] = nums.pc_covered/100.0
+                total += nums
+            except KeyboardInterrupt:                   # pragma: not covered
+                raise
+            except Exception:
+                report_it = not self.config.ignore_errors
+                if report_it:
+                    typ, msg = sys.exc_info()[:2]
+                    if typ is NotPython and not cu.should_be_python():
+                        report_it = False
+                if report_it:
+                    raise
+        result["coverage"] = total.pc_covered/100.0
+        return result
+
+
+class CoverageTest(TestCase):
+
+    def __init__(self, test_runner=None, **kwargs):
+        self.runner = test_runner
+        super(CoverageTest, self).__init__(**kwargs)
+
+    def report_test_result(self, test):
+            latest_coverage_version = self.runner.coverage_master["version"]
+
+            master_data = self.runner.coverage_master[latest_coverage_version][test]
+            master_missing = [ k for k,v in master_data["covered"].items() if not v ]
+            master_coverage = master_data["coverage"]
+
+            test_data = self.runner.coverage_data[test]
+            test_missing = [ k for k,v in test_data["covered"].items() if not v ]
+            test_coverage = test_data["coverage"]
+
+            if self.runner.run_full_test_suite:
+                # Assert coverage failure only if we're running the full test suite -- if we're
+                # only running some tests, then of course the coverage is going to be low
+                self.assertGreaterEqual(test_coverage, master_coverage,
+                    msg = "The %s coverage percentage is now lower (%.2f%%) than for version %s (%.2f%%)" %
+                        ( test, test_coverage*100, latest_coverage_version, master_coverage*100, ))
+                self.assertLessEqual(len(test_missing), len(master_missing),
+                    msg = "New %s without test coverage since %s: %s" % (test, latest_coverage_version, list(set(test_missing) - set(master_missing))))
+
+    def template_coverage_test(self):
+        global loaded_templates
+        if self.runner.check_coverage:
+            all = get_templates()
+            # The calculations here are slightly complicated by the situation
+            # that loaded_templates also contain nomcom page templates loaded
+            # from the database.  However, those don't appear in all
+            covered = [ k for k in all if k in loaded_templates ]
+            self.runner.coverage_data["template"] = {
+                "coverage": 1.0*len(covered)/len(all),
+                "covered":  dict( (k, k in covered) for k in all ),
+                }
+            self.report_test_result("template")
+        else:
+            self.skipTest("Coverage switched off with --skip-coverage")
+
+    def url_coverage_test(self):
+        if self.runner.check_coverage:
+            import ietf.urls
+            url_patterns = get_url_patterns(ietf.urls)
+
+            # skip some patterns that we don't bother with
+            def ignore_pattern(regex, pattern):
+                import django.views.static
+                return (regex in ("^_test500/$", "^accounts/testemail/$")
+                        or regex.startswith("^admin/")
+                        or getattr(pattern.callback, "__name__", "") == "RedirectView"
+                        or getattr(pattern.callback, "__name__", "") == "TemplateView"
+                        or pattern.callback == django.views.static.serve)
+
+            patterns = [(regex, re.compile(regex)) for regex, pattern in url_patterns
+                        if not ignore_pattern(regex, pattern)]
+            all = [ regex for regex, compiled in patterns ]
+
+            covered = set()
+            for url in visited_urls:
+                for regex, compiled in patterns:
+                    if regex not in covered and compiled.match(url[1:]): # strip leading /
+                        covered.add(regex)
+                        break
+
+            self.runner.coverage_data["url"] = {
+                "coverage": 1.0*len(covered)/len(all),
+                "covered": dict( (k, k in covered) for k in all ),
+                }
+
+            self.report_test_result("url")
+        else:
+            self.skipTest("Coverage switched off with --skip-coverage")
+
+    def code_coverage_test(self):
+        if self.runner.check_coverage:
+            checker = self.runner.code_coverage_checker
+            checker.stop()
+            checker.save()
+            checker._harvest_data()
+            checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE,
+                include=None, file=None)
+            reporter = CoverageReporter(checker, checker.config)
+            self.runner.coverage_data["code"] = reporter.report()
+            self.report_test_result("code")
+        else:
+            self.skipTest("Coverage switched off with --skip-coverage")
+
 class IetfTestRunner(DiscoverRunner):
-    def run_tests(self, test_labels, extra_tests=None, **kwargs):
-        # Tests that involve switching back and forth between the real
-        # database and the test database are way too dangerous to run
-        # against the production database
-        if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
-            raise EnvironmentError("Refusing to run tests on production server")
+    option_list = (
+        make_option('--skip-coverage',
+            action='store_true', dest='skip_coverage', default=False,
+            help='Skip test coverage measurements for code, templates, and URLs. '
+        ),
+        make_option('--save-version-coverage',
+            action='store', dest='save_version_coverage', default=False,
+            help='Save test coverage data under the given version label'),
+    )
+
+    def __init__(self, skip_coverage=False, save_version_coverage=None, **kwargs):
+        #
+        self.check_coverage = not skip_coverage
+        self.save_version_coverage = save_version_coverage
+        #
+        self.root_dir = os.path.dirname(settings.BASE_DIR)
+        self.coverage_file = os.path.join(self.root_dir, settings.TEST_CODE_COVERAGE_MASTER_FILE)
+        super(IetfTestRunner, self).__init__(**kwargs)
+
+    def setup_test_environment(self, **kwargs):
         ietf.utils.mail.test_mode = True
         ietf.utils.mail.SMTP_ADDR['ip4'] = '127.0.0.1'
         ietf.utils.mail.SMTP_ADDR['port'] = 2025
+        #
+        if self.check_coverage:
+            with open(self.coverage_file) as file:
+                self.coverage_master = json.load(file)
+            self.coverage_data = {
+                "time": datetime.datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "template": {
+                    "coverage": 0.0, 
+                    "covered": {},
+                },
+                "url": {
+                    "coverage": 0.0, 
+                    "covered": {},
+                },
+                "code": {
+                    "coverage": 0.0, 
+                    "covered": {},
+                },
+            }
 
-        global old_destroy, old_create, test_database_name
-        from django.db import connection
-        old_create = connection.creation.__class__.create_test_db
-        connection.creation.__class__.create_test_db = safe_create_1
-        old_destroy = connection.creation.__class__.destroy_test_db
-        connection.creation.__class__.destroy_test_db = safe_destroy_0_1
-
-        check_coverage = not test_labels
-
-        if check_coverage:
             settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
             settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
 
-        if not test_labels: # we only want to run our own tests
-            test_labels = [app for app in settings.INSTALLED_APPS if app.startswith("ietf")]
+            self.code_coverage_checker = coverage.coverage(source=[ settings.BASE_DIR ], cover_pylib=False, omit=settings.TEST_CODE_COVERAGE_EXCLUDE)
+            self.code_coverage_checker.start()
 
         if settings.SITE_ID != 1:
             print "     Changing SITE_ID to '1' during testing."
@@ -222,19 +340,75 @@ class IetfTestRunner(DiscoverRunner):
 
         assert not settings.IDTRACKER_BASE_URL.endswith('/')
 
-        smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None) 
-        smtpd_driver.start()
+        self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None) 
+        self.smtpd_driver.start()
 
-        try:
-            failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
-        finally:
-            smtpd_driver.stop()
+        super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
-        if check_coverage and not failures:
-            check_template_coverage(self.verbosity)
-            check_url_coverage(self.verbosity)
+    def teardown_test_environment(self, **kwargs):
+        self.smtpd_driver.stop()
+        if self.check_coverage:
+            latest_coverage_file = os.path.join(self.root_dir, settings.TEST_CODE_COVERAGE_LATEST_FILE)
+            with open(latest_coverage_file, "w") as file:
+                json.dump(self.coverage_data, file, indent=2, sort_keys=True)
+            if self.save_version_coverage:
+                with open(self.coverage_file, "w") as file:
+                    self.coverage_master["version"] = self.save_version_coverage
+                    self.coverage_master[self.save_version_coverage] = self.coverage_data
+                    json.dump(self.coverage_master, file, indent=2, sort_keys=True)
+        super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
-            print "0 test failures - coverage shown above"
+    def run_tests(self, test_labels, extra_tests=None, **kwargs):
+        # Tests that involve switching back and forth between the real
+        # database and the test database are way too dangerous to run
+        # against the production database
+        if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
+            raise EnvironmentError("Refusing to run tests on production server")
+
+        global old_destroy, old_create, test_database_name
+        from django.db import connection
+        old_create = connection.creation.__class__.create_test_db
+        connection.creation.__class__.create_test_db = safe_create_1
+        old_destroy = connection.creation.__class__.destroy_test_db
+        connection.creation.__class__.destroy_test_db = safe_destroy_0_1
+
+        self.run_full_test_suite = not test_labels
+
+        if not test_labels: # we only want to run our own tests
+            test_labels = [app for app in settings.INSTALLED_APPS if app.startswith("ietf")]
+
+        extra_tests = [
+            CoverageTest(test_runner=self, methodName='url_coverage_test'),
+            CoverageTest(test_runner=self, methodName='template_coverage_test'),
+            CoverageTest(test_runner=self, methodName='code_coverage_test'),
+        ]
+
+        self.reorder_by += (CoverageTest, ) # see to it that the coverage tests come last
+
+        failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
+
+        if self.check_coverage:
+            print("")
+            for test in ["template", "url", "code"]:
+                latest_coverage_version = self.coverage_master["version"]
+
+                master_data = self.coverage_master[latest_coverage_version][test]
+                #master_all = master_data["covered"]
+                #master_missing = [ k for k,v in master_data["covered"].items() if not v ]
+                master_coverage = master_data["coverage"]
+
+                test_data = self.coverage_data[test]
+                #test_all = test_data["covered"]
+                #test_missing = [ k for k,v in test_data["covered"].items() if not v ]
+                test_coverage = test_data["coverage"]
+
+                print( "%-8s coverage: %.1f%%  (%s: %.1f%%)" %
+                    (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, ))
+
+            print("""
+                Code coverage data has been written to '.coverage', readable by
+                %s/bin/coverage.
+                """.replace("    ","") % settings.BASE_DIR)
 
         save_test_results(failures, test_labels)
 
