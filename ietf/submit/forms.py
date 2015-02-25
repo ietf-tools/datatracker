@@ -51,22 +51,30 @@ class UploadForm(forms.Form):
         cutoff_00_str = cutoff_00.strftime("%Y-%m-%d %H:%M %Z")
         cutoff_01_str = cutoff_01.strftime("%Y-%m-%d %H:%M %Z")
         reopen_str    = reopen.strftime("%Y-%m-%d %H:%M %Z")
-        if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now <= cutoff_00:
-            self.cutoff_warning = ( 'The last submission time for new documents (i.e., version -00 Internet-Drafts) before %s is %s.<br/><br/>' % (meeting, cutoff_00_str) +
-                                    'The last submission time for revisions to existing documents before %s is %s.<br/>' % (meeting, cutoff_01_str) )
-        elif now.date() >= cutoff_00.date() and now <= cutoff_01:
-            # We are in the first_cut_off
-            if now < cutoff_00:
+        if cutoff_00 == cutoff_01:
+            if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
+                self.cutoff_warning = ( 'The last submission time for Internet-Drafts before %s is %s.<br/><br/>' % (meeting, cutoff_00_str))
+            elif now <= cutoff_00:
                 self.cutoff_warning = (
-                    'The last submission time for new documents (i.e., version -00 Internet-Drafts) before the meeting is %s.<br/>'
-                    'After that, you will not be able to submit a new document until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
-            else:  # No 00 version allowed
-                self.cutoff_warning = (
-                    'The last submission time for new documents (i.e., version -00 Internet-Drafts) was %s.<br/>'
-                    'You will not be able to submit a new document until after %s (IETF-meeting local time).<br/><br>'
-                    'You can still submit a version -01 or higher Internet-Draft until %s' % (cutoff_00_str, reopen_str, cutoff_01_str, ))
-                self.in_first_cut_off = True
-        elif now > cutoff_01 and now < reopen:
+                    'The last submission time for new Internet-Drafts before the meeting is %s.<br/>'
+                    'After that, you will not be able to submit drafts until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
+        else:
+            if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
+                self.cutoff_warning = ( 'The last submission time for new documents (i.e., version -00 Internet-Drafts) before %s is %s.<br/><br/>' % (meeting, cutoff_00_str) +
+                                        'The last submission time for revisions to existing documents before %s is %s.<br/>' % (meeting, cutoff_01_str) )
+            elif now.date() >= cutoff_00.date() and now <= cutoff_01:
+                # We are in the first_cut_off
+                if now < cutoff_00:
+                    self.cutoff_warning = (
+                        'The last submission time for new documents (i.e., version -00 Internet-Drafts) before the meeting is %s.<br/>'
+                        'After that, you will not be able to submit a new document until after %s (IETF-meeting local time)' % (cutoff_00_str, reopen_str, ))
+                else:  # No 00 version allowed
+                    self.cutoff_warning = (
+                        'The last submission time for new documents (i.e., version -00 Internet-Drafts) was %s.<br/>'
+                        'You will not be able to submit a new document until after %s (IETF-meeting local time).<br/><br>'
+                        'You can still submit a version -01 or higher Internet-Draft until %s' % (cutoff_00_str, reopen_str, cutoff_01_str, ))
+                    self.in_first_cut_off = True
+        if now > cutoff_01 and now < reopen:
             self.cutoff_warning = (
                 'The last submission time for the I-D submission was %s.<br/><br>'
                 'The I-D submission tool will be reopened after %s (IETF-meeting local time).' % (cutoff_01_str, reopen_str))

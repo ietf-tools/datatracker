@@ -1,3 +1,33 @@
+ietfdb (5.12.0) ietf; urgency=medium
+
+  This release provides measurement of how much of the code is being exercised
+  by our test suite, by integrating the 'coverage.py' tool in the test suite
+  itself.  The percentage of the code excercised by the test suite is compared
+  with the figure from the latest release, and a lower coverage constitutes a
+  test failure.  This way it shouldn't be possible to add new code without
+  also adding tests, without getting a test suite failure.  This should
+  encourage gradually increasing levels of test suit coverage :-)
+
+  Additionally, similar measurements and comparisons have been added for
+  template and URL coverage of the test suite; these also have been
+  implemented as tests, and sinking coverage of templates or URLs in the
+  test suite will result in tests failures, in the same way as for code
+  coverage.
+
+  The results of the test suit coverage of code, templates, and URLs is saved
+  to disk, in order to make the coverage details available for inspection.
+  Coverage data per source file/template/URL is available in json format in
+  a file 'coverage-latest.json' in the working directory, and more detailed
+  per-line code coverage data is available in a file '.coverage', which is
+  readable by the standalone 'coverage' program from 'coverage.py' from
+  http://nedbatchelder.com/code/coverage/.
+
+  * Merged in personal/henrik/v5.11.1-dev0@9103, which provides new tests
+    for the test suite's code coverage, template coverage, and URL coverage.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Feb 2015 19:15:36 -0000
+
+
 ietfdb (5.11.2) ietf; urgency=medium
 
   This is a minor release with a few additional bugfixes:
