@@ -664,7 +664,7 @@ class ScheduledSession(models.Model):
     pinned   = models.BooleanField(default=False, help_text="Do not move session during automatic placement")
 
     class Meta:
-        ordering = ["timeslot__time", "session__group__parent__name", "session__group__acronym", "session__name", ]
+        ordering = ["timeslot__time", "timeslot__type__slug", "session__group__parent__name", "session__group__acronym", "session__name", ]
 
     # use to distinguish this from FakeScheduledSession in placement.py
     faked   = "real"
