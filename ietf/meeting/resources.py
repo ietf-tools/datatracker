@@ -5,8 +5,8 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from ietf import api
 
-from ietf.meeting.models import *       # pyflakes:ignore
-
+from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
+                                TimeSlot, ScheduledSession, SessionPresentation )
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -38,7 +38,7 @@ class ResourceAssociationResource(ModelResource):
     name = ToOneField(RoomResourceNameResource, 'name')
     class Meta:
         queryset = ResourceAssociation.objects.all()
-        #resource_name = 'resourceassociation'
+        resource_name = 'resourceassociation'
         filtering = { 
             "id": ALL,
             "icon": ALL,
@@ -144,7 +144,7 @@ class TimeSlotResource(ModelResource):
     type = ToOneField(TimeSlotTypeNameResource, 'type')
     location = ToOneField(RoomResource, 'location', null=True)
     sessions = ToManyField(SessionResource, 'sessions', null=True)
-    duration = TimedeltaField()
+    duration = api.TimedeltaField()
     class Meta:
         queryset = TimeSlot.objects.all()
         #resource_name = 'timeslot'
@@ -182,4 +182,21 @@ class ScheduledSessionResource(ModelResource):
             "extendedfrom": ALL_WITH_RELATIONS,
         }
 api.meeting.register(ScheduledSessionResource())
+
+
+
+from ietf.doc.resources import DocumentResource
+class SessionPresentationResource(ModelResource):
+    session          = ToOneField(SessionResource, 'session')
+    document         = ToOneField(DocumentResource, 'document')
+    class Meta:
+        queryset = SessionPresentation.objects.all()
+        #resource_name = 'sessionpresentation'
+        filtering = { 
+            "id": ALL,
+            "rev": ALL,
+            "session": ALL_WITH_RELATIONS,
+            "document": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(SessionPresentationResource())
 

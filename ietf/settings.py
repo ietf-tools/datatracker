@@ -201,6 +201,7 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     'django.contrib.messages',
     'tastypie',
+    'ietf.api',
     'ietf.person',
     'ietf.name',
     'ietf.group',
@@ -270,10 +271,10 @@ TEST_BLUESHEET_DIR = "tmp-bluesheet-dir"
 
 TEST_CODE_COVERAGE_EXCLUDE = [
     "*/tests*",
-    "*/0*",
     "*/admin.py",
     "*/migrations/*",
-    "*/test_runner.py"
+    "ietf/settings*",
+    "ietf/utils/test_runner.py",
 ]
 TEST_CODE_COVERAGE_MASTER_FILE = "coverage-master.json"
 TEST_CODE_COVERAGE_LATEST_FILE = "coverage-latest.json"
