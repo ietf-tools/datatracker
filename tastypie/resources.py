@@ -2068,6 +2068,8 @@ class BaseModelResource(Resource):
             return self.authorized_read_list(objects, bundle)
         except ValueError:
             raise BadRequest("Invalid resource lookup data provided (mismatched type).")
+        except TypeError as e:
+            raise BadRequest("Invalid resource lookup data provided (%s)." % e)
 
     def obj_get(self, bundle, **kwargs):
         """
