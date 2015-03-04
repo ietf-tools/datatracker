@@ -35,7 +35,7 @@ from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, 
 # -------------------------------------------------
 # Globals 
 # -------------------------------------------------
-AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IRTF Chair','IAB Group Chair','Area Director','Secretariat','Team Chair')
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','AG Secretary','IRTF Chair','IAB Group Chair','Area Director','Secretariat','Team Chair')
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
