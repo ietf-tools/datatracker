@@ -98,9 +98,14 @@ th {
      {% endfor %}</select></td>
   </tr>
   {% endfor %}
+  <tr><th>Email:</th><td ></td><td colspan="2"><i>Active email
+     addresses are checked, inactive addresses unchecked.<br/>
+     Inactive addresses will not be used for email delivery from the
+     datatracker<br/> or in draft aliases; the first one in the list below
+     will be used instead in that case.</i></td></tr>
   {% for email in emails %}
   <tr>
-    <th>{% if forloop.first %}Email:{% endif %}</th>
+    <th></th>
     <td></td>
     <td colspan="2">
     <input type="checkbox" id="controller_{{email.address}}" name="{{email.address}}" {% if email.active %}checked="checked"{% else %}{% endif %} onchange="style_email(this)"/>
