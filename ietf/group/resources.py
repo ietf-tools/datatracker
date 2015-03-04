@@ -84,7 +84,7 @@ class GroupHistoryResource(ModelResource):
     parent = ToOneField(GroupResource, 'parent', null=True)
     ad = ToOneField(PersonResource, 'ad', null=True)
     group = ToOneField(GroupResource, 'group')
-    unused_states = ToManyField('ietf.doc.StateResource', 'unused_states', null=True)
+    unused_states = ToManyField('ietf.doc.resources.StateResource', 'unused_states', null=True)
     unused_tags = ToManyField(DocTagNameResource, 'unused_tags', null=True)
     class Meta:
         queryset = GroupHistory.objects.all()
