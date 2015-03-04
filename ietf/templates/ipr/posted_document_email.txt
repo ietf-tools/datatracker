@@ -1,5 +1,4 @@
-{% load ietf_filters %}
-To: {{ to_email }}
+{% load ietf_filters %}To: {{ to_email }}
 From: IETF Secretariat <ietf-ipr@ietf.org>
 Subject: IPR Disclosure {{ ipr.title }}
 Cc: {{ cc_email }}

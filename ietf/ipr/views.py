@@ -587,7 +587,7 @@ def notify(request, id, type):
                     response_due = datetime.datetime.now().date() + datetime.timedelta(days=30),
                     message = message,
                 )
-            messages.success(request,'Notifications send')
+            messages.success(request,'Notifications sent')
             return redirect("ipr_show", id=ipr.id)
             
     else:

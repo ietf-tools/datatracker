@@ -15,6 +15,7 @@ from ietf.ipr.utils import get_genitive, get_ipr_summary
 from ietf.message.models import Message
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data
+from ietf.utils.mail import outbox
 
 
 class IprTests(TestCase):
@@ -472,12 +473,30 @@ I would like to revoke this declaration.
         # fail if not logged in
         r = self.client.get(url,follow=True)
         self.assertTrue("Sign In" in r.content)
+        len_before = len(outbox)
         # successful post
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url,follow=True)
         self.assertEqual(r.status_code,200)
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
         self.assertEqual(ipr.state.slug,'posted')
+        url = urlreverse('ipr_notify',kwargs={ 'id':ipr.id, 'type':'posted'})
+        r = self.client.get(url,follow=True)
+        q = PyQuery(r.content)
+        data = dict()
+        for name in ['form-TOTAL_FORMS','form-INITIAL_FORMS','form-MIN_NUM_FORMS','form-MAX_NUM_FORMS']:
+            data[name] = q('form input[name=%s]'%name).val()
+        for i in range(0,int(data['form-TOTAL_FORMS'])):
+            name = 'form-%d-type' % i
+            data[name] = q('form input[name=%s]'%name).val()
+            text_name = 'form-%d-text' % i
+            data[text_name] = q('form textarea[name=%s]'%text_name).text()
+        r = self.client.post(url, data )
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(len(outbox),len_before+2)
+        self.assertTrue('george@acme.com' in outbox[len_before]['To'])
+        self.assertTrue('aread@ietf.org' in outbox[len_before+1]['To'])
+        self.assertTrue('mars-wg@ietf.org' in outbox[len_before+1]['Cc'])
 
     def test_process_response_email(self):
         # first send a mail
