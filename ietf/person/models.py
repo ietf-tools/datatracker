@@ -60,7 +60,9 @@ class PersonInfo(models.Model):
             return e[0]
         return None
     def email_address(self):
-        e = self.email_set.filter(active=True).order_by("-time").first()
+        e = self.email_set.filter(primary=True).first()
+        if not e:
+            e = self.email_set.filter(active=True).order_by("-time").first()
         if e:
             return e.address
         else:
@@ -150,6 +152,7 @@ class Email(models.Model):
     address = models.CharField(max_length=64, primary_key=True)
     person = models.ForeignKey(Person, null=True)
     time = models.DateTimeField(auto_now_add=True)
+    primary = models.BooleanField(default=False)
     active = models.BooleanField(default=True)      # Old email addresses are *not* purged, as history
                                         # information points to persons through these
     def __unicode__(self):
