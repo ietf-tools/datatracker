@@ -235,7 +235,7 @@ class CoverageTest(TestCase):
             # from the database.  However, those don't appear in all
             covered = [ k for k in all if k in loaded_templates ]
             self.runner.coverage_data["template"] = {
-                "coverage": 1.0*len(covered)/len(all if len(all)>0 else float('nan')),
+                "coverage": (1.0*len(covered)/len(all)) if len(all)>0 else float('nan'),
                 "covered":  dict( (k, k in covered) for k in all ),
                 }
             self.report_test_result("template")
@@ -438,7 +438,7 @@ class IetfTestRunner(DiscoverRunner):
             if self.run_full_test_suite:
                 print("Test coverage data:")
             else:
-                print("Test coverage data for %s:" % ", ".join(test_labels))
+                print("Test coverage for this test run across the related app%s (%s):" % (("s" if len(self.test_apps)>1 else ""), ", ".join(self.test_apps)))
             for test in ["template", "url", "code"]:
                 latest_coverage_version = self.coverage_master["version"]
 
