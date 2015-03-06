@@ -191,6 +191,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 
 INSTALLED_APPS = (
+    # Django apps
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -200,28 +201,32 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'django.contrib.humanize',
     'django.contrib.messages',
+    # External apps 
+    'form_utils',
     'tastypie',
+    # IETF apps
     'ietf.api',
-    'ietf.person',
-    'ietf.name',
-    'ietf.group',
+    'ietf.community',
+    'ietf.dbtemplate',
     'ietf.doc',
-    'ietf.message',
+    'ietf.group',
     'ietf.idindex',
-    'ietf.ietfauth',
     'ietf.iesg',
+    'ietf.ietfauth',
     'ietf.ipr',
     'ietf.liaisons',
     'ietf.mailinglists',
     'ietf.meeting',
-    'ietf.utils',
+    'ietf.message',
+    'ietf.name',
+    'ietf.nomcom',
+    'ietf.person',
     'ietf.redirects',
+    'ietf.release',
     'ietf.submit',
     'ietf.sync',
-    'ietf.community',
-    'ietf.release',
-    # secretariat apps
-    'form_utils',
+    'ietf.utils',
+    # IETF Secretariat apps
     'ietf.secr.announcement',
     'ietf.secr.areas',
     'ietf.secr.drafts',
@@ -230,10 +235,8 @@ INSTALLED_APPS = (
     'ietf.secr.proceedings',
     'ietf.secr.roles',
     'ietf.secr.rolodex',
-    'ietf.secr.telechat',
     'ietf.secr.sreq',
-    'ietf.nomcom',
-    'ietf.dbtemplate',
+    'ietf.secr.telechat',
 )
 
 INTERNAL_IPS = (
