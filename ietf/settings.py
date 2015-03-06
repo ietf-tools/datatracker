@@ -269,6 +269,12 @@ TEST_MATERIALS_DIR = "tmp-meeting-materials-dir"
 
 TEST_BLUESHEET_DIR = "tmp-bluesheet-dir"
 
+# These are regexes
+TEST_URL_COVERAGE_EXCLUDE = [
+    "^\^admin/",
+]
+
+# Tese are filename globs
 TEST_CODE_COVERAGE_EXCLUDE = [
     "*/tests*",
     "*/admin.py",
@@ -276,8 +282,9 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "ietf/settings*",
     "ietf/utils/test_runner.py",
 ]
-TEST_CODE_COVERAGE_MASTER_FILE = "coverage-master.json"
-TEST_CODE_COVERAGE_LATEST_FILE = "coverage-latest.json"
+
+TEST_COVERAGE_MASTER_FILE = "release-coverage.json"
+TEST_COVERAGE_LATEST_FILE = "latest-coverage.json"
 
 # WG Chair configuration
 MAX_WG_DELEGATES = 3

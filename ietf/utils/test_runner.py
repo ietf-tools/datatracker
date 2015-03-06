@@ -54,6 +54,7 @@ from django.template import TemplateDoesNotExist
 from django.test import TestCase
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
+from django.core.urlresolvers import RegexURLResolver
 
 import debug                            # pyflakes:ignore
 
@@ -108,43 +109,51 @@ class RecordUrlsMiddleware(object):
     def process_request(self, request):
         visited_urls.add(request.path)
 
-def get_url_patterns(module):
+def get_url_patterns(module, apps=None):
+    def include(name):
+        if not apps:
+            return True
+        for app in apps:
+            if name.startswith(app+'.'):
+                return True
+        return False
+    def exclude(name):
+        for pat in settings.TEST_URL_COVERAGE_EXCLUDE:
+            if re.search(pat, name):
+                return True
+        return False
+    if not hasattr(module, 'urlpatterns'):
+        return []
     res = []
-    try:
-        patterns = module.urlpatterns
-    except AttributeError:
-        patterns = []
-    for item in patterns:
-        try:
-            subpatterns = get_url_patterns(item.urlconf_module)
-        except:
-            subpatterns = [("", None)]
-        for sub, subitem in subpatterns:
-            if not sub:
-                res.append((item.regex.pattern, item))
-            elif sub.startswith("^"):
-                res.append((item.regex.pattern + sub[1:], subitem))
-            else:
-                res.append((item.regex.pattern + ".*" + sub, subitem))
+    for item in module.urlpatterns:
+        if isinstance(item, RegexURLResolver) and not type(item.urlconf_module) is list:
+            if include(item.urlconf_module.__name__) and not exclude(item.regex.pattern):
+                subpatterns = get_url_patterns(item.urlconf_module)
+                for sub, subitem in subpatterns:
+                    if sub.startswith("^"):
+                        res.append((item.regex.pattern + sub[1:], subitem))
+                    else:
+                        res.append((item.regex.pattern + ".*" + sub, subitem))
+        else:
+            res.append((item.regex.pattern, item))
     return res
 
-
-def get_templates():
+def get_templates(apps=None):
     templates = set()
-    # Should we teach this to use TEMPLATE_DIRS?
-    templatepath = os.path.join(settings.BASE_DIR, "templates")
-    for root, dirs, files in os.walk(templatepath):
-        if ".svn" in dirs:
-            dirs.remove(".svn")
-        relative_path = root[len(templatepath)+1:]
-        for file in files:
-            if file.endswith("~") or file.startswith("#"):
-                continue
-            if relative_path == "":
+    templatepaths = settings.TEMPLATE_DIRS
+    for templatepath in templatepaths:
+        for dirpath, dirs, files in os.walk(templatepath):
+            if ".svn" in dirs:
+                dirs.remove(".svn")
+            relative_path = dirpath[len(templatepath)+1:]
+            for file in files:
+                if file.endswith("~") or file.startswith("#"):
+                    continue
+                if relative_path != "":
+                    file = os.path.join(relative_path, file)
                 templates.add(file)
-            else:
-                templates.add(os.path.join(relative_path, file))
-
+    if apps:
+        templates = [ t for t in templates if t.split(os.path.sep)[0] in apps ]
     return templates
 
 def save_test_results(failures, test_labels):
@@ -219,13 +228,14 @@ class CoverageTest(TestCase):
     def template_coverage_test(self):
         global loaded_templates
         if self.runner.check_coverage:
-            all = get_templates()
+            apps = [ app.split('.')[-1] for app in self.runner.test_apps ]
+            all = get_templates(apps)
             # The calculations here are slightly complicated by the situation
             # that loaded_templates also contain nomcom page templates loaded
             # from the database.  However, those don't appear in all
             covered = [ k for k in all if k in loaded_templates ]
             self.runner.coverage_data["template"] = {
-                "coverage": 1.0*len(covered)/len(all),
+                "coverage": 1.0*len(covered)/len(all if len(all)>0 else float('nan')),
                 "covered":  dict( (k, k in covered) for k in all ),
                 }
             self.report_test_result("template")
@@ -235,7 +245,7 @@ class CoverageTest(TestCase):
     def url_coverage_test(self):
         if self.runner.check_coverage:
             import ietf.urls
-            url_patterns = get_url_patterns(ietf.urls)
+            url_patterns = get_url_patterns(ietf.urls, self.runner.test_apps)
 
             # skip some patterns that we don't bother with
             def ignore_pattern(regex, pattern):
@@ -268,12 +278,13 @@ class CoverageTest(TestCase):
 
     def code_coverage_test(self):
         if self.runner.check_coverage:
+            include = [ os.path.join(path, '*') for path in self.runner.test_paths ]
             checker = self.runner.code_coverage_checker
             checker.stop()
             checker.save()
             checker._harvest_data()
             checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE,
-                include=None, file=None)
+                include=include, file=None)
             reporter = CoverageReporter(checker, checker.config)
             self.runner.coverage_data["code"] = reporter.report()
             self.report_test_result("code")
@@ -297,7 +308,7 @@ class IetfTestRunner(DiscoverRunner):
         self.save_version_coverage = save_version_coverage
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
-        self.coverage_file = os.path.join(self.root_dir, settings.TEST_CODE_COVERAGE_MASTER_FILE)
+        self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MASTER_FILE)
         super(IetfTestRunner, self).__init__(**kwargs)
 
     def setup_test_environment(self, **kwargs):
@@ -348,7 +359,7 @@ class IetfTestRunner(DiscoverRunner):
     def teardown_test_environment(self, **kwargs):
         self.smtpd_driver.stop()
         if self.check_coverage:
-            latest_coverage_file = os.path.join(self.root_dir, settings.TEST_CODE_COVERAGE_LATEST_FILE)
+            latest_coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_LATEST_FILE)
             with open(latest_coverage_file, "w") as file:
                 json.dump(self.coverage_data, file, indent=2, sort_keys=True)
             if self.save_version_coverage:
@@ -357,6 +368,39 @@ class IetfTestRunner(DiscoverRunner):
                     self.coverage_master[self.save_version_coverage] = self.coverage_data
                     json.dump(self.coverage_master, file, indent=2, sort_keys=True)
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
+
+    def get_test_paths(self, test_labels):
+        """Find the apps and paths matching the test labels, so we later can limit
+           the coverage data to those apps and paths.
+        """
+        test_apps = []
+        app_roots = set( app.split('.')[0] for app in settings.INSTALLED_APPS )
+        for label in test_labels:
+            part_list = label.split('.')
+            if label in settings.INSTALLED_APPS:
+                # The label is simply an app in installed apps
+                test_apps.append(label)
+            elif not (part_list[0] in app_roots):
+                # try to add an app root to get a match with installed apps
+                for root in app_roots:
+                    for j in range(len(part_list)):
+                        maybe_app = ".".join([root] + part_list[:j+1])
+                        if maybe_app in settings.INSTALLED_APPS:
+                            test_apps.append(maybe_app)
+                            break
+                    else:
+                        continue
+                    break
+            else:
+                # the label is more detailed than a plain app, and the
+                # root is in app_roots.
+                for j in range(len(part_list)):
+                    maybe_app = ".".join(part_list[:j+1])
+                    if maybe_app in settings.INSTALLED_APPS:
+                        test_apps.append(maybe_app)
+                        break
+        test_paths = [ os.path.join(*app.split('.')) for app in test_apps ]
+        return test_apps, test_paths
 
     def run_tests(self, test_labels, extra_tests=None, **kwargs):
         # Tests that involve switching back and forth between the real
@@ -375,7 +419,9 @@ class IetfTestRunner(DiscoverRunner):
         self.run_full_test_suite = not test_labels
 
         if not test_labels: # we only want to run our own tests
-            test_labels = [app for app in settings.INSTALLED_APPS if app.startswith("ietf")]
+            test_labels = ["ietf"]
+
+        self.test_apps, self.test_paths = self.get_test_paths(test_labels)
 
         extra_tests = [
             CoverageTest(test_runner=self, methodName='url_coverage_test'),
@@ -389,6 +435,10 @@ class IetfTestRunner(DiscoverRunner):
 
         if self.check_coverage:
             print("")
+            if self.run_full_test_suite:
+                print("Test coverage data:")
+            else:
+                print("Test coverage data for %s:" % ", ".join(test_labels))
             for test in ["template", "url", "code"]:
                 latest_coverage_version = self.coverage_master["version"]
 
@@ -402,13 +452,20 @@ class IetfTestRunner(DiscoverRunner):
                 #test_missing = [ k for k,v in test_data["covered"].items() if not v ]
                 test_coverage = test_data["coverage"]
 
-                print( "%-8s coverage: %.1f%%  (%s: %.1f%%)" %
-                    (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, ))
+                if self.run_full_test_suite:
+                    print("      %8s coverage: %6.2f%%  (%s: %6.2f%%)" %
+                        (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, ))
+                else:
+                    print("      %8s coverage: %6.2f%%" %
+                        (test.capitalize(), test_coverage*100, ))
 
             print("""
-                Code coverage data has been written to '.coverage', readable by
-                %s/bin/coverage.
-                """.replace("    ","") % settings.BASE_DIR)
+                Per-file code and template coverage and per-url-pattern url coverage data
+                for the latest test run has been written to %s.
+
+                Per-statement code coverage data has been written to '.coverage', readable
+                by the 'coverage' program.
+                """.replace("    ","") % (settings.TEST_COVERAGE_LATEST_FILE))
 
         save_test_results(failures, test_labels)
 
