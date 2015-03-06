@@ -807,14 +807,15 @@ class MutableFeedbackForm(forms.ModelForm):
         return feedback
 
 
-class FullFeedbackFormSet(forms.models.BaseModelFormSet):
-
-    model = Feedback
-    extra = 0
-    max_num = 0
-    form = MutableFeedbackForm
-    can_order = False
-    can_delete = False
+FullFeedbackFormSet = forms.modelformset_factory(
+        model=Feedback,
+        extra=0,
+        max_num=0,
+        form=MutableFeedbackForm,
+        can_order=False,
+        can_delete=False,
+        fields='__all__',
+    )
 
 
 class EditNomineeForm(forms.ModelForm):
