@@ -44,6 +44,7 @@ import socket
 import warnings
 import coverage
 import datetime
+import codecs
 from coverage.report import Reporter
 from coverage.results import Numbers
 from coverage.misc import NotPython
@@ -161,7 +162,7 @@ def save_test_results(failures, test_labels):
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
     topdir = os.path.dirname(os.path.dirname(settings.BASE_DIR))
-    tfile = open(os.path.join(topdir,"testresult"), "a")
+    tfile = codecs.open(os.path.join(topdir,"testresult"), "a", encoding='utf-8')
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
     if failures:
         tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
@@ -317,7 +318,7 @@ class IetfTestRunner(DiscoverRunner):
         ietf.utils.mail.SMTP_ADDR['port'] = 2025
         #
         if self.check_coverage:
-            with open(self.coverage_file) as file:
+            with codecs.open(self.coverage_file, encoding='utf-8') as file:
                 self.coverage_master = json.load(file)
             self.coverage_data = {
                 "time": datetime.datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -360,10 +361,13 @@ class IetfTestRunner(DiscoverRunner):
         self.smtpd_driver.stop()
         if self.check_coverage:
             latest_coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_LATEST_FILE)
-            with open(latest_coverage_file, "w") as file:
-                json.dump(self.coverage_data, file, indent=2, sort_keys=True)
+            with codecs.open(latest_coverage_file, "w", encoding='utf-8') as file:
+                coverage_latest = {}
+                coverage_latest["version"] = "latest"
+                coverage_latest["latest"] = self.coverage_data
+                json.dump(coverage_latest, file, indent=2, sort_keys=True)
             if self.save_version_coverage:
-                with open(self.coverage_file, "w") as file:
+                with codecs.open(self.coverage_file, "w", encoding="utf-8") as file:
                     self.coverage_master["version"] = self.save_version_coverage
                     self.coverage_master[self.save_version_coverage] = self.coverage_data
                     json.dump(self.coverage_master, file, indent=2, sort_keys=True)
