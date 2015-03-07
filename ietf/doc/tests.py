@@ -508,13 +508,14 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
         os.unlink(self.doc_alias_file.name)
 
     def testAliases(self):
-        url = urlreverse('ietf.doc.views_doc.email_aliases', kwargs=dict())
-        r = self.client.get(url)
-        self.assertTrue(all([x in r.content for x in ['mars-test@','mars-test.authors@','mars-test.chairs@']]))
-        self.assertTrue(all([x in r.content for x in ['ames-test@','ames-test.authors@','ames-test.chairs@']]))
-
         url = urlreverse('ietf.doc.views_doc.email_aliases', kwargs=dict(name="draft-ietf-mars-test"))
         r = self.client.get(url)
         self.assertTrue(all([x in r.content for x in ['mars-test@','mars-test.authors@','mars-test.chairs@']]))
         self.assertFalse(any([x in r.content for x in ['ames-test@','ames-test.authors@','ames-test.chairs@']]))
+
+        url = urlreverse('ietf.doc.views_doc.email_aliases', kwargs=dict())
+        login_testing_unauthorized(self, "plain", url)
+        r = self.client.get(url)
+        self.assertTrue(all([x in r.content for x in ['mars-test@','mars-test.authors@','mars-test.chairs@']]))
+        self.assertTrue(all([x in r.content for x in ['ames-test@','ames-test.authors@','ames-test.chairs@']]))
 

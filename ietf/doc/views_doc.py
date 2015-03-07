@@ -963,6 +963,10 @@ def email_aliases(request,name=''):
     if name:
         pattern = re.compile('^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
     else:
+        # require login for the overview page, but not for the
+        # document-specific pages handled above
+        if not request.user.is_authenticated():
+                return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
         pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
     aliases = []
     with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:

@@ -38,7 +38,7 @@ import re
 from tempfile import mkstemp
 from collections import OrderedDict
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.conf import settings
@@ -629,6 +629,10 @@ def email_aliases(request, acronym=None, group_type=None):
     if acronym:
         pattern = re.compile('expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
     else:
+        # require login for the overview page, but not for the group-specific
+        # pages handled above
+        if not request.user.is_authenticated():
+                return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
         pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
 
     aliases = []

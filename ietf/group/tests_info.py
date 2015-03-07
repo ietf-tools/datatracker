@@ -976,14 +976,15 @@ expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf
         os.unlink(self.group_alias_file.name)
 
     def testNothing(self):
-        url = urlreverse('ietf.group.info.email_aliases', kwargs=dict())
-        r = self.client.get(url)
-        self.assertTrue(all([x in r.content for x in ['mars-ads@','mars-chairs@','ames-ads@','ames-chairs@']]))
-
         url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(acronym="mars"))
         r = self.client.get(url)
         self.assertTrue(all([x in r.content for x in ['mars-ads@','mars-chairs@']]))
         self.assertFalse(any([x in r.content for x in ['ames-ads@','ames-chairs@']]))
+
+        url = urlreverse('ietf.group.info.email_aliases', kwargs=dict())
+        login_testing_unauthorized(self, "plain", url)
+        r = self.client.get(url)
+        self.assertTrue(all([x in r.content for x in ['mars-ads@','mars-chairs@','ames-ads@','ames-chairs@']]))
 
         url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
