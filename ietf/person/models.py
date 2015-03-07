@@ -156,7 +156,7 @@ class Email(models.Model):
     active = models.BooleanField(default=True)      # Old email addresses are *not* purged, as history
                                         # information points to persons through these
     def __unicode__(self):
-        return self.address
+        return self.address or "Email object with id: %s"%self.pk
 
     def get_name(self):
         return self.person.plain_name() if self.person else self.address
