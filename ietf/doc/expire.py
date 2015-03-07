@@ -3,16 +3,15 @@
 from django.conf import settings
 
 import datetime, os, shutil, glob, re
+from pathlib import Path
 
 from ietf.utils.mail import send_mail
 from ietf.doc.models import Document, DocEvent, State, save_document_in_history, IESG_SUBSTATE_TAGS
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting
 from ietf.doc.utils import add_state_change_event
-try:
-    from pathlib import Path
-except ImportError:
-    from ietf.utils.path import path as Path
+
+
 
 def expirable_draft(draft):
     """Return whether draft is in an expirable state or not. This is
