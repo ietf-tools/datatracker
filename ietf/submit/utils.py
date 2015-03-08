@@ -254,7 +254,7 @@ def ensure_person_email_info_exists(name, email):
         except Email.DoesNotExist:
             # most likely we just need to create it
             email = Email(address=addr)
-            email.active = False
+            email.active = True
 
         email.person = person
         email.save()
