@@ -82,6 +82,6 @@ class CoverageChangeTestCase(TestCase):
             r"admin/group/group/change_form.html                             False      True",
             r"^api/v1/?$                                                      True     False",
             r"^community/personal/$                                          False      True",
-            r"ietf/community/constants                                         nan     50.00",
+            r"ietf/community/constants                                           -     50.00",
             ]:
             self.assertTrue(l in text, msg="Missing line in coverage_change output:\n'%s'\n"%l)
