@@ -60,8 +60,8 @@ class Command(BaseCommand):
                 if not key in mcoverage:
                     mcoverage[key] = None
                 if type(mcoverage[key]) is float or type(lcoverage[key]) is float:
-                    mval = "%8.2f" % (mcoverage[key] or float('nan'))
-                    lval = "%8.2f" % (lcoverage[key] or float('nan'))
+                    mval = ("%8.2f" % mcoverage[key]) if mcoverage[key] else "-"
+                    lval = ("%8.2f" % lcoverage[key]) if lcoverage[key] else "-"
                 else:
                     mval = mcoverage[key]
                     lval = lcoverage[key]
