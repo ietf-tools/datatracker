@@ -1,3 +1,82 @@
+ietfdb (5.12.1) ietf; urgency=medium
+
+  **Extended test coverage support, active email address fixups**
+
+  This is a minor release which contains a number of bugfixes, and also
+  introduces additional test coverage measurements and support functionality.
+  It further contains two migrations which fixes a set of inactive email
+  addresses which most likely should have been active, and notifies the owners
+  about the change.  This means that when running migrations as part of this
+  release, about 1000 notification emails will be sent out from the
+  datatracker.
+
+  Detailed changes:
+
+  * Don't set email addresses which are created when a draft is submitted
+    to inactive any more.  We now have a 'primary' field to indicate which
+    email address is the primary one when a person has multiple registered
+    addresses, so we don't have to rely on the timestamps on the email
+    address objects to determine the primary address.
+
+  * Added a migration which changes the active bit from False to True to 
+    all email addresses associated with active drafts, and sends out 
+    notification emails about this.
+
+  * Added a managment command to show the difference in coverage data 
+    between the latest release and the latest test run, and a test for the same.
+
+  * Added a login requirement for the full document and group email alias 
+    pages, but kept the individual group and document email-alias pages visible 
+    without login.  Added testing of login redirects for the full email alias 
+    lists, and reordered the test sequence within the test methods 
+    appropriately.
+
+  * Made sure that Email.__unicode__() will return a string even if address 
+    is None.  Fixes an exception on deleting an email address for a Person 
+    object in the admin interface.
+
+  * Added per-app coverage measurements, to make the numbers shown when not 
+    running the full tests suite a bit more meaningful.
+
+  * Changed the nomcom.forms.FullFeedbackFormSet to use 
+    modelformsets_factory() instead of direct subclassing, in order to avoid a 
+    crash when using the form, caused by a missing instance attribute.
+
+  * Clarified the meaning of checked/unchecked boxes in front of the email 
+    addresses on the account profile management page.
+
+  * Merged in [9143] from rcross@amsl.com:
+    Add AG Secretary to Proceedings authorized roles.   
+
+  * Merged in [9142] from rjsparks@nostrum.com:
+    Avoid creating blank line before headers on IPR notification email. 
+    Fixes #1609.  
+
+  * Merged in [9141] from rjsparks@nostrum.com:
+    Fix ordering issue on agenda.html.  
+
+  * Added a new field 'primary' to the Email model, added a matching 
+    migration, and a data migration to set primary fields to match the way a 
+    primary address is chosen today.
+
+  * Added a migration which captures the changed information for the
+    idsubmission-cutoff-related fields of Meeting.
+
+  * Removed the obsolete field Group._ad, and added a migration for the 
+    change.
+
+  * Added exception handling in tastypie for a case which can occur if one 
+    tries to filter by regex on a FK.
+
+  * Turned the api.py file into a module.  Moved the makeresources 
+    management command to the api module.  Added some api tests.  Added 
+    crawling of api files to the test-crawler.  Adjusted some resource files 
+    discovered by the test suite and test-crawler.  Removed a bunch of empty 
+    model files.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Mar 2015 20:28:33 -0000
+
 ietfdb (5.12.0) ietf; urgency=medium
 
   This release provides measurement of how much of the code is being exercised
