@@ -21,7 +21,7 @@ sys.path.append(os.path.abspath(BASE_DIR + "/.."))
 
 import datetime
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 # Domain name of the IETF
@@ -256,7 +256,7 @@ RFCDIFF_PREFIX = "//www.ietf.org/rfcdiff"
 # Valid values:
 # 'production', 'test', 'development'
 # Override this in settings_local.py if it's not true
-SERVER_MODE = 'production'
+SERVER_MODE = 'development'
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
