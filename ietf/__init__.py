@@ -4,6 +4,6 @@ __version__ = "5.12.1-dev0"
 
 __date__    = "$Date$"
 
-__rev__     = "$Rev$ (dev) Latest release: Rev. 9134 "
+__rev__     = "$Rev$"
 
 __id__      = "$Id$"
