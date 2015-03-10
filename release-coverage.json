@@ -2433,7 +2433,7 @@
   }, 
   "5.12.1": {
     "code": {
-      "coverage": 0.5894313569287963, 
+      "coverage": 0.5939973868265314, 
       "covered": {
         "ietf/__init__": 0.0, 
         "ietf/api/__init__": 0.24675324675324675, 
@@ -2467,7 +2467,7 @@
         "ietf/dbtemplate/urls": 1.0, 
         "ietf/dbtemplate/views": 0.3, 
         "ietf/doc/__init__": 1.0, 
-        "ietf/doc/expire": 0.9333333333333332, 
+        "ietf/doc/expire": 0.9316239316239315, 
         "ietf/doc/feeds": 0.9811320754716981, 
         "ietf/doc/forms": 0.9629629629629629, 
         "ietf/doc/lastcall": 0.9166666666666667, 
@@ -2496,7 +2496,7 @@
         "ietf/doc/views_ballot": 0.8893280632411067, 
         "ietf/doc/views_charter": 0.8162839248434238, 
         "ietf/doc/views_conflict_review": 0.9682539682539683, 
-        "ietf/doc/views_doc": 0.833984375, 
+        "ietf/doc/views_doc": 0.8346303501945525, 
         "ietf/doc/views_draft": 0.8353726362625139, 
         "ietf/doc/views_help": 0.696969696969697, 
         "ietf/doc/views_material": 0.5700934579439252, 
@@ -2509,7 +2509,7 @@
         "ietf/group/edit": 0.862876254180602, 
         "ietf/group/features": 1.0, 
         "ietf/group/feeds": 0.9736842105263157, 
-        "ietf/group/info": 0.6766169154228855, 
+        "ietf/group/info": 0.6782178217821782, 
         "ietf/group/mails": 0.9425287356321839, 
         "ietf/group/milestones": 0.8595744680851064, 
         "ietf/group/models": 0.281437125748503, 
@@ -2749,11 +2749,11 @@
         "ietf/utils/mail": 0.5648854961832062, 
         "ietf/utils/management/__init__": 1.0, 
         "ietf/utils/management/commands/__init__": 1.0, 
+        "ietf/utils/management/commands/coverage_changes": 0.7638888888888888, 
         "ietf/utils/management/commands/import_htpasswd": 0.0, 
         "ietf/utils/management/commands/makefixture": 0.0, 
         "ietf/utils/management/commands/pyflakes": 0.6027397260273972, 
         "ietf/utils/markup_txt": 0.6956521739130435, 
-        "ietf/utils/path": 0.3325242718446602, 
         "ietf/utils/pipe": 0.8333333333333333, 
         "ietf/utils/resources": 1.0, 
         "ietf/utils/serialize": 0.875, 
@@ -3309,7 +3309,7 @@
         "utils/header_change_content.txt": false
       }
     }, 
-    "time": "2015-03-06T20:07:18Z", 
+    "time": "2015-03-10T20:14:17Z", 
     "url": {
       "coverage": 0.5163934426229508, 
       "covered": {
