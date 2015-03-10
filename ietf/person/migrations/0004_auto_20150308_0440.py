@@ -48,7 +48,6 @@ Best regards,
 
 def activate_draft_email(apps, schema_editor):
     Document = apps.get_model("doc", "Document")
-    print("\nSetting email addresses to active ...")
     change_count = 0
     notify_user_count = 0
     for doc in Document.objects.filter(type__slug='draft', states__slug='active').order_by('-time'):
@@ -80,6 +79,7 @@ def activate_draft_email(apps, schema_editor):
                             txt= email_template % context,
                             extra={"Reply-To": "Secretariat <ietf-action@ietf.org>"},
                         )
+                        print("")
                         print("Set %s email addresses to active" % change_count)
                         print("Notified %s users, who had at least one other active email." % notify_user_count)
 
