@@ -79,6 +79,7 @@ longopts=help,dry-run,verbose,version
 
 # Default values
 MSG=""
+PROJ=ietfdb
 VERFILE=ietf/__init__.py
 SETTINGS=ietf/settings.py
 do=""
@@ -158,10 +159,10 @@ SRC=${SRC#/}				# remove leading slash
 MAJOR=${VER%%.*}
 REST=${VER#*.}
 MINOR=${REST%%.*}
-CHANGE=${REST#*.}
-VER="$(printf %d.%d.%d $MAJOR $MINOR $CHANGE)"
-NEXT=$(( $CHANGE + 1 ))
-DEV="$(printf %d.%d.%d-dev0 $MAJOR $MINOR $NEXT)"
+MAINT=${REST#*.}
+VER="$(printf %d.%d.%d $MAJOR $MINOR $MAINT)"
+NEXT=$(( $MAINT + 1 ))
+DEV="$(printf %d.%d.%d.dev0 $MAJOR $MINOR $NEXT)"
 
 note "Checking that there's a recent test-crawler log"
 touch -d $RDATE .svn/.latest-commit
@@ -169,7 +170,7 @@ TCLOG=$(ls -t ../test-crawl-*.log | head -n 1)
 [ $TCLOG -nt .svn/.latest-commit ] || die "Looked for ../test-crawl-*.log, but didn't find one newer than the latest repository commit ($RDATE)"
 
 note "Checking that changelog information is available"
-changes=$( sed -n "/^ietfdb ($VER.*)/,/^ -- /p" changelog )
+changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
 [ "$changes" ] || die "No changelog information for $VER found"
 note "$changes"
 
@@ -190,7 +191,7 @@ note "Verifying there's no uncommitted changes..."
 $do svn st | grep "^[AMGRD] " && die "There seems to be uncommitted changes in this working copy"
 
 note "\nUpdating the version info in $VERFILE and making sure'\$Rev\$' is Ok"
-$do sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev[0-9]*)?\"/\"$VER\"/" \
+$do sed -i -r -e "/^__version__/s/\"[.0-9]+(dev[0-9]+)?\"/\"$VER\"/" \
 	  -e "/^__rev__/s/\".*\"/\"\$Rev:\$\"/" \
 	$VERFILE
 
@@ -234,10 +235,10 @@ Release notes:
 $changes
 
 The new version is available for installation through SVN checkout, with
-  'svn checkout http://svn.tools.ietf.org/svn/tools/ietfdb/tags/$VER'
+  'svn checkout http://svn.tools.ietf.org/svn/tools/$PROJ/tags/$VER'
 
 For development, check out the new development version instead:
-  'svn checkout http://svn.tools.ietf.org/svn/tools/ietfdb/tags/dev/$DEV'
+  'svn checkout http://svn.tools.ietf.org/svn/tools/$PROJ/tags/dev/$DEV'
 
 Regards,
 
