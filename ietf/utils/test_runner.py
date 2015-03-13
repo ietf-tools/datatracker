@@ -42,7 +42,6 @@ import pytz
 import importlib
 import socket
 import warnings
-import coverage
 import datetime
 import codecs
 from coverage.report import Reporter
