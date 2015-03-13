@@ -90,6 +90,8 @@ class MeetingTests(TestCase):
         self.assertTrue(session.group.acronym in agenda_content)
         self.assertTrue(session.group.name in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
+        self.assertTrue("BEGIN:VTIMEZONE" in agenda_content)
+        self.assertTrue("END:VTIMEZONE" in agenda_content)        
 
         # week view
         r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))
