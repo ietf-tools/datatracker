@@ -352,8 +352,20 @@ class IetfTestRunner(DiscoverRunner):
 
         assert not settings.IDTRACKER_BASE_URL.endswith('/')
 
-        self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None) 
-        self.smtpd_driver.start()
+        # Try to set up an SMTP test server.  In case other test runs are
+        # going on at the same time, try a range of ports.
+        base = ietf.utils.mail.SMTP_ADDR['port']
+        for offset in range(10):
+            try:
+                # remember the value so ietf.utils.mail.send_smtp() will use the same
+                ietf.utils.mail.SMTP_ADDR['port'] = base + offset 
+                self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None) 
+                self.smtpd_driver.start()
+                print("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR)
+                break
+            except socket.error:
+                pass
+
 
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
