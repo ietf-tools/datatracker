@@ -341,8 +341,7 @@ class IetfTestRunner(DiscoverRunner):
             settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
             settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
 
-            self.code_coverage_checker = coverage.coverage(source=[ settings.BASE_DIR ], cover_pylib=False, omit=settings.TEST_CODE_COVERAGE_EXCLUDE)
-            self.code_coverage_checker.start()
+            self.code_coverage_checker = settings.COVERAGE_CHECKER
 
         if settings.SITE_ID != 1:
             print "     Changing SITE_ID to '1' during testing."
