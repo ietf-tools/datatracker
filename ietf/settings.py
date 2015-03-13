@@ -289,11 +289,12 @@ TEST_CODE_COVERAGE_EXCLUDE = [
 TEST_COVERAGE_MASTER_FILE = "release-coverage.json"
 TEST_COVERAGE_LATEST_FILE = "latest-coverage.json"
 
-COVERAGE_CHECKER = None
+
 if SERVER_MODE != 'production':
     import coverage
     COVERAGE_CHECKER = coverage.coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE)
-    COVERAGE_CHECKER.start()
+    if len(COVERAGE_CHECKER.collector._collectors) == 0:
+        COVERAGE_CHECKER.start()
 
 # WG Chair configuration
 MAX_WG_DELEGATES = 3
