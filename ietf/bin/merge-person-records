@@ -18,12 +18,12 @@ from django.contrib.auth.models import User
 from ietf.person.models import Person
 
 parser = argparse.ArgumentParser()
-parser.add_argument("source",type=int)
-parser.add_argument("target",type=int)
+parser.add_argument("source_id",type=int)
+parser.add_argument("target_id",type=int)
 args = parser.parse_args()
 
-source = Person.objects.get(pk=args.source)
-target = Person.objects.get(pk=args.target)
+source = Person.objects.get(pk=args.source_id)
+target = Person.objects.get(pk=args.target_id)
 
 print "Merging person {}({}) to {}({})".format(source.name,source.pk,target.name,target.pk)
 response = raw_input('Ok to continue y/n? ')
@@ -45,6 +45,16 @@ for alias in source.alias_set.all():
         print "Merging alias: {}".format(alias.name)
         alias.person = target
         alias.save()
+
+# merge DocEvents
+for docevent in source.docevent_set.all():
+    docevent.by = target
+    docevent.save()
+    
+# merge SubmissionEvents
+for subevent in source.submissionevent_set.all():
+    subevent.by = target
+    subevent.save()
 
 # check for any remaining relationships and delete if none
 objs = [source]
