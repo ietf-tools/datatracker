@@ -1,5 +1,35 @@
 ietfdb (5.12.2) ietf; urgency=medium
 
+  * Added test coverage data to the release pages if available for the shown
+    release.  Added saving of html pages for the code coverage to a directory 
+    in the static files area.  If a code coverage report is available, a link 
+    to it will be shown on the release page of the current release.  Renamed 
+    some setting variables related to test coverage to be more explicit and 
+    precise.
+
+  * Merged in [9185] from rcross@amsl.com:
+    Add DocEvent and SubmissionEvent to merge-person-records.   
+
+  * Added tests for the presence of a VTIMEZONE section in generated agenda 
+    iCalendar files.
+
+  * Started the code coverage measurements earlier, in order to make the 
+    apparent code coverage of model files less confusing.
+
+  * Added a fudge factor to the coverage test, in order to make it easier 
+    to do minor code changes without slipping under the coverage of the
+    latest release.
+
+  * Made the test runner try multiple port numbers for the SMTP server, in 
+    order to handle the case where multiple test suites are in progress on the 
+    same host (which can happen when multiple buildbot slaves are running tests 
+    at the same time).
+
+  * Fixed a small issue with the filter expression to select ADs for active 
+    groups.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Mar 2015 14:09:04 -0700
+
 
 ietfdb (5.12.1) ietf; urgency=medium
 
