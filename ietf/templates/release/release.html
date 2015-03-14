@@ -10,16 +10,30 @@
       |
       {% if entry.next %}<a href="/release/{{entry.next.version}}/">next release</a>&nbsp;&rarr;{% else %}<span style="color: grey">next release &rarr;</span>{% endif %}
 </p>
+
 <p>
-   <b>Release Notes:</b>
+   {% if coverage %}
+   Tested:
+      <b>Code</b>: {{coverage.code.percentage|stringformat:".2f"}}%, &nbsp;
+      <b>Templates</b>: {{coverage.template.percentage|stringformat:".2f"}}%, &nbsp;
+      <b>URLs</b>: {{coverage.url.percentage|stringformat:".2f"}}% &nbsp;
+   {% endif %}
+   {% if code_coverage_url %}
+      <br/>
+      (A <a href="{{code_coverage_url}}">code test coverage report</a> dated {{code_coverage_time}} is available.)
+   {% endif %}
+</p>
+
+
+
+<p>
+   <h2>Release Notes:</h2>
    <tt>
       <pre>
 {{entry.logentry|safe}}
       </pre>
    </tt>
 </p>
- 
-
 
 <h2>Release list:</h2>
 <table style="margin-left: 3em">

@@ -1,5 +1,7 @@
 import os
 import re
+import json
+import datetime
 
 from django.template import RequestContext
 from django.shortcuts import render_to_response
@@ -30,7 +32,34 @@ def release(request, version=None):
         next = entry
     entries = dict((entry.version, entry) for entry in log_entries)
     if version == None or version not in entries:
-        version = log_entries[0].version        
-    entries[version].logentry = trac_links(entries[version].logentry)
-    return render_to_response('release/release.html', { 'releases': log_entries, 'version': version, 'entry': entries[version], }, context_instance=RequestContext(request))
+        version = log_entries[0].version
+    entries[version].logentry = trac_links(entries[version].logentry.strip('\n'))
 
+    code_coverage_url = None
+    code_coverage_time = None
+    if os.path.exists(settings.TEST_CODE_COVERAGE_REPORT_FILE) and version == log_entries[0].version:
+        code_coverage_url = settings.TEST_CODE_COVERAGE_REPORT_URL
+        code_coverage_time = datetime.datetime.fromtimestamp(os.path.getmtime(settings.TEST_CODE_COVERAGE_REPORT_FILE))
+
+    coverage = {}
+    if os.path.exists(settings.TEST_COVERAGE_MASTER_FILE):
+        with open(settings.TEST_COVERAGE_MASTER_FILE) as file:
+            coverage_data = json.load(file)
+        if version in coverage_data:
+            coverage = coverage_data[version]
+            for key in coverage:
+                if "coverage" in coverage[key]:
+                    coverage[key]["percentage"] = coverage[key]["coverage"] * 100
+
+    return render_to_response('release/release.html',
+        {
+            'releases': log_entries,
+            'version': version,
+            'entry': entries[version],
+            'coverage': coverage,
+            'code_coverage_url': code_coverage_url,
+            'code_coverage_time': code_coverage_time,
+        },
+        context_instance=RequestContext(request))
+
+    

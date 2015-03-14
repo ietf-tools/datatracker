@@ -289,18 +289,22 @@ TEST_CODE_COVERAGE_EXCLUDE = [
 TEST_COVERAGE_MASTER_FILE = "release-coverage.json"
 TEST_COVERAGE_LATEST_FILE = "latest-coverage.json"
 
-
 if SERVER_MODE != 'production':
     import coverage
-    COVERAGE_CHECKER = coverage.coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE)
-    if len(COVERAGE_CHECKER.collector._collectors) == 0:
-        COVERAGE_CHECKER.start()
+    TEST_CODE_COVERAGE_CHECKER = coverage.coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE)
+    if len(TEST_CODE_COVERAGE_CHECKER.collector._collectors) == 0:
+        TEST_CODE_COVERAGE_CHECKER.start()
+
+TEST_CODE_COVERAGE_REPORT_PATH = "static/coverage/"
+TEST_CODE_COVERAGE_REPORT_URL = os.path.join(STATIC_URL, TEST_CODE_COVERAGE_REPORT_PATH, "index.html")
+TEST_CODE_COVERAGE_REPORT_DIR = os.path.join(STATIC_ROOT, TEST_CODE_COVERAGE_REPORT_PATH)
+TEST_CODE_COVERAGE_REPORT_FILE = os.path.join(TEST_CODE_COVERAGE_REPORT_DIR, "index.html")
 
 # WG Chair configuration
 MAX_WG_DELEGATES = 3
 
 DATE_FORMAT = "Y-m-d"
-DATETIME_FORMAT = "Y-m-d H:i"
+DATETIME_FORMAT = "Y-m-d H:i T"
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .

@@ -283,10 +283,15 @@ class CoverageTest(TestCase):
             include = [ os.path.join(path, '*') for path in self.runner.test_paths ]
             checker = self.runner.code_coverage_checker
             checker.stop()
+            # Save to the .coverage file
             checker.save()
-            checker._harvest_data()
+            # Apply the confirured and requested omit and include data 
             checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE,
                 include=include, file=None)
+            # Maybe output a html report
+            if self.runner.run_full_test_suite:
+                checker.html_report(directory=settings.TEST_CODE_COVERAGE_REPORT_DIR)
+            # In any case, build a dictionary with per-file data for this run
             reporter = CoverageReporter(checker, checker.config)
             self.runner.coverage_data["code"] = reporter.report()
             self.report_test_result("code")
@@ -340,7 +345,7 @@ class IetfTestRunner(DiscoverRunner):
             settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
             settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
 
-            self.code_coverage_checker = settings.COVERAGE_CHECKER
+            self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
 
         if settings.SITE_ID != 1:
             print "     Changing SITE_ID to '1' during testing."
