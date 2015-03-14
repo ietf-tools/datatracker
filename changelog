@@ -82,6 +82,8 @@ ietfdb (5.12.1) ietf; urgency=medium
 
 ietfdb (5.12.0) ietf; urgency=medium
 
+  **Test coverage tests**
+
   This release provides measurement of how much of the code is being exercised
   by our test suite, by integrating the 'coverage.py' tool in the test suite
   itself.  The percentage of the code excercised by the test suite is compared
