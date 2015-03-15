@@ -7,6 +7,10 @@ ietfdb (5.12.2) ietf; urgency=medium
     some setting variables related to test coverage to be more explicit and 
     precise.
 
+  * Changed the handling of some test directory creation and removal code, to
+    be more consistent.  Fixed a problem with a test that didn't create and
+    remove a test directory which it used.
+
   * Merged in [9185] from rcross@amsl.com:
     Add DocEvent and SubmissionEvent to merge-person-records.   
 
@@ -28,7 +32,7 @@ ietfdb (5.12.2) ietf; urgency=medium
   * Fixed a small issue with the filter expression to select ADs for active 
     groups.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  14 Mar 2015 14:09:04 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Mar 2015 22:04:14 +0000
 
 
 ietfdb (5.12.1) ietf; urgency=medium
