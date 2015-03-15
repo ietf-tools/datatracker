@@ -177,7 +177,7 @@ note "$changes"
 contributors=$(echo "$changes" | sed 's/\.[ \t\n]/ /'| tr -c "a-z0-9.@-" "\n" | sort | uniq | grep '@' | sed -r -e 's/^\.+//' -e 's/\.+$//' -e 's/^/-c /' || true)
 
 note "Set the current time on the release notes in the changelog file"
-sed -r -i -e "1,/^ -- /s/([A-Za-z-]+ <[a-z0-9.-]+@[a-z0-9.-]+>  ).*$/\1$(TZ=UTC date +'%d %b %Y %H:%M:%S %z')/" changelog
+$do sed -r -i -e "1,/^ -- /s/([A-Za-z-]+ <[a-z0-9.-]+@[a-z0-9.-]+>  ).*$/\1$(TZ=UTC date +'%d %b %Y %H:%M:%S %z')/" changelog
 note " $(grep -m1 "^ -- " changelog)"
 
 note "Verifying that version $VER doesn't already exist..."
