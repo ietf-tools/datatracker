@@ -133,14 +133,8 @@ class LiaisonTests(TestCase):
 class LiaisonManagementTests(TestCase):
     def setUp(self):
         self.liaison_dir = os.path.abspath("tmp-liaison-dir")
-        try:
+        if not os.path.exists(self.liaison_dir):
             os.mkdir(self.liaison_dir)
-        except OSError, e:
-            if "File exists" in str(e):
-                pass
-            else:
-                raise
-        
         settings.LIAISON_ATTACH_PATH = self.liaison_dir
 
     def tearDown(self):

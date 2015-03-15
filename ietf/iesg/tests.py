@@ -85,7 +85,8 @@ class IESGAgendaTests(TestCase):
         date = get_agenda_date()
 
         self.draft_dir = os.path.abspath("tmp-agenda-draft-dir")
-        os.mkdir(self.draft_dir)
+        if not os.path.exists(self.draft_dir):
+            os.mkdir(self.draft_dir)
         settings.INTERNET_DRAFT_PATH = self.draft_dir
 
         for d in self.telechat_docs.values():

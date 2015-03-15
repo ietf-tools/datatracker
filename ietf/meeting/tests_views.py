@@ -21,8 +21,7 @@ class MeetingTests(TestCase):
         settings.AGENDA_PATH = self.materials_dir
 
     def tearDown(self):
-        if os.path.exists(self.materials_dir):
-            shutil.rmtree(self.materials_dir)
+        shutil.rmtree(self.materials_dir)
 
     def write_materials_file(self, meeting, doc, content):
         path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, doc.external_url))

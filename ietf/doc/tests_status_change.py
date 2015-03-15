@@ -487,7 +487,8 @@ class StatusChangeSubmitTests(TestCase):
     def setUp(self):
         make_test_data()
         self.test_dir = os.path.abspath("tmp-status-change-testdir")
-        os.mkdir(self.test_dir)
+        if not os.path.exists(self.test_dir):
+            os.mkdir(self.test_dir)
         settings.STATUS_CHANGE_PATH = self.test_dir
 
     def tearDown(self):

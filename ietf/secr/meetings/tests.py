@@ -18,12 +18,18 @@ class MainTestCase(TestCase):
     def setUp(self):
         self.bluesheet_dir = os.path.abspath(settings.TEST_BLUESHEET_DIR)
         self.bluesheet_path = os.path.join(self.bluesheet_dir,'blue_sheet.rtf')
-        os.mkdir(self.bluesheet_dir)
+        if not os.path.exists(self.bluesheet_dir):
+            os.mkdir(self.bluesheet_dir)
         settings.SECR_BLUE_SHEET_PATH = self.bluesheet_path
+
+        self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
+        if not os.path.exists(self.materials_dir):
+            os.mkdir(self.materials_dir)
         
     def tearDown(self):
         shutil.rmtree(self.bluesheet_dir)
-        
+        shutil.rmtree(self.materials_dir)
+
     def test_main(self):
         "Main Test"
         url = reverse('meetings')

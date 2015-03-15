@@ -58,11 +58,13 @@ class RecordingTestCase(TestCase):
 class BluesheetTestCase(TestCase):
     def setUp(self):
         self.proceedings_dir = os.path.abspath("tmp-proceedings-dir")
-        os.mkdir(self.proceedings_dir)
+        if not os.path.exists(self.proceedings_dir):
+            os.mkdir(self.proceedings_dir)
         settings.AGENDA_PATH = self.proceedings_dir
         
         self.interim_listing_dir = os.path.abspath("tmp-interim-listing-dir")
-        os.mkdir(self.interim_listing_dir)
+        if not os.path.exists(self.interim_listing_dir):
+            os.mkdir(self.interim_listing_dir)
         settings.SECR_INTERIM_LISTING_DIR = self.interim_listing_dir
         
     def tearDown(self):
