@@ -48,7 +48,7 @@ class CoverageChangeTestCase(TestCase):
                   "coverage": 0.5921474057048117, 
                   "covered": {
                     "ietf/api": 0.65,
-                    "ietf/community/constants": 50, 
+                    "ietf/community/constants": 0.50, 
                     "ietf/dbtemplate/forms": 0.4782608695652174
                   }
                 }, 
@@ -78,10 +78,11 @@ class CoverageChangeTestCase(TestCase):
         output = StringIO()
         call_command('coverage_changes', master, latest, stdout=output)
         text = output.getvalue()
+        
         for l in [
             r"admin/group/group/change_form.html                             False      True",
             r"^api/v1/?$                                                      True     False",
             r"^community/personal/$                                          False      True",
-            r"ietf/community/constants                                           -     50.00",
+            r"ietf/community/constants                                           -   50.0  %",
             ]:
             self.assertTrue(l in text, msg="Missing line in coverage_change output:\n'%s'\n"%l)
