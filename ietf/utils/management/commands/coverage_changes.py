@@ -32,9 +32,10 @@ class Command(BaseCommand):
         try:
             data = json.load(file)
         except ValueError as e:
-            self.stderr.write("Failure to read json data from %s: %s" % (filename, e))
-            exit(1)
+            raise CommandError("Failure to read json data from %s: %s" % (filename, e))
         version = version or data["version"]
+        if not version in data:
+            raise CommandError("There is no data for version %s available in %s" % (version, filename))
         return data[version], version
 
     def coverage_diff(self, master, latest, sections=','.join(valid_sections), release=None, **options):
@@ -60,12 +61,12 @@ class Command(BaseCommand):
                 if not key in mcoverage:
                     mcoverage[key] = None
                 if type(mcoverage[key]) is float or type(lcoverage[key]) is float:
-                    mval = ("%8.2f" % mcoverage[key]) if mcoverage[key] else "-"
-                    lval = ("%8.2f" % lcoverage[key]) if lcoverage[key] else "-"
+                    mval = ("%5.1f" % (100*mcoverage[key])) if mcoverage[key] else "-"
+                    lval = ("%5.1f  %%" % (100*lcoverage[key])) if lcoverage[key] else "-   "
                 else:
                     mval = mcoverage[key]
                     lval = lcoverage[key]
-                if mval != lval:
+                if mcoverage[key] != lcoverage[key]:
                     if not header_written:
                         self.stdout.write(self.diff_line_format %
                             ("\n%s"%section.capitalize(), mversion[:7], lversion[:7]))
