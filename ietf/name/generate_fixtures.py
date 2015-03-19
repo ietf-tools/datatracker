@@ -2,10 +2,13 @@
 
 # boiler plate
 import os, sys
+import django
 
 basedir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
 sys.path.insert(0, basedir)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
+
+django.setup()
 
 # script
 from django.core.serializers import serialize

@@ -6,6 +6,7 @@ import re
 import tarfile
 import urllib
 from tempfile import mkstemp
+from collections import OrderedDict
 
 import debug                            # pyflakes:ignore
 
@@ -365,6 +366,7 @@ def agenda(request, num=None, name=None, base=None, ext=None):
     ext = ext if ext else '.html'
     if 'iPhone' in get_user_agent(request) and ext == ".html":
         base = 'm_agenda'
+    # This is misleading - urls.py doesn't send ics through here anymore
     mimetype = {".html":"text/html", ".txt": "text/plain", ".ics":"text/calendar", ".csv":"text/csv"}
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
@@ -373,8 +375,23 @@ def agenda(request, num=None, name=None, base=None, ext=None):
             {'meeting':meeting }, RequestContext(request)), content_type=mimetype[ext])
 
     updated = meeting_updated(meeting)
+    filtered_assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
     return HttpResponse(render_to_string("meeting/"+base+ext,
-        {"schedule":schedule, "updated": updated}, RequestContext(request)), content_type=mimetype[ext])
+        {"schedule":schedule, "filtered_assignments":filtered_assignments, "updated": updated}, RequestContext(request)), content_type=mimetype[ext])
+
+#TODO - let the IAB in
+@role_required('Area Director','Secretariat')
+@ensure_csrf_cookie
+def agenda_by_room(request,num=None):
+    meeting = get_meeting(num) 
+    schedule = get_schedule(meeting)
+    ss_by_day = OrderedDict()
+    for day in schedule.scheduledsession_set.dates('timeslot__time','day'):
+        ss_by_day[day]=[]
+    for ss in schedule.scheduledsession_set.order_by('timeslot__location','timeslot__time'):
+        day = ss.timeslot.time.date()
+        ss_by_day[day].append(ss)
+    return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"ss_by_day":ss_by_day})
 
 def read_agenda_file(num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
@@ -604,7 +621,7 @@ def ical_agenda(request, num=None, name=None, ext=None):
             elif item[0] == '~':
                 include_types |= set([item[1:]])
 
-    assignments = schedule.assignments.filter(
+    assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda']).filter(
         Q(timeslot__type__slug__in = include_types) |
         Q(session__group__acronym__in = include) |
         Q(session__group__parent__acronym__in = include)

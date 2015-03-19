@@ -95,7 +95,7 @@ def build_nonsession(meeting,schedule):
     system = Person.objects.get(name='(system)')
     secretariat = Group.objects.get(acronym='secretariat')
     
-    for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other','plenary')):
+    for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other','plenary','lead')):
         new_time = slot.time + delta
         session = None
         # create Session object for Tutorials to hold materials
@@ -128,15 +128,17 @@ def check_nonsession(meeting,schedule):
     Ensure non-session timeslots exist and have appropriate ScheduledSession objects
     for the specified schedule.
     '''
-    slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary'))
+    slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary','lead','offagenda'))
     if not slots:
         build_nonsession(meeting,schedule)
         return None
 
-    scheduledsessions = slots.filter(type='plenary').first().scheduledsession_set.all()
-    if not scheduledsessions.filter(schedule=schedule):
-        source = scheduledsessions.first().schedule
-        copy_scheduledsessions(slots,source,schedule)
+    plenary = slots.filter(type='plenary').first()
+    if plenary:
+        scheduledsessions = plenary.scheduledsession_set.all()
+        if not scheduledsessions.filter(schedule=schedule):
+            source = scheduledsessions.first().schedule
+            copy_scheduledsessions(slots,source,schedule)
 
 def copy_scheduledsessions(slots,source,target):
     '''
@@ -435,7 +437,7 @@ def non_session(request, meeting_id, schedule_name):
     
     check_nonsession(meeting,schedule)
 
-    slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary')).order_by('-type__name','time')
+    slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary','lead')).order_by('-type__name','time')
 
     if request.method == 'POST':
         form = NonSessionForm(request.POST)
@@ -458,7 +460,7 @@ def non_session(request, meeting_id, schedule_name):
                                                duration=duration,
                                                show_location=form.cleaned_data['show_location'])
 
-            if timeslot.type.slug not in ('other','plenary'):
+            if timeslot.type.slug not in ('other','plenary','lead'):
                 group = Group.objects.get(acronym='secretariat')
             
             # create associated Session object
@@ -501,7 +503,7 @@ def non_session_delete(request, meeting_id, schedule_name, slot_id):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     # schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     slot = get_object_or_404(TimeSlot, id=slot_id)
-    if slot.type_id in ('other','plenary'):
+    if slot.type_id in ('other','plenary','lead'):
         scheduledsessions = slot.scheduledsession_set.filter(schedule__meeting=meeting)
         session_objects = [ x.session for x in scheduledsessions ]
         for session in session_objects:
