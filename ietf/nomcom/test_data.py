@@ -110,7 +110,7 @@ def nomcom_test_data():
     if not nomcom_test_cert_file:
         nomcom_test_cert_file, privatekey_file = generate_cert()
 
-    nomcom.public_key.storage = storage=FileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR)
+    nomcom.public_key.storage = FileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR)
     nomcom.public_key.save('cert', File(open(nomcom_test_cert_file.name, 'r')))
 
     # chair and member
