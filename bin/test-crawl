@@ -14,6 +14,7 @@ parser.add_argument('--urls', '-u', dest='url_file',
 parser.add_argument('--slow', dest='slow_threshold', type=float, default=1.0,
                     help='responses taking longer than this (in seconds) results in SLOW being printed')
 parser.add_argument('--settings', dest='settings', help='custom settings file')
+parser.add_argument('--logfile', dest='logfile', help='write to logfile')
 
 args = parser.parse_args()
 
@@ -111,14 +112,16 @@ errors = 0
 count = 0
 
 start_time = datetime.datetime.now()
-fh, fn = tempfile.mkstemp(prefix="test-crawl-", suffix=".log", dir="../")
-logfile = open(fn, "w")
-os.close(fh)
+
+logfile = None
+if args.logfile:
+    logfile = open(args.logfile, "w")
 
 def log(s):
     print(s)
-    logfile.write(s)
-    logfile.write('\n')
+    if logfile:
+        logfile.write(s)
+        logfile.write('\n')
 
 def get_referrers(url):
     ref_list = []
@@ -202,8 +205,9 @@ while urls:
 
         log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), r.status_code, elapsed.total_seconds(), url, " ".join(tags)))
 
-logfile.close()
-sys.stderr.write("Output written to %s\n\n" % logfile.name)
+if logfile:
+    logfile.close()
+    sys.stderr.write("Output written to %s\n\n" % logfile.name)
 
 if errors > 0:
     sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
