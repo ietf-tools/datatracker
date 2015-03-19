@@ -164,6 +164,14 @@ VER="$(printf %d.%d.%d $MAJOR $MINOR $MAINT)"
 NEXT=$(( $MAINT + 1 ))
 DEV="$(printf %d.%d.%d.dev0 $MAJOR $MINOR $NEXT)"
 
+#cd $DIR ??
+
+note "Running the tests suite and writing release coverage data ..."
+$do ietf/manage.py test --settings=ietf.settings_sqlitetest --save-version-coverage=$VER
+
+note "Committing the release coverage data ..."
+$do svn commit release-coverage.json -m "Code coverage data for release $VER"
+
 note "Checking that there's a recent test-crawler log"
 touch -d $RDATE .svn/.latest-commit
 TCLOG=$(ls -t ../test-crawl-*.log | head -n 1)

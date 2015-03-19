@@ -35,9 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ietf_filters %}
 <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
 {% if user.is_authenticated %}
-  {% if not doc.name in have_doc_status %}
-<td>&nbsp;</td>
-  {% elif doc.name in doc_is_tracked %}
+  {% if doc.name in doc_is_tracked %}
 <td class="removefromlist">
   <a href="{% url "community_remove_track_document" doc.name %}" title="Remove from your personal ID list"><img src="/images/remove_from_list.png" alt="Remove from your personal ID list" /></a>
 </td>
