@@ -19,8 +19,13 @@ class DisableMigrations(object):
         return True
  
     def __getitem__(self, item):
-        return None
- 
+        # The string below is significant.  It has to include the value of
+        # django.db.migrations.loader.MIGRATIONS_MODULE_NAME.  Used by django
+        # 1.7 code in django.db.migrations.loader.MigrationLoader to
+        # determine whether or not to run migrations for a given module
+        from django.db.migrations.loader import MIGRATIONS_MODULE_NAME
+        return "no " + MIGRATIONS_MODULE_NAME
+
 MIGRATION_MODULES = DisableMigrations()
 
 DATABASES = {
