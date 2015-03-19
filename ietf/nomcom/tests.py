@@ -1,13 +1,17 @@
 # -*- coding: UTF-8-No-BOM -*-
 import tempfile
 import datetime
+import os
+import shutil
+from pyquery import PyQuery
 
 from django.db import IntegrityError
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.core.files import File
 from django.contrib.auth.models import User
 
-from pyquery import PyQuery
+import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.mail import outbox
@@ -46,6 +50,11 @@ class NomcomViewsTest(TestCase):
         return response
 
     def setUp(self):
+        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
+        if not os.path.exists(self.nomcom_public_keys_dir):
+            os.mkdir(self.nomcom_public_keys_dir)
+        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
+
         nomcom_test_data()
         self.cert_file, self.privatekey_file = get_cert_files()
         self.year = NOMCOM_YEAR
@@ -66,6 +75,9 @@ class NomcomViewsTest(TestCase):
         self.questionnaires_url = reverse('nomcom_questionnaires', kwargs={'year': self.year})
         self.public_feedback_url = reverse('nomcom_public_feedback', kwargs={'year': self.year})
         self.public_nominate_url = reverse('nomcom_public_nominate', kwargs={'year': self.year})
+
+    def tearDown(self):
+        shutil.rmtree(self.nomcom_public_keys_dir)
 
     def access_member_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
@@ -633,8 +645,16 @@ class NomineePositionStateSaveTest(TestCase):
     perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
+        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
+        if not os.path.exists(self.nomcom_public_keys_dir):
+            os.mkdir(self.nomcom_public_keys_dir)
+        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
+
         nomcom_test_data()
         self.nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
+
+    def tearDown(self):
+        shutil.rmtree(self.nomcom_public_keys_dir)
 
     def test_state_autoset(self):
         """Verify state is autoset correctly"""
@@ -665,8 +685,16 @@ class FeedbackTest(TestCase):
     perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
+        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
+        if not os.path.exists(self.nomcom_public_keys_dir):
+            os.mkdir(self.nomcom_public_keys_dir)
+        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
+
         nomcom_test_data()
         self.cert_file, self.privatekey_file = get_cert_files()
+
+    def tearDown(self):
+        shutil.rmtree(self.nomcom_public_keys_dir)
 
     def test_encrypted_comments(self):
 
@@ -694,6 +722,11 @@ class ReminderTest(TestCase):
     perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
+        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
+        if not os.path.exists(self.nomcom_public_keys_dir):
+            os.mkdir(self.nomcom_public_keys_dir)
+        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
+
         nomcom_test_data()
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
         self.cert_file, self.privatekey_file = get_cert_files()
@@ -731,6 +764,9 @@ class ReminderTest(TestCase):
                                            user=User.objects.get(username=CHAIR_USER))
         feedback.positions.add(gen)
         feedback.nominees.add(n)
+
+    def tearDown(self):
+        shutil.rmtree(self.nomcom_public_keys_dir)
 
     def test_is_time_to_send(self):
         self.nomcom.reminder_interval = 4

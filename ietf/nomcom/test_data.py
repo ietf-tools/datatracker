@@ -3,7 +3,10 @@ import os
 
 from django.contrib.auth.models import User
 from django.core.files import File
+from django.core.files.storage import FileSystemStorage
 from django.conf import settings
+
+import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group, ChangeStateGroupEvent
 from ietf.nomcom.models import NomCom, Position, Nominee
@@ -106,6 +109,8 @@ def nomcom_test_data():
     global nomcom_test_cert_file
     if not nomcom_test_cert_file:
         nomcom_test_cert_file, privatekey_file = generate_cert()
+
+    nomcom.public_key.storage = storage=FileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR)
     nomcom.public_key.save('cert', File(open(nomcom_test_cert_file.name, 'r')))
 
     # chair and member
