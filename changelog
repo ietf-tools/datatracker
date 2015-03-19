@@ -1,3 +1,41 @@
+ietfdb (5.12.3) ietf; urgency=medium
+
+  This is a minor bugfix release which also addresses a number of testing
+  issues, in preparation for the IETF-92 sprint on Saturday.
+
+  * Merged in [9242] from rjsparks@nostrum.com:
+    Restores add-to-community-list functionality to several pages. Fixes 
+    #1601.  
+
+  * Added a --logfile switch to the test crawler, in order to be able to 
+    control whether a logfile should be used or not.  It's not particularly 
+    hepful when running on a buildbot slave, which catches stdout anyway.
+
+  * Updated the nomcom tests to use temporary test directories for data, 
+    instead of the regular production settings in settings.py.
+
+  * Updated the mergeready script to check if the 'test:unittest' property 
+    has been set to 'passed' on a changeset marked 'ready for merge'.
+
+  * Introduced a more correct implementation of the workaround to skip
+    migrations during test, which also points at the code that makes this work
+    at the moment.
+
+  * Tweaked the settings_sqlitetest.py file, which normally is used during
+    test suite runs, to avoid a minutes-long stepping through migrations for
+    each test run.   This makes it much more workable to run individual tests.
+
+  * Added the buildbot config file to the repository.  Deployment path: 
+    trac.tools.ietf.org:/home/buildbot/masters/datatracker/master.cfg
+
+  * Added exception capture and error message output to the coverage_changes
+    management command when the --release switch to specifies a release for
+    which there isn't any data.  Also tweaked the diff output for code
+    coverage changes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Mar 2015 23:55:45 +0000
+
+
 ietfdb (5.12.2) ietf; urgency=medium
 
   * Added test coverage data to the release pages if available for the shown
