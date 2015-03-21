@@ -153,6 +153,7 @@ def fill_in_wg_drafts(group):
             a.rel = RelatedDocument.objects.filter(source=a.document).distinct()
             a.invrel = RelatedDocument.objects.filter(target=a).distinct()
 
+@cache_page ( 60 * 60 )
 def wg_charters(request, group_type):
     if group_type != "wg":
         raise Http404
@@ -169,6 +170,7 @@ def wg_charters(request, group_type):
                   { 'areas': areas },
                   content_type='text/plain; charset=UTF-8')
 
+@cache_page ( 60 * 60 )
 def wg_charters_by_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
