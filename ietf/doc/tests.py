@@ -1,4 +1,5 @@
 import os
+import shutil
 import datetime
 import sys
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
@@ -19,6 +20,7 @@ from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
+from Cookie import SimpleCookie
 
 class SearchTestCase(TestCase):
     def test_search(self):
@@ -126,7 +128,19 @@ class SearchTestCase(TestCase):
         self.assertTrue(draft.title in r.content)
         
 
-class DocTestCase(TestCase):
+class DocDraftTestCase(TestCase):
+    def setUp(self):
+        self.id_dir = os.path.abspath("tmp-id-dir")
+        if not os.path.exists(self.id_dir):
+            os.mkdir(self.id_dir)
+        settings.INTERNET_DRAFT_PATH = self.id_dir
+        f = open(os.path.join(self.id_dir, 'draft-ietf-mars-test-01.txt'), 'w')
+        f.write('\n\n\n\nMartian Special Interest Group (mars)                             P. Man\nInternet-Draft                                            March 21, 2015\nIntended status: Informational\nExpires: September 22, 2015\n\n\n                 Optimizing Martian Network Topologies\n                      draft-ietf-mars-test-02.txt\n\nAbstract\n\n   Techniques for achieving near-optimal Martian networks.\n\nStatus of This Memo\n\n   This Internet-Draft is submitted in full conformance with the\n   provisions of BCP 78 and BCP 79.\n\n   Internet-Drafts are working documents of the Internet Engineering\n   Task Force (IETF).  Note that other groups may also distribute\n   working documents as Internet-Drafts.  The list of current Internet-\n   Drafts is at http://datatracker.ietf.org/drafts/current/.\n\n   Internet-Drafts are draft documents valid for a maximum of six months\n   and may be updated, replaced, or obsoleted by other documents at any\n   time.  It is inappropriate to use Internet-Drafts as reference\n   material or to cite them other than as "work in progress."\n\n   This Internet-Draft will expire on September 22, 2015.\n\nCopyright Notice\n\n   Copyright (c) 2015 IETF Trust and the persons identified as the\n   document authors.  All rights reserved.\n\n   This document is subject to BCP 78 and the IETF Trust\'s Legal\n   Provisions Relating to IETF Documents\n   (http://trustee.ietf.org/license-info) in effect on the date of\n   publication of this document.  Please review these documents\n   carefully, as they describe your rights and restrictions with respect\n   to this document.  Code Components extracted from this document must\n   include Simplified BSD License text as described in Section 4.e of\n   the Trust Legal Provisions and are provided without warranty as\n   described in the Simplified BSD License.\n\n   This document may contain material from IETF Documents or IETF\n   Contributions published or made publicly available before November\n   10, 2008.  The person(s) controlling the copyright in some of this\n\n\n\nMan                    Expires September 22, 2015               [Page 1]\n\nInternet-Draft    Optimizing Martian Network Topologies       March 2015\n\n\n   material may not have granted the IETF Trust the right to allow\n   modifications of such material outside the IETF Standards Process.\n   Without obtaining an adequate license from the person(s) controlling\n   the copyright in such materials, this document may not be modified\n   outside the IETF Standards Process, and derivative works of it may\n   not be created outside the IETF Standards Process, except to format\n   it for publication as an RFC or to translate it into languages other\n   than English.\n\nTable of Contents\n\n   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2\n   2.  Security Considerations . . . . . . . . . . . . . . . . . . .   2\n   3.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   2\n   4.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   3\n   5.  Normative References  . . . . . . . . . . . . . . . . . . . .   3\n   Author\'s Address  . . . . . . . . . . . . . . . . . . . . . . . .   3\n\n1.  Introduction\n\n   This document describes how to make the Martian networks work.  The\n   methods used in Earth do not directly translate to the efficent\n   networks on Mars, as the topographical differences caused by planets.\n   For example the avian carriers, cannot be used in the Mars, thus\n   RFC1149 ([RFC1149]) cannot be used in Mars.\n\n   Some optimizations can be done because Mars is smaller than Earth,\n   thus the round trip times are smaller.  Also as Mars has two moons\n   instead of only one as we have in Earth, we can use both Deimos and\n   Phobos when using reflecting radio links off the moon.\n\n   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",\n   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this\n   document are to be interpreted as described in [RFC2119].\n\n2.  Security Considerations\n\n   As Martians are known to listen all traffic in Mars, all traffic in\n   the Mars MUST be encrypted.\n\n3.  IANA Considerations\n\n   There is no new IANA considerations in this document.\n\n\n\n\n\n\n\n\nMan                    Expires September 22, 2015               [Page 2]\n\nInternet-Draft    Optimizing Martian Network Topologies       March 2015\n\n\n4.  Acknowledgements\n\n   This document is created in the IETF-92 CodeSprint in Dallas, TX.\n\n5.  Normative References\n\n   [RFC1149]  Waitzman, D., "Standard for the transmission of IP\n              datagrams on avian carriers", RFC 1149, April 1990.\n\n   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate\n              Requirement Levels", BCP 14, RFC 2119, March 1997.\n\nAuthor\'s Address\n\n   Plain Man\n   Deimos street\n   Mars City  MARS-000000\n   Mars\n\n   Email: aliens@example.mars\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nMan                    Expires September 22, 2015               [Page 3]\n')
+        f.close()
+
+    def tearDown(self):
+        shutil.rmtree(self.id_dir)
+
     def test_document_draft(self):
         draft = make_test_data()
 
@@ -140,6 +154,47 @@ class DocTestCase(TestCase):
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertTrue("[include full document text]" in r.content)
+        self.assertFalse("Deimos street" in r.content)
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=0")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertFalse("[include full document text]" in r.content)
+        self.assertTrue("Deimos street" in r.content)
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=foo")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertFalse("[include full document text]" in r.content)
+        self.assertTrue("Deimos street" in r.content)
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=1")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertFalse("[include full document text]" in r.content)
+        self.assertTrue("Deimos street" in r.content)
+
+        self.client.cookies = SimpleCookie({'full_draft': 'on'})
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertFalse("[include full document text]" in r.content)
+        self.assertTrue("Deimos street" in r.content)
+
+        self.client.cookies = SimpleCookie({'full_draft': 'off'})
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertTrue("[include full document text]" in r.content)
+        self.assertFalse("Deimos street" in r.content)
+
+        self.client.cookies = SimpleCookie({'full_draft': 'foo'})
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertTrue("[include full document text]" in r.content)
+        self.assertFalse("Deimos street" in r.content)
 
         # expired draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
@@ -237,6 +292,7 @@ class DocTestCase(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertTrue("%s-00"%docname in r.content)
 
+class DocTestCase(TestCase):
     def test_document_charter(self):
         make_test_data()
 
