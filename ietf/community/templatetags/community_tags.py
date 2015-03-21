@@ -25,7 +25,7 @@ class CommunityListNode(template.Node):
             managed_areas = [i.group for i in Role.objects.filter(name__slug='ad', email__in=person.email_set.all())]
             for area in managed_areas:
                 groups.append(CommunityList.objects.get_or_create(group=area)[0])
-            managed_wg = [i.group for i in Role.objects.filter(name__slug='chair', group__type__slug='wg', email__in=person.email_set.all())]
+            managed_wg = [i.group for i in Role.objects.filter(name__slug='chair', group__type__slug='wg', group__state_id__slug__in=("active", "bof", "proposed", "replaced"), email__in=person.email_set.all())]
             for wg in managed_wg:
                 groups.append(CommunityList.objects.get_or_create(group=wg)[0])
             lists['group'] = groups
