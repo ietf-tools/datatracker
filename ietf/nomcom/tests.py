@@ -68,6 +68,8 @@ class NomcomViewsTest(TestCase):
         self.private_nominate_url = reverse('nomcom_private_nominate', kwargs={'year': self.year})
         self.add_questionnaire_url = reverse('nomcom_private_questionnaire', kwargs={'year': self.year})
         self.private_feedback_url = reverse('nomcom_private_feedback', kwargs={'year': self.year})
+        self.positions_url = reverse("nomcom_list_positions", kwargs={'year': self.year})        
+        self.edit_position_url = reverse("nomcom_add_position", kwargs={'year': self.year})
 
         # public urls
         self.index_url = reverse('nomcom_year_index', kwargs={'year': self.year})
@@ -103,6 +105,55 @@ class NomcomViewsTest(TestCase):
         """Verify private home view"""
         self.access_member_url(self.private_index_url)
         self.client.logout()
+
+    def create_nominees_for_states(self, base_state):
+        cnominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
+        position = Position.objects.get(name='APP')
+        NomineePosition.objects.create(position=position,
+                                                          nominee=cnominee,
+                                                          state=NomineePositionStateName.objects.get(slug=base_state))
+        position = Position.objects.get(name='INT')
+        NomineePosition.objects.create(position=position,
+                                                          nominee=cnominee,
+                                                          state=NomineePositionStateName.objects.get(slug=base_state))
+        position = Position.objects.get(name='OAM')
+        NomineePosition.objects.create(position=position,
+                                                          nominee=cnominee,
+                                                          state=NomineePositionStateName.objects.get(slug=base_state))
+
+    def test_private_index_post_accept(self):
+        self.create_nominees_for_states('pending')
+        login_testing_unauthorized(self, CHAIR_USER, self.private_index_url)
+        test_data = {"action": "set_as_accepted",
+                     "selected": [1]}
+        r = self.client.post(self.private_index_url, test_data)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "message")
+        self.assertEqual(NomineePosition.objects.filter(state='accepted').count (), 1)
+        self.client.logout()
+
+    def test_private_index_post_decline(self):
+        self.create_nominees_for_states('pending')
+        login_testing_unauthorized(self, CHAIR_USER, self.private_index_url)
+        test_data = {"action": "set_as_declined",
+                     "selected": [1]}
+        r = self.client.post(self.private_index_url, test_data)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "message")
+        self.assertEqual(NomineePosition.objects.filter(state='declined').count (), 1)
+        self.client.logout()
+
+    def test_private_index_post_pending(self):
+        self.create_nominees_for_states('declined')
+        login_testing_unauthorized(self, CHAIR_USER, self.private_index_url)
+        test_data = {"action": "set_as_pending",
+                     "selected": [1]}
+        r = self.client.post(self.private_index_url, test_data)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "message")
+        self.assertEqual(NomineePosition.objects.filter(state='pending').count (), 1)
+        self.client.logout()
+
 
     def test_private_merge_view(self):
         """Verify private merge view"""
@@ -388,6 +439,19 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
 
         self.client.logout()
+
+    def test_list_positions(self):
+        login_testing_unauthorized(self, CHAIR_USER, self.positions_url)
+
+    def test_list_positions_add(self):
+        nomcom = get_nomcom_by_year(self.year)
+        count = nomcom.position_set.all().count()
+        login_testing_unauthorized(self, CHAIR_USER, self.edit_position_url)
+        test_data = {"action" : "add", "name": "testpos", "description": "test description"}
+        r = self.client.post(self.edit_position_url, test_data)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(nomcom.position_set.all().count(), count+1)
+
 
     def test_index_view(self):
         """Verify home view"""
