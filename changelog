@@ -570,42 +570,42 @@ ietfdb (5.8.1) ietf; urgency=medium
 
 ietfdb (5.8.0) ietf; urgency=medium
 
-   ** JSON Api **
+  **JSON Api**
 
-   This release introduces a machine-readable API to the datatracker database
-   content, based on Tastypie (https://django-tastypie.readthedocs.org/).
+  This release introduces a machine-readable API to the datatracker database
+  content, based on Tastypie (https://django-tastypie.readthedocs.org/).
 
-   Currently the API is set to read-only; but Tastypie does support
-   fine-grained control of create, read, update, and delete permissions, so if
-   we find that it makes sense at some point, we can open up for authenticated
-   access to more than just reading database content.
+  Currently the API is set to read-only; but Tastypie does support
+  fine-grained control of create, read, update, and delete permissions, so if
+  we find that it makes sense at some point, we can open up for authenticated
+  access to more than just reading database content.
 
-   The details of which tables and objects from the database that are exposed
-   in the API are controlled by a series of resources.py files; one per Django
-   app.  By default, no data is exposed; in order to expose a table, the
-   resources file must contain a resource specification, in the form of a
-   python class which determines which table fields should be exposed, and how.
+  The details of which tables and objects from the database that are exposed
+  in the API are controlled by a series of resources.py files; one per Django
+  app.  By default, no data is exposed; in order to expose a table, the
+  resources file must contain a resource specification, in the form of a
+  python class which determines which table fields should be exposed, and how.
 
-   Since we want to expose almost all the database content, rather than only a
-   few selected tables, there is a lot of code which needs to be specified
-   (more than 200 classes, with almost 2000 lines, at this writing) in order
-   to make data available through the API.
+  Since we want to expose almost all the database content, rather than only a
+  few selected tables, there is a lot of code which needs to be specified
+  (more than 200 classes, with almost 2000 lines, at this writing) in order
+  to make data available through the API.
 
-   Rather than manually type out all of the needed classes, a management
-   command (ietf/manage.py makeresources) has been added which will generate
-   the needed resource classes in the resources.py files automatically.
-   Existing classes will be left intact, though, which makes it feasible to
-   hand tune the classes if needed, but still auto-generate resource classes
-   when new tables are added.
+  Rather than manually type out all of the needed classes, a management
+  command (ietf/manage.py makeresources) has been added which will generate
+  the needed resource classes in the resources.py files automatically.
+  Existing classes will be left intact, though, which makes it feasible to
+  hand tune the classes if needed, but still auto-generate resource classes
+  when new tables are added.
 
-   In addition to read access to the exposed tables and objects, the Tastypie
-   API provides support for automated discovery of the available tables.  Starting
-   at the URL https://datatracker.ietf.org/api/v1/, the returned machine-readable
-   data provides URL information for all available API endpoints, which makes it
-   possible to recurse down to all available data.
+  In addition to read access to the exposed tables and objects, the Tastypie
+  API provides support for automated discovery of the available tables.  Starting
+  at the URL https://datatracker.ietf.org/api/v1/, the returned machine-readable
+  data provides URL information for all available API endpoints, which makes it
+  possible to recurse down to all available data.
 
-   Data is currently provided in JSON and XML format.  Adding new formats is
-   fairly easy, if it should be found desriable.
+  Data is currently provided in JSON and XML format.  Adding new formats is
+  fairly easy, if it should be found desriable.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  18 Dec 2014 16:06:05 +0000
 
