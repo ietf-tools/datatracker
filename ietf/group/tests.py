@@ -1,7 +1,9 @@
-
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.group.models import Role
+from django.db.models import Q
+from django.test import Client
+
+from ietf.group.models import Role, Group
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 
@@ -36,3 +38,21 @@ class StreamTests(TestCase):
         r = self.client.post(url, dict(delegates="ad2@ietf.org"))
         self.assertEqual(r.status_code, 302)
         self.assertTrue(Role.objects.filter(name="delegate", group__acronym=stream_acronym, email__address="ad2@ietf.org"))
+
+class GroupTests(TestCase):
+    def test_dep_urls(self):
+        make_test_data()
+        for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
+            client = Client(Accept='application/pdf')
+            r = client.get(urlreverse("ietf.group.info.dependencies_dot",
+                kwargs=dict(acronym=group.acronym)))
+            self.assertTrue(r.status_code == 200, "Failted to request "
+                "a dot dependency graph for group: %s"%group.acronym)
+            self.assertTrue(len(r.content), "Dot dependency graph for group "
+                "%s has no content"%group.acronym)
+            r = client.get(urlreverse("ietf.group.info.dependencies_pdf",
+                kwargs=dict(acronym=group.acronym)))
+            self.assertTrue(r.status_code == 200, "Failted to request "
+                "a pdf dependency graph for group: %s"%group.acronym)
+            self.assertTrue(len(r.content), "Pdf dependency graph for group "
+                "%s has no content"%group.acronym)
