@@ -6,12 +6,11 @@ from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.test_utils import TestCase
-from ietf.doc.models import Document
 from ietf.person.models import Person
 from ietf.submit.models import Preapproval
 from ietf.utils.test_data import make_test_data
 
-from pyquery import PyQuery
+#from pyquery import PyQuery
 
 SECR_USER='secretary'
 
