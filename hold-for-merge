@@ -1,6 +1,5 @@
 # -*- conf-mode -*-
 
-personal/rcross/v5.12.4.dev0@9307	# Failed pyflakes, fixed in 9308
 personal/rcross/v5.7.3-dev0@8640	# Rework: make the check_permissions() decorator handle the case where the user isn't logged in
 personal/rcross/v5.6.3-dev0@8237	# Includes other merges; merge personal/rcross/v5.6.2-dev0@8216 instead
 personal/liudapeng/v5.5.1-dev0@7925	# alternative resolution desired
