@@ -46,11 +46,13 @@ class TastypieApiTestCase(ResourceTestCase):
 
     def _assertCallbackReturnsSameJSON(self, api_url, json_dict):
         cbclient = Client(Accept='text/javascript')
-        identity = lambda x: x
+        identity = lambda x: x      # pyflakes:ignore
+
         # To be able to eval JSON, we need to have three more symbols
-        true = True
-        false = False
-        null = None
+        # They are used indirectly
+        true = True                 # pyflakes:ignore
+        false = False               # pyflakes:ignore
+        null = None                 # pyflakes:ignore
         r = cbclient.get(api_url + '?callback=identity')
         code = compile(r.content, '<string>', 'eval')
         # Make sure it is just a call with the identity function
@@ -86,9 +88,8 @@ class TastypieApiTestCase(ResourceTestCase):
                         "There doesn't seem to be any API resource for model %s.models.%s"%(app.__name__,model.__name__,))
 
     def test_invalid_jsonp_callback_value(self):
-        cbclient = Client(Accept='text/javascript')
         try:
-            r = cbclient.get("/api/v1?callback=$.23")
+            Client(Accept='text/javascript').get("/api/v1?callback=$.23")
         except BadRequest:
             return
         self.assertTrue(False,
