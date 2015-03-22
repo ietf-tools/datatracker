@@ -286,8 +286,8 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "ietf/utils/test_runner.py",
 ]
 
-TEST_COVERAGE_MASTER_FILE = "release-coverage.json"
-TEST_COVERAGE_LATEST_FILE = "latest-coverage.json"
+TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
+TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
 if SERVER_MODE != 'production':
