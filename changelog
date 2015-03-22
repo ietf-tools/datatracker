@@ -1,3 +1,38 @@
+ietfdb (5.13.0) ietf; urgency=medium
+
+  * Merged in [9317] from jmh@joelhalpern.com:
+    Added some nomcom test cases.  
+
+  * Changed the MEDIA_URL to use https instead of http, to be in line with 
+    other efforts to move to https in general.
+
+  * Merged in [9316] from willem@nlnetlabs.nl:
+    Test fetching of wg and rg document dependency graphs.
+
+    Also added conditional running of these tests, as they depend on the
+    availability of the dot, unflatten and ps2pdf binaries, which may not
+    be available on all developers' systems.
+
+  * Merged in [9309] from tjw.ietf@gmail.com:
+    Fixed #845. Commit read for merge. 
+
+  * Merged in [9305] from willem@nlnetlabs.nl:
+    Callback API test code paths 
+
+  * Merged in [9307] from rcross@amsl.com:
+    Improved test coverage of secr.drafts.   
+
+  * Merged in [9306] from rjsparks@nostrum.com:
+    Added pre-ads to .ad aliases. Keep draft aliases for drafts that have 
+    become RFCs for some time.  
+
+  * Merged in [9303] from rjsparks@nostrum.com:
+    Cached the wg-charter*txt pages for a time since they are very heavy to 
+    generate.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2015 12:09:18 -0700
+
+
 ietfdb (5.12.3) ietf; urgency=medium
 
   This is a minor bugfix release which also addresses a number of testing
