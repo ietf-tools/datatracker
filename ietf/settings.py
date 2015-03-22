@@ -89,7 +89,7 @@ USE_I18N = False
 
 USE_TZ = False
 
-MEDIA_URL = 'http://www.ietf.org/'
+MEDIA_URL = 'https://www.ietf.org/'
 
 STATIC_URL = "/"
 STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
