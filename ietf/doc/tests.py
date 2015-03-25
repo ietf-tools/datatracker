@@ -8,6 +8,7 @@ else:
     import unittest
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
+from Cookie import SimpleCookie
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
@@ -15,12 +16,13 @@ from django.conf import settings
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, save_document_in_history )
 from ietf.group.models import Group
+from ietf.meeting.models import Meeting, Session, SessionPresentation
+from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
-from Cookie import SimpleCookie
 
 class SearchTestCase(TestCase):
     def test_search(self):
@@ -487,6 +489,16 @@ class DocTestCase(TestCase):
         )
         doc.set_state(State.objects.get(type="slides", slug="active"))
         DocAlias.objects.create(name=doc.name, document=doc)
+
+        session = Session.objects.create(
+            name = "session-42-mars-1",
+            meeting = Meeting.objects.get(number='42'),
+            group = Group.objects.get(acronym='mars'),
+            status = SessionStatusName.objects.create(slug='scheduled', name='Scheduled'),
+            modified = datetime.datetime.now(),
+            requested_by = Person.objects.get(user__username="marschairman"),
+            )
+        SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)

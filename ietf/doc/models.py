@@ -238,7 +238,7 @@ class DocumentInfo(models.Model):
                    or (self.session_set.exists() if isinstance(self, Document) else self.doc.session_set.exists()))
         elif self.type_id in ("slides",):
             return (self.name.split("-")[1] == "interim"
-                   or (self.get_state('slides').slug in ("active", "sessonly","archived") ))
+                   or (self.get_state('slides') and self.get_state('slides').slug in ("active", "sessonly","archived") ))
         else:
             return False
 

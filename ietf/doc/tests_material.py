@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2011, All Rights Reserved
 
-import os, shutil
+import os
+import shutil
+import datetime
 from StringIO import StringIO
 from pyquery import PyQuery
 
@@ -9,24 +11,46 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import Document, State, DocAlias
 from ietf.group.models import Group
+from ietf.meeting.models import Meeting, Session, SessionPresentation
+from ietf.name.models import SessionStatusName
+from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_data import make_test_data
 
 class GroupMaterialTests(TestCase):
     def setUp(self):
         self.materials_dir = os.path.abspath("tmp-document-dir")
-        os.mkdir(self.materials_dir)
-        os.mkdir(os.path.join(self.materials_dir, "slides"))
+        if not os.path.exists(self.materials_dir):
+            os.makedirs(os.path.join(self.materials_dir, "slides"))
         settings.DOCUMENT_PATH_PATTERN = self.materials_dir + "/{doc.type_id}/"
+
+        self.agenda_dir = os.path.abspath("tmp-agenda-dir")
+        if not os.path.exists(self.agenda_dir):
+            os.makedirs(os.path.join(self.agenda_dir, "42", "slides"))
+        settings.AGENDA_PATH = self.agenda_dir
 
     def tearDown(self):
         shutil.rmtree(self.materials_dir)
+        shutil.rmtree(self.agenda_dir)
 
     def create_slides(self):
+        make_test_data()
+
         group = Group.objects.create(type_id="team", acronym="testteam", name="Test Team", state_id="active")
 
         doc = Document.objects.create(name="slides-testteam-test-file", rev="00", type_id="slides", group=group)
         doc.set_state(State.objects.get(type="slides", slug="active"))
         DocAlias.objects.create(name=doc.name, document=doc)
+
+        session = Session.objects.create(
+            name = "session-42-mars-1",
+            meeting = Meeting.objects.get(number='42'),
+            group = Group.objects.get(acronym='mars'),
+            status = SessionStatusName.objects.create(slug='scheduled', name='Scheduled'),
+            modified = datetime.datetime.now(),
+            requested_by = Person.objects.get(user__username="marschairman"),
+            )
+        SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
 
         return doc
 
@@ -135,6 +159,6 @@ class GroupMaterialTests(TestCase):
         self.assertEqual(doc.title, "New title")
         self.assertEqual(doc.get_state_slug(), "active")
 
-        with open(os.path.join(self.materials_dir, "slides", doc.name + "-" + doc.rev + ".txt")) as f:
+        with open(os.path.join(self.agenda_dir, "42", "slides", doc.name + "-" + doc.rev + ".txt")) as f:
             self.assertEqual(f.read(), content)
 
