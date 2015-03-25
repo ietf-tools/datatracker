@@ -1,5 +1,26 @@
 ietfdb (5.13.0) ietf; urgency=medium
 
+  **IETF 92 Code Sprint**
+
+  This release contains the datatracker bugfixes and enhancements from the
+  IETF-92 Code Sprint.  It improves the coverage of the test suite, and also
+  fixes a number of issues.  Many thanks to everyone that contributed!
+
+  * Merged in [9330] from rcross@amsl.com:
+    Cleanup legacy IPR models.  Fixes ticket #1626.  
+
+  * Merged in [9326] from rjsparks@nostrum.com:
+    Test coverage improvement for group material management.  
+
+  * Fixed a problem in Document.meeting_related(), and fixed a number of 
+    tests which broke when slide objects started to return True to 
+    meeting_related() without being related to a session.
+
+  * Merged in [9319] from kivinen@iki.fi:
+    Added test cases for cookie code. This will test all the cookie setting 
+    code, and also adds test for draft for include_text and full_draft cookie 
+    checking.  
+
   * Merged in [9317] from jmh@joelhalpern.com:
     Added some nomcom test cases.  
 
@@ -30,7 +51,7 @@ ietfdb (5.13.0) ietf; urgency=medium
     Cached the wg-charter*txt pages for a time since they are very heavy to 
     generate.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2015 12:09:18 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Mar 2015 19:07:16 +0000
 
 
 ietfdb (5.12.3) ietf; urgency=medium
