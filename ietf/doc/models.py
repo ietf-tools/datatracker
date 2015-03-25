@@ -495,9 +495,9 @@ class Document(DocumentInfo):
         """Returns the IPR disclosures against this document and those documents this
         document directly or indirectly obsoletes or replaces
         """
-        from ietf.ipr.models import IprDocAlias
-        aliases = IprDocAlias.objects.filter(doc_alias__in=list(self.docalias_set.all())+self.all_related_that_doc(['obs','replaces'])).filter(ipr__status__in=[1,3]).values_list('ipr', flat=True).distinct()
-        return aliases
+        from ietf.ipr.models import IprDocRel
+        iprs = IprDocRel.objects.filter(document__in=list(self.docalias_set.all())+self.all_related_that_doc(['obs','replaces'])).filter(disclosure__state__in=['posted','removed']).values_list('disclosure', flat=True).distinct()
+        return iprs
 
     def future_presentations(self):
         """ returns related SessionPresentation objects for meetings that

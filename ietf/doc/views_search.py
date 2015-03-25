@@ -47,7 +47,6 @@ from ietf.doc.models import ( Document, DocAlias, State, RelatedDocument, DocEve
 from ietf.doc.expire import expirable_draft
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
-from ietf.ipr.models import IprDocAlias
 from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
 from ietf.utils.draft_search import normalize_draftname
@@ -135,41 +134,6 @@ def fill_in_search_attributes(docs):
 
     for e in DocEvent.objects.filter(doc__in=doc_ids, type__in=event_types).order_by('time'):
         docs_dict[e.doc_id].latest_event_cache[e.type] = e
-
-    # IPR
-    for d in docs:
-        d.iprs = []
-
-# Consider reworking the following block using all_relations_that_doc? That might simplify the final assembly
-# down to the code at "if a not in docs_dict"...
-
-    rel_docs = []
-    rel_id_camefrom = {}
-    for d in docs:
-        if isinstance(d,DocAlias):
-            d = d.document
-        rel_this_doc = d.all_related_that_doc(['replaces','obs']) 
-        for rel in rel_this_doc:
-            rel_id_camefrom.setdefault(rel.document.pk,[]).append(d.pk)
-        rel_docs += [x.document for x in rel_this_doc]
-
-    ipr_docaliases = IprDocAlias.objects.filter(doc_alias__document__in=doc_ids, ipr__status__in=[1,3]).select_related('doc_alias')
-    for a in ipr_docaliases:
-        if a.ipr not in docs_dict[a.doc_alias.document_id].iprs:
-            docs_dict[a.doc_alias.document_id].iprs.append(a.ipr)
-
-    rel_docs_dict = dict((d.pk, d) for d in rel_docs)
-    rel_doc_ids = rel_docs_dict.keys()
-    rel_ipr_docaliases = IprDocAlias.objects.filter(doc_alias__document__in=rel_doc_ids, ipr__status__in=[1,3]).select_related('doc_alias')
-    for a in rel_ipr_docaliases:
-        if a.doc_alias.document_id in rel_id_camefrom:
-            for k in rel_id_camefrom[a.doc_alias.document_id]:
-                if a.ipr not in docs_dict[k].iprs:
-                    docs_dict[k].iprs.append(a.ipr)
-
-    # Clean up, make sure these temporary variables aren't used later
-    # (so we can re-work the code in due time):
-    del rel_docs, rel_id_camefrom, rel_docs_dict, rel_doc_ids, rel_ipr_docaliases
 
     # telechat date, can't do this with above query as we need to get TelechatDocEvents out
     seen = set()

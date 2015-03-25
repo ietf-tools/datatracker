@@ -2,7 +2,7 @@
 from django import forms
 from django.contrib import admin
 from ietf.name.models import DocRelationshipName
-from ietf.ipr.models import (IprNotification, IprDisclosureBase, IprDocRel, IprEvent,
+from ietf.ipr.models import (IprDisclosureBase, IprDocRel, IprEvent,
     RelatedIpr, HolderIprDisclosure, ThirdPartyIprDisclosure, GenericIprDisclosure, 
     NonDocSpecificIprDisclosure)
 
@@ -84,10 +84,6 @@ class NonDocSpecificIprDisclosureAdmin(admin.ModelAdmin):
         return u", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
 
 admin.site.register(NonDocSpecificIprDisclosure, NonDocSpecificIprDisclosureAdmin)
-
-class IprNotificationAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(IprNotification, IprNotificationAdmin)
 
 class IprDocRelAdmin(admin.ModelAdmin):
     raw_id_fields = ["disclosure", "document"]
