@@ -73,8 +73,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% include "doc/search/status_columns.html" %}
 
 <td class="ipr">
-  {% if doc.iprs %}
-    <a href="{% url "ipr_search" %}?submit=draft&amp;id={{ doc.name }}">{{ doc.iprs|length }}</a>
+  {% if doc.related_ipr %}
+    <a href="{% url "ipr_search" %}?submit=draft&amp;id={{ doc.name }}">{{ doc.related_ipr|length }}</a>
   {% endif %}
 </td>
 
