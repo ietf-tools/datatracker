@@ -167,15 +167,15 @@ DEV="$(printf %d.%d.%d.dev0 $MAJOR $MINOR $NEXT)"
 #cd $DIR ??
 
 note "Running the tests suite and writing release coverage data ..."
-$do ietf/manage.py test --settings=ietf.settings_sqlitetest --save-version-coverage=$VER
+$do ietf/manage.py test --settings=ietf.settings_releasetest --save-version-coverage=$VER
 
 note "Committing the release coverage data ..."
 $do svn commit release-coverage.json -m "Code coverage data for release $VER"
 
-note "Checking that there's a recent test-crawler log"
-touch -d $RDATE .svn/.latest-commit
-TCLOG=$(ls -t ../test-crawl-*.log | head -n 1)
-[ $TCLOG -nt .svn/.latest-commit ] || die "Looked for ../test-crawl-*.log, but didn't find one newer than the latest repository commit ($RDATE)"
+# note "Checking that there's a recent test-crawler log"
+# touch -d $RDATE .svn/.latest-commit
+# TCLOG=$(ls -t ../test-crawl-*.log | head -n 1)
+# [ $TCLOG -nt .svn/.latest-commit ] || die "Looked for ../test-crawl-*.log, but didn't find one newer than the latest repository commit ($RDATE)"
 
 note "Checking that changelog information is available"
 changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )

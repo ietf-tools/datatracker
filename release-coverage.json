@@ -6494,9 +6494,9 @@
   }, 
   "5.13.0": {
     "code": {
-      "coverage": 0.6796908049071262, 
+      "coverage": 0.6783063492673922, 
       "covered": {
-        "ietf/__init__": 0.0, 
+        "ietf/__init__": 1.0, 
         "ietf/api/__init__": 0.7012987012987013, 
         "ietf/api/management/__init__": 1.0, 
         "ietf/api/management/commands/__init__": 1.0, 
@@ -6570,7 +6570,7 @@
         "ietf/group/edit": 0.862876254180602, 
         "ietf/group/features": 1.0, 
         "ietf/group/feeds": 0.9736842105263157, 
-        "ietf/group/info": 0.787128712871287, 
+        "ietf/group/info": 0.6881188118811882, 
         "ietf/group/mails": 0.9425287356321839, 
         "ietf/group/milestones": 0.8595744680851064, 
         "ietf/group/models": 0.9161676646706587, 
@@ -6829,7 +6829,7 @@
       }
     }, 
     "template": {
-      "coverage": 0.6728624535315985, 
+      "coverage": 0.671003717472119, 
       "covered": {
         "401.html": false, 
         "404.html": true, 
@@ -7032,7 +7032,7 @@
         "group/conclude.html": true, 
         "group/concluded_groups.html": true, 
         "group/customize_workflow.html": true, 
-        "group/dot.txt": true, 
+        "group/dot.txt": false, 
         "group/edit.html": true, 
         "group/edit_milestones.html": true, 
         "group/email_aliases.html": true, 
@@ -7371,9 +7371,9 @@
         "utils/header_change_content.txt": false
       }
     }, 
-    "time": "2015-03-25T19:00:54Z", 
+    "time": "2015-03-25T19:48:25Z", 
     "url": {
-      "coverage": 0.569672131147541, 
+      "coverage": 0.5655737704918032, 
       "covered": {
         "^$": true, 
         "^(?P<group_type>(wg|rg))/$": true, 
@@ -7562,8 +7562,8 @@
         "^group/(?P<acronym>[a-zA-Z0-9-._]+)/ajax/searchdocs/$": false, 
         "^group/(?P<acronym>[a-zA-Z0-9-._]+)/charter/$": false, 
         "^group/(?P<acronym>[a-zA-Z0-9-._]+)/conclude/$": false, 
-        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/deps/dot/$": true, 
-        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/deps/pdf/$": true, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/deps/dot/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/deps/pdf/$": false, 
         "^group/(?P<acronym>[a-zA-Z0-9-._]+)/documents/$": false, 
         "^group/(?P<acronym>[a-zA-Z0-9-._]+)/edit/$": false, 
         "^group/(?P<acronym>[a-zA-Z0-9-._]+)/history/$": false, 
