@@ -301,7 +301,7 @@ def retrieve_search_results(form, all_types=False):
             else:
                 res.append(d.get_state().order if d.get_state() else None)
         elif query["sort"] == "ipr":
-            res.append(d.related_ipr().count())
+            res.append(len(d.ipr()))
         elif query["sort"] == "ad":
             if rfc_num != None:
                 res.append(int(rfc_num))
