@@ -208,7 +208,7 @@ def active_wgs(request):
         area.urls = area.groupurl_set.all().order_by("name")
         for group in area.groups:
             group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-            group.ad_out_of_area = group.ad_role().person not in [role.person for role in area.ads]
+            group.ad_out_of_area = group.ad_role() and group.ad_role().person not in [role.person for role in area.ads]
             # get the url for mailing list subscription
             if group.list_subscribe.startswith('http'):
                 group.list_subscribe_url = group.list_subscribe
