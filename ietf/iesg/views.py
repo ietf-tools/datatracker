@@ -192,7 +192,7 @@ def agenda_txt(request, date=None):
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
             "domain": Site.objects.get_current().domain,
-            }, context_instance=RequestContext(request), content_type="text/plain")
+            }, context_instance=RequestContext(request), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
 def agenda_scribe_template(request, date=None):
     data = agenda_data(date)

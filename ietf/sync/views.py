@@ -96,9 +96,9 @@ def notify(request, org, notification):
             failed, out = runscript("rfc-editor-index-updates")
 
         if failed:
-            return HttpResponseServerError("FAIL\n\n" + out, content_type="text/plain")
+            return HttpResponseServerError("FAIL\n\n" + out, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
         else:
-            return HttpResponse("OK", content_type="text/plain")
+            return HttpResponse("OK", content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
     return render_to_response('sync/notify.html',
                               dict(org=known_orgs[org],
