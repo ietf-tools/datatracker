@@ -914,6 +914,7 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
             # set Doc state
             state = State.objects.get(type=doc.type,slug='active')
             doc.set_state(state)
+            doc.set_state(State.objects.get(type='reuse_policy',slug='single'))
 
             # create session relationship, per Henrik we should associate documents to all sessions
             # for the current meeting (until tools support different materials for diff sessions)

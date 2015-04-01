@@ -1,4143 +1,4299 @@
 [
 {
- "pk": "yes", 
- "model": "name.ballotpositionname", 
  "fields": {
-  "order": 1, 
-  "used": true, 
-  "name": "Yes", 
-  "blocking": false, 
+  "order": 1,
+  "used": true,
+  "name": "Yes",
+  "blocking": false,
   "desc": ""
- }
+ },
+ "model": "name.ballotpositionname",
+ "pk": "yes"
 },
 {
- "pk": "noobj", 
- "model": "name.ballotpositionname", 
  "fields": {
-  "order": 2, 
-  "used": true, 
-  "name": "No Objection", 
-  "blocking": false, 
+  "order": 2,
+  "used": true,
+  "name": "No Objection",
+  "blocking": false,
   "desc": ""
- }
+ },
+ "model": "name.ballotpositionname",
+ "pk": "noobj"
 },
 {
- "pk": "discuss", 
- "model": "name.ballotpositionname", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "Discuss", 
-  "blocking": true, 
+  "order": 3,
+  "used": true,
+  "name": "Discuss",
+  "blocking": true,
   "desc": ""
- }
+ },
+ "model": "name.ballotpositionname",
+ "pk": "discuss"
 },
 {
- "pk": "block", 
- "model": "name.ballotpositionname", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "Block", 
-  "blocking": true, 
+  "order": 3,
+  "used": true,
+  "name": "Block",
+  "blocking": true,
   "desc": ""
- }
+ },
+ "model": "name.ballotpositionname",
+ "pk": "block"
 },
 {
- "pk": "abstain", 
- "model": "name.ballotpositionname", 
  "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "Abstain", 
-  "blocking": false, 
+  "order": 4,
+  "used": true,
+  "name": "Abstain",
+  "blocking": false,
   "desc": ""
- }
+ },
+ "model": "name.ballotpositionname",
+ "pk": "abstain"
 },
 {
- "pk": "recuse", 
- "model": "name.ballotpositionname", 
  "fields": {
-  "order": 5, 
-  "used": true, 
-  "name": "Recuse", 
-  "blocking": false, 
+  "order": 5,
+  "used": true,
+  "name": "Recuse",
+  "blocking": false,
   "desc": ""
- }
+ },
+ "model": "name.ballotpositionname",
+ "pk": "recuse"
 },
 {
- "pk": "norecord", 
- "model": "name.ballotpositionname", 
  "fields": {
-  "order": 6, 
-  "used": true, 
-  "name": "No Record", 
-  "blocking": false, 
+  "order": 6,
+  "used": true,
+  "name": "No Record",
+  "blocking": false,
   "desc": ""
- }
+ },
+ "model": "name.ballotpositionname",
+ "pk": "norecord"
 },
 {
- "pk": "conflict", 
- "model": "name.constraintname", 
  "fields": {
-  "order": 0, 
-  "penalty": 100000, 
-  "used": true, 
-  "name": "Conflicts with", 
+  "order": 0,
+  "penalty": 100000,
+  "used": true,
+  "name": "Conflicts with",
   "desc": ""
- }
+ },
+ "model": "name.constraintname",
+ "pk": "conflict"
 },
 {
- "pk": "conflic2", 
- "model": "name.constraintname", 
  "fields": {
-  "order": 0, 
-  "penalty": 10000, 
-  "used": true, 
-  "name": "Conflicts with (secondary)", 
+  "order": 0,
+  "penalty": 10000,
+  "used": true,
+  "name": "Conflicts with (secondary)",
   "desc": ""
- }
+ },
+ "model": "name.constraintname",
+ "pk": "conflic2"
 },
 {
- "pk": "conflic3", 
- "model": "name.constraintname", 
  "fields": {
-  "order": 0, 
-  "penalty": 1000, 
-  "used": true, 
-  "name": "Conflicts with (tertiary)", 
+  "order": 0,
+  "penalty": 1000,
+  "used": true,
+  "name": "Conflicts with (tertiary)",
   "desc": ""
- }
+ },
+ "model": "name.constraintname",
+ "pk": "conflic3"
 },
 {
- "pk": "bethere", 
- "model": "name.constraintname", 
  "fields": {
-  "order": 0, 
-  "penalty": 200000, 
-  "used": true, 
-  "name": "Person must be present", 
+  "order": 0,
+  "penalty": 200000,
+  "used": true,
+  "name": "Person must be present",
   "desc": ""
- }
+ },
+ "model": "name.constraintname",
+ "pk": "bethere"
 },
 {
- "pk": "rst", 
- "model": "name.dbtemplatetypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "reStructuredText", 
+  "order": 0,
+  "used": true,
+  "name": "reStructuredText",
   "desc": ""
- }
+ },
+ "model": "name.dbtemplatetypename",
+ "pk": "rst"
 },
 {
- "pk": "plain", 
- "model": "name.dbtemplatetypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Plain", 
+  "order": 0,
+  "used": true,
+  "name": "Plain",
   "desc": ""
- }
+ },
+ "model": "name.dbtemplatetypename",
+ "pk": "plain"
 },
 {
- "pk": "django", 
- "model": "name.dbtemplatetypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Django", 
+  "order": 0,
+  "used": true,
+  "name": "Django",
   "desc": ""
- }
+ },
+ "model": "name.dbtemplatetypename",
+ "pk": "django"
 },
 {
- "pk": "obs", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Obsoleted by", 
-  "used": true, 
-  "name": "Obsoletes", 
+  "order": 0,
+  "revname": "Obsoleted by",
+  "used": true,
+  "name": "Obsoletes",
   "desc": ""
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "obs"
 },
 {
- "pk": "updates", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Updated by", 
-  "used": true, 
-  "name": "Updates", 
+  "order": 0,
+  "revname": "Updated by",
+  "used": true,
+  "name": "Updates",
   "desc": ""
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "updates"
 },
 {
- "pk": "replaces", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Replaced by", 
-  "used": true, 
-  "name": "Replaces", 
+  "order": 0,
+  "revname": "Replaced by",
+  "used": true,
+  "name": "Replaces",
   "desc": ""
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "replaces"
 },
 {
- "pk": "conflrev", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Conflict reviewed by", 
-  "used": true, 
-  "name": "conflict reviews", 
+  "order": 0,
+  "revname": "Conflict reviewed by",
+  "used": true,
+  "name": "conflict reviews",
   "desc": ""
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "conflrev"
 },
 {
- "pk": "refnorm", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Normatively Referenced by", 
-  "used": true, 
-  "name": "Normative Reference", 
+  "order": 0,
+  "revname": "Normatively Referenced by",
+  "used": true,
+  "name": "Normative Reference",
   "desc": "Normative Reference"
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "refnorm"
 },
 {
- "pk": "refold", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Referenced by", 
-  "used": true, 
-  "name": "Reference", 
+  "order": 0,
+  "revname": "Referenced by",
+  "used": true,
+  "name": "Reference",
   "desc": "A reference found in a document which does not have split normative/informative reference sections."
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "refold"
 },
 {
- "pk": "refinfo", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Informatively Referenced by", 
-  "used": true, 
-  "name": "Informative Reference", 
+  "order": 0,
+  "revname": "Informatively Referenced by",
+  "used": true,
+  "name": "Informative Reference",
   "desc": "Informative Reference"
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "refinfo"
 },
 {
- "pk": "tops", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Moved to Proposed Standard by", 
-  "used": true, 
-  "name": "Moves to Proposed Standard", 
+  "order": 0,
+  "revname": "Moved to Proposed Standard by",
+  "used": true,
+  "name": "Moves to Proposed Standard",
   "desc": ""
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "tops"
 },
 {
- "pk": "tois", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Moved to Internet Standard by", 
-  "used": true, 
-  "name": "Moves to Internet Standard", 
+  "order": 0,
+  "revname": "Moved to Internet Standard by",
+  "used": true,
+  "name": "Moves to Internet Standard",
   "desc": ""
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "tois"
 },
 {
- "pk": "tohist", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Moved to Historic by", 
-  "used": true, 
-  "name": "Moves to Historic", 
+  "order": 0,
+  "revname": "Moved to Historic by",
+  "used": true,
+  "name": "Moves to Historic",
   "desc": ""
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "tohist"
 },
 {
- "pk": "toinf", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Moved to Informational by", 
-  "used": true, 
-  "name": "Moves to Informational", 
+  "order": 0,
+  "revname": "Moved to Informational by",
+  "used": true,
+  "name": "Moves to Informational",
   "desc": ""
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "toinf"
 },
 {
- "pk": "tobcp", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Moved to BCP by", 
-  "used": true, 
-  "name": "Moves to BCP", 
+  "order": 0,
+  "revname": "Moved to BCP by",
+  "used": true,
+  "name": "Moves to BCP",
   "desc": ""
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "tobcp"
 },
 {
- "pk": "toexp", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 0, 
-  "revname": "Moved to Experimental by", 
-  "used": true, 
-  "name": "Moves to Experimental", 
+  "order": 0,
+  "revname": "Moved to Experimental by",
+  "used": true,
+  "name": "Moves to Experimental",
   "desc": ""
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "toexp"
 },
 {
- "pk": "refunk", 
- "model": "name.docrelationshipname", 
  "fields": {
-  "order": 3, 
-  "revname": "Possibly Referenced By", 
-  "used": true, 
-  "name": "Possible Reference", 
+  "order": 3,
+  "revname": "Possibly Referenced By",
+  "used": true,
+  "name": "Possible Reference",
   "desc": "Reference of unknown type, likely found in the text of the document."
- }
+ },
+ "model": "name.docrelationshipname",
+ "pk": "refunk"
 },
 {
- "pk": "stream-s", 
- "model": "name.docremindertypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Stream state should change", 
+  "order": 0,
+  "used": true,
+  "name": "Stream state should change",
   "desc": ""
- }
+ },
+ "model": "name.docremindertypename",
+ "pk": "stream-s"
 },
 {
- "pk": "iana-crd", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "IANA coordination", 
+  "order": 0,
+  "used": true,
+  "name": "IANA coordination",
   "desc": "RFC-Editor/IANA Registration Coordination"
- }
+ },
+ "model": "name.doctagname",
+ "pk": "iana-crd"
 },
 {
- "pk": "ref", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Holding for references", 
+  "order": 0,
+  "used": true,
+  "name": "Holding for references",
   "desc": "Holding for normative reference"
- }
+ },
+ "model": "name.doctagname",
+ "pk": "ref"
 },
 {
- "pk": "missref", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Missing references", 
+  "order": 0,
+  "used": true,
+  "name": "Missing references",
   "desc": "Awaiting missing normative reference"
- }
+ },
+ "model": "name.doctagname",
+ "pk": "missref"
 },
 {
- "pk": "errata", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Has errata", 
+  "order": 0,
+  "used": true,
+  "name": "Has errata",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "errata"
 },
 {
- "pk": "rfc-rev", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Review by RFC Editor", 
+  "order": 0,
+  "used": true,
+  "name": "Review by RFC Editor",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "rfc-rev"
 },
 {
- "pk": "via-rfc", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Via RFC Editor", 
+  "order": 0,
+  "used": true,
+  "name": "Via RFC Editor",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "via-rfc"
 },
 {
- "pk": "app-min", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Approved in minutes", 
+  "order": 0,
+  "used": true,
+  "name": "Approved in minutes",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "app-min"
 },
 {
- "pk": "need-sh", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Shepherd Needed", 
+  "order": 0,
+  "used": true,
+  "name": "Shepherd Needed",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "need-sh"
 },
 {
- "pk": "w-dep", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Waiting for Dependency on Other Document", 
+  "order": 0,
+  "used": true,
+  "name": "Waiting for Dependency on Other Document",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "w-dep"
 },
 {
- "pk": "iesg-com", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "IESG Review Completed", 
+  "order": 0,
+  "used": true,
+  "name": "IESG Review Completed",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "iesg-com"
 },
 {
- "pk": "iana", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "IANA", 
+  "order": 0,
+  "used": true,
+  "name": "IANA",
   "desc": "The document has IANA actions that are not yet completed."
- }
+ },
+ "model": "name.doctagname",
+ "pk": "iana"
 },
 {
- "pk": "rev-wg", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Revised I-D Needed - Issue raised by WG", 
+  "order": 0,
+  "used": true,
+  "name": "Revised I-D Needed - Issue raised by WG",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "rev-wg"
 },
 {
- "pk": "no-adopt", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Polled for WG adoption but not adopted", 
+  "order": 0,
+  "used": true,
+  "name": "Polled for WG adoption but not adopted",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "no-adopt"
 },
 {
- "pk": "point", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 1, 
-  "used": true, 
-  "name": "Point Raised - writeup needed", 
+  "order": 1,
+  "used": true,
+  "name": "Point Raised - writeup needed",
   "desc": "IESG discussions on the document have raised some issues that need to be brought to the attention of the authors/WG, but those issues have not been written down yet. (It is common for discussions during a telechat to result in such situations. An AD may raise a possible issue during a telechat and only decide as a result of that discussion whether the issue is worth formally writing up and bringing to the attention of the authors/WG). A document stays in the \"Point Raised - Writeup Needed\" state until *ALL* IESG comments that have been raised have been documented."
- }
+ },
+ "model": "name.doctagname",
+ "pk": "point"
 },
 {
- "pk": "w-expert", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 1, 
-  "used": true, 
-  "name": "Awaiting Expert Review/Resolution of Issues Raised", 
+  "order": 1,
+  "used": true,
+  "name": "Awaiting Expert Review/Resolution of Issues Raised",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "w-expert"
 },
 {
- "pk": "need-ed", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 1, 
-  "used": true, 
-  "name": "Editor Needed", 
+  "order": 1,
+  "used": true,
+  "name": "Editor Needed",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "need-ed"
 },
 {
- "pk": "ad-f-up", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 2, 
-  "used": true, 
-  "name": "AD Followup", 
+  "order": 2,
+  "used": true,
+  "name": "AD Followup",
   "desc": "A generic substate indicating that the shepherding AD has the action item to determine appropriate next steps. In particular, the appropriate steps (and the corresponding next state or substate) depend entirely on the nature of the issues that were raised and can only be decided with active involvement of the shepherding AD. Examples include:\n\n- if another AD raises an issue, the shepherding AD may first iterate with the other AD to get a better understanding of the exact issue. Or, the shepherding AD may attempt to argue that the issue is not serious enough to bring to the attention of the authors/WG.\n\n- if a documented issue is forwarded to a WG, some further iteration may be needed before it can be determined whether a new revision is needed or whether the WG response to an issue clarifies the issue sufficiently.\n\n- when a new revision appears, the shepherding AD will first look at the changes to determine whether they believe all outstanding issues have been raised satisfactorily, prior to asking the ADs who raised the original issues to verify the changes."
- }
+ },
+ "model": "name.doctagname",
+ "pk": "ad-f-up"
 },
 {
- "pk": "w-extern", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 2, 
-  "used": true, 
-  "name": "Awaiting External Review/Resolution of Issues Raised", 
+  "order": 2,
+  "used": true,
+  "name": "Awaiting External Review/Resolution of Issues Raised",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "w-extern"
 },
 {
- "pk": "w-part", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 2, 
-  "used": true, 
-  "name": "Waiting for Partner Feedback", 
+  "order": 2,
+  "used": true,
+  "name": "Waiting for Partner Feedback",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "w-part"
 },
 {
- "pk": "extpty", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "External Party", 
+  "order": 3,
+  "used": true,
+  "name": "External Party",
   "desc": "The document is awaiting review or input from an external party (i.e, someone other than the shepherding AD, the authors, or the WG). See the \"note\" field for more details on who has the action."
- }
+ },
+ "model": "name.doctagname",
+ "pk": "extpty"
 },
 {
- "pk": "w-merge", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "Awaiting Merge with Other Document", 
+  "order": 3,
+  "used": true,
+  "name": "Awaiting Merge with Other Document",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "w-merge"
 },
 {
- "pk": "w-review", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "Awaiting Reviews", 
+  "order": 3,
+  "used": true,
+  "name": "Awaiting Reviews",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "w-review"
 },
 {
- "pk": "need-aut", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "Author or Editor Needed", 
+  "order": 4,
+  "used": true,
+  "name": "Author or Editor Needed",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "need-aut"
 },
 {
- "pk": "sh-f-up", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "Document Shepherd Followup", 
+  "order": 4,
+  "used": true,
+  "name": "Document Shepherd Followup",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "sh-f-up"
 },
 {
- "pk": "need-rev", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 5, 
-  "used": true, 
-  "name": "Revised I-D Needed", 
+  "order": 5,
+  "used": true,
+  "name": "Revised I-D Needed",
   "desc": "An updated I-D is needed to address the issues that have been raised."
- }
+ },
+ "model": "name.doctagname",
+ "pk": "need-rev"
 },
 {
- "pk": "w-refdoc", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 5, 
-  "used": true, 
-  "name": "Waiting for Referenced Document", 
+  "order": 5,
+  "used": true,
+  "name": "Waiting for Referenced Document",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "w-refdoc"
 },
 {
- "pk": "w-refing", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 6, 
-  "used": true, 
-  "name": "Waiting for Referencing Document", 
+  "order": 6,
+  "used": true,
+  "name": "Waiting for Referencing Document",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "w-refing"
 },
 {
- "pk": "rev-wglc", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 7, 
-  "used": true, 
-  "name": "Revised I-D Needed - Issue raised by WGLC", 
+  "order": 7,
+  "used": true,
+  "name": "Revised I-D Needed - Issue raised by WGLC",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "rev-wglc"
 },
 {
- "pk": "rev-ad", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 8, 
-  "used": true, 
-  "name": "Revised I-D Needed - Issue raised by AD", 
+  "order": 8,
+  "used": true,
+  "name": "Revised I-D Needed - Issue raised by AD",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "rev-ad"
 },
 {
- "pk": "rev-iesg", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 9, 
-  "used": true, 
-  "name": "Revised I-D Needed - Issue raised by IESG", 
+  "order": 9,
+  "used": true,
+  "name": "Revised I-D Needed - Issue raised by IESG",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "rev-iesg"
 },
 {
- "pk": "sheph-u", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 10, 
-  "used": true, 
-  "name": "Doc Shepherd Follow-up Underway", 
+  "order": 10,
+  "used": true,
+  "name": "Doc Shepherd Follow-up Underway",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "sheph-u"
 },
 {
- "pk": "other", 
- "model": "name.doctagname", 
  "fields": {
-  "order": 11, 
-  "used": true, 
-  "name": "Other - see Comment Log", 
+  "order": 11,
+  "used": true,
+  "name": "Other - see Comment Log",
   "desc": ""
- }
+ },
+ "model": "name.doctagname",
+ "pk": "other"
 },
 {
- "pk": "charter", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Charter", 
+  "order": 0,
+  "used": true,
+  "name": "Charter",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "charter"
 },
 {
- "pk": "agenda", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Agenda", 
+  "order": 0,
+  "used": true,
+  "name": "Agenda",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "agenda"
 },
 {
- "pk": "minutes", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Minutes", 
+  "order": 0,
+  "used": true,
+  "name": "Minutes",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "minutes"
 },
 {
- "pk": "slides", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Slides", 
+  "order": 0,
+  "used": true,
+  "name": "Slides",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "slides"
 },
 {
- "pk": "draft", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Draft", 
+  "order": 0,
+  "used": true,
+  "name": "Draft",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "draft"
 },
 {
- "pk": "liai-att", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Liaison Attachment", 
+  "order": 0,
+  "used": true,
+  "name": "Liaison Attachment",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "liai-att"
 },
 {
- "pk": "conflrev", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Conflict Review", 
+  "order": 0,
+  "used": true,
+  "name": "Conflict Review",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "conflrev"
 },
 {
- "pk": "statchg", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Status Change", 
+  "order": 0,
+  "used": true,
+  "name": "Status Change",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "statchg"
 },
 {
- "pk": "shepwrit", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": false, 
-  "name": "Shepherd's writeup", 
+  "order": 0,
+  "used": false,
+  "name": "Shepherd's writeup",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "shepwrit"
 },
 {
- "pk": "liaison", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": false, 
-  "name": "Liaison", 
+  "order": 0,
+  "used": false,
+  "name": "Liaison",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "liaison"
 },
 {
- "pk": "recording", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Recording", 
+  "order": 0,
+  "used": true,
+  "name": "Recording",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "recording"
 },
 {
- "pk": "bluesheets", 
- "model": "name.doctypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Bluesheets", 
+  "order": 0,
+  "used": true,
+  "name": "Bluesheets",
   "desc": ""
- }
+ },
+ "model": "name.doctypename",
+ "pk": "bluesheets"
 },
 {
- "pk": "uploaded", 
- "model": "name.draftsubmissionstatename", 
  "fields": {
-  "order": 1, 
+  "order": 1,
   "next_states": [
-   "auth", 
-   "aut-appr", 
-   "grp-appr", 
-   "manual", 
+   "auth",
+   "aut-appr",
+   "grp-appr",
+   "manual",
    "cancel"
-  ], 
-  "used": true, 
-  "name": "Uploaded", 
+  ],
+  "used": true,
+  "name": "Uploaded",
   "desc": ""
- }
+ },
+ "model": "name.draftsubmissionstatename",
+ "pk": "uploaded"
 },
 {
- "pk": "auth", 
- "model": "name.draftsubmissionstatename", 
  "fields": {
-  "order": 2, 
+  "order": 2,
   "next_states": [
-   "cancel", 
+   "cancel",
    "posted"
-  ], 
-  "used": true, 
-  "name": "Awaiting Submitter Authentication", 
+  ],
+  "used": true,
+  "name": "Awaiting Submitter Authentication",
   "desc": ""
- }
+ },
+ "model": "name.draftsubmissionstatename",
+ "pk": "auth"
 },
 {
- "pk": "aut-appr", 
- "model": "name.draftsubmissionstatename", 
  "fields": {
-  "order": 3, 
+  "order": 3,
   "next_states": [
-   "cancel", 
+   "cancel",
    "posted"
-  ], 
-  "used": true, 
-  "name": "Awaiting Approval from Previous Version Authors'", 
+  ],
+  "used": true,
+  "name": "Awaiting Approval from Previous Version Authors'",
   "desc": ""
- }
+ },
+ "model": "name.draftsubmissionstatename",
+ "pk": "aut-appr"
 },
 {
- "pk": "grp-appr", 
- "model": "name.draftsubmissionstatename", 
  "fields": {
-  "order": 4, 
+  "order": 4,
   "next_states": [
-   "cancel", 
+   "cancel",
    "posted"
-  ], 
-  "used": true, 
-  "name": "Awaiting Initial Version Approval", 
+  ],
+  "used": true,
+  "name": "Awaiting Initial Version Approval",
   "desc": ""
- }
+ },
+ "model": "name.draftsubmissionstatename",
+ "pk": "grp-appr"
 },
 {
- "pk": "manual", 
- "model": "name.draftsubmissionstatename", 
  "fields": {
-  "order": 5, 
+  "order": 5,
   "next_states": [
-   "cancel", 
+   "cancel",
    "posted"
-  ], 
-  "used": true, 
-  "name": "Awaiting Manual Post", 
+  ],
+  "used": true,
+  "name": "Awaiting Manual Post",
   "desc": ""
- }
+ },
+ "model": "name.draftsubmissionstatename",
+ "pk": "manual"
 },
 {
- "pk": "cancel", 
- "model": "name.draftsubmissionstatename", 
  "fields": {
-  "order": 6, 
-  "next_states": [], 
-  "used": true, 
-  "name": "Cancelled", 
+  "order": 6,
+  "next_states": [],
+  "used": true,
+  "name": "Cancelled",
   "desc": ""
- }
+ },
+ "model": "name.draftsubmissionstatename",
+ "pk": "cancel"
 },
 {
- "pk": "posted", 
- "model": "name.draftsubmissionstatename", 
  "fields": {
-  "order": 7, 
-  "next_states": [], 
-  "used": true, 
-  "name": "Posted", 
+  "order": 7,
+  "next_states": [],
+  "used": true,
+  "name": "Posted",
   "desc": ""
- }
+ },
+ "model": "name.draftsubmissionstatename",
+ "pk": "posted"
 },
 {
- "pk": "comment", 
- "model": "name.feedbacktypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Comment", 
+  "order": 0,
+  "used": true,
+  "name": "Comment",
   "desc": ""
- }
+ },
+ "model": "name.feedbacktypename",
+ "pk": "comment"
 },
 {
- "pk": "questio", 
- "model": "name.feedbacktypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Questionnaire response", 
+  "order": 0,
+  "used": true,
+  "name": "Questionnaire response",
   "desc": ""
- }
+ },
+ "model": "name.feedbacktypename",
+ "pk": "questio"
 },
 {
- "pk": "nomina", 
- "model": "name.feedbacktypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Nomination", 
+  "order": 0,
+  "used": true,
+  "name": "Nomination",
   "desc": ""
- }
+ },
+ "model": "name.feedbacktypename",
+ "pk": "nomina"
 },
 {
- "pk": "junk", 
- "model": "name.feedbacktypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Junk", 
+  "order": 0,
+  "used": true,
+  "name": "Junk",
   "desc": ""
- }
+ },
+ "model": "name.feedbacktypename",
+ "pk": "junk"
 },
 {
- "pk": "active", 
- "model": "name.groupmilestonestatename", 
  "fields": {
-  "order": 1, 
-  "used": true, 
-  "name": "Active", 
+  "order": 1,
+  "used": true,
+  "name": "Active",
   "desc": ""
- }
+ },
+ "model": "name.groupmilestonestatename",
+ "pk": "active"
 },
 {
- "pk": "deleted", 
- "model": "name.groupmilestonestatename", 
  "fields": {
-  "order": 2, 
-  "used": true, 
-  "name": "Deleted", 
+  "order": 2,
+  "used": true,
+  "name": "Deleted",
   "desc": ""
- }
+ },
+ "model": "name.groupmilestonestatename",
+ "pk": "deleted"
 },
 {
- "pk": "review", 
- "model": "name.groupmilestonestatename", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "For review", 
+  "order": 3,
+  "used": true,
+  "name": "For review",
   "desc": ""
- }
+ },
+ "model": "name.groupmilestonestatename",
+ "pk": "review"
 },
 {
- "pk": "charter", 
- "model": "name.groupmilestonestatename", 
  "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "Chartering/rechartering", 
+  "order": 4,
+  "used": true,
+  "name": "Chartering/rechartering",
   "desc": ""
- }
+ },
+ "model": "name.groupmilestonestatename",
+ "pk": "charter"
 },
 {
- "pk": "bof", 
- "model": "name.groupstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "BOF", 
+  "order": 0,
+  "used": true,
+  "name": "BOF",
   "desc": ""
- }
+ },
+ "model": "name.groupstatename",
+ "pk": "bof"
 },
 {
- "pk": "proposed", 
- "model": "name.groupstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Proposed", 
+  "order": 0,
+  "used": true,
+  "name": "Proposed",
   "desc": ""
- }
+ },
+ "model": "name.groupstatename",
+ "pk": "proposed"
 },
 {
- "pk": "active", 
- "model": "name.groupstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Active", 
+  "order": 0,
+  "used": true,
+  "name": "Active",
   "desc": ""
- }
+ },
+ "model": "name.groupstatename",
+ "pk": "active"
 },
 {
- "pk": "dormant", 
- "model": "name.groupstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Dormant", 
+  "order": 0,
+  "used": true,
+  "name": "Dormant",
   "desc": ""
- }
+ },
+ "model": "name.groupstatename",
+ "pk": "dormant"
 },
 {
- "pk": "conclude", 
- "model": "name.groupstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Concluded", 
+  "order": 0,
+  "used": true,
+  "name": "Concluded",
   "desc": ""
- }
+ },
+ "model": "name.groupstatename",
+ "pk": "conclude"
 },
 {
- "pk": "unknown", 
- "model": "name.groupstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Unknown", 
+  "order": 0,
+  "used": true,
+  "name": "Unknown",
   "desc": ""
- }
+ },
+ "model": "name.groupstatename",
+ "pk": "unknown"
 },
 {
- "pk": "abandon", 
- "model": "name.groupstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Abandonded", 
+  "order": 0,
+  "used": true,
+  "name": "Abandonded",
   "desc": "Formation of the group (most likely a BoF or Proposed WG) was abandoned"
- }
+ },
+ "model": "name.groupstatename",
+ "pk": "abandon"
 },
 {
- "pk": "bof-conc", 
- "model": "name.groupstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "BOF Concluded", 
+  "order": 0,
+  "used": true,
+  "name": "BOF Concluded",
   "desc": ""
- }
+ },
+ "model": "name.groupstatename",
+ "pk": "bof-conc"
 },
 {
- "pk": "replaced", 
- "model": "name.groupstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Replaced", 
+  "order": 0,
+  "used": true,
+  "name": "Replaced",
   "desc": "Replaced by dnssd"
- }
+ },
+ "model": "name.groupstatename",
+ "pk": "replaced"
 },
 {
- "pk": "ietf", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "IETF", 
+  "order": 0,
+  "used": true,
+  "name": "IETF",
   "desc": ""
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "ietf"
 },
 {
- "pk": "area", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Area", 
+  "order": 0,
+  "used": true,
+  "name": "Area",
   "desc": ""
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "area"
 },
 {
- "pk": "ag", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "AG", 
+  "order": 0,
+  "used": true,
+  "name": "AG",
   "desc": "Area group"
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "ag"
 },
 {
- "pk": "wg", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "WG", 
+  "order": 0,
+  "used": true,
+  "name": "WG",
   "desc": "Working group"
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "wg"
 },
 {
- "pk": "rg", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "RG", 
+  "order": 0,
+  "used": true,
+  "name": "RG",
   "desc": "Research group"
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "rg"
 },
 {
- "pk": "team", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Team", 
+  "order": 0,
+  "used": true,
+  "name": "Team",
   "desc": ""
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "team"
 },
 {
- "pk": "individ", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Individual", 
+  "order": 0,
+  "used": true,
+  "name": "Individual",
   "desc": ""
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "individ"
 },
 {
- "pk": "sdo", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "SDO", 
+  "order": 0,
+  "used": true,
+  "name": "SDO",
   "desc": "Standards organization"
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "sdo"
 },
 {
- "pk": "irtf", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "IRTF", 
+  "order": 0,
+  "used": true,
+  "name": "IRTF",
   "desc": ""
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "irtf"
 },
 {
- "pk": "rfcedtyp", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "RFC Editor", 
+  "order": 0,
+  "used": true,
+  "name": "RFC Editor",
   "desc": ""
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "rfcedtyp"
 },
 {
- "pk": "nomcom", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Nomcom", 
+  "order": 0,
+  "used": true,
+  "name": "Nomcom",
   "desc": "An IETF/IAB Nominating Committee.  Use 'SDO' for external nominating committees."
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "nomcom"
 },
 {
- "pk": "iab", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "IAB", 
+  "order": 0,
+  "used": true,
+  "name": "IAB",
   "desc": ""
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "iab"
 },
 {
- "pk": "isoc", 
- "model": "name.grouptypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "ISOC", 
+  "order": 0,
+  "used": true,
+  "name": "ISOC",
   "desc": ""
- }
+ },
+ "model": "name.grouptypename",
+ "pk": "isoc"
 },
 {
- "pk": "ps", 
- "model": "name.intendedstdlevelname", 
  "fields": {
-  "order": 1, 
-  "used": true, 
-  "name": "Proposed Standard", 
+  "order": 0,
+  "used": true,
+  "name": "Directorate",
+  "desc": "In many areas, the Area Directors have formed an advisory group or directorate.  These comprise experienced members of the IETF and the technical community represented by the area.  The specific name and the details of the role for each group differ from area to area, but  the primary intent is that these groups assist the Area Director(s), e.g., with the review of specifications produced in the area."
+ },
+ "model": "name.grouptypename",
+ "pk": "dir"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "name": "Proposed Standard",
   "desc": ""
- }
+ },
+ "model": "name.intendedstdlevelname",
+ "pk": "ps"
 },
 {
- "pk": "ds", 
- "model": "name.intendedstdlevelname", 
  "fields": {
-  "order": 2, 
-  "used": false, 
-  "name": "Draft Standard", 
+  "order": 2,
+  "used": false,
+  "name": "Draft Standard",
   "desc": ""
- }
+ },
+ "model": "name.intendedstdlevelname",
+ "pk": "ds"
 },
 {
- "pk": "std", 
- "model": "name.intendedstdlevelname", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "Internet Standard", 
+  "order": 3,
+  "used": true,
+  "name": "Internet Standard",
   "desc": ""
- }
+ },
+ "model": "name.intendedstdlevelname",
+ "pk": "std"
 },
 {
- "pk": "bcp", 
- "model": "name.intendedstdlevelname", 
  "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "Best Current Practice", 
+  "order": 4,
+  "used": true,
+  "name": "Best Current Practice",
   "desc": ""
- }
+ },
+ "model": "name.intendedstdlevelname",
+ "pk": "bcp"
 },
 {
- "pk": "inf", 
- "model": "name.intendedstdlevelname", 
  "fields": {
-  "order": 5, 
-  "used": true, 
-  "name": "Informational", 
+  "order": 5,
+  "used": true,
+  "name": "Informational",
   "desc": ""
- }
+ },
+ "model": "name.intendedstdlevelname",
+ "pk": "inf"
 },
 {
- "pk": "exp", 
- "model": "name.intendedstdlevelname", 
  "fields": {
-  "order": 6, 
-  "used": true, 
-  "name": "Experimental", 
+  "order": 6,
+  "used": true,
+  "name": "Experimental",
   "desc": ""
- }
+ },
+ "model": "name.intendedstdlevelname",
+ "pk": "exp"
 },
 {
- "pk": "hist", 
- "model": "name.intendedstdlevelname", 
  "fields": {
-  "order": 7, 
-  "used": true, 
-  "name": "Historic", 
+  "order": 7,
+  "used": true,
+  "name": "Historic",
   "desc": ""
- }
+ },
+ "model": "name.intendedstdlevelname",
+ "pk": "hist"
 },
 {
- "pk": "action", 
- "model": "name.liaisonstatementpurposename", 
  "fields": {
-  "order": 1, 
-  "used": true, 
-  "name": "For action", 
+  "order": 0,
+  "used": true,
+  "name": "Pending",
   "desc": ""
- }
+ },
+ "model": "name.iprdisclosurestatename",
+ "pk": "pending"
 },
 {
- "pk": "comment", 
- "model": "name.liaisonstatementpurposename", 
  "fields": {
-  "order": 2, 
-  "used": true, 
-  "name": "For comment", 
+  "order": 1,
+  "used": true,
+  "name": "Parked",
   "desc": ""
- }
+ },
+ "model": "name.iprdisclosurestatename",
+ "pk": "parked"
 },
 {
- "pk": "info", 
- "model": "name.liaisonstatementpurposename", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "For information", 
+  "order": 2,
+  "used": true,
+  "name": "Posted",
   "desc": ""
- }
+ },
+ "model": "name.iprdisclosurestatename",
+ "pk": "posted"
 },
 {
- "pk": "response", 
- "model": "name.liaisonstatementpurposename", 
  "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "In response", 
+  "order": 3,
+  "used": true,
+  "name": "Rejected",
   "desc": ""
- }
+ },
+ "model": "name.iprdisclosurestatename",
+ "pk": "rejected"
 },
 {
- "pk": "ietf", 
- "model": "name.meetingtypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "IETF", 
+  "order": 4,
+  "used": true,
+  "name": "Removed",
   "desc": ""
- }
+ },
+ "model": "name.iprdisclosurestatename",
+ "pk": "removed"
 },
 {
- "pk": "interim", 
- "model": "name.meetingtypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Interim", 
+  "order": 0,
+  "used": true,
+  "name": "Submitted",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "submitted"
 },
 {
- "pk": "pending", 
- "model": "name.nomineepositionstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Nominated, pending response", 
+  "order": 0,
+  "used": true,
+  "name": "Posted",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "posted"
 },
 {
- "pk": "accepted", 
- "model": "name.nomineepositionstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Accepted", 
+  "order": 0,
+  "used": true,
+  "name": "Removed",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "removed"
 },
 {
- "pk": "declined", 
- "model": "name.nomineepositionstatename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Declined", 
+  "order": 0,
+  "used": true,
+  "name": "Rejected",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "rejected"
 },
 {
- "pk": "ceo", 
- "model": "name.rolename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "CEO", 
+  "order": 0,
+  "used": true,
+  "name": "Pending",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "pending"
 },
 {
- "pk": "chair", 
- "model": "name.rolename", 
  "fields": {
-  "order": 1, 
-  "used": true, 
-  "name": "Chair", 
+  "order": 0,
+  "used": true,
+  "name": "Parked",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "parked"
 },
 {
- "pk": "ad", 
- "model": "name.rolename", 
  "fields": {
-  "order": 2, 
-  "used": true, 
-  "name": "Area Director", 
+  "order": 0,
+  "used": true,
+  "name": "MsgIn",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "msgin"
 },
 {
- "pk": "execdir", 
- "model": "name.rolename", 
  "fields": {
-  "order": 2, 
-  "used": true, 
-  "name": "Executive Director", 
+  "order": 0,
+  "used": true,
+  "name": "MsgOut",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "msgout"
 },
 {
- "pk": "pre-ad", 
- "model": "name.rolename", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "Incoming Area Director", 
+  "order": 0,
+  "used": true,
+  "name": "Comment",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "comment"
 },
 {
- "pk": "admdir", 
- "model": "name.rolename", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "Administrative Director", 
+  "order": 0,
+  "used": true,
+  "name": "Private Comment",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "private_comment"
 },
 {
- "pk": "techadv", 
- "model": "name.rolename", 
  "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "Tech Advisor", 
+  "order": 0,
+  "used": true,
+  "name": "Legacy",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "legacy"
 },
 {
- "pk": "liaiman", 
- "model": "name.rolename", 
  "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "Liaison Manager", 
+  "order": 0,
+  "used": true,
+  "name": "Update Notify",
   "desc": ""
- }
+ },
+ "model": "name.ipreventtypename",
+ "pk": "update_notify"
 },
 {
- "pk": "advisor", 
- "model": "name.rolename", 
  "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "Advisor", 
+  "order": 0,
+  "used": true,
+  "name": "Changed disclosure metadata",
+  "desc": ""
+ },
+ "model": "name.ipreventtypename",
+ "pk": "changed_disclosure"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "None Selected",
+  "desc": ""
+ },
+ "model": "name.iprlicensetypename",
+ "pk": "none-selected"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "name": "No License",
+  "desc": "a) No License Required for Implementers"
+ },
+ "model": "name.iprlicensetypename",
+ "pk": "no-license"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "Royalty Free",
+  "desc": "b) Royalty-Free, Reasonable and Non-Discriminatory License to All Implementers"
+ },
+ "model": "name.iprlicensetypename",
+ "pk": "royalty-free"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "Reasonable",
+  "desc": "c) Reasonable and Non-Discriminatory License to All Implementers with Possible Royalty/Fee"
+ },
+ "model": "name.iprlicensetypename",
+ "pk": "reasonable"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "name": "Provided Later",
+  "desc": "d) Licensing Declaration to be Provided Later (implies a willingness to commit to the provisions of a), b), or c) above to all implementers; otherwise, the next option 'Unwilling to Commit to the Provisions of a), b), or c) Above'. - must be selected)"
+ },
+ "model": "name.iprlicensetypename",
+ "pk": "provided-later"
+},
+{
+ "fields": {
+  "order": 5,
+  "used": true,
+  "name": "Unwilling to Commit",
+  "desc": "e) Unwilling to Commit to the Provisions of a), b), or c) Above"
+ },
+ "model": "name.iprlicensetypename",
+ "pk": "unwilling-to-commit"
+},
+{
+ "fields": {
+  "order": 6,
+  "used": true,
+  "name": "See Below",
+  "desc": "f) See Text Below for Licensing Declaration"
+ },
+ "model": "name.iprlicensetypename",
+ "pk": "see-below"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "name": "For action",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementpurposename",
+ "pk": "action"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "For comment",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementpurposename",
+ "pk": "comment"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "For information",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementpurposename",
+ "pk": "info"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "name": "In response",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementpurposename",
+ "pk": "response"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "IETF",
+  "desc": ""
+ },
+ "model": "name.meetingtypename",
+ "pk": "ietf"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Interim",
+  "desc": ""
+ },
+ "model": "name.meetingtypename",
+ "pk": "interim"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Nominated, pending response",
+  "desc": ""
+ },
+ "model": "name.nomineepositionstatename",
+ "pk": "pending"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Accepted",
+  "desc": ""
+ },
+ "model": "name.nomineepositionstatename",
+ "pk": "accepted"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Declined",
+  "desc": ""
+ },
+ "model": "name.nomineepositionstatename",
+ "pk": "declined"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "CEO",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "ceo"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Co-ordinator",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "coord"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "name": "Chair",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "chair"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "Area Director",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "ad"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "Executive Director",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "execdir"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "Incoming Area Director",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "pre-ad"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "Administrative Director",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "admdir"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "name": "Tech Advisor",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "techadv"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "name": "Liaison Manager",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "liaiman"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "name": "Advisor",
   "desc": "Advisor in a group that has explicit membership, such as the NomCom"
- }
+ },
+ "model": "name.rolename",
+ "pk": "advisor"
 },
 {
- "pk": "editor", 
- "model": "name.rolename", 
  "fields": {
-  "order": 5, 
-  "used": true, 
-  "name": "Editor", 
+  "order": 5,
+  "used": true,
+  "name": "Editor",
   "desc": ""
- }
+ },
+ "model": "name.rolename",
+ "pk": "editor"
 },
 {
- "pk": "auth", 
- "model": "name.rolename", 
  "fields": {
-  "order": 5, 
-  "used": true, 
-  "name": "Authorized Individual", 
+  "order": 5,
+  "used": true,
+  "name": "Authorized Individual",
   "desc": ""
- }
+ },
+ "model": "name.rolename",
+ "pk": "auth"
 },
 {
- "pk": "secr", 
- "model": "name.rolename", 
  "fields": {
-  "order": 6, 
-  "used": true, 
-  "name": "Secretary", 
+  "order": 6,
+  "used": true,
+  "name": "Secretary",
   "desc": ""
- }
+ },
+ "model": "name.rolename",
+ "pk": "secr"
 },
 {
- "pk": "delegate", 
- "model": "name.rolename", 
  "fields": {
-  "order": 6, 
-  "used": true, 
-  "name": "Delegate", 
+  "order": 6,
+  "used": true,
+  "name": "Delegate",
   "desc": ""
- }
+ },
+ "model": "name.rolename",
+ "pk": "delegate"
 },
 {
- "pk": "member", 
- "model": "name.rolename", 
  "fields": {
-  "order": 7, 
-  "used": true, 
-  "name": "Member", 
+  "order": 7,
+  "used": true,
+  "name": "Member",
   "desc": "Regular group member in a group that has explicit membership, such as the NomCom"
- }
+ },
+ "model": "name.rolename",
+ "pk": "member"
 },
 {
- "pk": "atlarge", 
- "model": "name.rolename", 
  "fields": {
-  "order": 10, 
-  "used": true, 
-  "name": "At Large Member", 
+  "order": 10,
+  "used": true,
+  "name": "At Large Member",
   "desc": ""
- }
+ },
+ "model": "name.rolename",
+ "pk": "atlarge"
 },
 {
- "pk": "liaison", 
- "model": "name.rolename", 
  "fields": {
-  "order": 11, 
-  "used": true, 
-  "name": "Liaison Member", 
+  "order": 11,
+  "used": true,
+  "name": "Liaison Member",
   "desc": "Liaison group member in a group that has explicit membership, such as the NomCom"
- }
+ },
+ "model": "name.rolename",
+ "pk": "liaison"
 },
 {
- "pk": "announce", 
- "model": "name.rolename", 
  "fields": {
-  "order": 12, 
-  "used": true, 
-  "name": "List Announcer", 
+  "order": 12,
+  "used": true,
+  "name": "List Announcer",
   "desc": "Authorised to send announcements to the ietf-announce and other lists"
- }
+ },
+ "model": "name.rolename",
+ "pk": "announce"
 },
 {
- "pk": "project", 
- "model": "name.roomresourcename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "LCD projector", 
+  "order": 13,
+  "used": true,
+  "name": "Materials Manager",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "matman"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "LCD projector",
   "desc": "The room will have a computer projector"
- }
+ },
+ "model": "name.roomresourcename",
+ "pk": "project"
 },
 {
- "pk": "proj2", 
- "model": "name.roomresourcename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "second LCD projector", 
+  "order": 0,
+  "used": true,
+  "name": "second LCD projector",
   "desc": "The room will have a second computer projector"
- }
+ },
+ "model": "name.roomresourcename",
+ "pk": "proj2"
 },
 {
- "pk": "meetecho", 
- "model": "name.roomresourcename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Meetecho Remote Partition Support", 
+  "order": 0,
+  "used": true,
+  "name": "Meetecho Remote Partition Support",
   "desc": "The room will have a meetecho wrangler"
- }
+ },
+ "model": "name.roomresourcename",
+ "pk": "meetecho"
 },
 {
- "pk": "schedw", 
- "model": "name.sessionstatusname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Waiting for Scheduling", 
+  "order": 0,
+  "used": true,
+  "name": "Boardroom Layout",
+  "desc": "Experimental room setup (boardroom and classroom) subject to availability"
+ },
+ "model": "name.roomresourcename",
+ "pk": "boardroom"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Waiting for Scheduling",
   "desc": ""
- }
+ },
+ "model": "name.sessionstatusname",
+ "pk": "schedw"
 },
 {
- "pk": "apprw", 
- "model": "name.sessionstatusname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Waiting for Approval", 
+  "order": 0,
+  "used": true,
+  "name": "Waiting for Approval",
   "desc": ""
- }
+ },
+ "model": "name.sessionstatusname",
+ "pk": "apprw"
 },
 {
- "pk": "appr", 
- "model": "name.sessionstatusname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Approved", 
+  "order": 0,
+  "used": true,
+  "name": "Approved",
   "desc": ""
- }
+ },
+ "model": "name.sessionstatusname",
+ "pk": "appr"
 },
 {
- "pk": "sched", 
- "model": "name.sessionstatusname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Scheduled", 
+  "order": 0,
+  "used": true,
+  "name": "Scheduled",
   "desc": ""
- }
+ },
+ "model": "name.sessionstatusname",
+ "pk": "sched"
 },
 {
- "pk": "canceled", 
- "model": "name.sessionstatusname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Cancelled", 
+  "order": 0,
+  "used": true,
+  "name": "Cancelled",
   "desc": ""
- }
+ },
+ "model": "name.sessionstatusname",
+ "pk": "canceled"
 },
 {
- "pk": "disappr", 
- "model": "name.sessionstatusname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Disapproved", 
+  "order": 0,
+  "used": true,
+  "name": "Disapproved",
   "desc": ""
- }
+ },
+ "model": "name.sessionstatusname",
+ "pk": "disappr"
 },
 {
- "pk": "notmeet", 
- "model": "name.sessionstatusname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Not meeting", 
+  "order": 0,
+  "used": true,
+  "name": "Not meeting",
   "desc": ""
- }
+ },
+ "model": "name.sessionstatusname",
+ "pk": "notmeet"
 },
 {
- "pk": "deleted", 
- "model": "name.sessionstatusname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Deleted", 
+  "order": 0,
+  "used": true,
+  "name": "Deleted",
   "desc": ""
- }
+ },
+ "model": "name.sessionstatusname",
+ "pk": "deleted"
 },
 {
- "pk": "std", 
- "model": "name.stdlevelname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Internet Standard", 
+  "order": 0,
+  "used": true,
+  "name": "Internet Standard",
   "desc": ""
- }
+ },
+ "model": "name.stdlevelname",
+ "pk": "std"
 },
 {
- "pk": "ds", 
- "model": "name.stdlevelname", 
  "fields": {
-  "order": 0, 
-  "used": false, 
-  "name": "Draft Standard", 
+  "order": 0,
+  "used": false,
+  "name": "Draft Standard",
   "desc": ""
- }
+ },
+ "model": "name.stdlevelname",
+ "pk": "ds"
 },
 {
- "pk": "ps", 
- "model": "name.stdlevelname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Proposed Standard", 
+  "order": 0,
+  "used": true,
+  "name": "Proposed Standard",
   "desc": ""
- }
+ },
+ "model": "name.stdlevelname",
+ "pk": "ps"
 },
 {
- "pk": "inf", 
- "model": "name.stdlevelname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Informational", 
+  "order": 0,
+  "used": true,
+  "name": "Informational",
   "desc": ""
- }
+ },
+ "model": "name.stdlevelname",
+ "pk": "inf"
 },
 {
- "pk": "exp", 
- "model": "name.stdlevelname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Experimental", 
+  "order": 0,
+  "used": true,
+  "name": "Experimental",
   "desc": ""
- }
+ },
+ "model": "name.stdlevelname",
+ "pk": "exp"
 },
 {
- "pk": "bcp", 
- "model": "name.stdlevelname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Best Current Practice", 
+  "order": 0,
+  "used": true,
+  "name": "Best Current Practice",
   "desc": ""
- }
+ },
+ "model": "name.stdlevelname",
+ "pk": "bcp"
 },
 {
- "pk": "hist", 
- "model": "name.stdlevelname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Historic", 
+  "order": 0,
+  "used": true,
+  "name": "Historic",
   "desc": ""
- }
+ },
+ "model": "name.stdlevelname",
+ "pk": "hist"
 },
 {
- "pk": "unkn", 
- "model": "name.stdlevelname", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Unknown", 
+  "order": 0,
+  "used": true,
+  "name": "Unknown",
   "desc": ""
- }
+ },
+ "model": "name.stdlevelname",
+ "pk": "unkn"
 },
 {
- "pk": "ietf", 
- "model": "name.streamname", 
  "fields": {
-  "order": 1, 
-  "used": true, 
-  "name": "IETF", 
+  "order": 1,
+  "used": true,
+  "name": "IETF",
   "desc": "IETF stream"
- }
+ },
+ "model": "name.streamname",
+ "pk": "ietf"
 },
 {
- "pk": "ise", 
- "model": "name.streamname", 
  "fields": {
-  "order": 2, 
-  "used": true, 
-  "name": "ISE", 
+  "order": 2,
+  "used": true,
+  "name": "ISE",
   "desc": "Independent Submission Editor stream"
- }
+ },
+ "model": "name.streamname",
+ "pk": "ise"
 },
 {
- "pk": "irtf", 
- "model": "name.streamname", 
  "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "IRTF", 
+  "order": 3,
+  "used": true,
+  "name": "IRTF",
   "desc": "Independent Submission Editor stream"
- }
+ },
+ "model": "name.streamname",
+ "pk": "irtf"
 },
 {
- "pk": "iab", 
- "model": "name.streamname", 
  "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "IAB", 
+  "order": 4,
+  "used": true,
+  "name": "IAB",
   "desc": "IAB stream"
- }
+ },
+ "model": "name.streamname",
+ "pk": "iab"
 },
 {
- "pk": "legacy", 
- "model": "name.streamname", 
  "fields": {
-  "order": 5, 
-  "used": true, 
-  "name": "Legacy", 
+  "order": 5,
+  "used": true,
+  "name": "Legacy",
   "desc": "Legacy stream"
- }
+ },
+ "model": "name.streamname",
+ "pk": "legacy"
 },
 {
- "pk": "other", 
- "model": "name.timeslottypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Other", 
+  "order": 0,
+  "used": true,
+  "name": "Other",
   "desc": ""
- }
+ },
+ "model": "name.timeslottypename",
+ "pk": "other"
 },
 {
- "pk": "session", 
- "model": "name.timeslottypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Session", 
+  "order": 0,
+  "used": true,
+  "name": "Session",
   "desc": ""
- }
+ },
+ "model": "name.timeslottypename",
+ "pk": "session"
 },
 {
- "pk": "break", 
- "model": "name.timeslottypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Break", 
+  "order": 0,
+  "used": true,
+  "name": "Break",
   "desc": ""
- }
+ },
+ "model": "name.timeslottypename",
+ "pk": "break"
 },
 {
- "pk": "reg", 
- "model": "name.timeslottypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Registration", 
+  "order": 0,
+  "used": true,
+  "name": "Registration",
   "desc": ""
- }
+ },
+ "model": "name.timeslottypename",
+ "pk": "reg"
 },
 {
- "pk": "plenary", 
- "model": "name.timeslottypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Plenary", 
+  "order": 0,
+  "used": true,
+  "name": "Plenary",
   "desc": ""
- }
+ },
+ "model": "name.timeslottypename",
+ "pk": "plenary"
 },
 {
- "pk": "unavail", 
- "model": "name.timeslottypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Room Unavailable", 
+  "order": 0,
+  "used": true,
+  "name": "Room Unavailable",
   "desc": "A room was not booked for the timeslot indicated"
- }
+ },
+ "model": "name.timeslottypename",
+ "pk": "unavail"
 },
 {
- "pk": "reserved", 
- "model": "name.timeslottypename", 
  "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Room Reserved", 
+  "order": 0,
+  "used": true,
+  "name": "Room Reserved",
   "desc": "A room has been reserved for use by another body the timeslot indicated"
- }
+ },
+ "model": "name.timeslottypename",
+ "pk": "reserved"
 },
 {
- "pk": "draft", 
- "model": "doc.statetype", 
  "fields": {
   "label": "State"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "draft"
 },
 {
- "pk": "draft-iesg", 
- "model": "doc.statetype", 
  "fields": {
   "label": "IESG state"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "draft-iesg"
 },
 {
- "pk": "draft-iana", 
- "model": "doc.statetype", 
  "fields": {
   "label": "IANA state"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "draft-iana"
 },
 {
- "pk": "draft-rfceditor", 
- "model": "doc.statetype", 
  "fields": {
   "label": "RFC Editor state"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "draft-rfceditor"
 },
 {
- "pk": "draft-stream-ietf", 
- "model": "doc.statetype", 
  "fields": {
   "label": "IETF WG state"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "draft-stream-ietf"
 },
 {
- "pk": "draft-stream-irtf", 
- "model": "doc.statetype", 
  "fields": {
   "label": "IRTF state"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "draft-stream-irtf"
 },
 {
- "pk": "draft-stream-ise", 
- "model": "doc.statetype", 
  "fields": {
   "label": "ISE state"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "draft-stream-ise"
 },
 {
- "pk": "draft-stream-iab", 
- "model": "doc.statetype", 
  "fields": {
   "label": "IAB state"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "draft-stream-iab"
 },
 {
- "pk": "slides", 
- "model": "doc.statetype", 
  "fields": {
   "label": "State"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "slides"
 },
 {
- "pk": "minutes", 
- "model": "doc.statetype", 
  "fields": {
   "label": "State"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "minutes"
 },
 {
- "pk": "agenda", 
- "model": "doc.statetype", 
  "fields": {
   "label": "State"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "agenda"
 },
 {
- "pk": "liai-att", 
- "model": "doc.statetype", 
  "fields": {
   "label": "State"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "liai-att"
 },
 {
- "pk": "charter", 
- "model": "doc.statetype", 
  "fields": {
   "label": "State"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "charter"
 },
 {
- "pk": "conflrev", 
- "model": "doc.statetype", 
  "fields": {
   "label": "Conflict Review State"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "conflrev"
 },
 {
- "pk": "draft-iana-action", 
- "model": "doc.statetype", 
  "fields": {
   "label": "IANA Action state"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "draft-iana-action"
 },
 {
- "pk": "draft-iana-review", 
- "model": "doc.statetype", 
  "fields": {
   "label": "IANA Review state"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "draft-iana-review"
 },
 {
- "pk": "statchg", 
- "model": "doc.statetype", 
  "fields": {
   "label": "RFC Status Change state"
- }
+ },
+ "model": "doc.statetype",
+ "pk": "statchg"
 },
 {
- "pk": "recording", 
- "model": "doc.statetype", 
  "fields": {
-  "label": "Recording State"
- }
+  "label": "State"
+ },
+ "model": "doc.statetype",
+ "pk": "recording"
 },
 {
- "pk": "bluesheets", 
- "model": "doc.statetype", 
  "fields": {
-  "label": "Bluesheet State"
- }
+  "label": "State"
+ },
+ "model": "doc.statetype",
+ "pk": "bluesheets"
 },
 {
- "pk": 81, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Active", 
-  "next_states": [], 
-  "slug": "active", 
-  "type": "agenda", 
-  "order": 1, 
+  "label": "Policy"
+ },
+ "model": "doc.statetype",
+ "pk": "reuse_policy"
+},
+{
+ "fields": {
+  "used": true,
+  "name": "Active",
+  "next_states": [],
+  "slug": "active",
+  "type": "agenda",
+  "order": 1,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 81
 },
 {
- "pk": 82, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Deleted", 
-  "next_states": [], 
-  "slug": "deleted", 
-  "type": "agenda", 
-  "order": 2, 
+  "used": true,
+  "name": "Deleted",
+  "next_states": [],
+  "slug": "deleted",
+  "type": "agenda",
+  "order": 2,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 82
 },
 {
- "pk": 83, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Not currently under review", 
-  "next_states": [], 
-  "slug": "notrev", 
-  "type": "charter", 
-  "order": 0, 
+  "used": true,
+  "name": "Active",
+  "next_states": [],
+  "slug": "active",
+  "type": "bluesheets",
+  "order": 0,
+  "desc": ""
+ },
+ "model": "doc.state",
+ "pk": 139
+},
+{
+ "fields": {
+  "used": true,
+  "name": "Deleted",
+  "next_states": [],
+  "slug": "deleted",
+  "type": "bluesheets",
+  "order": 0,
+  "desc": ""
+ },
+ "model": "doc.state",
+ "pk": 140
+},
+{
+ "fields": {
+  "used": true,
+  "name": "Not currently under review",
+  "next_states": [],
+  "slug": "notrev",
+  "type": "charter",
+  "order": 0,
   "desc": "The proposed charter is not being considered at this time. A proposed charter will remain in this state until an AD moves it to Informal IESG review."
- }
+ },
+ "model": "doc.state",
+ "pk": 83
 },
 {
- "pk": 84, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Informal IESG review", 
-  "next_states": [], 
-  "slug": "infrev", 
-  "type": "charter", 
-  "order": 0, 
+  "used": true,
+  "name": "Informal IESG review",
+  "next_states": [],
+  "slug": "infrev",
+  "type": "charter",
+  "order": 0,
   "desc": "This is the initial state when an AD proposes a new charter. The normal next state is Internal review if the idea is accepted, or Not currently under review if the idea is abandoned."
- }
+ },
+ "model": "doc.state",
+ "pk": 84
 },
 {
- "pk": 85, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Internal review", 
-  "next_states": [], 
-  "slug": "intrev", 
-  "type": "charter", 
-  "order": 0, 
+  "used": true,
+  "name": "Internal review",
+  "next_states": [],
+  "slug": "intrev",
+  "type": "charter",
+  "order": 0,
   "desc": "The IESG and IAB are reviewing the early draft of the charter; this is the initial IESG and IAB review. The usual next state is External review if the idea is adopted, or Informal IESG review if the IESG decides the idea needs more work, or Not currently under review is the idea is abandoned"
- }
+ },
+ "model": "doc.state",
+ "pk": 85
 },
 {
- "pk": 86, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "External review", 
-  "next_states": [], 
-  "slug": "extrev", 
-  "type": "charter", 
-  "order": 0, 
+  "used": true,
+  "name": "External review",
+  "next_states": [],
+  "slug": "extrev",
+  "type": "charter",
+  "order": 0,
   "desc": "The IETF community and possibly other standards development organizations (SDOs) are reviewing the proposed charter. The usual next state is IESG review, although it might move to Not currently under review is the idea is abandoned during the external review."
- }
+ },
+ "model": "doc.state",
+ "pk": 86
 },
 {
- "pk": 87, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IESG review", 
-  "next_states": [], 
-  "slug": "iesgrev", 
-  "type": "charter", 
-  "order": 0, 
+  "used": true,
+  "name": "IESG review",
+  "next_states": [],
+  "slug": "iesgrev",
+  "type": "charter",
+  "order": 0,
   "desc": "The IESG is reviewing the discussion from the external review of the proposed charter. The usual next state is Approved, or Not currently under review if the idea is abandoned."
- }
+ },
+ "model": "doc.state",
+ "pk": 87
 },
 {
- "pk": 88, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved", 
-  "next_states": [], 
-  "slug": "approved", 
-  "type": "charter", 
-  "order": 0, 
+  "used": true,
+  "name": "Approved",
+  "next_states": [],
+  "slug": "approved",
+  "type": "charter",
+  "order": 0,
   "desc": "The charter is approved by the IESG."
- }
+ },
+ "model": "doc.state",
+ "pk": 88
 },
 {
- "pk": 90, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Needs Shepherd", 
+  "used": true,
+  "name": "Needs Shepherd",
   "next_states": [
-   91, 
-   98, 
+   91,
+   98,
    99
-  ], 
-  "slug": "needshep", 
-  "type": "conflrev", 
-  "order": 1, 
+  ],
+  "slug": "needshep",
+  "type": "conflrev",
+  "order": 1,
   "desc": "A conflict review has been requested, but a shepherding AD has not yet been assigned"
- }
+ },
+ "model": "doc.state",
+ "pk": 90
 },
 {
- "pk": 91, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "AD Review", 
+  "used": true,
+  "name": "AD Review",
   "next_states": [
-   92, 
-   98, 
+   92,
+   98,
    99
-  ], 
-  "slug": "adrev", 
-  "type": "conflrev", 
-  "order": 2, 
+  ],
+  "slug": "adrev",
+  "type": "conflrev",
+  "order": 2,
   "desc": "The sponsoring AD is reviewing the document and preparing a proposed response"
- }
+ },
+ "model": "doc.state",
+ "pk": 91
 },
 {
- "pk": 92, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IESG Evaluation", 
+  "used": true,
+  "name": "IESG Evaluation",
   "next_states": [
-   93, 
-   94, 
-   95, 
-   98, 
+   93,
+   94,
+   95,
+   98,
    99
-  ], 
-  "slug": "iesgeval", 
-  "type": "conflrev", 
-  "order": 3, 
+  ],
+  "slug": "iesgeval",
+  "type": "conflrev",
+  "order": 3,
   "desc": "The IESG is considering the proposed conflict review response"
- }
+ },
+ "model": "doc.state",
+ "pk": 92
 },
 {
- "pk": 93, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IESG Evaluation - Defer", 
+  "used": true,
+  "name": "IESG Evaluation - Defer",
   "next_states": [
-   92, 
-   94, 
-   95, 
-   98, 
+   92,
+   94,
+   95,
+   98,
    99
-  ], 
-  "slug": "defer", 
-  "type": "conflrev", 
-  "order": 4, 
+  ],
+  "slug": "defer",
+  "type": "conflrev",
+  "order": 4,
   "desc": "The evaluation of the proposed conflict review response has been deferred to the next telechat"
- }
+ },
+ "model": "doc.state",
+ "pk": 93
 },
 {
- "pk": 100, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved Request to Not Publish - point raised", 
+  "used": true,
+  "name": "Approved Request to Not Publish - point raised",
   "next_states": [
    94
-  ], 
-  "slug": "appr-reqnopub-pr", 
-  "type": "conflrev", 
-  "order": 5, 
+  ],
+  "slug": "appr-reqnopub-pr",
+  "type": "conflrev",
+  "order": 5,
   "desc": "The IESG has approved the conflict review response (a request to not publish), but a point has been raised that should be cleared before moving to announcement to be sent"
- }
+ },
+ "model": "doc.state",
+ "pk": 100
 },
 {
- "pk": 101, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved No Problem - point raised", 
+  "used": true,
+  "name": "Approved No Problem - point raised",
   "next_states": [
    95
-  ], 
-  "slug": "appr-noprob-pr", 
-  "type": "conflrev", 
-  "order": 6, 
+  ],
+  "slug": "appr-noprob-pr",
+  "type": "conflrev",
+  "order": 6,
   "desc": "The IESG has approved the conflict review response, but a point has been raised that should be cleared before proceeding to announcement to be sent"
- }
+ },
+ "model": "doc.state",
+ "pk": 101
 },
 {
- "pk": 94, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved Request to Not Publish - announcement to be sent", 
+  "used": true,
+  "name": "Approved Request to Not Publish - announcement to be sent",
   "next_states": [
-   96, 
+   96,
    98
-  ], 
-  "slug": "appr-reqnopub-pend", 
-  "type": "conflrev", 
-  "order": 7, 
+  ],
+  "slug": "appr-reqnopub-pend",
+  "type": "conflrev",
+  "order": 7,
   "desc": "The IESG has approved the conflict review response (a request to not publish), but the secretariat has not yet sent the response"
- }
+ },
+ "model": "doc.state",
+ "pk": 94
 },
 {
- "pk": 95, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved No Problem - announcement to be sent", 
+  "used": true,
+  "name": "Approved No Problem - announcement to be sent",
   "next_states": [
-   97, 
+   97,
    98
-  ], 
-  "slug": "appr-noprob-pend", 
-  "type": "conflrev", 
-  "order": 8, 
+  ],
+  "slug": "appr-noprob-pend",
+  "type": "conflrev",
+  "order": 8,
   "desc": "The IESG has approved the conflict review response, but the secretariat has not yet sent the response"
- }
+ },
+ "model": "doc.state",
+ "pk": 95
 },
 {
- "pk": 96, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved Request to Not Publish - announcement sent", 
+  "used": true,
+  "name": "Approved Request to Not Publish - announcement sent",
   "next_states": [
    96
-  ], 
-  "slug": "appr-reqnopub-sent", 
-  "type": "conflrev", 
-  "order": 9, 
+  ],
+  "slug": "appr-reqnopub-sent",
+  "type": "conflrev",
+  "order": 9,
   "desc": "The secretariat has delivered the IESG's approved conflict review response (a request to not publish) to the requester"
- }
+ },
+ "model": "doc.state",
+ "pk": 96
 },
 {
- "pk": 97, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved No Problem - announcement sent", 
+  "used": true,
+  "name": "Approved No Problem - announcement sent",
   "next_states": [
    97
-  ], 
-  "slug": "appr-noprob-sent", 
-  "type": "conflrev", 
-  "order": 10, 
+  ],
+  "slug": "appr-noprob-sent",
+  "type": "conflrev",
+  "order": 10,
   "desc": "The secretariat has delivered the IESG's approved conflict review response to the requester"
- }
+ },
+ "model": "doc.state",
+ "pk": 97
 },
 {
- "pk": 98, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Withdrawn", 
+  "used": true,
+  "name": "Withdrawn",
   "next_states": [
    90
-  ], 
-  "slug": "withdraw", 
-  "type": "conflrev", 
-  "order": 11, 
+  ],
+  "slug": "withdraw",
+  "type": "conflrev",
+  "order": 11,
   "desc": "The request for conflict review was withdrawn"
- }
+ },
+ "model": "doc.state",
+ "pk": 98
 },
 {
- "pk": 99, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Dead", 
+  "used": true,
+  "name": "Dead",
   "next_states": [
    90
-  ], 
-  "slug": "dead", 
-  "type": "conflrev", 
-  "order": 12, 
+  ],
+  "slug": "dead",
+  "type": "conflrev",
+  "order": 12,
   "desc": "The conflict review has been abandoned"
- }
+ },
+ "model": "doc.state",
+ "pk": 99
 },
 {
- "pk": 1, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Active", 
-  "next_states": [], 
-  "slug": "active", 
-  "type": "draft", 
-  "order": 1, 
+  "used": true,
+  "name": "Active",
+  "next_states": [],
+  "slug": "active",
+  "type": "draft",
+  "order": 1,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 1
 },
 {
- "pk": 2, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Expired", 
-  "next_states": [], 
-  "slug": "expired", 
-  "type": "draft", 
-  "order": 2, 
+  "used": true,
+  "name": "Expired",
+  "next_states": [],
+  "slug": "expired",
+  "type": "draft",
+  "order": 2,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 2
 },
 {
- "pk": 3, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "RFC", 
-  "next_states": [], 
-  "slug": "rfc", 
-  "type": "draft", 
-  "order": 3, 
+  "used": true,
+  "name": "RFC",
+  "next_states": [],
+  "slug": "rfc",
+  "type": "draft",
+  "order": 3,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 3
 },
 {
- "pk": 4, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Replaced", 
-  "next_states": [], 
-  "slug": "repl", 
-  "type": "draft", 
-  "order": 4, 
+  "used": true,
+  "name": "Replaced",
+  "next_states": [],
+  "slug": "repl",
+  "type": "draft",
+  "order": 4,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 4
 },
 {
- "pk": 5, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Withdrawn by Submitter", 
-  "next_states": [], 
-  "slug": "auth-rm", 
-  "type": "draft", 
-  "order": 5, 
+  "used": true,
+  "name": "Withdrawn by Submitter",
+  "next_states": [],
+  "slug": "auth-rm",
+  "type": "draft",
+  "order": 5,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 5
 },
 {
- "pk": 6, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Withdrawn by IETF", 
-  "next_states": [], 
-  "slug": "ietf-rm", 
-  "type": "draft", 
-  "order": 6, 
+  "used": true,
+  "name": "Withdrawn by IETF",
+  "next_states": [],
+  "slug": "ietf-rm",
+  "type": "draft",
+  "order": 6,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 6
 },
 {
- "pk": 102, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "New Document", 
-  "next_states": [], 
-  "slug": "newdoc", 
-  "type": "draft-iana-action", 
-  "order": 1, 
+  "used": true,
+  "name": "New Document",
+  "next_states": [],
+  "slug": "newdoc",
+  "type": "draft-iana-action",
+  "order": 1,
   "desc": "A new document has been received by IANA, but no actions have been taken"
- }
+ },
+ "model": "doc.state",
+ "pk": 102
 },
 {
- "pk": 103, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "In Progress", 
-  "next_states": [], 
-  "slug": "inprog", 
-  "type": "draft-iana-action", 
-  "order": 2, 
+  "used": true,
+  "name": "In Progress",
+  "next_states": [],
+  "slug": "inprog",
+  "type": "draft-iana-action",
+  "order": 2,
   "desc": "IANA is currently processing the actions for this document"
- }
+ },
+ "model": "doc.state",
+ "pk": 103
 },
 {
- "pk": 104, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Waiting on Authors", 
-  "next_states": [], 
-  "slug": "waitauth", 
-  "type": "draft-iana-action", 
-  "order": 3, 
+  "used": true,
+  "name": "Waiting on Authors",
+  "next_states": [],
+  "slug": "waitauth",
+  "type": "draft-iana-action",
+  "order": 3,
   "desc": "IANA is waiting on the document's authors to respond"
- }
+ },
+ "model": "doc.state",
+ "pk": 104
 },
 {
- "pk": 105, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Waiting on ADs", 
-  "next_states": [], 
-  "slug": "waitad", 
-  "type": "draft-iana-action", 
-  "order": 4, 
+  "used": true,
+  "name": "Waiting on ADs",
+  "next_states": [],
+  "slug": "waitad",
+  "type": "draft-iana-action",
+  "order": 4,
   "desc": "IANA is waiting on the IETF Area Directors to respond"
- }
+ },
+ "model": "doc.state",
+ "pk": 105
 },
 {
- "pk": 106, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Waiting on WGC", 
-  "next_states": [], 
-  "slug": "waitwgc", 
-  "type": "draft-iana-action", 
-  "order": 5, 
+  "used": true,
+  "name": "Waiting on WGC",
+  "next_states": [],
+  "slug": "waitwgc",
+  "type": "draft-iana-action",
+  "order": 5,
   "desc": "IANA is waiting on the IETF Working Group Chairs to respond"
- }
+ },
+ "model": "doc.state",
+ "pk": 106
 },
 {
- "pk": 107, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Waiting on RFC Editor", 
-  "next_states": [], 
-  "slug": "waitrfc", 
-  "type": "draft-iana-action", 
-  "order": 6, 
+  "used": true,
+  "name": "Waiting on RFC Editor",
+  "next_states": [],
+  "slug": "waitrfc",
+  "type": "draft-iana-action",
+  "order": 6,
   "desc": "IANA has notified the RFC Editor that the actions have been completed"
- }
+ },
+ "model": "doc.state",
+ "pk": 107
 },
 {
- "pk": 108, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "RFC-Ed-Ack", 
-  "next_states": [], 
-  "slug": "rfcedack", 
-  "type": "draft-iana-action", 
-  "order": 7, 
+  "used": true,
+  "name": "RFC-Ed-Ack",
+  "next_states": [],
+  "slug": "rfcedack",
+  "type": "draft-iana-action",
+  "order": 7,
   "desc": "Request completed. The RFC Editor has acknowledged receipt of IANA's message that the actions have been completed"
- }
+ },
+ "model": "doc.state",
+ "pk": 108
 },
 {
- "pk": 109, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "On Hold", 
-  "next_states": [], 
-  "slug": "onhold", 
-  "type": "draft-iana-action", 
-  "order": 8, 
+  "used": true,
+  "name": "On Hold",
+  "next_states": [],
+  "slug": "onhold",
+  "type": "draft-iana-action",
+  "order": 8,
   "desc": "IANA has suspended work on the document"
- }
+ },
+ "model": "doc.state",
+ "pk": 109
 },
 {
- "pk": 110, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "No IC", 
-  "next_states": [], 
-  "slug": "noic", 
-  "type": "draft-iana-action", 
-  "order": 9, 
+  "used": true,
+  "name": "No IC",
+  "next_states": [],
+  "slug": "noic",
+  "type": "draft-iana-action",
+  "order": 9,
   "desc": "Request completed. There were no IANA actions for this document"
- }
+ },
+ "model": "doc.state",
+ "pk": 110
 },
 {
- "pk": 111, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IANA - Review Needed", 
-  "next_states": [], 
-  "slug": "need-rev", 
-  "type": "draft-iana-review", 
-  "order": 1, 
+  "used": true,
+  "name": "IANA - Review Needed",
+  "next_states": [],
+  "slug": "need-rev",
+  "type": "draft-iana-review",
+  "order": 1,
   "desc": "Document has not yet been reviewed by IANA."
- }
+ },
+ "model": "doc.state",
+ "pk": 111
 },
 {
- "pk": 112, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IANA OK - Actions Needed", 
-  "next_states": [], 
-  "slug": "ok-act", 
-  "type": "draft-iana-review", 
-  "order": 2, 
+  "used": true,
+  "name": "IANA OK - Actions Needed",
+  "next_states": [],
+  "slug": "ok-act",
+  "type": "draft-iana-review",
+  "order": 2,
   "desc": "Document requires IANA actions, and the IANA Considerations section indicates the details of the actions correctly."
- }
+ },
+ "model": "doc.state",
+ "pk": 112
 },
 {
- "pk": 113, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IANA OK - No Actions Needed", 
-  "next_states": [], 
-  "slug": "ok-noact", 
-  "type": "draft-iana-review", 
-  "order": 3, 
+  "used": true,
+  "name": "IANA OK - No Actions Needed",
+  "next_states": [],
+  "slug": "ok-noact",
+  "type": "draft-iana-review",
+  "order": 3,
   "desc": "Document requires no IANA action, and the IANA Considerations section indicates this correctly."
- }
+ },
+ "model": "doc.state",
+ "pk": 113
 },
 {
- "pk": 114, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IANA - Not OK", 
-  "next_states": [], 
-  "slug": "not-ok", 
-  "type": "draft-iana-review", 
-  "order": 4, 
+  "used": true,
+  "name": "IANA - Not OK",
+  "next_states": [],
+  "slug": "not-ok",
+  "type": "draft-iana-review",
+  "order": 4,
   "desc": "IANA has issues with the text of the IANA Considerations section of the document."
- }
+ },
+ "model": "doc.state",
+ "pk": 114
 },
 {
- "pk": 115, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Version Changed - Review Needed", 
-  "next_states": [], 
-  "slug": "changed", 
-  "type": "draft-iana-review", 
-  "order": 5, 
+  "used": true,
+  "name": "Version Changed - Review Needed",
+  "next_states": [],
+  "slug": "changed",
+  "type": "draft-iana-review",
+  "order": 5,
   "desc": "Document revision has changed after review by IANA."
- }
+ },
+ "model": "doc.state",
+ "pk": 115
 },
 {
- "pk": 16, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Publication Requested", 
+  "used": true,
+  "name": "Publication Requested",
   "next_states": [
-   13, 
-   11, 
+   13,
+   11,
    8
-  ], 
-  "slug": "pub-req", 
-  "type": "draft-iesg", 
-  "order": 10, 
+  ],
+  "slug": "pub-req",
+  "type": "draft-iesg",
+  "order": 10,
   "desc": "A formal request has been made to advance/publish the document, following the procedures in Section 7.5 of RFC 2418. The request could be from a WG chair, from an individual through the RFC Editor, etc. (The Secretariat (iesg-secretary@ietf.org) is copied on these requests to ensure that the request makes it into the ID tracker.) A document in this state has not (yet) been reviewed by an AD nor has any official action been taken on it yet (other than to note that its publication has been requested."
- }
+ },
+ "model": "doc.state",
+ "pk": 16
 },
 {
- "pk": 13, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "AD Evaluation", 
+  "used": true,
+  "name": "AD Evaluation",
   "next_states": [
-   21, 
-   14, 
-   12, 
+   21,
+   14,
+   12,
    11
-  ], 
-  "slug": "ad-eval", 
-  "type": "draft-iesg", 
-  "order": 11, 
+  ],
+  "slug": "ad-eval",
+  "type": "draft-iesg",
+  "order": 11,
   "desc": "A specific AD (e.g., the Area Advisor for the WG) has begun reviewing the document to verify that it is ready for advancement. The shepherding AD is responsible for doing any necessary review before starting an IETF Last Call or sending the document directly to the IESG as a whole."
- }
+ },
+ "model": "doc.state",
+ "pk": 13
 },
 {
- "pk": 21, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Expert Review", 
+  "used": true,
+  "name": "Expert Review",
   "next_states": [
    13
-  ], 
-  "slug": "review-e", 
-  "type": "draft-iesg", 
-  "order": 12, 
+  ],
+  "slug": "review-e",
+  "type": "draft-iesg",
+  "order": 12,
   "desc": "An AD sometimes asks for an external review by an outside party as part of evaluating whether a document is ready for advancement. MIBs, for example, are reviewed by the \"MIB doctors\". Other types of reviews may also be requested (e.g., security, operations impact, etc.). Documents stay in this state until the review is complete and possibly until the issues raised in the review are addressed. See the \"note\" field for specific details on the nature of the review."
- }
+ },
+ "model": "doc.state",
+ "pk": 21
 },
 {
- "pk": 14, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Last Call Requested", 
+  "used": true,
+  "name": "Last Call Requested",
   "next_states": [
    15
-  ], 
-  "slug": "lc-req", 
-  "type": "draft-iesg", 
-  "order": 15, 
+  ],
+  "slug": "lc-req",
+  "type": "draft-iesg",
+  "order": 15,
   "desc": "The AD has requested that the Secretariat start an IETF Last Call, but the the actual Last Call message has not been sent yet."
- }
+ },
+ "model": "doc.state",
+ "pk": 14
 },
 {
- "pk": 15, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "In Last Call", 
+  "used": true,
+  "name": "In Last Call",
   "next_states": [
-   19, 
+   19,
    20
-  ], 
-  "slug": "lc", 
-  "type": "draft-iesg", 
-  "order": 16, 
+  ],
+  "slug": "lc",
+  "type": "draft-iesg",
+  "order": 16,
   "desc": "The document is currently waiting for IETF Last Call to complete. Last Calls for WG documents typically last 2 weeks, those for individual submissions last 4 weeks."
- }
+ },
+ "model": "doc.state",
+ "pk": 15
 },
 {
- "pk": 19, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Waiting for Writeup", 
+  "used": true,
+  "name": "Waiting for Writeup",
   "next_states": [
    20
-  ], 
-  "slug": "writeupw", 
-  "type": "draft-iesg", 
-  "order": 18, 
+  ],
+  "slug": "writeupw",
+  "type": "draft-iesg",
+  "order": 18,
   "desc": "Before a standards-track or BCP document is formally considered by the entire IESG, the AD must write up a protocol action. The protocol action is included in the approval message that the Secretariat sends out when the document is approved for publication as an RFC."
- }
+ },
+ "model": "doc.state",
+ "pk": 19
 },
 {
- "pk": 20, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Waiting for AD Go-Ahead", 
+  "used": true,
+  "name": "Waiting for AD Go-Ahead",
   "next_states": [
    12
-  ], 
-  "slug": "goaheadw", 
-  "type": "draft-iesg", 
-  "order": 19, 
+  ],
+  "slug": "goaheadw",
+  "type": "draft-iesg",
+  "order": 19,
   "desc": "As a result of the IETF Last Call, comments may need to be responded to and a revision of the ID may be needed as well. The AD is responsible for verifying that all Last Call comments have been adequately addressed and that the (possibly revised) document is in the ID directory and ready for consideration by the IESG as a whole."
- }
+ },
+ "model": "doc.state",
+ "pk": 20
 },
 {
- "pk": 12, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IESG Evaluation", 
+  "used": true,
+  "name": "IESG Evaluation",
   "next_states": [
-   18, 
-   9, 
+   18,
+   9,
    22
-  ], 
-  "slug": "iesg-eva", 
-  "type": "draft-iesg", 
-  "order": 20, 
+  ],
+  "slug": "iesg-eva",
+  "type": "draft-iesg",
+  "order": 20,
   "desc": "The document is now (finally!) being formally reviewed by the entire IESG. Documents are discussed in email or during a bi-weekly IESG telechat. In this phase, each AD reviews the document and airs any issues they may have. Unresolvable issues are documented as \"discuss\" comments that can be forwarded to the authors/WG. See the description of substates for additional details about the current state of the IESG discussion."
- }
+ },
+ "model": "doc.state",
+ "pk": 12
 },
 {
- "pk": 18, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IESG Evaluation - Defer", 
+  "used": true,
+  "name": "IESG Evaluation - Defer",
   "next_states": [
    12
-  ], 
-  "slug": "defer", 
-  "type": "draft-iesg", 
-  "order": 21, 
+  ],
+  "slug": "defer",
+  "type": "draft-iesg",
+  "order": 21,
   "desc": "During a telechat, one or more ADs requested an additional 2 weeks to review the document. A defer is designed to be an exception mechanism, and can only be invoked once, the first time the document comes up for discussion during a telechat."
- }
+ },
+ "model": "doc.state",
+ "pk": 18
 },
 {
- "pk": 9, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved-announcement to be sent", 
+  "used": true,
+  "name": "Approved-announcement to be sent",
   "next_states": [
    10
-  ], 
-  "slug": "approved", 
-  "type": "draft-iesg", 
-  "order": 27, 
+  ],
+  "slug": "approved",
+  "type": "draft-iesg",
+  "order": 27,
   "desc": "The IESG has approved the document for publication, but the Secretariat has not yet sent out on official approval message."
- }
+ },
+ "model": "doc.state",
+ "pk": 9
 },
 {
- "pk": 10, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved-announcement sent", 
+  "used": true,
+  "name": "Approved-announcement sent",
   "next_states": [
    17
-  ], 
-  "slug": "ann", 
-  "type": "draft-iesg", 
-  "order": 30, 
+  ],
+  "slug": "ann",
+  "type": "draft-iesg",
+  "order": 30,
   "desc": "The IESG has approved the document for publication, and the Secretariat has sent out the official approval message to the RFC editor."
- }
+ },
+ "model": "doc.state",
+ "pk": 10
 },
 {
- "pk": 17, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "RFC Ed Queue", 
+  "used": true,
+  "name": "RFC Ed Queue",
   "next_states": [
    7
-  ], 
-  "slug": "rfcqueue", 
-  "type": "draft-iesg", 
-  "order": 31, 
+  ],
+  "slug": "rfcqueue",
+  "type": "draft-iesg",
+  "order": 31,
   "desc": "The document is in the RFC editor Queue (as confirmed by http://www.rfc-editor.org/queue.html)."
- }
+ },
+ "model": "doc.state",
+ "pk": 17
 },
 {
- "pk": 7, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "RFC Published", 
+  "used": true,
+  "name": "RFC Published",
   "next_states": [
    8
-  ], 
-  "slug": "pub", 
-  "type": "draft-iesg", 
-  "order": 32, 
+  ],
+  "slug": "pub",
+  "type": "draft-iesg",
+  "order": 32,
   "desc": "The ID has been published as an RFC."
- }
+ },
+ "model": "doc.state",
+ "pk": 7
 },
 {
- "pk": 22, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "DNP-waiting for AD note", 
+  "used": true,
+  "name": "DNP-waiting for AD note",
   "next_states": [
    23
-  ], 
-  "slug": "nopubadw", 
-  "type": "draft-iesg", 
-  "order": 33, 
+  ],
+  "slug": "nopubadw",
+  "type": "draft-iesg",
+  "order": 33,
   "desc": "Do Not Publish: The IESG recommends against publishing the document, but the writeup explaining its reasoning has not yet been produced. DNPs apply primarily to individual submissions received through the RFC editor.  See the \"note\" field for more details on who has the action item."
- }
+ },
+ "model": "doc.state",
+ "pk": 22
 },
 {
- "pk": 23, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "DNP-announcement to be sent", 
+  "used": true,
+  "name": "DNP-announcement to be sent",
   "next_states": [
    8
-  ], 
-  "slug": "nopubanw", 
-  "type": "draft-iesg", 
-  "order": 34, 
+  ],
+  "slug": "nopubanw",
+  "type": "draft-iesg",
+  "order": 34,
   "desc": "The IESG recommends against publishing the document, the writeup explaining its reasoning has been produced, but the Secretariat has not yet sent out the official \"do not publish\" recommendation message."
- }
+ },
+ "model": "doc.state",
+ "pk": 23
 },
 {
- "pk": 11, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "AD is watching", 
+  "used": true,
+  "name": "AD is watching",
   "next_states": [
    16
-  ], 
-  "slug": "watching", 
-  "type": "draft-iesg", 
-  "order": 42, 
+  ],
+  "slug": "watching",
+  "type": "draft-iesg",
+  "order": 42,
   "desc": "An AD is aware of the document and has chosen to place the document in a separate state in order to keep a closer eye on it (for whatever reason). Documents in this state are still not being actively tracked in the sense that no formal request has been made to publish or advance the document. The sole difference between this state and \"I-D Exists\" is that an AD has chosen to put it in a separate state, to make it easier to keep track of (for the AD's own reasons)."
- }
+ },
+ "model": "doc.state",
+ "pk": 11
 },
 {
- "pk": 8, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Dead", 
+  "used": true,
+  "name": "Dead",
   "next_states": [
    16
-  ], 
-  "slug": "dead", 
-  "type": "draft-iesg", 
-  "order": 99, 
+  ],
+  "slug": "dead",
+  "type": "draft-iesg",
+  "order": 99,
   "desc": "Document is \"dead\" and is no longer being tracked. (E.g., it has been replaced by another document with a different name, it has been withdrawn, etc.)"
- }
+ },
+ "model": "doc.state",
+ "pk": 8
 },
 {
- "pk": 24, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "AUTH", 
-  "next_states": [], 
-  "slug": "auth", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "AUTH",
+  "next_states": [],
+  "slug": "auth",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Awaiting author action"
- }
+ },
+ "model": "doc.state",
+ "pk": 24
 },
 {
- "pk": 25, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "AUTH48", 
-  "next_states": [], 
-  "slug": "auth48", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "AUTH48",
+  "next_states": [],
+  "slug": "auth48",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Awaiting final author approval"
- }
+ },
+ "model": "doc.state",
+ "pk": 25
 },
 {
- "pk": 26, 
- "model": "doc.state", 
  "fields": {
-  "used": false, 
-  "name": "EDIT", 
-  "next_states": [], 
-  "slug": "edit", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": false,
+  "name": "EDIT",
+  "next_states": [],
+  "slug": "edit",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing"
- }
+ },
+ "model": "doc.state",
+ "pk": 26
 },
 {
- "pk": 27, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IANA", 
-  "next_states": [], 
-  "slug": "iana", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "IANA",
+  "next_states": [],
+  "slug": "iana",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Document has been edited, but is holding for completion of IANA actions"
- }
+ },
+ "model": "doc.state",
+ "pk": 27
 },
 {
- "pk": 28, 
- "model": "doc.state", 
  "fields": {
-  "used": false, 
-  "name": "IESG", 
-  "next_states": [], 
-  "slug": "iesg", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": false,
+  "name": "IESG",
+  "next_states": [],
+  "slug": "iesg",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Awaiting IESG action"
- }
+ },
+ "model": "doc.state",
+ "pk": 28
 },
 {
- "pk": 29, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "ISR", 
-  "next_states": [], 
-  "slug": "isr", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "ISR",
+  "next_states": [],
+  "slug": "isr",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Independent Submission Review by the ISE "
- }
+ },
+ "model": "doc.state",
+ "pk": 29
 },
 {
- "pk": 30, 
- "model": "doc.state", 
  "fields": {
-  "used": false, 
-  "name": "ISR-AUTH", 
-  "next_states": [], 
-  "slug": "isr-auth", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": false,
+  "name": "ISR-AUTH",
+  "next_states": [],
+  "slug": "isr-auth",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Independent submission awaiting author action, or in discussion between author and ISE"
- }
+ },
+ "model": "doc.state",
+ "pk": 30
 },
 {
- "pk": 31, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "REF", 
-  "next_states": [], 
-  "slug": "ref", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "REF",
+  "next_states": [],
+  "slug": "ref",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Holding for normative reference"
- }
+ },
+ "model": "doc.state",
+ "pk": 31
 },
 {
- "pk": 32, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "RFC-EDITOR", 
-  "next_states": [], 
-  "slug": "rfc-edit", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "RFC-EDITOR",
+  "next_states": [],
+  "slug": "rfc-edit",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Awaiting final RFC Editor review before AUTH48"
- }
+ },
+ "model": "doc.state",
+ "pk": 32
 },
 {
- "pk": 33, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "TO", 
-  "next_states": [], 
-  "slug": "timeout", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "TO",
+  "next_states": [],
+  "slug": "timeout",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Time-out period during which the IESG reviews document for conflict/concurrence with other IETF working group work"
- }
+ },
+ "model": "doc.state",
+ "pk": 33
 },
 {
- "pk": 34, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "MISSREF", 
-  "next_states": [], 
-  "slug": "missref", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "MISSREF",
+  "next_states": [],
+  "slug": "missref",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Awaiting missing normative reference"
- }
+ },
+ "model": "doc.state",
+ "pk": 34
 },
 {
- "pk": 89, 
- "model": "doc.state", 
  "fields": {
-  "used": false, 
-  "name": "AUTH48-DONE", 
+  "used": false,
+  "name": "AUTH48-DONE",
   "next_states": [
    74
-  ], 
-  "slug": "auth48done", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  ],
+  "slug": "auth48done",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Final approvals are complete"
- }
+ },
+ "model": "doc.state",
+ "pk": 89
 },
 {
- "pk": 116, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "AUTH48-DONE", 
-  "next_states": [], 
-  "slug": "auth48-done", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "AUTH48-DONE",
+  "next_states": [],
+  "slug": "auth48-done",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Final approvals are complete"
- }
+ },
+ "model": "doc.state",
+ "pk": 116
 },
 {
- "pk": 117, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "EDIT", 
-  "next_states": [], 
-  "slug": "edit", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "EDIT",
+  "next_states": [],
+  "slug": "edit",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing"
- }
+ },
+ "model": "doc.state",
+ "pk": 117
 },
 {
- "pk": 118, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IANA", 
-  "next_states": [], 
-  "slug": "iana-crd", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "IANA",
+  "next_states": [],
+  "slug": "iana-crd",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "RFC-Editor/IANA Registration Coordination"
- }
+ },
+ "model": "doc.state",
+ "pk": 118
 },
 {
- "pk": 119, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IESG", 
-  "next_states": [], 
-  "slug": "iesg", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "IESG",
+  "next_states": [],
+  "slug": "iesg",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Holding for IESG action"
- }
+ },
+ "model": "doc.state",
+ "pk": 119
 },
 {
- "pk": 120, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "ISR-AUTH", 
-  "next_states": [], 
-  "slug": "isr-auth", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "ISR-AUTH",
+  "next_states": [],
+  "slug": "isr-auth",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": "Independent Submission awaiting author update, or in discussion between author and ISE"
- }
+ },
+ "model": "doc.state",
+ "pk": 120
 },
 {
- "pk": 133, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Pending", 
-  "next_states": [], 
-  "slug": "pending", 
-  "type": "draft-rfceditor", 
-  "order": 0, 
+  "used": true,
+  "name": "Pending",
+  "next_states": [],
+  "slug": "pending",
+  "type": "draft-rfceditor",
+  "order": 0,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 133
 },
 {
- "pk": 45, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Candidate IAB Document", 
-  "next_states": [], 
-  "slug": "candidat", 
-  "type": "draft-stream-iab", 
-  "order": 1, 
+  "used": true,
+  "name": "Candidate IAB Document",
+  "next_states": [],
+  "slug": "candidat",
+  "type": "draft-stream-iab",
+  "order": 1,
   "desc": "A document being considered for the IAB stream."
- }
+ },
+ "model": "doc.state",
+ "pk": 45
 },
 {
- "pk": 46, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Active IAB Document", 
-  "next_states": [], 
-  "slug": "active", 
-  "type": "draft-stream-iab", 
-  "order": 2, 
+  "used": true,
+  "name": "Active IAB Document",
+  "next_states": [],
+  "slug": "active",
+  "type": "draft-stream-iab",
+  "order": 2,
   "desc": "This document has been adopted by the IAB and is being actively developed."
- }
+ },
+ "model": "doc.state",
+ "pk": 46
 },
 {
- "pk": 47, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Parked IAB Document", 
-  "next_states": [], 
-  "slug": "parked", 
-  "type": "draft-stream-iab", 
-  "order": 3, 
+  "used": true,
+  "name": "Parked IAB Document",
+  "next_states": [],
+  "slug": "parked",
+  "type": "draft-stream-iab",
+  "order": 3,
   "desc": "This document has lost its author or editor, is waiting for another document to be written, or cannot currently be worked on by the IAB for some other reason. Annotations probably explain why this document is parked."
- }
+ },
+ "model": "doc.state",
+ "pk": 47
 },
 {
- "pk": 48, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IAB Review", 
-  "next_states": [], 
-  "slug": "review-i", 
-  "type": "draft-stream-iab", 
-  "order": 4, 
+  "used": true,
+  "name": "IAB Review",
+  "next_states": [],
+  "slug": "review-i",
+  "type": "draft-stream-iab",
+  "order": 4,
   "desc": "This document is awaiting the IAB itself to come to internal consensus."
- }
+ },
+ "model": "doc.state",
+ "pk": 48
 },
 {
- "pk": 49, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Community Review", 
-  "next_states": [], 
-  "slug": "review-c", 
-  "type": "draft-stream-iab", 
-  "order": 5, 
+  "used": true,
+  "name": "Community Review",
+  "next_states": [],
+  "slug": "review-c",
+  "type": "draft-stream-iab",
+  "order": 5,
   "desc": "This document has completed internal consensus within the IAB and is now under community review."
- }
+ },
+ "model": "doc.state",
+ "pk": 49
 },
 {
- "pk": 50, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved by IAB, To Be Sent to RFC Editor", 
-  "next_states": [], 
-  "slug": "approved", 
-  "type": "draft-stream-iab", 
-  "order": 6, 
+  "used": true,
+  "name": "Approved by IAB, To Be Sent to RFC Editor",
+  "next_states": [],
+  "slug": "approved",
+  "type": "draft-stream-iab",
+  "order": 6,
   "desc": "The consideration of this document is complete, but it has not yet been sent to the RFC Editor for publication (although that is going to happen soon)."
- }
+ },
+ "model": "doc.state",
+ "pk": 50
 },
 {
- "pk": 51, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Sent to a Different Organization for Publication", 
-  "next_states": [], 
-  "slug": "diff-org", 
-  "type": "draft-stream-iab", 
-  "order": 7, 
+  "used": true,
+  "name": "Sent to a Different Organization for Publication",
+  "next_states": [],
+  "slug": "diff-org",
+  "type": "draft-stream-iab",
+  "order": 7,
   "desc": "The IAB does not expect to publish the document itself, but has passed it on to a different organization that might continue work on the document. The expectation is that the other organization will eventually publish the document."
- }
+ },
+ "model": "doc.state",
+ "pk": 51
 },
 {
- "pk": 52, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Sent to the RFC Editor", 
-  "next_states": [], 
-  "slug": "rfc-edit", 
-  "type": "draft-stream-iab", 
-  "order": 8, 
+  "used": true,
+  "name": "Sent to the RFC Editor",
+  "next_states": [],
+  "slug": "rfc-edit",
+  "type": "draft-stream-iab",
+  "order": 8,
   "desc": "The IAB processing of this document is complete and it has been sent to the RFC Editor for publication. The document may be in the RFC Editor's queue, or it may have been published as an RFC; this state doesn't distinguish between different states occurring after the document has left the IAB."
- }
+ },
+ "model": "doc.state",
+ "pk": 52
 },
 {
- "pk": 53, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Published RFC", 
-  "next_states": [], 
-  "slug": "pub", 
-  "type": "draft-stream-iab", 
-  "order": 9, 
+  "used": true,
+  "name": "Published RFC",
+  "next_states": [],
+  "slug": "pub",
+  "type": "draft-stream-iab",
+  "order": 9,
   "desc": "The document has been published as an RFC."
- }
+ },
+ "model": "doc.state",
+ "pk": 53
 },
 {
- "pk": 54, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Dead IAB Document", 
-  "next_states": [], 
-  "slug": "dead", 
-  "type": "draft-stream-iab", 
-  "order": 10, 
+  "used": true,
+  "name": "Dead IAB Document",
+  "next_states": [],
+  "slug": "dead",
+  "type": "draft-stream-iab",
+  "order": 10,
   "desc": "This document was an active IAB document, but for some reason it is no longer being pursued for the IAB stream. It is possible that the document might be revived later, possibly in another stream."
- }
+ },
+ "model": "doc.state",
+ "pk": 54
 },
 {
- "pk": 134, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Candidate for WG Adoption", 
+  "used": true,
+  "name": "Candidate for WG Adoption",
   "next_states": [
    35
-  ], 
-  "slug": "wg-cand", 
-  "type": "draft-stream-ietf", 
-  "order": 0, 
+  ],
+  "slug": "wg-cand",
+  "type": "draft-stream-ietf",
+  "order": 0,
   "desc": "The document has been marked as a candidate for WG adoption by the WG Chair.  This state can be used before a call for adoption is issued (and the document is put in the \"Call For Adoption By WG Issued\" state), to indicate that the document is in the queue for a call for adoption, even if none has been issued yet."
- }
+ },
+ "model": "doc.state",
+ "pk": 134
 },
 {
- "pk": 35, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Call For Adoption By WG Issued", 
+  "used": true,
+  "name": "Call For Adoption By WG Issued",
   "next_states": [
-   36, 
+   36,
    37
-  ], 
-  "slug": "c-adopt", 
-  "type": "draft-stream-ietf", 
-  "order": 1, 
+  ],
+  "slug": "c-adopt",
+  "type": "draft-stream-ietf",
+  "order": 1,
   "desc": "<a href=\"http://tools.ietf.org/html/rfc6174#section-4.2.1\" target=\"_blank\">4.2.1. Call for Adoption by WG Issued</a>\n\n The \"Call for Adoption by WG Issued\" state should be used to indicate when an I-D is being considered for adoption by an IETF WG. An I-D that is in this state is actively being considered for adoption and has not yet achieved consensus, preference, or selection in the WG.\n\n This state may be used to describe an I-D that someone has asked a WG to consider for adoption, if the WG Chair has agreed with the request. This state may also be used to identify an I-D that a WG Chair asked an author to write specifically for consideration as a candidate WG item [WGDTSPEC], and/or an I-D that is listed as a 'candidate draft' in the WG's charter.\n\n Under normal conditions, it should not be possible for an I-D to be in the \"Call for Adoption by WG Issued\" state in more than one working group at the same time. This said, it is not uncommon for authors to \"shop\" their I-Ds to more than one WG at a time, with the hope of getting their documents adopted somewhere.\n\n After this state is implemented in the Datatracker, an I-D that is in the \"Call for Adoption by WG Issued\" state will not be able to be \"shopped\" to any other WG without the consent of the WG Chairs and the responsible ADs impacted by the shopping.\n\n Note that Figure 1 includes an arc leading from this state to outside of the WG state machine. This illustrates that some I-Ds that are considered do not get adopted as WG drafts. An I-D that is not adopted as a WG draft will transition out of the WG state machine and revert back to having no stream-specific state; however, the status change history log of the I-D will record that the I-D was previously in the \"Call for Adoption by WG Issued\" state."
- }
+ },
+ "model": "doc.state",
+ "pk": 35
 },
 {
- "pk": 36, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Adopted by a WG", 
+  "used": true,
+  "name": "Adopted by a WG",
   "next_states": [
    38
-  ], 
-  "slug": "adopt-wg", 
-  "type": "draft-stream-ietf", 
-  "order": 2, 
+  ],
+  "slug": "adopt-wg",
+  "type": "draft-stream-ietf",
+  "order": 2,
   "desc": "<a href=\"http://tools.ietf.org/html/rfc6174#section-4.2.2\" target=\"_blank\">4.2.2. Adopted by a WG</a>\n\n The \"Adopted by a WG\" state describes an individual submission I-D that an IETF WG has agreed to adopt as one of its WG drafts.\n\n WG Chairs who use this state will be able to clearly indicate when their WGs adopt individual submission I-Ds. This will facilitate the Datatracker's ability to correctly capture \"Replaces\" information for WG drafts and correct \"Replaced by\" information for individual submission I-Ds that have been replaced by WG drafts.\n\n This state is needed because the Datatracker uses the filename of an I-D as a key to search its database for status information about the I-D, and because the filename of a WG I-D is supposed to be different from the filename of an individual submission I-D. The filename of an individual submission I-D will typically be formatted as 'draft-author-wgname-topic-nn'.\n\n The filename of a WG document is supposed to be formatted as 'draft- ietf-wgname-topic-nn'.\n\n An individual I-D that is adopted by a WG may take weeks or months to be resubmitted by the author as a new (version-00) WG draft. If the \"Adopted by a WG\" state is not used, the Datatracker has no way to determine that an I-D has been adopted until a new version of the I-D is submitted to the WG by the author and until the I-D is approved for posting by a WG Chair."
- }
+ },
+ "model": "doc.state",
+ "pk": 36
 },
 {
- "pk": 37, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Adopted for WG Info Only", 
-  "next_states": [], 
-  "slug": "info", 
-  "type": "draft-stream-ietf", 
-  "order": 3, 
+  "used": true,
+  "name": "Adopted for WG Info Only",
+  "next_states": [],
+  "slug": "info",
+  "type": "draft-stream-ietf",
+  "order": 3,
   "desc": "<a href=\"http://tools.ietf.org/html/rfc6174#section-4.2.3\" target=\"_blank\">4.2.3. Adopted for WG Info Only</a>\n\n The \"Adopted for WG Info Only\" state describes a document that contains useful information for the WG that adopted it, but the document is not intended to be published as an RFC. The WG will not actively develop the contents of the I-D or progress it for publication as an RFC. The only purpose of the I-D is to provide information for internal use by the WG."
- }
+ },
+ "model": "doc.state",
+ "pk": 37
 },
 {
- "pk": 38, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "WG Document", 
+  "used": true,
+  "name": "WG Document",
   "next_states": [
-   39, 
-   40, 
-   41, 
+   39,
+   40,
+   41,
    43
-  ], 
-  "slug": "wg-doc", 
-  "type": "draft-stream-ietf", 
-  "order": 4, 
+  ],
+  "slug": "wg-doc",
+  "type": "draft-stream-ietf",
+  "order": 4,
   "desc": "<a href=\"http://tools.ietf.org/html/rfc6174#section-4.2.4\" target=\"_blank\">4.2.4. WG Document</a>\n\n The \"WG Document\" state describes an I-D that has been adopted by an IETF WG and is being actively developed.\n\n A WG Chair may transition an I-D into the \"WG Document\" state at any time as long as the I-D is not being considered or developed in any other WG.\n\n Alternatively, WG Chairs may rely upon new functionality to be added to the Datatracker to automatically move version-00 drafts into the \"WG Document\" state as described in Section 4.1.\n\n Under normal conditions, it should not be possible for an I-D to be in the \"WG Document\" state in more than one WG at a time. This said, I-Ds may be transferred from one WG to another with the consent of the WG Chairs and the responsible ADs."
- }
+ },
+ "model": "doc.state",
+ "pk": 38
 },
 {
- "pk": 39, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Parked WG Document", 
+  "used": true,
+  "name": "Parked WG Document",
   "next_states": [
    38
-  ], 
-  "slug": "parked", 
-  "type": "draft-stream-ietf", 
-  "order": 5, 
+  ],
+  "slug": "parked",
+  "type": "draft-stream-ietf",
+  "order": 5,
   "desc": "<a href=\"http://tools.ietf.org/html/rfc6174#section-4.2.5\" target=\"_blank\">4.2.5. Parked WG Document</a>\n\n A \"Parked WG Document\" is an I-D that has lost its author or editor, is waiting for another document to be written or for a review to be completed, or cannot be progressed by the working group for some other reason.\n\n Some of the annotation tags described in Section 4.3 may be used in conjunction with this state to indicate why an I-D has been parked, and/or what may need to happen for the I-D to be un-parked.\n\n Parking a WG draft will not prevent it from expiring; however, this state can be used to indicate why the I-D has stopped progressing in the WG.\n\n A \"Parked WG Document\" that is not expired may be transferred from one WG to another with the consent of the WG Chairs and the responsible ADs."
- }
+ },
+ "model": "doc.state",
+ "pk": 39
 },
 {
- "pk": 40, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Dead WG Document", 
+  "used": true,
+  "name": "Dead WG Document",
   "next_states": [
    38
-  ], 
-  "slug": "dead", 
-  "type": "draft-stream-ietf", 
-  "order": 6, 
+  ],
+  "slug": "dead",
+  "type": "draft-stream-ietf",
+  "order": 6,
   "desc": "<a href=\"http://tools.ietf.org/html/rfc6174#section-4.2.6\" target=\"_blank\">4.2.6. Dead WG Document</a>\n\n A \"Dead WG Document\" is an I-D that has been abandoned. Note that 'Dead' is not always a final state for a WG I-D. If consensus is subsequently achieved, a \"Dead WG Document\" may be resurrected. A \"Dead WG Document\" that is not resurrected will eventually expire.\n\n Note that an I-D that is declared to be \"Dead\" in one WG and that is not expired may be transferred to a non-dead state in another WG with the consent of the WG Chairs and the responsible ADs."
- }
+ },
+ "model": "doc.state",
+ "pk": 40
 },
 {
- "pk": 41, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "In WG Last Call", 
+  "used": true,
+  "name": "In WG Last Call",
   "next_states": [
-   38, 
-   42, 
+   38,
+   42,
    43
-  ], 
-  "slug": "wg-lc", 
-  "type": "draft-stream-ietf", 
-  "order": 7, 
+  ],
+  "slug": "wg-lc",
+  "type": "draft-stream-ietf",
+  "order": 7,
   "desc": "<a href=\"http://tools.ietf.org/html/rfc6174#section-4.2.7\" target=\"_blank\">4.2.7. In WG Last Call</a>\n\n A document \"In WG Last Call\" is an I-D for which a WG Last Call (WGLC) has been issued and is in progress.\n\n Note that conducting a WGLC is an optional part of the IETF WG process, per Section 7.4 of RFC 2418 [RFC2418].\n\n If a WG Chair decides to conduct a WGLC on an I-D, the \"In WG Last Call\" state can be used to track the progress of the WGLC. The Chair may configure the Datatracker to send a WGLC message to one or more mailing lists when the Chair moves the I-D into this state. The WG Chair may also be able to select a different set of mailing lists for a different document undergoing a WGLC; some documents may deserve coordination with other WGs.\n\n A WG I-D in this state should remain \"In WG Last Call\" until the WG Chair moves it to another state. The WG Chair may configure the Datatracker to send an e-mail after a specified period of time to remind or 'nudge' the Chair to conclude the WGLC and to determine the next state for the document.\n\n It is possible for one WGLC to lead into another WGLC for the same document. For example, an I-D that completed a WGLC as an \"Informational\" document may need another WGLC if a decision is taken to convert the I-D into a Standards Track document."
- }
+ },
+ "model": "doc.state",
+ "pk": 41
 },
 {
- "pk": 42, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Waiting for WG Chair Go-Ahead", 
+  "used": true,
+  "name": "Waiting for WG Chair Go-Ahead",
   "next_states": [
-   41, 
+   41,
    43
-  ], 
-  "slug": "chair-w", 
-  "type": "draft-stream-ietf", 
-  "order": 8, 
+  ],
+  "slug": "chair-w",
+  "type": "draft-stream-ietf",
+  "order": 8,
   "desc": "<a href=\"http://tools.ietf.org/html/rfc6174#section-4.2.8\" target=\"_blank\">4.2.8. Waiting for WG Chair Go-Ahead</a>\n\n A WG Chair may wish to place an I-D that receives a lot of comments during a WGLC into the \"Waiting for WG Chair Go-Ahead\" state. This state describes an I-D that has undergone a WGLC; however, the Chair is not yet ready to call consensus on the document.\n\n If comments from the WGLC need to be responded to, or a revision to the I-D is needed, the Chair may place an I-D into this state until all of the WGLC comments are adequately addressed and the (possibly revised) document is in the I-D repository."
- }
+ },
+ "model": "doc.state",
+ "pk": 42
 },
 {
- "pk": 43, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "WG Consensus: Waiting for Write-Up", 
+  "used": true,
+  "name": "WG Consensus: Waiting for Write-Up",
   "next_states": [
    44
-  ], 
-  "slug": "writeupw", 
-  "type": "draft-stream-ietf", 
-  "order": 9, 
+  ],
+  "slug": "writeupw",
+  "type": "draft-stream-ietf",
+  "order": 9,
   "desc": "<a href=\"http://tools.ietf.org/html/rfc6174#section-4.2.9\" target=\"_blank\">4.2.9. WG Consensus: Waiting for Writeup</a>\n\n A document in the \"WG Consensus: Waiting for Writeup\" state has essentially completed its development within the working group, and is nearly ready to be sent to the IESG for publication. The last thing to be done is the preparation of a protocol writeup by a Document Shepherd. The IESG requires that a document shepherd writeup be completed before publication of the I-D is requested. The IETF document shepherding process and the role of a WG Document Shepherd is described in RFC 4858 [RFC4858]\n\n A WG Chair may call consensus on an I-D without a formal WGLC and transition an I-D that was in the \"WG Document\" state directly into this state.\n\n The name of this state includes the words \"Waiting for Writeup\" because a good document shepherd writeup takes time to prepare."
- }
+ },
+ "model": "doc.state",
+ "pk": 43
 },
 {
- "pk": 44, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Submitted to IESG for Publication", 
+  "used": true,
+  "name": "Submitted to IESG for Publication",
   "next_states": [
    38
-  ], 
-  "slug": "sub-pub", 
-  "type": "draft-stream-ietf", 
-  "order": 10, 
+  ],
+  "slug": "sub-pub",
+  "type": "draft-stream-ietf",
+  "order": 10,
   "desc": "<a href=\"http://tools.ietf.org/html/rfc6174#section-4.2.10\" target=\"_blank\">4.2.10. Submitted to IESG for Publication</a>\n\n This state describes a WG document that has been submitted to the IESG for publication and that has not been sent back to the working group for revision.\n\n An I-D in this state may be under review by the IESG, it may have been approved and be in the RFC Editor's queue, or it may have been published as an RFC. Other possibilities exist too. The document may be \"Dead\" (in the IESG state machine) or in a \"Do Not Publish\" state."
- }
+ },
+ "model": "doc.state",
+ "pk": 44
 },
 {
- "pk": 55, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Candidate RG Document", 
-  "next_states": [], 
-  "slug": "candidat", 
-  "type": "draft-stream-irtf", 
-  "order": 1, 
+  "used": true,
+  "name": "Candidate RG Document",
+  "next_states": [],
+  "slug": "candidat",
+  "type": "draft-stream-irtf",
+  "order": 1,
   "desc": "This document is under consideration in an RG for becoming an IRTF document. A document in this state does not imply any RG consensus and does not imply any precedence or selection.  It's simply a way to indicate that somebody has asked for a document to be considered for adoption by an RG."
- }
+ },
+ "model": "doc.state",
+ "pk": 55
 },
 {
- "pk": 56, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Active RG Document", 
-  "next_states": [], 
-  "slug": "active", 
-  "type": "draft-stream-irtf", 
-  "order": 2, 
+  "used": true,
+  "name": "Active RG Document",
+  "next_states": [],
+  "slug": "active",
+  "type": "draft-stream-irtf",
+  "order": 2,
   "desc": "This document has been adopted by the RG and is being actively developed."
- }
+ },
+ "model": "doc.state",
+ "pk": 56
 },
 {
- "pk": 57, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Parked RG Document", 
-  "next_states": [], 
-  "slug": "parked", 
-  "type": "draft-stream-irtf", 
-  "order": 3, 
+  "used": true,
+  "name": "Parked RG Document",
+  "next_states": [],
+  "slug": "parked",
+  "type": "draft-stream-irtf",
+  "order": 3,
   "desc": "This document has lost its author or editor, is waiting for another document to be written, or cannot currently be worked on by the RG for some other reason."
- }
+ },
+ "model": "doc.state",
+ "pk": 57
 },
 {
- "pk": 58, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "In RG Last Call", 
-  "next_states": [], 
-  "slug": "rg-lc", 
-  "type": "draft-stream-irtf", 
-  "order": 4, 
+  "used": true,
+  "name": "In RG Last Call",
+  "next_states": [],
+  "slug": "rg-lc",
+  "type": "draft-stream-irtf",
+  "order": 4,
   "desc": "The document is in its final review in the RG."
- }
+ },
+ "model": "doc.state",
+ "pk": 58
 },
 {
- "pk": 59, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Waiting for Document Shepherd", 
-  "next_states": [], 
-  "slug": "sheph-w", 
-  "type": "draft-stream-irtf", 
-  "order": 5, 
+  "used": true,
+  "name": "Waiting for Document Shepherd",
+  "next_states": [],
+  "slug": "sheph-w",
+  "type": "draft-stream-irtf",
+  "order": 5,
   "desc": "IRTF documents have document shepherds who help RG documents through the process after the RG has finished with the document."
- }
+ },
+ "model": "doc.state",
+ "pk": 59
 },
 {
- "pk": 60, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Waiting for IRTF Chair", 
-  "next_states": [], 
-  "slug": "chair-w", 
-  "type": "draft-stream-irtf", 
-  "order": 6, 
+  "used": true,
+  "name": "Waiting for IRTF Chair",
+  "next_states": [],
+  "slug": "chair-w",
+  "type": "draft-stream-irtf",
+  "order": 6,
   "desc": "The IRTF Chair is meant to be performing some task such as sending a request for IESG Review."
- }
+ },
+ "model": "doc.state",
+ "pk": 60
 },
 {
- "pk": 61, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Awaiting IRSG Reviews", 
-  "next_states": [], 
-  "slug": "irsg-w", 
-  "type": "draft-stream-irtf", 
-  "order": 7, 
+  "used": true,
+  "name": "Awaiting IRSG Reviews",
+  "next_states": [],
+  "slug": "irsg-w",
+  "type": "draft-stream-irtf",
+  "order": 7,
   "desc": "The document shepherd has taken the document to the IRSG and solicited reviews from one or more IRSG members."
- }
+ },
+ "model": "doc.state",
+ "pk": 61
 },
 {
- "pk": 62, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "In IRSG Poll", 
-  "next_states": [], 
-  "slug": "irsgpoll", 
-  "type": "draft-stream-irtf", 
-  "order": 8, 
+  "used": true,
+  "name": "In IRSG Poll",
+  "next_states": [],
+  "slug": "irsgpoll",
+  "type": "draft-stream-irtf",
+  "order": 8,
   "desc": "The IRSG is taking a poll on whether or not the document is ready to be published."
- }
+ },
+ "model": "doc.state",
+ "pk": 62
 },
 {
- "pk": 63, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "In IESG Review", 
-  "next_states": [], 
-  "slug": "iesg-rev", 
-  "type": "draft-stream-irtf", 
-  "order": 9, 
+  "used": true,
+  "name": "In IESG Review",
+  "next_states": [],
+  "slug": "iesg-rev",
+  "type": "draft-stream-irtf",
+  "order": 9,
   "desc": "The IRSG has asked the IESG to do a review of the document, as described in RFC5742."
- }
+ },
+ "model": "doc.state",
+ "pk": 63
 },
 {
- "pk": 64, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Sent to the RFC Editor", 
-  "next_states": [], 
-  "slug": "rfc-edit", 
-  "type": "draft-stream-irtf", 
-  "order": 10, 
+  "used": true,
+  "name": "Sent to the RFC Editor",
+  "next_states": [],
+  "slug": "rfc-edit",
+  "type": "draft-stream-irtf",
+  "order": 10,
   "desc": "The RG processing of this document is complete and it has been sent to the RFC Editor for publication. The document may be in the RFC Editor's queue, or it may have been published as an RFC; this state doesn't distinguish between different states occurring after the document has left the RG."
- }
+ },
+ "model": "doc.state",
+ "pk": 64
 },
 {
- "pk": 65, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Published RFC", 
-  "next_states": [], 
-  "slug": "pub", 
-  "type": "draft-stream-irtf", 
-  "order": 11, 
+  "used": true,
+  "name": "Published RFC",
+  "next_states": [],
+  "slug": "pub",
+  "type": "draft-stream-irtf",
+  "order": 11,
   "desc": "The document has been published as an RFC."
- }
+ },
+ "model": "doc.state",
+ "pk": 65
 },
 {
- "pk": 66, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Document on Hold Based On IESG Request", 
-  "next_states": [], 
-  "slug": "iesghold", 
-  "type": "draft-stream-irtf", 
-  "order": 12, 
+  "used": true,
+  "name": "Document on Hold Based On IESG Request",
+  "next_states": [],
+  "slug": "iesghold",
+  "type": "draft-stream-irtf",
+  "order": 12,
   "desc": "The IESG has requested that the document be held pending further review, as specified in RFC 5742, and the IRTF has agreed to such a hold."
- }
+ },
+ "model": "doc.state",
+ "pk": 66
 },
 {
- "pk": 67, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Dead IRTF Document", 
-  "next_states": [], 
-  "slug": "dead", 
-  "type": "draft-stream-irtf", 
-  "order": 13, 
+  "used": true,
+  "name": "Dead IRTF Document",
+  "next_states": [],
+  "slug": "dead",
+  "type": "draft-stream-irtf",
+  "order": 13,
   "desc": "This document was an active IRTF document, but for some reason it is no longer being pursued for the IRTF stream. It is possible that the document might be revived later, possibly in another stream."
- }
+ },
+ "model": "doc.state",
+ "pk": 67
 },
 {
- "pk": 68, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Submission Received", 
-  "next_states": [], 
-  "slug": "receive", 
-  "type": "draft-stream-ise", 
-  "order": 1, 
+  "used": true,
+  "name": "Submission Received",
+  "next_states": [],
+  "slug": "receive",
+  "type": "draft-stream-ise",
+  "order": 1,
   "desc": "The draft has been sent to the ISE with a request for publication."
- }
+ },
+ "model": "doc.state",
+ "pk": 68
 },
 {
- "pk": 69, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Finding Reviewers", 
-  "next_states": [], 
-  "slug": "find-rev", 
-  "type": "draft-stream-ise", 
-  "order": 2, 
+  "used": true,
+  "name": "Finding Reviewers",
+  "next_states": [],
+  "slug": "find-rev",
+  "type": "draft-stream-ise",
+  "order": 2,
   "desc": " The ISE is finding initial reviewers for the document."
- }
+ },
+ "model": "doc.state",
+ "pk": 69
 },
 {
- "pk": 70, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "In ISE Review", 
-  "next_states": [], 
-  "slug": "ise-rev", 
-  "type": "draft-stream-ise", 
-  "order": 3, 
+  "used": true,
+  "name": "In ISE Review",
+  "next_states": [],
+  "slug": "ise-rev",
+  "type": "draft-stream-ise",
+  "order": 3,
   "desc": "The ISE is actively working on the document."
- }
+ },
+ "model": "doc.state",
+ "pk": 70
 },
 {
- "pk": 71, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Response to Review Needed", 
-  "next_states": [], 
-  "slug": "need-res", 
-  "type": "draft-stream-ise", 
-  "order": 4, 
+  "used": true,
+  "name": "Response to Review Needed",
+  "next_states": [],
+  "slug": "need-res",
+  "type": "draft-stream-ise",
+  "order": 4,
   "desc": " One or more reviews have been sent to the author, and the ISE is awaiting response."
- }
+ },
+ "model": "doc.state",
+ "pk": 71
 },
 {
- "pk": 72, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "In IESG Review", 
-  "next_states": [], 
-  "slug": "iesg-rev", 
-  "type": "draft-stream-ise", 
-  "order": 5, 
+  "used": true,
+  "name": "In IESG Review",
+  "next_states": [],
+  "slug": "iesg-rev",
+  "type": "draft-stream-ise",
+  "order": 5,
   "desc": "The ISE has asked the IESG to do a review of the document, as described in RFC5742."
- }
+ },
+ "model": "doc.state",
+ "pk": 72
 },
 {
- "pk": 73, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Sent to the RFC Editor", 
-  "next_states": [], 
-  "slug": "rfc-edit", 
-  "type": "draft-stream-ise", 
-  "order": 6, 
+  "used": true,
+  "name": "Sent to the RFC Editor",
+  "next_states": [],
+  "slug": "rfc-edit",
+  "type": "draft-stream-ise",
+  "order": 6,
   "desc": "The ISE processing of this document is complete and it has been sent to the RFC Editor for publication. The document may be in the RFC Editor's queue, or it may have been published as an RFC; this state doesn't distinguish between different states occurring after the document has left the ISE."
- }
+ },
+ "model": "doc.state",
+ "pk": 73
 },
 {
- "pk": 74, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Published RFC", 
-  "next_states": [], 
-  "slug": "pub", 
-  "type": "draft-stream-ise", 
-  "order": 7, 
+  "used": true,
+  "name": "Published RFC",
+  "next_states": [],
+  "slug": "pub",
+  "type": "draft-stream-ise",
+  "order": 7,
   "desc": "The document has been published as an RFC."
- }
+ },
+ "model": "doc.state",
+ "pk": 74
 },
 {
- "pk": 75, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "No Longer In Independent Submission Stream", 
-  "next_states": [], 
-  "slug": "dead", 
-  "type": "draft-stream-ise", 
-  "order": 8, 
+  "used": true,
+  "name": "No Longer In Independent Submission Stream",
+  "next_states": [],
+  "slug": "dead",
+  "type": "draft-stream-ise",
+  "order": 8,
   "desc": "This document was actively considered in the Independent Submission stream, but the ISE chose not to publish it.  It is possible that the document might be revived later. A document in this state may have a comment explaining the reasoning of the ISE (such as if the document was going to move to a different stream)."
- }
+ },
+ "model": "doc.state",
+ "pk": 75
 },
 {
- "pk": 76, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Document on Hold Based On IESG Request", 
-  "next_states": [], 
-  "slug": "iesghold", 
-  "type": "draft-stream-ise", 
-  "order": 9, 
+  "used": true,
+  "name": "Document on Hold Based On IESG Request",
+  "next_states": [],
+  "slug": "iesghold",
+  "type": "draft-stream-ise",
+  "order": 9,
   "desc": "The IESG has requested that the document be held pending further review, as specified in RFC 5742, and the ISE has agreed to such a hold."
- }
+ },
+ "model": "doc.state",
+ "pk": 76
 },
 {
- "pk": 79, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Active", 
-  "next_states": [], 
-  "slug": "active", 
-  "type": "minutes", 
-  "order": 1, 
+  "used": true,
+  "name": "Active",
+  "next_states": [],
+  "slug": "active",
+  "type": "minutes",
+  "order": 1,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 79
 },
 {
- "pk": 80, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Deleted", 
-  "next_states": [], 
-  "slug": "deleted", 
-  "type": "minutes", 
-  "order": 2, 
+  "used": true,
+  "name": "Deleted",
+  "next_states": [],
+  "slug": "deleted",
+  "type": "minutes",
+  "order": 2,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 80
 },
 {
- "pk": 135, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Active", 
-  "next_states": [], 
-  "slug": "active", 
-  "type": "recording", 
-  "order": 0, 
+  "used": true,
+  "name": "Active",
+  "next_states": [],
+  "slug": "active",
+  "type": "recording",
+  "order": 0,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 135
 },
 {
- "pk": 136, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "deleted", 
-  "next_states": [], 
-  "slug": "deleted", 
-  "type": "recording", 
-  "order": 0, 
+  "used": true,
+  "name": "Deleted",
+  "next_states": [],
+  "slug": "deleted",
+  "type": "recording",
+  "order": 0,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 136
 },
 {
- "pk": 77, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Active", 
-  "next_states": [], 
-  "slug": "active", 
-  "type": "slides", 
-  "order": 1, 
+  "used": true,
+  "name": "Single Meeting",
+  "next_states": [],
+  "slug": "single",
+  "type": "reuse_policy",
+  "order": 0,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 141
 },
 {
- "pk": 78, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Deleted", 
-  "next_states": [], 
-  "slug": "deleted", 
-  "type": "slides", 
-  "order": 2, 
+  "used": true,
+  "name": "Multiple Meetings",
+  "next_states": [],
+  "slug": "multiple",
+  "type": "reuse_policy",
+  "order": 0,
   "desc": ""
- }
+ },
+ "model": "doc.state",
+ "pk": 142
 },
 {
- "pk": 121, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Needs Shepherd", 
+  "used": true,
+  "name": "Active",
+  "next_states": [],
+  "slug": "active",
+  "type": "slides",
+  "order": 1,
+  "desc": ""
+ },
+ "model": "doc.state",
+ "pk": 77
+},
+{
+ "fields": {
+  "used": true,
+  "name": "Archived",
+  "next_states": [],
+  "slug": "archived",
+  "type": "slides",
+  "order": 3,
+  "desc": "This document is not active, but is available in the archives"
+ },
+ "model": "doc.state",
+ "pk": 138
+},
+{
+ "fields": {
+  "used": true,
+  "name": "Deleted",
+  "next_states": [],
+  "slug": "deleted",
+  "type": "slides",
+  "order": 4,
+  "desc": ""
+ },
+ "model": "doc.state",
+ "pk": 78
+},
+{
+ "fields": {
+  "used": true,
+  "name": "Needs Shepherd",
   "next_states": [
-   122, 
+   122,
    129
-  ], 
-  "slug": "needshep", 
-  "type": "statchg", 
-  "order": 1, 
+  ],
+  "slug": "needshep",
+  "type": "statchg",
+  "order": 1,
   "desc": "An RFC status change has been requested, but a shepherding AD has not yet been assigned"
- }
+ },
+ "model": "doc.state",
+ "pk": 121
 },
 {
- "pk": 122, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "AD Review", 
+  "used": true,
+  "name": "AD Review",
   "next_states": [
-   130, 
-   123, 
+   130,
+   123,
    129
-  ], 
-  "slug": "adrev", 
-  "type": "statchg", 
-  "order": 2, 
+  ],
+  "slug": "adrev",
+  "type": "statchg",
+  "order": 2,
   "desc": "The sponsoring AD is preparing an RFC status change document"
- }
+ },
+ "model": "doc.state",
+ "pk": 122
 },
 {
- "pk": 130, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Last Call Requested", 
+  "used": true,
+  "name": "Last Call Requested",
   "next_states": [
    131
-  ], 
-  "slug": "lc-req", 
-  "type": "statchg", 
-  "order": 3, 
+  ],
+  "slug": "lc-req",
+  "type": "statchg",
+  "order": 3,
   "desc": "Last Call has been requested for this proposed status change"
- }
+ },
+ "model": "doc.state",
+ "pk": 130
 },
 {
- "pk": 131, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "In Last Call", 
+  "used": true,
+  "name": "In Last Call",
   "next_states": [
    132
-  ], 
-  "slug": "in-lc", 
-  "type": "statchg", 
-  "order": 4, 
+  ],
+  "slug": "in-lc",
+  "type": "statchg",
+  "order": 4,
   "desc": "This proposed status change is in IETF Last Call"
- }
+ },
+ "model": "doc.state",
+ "pk": 131
 },
 {
- "pk": 132, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Waiting for AD Go-Ahead", 
+  "used": true,
+  "name": "Waiting for AD Go-Ahead",
   "next_states": [
-   123, 
+   123,
    129
-  ], 
-  "slug": "goahead", 
-  "type": "statchg", 
-  "order": 5, 
+  ],
+  "slug": "goahead",
+  "type": "statchg",
+  "order": 5,
   "desc": "The AD is following up on IETF LC comments"
- }
+ },
+ "model": "doc.state",
+ "pk": 132
 },
 {
- "pk": 123, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IESG Evaluation", 
+  "used": true,
+  "name": "IESG Evaluation",
   "next_states": [
-   124, 
-   125, 
-   126, 
+   124,
+   125,
+   126,
    129
-  ], 
-  "slug": "iesgeval", 
-  "type": "statchg", 
-  "order": 6, 
+  ],
+  "slug": "iesgeval",
+  "type": "statchg",
+  "order": 6,
   "desc": "The IESG is considering the proposed RFC status changes"
- }
+ },
+ "model": "doc.state",
+ "pk": 123
 },
 {
- "pk": 124, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "IESG Evaluation - Defer", 
+  "used": true,
+  "name": "IESG Evaluation - Defer",
   "next_states": [
-   123, 
-   125, 
-   126, 
+   123,
+   125,
+   126,
    129
-  ], 
-  "slug": "defer", 
-  "type": "statchg", 
-  "order": 7, 
+  ],
+  "slug": "defer",
+  "type": "statchg",
+  "order": 7,
   "desc": "The evaluation of the proposed RFC status changes have been deferred to the next telechat"
- }
+ },
+ "model": "doc.state",
+ "pk": 124
 },
 {
- "pk": 125, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved - point raised", 
+  "used": true,
+  "name": "Approved - point raised",
   "next_states": [
-   126, 
+   126,
    127
-  ], 
-  "slug": "appr-pr", 
-  "type": "statchg", 
-  "order": 8, 
+  ],
+  "slug": "appr-pr",
+  "type": "statchg",
+  "order": 8,
   "desc": "The IESG has approved the RFC status changes, but a point has been raised that should be cleared before proceeding to announcement to be sent"
- }
+ },
+ "model": "doc.state",
+ "pk": 125
 },
 {
- "pk": 126, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved - announcement to be sent", 
+  "used": true,
+  "name": "Approved - announcement to be sent",
   "next_states": [
    127
-  ], 
-  "slug": "appr-pend", 
-  "type": "statchg", 
-  "order": 9, 
+  ],
+  "slug": "appr-pend",
+  "type": "statchg",
+  "order": 9,
   "desc": "The IESG has approved the RFC status changes, but the secretariat has not yet sent the announcement"
- }
+ },
+ "model": "doc.state",
+ "pk": 126
 },
 {
- "pk": 127, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Approved - announcement sent", 
-  "next_states": [], 
-  "slug": "appr-sent", 
-  "type": "statchg", 
-  "order": 10, 
+  "used": true,
+  "name": "Approved - announcement sent",
+  "next_states": [],
+  "slug": "appr-sent",
+  "type": "statchg",
+  "order": 10,
   "desc": "The secretariat has announced the IESG's approved RFC status changes"
- }
+ },
+ "model": "doc.state",
+ "pk": 127
 },
 {
- "pk": 129, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Dead", 
+  "used": true,
+  "name": "Dead",
   "next_states": [
    121
-  ], 
-  "slug": "dead", 
-  "type": "statchg", 
-  "order": 11, 
+  ],
+  "slug": "dead",
+  "type": "statchg",
+  "order": 11,
   "desc": "The RFC status changes have been abandoned"
- }
+ },
+ "model": "doc.state",
+ "pk": 129
 },
 {
- "pk": 137, 
- "model": "doc.state", 
  "fields": {
-  "used": true, 
-  "name": "Active", 
-  "next_states": [], 
-  "slug": "active", 
-  "type": "bluesheets", 
-  "order": 0, 
-  "desc": ""
- }
-},
-{
- "pk": 138, 
- "model": "doc.state", 
- "fields": {
-  "used": true, 
-  "name": "Deleted", 
-  "next_states": [], 
-  "slug": "deleted", 
-  "type": "bluesheets", 
-  "order": 1, 
-  "desc": ""
- }
-},
-{
- "pk": 5, 
- "model": "doc.ballottype", 
- "fields": {
-  "doc_type": "conflrev", 
-  "used": true, 
-  "name": "Approve", 
+  "doc_type": "conflrev",
+  "used": true,
+  "name": "Approve",
   "positions": [
-   "yes", 
-   "noobj", 
-   "discuss", 
-   "abstain", 
-   "recuse", 
+   "yes",
+   "noobj",
+   "discuss",
+   "abstain",
+   "recuse",
    "norecord"
-  ], 
-  "question": "Is this the correct conflict review response?", 
-  "slug": "conflrev", 
+  ],
+  "question": "Is this the correct conflict review response?",
+  "slug": "conflrev",
   "order": 0
- }
+ },
+ "model": "doc.ballottype",
+ "pk": 5
 },
 {
- "pk": 6, 
- "model": "doc.ballottype", 
  "fields": {
-  "doc_type": "statchg", 
-  "used": true, 
-  "name": "Approve", 
+  "doc_type": "statchg",
+  "used": true,
+  "name": "Approve",
   "positions": [
-   "yes", 
-   "noobj", 
-   "discuss", 
-   "abstain", 
-   "recuse", 
+   "yes",
+   "noobj",
+   "discuss",
+   "abstain",
+   "recuse",
    "norecord"
-  ], 
-  "question": "Do we approve these RFC status changes?", 
-  "slug": "statchg", 
+  ],
+  "question": "Do we approve these RFC status changes?",
+  "slug": "statchg",
   "order": 0
- }
+ },
+ "model": "doc.ballottype",
+ "pk": 6
 },
 {
- "pk": 1, 
- "model": "doc.ballottype", 
  "fields": {
-  "doc_type": "charter", 
-  "used": true, 
-  "name": "Ready for external review", 
+  "doc_type": "charter",
+  "used": true,
+  "name": "Ready for external review",
   "positions": [
-   "yes", 
-   "noobj", 
-   "block", 
-   "abstain", 
+   "yes",
+   "noobj",
+   "block",
+   "abstain",
    "norecord"
-  ], 
-  "question": "Is this charter ready for external review?", 
-  "slug": "r-extrev", 
+  ],
+  "question": "Is this charter ready for external review?",
+  "slug": "r-extrev",
   "order": 1
- }
+ },
+ "model": "doc.ballottype",
+ "pk": 1
 },
 {
- "pk": 4, 
- "model": "doc.ballottype", 
  "fields": {
-  "doc_type": "draft", 
-  "used": true, 
-  "name": "Approve", 
+  "doc_type": "draft",
+  "used": true,
+  "name": "Approve",
   "positions": [
-   "yes", 
-   "noobj", 
-   "discuss", 
-   "abstain", 
-   "recuse", 
+   "yes",
+   "noobj",
+   "discuss",
+   "abstain",
+   "recuse",
    "norecord"
-  ], 
-  "question": "", 
-  "slug": "approve", 
+  ],
+  "question": "",
+  "slug": "approve",
   "order": 1
- }
+ },
+ "model": "doc.ballottype",
+ "pk": 4
 },
 {
- "pk": 2, 
- "model": "doc.ballottype", 
  "fields": {
-  "doc_type": "charter", 
-  "used": true, 
-  "name": "Ready w/o external review", 
+  "doc_type": "charter",
+  "used": true,
+  "name": "Ready w/o external review",
   "positions": [
-   "yes", 
-   "noobj", 
-   "block", 
-   "abstain", 
+   "yes",
+   "noobj",
+   "block",
+   "abstain",
    "norecord"
-  ], 
-  "question": "Is this charter ready for external review? Is this charter ready for approval without external review?", 
-  "slug": "r-wo-ext", 
+  ],
+  "question": "Is this charter ready for external review? Is this charter ready for approval without external review?",
+  "slug": "r-wo-ext",
   "order": 2
- }
+ },
+ "model": "doc.ballottype",
+ "pk": 2
 },
 {
- "pk": 3, 
- "model": "doc.ballottype", 
  "fields": {
-  "doc_type": "charter", 
-  "used": true, 
-  "name": "Approve", 
+  "doc_type": "charter",
+  "used": true,
+  "name": "Approve",
   "positions": [
-   "yes", 
-   "noobj", 
-   "block", 
-   "abstain", 
+   "yes",
+   "noobj",
+   "block",
+   "abstain",
    "norecord"
-  ], 
-  "question": "Do we approve of this charter?", 
-  "slug": "approve", 
+  ],
+  "question": "Do we approve of this charter?",
+  "slug": "approve",
   "order": 3
- }
-},
-{
- "pk": "parked", 
- "model": "name.iprdisclosurestatename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Parked", 
-  "desc": ""
- }
-},
-{
- "pk": "pending", 
- "model": "name.iprdisclosurestatename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Pending", 
-  "desc": ""
- }
-},
-{
- "pk": "posted", 
- "model": "name.iprdisclosurestatename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Posted", 
-  "desc": ""
- }
-},
-{
- "pk": "rejected", 
- "model": "name.iprdisclosurestatename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Rejected", 
-  "desc": ""
- }
-},
-{
- "pk": "removed", 
- "model": "name.iprdisclosurestatename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Removed", 
-  "desc": ""
- }
-},
-{
- "pk": "unknown", 
- "model": "name.iprdisclosurestatename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Unknown", 
-  "desc": ""
- }
-},
-{
- "pk": "provided-later", 
- "model": "name.iprlicensetypename", 
- "fields": {
-  "order": 4, 
-  "used": true, 
-  "name": "Provided Later", 
-  "desc": "d) Licensing Declaration to be Provided Later (implies a willingness to commit to the provisions of a), b), or c) above to all implementers; otherwise, the next option 'Unwilling to Commit to the Provisions of a), b), or c) Above'. - must be selected)"
- }
-},
-{
- "pk": "no-license", 
- "model": "name.iprlicensetypename", 
- "fields": {
-  "order": 1, 
-  "used": true, 
-  "name": "No License", 
-  "desc": "a) No License Required for Implementers"
- }
-},
-{
- "pk": "none-selected", 
- "model": "name.iprlicensetypename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "None Selected", 
-  "desc": ""
- }
-},
-{
- "pk": "reasonable", 
- "model": "name.iprlicensetypename", 
- "fields": {
-  "order": 3, 
-  "used": true, 
-  "name": "Reasonable", 
-  "desc": "c) Reasonable and Non-Discriminatory License to All Implementers with Possible Royalty/Fee"
- }
-},
-{
- "pk": "royalty-free", 
- "model": "name.iprlicensetypename", 
- "fields": {
-  "order": 2, 
-  "used": true, 
-  "name": "Royalty Free", 
-  "desc": "b) Royalty-Free, Reasonable and Non-Discriminatory License to All Implementers"
- }
-},
-{
- "pk": "see-below", 
- "model": "name.iprlicensetypename", 
- "fields": {
-  "order": 6, 
-  "used": true, 
-  "name": "See Below", 
-  "desc": "f) See Text Below for Licensing Declaration"
- }
-},
-{
- "pk": "unwilling-to-commit", 
- "model": "name.iprlicensetypename", 
- "fields": {
-  "order": 5, 
-  "used": true, 
-  "name": "Unwilling to Commit", 
-  "desc": "e) Unwilling to Commit to the Provisions of a), b), or c) Above"
- }
-},
-{
- "pk": "comment", 
- "model": "name.ipreventtypename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Comment", 
-  "desc": ""
- }
-},
-{
- "pk": "disclose", 
- "model": "name.ipreventtypename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Disclosure", 
-  "desc": ""
- }
-},
-{
- "pk": "legacy", 
- "model": "name.ipreventtypename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "Legacy", 
-  "desc": ""
- }
-},
-{
- "pk": "msgin", 
- "model": "name.ipreventtypename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "MsgIn", 
-  "desc": ""
- }
-},
-{
- "pk": "msgout", 
- "model": "name.ipreventtypename", 
- "fields": {
-  "order": 0, 
-  "used": true, 
-  "name": "MsgOut", 
-  "desc": ""
- }
+ },
+ "model": "doc.ballottype",
+ "pk": 3
 }
 ]
