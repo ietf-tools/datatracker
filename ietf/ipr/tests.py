@@ -466,7 +466,7 @@ I would like to revoke this declaration.
         login_testing_unauthorized(self, "secretary", url)
 
         r = self.client.get(url,follow=True)
-        self.assertTrue("Sign In" in r.content)
+        self.assertEqual(r.status_code,200)
         len_before = len(outbox)
         # successful post
         self.client.login(username="secretary", password="secretary+password")
