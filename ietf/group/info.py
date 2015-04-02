@@ -34,10 +34,11 @@
 
 import os
 import itertools
+import re
 from tempfile import mkstemp
 from collections import OrderedDict
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.conf import settings
@@ -152,6 +153,7 @@ def fill_in_wg_drafts(group):
             a.rel = RelatedDocument.objects.filter(source=a.document).distinct()
             a.invrel = RelatedDocument.objects.filter(target=a).distinct()
 
+@cache_page ( 60 * 60 )
 def wg_charters(request, group_type):
     if group_type != "wg":
         raise Http404
@@ -168,6 +170,7 @@ def wg_charters(request, group_type):
                   { 'areas': areas },
                   content_type='text/plain; charset=UTF-8')
 
+@cache_page ( 60 * 60 )
 def wg_charters_by_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
@@ -205,7 +208,7 @@ def active_wgs(request):
         area.urls = area.groupurl_set.all().order_by("name")
         for group in area.groups:
             group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-            group.ad_out_of_area = group.ad_role().person not in [role.person for role in area.ads]
+            group.ad_out_of_area = group.ad_role() and group.ad_role().person not in [role.person for role in area.ads]
             # get the url for mailing list subscription
             if group.list_subscribe.startswith('http'):
                 group.list_subscribe_url = group.list_subscribe
@@ -621,3 +624,26 @@ def dependencies_pdf(request, acronym, group_type=None):
     os.unlink(dotname)
 
     return HttpResponse(pdf, content_type='application/pdf')
+
+def email_aliases(request, acronym=None, group_type=None):
+    group = get_group_or_404(acronym,group_type) if acronym else None
+
+    if acronym:
+        pattern = re.compile('expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
+    else:
+        # require login for the overview page, but not for the group-specific
+        # pages handled above
+        if not request.user.is_authenticated():
+                return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+        pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
+
+    aliases = []
+    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+        for line in virtual_file.readlines():
+            m = pattern.match(line)
+            if m:
+                if acronym or not group_type or Group.objects.filter(acronym=m.group(1),type__slug=group_type):
+                    aliases.append({'acronym':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
+
+    return render(request,'group/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'group':group})
+

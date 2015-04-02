@@ -173,7 +173,9 @@ def edit(request, id):
             for field in ('name','ascii','ascii_short'):
                 if field in person_form.changed_data:
                     person.alias_set.filter(name=getattr(person,field)).delete()
-                    Alias.objects.get_or_create(person=person,name=person_form.cleaned_data[field])
+                    alias = person_form.cleaned_data[field]
+                    if alias:
+                        Alias.objects.get_or_create(person=person,name=alias)
                     
             person_form.save()
             email_formset.save()

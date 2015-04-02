@@ -8,8 +8,6 @@ from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 
-from south.modelsinspector import add_introspection_rules
-
 from ietf.nomcom.fields import EncryptedTextField
 from ietf.person.models import Email
 from ietf.group.models import Group
@@ -199,6 +197,4 @@ class Feedback(models.Model):
     class Meta:
         ordering = ['time']
 
-# ----- adding south rules to help introspection -----
 
-add_introspection_rules([], ["^ietf\.nomcom\.fields\.EncryptedTextField"])

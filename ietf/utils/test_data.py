@@ -221,6 +221,13 @@ def make_test_data():
         desc="Started IESG process",
         )
 
+    DocEvent.objects.create(
+        type="new_revision",
+        by=ad,
+        doc=draft,
+        desc="New revision available",
+        )
+
     BallotDocEvent.objects.create(
         type="created_ballot",
         ballot_type=BallotType.objects.get(doc_type="draft", slug="approve"),

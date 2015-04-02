@@ -21,8 +21,7 @@ class MeetingTests(TestCase):
         settings.AGENDA_PATH = self.materials_dir
 
     def tearDown(self):
-        if os.path.exists(self.materials_dir):
-            shutil.rmtree(self.materials_dir)
+        shutil.rmtree(self.materials_dir)
 
     def write_materials_file(self, meeting, doc, content):
         path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, doc.external_url))
@@ -82,6 +81,8 @@ class MeetingTests(TestCase):
         self.assertTrue(session.group.acronym in agenda_content)
         self.assertTrue(session.group.name in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
+        self.assertTrue("BEGIN:VTIMEZONE" in agenda_content)
+        self.assertTrue("END:VTIMEZONE" in agenda_content)        
 
         # week view
         r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))

@@ -67,7 +67,7 @@ class AdResponsibleRule(RuleManager):
         return Document.objects.filter(type='draft', states__slug='active').filter(ad=self.value).distinct()
 
     def options(self):
-        return [(i.pk, i.name) for i in Person.objects.filter(role__name='ad',group__state='active').distinct().order_by('name')]
+        return [(i.pk, i.name) for i in Person.objects.filter(role__name='ad',role__group__state='active').distinct().order_by('name')]
 
     def show_value(self):
         try:

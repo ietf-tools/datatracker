@@ -18,6 +18,7 @@
 /.project
 /.pydevproject
 /.settings
+/.coverage
 /unix.tag
 /testresult
 /mergelog
@@ -28,3 +29,4 @@
 /local
 /lib
 /include
+/latest-coverage.json

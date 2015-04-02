@@ -5,18 +5,20 @@ from django.template import RequestContext
 
 def settings(request, new_enough = -1, expires_soon = -1, full_draft = ""):
     if new_enough < 0:
-        if "new_enough" in request.COOKIES:
+        if "new_enough" in request.COOKIES and request.COOKIES["new_enough"].isdigit():
             new_enough = int(request.COOKIES["new_enough"])
         else:
             new_enough = 14
     if expires_soon < 0:
-        if "expires_soon" in request.COOKIES:
+        if "expires_soon" in request.COOKIES and request.COOKIES["expires_soon"].isdigit():
             expires_soon = int(request.COOKIES["expires_soon"])
         else:
             expires_soon = 14
     if full_draft == "":
         if "full_draft" in request.COOKIES:
             full_draft = request.COOKIES["full_draft"]
+            if full_draft != 'on' and full_draft != 'off':
+                full_draft = "off"
         else:
             full_draft = "off"
     return render("cookies/settings.html",

@@ -13,7 +13,8 @@ from ietf.utils.test_data import make_test_data
 class IndexTests(TestCase):
     def setUp(self):
         self.id_dir = os.path.abspath("tmp-id-dir")
-        os.mkdir(self.id_dir)
+        if not os.path.exists(self.id_dir):
+            os.mkdir(self.id_dir)
         settings.INTERNET_DRAFT_PATH = self.id_dir
 
     def tearDown(self):

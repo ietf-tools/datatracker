@@ -421,7 +421,7 @@ def iprs_for_drafts_txt(request):
     for name, iprs in docipr.iteritems():
         lines.append(name + "\t" + "\t".join(unicode(ipr_id) for ipr_id in sorted(iprs)))
 
-    return HttpResponse("\n".join(lines), content_type="text/plain")
+    return HttpResponse("\n".join(lines), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
 def new(request, type, updates=None):
     """Submit a new IPR Disclosure.  If the updates field != None, this disclosure
@@ -519,7 +519,7 @@ def notify(request, id, type):
                     response_due = datetime.datetime.now().date() + datetime.timedelta(days=30),
                     message = message,
                 )
-            messages.success(request,'Notifications send')
+            messages.success(request,'Notifications sent')
             return redirect("ipr_show", id=ipr.id)
             
     else:

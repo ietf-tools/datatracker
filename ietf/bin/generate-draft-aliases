@@ -133,7 +133,8 @@ if __name__ == '__main__':
     for draft in interesting_drafts.distinct().iterator():
         # Omit RFCs, we care only about drafts
         if draft.docalias_set.filter(name__startswith='rfc'):
-            continue
+            if  (datetime.datetime.now() - draft.latest_event(type='published_rfc').time) > datetime.timedelta(days= 365 * 3 ):
+                continue
 
         alias = draft.name
         all = []

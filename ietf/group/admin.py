@@ -26,7 +26,7 @@ class GroupAdmin(admin.ModelAdmin):
     list_filter = ["type", "state", "time"]
     search_fields = ["acronym", "name"]
     ordering = ["name"]
-    raw_id_fields = ["charter", "parent", "_ad"]
+    raw_id_fields = ["charter", "parent"]
     inlines = [RoleInline, GroupURLInline]
     prepopulated_fields = {"acronym": ("name", )}
 
@@ -107,7 +107,7 @@ class GroupHistoryAdmin(admin.ModelAdmin):
     list_filter = ["type"]
     search_fields = ["acronym", "name"]
     ordering = ["name"]
-    raw_id_fields = ["group", "parent", "_ad"]
+    raw_id_fields = ["group", "parent"]
 
 admin.site.register(GroupHistory, GroupHistoryAdmin)
 

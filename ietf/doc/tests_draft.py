@@ -469,8 +469,10 @@ class ExpireIDsTests(TestCase):
     def setUp(self):
         self.id_dir = os.path.abspath("tmp-id-dir")
         self.archive_dir = os.path.abspath("tmp-id-archive")
-        os.mkdir(self.id_dir)
-        os.mkdir(self.archive_dir)
+        if not os.path.exists(self.id_dir):
+            os.mkdir(self.id_dir)
+        if not os.path.exists(self.archive_dir):
+            os.mkdir(self.archive_dir)
         os.mkdir(os.path.join(self.archive_dir, "unknown_ids"))
         os.mkdir(os.path.join(self.archive_dir, "deleted_tombstones"))
         os.mkdir(os.path.join(self.archive_dir, "expired_without_tombstone"))

@@ -223,7 +223,7 @@ api.name.register(DocRelationshipNameResource())
 class RoomResourceNameResource(ModelResource):
     class Meta:
         queryset = RoomResourceName.objects.all()
-        #resource_name = 'roomresourcename'
+        resource_name = 'roomresourcename' # Needed because tastypie otherwise removes 'resource' from the name
         filtering = { 
             "slug": ALL,
             "name": ALL,
@@ -298,4 +298,45 @@ class NomineePositionStateNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(NomineePositionStateNameResource())
+
+
+
+class IprDisclosureStateNameResource(ModelResource):
+    class Meta:
+        queryset = IprDisclosureStateName.objects.all()
+        #resource_name = 'iprdisclosurestatename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(IprDisclosureStateNameResource())
+
+class IprEventTypeNameResource(ModelResource):
+    class Meta:
+        queryset = IprEventTypeName.objects.all()
+        #resource_name = 'ipreventtypename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(IprEventTypeNameResource())
+
+class IprLicenseTypeNameResource(ModelResource):
+    class Meta:
+        queryset = IprLicenseTypeName.objects.all()
+        #resource_name = 'iprlicensetypename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(IprLicenseTypeNameResource())
 

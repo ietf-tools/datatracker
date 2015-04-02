@@ -1,3 +1,325 @@
+ietfdb (5.13.0) ietf; urgency=medium
+
+  **IETF 92 Code Sprint**
+
+  This release contains the datatracker bugfixes and enhancements from the
+  IETF-92 Code Sprint.  It improves the coverage of the test suite, and also
+  fixes a number of issues.  Many thanks to everyone that contributed!
+
+  * Merged in [9330] from rcross@amsl.com:
+    Cleanup legacy IPR models.  Fixes ticket #1626.  
+
+  * Merged in [9326] from rjsparks@nostrum.com:
+    Test coverage improvement for group material management.  
+
+  * Fixed a problem in Document.meeting_related(), and fixed a number of 
+    tests which broke when slide objects started to return True to 
+    meeting_related() without being related to a session.
+
+  * Merged in [9319] from kivinen@iki.fi:
+    Added test cases for cookie code. This will test all the cookie setting 
+    code, and also adds test for draft for include_text and full_draft cookie 
+    checking.  
+
+  * Merged in [9317] from jmh@joelhalpern.com:
+    Added some nomcom test cases.  
+
+  * Changed the MEDIA_URL to use https instead of http, to be in line with 
+    other efforts to move to https in general.
+
+  * Merged in [9316] from willem@nlnetlabs.nl:
+    Test fetching of wg and rg document dependency graphs.
+
+    Also added conditional running of these tests, as they depend on the
+    availability of the dot, unflatten and ps2pdf binaries, which may not
+    be available on all developers' systems.
+
+  * Merged in [9309] from tjw.ietf@gmail.com:
+    Fixed #845. Commit read for merge. 
+
+  * Merged in [9305] from willem@nlnetlabs.nl:
+    Callback API test code paths 
+
+  * Merged in [9307] from rcross@amsl.com:
+    Improved test coverage of secr.drafts.   
+
+  * Merged in [9306] from rjsparks@nostrum.com:
+    Added pre-ads to .ad aliases. Keep draft aliases for drafts that have 
+    become RFCs for some time.  
+
+  * Merged in [9303] from rjsparks@nostrum.com:
+    Cached the wg-charter*txt pages for a time since they are very heavy to 
+    generate.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Mar 2015 19:07:16 +0000
+
+
+ietfdb (5.12.3) ietf; urgency=medium
+
+  This is a minor bugfix release which also addresses a number of testing
+  issues, in preparation for the IETF-92 sprint on Saturday.
+
+  * Merged in [9242] from rjsparks@nostrum.com:
+    Restores add-to-community-list functionality to several pages. Fixes 
+    #1601.  
+
+  * Added a --logfile switch to the test crawler, in order to be able to 
+    control whether a logfile should be used or not.  It's not particularly 
+    hepful when running on a buildbot slave, which catches stdout anyway.
+
+  * Updated the nomcom tests to use temporary test directories for data, 
+    instead of the regular production settings in settings.py.
+
+  * Updated the mergeready script to check if the 'test:unittest' property 
+    has been set to 'passed' on a changeset marked 'ready for merge'.
+
+  * Introduced a more correct implementation of the workaround to skip
+    migrations during test, which also points at the code that makes this work
+    at the moment.
+
+  * Tweaked the settings_sqlitetest.py file, which normally is used during
+    test suite runs, to avoid a minutes-long stepping through migrations for
+    each test run.   This makes it much more workable to run individual tests.
+
+  * Added the buildbot config file to the repository.  Deployment path: 
+    trac.tools.ietf.org:/home/buildbot/masters/datatracker/master.cfg
+
+  * Added exception capture and error message output to the coverage_changes
+    management command when the --release switch to specifies a release for
+    which there isn't any data.  Also tweaked the diff output for code
+    coverage changes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Mar 2015 23:55:45 +0000
+
+
+ietfdb (5.12.2) ietf; urgency=medium
+
+  * Added test coverage data to the release pages if available for the shown
+    release.  Added saving of html pages for the code coverage to a directory 
+    in the static files area.  If a code coverage report is available, a link 
+    to it will be shown on the release page of the current release.  Renamed 
+    some setting variables related to test coverage to be more explicit and 
+    precise.
+
+  * Changed the handling of some test directory creation and removal code, to
+    be more consistent.  Fixed a problem with a test that didn't create and
+    remove a test directory which it used.
+
+  * Merged in [9185] from rcross@amsl.com:
+    Add DocEvent and SubmissionEvent to merge-person-records.   
+
+  * Added tests for the presence of a VTIMEZONE section in generated agenda 
+    iCalendar files.
+
+  * Started the code coverage measurements earlier, in order to make the 
+    apparent code coverage of model files less confusing.
+
+  * Added a fudge factor to the coverage test, in order to make it easier 
+    to do minor code changes without slipping under the coverage of the
+    latest release.
+
+  * Made the test runner try multiple port numbers for the SMTP server, in 
+    order to handle the case where multiple test suites are in progress on the 
+    same host (which can happen when multiple buildbot slaves are running tests 
+    at the same time).
+
+  * Fixed a small issue with the filter expression to select ADs for active 
+    groups.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Mar 2015 22:04:14 +0000
+
+
+ietfdb (5.12.1) ietf; urgency=medium
+
+  **Extended test coverage support, active email address fixups**
+
+  This is a minor release which contains a number of bugfixes, and also
+  introduces additional test coverage measurements and support functionality.
+  It further contains two migrations which fixes a set of inactive email
+  addresses which most likely should have been active, and notifies the owners
+  about the change.  This means that when running migrations as part of this
+  release, about 1000 notification emails will be sent out from the
+  datatracker.
+
+  Detailed changes:
+
+  * Don't set email addresses which are created when a draft is submitted
+    to inactive any more.  We now have a 'primary' field to indicate which
+    email address is the primary one when a person has multiple registered
+    addresses, so we don't have to rely on the timestamps on the email
+    address objects to determine the primary address.
+
+  * Added a migration which changes the active bit from False to True to 
+    all email addresses associated with active drafts, and sends out 
+    notification emails about this.
+
+  * Added a managment command to show the difference in coverage data 
+    between the latest release and the latest test run, and a test for the same.
+
+  * Added a login requirement for the full document and group email alias 
+    pages, but kept the individual group and document email-alias pages visible 
+    without login.  Added testing of login redirects for the full email alias 
+    lists, and reordered the test sequence within the test methods 
+    appropriately.
+
+  * Made sure that Email.__unicode__() will return a string even if address 
+    is None.  Fixes an exception on deleting an email address for a Person 
+    object in the admin interface.
+
+  * Added per-app coverage measurements, to make the numbers shown when not 
+    running the full tests suite a bit more meaningful.
+
+  * Changed the nomcom.forms.FullFeedbackFormSet to use 
+    modelformsets_factory() instead of direct subclassing, in order to avoid a 
+    crash when using the form, caused by a missing instance attribute.
+
+  * Clarified the meaning of checked/unchecked boxes in front of the email 
+    addresses on the account profile management page.
+
+  * Merged in [9143] from rcross@amsl.com:
+    Add AG Secretary to Proceedings authorized roles.   
+
+  * Merged in [9142] from rjsparks@nostrum.com:
+    Avoid creating blank line before headers on IPR notification email. 
+    Fixes #1609.  
+
+  * Merged in [9141] from rjsparks@nostrum.com:
+    Fix ordering issue on agenda.html.  
+
+  * Added a new field 'primary' to the Email model, added a matching 
+    migration, and a data migration to set primary fields to match the way a 
+    primary address is chosen today.
+
+  * Added a migration which captures the changed information for the
+    idsubmission-cutoff-related fields of Meeting.
+
+  * Removed the obsolete field Group._ad, and added a migration for the 
+    change.
+
+  * Added exception handling in tastypie for a case which can occur if one 
+    tries to filter by regex on a FK.
+
+  * Turned the api.py file into a module.  Moved the makeresources 
+    management command to the api module.  Added some api tests.  Added 
+    crawling of api files to the test-crawler.  Adjusted some resource files 
+    discovered by the test suite and test-crawler.  Removed a bunch of empty 
+    model files.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Mar 2015 12:22:03 +0000
+
+ietfdb (5.12.0) ietf; urgency=medium
+
+  **Test coverage tests**
+
+  This release provides measurement of how much of the code is being exercised
+  by our test suite, by integrating the 'coverage.py' tool in the test suite
+  itself.  The percentage of the code excercised by the test suite is compared
+  with the figure from the latest release, and a lower coverage constitutes a
+  test failure.  This way it shouldn't be possible to add new code without
+  also adding tests, without getting a test suite failure.  This should
+  encourage gradually increasing levels of test suit coverage :-)
+
+  Additionally, similar measurements and comparisons have been added for
+  template and URL coverage of the test suite; these also have been
+  implemented as tests, and sinking coverage of templates or URLs in the
+  test suite will result in tests failures, in the same way as for code
+  coverage.
+
+  The results of the test suit coverage of code, templates, and URLs is saved
+  to disk, in order to make the coverage details available for inspection.
+  Coverage data per source file/template/URL is available in json format in
+  a file 'coverage-latest.json' in the working directory, and more detailed
+  per-line code coverage data is available in a file '.coverage', which is
+  readable by the standalone 'coverage' program from 'coverage.py' from
+  http://nedbatchelder.com/code/coverage/.
+
+  * Merged in personal/henrik/v5.11.1-dev0@9103, which provides new tests
+    for the test suite's code coverage, template coverage, and URL coverage.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Feb 2015 10:08:14 +0000
+
+
+ietfdb (5.11.2) ietf; urgency=medium
+
+  This is a minor release with a few additional bugfixes:
+
+  * Merged in [9121] from rcross@amsl.com:
+    Resolved some issues with the proceedings progress repport.
+
+  * Merged in [9099] from rcross@amsl.com:
+    Added an ietf/bin script, merge-person-records.   
+
+  * Merged in [9097] from rcross@amsl.com:
+    Editing session request causes KeyError.  Fixes #1605.
+
+  * Changed the handling of the group edit form so as to generate a 
+    ChangeStateGroupEvent for state changes, instead of a generic GroupEvent of 
+    type 'info_changed'.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Feb 2015 09:06:43 +0000
+
+
+ietfdb (5.11.1) ietf; urgency=medium
+
+  This is a minor release, providing bugfixes and some enhancements.
+  Worth mentioning is pages which lets one view and search the draft- and
+  wg- email alias lists, the ability to control draft submission cutoff
+  individually per meeting, improved presentation of the submission cutoff
+  times, and release content annotations for major releases back to 2010
+  on the release overview page.  Details below:
+
+  * Added a slightly tweaked version of timedelta, in order to support 
+    handling of TimedeltaFields.
+
+  * Made the selector for Agenda.groups() match that of Agenda.area_list() 
+    by adding parent__isnull=False.  Without this, the two won't match if split 
+    by area.  Fixes issue #1607.
+
+  * Added 4 new fields to the meeting class, to hold draft submission 
+    cutoff information for the meeting.  On request, changed the presentation 
+    of the cutoff times to show the last submission time, rather than the 
+    beginning of the cutoff time. Changed the cutoff hour format to support 
+    full timedelta information, not just a given hour (this was necessary in 
+    order to be able to set the requested 23:59:59 submission stop time).
+
+  * Merged in [9083] from rjsparks@nostrum.com:
+    Added dealing with /wg/foo/email-aliases, /wg/email-aliases, and 
+    similar for /rg. Added an initial test suite for all invocations of the 
+    email_alias views.  
+
+  * Merged in [9070] from rjsparks@nostrum.com:
+    Adds pages to view the draft and group email aliases, either as a 
+    whole, or per document or group.  
+
+  * Added newly generated .ics timezone snippets, from
+    http://www.ietf.org/timezones/tzdata-latest.tar.gz.  This updates the .ics
+    files to use timezone information current as of 13 Feb 2015.
+
+  * Modified the vzic makefile to generate new zoneinfo data by fetching 
+    the latest tzdata file from ietf.org/timezones/tzdata-latest.tar.gz and 
+    running vzic to update the .ics files as needed.
+
+  * Don't create empty Alias records. Fixes issue #1603.
+
+  * Added a guard against crashing because of missing timeslot location or 
+    time in check_audio_files(), which is called by create_proceedings() after 
+    changes to meeting materials.  Fixes issue 1604.
+
+  * Added back a functioning get_fieldsets() method, which was removed 
+    instead of corrected in the Django 1.7 upgrade.
+
+  * Added a missing table column to the WG document page for the case when 
+    the user isn't logged in.  Addresses issue #1601 (but add links in the 
+    column are still missing).
+
+  * Added title annotations to major release entries in the changelog back 
+    to 2010, and changelog parsing and release page support for the same.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Feb 2015 20:49:11 +0000
+
+
 ietfdb (5.11.0) ietf; urgency=medium
 
   **Django 1.7**
@@ -304,42 +626,42 @@ ietfdb (5.8.1) ietf; urgency=medium
 
 ietfdb (5.8.0) ietf; urgency=medium
 
-   ** JSON Api **
+  **JSON Api**
 
-   This release introduces a machine-readable API to the datatracker database
-   content, based on Tastypie (https://django-tastypie.readthedocs.org/).
+  This release introduces a machine-readable API to the datatracker database
+  content, based on Tastypie (https://django-tastypie.readthedocs.org/).
 
-   Currently the API is set to read-only; but Tastypie does support
-   fine-grained control of create, read, update, and delete permissions, so if
-   we find that it makes sense at some point, we can open up for authenticated
-   access to more than just reading database content.
+  Currently the API is set to read-only; but Tastypie does support
+  fine-grained control of create, read, update, and delete permissions, so if
+  we find that it makes sense at some point, we can open up for authenticated
+  access to more than just reading database content.
 
-   The details of which tables and objects from the database that are exposed
-   in the API are controlled by a series of resources.py files; one per Django
-   app.  By default, no data is exposed; in order to expose a table, the
-   resources file must contain a resource specification, in the form of a
-   python class which determines which table fields should be exposed, and how.
+  The details of which tables and objects from the database that are exposed
+  in the API are controlled by a series of resources.py files; one per Django
+  app.  By default, no data is exposed; in order to expose a table, the
+  resources file must contain a resource specification, in the form of a
+  python class which determines which table fields should be exposed, and how.
 
-   Since we want to expose almost all the database content, rather than only a
-   few selected tables, there is a lot of code which needs to be specified
-   (more than 200 classes, with almost 2000 lines, at this writing) in order
-   to make data available through the API.
+  Since we want to expose almost all the database content, rather than only a
+  few selected tables, there is a lot of code which needs to be specified
+  (more than 200 classes, with almost 2000 lines, at this writing) in order
+  to make data available through the API.
 
-   Rather than manually type out all of the needed classes, a management
-   command (ietf/manage.py makeresources) has been added which will generate
-   the needed resource classes in the resources.py files automatically.
-   Existing classes will be left intact, though, which makes it feasible to
-   hand tune the classes if needed, but still auto-generate resource classes
-   when new tables are added.
+  Rather than manually type out all of the needed classes, a management
+  command (ietf/manage.py makeresources) has been added which will generate
+  the needed resource classes in the resources.py files automatically.
+  Existing classes will be left intact, though, which makes it feasible to
+  hand tune the classes if needed, but still auto-generate resource classes
+  when new tables are added.
 
-   In addition to read access to the exposed tables and objects, the Tastypie
-   API provides support for automated discovery of the available tables.  Starting
-   at the URL https://datatracker.ietf.org/api/v1/, the returned machine-readable
-   data provides URL information for all available API endpoints, which makes it
-   possible to recurse down to all available data.
+  In addition to read access to the exposed tables and objects, the Tastypie
+  API provides support for automated discovery of the available tables.  Starting
+  at the URL https://datatracker.ietf.org/api/v1/, the returned machine-readable
+  data provides URL information for all available API endpoints, which makes it
+  possible to recurse down to all available data.
 
-   Data is currently provided in JSON and XML format.  Adding new formats is
-   fairly easy, if it should be found desriable.
+  Data is currently provided in JSON and XML format.  Adding new formats is
+  fairly easy, if it should be found desriable.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  18 Dec 2014 16:06:05 +0000
 

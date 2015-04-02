@@ -49,13 +49,19 @@ CFLAGS = -g -DOLSON_DIR=\"$(OLSON_DIR)\" -DPRODUCT_ID='"$(PRODUCT_ID)"' -DTZID_P
 
 OBJECTS = vzic.o vzic-parse.o vzic-dump.o vzic-output.o
 
-all: vzic
+all: vzic zoneinfo
 
 vzic: $(OBJECTS)
 	$(CC) $(OBJECTS) $(GLIB_LDADD) -o vzic
 
 test-vzic: test-vzic.o
 	$(CC) test-vzic.o $(LIBICAL_LDADD) -o test-vzic
+
+zoneinfo: vzic
+	mkdir -p tzdata
+	cd tzdata; wget -N http://www.ietf.org/timezones/tzdata-latest.tar.gz
+	cd tzdata; tar xzf tzdata-latest.tar.gz
+	vzic --olson-dir tzdata --pure
 
 # Dependencies.
 $(OBJECTS): vzic.h
@@ -83,8 +89,6 @@ test-changes: vzic test-vzic
 	diff -ru zoneinfo/ChangesVzic test-output
 
 clean:
-	-rm -rf vzic $(OBJECTS) *~ ChangesVzic RulesVzic ZonesVzic RulesPerl ZonesPerl test-vzic test-vzic.o
+	-rm -rf vzic $(OBJECTS) *~ ChangesVzic RulesVzic ZonesVzic RulesPerl ZonesPerl test-vzic test-vzic.o tzdata
 
 .PHONY: clean perl-dump test-parse
-
-

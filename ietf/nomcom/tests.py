@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 import tempfile
 import datetime
+import os
+import shutil
+from pyquery import PyQuery
 
 from django.db import IntegrityError
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.core.files import File
 from django.contrib.auth.models import User
 
-from pyquery import PyQuery
+import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.mail import outbox
@@ -46,6 +50,11 @@ class NomcomViewsTest(TestCase):
         return response
 
     def setUp(self):
+        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
+        if not os.path.exists(self.nomcom_public_keys_dir):
+            os.mkdir(self.nomcom_public_keys_dir)
+        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
+
         nomcom_test_data()
         self.cert_file, self.privatekey_file = get_cert_files()
         self.year = NOMCOM_YEAR
@@ -58,6 +67,8 @@ class NomcomViewsTest(TestCase):
         self.private_nominate_url = reverse('nomcom_private_nominate', kwargs={'year': self.year})
         self.add_questionnaire_url = reverse('nomcom_private_questionnaire', kwargs={'year': self.year})
         self.private_feedback_url = reverse('nomcom_private_feedback', kwargs={'year': self.year})
+        self.positions_url = reverse("nomcom_list_positions", kwargs={'year': self.year})        
+        self.edit_position_url = reverse("nomcom_add_position", kwargs={'year': self.year})
 
         # public urls
         self.index_url = reverse('nomcom_year_index', kwargs={'year': self.year})
@@ -65,6 +76,9 @@ class NomcomViewsTest(TestCase):
         self.questionnaires_url = reverse('nomcom_questionnaires', kwargs={'year': self.year})
         self.public_feedback_url = reverse('nomcom_public_feedback', kwargs={'year': self.year})
         self.public_nominate_url = reverse('nomcom_public_nominate', kwargs={'year': self.year})
+
+    def tearDown(self):
+        shutil.rmtree(self.nomcom_public_keys_dir)
 
     def access_member_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
@@ -90,6 +104,55 @@ class NomcomViewsTest(TestCase):
         """Verify private home view"""
         self.access_member_url(self.private_index_url)
         self.client.logout()
+
+    def create_nominees_for_states(self, base_state):
+        cnominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
+        position = Position.objects.get(name='APP')
+        NomineePosition.objects.create(position=position,
+                                                          nominee=cnominee,
+                                                          state=NomineePositionStateName.objects.get(slug=base_state))
+        position = Position.objects.get(name='INT')
+        NomineePosition.objects.create(position=position,
+                                                          nominee=cnominee,
+                                                          state=NomineePositionStateName.objects.get(slug=base_state))
+        position = Position.objects.get(name='OAM')
+        NomineePosition.objects.create(position=position,
+                                                          nominee=cnominee,
+                                                          state=NomineePositionStateName.objects.get(slug=base_state))
+
+    def test_private_index_post_accept(self):
+        self.create_nominees_for_states('pending')
+        login_testing_unauthorized(self, CHAIR_USER, self.private_index_url)
+        test_data = {"action": "set_as_accepted",
+                     "selected": [1]}
+        r = self.client.post(self.private_index_url, test_data)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "message")
+        self.assertEqual(NomineePosition.objects.filter(state='accepted').count (), 1)
+        self.client.logout()
+
+    def test_private_index_post_decline(self):
+        self.create_nominees_for_states('pending')
+        login_testing_unauthorized(self, CHAIR_USER, self.private_index_url)
+        test_data = {"action": "set_as_declined",
+                     "selected": [1]}
+        r = self.client.post(self.private_index_url, test_data)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "message")
+        self.assertEqual(NomineePosition.objects.filter(state='declined').count (), 1)
+        self.client.logout()
+
+    def test_private_index_post_pending(self):
+        self.create_nominees_for_states('declined')
+        login_testing_unauthorized(self, CHAIR_USER, self.private_index_url)
+        test_data = {"action": "set_as_pending",
+                     "selected": [1]}
+        r = self.client.post(self.private_index_url, test_data)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "message")
+        self.assertEqual(NomineePosition.objects.filter(state='pending').count (), 1)
+        self.client.logout()
+
 
     def test_private_merge_view(self):
         """Verify private merge view"""
@@ -354,6 +417,19 @@ class NomcomViewsTest(TestCase):
 
         self.client.logout()
 
+    def test_list_positions(self):
+        login_testing_unauthorized(self, CHAIR_USER, self.positions_url)
+
+    def test_list_positions_add(self):
+        nomcom = get_nomcom_by_year(self.year)
+        count = nomcom.position_set.all().count()
+        login_testing_unauthorized(self, CHAIR_USER, self.edit_position_url)
+        test_data = {"action" : "add", "name": "testpos", "description": "test description"}
+        r = self.client.post(self.edit_position_url, test_data)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(nomcom.position_set.all().count(), count+1)
+
+
     def test_index_view(self):
         """Verify home view"""
         self.check_url_status(self.index_url, 200)
@@ -614,8 +690,16 @@ class NomineePositionStateSaveTest(TestCase):
     perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
+        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
+        if not os.path.exists(self.nomcom_public_keys_dir):
+            os.mkdir(self.nomcom_public_keys_dir)
+        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
+
         nomcom_test_data()
         self.nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
+
+    def tearDown(self):
+        shutil.rmtree(self.nomcom_public_keys_dir)
 
     def test_state_autoset(self):
         """Verify state is autoset correctly"""
@@ -646,8 +730,16 @@ class FeedbackTest(TestCase):
     perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
+        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
+        if not os.path.exists(self.nomcom_public_keys_dir):
+            os.mkdir(self.nomcom_public_keys_dir)
+        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
+
         nomcom_test_data()
         self.cert_file, self.privatekey_file = get_cert_files()
+
+    def tearDown(self):
+        shutil.rmtree(self.nomcom_public_keys_dir)
 
     def test_encrypted_comments(self):
 
@@ -675,6 +767,11 @@ class ReminderTest(TestCase):
     perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
+        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
+        if not os.path.exists(self.nomcom_public_keys_dir):
+            os.mkdir(self.nomcom_public_keys_dir)
+        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
+
         nomcom_test_data()
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
         self.cert_file, self.privatekey_file = get_cert_files()
@@ -712,6 +809,9 @@ class ReminderTest(TestCase):
                                            user=User.objects.get(username=CHAIR_USER))
         feedback.positions.add(gen)
         feedback.nominees.add(n)
+
+    def tearDown(self):
+        shutil.rmtree(self.nomcom_public_keys_dir)
 
     def test_is_time_to_send(self):
         self.nomcom.reminder_interval = 4

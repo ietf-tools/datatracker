@@ -367,7 +367,12 @@ def edit_agendas(request, num=None, order=None):
 def agenda(request, num=None, name=None, base=None, ext=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.html'
-    mimetype = {".html":"text/html", ".txt": "text/plain", ".ics":"text/calendar", ".csv":"text/csv"}
+    mimetype = {
+        ".html":"text/html; charset=%s"%settings.DEFAULT_CHARSET,
+        ".txt": "text/plain; charset=%s"%settings.DEFAULT_CHARSET,
+        ".ics":"text/calendar; charset=%s"%settings.DEFAULT_CHARSET,
+        ".csv":"text/csv; charset=%s"%settings.DEFAULT_CHARSET,
+    }
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
     if schedule == None:
@@ -405,7 +410,7 @@ def session_agenda(request, num, session):
         ext = ext.lstrip(".").lower()
 
         if ext == "txt":
-            return HttpResponse(content, content_type="text/plain")
+            return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
         elif ext == "pdf":
             return HttpResponse(content, content_type="application/pdf")
         else:

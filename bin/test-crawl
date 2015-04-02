@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, re, datetime, argparse, traceback, tempfile
+import os, sys, re, datetime, argparse, traceback, tempfile, json
 
 # args
 parser = argparse.ArgumentParser(
@@ -14,6 +14,7 @@ parser.add_argument('--urls', '-u', dest='url_file',
 parser.add_argument('--slow', dest='slow_threshold', type=float, default=1.0,
                     help='responses taking longer than this (in seconds) results in SLOW being printed')
 parser.add_argument('--settings', dest='settings', help='custom settings file')
+parser.add_argument('--logfile', dest='logfile', help='write to logfile')
 
 args = parser.parse_args()
 
@@ -51,6 +52,7 @@ if args.url_file:
 
 if not initial_urls:
     initial_urls.append("/")
+    initial_urls.append("/api/v1")
 
 visited = set()
 urls = {} # url -> referrer
@@ -78,8 +80,30 @@ def extract_html_urls(content):
 
         yield url
 
+def extract_tastypie_urls(content):
+    VISIT_OBJECTS = False
+    VISIT_NEXT = False
+    data = json.loads(content)
+    for item in data:
+        if type(data[item]) is dict:
+            if "list_endpoint" in data[item]:
+                uri = data[item]["list_endpoint"]
+                yield uri
+    if VISIT_NEXT:
+        if "meta" in data and "next" in data["meta"]:
+            uri = data["meta"]["next"]
+            if uri != None:
+                yield uri
+    if VISIT_OBJECTS:
+        if "objects" in data:
+            object_list = data["objects"]
+            for i in range(len(object_list)):
+                if "resource_uri" in object_list[i]:
+                    uri = object_list[i]["resource_uri"]
+                    yield uri
+
 django.setup()
-client = django.test.Client()
+client = django.test.Client(Accept='text/html,text/plain,application/json')
 
 for url in initial_urls:
     urls[url] = "[initial]"
@@ -88,14 +112,16 @@ errors = 0
 count = 0
 
 start_time = datetime.datetime.now()
-fh, fn = tempfile.mkstemp(prefix="test-crawl-", suffix=".log", dir="../")
-logfile = open(fn, "w")
-os.close(fh)
+
+logfile = None
+if args.logfile:
+    logfile = open(args.logfile, "w")
 
 def log(s):
     print(s)
-    logfile.write(s)
-    logfile.write('\n')
+    if logfile:
+        logfile.write(s)
+        logfile.write('\n')
 
 def get_referrers(url):
     ref_list = []
@@ -150,8 +176,19 @@ while urls:
                     log("=============")
                     log(traceback.format_exc())
                     log("=============")
+            elif ctype == "application/json":
+                try:
+                    for u in extract_tastypie_urls(r.content):
+                        if u not in visited and u not in urls:
+                            urls[u] = url
+                            referrers[u] = url
+                except:
+                    log("error extracting urls from %s" % url)
+                    log("=============")
+                    log(traceback.format_exc())
+                    log("=============")
         else:
-            tags.append(u"FAIL (from %s)" % referrer)
+            tags.append(u"FAIL for %s\n   (from %s)" % (url, referrer))
             errors += 1
 
         if elapsed.total_seconds() > slow_threshold:
@@ -164,12 +201,13 @@ while urls:
         sec = acc_secs % 60
 
         if (len(visited) % 100) == 1:
-            log("\nElapsed  Visited  Queue   Code  Time  Url  ...  Notes")
+            log("\nElapsed  Visited  Queue Code   Time  Url  ...  Notes")
 
-        log("%2d:%02d:%02d %7d %6d  %s %.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), r.status_code, elapsed.total_seconds(), url, " ".join(tags)))
+        log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), r.status_code, elapsed.total_seconds(), url, " ".join(tags)))
 
-logfile.close()
-sys.stderr.write("Output written to %s\n\n" % logfile.name)
+if logfile:
+    logfile.close()
+    sys.stderr.write("Output written to %s\n\n" % logfile.name)
 
 if errors > 0:
     sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)

@@ -53,7 +53,7 @@
       <h2>Author(s)</h2>
         <table>
         {% for author in draft.authors.all %}
-          <tr><td><a href="{% url "sec.rolodex.views.view" id=author.person.pk %}">{{ author.person.name }}</a></td></tr>
+          <tr><td><a href="{% url "ietf.secr.rolodex.views.view" id=author.person.pk %}">{{ author.person.name }}</a></td></tr>
         {% endfor %}
         </table>
     </div> <!-- inline-related -->

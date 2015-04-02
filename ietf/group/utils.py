@@ -48,7 +48,7 @@ def get_area_ads_emails(area):
     if area.acronym == 'none':
         return []
     emails = [r.email.email_address()
-              for r in area.role_set.filter(name__in=('ad', 'chair'))]
+              for r in area.role_set.filter(name__in=('pre-ad', 'ad', 'chair'))]
     return filter(None, emails)
 
 def get_group_ads_emails(wg):

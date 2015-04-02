@@ -735,4 +735,4 @@ def charter_with_milestones_txt(request, name, rev):
                               dict(charter_text=charter_text,
                                    milestones=milestones),
                               context_instance=RequestContext(request),
-                              content_type="text/plain")
+                              content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)

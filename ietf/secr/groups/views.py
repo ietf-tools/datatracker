@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.conf import settings
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
@@ -144,7 +145,7 @@ def blue_dot(request):
 
     return render_to_response('groups/blue_dot_report.txt', {
         'chairs':sorted_chairs},
-        RequestContext(request, {}), content_type="text/plain",
+        RequestContext(request, {}), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET,
     )
 
 @role_required('Secretariat')

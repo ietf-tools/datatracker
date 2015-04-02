@@ -1,3 +1,5 @@
+import os
+import shutil
 import datetime
 import json
 import sys
@@ -6,12 +8,17 @@ if sys.version_info[0] == 2 and sys.version_info[1] < 7:
 else:
     import unittest
 from pyquery import PyQuery
+from tempfile import NamedTemporaryFile
+from Cookie import SimpleCookie
 
 from django.core.urlresolvers import reverse as urlreverse
+from django.conf import settings
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, save_document_in_history )
 from ietf.group.models import Group
+from ietf.meeting.models import Meeting, Session, SessionPresentation
+from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
@@ -150,7 +157,189 @@ class SearchTestCase(TestCase):
         self.assertEqual(data[0]["id"], doc_alias.pk)
         
 
-class DocTestCase(TestCase):
+class DocDraftTestCase(TestCase):
+    draft_text = """
+
+
+
+Martian Special Interest Group (mars)                             P. Man
+Internet-Draft                                            March 21, 2015
+Intended status: Informational
+Expires: September 22, 2015
+
+
+                 Optimizing Martian Network Topologies
+                      draft-ietf-mars-test-02.txt
+
+Abstract
+
+   Techniques for achieving near-optimal Martian networks.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on September 22, 2015.
+
+Copyright Notice
+
+   Copyright (c) 2015 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+   This document may contain material from IETF Documents or IETF
+   Contributions published or made publicly available before November
+   10, 2008.  The person(s) controlling the copyright in some of this
+
+
+
+Man                    Expires September 22, 2015               [Page 1]
+
+Internet-Draft    Optimizing Martian Network Topologies       March 2015
+
+
+   material may not have granted the IETF Trust the right to allow
+   modifications of such material outside the IETF Standards Process.
+   Without obtaining an adequate license from the person(s) controlling
+   the copyright in such materials, this document may not be modified
+   outside the IETF Standards Process, and derivative works of it may
+   not be created outside the IETF Standards Process, except to format
+   it for publication as an RFC or to translate it into languages other
+   than English.
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
+   2.  Security Considerations . . . . . . . . . . . . . . . . . . .   2
+   3.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   2
+   4.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   3
+   5.  Normative References  . . . . . . . . . . . . . . . . . . . .   3
+   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .   3
+
+1.  Introduction
+
+   This document describes how to make the Martian networks work.  The
+   methods used in Earth do not directly translate to the efficent
+   networks on Mars, as the topographical differences caused by planets.
+   For example the avian carriers, cannot be used in the Mars, thus
+   RFC1149 ([RFC1149]) cannot be used in Mars.
+
+   Some optimizations can be done because Mars is smaller than Earth,
+   thus the round trip times are smaller.  Also as Mars has two moons
+   instead of only one as we have in Earth, we can use both Deimos and
+   Phobos when using reflecting radio links off the moon.
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in [RFC2119].
+
+2.  Security Considerations
+
+   As Martians are known to listen all traffic in Mars, all traffic in
+   the Mars MUST be encrypted.
+
+3.  IANA Considerations
+
+   There is no new IANA considerations in this document.
+
+
+
+
+
+
+
+
+Man                    Expires September 22, 2015               [Page 2]
+
+Internet-Draft    Optimizing Martian Network Topologies       March 2015
+
+
+4.  Acknowledgements
+
+   This document is created in the IETF-92 CodeSprint in Dallas, TX.
+
+5.  Normative References
+
+   [RFC1149]  Waitzman, D., "Standard for the transmission of IP
+              datagrams on avian carriers", RFC 1149, April 1990.
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119, March 1997.
+
+Author's Address
+
+   Plain Man
+   Deimos street
+   Mars City  MARS-000000
+   Mars
+
+   Email: aliens@example.mars
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Man                    Expires September 22, 2015               [Page 3]
+"""
+
+    def setUp(self):
+        self.id_dir = os.path.abspath("tmp-id-dir")
+        if not os.path.exists(self.id_dir):
+            os.mkdir(self.id_dir)
+        settings.INTERNET_DRAFT_PATH = self.id_dir
+        f = open(os.path.join(self.id_dir, 'draft-ietf-mars-test-01.txt'), 'w')
+        f.write(self.draft_text)
+        f.close()
+
+    def tearDown(self):
+        shutil.rmtree(self.id_dir)
+
     def test_document_draft(self):
         draft = make_test_data()
 
@@ -164,6 +353,47 @@ class DocTestCase(TestCase):
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertTrue("[include full document text]" in r.content)
+        self.assertFalse("Deimos street" in r.content)
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=0")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertFalse("[include full document text]" in r.content)
+        self.assertTrue("Deimos street" in r.content)
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=foo")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertFalse("[include full document text]" in r.content)
+        self.assertTrue("Deimos street" in r.content)
+
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=1")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertFalse("[include full document text]" in r.content)
+        self.assertTrue("Deimos street" in r.content)
+
+        self.client.cookies = SimpleCookie({'full_draft': 'on'})
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertFalse("[include full document text]" in r.content)
+        self.assertTrue("Deimos street" in r.content)
+
+        self.client.cookies = SimpleCookie({'full_draft': 'off'})
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertTrue("[include full document text]" in r.content)
+        self.assertFalse("Deimos street" in r.content)
+
+        self.client.cookies = SimpleCookie({'full_draft': 'foo'})
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Internet-Draft" in r.content)
+        self.assertTrue("[include full document text]" in r.content)
+        self.assertFalse("Deimos street" in r.content)
 
         # expired draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
@@ -261,6 +491,7 @@ class DocTestCase(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertTrue("%s-00"%docname in r.content)
 
+class DocTestCase(TestCase):
     def test_document_charter(self):
         make_test_data()
 
@@ -285,6 +516,16 @@ class DocTestCase(TestCase):
         )
         doc.set_state(State.objects.get(type="slides", slug="active"))
         DocAlias.objects.create(name=doc.name, document=doc)
+
+        session = Session.objects.create(
+            name = "session-42-mars-1",
+            meeting = Meeting.objects.get(number='42'),
+            group = Group.objects.get(acronym='mars'),
+            status = SessionStatusName.objects.create(slug='scheduled', name='Scheduled'),
+            modified = datetime.datetime.now(),
+            requested_by = Person.objects.get(user__username="marschairman"),
+            )
+        SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
@@ -497,3 +738,47 @@ class ReferencesTest(TestCase):
         self.assertEquals(r.status_code, 200)
         self.assertTrue(doc1.name in r.content)
        
+
+class EmailAliasesTests(TestCase):
+
+    def setUp(self):
+        make_test_data()
+        self.doc_alias_file = NamedTemporaryFile(delete=False)
+        self.doc_alias_file.write("""# Generated by hand at 2015-02-12_16:26:45
+virtual.ietf.org anything
+draft-ietf-mars-test@ietf.org              xfilter-draft-ietf-mars-test
+expand-draft-ietf-mars-test@virtual.ietf.org  mars-author@example.com, mars-collaborator@example.com
+draft-ietf-mars-test.authors@ietf.org      xfilter-draft-ietf-mars-test.authors
+expand-draft-ietf-mars-test.authors@virtual.ietf.org  mars-author@example.mars, mars-collaborator@example.mars
+draft-ietf-mars-test.chairs@ietf.org      xfilter-draft-ietf-mars-test.chairs
+expand-draft-ietf-mars-test.chairs@virtual.ietf.org  mars-chair@example.mars
+draft-ietf-mars-test.all@ietf.org      xfilter-draft-ietf-mars-test.all
+expand-draft-ietf-mars-test.all@virtual.ietf.org  mars-author@example.mars, mars-collaborator@example.mars, mars-chair@example.mars
+draft-ietf-ames-test@ietf.org              xfilter-draft-ietf-ames-test
+expand-draft-ietf-ames-test@virtual.ietf.org  ames-author@example.com, ames-collaborator@example.com
+draft-ietf-ames-test.authors@ietf.org      xfilter-draft-ietf-ames-test.authors
+expand-draft-ietf-ames-test.authors@virtual.ietf.org  ames-author@example.ames, ames-collaborator@example.ames
+draft-ietf-ames-test.chairs@ietf.org      xfilter-draft-ietf-ames-test.chairs
+expand-draft-ietf-ames-test.chairs@virtual.ietf.org  ames-chair@example.ames
+draft-ietf-ames-test.all@ietf.org      xfilter-draft-ietf-ames-test.all
+expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames-collaborator@example.ames, ames-chair@example.ames
+
+""")
+        self.doc_alias_file.close()
+        settings.DRAFT_VIRTUAL_PATH = self.doc_alias_file.name
+
+    def tearDown(self):
+        os.unlink(self.doc_alias_file.name)
+
+    def testAliases(self):
+        url = urlreverse('ietf.doc.views_doc.email_aliases', kwargs=dict(name="draft-ietf-mars-test"))
+        r = self.client.get(url)
+        self.assertTrue(all([x in r.content for x in ['mars-test@','mars-test.authors@','mars-test.chairs@']]))
+        self.assertFalse(any([x in r.content for x in ['ames-test@','ames-test.authors@','ames-test.chairs@']]))
+
+        url = urlreverse('ietf.doc.views_doc.email_aliases', kwargs=dict())
+        login_testing_unauthorized(self, "plain", url)
+        r = self.client.get(url)
+        self.assertTrue(all([x in r.content for x in ['mars-test@','mars-test.authors@','mars-test.chairs@']]))
+        self.assertTrue(all([x in r.content for x in ['ames-test@','ames-test.authors@','ames-test.chairs@']]))
+

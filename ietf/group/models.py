@@ -18,7 +18,6 @@ class GroupInfo(models.Model):
     type = models.ForeignKey(GroupTypeName, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)
     description = models.TextField(blank=True)
-    _ad = models.ForeignKey(Person, verbose_name="AD", blank=True, null=True, db_column="ad_id")
     list_email = models.CharField(max_length=64, blank=True)
     list_subscribe = models.CharField(max_length=255, blank=True)
     list_archive = models.CharField(max_length=255, blank=True)

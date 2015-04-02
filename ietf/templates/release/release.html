@@ -18,6 +18,19 @@
     </li>
   </ul>
 
+  <p>
+     {% if coverage %}
+     Tested:
+	<b>Code</b>: {{coverage.code.percentage|stringformat:".2f"}}%, &nbsp;
+	<b>Templates</b>: {{coverage.template.percentage|stringformat:".2f"}}%, &nbsp;
+	<b>URLs</b>: {{coverage.url.percentage|stringformat:".2f"}}% &nbsp;
+     {% endif %}
+     {% if code_coverage_url %}
+	<br/>
+	(A <a href="{{code_coverage_url}}">code test coverage report</a> dated {{code_coverage_time}} is available.)
+     {% endif %}
+  </p>
+
   <h2>{{ entry.version }} release notes</h2>
 
   <pre>{{entry.logentry|safe}}</pre>

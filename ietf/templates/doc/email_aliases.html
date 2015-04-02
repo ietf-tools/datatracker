@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block morecss %}
+td.aliasname { white-space:nowrap;}
+{% endblock %}
+
+{% block title %}Document email aliases{% if doc %} for {{doc.name}}{% endif %}{% endblock %}
+
+{% block content %}
+<h1>Document email aliases{% if doc %} for {{doc.name}}{% endif %}</h1>
+{% regroup aliases|dictsort:"doc_name" by doc_name as alias_list %}
+<table class="ietf-table">
+{% for alias in alias_list %}
+  {% cycle 'evenrow' 'oddrow' as alternator silent %}
+  {% for item in alias.list %}
+    <tr class={{alternator}}><td class="aliasname">{{alias.grouper}}{{item.alias_type|default:''}}@{{ietf_domain}}</td><td>{{item.expansion}}</td></tr>
+  {% endfor %}
+{% endfor %}
+</table>
+{% endblock %}

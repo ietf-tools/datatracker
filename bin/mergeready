@@ -247,8 +247,10 @@ ready += get_ready_commits(repo, 'personal')
 ready += get_ready_commits(repo, 'branch/amsl')
 
 ready_commits = {}
+not_passed = {}
 for entry in ready:
     rev, repo, branch = entry
+    # Get the time, committer, and commit message
     cmd = 'svn log -v -r %s %s/%s/' % (rev, repo, branch)
     if opt_verbose > 1:
         note("Running '%s' ..." % cmd)
@@ -261,9 +263,25 @@ for entry in ready:
         type, path = line[:4], line[5:]
         if 'M' in type or 'A' in type or 'D' in type:
             break
+    # Get the test status
+    cmd = 'svn propget --revprop -r %s "test:unittest"' % rev
+    unittest = pipe(cmd).strip()
+    # 
     merge_path = os.path.join(*path.split(os.path.sep)[:4])
     if not (rev, repo, merge_path) in hold:
-        ready_commits[when] = "%s  %-24s %s@%s" % (when, who+":", merge_path, rev)
+        output_line = "%s  %-24s %s@%s" % (when, who+":", merge_path, rev)
+        if unittest == 'passed':
+            ready_commits[when] = output_line
+        else:
+            not_passed[when] = output_line
+
+keys = not_passed.keys()
+keys.sort()
+if len(keys) > 0:
+    sys.stderr.write("Commits marked ready which haven't passed the test suite:\n")
+    for key in keys:
+        sys.stderr.write(not_passed[key]+'\n')
+    sys.stderr.write('\n')
 
 keys = ready_commits.keys()
 keys.sort()
