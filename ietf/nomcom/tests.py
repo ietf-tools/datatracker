@@ -127,7 +127,8 @@ class NomcomViewsTest(TestCase):
                      "selected": [1]}
         r = self.client.post(self.private_index_url, test_data)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "message")
+        q = PyQuery(r.content)
+        self.assertNotEqual(q('p.alert.alert-success'), [])
         self.assertEqual(NomineePosition.objects.filter(state='accepted').count (), 1)
         self.client.logout()
 
@@ -138,7 +139,8 @@ class NomcomViewsTest(TestCase):
                      "selected": [1]}
         r = self.client.post(self.private_index_url, test_data)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "message")
+        q = PyQuery(r.content)
+        self.assertNotEqual(q('p.alert.alert-success'), [])
         self.assertEqual(NomineePosition.objects.filter(state='declined').count (), 1)
         self.client.logout()
 
@@ -149,7 +151,8 @@ class NomcomViewsTest(TestCase):
                      "selected": [1]}
         r = self.client.post(self.private_index_url, test_data)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "message")
+        q = PyQuery(r.content)
+        self.assertNotEqual(q('p.alert.alert-success'), [])
         self.assertEqual(NomineePosition.objects.filter(state='pending').count (), 1)
         self.client.logout()
 
