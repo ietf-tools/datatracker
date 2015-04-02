@@ -8,31 +8,9 @@ from ietf.group.models import Role
 
 register = template.Library()
 
-
-class CommunityListNode(template.Node):
-    
-    def __init__(self, user, var_name):
-        self.user = user
-        self.var_name = var_name
-
-    def render(self, context):
-        user = self.user.resolve(context)
-        if not (user and hasattr(user, "is_authenticated") and user.is_authenticated() ):
-            return ''
-        lists = {'personal': CommunityList.objects.get_or_create(user=user)[0]}
-        try:
-            person = user.person
-            groups = []
-            managed_areas = [i.group for i in Role.objects.filter(name__slug='ad', email__in=person.email_set.all())]
-            for area in managed_areas:
-                groups.append(CommunityList.objects.get_or_create(group=area)[0])
-            managed_wg = [i.group for i in Role.objects.filter(name__slug='chair', group__type__slug='wg', group__state__slug__in=("active", "bof", "proposed", "replaced"), email__in=person.email_set.all())]
-            for wg in managed_wg:
-                groups.append(CommunityList.objects.get_or_create(group=wg)[0])
-            lists['group'] = groups
-        except:
-            pass
-        context.update({self.var_name: lists})
+@register.assignment_tag
+def get_user_managed_lists(user):
+    if not (user and hasattr(user, "is_authenticated") and user.is_authenticated()):
         return ''
     lists = {'personal': CommunityList.objects.get_or_create(user=user)[0]}
     try:
@@ -58,9 +36,10 @@ def show_field(field, doc):
 
 @register.simple_tag
 def get_clist_view(clist):
-        if settings.DEBUG or not clist.cached:
-            clist.cached = render_to_string('community/raw_view.html',
-                                            {'cl': clist,
-                                             'dc': clist.get_display_config()})
-            clist.save()
+    if settings.DEBUG or not clist.cached:
+        clist.cached = render_to_string('community/raw_view.html', {
+                'cl': clist,
+                'dc': clist.get_display_config()
+            })
+        clist.save()
         return clist.cached
