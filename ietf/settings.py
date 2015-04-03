@@ -93,7 +93,6 @@ MEDIA_URL = '//www.ietf.org/'
 
 STATIC_URL = "/"
 STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
-STATIC_URL = STATIC_ROOT + '/'
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
