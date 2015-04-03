@@ -154,11 +154,16 @@ label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
 pre { line-height: 1.214;  }
 
 /* Make ampersands pretty */
+/* This sets ampersand in a different font than the rest of the text. Fancy, but it's
+really better to select a pretty font in the first place.  Additionally, _which_ 'pretty'
+ampersand you get is dependent on which fonts are available in the browser.  Hacky. */
+/*
 .amp {
 	 font-family:Baskerville,"Goudy Old Style","Palatino","Book Antiqua",serif;
 	 font-size:110%;
 	 font-style:italic;
 }
+ */
 
 /* Turn off link underlining for panels in the search results */
 .ipr a:hover { text-decoration: none }
@@ -175,11 +180,112 @@ pre { line-height: 1.214;  }
 }
 .in-nojs { display: block !important; }
 
+.navbar-brand > img {
+  display: inline;
+  vertical-align: middle;
+  margin-top: -8px;
+  padding-top: 0;
+}
+
+/* Production Mode tool bar */
+
+.navbar-prod {
+	background-color: #303060;
+	border-color: #202040;
+}
+.navbar-prod a {
+	color: #fff;
+}
+/*
+.navbar-prod .nav .open>a,.navbar-prod .nav .open>a:focus,.navbar-prod .nav .open>a:hover {
+	background-color: #404080;
+	border-color: #101020;
+	color: #ffffff;
+	text-shadow: #fff;
+}
+*/
+
+.navbar-prod .navbar-brand {
+	color: #ecf0f1;
+}
+.navbar-prod .navbar-brand:hover, .navbar-default .navbar-brand:focus {
+	color: #eeeeff;
+}
+.navbar-prod .navbar-text {
+	color: #ecf0f1;
+}
+.navbar-prod .navbar-nav > li > a {
+	color: #ecf0f1;
+}
+.navbar-prod .navbar-nav > li > a:hover, .navbar-prod .navbar-nav > li > a:focus {
+	color: #eeeeff;
+	background-color: #404080;
+}
+.navbar-prod .navbar-nav > .active > a, .navbar-prod .navbar-nav > .active > a:hover, .navbar-prod .navbar-nav > .active > a:focus {
+	color: #eeeeff;
+	background-color: #404080;
+}
+.navbar-prod .dropdown-menu > li > a {
+	color: #000040;
+}
+.navbar-prod .dropdown-menu > li > a:focus, .navbar-prod .dropdown-menu > li > a:hover {
+	color: #000040;
+	background-color: #404080;
+}
+.navbar-prod .navbar-nav > .open > a, .navbar-prod .navbar-nav > .open > a:hover, .navbar-prod .navbar-nav > .open > a:focus {
+	color: #eeeeff;
+	background-color: #404080;
+}
+
+@media (max-width: 767px) {
+  .navbar-prod .navbar-nav > li > a:hover, .navbar-prod .navbar-nav > li > a:focus {
+	  color: #eeeeff;
+	  background-color: #404080;
+  }
+  .navbar-prod .navbar-nav > .active > a, .navbar-prod .navbar-nav > .active > a:hover, .navbar-prod .navbar-nav > .active > a:focus {
+	  color: #eeeeff;
+	  background-color: #404080;
+  }
+  .navbar-prod .dropdown-menu > li > a {
+	  color: #eeeeff;
+  }
+  .navbar-prod .dropdown-menu > li > a:focus, .navbar-prod .dropdown-menu > li > a:hover {
+	  color: #eeeeff;
+	  background-color: #404080;
+  }
+  .navbar-prod .navbar-nav > .open > a, .navbar-prod .navbar-nav > .open > a:hover, .navbar-prod .navbar-nav > .open > a:focus {
+	  color: #eeeeff;
+	  background-color: #404080;
+  }
+}
+
+.navbar-prod .navbar-toggle {
+	border-color: #404080;
+}
+.navbar-prod .navbar-toggle:hover, .navbar-prod .navbar-toggle:focus {
+	background-color: #404080;
+}
+.navbar-prod .navbar-toggle .icon-bar {
+	background-color: #ecf0f1;
+}
+.navbar-prod .navbar-collapse,
+.navbar-prod .navbar-form {
+	border-color: #ecf0f1;
+}
+.navbar-prod .navbar-link {
+	color: #ecf0f1;
+}
+.navbar-prod .navbar-link:hover {
+	color: #eeeeff;
+}
+
+
+
 /* Development Mode tool bar */
 
 .navbar-dev {
-	background-color: #FF0000;
-	border-color: #CC0000;
+	background-color: #ff0000;
+	border-color: #cc0000;
 }
 .navbar-dev .navbar-brand {
 	color: #ecf0f1;
