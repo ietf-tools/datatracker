@@ -16,13 +16,13 @@
 
     {% block pagehead %}{% endblock %}
 
-    <link rel="shortcut icon" href="/images/ietf-icon-blue.png">
+    <link rel="shortcut icon" href="/images/ietf-icon-blue3.png">
     <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
   </head>
 
   <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url "group_menu_data" %}">
-    {% filter amp|smartypants %}
-      <nav class="navbar {% if server_mode and server_mode != "production" %}navbar-dev{% else %}navbar-prod{% endif %} navbar-fixed-top" role="navigation">
+
+      <nav class="navbar {% if server_mode and server_mode != "production" %}navbar-inverse{% else %}navbar-inverse{% endif %} navbar-fixed-top" role="navigation">
         <div class="container-fluid">
 	  <div class="navbar-header">
 	    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse">
@@ -32,7 +32,7 @@
 	      <span class="icon-bar"></span>
 	    </button>
 	    <a class="navbar-brand" href="/">
-	       <img alt="IETF Logo" src="/images/ietflogo-blue-small.png"></img>
+	       <img alt="IETF Logo" src="/images/ietflogo-blue3-small.png"></img>
 	    </a>
 	  </div>
 
@@ -91,7 +91,7 @@
         {% endif %}
 
         <footer class="row">
-	  <div class="col-md-12 hidden-xs">
+	  <div class="col-sm-12">
 	    <div class="text-center">
 	      <hr>
 	      <ul class="nav nav-pills center-pills">
@@ -137,7 +137,7 @@
        $(".leftmenu").removeClass("col-xs-3 col-md-2").addClass("col-lg-2 hidden-md hidden-sm hidden-xs ").next().removeClass("col-xs-9 col-md-10").addClass("col-lg-10");
        $(".hidden-nojs, .in-nojs").removeClass("hidden-nojs in-nojs");
       </script>
-    {% endfilter %}
+
   </body>
 </html>
 

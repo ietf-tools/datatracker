@@ -14,11 +14,24 @@
 @gray-light:             lighten(@gray-base, 46.7%); // #777
 @gray-lighter:           lighten(@gray-base, 93.5%); // #eee
 
-@brand-primary:         darken(#428bca, 6.5%); // #337ab7
-@brand-success:         #5cb85c;
-@brand-info:            #5bc0de;
-@brand-warning:         #f0ad4e;
-@brand-danger:          #d9534f;
+// Brand palette
+// http://www.colourlovers.com/palette/3702908/Key_West_Sunset
+//
+// blue			#2c254a;
+// purple		#59356b;
+// mauve		#b05683;
+// orange		#f69f74;
+// yellow		#f8e16d;
+//
+// Secondary colours, not part of the primary palette
+// green		#69fc2c;
+// red			#d4584d;
+
+@brand-primary:         #2c254a;	// darken(#428bca, 6.5%); // #337ab7
+@brand-success:         darken(#69fc2c, 20%);	//#5cb85c;
+@brand-info:		darken(#f8e16d, 50%);	// #5bc0de;
+@brand-warning:		#f69f74;	// #f0ad4e;
+@brand-danger:		#d4584d;	// #d9534f;
 
 
 //== Scaffolding
@@ -31,7 +44,7 @@
 @text-color:            @gray-dark;
 
 //** Global textual link color.
-@link-color:            @brand-primary;
+@link-color:            lighten(@brand-primary, 25%);
 //** Link hover color set via `darken()` function.
 @link-hover-color:      darken(@link-color, 15%);
 //** Link hover decoration.
@@ -385,16 +398,16 @@
 
 // Inverted navbar
 // Reset inverted navbar basics
-@navbar-inverse-color:                      lighten(@gray-light, 15%);
-@navbar-inverse-bg:                         #222;
+@navbar-inverse-color:                      lighten(@gray-light, 5%);
+@navbar-inverse-bg:			    @brand-primary;
 @navbar-inverse-border:                     darken(@navbar-inverse-bg, 10%);
 
 // Inverted navbar links
-@navbar-inverse-link-color:                 lighten(@gray-light, 15%);
+@navbar-inverse-link-color:                 #eee; // lighten(@gray-light, 30%);
 @navbar-inverse-link-hover-color:           #fff;
-@navbar-inverse-link-hover-bg:              transparent;
+@navbar-inverse-link-hover-bg:              darken(@navbar-inverse-bg, 4%);
 @navbar-inverse-link-active-color:          @navbar-inverse-link-hover-color;
-@navbar-inverse-link-active-bg:             darken(@navbar-inverse-bg, 10%);
+@navbar-inverse-link-active-bg:             darken(@navbar-inverse-bg, 8%);
 @navbar-inverse-link-disabled-color:        #444;
 @navbar-inverse-link-disabled-bg:           transparent;
 
