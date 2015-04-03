@@ -68,6 +68,9 @@ body { padding-top: 70px; }
 .nav-header:not(:first-child) { padding: 10px 0 2px 0 }
 .nav-stacked>li, .nav-stacked>li+li { margin: 0; line-height: 1.214; }
 .nav-stacked>li>a { padding: 2px 8px; }
+.leftmenu {
+  max-width: 200px;
+}
 .leftmenu .nav { overflow-wrap: break-word }
 
 /* Hack to make anchor-targets take up a bit more space vertically
@@ -300,8 +303,4 @@ form.add-email textarea {
 
 table.materials .snippable {
   width: 25em;
-}
-
-.col-fixed-leftmenu {
-  max-width: 200px;
 }
