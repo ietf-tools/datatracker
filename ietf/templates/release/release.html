@@ -3,6 +3,7 @@
 {% block title %}Release information{% endblock %}
 
 {% block content %}
+<div class="col-sm-12">
   <h1>
     <a href="//trac.tools.ietf.org/tools/ietfdb/browser/tags/{{entry.version}}">
       Version {{ entry.version }}</a>
@@ -35,12 +36,20 @@
 
   <pre>{{entry.logentry|safe}}</pre>
 
-  <h2>All releases</h2>
-
+  <h2>Release list:</h2>
+  <table style="margin-left: 3em">
   {% for item in releases %}
-    {% ifchanged %}<h3>{{ item.date|slice:"7:11" }}</h3>{% endifchanged %}
-    <div><a href="/release/{{item.version}}/">{{ item.version }}</a> from {{ item.date|slice:":11" }} {% if item.title %}- {{ item.title }}{% endif %}</div>
+      {% ifchanged %}<tr><td><h3>{{ item.date|slice:"7:11" }}</h3></td><tr>{% endifchanged %}    
+      <tr>
+	 <td style="text-align: right; padding: 0.1em 0.5em; min-width: 4em;"><a href="/release/{{item.version}}/">{{ item.version }}</a></td>
+	 <td style="text-align: right; padding: 0.1em 0.5em; min-width: 8em;">{{ item.date|slice:":11" }}</td>
+	 <td style="text-align: left;  padding: 0.1em 0.5em;">{{ item.title }}</td>       
+	 <!--
+	 <td style="text-align: right; padding: 0.2em 0.5em;">{{ item.date|slice:"12:20" }}</td>
+	 <td style="text-align: right; padding: 0.2em 0.5em;">{{ item.date|slice:"21:" }}</td>
+	 -->
+      </tr>
   {% endfor %}
-
-    </div>
+  </table>
+</div>
 {% endblock %}
