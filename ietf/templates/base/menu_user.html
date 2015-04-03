@@ -1,13 +1,15 @@
 {% load ietf_filters %}
 
 <li {% if flavor == "top" %}class="dropdown"{% else %}class="nav-header"{% endif %}>
-  {% if flavor == "top" %}<a href="#" class="dropdown-toggle" data-toggle="dropdown">{% endif %}
-  {#<span class="fa fa-user"></span>#}
-  {% if user.is_authenticated %} {{ user }} {% else %} User {% endif %}
   {% if flavor == "top" %}
-    </a>
-    <ul class="dropdown-menu" role="menu">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+    {% if user.is_authenticated %}{{ user }}{% else %} User {% endif %}
+  </a>
+  <ul class="dropdown-menu" role="menu">
+  {% else %}
+     Account
   {% endif %}
+
   {% if request.get_full_path == "/accounts/logout/" %}
     <li><a rel="nofollow" href="/accounts/login{% if "/accounts/logout/" not in request.get_full_path %}/?next={{request.get_full_path|urlencode}}{% endif %}">Sign in</a></li>
   {% else %}
