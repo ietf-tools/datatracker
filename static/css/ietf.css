@@ -301,3 +301,7 @@ form.add-email textarea {
 table.materials .snippable {
   width: 25em;
 }
+
+.col-fixed-leftmenu {
+  max-width: 200px;
+}
