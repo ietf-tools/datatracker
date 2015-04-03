@@ -345,6 +345,21 @@ def retrieve_search_results(form, all_types=False):
     return (results, meta)
 
 
+def get_doc_is_tracked(request, results):
+    # Determine whether each document is being tracked or not, and remember
+    # that so we can display the proper track/untrack option.
+    doc_is_tracked = { }
+    if request.user.is_authenticated():
+        try:
+            clist = CommunityList.objects.get(user=request.user)
+            clist.update()
+        except ObjectDoesNotExist:
+            return doc_is_tracked
+        for doc in results:
+            if clist.get_documents().filter(name=doc.name).count() > 0:
+                doc_is_tracked[doc.name] = True
+    return doc_is_tracked
+
 def search(request):
     if request.GET:
         # backwards compatibility
@@ -367,18 +382,7 @@ def search(request):
         results = []
         meta = { 'by': None, 'advanced': False, 'searching': False }
 
-    # Determine whether each document is being tracked or not, and remember
-    # that so we can display the proper track/untrack option.
-    doc_is_tracked = { }
-    if request.user.is_authenticated():
-        try:
-            clist = CommunityList.objects.get(user=request.user)
-            clist.update()
-        except ObjectDoesNotExist:
-            pass
-        for doc in results:
-            if clist.get_documents().filter(name=doc.name).count() > 0:
-                doc_is_tracked[doc.name] = True
+    doc_is_tracked = get_doc_is_tracked(request, results)
 
     return render_to_response('doc/search/search.html',
                               {'form':form, 'docs':results, 'doc_is_tracked':doc_is_tracked, 'meta':meta, },
