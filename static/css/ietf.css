@@ -112,6 +112,7 @@ label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
 .ballot-icon table { margin: 0 0 10px 10px; }
 
 /* Style the right-hand page navigation affix used on some pages. */
+
 #affix .nav > li > a {
 	display: block;
 	padding: 4px 20px;
@@ -123,10 +124,10 @@ label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
 #affix .nav > li > a:hover,
 #affix .nav > li > a:focus {
 	padding-left: 19px;
-	color: #428bca;
+	color: #5f4f9f;
 	text-decoration: none;
 	background-color: transparent;
-	border-left: 1px solid #428bca;
+	border-left: 1px solid #5f4f9f;
 	border-radius: 0;
 }
 #affix .nav > .active > a,
@@ -134,9 +135,9 @@ label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
 #affix .nav > .active:focus > a {
 	padding-left: 18px;
 	font-weight: bold;
-	color: #428bca;
+	color: #5f4f9f;
 	background-color: transparent;
-	border-left: 2px solid #428bca;
+	border-left: 2px solid #5f4f9f;
 	border-radius: 0;
 }
 
