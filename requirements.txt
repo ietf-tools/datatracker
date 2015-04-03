@@ -3,6 +3,7 @@ coverage>=3.7.1
 cssselect>=0.6.1
 decorator>=3.4.0
 defusedxml>=0.4.1
+django-bootstrap3>=5.1.1
 docutils>=0.12
 lxml>=3.4.0
 mimeparse>=0.1.3
