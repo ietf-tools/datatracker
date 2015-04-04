@@ -69,7 +69,7 @@ body { padding-top: 70px; }
 .nav-stacked>li, .nav-stacked>li+li { margin: 0; line-height: 1.214; }
 .nav-stacked>li>a { padding: 2px 8px; }
 .leftmenu {
-  width: 200px;
+  max-width: 200px;
 }
 .leftmenu .nav { overflow-wrap: break-word }
 
@@ -182,7 +182,7 @@ ampersand you get is dependent on which fonts are available in the browser.  Hac
 	display: none !important;
 	visibility: hidden !important;
 }
-.in-nojs { display: block !important; }
+.visible-nojs { display: block !important; }
 
 .navbar-brand > img {
   display: inline;

@@ -8,7 +8,7 @@
 
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
-    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
     <link rel="stylesheet" href="/css/ietf.css">
     <style>
      {% block morecss %}{% endblock %}
@@ -69,12 +69,12 @@
 
         {% if not hide_menu %} {# ugly hack for the more or less unported meeting agenda edit pages #}
           <div class="row">
-	    <div class="col-md-3 visible-md visible-lg leftmenu">
+	    <div class="col-md-2 visible-md visible-lg leftmenu">
 	      <ul class="nav nav-pills nav-stacked panel panel-default panel-body">
                 {% include "base/menu.html" with flavor="left" %}
               </ul>
 	    </div>
-            <div class="col-md-9 content-wrapper">
+            <div class="col-md-10">
 	      <!--[if lt IE 8]>
 	      <p id="browsehappy" class="collapse alert alert-warning alert-dismissible">
 	      <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
@@ -139,18 +139,16 @@
 	  </div>
         </footer>
       </div>
-
-      <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
       <script>window.jQuery || document.write('<script src="/js/lib/jquery-1.11.2.min.js"><\/script>')</script>
+      <!-- Remove the *-nojs attributes if we are running js.  This depends on jQuery's removeClass(): -->
+      <!-- Do this as early as possible (after loading the page and jQuery) to avoid rendering changes -->
+      <script>$(".visible-nojs").removeClass("visible-nojs");</script>
+      <script>$(".hidden-nojs").removeClass("hidden-nojs");</script>
       <script src="/js/lib/jquery.cookie.min.js"></script>
       <script src="/js/lib/bootstrap.min.js"></script>
-      {% block js %}{% endblock %}
       <script src="/js/ietf.js"></script>
-      <script>
-
-       $(".hidden-nojs, .in-nojs").removeClass("hidden-nojs in-nojs");
-      </script>
-
+      {% block js %}{% endblock %}
   </body>
 </html>
 
