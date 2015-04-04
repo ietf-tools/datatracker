@@ -17,7 +17,7 @@ def show_submission_files(context, submission):
             exists = True
         elif submission.state_id == "posted":
             continue
-        result.append({'name': '%s' % ext[1:],
+        result.append({'ext': '%s' % ext[1:],
                        'exists': exists,
 		       'url': '%s%s-%s%s' % (settings.IDSUBMIT_STAGING_URL, submission.name, submission.rev, ext)})
     return {'files': result}
