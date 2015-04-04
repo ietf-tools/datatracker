@@ -186,9 +186,7 @@ ampersand you get is dependent on which fonts are available in the browser.  Hac
 
 .navbar-brand > img {
   display: inline;
-  vertical-align: middle;
-  margin-top: -8px;
-  padding-top: 0;
+  margin-top: -7px;
 }
 
 /* Development Mode tool bar */
