@@ -184,6 +184,10 @@ ampersand you get is dependent on which fonts are available in the browser.  Hac
 }
 .visible-nojs { display: block !important; }
 
+.navbar {
+  font-family: "PT Sans Caption", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
 .navbar-brand > img {
   display: inline;
   margin-top: -7px;
