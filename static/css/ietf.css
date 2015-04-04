@@ -154,8 +154,13 @@ label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
 /* Add some padding when there are multiple buttons in a line than can wrap. */
 .buttonlist .btn { margin-bottom: .5em }
 
-/* Make preformatted text a bit more condensed in display */
-pre { line-height: 1.214;  }
+
+pre {
+  /* Make preformatted text a bit more condensed in display */
+  line-height: 1.214;
+  /* PT Mono doesn't need the default one-step size reduction provided by bootstrap */
+  font-size: 14px;
+}
 
 /* Make ampersands pretty */
 /* This sets ampersand in a different font than the rest of the text. Fancy, but it's
