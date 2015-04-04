@@ -345,9 +345,9 @@ class StatusChangeTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('.content-wrapper [type=submit]:contains("Save")')),1)
+        self.assertEqual(len(q('#content [type=submit]:contains("Save")')),1)
         # There should be three rows on the form
-        self.assertEqual(len(q('.content-wrapper .row')),3)
+        self.assertEqual(len(q('#content .row')),3)
 
         # Try to add a relation to an RFC that doesn't exist
         r = self.client.post(url,dict(new_relation_row_blah="rfc9997",

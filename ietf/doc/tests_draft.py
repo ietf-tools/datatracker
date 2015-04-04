@@ -916,7 +916,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('.content-wrapper a:contains("Edit")')), 1)
+        self.assertEqual(len(q('#content a:contains("Edit")')), 1)
 
         # Try again when no longer a shepherd.
 
@@ -925,7 +925,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('.content-wrapper a:contains("Edit")')), 0)
+        self.assertEqual(len(q('#content a:contains("Edit")')), 0)
 
     def test_doc_change_shepherd_writeup(self):
         url = urlreverse('doc_edit_shepherd_writeup',kwargs=dict(name=self.docname))
