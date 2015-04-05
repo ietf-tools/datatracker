@@ -130,7 +130,7 @@
 
     <tr>
       {% if doc.stream %}
-        <th>{{ doc.stream }} state</th>
+        <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">{{ doc.stream }} state</th>
         <td class="edit">
           {% if doc.stream and can_edit_stream_info %}
             <a class="btn btn-default btn-xs" href="{% url "doc_change_stream_state" name=doc.name state_type=stream_state_type_slug %}">Edit</a>
@@ -211,7 +211,7 @@
     {% endif %}
 
     <tr>
-      <th><a href="{% url "state_help" "draft-iesg" %}">IESG state</a></th>
+      <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
       <td class="edit">
         {% if iesg_state and can_edit %}
           <a class="btn btn-default btn-xs" href="{% url "doc_change_state" name=doc.name %}">Edit</a>
@@ -224,7 +224,7 @@
 
     {% if iana_review_state %}
       <tr>
-        <th>IANA review state</th>
+        <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
         <td class="edit">
           {% if can_edit_iana_state %}
             <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-review" %}">Edit</a>
@@ -250,7 +250,7 @@
 
     {% if rfc_editor_state %}
       <tr>
-        <th>RFC Editor state</th>
+        <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">RFC Editor state</a></th>
         <td class="edit"></td>
         <td><a href="//www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ rfc_editor_state }}</a></td>
       </tr>

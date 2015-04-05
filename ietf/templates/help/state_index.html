@@ -20,10 +20,10 @@
       {% for type in types %}
         {% if type.stategroups != None %}
           <tr>
-            <td><a href='state/{{ type.slug }}/'>{{type.slug}}</a></td>
+            <td><a href='{{ type.slug }}/'>{{type.slug}}</a></td>
             <td>
 	      {% for group in type.stategroups %}
-	        <a href='state/{{ type.slug }}/{{ group }}'>{{ group }}</a>{% if not forloop.last %}, {% endif %}
+	        <a href='{{ type.slug }}/{{ group }}'>{{ group }}</a>{% if not forloop.last %}, {% endif %}
 	      {% endfor %}
             </td>
           </tr>
