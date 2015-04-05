@@ -1,0 +1,70 @@
+{% extends "ietf.html" %}
+
+{% block title %}About the Datatracker{% endblock %}
+
+{% block content %}
+<div class="col-sm-12">
+   <div class="document" id="facelift-todo">
+      <h1 class="title">Facelift ToDo</h1>
+
+      <div class="section" id="pre-release">
+	 <h2>Pre-Release</h2>
+
+	    <ul class="simple">
+	       <!-- Done -->
+	       <li><strong>DONE</strong>  Initial merge with trunk (on separate branch)</li>
+	       <li><strong>DONE</strong>  Re-style to make people recognise that they are at the datatracker</li>
+	       <li><strong>DONE</strong>  Use a designed colour palette rather than arbitrary element colours</li>
+	       <li><strong>DONE</strong>  The extra FontAwesome add-in seems to add glyphs already bundled in
+		  glyphicons, which adds page load time and update complexity; see if we
+		  can reduce to only the bundled glyphs.  <em>Conclusion: not feasible</em></li>
+	       <li><strong>DONE</strong>  Have a look at using slightly more readable fonts than the current
+		  one, and change font families if it looks reasonable</li>
+	       <li><strong>DONE</strong>  Align the use of info and warning background colours with the info and
+		  warning button colours</li>
+	       <li><strong>DONE</strong>  Add an 'About' page which gives credit to those working on the facelift.</li>
+	       <hr/>
+	       <!-- Remaining -->
+	       <li>Rename the base template back to 'base.html' from 'ietf.html' now that
+		  all templates using the old base have been fixed</li>
+	       <li>Fix the missing IPR values on search and group pages.</li>
+	       <li>Fix style consistency, for instance in WG metadata table vs. document
+		  metadata table, WG doc list vs. release list, and more</li>
+	       <li>The header colours on the meeting requests page have inverted colour
+		  logic compared to other list pages (info background for warnings, warning
+		  background for sub-headers).  Empty warning panes are shown.  Fix.</li>
+	       <li>The agenda page uses warning colours for day headers.  Fix.</li>
+	       <li>On tablets, the ballot grids has a 'click to show more' which has a
+		  z-value larger than the pop-up.  This only matters because it doesn't go
+		  away on click on tablets.  Fix.</li>
+	       <li>Replace buttons which are links with something which is recognisable
+		  as links, preferably in submenu form. (Could be done post-release).</li>
+	       <li>Final merge to trunk</li>
+	    </ul>
+
+      </div>
+      <div class="section" id="post-release">
+	 <h2>Post-Release</h2>
+
+	    <ul class="simple">
+	       <li>Maybe change alert, warning, etc. fonts to sans?</li>
+	       <li>Fix input fields to have appropriate type setting, in order to provide
+		  the appropriate keyboard on mobile devices (email address keyboard,
+		  url keyboard, and possibly others).  Set autocorrect and autocaptitalise
+		  attributes correctly, also to make things easier on mobile devices.</li>
+	       <li>The materials page has very different column width for the different
+		  areas.  Consider normalising.  Check IPR list page for possible approach.</li>
+	       <li>The ballot grids don't use the position colours used in the pop-up (the
+		  colours in the pop-up is based on the palette colours).  Mabye align grid
+		  position colours with pop-up position colours?</li>
+	       <li>Remove general uglyness (like the overly large section descriptions on
+		  <a class="reference external" href="http://zin.tools.ietf.org:31415/sync/discrepancies/">http://zin.tools.ietf.org:31415/sync/discrepancies/</a>)</li>
+	       <li>Change the room map links on the agenda to use pop-overs instead of
+		  pointing off to the room maps on tools.ietf.org</li>
+	    </ul>
+
+      </div>
+   </div>
+
+</div>
+{% endblock %}

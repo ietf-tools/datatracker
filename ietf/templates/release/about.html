@@ -1,0 +1,105 @@
+{% extends "ietf.html" %}
+
+{% block title %}About the Datatracker{% endblock %}
+
+{% block content %}
+<div class="col-sm-12">
+  <h1>About the IETF Datatracker</h1>
+  <big>
+     <p>
+
+	The IETF Datatracker is the primary day-to-day front-end to the IETF database for people
+	who work on IETF standards.  It contains data about the documents, working groups,
+	meetings, agendas, minutes, presentations, etc. of the IETF.
+
+     </p>
+     <p>
+
+	The primary public face of IETF is at <a href="https://www.ietf.org/">www.ietf.org</a>.
+
+     </p>
+
+  </big>
+  <h2>Version 6.0.0: Facelift using Bootstrap</h2>
+  <p>
+
+     During more than a year, from July 2013 to late 2014, <i>Lars Eggert</i> worked intensively
+     on a major facelift to the datatracker, porting the GUI to Bootstrap.  The work
+     took
+     <a href="http://trac.tools.ietf.org/tools/ietfdb/log/personal/lars?rev=8652&stop_rev=5871&limit=500">
+	287 separate commits
+     </a>, and comprised changes to 1016 different files.
+
+  </p>
+  <p>
+
+     This work has turned the IETF Datatracker website into a responsive website which
+     support use on a much larger variety of devices, from small mobile devices to desktops.
+
+  </p>
+  <p>
+
+     The work continues to build on the <a href="https://www.djangoproject.org/">Django</a>
+     framework which the datatracker has been using since <a href="/release/2.00/">version
+     2.00</a>, and relies heavily on the capabilities of <a href="http://getbootstrap.com">
+     Bootstrap</a>.  It also uses icons from <a href="">FontAwesome</a>, and functions from
+     <a href="https://django-bootstrap3.readthedocs.org/">django-bootstrap3</a>.
+
+  </p>
+  <p>
+
+     Additional
+     <a href="http://trac.tools.ietf.org/tools/ietfdb/log/branch/iola?rev=9116&stop_rev=8520&limit=200">
+	page conversion work
+     </a> has been done by <i>Ole Laursen</i>, with final
+     tweaks by <i>Henrk Levkowetz</i>, giving it a distinct
+     <a href="http://www.colourlovers.com/palette/3702908/Key_West_Sunset">colour palette</a>
+     (with the addition of complementing red and green colours for success and error indications),
+     and a selection of fonts
+     (<a href="http://www.identifont.com/show?2G32">PT Serif</a>,
+     <a href="http://www.identifont.com/show?2G2G">PT Sans Caption</a>, and PT Mono) from
+     <a href="http://www.paratype.com/public/">ParaType</a>, provided by
+     <a href="https://www.google.com/fonts">Google Fonts</a>.
+
+  </p>
+
+  <h2>Version 5.0.0: Shim Removal</h2>
+
+     <div class="alert-info">
+	To be written.
+     </div>
+  
+  <h2>Version 4.0.0: New Database Schema</h2>
+
+     <div class="alert-info">
+	To be written.
+     </div>
+
+  <h2>Version 3.0.0: Django Port of the IESG Datatracker Pages</h2>
+
+     <div class="alert-info">
+	To be written.
+     </div>
+
+  <h2>Version 2.0.0: Django Port of the Public Datatracker Pages</h2>
+
+     <div class="alert-info">
+	To be written.
+     </div>
+
+  <h2>Version 1.0.0: Initial Perl/MySQL database and web-pages</h2>
+
+  <p>
+     The first version of the idtracker was commissioned by the IESG under <i>Harald
+     Alvestrand</i> in 2001, and the IESG started using it at the beginning of 2002.  It was
+     written by <i>Michael Lee</i> in Perl, with direct SQL statements.  It provided a
+     major improvement in visibility of the progress of drafts by the IESG.
+     The first <a href="https://www.ietf.org/proceedings/55/slides/plenary-6/plenary-6.ppt">
+     public presentation</a> of it and its capabilities was made 2002-11-20
+     in Atlanta by Thomas Narten.
+  </p>
+
+
+
+</div>
+{% endblock %}
