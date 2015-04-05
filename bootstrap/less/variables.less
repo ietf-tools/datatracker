@@ -46,7 +46,7 @@
 @text-color:            @gray-darker;
 
 //** Global textual link color.
-@link-color:            lighten(@brand-primary, 20%);
+@link-color:            lighten(saturate(@brand-primary, 35%), 25%);
 //** Link hover color set via `darken()` function.
 @link-hover-color:      darken(@link-color, 15%);
 //** Link hover decoration.
@@ -72,7 +72,7 @@
 
 
 
-@font-size-base:          14px;
+@font-size-base:          15px;
 @font-size-large:         ceil((@font-size-base * 1.189)); // ~18px
 @font-size-small:         ceil((@font-size-base * 0.841)); // ~12px
 
