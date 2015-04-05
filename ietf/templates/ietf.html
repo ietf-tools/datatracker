@@ -6,6 +6,11 @@
     <title>{% block title %}No title{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <link href='http://fonts.googleapis.com/css?family=PT+Serif+Caption|PT+Mono|PT+Serif:400,700,400italic,700italic|PT+Sans+Caption&subset=latin-ext' rel='stylesheet' type='text/css'>
+    <!-- Halloween
+    <link href='http://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+DW+Pica:400,400italic|Nova+Mono|IM+Fell+English:400,400italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
+    -->
+
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="/css/font-awesome.min.css">
@@ -92,34 +97,34 @@
         {% endif %}
 
 	<hr>
-        <footer class="row">
-	  <div class="col-sm-6">
+	  <div class="col-md-6">
 	    <div class="text-center">
 	      <ul class="nav nav-pills center-pills">
-	        <li><a href="//www.ietf.org/">IETF</a></li>
-	        <li><a href="//tools.ietf.org/">IETF Tools</a></li>
-	        <li><a href="//www.ietf.org/iesg/">IESG</a></li>
-	        <li><a href="//www.iab.org/">IAB</a></li>
+	        <li><a href="//tools.ietf.org/">IETF&nbsp;Tools</a></li>
+	        <li><a href="//www.internetsociety.org/">ISOC</a></li>
 	        <li><a href="//www.irtf.org/">IRTF</a></li>
+	        <li><a href="//www.iab.org/">IAB</a></li>
+	        <li><a href="//www.ietf.org/iesg/">IESG</a></li>
+	        <li><a href="//www.ietf.org/">IETF</a></li>
 	      </ul>
 	    </div>
 	  </div>
 
-	  <div class="col-sm-6">
+
+	  <div class="col-md-6">
 	    <div class="text-center">
 	      <ul class="nav nav-pills center-pills">
-	        <li><a href="//www.rfc-editor.org/">RFC Editor</a></li>
+	        <li><a href="//trustee.ietf.org/">IETF&nbsp;Trust</a></li>
+	        <li><a href="//iaoc.ietf.org">IASA&nbsp;&amp;&nbsp;IAOC</a></li>
+	        <li><a href="//www.rfc-editor.org/">RFC&nbsp;Editor</a></li>
 	        <li><a href="//www.iana.org/">IANA</a></li>
-	        <li><a href="//iaoc.ietf.org">IASA &amp; IAOC</a></li>
-	        <li><a href="//trustee.ietf.org/">IETF Trust</a></li>
-	        <li><a class="hidden-sm" href="//www.internetsociety.org/">ISOC</a></li>
 	      </ul>
 	    </div>
 	  </div>
         </footer>
 
         <footer class="row">
-	  <div class="col-sm-12">
+	  <div class="col-md-12">
 	    <div class="text-center">
 	      <p class="small text-muted">
 	        {% if version_num %}
