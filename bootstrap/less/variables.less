@@ -1,4 +1,4 @@
-//
+// -*- mode: c -*-
 // Variables
 // --------------------------------------------------
 
@@ -14,24 +14,26 @@
 @gray-light:             lighten(@gray-base, 46.7%); // #777
 @gray-lighter:           lighten(@gray-base, 93.5%); // #eee
 
+@gray-doc-background:   #fafafa;        // was #f5f5f5
+
 // Brand palette
 // http://www.colourlovers.com/palette/3702908/Key_West_Sunset
 //
-// space blue           #2c254a;
-// time purple          #59356b;
-// mauve                #b05683;
-// orange               #f69f74;
-// yellow               #f8e16d;
+@brand-blue:            #2c254a;        // space blue
+@brand-purple:          #59356b;        // time purple
+@brand-mauve:           #b05683;
+@brand-orange:          #f69f74;
+@brand-yellow:          #f8e16d;
 //
 // Secondary colours, not part of the primary palette
-// green                #69fc2c;
-// red                  #d4584d;
+@brand-green:           #69fc2c;
+@brand-red:             #d4584d;
 
-@brand-primary:         #2c254a;        // space blue
-@brand-success:         darken(#69fc2c, 20%);   // green
-@brand-info:            darken(#f8e16d, 50%);   // yellow
-@brand-warning:         #f69f74;        // orange
-@brand-danger:          #d4584d;        // red
+@brand-primary:         @brand-blue;			// space blue
+@brand-success:         darken(@brand-green, 20%);	// green
+@brand-info:            darken(@brand-yellow, 10%);	// yellow
+@brand-warning:         @brand-orange;			// orange
+@brand-danger:          @brand-red;			// red
 
 
 //== Scaffolding
@@ -55,11 +57,20 @@
 //
 //## Font, line-height, and color for body text, headings, and more.
 
-@font-family-sans-serif:  "Helvetica Neue", Helvetica, Arial, sans-serif;
-@font-family-serif:       Georgia, "Times New Roman", Times, serif;
+@font-family-sans-serif:  "PT Sans", Helvetica, Arial, sans-serif;
+@font-family-serif:       "PT Serif", serif;
 //** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
-@font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace;
-@font-family-base:        @font-family-sans-serif;
+@font-family-monospace:   "PT Mono", Menlo, Monaco, Consolas, monospace;
+@font-family-base:        @font-family-serif;
+
+// Halloween
+//@font-family-sans-serif:  "IM Fell English SC", Helvetica, Arial, sans-serif;
+//@font-family-serif:       "IM Fell English", serif;
+////** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
+//@font-family-monospace:   "Nova Mono", Menlo, Monaco, Consolas, monospace;
+//@font-family-base:        @font-family-serif;
+
+
 
 @font-size-base:          14px;
 @font-size-large:         ceil((@font-size-base * 1.189)); // ~18px
@@ -78,8 +89,11 @@
 @line-height-computed:    floor((@font-size-base * @line-height-base)); // ~20px
 
 //** By default, this inherits from the `<body>`.
-@headings-font-family:    inherit;
-@headings-font-weight:    500;
+@headings-font-family:    "PT Sans Caption", sans-serif;
+
+//@headings-font-family:    "IM Fell DW Pica", serif; // Halloween
+
+@headings-font-weight:    400;
 @headings-line-height:    1.1;
 @headings-color:          inherit;
 
@@ -170,7 +184,7 @@
 @btn-success-border:             darken(@btn-success-bg, 5%);
 
 @btn-info-color:                 #fff;
-@btn-info-bg:                    lighten(@brand-info, 30%);
+@btn-info-bg:                    @brand-info;
 @btn-info-border:                darken(@btn-info-bg, 5%);
 
 @btn-warning-color:              #fff;
@@ -504,19 +518,19 @@
 //## Define colors for form feedback states and, by default, alerts.
 
 @state-success-text:             darken(@brand-success, 70%);
-@state-success-bg:               lighten(@brand-success, 30%);
+@state-success-bg:               lighten(@brand-success, 40%);
 @state-success-border:           darken(spin(@state-success-bg, -10), 5%);
 
-@state-info-text:                @brand-primary;
-@state-info-bg:                  lighten(@brand-primary, 70%);
+@state-info-text:                darken(@brand-info, 70%);
+@state-info-bg:                  lighten(@brand-info, 32%);
 @state-info-border:              darken(spin(@state-info-bg, -10), 7%);
 
-@state-warning-text:             darken(@brand-info, 70%);
-@state-warning-bg:               lighten(@brand-info, 70%);
+@state-warning-text:             darken(@brand-warning, 70%);
+@state-warning-bg:               lighten(@brand-warning, 10%);
 @state-warning-border:           darken(spin(@state-warning-bg, -10), 5%);
 
-@state-danger-text:              darken(@brand-warning, 70%);
-@state-danger-bg:                lighten(@brand-warning, 70%);
+@state-danger-text:              darken(@brand-danger, 70%);
+@state-danger-bg:                lighten(@brand-danger, 10%);
 @state-danger-border:            darken(spin(@state-danger-bg, -10), 5%);
 
 
@@ -842,8 +856,8 @@
 @kbd-color:                   #fff;
 @kbd-bg:                      #333;
 
-@pre-bg:                      #f5f5f5;
-@pre-color:                   @gray-dark;
+@pre-bg:                      lighten(@brand-yellow, 28%);
+@pre-color:                   @gray-base;
 @pre-border-color:            #ccc;
 @pre-scrollable-max-height:   340px;
 
@@ -863,7 +877,7 @@
 //** Blockquote small color
 @blockquote-small-color:      @gray-light;
 //** Blockquote font size
-@blockquote-font-size:        (@font-size-base * 1.25);
+@blockquote-font-size:        (@font-size-base * 1.189);
 //** Blockquote border color
 @blockquote-border-color:     @gray-lighter;
 //** Page header border color
