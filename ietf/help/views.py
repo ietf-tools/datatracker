@@ -25,12 +25,9 @@ def state_index(request):
 
 def state(request, doc, type=None):
     if type:
-        debug.show('type')
         streams = [ s.slug for s in StreamName.objects.all() ]
-        debug.show('streams')
         if type in streams:
             type = "stream-%s" % type
-        debug.show('type')
     slug = "%s-%s" % (doc,type) if type else doc
     statetype = get_object_or_404(StateType, slug=slug)
     states = State.objects.filter(used=True, type=statetype).order_by('order')
