@@ -34,17 +34,17 @@
 
 import datetime
 import hashlib
-import json
+#import json
 
 from django.conf import settings
 from django.template import RequestContext
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.http import Http404  #, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
-from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
+#from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
-from django.utils.http import urlquote
-from django.utils.translation import ugettext as _
+#from django.contrib.auth.models import User
+#from django.utils.http import urlquote
+#from django.utils.translation import ugettext as _
 from django.core.exceptions import ValidationError
 
 from ietf.group.models import Role
@@ -54,32 +54,32 @@ from ietf.person.models import Person, Email
 def index(request):
     return render_to_response('registration/index.html', context_instance=RequestContext(request))
 
-def url_login(request, user, passwd):
-    user = authenticate(username=user, password=passwd)
-    redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
-    if user is not None:
-        if user.is_active:
-            login(request, user)
-            return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
-    return HttpResponse("Not authenticated?", status=500)
+# def url_login(request, user, passwd):
+#     user = authenticate(username=user, password=passwd)
+#     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
+#     if user is not None:
+#         if user.is_active:
+#             login(request, user)
+#             return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
+#     return HttpResponse("Not authenticated?", status=500)
 
-@login_required
-def ietf_login(request):
-    if not request.user.is_authenticated():
-        return HttpResponse("Not authenticated?", status=500)
+# @login_required
+# def ietf_login(request):
+#     if not request.user.is_authenticated():
+#         return HttpResponse("Not authenticated?", status=500)
+# 
+#     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
+#     request.session.set_test_cookie()
+#     return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
 
-    redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
-    request.session.set_test_cookie()
-    return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
-
-def ietf_loggedin(request):
-    if not request.session.test_cookie_worked():
-        return HttpResponse("You need to enable cookies")
-    request.session.delete_test_cookie()
-    redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
-    if not redirect_to or '//' in redirect_to or ' ' in redirect_to:
-        redirect_to = settings.LOGIN_REDIRECT_URL
-    return HttpResponseRedirect(redirect_to)
+# def ietf_loggedin(request):
+#     if not request.session.test_cookie_worked():
+#         return HttpResponse("You need to enable cookies")
+#     request.session.delete_test_cookie()
+#     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
+#     if not redirect_to or '//' in redirect_to or ' ' in redirect_to:
+#         redirect_to = settings.LOGIN_REDIRECT_URL
+#     return HttpResponseRedirect(redirect_to)
 
 @login_required
 def profile(request):
@@ -222,12 +222,12 @@ def confirm_password_reset(request, username, date, realm, hash):
                                'username': username},
                               context_instance=RequestContext(request))
 
-def ajax_check_username(request):
-    username = request.GET.get('username', '')
-    error = False
-    if User.objects.filter(username=username).count():
-        error = _('This email address is already registered')
-    return HttpResponse(json.dumps({'error': error}), content_type='text/plain')
+# def ajax_check_username(request):
+#     username = request.GET.get('username', '')
+#     error = False
+#     if User.objects.filter(username=username).count():
+#         error = _('This email address is already registered')
+#     return HttpResponse(json.dumps({'error': error}), content_type='text/plain')
     
 def test_email(request):
     """Set email address to which email generated in the system will be sent."""
