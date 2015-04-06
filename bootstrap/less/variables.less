@@ -33,7 +33,8 @@
 @brand-success:         darken(@brand-green, 20%);	// green
 @brand-info:            darken(@brand-yellow, 10%);	// yellow
 @brand-warning:         @brand-orange;			// orange
-@brand-danger:          @brand-red;			// red
+//@brand-danger:          darken(saturate(@brand-orange, 60%), 10%);
+@brand-danger:		darken(saturate(@brand-red, 20%), 8%); // red
 
 
 //== Scaffolding
@@ -530,7 +531,7 @@
 @state-warning-border:           darken(spin(@state-warning-bg, -10), 5%);
 
 @state-danger-text:              darken(@brand-danger, 70%);
-@state-danger-bg:                lighten(@brand-danger, 10%);
+@state-danger-bg:                lighten(saturate(@brand-danger, 50%), 20%);
 @state-danger-border:            darken(spin(@state-danger-bg, -10), 5%);
 
 
