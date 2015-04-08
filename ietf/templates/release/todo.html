@@ -1,4 +1,4 @@
-{% extends "ietf.html" %}
+{% extends "base.html" %}
 
 {% block title %}About the Datatracker{% endblock %}
 
@@ -22,14 +22,14 @@
 		  one, and change font families if it looks reasonable</li>
 	       <li><strong>DONE</strong> &nbsp; Align the use of info and warning background colours with the info and
 		  warning button colours</li>
-	       <li><strong>DONE</strong>  Add an 'About' page which gives credit to those working on the facelift.</li>
+	       <li><strong>DONE</strong> &nbsp; Add an 'About' page which gives credit to those working on the facelift.</li>
 	       <li><strong>DONE</strong> &nbsp; Fix style consistency in WG metadata table vs. document
 		  metadata table (DONE for drafts)</li>
+	       <li><strong>DONE</strong> &nbsp; Rename the base template back to 'base.html' from 'ietf.html' now that
+		  all templates using the old base have been fixed</li>
 	       <hr/>
 	       <!-- Remaining -->
 	       <li>Fix the missing IPR values on search and group pages.</li>
-	       <li>Rename the base template back to 'base.html' from 'ietf.html' now that
-		  all templates using the old base have been fixed</li>
 	       <li>Fix style consistency in WG doc list vs. release list, and more</li>
 	       <li>On tablets, the ballot grids has a 'click to show more' which has a
 		  z-value larger than the pop-up.  This only matters because it doesn't go
