@@ -1086,7 +1086,7 @@ html {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 body {
-  font-family: "PT Serif", serif;
+  font-family: "PT Serif", "Palatino", "Neue Swift", serif;
   font-size: 15px;
   line-height: 1.42857143;
   color: #222;
@@ -1101,12 +1101,12 @@ textarea {
   line-height: inherit;
 }
 a {
-  color: #4526c9;
+  color: #3d22b3;
   text-decoration: none;
 }
 a:hover,
 a:focus {
-  color: #2f1a88;
+  color: #271673;
   text-decoration: underline;
 }
 a:focus {
@@ -1526,7 +1526,7 @@ code,
 kbd,
 pre,
 samp {
-  font-family: "PT Mono", Menlo, Monaco, Consolas, monospace;
+  font-family: "PT Mono", Monaco, monospace;
 }
 code {
   padding: 2px 4px;
@@ -3315,7 +3315,7 @@ fieldset[disabled] .btn-danger.active {
 }
 .btn-link {
   font-weight: normal;
-  color: #4526c9;
+  color: #3d22b3;
   border-radius: 0;
 }
 .btn-link,
@@ -3335,7 +3335,7 @@ fieldset[disabled] .btn-link {
 }
 .btn-link:hover,
 .btn-link:focus {
-  color: #2f1a88;
+  color: #271673;
   text-decoration: underline;
   background-color: transparent;
 }
@@ -3483,7 +3483,7 @@ tbody.collapse.in {
 .dropdown-menu > .active > a:focus {
   color: #fff;
   text-decoration: none;
-  background-color: #2c254a;
+  background-color: #54478e;
   outline: 0;
 }
 .dropdown-menu > .disabled > a,
@@ -3910,7 +3910,7 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 .nav .open > a:hover,
 .nav .open > a:focus {
   background-color: #eee;
-  border-color: #4526c9;
+  border-color: #3d22b3;
 }
 .nav .nav-divider {
   height: 1px;
@@ -4003,7 +4003,7 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 .nav-pills > li.active > a:hover,
 .nav-pills > li.active > a:focus {
   color: #fff;
-  background-color: #2c254a;
+  background-color: #54478e;
 }
 .nav-stacked > li {
   float: none;
@@ -4630,7 +4630,7 @@ fieldset[disabled] .navbar-inverse .btn-link:focus {
   padding: 6px 12px;
   margin-left: -1px;
   line-height: 1.42857143;
-  color: #4526c9;
+  color: #3d22b3;
   text-decoration: none;
   background-color: #fff;
   border: 1px solid #ddd;
@@ -4650,7 +4650,7 @@ fieldset[disabled] .navbar-inverse .btn-link:focus {
 .pagination > li > span:hover,
 .pagination > li > a:focus,
 .pagination > li > span:focus {
-  color: #2f1a88;
+  color: #271673;
   background-color: #eee;
   border-color: #ddd;
 }
@@ -4663,7 +4663,7 @@ fieldset[disabled] .navbar-inverse .btn-link:focus {
   z-index: 2;
   color: #fff;
   cursor: default;
-  background-color: #2c254a;
+  background-color: #54478e;
   border-color: #2c254a;
 }
 .pagination > .disabled > span,
@@ -4778,11 +4778,11 @@ a.label:focus {
   background-color: #5e5e5e;
 }
 .label-primary {
-  background-color: #2c254a;
+  background-color: #54478e;
 }
 .label-primary[href]:hover,
 .label-primary[href]:focus {
-  background-color: #181428;
+  background-color: #40366c;
 }
 .label-success {
   background-color: #3abf03;
@@ -4846,7 +4846,7 @@ a.badge:focus {
 }
 .list-group-item.active > .badge,
 .nav-pills > .active > a > .badge {
-  color: #4526c9;
+  color: #3d22b3;
   background-color: #fff;
 }
 .list-group-item > .badge {
@@ -4917,14 +4917,14 @@ a.badge:focus {
 a.thumbnail:hover,
 a.thumbnail:focus,
 a.thumbnail.active {
-  border-color: #4526c9;
+  border-color: #3d22b3;
 }
 .thumbnail .caption {
   padding: 9px;
   color: #222;
 }
 .alert {
-  padding: 15px;
+  padding: 8px;
   margin-bottom: 21px;
   border: 1px solid transparent;
   border-radius: 4px;
@@ -4945,7 +4945,7 @@ a.thumbnail.active {
 }
 .alert-dismissable,
 .alert-dismissible {
-  padding-right: 35px;
+  padding-right: 28px;
 }
 .alert-dismissable .close,
 .alert-dismissible .close {
@@ -5192,8 +5192,8 @@ a.list-group-item:focus {
 .list-group-item.active:focus {
   z-index: 2;
   color: #fff;
-  background-color: #2c254a;
-  border-color: #2c254a;
+  background-color: #54478e;
+  border-color: #54478e;
 }
 .list-group-item.active .list-group-item-heading,
 .list-group-item.active:hover .list-group-item-heading,
@@ -5209,7 +5209,7 @@ a.list-group-item:focus {
 .list-group-item.active .list-group-item-text,
 .list-group-item.active:hover .list-group-item-text,
 .list-group-item.active:focus .list-group-item-text {
-  color: #897dbe;
+  color: #c7c1e0;
 }
 .list-group-item-success {
   color: #000;
@@ -5847,7 +5847,7 @@ button.close {
   position: absolute;
   z-index: 1070;
   display: block;
-  font-family: "PT Serif", serif;
+  font-family: "PT Serif", "Palatino", "Neue Swift", serif;
   font-size: 13px;
   font-weight: normal;
   line-height: 1.4;
@@ -5877,10 +5877,10 @@ button.close {
 .tooltip-inner {
   max-width: 200px;
   padding: 3px 8px;
-  color: #fff;
+  color: #000;
   text-align: center;
   text-decoration: none;
-  background-color: #000;
+  background-color: #fdf7d8;
   border-radius: 4px;
 }
 .tooltip-arrow {
@@ -5895,56 +5895,56 @@ button.close {
   left: 50%;
   margin-left: -5px;
   border-width: 5px 5px 0;
-  border-top-color: #000;
+  border-top-color: #9c8307;
 }
 .tooltip.top-left .tooltip-arrow {
   right: 5px;
   bottom: 0;
   margin-bottom: -5px;
   border-width: 5px 5px 0;
-  border-top-color: #000;
+  border-top-color: #9c8307;
 }
 .tooltip.top-right .tooltip-arrow {
   bottom: 0;
   left: 5px;
   margin-bottom: -5px;
   border-width: 5px 5px 0;
-  border-top-color: #000;
+  border-top-color: #9c8307;
 }
 .tooltip.right .tooltip-arrow {
   top: 50%;
   left: 0;
   margin-top: -5px;
   border-width: 5px 5px 5px 0;
-  border-right-color: #000;
+  border-right-color: #9c8307;
 }
 .tooltip.left .tooltip-arrow {
   top: 50%;
   right: 0;
   margin-top: -5px;
   border-width: 5px 0 5px 5px;
-  border-left-color: #000;
+  border-left-color: #9c8307;
 }
 .tooltip.bottom .tooltip-arrow {
   top: 0;
   left: 50%;
   margin-left: -5px;
   border-width: 0 5px 5px;
-  border-bottom-color: #000;
+  border-bottom-color: #9c8307;
 }
 .tooltip.bottom-left .tooltip-arrow {
   top: 0;
   right: 5px;
   margin-top: -5px;
   border-width: 0 5px 5px;
-  border-bottom-color: #000;
+  border-bottom-color: #9c8307;
 }
 .tooltip.bottom-right .tooltip-arrow {
   top: 0;
   left: 5px;
   margin-top: -5px;
   border-width: 0 5px 5px;
-  border-bottom-color: #000;
+  border-bottom-color: #9c8307;
 }
 .popover {
   position: absolute;
@@ -5954,7 +5954,7 @@ button.close {
   display: none;
   max-width: 276px;
   padding: 1px;
-  font-family: "PT Serif", serif;
+  font-family: "PT Serif", "Palatino", "Neue Swift", serif;
   font-size: 15px;
   font-weight: normal;
   line-height: 1.42857143;

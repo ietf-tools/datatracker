@@ -47,7 +47,7 @@
 @text-color:            @gray-darker;
 
 //** Global textual link color.
-@link-color:            lighten(saturate(@brand-primary, 35%), 25%);
+@link-color:            lighten(saturate(@brand-primary, 35%), 20%);
 //** Link hover color set via `darken()` function.
 @link-hover-color:      darken(@link-color, 15%);
 //** Link hover decoration.
@@ -58,10 +58,10 @@
 //
 //## Font, line-height, and color for body text, headings, and more.
 
-@font-family-sans-serif:  "PT Sans", Helvetica, Arial, sans-serif;
-@font-family-serif:       "PT Serif", serif;
+@font-family-sans-serif:  "PT Sans", "Trebuchet", "Seravek", sans-serif;
+@font-family-serif:       "PT Serif", "Palatino", "Neue Swift", serif;
 //** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
-@font-family-monospace:   "PT Mono", Menlo, Monaco, Consolas, monospace;
+@font-family-monospace:   "PT Mono", Monaco, monospace;
 @font-family-base:        @font-family-serif;
 
 // Halloween
@@ -90,6 +90,7 @@
 @line-height-computed:    floor((@font-size-base * @line-height-base)); // ~20px
 
 //** By default, this inherits from the `<body>`.
+// 'Caption' faces are actually created for small point sizes, 6-8 pt, but this works well:
 @headings-font-family:    "PT Sans Caption", sans-serif;
 
 //@headings-font-family:    "IM Fell DW Pica", serif; // Halloween
@@ -137,7 +138,7 @@
 //** Global color for active items (e.g., navs or dropdowns).
 @component-active-color:    #fff;
 //** Global background color for active items (e.g., navs or dropdowns).
-@component-active-bg:       @brand-primary;
+@component-active-bg:       lighten(@brand-primary, 20%);
 
 //** Width of the `border` for generating carets that indicator dropdowns.
 @caret-width-base:          4px;
@@ -479,7 +480,7 @@
 @pagination-hover-border:              #ddd;
 
 @pagination-active-color:              #fff;
-@pagination-active-bg:                 @brand-primary;
+@pagination-active-bg:                 lighten(@brand-primary, 20%);
 @pagination-active-border:             @brand-primary;
 
 @pagination-disabled-color:            @gray-light;
@@ -542,15 +543,15 @@
 //** Tooltip max width
 @tooltip-max-width:           200px;
 //** Tooltip text color
-@tooltip-color:               #fff;
+@tooltip-color:               @state-info-text;
 //** Tooltip background color
-@tooltip-bg:                  #000;
+@tooltip-bg:                  @state-info-bg;
 @tooltip-opacity:             .9;
 
 //** Tooltip arrow width
 @tooltip-arrow-width:         5px;
 //** Tooltip arrow color
-@tooltip-arrow-color:         @tooltip-bg;
+@tooltip-arrow-color:         darken(@tooltip-bg, 60%);
 
 
 //== Popovers
@@ -589,7 +590,7 @@
 //** Default label background color
 @label-default-bg:            @gray-light;
 //** Primary label background color
-@label-primary-bg:            @brand-primary;
+@label-primary-bg:            lighten(@brand-primary, 20%);
 //** Success label background color
 @label-success-bg:            @brand-success;
 //** Info label background color
@@ -642,7 +643,7 @@
 //
 //## Define alert colors, border radius, and padding.
 
-@alert-padding:               15px;
+@alert-padding:               8px;
 @alert-border-radius:         @border-radius-base;
 @alert-link-font-weight:      bold;
 
