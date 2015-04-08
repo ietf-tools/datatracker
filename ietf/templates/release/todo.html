@@ -12,35 +12,46 @@
 
 	    <ul class="simple">
 	       <!-- Done -->
-	       <li><strong>DONE</strong>  Initial merge with trunk (on separate branch)</li>
-	       <li><strong>DONE</strong>  Re-style to make people recognise that they are at the datatracker</li>
-	       <li><strong>DONE</strong>  Use a designed colour palette rather than arbitrary element colours</li>
-	       <li><strong>DONE</strong>  The extra FontAwesome add-in seems to add glyphs already bundled in
+	       <li><strong>DONE</strong> &nbsp; Initial merge with trunk (on separate branch)</li>
+	       <li><strong>DONE</strong> &nbsp; Re-style to make people recognise that they are at the datatracker</li>
+	       <li><strong>DONE</strong> &nbsp; Use a designed colour palette rather than arbitrary element colours</li>
+	       <li><strong>DONE</strong> &nbsp; The extra FontAwesome add-in seems to add glyphs already bundled in
 		  glyphicons, which adds page load time and update complexity; see if we
 		  can reduce to only the bundled glyphs.  <em>Conclusion: not feasible</em></li>
-	       <li><strong>DONE</strong>  Have a look at using slightly more readable fonts than the current
+	       <li><strong>DONE</strong> &nbsp; Have a look at using slightly more readable fonts than the current
 		  one, and change font families if it looks reasonable</li>
-	       <li><strong>DONE</strong>  Align the use of info and warning background colours with the info and
+	       <li><strong>DONE</strong> &nbsp; Align the use of info and warning background colours with the info and
 		  warning button colours</li>
 	       <li><strong>DONE</strong>  Add an 'About' page which gives credit to those working on the facelift.</li>
+	       <li><strong>DONE</strong> &nbsp; Fix style consistency in WG metadata table vs. document
+		  metadata table (DONE for drafts)</li>
 	       <hr/>
 	       <!-- Remaining -->
+	       <li>Fix the missing IPR values on search and group pages.</li>
 	       <li>Rename the base template back to 'base.html' from 'ietf.html' now that
 		  all templates using the old base have been fixed</li>
-	       <li>Fix the missing IPR values on search and group pages.</li>
-	       <li>Fix style consistency, for instance in WG metadata table vs. document
-		  metadata table, WG doc list vs. release list, and more</li>
+	       <li>Fix style consistency in WG doc list vs. release list, and more</li>
+	       <li>On tablets, the ballot grids has a 'click to show more' which has a
+		  z-value larger than the pop-up.  This only matters because it doesn't go
+		  away on click on tablets.  Fix.</li>
+	       <li>The Responsible AD Column is also lacking values in the active WGs page.  Fix. </li>
+	       <li>Final merge to trunk</li>
+	    </ul>
+
+      </div>
+      <div class="section" id="undetermined">
+	 <h3>Can be done before or after release</h3>
+	    <ul>
 	       <li>The header colours on the meeting requests page have inverted colour
 		  logic compared to other list pages (info background for warnings, warning
 		  background for sub-headers).  Empty warning panes are shown.  Fix.</li>
 	       <li>The agenda page uses warning colours for day headers.  Fix.</li>
-	       <li>On tablets, the ballot grids has a 'click to show more' which has a
-		  z-value larger than the pop-up.  This only matters because it doesn't go
-		  away on click on tablets.  Fix.</li>
 	       <li>Replace buttons which are links with something which is recognisable
-		  as links, preferably in submenu form. (Could be done post-release).</li>
-	       <li>Final merge to trunk</li>
+		  as links, preferably in submenu form.</li>
+	       <li>The colouring of table rows for logged-in ADs, showing their own position,
+		  on <tt>/iesg/agenda/documents/</tt>, has been lost.  Fix.</li>
 	    </ul>
+	    
 
       </div>
       <div class="section" id="post-release">
