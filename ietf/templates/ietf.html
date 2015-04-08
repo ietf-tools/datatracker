@@ -6,7 +6,7 @@
     <title>{% block title %}No title{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link href='http://fonts.googleapis.com/css?family=PT+Serif+Caption|PT+Mono|PT+Serif:400,700,400italic,700italic|PT+Sans+Caption&subset=latin-ext' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=PT+Sans|PT+Mono|PT+Serif:400,700,400italic,700italic|PT+Sans+Caption&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
     <!-- Halloween
     <link href='http://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+DW+Pica:400,400italic|Nova+Mono|IM+Fell+English:400,400italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
     -->
@@ -38,7 +38,9 @@
 	    </button>
 	    <a class="navbar-brand" href="/">
 	       <img alt="IETF Logo" src="/images/ietflogo-blue3-small.png"></img>
+	       {% if not user.is_authenticated %}
 	       <div style="display: inline; vertical-align: top; padding-left: 1em;">Datatracker</div>
+	       {% endif %}
 	    </a>
 	  </div>
 
