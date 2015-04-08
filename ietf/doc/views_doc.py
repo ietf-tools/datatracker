@@ -107,6 +107,7 @@ def document_main(request, name, rev=None):
             revisions.append(h.rev)
     if not doc.rev in revisions:
         revisions.append(doc.rev)
+    latest_rev = doc.rev
 
     snapshot = False
 
@@ -340,6 +341,27 @@ def document_main(request, name, rev=None):
             except ObjectDoesNotExist:
                 pass
 
+        replaces = [d.name for d in doc.related_that_doc("replaces")]
+        replaced_by = [d.name for d in doc.related_that("replaces")]
+        published = doc.latest_event(type="published_rfc")
+        started_iesg_process = doc.latest_event(type="started_iesg_process")
+
+        # We'd like to group rows in the document information table, with a first row giving the
+        # group label.  This would be easy if all browsers supported the rowspan="0" (zero)
+        # semantics of the html standard, but only Firefox and Opera do, so we have to count
+        # how many entries there will be in each section here, instead.  Bah!
+        table_rows = dict(doc=5, stream=3, iesg=5, iana=3, rfced=2)
+        table_rows['doc'] += 1 if replaces or can_edit_stream_info else 0
+        table_rows['doc'] += 1 if replaced_by  else 0
+        table_rows['doc'] += 1 if doc.get_state_slug != "rfc" else 0
+        table_rows['doc'] += 1 if conflict_reviews else 0
+
+        table_rows['stream'] += 1 if consensus else 0
+        table_rows['stream'] += 1 if shepherd_writeup or can_edit_shepherd_writeup else 0
+        table_rows['stream'] += 1 if published and started_iesg_process and published.time < started_iesg_process.time else 0
+
+        table_rows['iesg'] += 1 if iesg_state and (doc.note or can_edit) else 0
+
         return render_to_response("doc/document_draft.html",
                                   dict(doc=doc,
                                        group=group,
@@ -350,6 +372,9 @@ def document_main(request, name, rev=None):
                                        revisions=revisions,
                                        snapshot=snapshot,
                                        latest_revision=latest_revision,
+                                       latest_rev=latest_rev,
+
+                                       table_rows=table_rows,
 
                                        can_edit=can_edit,
                                        can_change_stream=can_change_stream,
@@ -367,8 +392,8 @@ def document_main(request, name, rev=None):
                                        submission=submission,
                                        resurrected_by=resurrected_by,
 
-                                       replaces=[d.name for d in doc.related_that_doc("replaces")],
-                                       replaced_by=[d.name for d in doc.related_that("replaces")],
+                                       replaces=replaces,
+                                       replaced_by=replaced_by,
                                        updates=[prettify_std_name(d.name) for d in doc.related_that_doc("updates")],
                                        updated_by=[prettify_std_name(d.document.canonical_name()) for d in doc.related_that("updates")],
                                        obsoletes=[prettify_std_name(d.name) for d in doc.related_that_doc("obs")],
@@ -378,7 +403,7 @@ def document_main(request, name, rev=None):
                                        proposed_status_changes=proposed_status_changes,
                                        rfc_aliases=rfc_aliases,
                                        has_errata=doc.tags.filter(slug="errata"),
-                                       published=doc.latest_event(type="published_rfc"),
+                                       published=published,
                                        file_urls=file_urls,
                                        stream_state_type_slug=stream_state_type_slug,
                                        stream_state=stream_state,
@@ -390,7 +415,7 @@ def document_main(request, name, rev=None):
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
-                                       started_iesg_process=doc.latest_event(type="started_iesg_process"),
+                                       started_iesg_process=started_iesg_process,
                                        shepherd_writeup=shepherd_writeup,
                                        search_archive=search_archive,
                                        actions=actions,
@@ -420,6 +445,8 @@ def document_main(request, name, rev=None):
 
         can_manage = can_manage_group_type(request.user, doc.group.type_id)
 
+        table_rows = dict(doc=5, wg=2, iesg=3)
+
         return render_to_response("doc/document_charter.html",
                                   dict(doc=doc,
                                        top=top,
@@ -427,12 +454,14 @@ def document_main(request, name, rev=None):
                                        content=content,
                                        txt_url=doc.href(),
                                        revisions=revisions,
+                                       latest_rev=latest_rev,
                                        snapshot=snapshot,
                                        telechat=telechat,
                                        ballot_summary=ballot_summary,
                                        group=group,
                                        milestones=milestones,
                                        can_manage=can_manage,
+                                       table_rows=table_rows,
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -450,16 +479,21 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() in ("iesgeval"):
             ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
 
+        table_rows = dict(doc=4, wg=2, iesg=3)
+        table_rows['iesg'] += 1 if not snapshot else 0
+
         return render_to_response("doc/document_conflict_review.html",
                                   dict(doc=doc,
                                        top=top,
                                        content=content,
                                        revisions=revisions,
+                                       latest_rev=latest_rev,
                                        snapshot=snapshot,
                                        telechat=telechat,
                                        conflictdoc=conflictdoc,
                                        ballot_summary=ballot_summary,
-                                       approved_states=('appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent')
+                                       approved_states=('appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent'),
+                                       table_rows=table_rows,
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -484,16 +518,21 @@ def document_main(request, name, rev=None):
         else:
             sorted_relations=None
 
+        table_rows = dict(doc=5, wg=2, iesg=3)
+        table_rows['iesg'] += sorted_relations.count() if sorted_relations else 0
+
         return render_to_response("doc/document_status_change.html",
                                   dict(doc=doc,
                                        top=top,
                                        content=content,
                                        revisions=revisions,
+                                       latest_rev=latest_rev,
                                        snapshot=snapshot,
                                        telechat=telechat,
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-pend','appr-sent'),
                                        sorted_relations=sorted_relations,
+                                       table_rows=table_rows,
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -536,6 +575,7 @@ def document_main(request, name, rev=None):
                                        top=top,
                                        content=content,
                                        revisions=revisions,
+                                       latest_rev=latest_rev,
                                        snapshot=snapshot,
                                        can_manage_material=can_manage_material,
                                        other_types=other_types,
@@ -544,6 +584,11 @@ def document_main(request, name, rev=None):
                                   context_instance=RequestContext(request))
 
     raise Http404
+
+
+
+
+
 
 
 def document_history(request, name):

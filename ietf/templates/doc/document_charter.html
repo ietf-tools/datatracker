@@ -13,111 +13,142 @@
 
   {% include "doc/revisions_list.html" %}
 
-  <table class="table table-condensed table-striped">
-    <tr>
-      <th>
-        {% if doc.get_state_slug != "approved" %}
-          Proposed charter
-        {% else %}
-          Charter
-        {% endif %}
-      </th>
-      <td class="edit"></td>
-      <td>
-        {{ group.name }} {{ group.type.name }}
-        <a href="{{ group.about_url }}">({{ group.acronym }})</a>
+  <table class="table table-condensed">
+    <thead id="message-row">
+       <tr>
+	  {% if doc.rev != latest_rev %}
+	  <th colspan="4" class="alert-warning">&nbsp;The information below is for an old version of the document</th>
+	  {% else %}
+	  <th colspan="4">&nbsp;</th>
+	  {% endif %}  
+       </tr>
+    </thead>
 
-        {% if snapshot %}
-          <span class="label label-warning">Snapshot</span>
-        {% endif %}
-      </td>
-    </tr>
-
-    <tr>
-      <th>Title</th>
-      <td class="edit">
-        {% if not snapshot and can_manage %}
-          {% doc_edit_button "charter_change_title" name=doc.name %}
-        {% endif %}
-      </td>
-      <td>{{ doc.title }}</td>
-    </tr>
-
-    
-    <tr>
-      <th>WG state</th>
-      <td class="edit"></td>
-      <td>{{ group.state.name }}</td>
-    </tr>
-    <tr>
-      <th><a href="/doc/help/state/charter/">Charter state</a></th>
-      <td class="edit">
-        {% if not snapshot and can_manage %}
-          {% doc_edit_button "charter_change_state" name=doc.name %}
-        {% endif %}
-      </td>
-      <td>
-        <span title="{{ doc.get_state.desc }}">{{ doc.get_state.name }}</span>
-
-        {% if chartering == "initial" %}
-          <span class="label label-info">Initial chartering</span>
-        {% endif %}
-        {% if chartering == "rechartering" %}
-          <span class="label label-info">Rechartering</span>
-        {% endif %}
-      </td>
-    </tr>
-
-    {% if not snapshot and chartering %}
+    <tbody>
       <tr>
-        <th>Telechat date</th>
-        <td class="edit">
-          {% if can_manage %}
-            {% doc_edit_button "charter_telechat_date" name=doc.name %}
-          {% endif %}
-        </td>
-        <td>
-          {% if not telechat %}
-            (None)
-          {% else %}
-            On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat
-          {% endif %}
+	 <th rowspan="{{table_rows.doc}}">Document</th>
+      </tr>
 
-          {% if ballot_summary %}
-            <br><i>{{ ballot_summary }}</i>
-          {% endif %}
-        </td>
-    {% endif %}
+      <tr>
+	<th>
+	  {% if doc.get_state_slug != "approved" %}
+	    Proposed charter
+	  {% else %}
+	    Charter
+	  {% endif %}
+	</th>
+	<td class="edit"></td>
+	<td>
+	  {{ group.name }} {{ group.type.name }}
+	  <a href="{{ group.about_url }}">({{ group.acronym }})</a>
 
-    <tr>
-      <th>Responsible AD</th>
-      <td class="edit">
-        {% if can_manage %}
-          {% doc_edit_button "charter_edit_ad" name=doc.name %}
-        {% endif %}
-      </td>
-      <td>
-        {{ doc.ad|default:"(None)" }}
-      </td>
-    </tr>
+	  {% if snapshot %}
+	    <span class="label label-warning">Snapshot</span>
+	  {% endif %}
+	</td>
+      </tr>
 
-    <tr>
-      <th>Send notices to</th>
-      <td class="edit">
-        {% if can_manage %}
-          {% doc_edit_button "charter_edit_notify" name=doc.name %}
-        {% endif %}
-      </td>
-      <td>
-        {{ doc.notify|default:"(None)" }}
-      </td>
-    </tr>
+      <tr>
+	<th>Title</th>
+	<td class="edit">
+	  {% if not snapshot and can_manage %}
+	    {% doc_edit_button "charter_change_title" name=doc.name %}
+	  {% endif %}
+	</td>
+	<td>{{ doc.title }}</td>
+      </tr>
 
-    <tr>
-      <th>Last updated</th>
-      <td class="edit"></td>
-      <td>{{ doc.time|date:"Y-m-d" }}</td>
-    </tr>
+      <tr>
+	<th>Last updated</th>
+	<td class="edit"></td>
+	<td>{{ doc.time|date:"Y-m-d" }}</td>
+      </tr>
+
+      <tr>
+	<th><a href="/doc/help/state/charter/">State</a></th>
+	<td class="edit">
+	  {% if not snapshot and can_manage %}
+	    {% doc_edit_button "charter_change_state" name=doc.name %}
+	  {% endif %}
+	</td>
+	<td>
+	  <span title="{{ doc.get_state.desc }}">{{ doc.get_state.name }}</span>
+
+	  {% if chartering == "initial" %}
+	    <span class="label label-info">Initial chartering</span>
+	  {% endif %}
+	  {% if chartering == "rechartering" %}
+	    <span class="label label-info">Rechartering</span>
+	  {% endif %}
+	</td>
+      </tr>
+
+    </tbody>
+    <tbody>
+
+      <tr>
+	 <th rowspan="{{table_rows.wg}}">WG</th>
+      </tr>
+
+      <tr>
+	<th>State</th>
+	<td class="edit"></td>
+	<td>{{ group.state.name }}</td>
+      </tr>
+
+    </tbody>
+    <tbody>
+
+      <tr>
+	 <th rowspan="{{table_rows.iesg}}">IESG</th>
+      </tr>
+
+      {% if not snapshot and chartering %}
+	<tr>
+	  <th>Telechat date</th>
+	  <td class="edit">
+	    {% if can_manage %}
+	      {% doc_edit_button "charter_telechat_date" name=doc.name %}
+	    {% endif %}
+	  </td>
+	  <td>
+	    {% if not telechat %}
+	      (None)
+	    {% else %}
+	      On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat
+	    {% endif %}
+
+	    {% if ballot_summary %}
+	      <br><i>{{ ballot_summary }}</i>
+	    {% endif %}
+	  </td>
+      {% endif %}
+
+      <tr>
+	<th>Responsible AD</th>
+	<td class="edit">
+	  {% if can_manage %}
+	    {% doc_edit_button "charter_edit_ad" name=doc.name %}
+	  {% endif %}
+	</td>
+	<td>
+	  {{ doc.ad|default:"(None)" }}
+	</td>
+      </tr>
+
+      <tr>
+	<th>Send notices to</th>
+	<td class="edit">
+	  {% if can_manage %}
+	    {% doc_edit_button "charter_edit_notify" name=doc.name %}
+	  {% endif %}
+	</td>
+	<td>
+	  {{ doc.notify|default:"(None)" }}
+	</td>
+      </tr>
+
+    </tbody>
   </table>
 
   <p class="buttonlist">

@@ -66,12 +66,27 @@ body { padding-top: 70px; }
 /* Style the left menu */
 .nav-header { font-weight: bold; padding-bottom: 2px;}
 .nav-header:not(:first-child) { padding: 10px 0 2px 0 }
-.nav-stacked>li, .nav-stacked>li+li { margin: 0; line-height: 1.214; }
-.nav-stacked>li>a { padding: 2px 8px; }
-.leftmenu {
-  max-width: 200px;
+
+.navbar {
+  font-family: "PT Sans Caption", "Trebuchet", "Seravek", sans-serif;
 }
-.leftmenu .nav { overflow-wrap: break-word }
+
+.nav-stacked>li, .nav-stacked>li+li { margin: 0; line-height: 1.214; }
+.nav-stacked>li>a { padding: 0.125em 0.5em; }
+
+.leftmenu {
+  max-width: 195px;
+  font-family: "PT Sans Caption", "Trebuchet", "Seravek", sans-serif;
+  font-size: 0.917em;
+}
+.leftmenu .nav {
+  overflow-wrap: break-word
+}
+
+.navbar-brand > img {
+  display: inline;
+  margin-top: -7px;
+}
 
 /* Hack to make anchor-targets take up a bit more space vertically
  to work around the position fixed navbar which otherwise covers them */
@@ -80,13 +95,13 @@ body { padding-top: 70px; }
   display: block;
   position: relative;
   width: 0;
-  height: 50px;
-  margin-top: -50px;
+  height: 65px;
+  margin-top: -65px;
 }
 
 /* Style navbar buttons */
-.navbar-btn { color:#777; }
-.navbar-btn:hover { color: #333; }
+/* .navbar-btn { color:#777; } */
+/* .navbar-btn:hover { color: #333; } */
 
 /* Make the panel title font normally large */
 .panel-title { font-size: 14px }
@@ -188,15 +203,6 @@ ampersand you get is dependent on which fonts are available in the browser.  Hac
 	visibility: hidden !important;
 }
 .visible-nojs { display: block !important; }
-
-.navbar {
-  font-family: "PT Sans Caption", "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-.navbar-brand > img {
-  display: inline;
-  margin-top: -7px;
-}
 
 /* Development Mode tool bar */
 
@@ -310,4 +316,24 @@ form.add-email textarea {
 
 table.materials .snippable {
   width: 25em;
+}
+
+.revlist {
+  font-family: "PT Sans Caption", "Trebuchet", "Seravek", sans-serif;
+  font-size: 0.7071em;
+}
+.pagination.revlist {
+  margin: 1em 0 0.5em 0;
+}
+.pagination.revlist>li>a, .pagination.revlist>li>a:hover, .pagination.revlist>li>a:active {
+  padding: 4px 8px;
+}
+.revlist>li.warning>a, .revlist>li.warning>a:hover, .revlist>li.warning>a:active {
+  background-color: #f9c0a4;	/* warning colour */
+}
+
+/* This is for the <thead> of document meta-information tables, which can either be empty or hold an alert-warning */
+
+#message-row tr th  {
+  padding: 0.2em 0.5em;
 }

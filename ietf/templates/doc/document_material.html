@@ -9,7 +9,17 @@
 
   {% include "doc/revisions_list.html" %}
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-condensed">
+    <thead id="message-row">
+       <tr>
+	  {% if doc.rev != latest_rev %}
+	  <th colspan="4" class="alert-warning">&nbsp;The information below is for an old version of the document</th>
+	  {% else %}
+	  <th colspan="4">&nbsp;</th>
+	  {% endif %}  
+       </tr>
+    </thead>
+
     <tr>
       <th>{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}</th>
       <td class="edit"></td>

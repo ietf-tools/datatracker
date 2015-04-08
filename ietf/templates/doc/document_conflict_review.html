@@ -9,92 +9,115 @@
 
   {% include "doc/revisions_list.html" %}
 
-  <table class="table table-condensed table-striped">
-    <tr>
-      <th>
-        {% if doc.get_state_slug not in approved_states %}
-          Proposed conflict review
-        {% else %}
-          Conflict review
-        {% endif %}
-      </th>
-      <td class="edit"></td>
-      <td>
-        <a href="{% url "doc_view" name=conflictdoc.canonical_name %}">
-	  {{ conflictdoc.canonical_name }}{% if conflictdoc.get_state_slug != 'rfc' %}-{{ conflictdoc.rev }}{% endif %}
-        </a>
-        <span class="label label-info">{{conflictdoc.stream}} stream</span>
+  <table class="table table-condensed">
+    <thead id="message-row">
+       <tr>
+	  {% if doc.rev != latest_rev %}
+	  <th colspan="4" class="alert-warning">&nbsp;The information below is for an old version of the document</th>
+	  {% else %}
+	  <th colspan="4">&nbsp;</th>
+	  {% endif %}  
+       </tr>
+    </thead>
 
-        {% if snapshot %}
-          <span class="label label-warning">Snapshot</span>
-        {% endif %}
-      </td>
-    </tr>
-
-    <tr>
-      <th><a href="/doc/help/state/conflict-review/">Conflict review state</a></th>
-      <td class="edit">
-        {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
-          <a title="{{ doc.get_state.desc }}" class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_change_state" name=doc.name %}">Edit</a>
-        {% endif %}
-      </td>
-      <td>
-        {{ doc.get_state.name }}
-      </td>
-    </tr>
-
-    {% if not snapshot %}
+    <tbody>
       <tr>
-        <th>Telechat date</th>
-        <td class="edit">
-          {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-            <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_telechat_date" name=doc.name %}">Edit</a>
-          {% endif %}
-        </td>
-        <td>
-          {% if not telechat %}
-            (None)
-          {% else %}
-            On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat
-            {% if doc.returning_item %} (returning item){% endif %}
-          {% endif %}
-
-          {% if ballot_summary %}
-            <br><i>{{ ballot_summary }}</i>
-          {% endif %}
-        </td>
+	 <th rowspan="{{table_rows.doc}}">Document</th>
       </tr>
-    {% endif %}
 
-    <tr>
-      <th>Shepherding AD</th>
-      <td class="edit">
-        {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-          <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_ad" name=doc.name %}">Edit</a>
-        {% endif %}
-      </td>
-      <td>
-        {{doc.ad}}
-      </td>
-    </tr>
+      <tr>
+	<th>
+	  {% if doc.get_state_slug not in approved_states %}
+	    Proposed conflict review
+	  {% else %}
+	    Conflict review
+	  {% endif %}
+	</th>
+	<td class="edit"></td>
+	<td>
+	  <a href="{% url "doc_view" name=conflictdoc.canonical_name %}">
+	    {{ conflictdoc.canonical_name }}{% if conflictdoc.get_state_slug != 'rfc' %}-{{ conflictdoc.rev }}{% endif %}
+	  </a>
+	  <span class="label label-info">{{conflictdoc.stream}} stream</span>
 
-    <tr>
-      <th>Send notices to</th>
-      <td class="edit">
-        {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-          <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_notices" name=doc.name %}">Edit</a>
-        {% endif %}
-      </td>
-      <td>
-        {{doc.notify}}
-      </td>
-    </tr>
+	  {% if snapshot %}
+	    <span class="label label-warning">Snapshot</span>
+	  {% endif %}
+	</td>
+      </tr>
 
-    <tr>
-      <th>Last updated</th>
-      <td class="edit"></td>
-      <td>{{ doc.time|date:"Y-m-d" }}</td>
-    </tr>
+      <tr>
+	<th>Last updated</th>
+	<td class="edit"></td>
+	<td>{{ doc.time|date:"Y-m-d" }}</td>
+      </tr>
+
+      <tr>
+	<th><a href="/doc/help/state/conflict-review/">State</a></th>
+	<td class="edit">
+	  {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
+	    <a title="{{ doc.get_state.desc }}" class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_change_state" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{ doc.get_state.name }}
+	</td>
+      </tr>
+
+    </tbody>
+    </tbody>
+      <tr>
+	 <th rowspan="{{table_rows.iesg}}">IESG</th>
+      </tr>
+
+
+      {% if not snapshot %}
+	<tr>
+	  <th>Telechat date</th>
+	  <td class="edit">
+	    {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+	      <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_telechat_date" name=doc.name %}">Edit</a>
+	    {% endif %}
+	  </td>
+	  <td>
+	    {% if not telechat %}
+	      (None)
+	    {% else %}
+	      On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat
+	      {% if doc.returning_item %} (returning item){% endif %}
+	    {% endif %}
+
+	    {% if ballot_summary %}
+	      <br><i>{{ ballot_summary }}</i>
+	    {% endif %}
+	  </td>
+	</tr>
+      {% endif %}
+
+      <tr>
+	<th>Shepherding AD</th>
+	<td class="edit">
+	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+	    <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_ad" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{doc.ad}}
+	</td>
+      </tr>
+
+      <tr>
+	<th>Send notices to</th>
+	<td class="edit">
+	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+	    <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_notices" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{doc.notify}}
+	</td>
+      </tr>
+    </tbody>
   </table>
 
   <h2>Conflict review<br><small>{{ conflictdoc.name }}-{{ conflictdoc.rev }}</small></h2>

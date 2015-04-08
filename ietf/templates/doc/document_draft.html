@@ -18,308 +18,357 @@
 {% block content %}
   {{ top|safe }}
 
-  <table class="table table-condensed table-striped">
-    <tr>
-      <th>Document type</th>
-      <td class="edit"></td>
-      <td>
-        {% if doc.get_state_slug == "rfc" %}
-          RFC - {{ doc.std_level }}
-          ({% if published %}{{ published.time|date:"F Y" }}{% else %}publication date unknown{% endif %}{% if has_errata %}; <a href="//www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}" rel="nofollow">Errata</a>{% else %}; No errata{% endif %})
+  {% include "doc/revisions_list.html" %}
 
-          {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
-          {% if updated_by %}<div>Updated by {{ updated_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
-          {% if obsoletes %}<div>Obsoletes {{ obsoletes|join:", "|urlize_ietf_docs }}</div>{% endif %}
-          {% if updates %}<div>Updates {{ updates|join:", "|urlize_ietf_docs }}</div>{% endif %}
-          {% if status_changes %}<div>Status changed by {{ status_changes|join:", "|urlize_ietf_docs }}</div>{% endif %}
-          {% if proposed_status_changes %}<div>Proposed status changed by {{ proposed_status_changes|join:", "|urlize_ietf_docs }}</div>{% endif %}
-          {% if rfc_aliases %}<div>Also known as {{ rfc_aliases|join:", "|urlize_ietf_docs }}</div>{% endif %}
-          {% if draft_name %}<div>Was <a href="/doc/{{ draft_name}}/">{{ draft_name }}</a> {% if submission %}({{ submission|safe }}){% endif %}</div>{% endif %}
-        {% else %}
-          {{ doc.get_state }} Internet-Draft {% if submission %}({{ submission|safe }}){% endif %}
-          {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
-        {% endif %}
-      </td>
-    </tr>
+  <table class="table table-condensed">
+    <thead id="message-row">
+       <tr>
+	  {% if doc.rev != latest_rev %}
+	  <th colspan="4" class="alert-warning">&nbsp;The information below is for an old version of the document</th>
+	  {% else %}
+	  <th colspan="4">&nbsp;</th>
+	  {% endif %}  
+       </tr>
+    </thead>
 
-    {% if replaces or can_edit_stream_info %}
+    <tbody>
       <tr>
-        <th>Replaces</th>
-        <td class="edit">
-          {% if can_edit_stream_info %}
-            <a class="btn btn-default btn-xs" href="{% url "doc_change_replaces" name=doc.name %}">Edit</a>
-          {% endif %}
-        </td>
-        <td>
-          {{ replaces|join:", "|urlize_ietf_docs|default:"(None)" }}
-        </td>
+	 <th rowspan="{{table_rows.doc}}">Document</th>
       </tr>
-    {% endif %}
 
-    {% if replaced_by %}
       <tr>
-        <th>Replaced by</th>
-        <td class="edit"></td>
-        <td>
-          {{ replaced_by|join:", "|urlize_ietf_docs }}
-        </td>
+	<th>Type</th>
+	<td class="edit"></td>
+	<td>
+	  {% if doc.get_state_slug == "rfc" %}
+	    RFC - {{ doc.std_level }}
+	    ({% if published %}{{ published.time|date:"F Y" }}{% else %}publication date unknown{% endif %}{% if has_errata %}; <a href="//www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}" rel="nofollow">Errata</a>{% else %}; No errata{% endif %})
+
+	    {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
+	    {% if updated_by %}<div>Updated by {{ updated_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
+	    {% if obsoletes %}<div>Obsoletes {{ obsoletes|join:", "|urlize_ietf_docs }}</div>{% endif %}
+	    {% if updates %}<div>Updates {{ updates|join:", "|urlize_ietf_docs }}</div>{% endif %}
+	    {% if status_changes %}<div>Status changed by {{ status_changes|join:", "|urlize_ietf_docs }}</div>{% endif %}
+	    {% if proposed_status_changes %}<div>Proposed status changed by {{ proposed_status_changes|join:", "|urlize_ietf_docs }}</div>{% endif %}
+	    {% if rfc_aliases %}<div>Also known as {{ rfc_aliases|join:", "|urlize_ietf_docs }}</div>{% endif %}
+	    {% if draft_name %}<div>Was <a href="/doc/{{ draft_name}}/">{{ draft_name }}</a> {% if submission %}({{ submission|safe }}){% endif %}</div>{% endif %}
+	  {% else %}
+	    {{ doc.get_state }} Internet-Draft {% if submission %}({{ submission|safe }}){% endif %}
+	    {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
+	  {% endif %}
+	</td>
       </tr>
-    {% endif %}
 
-    <tr>
-      <th>Document stream</th>
-      <td class="edit">
-        {% if can_change_stream %}
-          <a class="btn btn-default btn-xs" href="{% url "doc_change_stream" name=doc.name %}">Edit</a>
-        {% endif %}
-      </td>
-      <td>
-        {{ doc.stream|default:"(None)" }}
-      </td>
-    </tr>
-
-    <tr>
-      <th>Last updated</th>
-      <td class="edit"></td>
-      <td>
-        {{ doc.time|date:"Y-m-d" }}
-        {% if latest_revision and latest_revision.time.date != doc.time.date %}
-          (latest revision {{ latest_revision.time|date:"Y-m-d" }})
-        {% endif %}
-      </td>
-    </tr>
-
-    {% if doc.get_state_slug != "rfc" %}
       <tr>
-        <th>Intended RFC status</th>
-        <td class="edit">
-          {% if can_edit or can_edit_stream_info %}
-            <a class="btn btn-default btn-xs" href="{% url "doc_change_intended_status" name=doc.name %}">Edit</a>
-          {% endif %}
-        </td>
-        <td>
-          {{ doc.intended_std_level|default:"(None)" }}
-        </td>
+	<th>Last updated</th>
+	<td class="edit"></td>
+	<td>
+	  {{ doc.time|date:"Y-m-d" }}
+	  {% if latest_revision and latest_revision.time.date != doc.time.date %}
+	    (latest revision {{ latest_revision.time|date:"Y-m-d" }})
+	  {% endif %}
+	</td>
       </tr>
-    {% endif %}
 
-    <tr>
-      <th>Other versions</th>
-      <td class="edit"></td>
-      <td>
-        {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}<div class="pull-right label label-warning">Expired & archived</div>{% endif %}
-        {% if file_urls %}
-          {% for label, url in file_urls %}
-            <a class="btn btn-default btn-xs" href="{{ url }}">
-	      <span class="fa fa-file-{% if label == "pdf" %}pdf-{% elif label == "xml" or label == "html" %}code-{% elif label == "plain text" %}text-{% endif %}o"></span>
-	      {{ label }}</a>
-          {% endfor %}
-        {% else %}
-          (not online)
-        {% endif %}
-      </td>
-    </tr>
-
-    {% if conflict_reviews %}
-      <tr>
-        <th>IETF conflict review</th>
-        <td class="edit"></td>
-        <td>{{ conflict_reviews|join:", "|urlize_ietf_docs }}</td>
-      </tr>
-    {% endif %}
-
-    <tr>
-      {% if doc.stream %}
-        <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">{{ doc.stream }} state</th>
-        <td class="edit">
-          {% if doc.stream and can_edit_stream_info %}
-            <a class="btn btn-default btn-xs" href="{% url "doc_change_stream_state" name=doc.name state_type=stream_state_type_slug %}">Edit</a>
-          {% endif %}
-        </td>
-        <td>
-          {{ stream_state|default:"(None)" }}
-
-          {% for m in milestones %}
-            <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)" class="milestone">{{ m.due|date:"M Y" }}</span>
-          {% endfor %}
-
-          {% if stream_tags %}
-            <div class="stream-tags">{% for tag in stream_tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
-          {% endif %}
-        </td>
-      {% else %}
-        <th>Stream state</th>
-        <td class="edit"></td>
-        <td>(No stream defined)</td>
+      {% if replaces or can_edit_stream_info %}
+	<tr>
+	  <th>Replaces</th>
+	  <td class="edit">
+	    {% if can_edit_stream_info %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_change_replaces" name=doc.name %}">Edit</a>
+	    {% endif %}
+	  </td>
+	  <td>
+	    {{ replaces|join:", "|urlize_ietf_docs|default:"(None)" }}
+	  </td>
+	</tr>
       {% endif %}
-    </tr>
 
-    {% if consensus %}
+      {% if replaced_by %}
+	<tr>
+	  <th>Replaced by</th>
+	  <td class="edit"></td>
+	  <td>
+	    {{ replaced_by|join:", "|urlize_ietf_docs }}
+	  </td>
+	</tr>
+      {% endif %}
+      
       <tr>
-        <th>Consensus</th>
-        <td class="edit">
-          {% if can_edit or can_edit_stream_info %}
-            <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
-          {% endif %}
-        </td>
-        <td>
-          <span title="Whether the document is the result of a community consensus process as defined in RFC 5741">{{ consensus }}</span>
-        </td>
+	<th>Stream</th>
+	<td class="edit">
+	  {% if can_change_stream %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_change_stream" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{ doc.stream|default:"(None)" }}
+	</td>
       </tr>
-    {% endif %}
 
-    <tr>
-      <th>Document shepherd</th>
-      <td class="edit">
-        {% if can_edit_stream_info %}
-          <a class="btn btn-default btn-xs" href="{% url "doc_edit_shepherd" name=doc.name %}">Edit</a>
-        {% elif is_shepherd %}
-          <a class="btn btn-default btn-xs" href="{% url "doc_change_shepherd_email" name=doc.name %}">Change Email</a>
-        {% endif %}
-      </td>
-      <td>
-        {% if doc.shepherd %}{{ doc.shepherd.person }}{% else %}No shepherd assigned{% endif %}
-      </td>
-    </tr>
+      {% if doc.get_state_slug != "rfc" %}
+	<tr>
+	  <th>Intended RFC status</th>
+	  <td class="edit">
+	    {% if can_edit or can_edit_stream_info %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_change_intended_status" name=doc.name %}">Edit</a>
+	    {% endif %}
+	  </td>
+	  <td>
+	    {{ doc.intended_std_level|default:"(None)" }}
+	  </td>
+	</tr>
+      {% endif %}
 
-    {% if shepherd_writeup or can_edit_shepherd_writeup %}
       <tr>
-        <th>Shepherd write-up</th>
-        <td class="edit">
-          {% if can_edit_shepherd_writeup %}
-            {% url "doc_edit_shepherd_writeup" name=doc.name as doc_edit_url %}
-            {% if doc_edit_url %}
-              <a class="btn btn-default btn-xs" href="{{doc_edit_url}}">Edit</a>
-            {% endif %}
-          {% endif %}
-        </td>
-        <td>
-          {% if shepherd_writeup %}
-            <a class="btn btn-default btn-xs" href="{% url "doc_shepherd_writeup" name=doc.name %}">Show</a>
-            (last changed {{ shepherd_writeup.time|date:"Y-m-d"}})
-          {% else %}
-            (None)
-          {% endif %}
-        </td>
+	<th>Formats</th>
+	<td class="edit"></td>
+	<td>
+	  {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}<div class="pull-right label label-warning">Expired & archived</div>{% endif %}
+	  {% if file_urls %}
+	    {% for label, url in file_urls %}
+	      <a class="btn btn-default btn-xs" href="{{ url }}">
+		<span class="fa fa-file-{% if label == "pdf" %}pdf-{% elif label == "xml" or label == "html" %}code-{% elif label == "plain text" %}text-{% endif %}o"></span>
+		{{ label }}</a>
+	    {% endfor %}
+	  {% else %}
+	    (not online)
+	  {% endif %}
+	</td>
       </tr>
-    {% endif %}
 
-    {% if published and started_iesg_process and published.time < started_iesg_process.time %}
+      {% if conflict_reviews %}
+	<tr>
+	  <th>IETF conflict review</th>
+	  <td class="edit"></td>
+	  <td>{{ conflict_reviews|join:", "|urlize_ietf_docs }}</td>
+	</tr>
+      {% endif %}
+
+    </tbody>
+    <tbody>
+
       <tr>
-	<th colspan="3" class="warning">This information refers to IESG processing after the RFC was initially published:</th>
+	 <th rowspan="{{table_rows.stream}}">Stream</th>
       </tr>
-    {% endif %}
+	 
+      <tr>
+	{% if doc.stream %}
+	  <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">
+	    {% if doc.stream.slug == "ietf" %} WG {% else %} {{ doc.stream }} {% endif %} state
+	  </th>
+	  <td class="edit">
+	    {% if doc.stream and can_edit_stream_info %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_change_stream_state" name=doc.name state_type=stream_state_type_slug %}">Edit</a>
+	    {% endif %}
+	  </td>
+	  <td>
+	    {{ stream_state|default:"(None)" }}
 
-    <tr>
-      <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
-      <td class="edit">
-        {% if iesg_state and can_edit %}
-          <a class="btn btn-default btn-xs" href="{% url "doc_change_state" name=doc.name %}">Edit</a>
-        {% endif %}
-      </td>
-      <td>
-        {{ iesg_state_summary|default:"I-D Exists" }}
-      </td>
-    </tr>
+	    {% for m in milestones %}
+	      <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)" class="milestone">{{ m.due|date:"M Y" }}</span>
+	    {% endfor %}
+
+	    {% if stream_tags %}
+	      <div class="stream-tags">{% for tag in stream_tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+	    {% endif %}
+	  </td>
+	{% else %}
+	  <th>Stream state</th>
+	  <td class="edit"></td>
+	  <td>(No stream defined)</td>
+	{% endif %}
+      </tr>
+
+      {% if consensus %}
+	<tr>
+	  <th>Consensus</th>
+	  <td class="edit">
+	    {% if can_edit or can_edit_stream_info %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
+	    {% endif %}
+	  </td>
+	  <td>
+	    <span title="Whether the document is the result of a community consensus process as defined in RFC 5741">{{ consensus }}</span>
+	  </td>
+	</tr>
+      {% endif %}
+
+      <tr>
+	<th>Document shepherd</th>
+	<td class="edit">
+	  {% if can_edit_stream_info %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_edit_shepherd" name=doc.name %}">Edit</a>
+	  {% elif is_shepherd %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_change_shepherd_email" name=doc.name %}">Change Email</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if doc.shepherd %}{{ doc.shepherd.person }}{% else %}No shepherd assigned{% endif %}
+	</td>
+      </tr>
+
+      {% if shepherd_writeup or can_edit_shepherd_writeup %}
+	<tr>
+	  <th>Shepherd write-up</th>
+	  <td class="edit">
+	    {% if can_edit_shepherd_writeup %}
+	      {% url "doc_edit_shepherd_writeup" name=doc.name as doc_edit_url %}
+	      {% if doc_edit_url %}
+		<a class="btn btn-default btn-xs" href="{{doc_edit_url}}">Edit</a>
+	      {% endif %}
+	    {% endif %}
+	  </td>
+	  <td>
+	    {% if shepherd_writeup %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_shepherd_writeup" name=doc.name %}">Show</a>
+	      (last changed {{ shepherd_writeup.time|date:"Y-m-d"}})
+	    {% else %}
+	      (None)
+	    {% endif %}
+	  </td>
+	</tr>
+      {% endif %}
+
+      {% if published and started_iesg_process and published.time < started_iesg_process.time %}
+	<tr>
+	  <th colspan="3" class="warning">This information refers to IESG processing after the RFC was initially published:</th>
+	</tr>
+      {% endif %}
+
+    </tbody>
+    <tbody>
+
+      <tr>
+	 <th rowspan="{{table_rows.iesg}}">IESG</th>
+      </tr>
+
+      <tr>
+	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
+	<td class="edit">
+	  {% if iesg_state and can_edit %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_change_state" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{ iesg_state_summary|default:"I-D Exists" }}
+	</td>
+      </tr>
+
+      <tr>
+	<th>Telechat date</th>
+	<td class="edit">
+	  {% if can_edit %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_change_telechat_date" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if telechat %}
+	    On agenda of {{ telechat.telechat_date }} IESG telechat
+	    {% if telechat.returning_item %}
+	      (returning item)
+	    {% endif %}
+	  {% else %}
+	    {% if can_edit %}
+	      (None)
+	    {% endif %}
+	  {% endif %}
+
+	  {% if ballot_summary %}
+	    <br><i>{{ ballot_summary }}</i>
+	  {% endif %}
+	</td>
+      </tr>
+
+      <tr>
+	<th>Responsible AD</th>
+	<td class="edit">
+	  {% if can_edit %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_change_ad" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{ doc.ad|default:"(None)" }}
+	</td>
+      </tr>
+
+      {% if iesg_state %}
+	{% if doc.note or can_edit %}
+	  <tr>
+	    <th>IESG note</th>
+	    <td class="edit">
+	      {% if can_edit %}
+		<a class="btn btn-default btn-xs" href="{% url "doc_change_iesg_note" name=doc.name %}">Edit</a>
+	      {% endif %}
+	    </td>
+	    <td>
+	      {{ doc.note|default:"(None)"|linebreaksbr }}
+	    </td>
+	  </tr>
+	{% endif %}
+      {% endif %}
+
+      <tr>
+	<th>Send notices to</th>
+	<td class="edit">
+	  {% if can_edit_notify %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_change_notify" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{ doc.notify|default:"(None)"}}
+	</td>
+      </tr>
+
+    </tbody>
 
     {% if iana_review_state %}
+    <tbody>
       <tr>
-        <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
-        <td class="edit">
-          {% if can_edit_iana_state %}
-            <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-review" %}">Edit</a>
-          {% endif %}
-        </td>
-        <td>
-          {{ iana_review_state }}
-        </td>
+	 <th rowspan="{{table_rows.iana}}">IANA</th>
       </tr>
 
       <tr>
-        <th>IANA action state</th>
-        <td class="edit">
-          {% if can_edit_iana_state %}
-            <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-action" %}">Edit</a>
-          {% endif %}
-        </td>
-        <td>
-          {{ iana_action_state }}
-        </td>
+	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
+	<td class="edit">
+	  {% if can_edit_iana_state %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-review" %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{ iana_review_state }}
+	</td>
       </tr>
+
+      <tr>
+	<th>IANA action state</th>
+	<td class="edit">
+	  {% if can_edit_iana_state %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-action" %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{ iana_action_state }}
+	</td>
+      </tr>
+    </tbody>
     {% endif %}
 
-    {% if rfc_editor_state %}
-      <tr>
-        <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">RFC Editor state</a></th>
-        <td class="edit"></td>
-        <td><a href="//www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ rfc_editor_state }}</a></td>
-      </tr>
-    {% endif %}
+    <tbody>
 
-    <tr>
-      <th>Telechat date</th>
-      <td class="edit">
-        {% if can_edit %}
-          <a class="btn btn-default btn-xs" href="{% url "doc_change_telechat_date" name=doc.name %}">Edit</a>
-        {% endif %}
-      </td>
-      <td>
-        {% if telechat %}
-          On agenda of {{ telechat.telechat_date }} IESG telechat
-          {% if telechat.returning_item %}
-            (returning item)
-          {% endif %}
-        {% else %}
-          {% if can_edit %}
-            (None)
-          {% endif %}
-        {% endif %}
+      {% if rfc_editor_state %}
+	<tr>
+	   <th rowspan="{{table_rows.rfced}}">RFC Editor</th>
+	</tr>
 
-        {% if ballot_summary %}
-          <br><i>{{ ballot_summary }}</i>
-        {% endif %}
-      </td>
-    </tr>
-
-    <tr>
-      <th>Responsible AD</th>
-      <td class="edit">
-        {% if can_edit %}
-          <a class="btn btn-default btn-xs" href="{% url "doc_change_ad" name=doc.name %}">Edit</a>
-        {% endif %}
-      </td>
-      <td>
-        {{ doc.ad|default:"(None)" }}
-      </td>
-    </tr>
-
-    {% if iesg_state %}
-      {% if doc.note or can_edit %}
-        <tr>
-          <th>IESG note</th>
-          <td class="edit">
-            {% if can_edit %}
-              <a class="btn btn-default btn-xs" href="{% url "doc_change_iesg_note" name=doc.name %}">Edit</a>
-            {% endif %}
-          </td>
-          <td>
-            {{ doc.note|default:"(None)"|linebreaksbr }}
-          </td>
-        </tr>
+	<tr>
+	  <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">RFC Editor state</a></th>
+	  <td class="edit"></td>
+	  <td><a href="//www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ rfc_editor_state }}</a></td>
+	</tr>
       {% endif %}
-    {% endif %}
 
-    <tr>
-      <th>Send notices to</th>
-      <td class="edit">
-        {% if can_edit_notify %}
-          <a class="btn btn-default btn-xs" href="{% url "doc_change_notify" name=doc.name %}">Edit</a>
-        {% endif %}
-      </td>
-      <td>
-        {{ doc.notify|default:"(None)"}}
-      </td>
-    </tr>
+    </tbody>
   </table>
 
   <p class="buttonlist">
@@ -364,13 +413,12 @@
     <p></p>
     <div class="panel panel-warning">
       <div class="panel-heading">
-        This Internet-Draft is no longer active. A copy of the expired Internet-Draft can be found at
-        <a href="//www.ietf.org/archive/id/{{ doc.name }}-{{ doc.rev }}.txt">https://www.ietf.org/archive/id/{{ doc.name }}-{{ doc.rev }}.txt</a>
+	 This Internet-Draft is no longer active. A copy of
+	 the expired Internet-Draft can be found at<br/>
+          <a href="{{doc.href}}">{{doc.href}}</a>
       </div>
       <div class="panel-body">
-        <p>This Internet-Draft is no longer active. A copy of
-          the expired Internet-Draft can be found here:<br/>
-          <a href="{{doc.href}}">{{doc.href}}</a>
+        <p>
 
           <h4>Abstract</h4>
           <p>{{ doc.abstract }}</p>
