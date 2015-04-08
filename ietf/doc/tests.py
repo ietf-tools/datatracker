@@ -14,7 +14,8 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
-    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, save_document_in_history )
+    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent,
+    save_document_in_history )
 from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.name.models import SessionStatusName
@@ -520,6 +521,7 @@ class DocTestCase(TestCase):
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(pos.comment in r.content)
+        self.assertTrue(pos.comment_time.strftime('(%Y-%m-%d)') in r.content)
 
         # test with ballot_id
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
@@ -529,6 +531,16 @@ class DocTestCase(TestCase):
         # test popup too while we're at it
         r = self.client.get(urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
         self.assertEqual(r.status_code, 200)
+
+        # Now simulate a new revision and make sure positions on older revisions are marked as such
+        oldrev = doc.rev
+        e = NewRevisionDocEvent.objects.create(doc=doc,rev='%02d'%(int(doc.rev)+1),type='new_revision',by=Person.objects.get(name="(System)"))
+        save_document_in_history(doc)
+        doc.rev = e.rev
+        doc.save()
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue( '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'),oldrev) in r.content)
         
     def test_document_ballot_needed_positions(self):
         make_test_data()
