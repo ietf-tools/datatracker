@@ -701,7 +701,7 @@ class DocEvent(models.Model):
     desc = models.TextField()
 
     def for_current_revision(self):
-        return self.time >= self.doc.time
+        return self.time >= self.doc.latest_event(NewRevisionDocEvent,type='new_revision').time
 
     def get_dochistory(self):
         return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time').first()
