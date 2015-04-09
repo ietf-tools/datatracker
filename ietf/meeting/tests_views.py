@@ -33,10 +33,26 @@ class MeetingTests(TestCase):
         with open(path, "w") as f:
             f.write(content)
 
+    def write_materials_files(self, meeting, session):
+
+        draft = Document.objects.filter(type="draft", group=session.group).first()
+
+        self.write_materials_file(meeting, session.materials.get(type="agenda"),
+                                  "1. WG status (15 minutes)\n\n2. Status of %s\n\n" % draft.name)
+
+        self.write_materials_file(meeting, session.materials.get(type="minutes"),
+                                  "1. More work items underway\n\n2. The draft will be finished before next meeting\n\n")
+
+        self.write_materials_file(meeting, session.materials.filter(type="slides").exclude(states__type__slug='slides',states__slug='deleted').first(),
+                                  "This is a slideshow")
+        
+
     def test_agenda(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         slot = TimeSlot.objects.get(scheduledsession__session=session)
+
+        self.write_materials_files(meeting, session)
 
         time_interval = "%s-%s" % (slot.time.strftime("%H%M"), (slot.time + slot.duration).strftime("%H%M"))
 
@@ -50,6 +66,13 @@ class MeetingTests(TestCase):
         self.assertTrue(session.group.parent.acronym.upper() in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
         self.assertTrue(time_interval in agenda_content)
+
+        # Make sure there's a frame for the agenda and it points to the right place
+        self.assertTrue(any([session.materials.get(type='agenda').href() in x.attrib['xsrc'] for x in q('tr.groupagenda iframe')])) 
+
+        # Make sure undeleted slides are present and deleted slides are not
+        self.assertTrue(any([session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr.groupagenda a')]))
+        self.assertFalse(any([session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr.groupagenda a')]))
 
         # mobile
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)),
@@ -81,6 +104,10 @@ class MeetingTests(TestCase):
         self.assertTrue(session.group.parent.acronym.upper() in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
 
+        self.assertTrue(session.materials.get(type='agenda').external_url in r.content)
+        self.assertTrue(session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().external_url in r.content)
+        self.assertFalse(session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().external_url in r.content)
+
         # iCal
         r = self.client.get(urlreverse("ietf.meeting.views.ical_agenda", kwargs=dict(num=meeting.number))
                             + "?" + session.group.parent.acronym.upper())
@@ -92,6 +119,11 @@ class MeetingTests(TestCase):
         self.assertTrue("BEGIN:VTIMEZONE" in agenda_content)
         self.assertTrue("END:VTIMEZONE" in agenda_content)        
 
+        self.assertTrue(session.agenda().get_absolute_url() in r.content)
+        self.assertTrue(session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().get_absolute_url() in r.content)
+        # TODO - the ics view uses .all on a queryset in a view so it's showing the deleted slides.
+        #self.assertFalse(session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().get_absolute_url() in r.content)
+
         # week view
         r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
@@ -102,16 +134,8 @@ class MeetingTests(TestCase):
     def test_materials(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
-        draft = Document.objects.filter(type="draft", group=session.group).first()
 
-        self.write_materials_file(meeting, session.materials.get(type="agenda"),
-                                  "1. WG status (15 minutes)\n\n2. Status of %s\n\n" % draft.name)
-
-        self.write_materials_file(meeting, session.materials.get(type="minutes"),
-                                  "1. More work items underway\n\n2. The draft will be finished before next meeting\n\n")
-
-        self.write_materials_file(meeting, session.materials.get(type="slides"),
-                                  "This is a slideshow")
+        self.write_materials_files(meeting, session)
         
         # session agenda
         r = self.client.get(urlreverse("ietf.meeting.views.session_agenda",
@@ -132,6 +156,7 @@ class MeetingTests(TestCase):
         self.assertTrue(row.find("a:contains(\"Agenda\")"))
         self.assertTrue(row.find("a:contains(\"Minutes\")"))
         self.assertTrue(row.find("a:contains(\"Slideshow\")"))
+        self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
 
         # FIXME: missing tests of .pdf/.tar generation (some code can
         # probably be lifted from similar tests in iesg/tests.py)

@@ -500,7 +500,7 @@ def document_main(request, name, rev=None):
     if doc.type_id in ("slides", "agenda", "minutes"):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = None
-        if doc.type_id=='slides' and doc.get_state_slug('slides') in ['sessonly','active']:
+        if doc.type_id=='slides' and doc.get_state_slug('slides')=='active' :
             presentations = doc.future_presentations()
         if doc.meeting_related():
             # disallow editing meeting-related stuff through this
