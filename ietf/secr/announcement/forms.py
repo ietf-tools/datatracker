@@ -27,7 +27,7 @@ FROM_LIST = ('IETF Secretariat <ietf-secretariat@ietf.org>',
              'IETF Registrar <ietf-registrar@ietf.org>',
              'IETF Administrative Director <iad@ietf.org>',
              'IETF Executive Director <exec-director@ietf.org>',
-             'The IAOC <bob.hinden@gmail.com>',
+             'The IAOC <cgriffiths@gmail.com>',
              'The IETF Trust <ietf-trust@ietf.org>',
              'RSOC Chair <rsoc-chair@iab.org>',
              'ISOC Board of Trustees <eburger@standardstrack.com>',
@@ -61,7 +61,7 @@ def get_from_choices(user):
     elif has_role(user,'IAB Chair'):
         f = (FROM_LIST[6],)
     elif has_role(user,'IAD'):
-        f = (FROM_LIST[9],)
+        f = (FROM_LIST[9],FROM_LIST[12],FROM_LIST[18],FROM_LIST[11],)
     #RSOC Chair, IAOC Chair aren't supported by has_role()
     elif Role.objects.filter(person=person,
                              group__acronym='rsoc',
