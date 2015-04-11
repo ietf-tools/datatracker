@@ -61,9 +61,9 @@
   {% include "doc/search/status_columns.html" %}
 
   <td class="ipr text-center">
-    {% if doc.iprs %}
+    {% if doc.related_ipr %}
       <a href="{% url "ipr_search" %}?submit=draft&amp;id={{ doc.name }}">
-        <span class="label label-default">{{ doc.iprs|length }}</span>
+        <span class="label label-default">{{ doc.related_ipr|length }}</span>
       </a>
     {% endif %}
   </td>
