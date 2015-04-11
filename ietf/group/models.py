@@ -39,24 +39,6 @@ class GroupInfo(models.Model):
         return self.role_set.filter(name='ad').first()
 
     @property
-    def ad(self):
-        #assert(False) # These methods are deprecated  - expect them to go away when the _ad field is removed
-        ad_role = self.ad_role()
-        return ad_role and ad_role.person
-
-    @ad.setter
-    def ad(self,value):
-        #assert(False)
-        self.role_set.filter(name='ad').delete()
-        if value:
-            self.role_set.create(name=RoleName.objects.get(slug='ad'), person=value, email=value.role_email('ad'))
-
-    @property 
-    def ad_id(self):
-        #assert(False)
-        return self.ad.id
-
-    @property
     def features(self):
         if not hasattr(self, "features_cache"):
             from ietf.group.features import GroupFeatures

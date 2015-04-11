@@ -43,6 +43,7 @@ class GroupMaterialTests(TestCase):
 
         doc = Document.objects.create(name="slides-testteam-test-file", rev="01", type_id="slides", group=group)
         doc.set_state(State.objects.get(type="slides", slug="active"))
+        doc.set_state(State.objects.get(type="reuse_policy", slug="multiple"))
         DocAlias.objects.create(name=doc.name, document=doc)
         NewRevisionDocEvent.objects.create(doc=doc,by=Person.objects.get(name="(System)"),rev='00',type='new_revision',desc='New revision available')
         NewRevisionDocEvent.objects.create(doc=doc,by=Person.objects.get(name="(System)"),rev='01',type='new_revision',desc='New revision available')
@@ -168,7 +169,7 @@ class GroupMaterialTests(TestCase):
         self.assertEqual(doc.title, "New title")
         self.assertEqual(doc.get_state_slug(), "active")
 
-        with open(os.path.join(self.agenda_dir, "42", "slides", doc.name + "-" + doc.rev + ".txt")) as f:
+        with open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")) as f:
             self.assertEqual(f.read(), content)
 
     def test_material_presentations(self):

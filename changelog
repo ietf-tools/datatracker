@@ -1,3 +1,45 @@
+ietfdb (5.13.1) ietf; urgency=medium
+
+  This is a bugfix release, to have a clean slate before merging in the
+  Bootstrap facelift for 6.0.0.  Details:
+
+  * Merged in [9428] from rjsparks@nostrum.com:
+    Properly mark (and test) older ballot comment and discuss text after a new
+    revision is submitted. Fixes bug #1656.  
+
+  * Merged in [9426] from rcross@amsl.com:
+    Add several 'From' options for IAD user of announcement tool.   
+
+  * Merged in [9375] from rjsparks@nostrum.com:
+    Put old style slides directly into archived. Migrate IETF92 materials to
+    match.  
+
+  * Merged in [9351] from rjsparks@nostrum.com:
+    Removed sessonly, replacing the idea with a separate State. Add tests
+    checking how materials show on agenda views.  
+
+  * Fixed style attributes which resulted in red text on red background for
+    some error messages
+
+  * Buildbot changes: Separated out the schedulers for trunk, personal/* and
+    branch/*.  Corrected regex patterns which extract unittest details.  Added
+    a first tentative email notifier.  Added ForceSchedulers, in order to be
+    able to force builds.
+
+  * Changed all explicitly set HttpResponse content_types to specify charset.
+    Django sets charset if you don't specify a content_type; if you specify
+    one you also must add a charset specification (if you want one).  Fixes
+    issue #1647.
+
+  * Fixed a typo in the sort key generation for the sort on ipr count in
+    document search results.
+
+  * Updated release data and mkrelease support, which calculates the 
+    release coverage snapshot without invoking tests that developers won't 
+    ordinarily be able to run on their laptops/work machines.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Apr 2015 13:44:05 +0000
+
 ietfdb (5.13.0) ietf; urgency=medium
 
   **IETF 92 Code Sprint**

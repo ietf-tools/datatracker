@@ -233,14 +233,13 @@ class DocumentInfo(models.Model):
             return None
 
     def meeting_related(self):
-        if self.type_id in ("agenda","minutes","bluesheets"):
-            return (self.name.split("-")[1] == "interim"
-                   or (self.session_set.exists() if isinstance(self, Document) else self.doc.session_set.exists()))
-        elif self.type_id in ("slides",):
-            return (self.name.split("-")[1] == "interim"
-                   or (self.get_state('slides') and self.get_state('slides').slug in ("active", "sessonly","archived") ))
-        else:
-            return False
+        answer = False
+        if self.type_id in ("agenda","minutes","bluesheets","slides"):
+            answer =  (self.name.split("-")[1] == "interim"
+                       or (self if isinstance(self, Document) else self.doc).session_set.exists())
+            if self.type_id in ("slides",):
+                answer =  answer and self.get_state_slug('reuse_policy')=='single'
+        return answer
 
     def relations_that(self, relationship):
         """Return the related-document objects that describe a given relationship targeting self."""
@@ -702,7 +701,7 @@ class DocEvent(models.Model):
     desc = models.TextField()
 
     def for_current_revision(self):
-        return self.time >= self.doc.time
+        return self.time >= self.doc.latest_event(NewRevisionDocEvent,type='new_revision').time
 
     def get_dochistory(self):
         return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time').first()

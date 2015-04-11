@@ -864,24 +864,16 @@ class Session(models.Model):
 
     unique_constraints_dict = None
 
+    # Should work on how materials are captured so that deleted things are no longer associated with the session
+    # (We can keep the information about something being added to and removed from a session in the document's history)
     def agenda(self):
-        items = self.materials.filter(type="agenda",states__type="agenda",states__slug="active")
-        if items and items[0] is not None:
-            return items[0]
-        else:
-            return None
+        return self.materials.filter(type='agenda').exclude(states__type='agenda',states__slug='deleted').first()
 
     def minutes(self):
-        try:
-            return self.materials.get(type="minutes",states__type="minutes",states__slug="active")
-        except Exception:
-            return None
+        return self.materials.filter(type='minutes').exclude(states__type='minutes',states__slug='deleted').first()
 
     def slides(self):
-        try:
-            return self.materials.filter(type="slides",states__type="slides",states__slug="active").order_by("order")
-        except Exception:
-            return []
+        return list(self.materials.filter(type='slides').exclude(states__type='slides',states__slug='deleted').order_by('order'))
 
     def __unicode__(self):
         if self.meeting.type_id == "interim":

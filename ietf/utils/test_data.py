@@ -319,6 +319,9 @@ def make_test_data():
     def other_doc_factory(type_id,name):
         doc = Document.objects.create(type_id=type_id,name=name,rev='00',group=mars_wg)
         DocAlias.objects.create(name=name,document=doc)
+        doc.set_state(State.objects.get(type__slug=doc.type.slug,slug='active'))
+        if type_id=='slides':
+            doc.set_state(State.objects.get(type='reuse_policy',slug='single'))
     other_doc_factory('agenda','agenda-42-mars')
     other_doc_factory('minutes','minutes-42-mars')
     other_doc_factory('slides','slides-42-mars-1')
