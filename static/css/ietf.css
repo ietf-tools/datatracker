@@ -58,7 +58,7 @@ body { padding-top: 70px; }
 /* See http://eichefam.net/2012/04/12/scrollable-menus-in-bootstrap/ */
 .dropdown-submenu:hover > .dropdown-menu {
 		height: auto;
-		max-height: 400px;
+		max-height: 600px;
 		overflow-x: hidden;
 		overflow-y: auto;
 }
@@ -68,7 +68,7 @@ body { padding-top: 70px; }
 .nav-header:not(:first-child) { padding: 10px 0 2px 0 }
 
 .navbar {
-  font-family: "PT Sans Caption", "Trebuchet", "Seravek", sans-serif;
+  font-family: "PT Sans", "Trebuchet", "Seravek", sans-serif;
 }
 
 .nav-stacked>li, .nav-stacked>li+li { margin: 0; line-height: 1.214; }
@@ -76,8 +76,7 @@ body { padding-top: 70px; }
 
 .leftmenu {
   max-width: 195px;
-  font-family: "PT Sans Caption", "Trebuchet", "Seravek", sans-serif;
-  font-size: 0.917em;
+  font-family: "PT Sans", "Trebuchet", "Seravek", sans-serif;
 }
 .leftmenu .nav {
   overflow-wrap: break-word
