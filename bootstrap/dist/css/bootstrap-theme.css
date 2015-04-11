@@ -300,13 +300,13 @@
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 1px 2px rgba(0, 0, 0, .05);
 }
 .alert-success {
-  background-image: -webkit-linear-gradient(top, #b0fd91 0%, #96fd6b 100%);
-  background-image:      -o-linear-gradient(top, #b0fd91 0%, #96fd6b 100%);
-  background-image: -webkit-gradient(linear, left top, left bottom, from(#b0fd91), to(#96fd6b));
-  background-image:         linear-gradient(to bottom, #b0fd91 0%, #96fd6b 100%);
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffb0fd91', endColorstr='#ff96fd6b', GradientType=0);
+  background-image: -webkit-linear-gradient(top, #b5f29c 0%, #9cee7a 100%);
+  background-image:      -o-linear-gradient(top, #b5f29c 0%, #9cee7a 100%);
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#b5f29c), to(#9cee7a));
+  background-image:         linear-gradient(to bottom, #b5f29c 0%, #9cee7a 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffb5f29c', endColorstr='#ff9cee7a', GradientType=0);
   background-repeat: repeat-x;
-  border-color: #7bfc45;
+  border-color: #83ea58;
 }
 .alert-info {
   background-image: -webkit-linear-gradient(top, #fdf7d8 0%, #fbf0b4 100%);
@@ -431,11 +431,11 @@
   background-repeat: repeat-x;
 }
 .panel-success > .panel-heading {
-  background-image: -webkit-linear-gradient(top, #b0fd91 0%, #9ffd77 100%);
-  background-image:      -o-linear-gradient(top, #b0fd91 0%, #9ffd77 100%);
-  background-image: -webkit-gradient(linear, left top, left bottom, from(#b0fd91), to(#9ffd77));
-  background-image:         linear-gradient(to bottom, #b0fd91 0%, #9ffd77 100%);
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffb0fd91', endColorstr='#ff9ffd77', GradientType=0);
+  background-image: -webkit-linear-gradient(top, #b5f29c 0%, #a4ef85 100%);
+  background-image:      -o-linear-gradient(top, #b5f29c 0%, #a4ef85 100%);
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#b5f29c), to(#a4ef85));
+  background-image:         linear-gradient(to bottom, #b5f29c 0%, #a4ef85 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffb5f29c', endColorstr='#ffa4ef85', GradientType=0);
   background-repeat: repeat-x;
 }
 .panel-info > .panel-heading {
