@@ -190,6 +190,10 @@
 @btn-success-bg:                 @brand-success;
 @btn-success-border:             darken(@btn-success-bg, 5%);
 
+@btn-pass-color:                 #fff;
+@btn-pass-bg:                    lighten(desaturate(@brand-success, 30%), 20%);
+@btn-pass-border:                darken(@btn-pass-bg, 5%);
+
 @btn-info-color:                 #fff;
 @btn-info-bg:                    @brand-info;
 @btn-info-border:                darken(@btn-info-bg, 5%);
@@ -598,6 +602,8 @@
 @label-primary-bg:            lighten(@brand-primary, 20%);
 //** Success label background color
 @label-success-bg:            @brand-success;
+@label-pass-bg:		      lighten(desaturate(@brand-success, 30%), 20%);
+
 //** Info label background color
 @label-info-bg:               darken(saturate(@brand-info, 5%), 12%);
 //** Warning label background color
@@ -751,6 +757,10 @@
 @panel-success-text:          @state-success-text;
 @panel-success-border:        @state-success-border;
 @panel-success-heading-bg:    @state-success-bg;
+
+@panel-pass-text:             @state-success-text;
+@panel-pass-border:           lighten(desaturate(@brand-success, 30%), 20%);
+@panel-pass-heading-bg:       @state-success-bg;
 
 @panel-info-text:             @state-info-text;
 @panel-info-border:           @state-info-border;

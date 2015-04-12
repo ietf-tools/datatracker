@@ -3178,6 +3178,51 @@ fieldset[disabled] .btn-success.active {
   color: #3abf03;
   background-color: #fff;
 }
+.btn-pass {
+  color: #fff;
+  background-color: #76dc4c;
+  border-color: #66d837;
+}
+.btn-pass:hover,
+.btn-pass:focus,
+.btn-pass.focus,
+.btn-pass:active,
+.btn-pass.active,
+.open > .dropdown-toggle.btn-pass {
+  color: #fff;
+  background-color: #58cd28;
+  border-color: #4caf22;
+}
+.btn-pass:active,
+.btn-pass.active,
+.open > .dropdown-toggle.btn-pass {
+  background-image: none;
+}
+.btn-pass.disabled,
+.btn-pass[disabled],
+fieldset[disabled] .btn-pass,
+.btn-pass.disabled:hover,
+.btn-pass[disabled]:hover,
+fieldset[disabled] .btn-pass:hover,
+.btn-pass.disabled:focus,
+.btn-pass[disabled]:focus,
+fieldset[disabled] .btn-pass:focus,
+.btn-pass.disabled.focus,
+.btn-pass[disabled].focus,
+fieldset[disabled] .btn-pass.focus,
+.btn-pass.disabled:active,
+.btn-pass[disabled]:active,
+fieldset[disabled] .btn-pass:active,
+.btn-pass.disabled.active,
+.btn-pass[disabled].active,
+fieldset[disabled] .btn-pass.active {
+  background-color: #76dc4c;
+  border-color: #66d837;
+}
+.btn-pass .badge {
+  color: #76dc4c;
+  background-color: #fff;
+}
 .btn-info {
   color: #fff;
   background-color: #f6d73c;
@@ -4791,6 +4836,13 @@ a.label:focus {
 .label-success[href]:focus {
   background-color: #2b8d02;
 }
+.label-pass {
+  background-color: #76dc4c;
+}
+.label-pass[href]:hover,
+.label-pass[href]:focus {
+  background-color: #58cd28;
+}
 .label-info {
   background-color: #f0c905;
 }
@@ -5591,6 +5643,24 @@ a.list-group-item-danger.active:focus {
 }
 .panel-success > .panel-footer + .panel-collapse > .panel-body {
   border-bottom-color: #b6ef85;
+}
+.panel-pass {
+  border-color: #76dc4c;
+}
+.panel-pass > .panel-heading {
+  color: #000;
+  background-color: #b5f29c;
+  border-color: #76dc4c;
+}
+.panel-pass > .panel-heading + .panel-collapse > .panel-body {
+  border-top-color: #76dc4c;
+}
+.panel-pass > .panel-heading .badge {
+  color: #b5f29c;
+  background-color: #000;
+}
+.panel-pass > .panel-footer + .panel-collapse > .panel-body {
+  border-bottom-color: #76dc4c;
 }
 .panel-info {
   border-color: #fbe4b6;
