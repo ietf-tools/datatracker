@@ -108,7 +108,7 @@ class SearchTestCase(TestCase):
         make_test_data()
         r = self.client.get("/")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Search Documents" in r.content)
+        self.assertTrue("Document Search" in r.content)
 
     def test_drafts_pages(self):
         draft = make_test_data()
