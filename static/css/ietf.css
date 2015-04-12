@@ -337,3 +337,8 @@ table.materials .snippable {
 #message-row tr th  {
   padding: 0.2em 0.5em;
 }
+
+footer {
+  font-family: "PT Sans Caption", "Trebuchet", "Seravek", sans-serif;
+  font-size: 0.7071em;
+}
