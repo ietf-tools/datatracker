@@ -17,17 +17,17 @@
 @gray-doc-background:   #fafafa;        // was #f5f5f5
 
 // Brand palette
-// http://www.colourlovers.com/palette/3702908/Key_West_Sunset
+// http://www.colourlovers.com/palette/3702908/Key_West_Sunset_2
 //
 @brand-blue:            #2c254a;        // space blue
 @brand-purple:          #59356b;        // time purple
-@brand-mauve:           #b05683;
+@brand-red:             #d4584d;	// tweaked from sunset 2
 @brand-orange:          #f69f74;
 @brand-yellow:          #f8e16d;
 //
 // Secondary colours, not part of the primary palette
 @brand-green:           #69fc2c;
-@brand-red:             #d4584d;
+
 
 @brand-primary:         @brand-blue;			// space blue
 @brand-success:         darken(@brand-green, 20%);	// green // #3abf03
@@ -394,16 +394,16 @@
 @navbar-collapse-max-height:       340px;
 
 @navbar-default-color:             #777;
-@navbar-default-bg:                #f8f8f8;
+@navbar-default-bg:                lighten(saturate(@brand-red, 25%), 10%);
 @navbar-default-border:            darken(@navbar-default-bg, 6.5%);
 
 // Navbar links
-@navbar-default-link-color:                #777;
-@navbar-default-link-hover-color:          #333;
+@navbar-default-link-color:                #222;
+@navbar-default-link-hover-color:          #111;
 @navbar-default-link-hover-bg:             transparent;
-@navbar-default-link-active-color:         #555;
+@navbar-default-link-active-color:         #111;
 @navbar-default-link-active-bg:            darken(@navbar-default-bg, 6.5%);
-@navbar-default-link-disabled-color:       #ccc;
+@navbar-default-link-disabled-color:       #777;
 @navbar-default-link-disabled-bg:          transparent;
 
 // Navbar brand label
@@ -413,7 +413,7 @@
 
 // Navbar toggle
 @navbar-default-toggle-hover-bg:           #ddd;
-@navbar-default-toggle-icon-bar-bg:        #888;
+@navbar-default-toggle-icon-bar-bg:        #000;
 @navbar-default-toggle-border-color:       #ddd;
 
 

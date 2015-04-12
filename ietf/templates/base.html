@@ -27,7 +27,7 @@
 
   <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url "group_menu_data" %}">
       <!-- Removing the amp|smartypants filter as it increases the rendering time with about 50%  -->
-      <nav class="navbar {% if server_mode and server_mode != "production" %}navbar-inverse{% else %}navbar-inverse{% endif %} navbar-fixed-top" role="navigation">
+      <nav class="navbar {% if server_mode and server_mode == "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top" role="navigation">
         <div class="container-fluid">
 	  <div class="navbar-header">
 	    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse">
@@ -37,9 +37,15 @@
 	      <span class="icon-bar"></span>
 	    </button>
 	    <a class="navbar-brand" href="/">
-	       <img alt="IETF Logo" src="/images/ietflogo-blue3-small.png"></img>
+	       <img alt="IETF Logo" src="/images/ietflogo-small-transparent.png"></img>
 	       {% if not user.is_authenticated %}
-	       <div style="display: inline; vertical-align: top; padding-left: 1em;">Datatracker</div>
+	       <div style="display: inline; vertical-align: top; padding-left: 1em;">
+		  {% if server_mode and server_mode == "production" %}		  
+		  Datatracker
+		  {% else %}
+		  <b><i>Development mode</i></b>
+		  {% endif %}
+	       </div>
 	       {% endif %}
 	    </a>
 	  </div>
