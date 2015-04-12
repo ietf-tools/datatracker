@@ -1,46 +1,52 @@
 {% load ietf_filters ballot_icon %}
-<div class="agenda-doc">
-  <div class="ballot-icon-column">
-    {% ballot_icon doc %}
-  </div>
 
-  <div>
-    <a href="{% url "doc_view" name=doc.name %}">{{doc.name}}-{{doc.rev}}</a>
-    <a href="{{doc.href}}">[txt]</a>
+<p>
+  <div class="pull-right">{% ballot_icon doc %}</div>
 
-    <br/>{{ doc.title }}
-
+  <dl class="dl-horizontal">
     {% with doc.conflictdoc as conflictdoc %}
+      <dt>Conflict review</dt>
+      <dd>
+        <a href="{{doc.href}}">
+	  <span class="fa fa-file"></span>
+        </a>
+        <a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
+        <br>
+        <i>{{ doc.title }}</i>
+      </dd>
 
-    <div style="padding-left:30px;">
-    <a href="{% url "doc_view" name=conflictdoc.name %}">{{ conflictdoc.name }}-{{ conflictdoc.rev }}</a>
-    <a href="{{ conflictdoc.href }}">[txt]</a>
-    <br/>{{ conflictdoc.title }} ({{ conflictdoc.stream }}: {{ conflictdoc.intended_std_level }})
-    {% if conflictdoc.note %}
-    <br/>Note: {{ conflictdoc.note|linebreaksbr }}
-    {% endif %}
+      <dt>{{ conflictdoc.stream }} {{ conflictdoc.intended_std_level }}</dt>
+      <dd>
+        <a href="//www.ietf.org/id/{{ conflictdoc.name }}-{{ conflictdoc.rev }}.txt">
+	  <span class="fa fa-file"></span>
+        </a>
+        <a href="{% url "doc_view" name=conflictdoc.name %}">{{ conflictdoc.name }}</a>
+        <br>
+        <i>{{ conflictdoc.title }}</i>
+      </dd>
 
-    {% if conflictdoc.ipr %}
-    <br />
-    <h5>IPR:</h5>
-       <ul>
-       {% for ipr in conflictdoc.ipr %}
-        {% if ipr.disclosure.state.slug == "posted" %}
-          <li><a href="/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a></li>
+      {% if conflictdoc.note %}
+        <dt>Note</dt><dd>{{ conflictdoc.note|linebreaksbr }}</dd>
+      {% endif %}
+
+      <dt>Token</dt><dd>{{ doc.ad }}</dd>
+
+      {% with doc.active_defer_event as defer %}
+        {% if defer %}
+          <dt>Deferred by</dt><dd>{{ defer.by }} on {{ defer.time|date:"Y-m-d" }}</dd>
         {% endif %}
-       {% endfor %}
-       </ul>
+      {% endwith %}
 
-    {% endif %}
-    </div>
-
+      {% if conflictdoc.ipr %}
+        <dt>IPR</dt>
+        <dd>
+          {% for ipr in conflictdoc.ipr %}
+            {% if ipr.disclosure.state_id == "posted" %}
+              <a href="/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a><br>
+            {% endif %}
+          {% endfor %}
+        </dd>
+      {% endif %}
     {% endwith %}
-
-    Token: {{ doc.ad }} 
-    {% with doc.active_defer_event as defer %}
-    {% if defer %}
-    <br/>Was deferred by {{ defer.by }} on {{ defer.time|date:"Y-m-d" }}
-    {% endif %}
-    {% endwith %}
-  </div>
-</div>
+  </dl>
+</p>

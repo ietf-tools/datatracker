@@ -1,20 +1,22 @@
-{% extends "nomcom/nomcom_base.html" %}
+{% extends "base.html" %}
 
 {% load nomcom_tags %}
 
+{% block title %}NomCom {{ year }}{% block subtitle %}{% endblock %}{% endblock %}
+
 {% block content %}
 
-  <h1>Nomcom {{ year }} Pages</h1>
+  <h1>NomCom {{ year }}</h1>
 
-  <div class="ietf-navset">
-    {% if selected == "index" %}<span class="selected">Home</span>{% else %}<a href="{% url "nomcom_year_index" year %}">Home</a>{% endif %} |
+  <ul class="nav nav-tabs" role="tablist">
+    <li {% if selected == "index" %}class="active"{% endif %}><a href="{% url "nomcom_year_index" year %}">Home</a></li>
     {% if nomcom|has_publickey %}
-      {% if selected == "nominate" %}<span class="selected">Nominate</span>{% else %}<a href="{% url "nomcom_public_nominate" year %}">Nominate</a>{% endif %} |
-      {% if selected == "feedback" %}<span class="selected">Provide Comments</span>{% else %}<a href="{% url "nomcom_public_feedback" year %}">Provide Comments</a>{% endif %} |
+      <li {% if selected == "nominate" %}class="active"{% endif %}><a href="{% url "nomcom_public_nominate" year %}">Nominate</a></li>
+      <li {% if selected == "feedback" %}class="active"{% endif %}><a href="{% url "nomcom_public_feedback" year %}">Provide feedback</a></li>
     {% endif %}
-    {% if selected == "requirements" %}<span class="selected">Desired Expertise</span>{% else %}<a href="{% url "nomcom_requirements" year %}">Desired Expertise</a>{% endif %} |
-    {% if selected == "questionnaires" %}<span class="selected">Questionnaires</span>{% else %}<a href="{% url "nomcom_questionnaires" year %}">Questionnaires</a>{% endif %} |
-  </div>
+    <li {% if selected == "requirements" %}class="active"{% endif %}><a href="{% url "nomcom_requirements" year %}">Desired expertise</a></li>
+    <li {% if selected == "questionnaires" %}class="active"{% endif %}><a href="{% url "nomcom_questionnaires" year %}">Questionnaires</a></li>
+  </ul>
 
   {% block nomcom_content %}
   {% endblock %}

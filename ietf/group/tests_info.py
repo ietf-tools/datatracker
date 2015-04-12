@@ -1,8 +1,8 @@
 import os
 import shutil
 import calendar
-import json
 import datetime
+import json
 
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
@@ -100,7 +100,7 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('table.ietf-doctable td.acronym a:contains("%s")' % group.acronym)), 1)
+        self.assertEqual(len(q('#content a:contains("%s")' % group.acronym)), 1)
 
     def test_concluded_groups(self):
         draft = make_test_data()
@@ -112,7 +112,7 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('table.concluded-groups a:contains("%s")' % group.acronym)), 1)
+        self.assertEqual(len(q('#content a:contains("%s")' % group.acronym)), 1)
 
     def test_bofs(self):
         draft = make_test_data()
@@ -124,7 +124,7 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('table.ietf-doctable td.acronym a:contains("%s")' % group.acronym)), 1)
+        self.assertEqual(len(q('#content a:contains("%s")' % group.acronym)), 1)
         
     def test_group_documents(self):
         draft = make_test_data()
@@ -167,7 +167,7 @@ class GroupPagesTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertTrue(any([draft2.name in x.attrib['href'] for x in q('table.ietf-doctable td.addtolist a')]))
+        self.assertTrue(any([draft2.name in x.attrib['href'] for x in q('table td a.community-list-add-remove-doc')]))
 
         # test the txt version too while we're at it
         url = urlreverse('ietf.group.info.group_documents_txt', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
@@ -309,7 +309,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="foobarbaz")) # No name
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         self.assertEqual(len(Group.objects.filter(type="wg")), num_wgs)
 
         # acronym contains non-alphanumeric
@@ -337,7 +337,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.charter.name, "charter-ietf-testwg")
         self.assertEqual(group.charter.rev, "00-00")
 
-    def test_create_based_on_existing(self):
+    def test_create_based_on_existing_bof(self):
         make_test_data()
 
         url = urlreverse('group_create', kwargs=dict(group_type="wg"))
@@ -349,8 +349,8 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(name="Test", acronym=group.parent.acronym))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
-        self.assertEqual(len(q('form input[name="confirmed"]')), 0) # can't confirm us out of this
+        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertEqual(len(q('form input[name="confirm_acronym"]')), 0) # can't confirm us out of this
 
         # try elevating BoF to WG
         group.state_id = "bof"
@@ -359,14 +359,14 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(name="Test", acronym=group.acronym))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
-        self.assertEqual(len(q('form input[name="confirmed"]')), 1)
+        self.assertTrue(len(q('form .has-error')) > 0)
+        self.assertEqual(len(q('form input[name="confirm_acronym"]')), 1)
 
         self.assertEqual(Group.objects.get(acronym=group.acronym).state_id, "bof")
 
         # confirm elevation
         state = GroupStateName.objects.get(slug="proposed")
-        r = self.client.post(url, dict(name="Test", acronym=group.acronym, confirmed="1",state=state.pk))
+        r = self.client.post(url, dict(name="Test", acronym=group.acronym, confirm_acronym="1", state=state.pk))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Group.objects.get(acronym=group.acronym).state_id, "proposed")
         self.assertEqual(Group.objects.get(acronym=group.acronym).name, "Test")
@@ -390,7 +390,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="collide"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         # create old acronym
         group.acronym = "oldmars"
@@ -403,7 +403,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(acronym="oldmars"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         
         # edit info
         with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
@@ -460,7 +460,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(instructions="")) # No instructions
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         # request conclusion
         mailbox_before = len(outbox)
@@ -537,15 +537,14 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m-1",
                                     'm-1-id': "-1",
                                     'm-1-desc': "", # no description
-                                    'm-1-due_month': str(due.month),
-                                    'm-1-due_year': str(due.year),
+                                    'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
                                     'm-1-docs': ",".join(docs),
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         self.assertEqual(GroupMilestone.objects.count(), milestones_before)
 
         # add
@@ -553,8 +552,7 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m-1",
                                     'm-1-id': "-1",
                                     'm-1-desc': "Test 3",
-                                    'm-1-due_month': str(due.month),
-                                    'm-1-due_year': str(due.year),
+                                    'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
                                     'm-1-docs': ",".join(docs),
                                     'action': "save",
@@ -591,8 +589,7 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m-1",
                                     'm-1-id': -1,
                                     'm-1-desc': "Test 3",
-                                    'm-1-due_month': str(due.month),
-                                    'm-1-due_year': str(due.year),
+                                    'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
                                     'm-1-docs': "",
                                     'action': "save",
@@ -626,11 +623,10 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': m1.desc,
-                                    'm1-due_month': str(m1.due.month),
-                                    'm1-due_year': str(m1.due.year),
+                                    'm1-due': m1.due.strftime("%B %Y"),
                                     'm1-resolved': m1.resolved,
                                     'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
-                                    'm1-accept': "accept",
+                                    'm1-review': "accept",
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -653,8 +649,7 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': m1.desc,
-                                    'm1-due_month': str(m1.due.month),
-                                    'm1-due_year': str(m1.due.year),
+                                    'm1-due': m1.due.strftime("%B %Y"),
                                     'm1-resolved': "",
                                     'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
                                     'm1-delete': "checked",
@@ -684,15 +679,14 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': "", # no description
-                                    'm1-due_month': str(due.month),
-                                    'm1-due_year': str(due.year),
+                                    'm1-due': due.strftime("%B %Y"),
                                     'm1-resolved': "",
                                     'm1-docs': ",".join(docs),
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         m = GroupMilestone.objects.get(pk=m1.pk)
         self.assertEqual(GroupMilestone.objects.count(), milestones_before)
         self.assertEqual(m.due, m1.due)
@@ -702,8 +696,7 @@ class MilestoneTests(TestCase):
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': "Test 2 - changed",
-                                    'm1-due_month': str(due.month),
-                                    'm1-due_year': str(due.year),
+                                    'm1-due': due.strftime("%B %Y"),
                                     'm1-resolved': "Done",
                                     'm1-resolved_checkbox': "checked",
                                     'm1-docs': ",".join(docs),
@@ -880,15 +873,6 @@ class MilestoneTests(TestCase):
         self.assertTrue(m1.desc in unicode(outbox[-1]))
         self.assertTrue(m2.desc in unicode(outbox[-1]))
 
-    def test_ajax_search_docs(self):
-        draft = make_test_data()
-
-        r = self.client.get(urlreverse("group_ajax_search_docs", kwargs=dict(group_type=draft.group.type_id, acronym=draft.group.acronym)),
-                            dict(q=draft.name))
-        self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
-        self.assertTrue(data[0]["id"], draft.name)
-
 class CustomizeWorkflowTests(TestCase):
     def test_customize_workflow(self):
         make_test_data()
@@ -999,4 +983,27 @@ expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf
         url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(group_type="rg"))
         r = self.client.get(url)
         self.assertFalse('mars-ads@' in r.content)
+
+
+class AjaxTests(TestCase):
+    def test_group_menu_data(self):
+        make_test_data()
+
+        r = self.client.get(urlreverse("group_menu_data"))
+        self.assertEqual(r.status_code, 200)
+
+        parents = json.loads(r.content)
+
+        area = Group.objects.get(type="area", acronym="farfut")
+        self.assertTrue(str(area.id) in parents)
+
+        mars_wg_data = None
+        for g in parents[str(area.id)]:
+            if g["acronym"] == "mars":
+                mars_wg_data = g
+                break
+        self.assertTrue(mars_wg_data)
+
+        mars_wg = Group.objects.get(acronym="mars")
+        self.assertEqual(mars_wg_data["name"], mars_wg.name)
 

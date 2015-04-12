@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}About the Datatracker{% endblock %}
+
+{% block content %}
+<div class="col-sm-12">
+   <div class="document" id="facelift-todo">
+      <h1 class="title">Facelift ToDo</h1>
+
+      <div class="section" id="pre-release">
+	 <h2>Pre-Release</h2>
+
+	    <ul class="simple">
+	       <!-- Done -->
+	       <li><strong>DONE</strong> &nbsp; Initial merge with trunk (on separate branch)</li>
+	       <li><strong>DONE</strong> &nbsp; Re-style to make people recognise that they are at the datatracker</li>
+	       <li><strong>DONE</strong> &nbsp; Use a designed colour palette rather than arbitrary element colours</li>
+	       <li><strong>DONE</strong> &nbsp; The extra FontAwesome add-in seems to add glyphs already bundled in
+		  glyphicons, which adds page load time and update complexity; see if we
+		  can reduce to only the bundled glyphs.  <em>Conclusion: not feasible</em></li>
+	       <li><strong>DONE</strong> &nbsp; Have a look at using slightly more readable fonts than the current
+		  one, and change font families if it looks reasonable</li>
+	       <li><strong>DONE</strong> &nbsp; Align the use of info and warning background colours with the info and
+		  warning button colours</li>
+	       <li><strong>DONE</strong> &nbsp; Add an 'About' page which gives credit to those working on the facelift.</li>
+	       <li><strong>DONE</strong> &nbsp; Fix style consistency in WG metadata table vs. document
+		  metadata table (DONE for drafts)</li>
+	       <li><strong>DONE</strong> &nbsp; Rename the base template back to 'base.html' from 'ietf.html' now that
+		  all templates using the old base have been fixed</li>
+	       <li><strong>DONE</strong> &nbsp; On tablets, the ballot grids has a 'click to show more' which has a
+		  z-value larger than the pop-up.  This only matters because it doesn't go
+		  away on click on tablets.  Fix.</li>
+	       <li><strong>DONE</strong> &nbsp; Fix the missing IPR values on search and group pages.</li>
+	       <li><strong>DONE</strong> &nbsp; The ballot grids don't use the position colours used in the pop-up (the
+		  colours in the pop-up is based on the palette colours).  Mabye align grid
+		  position colours with pop-up position colours?</li>
+	       <li><strong>DONE</strong> &nbsp; The Responsible AD Column is also lacking values in the active WGs page.  Fix. </li>
+	       <hr/>
+	       <!-- Remaining -->
+	       <li>Final merge to trunk</li>
+	    </ul>
+
+      </div>
+      <div class="section" id="undetermined">
+	 <h3>Can be done before or after release</h3>
+	    <ul>
+	       <li>Fix style consistency in WG doc list vs. release list, and more</li>
+	       <li>The header colours on the meeting requests page have inverted colour
+		  logic compared to other list pages (info background for warnings, warning
+		  background for sub-headers).  Empty warning panes are shown.  Fix.</li>
+	       <li>The agenda page uses warning colours for day headers.  Fix.</li>
+	       <li>Replace buttons which are links with something which is recognisable
+		  as links, preferably in submenu form.</li>
+	       <li>The colouring of table rows for logged-in ADs, showing their own position,
+		  on <tt>/iesg/agenda/documents/</tt>, has been lost.  Fix.</li>
+	       <li>Fix the misplaced horizontal line on the ballot popup on <tt>/iesg/agenda/</tt>.</li>
+	       <li>Fix the area popups so you don't need to scroll to see all WGs</li>
+	       <li>Darken the background of the 'updated [date]' on the agenda page.</li>
+	       <li>When the viewport becomes very narrow, the WG popups don't come up any more.
+	           There used to be a 'jump to wg' field to let you go to a WG, but that's lost
+		   now.  Bring it back.</li>
+	       <li>Grep for 'XXX' in the code to find places that still need attention.</li>
+	    </ul>
+	    
+
+      </div>
+      <div class="section" id="post-release">
+	 <h2>Post-Release</h2>
+
+	    <ul class="simple">
+	       <li>Maybe change alert, warning, etc. fonts to sans?</li>
+	       <li>Fix input fields to have appropriate type setting, in order to provide
+		  the appropriate keyboard on mobile devices (email address keyboard,
+		  url keyboard, and possibly others).  Set autocorrect and autocaptitalise
+		  attributes correctly, also to make things easier on mobile devices.</li>
+	       <li>The materials page has very different column width for the different
+		  areas.  Consider normalising.  Check IPR list page for possible approach.</li>
+	       <li>Remove general uglyness (like the overly large section descriptions on
+		  <a class="reference external" href="http://zin.tools.ietf.org:31415/sync/discrepancies/">http://zin.tools.ietf.org:31415/sync/discrepancies/</a>)</li>
+	       <li>Change the room map links on the agenda to use pop-overs instead of
+		  pointing off to the room maps on tools.ietf.org</li>
+	    </ul>
+
+      </div>
+   </div>
+
+</div>
+{% endblock %}

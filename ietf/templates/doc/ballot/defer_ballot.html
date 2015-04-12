@@ -1,18 +1,24 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Defer ballot for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Defer ballot for {{ doc }}</h1>
+  <h1>Defer ballot<br><small>{{ doc }}</small></h1>
 
-<form class="defer" action="" method="post">{% csrf_token %}
-  <p>Defer the ballot for {{ doc.file_tag }}?</p>
+  <form role="form" method="post">
+    {% csrf_token %}
+    <p class="alert alert-danger">
+      <b>Defer the ballot for {{ doc }}?</b>
+      <br>
+      The ballot will then be put on the IESG agenda of {{ telechat_date }}.
+    </p>
 
-  <p>The ballot will then be on the IESG agenda of {{ telechat_date }}.</p>
-  
-  <div class="actions">
-    <a href="{{ back_url }}">Back</a>
-    <input type="submit" value="Defer ballot"/>
-  </div>
-</form>
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+      <button type="submit" class="btn btn-danger">Defer ballot</button>
+    {% endbuttons %}
+  </form>
+
 {% endblock %}

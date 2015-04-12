@@ -1,34 +1,22 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Edit IESG note for {{ doc.name }}{% endblock %}
 
-{% block morecss %}
-form.edit-iesg-note #id_note {
-  width: 600px;
-  height: 150px;
-}
-{% endblock %}
-
 {% block content %}
-<h1>Edit IESG note for {{ doc.name }}</h1>
+  <h1>Edit IESG note<br><small>{{ doc.name }}</small></h1>
 
-<form class="edit-iesg-note" action="" method="post">{% csrf_token %}
-  <table>
-    {% for field in form.visible_fields %}
-    <tr>
-      <th>{{ field.label_tag }}</th>
-      <td>{{ field }}
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-      {{ field.errors }}</td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td></td>
-      <td class="actions">
-        <a href="{{ doc.get_absolute_url }}">Back</a>
-        <input type="submit" value="Save"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  {% bootstrap_messages %}
+
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
+
 {% endblock %}

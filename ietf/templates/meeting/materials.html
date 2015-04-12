@@ -1,116 +1,174 @@
-{% extends "base.html" %}{% load ietf_filters %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% block title %}IETF {{ meeting_num }} Preliminary &amp; Interim Materials{% endblock %}
-{% block morecss %}
-table.ietf-materials { width: 99%; border-bottom:1px solid #cbcbcb; nopadding: 0; margin: 0; vertical-align: top; border-collapse: collapse;}
-table.ietf-materials tr {vertical-align: top; }
-table.ietf-materials td { padding:0.5em 0; }
-{% endblock morecss %}
+{% extends "base.html" %}
+
+{% load ietf_filters %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block title %}IETF {{ meeting_num }} preliminary &amp; interim materials{% endblock %}
 
 {% block content %}
-<h1>IETF {{ meeting_num }} Meeting Materials</h1>
+  <div class="row">
+    <div class="col-md-10">
 
-{% if submission_started %}
-<p>Submission cutoff date: {{ cut_off_date|date:"F j, Y" }}<br/>
-Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
-{% endif %}
-<ul>
-<li><a href="{% url "proceedings" %}">Meeting Materials Manager</a> (for session chairs only; password required)</li>
-<li><a href="/meeting/{{meeting_num}}/requests">Meeting Request/Conflict Table</a></li>
-</ul>
+      <h1>IETF {{ meeting_num }} meeting materials</h1>
 
-<div class="ietf-divider"></div>
-<div style="padding: 1em 3em 0 3em;;">
- {% if plenaries %}
- <a href="#plenaries"><b>Plenaries</b></a> &nbsp;|&nbsp;
- {% endif %}
- {% if ietf %}
-    {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.acronym as areas %}
-    {% for area in areas %}
-       {% if not forloop.first %}&nbsp;|&nbsp;{% endif %}
-       <a href="#{{area.grouper}}"><b>{{ area.grouper.upper }}</b></a>
-    {% endfor %}
- {% endif %}
- {% if training %}
-    &nbsp;|&nbsp; <a href="#training"><b>Training</b></a>
- {% endif %}
- {% if iab %}
-    &nbsp;|&nbsp; <a href="#iab-sessions"><b>IAB</b></a>
- {% endif %}
- {% if irtf %}
-    &nbsp;|&nbsp; <a href="#irtf"><b>IRTF</b></a>
- {% endif %}
+      {% if submission_started %}
+        <p class="alert alert-info">
+          <b>Submission cutoff date:</b> {{ cut_off_date|date:"F j, Y" }}<br>
+          <b>Corrections to submissions cutoff date:</b> {{ cor_cut_off_date|date:"F j, Y" }}
+        </p>
+      {% endif %}
 
+      <p>
+        <a class="btn btn-default" href="{% url "proceedings" %}">Meeting materials manager</a>
+        <a class="btn btn-default" href="/meeting/{{meeting_num}}/requests">Meeting requests/conflicts</a>
+      </p>
 
+      {# cache for 15 minutes, as long as there's no proceedings activity. takes 4-8 seconds to generate. #}
+      {% load cache %}
+      {% cache 900 ietf_meeting_materials meeting_num cache_version %}
 
+        {% with "True" as show_agenda %}
+          <!-- Plenaries -->
+          {% if plenaries %}
+            <h2 class="anchor-target" id="plenaries">Plenaries</h2>
+            <table class="table table-condensed table-striped">
+              <thead>
+	        <tr>
+	          <th>Group</th>
+	          <th>Agenda</th>
+	          <th>Minutes</th>
+	          <th>Slides</th>
+	        </tr>
+              </thead>
 
+              <tbody>
+	        {% for session in plenaries %}
+	          {% include "meeting/group_materials.html" %}
+	        {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
 
-</div>
-{# cache for 15 minutes, as long as there's no proceedings activity. takes 4-8 seconds to generate. #}
-{% load cache %}
-{% cache 900 ietf_meeting_materials meeting_num cache_version %}
+          <!-- Working groups -->
+          {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
+          {% for sessions in areas %}
+            <h2 class="anchor-target" id="{{sessions.list.0.group.parent.acronym}}">{{sessions.list.0.group.parent.acronym|upper}} <small>{{ sessions.grouper }}</small></h2>
+            <table class="table table-condensed table-striped">
+              <thead>
+	        <tr>
+	          <th>Group</th>
+	          <th>Agenda</th>
+	          <th>Minutes</th>
+	          <th>Slides</th>
+	        </tr>
+              </thead>
 
-{% with "True" as show_agenda %}
-<!-- Plenaries -->
-{% if plenaries %}
-    <a name="plenaries"></a>
-    <h2 class="ietf-divider">Plenaries</h2>
-    {% for session in plenaries %}
-       {% include "meeting/group_materials.html" %}
-    {% endfor %}
-{% endif %}
+              <tbody>
+	        {% for session in sessions.list|dictsort:"group.acronym" %}
+	          {% ifchanged session.group.acronym %}
+	            {% include "meeting/group_materials.html" %}
+	          {% endifchanged %}
+	        {% endfor %}
+              </tbody>
+            </table>
+          {% endfor %}
 
-<!-- Working groups -->
-{% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
-{% for sessions in areas %}
-   <a name="{{sessions.list.0.group.parent.acronym}}"></a>
-   <h2 class="ietf-divider">{{ sessions.grouper }}</h2>
-   {% for session in sessions.list|dictsort:"group.acronym" %}
-      {% ifchanged session.group.acronym %}
-	 {% include "meeting/group_materials.html" %}
-      {% endifchanged %}
-   {% endfor %}
-{% endfor %}
+          <!-- Training Sessions -->
+          {% if training %}
+            {% with "False" as show_agenda %}
+              <h2 class="anchor-target" id="training">Training</h2>
+              <table class="table table-condensed table-striped">
+                <thead>
+	          <tr>
+	            <th>Group</th>
+	            <th>Agenda</th>
+	            <th>Minutes</th>
+	            <th>Slides</th>
+	          </tr>
+                </thead>
 
-<!-- Training Sessions -->
-{% if training %}
-    {% with "False" as show_agenda %}
-    <a name="training"></a>
-    <h2 class="ietf-divider">Training</h2>
-    {% for session in training %}
-      {% ifchanged %}
-	 {% include "meeting/group_materials.html" %}
-      {% endifchanged %}
-    {% endfor %}
-    {% endwith %}
-{% endif %}
-<!-- End of Training Sessions -->
+                <tbody>
+	          {% for session in training %}
+	            {% ifchanged %}
+	              {% include "meeting/group_materials.html" %}
+	            {% endifchanged %}
+	          {% endfor %}
+                </tbody>
+              </table>
+            {% endwith %}
+          {% endif %}
 
-<!-- IAB Sessions -->
-{% if iab %}
-    <a name="iab-sessions"></a>
-    <h2 class="ietf-divider">IAB</h2>
-    {% for session in iab %}
-      {% ifchanged %}
-	 {% include "meeting/group_materials.html" %}
-      {% endifchanged %}
-    {% endfor %}
-{% endif %}
-<!-- End of IAB Sessions -->
+          <!-- IAB Sessions -->
+          {% if iab %}
+            <h2 class="anchor-target" id="iab">IAB <small>Internet Architecture Board</small></h2>
+            <table class="table table-condensed table-striped">
+              <thead>
+	        <tr>
+	          <th>Group</th>
+	          <th>Agenda</th>
+	          <th>Minutes</th>
+	          <th>Slides</th>
+	        </tr>
+              </thead>
 
-<!-- IRTF Sessions -->
-{% if irtf %}
-   <a name="irtf"></a>
-   <h2 class="ietf-divider">IRTF</h2>
-    {% for session in irtf|dictsort:"group.acronym" %}
-      {% ifchanged %}
-	 {% include "meeting/group_materials.html" %}
-      {% endifchanged %}
-    {% endfor %}
-{% endif %}
-<!-- End of IRTF Sessions -->
-{% endwith %}
+              <tbody>
+	        {% for session in iab %}
+	          {% ifchanged %}
+	            {% include "meeting/group_materials.html" %}
+	          {% endifchanged %}
+	        {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
 
-{% endcache %}
+          <!-- IRTF Sessions -->
+          {% if irtf %}
+            <h2 class="anchor-target" id="irtf">IRTF <small>Internet Research Task Force</small></h2>
+            <table class="table table-condensed table-striped">
+              <thead>
+	        <tr>
+	          <th>Group</th>
+	          <th>Agenda</th>
+	          <th>Minutes</th>
+	          <th>Slides</th>
+	        </tr>
+              </thead>
 
+              <tbody>
+	        {% for session in irtf|dictsort:"group.acronym" %}
+	          {% ifchanged %}
+	            {% include "meeting/group_materials.html" %}
+	          {% endifchanged %}
+	        {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+        {% endwith %}
+      {% endcache %}
+    </div>
+
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        {% if plenaries %}
+          <li><a href="#plenaries">Plenaries</a></li>
+        {% endif %}
+        {% if ietf %}
+          {% regroup ietf|dictsort:"group.parent.acronym" by group.parent as areas %}
+          {% for area in areas %}
+            <li><a href="#{{area.grouper.acronym}}">{{ area.grouper.acronym|upper }}</a></li>
+          {% endfor %}
+        {% endif %}
+        {% if training %}
+          <li><a href="#training">Training</a></li>
+        {% endif %}
+        {% if iab %}
+          <li><a href="#iab">IAB</a></li>
+        {% endif %}
+        {% if irtf %}
+          <li><a href="#irtf">IRTF</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
 {% endblock %}

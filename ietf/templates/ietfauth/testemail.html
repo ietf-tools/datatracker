@@ -1,25 +1,29 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Set up test email address{% endblock %}
 
 {% block content %}
-<h1>Set up test email address</h1>
+  <h1>Set up test email address</h1>
 
-<p>Since this server is running in test mode, all email to be sent out
-is intercepted and thrown away.</p>
+  {% bootstrap_messages %}
 
-<p>To receive a copy of each message before it's thrown away, you can
-set an email address below. The address is stored in the <code>testmailcc</code>
-cookie in your browser. So make sure cookies are enabled.</p>
+  <p>Since this server is running in test mode, all email to be sent out
+    is intercepted and thrown away.</p>
 
-<p>Value of <code>testmailcc</code>: {{ cookie }}</p>
+  <p>To receive a copy of each message before it's thrown away, you can
+    set an email address below. The address is stored in the <code>testmailcc</code>
+    cookie in your browser. So make sure cookies are enabled.</p>
 
-<form action="" method="post">{% csrf_token %}
-  <table>
-  {{ form.as_table }}
-  </table>
-  <div>
-    <input type="submit" value="Set cookie" />
-  </div>
-</form>
+  <p>Value of <code>testmailcc</code>: {{ cookie }}</p>
+
+  <form role-"form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button class="btn btn-primary" type="submit">Set cookie</button>
+    {% endbuttons %}
+  </form>
 {% endblock %}

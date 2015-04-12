@@ -1,75 +1,60 @@
 {% extends "submit/submit_base.html" %}
-{% block title %}Add Pre-Approval{% endblock %}
 
-{% block morecss %}
-{{ block.super }}
-p { max-width: 50em; }
-.name-template { padding: 0.2em 0.5em; background-color: #eee; cursor: pointer; transition: background-color 0.3s; }
-.name-template:hover { background-color: #aaa; }
-form.add-preapproval input[name=name] { width: 30em; }
-ul.errorlist { color: #a00; padding: 0px; margin: 0px; list-style-type: none; }
-form .actions { padding-top: 1em; text-align: right; }
-form .actions a { display: inline-block; margin-right: 1em; }
-{% endblock %}
+{% load humanize %}
+{% load bootstrap3 %}
+
+{% block title %}Add pre-approval{% endblock %}
 
 {% load ietf_filters %}
 
 {% block submit_content %}
 
-<h2>Add Pre-Approval</h2>
+  {% bootstrap_messages %}
 
-<p>You can register a pre-approved draft name. Then the chair
-approval step of group -00 submissions is suspended for that draft name
-so a future submission is posted to the data tracker immediately.</p>
+  <h2>Add pre-approval</h2>
 
-<p>When the revision 00 draft is submitted, the pre-approval will not
-be shown anymore as it has fulfilled its purpose (only revision 00 submissions are
-subject to approval). If the draft never shows up, you can instead
-later cancel the pre-approval to get rid of it.</p>
+  <p>You can register a pre-approved draft name. Then the chair
+    approval step of group -00 submissions is suspended for that draft name
+    so a future submission is posted to the data tracker immediately.</p>
 
-<h3>Instructions</h3>
+  <p>When the revision -00 draft is submitted, the pre-approval will not
+    be shown anymore as it has fulfilled its purpose (only revision -00 submissions are
+    subject to approval). If the draft never shows up, you can instead
+    later cancel the pre-approval to get rid of it.</p>
 
-<p>Do not include <code>-00</code> and do not include a file extension
-like <code>.txt</code> in the name.</p>
+  <h3>Instructions</h3>
 
-{% if user|has_role:"Secretariat" %}
-<p>Only group submissions are subject to approval and are thus pre-approvable.</p>
-{% else %}
-<p>As chair{% if groups|length > 1 %} of {{ groups|length }} groups{% endif %} you can pre-approve draft names on the form (click to pre-fill):
-  <table>
-  {% for g in groups %}
-    <tr><td class="name-template">draft-{% if g.type_id == "rg"%}irtf{% else %}ietf{% endif %}-{{ g.acronym }}-<i>something</i></td></tr>
-  {% endfor %}
-  </table>
-</p>
-{% endif %}
+  <p class="alert alert-warning">Do not include <code>-00</code> and do not include a file extension
+    like <code>.txt</code> in the name.</p>
 
-<form class="add-preapproval" action="" method="post">{% csrf_token %}
-  <table>
-    <tr>
-      <td>{{ form.name.label_tag }}</td>
-      <td>{{ form.name }}</td>
-    </tr>
-    {% if form.name.errors %}
-    <tr><td colspan="2">{{ form.name.errors }}</td></tr>
-    {% endif %}
+  {% if user|has_role:"Secretariat" %}
+    <p class="alert alert-info">Only group submissions are subject to approval and are thus pre-approvable.</p>
+  {% else %}
+    <p>As chair{% if groups|length > 1 %} of {{ groups|length|apnumber }} groups{% endif %} you can pre-approve draft names on the form:</p>
 
-    <tr>
-      <td class="actions" colspan="2">
-      <a class="button" href="{% url "submit_approvals" %}#preapprovals">Cancel</a>
-      <input class="button" type="submit" value="Add pre-approval" />
-      </td>
-    </tr>
-  </table>
-</form>
+    <p class="buttonlist">
+      {% for g in groups %}
+        <button class="btn btn-default name-template">draft-ietf-<b>{{ g.acronym }}</b>-<i>something</i></button>
+      {% endfor %}
+    </p>
+  {% endif %}
+
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-default pull-right" href="{% url "submit_approvals" %}#preapprovals">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}
 
-{% block scripts %}
-jQuery(function () {
-    jQuery(".name-template").click(function (){
-        // clear text first to make sure the cursor ends up at the end
-        jQuery("form.add-preapproval input[name=name]").text("").focus().val(jQuery(this).text().replace("something", ""));
+{% block js %}
+  <script>
+    $(".name-template").click(function (){
+        $("form input[name=name]").text("").focus().val($(this).text().replace("something", ""));
     });
-});
+  </script>
 {% endblock %}

@@ -1,49 +1,73 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "ipr/search_result.html" %}
+
 {% load ietf_filters %}
-{% load future %}
+
+{% block search_header %}Draft search results{% endblock %}
 
 {% block search_result %}
-        <table cellpadding="1" cellspacing="0" border="0">
+  <p class="alert alert-info">Total number of IPR disclosures found: <b>{{ iprs|length }}</b>.</p>
 
-          <tr><td colspan="3">Total number of IPR disclosures found: {{ iprs|length }} </td></tr>
-          {% for ipr in iprs %}
-          <tr valign="top" bgcolor="#dadada">
-             <td width="100">{{ ipr.time|date:"Y-m-d" }}</td>
-             <td width="90"><li>ID # {{ ipr.id }}</li></td>
-                     <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">"{{ ipr.title }}"</a></td>
+  {% if iprs %}
+    <table class="table table-condensed table-striped">
+      <thead>
+        <th>Date</th>
+        <th>ID</th>
+        <th>Statement</th>
+      </thead>
+
+      <tbody>
+        {% for ipr in iprs %}
+          <tr>
+            <td class="text-nowrap">{{ ipr.time|date:"Y-m-d" }}</td>
+            <td>{{ ipr.id }}</td>
+            <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a></td>
           </tr>
-          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
 
-          <tr><td colspan="3"><hr>Total number of documents searched: {{ docs|length }}</td></tr>
-          {% for doc in docs %}
-          <tbody bgcolor="#{% cycle 'dadada','eaeaea' as bgcolor %}">
-             <tr >
-            <td colspan="3">
-                           Search result on {{ doc.name|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.document.title }}"{% if not forloop.first %}{% if doc.related %}, that was {{ doc.relation|lower }} {{ doc.related.source|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.source.title }}"{% endif %}{% endif %}
-            </td>
-             </tr>
-             {% if doc.iprdocrel_set.all %}
-              {% for ipr in doc.iprdocrel_set.all %}
-              {% if ipr.disclosure.state.slug in states %}
-               <tr valign="top">
-                  <td width="100">{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
-                  <td width="90"><li>ID # {{ ipr.disclosure.id }}</li></td>
-                              <td><a href="{% url "ietf.ipr.views.show" id=ipr.disclosure.id %}">"{{ ipr.disclosure.title }}"</a></td>
-               </tr>
-               {% endif %}
-              {% endfor %}
-             {% else %}
-             <tr>
-               <td></td>
-               <td colspan="2">
-                  No IPR disclosures have been submitted directly on <i>{{ doc.name|rfcspace|lstrip:"0" }}</i>{% if iprs %},
-                              but there are disclosures on {% if docs|length == 2 %}a related document{% else %}related documents{% endif %}, listed on this page{% endif %}.
-               </td>
-             </tr>
-             {% endif %}
-          </tbody>
-          {% endfor %}
+  <p class="alert alert-info">Total number of documents searched: <b>{{ docs|length}}</b>.</p>
 
-        </table>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <th>Date</th>
+      <th>ID</th>
+      <th>Statement</th>
+    </thead>
+
+    <tbody>
+      {% for doc in docs %}
+        <tr>
+          <th class="warning" colspan="3">
+            Results for {{ doc.name|rfcspace|lstrip:"0"|rfcnospace }} ("{{ doc.document.title }}"){% if not forloop.first %}{% if doc.related %}, that was {{ doc.relation|lower }} {{ doc.related.source|rfcspace|lstrip:"0"|rfcnospace  }} ("{{ doc.related.source.title }}"){% endif %}{% endif %}:
+          </th>
+        </tr>
+
+        {% with doc.iprdocrel_set.all as doc_iprs %}
+          {% if doc_iprs %}
+            {% for ipr in doc_iprs %}
+              {% if ipr.disclosure.state_id in states %}
+                <tr>
+                  <td class="text-nowrap">{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
+                  <td>{{ ipr.disclosure.id }}</td>
+                  <td><a href="{% url "ietf.ipr.views.show" id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a></td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td></td>
+              <td></td>
+              <td>
+	        No IPR disclosures have been submitted directly on <i>{{ doc.name|rfcspace|lstrip:"0" }}</i>{% if iprs %},
+	        but there are disclosures on {% if docs|length == 2 %}a related document{% else %}related documents{% endif %}, listed on this page{% endif %}.
+              </td>
+            </tr>
+          {% endif %}
+        {% endwith %}
+      {% endfor %}
+    </tbody>
+  </table>
+
 {% endblock %}

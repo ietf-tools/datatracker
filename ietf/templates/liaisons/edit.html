@@ -1,34 +1,66 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% load ietf_filters %}
+
+{% load bootstrap3 %}
+
 {% block title %}{% if liaison %}Edit liaison: {{ liaison }}{% else %}Send Liaison Statement{% endif %}{% endblock %}
 
 {% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/liaisons.css"></link>
-<link rel="stylesheet" type="text/css" href="/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css"></link>
+  <link rel="stylesheet" href="/css/lib/datepicker3.css"></link>
+  <link rel="stylesheet" href="/css/lib/select2.css">
+  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
 {% endblock %}
 
 {% block content %}
-<h1>{% if liaison %}Edit liaison: {{ liaison }}{% else %}Send Liaison Statement{% endif %}</h1>
 
-<noscript class="js-info">
-This page depends on Javascript being enabled to work properly. Please enable Javascript and reload the page.
-</noscript>
+  <h1>{% if liaison %}Edit liaison: {{ liaison }}{% else %}Send Liaison Statement{% endif %}</h1>
 
-{% if not liaison %}
-<ul>
-  <li>If you wish to submit your liaison statement by e-mail, then please send it to <a href="mailto:statements@ietf.org">statements@ietf.org</a></li>
-  <li>Fields marked with <span class="fieldRequired">*</span> are required. For detailed descriptions of the fields see <a href="/liaison/help/fields/">Field help</a></li>
-</ul>
-{% endif %}
+  {% bootstrap_messages %}
 
-{# Replace the form expansion with an include as a temporary workaround for missing CSRF tokens #}
-{# {{ form }} #}
-{% include "liaisons/liaisonform.html" %}
+  {% if form.errors %}
+    <div class="alert alert-danger">
+      <p>There were errors in the submitted form -- see below. Please correct these and resubmit.</p>
+    </div>
+  {% endif %}
+
+  {% bootstrap_form_errors form %}
+
+  <noscript class="js-info">
+    This page depends on Javascript being enabled to work properly. Please enable Javascript and reload the page.
+  </noscript>
+
+  {% if not liaison %}
+    <p class="help-block">If you wish to submit your liaison statement by e-mail, then please send it to <a href="mailto:statements@ietf.org">statements@ietf.org</a></p>
+
+    <p class="help-block">Fields marked with <label class="required"></label> are required. For detailed descriptions of the fields see the <a href="{% url "liaisons_field_help" %}">field help</a>.</p>
+  {% endif %}
+
+  <form role="form" class="liaisons form-horizontal show-required" method="post" enctype="multipart/form-data" data-ajax-info-url="{% url "ietf.liaisons.views.ajax_get_liaison_info" %}">{% csrf_token %}
+
+    {% for fieldset in form.get_fieldsets %}
+      <h2>{{ fieldset.name }}</h2>
+
+      {% for field in fieldset.fields %}
+        {% bootstrap_field field layout="horizontal" %}
+      {% endfor %}
+    {% endfor %}
+
+    {% buttons %}
+      <a class="btn btn-danger pull-right" href="{% url "liaison_list" %}">Cancel</a>
+
+      {% if not liaison %}
+        <button name="send" type="submit" class="btn btn-primary">Send and post</button>
+        <button name="post_only" type="submit" class="btn btn-default">Post only</button>
+      {% else %}
+        <button name="save" type="submit" class="btn btn-primary">Save</button>
+      {% endif %}
+    {% endbuttons %}
+  </form>
 
 {% endblock %}
 
 {% block js %}
-  <script type="text/javascript" src="/js/jquery-ui-1.9.0.custom/minified/jquery-ui.custom.min.js"></script>
-  <script type="text/javascript" src="/js/liaisons.js"></script>
+  <script src="/js/lib/bootstrap-datepicker.js"></script>
+  <script src="/js/lib/select2-3.5.2.min.js"></script>
+  <script src="/js/select2-field.js"></script>
+  <script src="/js/liaisons.js"></script>
 {% endblock %}

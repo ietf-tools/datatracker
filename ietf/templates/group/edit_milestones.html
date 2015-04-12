@@ -1,111 +1,100 @@
 {% extends "base.html" %}
 
-{% block title %}{{ title }}{% endblock %}
-
-{% block morecss %}
-tr.milestone td { padding: 0.2em 0; cursor: pointer; vertical-align: top; }
-tr.milestone:hover { background-color: #e8f0fa; }
-td.due { width: 5em; }
-.milestone.changed { font-weight: bold; }
-.milestone .note  { font-style: italic; display: inline-block; margin-left: 0.5em; color: #2647a0; }
-.milestone .doc { display: block; padding-left: 1em; }
-.edit-milestone { display: none; }
-.milestone.delete, .edit-milestone.delete, .edit-milestone.delete input { color: #aaa !important; }
-.edit-milestone table { margin: 1em 0; }
-.edit-milestone table td { padding: 0.1em; }
-.edit-milestone .desc input { width: 50em; }
-.edit-milestone .due input { width: 6em; }
-.edit-milestone input[type=checkbox] { vertical-align: middle; margin: 0 0.2em 0 0.8em;}
-.edit-milestone .resolved label { vertical-align: middle; }
-.edit-milestone .delete label { vertical-align: middle; }
-.edit-milestone .accept ul { display: inline-block; margin: 0; padding: 0; }
-.edit-milestone .accept ul li { list-style: none; display: inline-block; margin: 0; padding: 0; padding-left: 0.4em; }
-.edit-milestone .accept ul li label { vertical-align: middle; }
-.edit-milestone .accept ul li input { margin: 0; padding: 0; vertical-align: middle; }
-.edit-milestone .docs td { vertical-align: top; }
-
-ul.errorlist { border-width: 0px; padding: 0px; margin: 0px; display: inline-block; }
-ul.errorlist li { color: #a00; margin: 0px; padding: 0px; list-style: none; }
-p.help { font-style: italic; }
-p.error { color: #a00; font-size: larger; }
-tr.milestone.add { font-style: italic; }
-{% endblock %}
+{% load bootstrap3 %}
 
 {% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/token-input.css"></link>
+  <link rel="stylesheet" href="/css/lib/select2.css">
+  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
+  <link rel="stylesheet" href="/css/lib/datepicker3.css">
 {% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-{% load ietf_filters %}
-<h1>{{ title }}</h1>
+  <h1>{{ title }}</h1>
 
-<noscript>This page depends on Javascript being enabled to work properly.</noscript>
+  <noscript>This page depends on Javascript being enabled to work properly.</noscript>
 
-<p>Links:
-  <a href="{{ g.about_url  }}">{{ group.acronym }} {{ group.type.name }}</a>
-  {% if group.charter %}
-  - <a href="{% url "doc_view" name=group.charter.canonical_name %}">{{ group.charter.canonical_name }}</a>
+  {% bootstrap_messages %}
+
+  <p>Links:
+    <a href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>
+    {% if group.charter %}
+      - <a href="{% url "doc_view" name=group.charter.canonical_name %}">{{ group.charter.canonical_name }}</a>
+    {% endif %}
+  </p>
+
+
+  <p class="help-block">
+    {% if forms %}Click a milestone to edit it.{% endif %}
+
+    {% if needs_review %}
+      Note that as {{ group.type.name }} Chair you cannot edit descriptions of existing
+      milestones and milestones you add are subject to review by the {{ reviewer }}.
+    {% endif %}
+  </p>
+
+  {% if can_reset %}
+    <p>
+      You can <a href="{% url "group_reset_charter_milestones" group_type=group.type_id acronym=group.acronym %}">reset
+      this list</a> to the milestones currently in use for the {{ group.acronym }} {{ group.type.name }}.
+    </p>
   {% endif %}
-</p>
 
+  {% if form_errors %}
+    <p class="alert alert-danger">There were errors, see below.</p>
+  {% endif %}
 
-<p class="help">{% if forms %}Click a milestone to edit it.{% endif %}
+  <form method="post" id="milestones-form">{% csrf_token %}
+    <table class="table">
 
-{% if needs_review %}
-Note that as {{ group.type.name }} Chair you cannot edit descriptions of existing
-milestones and milestones you add are subject to review by the {{ reviewer }}.
-{% endif %}
-</p>
+      {% for form in forms %}
+        <tr class="milestone{% if form.delete.data %} delete{% endif %}">
+          <td class="due">
+            {% if form.milestone.resolved %}
+              <span class="label label-success">{{ form.milestone.resolved }}</span>
+            {% else %}
+              {{ form.milestone.due|date:"M Y" }}
+            {% endif %}
+          </td>
+          <td>
+            <div>{{ form.milestone.desc }}
+              {% if form.needs_review %}<span title="This milestone is not active yet, awaiting {{ reviewer }} acceptance" class="label label-warning">Awaiting accept</span>{% endif %}
+              {% if form.changed %}<span class="label label-info">Changed</span>{% endif %}
+            </div>
+            
+            {% for d in form.docs_names %}
+              <div class="doc">{{ d }}</div>
+            {% endfor %}
+          </td>
+        </tr>
 
-{% if can_reset %}
-<p>
-You can <a href="{% url "group_reset_charter_milestones" group_type=group.type_id acronym=group.acronym %}">reset
-this list</a> to the milestones currently in use for the {{ group.acronym }} {{ group.type.name }}.
-</p>
-{% endif %}
+        <tr class="edit-milestone{% if form.changed %} changed{% endif %}">
+          <td colspan="2">{% include "group/milestone_form.html" %}</td>
+        </tr>
+      {% endfor %}
 
-{% if form_errors %}
-<p class="error">There were errors, see below.</p>
-{% endif %}
+      <tr>
+        <td></td>
+        <td><button type="button" class="btn btn-default add-milestone">Add extra {% if milestone_set == "chartering" %}charter{% endif%} milestone {% if needs_review %}for {{ reviewer }} review{% endif %}</button></td>
+      </tr>
 
-<form action="" method="post" id="milestones-form">{% csrf_token %}
-<table cellspacing="0" cellpadding="0">
-{% for form in forms %}
-<tr class="milestone{% if form.delete.data %} delete{% endif %}">
-  <td class="due">{% if form.milestone.resolved %}{{ form.milestone.resolved }}{% else %}{{ form.milestone.due|date:"M Y" }}{% endif %}</td>
-  <td>
-    <div>{{ form.milestone.desc }}
-    {% if form.needs_review %}<span class="note">awaiting accept</span>{% endif %}
-    {% if form.changed %}<span class="note">changed</span>{% endif %}
-    </div>
+      <tr class="edit-milestone template"><td colspan="2">{% include "group/milestone_form.html" with form=empty_form %}</td></tr>
+    </table>
 
-    {% for d in form.docs_names %}
-    <div class="doc">{{ d }}</div>
-    {% endfor %}
-  </td>
-</tr>
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="{% if milestone_set == "charter" %}{% url "doc_view" name=group.charter.canonical_name %}{% else %}{{ group.about_url }}{% endif %}">Cancel</a>
 
-<tr class="edit-milestone{% if form.changed %} changed{% endif %}"><td colspan="2">{% include "group/milestone_form.html" %}</td></tr>
-{% endfor %}
-<tr class="milestone add"><td></td><td>Add {% if milestone_set == "chartering" %}charter{% endif%} milestone {% if needs_review %}for {{ reviewer }} review{% endif %}</td></tr>
-<tr class="edit-milestone template"><td colspan="2">{% include "group/milestone_form.html" with form=empty_form %}</td></tr>
-</table>
+      <button style="display:none" class="btn btn-primary" type="submit" data-labelsave="Save" data-labelreview="Review changes">Save</button>
+      <input type="hidden" name="action" value="save">
+    {% endbuttons %}
 
-<div class="actions">
-  <a class="button" href="{% if milestone_set == "charter" %}{% url "doc_view" name=group.charter.canonical_name %}{% else %}{{ group.about_url }}{% endif %}">Cancel</a>
-  <input class="button" type="submit" data-labelsave="Save" data-labelreview="Review changes" value="Save" style="display:none"/>
-  <input type="hidden" name="action" value="save">
-</div>
-
-</form>
+  </form>
 {% endblock %}
 
-{% block content_end %}
-<script type="text/javascript" src="/js/lib/jquery.tokeninput.js"></script>
-<script type="text/javascript" src="/js/lib/json2.js"></script>
-<script type="text/javascript" src="/js/tokenized-field.js"></script>
-<script>
-  var finishedMilestoneText = "{{ finished_milestone_text|escapejs }}";
-</script>
-<script type="text/javascript" src="/js/edit-milestones.js"></script>
+{% block js %}
+  <script src="/js/lib/select2-3.5.2.min.js"></script>
+  <script src="/js/select2-field.js"></script>
+  <script src="/js/lib/bootstrap-datepicker.js"></script>
+  <script src="/js/edit-milestones.js"></script>
 {% endblock %}

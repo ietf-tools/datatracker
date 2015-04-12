@@ -1,87 +1,75 @@
 {% extends "base.html" %}
-{% comment %}
-Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
-All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions 
-are met:
-
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided
-   with the distribution.
-
- * Neither the name of the Nokia Corporation and/or its
-   subsidiary(-ies) nor the names of its contributors may be used
-   to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-{% endcomment %}
 
 {% load ballot_icon %}
 {% load ietf_filters %}
 
-{% block title %}IESG Discuss Positions{% endblock %}
-
-{% block morecss %}
-.discusses-chooser label { display: inline-block; margin-right: 0.5em; }
-.discusses-chooser input { vertical-align: middle; margin: 0; padding: 0; margin-right: 0.3em; }
-{% endblock %}
+{% block title %}IESG discuss positions{% endblock %}
 
 {% block content %}
-<h1>IESG Discuss Positions</h1>
+  <h1>IESG discuss positions</h1>
 
-{% if user|has_role:"Area Director" %}
-<p class="discusses-chooser">
-  Show:
-  <label><input type="radio" name="discusses" checked="checked" value="all"/>All</label>
-  <label><input type="radio" name="discusses" value="byme"/>By me</label>
-  <label><input type="radio" name="discusses" value="forme"/>For me</label>
-</p>
-{% endif %}
+  {% if user|has_role:"Area Director" %}
+    <p class="btn-group" data-toggle="buttons">
+      <label class="btn btn-default active discuss">
+        <input type="radio" value="all">All
+      </label>
+      <label class="btn btn-default discuss">
+        <input type="radio" value="byme">By me
+      </label>
+      <label class="btn btn-default discuss">
+        <input type="radio" value="forme">For me
+      </label>
+    </p>
+  {% endif %}
 
-<table class="ietf-table ietf-doctable">
-  <tr>
-    <th class="doc">Document</th>
-    <th class="status" colspan="2">Status</th>
-    <th class="ad">Area Director</th>
-    <th>Discusses</th>
-  </tr>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>Status</th>
+        <th>Responsible AD</th>
+        <th>Discusses</th>
+      </tr>
+    </thead>
 
-  {% for doc in docs %}
-  <tr class="discuss-row {{ forloop.counter|divisibleby:2|yesno:"evenrow,oddrow" }} {% if doc.by_me %}byme{% endif %} {% if doc.for_me %}forme{% endif %}">
-    <td class="doc">{{ doc.displayname_with_link }}</td>
-
-    {% include "doc/search/status_columns.html" %}
-
-    <td class="ad">{{ doc.ad|default:"" }}</td>
-    <td>
-      {% for p in doc.blocking_positions %}
-        {% if p.old_ad %}[{% endif %}{{ p.ad }}{% if p.old_ad %}]{% endif %} ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %} days ago{% if doc.get_state_url != "rfc" and p.rev != doc.rev %} for -{{ p.rev }}{% endif %})<br/>
+    <tbody>
+      {% for doc in docs %}
+        <tr class="{% if doc.by_me %}byme{% endif %} {% if doc.for_me %}forme{% endif %}">
+          <td>
+	    {{ doc.displayname_with_link }}
+          </td>
+          {% include "doc/search/status_columns.html" %}
+          <td>{{ doc.ad|default:"" }}</td>
+          <td>
+	    {% for p in doc.blocking_positions %}
+	      {% if p.old_ad %}
+	        <span class="text-muted">
+	      {% endif %}
+	      {{ p.ad }}
+	      ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
+	      days ago{% if doc.get_state_url != "rfc" and p.rev != doc.rev %}
+	        for -{{ p.rev }}{% endif %})<br>
+	      {% if p.old_ad %}
+	        </span>
+	      {% endif %}
+	    {% endfor %}
+          </td>
+        </tr>
       {% endfor %}
-    </td>
-  </tr>
-  {% endfor %}
-</table>
-{% endblock content %}
+    </tbody>
+  </table>
+{% endblock %}
 
 {% block js %}
-<script type="text/javascript" src="/js/utils.js"></script>
-<script type="text/javascript" src="/js/doc-search.js"></script>
-<script type="text/javascript" src="/js/iesg-discusses.js"></script>
+  <script>
+    $(".discuss").click(function () {
+        var x = $(this).find("input").val();
+        if (x === "all") {
+            $("tbody tr").removeClass("hidden");
+        } else {
+            $("tbody tr." + x).removeClass("hidden");
+            $("tbody tr:not(." + x + ")").addClass("hidden");
+        }
+    });
+  </script>
 {% endblock %}

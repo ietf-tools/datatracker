@@ -1,17 +1,16 @@
-  <tr>
-    <th>Submitter</th>
-    <td class="author-button-help">
-      If you are one of the authors, please click the button below
-      with your name on it to automatically fill in the
-      submitter information. Otherwise,
-      please manually enter your name and email address.<br /><br />
+{% load bootstrap3 %}
 
-      {% for author in submission.authors_parsed %}
-        <input type="button" class="author" data-name="{{ author.name  }}" data-email="{{ author.email }}" value="{{ author.name }}" />
-      {% endfor %}
-    </td>
-  </tr>
+<p>
+  If you are one of the authors, please click the button below
+  with your name on it to automatically fill in the
+  submitter information. Otherwise,
+  please manually enter your name and email address.
+</p>
 
-  {% for field in submitter_form %}
-  <tr{% if field.errors %} class="error"{% endif %}><th>{{ field.label_tag }}</th><td>{{ field }}{{ field.errors }}</td></tr>
+{% buttons %}
+  {% for author in submission.authors_parsed %}
+    <input type="button" class="author btn btn-default" data-name="{{ author.name  }}" data-email="{{ author.email }}" value="{{ author.name }}">
   {% endfor %}
+{% endbuttons %}
+
+{% bootstrap_form submitter_form %}

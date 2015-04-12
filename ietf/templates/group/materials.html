@@ -1,13 +1,8 @@
 {% extends "group/group_base.html" %}
+
 {% load ietf_filters %}
 
 {% block group_subtitle %}Materials{% endblock %}
-
-{% block morecss %}
-  {{ block.super }}
-  .materials .edit-options { float: right; margin-left: 2em; font-style: italic; }
-  .materials .snippable { width:25em; }
-{% endblock %}
 
 {% block group_content %}
   {% load ietf_filters %}
@@ -16,8 +11,7 @@
     {% for doc_type, docs in doc_types %}
       <h2>{{ doc_type.name }}</h2>
 
-      <table class="ietf-table ietf-doctable materials">
-
+      <table class="table table-condensed table-striped materials">
         <tr>
           <th>Title</th>
           <th>Abstract</th>
@@ -28,40 +22,40 @@
         </tr>
 
         {% for d in docs %}
-          <tr class="{% cycle "evenrow" "oddrow" %}">
+          <tr>
             <td><a class="title-link" href="{% url "doc_view" name=d.name %}">{{ d.title }}</a></td>
             <td class='snippable'>{{ d.abstract|format_snippet }} </td>
             <td>{{ d.rev }}</td>
             <td>{{ d.time|date:"Y-m-d" }}</td>
             <td>{% regroup d.last_presented by session.meeting as past_pres_list %}
-                {% for p in past_pres_list %}
-                  {{ p.grouper }}
-                   {% if p.list|length > 1 %}
-                       ( {{ p.list|length }} sessions )
-                   {% else %}
-                       {% for pr in p.list %}
-                         {% if pr.rev != d.rev %}
-                           (-{{ pr.rev }})
-                         {% endif %}
-                       {% endfor %}
-                   {% endif %}
-                   {% if not forloop.last %}, {% endif %}
-               {% endfor %}
-            <td>{% regroup d.future_presentations by session.meeting as meeting_pres_list %} 
+              {% for p in past_pres_list %}
+                {{ p.grouper }}
+                {% if p.list|length > 1 %}
+                  ({{ p.list|length }} sessions)
+                {% else %}
+                  {% for pr in p.list %}
+                    {% if pr.rev != d.rev %}
+                      (-{{ pr.rev }})
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+                {% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              <td>{% regroup d.future_presentations by session.meeting as meeting_pres_list %} 
                 {% for p in meeting_pres_list %}
-                   {{ p.grouper }}
-                   {% if p.list|length > 1 %}
-                       ( {{ p.list|length }} sessions )
-                   {% else %}
-                       {% for pr in p.list %}
-                         {% if pr.rev != d.rev %}
-                           (-{{ pr.rev }})
-                         {% endif %}
-                       {% endfor %}
-                   {% endif %}
-                   {% if not forloop.last %}, {% endif %}
+                  {{ p.grouper }}
+                  {% if p.list|length > 1 %}
+                    ({{ p.list|length }} sessions)
+                  {% else %}
+                    {% for pr in p.list %}
+                      {% if pr.rev != d.rev %}
+                        (-{{ pr.rev }})
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                  {% if not forloop.last %}, {% endif %}
                 {% endfor %}
-            </td>
+              </td>
           </tr>
         {% endfor %}
       </table>
@@ -72,8 +66,4 @@
     <p>No materials uploaded.</p>
   {% endif %}
 
-{% endblock %}
-
-{% block content_end %}
-<script src="/js/snippet.js" type="text/javascript"></script>
 {% endblock %}

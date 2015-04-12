@@ -43,9 +43,3 @@ class UnicodeNfkcNormalization(object):
         request.META["PATH_INFO"] = unicodedata.normalize('NFKC', request.META["PATH_INFO"])
         request.path_info = unicodedata.normalize('NFKC', request.path_info)
         return None
-
-class FillInRemoteUserIfLoggedInMiddleware(object):
-    def process_request(self, request):
-        if request.user.is_authenticated() and "REMOTE_USER" not in request.META:
-            request.META["REMOTE_USER"] = request.user.username
-

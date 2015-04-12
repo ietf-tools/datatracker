@@ -3,11 +3,12 @@
 {% block title %}Trigger {{ notification }} sync for {{ org }}{% endblock %}
 
 {% block content %}
-<h1>Trigger {{ notification }} sync for {{ org }}</h1>
+  <h1>Trigger {{ notification }} sync for {{ org }}</h1>
 
-<p>Update the Datatracker with {{ help_text|safe }} at {{ org }}.</p>
+  <p>Update the Datatracker with {{ help_text|safe }} at {{ org }}.</p>
 
-<form class="sync-form" method="post">{% csrf_token %}
-<input type="submit" value="Trigger {{ notification }} sync"/>
-</form>
+  <form method="post">
+    {% csrf_token %}
+    <input class="btn btn-default" type="submit" value="Trigger {{ notification }} sync"/>
+  </form>
 {% endblock %}

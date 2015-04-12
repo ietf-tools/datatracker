@@ -2,55 +2,51 @@
 
 {% block title %}Confirm submission of {{ submission.name }}{% endblock %}
 
-{% block morecss %}
-{{ block.super }}
-p.error { color: red; font-weight: bold; font-size: 1.5em; }
-{% endblock %}
-
-
 {% block submit_content %}
 
-<h2>Confirm submission of {{ submission.name }}</h2>
+  <h2>Confirm submission of {{ submission.name }}</h2>
 
-{% if submission.state_id != "auth" and submission.state_id != "aut-appr" %}
-  {% if submission.state_id == "posted" %}
-    <p>The submission has already been posted. See the <a href="{% url "doc_view" name=submission.name %}">draft here</a>.</p>
+  {% if submission.state_id != "auth" and submission.state_id != "aut-appr" %}
+    {% if submission.state_id == "posted" %}
+      <p>The submission has already been posted. See the <a href="{% url "doc_view" name=submission.name %}">draft here</a>.</p>
+    {% else %}
+      <p>The submission is not in a state where it can be confirmed.</p>
+
+      <p>Go to the <a href="{% url "submit_submission_status" submission_id=submission.pk %}">status page</a>
+        to see what has happened to it.</p>
+    {% endif %}
   {% else %}
-    <p>The submission is not in a state where it can be confirmed.</p>
 
-    <p>Go to the <a href="{% url "submit_submission_status" submission_id=submission.pk %}">status page</a>
-      to see what has happened to it.</p>
+    {% if not key_matched %}
+      <p class="error">Incorrect authorization key.</p>
+
+      <p>Double-check the link you followed. If everything fails, you can go to
+        the <a href="{% url "submit_submission_status" submission_id=submission.pk %}">status page</a>,
+        cancel the submission and try again.</p>
+    {% else %}
+      <p>Authorization key accepted.</p>
+
+      <p>Please press the button below to finish posting of
+        <b>{{ submission.name }}-{{ submission.rev }}</b>.</p>
+
+      <form class="confirm-submission" method="post">{% csrf_token %}
+        <button class="btn btn-primary" type="submit">Confirm submission & post draft</button>
+      </form>
+    {% endif %}
+
   {% endif %}
-{% else %}
-
-  {% if not key_matched %}
-    <p class="error">Incorrect authorization key.</p>
-
-    <p>Double-check the link you followed. If everything fails, you can go to
-      the <a href="{% url "submit_submission_status" submission_id=submission.pk %}">status page</a>,
-      cancel the submission and try again.</p>
-  {% else %}
-    <p>Authorization key accepted.</p>
-
-    <p>Please press the button below to finish posting of
-      <strong>{{ submission.name }}-{{ submission.rev }}</strong></p>
-
-    <form method="post">{% csrf_token %}
-      <input type="submit" value="Confirm submission and post draft" />
-    </form>
-  {% endif %}
-
-{% endif %}
 
 {% endblock %}
 
-{% block scripts %}
-jQuery(function () {
-    jQuery("form").submit(function() {
-        if (this.submittedAlready)
-            return false;
-        else
-            this.submittedAlready = true;
-    });
-});
+{% block js %}
+  <script>
+   $(function () {
+       $("form.confirm-submission").submit(function() {
+           if (this.submittedAlready)
+               return false;
+           else
+               this.submittedAlready = true;
+       });
+   });
+  </script>
 {% endblock %}

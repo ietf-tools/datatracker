@@ -1,26 +1,23 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
 
-{% block title %}Posting Approved Draft to RFC Editor Failed{% endblock %}
+{% block title %}Posting approved I-D to RFC Editor failed{% endblock %}
 
 {% block content %}
-<h1>Posting Approved Draft to RFC Editor Failed</h1>
+  <h1>Posting approved I-D to RFC Editor failed</h1>
 
-<p>Sorry, when trying to notify the RFC Editor through HTTP, we hit an
-error.</p>
+  <p>Sorry, when trying to notify the RFC Editor through HTTP, we hit an
+    error.</p>
 
-<p>We have not changed the draft state or sent the announcement
-yet so if this is an intermittent error, you can go back and try
-again.</p>
+  <p>We have not changed the draft state or sent the announcement
+    yet so if this is an intermittent error, you can go back and try
+    again.</p>
 
-<p>The error was:</p>
+  <p>The error was:</p>
+  <p><code>{{ error }}</code></p>
 
-<p><code>{{ error }}</code></p>
-
-{% if response %}
-<p>The response from the RFC Editor was:</p>
-
-<p><code>{{ response|linebreaksbr }}</code></p>
-{% endif %}
+  {% if response %}
+    <p>The response from the RFC Editor was:</p>
+    <p><code>{{ response|linebreaksbr }}</code></p>
+  {% endif %}
 
 {% endblock %}

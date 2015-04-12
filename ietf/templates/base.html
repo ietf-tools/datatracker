@@ -1,153 +1,153 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-{% comment %}<!--
+<!DOCTYPE html> {% load ietf_filters typogrify_tags %}
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{% block title %}No title{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
-All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
+    <link href='http://fonts.googleapis.com/css?family=PT+Sans|PT+Mono|PT+Serif:400,700,400italic,700italic|PT+Sans+Caption&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+    <!-- Halloween
+    <link href='http://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+DW+Pica:400,400italic|Nova+Mono|IM+Fell+English:400,400italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
+    -->
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions 
-are met:
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/ietf.css">
+    <style>
+     {% block morecss %}{% endblock %}
+    </style>
 
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
+    {% block pagehead %}{% endblock %}
 
- * Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided
-   with the distribution.
+    <link rel="shortcut icon" href="/images/ietf-icon-blue3.png">
+    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+  </head>
 
- * Neither the name of the Nokia Corporation and/or its
-   subsidiary(-ies) nor the names of its contributors may be used
-   to endorse or promote products derived from this software
-   without specific prior written permission.
+  <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url "group_menu_data" %}">
+      <!-- Removing the amp|smartypants filter as it increases the rendering time with about 50%  -->
+      <nav class="navbar {% if server_mode and server_mode != "production" %}navbar-inverse{% else %}navbar-inverse{% endif %} navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+	  <div class="navbar-header">
+	    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse">
+	      <span class="sr-only">Toggle navigation</span>
+	      <span class="icon-bar"></span>
+	      <span class="icon-bar"></span>
+	      <span class="icon-bar"></span>
+	    </button>
+	    <a class="navbar-brand" href="/">
+	       <img alt="IETF Logo" src="/images/ietflogo-blue3-small.png"></img>
+	       {% if not user.is_authenticated %}
+	       <div style="display: inline; vertical-align: top; padding-left: 1em;">Datatracker</div>
+	       {% endif %}
+	    </a>
+	  </div>
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+	  <noscript>
+	    <p class="navbar-text"><small>Enable Javascript for full functionality.</small></p>
+	  </noscript>
 
--->{% endcomment %}
-{% load ietf_filters %}
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<!-- v{{version_num}}, {{ revision_num }}, {{ revision_time }} -->
-<title>{% block title %}No title{% endblock %}{% if server_mode %}{% if server_mode != "production" %} - {{ server_mode|upper }} MODE{% endif %}{% endif %}</title>
-<link rel="stylesheet" type="text/css" href="/css/yui/yui-20100305.css"></link>
-<link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
-<style type="text/css">
-{% block morecss %}{% endblock %}
-</style>
-{% block pagehead %}{% endblock %}
-{% if server_mode != "production" %}
-<link rel="icon" href="/images/ietf-dev-icon.bmp" />
-{% else %}
-<link rel="icon" href="/images/ietf-icon-blue.bmp" />
-{% endif %}
-<link rel="search" href="/js/datatracker-search.xml" type="application/opensearchdescription+xml" title="IETF Datatracker Search" />
-</head>
-<body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
-<div style="background-color:{% if server_mode %}{% if server_mode != "production" %}#c00000{% else %}#313163{% endif %}{%else %}#313163{%endif%};color:white;font-size:150%;height:35px;" class="noprint">
-<span style="padding-left:15px;font-weight:bold;letter-spacing:0.1em;"><a href="/" style="text-decoration:none;color:white"><img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/>datatracker.ietf.org</a> {% if server_mode %}{% if server_mode != "production" %} - {{ server_mode|upper}} MODE{% endif %}{% endif %}</span>
-</div>
+	  <div class="collapse navbar-collapse" id="navbar-collapse">
+	    <ul class="hidden-nojs nav navbar-nav">
+              {% include "base/menu.html" with flavor="top" %}
+            </ul>
 
-{% if user %}
-    <div id="ietf-login" class="noprint">
-       {% if request.get_full_path == "/accounts/logout/" %}
-       <a href="{% if server_mode == "development" %}http://{% else %}https://{% endif %}{{ request.get_host }}/accounts/login/" class="login" rel="nofollow">Sign in</a>
-       {% else %}
-	  {% if user.is_authenticated %}
-	  <a href="/accounts/">{{ user }}</a> | <a href="/accounts/logout/" class="login" rel="nofollow">Sign out</a>
-	  {% else %}
-	  <a href="{% if debug %}http://{% else %}https://{% endif %}{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" class="login" rel="nofollow">Sign in</a>
-       {% endif %}
-    {% endif %}
-    </div>
-{% endif %}
+	    <form class="navbar-form navbar-right hidden-sm hidden-xs" action="/doc/search/" role="search">
+	      <div class="form-group">
+	        <input class="form-control" type="text" name="name" placeholder="Document search">
+	        <input type="hidden" name="activedrafts" value="on">
+	        <input type="hidden" name="rfcs" value="on">
+	      </div>
+	    </form>
+	  </div>
+        </div>
+      </nav>
 
-{% block start_content_table %}
-<table style="margin-left:8px;margin-top:8px; width:98%;" id="ietf_menubar">
-<tr valign="top">
-<td style="width:130px;padding-right:8px;" class="noprint">
-<div class="ietf-navbar">
-{% include "base/left_menu.html" %}
-</div>
-<div style="width: 100%; text-align: center; padding-top:4px;font-size:69%;">
-{% if version_num %}
-<a href="/release/{{version_num}}/">Version {{ version_num }}, {{revision_date}}</a>
-<br/>
-{% endif %}
-<a href="http://tools.ietf.org/tools/ietfdb/newticket">Report a bug</a>
-</div>
-</td>
-<td>
-{% endblock start_content_table %}
-{% if messages %}
-<ul class="messages">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
-{% block content %}
-{% endblock %}
+      <div class="container-fluid">
+        {% if messages %}
+          <div class="row">
+	    <div class="col-lg-12">
+	      {% for message in messages %}
+	        <p class="alert alert-info {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</p>
+	      {% endfor %}
+	    </div>
+          </div>
+        {% endif %}
 
-<script type="text/javascript" src="/js/lib/jquery-1.8.2.min.js"></script>
-<script type="text/javascript" src="/js/yui/yui-20100305.js"></script> 
-<script type="text/javascript">
-//<![CDATA[
-YAHOO.util.Event.onContentReady("wgs", function () {
-    var oMenu = new YAHOO.widget.Menu("wgs", { position: "static", hidedelay:  750, lazyload: true });
-    oMenu.render();      
-});
-// setup CSRF protection
-// using jQuery
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie != '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = jQuery.trim(cookies[i]);
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-var csrftoken = getCookie('csrftoken');
-function csrfSafeMethod(method) {
-    // these HTTP methods do not require CSRF protection
-    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-}
-jQuery.ajaxSetup({
-    crossDomain: false, // obviates need for sameOrigin test
-    beforeSend: function(xhr, settings) {
-        if (!csrfSafeMethod(settings.type)) {
-            xhr.setRequestHeader("X-CSRFToken", csrftoken);
-        }
-    }
-});
-{% block scripts %}
-{% endblock %}
-//]]>
-</script>
-{% block js %}{% endblock %}
+        {% if not hide_menu %} {# ugly hack for the more or less unported meeting agenda edit pages #}
+          <div class="row">
+	    <div class="col-md-2 visible-md visible-lg leftmenu">
+	      <ul class="nav nav-pills nav-stacked panel panel-default panel-body">
+                {% include "base/menu.html" with flavor="left" %}
+              </ul>
+	    </div>
+            <div class="col-md-10" id="content">
+	      <!--[if lt IE 8]>
+	      <p id="browsehappy" class="collapse alert alert-warning alert-dismissible">
+	      <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+	      <b>You are using an outdated browser.</b> Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.
+	      </p>
+	      <![endif]-->
 
-{% block content_end %}
-{% endblock %}
-<div id="ietf-extras"></div>
-{% block end_content_table %}
-</td></tr></table>
-{% endblock end_content_table %}
-{% include "debug.html" %}
-</body></html>
+        {% endif %}
+        {% block content %}{% endblock %}
+        {% block content_end %}{% endblock %}
+        {% if not hide_menu %}
+	    </div>
+          </div>
+        {% endif %}
+
+	<hr>
+	  <div class="col-md-12">
+	    <div class="text-center padded">
+	        <a href="//www.internetsociety.org/" class="padded">ISOC</a>
+	        <a href="//trustee.ietf.org/" class="padded">IETF&nbsp;Trust</a>
+	        <a href="//www.rfc-editor.org/" class="padded">RFC&nbsp;Editor</a>
+	        <a href="//www.irtf.org/" class="padded">IRTF</a>
+	        <a href="//www.ietf.org/iesg/" class="padded">IESG</a>
+	        <a href="//www.ietf.org/" class="padded">IETF</a>
+	        <a href="//www.iab.org/" class="padded">IAB</a>
+	        <a href="//iaoc.ietf.org" class="padded">IASA&nbsp;&amp;&nbsp;IAOC</a>
+	        <a href="//tools.ietf.org/" class="padded">IETF&nbsp;Tools</a>
+	        <a href="//www.iana.org/" class="padded">IANA</a>
+	    </div>
+	  </div>
+        </footer>
+
+        <footer class="row">
+	  <div class="col-md-12">
+	    <div class="text-center">
+	      <p class="small text-muted">
+	        {% if version_num %}
+		  <a href="/release/about">About</a> |
+	          IETF Datatracker |
+	          <a href="/release/{{version_num}}/">Version {{ version_num }}</a>
+	          | {{revision_date}} |
+	        {% endif %}
+	        <a href="//tools.ietf.org/tools/ietfdb/newticket">Report a bug</a>
+	        {% if messages %}
+	          <ul class="messages">
+		    {% for message in messages %}
+		      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+		    {% endfor %}
+	          </ul>
+	        {% endif %}
+	      </p>
+	    </div>
+	  </div>
+        </footer>
+      </div>
+      <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+      <script>window.jQuery || document.write('<script src="/js/lib/jquery-1.11.2.min.js"><\/script>')</script>
+      <!-- Remove the *-nojs attributes if we are running js.  This depends on jQuery's removeClass(): -->
+      <!-- Do this as early as possible (after loading the page and jQuery) to avoid rendering changes -->
+      <script>$(".visible-nojs").removeClass("visible-nojs");</script>
+      <script>$(".hidden-nojs").removeClass("hidden-nojs");</script>
+      <script src="/js/lib/jquery.cookie.min.js"></script>
+      <script src="/js/lib/bootstrap.min.js"></script>
+      <script src="/js/ietf.js"></script>
+      {% block js %}{% endblock %}
+  </body>
+</html>
+

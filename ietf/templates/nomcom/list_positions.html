@@ -1,30 +1,37 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
+{% block subtitle %} - Positions{% endblock %}
+
 {% block nomcom_content %}
 
-<h2>Positions in {{ nomcom.group }}</h2>
-<a href="{% url "nomcom_add_position" year %}">Add a new position</a>
-{% if positions %}
-  {% for position in positions %}
-      <h3>{{ position.name }} <a href="{% url "nomcom_edit_position" year position.id %}">[Edit]</a> <a href="{% url "nomcom_remove_position" year position.id %}">[Remove]</a></h3>
-      <dl>
-        <dt>Description:</dt>
+  <h2>Positions in {{ nomcom.group }}</h2>
+
+  <a class="btn btn-default" href="{% url "nomcom_add_position" year %}">Add new position</a>
+
+  {% if positions %}
+    {% for position in positions %}
+      <h3>{{ position.name }}</h3>
+      <dl class="dl-horizontal">
+        <dt>Description</dt>
         <dd>{{ position.description }}</dd>
-        <dt>Incumbent:</dt>
+        <dt>Incumbent</dt>
         <dd>{% if position.incumbent %}{{ position.incumbent.person }} &lt;{{ position.incumbent.address }}&gt;{% else %}None{% endif %}</dd>
-        <dt>Is open:</dt>
+        <dt>Is open</dt>
         <dd>{{ position.is_open }}</dd>
-        <dt>Templates:</dt>
+        <dt>Templates</dt>
         <dd>
-    <ul>
-    {% for template in position.get_templates %}
-      <li><a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a></li>
-    {% endfor %}
-    </ul>
+          {% for template in position.get_templates %}
+            <a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a><br>
+          {% endfor %}
+        </dd>
+        <dt>Actions</dt>
+        <dd>
+          <a class="btn btn-default" href="{% url "nomcom_edit_position" year position.id %}">Edit</a>
+          <a class="btn btn-default" href="{% url "nomcom_remove_position" year position.id %}">Remove</a>
         </dd>
       </dl>
-  {% endfor %}
-{% else %}
-  <p>There are no positions defined.</p>
-{% endif %}
+    {% endfor %}
+  {% else %}
+    <p>There are no positions defined.</p>
+  {% endif %}
 {% endblock nomcom_content %}

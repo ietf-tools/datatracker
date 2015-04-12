@@ -1,13 +1,17 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
+
 {% block title %}IETF {{ meeting_num }} Preliminary &amp; Interim Materials {% endblock %}
+
 {% block content %}
-<h1>IETF {{ meeting_num }} Preliminary &amp; Interim Materials</h1>
+  <h1>IETF {{ meeting_num }} Preliminary &amp; Interim Materials</h1>
 
-<p>Submission began {{ begin_date|date:"F j, Y" }}<br/>
-Submission cutoff date: {{ cut_off_date|date:"F j, Y" }}<br/>
-Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
+  <p>
+    Submission began {{ begin_date|date:"F j, Y" }}<br/>
+    Submission cutoff date: {{ cut_off_date|date:"F j, Y" }}<br/>
+    Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}
+  </p>
 
-<p>The IETF {{ meeting_num }} Preliminary &amp; Interim Materials page is now closed.<br/>
-<p>You should be able to access the final version of IETF {{ meeting_num }} Proceedings via the <a href="http://www.ietf.org/meeting/proceedings.html">IETF Online Proceedings page</a>.</p>
+  <p>The IETF {{ meeting_num }} Preliminary &amp; Interim Materials page is now closed.</p>
+
+  <p>You should be able to access the final version of IETF {{ meeting_num }} Proceedings via the <a href="https://www.ietf.org/meeting/proceedings.html">IETF Online Proceedings page</a>.</p>
 {% endblock %}

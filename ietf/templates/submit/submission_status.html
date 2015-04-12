@@ -3,284 +3,320 @@
 {% load ietf_filters submit_tags %}
 {% load future %}
 
-{% block title %}Status of submission of {{ submission.name }}-{{ submission.rev }}{% endblock %}
+{% block title %}Submission status of {{ submission.name }}-{{ submission.rev }}{% endblock %}
 
 {% block submit_content %}
 
-{% if submission.state_id != "uploaded" %}
-<h2>Status of the submission: {{ submission.state.name }}</h2>
-{% endif %} 
-
-{% if message %} 
-<div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
-{% endif %}
-
-{% if submission.state_id == "aut-appr" and submission.submitter_parsed.email not in confirmation_list|join:", " %}
-<div class="info-message-warning">
-  Please note that since the database does not have your email address in the list of authors of previous
-  revisions of the document, you are <b>not</b> receiving a confirmation email yourself; one of the
-  addressees above will have to send a confirmation in order to complete the submission.  This is done
-  to avoid document hijacking.  If none of the known previous authors will be able to confirm the
-  submission, please contact <a href="mailto:ietf-action@ietf.org">the Secretariat</a> for action.
-</div>
-{% endif %}
-
-{% if submitter_form.errors %}
-<div class="info-message-error">Please fix errors in the form below</div> 
-{% endif %}
-
-<h2>IDNITS</h2>
-<p>
-  {% if passes_idnits %}
-    Your draft has been verified to meet IDNITS requirements.
-  {% else %}
-    Your draft has NOT been verified to meet IDNITS requirements.
+  {% if submission.state_id != "uploaded" %}
+    <h2>Submission status: {{ submission.state.name }}</h2>
   {% endif %}
-  <a class="idnits-trigger" href="">(View IDNITS Results)</a>
-</p>
 
-<div class="idnits-popup" style="display:none">
-  <div class="content">
-    <pre>{{ submission.idnits_message }}</pre>
+  {% if message %}
+    <p class="alert alert-info">{{ message.1 }}</p>
+  {% endif %}
+
+  {% if submission.state_id == "aut-appr" and submission.submitter_parsed.email not in confirmation_list|join:", " %}
+    <p class="alert alert-warning">
+      Please note that since the database does not have your email address in the list of authors of previous
+      revisions of the document, you are <b>not</b> receiving a confirmation email yourself; one of the
+      addressees above will have to send a confirmation in order to complete the submission.  This is done
+      to avoid document hijacking.  If none of the known previous authors will be able to confirm the
+      submission, please contact <a href="mailto:ietf-action@ietf.org">the Secretariat</a> for action.
+    </p>
+  {% endif %}
+
+  {% if submitter_form.errors %}
+    <p class="alert alert-danger">Please fix errors in the form below.</p>
+  {% endif %}
+
+  <h2>I-D nits</h2>
+  <p>
+    {% if passes_idnits %}
+      Your draft has been verified to meet I-D nits requirements.
+    {% else %}
+      Your draft has <b>NOT</b> been verified to meet I-D nits requirements.
+    {% endif %}
+  </p>
+  <button class="btn btn-default" data-toggle="modal" data-target="#nits">View I-D nits</button>
+
+  <div class="modal fade" id="nits" tabindex="-1" role="dialog" aria-labelledby="nits" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+	  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	  <h4 class="modal-title" id="nitslabel">I-D nits for {{ submission.name }}-{{ submission.rev }}</h4>
+        </div>
+        <div class="modal-body">
+	  <pre>{{ submission.idnits_message }}</pre>
+        </div>
+        <div class="modal-footer">
+	  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="actions">
-    <a href="" class="button close">Close</a>
+
+  <div class="modal fade" id="twopages" tabindex="-1" role="dialog" aria-labelledby="twopageslabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+	  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	  <h4 class="modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</h4>
+        </div>
+        <div class="modal-body">
+	  {{ submission|two_pages_decorated_with_errors:errors }}
+        </div>
+        <div class="modal-footer">
+	  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
-
-<div class="twopages-popup" style="display:none">
-  <div class="content">
-    <pre>{{ submission|two_pages_decorated_with_errors:errors }}</pre>
-  </div>
-  <div class="actions">
-    <a href="" class="button close">Close</a>
-  </div>
-</div>
 
 
-<h2>Meta-Data from the Submission</h2>
+  <h2>Meta-data from the submission</h2>
 
-{% if errors %}
-  <div class="metadata-errors">
-    <h3>Meta-Data errors found</h3>
-    <p>Please make sure that your Internet-Draft includes all of the required meta-data in the proper format.</p>
-    
-    <p>If your Internet-Draft *does* include all of the required meta-data in the proper format, and if
-      the error(s) identified above are due to the failure of the tool to extract the meta-data correctly,
-      then please use the 'Adjust Meta-Data' button below, which will take you to the 'Adjust Screen' where
-      you can correct the improperly extracted meta-data. You will then be able to submit your Internet-Draft
-      to the Secretariat for manual posting.</p>
+  {% if errors %}
+    <div class="alert alert-danger">
+      <p><b>Meta-Data errors found!</b></p>
+      <p>Please make sure that your Internet-Draft includes all of the required meta-data in the proper format.</p>
 
-    <p>If your Internet-Draft *does not* include all of the required meta-data in the proper format, then
-      please cancel this submission, update your Internet-Draft, and resubmit it.</p>
+      <p>If your Internet-Draft <b>does</b> include all of the required meta-data in the proper format, and if
+        the error(s) identified above are due to the failure of the tool to extract the meta-data correctly,
+        then please use the "Adjust meta-data" button below, which will take you to the "Adjust screen" where
+        you can correct the improperly extracted meta-data. You will then be able to submit your Internet-Draft
+        to the Secretariat for manual posting.</p>
 
-    <p><strong>NOTE:</strong> The Secretariat will NOT add any
-      meta-data to your Internet-Draft or edit the meta-data. An
-      Internet-Draft that does not include all of the required meta-data in
-      the proper format WILL be returned to the submitter.</p>
+      <p>If your Internet-Draft <b>does not</b> include all of the required meta-data in the proper format, then
+        please cancel this submission, update your Internet-Draft, and resubmit it.</p>
 
-  </div>
-{% endif %}
+      <p><b>Note:</b> The secretariat will <b>not</b> add any
+        meta-data to your Internet-Draft or edit the meta-data. An
+        Internet-Draft that does not include all of the required meta-data in
+        the proper format <b>will</b> be returned to the submitter.</p>
+    </div>
+  {% endif %}
 
-<table class="metadata-table">
-  <tr{% if errors.files %} class="error"{% endif %}>
-     <th>Document</th>
-     <td>
-        {% if submission.state_id == "posted" %}<a href="http://www.ietf.org/id/{{ submission.name }}-{{submission.rev}}.txt">{{ submission.name }}</a>{% else %}{{ submission.name }}{% endif %}
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th>Document</th>
+      <td>
+        {% if submission.state_id == "posted" %}
+          <a href="//www.ietf.org/id/{{ submission.name }}-{{submission.rev}}.txt">{{ submission.name }}</a>
+        {% else %}
+          {{ submission.name }}
+        {% endif %}
 
-        <div><a class="twopages-trigger" href="">[View first two pages]</a></div>
+        <button class="btn btn-default btn-xs pull-right" data-toggle="modal" data-target="#twopages">View first two pages</button>
 
         {% show_submission_files submission %}
 
-        {% if errors.files %}<div class="error-msg">{{ errors.files|safe }}</div>{% endif %}
-     </td>
-  </tr>
-
-  <tr{% if errors.rev %} class="error"{% endif %}>
-    <th>Revision</th>
-    <td>{{ submission.rev }}
-
-      {% if errors.rev %}
-      <div class="error-msg">
-        {{ errors.rev }}
-        <br /><a class="twopages-trigger" href="">[View error]</a>
-      </div>
-      {% endif %}
-    </td>
-  </tr>
-
-  <tr{% if errors.group %} class="error"{% endif %}>
-    <th>Group</th>
-    <td>{{ submission.group|default:"Individual Submission" }}
-      {% if errors.group %}<div class="error-msg">{{ errors.group }}</div>{% endif %}
-    </td>
-  </tr>
-
-  <tr{% if errors.document_date %} class="error"{% endif %}>
-    <th>Document date</th>
-    <td>{{ submission.document_date }}
-      {% if errors.document_date %}<div class="error-msg">{{ errors.document_date }}</div>{% endif %}
-    </td>
-  </tr>
-
-  <tr>
-    <th>Submission date</th>
-    <td>{{ submission.submission_date }}</td>
-  </tr>
-
-  <tr{% if errors.title %} class="error"{% endif %}>
-    <th>Title</th>
-    <td>{{ submission.title|default:"" }}
-      {% if errors.title %}<div class="error-msg">{{ errors.title }}</div>{% endif %}
-    </td>
-  </tr>
-
-  <tr{% if errors.authors %} class="error"{% endif %}>
-    <th>Authors</th>
-    <td>{% with submission.authors_parsed as authors %}{{ authors|length }} author{{ authors|pluralize }}{% endwith %}
-    {% if errors.authors %}<div class="error-msg">{{ errors.authors|safe }}</div>{% endif %}
-    </td>
-  </tr>
-
-  {% for author in submission.authors_parsed %}
-  <tr{% if errors.authors %} class="error"{% endif %}>
-    <th class="author">Author {{ forloop.counter }}</th>
-    <td>{{ author.name }} {% if author.email %}&lt;{{ author.email }}&gt;{% endif %}</td>
-  </tr>
-  {% endfor %}
-
-  <tr{% if errors.abstract %} class="error"{% endif %}>
-    <th>Abstract</th>
-    <td>{{ submission.abstract|linebreaksbr }}
-      {% if errors.abstract %}<div class="error-msg">{{ errors.abstract }}</div>{% endif %}
-    </td>
-  </tr>
-
-  <tr{% if errors.pages %} class="error"{% endif %}>
-    <th>Pages</th>
-    <td>{{ submission.pages }}
-      {% if errors.pages %}<div class="error-msg">{{ errors.pages }}</div>{% endif %}
-    </td>
-  </tr>
-
-  <tr>
-    <th>File size</th>
-    <td>{{ submission.file_size|filesizeformat }}</td>
-  </tr>
-</table>
-
-{% if can_edit %}
-  <form method="post">{% csrf_token %}
-    <input type="hidden" name="action" value="edit" />
-    <input type="submit" value="Adjust Meta-Data" value="adjust" /> (Leads to manual post by the Secretariat)
-  </form>
-
-  {% if passes_idnits and not errors %}
-    <h2>Please edit the following meta-data before posting</h2>
-
-    <p></p>
-
-    <form method="post">{% csrf_token %}
-      <table class="metadata-table">
-        {% include "submit/submitter_form.html" %}
-      </table>
-
-      <input type="hidden" name="action" value="autopost" />
-      <input type="submit" value="Post submission" />
-      {% if requires_group_approval %}
-        (Notifies group chairs to get approval)
-      {% else %}
-        {% if requires_prev_authors_approval %}
-          (Notifies authors of previous revision of draft to get approval)
-        {% else %}
-          (Notifies submitter and authors for confirmation)
+        {% if errors.files %}
+          <p class="text-danger"><b>{{ errors.files|safe }}</b></p>
         {% endif %}
-      {% endif %}
-    </form>
-  {% endif %} 
+      </td>
+    </tr>
 
-{% else %}
-  {% if submission.submitter %}
-    <h3>Submitter information</h3> 
-    <table class="metadata-table"> 
-      <tr><th>Name</th><td>{{ submission.submitter_parsed.name }}</td></tr>
-      <tr><th>Email address</th><td>{{ submission.submitter_parsed.email }}</td></tr>
-    </table> 
-  {% endif %} 
-{% endif %}
+    <tr>
+      <th>Revision</th>
+      <td>
+        {{ submission.rev }}
 
-{% if can_cancel %}
-  <h2>Cancel submission</h2>
-  <p>
-    Cancel submission and delete the uploaded file{{ submission.file_types|split:","|pluralize }} permanently:
+        {% if errors.rev %}
+          <button class="btn btn-default btn-xs pull-right" data-toggle="modal" data-target="#twopages">View errors in document</button>
+          <p class="text-danger"><b>{{ errors.rev }}</b></p>
+        {% endif %}
+      </td>
+    </tr>
 
-    <form id="cancel-submission" method="post">{% csrf_token %}
-      <input type="hidden" name="action" value="cancel" />
-      <input type="submit" value="Cancel submission" />
-    </form>
-  </p>
-{% endif %}
+    <tr>
+      <th>Group</th>
+      <td>
+        {{ submission.group|default:"Individual Submission" }}
+        {% if errors.group %}
+          <p class="text-danger"><b>{{ errors.group }}</b></p>
+        {% endif %}
+      </td>
+    </tr>
 
-{% if can_group_approve %}
-  <h2>Approve submission</h2>
-  <p>
-    <form method="post">{% csrf_token %}
-      <input type="hidden" name="action" value="approve" />
-      <input type="submit" value="Approve this submission" />
-    </form>
-  </p>
-{% endif %}
- 
-{% if can_force_post %}
-  <p>
-    <form method="post">{% csrf_token %}
-      <input type="hidden" name="action" value="forcepost" />
-      <input type="submit" value="Force post of submission" />
-    </form>
-  </p>
-{% endif %}
+    <tr>
+      <th>Document date</th>
+      <td>
+        {{ submission.document_date }}
+        {% if errors.document_date %}
+          <p class="text-danger"><b>{{ errors.document_date }}</b></p>
+        {% endif %}
+      </td>
+    </tr>
 
-{% if show_send_full_url %}
-<div class="metadata-errors">
-  <p>You are not allowed to modify or cancel this submission. You can
-    only modify or cancel this submission from the same URL you were
-    redirected to after the submission.</p>
+    <tr>
+      <th>Submission date</th>
+      <td>{{ submission.submission_date }}</td>
+    </tr>
 
-  <p>If you are the submitter check your browser history to find this
-    URL. You can share it with any person you need.</p>
+    <tr>
+      <th>Title</th>
+      <td>
+        {{ submission.title|default:"" }}
+        {% if errors.title %}<p class="text-danger"><b>{{ errors.title }}</b></p>{% endif %}
+      </td>
+    </tr>
 
-  <p>If you are one of the authors you can request the URL from which
-    you can modify or cancel this submission by clicking the next
-    button. An email will then be sent to the authors and submitter
-    (if submitter email was entered): {{ confirmation_list|join:", " }}.</p>
+    <tr>
+      <th>Authors</th>
+      <td>
+        {% with submission.authors_parsed as authors %}
+          {{ authors|length }} author{{ authors|pluralize }}
+        {% endwith %}
+        {% if errors.authors %}<p class="text-danger"><b>{{ errors.authors|safe }}</b></p>{% endif %}
+      </td>
+    </tr>
 
-  <form method="post">{% csrf_token %}
-    <input type="hidden" name="action" value="sendfullurl" />
-    <input type="submit" value="Request full access URL" />
-  </form>
-</div>
-{% endif %}
+    {% for author in submission.authors_parsed %}
+      <tr>
+        <th>Author {{ forloop.counter }}</th>
+        <td>{{ author.name }} {% if author.email %}&lt;{{ author.email }}&gt;{% endif %}</td>
+      </tr>
+    {% endfor %}
 
-<h2>History</h2>
+    <tr>
+      <th>Abstract</th>
+      <td>
+        {{ submission.abstract|linebreaksbr }}
+        {% if errors.abstract %}<p class="text-danger"><b>{{ errors.abstract }}</b></p>{% endif %}
+      </td>
+    </tr>
 
-<table class="ietf-table history">
-  <tr><th>Date</th><th>By</th><th>Text</th></tr>
+    <tr>
+      <th>Pages</th>
+      <td>
+        {{ submission.pages }}
+        {% if errors.pages %}<p class="text-danger"><b>{{ errors.pages }}</b></p>{% endif %}
+      </td>
+    </tr>
 
-  {% for e in submission.submissionevent_set.all %}
-  <tr class="{% cycle 'oddrow','evenrow' %}">
-    <td>{{ e.time|date:"Y-m-d" }}</td>
-    <td>{{ e.by|default:"" }}</td>
-    <td>{{ e.desc }}
-    </td>
-  </tr>
-  {% endfor %}
-</table>
+    <tr>
+      <th>File size</th>
+      <td>{{ submission.file_size|filesizeformat }}</td>
+    </tr>
+  </table>
 
-{% include "submit/problem-reports-footer.html" %}
+  {% if can_edit %}
+    <p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="edit">
+        <button class="btn btn-warning" type="submit" value="adjust">Adjust meta-data</button>
+      </form>
+    </p>
+    <p>Leads to manual post by the secretariat.</p>
 
-{% endblock %}
+    {% if passes_idnits and not errors %}
+      <h2>Please edit the following meta-data before posting:</h2>
 
-{% block js %}
-<script type="text/javascript" src="/js/utils.js"></script>
-<script type="text/javascript" src="/js/draft-submit.js"></script>
+      <form class="idsubmit" method="post">
+        {% csrf_token %}
+        {% include "submit/submitter_form.html" %}
+        <input type="hidden" name="action" value="autopost">
+        <button class="btn btn-primary" type="submit">Post submission</button>
+      </form>
+
+      <p>
+        {% if requires_group_approval %}
+          Notifies group chairs to get approval.
+        {% else %}
+          {% if requires_prev_authors_approval %}
+            Notifies authors of previous revision of draft to get approval.
+          {% else %}
+            Notifies submitter and authors for confirmation.
+          {% endif %}
+        {% endif %}
+      </p>
+    {% endif %}
+
+  {% else %}
+    {% if submission.submitter %}
+      <h3>Submitter information</h3>
+      <table class="table table-condensed table-striped">
+        <tr><th>Name</th><td>{{ submission.submitter_parsed.name }}</td></tr>
+        <tr><th>Email address</th><td>{{ submission.submitter_parsed.email }}</td></tr>
+      </table>
+    {% endif %}
+  {% endif %}
+
+  {% if can_cancel %}
+    <h2>Cancel submission</h2>
+    <p>
+      <form id="cancel-submission" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="cancel">
+        <button class="btn btn-danger" type="submit">Cancel submission</button>
+      </form>
+    </p>
+    <p>Deletes the uploaded file{{ submission.file_types|split:","|pluralize }} permanently.</p>
+  {% endif %}
+
+  {% if can_group_approve %}
+    <h2>Approve submission</h2>
+    <p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="approve">
+        <button class="btn btn-danger" type="submit">Approve this submission</button>
+      </form>
+    </p>
+  {% endif %}
+
+  {% if can_force_post %}
+    <p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="forcepost">
+        <button class="btn btn-danger" type="submit">Force post of submission</button>
+      </form>
+    </p>
+  {% endif %}
+
+  {% if show_send_full_url %}
+    <div class="alert alert-danger">
+      <p>You are not allowed to modify or cancel this submission. You can
+        only modify or cancel this submission from the same URL you were
+        redirected to after the submission.</p>
+
+      <p>If you are the submitter check your browser history to find this
+        URL. You can share it with any person you need.</p>
+
+      <p>If you are one of the authors you can request the URL from which
+        you can modify or cancel this submission by clicking the next
+        button. An email will then be sent to the authors and submitter
+        (if submitter email was entered): {{ confirmation_list|join:", " }}.</p>
+
+      <p>
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="sendfullurl">
+          <button class="btn btn-danger" type="submit">Request full access URL</button>
+        </form>
+      </p>
+    </div>
+  {% endif %}
+
+  <h2>History</h2>
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr><th>Date</th><th>By</th><th>Event</th></tr>
+    </thead>
+    <tbody>
+      {% for e in submission.submissionevent_set.all %}
+        <tr>
+          <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
+          <td>{{ e.by|default:"" }}</td>
+          <td>{{ e.desc }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% include "submit/problem-reports-footer.html" %}
+
 {% endblock %}

@@ -1,17 +1,22 @@
-{% load ballot_icon %}
-<div class="agenda-doc">
-  <div class="ballot-icon-column">
-    {% ballot_icon doc %}
-  </div>
+{% load ietf_filters ballot_icon %}
 
-  <div>
-  <div>
+{% comment %}
+FACELIFT: There seems to be an issue here in bootstrap 3.2.0 where the
+float interferes with the spacing of the following dl. Not a huge issue,
+but shoudl investigate in the future.
+{% endcomment %}
+<div class="pull-right">{% ballot_icon doc %}</div>
+
+<dl class="dl-horizontal">
+  <dt>{{ doc.group.type }} name</dt>
+  <dd><b>{{ doc.group.name }} ({{doc.group.acronym}})</b></dd>
+
+  <dt>Charter</dt>
+  <dd>
+    <a href="{{ doc.href }}"><span class="fa fa-file"></span></a>
     <a href="{{ doc.get_absolute_url }}">{{ doc.name}}-({{doc.rev}})</a>
-    <a href="{{ doc.href }}">[txt]</a>
-  </div>
+  </dd>
 
-  <div>{{ doc.group.name }} ({{doc.group.acronym}})</div>
-
-  <div>Area: {{ doc.group.parent.acronym|upper }}  ({{ doc.ad|default:"Sponsoring AD not assigned" }})</div>
-  </div>
-</div>
+  <dt>Area</dt>
+  <dd>{{ doc.group.parent.acronym|upper }}  ({{ doc.ad|default:"(None)" }})</dd>
+</dl>

@@ -1,0 +1,5 @@
+{% for p in parents %}
+  <li class="hidden-nojs dropdown-submenu group-menu group-parent-{{ p.id }}">
+    <a href="{{ p.menu_url }}">{{ p.short_name }}</a>
+  </li>
+{% endfor %}

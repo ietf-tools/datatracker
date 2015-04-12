@@ -1,18 +1,24 @@
-<h2>Display customization</h2>
+{% load bootstrap3 %}
 
-<form action="#custom" method="post" />{% csrf_token %}
-  <h3>Sort method</h2>
-  {{ display_form.sort_method }}
+{% bootstrap_messages %}
 
-  <h3>Show fields</h2>
-  <div>
-  {% for field in dc.get_display_fields_config %}
-  <div style="float: left; width: 30%;">
-    <input id="id_{{ field.codename }}" type="checkbox" name="{{ field.codename }}"{% if field.active %} checked="checked"{% endif %} />
-    <label for="id_{{ field.codename }}">{{ field.description }}</label>
+<form role="form" method="post" action="#custom">
+  {% csrf_token %}
+  {% bootstrap_form display_form %}
+
+  <div class="form-group">
+    <label>Show fields</label>
+    {% for field in dc.get_display_fields_config %}
+      <div class="checkbox">
+        <label for="id_{{ field.codename }}">
+	  <input id="id_{{ field.codename }}" type="checkbox" name="{{ field.codename }}" {% if field.active %}checked{% endif %}>
+	  {{ field.description }}
+        </label>
+      </div>
+    {% endfor %}
   </div>
-  {% endfor %}
-  </div>
-  <div style="clear: both;"><br /></div>
-  <input type="submit" value="Save configuration" name="save_display" />
+
+  {% buttons %}
+    <input type="submit" class="btn btn-primary" name="save_display">
+  {% endbuttons %}
 </form>

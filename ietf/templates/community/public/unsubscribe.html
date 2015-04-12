@@ -1,22 +1,33 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Cancel subscription to {{ cl.long_name }}{% endblock %}
 
 {% block content %}
-<h1>Cancel subscription to {{ cl.long_name }}</h1>
-{% if success %}
-<p>
-You will receive a confirmation email shortly containing further instructions on how to cancel your subscription.
-</p>
-{% else %}
-<p>
-Cancel your subscription to the email list for notifications of {% if significant %}significant {% endif %}changes on {{ cl.long_name }}.
-</p>
-<form action="" method="post">{% csrf_token %}
-<table>
-  {{ form }}
-</table>
-<input type="submit" value="Cancel subscription" />
-</form>
-{% endif %}
+
+  {% if success %}
+    <h1>Cancellation successful</h1>
+
+    <p>
+      You will receive a confirmation email shortly containing further instructions on how to cancel your subscription.
+    </p>
+  {% else %}
+    <h1>Cancel subscription to {{ cl.long_name }}</h1>
+
+    {% bootstrap_messages %}
+
+    <p>
+      Cancel your subscription to the email list for notifications of {% if significant %}significant {% endif %}changes on {{ cl.long_name }}.
+    </p>
+
+    <form role="form" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+
+      {% buttons %}
+        <button type="submit" class="btn btn-primary">Subscribe</button>
+      {% endbuttons %}
+    </form>
+  {% endif %}
 {% endblock %}

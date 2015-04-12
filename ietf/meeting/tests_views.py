@@ -54,13 +54,13 @@ class MeetingTests(TestCase):
 
         self.write_materials_files(meeting, session)
 
-        time_interval = "%s-%s" % (slot.time.strftime("%H%M"), (slot.time + slot.duration).strftime("%H%M"))
+        time_interval = "%s-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
 
         # plain
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        agenda_content = q("#agenda").html()
+        agenda_content = q("#content").html()
         self.assertTrue(session.group.acronym in agenda_content)
         self.assertTrue(session.group.name in agenda_content)
         self.assertTrue(session.group.parent.acronym.upper() in agenda_content)
@@ -68,24 +68,16 @@ class MeetingTests(TestCase):
         self.assertTrue(time_interval in agenda_content)
 
         # Make sure there's a frame for the agenda and it points to the right place
-        self.assertTrue(any([session.materials.get(type='agenda').href() in x.attrib['xsrc'] for x in q('tr.groupagenda iframe')])) 
+        self.assertTrue(any([session.materials.get(type='agenda').href() in x.attrib["data-src"] for x in q('tr div.modal-body  div.frame')])) 
 
         # Make sure undeleted slides are present and deleted slides are not
-        self.assertTrue(any([session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr.groupagenda a')]))
-        self.assertFalse(any([session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr.groupagenda a')]))
-
-        # mobile
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)),
-                            { '_testiphone': "1" })
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        agenda_content = q("#agenda").html()
-        self.assertTrue(session.group.acronym in agenda_content)
-        self.assertTrue(session.group.name[:10] in agenda_content)
-        self.assertTrue(slot.location.name in agenda_content)
-        self.assertTrue(time_interval in agenda_content)
+        self.assertTrue(any([session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr div.modal-body ul a')]))
+        self.assertFalse(any([session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr div.modal-body ul a')]))
 
         # text
+        # the rest of the results don't have as nicely formatted times
+        time_interval = time_interval.replace(":", "")
+
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".txt")))
         self.assertEqual(r.status_code, 200)
         agenda_content = r.content
@@ -93,6 +85,7 @@ class MeetingTests(TestCase):
         self.assertTrue(session.group.name in agenda_content)
         self.assertTrue(session.group.parent.acronym.upper() in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
+
         self.assertTrue(time_interval in agenda_content)
 
         # CSV
@@ -150,12 +143,11 @@ class MeetingTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(meeting_num=meeting.number)))
         self.assertEqual(r.status_code, 200)
-        #debug.show('r.content')
         q = PyQuery(r.content)
-        row = q('.ietf-materials b:contains("%s")' % str(session.group.acronym.upper())).closest("tr")
-        self.assertTrue(row.find("a:contains(\"Agenda\")"))
-        self.assertTrue(row.find("a:contains(\"Minutes\")"))
-        self.assertTrue(row.find("a:contains(\"Slideshow\")"))
+        row = q('#content td:contains("%s")' % str(session.group.acronym)).closest("tr")
+        self.assertTrue(row.find('a:contains("Agenda")'))
+        self.assertTrue(row.find('a:contains("Minutes")'))
+        self.assertTrue(row.find('a:contains("Slideshow")'))
         self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
 
         # FIXME: missing tests of .pdf/.tar generation (some code can

@@ -1,58 +1,64 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "base.html" %}{% load ietf_filters %}
+{% extends "base.html" %}
 
-{% block title %}Liaison Statements to the IETF - Guidelines for Completing the "To:" and "Cc:" Fields{% endblock %}
+{% load ietf_filters %}
+
+{% block title %}Liaison statements to the IETF - guidelines for completing the "To:" and "Cc:" fields{% endblock %}
 
 {% block content %}
 
-<h1>Liaison Statements to the IETF <br>Guidelines for Completing the "To:" and "Cc:" Fields</h1>
+  <h1>Liaison statements to the IETF<br><small>Guidelines for completing the "To:" and "Cc:" fields</small></h1>
 
-<p>The following table provides guidelines for completing the "To:" and "Cc:" fields of liaison statements that are sent TO the IETF by other Standards Development Organizations (SDOs).  
-For definitive information on generating liaison statements, please
-see <a href="{{ "4053"|rfcurl }}">RFC 4053 (BCP 103) "Procedures for Handling Liaison Statements to and from the IETF."</a></p>
+  <p>The following table provides guidelines for completing the "To:" and "Cc:" fields of liaison statements that are sent to the IETF by other Standards Development Organizations (SDOs).</p>
+  <p>
+    For definitive information on generating liaison statements, please
+    see <a href="{{ "4053"|rfcurl }}">RFC 4053 (BCP 103) "Procedures for Handling Liaison Statements to and from the IETF."</a></p>
 
-<table cellspacing="0" cellpadding="3" border="1" bgcolor="#ffffff">
-  <tr>
-    <td colspan="3"><center><b>Liaison Statements TO the IETF</b></center></td></tr>
-  <tr align="center">
-    <td colspan="2"><b>"To:" Field</b></td>
-    <td rowspan="2"><b>"Cc:" Field</b> <sup><small>(1, 2)</small></sup></td></tr>
-  <tr align="center">
-    <td><b>Organization</b></td>
-    <td><b>POC(s)</b></td></tr>
-  <tr>
-    <td><ul><li>The IAB </li></td>
-    <td><ul><li>The IAB Chair &lt;iab-chair@iab.org&gt;</li></td>
-    <td><ul><li><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br><br>
-        <li>The IAB &lt;iab@iab.org&gt;</li></td></tr>
-  <tr>
-    <td><ul><li>The IESG </li></td>
-    <td><ul><li>The IETF Chair &lt;chair@ietf.org&gt;</li></td>
-    <td><ul><li><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br><br>
-        <li>The IESG &lt;iesg@ietf.org&gt;</li></td></tr>
-  <tr>
-    <td><ul><li>The IETF </li></td>
-    <td><ul><li>The IETF Chair &lt;chair@ietf.org&gt;</li></td>
-    <td><ul><li><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br><br>
-            <li>The IESG &lt;iesg@ietf.org&gt;</li></td></tr>
-  <tr>
-    <td><ul><li>An IETF Area </li></td>
-    <td><ul><li><a href="/wg/">The IETF Area Director(s)</a></li></td>
-    <td><ul><li><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br><br>
-        <li>The IETF Chair &lt;chair@ietf.org&gt;<br><br>
-        <li>The IETF Area Directorate Mailing List(where applicable)<sup><small>(3)</small></sup></li></td></tr>
-  <tr>
-    <td><ul><li>An IETF Working Group </li></td>
-    <td><ul><li><a href="/wg/">The Working Group Chair(s)</a></li></td>
-    <td><ul><li><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br><br>
-        <li><a href="/wg/">The IETF Area Director(s)</a><br><br>
-        <li><a href="/wg/">The IETF Working Group Discussion List</a></li></td></tr>
-  <tr>
-    <td colspan="3"> <sup><small>(1)</small></sup> The IETF Secretariat, <a href="mailto:statement@ietf.org">&lt;statements@ietf.org&gt;</a>, is automatically blind-copied on every liaison statement sent to the IETF.<br>
-    <sup><small>(2)</small></sup> Any addresses included in the "Response Contact" and 
-"Technical Contact" fields of a liaison statement will also receive copies of the liaison statement.<br>
-    <sup><small>(3)</small></sup> A list of Area Directorate mailing lists is not currently available.</td></tr>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>To: organization</th>
+        <th>To: POC(s)</th>
+        <th>Cc: <sup><small>(1, 2)</small></sup></th>
+      </tr>
+    </thead>
 
-</table>
+    <tr>
+      <td>The IAB </td>
+      <td>The IAB Chair &lt;iab-chair@iab.org&gt;</td>
+      <td><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br>
+        The IAB &lt;iab@iab.org&gt;</td></tr>
+    <tr>
+      <td>The IESG </td>
+      <td>The IETF Chair &lt;chair@ietf.org&gt;</td>
+      <td><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br>
+        The IESG &lt;iesg@ietf.org&gt;</td></tr>
+    <tr>
+      <td>The IETF </td>
+      <td>The IETF Chair &lt;chair@ietf.org&gt;</td>
+      <td><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br>
+        The IESG &lt;iesg@ietf.org&gt;</td></tr>
+    <tr>
+      <td>An IETF Area </td>
+      <td><a href="/wg/">The IETF Area Director(s)</a></td>
+      <td><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br>
+        The IETF Chair &lt;chair@ietf.org&gt;<br>
+        The IETF Area Directorate Mailing List(where applicable) <sup><small>(3)</small></sup></td></tr>
+    <tr>
+      <td>An IETF Working Group </td>
+      <td><a href="/wg/">The Working Group Chair(s)</a></td>
+      <td><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br>
+        <a href="/wg/">The IETF Area Director(s)</a><br>
+        <a href="/wg/">The IETF Working Group Discussion List</a></td></tr>
+  </table>
 
+  <p>
+    <sup><small>(1)</small></sup> The <a href="mailto:statements@ietf.org">IETF Secretariat &lt;statements@ietf.org&gt;</a>, is automatically blind-copied on every liaison statement sent to the IETF.
+  </p>
+  <p>
+    <sup><small>(2)</small></sup> Any addresses included in the "response contact" and
+    "technical contact" fields of a liaison statement will also receive copies of the liaison statement.
+  </p>
+  <p>
+    <sup><small>(3)</small></sup> A list of area directorate mailing lists is not currently available.
+  </p>
 {% endblock %}

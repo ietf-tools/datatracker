@@ -1,48 +1,28 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% load ietf_filters %}
 
-{% block title %}Begin IETF conflict review : {{doc_to_review.canonical_name}}-{{doc_to_review.rev}}{% endblock %}
-
-{% block morecss %}
-form.start-conflict-review #id_notify {
-  width: 600px;
-}
-form.start-conflict-review .actions {
-  padding-top: 20px;
-}
-.warning {
-  font-weight: bold;
-  color: #a00;
-}
-{% endblock %}
+{% block title %}Begin IETF conflict review for {{doc_to_review.canonical_name}}-{{doc_to_review.rev}}{% endblock %}
 
 {% block content %}
-<h1>Begin IETF conflict review for {{doc_to_review.canonical_name}}-{{doc_to_review.rev}}</h1>
+  <h1>Begin IETF conflict review<br><small>{{doc_to_review.canonical_name}}-{{doc_to_review.rev}}</small></h1>
 
-{% if user|has_role:"Secretariat" %}
-<p class="helptext">For help on the initial state choice, see the <a href="{% url "state_help" type="conflict-review" %}">state table</a>.</p>
-{% endif %}
+  {% bootstrap_messages %}
 
-<form class="start-conflict-review" action="" method="post">{% csrf_token %}
-  <table>
-    {% for field in form.visible_fields %}
-    <tr>
-      <th>{{ field.label_tag }}</th>
-      <td>{{ field }}
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+  {% if user|has_role:"Secretariat" %}
+    <p><a class="btn btn-info" href="{% url "state_help" type="conflict-review" %}">Help on states</a></p>
+  {% endif %}
 
-      {{ field.errors }}
-      </td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td colspan="2" class="actions">
-        <a href="{% url "doc_view" name=doc_to_review.name %}">Back</a>
-        <input type="submit" value="Submit"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc_to_review.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

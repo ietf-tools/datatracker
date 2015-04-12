@@ -13,7 +13,7 @@ from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDis
     ThirdPartyIprDisclosure,RelatedIpr)
 from ietf.ipr.utils import get_genitive, get_ipr_summary
 from ietf.message.models import Message
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 
@@ -248,7 +248,7 @@ class IprTests(TestCase):
             })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("ul.errorlist")) > 0)
+        self.assertTrue(len(q("form .has-error")) > 0)
 
         # successful post
         r = self.client.post(url, {
@@ -284,13 +284,11 @@ class IprTests(TestCase):
             "holder_contact_info": "555-555-0100",
             "ietfer_name": "Test Participant",
             "ietfer_contact_info": "555-555-0101",
-            "rfc-TOTAL_FORMS": 1,
-            "rfc-INITIAL_FORMS": 0,
-            "rfc-0-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
-            "draft-TOTAL_FORMS": 1,
-            "draft-INITIAL_FORMS": 0,
-            "draft-0-document": "%s" % draft.docalias_set.first().pk,
-            "draft-0-revisions": '00',
+            "iprdocrel_set-TOTAL_FORMS": 2,
+            "iprdocrel_set-INITIAL_FORMS": 0,
+            "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().pk,
+            "iprdocrel_set-0-revisions": '00',
+            "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
             "patent_info": "none",
             "has_patent_pending": False,
             "licensing": "royalty-free",
@@ -320,13 +318,11 @@ class IprTests(TestCase):
             "ietfer_name": "Test Participant",
             "ietfer_contact_email": "test@ietfer.com",
             "ietfer_contact_info": "555-555-0101",
-            "rfc-TOTAL_FORMS": 1,
-            "rfc-INITIAL_FORMS": 0,
-            "rfc-0-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
-            "draft-TOTAL_FORMS": 1,
-            "draft-INITIAL_FORMS": 0,
-            "draft-0-document": "%s" % draft.docalias_set.first().pk,
-            "draft-0-revisions": '00',
+            "iprdocrel_set-TOTAL_FORMS": 2,
+            "iprdocrel_set-INITIAL_FORMS": 0,
+            "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().pk,
+            "iprdocrel_set-0-revisions": '00',
+            "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
             "patent_info": "none",
             "has_patent_pending": False,
             "licensing": "royalty-free",
@@ -334,7 +330,6 @@ class IprTests(TestCase):
             "submitter_email": "test@holder.com",
             })
         self.assertEqual(r.status_code, 200)
-        # print r.content
         self.assertTrue("Your IPR disclosure has been submitted" in r.content)
 
         iprs = IprDisclosureBase.objects.filter(title__icontains="belonging to Test Legal")
@@ -358,13 +353,11 @@ class IprTests(TestCase):
             "holder_contact_info": "555-555-0100",
             "ietfer_name": "Test Participant",
             "ietfer_contact_info": "555-555-0101",
-            "rfc-TOTAL_FORMS": 1,
-            "rfc-INITIAL_FORMS": 0,
-            "rfc-0-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
-            "draft-TOTAL_FORMS": 1,
-            "draft-INITIAL_FORMS": 0,
-            "draft-0-document": "%s" % draft.docalias_set.first().pk,
-            "draft-0-revisions": '00',
+            "iprdocrel_set-TOTAL_FORMS": 2,
+            "iprdocrel_set-INITIAL_FORMS": 0,
+            "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().pk,
+            "iprdocrel_set-0-revisions": '00',
+            "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
             "patent_info": "none",
             "has_patent_pending": False,
             "licensing": "royalty-free",
@@ -443,7 +436,7 @@ I would like to revoke this declaration.
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        x = len(q('table#pending-iprs tr')) - 1     # minus header
+        x = len(q('table.ipr-table tbody tr'))
         self.assertEqual(num,x)
         
     def test_admin_removed(self):
@@ -460,7 +453,7 @@ I would like to revoke this declaration.
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        x = len(q('table#removed-iprs tr')) - 1     # minus header
+        x = len(q('table.ipr-table tbody tr'))
         self.assertEqual(num,x)
         
     def test_admin_parked(self):
@@ -469,10 +462,11 @@ I would like to revoke this declaration.
     def test_post(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
-        url = urlreverse("ipr_post",kwargs={ "id": ipr.id })
-        # fail if not logged in
+        url = urlreverse("ipr_post", kwargs={ "id": ipr.id })
+        login_testing_unauthorized(self, "secretary", url)
+
         r = self.client.get(url,follow=True)
-        self.assertTrue("Sign In" in r.content)
+        self.assertEqual(r.status_code,200)
         len_before = len(outbox)
         # successful post
         self.client.login(username="secretary", password="secretary+password")

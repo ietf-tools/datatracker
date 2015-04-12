@@ -1,74 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}Edit List of RFCs Affected By Status Change{% endblock %}
+{% load bootstrap3 %}
 
-{% block morecss %}
-form.start-rfc-status-change-review #id_notify {
-  width: 600px;
-}
-form.start-rfc-status-change-review #id_document_name {
-  width: 510px;
-}
-form.start-rfc-status-change-review .actions {
-  padding-top: 20px;
-}
-.warning {
-  font-weight: bold;
-  color: #a00;
-}
-{% endblock %}
-
-{% block pagehead %}
-{% include "doc/status_change/status-change-edit-relations-js.html" %}
-{% endblock %}
+{% block title %}Edit RFCs affected by status change{% endblock %}
 
 {% block content %}
 
-<h1>Edit List of RFCs Affected By Status Change</h1>
+  <h1>Edit RFCs affected by status change</h1>
 
-<form class="edit-status-change-rfcs" action="" method="post">{% csrf_token %}
-  <table>
-    <th>Affects RFCs:</th>
-    <td><table><tbody id="relations_table">
-       {% for rfc,choice_slug in form.relations.items %}
-       <tr id="relation_row_{{rfc}}">
-         <td>
-             <input id="new_relation_row_{{rfc}}" name="new_relation_row_{{rfc}}"
-                    type="text" maxlength="7"
-                    value="{{rfc}}"
-                    onchange="update_relation_row('relation_row_{{rfc}}')"/>
-         </td>
-         <td>
-            <select id="statchg_relation_row_{{rfc}}" name="statchg_relation_row_{{rfc}}" 
-                    style="vertical-align: top;">
-              <option value="" {% if choice_slug == "" %}selected="selected"{% endif %}>(None)</option>
-              {% for rel in relation_slugs %}
-              <option value="{{rel.slug}}" {% if choice_slug == rel.slug %}selected="selected"{%endif%}>{{rel.name}}</option>
-              {% endfor %}
-            </select>
-            <img src="/images/close.png" onclick="delete_relation('relation_row_{{rfc}}');" 
-                 style="cursor: pointer; padding-left: 4px;"/>
-         </td>
-       {% endfor %}
-       <tr id="relation_row_0">
-         <td>
-             <input id="new_relation_row_0" name="new_relation_row_0" 
-                    type="text" maxlength="7" 
-                    onkeypress="buff_out_row('relation_row_0');" 
-                    onchange="update_relation_row('relation_row_0')"/>
-         </td>
-       </tr>
-    </tbody></table>
-    <div class="help">Enter one of the affected RFC as RFCn</div>
-    {{ form.non_field_errors }}
-    </td>
-    </tr>
-    <tr>
-      <td colspan="2" class="actions">
-        <input type="submit" name="Cancel" value="Cancel"/>
-        <input type="submit" name="Submit" value="Submit"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+
+    {% include "doc/status_change/edit_related_rows.html" %}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}
+
+{% block js %}
+  <script src="/js/status-change-edit-relations.js"></script>
+{% endblock %}
+

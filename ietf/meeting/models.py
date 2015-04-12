@@ -73,7 +73,7 @@ class Meeting(models.Model):
     venue_addr = models.TextField(blank=True)
     break_area = models.CharField(blank=True, max_length=255)
     reg_area = models.CharField(blank=True, max_length=255)
-    agenda_note = models.TextField(blank=True, help_text="Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not validated.")
+    agenda_note = models.TextField(blank=True, help_text="Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.")
     agenda     = models.ForeignKey('Schedule',null=True,blank=True, related_name='+')
     session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
     
@@ -333,8 +333,8 @@ class TimeSlot(models.Model):
     time = models.DateTimeField()
     duration = TimedeltaField()
     location = models.ForeignKey(Room, blank=True, null=True)
-    show_location = models.BooleanField(default=True, help_text="Show location in agenda")
-    sessions = models.ManyToManyField('Session', related_name='slots', through='ScheduledSession', null=True, blank=True, help_text=u"Scheduled session, if any")
+    show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
+    sessions = models.ManyToManyField('Session', related_name='slots', through='ScheduledSession', null=True, blank=True, help_text=u"Scheduled session, if any.")
     modified = models.DateTimeField(default=datetime.datetime.now)
     #
 
@@ -496,8 +496,8 @@ class Schedule(models.Model):
     meeting  = models.ForeignKey(Meeting, null=True)
     name     = models.CharField(max_length=16, blank=False)
     owner    = models.ForeignKey(Person)
-    visible  = models.BooleanField(default=True, help_text=u"Make this agenda available to those who know about it")
-    public   = models.BooleanField(default=True, help_text=u"Make this agenda publically available")
+    visible  = models.BooleanField(default=True, help_text=u"Make this agenda available to those who know about it.")
+    public   = models.BooleanField(default=True, help_text=u"Make this agenda publically available.")
     badness  = models.IntegerField(null=True, blank=True)
     # considering copiedFrom = models.ForeignKey('Schedule', blank=True, null=True)
 
@@ -654,14 +654,14 @@ class ScheduledSession(models.Model):
     Each relationship is attached to the named agenda, which is owned by
     a specific person/user.
     """
-    timeslot = models.ForeignKey('TimeSlot', null=False, blank=False, help_text=u"")
-    session  = models.ForeignKey('Session', null=True, default=None, help_text=u"Scheduled session")
+    timeslot = models.ForeignKey('TimeSlot', null=False, blank=False)
+    session  = models.ForeignKey('Session', null=True, default=None, help_text=u"Scheduled session.")
     schedule = models.ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
-    extendedfrom = models.ForeignKey('ScheduledSession', null=True, default=None, help_text=u"Timeslot this session is an extension of")
+    extendedfrom = models.ForeignKey('ScheduledSession', null=True, default=None, help_text=u"Timeslot this session is an extension of.")
     modified = models.DateTimeField(default=datetime.datetime.now)
     notes    = models.TextField(blank=True)
     badness  = models.IntegerField(default=0, blank=True, null=True)
-    pinned   = models.BooleanField(default=False, help_text="Do not move session during automatic placement")
+    pinned   = models.BooleanField(default=False, help_text="Do not move session during automatic placement.")
 
     class Meta:
         ordering = ["timeslot__time", "timeslot__type__slug", "session__group__parent__name", "session__group__acronym", "session__name", ]
@@ -846,8 +846,8 @@ class Session(models.Model):
     Training sessions and similar are modeled by filling in a
     responsible group (e.g. Edu team) and filling in the name."""
     meeting = models.ForeignKey(Meeting)
-    name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting")
-    short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames")
+    name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting.")
+    short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
     group = models.ForeignKey(Group)    # The group type determines the session type.  BOFs also need to be added as a group.
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)

@@ -1,0 +1,56 @@
+{% load ietf_filters %}
+
+<li {% if flavor == "top" %}class="dropdown"{% else %}class="nav-header"{% endif %}>
+  {% if flavor == "top" %}
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+    {% if user.is_authenticated %}{{ user }}{% else %} User {% endif %}
+  </a>
+  <ul class="dropdown-menu" role="menu">
+  {% else %}
+     User
+  {% endif %}
+
+  {% if request.get_full_path == "/accounts/logout/" %}
+    <li><a rel="nofollow" href="/accounts/login{% if "/accounts/logout/" not in request.get_full_path %}/?next={{request.get_full_path|urlencode}}{% endif %}">Sign in</a></li>
+  {% else %}
+    {% if user.is_authenticated %}
+      <li><a rel="nofollow" href="/accounts/logout/" >Sign out</a></li>
+      <li><a rel="nofollow" href="/accounts/profile/">Edit profile</a></li>
+    {% else %}
+      <li><a rel="nofollow" href="/accounts/login/?next={{request.get_full_path|urlencode}}">Sign in</a></li>
+    {% endif %}
+  {% endif %}
+
+  <li><a href="{% url "create_account" %}">{% if request.user.is_authenticated %}Manage account{% else %}New account{% endif %}</a></li>
+  <li><a href="{%url "ietf.cookies.views.settings" %}" rel="nofollow">Settings</a></li>
+
+  {% if user|has_role:"Area Director" %}
+    {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
+    <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>AD dashboard</li>
+    <li><a href="{% url "docs_for_ad" name=user.person.full_name_as_key %}">My docs</a></li>
+    <li><a href="{% url "ietf.iesg.views.agenda_documents" %}">Next telechat</a></li>
+    <li><a href="{% url "ietf.iesg.views.discusses" %}">Discusses</a></li>
+    <li><a href="{% url "ietf.iesg.views.milestones_needing_review" %}">Milestone review</a></li>
+  {% endif %}
+
+  {% if user|has_role:"Secretariat" %}
+    {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
+    <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>IETF secretariat</li>
+    <li><a href="/admin/iesg/telechatdate/">Telechat dates</a></li>
+    <li><a href="/admin/iesg/telechatagendaitem/">Management items</a></li>
+    <li><a href="{% url "ietf.iesg.views.milestones_needing_review" %}">Milestones</a></li>
+    <li><a href="{% url "ietf.sync.views.discrepancies" %}">Sync discrepancies</a>
+  {% endif %}
+
+  {% if user|has_role:"IANA" %}
+    {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
+    <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>IANA</li>
+    <li><a href="{% url "ietf.sync.views.discrepancies" %}">Sync discrepancies</a></li>
+  {% endif %}
+
+  {% if user|has_role:"RFC Editor" %}
+    {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
+    <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>RFC Editor</li>
+    <li><a href="{% url "ietf.sync.views.discrepancies" %}">Sync discrepancies</a></li>
+  {% endif %}
+{% if flavor == "top" %}</ul>{% endif %}

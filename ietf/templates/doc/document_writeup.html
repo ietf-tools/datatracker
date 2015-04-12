@@ -1,28 +1,37 @@
 {% extends "base.html" %}
 
+{% load ietf_filters %}
+
 {% block title %}Writeups for {{ doc.name }}-{{ doc.rev }}{% endblock %}
 
-{% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
-{% endblock %}
-
 {% block content %}
-{{ top|safe }}
+  {{ top|safe }}
 
-{% for title, subtitle, writeups in sections %}
-<h2>{{ title }}</h2>
+  {% for title, subtitle, writeups in sections %}
+    <h2>
+      {{ title|capfirst_allcaps }}
+      {% if subtitle %}
+        <br><small>{{ subtitle|safe }}</small>
+      {% endif %}
+    </h2>
 
-{% if subtitle %}<p>{{ subtitle|safe }}</p>{% endif %}
+    {% for name, text, url in writeups %}
+      {% if text %}
+        <pre>{{ text|urlize }}</pre>
+      {% endif %}
 
-{% for name, text, url in writeups %}
-<div class="writeup">
-{% if can_edit %}<a href="{{ url }}" class="edit button">{% if text %}Edit{% else %}Generate{% endif %} {{ name }}</a>{% endif %}
-
-<pre {% if can_edit %}class="editable"{% endif %}>
-{{ text }}
-</pre>
-</div>
-{% endfor %}
-{% endfor %}
-
+      <p>
+        {% if can_edit %}
+          <a href="{{ url }}" class="btn btn-primary">
+            {% if text %}
+              Edit
+            {% else %}
+              Generate
+            {% endif %}
+            {{ name|lower_allcaps }}
+          </a>
+        {% endif %}
+      </p>
+    {% endfor %}
+  {% endfor %}
 {% endblock content %}

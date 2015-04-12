@@ -1,33 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Add comment on {{ doc }}{% endblock %}
+{% load bootstrap3 %}
 
-{% block morecss %}
-form.add-comment #id_comment {
-  width: 600px;
-  height: 300px;
-}
-
-form.add-comment .actions {
-  padding-top: 20px;
-}
-{% endblock %}
+{% block title %}Add comment for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Add comment on {{ doc }}</h1>
+  <h1>Add comment<br><small>{{ doc }}</small></h1>
 
-<p>The comment will be added to the history trail.</p>
+  {% bootstrap_messages %}
 
-<form class="add-comment" action="" method="post">{% csrf_token %}
-  <table>
-  {{ form.as_table }}
-  <tr>
-    <td></td>
-    <td class="actions">
-      <a href="{% url "doc_history" name=doc.name %}">Back</a>
-      <input type="submit" value="Add comment"/>
-    </td>
-  </tr>
-  </table>
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <p class="help-block">The comment will be added to the history trail.</p>
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
+
 {% endblock %}

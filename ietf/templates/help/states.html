@@ -1,29 +1,32 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
-{% load future %}
 
-{% block title %} {{type.label|cut:"state"|cut:"State"}} Statess{% endblock %}
+{% block title %} {{type.label|cut:"state"|cut:"state"}} states{% endblock %}
 
 {% block content %}
 
-<h1>{{type.label|cut:"state"|cut:"State"}} States</h1>
+  <h1>{{type.label|cut:"state"|cut:"State"}} states</h1>
 
 
-<table class="ietf-table">
-<tr>
-<th>State</th>
-<th>Description</th>
-<th>Next State</th>
-</tr>
-                                                                                                               
-{% for state in states %}   
-<tr class="{% cycle 'oddrow','evenrow' as cycle1 %}">
-          <td>{{ state.name }}</td>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>State</th>
+        <th>Description</th>
+        <th>Next states</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for state in states %}
+        <tr>
+          <th>{{ state.name }}</th>
           <td>{{ state.desc|safe }}</td>
           <td><ul>{% for s in state.next_states.all %}<li>{{ s.name }}</li>{%endfor%}</ul></td>
-</tr>
-{% endfor %}
-</table>
+        </tr>
+      {% endfor %}
+
+    </tbody>
+  </table>
 
 
 {% endblock %}

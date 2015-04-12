@@ -1,86 +1,69 @@
 {% extends "base.html" %}
 
-{% block title %}Change state of {{ doc }}{% endblock %}
+{% load bootstrap3 %}
 
-{% block morecss %}
-form.change-state select { width: 22em; }
-form.change-state #id_comment { width: 30em; }
-form.change-state .cancel-pub-note { width: 30em; color: #a00; }
-form.change-state .actions {
-  text-align: right;
-  padding-top: 10px;
-}
-.next-states,
-.prev-state {
-  margin-bottom: 30px;
-}
-.next-states form,
-.prev-state form {
-  display: inline;
-  margin-right: 10px;
-}
-{% endblock %}
+{% block title %}Change state for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Change state of {{ doc }}</h1>
+  <h1>Change state<br><small>{{ doc }}</small></h1>
 
-<p class="helptext">For help on the states, see the <a href="{% url "state_help" type="draft-iesg" %}">state table</a>.</p>
+  {% bootstrap_messages %}
 
-<form class="change-state" action="" method="post">{% csrf_token %}
-  <table>
-    {{ form.as_table }}
-    {% if state and state.slug == "rfcqueue" %}
-    <tr>
-      <td></td>
-      <td class="cancel-pub-note">Note: if you pull the draft out of the
-      {{ state.name }} state, the RFC Editor and IANA will be notified
-      by email with this comment so they can update their queues.</td>
-    </tr>
-    {% endif %}
-    <tr>
-      <td colspan="2" class="actions">
-        <a href="{{ doc.get_absolute_url }}">Back</a>
-        <input type="submit" value="Save"/>
-      </td>
-    </tr>
-  </table>
-</form>
-
-{% if next_states %}
-<h3>Or jump directly to</h3>
-
-<div class="next-states">
-  {% for n in next_states %}
-  <form action="" method="post">{% csrf_token %}
-    <input type="hidden" name="state" value="{{ n.pk }}" />
-    <input type="submit" value="{{ n.name }}" />
-  </form>
-  {% endfor %}
-</div>
-{% endif %}
-
-{% if to_iesg_eval %}
-<h3>You could also jump directly to</h3>
-<div class="warn-states">
-  <form action="" method="post">{% csrf_token %}
-    <input type="hidden" name="state" value="{{ to_iesg_eval.pk }}" />
-    <input type="submit" value="{{ to_iesg_eval.name }}" />
-  </form>
-  <p> 
-     But the ballot for this document has not yet been issued. 
-     <a href="{% url "doc_ballot_writeupnotes" name=doc.name %}">Edit Ballot Text</a>
+  <p>
+    <a class="btn btn-info" href="{% url "state_help" type="draft-iesg" %}">Help on states</a>
   </p>
-</div>
-{% endif %}
 
-{% if prev_state %}
-<h3>Or revert to previous state</h3>
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-<div class="prev-state">
-  <form action="" method="post">{% csrf_token %}
-    <input type="hidden" name="state" value="{{ prev_state.pk }}" />
-    <input type="submit" value="Back to {{ prev_state.name }}" />
+    {% if state and state.slug == "rfcqueue" %}
+      <span class="help-block">
+        <b>Note:</b> If you pull the draft out of the
+        <i>{{ state.name }}</i> state, the RFC Editor and IANA will be notified
+        by email with this comment, so they can update their queues.
+      </span>
+    {% endif %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
   </form>
-</div>
-{% endif %}
+
+  {% if next_states %}
+    <h2>Or jump directly to</h2>
+
+    <div class="buttonlist">
+      {% for n in next_states %}
+        <form role="form" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="state" value="{{ n.pk }}">
+          <input class="btn btn-default" type="submit" value="{{ n.name }}">
+        </form>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if to_iesg_eval %}
+    <h2>You could also jump directly to</h2>
+
+    <form role="form" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="state" value="{{ to_iesg_eval.pk }}">
+      <input class="btn btn-warning" type="submit" value="{{ to_iesg_eval.name }}">
+      But the ballot for this document has not yet been issued.
+      <a class="btn btn-default" href="{% url "doc_ballot_writeupnotes" name=doc.name %}">Edit ballot text</a>
+    </form>
+  {% endif %}
+
+  {% if prev_state %}
+    <h2>Or revert to previous state</h2>
+
+    <form role="form" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="state" value="{{ prev_state.pk }}">
+      <input class="btn btn-danger" type="submit" value="Revert to {{ prev_state.name }}">
+    </form>
+  {% endif %}
 {% endblock %}

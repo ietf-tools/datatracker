@@ -1,79 +1,52 @@
-{% extends "registration/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Account Creation{% endblock %}
+{% load bootstrap3 %}
 
-{% block scripts %}
-  {{ block.super }}
-
-(function($) {
-    var checkUsername = function() {
-        var field = $(this);
-        var url = $("#check_user_name_url").val();
-        var error = field.next('.username-error');
-
-        $.ajax({
-            url: url,
-            data: {username: field.val()},
-            dataType: 'json',
-            success: function(response) {
-                if (response.error) {
-                   error.text(response.error);
-                   error.show();
-                } else {
-                   error.hide();
-                }
-            }
-        });
-    }
-
-    $(document).ready(function(){
-        $('#id_email').after(' <span class="username-error" style="display: none;"></span>');
-        $('#id_email').keyup(checkUsername).blur(checkUsername);
-    });
-})(jQuery);
-{% endblock %}
+{% block title %}Account creation{% endblock %}
 
 {% block content %}
-<div id="register_page">
-<h1>Account Creation</h1>
-{% if success %}
-<p>Your account creation request has been received successfully. <br />
-   We have sent you an email with instructions on how to complete the process.</p>
-<p>Best regards,
-<br />
-<br />
-<blockquote>
-	The datatracker login manager service<br />
-	(for the IETF Secretariat)
 
-</blockquote>
-{% else %}
-<form action="" method="post">{% csrf_token %}
-  <p>
-     If you already have an account, and want to use a new email address,<br/>
-     please go to your <a href="{% url "ietf.ietfauth.views.profile" %}" rel="nofollow">account profile page</a> and
-     add the new email<br/>
-     address there.
-  </p>
+  {% bootstrap_messages %}
 
-  <p style="width: 35em">
-     If you already have an account, but forgot your password,<br/> <a href="{% url "password_reset" %}">please use the password reset form.</a>
-  </p>
+  {% if success %}
+    <h1>Account created successfully</h1>
+    <p>Your account creation request has been successfully received.</p>
+    <p>We have sent you an email with instructions on how to complete the process.</p>
 
+  {% else %}
+    <div class="row">
+      <div class="col-md-6">
+        <h1>Account creation</h1>
+        <p>Please enter your email address in order to create a new datatracker account.</p>
+        <form role="form" method="post">
+          {% csrf_token %}
+          {% bootstrap_form form %}
 
-  <hr style="width:35em; " align="left" />
+          {% buttons %}
+            <button type="submit" class="btn btn-primary">Create account</button>
+          {% endbuttons %}
+        </form>
+      </div>
 
-  <p>Please enter your email address in order to create a new account.</p>
+      <div class="col-md-6">
+        <h1>Other options</h1>
 
-  <table class="register-form">
-  {{ form }}
-  </table>
-  <div class="submit_row">
-    <input type="hidden" id="check_user_name_url" value="{% url "ajax_check_username" %}" />
-    <input type="submit" value="Submit" />
-  </div>
-</form>
-
-{% endif %}
-</div>
+        <p>
+          <b>If you already have an account and want to use a new email address,</b>
+          please go to your account profile page and
+        </p>
+        <p>
+          <a class="btn btn-default" href="{% url "ietf.ietfauth.views.profile" %}"> Add a new email address</a>
+        </p>
+        <p>&nbsp;</p>
+        <p>
+          <b>If you already have an account but forgot your password,</b>
+          please simply
+        </p>
+        <p>
+          <a class="btn btn-warning" href="{% url "password_reset" %}">Reset your password</a>
+        </p>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}

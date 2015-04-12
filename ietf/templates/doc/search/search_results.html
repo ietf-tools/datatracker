@@ -1,76 +1,57 @@
-{% comment %}<!--
-Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
-All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions 
-are met:
-
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided
-   with the distribution.
-
- * Neither the name of the Nokia Corporation and/or its
-   subsidiary(-ies) nor the names of its contributors may be used
-   to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--->{% endcomment %}
-
 {% load ietf_filters %}
-<div class="search-results">
 
-{% if not docs %}
-  {% if not skip_no_matches_warning %}
-    <h2>No documents match your query.</h2>
-  {% endif %}
+{% if not docs and not skip_no_matches_warning %}
+  <div class="alert alert-info">
+    No documents match your query.
+  </div>
 {% else %}
 
-{% if meta.max %}
-<h2>Too many documents match the query! Returning partial result only.</h2>
+  {% if meta.max %}
+    <div class="alert alert-warning">
+      Too many documents match your query! Returning only a partial result.
+    </div>
+  {% endif %}
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>
+	  {% if show_add_to_list and user.is_authenticated %}
+	    <span class="fa fa-bookmark"></span>
+	  {% endif %}
+        </th>
+
+        {% for h in meta.headers %}
+          {% if h.title != "Title" %}
+            <th class="{{ h.key }}">
+	      {% if "sort_url" in h %}
+	        <a href="{{ h.sort_url }}">{{ h.title }}
+	          {% if h.sorted %}<span class="fa fa-caret-down"></span>{% endif %}
+	        </a>
+	      {% else %}
+	        {{ h.title }}
+	      {% endif %}
+            </th>
+          {% endif %}
+        {% endfor %}
+      </tr>
+    </thead>
+
+    {% regroup docs by search_heading as grouped_docs %}
+
+    <tbody>
+      {% for doc_group in grouped_docs %}
+        <tr class="info">
+          <th></th>
+          <th colspan="{{ meta.headers|length|add:"-1" }}">
+	    {{ doc_group.grouper|plural:doc_group.list }}
+          </th>
+        </tr>
+
+        {% for doc in doc_group.list %}
+          {% include "doc/search/search_result_row.html" %}
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
 {% endif %}
-
-<table class="ietf-table ietf-doctable">
-<tr>
-  {% if show_add_to_list and user.is_authenticated %}<th></th>{% endif %}
-
-  {% for h in meta.headers %}
-  <th class="{{ h.key }}" {% if h.colspan %}colspan="{{ h.colspan }}"{% endif %}>
-    {% if "sort_url" in h %}
-    <a href="{{ h.sort_url }}">{{ h.title }}
-    <img src="/images/sort-header-{% if h.sorted %}filled{% else %}clear{% endif %}.png"/></a>
-    {% else %}
-    {{ h.title }}
-    {% endif %}
-  </th>
-  {% endfor %}
-</tr> 
-
-{% regroup docs by search_heading as grouped_docs %}
-
-{% for doc_group in grouped_docs %}
-  <tr class="header"><td colspan="10">{{ doc_group.grouper|plural:doc_group.list }}</td></tr>
-
-  {% for doc in doc_group.list %}
-    {% include "doc/search/search_result_row.html" %}
-  {% endfor %}
-{% endfor %}
-</table>
-{% endif %}
-
-</div>

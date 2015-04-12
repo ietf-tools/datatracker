@@ -16,6 +16,7 @@ from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaiso
 from ietf.liaisons.forms import liaison_form_factory
 from ietf.liaisons.utils import IETFHM, can_submit_liaison_required, approvable_liaison_statements
 from ietf.liaisons.mails import notify_pending_by_email, send_liaison_by_email
+from ietf.liaisons.fields import select2_id_liaison_json
 
 
 
@@ -44,7 +45,7 @@ def add_liaison(request, liaison=None):
 
 
 @can_submit_liaison_required
-def get_info(request):
+def ajax_get_liaison_info(request):
     person = get_person_for_user(request.user)
 
     to_entity_id = request.GET.get('to_entity_id', None)
@@ -110,14 +111,20 @@ def liaison_list(request):
         "sort": sort,
     }, context_instance=RequestContext(request))
 
-def ajax_liaison_list(request):
-    sort, order_by = normalize_sort(request)
-    liaisons = LiaisonStatement.objects.exclude(approved=None).order_by(order_by)
+def ajax_select2_search_liaison_statements(request):
+    q = [w.strip() for w in request.GET.get('q', '').split() if w.strip()]
 
-    return render_to_response('liaisons/liaison_table.html', {
-        "liaisons": liaisons,
-        "sort": sort,
-    }, context_instance=RequestContext(request))
+    if not q:
+        objs = LiaisonStatement.objects.none()
+    else:
+        qs = LiaisonStatement.objects.exclude(approved=None).all()
+
+        for t in q:
+            qs = qs.filter(title__icontains=t)
+
+        objs = qs.distinct().order_by("-id")[:20]
+
+    return HttpResponse(select2_id_liaison_json(objs), content_type='application/json')
 
 @can_submit_liaison_required
 def liaison_approval_list(request):

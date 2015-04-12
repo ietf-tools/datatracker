@@ -1,99 +1,97 @@
 {% extends "submit/submit_base.html" %}
-{% block title %}Draft Submission Approvals{% endblock %}
 
-{% block morecss %}
-{{ block.super }}
-table.approvals td, table.preapprovals td, table.recently-approved td,
-table.approvals th, table.preapprovals th, table.recently-approved th { text-align: left; padding-right: 8px; padding-bottom: 4px; }
-
-table.preapprovals tr td a.cancel { visibility: hidden; }
-table.preapprovals tr:hover { background-color: #eee; }
-table.preapprovals tr:hover td a.cancel { visibility: visible; }
-{% endblock %}
+{% block title %}Draft submission approvals{% endblock %}
 
 {% load ietf_filters %}
 
 {% block submit_content %}
 
-{% if user.is_authenticated %}
-<h2 id="approvals">Submissions you can approve</h2>
+  {% if user.is_authenticated %}
+    <h2 class="anchor-target" id="approvals">Submissions you can approve</h2>
 
-{% if not approvals %}
-<p>You don't have any submissions to approve.</p>
-{% else %}
-<table cellspacing="0" class="approvals">
-  <tr>
-    <th>Submission</th>
-    <th>Submitted</th>
-  </tr>
-  {% for s in approvals %}
-  <tr>
-    <td><a href="{% url "submit_submission_status_by_hash" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
-    <td>{{ s.submission_date }}</td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
+    {% if not approvals %}
+      <p>You don't have any submissions to approve.</p>
+    {% else %}
+      <table class="approvals table table-condensed table-striped">
+        <thead>
+          <tr>
+            <th>Draft</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in approvals %}
+            <tr>
+              <td><a href="{% url "submit_submission_status_by_hash" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
+              <td>{{ s.submission_date }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
 
-<h2 id="preapprovals">Pre-approved drafts not yet submitted</h2>
+    <h2 class="anchor-target" id="preapprovals">Pre-approved drafts not yet submitted</h2>
 
-{% if user|has_role:"Secretariat,WG Chair,RG Chair" %}
-<p>You can <a href="{% url "submit_add_preapproval" %}">add a pre-approval</a>.</p>
-{% endif %}
+    {% if user|has_role:"Secretariat,WG Chair,RG Chair" %}
+      <p><a class="btn btn-default" href="{% url "submit_add_preapproval" %}">Add pre-approval</a></p>
+    {% endif %}
 
-{% if not preapprovals %}
-<p>No pre-approvals within your jurisdiction found.</p>
-{% else %}
+    {% if not preapprovals %}
+      <p>No pre-approvals within your jurisdiction found.</p>
+    {% else %}
+      <table class="preapprovals table table-condensed table-striped">
+        <thead>
+          <tr>
+            <th>Draft name</th>
+            <th>Pre-approved</th>
+            <th>By</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in preapprovals %}
+            <tr>
+              <td>{{ p.name }}</td>
+              <td>{{ p.time|date:"Y-m-d" }}</td>
+              <td>{{ p.by }}</td>
+              <td><a class="btn btn-danger btn-xs" href="{% url "submit_cancel_preapproval" preapproval_id=p.id %}">Cancel</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
 
-<table cellspacing="0" class="preapprovals">
-  <tr>
-    <th>Draft name</th>
-    <th>Pre-approved</th>
-    <th>By</th>
-  </tr>
-  {% for p in preapprovals %}
-  <tr>
-    <td>{{ p.name }}</td>
-    <td>{{ p.time|date:"Y-m-d" }}</td>
-    <td>{{ p.by }}</td>
-    <td><a class="cancel" href="{% url "submit_cancel_preapproval" preapproval_id=p.id %}">cancel pre-approval</a></td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
+    <h2 class="anchor-target" id="recently-approved">Approved drafts within the past {{ days }} days</h2>
 
-<h2 id="recently-approved">Approved drafts within the past {{ days }} days</h2>
+    {% if not recently_approved %}
+      <p>No drafts approved.</p>
+    {% else %}
+      <table class="recently-approved table table-condensed table-striped">
+        <thead>
+          <tr>
+            <th>Draft</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in recently_approved %}
+            <tr>
+              <td><a href="{% url "doc_view" d.name %}">{{ d.name }}</a></td>
+              <td>{{ d.submission_date }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
 
-{% if not recently_approved %}
-<p>No drafts approved.</p>
-{% else %}
-
-<table cellspacing="0" class="recently-approved">
-   <tr>
-     <th>Draft</th>
-     <th>Submitted</th>
-   </tr>
-   {% for d in recently_approved %}
-   <tr>
-     <td><a href="{% url "doc_view" d.name %}">{{ d.name }}</a></td>
-     <td>{{ d.submission_date }}</td>
-   </tr>
-   {% endfor %}
-</table>
-{% endif %}
-
-{% else %}
-<h2>Submission approvals</h2>
-<p>
-
-   This is where Chairs and Secretariat can approve and pre-approve document
-   submissions which require approval, such as WG -00 drafts.
-
-</p>
-<p>
-
-   You need to <a href="https://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">sign in</a> in order to handle approvals.
-
-</p>
-{% endif %}
+  {% else %}
+    <h2>Submission of approvals</h2>
+    <p>
+      This is where chairs and the secretariat can approve and pre-approve document
+      submissions which require approval, such as WG -00 drafts.
+    </p>
+    <p>
+      You need to <a href="//{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">sign in</a> in order to handle approvals.
+    </p>
+  {% endif %}
 {% endblock %}

@@ -3,16 +3,8 @@
 {% block group_subtitle %}Documents{% endblock %}
 
 {% block group_content %}
-<div class="group-documents">
 
-{% include "doc/search/search_results.html" %}
+  {% include "doc/search/search_results.html" %}
+  {% include "doc/search/search_results.html" with docs=docs_related meta=meta_related skip_no_matches_warning=True %}
 
-{% include "doc/search/search_results.html" with docs=docs_related meta=meta_related skip_no_matches_warning=True %}
-
-</div>
 {% endblock group_content %}
-
-{% block js %}
-<script type="text/javascript" src="/js/utils.js"></script>
-<script type="text/javascript" src="/js/doc-search.js"></script>
-{% endblock %}

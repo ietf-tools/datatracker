@@ -2,68 +2,58 @@
 
 {% load nomcom_tags %}
 
-{% block subtitle %} - View comments of {{ nominee.email.person.name }}{% endblock %}
+{% block subtitle %} - View feedback about {{ nominee.email.person.name }}{% endblock %}
 
 {% block nomcom_content %}
 
-<p>Back to list of <a href="{% url "nomcom_view_feedback" year %}">nominees</a></p>
+  <h2>Feedback about {{ nominee }} </h2>
 
-<h2>Feedback of {{ nominee }} </h2>
-
-  <div id="mytabs" class="yui-navset">
-  <ul class="yui-nav">
+  <ul class="nav nav-tabs" role="tablist">
     {% for ft in feedback_types %}
-      <li><a href="#{{ ft.slug }}"><em>{{ ft.name }}</em></a></li>
+      <li {% if forloop.first %}class="active"{% endif %}><a href="#{{ ft.slug }}" role="tab" data-toggle="tab">{{ ft.name }}</a></li>
     {% endfor %}
   </ul>
-  Pick the feedback type to view from the list immediately above
-  <div class="yui-content">
+
+  <div class="tab-content">
     {% for ft in feedback_types %}
-      <div id="#{{ ft.slug }}">
+      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ ft.slug }}">
         {% for feedback in nominee.feedback_set.all %}
           {% if feedback.type.slug == ft.slug %}
-            <div>
-              <h3 class="ietf-divider">From {{ feedback.author|formatted_email|default:"Anonymous" }} ({{ feedback.time|date:"Y-m-d" }})</h3>
+            {% if forloop.first %}<p></p>{% else %}<hr>{% endif %}
+            <dl class="dl-horizontal">
+              <dt>From</dt>
+              <dd>{{ feedback.author|formatted_email|default:"Anonymous" }}</dd>
+              <dt>Date</dt>
+              <dd>{{ feedback.time|date:"Y-m-d" }})</dd>
+
               {% if ft.slug == "nomina" %}
                 {% for fn in feedback.nomination_set.all %}
                   {% if fn.candidate_name %}
-                    <h3>Candidate name:</h3> <pre>{{ fn.candidate_name }}</pre>
+                    <dt>Nominee</dt>
+                    <dd>{{ fn.candidate_name }}</dd>
                   {% endif %}
                   {% if fn.candidate_phone %}
-                    <h3>Candidate phone:</h3> <pre>{{ fn.candidate_phone }}</pre>
+                    <dt>Nominee phone</dt>
+                    <dd>{{ fn.candidate_phone }}</dd>
                   {% endif %}
                 {% endfor %}
               {% endif %}
-              <h3>Positions:</h3> <pre>{{ feedback.positions.all|join:"," }}</pre>
+
+              <dt>Positions</dt>
+              <dd>{{ feedback.positions.all|join:"," }}</dd>
               {% if feedback.subject %}
-                <h3>Subject:</h3> <pre>{{ feedback.subject }}</pre>
+                <dt>Subject</dt>
+                <dd>{{ feedback.subject }}</dd>
               {% endif %}
-              <h3>Body</h3>
-                <pre>{% decrypt feedback.comments request year 1 %}</pre>
-            </div>
+              <dt>Body</dt>
+              <dd>{% decrypt feedback.comments request year 1 %}</dd>
+            </dl>
           {% endif %}
         {% endfor %}
       </div>
     {% endfor %}
   </div>
 
-  <script type="text/javascript">
-  //<![CDATA[
-  var tabView = new YAHOO.widget.TabView('mytabs');
-  var url = location.href.split('#');
-  if (url[1]) {
-    url[1] = "#"+url[1];
-    var tabs = tabView.get('tabs');
-    for (var i = 0; i < tabs.length; i++) {
-      if (url[1].indexOf(tabs[i].get('href')) == 0) {
-        tabView.set('activeIndex', i);
-        break;
-      }
-    }
-  }
-  //]]>
-  </script>
-
-
+  <a class="btn btn-default" href="{% url "nomcom_view_feedback" year %}">Back</a>
 
 {% endblock %}

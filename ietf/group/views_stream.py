@@ -10,7 +10,7 @@ from ietf.group.models import Group, GroupEvent, Role
 from ietf.group.utils import save_group_in_history
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import StreamName
-from ietf.person.fields import AutocompletedEmailsField
+from ietf.person.fields import SearchableEmailsField
 from ietf.person.models import Email
 
 import debug                            # pyflakes:ignore
@@ -24,14 +24,16 @@ def stream_documents(request, acronym):
     streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]
     if not acronym in streams:
         raise Http404("No such stream: %s" % acronym)
+    group = get_object_or_404(Group, acronym=acronym)
+    editable = has_role(request.user, "Secretariat") or group.has_role(request.user, "chair")
     stream = StreamName.objects.get(slug=acronym)
     form = SearchForm({'by':'stream', 'stream':acronym,
                        'rfcs':'on', 'activedrafts':'on'})
     docs, meta = retrieve_search_results(form)
-    return render_to_response('group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta }, context_instance=RequestContext(request))
+    return render_to_response('group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable }, context_instance=RequestContext(request))
 
 class StreamEditForm(forms.Form):
-    delegates = AutocompletedEmailsField(required=False, only_users=True)
+    delegates = SearchableEmailsField(required=False, only_users=True)
 
 def stream_edit(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
@@ -62,7 +64,7 @@ def stream_edit(request, acronym):
                 for e in new:
                     Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
 
-            return redirect("ietf.group.views.streams")
+            return redirect("ietf.group.views_stream.streams")
     else:
         form = StreamEditForm(initial=dict(delegates=Email.objects.filter(role__group=group, role__name="delegate")))
 
@@ -72,4 +74,4 @@ def stream_edit(request, acronym):
                                'form': form,
                                },
                               context_instance=RequestContext(request))
-    
+

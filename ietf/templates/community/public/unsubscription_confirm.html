@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Canceled subscription to {{ cl.long_name }}{% endblock %}
+{% block title %}Cancelled subscription to {{ cl.long_name }}{% endblock %}
 
 {% block content %}
-<h1>Canceled subscription to {{ cl.long_name }}</h1>
-<p>
-You email address {{ email }} has been successfully removed form {{ cl.long_name }} {% if significant %}significant {% endif %}changes mailing list.
-</p>
-<p>
-<a href="{{ cl.get_public_url }}">Return to the list view</a>
-</p>
+  <h1>Cancelled subscription to {{ cl.long_name }}</h1>
+
+  <p>
+    Your email address {{ email }} has been successfully removed from the {{ cl.long_name }} {% if significant %}significant {% endif %}changes mailing list.
+  </p>
+
+  <p>
+    <a class="btn btn-primary" href="{{ cl.get_public_url }}">Back</a>
+  </p>
 {% endblock %}

@@ -6,29 +6,41 @@
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: Timeslot/Room Availability{% endblock %}
 {% load agenda_custom_tags %}
 {% block pagehead %}
-<link rel='stylesheet' type='text/css' href='/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css' />
-<link rel='stylesheet' type='text/css' href='/css/base2.css' />
-<link rel='stylesheet' type='text/css' href='/css/agenda.css' />
+<link rel='stylesheet' type='text/css' href='/css/agenda/jquery-ui-themes/jquery-ui-1.8.11.custom.css' />
+<link rel='stylesheet' type='text/css' href='/css/agenda/base2.css' />
+<link rel='stylesheet' type='text/css' href='/css/agenda/agenda.css' />
 {% endblock pagehead %}
 
 {% block js %}
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery-ui.custom.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.widget.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.droppable.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.sortable.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.accordion.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.draggable.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/jquery.ui.datetime.js'></script>
+<script type="text/javascript" src="/js/agenda/jquery-1.8.2.min.js"></script>
+<script src="/js/lib/jquery.cookie.min.js"></script>
+<script>
+jQuery.ajaxSetup({
+    crossDomain: false, // obviates need for sameOrigin test
+    beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type)) {
+            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken'));
+        }
+    }
+});
+</script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery-ui.custom.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.widget.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.droppable.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.sortable.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.accordion.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.draggable.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.datetime.js'></script>
 
 <!-- source (MIT License) http://momentjs.com/ https://github.com/moment/moment/ -->
-<script type='text/javascript' src='/js/moment.min.js'></script>
+<script type='text/javascript' src='/js/agenda/moment.min.js'></script>
 
 <!-- source (MIT License) : https://github.com/trentrichardson/jQuery-Timepicker-Addon -->
-<script type='text/javascript' src='/js/jquery-ui-timepicker/jquery-ui-timepicker-addon.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-timepicker/jquery-ui-sliderAccess.js.js'></script>
-<link rel='stylesheet' type='text/css' href='/css/jquery-ui-timepicker-addon.css' />
+<script type='text/javascript' src='/js/agenda/jquery-ui-timepicker/jquery-ui-timepicker-addon.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-timepicker/jquery-ui-sliderAccess.js.js'></script>
+<link rel='stylesheet' type='text/css' href='/css/agenda/jquery-ui-timepicker-addon.css' />
 
-<script type='text/javascript' src='/js/spin/dist/spin.min.js'></script>
+<script type='text/javascript' src='/js/agenda/spin/dist/spin.min.js'></script>
 <script type='text/javascript' src='/js/agenda/timeslot_edit.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_objects.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_helpers.js'></script>
@@ -59,9 +71,6 @@ promiselist.push(ts_promise);
 </script>
 {% endblock js %}
 
-
-{% block start_content_table %}{% endblock %}
-{% block end_content_table %}{% endblock %}
 
 {% block content %}
 <div class="wrapper custom_text_stuff">

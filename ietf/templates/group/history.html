@@ -3,26 +3,27 @@
 {% load ietf_filters %}
 {% load future %}
 
-{% block group_subtitle %}History{% endblock %}
-
 {% block group_content %}
-{% load ietf_filters %}
 
-<h2>Group History</h2>
+  <table class="table table-condensed table-striped ietf">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>By</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in events %}
+        <tr>
+          <td class="text-nowrap">{{ e.time|date:"Y-m-d"}}</td>
+          <td>
+	    {{ e.by.plain_name }}
+          </td>
+          <td>{{ e.desc|format_history_text }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-<table class="ietf-table history">
-  <tr><th>Date</th><th>By</th><th>Text</th></tr>
-
-  {% for e in events %}
-  <tr class="{% cycle 'oddrow','evenrow' %}">
-    <td>{{ e.time|date:"Y-m-d"}}</td>
-    <td>{{ e.by.plain_name }}</td>
-    <td>{{ e.desc|format_history_text }}</td>
-  </tr>
-  {% endfor %}
-</table>
 {% endblock %}
-
-{% block content_end %}
-<script src="/js/snippet.js" type="text/javascript"></script>
-{% endblock %} 

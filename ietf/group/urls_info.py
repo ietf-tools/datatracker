@@ -32,7 +32,6 @@ urlpatterns = patterns('',
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/milestones/$', milestones.edit_milestones, {'milestone_set': "current"}, "group_edit_milestones"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/milestones/charter/$', milestones.edit_milestones, {'milestone_set': "charter"}, "group_edit_charter_milestones"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/milestones/charter/reset/$', milestones.reset_charter_milestones, None, "group_reset_charter_milestones"),
-    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/ajax/searchdocs/$', milestones.ajax_search_docs, None, "group_ajax_search_docs"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/workflow/$', edit.customize_workflow),
     (r'^(?P<acronym>[A-Za-z0-9._+-]+)/email-aliases/$', 'ietf.group.info.email_aliases'),
 )

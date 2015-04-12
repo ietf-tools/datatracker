@@ -1,11 +1,8 @@
-{% if files %}
-<ul>
 {% for file in files %}
-  {% if file.exists %} 
-  <li><a href="{{ file.url }}" target="_blank">{{ file.name }}</a></li>
-  {% else %}
-  <li style="color: red;"><span style="text-decoration: line-through;">{{ file.name }}</span> This file is not found on staging area</li>
+  {% if file.exists %}
+    <a class="btn btn-default btn-xs" href="{{ file.url }}" target="_blank">
+      <span class="fa fa-file-{% if file.ext == "txt" %}text-o{% elif file.ext == "xml" %}code-o{% elif file.ext == "pdf" %}pdf-o{% else %}o{% endif %}"></span>
+      {{ file.ext }}
+    </a>
   {% endif %}
 {% endfor %}
-</ul>
-{% endif %}

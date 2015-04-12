@@ -1,40 +1,33 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+{% load ietf_filters %}
+
 {% block title %}WG {{ announcement }} announcement writeup for {{ charter.chartered_group.acronym }}{% endblock %}
 
-{% block morecss %}
-form #id_announcement_text {
-  width: 700px;
-  height: 600px;
-}
-{% endblock %}
-
 {% block content %}
-<h1>WG {{ announcement }} announcement writeup for {{ charter.chartered_group.acronym }}</h1>
+  <h1>WG {{ announcement }} announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
 
-<form action="" method="post">{% csrf_token %}
+  {% bootstrap_messages %}
 
-  {{ announcement_text_form.announcement_text }}
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form announcement_text_form %}
 
-  <div class="actions">
-    <a class="button" href="{{ back_url }}">Cancel</a>
-    <input class="button" type="submit" name="regenerate_text" value="Regenerate" />
-    <input class="button" type="submit" name="save_text" value="Save" />
-  </div>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="save_text">Submit</button>
+      <button type="submit" class="btn btn-warning" name="regenerate_text">Regenerate</button>
 
-{% load ietf_filters %}
-{% if user|has_role:"Secretariat" %}
-  <h3>Secretariat actions</h3>
+      {% if user|has_role:"Secretariat" %}
+        {% if announcement == "action" %}
+          <a type="submit" class="btn btn-default" href="{% url "charter_approve" name=charter.canonical_name %}">Charter approval page</a>
+        {% else %}
+          <input type="submit" type="submit" class="btn btn-default" name="send_text" value="Send WG {{ announcement }} announcement" />
+        {% endif %}
+      {% endif %}
 
-  <div class="actions">
-    {% if announcement == "action" %}
-    <a href="{% url "charter_approve" name=charter.canonical_name %}">Go to charter approval page</a>
-    {% else %}
-    <input type="submit" name="send_text" value="Send WG {{ announcement }} announcement" />
-    {% endif %}
-  </div>
-{% endif %}
-
-</form>
+      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock%}

@@ -1,102 +1,74 @@
 {% extends "base.html" %}
-{% comment %}
-Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
-All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions 
-are met:
-
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided
-   with the distribution.
-
- * Neither the name of the Nokia Corporation and/or its
-   subsidiary(-ies) nor the names of its contributors may be used
-   to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-{% endcomment %}
 {% load ballot_icon %}
 {% load ietf_filters %}
 
-{% block title %}Documents on Future IESG Telechat Agendas{% endblock %}
-
-{% block morecss %}
-.agenda_docs tr.oddrow {background-color: #EDF5FF; }
-.agenda_docs tr.header.telechat-date { margin-top:10px; background:#2647A0; color: white;}
-.agenda_docs tr.header.telechat-date td { font-size: 125%; }
-.agenda_docs tr.header + tr.header { border-top: 2px solid white;}
-.agenda_docs tr td { vertical-align: top; }
-.agenda_docs tr .reschedule,
-.agenda_docs tr .clear-returning-item { font-size: 11px; }
-.agenda_docs tr .doc_pages { font-size: 80%; font-style: italic; }
-.secretariat-actions { margin-bottom: 1em; }
-{% endblock %}
-
 {% block pagehead %}
-<link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/" />
+  <link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">
 {% endblock %}
+
+{% block title %}Documents on future IESG telechat agendas{% endblock %}
 
 {% block content %}
-<h1>Documents on Future IESG Telechat Agendas</h1>
+  <h1>Documents on future IESG telechat agendas</h1>
 
-<form action="" method="post">{% csrf_token %}
-
-{% if user|has_role:"Secretariat" %}
-<div class="secretariat-actions">
-  <input title="Save reschedule changes done with the drop-down boxes below" type="submit" value="Save Reschedules"/>
-</div>
-{% endif %}
-
-
-<table class="ietf-table ietf-doctable agenda_docs">
-{% for t in telechats %}
-
-  {% if not forloop.first %}
-  <tr class="header"><td colspan="6">&nbsp;</td></tr>
+  {% if user|has_role:"Secretariat" %}
+    <form role="form" class="form-inline" method="post">
+      {% csrf_token %}
   {% endif %}
 
-  <tr class="header telechat-date"><td colspan="6">IESG telechat {{t.date}}</td></tr>
+  {% for t in telechats %}
+    <h2>IESG telechat {{t.date}}</h2>
+    <p>
+      <a class="btn btn-default" role="button" href="/iesg/agenda/">
+        <span class="fa fa-list"></span>
+        Full IESG agenda
+      </a>
 
-  {% if forloop.first %}
-  <tr class="header"><td colspan="6"><a href="/iesg/agenda/">Full IESG Agenda</a></td></tr>
-  {% endif %}
+      <a class="btn btn-default" role="button" href="/iesg/agenda/telechat-{{t.date|date:"Y"}}-{{t.date|date:"m"}}-{{t.date|date:"d"}}-docs.tgz">
+        <span class="fa fa-download"></span>
+        Download documents
+      </a>
+    </p>
 
-  <tr class="header"><td colspan="6"><a href="/iesg/agenda/telechat-{{t.date|date:"Y"}}-{{t.date|date:"m"}}-{{t.date|date:"d"}}-docs.tgz">Download Documents</a></td></tr>
+    {% for num, section in t.sections %}
+      {% if "docs" not in section or section.docs %}
+        {% if num|sectionlevel == 1 %}<h3>{{ num }}. {{ section.title|safe }}</h3>{% endif %}
+        {% if num|sectionlevel == 2 %}<h4>{{ num }} {{ section.title|safe }}</h4>{% endif %}
+        {% if num|sectionlevel == 3 %}<h5>{{ num }} {{ section.title|safe }}</h5>{% endif %}
+      {% endif %}
 
-  {% for num, section in t.sections %}
-    {% if "docs" not in section or section.docs %}
-    <tr class="header"><td colspan="6">{{ num }}{% if num|sectionlevel == 1 %}.{% endif %} {{ section.title }}</td></tr>
-    {% endif %}
-    {% if "docs" in section and section.docs %}
-    {% for doc in section.docs %}{% include "iesg/agenda_documents_row.html" %}{% endfor %}
-    {% endif %}
+      {% if "docs" in section and section.docs %}
+        <table class="table table-condensed table-striped ietf">
+          <thead>
+            <tr>
+	      <th>
+	        {% if show_add_to_list and user.is_authenticated %}
+	          <span class="fa fa-bookmark"></span>
+	        {% endif %}
+	      </th>
+
+	      <th>Document</th>
+	      <th>Date</th>
+	      <th>Status</th>
+	      <th>IPR</th>
+	      <th>AD / Shepherd</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in section.docs %}
+              {% include "doc/search/search_result_row.html" %}
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    {% endfor %}
+    <hr>
   {% endfor %}
 
-{% endfor %}
-</table>
-</form>
+  {% if user|has_role:"Secretariat" %}
+    <input title="Save reschedule changes done with the drop-down boxes below" type="submit" value="Save reschedules" class="btn btn-primary">
+    </form>
+  {% endif %}
 
 {% endblock content %}
-
-{% block content_end %}
-<script type="text/javascript" src="/js/utils.js"></script>
-<script type="text/javascript" src="/js/doc-search.js"></script>
-<script type="text/javascript" src="/js/agenda-documents.js"></script>
-{% endblock %}

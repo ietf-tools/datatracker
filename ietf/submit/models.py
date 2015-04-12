@@ -31,7 +31,7 @@ class Submission(models.Model):
     abstract = models.TextField(blank=True)
     rev = models.CharField(max_length=3, blank=True)
     pages = models.IntegerField(null=True, blank=True)
-    authors = models.TextField(blank=True, help_text="List of author names and emails, one author per line, e.g. \"John Doe &lt;john@example.org&gt;\"")
+    authors = models.TextField(blank=True, help_text="List of author names and emails, one author per line, e.g. \"John Doe &lt;john@example.org&gt;\".")
     note = models.TextField(blank=True)
     replaces = models.CharField(max_length=255, blank=True)
 
@@ -41,7 +41,7 @@ class Submission(models.Model):
     document_date = models.DateField(null=True, blank=True)
     submission_date = models.DateField(default=datetime.date.today)
 
-    submitter = models.CharField(max_length=255, blank=True, help_text="Name and email of submitter, e.g. \"John Doe &lt;john@example.org&gt;\"")
+    submitter = models.CharField(max_length=255, blank=True, help_text="Name and email of submitter, e.g. \"John Doe &lt;john@example.org&gt;\".")
 
     idnits_message = models.TextField(blank=True)
 

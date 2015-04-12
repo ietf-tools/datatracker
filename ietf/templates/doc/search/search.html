@@ -1,19 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Search Internet-Drafts and RFCs{% endblock %}
+{% block title %}Document Search{% endblock %}
 
 {% block content %}
-<h1>Search Internet-Drafts and RFCs</h1>
+  <h1>Document Search</h1>
 
-<div class="ietf-box search-form-box">
-{% include "doc/search/search_form.html" %}
-</div>
+  {% include "doc/search/search_form.html" %}
 
-{% if meta.searching %}{% include "doc/search/search_results.html" %}{% endif %}
-
+  {% if meta.searching %}
+    {% include "doc/search/search_results.html" %}
+  {% endif %}
 {% endblock content %}
-
-{% block js %}
-<script type="text/javascript" src="/js/utils.js"></script>
-<script type="text/javascript" src="/js/doc-search.js"></script>
-{% endblock %}

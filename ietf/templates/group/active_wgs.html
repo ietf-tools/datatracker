@@ -1,99 +1,85 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2009, All Rights Reserved #}
-{% comment %}
-Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions 
-are met:
+{% block title %}Active IETF working groups{% endblock %}
 
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided
-   with the distribution.
-
- * Neither the name of the Nokia Corporation and/or its
-   subsidiary(-ies) nor the names of its contributors may be used
-   to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-{% endcomment %}
-
-{% block title %}Active IETF Working Groups{% endblock %}
-
-{% block morecss %}
-.ietf-wg-table { width: 100%; max-width:80em; }
-.ietf-wg-table tr { vertical-align:top; }
-{% endblock morecss %}
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
 {% block content %}
-<h1>Active IETF Working Groups</h1>
+  <div class="row">
+    <div class="col-md-10">
 
-   <p>See also:
-      <a href="http://www.ietf.org/wg/concluded/">Concluded Working Groups (www.ietf.org)</a>,
-      <a href="http://tools.ietf.org/wg/concluded/">Concluded Working Groups (tools.ietf.org)</a>,
-      <a href="http://www.ietf.org/dyn/wg/charter/history/">Historic Charters</a>.
-   </p>
+      <h1>Active IETF working groups</h1>
 
-   {% for area in areas %}
-   <h2 class="ietf-divider" id="{{area.name|cut:" "}}">{{ area.name }}</h2>
+      <a class="btn btn-default" href="{% url "ietf.group.info.concluded_groups" %}">Concluded WGs</a>
+      <a class="btn btn-default" href="//www.ietf.org/dyn/wg/charter/history/">Historic charters</a>
 
-   {% if area.ads %}
-   <p>Area Director{{ area.ads|pluralize }}:</p>
-   <table style="margin-left: 2em" class="ietf-wg-table">
-      {% for ad in area.ads %}
-      <tr>
-         <td><span class="square bgcolor{{forloop.counter}}">&nbsp;</span></td>
-         <td><a href="mailto:{{ ad.email.address }}">{{ ad.person.plain_name }} &lt;{{ ad.email.address }}&gt;</a>{% if ad.name == "pre-ad" %} (Incoming AD){% endif %}</td>
-      </tr>
-     {% endfor %}
-   </table>
-   {% endif %}
+      {% for area in areas %}
+        <h2 class="anchor-target" id="{{area.acronym}}">{{ area.name }} ({{ area.acronym }})</h2>
 
-   {% if area.urls %}
-   <p>Area Specific Web Page{{ area.urls|pluralize}}:</p>
-   <p style="margin-left: 2em">
-      {% for url in area.urls %}
-      <a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}<br/>{% endif %}
+        {% if area.ads %}
+          <h3>{{ area.acronym }} Area Director{{ area.ads|pluralize }} (AD{{ area.ads|pluralize }})</h3>
+          <ul class="list-unstyled">
+            {% for ad in area.ads %}
+              <li>
+	        {{ ad.person.plain_name }} (<a href="mailto:{{ ad.email.address }}">{{ ad.email.address }}</a>)
+	        {% if ad.name == "pre-ad" %} (Incoming AD){% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if area.urls %}
+          <h3>{{ area.acronym }} area-specific web page{{ area.urls|pluralize}}</h3>
+          <ul class="list-unstyled">
+            {% for url in area.urls %}
+              <li><a href="{{ url.url }}">{{ url.name }}</a></li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if area.groups %}
+          <h3>{{ area.acronym }} active WG{{ area.groups|pluralize}}</h3>
+          <table class="table table-condensed table-striped">
+            <thead>
+	      <tr>
+	        <th>Group</th>
+	        <th>Responsible AD</th>
+	        <th>Name</th>
+	        <th>Chairs</th>
+	      </tr>
+            </thead>
+            <tbody>
+	      {% for group in area.groups %}
+	        <tr>
+	          <td><a href="{% url "ietf.group.info.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
+	          <td>
+		     <a href="mailto:{{ group.ad_role.email.address }}" title="{{ group.ad_role.person.plain_name }} &lt;{{ group.ad_role.email.address }}&gt;">{{ group.ad_role.person.plain_name.split.0 }}</a>
+	          </td>
+	          <td>{{ group.name }}</td>
+	          <td>
+	            {% for chair in group.chairs %}
+	              <a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                    {% if group.ad_out_of_area %}(Assigned AD: <a href="mailto:{{ group.ad_role.email.address }}">{{ group.ad_role.person.plain_name }}</a>){% endif %}
+	          </td>
+	        </tr>
+	      {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <h3>No active {{ area.acronym }} WGs</h3>
+        {% endif %}
+
+        <hr>
       {% endfor %}
-   </p>
-   {% endif %}
 
-   {% if area.groups %}
-   <p>Active Working Group{{ area.groups|pluralize}}:</p>
-   <div style="margin-left:2em;">
-      <table class="ietf-wg-table">
-         {% for group in area.groups %}
-	 <tr>
-            <td width="7%;"><a href="{% url "ietf.group.info.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
-	    <td width="1%"><span title="AD for {{ group.acronym }}: {{ group.ad_role.person }}" class="square {% if group.ad_out_of_area %}bgcolor3{% else %}{% for ad in area.ads %}{% if ad.person_id == group.ad_role.person.id %}bgcolor{{forloop.counter}}{% endif %}{% endfor %}{% endif %} "></span></td>
-	    <td width="31%">{{ group.name }}</td>
-	    <td width="13%"><a href="{{ group.list_archive }}"><span title="Click to view list archive">{{ group.list_email }}</span></a></td>
-	    <td width="7%"><a href="{{ group.list_subscribe_url }}">subscribe</a></td>
-	    <td width="41%">{% for chair in group.chairs %}<a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% if group.ad_out_of_area %} (Assigned AD: <a href="mailto:{{ group.ad_role.email.address }}">{{ group.ad_role.person.plain_name }}</a>){%endif%}</td>
-	 </tr>
-         {% endfor %}
-      </table>
-   </div>
-   {% else %}
-   <p>No Active Working Groups</p>
-   {% endif %}
-
-   {% endfor %}{# area #}
-
+    </div>
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        {% for area in areas %}
+          <li><a href="#{{area.acronym}}">{{ area.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
 {% endblock %}

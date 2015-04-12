@@ -1,0 +1,63 @@
+{% extends base_template %}
+
+{% load bootstrap3 %}
+{% load nomcom_tags %}
+
+{% block subtitle %} - Feedback{% endblock %}
+
+{% block nomcom_content %}
+
+  <p class="alert alert-info">
+    First select a nominee from the list of nominees to provide input about that nominee.
+    This will fill in the non-editable fields in the form.
+  </p>
+
+  {% if message %}
+    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
+  {% endif %}
+
+  {% bootstrap_messages %}
+
+  {% if nomcom|has_publickey %}
+    <div class="row">
+      <div class="col-sm-4 col-sm-push-8">
+        <h3>Nominees</h3>
+
+        {% for p in positions %}
+          {% if p.nomineeposition_set.accepted.not_duplicated %}
+            <h4>{{ p.name }}</h4>
+            <div class="btn-group-vertical form-group">
+              {% for np in p.nomineeposition_set.accepted.not_duplicated %}
+                <a class="btn btn-default btn-xs" href="?nominee={{np.nominee.id}}&position={{ np.position.id}}">
+	          {{ np.nominee }}
+	          {% add_num_nominations user np.position np.nominee %}
+                </a>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        <p>
+          An number after a name indicates
+          that you have given comments on this nominee
+          earlier. If you position the mouse pointer over
+          it, you should see how many comments
+          exist from you for this nominee.
+        </p>
+      </div>
+
+      <div class="col-sm-8 col-sm-pull-4">
+        <h3>Provide feedback</h3>
+
+        <form id="feedbackform" role="form" method="post">
+          {% csrf_token %}
+          {% bootstrap_form form %}
+          {% buttons %}
+            <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
+          {% endbuttons %}
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}

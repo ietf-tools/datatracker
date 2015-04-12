@@ -2,44 +2,57 @@
 
 {% load nomcom_tags %}
 
-{% block subtitle %} - View comments {% endblock %}
+{% block subtitle %} - View feedback {% endblock %}
 
 {% block nomcom_content %}
 
-<h2>Feedback related to Nominees</h2>
+  <h2>Feedback related to nominees</h2>
 
-<table class="ietf-table ietf-doctable">
-<tr>
-  <th>Nominee</th>
-  {% for ft in feedback_types %}
-      <th>{{ ft.name }}</th>
-  {% endfor %}
-</tr>
-{% for nominee, feedback in nominees_feedback.items %}
-<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-  <td><a href="{% url "nomcom_view_feedback_nominee" year nominee.id %}#comment">{{ nominee }}</td>
-  {% for f in feedback %}
-    <td>{{ f.1 }}</td>
-  {% endfor %}
-</tr>
-{% endfor %}
-</table>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Nominee</th>
+        {% for ft in feedback_types %}
+          <th>{{ ft.name }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for nominee, feedback in nominees_feedback.items %}
+        <tr>
+          <td>
+	    <a href="{% url "nomcom_view_feedback_nominee" year nominee.id %}#comment">{{ nominee }}
+          </td>
+          {% for f in feedback %}
+            <td>{{ f.1 }}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-{% if independent_feedback_types %}
-<h2>Feedback not related to Nominees</h2>
-<table class="ietf-table ietf-doctable">
-<tr>
-  <th></th>
-  {% for ft in independent_feedback_types %}
-      <th>{{ ft.name }}</th>
-  {% endfor %}
-</tr>
-<tr class="evenrow">
-  <td><a href="{% url "nomcom_view_feedback_unrelated" year %}">View feedback not related to nominees</td>
-  {% for count in independent_feedback %}
-    <td>{{ count }}</td>
-  {% endfor %}
-</tr>
-</table>
-{% endif %}
+  {% if independent_feedback_types %}
+    <h2>Feedback not related to Nominees</h2>
+
+    <table class="table table-condensed table-striped">
+      <thead>
+        <tr>
+          <th></th>
+          {% for ft in independent_feedback_types %}
+            <th>{{ ft.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+	    <a href="{% url "nomcom_view_feedback_unrelated" year %}">View feedback not related to nominees</a>
+          </td>
+          {% for count in independent_feedback %}
+            <td>{{ count }}</td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  {% endif %}
 {% endblock %}

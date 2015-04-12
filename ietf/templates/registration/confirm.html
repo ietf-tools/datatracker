@@ -1,23 +1,30 @@
-{% extends "registration/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Confirm account creation{% endblock %}
+{% load bootstrap3 %}
+
+{% block title %}Complete account creation{% endblock %}
 
 {% block content %}
-<div id="confirm_account_page">
-<h1>Confirm account creation</h1>
-{% if success %}
-<p>Your account with login name '{{ email }}' has been created, using the password you have selected.</p>
-<p>Now you can <a href="/accounts/login/">sign in</a></p>
-{% else %}
-<p>In order to complete the setup of your account with login name  '{{ email }}', please set a password:</p>
-<form action="" method="post">{% csrf_token %}
-  <table class="register-form">
-  {{ form }}
-  </table>
-  <div class="submit_row">
-    <input type="submit" value="Set Password" />
-  </div>
-</form>
-{% endif %}
-</div>
+
+  {% if success %}
+    <h1>Account creation successful</h1>
+
+    <p>Your account with login name {{ email }} has been created, using the password you have selected.</p>
+    <a type="a" class="btn btn-primary" href="/accounts/login/" rel="nofollow">Sign in</a>
+
+  {% else %}
+    <h1>Complete account creation</h1>
+
+    {% bootstrap_messages %}
+
+    <p>In order to complete the setup of your account with login name {{ email }}, please choose a password:</p>
+    <form role="form" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+
+      {% buttons %}
+        <button type="submit" class="btn btn-primary">Set password</button>
+      {% endbuttons %}
+    </form>
+  {% endif %}
 {% endblock %}

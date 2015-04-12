@@ -1,27 +1,29 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
 
-{% block title %}E-Mail Sending Failed{% endblock %}
+{% block title %}E-mail sending failed{% endblock %}
 
 {% block content %}
-<h1>E-Mail Sending Failed</h1>
+  <h1>E-mail sending failed</h1>
 
-<p>Sorry, the site needed to send an E-Mail message to complete this
-action, and that attempt failed.  Please reload this page later
-to try again, or, if this condition persists, please send an
-E-Mail to &lt;<a href="mailto:webmaster@ietf.org">webmaster@ietf.org</a>&gt;
+  <p class="alert alert-warning">
+    Sorry, the site needed to send an E-Mail message to complete this
+    action, and that attempt failed.  Please reload this page later
+    to try again, or, if this condition persists, please send an
+    e-mail to <a href="mailto:webmaster@ietf.org">webmaster@ietf.org</a>.
+  </p>
 
-{% if debug %}
-<hr/>
-<h3>Debug information, please forward when reporting this error:</h3>
-<ul>
-<li>Exception: {{ exception|escape }}
-<li>Detail: {{ args|escape }}
-<li>Traceback:
-<pre>
-{{ traceback|escape }}
-</pre>
-</ul>
-{% endif %}
+  {% if debug %}
+    <hr>
+    <h3>Debug information, please forward when reporting this error:</h3>
+    <ul>
+      <li>Exception: {{ exception|escape }}</li>
+      <li>Detail: {{ args|escape }}</li>
+      <li>Traceback:
+        <pre>
+          {{ traceback|escape }}
+        </pre>
+      </li>
+    </ul>
+  {% endif %}
 
 {% endblock %}

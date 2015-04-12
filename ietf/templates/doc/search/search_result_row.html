@@ -1,85 +1,82 @@
-{% comment %}
-Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
-All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions 
-are met:
-
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided
-   with the distribution.
-
- * Neither the name of the Nokia Corporation and/or its
-   subsidiary(-ies) nor the names of its contributors may be used
-   to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-{% endcomment %}
-
+{% load widget_tweaks %}
 {% load ietf_filters %}
-<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-{% if user.is_authenticated %}
-  {% if doc.name in doc_is_tracked %}
-<td class="removefromlist">
-  <a href="{% url "community_remove_track_document" doc.name %}" title="Remove from your personal ID list"><img src="/images/remove_from_list.png" alt="Remove from your personal ID list" /></a>
-</td>
+
+<tr>
+
+  <td>
+    {% if user.is_authenticated %}
+      {% if doc.name in doc_is_tracked %}
+        <a href="{% url "community_remove_track_document" doc.name %}" class="community-list-add-remove-doc" title="Remove from your personal ID list">
+          <span class="fa fa-bookmark-o"></span>
+        </a>
+      {% else %}
+        <a href="{% url "community_add_track_document" doc.name %}" class="community-list-add-remove-doc" title="Add to your personal ID list">
+          <span class="fa fa-bookmark"></span>
+        </a>
+      {% endif %}
+    {% endif %}
+  </td>
+
+  <td class="doc">
+    <p>
+      <a href="{{ doc.get_absolute_url }}">{% if doc.get_state_slug == "rfc" %}RFC {{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}</a>
+
+      {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}
+        <i>(was {{ doc.name }})</i>
+      {% endif %}
+      <br>
+      <b>{{ doc.title }}</b>
+      {% if doc.has_errata %}
+        <a class="label label-danger" href="//www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
+      {% endif %}
+
+      {% if doc.pages %}
+        <br><small class="text-muted">{{doc.pages}} page{{ doc.pages|pluralize }}</small>
+      {% endif %}
+    </p>
+
+    {% if user|has_role:"Secretariat" and doc.reschedule_form %}
+      <div class="form-group">
+        <label for="{{ doc.reschedule_form.telechat_date.auto_id}}">Reschedule:</label>
+        {{ doc.reschedule_form.telechat_date|add_class:"form-control input-sm" }}
+      </div>
+      {% if doc.reschedule_form.show_clear %}
+        <div class="checkbox">
+          <label>{{ doc.reschedule_form.clear_returning_item }} <b>Clear "returning item"</b></label>
+        </div>
+      {% endif %}
+    {% endif %}
+  </td>
+
+  <td class="text-nowrap">
+    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}<a href="{{ rfcdiff_prefix }}?url2={{ doc.name }}-{{ doc.rev }}">{% endif %}{% if doc.get_state_slug == "rfc" %}{{ doc.latest_revision_date|date:"Y-m" }}{% else %}{{ doc.latest_revision_date|date:"Y-m-d" }}{% endif %}{% if doc.latest_revision_date|timesince_days|new_enough:request %}{% if doc.get_state_slug != "rfc" %}</a>{% endif %}
+      <wbr><span class="label label-success">New</span>
+    {% endif %}
+
+    {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
+      <wbr><span class="label label-warning">Expires soon</span>
+    {% endif %}
+  </td>
+
+  {% include "doc/search/status_columns.html" %}
+
+  <td class="ipr text-center">
+    {% if doc.related_ipr %}
+      <a href="{% url "ipr_search" %}?submit=draft&amp;id={{ doc.name }}">
+        <span class="label label-default">{{ doc.related_ipr|length }}</span>
+      </a>
+    {% endif %}
+  </td>
+
+  {% if ad_name == None or ad_name != doc.ad.plain_name %}
+    <td class="ad">
+      {% if doc.ad %}
+        <p>{{ doc.ad|default:"" }}</p>
+      {% endif %}
+      {% if doc.shepherd %}<small class="text-muted">{{doc.shepherd|default:""}}</small>{% endif %}
+    </td>
   {% else %}
-<td class="addtolist">
-  <a href="{% url "community_add_track_document" doc.name %}" title="Add to your personal ID list"><img src="/images/add_to_list.png" alt="Add to your personal ID list" /></a>
-</td>
+     <td></td>
   {% endif %}
-{% else %}
-<td>&nbsp;</td>
-{% endif %}
-
-<td class="doc">
-  <a href="{{ doc.get_absolute_url }}">{% if doc.get_state_slug == "rfc" %}RFC {{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}</a>
-
-  {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}
-  <br/><i>(was {{ doc.name }})</i>
-  {% endif %}
-</td>
-
-<td class="title">{{ doc.title }}</td>
-
-<td class="date">
-  {% if doc.get_state_slug == "rfc" %}{{ doc.latest_revision_date|date:"Y-m" }}{% else %}{{ doc.latest_revision_date|date:"Y-m-d" }}{% endif %}
-
-  {% if doc.latest_revision_date|timesince_days|new_enough:request %}
-  <div class="ietf-small ietf-highlight-y"><a{% if doc.get_state_slug != "rfc" %} href="http:{{ rfcdiff_prefix }}?url2={{ doc.name }}-{{ doc.rev }}"{% endif %}>new</a></div>
-  {% endif %}
-
-  {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
-  <div class="ietf-small ietf-highlight-y">expires soon</div>
-  {% endif %}
-</td>
-
-{% include "doc/search/status_columns.html" %}
-
-<td class="ipr">
-  {% if doc.related_ipr %}
-    <a href="{% url "ipr_search" %}?submit=draft&amp;id={{ doc.name }}">{{ doc.related_ipr|length }}</a>
-  {% endif %}
-</td>
-
-{% if ad_name == None or ad_name != doc.ad.plain_name %}
-<td class="ad">{{ doc.ad|default:"" }}<div class="search-text-shepherd">{% if doc.shepherd %}{{ doc.shepherd.person }}{% endif %}</div></td>
-{% endif %}
 
 </tr>

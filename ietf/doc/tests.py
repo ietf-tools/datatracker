@@ -1,6 +1,7 @@
 import os
 import shutil
 import datetime
+import json
 import sys
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
     import unittest2 as unittest
@@ -12,6 +13,8 @@ from Cookie import SimpleCookie
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
+
+import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent,
@@ -105,7 +108,7 @@ class SearchTestCase(TestCase):
         make_test_data()
         r = self.client.get("/")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Search Internet-Drafts" in r.content)
+        self.assertTrue("Document Search" in r.content)
 
     def test_drafts_pages(self):
         draft = make_test_data()
@@ -129,6 +132,32 @@ class SearchTestCase(TestCase):
         r = self.client.get(urlreverse("index_active_drafts"))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in r.content)
+
+    def test_ajax_search_docs(self):
+        draft = make_test_data()
+
+        # Document
+        url = urlreverse("ajax_select2_search_docs", kwargs={
+            "model_name": "document",
+            "doc_type": "draft",
+        })
+        r = self.client.get(url, dict(q=draft.name))
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data[0]["id"], draft.pk)
+
+        # DocAlias
+        doc_alias = draft.docalias_set.get()
+
+        url = urlreverse("ajax_select2_search_docs", kwargs={
+            "model_name": "docalias",
+            "doc_type": "draft",
+        })
+
+        r = self.client.get(url, dict(q=doc_alias.name))
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data[0]["id"], doc_alias.pk)
         
 
 class DocDraftTestCase(TestCase):
@@ -327,46 +356,46 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertTrue("[include full document text]" in r.content)
+        self.assertTrue("Show full document text" in r.content)
         self.assertFalse("Deimos street" in r.content)
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=0")
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertFalse("[include full document text]" in r.content)
+        self.assertFalse("Show full document text" in r.content)
         self.assertTrue("Deimos street" in r.content)
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=foo")
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertFalse("[include full document text]" in r.content)
+        self.assertFalse("Show full document text" in r.content)
         self.assertTrue("Deimos street" in r.content)
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=1")
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertFalse("[include full document text]" in r.content)
+        self.assertFalse("Show full document text" in r.content)
         self.assertTrue("Deimos street" in r.content)
 
         self.client.cookies = SimpleCookie({'full_draft': 'on'})
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertFalse("[include full document text]" in r.content)
+        self.assertFalse("Show full document text" in r.content)
         self.assertTrue("Deimos street" in r.content)
 
         self.client.cookies = SimpleCookie({'full_draft': 'off'})
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertTrue("[include full document text]" in r.content)
+        self.assertTrue("Show full document text" in r.content)
         self.assertFalse("Deimos street" in r.content)
 
         self.client.cookies = SimpleCookie({'full_draft': 'foo'})
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertTrue("[include full document text]" in r.content)
+        self.assertTrue("Show full document text" in r.content)
         self.assertFalse("Deimos street" in r.content)
 
         # expired draft
@@ -508,6 +537,8 @@ class DocTestCase(TestCase):
         doc = make_test_data()
         ballot = doc.active_ballot()
 
+        save_document_in_history(doc)
+
         pos = BallotPositionDocEvent.objects.create(
             doc=doc,
             ballot=ballot,
@@ -521,7 +552,6 @@ class DocTestCase(TestCase):
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(pos.comment in r.content)
-        self.assertTrue(pos.comment_time.strftime('(%Y-%m-%d)') in r.content)
 
         # test with ballot_id
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
@@ -540,7 +570,7 @@ class DocTestCase(TestCase):
         doc.save()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue( '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'),oldrev) in r.content)
+        self.assertTrue( '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev) in r.content)
         
     def test_document_ballot_needed_positions(self):
         make_test_data()
@@ -655,14 +685,12 @@ class DocTestCase(TestCase):
         self.client.login(username='iab-chair', password='iab-chair+password')
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertFalse(q('.actions'))
+        self.assertTrue("Request publication" not in r.content)
 
         Document.objects.filter(pk=doc.pk).update(stream='iab')
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue('IESG state' in q('.actions').html())
+        self.assertTrue("Request publication" in r.content)
 
 
 class AddCommentTestCase(TestCase):

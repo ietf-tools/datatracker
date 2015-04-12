@@ -1,40 +1,46 @@
 {% extends "base.html" %}
 
-{% block title %}Make Last Call for {{ doc.name }}{% endblock %}
+{% load bootstrap3 %}
 
-{% block morecss %}
-form.approve-ballot pre {
-  margin: 0;
-  padding: 4px;
-  border-top: 4px solid #eee;
-  border-bottom: 4px solid #eee;
-}
-form.approve-ballot .announcement {
-  overflow-x: auto;
-  overflow-y: scroll;
-  width: 800px;
-  height: 400px;
-  border: 1px solid #bbb;
-}
+{% block pagehead %}
+  <link rel="stylesheet" href="/css/lib/datepicker3.css"></link>
 {% endblock %}
+
+{% block title %}Make last call for {{ doc.name }}{% endblock %}
 
 {% block content %}
-<h1>Make Last Call for {{ doc.file_tag }}</h1>
-<h2>({{doc.title}})</h2>
-<h2>Announcement Text:</h2>
-<div style="font-family: monospace; white-space: pre; border-style:solid; border-width:1px; padding:5px;">
-{{ announcement }}
-</div>
 
-<form style="margin-top:20px" action="" method="post">{% csrf_token %}
-  <table>
-    {{ form.as_table }}
-  </table>
+  <h1>Make last call<br><small>{{doc.name}}</small></h1>
 
-  <div class="actions">
-    <a href="{{ doc.get_absolute_url }}">Back</a>
-    <input type="reset" value="Reset">
-    <input type="submit" value="Make Last Call"/>
+  {% bootstrap_messages %}
+
+  <div class="form-group">
+    <label>Last call text</label>
+    <pre>{{ announcement }}</pre>
   </div>
-</form>
+
+  <form role="form" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <button type="reset" class="btn btn-warning">Reset</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}
+
+
+{% block js %}
+  <script src="/js/lib/bootstrap-datepicker.js"></script>
+  <script>
+   $('#id_last_call_sent_date, #id_last_call_expiration_date').datepicker({
+       format: "yyyy-mm-dd",
+       todayBtn: "linked",
+       todayHighlight: true
+   }).wrap('<div class="input-group"></div>').parent().prepend('<span class="input-group-addon"><span class="fa fa-calendar"></span></span>');
+  </script>
+{% endblock %}
+
+

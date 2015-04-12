@@ -1,39 +1,30 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Request closing of {{ group.acronym }} {{ group.type.name }}{% endblock %}
 
-{% block morecss %}
-#id_instructions {
-  width: 40em;
-}
-
-form.conclude .actions {
-  text-align: right;
-  padding-top: 10px;
-}
-{% endblock %}
-
 {% block content %}
-<h1>Request closing of {{ group.acronym }} {{ group.type.name }}</h1>
+  <h1>Request closing of {{ group.acronym }} {{ group.type.name }}</h1>
 
-<p>
-   Please provide instructions regarding the disposition of each
-   active Internet-Draft (such as to withdraw the draft, move it to
-   another group, convert it to an individual submission, and so on),
-   wording for the closure announcement, and the status of the group
-   mailing list (will it remain open or should it be closed).
-</p>
+  {% bootstrap_messages %}
 
-<form class="conclude" action="" method="post">{% csrf_token %}
-  <table>
-    {{ form.as_table }}
-    <tr>
-      <td colspan="2" class="actions">
-        <a class="button" href="{{ group.about_url }}">Cancel</a>
-        <input class="button" type="submit" value="Send request"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  <p>
+    Please provide instructions regarding the disposition of each
+    active Internet-Draft (such as to withdraw the draft, move it to
+    another group, convert it to an individual submission, and so on),
+    wording for the closure announcement, and the status of the group
+    mailing list (will it remain open or should it be closed).
+  </p>
 
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{{ group.about_url }}">Back</a>
+    {% endbuttons %}
+
+  </form>
 {% endblock %}

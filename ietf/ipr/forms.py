@@ -1,16 +1,18 @@
 import datetime
 import email
 
+from django.utils.safestring import mark_safe
 from django import forms
 
 from ietf.group.models import Group
+from ietf.doc.fields import SearchableDocAliasField
 from ietf.ipr.mail import utc_from_string
-from ietf.ipr.fields import (AutocompletedIprDisclosuresField, AutocompletedDraftField,
-    AutocompletedRfcField)
+from ietf.ipr.fields import SearchableIprDisclosuresField
 from ietf.ipr.models import (IprDocRel, IprDisclosureBase, HolderIprDisclosure,
     GenericIprDisclosure, ThirdPartyIprDisclosure, NonDocSpecificIprDisclosure,
     IprLicenseTypeName, IprDisclosureStateName)
 from ietf.message.models import Message
+from ietf.utils.fields import DatepickerDateField
 
 # ----------------------------------------------------------------
 # Globals
@@ -44,8 +46,8 @@ class MessageModelChoiceField(forms.ModelChoiceField):
 # Forms
 # ----------------------------------------------------------------
 class AddCommentForm(forms.Form):
-    private = forms.BooleanField(required=False,help_text="If this box is checked the comment will not appear in the disclosure's public history view.")
     comment = forms.CharField(required=True, widget=forms.Textarea)
+    private = forms.BooleanField(label="Private comment", required=False,help_text="If this box is checked the comment will not appear in the disclosure's public history view.")
 
 class AddEmailForm(forms.Form):
     direction = forms.ChoiceField(choices=(("incoming", "Incoming"), ("outgoing", "Outgoing")),
@@ -89,7 +91,7 @@ class AddEmailForm(forms.Form):
         return self.cleaned_data
 
 class DraftForm(forms.ModelForm):
-    document = AutocompletedDraftField(required=False)
+    document = SearchableDocAliasField(label="I-D name/RFC number", required=False, doc_type="draft")
     
     class Meta:
         model = IprDocRel
@@ -103,20 +105,20 @@ class GenericDisclosureForm(forms.Form):
     """Custom ModelForm-like form to use for new Generic or NonDocSpecific Iprs.
     If patent_info is submitted create a NonDocSpecificIprDisclosure object
     otherwise create a GenericIprDisclosure object."""
-    compliant = forms.BooleanField(required=False)
+    compliant = forms.BooleanField(label="This disclosure complies with RFC 3979", required=False)
     holder_legal_name = forms.CharField(max_length=255)
-    notes = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
-    other_designations = forms.CharField(max_length=255,required=False)
-    holder_contact_name = forms.CharField(max_length=255)
-    holder_contact_email = forms.EmailField()
-    holder_contact_info = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
+    notes = forms.CharField(label="Additional notes", max_length=255,widget=forms.Textarea,required=False)
+    other_designations = forms.CharField(label="Designations for other contributions", max_length=255,required=False)
+    holder_contact_name = forms.CharField(label="Name", max_length=255)
+    holder_contact_email = forms.EmailField(label="Email")
+    holder_contact_info = forms.CharField(label="Other Info (address, phone, etc.)", max_length=255,widget=forms.Textarea,required=False)
     submitter_name = forms.CharField(max_length=255,required=False)
     submitter_email = forms.EmailField(required=False)
-    patent_info = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
+    patent_info = forms.CharField(max_length=255,widget=forms.Textarea, required=False, help_text="Patent, Serial, Publication, Registration, or Application/File number(s), Date(s) granted or applied for, Country, and any additional notes.")
     has_patent_pending = forms.BooleanField(required=False)
     statement = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
-    updates = AutocompletedIprDisclosuresField(required=False)
-    same_as_ii_above = forms.BooleanField(required=False)
+    updates = SearchableIprDisclosuresField(required=False, help_text="If this disclosure <strong>updates</strong> other disclosures identify here which ones. Leave this field blank if this disclosure does not update any prior disclosures. <strong>Note</strong>: Updates to IPR disclosures must only be made by authorized representatives of the original submitters. Updates will automatically be forwarded to the current Patent Holder's Contact and to the Submitter of the original IPR disclosure.")
+    same_as_ii_above = forms.BooleanField(label="Same as in section II above", required=False)
     
     def __init__(self,*args,**kwargs):
         super(GenericDisclosureForm, self).__init__(*args,**kwargs)
@@ -156,7 +158,7 @@ class GenericDisclosureForm(forms.Form):
 
 class IprDisclosureFormBase(forms.ModelForm):
     """Base form for Holder and ThirdParty disclosures"""
-    updates = AutocompletedIprDisclosuresField(required=False)
+    updates = SearchableIprDisclosuresField(required=False, help_text=mark_safe("If this disclosure <strong>updates</strong> other disclosures identify here which ones. Leave this field blank if this disclosure does not update any prior disclosures. Note: Updates to IPR disclosures must only be made by authorized representatives of the original submitters. Updates will automatically be forwarded to the current Patent Holder's Contact and to the Submitter of the original IPR disclosure."))
     same_as_ii_above = forms.BooleanField(required=False)
     
     def __init__(self,*args,**kwargs):
@@ -164,6 +166,22 @@ class IprDisclosureFormBase(forms.ModelForm):
         self.fields['submitter_name'].required = False
         self.fields['submitter_email'].required = False
         self.fields['compliant'].initial = True
+        self.fields['compliant'].label = "This disclosure complies with RFC 3979"
+        if "ietfer_name" in self.fields:
+            self.fields["ietfer_name"].label = "Name"
+        if "ietfer_contact_email" in self.fields:
+            self.fields["ietfer_contact_email"].label = "Email"
+        if "ietfer_contact_info" in self.fields:
+            self.fields["ietfer_contact_info"].label = "Other info"
+            self.fields["ietfer_contact_info"].help_text = "Address, phone, etc."
+        if "patent_info" in self.fields:
+            self.fields["patent_info"].help_text = "Patent, Serial, Publication, Registration, or Application/File number(s), Date(s) granted or applied for, Country, and any additional notes"
+        if "licensing" in self.fields:
+            self.fields["licensing_comments"].label = "Licensing information, comments, notes, or URL for further information"
+        if "submitter_claims_all_terms_disclosed" in self.fields:
+            self.fields["submitter_claims_all_terms_disclosed"].label = "The individual submitting this template represents and warrants that all terms and conditions that must be satisfied for implementers of any covered IETF specification to obtain a license have been disclosed in this IPR disclosure statement"
+        if "same_as_ii_above" in self.fields:
+            self.fields["same_as_ii_above"].label = "Same as in section II above"
     
     class Meta:
         """This will be overridden"""
@@ -204,7 +222,7 @@ class HolderIprDisclosureForm(IprDisclosureFormBase):
     def clean(self):
         super(HolderIprDisclosureForm, self).clean()
         cleaned_data = self.cleaned_data
-        if not self.data.get('draft-0-document') and not self.data.get('rfc-0-document') and not cleaned_data.get('other_designations'):
+        if not self.data.get('iprdocrel_set-0-document') and not cleaned_data.get('other_designations'):
             raise forms.ValidationError('You need to specify a contribution in Section IV')
         return cleaned_data
 
@@ -224,7 +242,7 @@ class GenericIprDisclosureForm(IprDisclosureFormBase):
         exclude = [ 'by','docs','state','rel' ]
         
 class MessageModelForm(forms.ModelForm):
-    response_due = forms.DateField(required=False,help_text='The date which a response is due')
+    response_due = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, required=False, help_text='The date which a response is due.')
     
     class Meta:
         model = Message
@@ -246,12 +264,6 @@ class NotifyForm(forms.Form):
     type = forms.CharField(widget=forms.HiddenInput)
     text = forms.CharField(widget=forms.Textarea)
     
-class RfcForm(DraftForm):
-    document = AutocompletedRfcField(required=False)
-    
-    class Meta(DraftForm.Meta):
-        exclude = ('revisions',)
-
 class ThirdPartyIprDisclosureForm(IprDisclosureFormBase):
     class Meta:
         model = ThirdPartyIprDisclosure
@@ -260,7 +272,7 @@ class ThirdPartyIprDisclosureForm(IprDisclosureFormBase):
     def clean(self):
         super(ThirdPartyIprDisclosureForm, self).clean()
         cleaned_data = self.cleaned_data
-        if not self.data.get('draft-0-document') and not self.data.get('rfc-0-document') and not cleaned_data.get('other_designations'):
+        if not self.data.get('iprdocrel_set-0-document') and not cleaned_data.get('other_designations'):
             raise forms.ValidationError('You need to specify a contribution in Section III')
         return cleaned_data
     
@@ -276,15 +288,15 @@ class ThirdPartyIprDisclosureForm(IprDisclosureFormBase):
         
 class SearchForm(forms.Form):
     state =    forms.MultipleChoiceField(choices=STATE_CHOICES,widget=forms.CheckboxSelectMultiple,required=False)
-    draft =    forms.CharField(max_length=128,required=False)
-    rfc =      forms.IntegerField(required=False)
-    holder =   forms.CharField(max_length=128,required=False)
-    patent =   forms.CharField(max_length=128,required=False)
-    group =    GroupModelChoiceField(label="Working group name",queryset=Group.objects.filter(type='wg').order_by('acronym'),required=False)
-    doctitle = forms.CharField(max_length=128,required=False)
-    iprtitle = forms.CharField(max_length=128,required=False)
+    draft =    forms.CharField(label="Draft name", max_length=128, required=False)
+    rfc =      forms.IntegerField(label="RFC number", required=False)
+    holder =   forms.CharField(label="Name of patent owner/applicant", max_length=128,required=False)
+    patent =   forms.CharField(label="Text in patent information", max_length=128,required=False)
+    group =    GroupModelChoiceField(label="Working group",queryset=Group.objects.filter(type='wg').order_by('acronym'),required=False, empty_label="(Select WG)")
+    doctitle = forms.CharField(label="Words in document title", max_length=128,required=False)
+    iprtitle = forms.CharField(label="Words in IPR disclosure title", max_length=128,required=False)
 
 class StateForm(forms.Form):
     state = forms.ModelChoiceField(queryset=IprDisclosureStateName.objects,label="New State",empty_label=None)
-    private = forms.BooleanField(required=False,help_text="If this box is checked the comment will not appear in the disclosure's public history view.")
-    comment = forms.CharField(required=False, widget=forms.Textarea)
+    comment = forms.CharField(required=False, widget=forms.Textarea, help_text="You may add a comment to be included in the disclosure history.")
+    private = forms.BooleanField(label="Private comment", required=False, help_text="If this box is checked the comment will not appear in the disclosure's public history view.")

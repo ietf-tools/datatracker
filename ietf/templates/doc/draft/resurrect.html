@@ -1,18 +1,26 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Resurrect {{ doc }}{% endblock %}
 
 {% block content %}
-<form action="" method="post">{% csrf_token %}
-  <h1>Resurrect {{ doc }}</h1>
-  
-  <p>Resurrect {{ doc.file_tag }}?</p>
 
-  <p>This will change the status to Active{% if doc.idinternal.resurrect_requested_by %} and email a notice to {{ doc.idinternal.resurrect_requested_by }}{% endif %}.</p>
+  <h1>Resurrect<br><small>{{ doc }}</small></h1>
 
-  <div class="actions">
-    <a href="{{ back_url }}">Back</a>
-    <input type="submit" value="Resurrect"/>
-  </div>
-</form>
+  <p>Resurrect {{ doc }}?</p>
+
+  <p>
+    This will change the status to Active {% if doc.idinternal.resurrect_requested_by %} and email a notice to {{ doc.idinternal.resurrect_requested_by }}{% endif %}.
+  </p>
+
+  <form role="form" method="post">
+    {% csrf_token %}
+
+    {% buttons %}
+      <button class="btn btn-primary" type="submit">Resurrect</button>
+      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+    {% endbuttons %}
+  </form>
+
 {% endblock %}

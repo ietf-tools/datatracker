@@ -1,64 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}Edit info on {{ doc }}{% endblock %}
+{% load bootstrap3 %}
+{% load ietf_filters %}
 
-{% block scripts %}
-function make_bold()
-{
-  var e = document.getElementById("ballotwarn");
-  e.setAttribute("class","warning");
-}
-{% endblock %}
-
-{% block morecss %}
-form.edit-info #id_notify {
-  width: 600px;
-}
-form.edit-info #id_note {
-  width: 600px;
-  height: 150px;
-}
-form.edit-info .actions {
-  padding-top: 20px;
-}
-.warning {
-  font-weight: bold;
-  color: #a00;
-}
-{% endblock %}
+{% block title %}Edit info for {{ doc }}{% endblock %}
 
 {% block content %}
-{% load ietf_filters %}
-<h1>Edit info on {{ doc }}</h1>
+  <h1>Edit info<br><small>{{ doc }}</small></h1>
 
-<form class="edit-info" action="" method="post">{% csrf_token %}
-  <table>
-    {% for field in form.standard_fields %}
-    <tr>
-      <th>{{ field.label_tag }}</th>
-      <td>{{ field }}
-      {% if field.name == "telechat_date" %}
-        {% if not ballot_issued %}
-         <span id="ballotwarn"> A ballot for this document has not been issued: <a href="{% url "doc_ballot_writeupnotes" name=doc.name %}">Edit Ballot Text</a></span>
-        {% endif %}
-        {{ form.returning_item }} {{ form.returning_item.label_tag }} {{ form.returning_item.errors }}
-      {% endif %}
-      {% if field.name == "ad" %}
-      {% if user|has_role:"Area Director" %}
-      <label><input type="checkbox" name="ad" value="{{ login.pk }}" /> Assign to me</label>
-      {% endif %}
-      {% endif %}      
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-      {{ field.errors }}</td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td></td>
-      <td class="actions">
-        <a href="{{ doc.get_absolute_url }}">Back</a>
-        <input type="submit" value="Save"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  {% bootstrap_messages %}
+
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button class="btn btn-primary" type="submit">Submit</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}

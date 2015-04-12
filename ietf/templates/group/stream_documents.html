@@ -1,15 +1,17 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2013, All Rights Reserved #}
 
-{% block title %}{{ stream }} Stream Documents{% endblock %}
+{% load ietf_filters %}
+
+{% block title %}{{ stream }} stream documents{% endblock %}
 
 {% block content %}
-<h1>{{ stream }} Stream Documents</h1>
+  <h1>{{ stream }} stream documents</h1>
 
-{% include "doc/search/search_results.html" %}
-{% endblock %}
+  {% if editable %}
+    <p>
+      <a class="btn btn-default" href="{% url "ietf.group.views_stream.stream_edit" stream.slug %}">Assign delegates</a>
+    </p>
+  {% endif %}
 
-{% block js %}
-<script type="text/javascript" src="/js/utils.js"></script>
-<script type="text/javascript" src="/js/doc-search.js"></script>
+  {% include "doc/search/search_results.html" %}
 {% endblock %}

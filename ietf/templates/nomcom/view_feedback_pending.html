@@ -1,132 +1,157 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
+{% load bootstrap3 %}
 {% load nomcom_tags %}
-
 
 {% block subtitle %} - Feeback pending{% endblock %}
 
-{% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css"></link>
-{% endblock %}
-
-{% block js %}
-{{ block.super }}
-<script type="text/javascript" src="/js/jquery-ui-1.8.11.custom.min.js"></script>
-<script type="text/javascript">
-(function($) {
-    $(document).ready(function() {
-        $('.toggle .trigger').click(function() {
-            if ($(this).hasClass('closed')) {
-                $(this).removeClass('closed').addClass('open');
-                $(this).parent().parent().next().show();
-            } else {
-                $(this).removeClass('open').addClass('closed');
-                $(this).parent().parent().next().hide();
-            }
-            return false;
-        });
-        $('#feedbackformset select[multiple=multiple]').resizable();
-    });
-})(jQuery);
-</script>
-{% endblock %}
-
 {% block nomcom_content %}
 
-<h2>Feedback pending from email list</h2>
+  <h2>Feedback pending from email list</h2>
 
-{% if message %}
-  <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
-{% endif %}
+  {% if message %}
+    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
+  {% endif %}
 
-{% if formset.forms %}
-{% if extra_step %}
-<p>Please, provide the following information about nominees to complete the classification of this feedback.</p>
-{% endif %}
+  {% if formset.forms %}
+    <form role="form" method="post">
+      {% csrf_token %}
 
-<div>
-  <form id="feedbackformset" action="" method="post">{% csrf_token %}
-    {% if extra_ids %}<input type="hidden" name="extra_ids" value="{{ extra_ids }}" />{% endif %}
-    <div class="sumit-row">
-    {% if extra_step %}
-    <input type="submit" value="Save feedback" name="end" />
-    <a href="{% url "nomcom_view_feedback_pending" year %}">Cancel and leave the following feedback unclassified</a>
-    {% else %}
-    <input type="submit" value="Classify" />
-    {% if default_type %}<input type="submit" name="move_to_default" value="Move all unclassified feedback to {{ default_type }}" />{% endif %}
-    {% endif %}
-    </div>
-    {% if not extra_step %}
-    <div class="legend" style="margin-bottom: 1em;">
-    <h4 style="margin-bottom: 0px;">Feedback types</h4>
-    (U) Unclassified, {% for legend, t in type_dict.items %}({{ legend }}) {{ t.name }}{% if not forloop.last %},{% endif %} {% endfor %}
-    </div>
-    {% endif %}
-    {{ formset.management_form }}
-    <table class="ietf-table">
-    {% include "nomcom/inc.feedback_pending_header.html" %}
-    {% for form in formset.forms %}
-     {% if forloop.counter|divisibleby:"20" %}{% include "nomcom/inc.feedback_pending_header.html" %}{% endif %}
-     {% if form.errors %}<tr><td colspan="5" class="info-message-error">Please correct the following errors</td></tr>{% endif %}
-        <tr class="{% cycle "evenrow" "oddrow" %}">
-        {% if not extra_step %}<td class="toggle"><a href="#" class="trigger closed"></a></td>{% endif %}
-        <td>{{ form.instance.time|date:"r" }}</td>
-        {% if extra_step %}
-          <td>{{ form.feedback_type }}</td>
-        {% else %}
-          {{ form.id }}
-          {% for choice in form.type.field.choices %}
-            <td class="{% cycle "evenradio" "oddradio" %}"><input type="radio" name="{{ form.type.html_name }}" value="{{ choice.0 }}" {% if not choice.0 %}checked="checked"{% endif %} title="{{ choice.1 }}" /></td>
-          {% endfor %}
-        {% endif %}
-        <td>{{ form.instance.author }}</th>
-        <td>{{ form.instance.subject }}</td>
-        </tr>
-        {% if extra_step %}
-        <tr class="body bodyform"><td colspan="2" class="baseform">
-        {% for field in form %}
-        <div id="baseform-fieldname-{{ field.html_name }}"
-          {% if field.field.widget.is_hidden %}style="display: none;"{% endif %}
-          class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
-        {% if extra_step %}
-        <label for="id_{{ field.html_name }}">{{ field.label }}
-        {% if field.field.required %}
-          <span class="fieldRequired" title="Required">*</span>
-        {% endif %}
-        </label>
-        {% endif %}
-        <div class="fieldWidget{% if extra_step %} defaultPos{% endif %}">
-        <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
-        {{ field }}
-        {{ field.errors }}
-        </div>
-        <div class="endfield"></div>
-        </div>
+      {% if extra_ids %}
+        <input type="hidden" name="extra_ids" value="{{ extra_ids }}">
+      {% endif %}
+
+      {% bootstrap_form formset.management_form %}
+
+      {% if extra_step %}
+        <p>Please, provide the following information about nominees to complete the classification of this feedback.</p>
+
+        {% for form in formset.forms %}
+          <dl class="dl-horizontal">
+            <dt>Date</dt>
+            <dd>{{ form.instance.time|date:"r" }}</dd>
+            <dt>Author</dt>
+            <dd>{{ form.instance.author }}</dd>
+            <dt>Subject</dt>
+            <dd>{{ form.instance.subject }}</dd>
+            <dt>Type</dt>
+            <dd><span class="label label-info">{{ form.feedback_type }}</span></dd>
+            <dt>Feedback</dt>
+            <dd>
+              <pre>{% decrypt form.instance.comments request year 1 %}</pre>
+            </dd>
+            <dt>Information</dt>
+            <dd>
+              {% bootstrap_form form %}
+            </dd>
+          </dl>
+
+          {% if not forloop.last %}<hr>{% endif %}
         {% endfor %}
-        </td>
-        <td colspan="3">
-           <pre>{% decrypt form.instance.comments request year 1 %}</pre>
-        </td></tr>
-        {% else %}
-        <tr class="body" style="display: none;"><td colspan="{{ types.count|add:"5" }}">
-           <pre>{% decrypt form.instance.comments request year 1 %}</pre>
-        </td></tr>
-        {% endif %}
-        </tr>
-    {% endfor %}
-    </table>
-    <div class="sumit-row">
-    {% if extra_step %}
-    <input type="submit" value="Save feedback" name="end" />
-    <a href="{% url "nomcom_view_feedback_pending" year %}">Cancel and leave the following feedback unclassified</a>
-    {% else %}
-    <input type="submit" value="Classify" />
-    {% if default_type %}<input type="submit" name="move_to_default" value="Move all unclassified feedback to {{ default_type }}" />{% endif %}
-    {% endif %}
-    </div>
-  </form>
-</div>
-{% else %}
-<p>There is no pending feedback.</p>
-{% endif %}
+
+        {% buttons %}
+        <input class="btn btn-primary" type="submit" value="Save feedback" name="end">
+        <a class="btn btn-default" href="{% url "nomcom_view_feedback_pending" year %}">Cancel & leave unclassified</a>
+        {% endbuttons %}
+
+      {% else %}
+
+        <table class="table table-condensed">
+          <thead>
+            <tr><th>Code</th><th>Explanation</th></tr>
+          </thead>
+          <tbody>
+            <tr><th>U</th><td>Unclassified</td></tr>
+            {% for legend, t in type_dict.items %}
+              <tr>
+	        <th>{{ legend }}</th>
+	        <td>{{ t.name }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <table class="table table-condensed table-striped">
+          <thead>
+            <tr>
+	      <th>Date</th>
+	      <th>U</th>
+	      {% for t in type_dict.keys %}
+	        <th>{{ t }}</th>
+	      {% endfor %}
+	      <th>Author</th>
+	      <th>Subject</th>
+	      <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for form in formset.forms %}
+              {% if form.errors %}
+                <tr>
+	          <td colspan="5" class="info-message-error">Please correct the following errors</td>
+                </tr>
+              {% endif %}
+
+              <tr>
+	        <td>{{ form.instance.time|date:"r" }}</td>
+
+	        {{ form.id }}
+	        {% for choice in form.type.field.choices %}
+	          <td>
+	            <input type="radio" name="{{ form.type.html_name }}" value="{{ choice.0 }}" {% if not choice.0 %}checked="checked"{% endif %} title="{{ choice.1 }}">
+	          </td>
+	        {% endfor %}
+
+	        <td>{{ form.instance.author }}</td>
+	        <td>{{ form.instance.subject }}</td>
+
+	        <td>
+	          <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#modal{{ form.instance.id }}">View</button>
+	        </td>
+              </tr>
+
+              <div class="modal fade" id="modal{{ form.instance.id }}" tabindex="-1" role="dialog" aria-labelledby="label{{ form.instance.id }}" aria-hidden="true">
+	        <div class="modal-dialog modal-lg">
+	          <div class="modal-content">
+	            <div class="modal-header">
+	              <button type="button" class="close" data-dismiss="modal">
+		        <span aria-hidden="true">&times;</span>
+		        <span class="sr-only">Close</span>
+	              </button>
+	              <h4 class="modal-title" id="label{{ form.instance.id }}">
+		        {{ form.instance.subject }}
+	              </h4>
+	            </div>
+	            <div class="modal-body">
+	              {% decrypt form.instance.comments request year 1 %}
+	            </div>
+	            <div class="modal-footer">
+	              {% for choice in form.type.field.choices %}
+	                <input type="radio" name="{{ form.type.html_name }}" value="{{ choice.0 }}" {% if not choice.0 %}checked="checked"{% endif %} title="{{ choice.1 }}">
+	              {% endfor %}
+	              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	              <input type="submit" class="btn btn-warning" value="Save feedback" name="end">
+	            </div>
+	          </div>
+	        </div>
+              </div>
+
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% buttons %}
+          <input class="btn btn-primary" type="submit" value="Classify">
+          {% if default_type %}
+            <input class="btn btn-default" type="submit" name="move_to_default" value="Move all unclassified feedback to {{ default_type }}">
+          {% endif %}
+        {% endbuttons %}
+      {% endif %}
+    </form>
+
+  {% else %}
+      <p>There is no pending feedback.</p>
+  {% endif %}
+
 {% endblock %}

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %} {{meeting}} : {{acronym}} {% endblock %}
+{% block title %}{{ meeting }} : {{ acronym }}{% endblock %}
 
 {% block content %}
-<h1> {{ meeting }} : {{acronym}} </h1>
+  <h1>{{ meeting }} : {{ acronym }}</h1>
 
-<ul>
-{% for session in sessions %}
-  <li> <a href="{{forloop.counter}}">{{session}}</a></li>
-{% endfor %}
-</ul>
+  <ul>
+    {% for session in sessions %}
+      <li> <a href="{{ forloop.counter }}/">{{session}}</a></li>
+    {% endfor %}
+  </ul>
 {% endblock %}

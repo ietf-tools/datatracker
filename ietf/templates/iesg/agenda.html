@@ -2,123 +2,151 @@
 
 {% load ietf_filters %}
 
-{% block title %}IESG Agenda: {{ date }}{% endblock %}
-
 {% block pagehead %}
-<link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/" />
+  <link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">
 {% endblock %}
 
 {% block morecss %}
-.agenda hr { margin-top: 2em; }
-.agenda .section.s1 h3 { margin: 0; }
-.agenda .section p, .agenda .section pre, .agenda blockquote, .agenda .agenda-doc { margin-left: 2.2em; }
-.agenda h4 { margin-top: 0; margin-bottom: 0; }
-.agenda h5 { font-size: inherit; margin: 1em 0; }
-.agenda blockquote { width: 37.6em; font-style:italic; }
-.agenda .agenda-doc { margin-top: 0.5em; margin-bottom: 0.8em; width: 95%; clear: both; }
-.agenda .agenda-doc .ballot-icon-column { float: right; padding: 0.5em 1em; }
-.agenda .stream { padding-left: 0.5em; }
-{% endblock morecss %}
+  {% comment %}
+  FACELIFT: This is an ugly hack to suppress some whitespace in bootstrap-3.2.0.
+  Will hopefully be fixed in later versions, so this can be removed.
+  {% endcomment %}
+  .clearfix:before, .clearfix:after, .dl-horizontal dd:before, .dl-horizontal dd:after,
+  .container:before, .container:after, .container-fluid:before, .container-fluid:after,
+  .row:before, .row:after, .form-horizontal .form-group:before, .form-horizontal .form-group:after,
+  .btn-toolbar:before, .btn-toolbar:after, .btn-group-vertical>.btn-group:before,
+  .btn-group-vertical>.btn-group:after, .nav:before, .nav:after, .navbar:before,
+  .navbar:after, .navbar-header:before, .navbar-header:after, .navbar-collapse:before,
+  .navbar-collapse:after, .pager:before, .pager:after, .panel-body:before,
+  .panel-body:after, .modal-footer:before, .modal-footer:after {
+  content: none;
+  }
+{% endblock %}
+
+{% block title %}IESG agenda: {{ date }}{% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
 {% block content %}
-<div class="agenda">
+  <div class="row">
+    <div class="col-md-10">
 
-<h1>IESG Agenda: {{ date }} </h1>
+      <h1>IESG agenda: {{ date }} </h1>
 
-<p>See also: <a href="/iesg/agenda/documents/">Documents on Future
-IESG Telechat Agendas</a> and <a href="/iesg/discusses/">IESG Discuss
-Positions</a>.</p>
+      <p class="buttonlist">
+        <a class="btn btn-default" role="button" href="/iesg/agenda/documents/">Documents on future agendas</a>
+        <a class="btn btn-default" role="button" href="/iesg/discusses/">DISCUSS positions</a>
+      </p>
 
-{% for num, section in sections %}
-<div class="section s{{ num|slice:"1" }}">
+      {% for num, section in sections %}
 
-{% if num|sectionlevel == 1 %}<h2>{{ num }}. {{ section.title|safe }}</h2>{% endif %}
-{% if num|sectionlevel == 2 %}<h3>{{ num }} {{ section.title|safe }}</h3>{% endif %}
-{% if num|sectionlevel == 3 %}<h4>{{ num }} {{ section.title|safe }}</h4>{% endif %}
+        {% if num|sectionlevel == 1 %}<h2 class="anchor-target" id="{{num}}">{{ num }}. {{ section.title|safe }}</h2>{% endif %}
+        {% if num|sectionlevel == 2 %}<h3 class="anchor-target" id="{{num}}">{{ num }} {{ section.title|safe }}</h3>{% endif %}
+        {% if num|sectionlevel == 3 %}<h4 class="anchor-target" id="{{num}}">{{ num }} {{ section.title|safe }}</h4>{% endif %}
 
-{% if num == "1.4" %}
-<pre>
-{{ section.text }}
-</pre>
-{% endif %}
+        {% if num == "1.4" %}
+          <pre>
+            {{ section.text }}
+          </pre>
+        {% endif %}
 
-{% if num >= "2" and num < "5" %}
-  {% if num == "2" %}
-    <blockquote>
-    Reviews should focus on these questions: "Is this document a
-    reasonable basis on which to build the salient part of the Internet
-    infrastructure? If not, what changes would make it so?"
-    </blockquote>
-  {% endif %}
+        {% if num >= "2" and num < "5" %}
+	  {% if num == "2" %}
+	    <p class="alert alert-info">
+	      Reviews should focus on these questions: "Is this document a
+	      reasonable basis on which to build the salient part of the Internet
+	      infrastructure? If not, what changes would make it so?"
+	    </p>
+	  {% endif %}
 
-  {% if num == "3.1" or num == "3.2" %}
-    <blockquote>
-    Reviews should focus on these questions: "Is this document a
-    reasonable contribution to the area of Internet engineering
-    which it covers? If not, what changes would make it so?"
-    </blockquote>
-  {% endif %}
-  
-  {% if num == "3.3" %}
-    <blockquote>
-    Reviews should focus on these questions: "Are the proposed 
-    changes to document status appropriate? Have all requirements 
-    for such a change been met? If not, what changes to the proposal 
-    would make it appropriate?" 
-    </blockquote>
-  {% endif %}
+	  {% if num == "3.1" or num == "3.2" %}
+            <p class="alert alert-info">
+              Reviews should focus on these questions: "Is this document a
+              reasonable contribution to the area of Internet engineering
+              which it covers? If not, what changes would make it so?"
+            </p>
+          {% endif %}
 
-  {% if num == "3.4" %}
-    <blockquote>
-    The IESG will use RFC 5742 responses: 1) The IESG has concluded
-    that there is no conflict between this document and IETF work; 2)
-    The IESG has concluded that this work is related to IETF work done
-    in WG &lt;X&gt;, but this relationship does not prevent
-    publishing; 3) The IESG has concluded that publication could
-    potentially disrupt the IETF work done in WG &lt;X&gt; and
-    recommends not publishing the document at this time; 4) The IESG
-    has concluded that this document violates IETF procedures for
-    &lt;Y&gt; and should therefore not be published without IETF
-    review and IESG approval; or 5) The IESG has concluded that this
-    document extends an IETF protocol in a way that requires IETF
-    review and should therefore not be published without IETF review
-    and IESG approval.<br/>
-    <br />
-    The document shepherd must propose one of these responses in the
-    conflict-review document, and the document shepherd may supply text 
-    for an IESG Note in that document. The Area Director ballot positions 
-    indicate consensus with the response proposed by the document shepherd 
-    and agreement that the IESG should request inclusion of the IESG Note.<br/>
-    <br />
-    Other matters may be recorded in comments, and the comments will
-    be passed on to the RFC Editor as community review of the document.
-    </blockquote>
-  {% endif %}
+          {% if num == "3.3" %}
+            <p class="alert alert-info">
+              Reviews should focus on these questions: "Are the proposed
+              changes to document status appropriate? Have all requirements
+              for such a change been met? If not, what changes to the proposal
+              would make it appropriate?"
+            </p>
+          {% endif %}
+
+          {% if num == "3.4" %}
+            <p class="alert alert-info">
+              The IESG will use RFC 5742 responses:
+            </p>
+            <ol>
+              <li>The IESG has concluded
+	        that there is no conflict between this document and IETF work;</li>
+              <li>The IESG has concluded that this work is related to IETF work done
+	        in WG &lt;X&gt;, but this relationship does not prevent
+	        publishing;</li>
+              <li>The IESG has concluded that publication could
+	        potentially disrupt the IETF work done in WG &lt;X&gt; and
+	        recommends not publishing the document at this time;</li>
+              <li>The IESG
+	        has concluded that this document violates IETF procedures for
+	        &lt;Y&gt; and should therefore not be published without IETF
+	        review and IESG approval; or</li>
+              <li>The IESG has concluded that this
+	        document extends an IETF protocol in a way that requires IETF
+	        review and should therefore not be published without IETF review
+	        and IESG approval.</li>
+            </ol>
+            <p>
+              The document shepherd must propose one of these responses in the
+              conflict-review document, and the document shepherd may supply text
+              for an IESG Note in that document. The Area Director ballot positions
+              indicate consensus with the response proposed by the document shepherd
+              and agreement that the IESG should request inclusion of the IESG Note.</p>
+            <p>
+              Other matters may be recorded in comments, and the comments will
+              be passed on to the RFC Editor as community review of the document.
+            </p>
+          {% endif %}
 
 
-  {% if "docs" in section %}
-  {% for doc in section.docs %}
-    {% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/agenda_doc.html" %}{% endif %}
-    {% if doc.type_id == "conflrev" %}{% include "iesg/agenda_conflict_doc.html" %}{% endif %}
-    {% if doc.type_id == "charter" %}{% include "iesg/agenda_charter.html" %}{% endif %}
-  {% empty %}
-  <p>NONE</p>
-  {% endfor %}
-  {% endif %}
-{% endif %}
+          {% if "docs" in section %}
+            {% for doc in section.docs %}
+              {% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/agenda_doc.html" %}{% endif %}
+              {% if doc.type_id == "conflrev" %}{% include "iesg/agenda_conflict_doc.html" %}{% endif %}
+              {% if doc.type_id == "charter" %}{% include "iesg/agenda_charter.html" %}{% endif %}
+              {% if not forloop.last %}<hr>{% endif %}
+            {% empty %}
+              <p class="text-muted">(None)</p>
+            {% endfor %}
+          {% endif %}
+        {% endif %}
 
-{% if num|startswith:"6." and user|has_role:"Area Director,IAB Chair,Secretariat" %}
-<pre>
-{{ section.text|wordwrap:"76" }}
-</pre>
-{% endif %}
+        {% if num|startswith:"6." and user|has_role:"Area Director,IAB Chair,Secretariat" %}
+          <pre>{{ section.text|wordwrap:"76" }}</pre>
+        {% endif %}
 
-</div>
-{% endfor %}
+      {% endfor %}
+    </div>
 
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        {% for num, section in sections %}
+          {% if num|sectionlevel <= 1 %}
+	    {% comment %}
+	    {% ifchanged num|cut:"."|make_list|first %}
+	    {% if not forloop.first %}</ul>{% endif %}
+	    {% endifchanged %}
+	    <li><a href="#{{num}}">{{ section.title|safe }}</a>
+	    {% if num|sectionlevel == 1 %}
+	    {% if not forloop.last %}<ul>{% endif %}
+	    {% endif %}
+	    {% endcomment %}
+	    <li><a href="#{{num}}">{{ section.title|safe }}</a></li>
+	  {% endif %}
+	{% endfor %}
+      </ul>
+    </div>
+  </div>
 {% endblock content %}
-
-{% block js %}
-<script type="text/javascript" src="/js/utils.js"></script>
-<script type="text/javascript" src="/js/doc-search.js"></script>
-{% endblock %}

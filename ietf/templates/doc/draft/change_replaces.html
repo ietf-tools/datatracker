@@ -1,86 +1,33 @@
 {% extends "base.html" %}
-{% block title %}Change which documents {{ doc }} replaces{% endblock %}
-{% block pagehead %}{{ block.super }}
-  <!--TODO: The template will later load another version of jQuery.
-      We should eliminate the duplication.-->
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-1.5.1.min.js"></script>
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.8.9.min.js"></script>
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery.json-2.2.min.js"></script>
-  <link rel="stylesheet" href="{{ SECR_STATIC_URL }}css/redmond/jquery-ui-1.8.9.custom.css" type="text/css" media="screen" charset="utf-8"/>
 
-  <script type="text/javascript">
-    // Free up the $ and jQuery names.
-    j=$.noConflict(true);
-    j(document).ready(function($) {
-      function add_to_list(list, id, label) {
-        list.append('<li><a href="' + id
-         + '"><img src="{{ SECR_STATIC_URL }}img/delete.png" alt="delete"></a> '
-         + label + '</li>');
-      }
+{% load bootstrap3 %}
 
-      function setup_ajax(field, list, searchfield, url) {
-        var datastore = {};
-        window.field = field;
-        if (field.val() != '') {
-          datastore = $.parseJSON(field.val());
-        }
-        $.each(datastore, function(k, v) {
-          add_to_list(list, k, v);
-        });
-        searchfield.autocomplete({
-          source: url,
-          minLength: 1,
-          select: function(event, ui) {
-            datastore[ui.item.id] = ui.item.label;
-            field.val($.toJSON(datastore));
-            searchfield.val('');
-            add_to_list(list, ui.item.id, ui.item.label);
-            return false;
-          }
-        });
-        // Automatically select the first element in the autocomplete list, so
-        // that hitting Enter adds it.
-        $(".ui-autocomplete-input").live("autocompleteopen", function() {
-          var autocomplete = $(this).data("autocomplete");
-          var menu = autocomplete.menu;
-          menu.activate($.Event({ type: "mouseenter" }),
-           menu.element.children().first());
-        });
-        list.delegate("a", "click", function() {
-          delete datastore[$(this).attr("href")];
-          field.val($.toJSON(datastore));
-          $(this).closest("li").remove();
-          return false;
-        });
-      }
+{% block title %}Change documents replaced by {{ doc }}{% endblock %}
 
-      setup_ajax($("#id_replaces"), $("#replaces_list"),
-       $("#id_replaces_search"), "{% url "doc_ajax_internet_draft" %}");
-    });
-  </script>
+{% bootstrap_messages %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="/css/lib/select2.css">
+  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
 {% endblock %}
 
 {% block content %}
-<h1>Change which documents {{ doc }} replaces</h1>
+  <h1>Change documents replaced by<br><small>{{ doc }}</small></h1>
 
-<form class="change-replaces" action="" method="post">{% csrf_token %}
-  {{ form.non_field_errors }}
-  {{ form.replaces.label_tag }}
-  <input type="text" id="id_replaces_search">
-  {{ form.replaces }}
-  <ul id="replaces_list"></ul>
-  {{ form.replaces.errors }}
-  <table>
-    <tr>
-      <td>{{ form.comment.label_tag }}</td>
-      <td>{{ form.comment.errors }} {{ form.comment }}</td>
-    </tr>
-    <tr>
-      <td colspan="2" class="actions">
-        <a href="{{ doc.get_absolute_url }}">Back</a>
-        <input type="submit" value="Save"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+
+  </form>
+{% endblock %}
+
+{% block js %}
+  <script src="/js/lib/select2-3.5.2.min.js"></script>
+  <script src="/js/select2-field.js"></script>
 {% endblock %}

@@ -3,11 +3,11 @@
 {% block title %}Subscription to {{ cl.long_name }}{% endblock %}
 
 {% block content %}
-<h1>Subscription to {{ cl.long_name }}</h1>
-<p>
-You email address {{ email }} has been successfully subscribed to {{ cl.long_name }}
-</p>
-<p>
-<a href="{% url "view_personal_list" secret=cl.secret %}">Return to the list view</a>
-</p>
+  <h1>Subscription to {{ cl.long_name }}</h1>
+
+  <p>Your email address {{ email }} has been successfully subscribed to {{ cl.long_name }}.</p>
+
+  <p>
+    <a class="btn btn-primary" href="{% url "view_personal_list" secret=cl.secret %}">Back</a>
+  </p>
 {% endblock %}

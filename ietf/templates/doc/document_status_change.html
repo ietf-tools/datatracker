@@ -2,137 +2,156 @@
 
 {% load ietf_filters %}
 
-{% block title %}{{ doc.canonical_name }}-{{ doc.rev }}{% endblock %}
-
-{% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
-{% endblock %}
+{% block title %}{{ doc.title }}{% endblock %}
 
 {% block content %}
-{{ top|safe }}
+  {{ top|safe }}
 
-{% include "doc/revisions_list.html" %}
+  {% include "doc/revisions_list.html" %}
 
-<div class="ietf-box metabox">
-  <div>
-    {% if snapshot %}Snapshot of{% endif %}
-    {% if doc.get_state_slug not in approved_states %}Proposed{% endif %}
-    Status change : 
-           <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-               class="editlink" href="{% url "status_change_title" name=doc.name %}"
-              {% endif %}
-           >
-           {{ doc.title }} </a>
-  </div>
+  {% if doc.rev != latest_rev %}
+      <p class="alert alert-warning"> The information below is for an old version of the document</p>
+  {% endif %}  
 
-  <table id="metatable" width="100%">
+  <table class="table table-condensed">
+    <thead id="message-row">
+       <tr>
+	  {% if doc.rev != latest_rev %}
+	  <th colspan="4" class="alert-warning">&nbsp;The information below is for an old version of the document</th>
+	  {% else %}
+	  <th colspan="4">&nbsp;</th>
+	  {% endif %}  
+       </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+	 <th rowspan="{{table_rows.doc}}">Document</th>
+      </tr>
+
+      <tr>
+	<th>
+	  {% if doc.get_state_slug not in approved_states %}
+	    Proposed status change
+	  {% else %}
+	    Status change
+	  {% endif %}
+	</th>
+	<td class="edit">
+	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+	    <a class="btn btn-default btn-xs pull-right" href="{% url "status_change_title" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{ doc.title }}
+	  {% if snapshot %}
+	    <span class="label label-warning">Snapshot</span>
+	  {% endif %}
+	</td>
+      </tr>
+
+      <tr>
+	<th>Last updated</th>
+	<td class="edit"></td>
+	<td>{{ doc.time|date:"Y-m-d" }}</td>
+      </tr>
+
+
     {% regroup sorted_relations by relationship.name as relation_groups %}
-    {% for relation_group in relation_groups %}
-    <tr>
-      <td>{{relation_group.grouper}}:</td>
-      <td>{% for rel in relation_group.list %}{{rel.target.document.canonical_name|upper|urlize_ietf_docs}}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td><a href="{% url "state_help" type="status-change" %}">Review State</a>:</td>
-      <td>
-        <div>
-        <a title="{{ doc.get_state.desc }}"{% if not snapshot and user|has_role:"Area Director,Secretariat" %} class="editlink" href="{% url "status_change_change_state" name=doc.name %}"{% endif %}>{{ doc.get_state.name }}</a>
+      {% for relation_group in relation_groups %}
+	<tr>
+	  <th>{{relation_group.grouper}}</th>
+	  <td class="edit"></td>
+	  <td>{% for rel in relation_group.list %}{{rel.target.document.canonical_name|upper|urlize_ietf_docs}}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+	</tr>
+      {% endfor %}
 
-        {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
+      <tr>
+	<th><a href="{% url "state_help" type="status-change" %}">State</a></th>
+	<td class="edit">
+	  {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
+	    <a class="btn btn-default btn-xs pull-right" href="{% url "status_change_change_state" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  <span title="{{ doc.get_state.desc }}">{{ doc.get_state.name }}</span>
+	</td>
+      </tr>
 
-          {% if request.user|has_role:"Secretariat" %}{% if doc.get_state_slug = 'appr-pend' %}
-          - <a href="{% url "status_change_approve" name=doc.name %}">Approve RFC status changes</a>
-          {% endif %}{% endif %}
+    </tbody>
+    <tbody>
+      <tr>
+	 <th rowspan="{{table_rows.doc}}">IESG</th>
+      </tr>
 
-        {% endif %}
-        </div>
-      </td>
-    </tr>
+      <tr>
+	<th>Telechat date</th>
+	<td class="edit">
+	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+	    <a class="btn btn-default btn-xs pull-right" href="{% url "status_change_telechat_date" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if not telechat %}
+	    (None)
+	  {% else %}
+	    On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat
+	    {% if doc.returning_item %}(returning item){% endif %}
+	  {% endif %}
 
-    <tr>
-      <td>Telechat Date:</td>
-      <td>
-        {% if not snapshot %}
-          <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-                class="editlink" href="{% url "status_change_telechat_date" name=doc.name %}"
-             {%endif%} >
-          {% if not telechat %}Not on agenda of an IESG telechat{% else %}On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat{% if doc.returning_item %} (returning item){% endif %}{% endif %}
-          </a>
+	  {% if ballot_summary %}
+	    <br><i>{{ ballot_summary }}</i>
+	  {% endif %}
+	</td>
+      </tr>
 
-        {% if ballot_summary %}
-        <div class="ballot-summary">
-          ({{ ballot_summary }})
-        </div>
-        {% endif %}
+      <tr>
+	<th>Shepherding AD</th>
+	<td class="edit">
+	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+	    <a class="btn btn-default btn-xs pull-right" href="{% url "status_change_ad" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{doc.ad}}
+	</td>
+      </tr>
 
-        {% endif %}
-      </td>
-    </tr>
+      <tr>
+	<th>Send notices to</th>
+	<td class="edit">
+	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+	    <a class="btn btn-default btn-xs pull-right" href="{% url "status_change_notices" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{doc.notify}}
+	</td>
+      </tr>
 
-    <tr>
-       <td>Shepherding AD:</td>
-       <td>
-           <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-               class="editlink" href="{% url "status_change_ad" name=doc.name %}"
-              {% endif %}
-           >
-           {{doc.ad}}
-           </a>
-       </td>
-    </tr>
-
-    <tr>
-       <td>Send notices to:</td>
-       <td>
-           <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-               class="editlink" href="{% url "status_change_notices" name=doc.name %}"
-              {% endif %}
-           >
-           {{doc.notify}}
-           </a>
-       </td>
-    </tr>
-
-
-    <tr><td colspan='2'><hr size='1' noshade /></td></tr>
-
-    <tr><td>Last updated:</td><td> {{ doc.time|date:"Y-m-d" }}</td></tr>
-    {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-    <tr><td colspan="2">
-       <span id="doc_edit_affected_rfc_list_button" class="yui-button yui-link-button" style="margin-left:2px;">
-          <span class="first-child">
-            <a href="{% url "status_change_relations" name=doc.name %}">Edit Affected RFC List</a>
-          </span>
-       </span>
-       <span id="doc_edit_last_call_text" class="yui-button yui-link-button" style="margin-left:2px;">
-          <span class="first-child"> 
-            <a href="{% url "status_change_last_call"  name=doc.name %}">Edit Last Call Text</a>
-          </span>
-       </span>
-    </td><tr/>
-    {% endif %}
-
-    {% comment %}
-    <tr><td colspan='2'><hr size='1' noshade /></td></tr>
-    {% endcomment %}
-
+    </tbody>
   </table>
 
-</div>
+  <p class="buttonlist">
+    {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
+      {% if doc.get_state_slug not in approved_states %}
+        <a class="btn btn-default" href="{% url "status_change_relations" name=doc.name %}">Edit affected RFCs</a>
+        <a class="btn btn-default" href="{% url "status_change_last_call"  name=doc.name %}">Edit last call text</a>
+      {% endif %}
 
-<h3>RFC Status Change : {{ doc.title }}
+      {% if doc.get_state_slug != 'apprsent' %}
+        <a class="btn btn-default" href="{% url "status_change_submit" name=doc.name %}">Edit status change text</a>
+      {% endif %}
+    {% endif %}
 
-{% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug != 'apprsent' %}
-<a class="edit" href="{% url "status_change_submit" name=doc.name %}">Change status change text</a>
-{% endif %}
-</h3>
+    {% if request.user|has_role:"Secretariat" and doc.get_state_slug = 'appr-pend' %}
+      <a class="btn btn-warning" href="{% url "status_change_approve" name=doc.name %}">Approve RFC status change</a>
+    {% endif %}
+  </p>
 
-{% if doc.rev %}
-<div class="markup_draft">
-{{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
-</div>
-{% endif %}
+  {% if doc.rev %}
+    {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
+  {% endif %}
 
 {% endblock %}
 

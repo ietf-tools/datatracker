@@ -1,114 +1,88 @@
 {% extends "submit/submit_base.html" %}
 
+{% load bootstrap3 %}
+
 {% load submit_tags %}
 
-{% block title %}Adjust Meta-Data of Submitted {{ submission.name }}{% endblock %}
-
-{% block morecss %}
-{{ block.super }}
-table.metadata-table tr th { padding-right: 2em; }
-table.metadata-table #id_edit-title, table.metadata-table #id_edit-abstract, table.metadata-table #id_edit-note { width: 40em; }
-table.authors td { vertical-align: top; }
-table.authors tr.empty { display: none; }
-input.add-author { margin-left: 42em; }
-div.manual-posting { margin-top: 2em; }
-{% endblock %}
+{% block title %}Adjust meta-data of submitted {{ submission.name }}{% endblock %}
 
 {% block submit_content %}
-<h2>Adjust Meta-Data of Submitted {{ submission.name }}</h2>
 
-<div class="twopages-popup" style="display:none">
-  <div class="content">
-    <pre>{{ submission|two_pages_decorated_with_errors:errors }}</pre>
+  {% bootstrap_messages %}
+
+  <div class="modal fade" id="twopages" tabindex="-1" role="dialog" aria-labelledby="twopageslabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+	  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	  <h4 class="modal-title" id="twopageslabel">First two pages of {{ submission.name }}-{{ submission.rev }}</h4>
+        </div>
+        <div class="modal-body">
+	  {{ submission|two_pages_decorated_with_errors:errors }}
+        </div>
+        <div class="modal-footer">
+	  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="actions">
-    <a href="" class="button close">Close</a>
-  </div>
-</div>
-
-<table class="metadata-table">
-  <tr>
-    <th>Document</th>
-    <td>{{ submission.name }} <a class="twopages-trigger" href="">[View first two pages]</a>
-      {% show_submission_files submission %}
-    </td>
-  </tr>
-
-  <tr><th>Submission date</th><td>{{ submission.submission_date }}</td></tr>
-
-  <tr{% if errors.group %} class="error"{% endif %}>
-    <th>Group</th>
-    <td>{{ submission.group|default:"Individual Submission" }}
-      {% if errors.group %}<div class="error-msg">{{ errors.group }} (note: the Secretariat will be notified of this)</div>{% endif %}
-    </td>
-  </tr>
-
-  <tr><th>File size</th><td>{{ submission.file_size|filesizeformat }}</td></tr>
-</table>
-
-<h3>Adjust meta-data</h3>
-
-{% if form_errors %}
-  <div class="metadata-errors">
-    Please fix the following errors.
-  </div>
-{% endif %}
-
-<form method="post">{% csrf_token %}
-
-<table class="metadata-table">
-  {% for field in edit_form %}
-  {% if field.name != "note" %}
-  <tr{% if field.errors %} class="error"{% endif %}><th>{{ field.label_tag }}</th><td>{{ field }}{{ field.errors }}</td></tr>
-  {% endif %}
-  {% endfor %}
-
-  {% include "submit/submitter_form.html" %}
-
-  {% with edit_form.note as field %}
-  <tr{% if field.errors %} class="error"{% endif %}><th>{{ field.label_tag }}</th><td>{{ field }}{{ field.errors }}</td></tr>
-  {% endwith %}
-</table>
 
 
-<h3>Authors</h3>
+  <h2>Adjust meta-data of submitted {{ submission.name }}</h2>
 
-<table class="authors metadata-table">
-  <thead>
+  <table class="table table-condensed table-striped">
     <tr>
-      <th>Name</th>
-      <th>Email address</th>
+      <th>Document</th>
+      <td>
+        {{ submission.name }}
+        <button class="btn btn-default btn-xs pull-right" data-toggle="modal" data-target="#twopages">View first two pages</button>
+        {% show_submission_files submission %}
+      </td>
     </tr>
-  </thead>
-  <tbody>
-  <tr class="empty">
-    <td>{{ empty_author_form.name }} <input type="hidden" name="authors-prefix" value="authors-" /></td>
-    <td>{{ empty_author_form.email }}</td>
-  </tr>
-  {% for form in author_forms %}
-  <tr class="{% if form.errors %} error{% endif %}">
-    <td>{{ form.name }} {{ form.name.errors }} <input type="hidden" name="authors-prefix" value="{{ form.prefix  }}" /></td>
-    <td>{{ form.email }} {{ form.email.errors }}</td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table>
 
-<div>
-  <input type="button" value="Add another author" class="add-author" />
-</div>
+    <tr><th>Submission date</th><td>{{ submission.submission_date }}</td></tr>
 
-<div class="manual-posting">
- <input type="submit" value="Submit for manual posting" />
-</div>
-</form>
+    <tr>
+      <th>Group</th>
+      <td>{{ submission.group|default:"Individual Submission" }}
+        {% if errors.group %}<p class="text-danger"><b>{{ errors.group }}</b> (Note: the Secretariat will be notified of this)</p>{% endif %}
+      </td>
+    </tr>
 
-{% include "submit/problem-reports-footer.html" %}
+    <tr><th>File size</th><td>{{ submission.file_size|filesizeformat }}</td></tr>
+  </table>
 
-{% endblock %}
+  <h3>Adjust meta-data</h3>
 
-{% block js %}
-{{ block.super }}
-<script type="text/javascript" src="/js/utils.js"></script>
-<script type="text/javascript" src="/js/draft-submit.js"></script>
+  {% if form_errors %}
+    <div class="alert alert-danger">
+      Please fix the errors in the form below.
+    </div>
+  {% endif %}
+
+  <form class="idsubmit" role="form" method="post">
+    {% csrf_token %}
+
+    {% bootstrap_form edit_form %}
+
+    <h3>Submitter</h3>
+    {% include "submit/submitter_form.html" %}
+
+    {% for form in author_forms %}
+      <div {% if forloop.last %}id="cloner"{% endif %}>
+        <h3>Author {{ forloop.counter }}</h3>
+        {% bootstrap_form form %}
+        <input type="hidden" name="authors-prefix" value="{{ form.prefix  }}">
+      </div>
+    {% endfor %}
+
+    {% buttons %}
+      <input class="btn btn-default" type="button" value="Add another author" id="add-author">
+      <input class="btn btn-primary" type="submit" value="Submit for manual posting">
+    {% endbuttons %}
+  </form>
+
+  <p>
+    {% include "submit/problem-reports-footer.html" %}
+  </p>
 {% endblock %}

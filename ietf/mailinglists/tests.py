@@ -18,13 +18,13 @@ class MailingListTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q(".group-archives a:contains(\"%s\")" % group.acronym)), 0)
+        self.assertEqual(len(q("#content a:contains(\"%s\")" % group.acronym)), 0)
 
         # successful get
         group.list_archive = "https://example.com/foo"
         group.save()
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q(".group-archives a:contains(\"%s\")" % group.acronym)), 1)
+        self.assertEqual(len(q("#content a:contains(\"%s\")" % group.acronym)), 1)
 
 

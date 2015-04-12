@@ -3,16 +3,20 @@
 {% block title %}Clear ballot for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Clear ballot for {{ doc }}</h1>
+  <h1>Clear ballot<br><small>{{ doc }}</small></h1>
 
-<form action="" method="post">{% csrf_token %}
-  <p>Clear the ballot for {{ doc.file_tag }}?</p>
+  <form role="form" method="post">
+    {% csrf_token %}
+    <p class="alert alert-danger">
+      <b>Clear the ballot for {{ doc }}?</b>
+      <br>
+      This will clear all ballot positions and discuss entries.
+    </p>
 
-  <p>This will clear all ballot positions and discuss entries.</p>
-  
-  <div class="actions">
-    <a href="{{ back_url }}ballot/">Back</a>
-    <input type="submit" value="Clear ballot"/>
-  </div>
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-danger">Clear</button>
+      <a class="btn btn-default pull-right" href="{{ back_url }}ballot/">Back</a>
+    {% endbuttons %}
+  </form>
+
 {% endblock %}

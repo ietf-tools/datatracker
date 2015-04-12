@@ -1,36 +1,31 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
+{% load bootstrap3 %}
 {% load nomcom_tags %}
 
 {% block subtitle %} - Quesionnaire Response{% endblock %}
 
 {% block nomcom_content %}
 
+  {% if message %}
+    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
+  {% endif %}
 
-{% if message %}
-  <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
-{% endif %}
+  {% if nomcom|has_publickey %}
+    {% if questionnaire_response %}
+      <h2>Questionnaire response</h2>
+      {{ questionnaire_response }}
+    {% endif %}
 
-{% if nomcom|has_publickey %}
+    {% bootstrap_messages %}
 
-<div class="content">
-{% if questionnaire_response %}
-<h3>Questionnaire response:</h3>
-{{ questionnaire_response }}
-
-{% endif %}
-  <div class="primary">
-    {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
-
-    <form id="questionnnaireform" action="" method="post">{% csrf_token %}
-      {{ form }}
-
-    <div class="submitrow">
-      <input type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}/>
-    </div>
-
+    <form id="questionnnaireform" role="form" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+      {% buttons %}
+        <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
+      {% endbuttons %}
     </form>
-  </div>
-{% endif %}
+  {% endif %}
 
 {% endblock %}

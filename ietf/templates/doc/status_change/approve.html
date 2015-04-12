@@ -1,41 +1,21 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Approve {{doc.canonical_name }}{% endblock %}
 
-{% block morecss %}
-textarea[id^="id_form-"][id$="-announcement_text"] {
-  overflow-x: auto;
-  overflow-y: scroll;
-  width: 800px;
-  height: 400px;
-  border: 1px solid #bbb;
-}
-{% endblock %}
-
 {% block content %}
-<h1>Approve {{ doc.canonical_name }}</h1>
+  <h1>Approve<br><small>{{ doc.canonical_name }}</small></h1>
 
-<form class="approve" action="" method="post">{% csrf_token %}
-  {{formset.management_form}}
-  <table>
-   {% for form in formset.forms %}
-    {% for field in form.visible_fields %}
-    <tr>
-      <td>
-      <div>{{ field.label_tag }}</div>
-        {{ field }}
-        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-        {{ field.errors }}
-      </td>
-    </tr>
-    {% endfor %}
-   {% endfor %}
-    <tr>
-      <td class="actions">
-        <a href="{% url "doc_view" name=doc.name %}">Back</a>
-        <input type="submit" value="Send out the announcement and close the ballot"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  {% bootstrap_messages %}
+
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_formset formset %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" >Send announcement & close ballot</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}

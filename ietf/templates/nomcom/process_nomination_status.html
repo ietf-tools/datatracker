@@ -1,22 +1,23 @@
 {% extends "nomcom/nomcom_public_base.html" %}
 
+{% load bootstrap3 %}
+
 {% block subtitle %} - Change Nomination {% endblock %}
 
 {% block nomcom_content %}
 
-{% if message %}
-  <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
-{% endif %}
+  {% if message %}
+    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
+  {% endif %}
 
-{% if need_confirmation %}
-  <form action="" method="post">{% csrf_token %}
-    {{ form }}
+  {% if need_confirmation %}
+    <form role="form" method="post">
+      {% csrf_token %}
 
-  <div class="submitrow">
-    <input type="submit" value="Save" name="save"/>
-  </div>
-
-  </form>
-{% endif %}
+      {% buttons %}
+        <button class="btn btn-primary" type="submit">Save</button>
+      {% endbuttons %}
+    </form>
+  {% endif %}
 
 {% endblock %}

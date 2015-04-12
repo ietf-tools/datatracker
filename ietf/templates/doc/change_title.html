@@ -1,42 +1,22 @@
 {% extends "base.html" %}
 
-{% block morecss %}
-.warning {
-  font-weight: bold;
-  color: #a00;
-}
-form.edit-info #id_title {
-  width: 600px;
-}
-{% endblock %}
+{% load bootstrap3 %}
 
-{% block title %}
-Change the title for {{titletext}}
-{% endblock %}
+{% block title %}Change title for {{ doc.title }}{% endblock %}
 
 {% block content %}
-<h1>Change the title for {{titletext}}</h1>
+  <h1>Change title<br><small>{{ titletext }}</small></h1>
 
-<form class="edit-info" action="" enctype="multipart/form-data" method="post">{% csrf_token %}
-  <table>
-    {% for field in form.visible_fields %}
-    <tr>
-      <th>{{ field.label_tag }}:</th>
-      <td>
-        {{ field }}
-	{% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-        {{ field.errors }}
-      </td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td></td>
-      <td class="actions">
-        <a href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
-        <input type="submit" value="Submit"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  {% bootstrap_messages %}
+
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

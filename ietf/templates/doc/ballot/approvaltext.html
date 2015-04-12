@@ -1,36 +1,27 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+{% load ietf_filters %}
+
 {% block title %}Approval announcement writeup for {{ doc }}{% endblock %}
 
-{% block morecss %}
-form #id_approval_text {
-  width: 700px;
-  height: 600px;
-}
-{% endblock %}
-
 {% block content %}
-<h1>Approval announcement writeup for {{ doc }}</h1>
+  <h1>Approval announcement writeup<br><small>{{ doc }}</small></h1>
 
-<form action="" method="post">{% csrf_token %}
+  {% bootstrap_messages %}
 
-  <p>Sent after approval.</p>
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form approval_text_form %}
 
-  {{ approval_text_form.approval_text }}
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="save_approval_text">Save text</button>
+      <button type="submit" class="btn btn-warning" name="regenerate_approval_text">Regenerate text</button>
+      {% if user|has_role:"Secretariat" and can_announce %}
+        <a class="btn btn-default" href="{% url "doc_approve_ballot" name=doc.name %}">Approve ballot</a>
+      {% endif %}
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
-  <div class="actions">
-    <a href="{{ back_url }}">Back</a>
-    <input type="submit" name="save_approval_text" value="Save Approval Announcement Text" />
-    <input type="submit" name="regenerate_approval_text" value="Regenerate Approval Announcement Text" />
-  </div>
-</form>
-
-{% load ietf_filters %}
-{% if user|has_role:"Secretariat" %}
-<p>
-{% if can_announce %}
-<a href="{% url "doc_approve_ballot" name=doc.name %}">Approve ballot</a>
-{% endif %}
-</p>
-{% endif %}
 {% endblock%}

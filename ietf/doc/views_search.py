@@ -37,7 +37,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render_to_response
 from django.db.models import Q
 from django.template import RequestContext
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404, HttpResponseBadRequest, HttpResponse
 
 import debug                            # pyflakes:ignore
 
@@ -45,11 +45,13 @@ from ietf.community.models import CommunityList
 from ietf.doc.models import ( Document, DocAlias, State, RelatedDocument, DocEvent,
     LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.expire import expirable_draft
+from ietf.doc.fields import select2_id_doc_name_json
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
 from ietf.utils.draft_search import normalize_draftname
+
 
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
@@ -204,7 +206,7 @@ def retrieve_search_results(form, all_types=False):
     """Takes a validated SearchForm and return the results."""
     if not form.is_valid():
         raise ValueError("SearchForm doesn't validate: %s" % form.errors)
-        
+
     query = form.cleaned_data
 
     types=[];
@@ -246,7 +248,7 @@ def retrieve_search_results(form, all_types=False):
     if query["olddrafts"]:
         allowed_draft_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
 
-    docs = docs.filter(Q(states__slug__in=allowed_draft_states) | 
+    docs = docs.filter(Q(states__slug__in=allowed_draft_states) |
                        ~Q(type__slug='draft')).distinct()
 
     # radio choices
@@ -326,11 +328,10 @@ def retrieve_search_results(form, all_types=False):
     meta['by'] = query['by']
     meta['advanced'] = bool(query['by'] or len(meta['checked']))
 
-    meta['headers'] = [{'title': 'Add', 'key':'add'},
-                       {'title': 'Document', 'key':'document'},
+    meta['headers'] = [{'title': 'Document', 'key':'document'},
                        {'title': 'Title', 'key':'title'},
                        {'title': 'Date', 'key':'date'},
-                       {'title': 'Status', 'key':'status', 'colspan':'2'},
+                       {'title': 'Status', 'key':'status'},
                        {'title': 'IPR', 'key':'ipr'},
                        {'title': 'AD / Shepherd', 'key':'ad'}]
 
@@ -343,6 +344,21 @@ def retrieve_search_results(form, all_types=False):
                 h['sorted'] = True
     return (results, meta)
 
+
+def get_doc_is_tracked(request, results):
+    # Determine whether each document is being tracked or not, and remember
+    # that so we can display the proper track/untrack option.
+    doc_is_tracked = { }
+    if request.user.is_authenticated():
+        try:
+            clist = CommunityList.objects.get(user=request.user)
+            clist.update()
+        except ObjectDoesNotExist:
+            return doc_is_tracked
+        for doc in results:
+            if clist.get_documents().filter(name=doc.name).count() > 0:
+                doc_is_tracked[doc.name] = True
+    return doc_is_tracked
 
 def search(request):
     if request.GET:
@@ -366,18 +382,7 @@ def search(request):
         results = []
         meta = { 'by': None, 'advanced': False, 'searching': False }
 
-    # Determine whether each document is being tracked or not, and remember
-    # that so we can display the proper track/untrack option.
-    doc_is_tracked = { }
-    if request.user.is_authenticated():
-        try:
-            clist = CommunityList.objects.get(user=request.user)
-            clist.update()
-        except ObjectDoesNotExist:
-            pass
-        for doc in results:
-            if clist.get_documents().filter(name=doc.name).count() > 0:
-                doc_is_tracked[doc.name] = True
+    doc_is_tracked = get_doc_is_tracked(request, results)
 
     return render_to_response('doc/search/search.html',
                               {'form':form, 'docs':results, 'doc_is_tracked':doc_is_tracked, 'meta':meta, },
@@ -398,14 +403,14 @@ def ad_dashboard_group(doc):
             return '%s Internet-Draft' % doc.get_state('draft').name
     elif doc.type.slug=='conflrev':
         if doc.get_state_slug('conflrev') in ('appr-reqnopub-sent','appr-noprob-sent'):
-            return 'Approved Conflict Review' 
+            return 'Approved Conflict Review'
         elif doc.get_state_slug('conflrev') in ('appr-reqnopub-pend','appr-noprob-pend','appr-reqnopub-pr','appr-noprob-pr'):
             return "%s Conflict Review" % State.objects.get(type__slug='draft-iesg',slug='approved')
         else:
           return '%s Conflict Review' % doc.get_state('conflrev')
     elif doc.type.slug=='statchg':
         if doc.get_state_slug('statchg') in ('appr-sent',):
-            return 'Approved Status Change' 
+            return 'Approved Status Change'
         if doc.get_state_slug('statchg') in ('appr-pend','appr-pr'):
             return '%s Status Change' % State.objects.get(type__slug='draft-iesg',slug='approved')
         else:
@@ -419,7 +424,7 @@ def ad_dashboard_group(doc):
         return "Document"
 
 def ad_dashboard_sort_key(doc):
-    
+
     if doc.type.slug=='draft' and doc.get_state_slug('draft') == 'rfc':
         return "21%04d" % int(doc.rfc_number())
     if doc.type.slug=='statchg' and doc.get_state_slug('statchg') == 'appr-sent':
@@ -432,26 +437,26 @@ def ad_dashboard_sort_key(doc):
     seed = ad_dashboard_group(doc)
 
     if doc.type.slug=='conflrev' and doc.get_state_slug('conflrev') == 'adrev':
-        state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')        
+        state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')
         return "1%d%s" % (state.order,seed)
 
     if doc.type.slug=='charter':
         if doc.get_state_slug('charter') in ('notrev','infrev'):
             return "100%s" % seed
         elif  doc.get_state_slug('charter') == 'intrev':
-            state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')        
+            state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')
             return "1%d%s" % (state.order,seed)
         elif  doc.get_state_slug('charter') == 'extrev':
-            state = State.objects.get(type__slug='draft-iesg',slug='lc')        
+            state = State.objects.get(type__slug='draft-iesg',slug='lc')
             return "1%d%s" % (state.order,seed)
         elif  doc.get_state_slug('charter') == 'iesgrev':
-            state = State.objects.get(type__slug='draft-iesg',slug='iesg-eva')        
+            state = State.objects.get(type__slug='draft-iesg',slug='iesg-eva')
             return "1%d%s" % (state.order,seed)
 
     if doc.type.slug=='statchg' and  doc.get_state_slug('statchg') == 'adrev':
-        state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')        
+        state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')
         return "1%d%s" % (state.order,seed)
-    
+
     if seed.startswith('Needs Shepherd'):
         return "100%s" % seed
     if seed.endswith(' Document'):
@@ -584,3 +589,28 @@ def index_active_drafts(request):
     groups = active_drafts_index_by_group()
 
     return render_to_response("doc/index_active_drafts.html", { 'groups': groups }, context_instance=RequestContext(request))
+
+def ajax_select2_search_docs(request, model_name, doc_type):
+    if model_name == "docalias":
+        model = DocAlias
+    else:
+        model = Document
+
+    q = [w.strip() for w in request.GET.get('q', '').split() if w.strip()]
+
+    if not q:
+        objs = model.objects.none()
+    else:
+        qs = model.objects.all()
+
+        if model == Document:
+            qs = qs.filter(type=doc_type)
+        elif model == DocAlias:
+            qs = qs.filter(document__type=doc_type)
+
+        for t in q:
+            qs = qs.filter(name__icontains=t)
+
+        objs = qs.distinct().order_by("name")[:20]
+
+    return HttpResponse(select2_id_doc_name_json(objs), content_type='application/json')

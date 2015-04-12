@@ -1,23 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Material for Group {{ group.acronym }}{% endblock %}
-
-{% block morecss %}
-{{ block.super }}
-.material-types li { margin-bottom: 0.5em; }
-{% endblock %}
-
-{% block content %}
 {% load ietf_filters %}
 
-<h1>Upload Material for Group {{ group.acronym }}</h1>
+{% block title %}Upload Material for group {{ group.name }} ({{ group.acronym }}){% endblock %}
 
-<p>Select what kind of material you wish to upload:</p>
+{% block content %}
+  <h1>Upload Material<br><small>{{ group.name }} ({{ group.acronym }})</small></h1>
 
-<ul class="material-types">
-  {% for t in material_types %}
-    <li><a href="{% url "group_new_material" acronym=group.acronym doc_type=t.slug %}">{{ t.name }}</a></li>
-  {% endfor %}
-</ul>
+  <p>Select what kind of material you wish to upload:</p>
 
+  <ul class="material-types">
+    {% for t in material_types %}
+      <li><a href="{% url "group_new_material" acronym=group.acronym doc_type=t.slug %}">{{ t.name }}</a></li>
+    {% endfor %}
+  </ul>
 {% endblock content %}

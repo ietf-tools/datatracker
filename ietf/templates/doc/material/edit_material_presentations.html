@@ -1,23 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}
-Edit Upcoming Presentations
-{% endblock %}
+{% load bootstrap3 %}
 
-{% block morecss %}
-{{ block.super }}
-ul#id_versions { list-style-type: none; padding: 0px; margin: 0px; }
-{% endblock %}
+{% block title %}Edit Upcoming Presentations{% endblock %}
 
 {% block content %}
-{% load ietf_filters %}
+  <h1>Edit Upcoming Presentations<br><small>{{doc.title}}<br>{{doc.name}}<br>at {{session}}</small></h1>
 
-<h1>Edit Upcoming Presentations of<br/>{{doc.title}}<br/>{{doc.name}}<br/>at {{session}}</h1>
+  <form role="form" method="post">
+    {% csrf_token %}
 
-<form method="post">{% csrf_token %}
-{{form.as_p}}
-<input style="button" type="submit" name="action" value="Save"/>
-<input style="button" type="submit" name="action" value="Cancel"/>
-</form>
+    {% bootstrap_form form %}
 
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+      <button class="btn btn-primary" type="submit">Save</button>
+    {% endbuttons %}
+  </form>
 {% endblock content %}

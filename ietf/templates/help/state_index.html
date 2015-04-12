@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %} Document state index{% endblock %}
+
+{% block content %}
+
+  <h1>Document state index</h1>
+
+  <p>Document state information is available for the following document and document state groups:</p>
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>State groups</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for type in types %}
+        {% if type.stategroups != None %}
+          <tr>
+            <td><a href='{{ type.slug }}/'>{{type.slug}}</a></td>
+            <td>
+	      {% for group in type.stategroups %}
+	        <a href='{{ type.slug }}/{{ group }}'>{{ group }}</a>{% if not forloop.last %}, {% endif %}
+	      {% endfor %}
+            </td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+
+    </tbody>
+  </table>
+
+
+{% endblock %}

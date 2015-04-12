@@ -1,46 +1,24 @@
 {% extends "base.html" %}
 
-{% block title %}Change State: {{doc.title}}{% endblock %}
+{% load bootstrap3 %}
 
-{% block morecss %}
-form.change-state select {
-  width: 22em;
-}
-
-#id_message, #id_comment {
-  width: 40em;
-}
-
-form.change-state .actions {
-  text-align: right;
-  padding-top: 10px;
-}
-{% endblock %}
+{% block title %}Change state for {{doc.title}}{% endblock %}
 
 {% block content %}
-<h1>Change State: {{doc.title}}</h1>
+  <h1>Change state<br><small>{{doc.title}}</small></h1>
 
-<p class="helptext">For help on the states, see the <a href="{{help_url}}">state table</a>.</p>
+  {% bootstrap_messages %}
 
-<form class="change-state" action="" method="post">{% csrf_token %}
-  <table>
-    {% for field in form.visible_fields %}
-    <tr>
-      <th>{{ field.label_tag }}</th>
-      <td>{{ field }}
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+  <p><a class="btn btn-info" href="{{help_url}}">Help on states</a></p>
 
-      {{ field.errors }}
-      </td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td colspan="2" class="actions">
-        <a href="{% url "doc_view" name=doc.name %}">Back</a>
-        <input type="submit" value="Submit"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

@@ -1,54 +1,51 @@
 {% extends "base.html" %}
+
 {% block title %}
-References from {{doc.canonical_name}}
+  References from {{doc.canonical_name}}
 {% endblock %}
-{% block morecss %}
-.referencetable {margin-top:1em;}
-.referenctable .references {width:100%;}
-.referencetable .references .reference .source {width:30%;}
-.referencetable .references .reference .title {width:35%;}
-.referencetable .references .reference .level {width:15%;}
-.referencetable .references .reference .reftype {width:15%;}
-.referencetable .references .reference .downref {width:5%;}
-.reflinks {font-size:80%;float:right;}
-{% endblock %}
+
 {% block content %}
-<h1>References from {{doc.canonical_name}}</h1>
-<div class="info-message-warning">
-This is an experimental product. These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
-</div>
-<div>
-Sorted by document name.
-<a href="{% url 'relationship_subset_help' subset='reference' %}">Reference type help</a>
-</div>
-<div class="referencetable">
-<table class="references ietf-table">
-<tr><th>Document</th><th>Title</th><th>Status</th><th>Reference Type</th><th>Downref</th></tr>
-{% for ref in refs %}
-<tr class="reference {% cycle 'evenrow' 'oddrow' %}">
-<td class="target">
-{% with ref.target.name as name %}
-<a href="{% url 'doc_view' name=name %}">{{name}}</a> <span class="reflinks">(<a href="{% url 'doc_references' name %}">refs</a>, <a href="{% url 'doc_referenced_by' name %}">refby</a>)</span>
-{% endwith %}
-</td>
-<td class="title">
-{{ref.target.document.title}}
-</td>
-<td class="level">
-{% ifequal ref.target.document.get_state.slug 'rfc' %}
-   {% with ref.target.document.std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
-{% else %}
-   {% with ref.target.document.intended_std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
-{% endifequal %}
-</td>
-<td class="reftype">
-{{ref.relationship.name}}
-</td>
-<td class="downref">
-{{ref.is_downref|default:''}}
-</td>
-</tr>
-{% endfor %}
-</table>
-</div>
+  <h1>References from {{doc.canonical_name}}</h1>
+
+  <p class="alert alert-info">
+    This is an experimental product. These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
+  </p>
+  <p>
+    <a class="btn btn-default" href="{% url 'relationship_subset_help' subset='reference' %}">Reference type help</a>
+  </p>
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Type</th>
+        <th>Downref</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ref in refs %}
+        {% with ref.target.name as name %}
+          <tr>
+            <td><a href="{% url 'doc_view' name=name %}">{{name}}</a></td>
+            <td>
+	      <b>{{ref.target.document.title}}</b><br>
+	      <a class="btn btn-default btn-xs" href="{% url 'doc_references' name %}">Refs</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'doc_referenced_by' name %}">Ref'd by</a>
+            </td>
+            <td>
+	      {% ifequal ref.target.document.get_state.slug 'rfc' %}
+	        {% with ref.target.document.std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
+	{% else %}
+	        {% with ref.target.document.intended_std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
+	      {% endifequal %}
+            </td>
+            <td>{{ref.relationship.name}}</td>
+            <td>{{ref.is_downref|default:''}}</td>
+          </tr>
+        {% endwith %}
+      {% endfor %}
+  </table>
+
 {% endblock %}

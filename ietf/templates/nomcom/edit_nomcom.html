@@ -1,59 +1,56 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
-{% block subtitle %}- Edit settings{% endblock %}
+{% load bootstrap3 %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="/css/lib/datepicker3.css"></link>
+{% endblock %}
+
+{% block subtitle %} - Settings{% endblock %}
 
 {% block nomcom_content %}
-<h2>Edit settings</h2>
+  <h2>Settings</h2>
 
-{% if message %}
-<div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
-{% endif %}
+  {% if message %}
+    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
+  {% endif %}
 
-{% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
+  {% bootstrap_messages %}
 
-<form enctype="multipart/form-data" action="" method="post">{% csrf_token %}
-{{ form }}
+  <form enctype="multipart/form-data" role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-<h3>Reminder Dates</h3>
+    <h3>Reminder Dates</h3>
 
-<p>If the "reminder interval" field of nomcom isn't filled, the following dates will be used to send reminders.</p>
+    <p>If the "reminder interval" field of nomcom isn't filled, the following dates will be used to send reminders.</p>
 
-<p>The valid format: <strong>YYYY-MM-DD</strong></p>
+    <p>The valid format: <strong>YYYY-MM-DD</strong></p>
 
-    {{ formset.management_form }}
-    {% for form in formset.forms %}
-     {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
-     <table style="width: 100%;"><tr><td>
-     <div class="baseform">
-        <div class="fieldset">
-        {% for field in form %}
-      <div id="baseform-fieldname-{{ field.html_name }}"
-          {% if field.field.widget.is_hidden %}style="display: none;"{% endif %}
-          class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
-        <label for="id_{{ field.html_name }}">{{ field.label }}
-        {% if field.field.required %}
-          <span class="fieldRequired" title="Required">*</span>
-        {% endif %}
-        </label>
-        <div class="fieldWidget">
-        <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
-        {{ field }}
-        {{ field.errors }}
-        </div>
-        <div class="endfield"></div>
-      </div>
-        {% endfor %}
-        </div>
-    </div>
-    </td><td style="width: 50%; vertical-align: top;">
-    </td></tr></table>
-    {% endfor %}
+    {% bootstrap_formset formset %}
 
-<p><input type="submit" value="Save" /></p>
-</form>
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="Save">
+    {% endbuttons %}
+  </form>
 
-<h2>Delete Nomcom</h2>
+  <h2>Delete Nomcom</h2>
 
-<p>To delete all data about {{ nomcom.group.name }}, <a href="{% url "nomcom_delete_nomcom" year %}" class="deletelink">click here</a></p>
+  <p>
+    <a class="btn btn-danger" href="{% url "nomcom_delete_nomcom" year %}" class="deletelink">Delete NomCom</a>
+  </p>
 
 {% endblock %}
+
+{% block js %}
+  <script src="/js/lib/bootstrap-datepicker.js"></script>
+  <script>
+   $('input[id*="reminderdates"][type="text"]').datepicker({
+       format: "yyyy-mm-dd",
+       todayBtn: "linked",
+       todayHighlight: true
+   }).wrap('<div class="input-group"></div>').parent().prepend('<span class="input-group-addon"><span class="fa fa-calendar"></span></span>');
+  </script>
+{% endblock %}
+
+

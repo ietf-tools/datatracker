@@ -1,23 +1,36 @@
 {% extends "base.html" %}
 {% load ietf_filters %}
-{% block title %}RFC Status Changes{% endblock %}
-{% block content %}
-<h1>RFC Status Changes</h1>
 
-{% if user|has_role:"Area Director,Secretariat" %}
-<p><a href="{% url "start_rfc_status_change" name='' %}">Start new RFC status change document</a></p>
-{% endif %}
-{% regroup docs by get_state as state_groups %}
-<table class="ietf-table ietf-doctable">
-<tr><th class="doc">Document</th><th class="title">Title</th></tr>
-{% for state in state_groups %}
-<tr class="header"><td colspan="2">{{state.grouper}}</td></tr>
-{% for doc in state.list %}
-<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-<td>{{ doc.displayname_with_link|safe }}</td>
-<td>{{ doc.title }}</td>
-</tr>
-{% endfor %}
-{% endfor %}
+{% block title %}RFC status changes{% endblock %}
+
+{% block content %}
+  <h1>RFC status changes</h1>
+
+  {% if user|has_role:"Area Director,Secretariat" %}
+    <p><a class="btn btn-default" href="{% url "start_rfc_status_change" name='' %}">New RFC status change</a></p>
+  {% endif %}
+
+  {% regroup docs by get_state as state_groups %}
+  <table class="table table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>Title</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for state in state_groups %}
+        <tr class="info"><th colspan="2">{{state.grouper}}</th></tr>
+
+        {% for doc in state.list %}
+          <tr">
+	    <td>{{ doc.displayname_with_link|safe }}</td>
+            <td><b>{{ doc.title }}</b></td>
+          </tr>
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock content %}
 

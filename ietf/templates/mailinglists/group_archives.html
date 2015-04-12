@@ -1,30 +1,33 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2008, All Rights Reserved #}
 
-{% block title %}Web-based Working Group E-mail Archives{% endblock %}
+{% block title %}Web-based Working Group email archives{% endblock %}
 
 {% block content %}
-<h1>Web-based Working Group E-mail Archives</h1>
+  <h1>Web-based Working Group email archives</h1>
 
-<p>These links to the Web-based working group e-mail archives are
-  extracted from the working group charters.  Please consult the
-  charters for more information about the mailing lists and archives
-  of specific working groups.  Charters for active working groups are
-  available on
-  the <a href="/wg/">Active IETF Working Groups</a> Web page.
-  Charters for concluded working groups are available on
-  the <a href="http://www.ietf.org/wg/concluded/index.html">Concluded
+  <p>These links to the Web-based working group e-mail archives are
+    extracted from the working group charters.  Please consult the
+    charters for more information about the mailing lists and archives
+    of specific working groups.  Charters for active working groups are
+    available on
+    the <a href="/wg/">Active IETF Working Groups</a> Web page.
+    Charters for concluded working groups are available on
+    the <a href="//www.ietf.org/wg/concluded/index.html">Concluded
     Working Groups</a> Web page.</p>
 
-<table class="group-archives" cellpadding="2" cellspacing="0" border="0">
-  <tr>
-    <th style="text-align:left;padding-right:2em;">Acronym</th><th  style="text-align:left;">Name</th>
-  </tr>
-  {% for group in groups %}
-  <tr>
-    <td><a href="{{ group.list_archive }}">{{ group.acronym }}</a></td>
-    <td>{{ group.name }}</td>
-  </tr>
-  {% endfor %}
-</table>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Acronym</th><th>Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for group in groups %}
+        <tr>
+          <td><a href="{{ group.list_archive }}">{{ group.acronym }}</a></td>
+          <td>{{ group.name }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}

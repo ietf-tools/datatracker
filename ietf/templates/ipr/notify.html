@@ -1,23 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}Send Notification{% endblock %}
+{% load bootstrap3 %}
 
-{% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
-{% endblock %}
+{% block title %}Send Notification{{ formset|pluralize }}{% endblock %}
 
 {% block content %}
-<h1>Send Notification about {{ ipr }}</h1>
+  <h1>Send Notification{{ formset|pluralize }}<br><small>{{ ipr }}</small></h1>
 
-<form class="send-notification" action="" method="post">{% csrf_token %}
-  <table>
-  {{ formset }}
-  <tr>
-    <td></td>
-    <td class="actions">
-      <input type="submit" value="Send Notification(s)"/>
-    </td>
-  </tr>
-  </table>
-</form>
+  {% bootstrap_messages %}
+
+  <form class="send-notification" method="post">
+    {% csrf_token %}
+
+    {% bootstrap_formset formset %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Send Notification{{ formset|pluralize }}</button>
+    {% endbuttons %}
+  </form>
 {% endblock %}

@@ -1,24 +1,19 @@
-{% extends "registration/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Account Management{% endblock %}
+{% block title %}Account management{% endblock %}
 
 {% block content %}
-<div id="account_index">
-<h1>Account Management</h1>
+  <h1>Account management</h1>
 
-<p>
-   <b>You can:</b>
-   <ul>
-      {% if user.username %}
-      <li><a href="/accounts/profile/">View and edit your profile</a></li>
-      {% else %}
-      <li><a href="/accounts/login/" rel="nofollow">Sign in</a></li>
-      {% endif %}
-      <li><a href="/accounts/create/">Request an account</a></li>
-      <li><a href="/accounts/reset/">Request a password reset </a></li>
-      <li><a href="/accounts/settings/">Change your datatracker preferences for this browser</a></li>
-   </ul>
-</p>
- 
-</div>
+  <div class="buttonlist">
+    {% if user.username %}
+      <a type="a" class="btn btn-primary" href="/accounts/profile/">View/edit profile</a>
+    {% else %}
+      <a type="a" class="btn btn-primary" href="/accounts/login/" rel="nofollow">Sign in</a>
+    {% endif %}
+    <a type="a" class="btn btn-info" href="/accounts/create/">New account</a>
+    <a type="a" class="btn btn-warning" href="/accounts/reset/">Reset password</a>
+    <a type="a" class="btn btn-default" href="/accounts/settings/">Change browser preferences</a>
+  </div>
+
 {% endblock %}

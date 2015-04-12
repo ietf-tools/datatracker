@@ -1,43 +1,30 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% block title %}IPR Email{% endblock %}
+
+{% load bootstrap3 %}
+
+{% block title %}Email submitter of {{ ipr.title }}{% endblock %}
 
 {% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css"></link>
-<link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
+  <link rel="stylesheet" href="/css/lib/datepicker3.css"></link>
 {% endblock %}
 
-
 {% block content %}
+  <h1>Email submitter<br><small>{{ ipr.title }}</small></h1>
 
-<div class="ipr">
-    <h2>Send email to disclosure submitter</h2>
-    
-    <form action="" method="post">{% csrf_token %}
-    <table id="ipr-table">
-      <th colspan=2>Email Form</th>
-      {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
-      {% for field in form.visible_fields %}
-        <tr>
-        <td>{{ field.label_tag }}{% if field.field.required %}<span class="required"> *</span>{% endif %}</td>
-        <td>{{ field.errors }}{{ field }}{% if field.help_text %}<br>{{ field.help_text }}{% endif %}</td>
-        </tr>
-      {% endfor %}
-    </table>
-    <div class="button-group">
-      <ul id="announcement-button-list">
-        <li><button type="submit" name="submit" value="submit">Submit</button></li>
-        <li><button type="submit" name="submit" value="Cancel">Cancel</button></li>
-      </ul>
-    </div> <!-- button-group -->
+  {% bootstrap_messages %}
 
-    </form>
-</div> <!-- module -->
+  <form role="form" method="post" class="show-required">
+    {% csrf_token %}
 
+    {% bootstrap_form form %}
 
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Send Email</button>
+      <a class="btn btn-default pull-right" href="{% url "ipr_history" id=ipr.id %}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript" src="/js/jquery-ui-1.8.11.custom.min.js"></script>
-<script type="text/javascript" src="/js/ipr-email.js"></script>
+  <script src="/js/lib/bootstrap-datepicker.js"></script>
 {% endblock %}

@@ -1,46 +1,53 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Request publication for {{ doc }}{% endblock %}
 
-{% block morecss %}
-p.warning { color: #a00; font-weight: bold; }
-form.request-publication #id_subject,
-form.request-publication #id_body { width: 50em; }
-form.request-publication #id_body { height: 30em; }
-{% endblock %}
-
 {% block content %}
-<h1>Request publication for {{ doc }}</h1>
+  <h1>Request publication<br><small>{{ doc }}</small></h1>
 
-<p>Send a publication request to the RFC Editor for {{ doc }} and move
-it to the <em>{{ next_state.name }}</em> stream state.</p>
+  {% bootstrap_messages %}
 
-{% if not doc.intended_std_level %}
-  <p class="warning">Note: Intended RFC status is not set for the document.</p>
-{% endif %}
+  <p class="alert alert-info">
+    Send a publication request to the RFC Editor for {{ doc }} and move it to the <i>{{ next_state.name }}</i> stream state.
+    Please edit the message and remove any parts in brackets you do not
+    fill in. For independent submissions, see the <a
+href="http://www.rfc-editor.org/indsubs.html">guidelines</a>.
+  </p>
 
-{% if doc.stream_id != "ise" and not consensus_filled_in %}
-  <p class="warning">Note: Consensus status is not set for the document.</p>
-{% endif %}
+  {% if not doc.intended_std_level %}
+    <p class="alert alert-warning">
+      <b>Note:</b> Intended RFC status is not set for the document.
+    </p>
+  {% endif %}
 
+  {% if doc.stream_id != "ise" and not consensus_filled_in %}
+    <p class="alert alert-warning">
+      <b>Note:</b> Consensus status is not set for the document.
+    </p>
+  {% endif %}
 
-<p>Please edit the message and remove any parts in brackets you do not
-fill in. For independent submissions, see the <a
-href="http://www.rfc-editor.org/indsubs.html">guidelines</a>.</p>
+  <form role="form" method="post">
+    {% csrf_token %}
 
-<form class="request-publication" action="" method="post">{% csrf_token %}
-<table>
-  <tr><td>From:</td> <td>{{ message.frm }}</td></tr>
-  <tr><td>To:</td> <td>{{ message.to }}</td></tr>
-  <tr><td>Subject:</td> <td>{{ form.subject }} {{ form.subject.errors }}</td></tr>
-  <tr><td style="vertical-align: top">Message:</td> <td>{{ form.body }} {{ form.body.errors }}</td></tr>
-  <tr class="actions"><td></td>
-    <td>
-      <a class="button" href="{% url "doc_view" name=doc.name %}">Cancel</a>
-      <input class="button" name="reset" type="submit" value="Reset"/>
-      <input class="button" type="submit" value="Send request to the RFC Editor"/>
-    </td>
-  </tr>
-</table>
-</form>
+    <div class="form-group">
+      <label>From</label>
+      <input class="form-control" type="text" placeholder="{{ message.frm }}" disabled>
+    </div>
+
+    <div class="form-group">
+      <label>To</label>
+      <input class="form-control" type="text" placeholder="{{ message.to }}" disabled>
+    </div>
+
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-danger">Email RFC Editor</button>
+      <button type="reset" class="btn btn-warning">Reset</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
+
 {% endblock %}

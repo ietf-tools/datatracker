@@ -1,21 +1,32 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
 {% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/token-input.css"></link>
+  <link rel="stylesheet" href="/css/lib/select2.css">
+  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
+{% endblock %}
+
+{% load bootstrap3 %}
+
+{% block subtitle %} - {% if position %}Edit{% else %}Add{% endif %} positions{% endblock %}
+
+{% block nomcom_content %}
+
+  <h2>{% if position %}Edit{% else %}Add{% endif %} position</h2>
+
+  {% bootstrap_messages %}
+
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="{% if position %}Save{% else %}Add{% endif %}">
+      <a class="btn btn-default pull-right" href="../">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}
 
 {% block content_end %}
-<script type="text/javascript" src="/js/lib/jquery.tokeninput.js"></script>
-<script type="text/javascript" src="/js/tokenized-field.js"></script>
+  <script src="/js/lib/select2-3.5.2.min.js"></script>
+  <script src="/js/select2-field.js"></script>
 {% endblock %}
-
-{% block nomcom_content %}
-<h3>{% if position %}Edit{% else %}Add{% endif %} position</h3>
-
-{% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
-
-<form action="" method="post">{% csrf_token %}
-{{ form }}
-<p><input type="submit" value="{% if position %}Save{% else %}Add{% endif %}" /> <a href="../">Cancel</a></p>
-</form>
-{% endblock nomcom_content %}

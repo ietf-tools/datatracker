@@ -1,19 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Request resurrection of {{ doc }}{% endblock %}
+{% load bootstrap3 %}
+
+{% block title %}Request resurrection for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Request resurrection of {{ doc }}</h1>
+  <h1>Request resurrection<br><small>{{ doc }}</small></h1>
 
-<form action="" method="post">{% csrf_token %}
-  <p>Request resurrection of the Internet Draft {{ doc.file_tag }}?</p>
+  <p>Request resurrection of the Internet-Draft {{ doc.file_tag }}?</p>
 
-  <p>This will send a notification to the Secretariat to resurrect the
-  I-D.</p>
+  <p>This will send a notification to the Secretariat to resurrect the I-D.</p>
 
-  <div class="actions">
-    <a href="{{ back_url }}">Back</a>
-    <input type="submit" value="Request resurrection"/>
-  </div>
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+
+    {% buttons %}
+      <button class="btn btn-primary" type="submit">Request resurrection</button>
+      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+    {% endbuttons %}
+  </form>
+
 {% endblock %}

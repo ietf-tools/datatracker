@@ -17,19 +17,31 @@
 {% block title %}IETF {{ meeting.number }} Meeting Agenda{% endblock %}
 {% load agenda_custom_tags %}
 {% block pagehead %}
-<link rel='stylesheet' type='text/css' href='/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css' />
-<link rel='stylesheet' type='text/css' href='/css/agenda.css' />
+<link rel='stylesheet' type='text/css' href='/css/agenda/jquery-ui-themes/jquery-ui-1.8.11.custom.css' />
+<link rel='stylesheet' type='text/css' href='/css/agenda/agenda.css' />
 {% endblock pagehead %}
 
 {% block js %}
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery-ui.custom.min.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.widget.min.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.droppable.min.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.sortable.min.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.accordion.min.js'></script>
-<script type='text/javascript' src='/js/jquery-ui-1.9.0.custom/minified/jquery.ui.draggable.min.js'></script>
+<script type="text/javascript" src="/js/agenda/jquery-1.8.2.min.js"></script>
+<script src="/js/lib/jquery.cookie.min.js"></script>
+<script>
+jQuery.ajaxSetup({
+    crossDomain: false, // obviates need for sameOrigin test
+    beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type)) {
+            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken'));
+        }
+    }
+});
+</script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery-ui.custom.min.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.widget.min.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.droppable.min.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.sortable.min.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.accordion.min.js'></script>
+<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.draggable.min.js'></script>
 
-<script type='text/javascript' src='/js/spin/dist/spin.min.js'></script>
+<script type='text/javascript' src='/js/agenda/spin/dist/spin.min.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_edit.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_helpers.js'></script>
 <script type='text/javascript' src='/js/agenda/agenda_objects.js'></script>
@@ -89,11 +101,7 @@ promiselist.push(ss_promise);
 {% endblock js %}
 
 
-{% block start_content_table %}{% endblock %}
-{% block end_content_table %}{% endblock %}
-
 {% block content %}
-
 <div id="read_only">
   <p>You do not have write permission to agenda: {{schedule.name}}</p>
   <p>Please save this agenda to your account first.</p>

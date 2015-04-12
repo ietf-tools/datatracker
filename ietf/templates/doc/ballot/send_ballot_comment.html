@@ -1,47 +1,56 @@
 {% extends "base.html" %}
-{% load ietf_filters %}
-{% block title %}Send ballot position email for {{ ad }}{% endblock %}
 
-{% block morecss %}
-form.send-ballot pre {
-  margin: 0;
-  padding: 4px;
-  border-top: 4px solid #eee;
-  border-bottom: 4px solid #eee;
-}
-{% endblock %}
+{% load bootstrap3 %}
+
+{% load ietf_filters %}
+
+{% block title %}Send ballot position for {{ ad }}{% endblock %}
 
 {% block content %}
-<h1>Send ballot position email for {{ ad }}</h1>
+  <h1>Send ballot position for {{ ad }}</h1>
 
-<form class="send-ballot" action="" method="post">{% csrf_token %}
-  <table>
-    <tr><th>From:</th> <td>{{ frm }}</td></tr>
-    <tr><th>To:</th> <td>{{ to }}</td></tr>
-    <tr>
-      <th>Cc:<br/>
-      <span class="help">separated<br/> by comma</span></th>
-      <td><input type="text" name="cc" value="" size="75" /><br/>
-      {% if doc.notify %}
-      <label>
-        <input type="checkbox" name="cc_state_change" value="1" checked="checked" />
-        {{ doc.notify }}
-      </label>
-      {% endif %}
-      </td>
-    </tr>
-    <tr><th>Subject:</th> <td>{{ subject }}</td></tr>
-    <tr>
-      <th>Body:</th>
-      <td><pre>{{ body|wrap_text }}</pre></td>
-    </tr>
-    <tr>
-      <td></td>
-      <td class="actions">
-        <a href="{{ back_url }}">Back</a>
-        <input type="submit" value="Send"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label>From</label>
+      <input class="form-control" type="text" placeholder="{{ frm }}" disabled>
+    </div>
+
+    <div class="form-group">
+      <label>To</label>
+      <input class="form-control" type="text" placeholder="{{ to }}" disabled>
+    </div>
+
+    <div class="form-group">
+      <label>Cc</label>
+      <input class="form-control" type="email" name="cc">
+      <span class="help-block">Separate email addresses with commas.</span>
+    </div>
+
+    {% if doc.notify %}
+      <div class="checkbox">
+        <label>
+          <input type="checkbox" name="cc_state_change" value="1" checked>
+          <b>Cc:</b> {{ doc.notify }}
+        </label>
+      </div>
+    {% endif %}
+
+    <div class="form-group">
+      <label>Subject</label>
+      <input class="form-control" type="text" placeholder="{{ subject }}" disabled>
+    </div>
+
+    <div class="form-group">
+      <label>Body</label>
+      <pre>{{ body|wrap_text }}</pre>
+    </div>
+
+    {% buttons %}
+      <button type="submit" class="btn btn-danger">Send</button>
+      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+    {% endbuttons %}
+  </form>
+
 {% endblock %}

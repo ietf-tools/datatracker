@@ -4,16 +4,7 @@
 
 {% block title %}Ballot for {{ doc.name }}-{{ doc.rev }}{% endblock %}
 
-{% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
-{% endblock %}
-
 {% block content %}
-{{ top|safe }}
-
-{{ ballot_content|safe }}
-
+  {{ top|safe }}
+  {{ ballot_content|safe }}
 {% endblock content %}
-
-{% block content_end %}
-{% endblock content_end %}

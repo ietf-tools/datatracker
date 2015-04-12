@@ -1,26 +1,26 @@
 {% extends "nomcom/nomcom_public_base.html" %}
 
+{% load bootstrap3 %}
 {% load nomcom_tags %}
 
 {% block subtitle %} - Nominate{% endblock %}
 
 {% block nomcom_content %}
 
-{% if message %}
-  <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
-{% endif %}
+  {% if message %}
+    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
+  {% endif %}
 
-{% if nomcom|has_publickey %}
-  {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
+  {% bootstrap_messages %}
 
-  <form id="nominateform" action="" method="post">{% csrf_token %}
-    {{ form }}
-
-  <div class="submitrow">
-    <input type="submit" value="Save" name="save" />
-  </div>
-
-  </form>
-{% endif %}
+  {% if nomcom|has_publickey %}
+    <form id="nominate-form" role="form" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+      {% buttons %}
+        <button class="btn btn-primary" type="submit" name="save">Save</button>
+      {% endbuttons %}
+    </form>
+  {% endif %}
 
 {% endblock %}

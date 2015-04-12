@@ -1,19 +1,29 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
-{% block nomcom_content %}
-<h2>Position: {{ position }}</h2>
-<dl>
-  <dt>Description:</dt>
-  <dd>{{ position.description }}</dd>
-  <dt>Incumbent:</dt>
-  <dd>{{ position.incumbent }}</dd>
-  <dt>Is open:</dt>
-  <dd>{{ position.is_open }}</dd>
-</dl>
+{% load bootstrap3 %}
 
-<h3>Do you want to remove it?</h3>
-<form method="post" action="">{% csrf_token %}
-<p><input type="submit" name="remove" value="Yes, remove it" /> <a href="../">No, get me out of here</a></p>
-</form>
+{% block nomcom_content %}
+  <h2>Position: {{ position }}</h2>
+  <dl>
+    <dt>Description:</dt>
+    <dd>{{ position.description }}</dd>
+    <dt>Incumbent:</dt>
+    <dd>{{ position.incumbent }}</dd>
+    <dt>Is open:</dt>
+    <dd>{{ position.is_open }}</dd>
+  </dl>
+
+  <h3>Do you want to remove it?</h3>
+
+  <form role="form" method="post">
+    {% csrf_token %}
+
+    <input type="hidden" name="remove" value="1">
+
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="../">No, get me out of here</a>
+      <button class="btn btn-primary" type="submit">Yes, remove it</button>
+    {% endbuttons %}
+  </form>
 
 {% endblock nomcom_content %}

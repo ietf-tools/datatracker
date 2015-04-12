@@ -1,43 +1,61 @@
-{% load ietf_filters %}{% load ballot_icon %}
+{% load ietf_filters ballot_icon %}
+
 <td class="status">
-  {{ doc.friendly_state|safe }} {% if not doc.get_state_slug == "rfc" %}{{ doc|state_age_colored }}{% endif %}
+  <div class="pull-right">
+    {% ballot_icon doc %}
+  </div>
 
-  {% block extra_status %}
-  {% if doc.telechat_date %}<br/>IESG Telechat: {{ doc.telechat_date }}{% endif %}
-  {% endblock %}
-
-  {% if doc.get_state_slug != "rfc" %}{# I-D #}
-
-    {% if doc|state:"draft-rfceditor" %}
-      <br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
+  {% if not doc.get_state_slug == "rfc" %}
+    {% if '::' in doc.friendly_state %}
+      {{ doc.friendly_state|safe|split:"::"|join:"::<wbr>" }}
+    {% else %}
+      {{ doc.friendly_state|safe }}
     {% endif %}
 
-    {% if doc.stream %}
-      <br />
-      {% if doc|state:"stream" %}{{ doc|state:"stream" }}{% else %}{{ doc.stream }}{% endif %}
+    <wbr>{{ doc|state_age_colored }}
 
-      {% if doc.milestones %}
-        {% for m in doc.milestones %}<span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>{% endfor %}
+    {% if doc.telechat_date %}
+      <br>IESG telechat: {{ doc.telechat_date }}
+    {% endif %}
+
+    {% with doc.active_defer_event as defer %}
+      {% if defer %}
+        <br>Deferred by {{ defer.by }} on {{ defer.time|date:"Y-m-d" }})
       {% endif %}
+    {% endwith %}
+
+    {% if doc.intended_std_level %}
+      <br>{{ doc.intended_std_level }}
+    {% endif %}
+
+    {% for m in doc.milestones %}
+      <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>
+    {% endfor %}
+
+    {% if doc|state:"draft-rfceditor" %}
+      <br>RFC Editor: <a href="//www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
     {% endif %}
 
   {% else %}{# RFC #}
+    {{ doc.std_level|safe }} RFC
 
     {% if doc.obsoleted_by_list %}
-      <div>Obsoleted by {{ doc.obsoleted_by_list|join:", "|urlize_ietf_docs }}</div>
+      <br>Obsoleted by {{ doc.obsoleted_by_list|join:", "|urlize_ietf_docs }}
     {% endif %}
 
     {% if doc.updated_by_list %}
-      <div class="updated-by">Updated by {{ doc.updated_by_list|join:", "|urlize_ietf_docs }}</div>
+      <br>Updated by {{ doc.updated_by_list|join:", "|urlize_ietf_docs }}
     {% endif %}
-
-    {% if doc.has_errata %}
-      <div><a href="http://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" rel="nofollow">Errata</a></div>
-    {% endif %}
-
   {% endif %}
-</td>
 
-<td class="ballot">
-  {% ballot_icon doc %}
+  {% if doc.stream %}
+    <br>
+    {% if doc|state:"stream" %}
+      {{ doc|state:"stream" }}
+    {% else %}
+      {{ doc.stream }} RFC stream
+    {% endif %}
+  {% endif %}
+
+
 </td>

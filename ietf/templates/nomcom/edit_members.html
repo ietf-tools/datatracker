@@ -1,18 +1,22 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
+{% load bootstrap3 %}
+
 {% block subtitle %} - Edit members{% endblock %}
 
 {% block nomcom_content %}
-<h2>Edit members</h2>
+  <h2>Edit members</h2>
 
-{% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
+  {% bootstrap_messages %}
 
-<form action="" method="post">{% csrf_token %}
-<table>
-{{ form }}
-</table>
-<input type="hidden" name="{{ stage_field }}" value="1" />
-<p><input type="submit" value="Preview" /></p>
-</form>
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <input type="hidden" name="{{ stage_field }}" value="1">
+
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="Preview">
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

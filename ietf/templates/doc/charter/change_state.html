@@ -1,96 +1,77 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}{{ title }}{% endblock %}
 
-{% block morecss %}
-form.change-state select {
-  width: 22em;
-}
-
-#id_message, #id_comment {
-  width: 40em;
-}
-
-form.change-state .actions {
-  text-align: right;
-  padding-top: 10px;
-}
-{% endblock %}
-
 {% block content %}
-<h1>{{ title }}</h1>
+  <h1>{{ title }}</h1>
 
-{% if not option %}
-<p class="helptext">For help on the states, see the <a href="{% url "state_help" type="charter" %}">state table</a>.</p>
-{% endif %}
+  {% bootstrap_messages %}
 
-<form class="change-state" action="" method="post">{% csrf_token %}
-  <table>
+  {% if not option %}
+    <p><a class="btn btn-info" href="{% url "state_help" type="charter" %}">Help on states</a></p>
+  {% endif %}
+
+  <form role="form" method="post">
+    {% csrf_token %}
     {% for field in form.visible_fields %}
-    <tr>
-      {% if field.name == "initial_time" %}
-      {% if option == "recharter" %}
-      <th>{{ field.label_tag }}</th>
-      <td>{{ field }}
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-      {% else %}
-      {% if option == "initcharter" %}
-      <th>{{ field.label_tag }}</th>
-      <td>{{ field }}
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-      {% endif %}
-      {% endif %}
+      {% bootstrap_field field %}
 
-      {% else %}
-      <th>{{ field.label_tag }}</th>
-      <td>{{ field }}
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {% if field.name == "charter_state" and chartering_type == "rechartering" %}
+        <div class="checkbox ballot-wo-extern">
+          <label>
+            <input type="checkbox" name="ballot_wo_extern">
+            <b>Ask whether external review can be skipped in ballot</b>
+          </label>
+        </div>
       {% endif %}
-
-      {{ field.errors }}
-      </td>
-    </tr>
-    {% if field.name == "charter_state" and chartering_type == "rechartering" %}
-    <tr class="ballot-wo-extern" style="display:none">
-      <td></td>
-      <td><label><input name="ballot_wo_extern" type="checkbox" /> Ask whether external review can be skipped in ballot</label></td>
-    </tr>
-    {% endif %}
     {% endfor %}
+
     {% if initial_review %}
-    <tr><td></td><td class="warning">Warning: Announced initial review time hasn't elapsed yet. It does so at {{ initial_review.expires }}.</td></tr>
+      <p class="alert alert-warning"><b>Warning:</b> Announced initial review time hasn't elapsed yet. It does so at {{ initial_review.expires }}.</p>
     {% endif %}
-    <tr>
-      <td colspan="2" class="actions">
-        {% if option == "initcharter" or option == "recharter" %}
-        <input type="submit" value="Initiate chartering"/>
-        {% endif %}
-        {% if not option or option == "abandon" %}
-        <a href="{% url "doc_view" name=doc.name %}">Back</a>
-        <input type="submit" value="Save and (possibly) notify Secretariat"/>
-        {% endif %}
-      </td>
-    </tr>
-  </table>
-</form>
 
-{% if prev_state %}
-<h3>Or revert to previous state</h3>
-
-<div class="prev-state">
-  <form action="" method="post">{% csrf_token %}
-    <input type="hidden" name="charter_state" value="{{ prev_charter_state.pk }}" />
-    <input type="hidden" name="state" value="{{ prev_state.slug }}" />
-    <input type="submit" value="Back to {{ prev_charter_state.name }}" />
+    {% buttons %}
+      {% if option == "initcharter" or option == "recharter" %}
+        <button class="btn btn-primary" type="submit">Initiate chartering</button>
+      {% endif %}
+      {% if not option or option == "abandon" %}
+        <button class="btn btn-primary" type="submit">Save & notify secretariat</button>
+        <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+      {% endif %}
+    {% endbuttons %}
   </form>
-</div>
-{% endif %}
+
+  {% if prev_state %}
+    <h3>Or revert to previous state</h3>
+
+    <div class="prev-state">
+      <form action="" method="post">{% csrf_token %}
+        <input type="hidden" name="charter_state" value="{{ prev_charter_state.pk }}" />
+        <input type="hidden" name="state" value="{{ prev_state.slug }}" />
+        <input type="submit" value="Back to {{ prev_charter_state.name }}" />
+      </form>
+    </div>
+  {% endif %}
 {% endblock %}
 
-{% block content_end %}
-<script type="text/javascript">
-  var info_msg = {{ info_msg|safe }},
-      statesForBallotWoExtern = {{ states_for_ballot_wo_extern }};
-</script>
-<script type="text/javascript" src="/js/charter-change-state.js"></script>
+{% block js %}
+  <script>
+   var info_msg = {{ info_msg|safe }}, statesForBallotWoExtern = {{ states_for_ballot_wo_extern }};
+
+   $(document).ready(function () {
+       function stateChanged() {
+           var v = $(this).val();
+           $("#id_message").val(info_msg[v] || "");
+
+           if ($.inArray(+v, statesForBallotWoExtern) != -1)
+               $(".ballot-wo-extern").show();
+           else
+               $(".ballot-wo-extern").hide();
+       }
+       $("#id_charter_state").click(stateChanged).change(stateChanged).keydown(stateChanged);
+       $("#id_charter_state").click();
+  });
+  </script>
 {% endblock %}

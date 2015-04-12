@@ -3,38 +3,23 @@
 {% block subtitle %} - Questionnaires {% endblock %}
 
 {% block nomcom_content %}
+
   <h2>Questionnaires</h2>
-  <div id="mytabs" class="yui-navset">
-  <ul class="yui-nav">
+
+  <ul class="nav nav-tabs" role="tablist">
     {% for position in positions %}
-      <li><a href="#{{ position.name }}"><em>{{ position.name }}</em></a></li>
+      <li {% if forloop.first %}class="active"{% endif %}>
+        <a data-toggle="tab" role="tab" href="#{{ position.name|slugify }}">{{ position.name }}</a>
+      </li>
     {% endfor %}
   </ul>
-  Pick the position questionnaires to view from the list immediately above
-  <div class="yui-content">
+
+  <div class="tab-content">
     {% for position in positions %}
-      <div id="{{ position.name }}">
-          <h3>{{ position.description }}</h3>
-          {{ position.get_questionnaire|linebreaks}}
+      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ position.name|slugify }}">
+        <h3>{{ position.description }}</h3>
+        {{ position.get_questionnaire|linebreaks}}
       </div>
     {% endfor %}
   </div>
-
-  <script type="text/javascript">
-  //<![CDATA[
-  var tabView = new YAHOO.widget.TabView('mytabs');
-  var url = location.href.split('#');
-  if (url[1]) {
-    url[1] = "#"+url[1];
-    var tabs = tabView.get('tabs');
-    for (var i = 0; i < tabs.length; i++) {
-      if (url[1].indexOf(tabs[i].get('href')) == 0) {
-        tabView.set('activeIndex', i);
-        break;
-      }
-    }
-  }
-  //]]>
-  </script>
-
 {% endblock %}

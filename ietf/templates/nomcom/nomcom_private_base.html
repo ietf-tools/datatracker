@@ -1,39 +1,48 @@
-{% extends "nomcom/nomcom_base.html" %}
+{% extends "base.html" %}
 
 {% load nomcom_tags %}
 
+{% block title %}NomCom {{ year }} Private{% block subtitle %}{% endblock %}{% endblock %}
+
 {% block content %}
 
-  <h1>Nomcom {{ year }} Private Area</h1>
+  <h1>NomCom {{ year }} <small>Private area</small></h1>
 
-  <div class="ietf-navset nomcom-menu" >
-     <div>
-    {% if selected == "index" %}<span class="selected">Nominees</span>{% else %}<a href="{% url "nomcom_private_index" year %}">Nominees</a>{% endif %} |
+  <ul class="nav nav-tabs" role="tablist">
+    <li {% if selected == "index" %}class="active"{% endif %}><a href="{% url "nomcom_private_index" year %}">Nominees</a></li>
+
     {% if nomcom|has_publickey %}
-      {% if selected == "nominate" %}<span class="selected">Nominate</span>{% else %}<a href="{% url "nomcom_private_nominate" year %}">Nominate</a>{% endif %} |
-      {% if selected == "feedback" %}<span class="selected">Enter Comments</span>{% else %}<a href="{% url "nomcom_private_feedback" year %}">Enter Comments</a>{% endif %} |
-      {% if selected == "questionnaire" %}<span class="selected">Questionnaire response</span>{% else %}<a href="{% url "nomcom_private_questionnaire" year %}">Questionnaire response</a>{% endif %} |
+      <li {% if selected == "nominate" %}class="active"{% endif %}><a href="{% url "nomcom_private_nominate" year %}">Nominate</a></li>
+      <li {% if selected == "feedback" %}class="active"{% endif %}><a href="{% url "nomcom_private_feedback" year %}">Enter feedback</a></li>
+      <li {% if selected == "questionnaire" %}class="active"{% endif %}><a href="{% url "nomcom_private_questionnaire" year %}">Questionnaire response</a></li>
     {% endif %}
-    {% if selected == "view_feedback" %}<span class="selected">View Comments</span>{% else %}<a href="{% url "nomcom_view_feedback" year %}">View Comments</a>{% endif %} |
-    {% if selected == "private_key" %}<span class="selected">Private Key</span>{% else %}<a href="{% url "nomcom_private_key" year %}">Private Key</a>{% endif %}
-    {% if user|is_chair:year %} |
-      {% if selected == "feedback_pending" %}<span class="selected">Pending Feedback</span>{% else %}<a href="{% url "nomcom_view_feedback_pending" year %}">Pending Feedback</a>{% endif %} |
-      {% if selected == "feedback_email" %}<span class="selected">Enter Email Feedback</span>{% else %}<a href="{% url "nomcom_private_feedback_email" year %}">Enter Email Feedback</a>{% endif %} |
-      {% if selected == "send_accept_reminder" %}<span class="selected">Send Accept Reminder</span>{% else %}<a href="{% url "nomcom_send_reminder_mail" year "accept" %}">Send Accept Reminder</a>{% endif %} |
-      {% if selected == "send_questionnaire_reminder" %}<span class="selected">Send Questionnaire Reminder</span>{% else %}<a href="{% url "nomcom_send_reminder_mail" year "questionnaire" %}">Send Questionnaire Reminder</a>{% endif %} 
-    {% endif %}
-    </div>
-    {% if user|is_chair:year %}
-    <div class="nomcom-edit">
-      {% if selected == "edit_nomcom" %}<span class="selected">Edit Settings</span>{% else %}<a href="{% url "nomcom_edit_nomcom" year %}">Edit Settings</a>{% endif %} |
-      {% if selected == "edit_templates" %}<span class="selected">Edit Pages</span>{% else %}<a href="{% url "nomcom_list_templates" year %}">Edit Pages</a>{% endif %} |
-      {% if selected == "edit_positions" %}<span class="selected">Edit Positions</span>{% else %}<a href="{% url "nomcom_list_positions" year %}">Edit Positions</a>{% endif %} |
-      {% if selected == "merge" %}<span class="selected">Merge Email Addresses</span>{% else %}<a href="{% url "nomcom_private_merge" year %}">Merge Email Addresses</a>{% endif %} |
-      {% if selected == "edit_members" %}<span class="selected">Edit Nomcom Members</span>{% else %}<a href="{% url "nomcom_edit_members" year %}">Edit Nomcom Members</a>{% endif %}
-    </div>
-    {% endif %}
-  </div>
 
+    <li {% if selected == "view_feedback" %}class="active"{% endif %}><a href="{% url "nomcom_view_feedback" year %}">View feedback</a></li>
+    <li {% if selected == "private_key" %}class="active"{% endif %}><a href="{% url "nomcom_private_key" year %}">Private key</a></li>
+
+    {% if user|is_chair:year %}
+      <li class="dropdown">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Chair <span class="caret"></span></a>
+        <ul class="dropdown-menu" role="menu">
+          <li {% if selected == "feedback_pending" %}class="active"{% endif %}><a href="{% url "nomcom_view_feedback_pending" year %}">Pending feedback</a></li>
+          <li {% if selected == "feedback_email" %}class="active"{% endif %}><a href="{% url "nomcom_private_feedback_email" year %}">Enter email feedback</a></li>
+          <li {% if selected == "send_accept_reminder" %}class="active"{% endif %}><a href="{% url "nomcom_send_reminder_mail" year "accept" %}">Send accept reminder</a></li>
+          <li {% if selected == "send_questionnaire_reminder" %}class="active"{% endif %}><a href="{% url "nomcom_send_reminder_mail" year "questionnaire" %}">Send questionnaire reminder</a></li>
+        </ul>
+      </li>
+
+      <li class="dropdown">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Edit <span class="caret"></span></a>
+        <ul class="dropdown-menu" role="menu">
+          <li {% if selected == "edit_nomcom" %}class="active"{% endif %}><a href="{% url "nomcom_edit_nomcom" year %}">Edit Settings</a></li>
+          <li {% if selected == "edit_templates" %}class="active"{% endif %}><a href="{% url "nomcom_list_templates" year %}">Edit Pages</a></li>
+          <li {% if selected == "edit_positions" %}class="active"{% endif %}><a href="{% url "nomcom_list_positions" year %}">Edit Positions</a></li>
+          <li {% if selected == "merge" %}class="active"{% endif %}><a href="{% url "nomcom_private_merge" year %}">Merge Email Addresses</a></li>
+          <li {% if selected == "edit_members" %}class="active"{% endif %}><a href="{% url "nomcom_edit_members" year %}">Edit Nomcom Members</a></li>
+        </ul>
+      </li>
+    {% endif %}
+  </ul>
 
   {% block nomcom_content %}
   {% endblock %}

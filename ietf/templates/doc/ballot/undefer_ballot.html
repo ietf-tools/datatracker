@@ -1,18 +1,23 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Undefer ballot for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Undefer ballot for {{ doc }}</h1>
+  <h1>Undefer ballot<br><small>{{ doc }}</small></h1>
 
-<form class="undefer" action="" method="post">{% csrf_token %}
-  <p>Undefer the ballot for {{ doc.file_tag }}?</p>
-  
-  <p>The ballot will then be on the IESG agenda of {{ telechat_date }}.</p>
+  <form role="form" class="undefer" method="post">
+    {% csrf_token %}
+    <p class="alert alert-danger">
+      <b>Undefer the ballot for {{ doc }}?</b>
+      <br>
+      The ballot will then be put on the IESG agenda of {{ telechat_date }}.
+    </p>
 
-  <div class="actions">
-    <a href="{{ back_url }}">Back</a>
-    <input type="submit" value="Undefer ballot"/>
-  </div>
-</form>
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+      <button class="btn btn-danger" type="submit">Undefer ballot</button>
+    {% endbuttons %}
+  </form>
 {% endblock %}

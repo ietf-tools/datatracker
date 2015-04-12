@@ -1,29 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}Document Relationships{% endblock %}
-
-{% block morecss %}
-.ietf-table .name { white-space: nowrap; padding-right: 1em; }
-.ietf-table .desc { max-width: 35em; }
-{% endblock %}
+{% block title %}Document relationships{% endblock %}
 
 {% block content %}
-<h1>Document Relationships</h1>
+  <h1>Document relationships</h1>
 
-<table class="ietf-table">
-  <tr>
-    <th>Relationship</th>
-    <th>Description</th>
-    <th>Inverse Relationship</th>
-  </tr>
-
-  {% for rel in relations %}
-  <tr id="{{ rel.slug }}" class="{{ forloop.counter|divisibleby:2|yesno:"evenrow,oddrow" }}">
-    <td class="name">{{ rel.name }}</td>
-    <td class="desc">{{ rel.desc|linebreaksbr }}</td>
-    <td class="revname">{{ rel.revname }}</td>
-  </tr>
-  {% endfor %}
-</table>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Relationship</th>
+        <th>Description</th>
+        <th>Inverse relationship</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rel in relations %}
+        <tr class="anchor-target" id="{{ rel.slug }}">
+          <td class="name">{{ rel.name }}</td>
+          <td class="desc">{{ rel.desc|linebreaksbr }}</td>
+          <td class="revname">{{ rel.revname }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
 {% endblock %}

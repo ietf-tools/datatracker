@@ -1,0 +1,353 @@
+/*
+ * Site-wide CSS for the IETF datatracker.
+ *
+ * Styles only used for one page go into the morecss block of
+ * that page template! (And not into the HTML of the page...)
+ */
+
+/* Passing for static navbar; see http://getbootstrap.com/components/#navbar-fixed-top */
+body { padding-top: 70px; }
+
+/* Browse Happy prompt */
+.browsehappy {
+    margin: 0.2em 0;
+    background: #ccc;
+    color: #000;
+    padding: 0.2em 0;
+}
+
+/* Helper to center navigation pills */
+.center-pills {	display: inline-block; }
+
+/* Helper to constrain the size of the main logo */
+.ietflogo { width: 75%;	max-width: 300px; }
+
+/* See http://bootply.com/100899 */
+.dropdown-submenu { position: relative; }
+.dropdown-submenu > .dropdown-menu {
+	top: 0;
+	left: 100%;
+	margin-top: -6px;
+	margin-left: -1px;
+	-webkit-border-radius: 0 6px 6px 6px;
+	-moz-border-radius: 0 6px 6px 6px;
+	border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu > a:after {
+	display: block;
+	content: " ";
+	float: right;
+	width: 0;
+	height: 0;
+	border-color: transparent;
+	border-style: solid;
+	border-width: 5px 0 5px 5px;
+	border-left-color: #cccccc;
+	margin-top: 5px;
+	margin-right: -10px;
+}
+.dropdown-submenu .pull-left { float: none; }
+.dropdown-submenu .pull-left > .dropdown-menu {
+	left: -100%;
+	margin-left: 10px;
+	-webkit-border-radius: 6px 0 6px 6px;
+	-moz-border-radius: 6px 0 6px 6px;
+	border-radius: 6px 0 6px 6px;
+}
+
+/* See http://eichefam.net/2012/04/12/scrollable-menus-in-bootstrap/ */
+.dropdown-submenu:hover > .dropdown-menu {
+		height: auto;
+		max-height: 600px;
+		overflow-x: hidden;
+		overflow-y: auto;
+}
+
+/* Style the left menu */
+.nav-header { font-weight: bold; padding-bottom: 2px;}
+.nav-header:not(:first-child) { padding: 10px 0 2px 0 }
+
+.navbar {
+  font-family: "PT Sans", "Trebuchet", "Seravek", sans-serif;
+}
+
+.nav-stacked>li, .nav-stacked>li+li { margin: 0; line-height: 1.214; }
+.nav-stacked>li>a { padding: 0.125em 0.5em; }
+
+.leftmenu {
+  max-width: 195px;
+  font-family: "PT Sans", "Trebuchet", "Seravek", sans-serif;
+}
+.leftmenu .nav {
+  overflow-wrap: break-word
+}
+
+.navbar-brand > img {
+  display: inline;
+  margin-top: -7px;
+}
+
+/* Hack to make anchor-targets take up a bit more space vertically
+ to work around the position fixed navbar which otherwise covers them */
+.anchor-target:before {
+  content: '';
+  display: block;
+  position: relative;
+  width: 0;
+  height: 65px;
+  margin-top: -65px;
+}
+
+/* Style navbar buttons */
+/* .navbar-btn { color:#777; } */
+/* .navbar-btn:hover { color: #333; } */
+
+/* Make the panel title font normally large */
+.panel-title { font-size: 14px }
+
+/* A new type of Bootstrap label and panel*/
+.label-blank { color: #555; background-color: #eee; }
+.panel-blank { color: #555; }
+.panel-blank > .panel-heading { background-color: #eee; }
+
+/* Required form field labels - 2217 = &lowast;  */
+label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
+
+/* Add some margin to tabs */
+.nav-tabs[role=tablist] { margin-bottom: 0.7em; }
+
+/* Styles needed for the ballot table */
+.position-discuss,
+.position-block    { background-color: #d4584d; } /* @alert-danger-bg */
+.position-yes      { background-color: #67F72B; } /* @brand-success */
+.position-noobj    { background-color: #D1F7C1; } /* lighten(@brand-success) */
+.position-abstain  { background-color: #f6d73c; } /* darken(@brand-info) */
+.position-recuse   { background-color: #808080; }
+.position-norecord { background-color: inherit; }
+.ballot-icon table td { border: 1px solid #ddd; height: 10px; width: 8px; }
+.ballot-icon table .my { border: 2px solid #000;}
+.ballot-icon table { margin: 0 0 10px 10px; }
+
+
+/* Style the right-hand page navigation affix used on some pages. */
+
+#affix .nav > li > a {
+	display: block;
+	padding: 4px 20px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #999;
+	border-radius: 0;
+}
+#affix .nav > li > a:hover,
+#affix .nav > li > a:focus {
+	padding-left: 19px;
+	color: #5f4f9f;
+	text-decoration: none;
+	background-color: transparent;
+	border-left: 1px solid #5f4f9f;
+	border-radius: 0;
+}
+#affix .nav > .active > a,
+#affix .nav > .active:hover > a,
+#affix .nav > .active:focus > a {
+	padding-left: 18px;
+	font-weight: bold;
+	color: #5f4f9f;
+	background-color: transparent;
+	border-left: 2px solid #5f4f9f;
+	border-radius: 0;
+}
+
+/* Style the search form and results */
+.search_field:first-child { padding-bottom: 10px; }
+.doc { width: 40%; }
+
+/* Ballot discuss and comment text needs to look a bit different than pre */
+.ballot { padding: 0; margin: 0; border: 0; background-color: inherit; }
+
+/* Add some padding when there are multiple buttons in a line than can wrap. */
+.buttonlist .btn { margin-bottom: .5em }
+
+
+pre {
+  /* Make preformatted text a bit more condensed in display */
+  line-height: 1.214;
+  /* PT Mono doesn't need the default one-step size reduction provided by bootstrap */
+  font-size: 14px;
+}
+
+/* Make ampersands pretty */
+/* This sets ampersand in a different font than the rest of the text. Fancy, but it's
+really better to select a pretty font in the first place.  Additionally, _which_ 'pretty'
+ampersand you get is dependent on which fonts are available in the browser.  Hacky. */
+/*
+.amp {
+	 font-family:Baskerville,"Goudy Old Style","Palatino","Book Antiqua",serif;
+	 font-size:110%;
+	 font-style:italic;
+}
+ */
+
+/* Turn off link underlining for panels in the search results */
+.ipr a:hover { text-decoration: none }
+
+/* Helper for line-through text. */
+.line-through { text-decoration: line-through; }
+
+/* Tweak visibility of elements when js is disabled. These styles
+   are removed from the DOM when js is enabled by a script in the main
+   template. */
+.hidden-nojs {
+	display: none !important;
+	visibility: hidden !important;
+}
+.visible-nojs { display: block !important; }
+
+/* Development Mode tool bar */
+
+.navbar-dev {
+	background-color: #ff0000;
+	border-color: #cc0000;
+}
+.navbar-dev .navbar-brand {
+	color: #ecf0f1;
+}
+.navbar-dev .navbar-brand:hover, .navbar-default .navbar-brand:focus {
+	color: #ecdbff;
+}
+.navbar-dev .navbar-text {
+	color: #ecf0f1;
+}
+.navbar-dev .navbar-nav > li > a {
+	color: #ecf0f1;
+}
+.navbar-dev .navbar-nav > li > a:hover, .navbar-dev .navbar-nav > li > a:focus {
+	color: #ecdbff;
+}
+.navbar-dev .navbar-nav > .active > a, .navbar-dev .navbar-nav > .active > a:hover, .navbar-dev .navbar-nav > .active > a:focus {
+	color: #ecdbff;
+	background-color: #CC0000;
+}
+.navbar-dev .navbar-nav > .open > a, .navbar-dev .navbar-nav > .open > a:hover, .navbar-dev .navbar-nav > .open > a:focus {
+	color: #ecdbff;
+	background-color: #CC0000;
+}
+.navbar-dev .navbar-toggle {
+	border-color: #CC0000;
+}
+.navbar-dev .navbar-toggle:hover, .navbar-dev .navbar-toggle:focus {
+	background-color: #CC0000;
+}
+.navbar-dev .navbar-toggle .icon-bar {
+	background-color: #ecf0f1;
+}
+.navbar-dev .navbar-collapse,
+.navbar-dev .navbar-form {
+	border-color: #ecf0f1;
+}
+.navbar-dev .navbar-link {
+	color: #ecf0f1;
+}
+.navbar-dev .navbar-link:hover {
+	color: #ecdbff;
+}
+
+/* table on document main tabs  */
+
+.table td.edit {
+  width: 1px; /* make sure it uses as little space as possible */
+}
+
+/* milestone editing */
+#milestones-form .milestone {
+  cursor: pointer;
+}
+#milestones-form .milestone:hover {
+  background-color: #f5f5f5;
+}
+#milestones-form .edit-milestone {
+  display: none;
+}
+#milestones-form .milestone.delete, #milestones-form .edit-milestone.delete, #milestones-form .edit-milestone.delete input {
+  color: #aaa !important;
+}
+
+/* customize group workflow */
+#group-customize-workflow  .state-table .inactive .name, .state-table .inactive .state, .state-table div.inactive, .tag-table .inactive .name {
+  font-style: italic;
+  color: #666;
+}
+
+#group-customize-workflow .state-table .state {
+  margin-bottom: 0.1em;
+}
+
+#group-customize-workflow .state-table .set-state button, .set-tag button {
+  width: 6.5em; /* prevent the layout from jumping around */
+}
+
+#group-customize-workflow .state-table td.next-states {
+  width: 32em; /* prevent the layout from jumping around */
+}
+
+/* misc pages */
+
+#reset-charter-milestones .date {
+  display: inline-block;
+  min-width: 5em;
+}
+
+#ipr-details dl.dl-horizontal dt {
+  white-space: normal;
+}
+
+.ipr-form .draft-row.template {
+  display: none;
+}
+
+form.send-notification textarea {
+  height: 24em;
+}
+
+form.add-email textarea {
+  height: 24em;
+}
+
+table.materials .snippable {
+  width: 25em;
+}
+
+.revlist {
+  font-family: "PT Sans Caption", "Trebuchet", "Seravek", sans-serif;
+  font-size: 0.7071em;
+}
+.pagination.revlist {
+  margin: 1em 0 0.5em 0;
+}
+.pagination.revlist>li>a, .pagination.revlist>li>a:hover, .pagination.revlist>li>a:active {
+  padding: 4px 8px;
+}
+.revlist>li.warning>a, .revlist>li.warning>a:hover, .revlist>li.warning>a:active {
+  background-color: #f9c0a4;	/* warning colour */
+}
+
+/* This is for the <thead> of document meta-information tables, which can either be empty or hold an alert-warning */
+
+#message-row tr th  {
+  padding: 0.2em 0.5em;
+}
+
+.padded {
+  padding: 1em 1em;
+  line-height: 1.4142;
+}
+
+a.padded {
+  line-height: 2.0;
+}
+
+footer {
+  font-family: "PT Sans Caption", "Trebuchet", "Seravek", sans-serif;
+  font-size: 0.7071em;
+}

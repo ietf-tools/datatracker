@@ -4,121 +4,118 @@
 
 {% block nomcom_content %}
 
-<h2>Nominations stats</h2>
+  <h2>Nomination status</h2>
 
-<table class="ietf-table ietf-doctable">
-<tr>
-  <th>Position</th>
-  <th>Accepted</th>
-  <th>Declined</th>
-  <th>Pending</th>
-  <th>Questionnaire response</th>
-  <th>Total</th>
-</tr>
-{% for item in stats %}
-<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-  <td>{{ item.position__name }}</td>
-  <td>{{ item.accepted }}</td>
-  <td>{{ item.declined }}</td>
-  <td>{{ item.pending }}</td>
-  <td>{{ item.questionnaire }}</td>
-  <td>{{ item.total }}</td>
-</tr>
-{% endfor %}
-</table>
-
-<div style="padding: 8px 0 8px 0;"></div>
-
-
-<h2>List of nominees by position</h2>
-
-<p>The following is a list of registered nominees.
-
-<div class="content">
-
-  <div>
-    <h3>Select Filters</h3>
-
-    <form action="" method="get">
-      <table>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Position</th>
+        <th>Accepted</th>
+        <th>Declined</th>
+        <th>Pending</th>
+        <th>Questionnaire response</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in stats %}
         <tr>
-          <td>
-            <label>State</label>
-            <select name="state">
-              <option value="">All</option>
-              {% for state in states %}
-                <option value="{{ state.slug }}"
-                  {% if state.slug == selected_state %}selected="selected"{% endif%}>
-                  {{ state.name }}
-                </option>
-              {% endfor %}
-            </select>
-          </td>
-          <td rowspan="2" valign="top">
-            <label>Position:</label>
-            <select name="position">
-              <option value="">All</option>
-              {% for position in positions %}
-                  <option value="{{ position.id }}"
-                    {% if position.id == selected_position %}selected="selected"{% endif%}>
-                    {{ position.name }}
-                  </option>
-              {% endfor %}
-            </select>
-            <input name="submit" value="Go!" type="submit" />
-          </td>
+          <td>{{ item.position__name }}</td>
+          <td>{{ item.accepted }}</td>
+          <td>{{ item.declined }}</td>
+          <td>{{ item.pending }}</td>
+          <td>{{ item.questionnaire }}</td>
+          <td>{{ item.total }}</td>
         </tr>
-      </table>
-    </form>
-  </div>
+      {% endfor %}
+    </tbody>
+  </table>
 
+  <h2>Nominees by position</h2>
 
-    {% if is_chair %}
-    <form id="batch-action-form" method="post" action="">{% csrf_token %}
-      {% if message %}
-        <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
-      {% endif %}
-      <div class="actions">
-        <label>Action:
-          <select name="action">
-            <option value="" selected="selected">---------</option>
-            <option value="set_as_accepted">Set as accepted</option>
-            <option value="set_as_pending">Set as pending</option>
-            <option value="set_as_declined">Set as declined</option>
-          </select>
-        </label>
-        <button type="submit" title="Run action">Go</button>
-      </div>
-    {% endif %}
-  </div>
+  <form class="form-inline" role="form" method="get">
+    <div class="form-group">
+      <label>State: </label>
+      <select class="form-control input-sm" name="state">
+        <option value="">All</option>
+        {% for state in states %}
+          <option value="{{ state.slug }}"
+	          {% if state.slug == selected_state %}selected="selected"{% endif%}>
+	          {{ state.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
 
-  <div>
-    <table class="ietf-table ietf-doctable">
-    <tr>
-      {% if is_chair %}<th>&#x2713;</th>{% endif %}
-      <th>Nominees</th>
-      <th>Position</th>
-      <th>State</th>
-      <th>Questionnaire response</th>
-    </tr>
-    {% for np in nominee_positions %}
-        <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-          {% if is_chair %}
-            <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"/></td>
-          {% endif %}
-          <td><a href="{% url "ietf.nomcom.views.view_feedback_nominee" year=year nominee_id=np.nominee.id %}#comment">{{ np.nominee }}</a>{% if is_chair %} <a href="{% url "nomcom_edit_nominee" year np.nominee.id %}">(edit)</a>{% endif %}</td>
-          <td>{{ np.position.name }}</td>
-          <td>{{ np.state }}</td>
-          <td>{{ np.questionnaires|yesno:"Yes,No,No" }}
-        </tr>
-    {% endfor %}
-    </table>
-  </div>
+    <div class="form-group">
+      <label>Position:</label>
+      <select class="form-control input-sm" name="position">
+        <option value="">All</option>
+        {% for position in positions %}
+          <option value="{{ position.id }}"
+	          {% if position.id == selected_position %}selected="selected"{% endif%}>
+	          {{ position.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
 
-
-{% if is_chair %}
+    <input class="btn btn-default" name="submit" value="Filter" type="submit">
   </form>
-{% endif %}
-</div
+
+
+  {% if is_chair %}
+    <form class="form-inline" id="batch-action-form" method="post" role="form">{% csrf_token %}
+  {% endif %}
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+	{% if is_chair %}<th colspan="2"><span class="fa fa-check"></span></th>{% endif %}
+	<th>Nominee</th>
+	<th>Position</th>
+	<th>State</th>
+	<th>Questionnaire response</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for np in nominee_positions %}
+        <tr>
+	  {% if is_chair %}
+	    <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"></td>
+	    <td class="edit"><a class="btn btn-default btn-xs" href="{% url "nomcom_edit_nominee" year np.nominee.id %}">Edit</a></td>
+	  {% endif %}
+
+	  <td>
+	    <a href="{% url "ietf.nomcom.views.view_feedback_nominee" year=year nominee_id=np.nominee.id %}#comment">{{ np.nominee }}</a>
+	  </td>
+	  <td>{{ np.position.name }}</td>
+	  <td>{{ np.state }}</td>
+	  <td>{{ np.questionnaires|yesno:"Yes,No,No" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if is_chair %}
+
+    {% if message %}
+      <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
+    {% endif %}
+
+    <div class="form-group">
+      <label>Action:</label>
+      <select class="form-control" name="action">
+        <option value="" selected="selected">---------</option>
+        <option value="set_as_accepted">Set as accepted</option>
+        <option value="set_as_pending">Set as pending</option>
+        <option value="set_as_declined">Set as declined</option>
+      </select>
+    </div>
+
+    <button class="btn btn-warning"  type="submit" title="Run action">Apply</button>
+
+    </form>
+  {% endif %}
 
 {% endblock %}

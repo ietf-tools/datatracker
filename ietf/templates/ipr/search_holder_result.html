@@ -1,5 +1,11 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "ipr/search_result.html" %}
-{% load ietf_filters %}
-{% block search_header %}{% if not iprs %}Search result on {{ q }}{% else %}Patent Owner/Applicant Search Result{% endif %}{% endblock %}</b></td></tr>
-{% block intro_prefix %}IPR that was submitted by <b><i>{{ q }}</i></b>, and{% endblock %}
+
+{% block search_header %}
+  {% if not iprs %}
+    Search result on {{ q }}
+  {% else %}
+    Patent owner/applicant search result
+  {% endif %}
+{% endblock %}
+
+{% block intro_prefix %}IPR that was submitted by <i>{{ q }}</i> and{% endblock %}

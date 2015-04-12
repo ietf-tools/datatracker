@@ -1,147 +1,112 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Customize Workflow for {{ group.acronym }} {{ group.type.name }}{% endblock %}
 
-{% block morecss %}
-{{ block.super }}
-.state-table .inactive,
-.tag-table .inactive { font-style: italic; color: #666; }
-.state-table .state { margin-bottom: 0.1em; }
-.state-table .set-next-states label { display: block; cursor: pointer; }
-.state-table .set-next-states label input { vertical-align: middle; }
-.state-table .set-state input, .set-tag input { width: 6em; }
-.state-table .toggled { display: none; }
-.state-table .toggler {
-  color: #444;
-  background: #ddd;
-  font-weight: bold;
-  text-decoration: none;
-  padding: 1px 3px;
-  display: inline-block;
-  margin-left: 0.5em;
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-}
-.state-table .inactive .toggler { color: #aaa; background: #eee; }
-.state-table .toggler:hover { color: #fff; background-color: #999; }
-{% endblock %}
-
 {% block content %}
-{% load ietf_filters %}
+  {% load ietf_filters %}
 
-<div class="group-customize-workflow">
+  <div id="group-customize-workflow">
 
-<h1>Customize Workflow for {{ group.acronym }} {{ group.type.name }}</h1>
+    <h1>Customize Workflow for {{ group.acronym }} {{ group.type.name }}</h1>
 
-<p>Below you can customize the draft states and tags used in the
-<a href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>. Note that some states are
-mandatory for group operation and cannot be deactivated.</p>
+    <p class="help-block">Below you can customize the draft states and tags used in the
+      <a href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>. Note that some states are
+      mandatory for group operation and cannot be deactivated.</p>
 
-{% if group.type_id == "wg" %}
-<p>You can see the default Working Group I-D State Diagram
-in <a href="http://tools.ietf.org/html/rfc6174#section-4.1">Section 4.1 of RFC6174</a>.</p>
-{% endif %}
+    {% if group.type_id == "wg" %}
+      <p class="help-block">You can see the default Working Group I-D State Diagram
+        in <a href="http://tools.ietf.org/html/rfc6174#section-4.1">Section 4.1 of RFC6174</a>.</p>
+    {% endif %}
 
-<h3>States</h3>
+    <h3>States</h3>
 
-<table class="ietf-table state-table">
-  <tr> 
-    <th>Turn on/off</th>
-    <th style="width:30em">State</th>
-    <th style="width:26em">Next states</th>
-  </tr>
-  {% for state in states %}
-  <tr class="{% cycle "oddrow" "evenrow" %}{% if not state.used %} inactive{% endif %}" style="vertical-align: top;">
-    <td>
-      {% if state.mandatory %}
-      (mandatory)
-      {% else %}
-      <form class="set-state" method="post" action="">{% csrf_token %}
-      {% if state.used %}
-        <input type="hidden" name="state" value="{{ state.pk }}" />
-        <input type="hidden" name="active" value="0" />
-        <input type="submit" title="Click to deactive this state" value="Deactivate" />
-      {% else %}
-        <input type="hidden" name="state" value="{{ state.pk }}" />
-        <input type="hidden" name="active" value="1" />
-        <input type="submit" title="Click to active this state" value="Activate" />
-      {% endif %}
-        <input type="hidden" name="action" value="setstateactive" />
-      </form>
-      {% endif %}
-    </td>
-    <td>
-      {{ state.name }} {% if not state.used %} (not used in {{ group.acronym }}){% endif %} {{ state|statehelp }}
-    </td>
-    <td>
-      <div>
-      {% if state.used_next_states %}
-        {% for n in state.used_next_states %}<div class="state">{{ n.name }}</div>{% endfor %}
-      {% else %}
-        <div><i>None</i></div>
-      {% endif %}
-      <a class="toggler" title="Click to set next states for state"  href="">+ customize</a>
-      </div>
-      <form class="toggled set-next-states" method="post" action="">{% csrf_token %}
-      Select the next states:
-      {% for checked, default, s in state.next_states_checkboxes %}
-      <label{% if not s.used %} class="inactive"{% endif %}><input type="checkbox" name="next_states" value="{{ s.pk }}"{% if checked %} checked="checked"{% endif %} />{{ s.name }}{% if default  %} (default){% endif %}</label>
-      {% endfor %}
-      <input type="hidden" name="state" value="{{ state.pk }}" />
-      <input type="hidden" name="action" value="setnextstates" />
-      <input class="submit" type="submit" value="Save" />
-      </form>
-    </td>
-  </tr>
-{% endfor %}
-</table>
+    <table class="table state-table">
+      <thead>
+        <tr>
+	  <th>State</th>
+	  <th>Next states</th>
+	  <th>Turn on/off</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for state in states %}
+          <tr class="{% if not state.used %}inactive{% endif %}">
+            <td class="name">
+              {{ state.name }} {% if not state.used %} (not used in {{ group.acronym }}){% endif %} {{ state|statehelp }}
+            </td>
+            <td class="next-states">
+              <div>
+                {% if state.used_next_states %}
+                  {% for n in state.used_next_states %}<div class="state">{{ n.name }}</div>{% endfor %}
+                {% else %}
+                  <div><i>None</i></div>
+                {% endif %}
 
-<h3>Tags</h3>
+                <div>
+                  <button class="btn btn-default btn-sm {% if not state.used %}disabled{% endif %}" title="Click to set next states for state" data-toggle="collapse" data-target="#nexts{{ state.pk }}" aria-expanded="false" aria-controls="nexts{{ state.pk }}">
+                    <span class="caret"></span> Customize
+                  </button>
+                </div>
+              </div>
+              <form id="nexts{{ state.pk }}" class="set-next-states collapse out" method="post" action="">{% csrf_token %}
+                <div>Select the next states:</div>
 
-<table class="ietf-table tag-table">
-  <tr> 
-    <th>Turn on/off</th>
-    <th>Tag</th>
-  </tr>
-  {% for tag in tags %}
-  <tr class="{% cycle "oddrow" "evenrow" %}{% if not tag.used %} inactive{% endif %}" style="vertical-align: top;">
-    <td>
-      <form class="set-tag" method="post" action="">{% csrf_token %}
-      {% if tag.used %}
-        <input type="hidden" name="tag" value="{{ tag.pk }}" />
-        <input type="hidden" name="active" value="0" />
-        <input type="submit" value="Deactivate" />
-      {% else %}
-        <input type="hidden" name="tag" value="{{ tag.pk }}" />
-        <input type="hidden" name="active" value="1" />
-        <input type="submit" value="Activate" />
-      {% endif %}
-        <input type="hidden" name="action" value="settagactive" />
-      </form>
-    </td>
-    <td><span>{{ tag.name }} {% if not tag.used %} (not used in {{ group.acronym }}){% endif %}</span></td>
-  </tr>
-  {% endfor %}
-</table>
+                {% for checked, default, s in state.next_states_checkboxes %}
+                  <div class="checkbox {% if not s.used %}inactive{% endif %}">
+                    <label>
+                      <input type="checkbox" name="next_states" value="{{ s.pk }}"{% if checked %} checked="checked"{% endif %} />
+                      {{ s.name }} {% if default %}<span class="label label-default">default</span>{% endif %}
+                    </label>
+                  </div>
+                {% endfor %}
 
+                <input type="hidden" name="state" value="{{ state.pk }}" />
+                <input type="hidden" name="action" value="setnextstates" />
+                <button class="btn btn-primary" type="submit">Save</button>
+              </form>
+            </td>
+            <td>
+              {% if state.mandatory %}
+                (mandatory)
+              {% else %}
+                <form class="set-state" method="post">{% csrf_token %}
+                  <input type="hidden" name="state" value="{{ state.pk }}" />
+                  <input type="hidden" name="action" value="setstateactive" />
+                  <input type="hidden" name="active" value="{{ state.used|yesno:"0,1" }}" />
+                  <button class="btn btn-{% if state.used %}danger{% else %}success{% endif %}" type="submit" title="Click to {% if state.used %}de{% endif %}activate this state">{% if state.used %}Deactivate{% else %}Activate{% endif %}</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3>Tags</h3>
+
+    <table class="table tag-table">
+      <thead>
+        <tr> 
+	  <th>Tag</th>
+	  <th>Turn on/off</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tag in tags %}
+          <tr class="{% if not tag.used %}inactive{% endif %}">
+	    <td class="name">{{ tag.name }} {% if not tag.used %} (not used in {{ group.acronym }}){% endif %}</td>
+	    <td>
+              <form class="set-tag" method="post">{% csrf_token %}
+                <input type="hidden" name="tag" value="{{ tag.pk }}" />
+                <input type="hidden" name="action" value="settagactive" />
+                <input type="hidden" name="active" value="{{ tag.used|yesno:"0,1" }}" />
+                <button class="btn btn-{% if tag.used %}danger{% else %}success{% endif %}" type="submit" title="Click to {% if tag.used %}de{% endif %}activate this tag">{% if tag.used %}Deactivate{% else %}Activate{% endif %}</button>
+              </form>
+	    </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 {% endblock content %}
-
-{% block js %}
-<script type="text/javascript">
-//<![CDATA[
-jQuery('.state-table .toggler').click(function(e) {
-    e.preventDefault();
-    var toggler = jQuery(this),
-        toggled = toggler.parent().siblings(".toggled");
-    if (toggled.is(":hidden")) {
-        toggler.html("&ndash; customize");
-        toggled.slideDown(300);
-    }
-    else {
-        toggler.html("+ customize");
-        toggled.slideUp(300);
-    }
-});
-//]]>
-</script>
-{% endblock %}

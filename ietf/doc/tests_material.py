@@ -84,7 +84,7 @@ class GroupMaterialTests(TestCase):
 
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('.has-error')) > 0)
 
         test_file.seek(0)
 
@@ -112,7 +112,7 @@ class GroupMaterialTests(TestCase):
                                        state=State.objects.get(type="slides", slug="active").pk,
                                        material=test_file))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('.has-error')) > 0)
         
     def test_change_state(self):
         doc = self.create_slides()

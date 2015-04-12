@@ -1,32 +1,53 @@
 {% load ietf_filters %}
-<table class="ietf-materials">
-  <tr>
-     <td style="width:12em;">
-	<a name="{{ session.group.acronym }}"></a>
-	<a name="wg-{{ session.group.acronym }}"></a>
-	<a name="session.group-{{ session.group.acronym }}"></a>
-	<b>
-	{% if session.name %}
-	{{ session.name }}
-	{% else %}
-	{{session.group.acronym.upper}}
-	{% if session.group.state.slug == "bof" %} <font color="red">({{ session.group.state.slug }})</font>{% endif %}
-	{% endif %}
-	</b>
-     </td>
-     <td>
-	{% if session.status_id == 'canceled' %}
-	    Session Cancelled
-	{% else %}
-	    {% if session.agenda %}<a href="http://www.ietf.org/proceedings/{{meeting_num}}/agenda/{{ session.agenda }}">Agenda</a>{% else %}{% if show_agenda == "True" %}<span style="background:#ff8888;padding:0 2px;">No agenda received</span> {% endif %}{% endif %}<br/>
-	    {% if session.minutes %}<a href="http://www.ietf.org/proceedings/{{ meeting_num }}/minutes/{{ session.minutes }}">Minutes</a>{% else %}{% if show_agenda == "True" %}No minutes received{% endif %}{% endif %}<br/>
-	    {% with session.slides as slides %}
-	    {% for slide in slides %}
-	    <a href="http://www.ietf.org/proceedings/{{meeting_num}}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a><br/>
-	    {% endfor %}
-	    {% endwith %}
-	{% endif %}
-     </td>
-  </tr>
-</table>
+
+<tr>
+  <td>
+    {% comment %}
+    <a name="{{ session.group.acronym }}"></a>
+    <a name="wg-{{ session.group.acronym }}"></a>
+    <a name="session.group-{{ session.group.acronym }}"></a>
+    {% endcomment %}
+    {% if session.name %}
+      {{ session.name }}
+    {% else %}
+      {{session.group.acronym}}
+      {% if session.group.state.slug == "bof" %}
+        <span class="label label-success">{{ session.group.state.slug|upper }}</span>
+      {% endif %}
+    {% endif %}
+  </td>
+
+  {% if session.status_id == 'canceled' %}
+    <td colspan="3"><span class="label label-danger">Session cancelled</span></td>
+  {% else %}
+    <td>
+      {% if session.agenda %}
+        <a href="//www.ietf.org/proceedings/{{meeting_num}}/agenda/{{ session.agenda }}">Agenda</a>
+      {% else %}
+        {% if show_agenda == "True" %}
+          <span class="label label-warning">No agenda</span>
+        {% endif %}
+      {% endif %}
+    </td>
+    <td>
+      {% if session.minutes %}
+        <a href="//www.ietf.org/proceedings/{{ meeting_num }}/minutes/{{ session.minutes }}">Minutes</a>
+      {% else %}
+        {% if show_agenda == "True" %}
+          <span class="label label-warning">No minutes</span>
+        {% endif %}
+      {% endif %}
+    </td>
+    <td>
+      {% with session.slides as slides %}
+        {% for slide in slides %}
+          <a href="//www.ietf.org/proceedings/{{meeting_num}}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a>
+          <br>
+        {% empty %}
+          <span class="label label-warning">No slides</span>
+        {% endfor %}
+      {% endwith %}
+    </td>
+  {% endif %}
+</tr>
 

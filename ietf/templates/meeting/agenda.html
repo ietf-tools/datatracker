@@ -1,242 +1,441 @@
 {% extends "base.html" %}
+
 {% load ietf_filters %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% load humanize %}
-{% block title %}IETF {{ schedule.meeting.number }} Meeting Agenda{% endblock %}
+
+{% block title %}
+  IETF {{ schedule.meeting.number }} meeting agenda
+  {% if "-utc" in request.path %}
+    (UTC)
+  {% endif %}
+{% endblock %}
 
 {% block morecss %}
-table#agenda { border: 0; border-collapse:collapse; }
-#agenda td { padding-right:2em; }
-#agenda tr.meeting-date td { padding-top:1em; padding-right:0;}
+  iframe#weekview { height: 600px; width: 100%; }
+  tr:not(:first-child) th.gap {
+  height: 3em !important;
+  background-color: inherit !important;
+  border: none !important;
+  }
+  tr:first-child th.gap {
+  height: 0 !important;
+  background-color: inherit !important;
+  border: none !important;
+  }
+{% endblock %}
 
-table#wg-selector { border:1px solid black; border-collapse:collapse; }
-#wg-selector td,#wg-selector th { border:1px solid black; padding: 2px}
-#wg-selector div.selected { background-color: #c0c0FF; cursor: pointer; }
-#wg-selector div.unselected { cursor: pointer; }
-#wg-selector td.inactive div { background-color: #EEEEEE; color: #808080; cursor:default;}
-#wg-selector.hidden { display: none; }
-#wg-selector-toggle-text { text-decoration: underline; cursor: pointer; }
-#wg-selector-triangle-right { vertical-align: text-top; }
-#wg-selector-triangle-down { vertical-align: text-top; }
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
-table#ics-preconfig { border:1px solid black; border-collapse:collapse; margin-top:24px; margin-bottom:24px;}
-
-#weekview.hidden { display: none; }
-#weekview { border: none; margin: 0 0 0 0; overflow: hidden;}
-#ical-link.hidden { display: none; }
-#ical-link { margin: 10px 0 0 0; padding: 10px; text-align: center; background-color: #2647a0; color: #FFFFFF }
-#ical-link A:link { color: #FFFFFF; }
-#ical-link A:visited { color: #FFFFFF; }
-#ical-link A:active { color: #FF00FF; }
-#ical-link A:hover { color: #FF0000; }
-
-tr.time-title { font-weight: bold; color:#800000;}
-tr.grouprow > td { padding: 4px; }
-td.materials { align:right; }
-span.note { font-style: italic; color:#ff0000; }
-
-#APP-groups, #selector-APP { color:#008; background-color:#eef }
-#GEN-groups, #selector-GEN { color:#080; background-color:#efe }
-#INT-groups, #selector-INT { color:#088; background-color:#eff }
-#OPS-groups, #selector-OPS { color:#800; background-color:#fee }
-#RAI-groups, #selector-RAI { color:#808; background-color:#fef }
-#RTG-groups, #selector-RTG { color:#880; background-color:#ffe }
-#SEC-groups, #selector-SEC { color:#488; background-color:#dff }
-#TSV-groups, #selector-TSV { color:#484; background-color:#dfd }
-#IRTF-groups, #selector-IRTF { color:#448; background-color:#ddf }
-
-img.hidden { display: none; }
-
-.ietf-agenda-palette { border-collapse:collapse; border:2px solid black; background:white; overflow:hidden; }
-.ietf-agenda-palette td { border:1px solid black; }
-.ietf-agenda-palette td { padding: 4px; text-align:center;}
-.ietf-agenda-palette td a { text-decoration:none; }
-.bgnone {}
-.bgaqua, .bgaqua a { background-color: aqua; color: black; }
-.bgblue, .bgblue a { background-color: blue; color: black; }
-.bgfuchsia, .bgfuchsia a { background-color: fuchsia; color: black; }
-.bggray, .bggray a { background-color: gray; color: white; }
-.bggreen, .bggreen a { background-color: green; color: white; }
-.bglime, .bglime a { background-color: lime; color: black; }
-.bgmaroon, .bgmaroon a { background-color: maroon; color: white; }
-.bgnavy, .bgnavy a { background-color: navy; color: white; }
-.bgolive, .bgolive a { background-color: olive; color: white; }
-.bgpurple, .bgpurple a { background-color: purple; color: white; }
-.bgred, .bgred a { background-color: red; color: black; }
-.bgsilver, .bgsilver a { background-color: silver; color: black; }
-.bgteal, .bgteal a { background-color: teal; color: white; }
-.bgwhite, .bgwhite a { background-color: white; color: black; }
-.bgyellow, .bgyellow a { background-color: yellow; color: black; }
-.bgblack, .bgblack a { background-color: black; color: white; }
-.groupagenda { display:none; }
-
-.timecolumn { white-space:nowrap; }
-
-{% endblock morecss %}
-
-{% block pagehead %}
-<script type="text/javascript" src='/js/agenda2.js'></script>
-<script type="text/javascript" src='/js/weekview.js'></script>
-
-{% endblock pagehead %}
-{% block bodyAttrs %}onload='setGroupState();updateAgendaColors()'{% endblock %}
 {% block content %}
 
-<h1>IETF {{ schedule.meeting.number }} Meeting Agenda</h1>
+  <div class="row">
+    <div class="col-md-10">
 
-<p>{{ schedule.meeting.city }}, {{ schedule.meeting.date|date:"F j" }} &#8211; {% if schedule.meeting.date.month != schedule.meeting.end_date.month %}{{ schedule.meeting.end_date|date:"F " }}{% endif %}{{ schedule.meeting.end_date|date:"j, Y" }}<br />
-Updated {{ updated|date:"Y-m-d H:i:s T" }}</p>
-<div class="noprint">
-(There's also a <a href="/meeting/agenda-utc">agenda with UTC times</a>, a <a href="/meeting/{{schedule.meeting.number}}/agenda.txt">plaintext agenda</a> and a <a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/">tools-style agenda</a> available)</div>
+      {% include "meeting/meeting_heading.html" with meeting=schedule.meeting %}
 
-<p><strong>IETF agendas are subject to change, up to and during the meeting.</strong></p>
+      <p class="label label-info">Updated {{ updated|date:"Y-m-d \a\t G:i:s (T)" }}</p>
+      <p></p>
+      <p class="alert alert-info">
+        <b>Note:</b> IETF agendas are subject to change, up to and during a meeting.
+      </p>
 
-{# cache this part for 5 minutes -- it takes 3-6 seconds to generate #}
-{% load cache %}{% cache 300 ietf_meeting_agenda schedule.meeting.number %}
+      <p class="noprint buttonlist">
+        {% if "-utc" in request.path %}
+          <a class="btn btn-default" href="/meeting/agenda">Agenda in local timezone</a>
+        {% else %}
+          <a class="btn btn-default" href="/meeting/agenda-utc">Agenda in UTC timezone</a>
+        {% endif %}
+        <a class="btn btn-default" href="/meeting/{{schedule.meeting.number}}/agenda.txt">Plaintext agenda</a>
+        <a class="btn btn-default" href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/">Tools-style agenda</a>
+      </p>
 
-You can customize the agenda below to show only selected working group sessions.  To be able to return to the customized view later, bookmark the resulting URL.
-<div class="noprint" onclick="toggle_wg_selector()">
-   <img id="wg-selector-triangle-right" src="/images/triangle-right.png" />
-   <img id="wg-selector-triangle-down" src="/images/triangle-down.png" class="hidden" />
-   <span id="wg-selector-toggle-text">Select working group sessions</span>
-</div>
+      {# cache this part for 5 minutes -- it takes 3-6 seconds to generate #}
+      {% load cache %}
+      {% cache 300 ietf_meeting_agenda_utc schedule.meeting.number request.path %}
 
-<table id="wg-selector" width="100%" class="hidden">
-  <tr>
-    {% for area in schedule.area_list %}
-      <th><div id='selector-{{area|upper}}' class="unselected" onclick="toggle(this)">{{area|upper}}</div></th>
-    {% endfor %}
-  </tr>
-  <tr>
-    {% for wg in schedule.groups %}{% ifchanged wg.parent.acronym %}{% if forloop.counter > 1 %}
-    </td>{% endif %}
-    <td valign="top" id="{{wg.parent.acronym|upper}}-groups">{% endifchanged %}
-      <div id='selector-{{wg.acronym}}' class="unselected" onclick="toggle(this)">{% if wg.state.name = "BOF" %}<i>{{wg.acronym}}</i>{% else %}{{wg.acronym}}{% endif %}</div>{% endfor %}
-    </td>
-  </tr>
-  <tr><td align="center" colspan="{{schedule.area_list|length}}">
-    Also show:
-    <input type="checkbox" class="include-checkbox" id="include-edu" onchange="toggle_special(this)"/>EDU &#8226;
-    <input type="checkbox" class="include-checkbox" id="include-ietf" onchange="toggle_special(this)"/>IETF &#8226;
-    <input type="checkbox" class="include-checkbox" id="include-tools" onchange="toggle_special(this)"/>Tools &#8226;
-    <input type="checkbox" class="include-checkbox" id="include-iesg" onchange="toggle_special(this)"/>IESG &#8226;
-    <input type="checkbox" class="include-checkbox" id="include-iab" onchange="toggle_special(this)"/>IAB
-<!--  </td></tr>
-  <tr><td align="center" colspan="{{schedule.area_list|length}}">
--->
-  <br/><i>Groups displayed in italics are BOFs</i></td></tr>
-</table>
+        <h2>Agenda</h2>
 
-<div id="ical-link" class="hidden"><span style="font-size:150%">Week View</span><br/><a id="ical-href" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}"><em>Download as an .ics file</em></a></div>
+        <div class="panel-group" id="accordion">
+          <div class="panel panel-default">
+	    <div class="panel-heading">
+	      <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion" href="#customize">
+	          <span class="fa fa-caret-down"></span> Customize the agenda view...
+	        </a>
+	      </h4>
+	    </div>
+	    <div id="customize" class="panel-collapse collapse">
+	      <div class="panel-body">
 
-<iframe id="weekview" class="hidden" width="100%" height="600px" src="about:blank" scrolling="no"></iframe>
+	        <p>
+	          You can customize the agenda view to show only selected sessions,
+	          by clicking on groups and areas in the table below.
+	          To be able to return to the customized view later, bookmark the resulting URL.
+	        </p>
 
-<table width="100%" id="ics-preconfig"><tr><td align="center">
-  Preconfigured .ics links:
-  {% for area in schedule.area_list %}
-    <a href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}?{{area|upper}},-~Other,-~Plenary">{{area|upper}}</a> &#8226;
-  {% endfor %}
-  <a href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}">Non-Area Events</a>
-</td></tr></table>
+	        <p>Groups displayed in <i>italics</i> are BOFs.</p>
 
-{% if schedule.meeting.agenda_note %}<h2 class="ietf-divider" style="background-color: #C00; margin-top: 2em; margin-bottom: 0;">{{ schedule.meeting.agenda_note|safe }}</h2>{% endif %}
 
-<table id="agenda" width="100%">
-{% for item in schedule.assignments.all %}
-   {% ifchanged  %}
-      <tr class="meeting-date">
-         <td colspan="6">
-             <h2 class="ietf-divider">{{ item.timeslot.time|date:"l"|upper }}, {{ item.timeslot.time|date:"F j, Y" }}</h2>
-         </td>
-      </tr>
-   {% endifchanged %}
-   {% if item.timeslot.type.slug == 'session' %}
-      {% ifchanged %}
-      <tr class="time-title">
-         <td colspan="1" class="timecolumn">
-	    {{item.timeslot.time|date:"Hi"}}-{{item.timeslot.end_time|date:"Hi"}}&nbsp;<span class="ietf-tiny">{{item.timeslot.tzname}}</span>
-         </td>
-         <td colspan="5">
-           {{ item.timeslot.time|date:"l"}} {{item.timeslot.name}}
-         </td>
-      </tr>
-      {% endifchanged %}
-   {% endif %}
-   {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' or item.timeslot.type.slug == 'plenary' %}
-      {% ifchanged %}
-      <tr class="time-title">
-         <td colspan="1" class="timecolumn">
-	    {{item.timeslot.time|date:"Hi"}}-{{item.timeslot.end_time|date:"Hi"}}&nbsp;<span class="ietf-tiny">{{item.timeslot.tzname}}</span>
-         </td>
-         <td colspan="5">
-           {{item.timeslot.name}}
-           {% if item.timeslot.show_location %}- <a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location}}</a>{% endif %}
-         </td>
-      </tr>
-      {% endifchanged %}
-   {% endif %}
-   {% if item.timeslot.type.slug = 'session' %} {% if item.session.group %}
-     <tr id="{{schedule.meeting.number}}-{{item.timeslot.time|date:"D-Hi"|lower}}-{{item.session.group.parent.acronym|upper}}-{{item.session.group.acronym|lower}}" class="grouprow">
-       <td>
-       <td>{% if item.timeslot.show_location %}<a href="http://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location}}</a>{% endif %}</td>
-       <td>{{item.session.group.parent.acronym|upper}}</td>
-       <td>
-           {% if item.session.group.charter %}<a href="{{item.session.group.charter.get_absolute_url}}">{{item.session.group.acronym}}</a>
-           {% else %}{{item.session.group.acronym}}{% endif %}</td>
-       <td>
-         <img src="/images/color-palette-4x4.gif" alt="" onclick="pickAgendaColor('{{schedule.meeting.number}}-{{item.timeslot.time|date:"D-Hi"|lower}}-{{item.session.group.parent.acronym|upper}}-{{item.session.group.acronym|lower}}',this);" title="color tag this line"/ class="noprint">
-           {% if item.session.agenda %}<a href="/meeting/{{ schedule.meeting.number }}/agenda/{{ item.session.group.acronym }}/">{{item.session.group.name}}</a>
-           {% else %}{{item.session.group.name}}{% endif %}
-           {% if item.session.group.state.name = "BOF" %} BOF {% endif %}
-           {% if item.session.agenda_note %}
-	   <br/><span class="note">{{item.session.agenda_note}}</span>{% endif %}</td>
-       <td class="materials">{% if item.session.agenda %}drafts:&nbsp;<a href="/meeting/{{schedule.meeting.number}}/agenda/{{item.session.group.acronym}}-drafts.tgz">tar</a>|<a href="/meeting/{{ schedule.meeting.number }}/agenda/{{item.session.group.acronym}}-drafts.pdf">pdf</a>{%endif%}</td>
-     </tr>
-     <tr id="{{schedule.meeting.number}}-{{item.timeslot.time|date:"D-Hi"|lower}}-{{item.session.group.parent.acronym|upper}}-{{item.session.group.acronym|lower}}" class="groupagenda">
-       <td></td>
-       <td colspan="5">
-          {% if item.session.agenda %}
-          {% if item.session.agenda.file_extension == "txt" or item.session.agenda.file_extension == "html" or item.session.agenda.file_extension == "htm" %}
-          <iframe width="100%" height="1px" src="about:blank" xsrc="{{item.session.agenda.href}}" onload="r(this)"></iframe>
-          {% else %}
-          <b><i>Agenda submitted in {{item.session.agenda.file_extension|upper}} format</i></b>
+	        {% regroup schedule.groups by parent.acronym as area_sessions %}
+	        <table class="table table-condensed">
+	          <thead>
+		    <tr>
+		      {% for area in area_sessions %}
+		        <th style="width:{% widthratio 1 area_sessions|length 100 %}%">
+		          <button class="btn btn-default btn-block pickview {{area.grouper|lower}}">{{area.grouper|upper}}</button>
+		        </th>
+		      {% endfor %}
+		    </tr>
+	          </thead>
+	          <tbody>
+		    <tr>
+		      {% for area in area_sessions %}
+		        <td class="view {{area.grouper|lower}}">
+		          <div class="btn-group-vertical btn-block">
+		            {% for wg in area.list %}
+		              <div class="btn-group btn-group-xs btn-group-justified">
+			        <button class="btn btn-default pickview {{wg.acronym}}">
+			          {% if wg.wg.is_bof %}
+			            <i>{{wg.acronym}}</i>
+			          {% else %}
+			            {{wg.acronym}}
+			          {% endif %}
+			        </button>
+		              </div>
+		            {% endfor %}
+		          </div>
+		        </td>
+		      {% endfor %}
+		    </tr>
+	          </tbody>
+	        </table>
+
+	        <p>Also show sessions of these groups:</p>
+	        <div class="btn-group btn-group-justified">
+	          <div class="btn-group"><button class="btn btn-default pickviewneg active iepg"> IEPG</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickviewneg active tools"> Tools</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickviewneg active edu"> EDU</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickviewneg active ietf"> IETF</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickviewneg active iesg"> IESG</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickviewneg active iab"> IAB</button></div>
+	        </div>
+	      </div>
+	    </div>
+          </div>
+        </div>
+
+        <h2>Download as .ics</h2>
+        <p class="buttonlist">
+          {% for area in schedule.area_list %}
+            <a class="btn btn-default" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}?{{area|upper}},-~Other,-~Plenary">{{area|upper}}</a>
+          {% endfor %}
+          <a class="btn btn-default" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}">Non-area events</a>
+          <a id="ical-link" class="hidden btn btn-primary" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}">Customized schedule</a>
+        </p>
+
+
+        <h2>
+          Schedule
+          {% if schedule.meeting.agenda_note %}
+            <span class="label label-danger">{{ schedule.meeting.agenda_note|removetags:"h1"|safe }}</span>
           {% endif %}
-          {% else %}
-          <b><i>No Agenda Submitted</i></b>
-          {% endif %}
-          {% if item.session.slides %}
-          <h3>Slides:</h3>
-          <ol>{% for slide in item.session.slides %}
-            <li>
-              <img src="/images/{{slide.file_extension|upper}}_icon.png">
-              <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>
-            </li>
-          {% endfor %}</ol>
-          {% endif %}
-       </td>
-     </tr>
+        </h2>
 
-   {% endif %} {% endif %}
-   {% if item.timeslot.type.slug = 'plenary' %}
-     <tr>
-       <td></td>
-       <td colspan="5">
-         <iframe width="100%" height="1px" src="{{item.session.agenda.href}}" onload="r(this)"></iframe>
-          {% if item.session.slides %}
-          <h3>Slides:</h3>
-          <ol>{% for slide in item.session.slides %}
-            <li>
-              <img src="/images/{{slide.file_extension|upper}}_icon.png">
-              <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>
-            </li>
-          {% endfor %}</ol>
-          {% endif %}
-       </td>
-     </tr>
-   {% endif %}
-{% endfor %}
-</table>
+        <iframe seamless class="hidden" id="weekview"></iframe>
 
-{% endcache %}
+        <table class="table table-condensed table-striped">
+          {% for item in schedule.assignments.all %}
 
+            {% ifchanged item.timeslot.time|date:"Y-m-d" %}
+              <tr><th class="gap" colspan="6"></th></tr>
+              <tr class="warning">
+                <th colspan="6" class="anchor-target" id="{{item.timeslot.time|slugify}}">
+	          {% if "-utc" in request.path %}
+	            {{ item.timeslot.utc_start_time|date:"l, F j, Y" }} (UTC)
+	          {% else %}
+	            {{ item.timeslot.time|date:"l, F j, Y" }} ({{item.timeslot.tzname}})
+	          {% endif %}
+	        </th>
+              </tr>
+            {% endifchanged %}
+
+            {% if item.timeslot.type.slug == 'session' %}
+              {% ifchanged %}
+                <tr class="info">
+	          <th class="text-nowrap text-right">
+	            {% if "-utc" in request.path %}
+	              {{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
+	            {% else %}
+	              {{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
+	            {% endif %}
+	          </th>
+	          <th colspan="5">
+	            {% if "-utc" in request.path %}
+	              {{ item.timeslot.utc_start_time|date:"l"}}
+	            {% else %}
+	              {{ item.timeslot.time|date:"l"}}
+	            {% endif %}
+	            {{item.timeslot.name|capfirst_allcaps}}
+	          </th>
+                </tr>
+              {% endifchanged %}
+            {% endif %}
+
+            {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
+              {% with session_id=item.timeslot.time|date:"D-Hi"|lower|add:"-"|add:item.session.group.acronym|lower %}
+                <tr id="row-{{session_id}}">
+	          <td class="text-nowrap text-right">
+	            {% if "-utc" in request.path %}
+	              {{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
+	            {% else %}
+	              {{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
+	            {% endif %}
+	          </td>
+                  <td class="hidden-xs" colspan="3">
+                    {% if item.timeslot.show_location and item.timeslot.get_location %}
+                      <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+	            {% endif %}
+	          </td>
+                  <td class="visible-xs">
+                    {% if item.timeslot.show_location and item.timeslot.get_location %}
+	              <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+	            {% endif %}
+	          </td>
+                  <td colspan="2">
+	            {{item.timeslot.name}}
+	          </td>
+                </tr>
+              {% endwith %}
+            {% endif %}
+
+            {% if item.timeslot.type.slug = 'session' or item.timeslot.type.slug == 'plenary' %}
+              {% if item.session.group %}
+                {% with session_id=item.timeslot.time|date:"D-Hi"|lower|add:"-"|add:item.area|default:"unknown"|lower|add:"-"|add:item.session.group.acronym|lower %}
+                  <tr id="row-{{session_id}}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
+
+	            {% if item.timeslot.type.slug == 'plenary' %}
+	              <th class="text-nowrap text-right">
+                        {% if "-utc" in request.path %}
+	                  {{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
+	                {% else %}
+	                  {{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
+	                {% endif %}
+	              </th>
+                      <td class="hidden-xs" colspan="3">
+                        {% if item.timeslot.show_location and item.timeslot.get_location %}
+	                  <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+	                {% endif %}
+	              </td>
+                      <td class="visible-xs">
+                        {% if item.timeslot.show_location and item.timeslot.get_location %}
+	                  <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+	                {% endif %}
+	              </td>
+
+	            {% else %}
+                      <td class="hidden-xs">
+	              </td>
+
+	              <td>
+                        {% if item.timeslot.show_location and item.timeslot.get_location %}
+	                  <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+	                {% endif %}
+	              </td>
+
+                      <td class="hidden-xs">{{item.session.group.parent.acronym}}</td>
+
+	              <td>
+	                {% if item.session.group.charter %}
+	                  <a href="{{item.session.group.charter.get_absolute_url}}">{{item.session.group.acronym}}</a>
+	                {% else %}
+	                  {{item.session.group.acronym}}
+	                {% endif %}
+	              </td>
+	            {% endif %}
+
+	            <td>
+	              {% if item.session.agenda %}
+	                <a href="/meeting/{{ schedule.meeting.number }}/agenda/{{ item.session.group.acronym }}/">
+	              {% endif %}
+	              {% if item.timeslot.type.slug == 'plenary' %}
+	                {{item.timeslot.name}}
+	              {% else %}
+	                {{item.session.group.name}}
+	              {% endif %}
+	              {% if item.session.agenda %}
+	                </a>
+	              {% endif %}
+
+	              {% if item.session.group.state.name = "BOF" %}
+	                <span class="label label-success pull-right">BOF</span>
+	              {% endif %}
+
+	              {% if item.session.agenda_note %}
+	                <br><span class="text-danger">{{item.session.agenda_note}}</span>
+	              {% endif %}
+
+	              <div class="modal fade" id="modal-{{ session_id }}" tabindex="-1" role="dialog" aria-labelledby="label-{{ session_id }}" aria-hidden="true">
+	                <div class="modal-dialog modal-lg">
+	                  <div class="modal-content">
+		            <div class="modal-header">
+		              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		              <h4 class="modal-title" id="label-{{session_id}}">
+		                Meeting materials for
+		                {% if item.timeslot.type.slug == 'plenary' %}{{item.timeslot.name}}{% else %}{{item.session.group.name}}{% endif %}
+
+		              </h4>
+		            </div>
+		            <div class="modal-body">
+		              {% if item.session.agenda %}
+		                {% if item.session.agenda.file_extension == "txt" or item.session.agenda.file_extension == "html" or item.session.agenda.file_extension == "htm" %}
+		                  <h4>Agenda</h4>
+		                  <div class="frame" data-src="{{item.session.agenda.href}}"></div>
+		                {% else %}
+		                  <span class="label label-info">Agenda submitted as {{item.session.agenda.file_extension|upper}}</span>
+		                {% endif %}
+		              {% else %}
+		                <span class="label label-warning">No agenda submitted</span>
+		              {% endif %}
+
+		              {% if item.session.slides %}
+		                <h4>Slides</h4>
+		                <ul class="fa-ul list-unstyled">
+		                  {% for slide in item.session.slides %}
+		                    <li>
+		                      <span class="fa-li fa fa-file-{{slide.file_extension|lower}}-o"></span>
+		                      <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>
+		                    </li>
+		                  {% endfor %}
+		                </ul>
+		              {% endif %}
+		            </div>
+		            <div class="modal-footer">
+		              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		            </div>
+	                  </div>
+	                </div>
+	              </div>
+	            </td>
+                    <td class="text-nowrap hidden-xs">
+	              {% if item.session.agenda %}
+	                <button class="btn btn-default btn-xs" data-toggle="modal" data-target="#modal-{{session_id}}"><span class="fa fa-arrows-alt" title="Show meeting materials"></span></button>
+	                <a class="btn btn-default btn-xs" href="/meeting/{{schedule.meeting.number}}/agenda/{{item.session.group.acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="fa fa-file-archive-o"></span></a>
+	                <a class="btn btn-default btn-xs" href="/meeting/{{ schedule.meeting.number }}/agenda/{{item.session.group.acronym}}-drafts.pdf" title="Download meeting materials as PDF file"><span class="fa fa-file-pdf-o"></span></a>
+	              {% endif %}
+	            </td>
+                  </tr>
+                {% endwith %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        </table>
+
+    </div>
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        {% for item in schedule.assignments.all %}
+          {% ifchanged item.timeslot.time|date:"Y-m-d" %}
+            <li><a href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a></li>
+          {% endifchanged %}
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+      {% endcache %}
+{% endblock %}
+
+{% block js %}
+  <script>
+   function toggle_visibility() {
+       var h = window.location.hash;
+       h = h.replace(/^#?,?/, '');
+
+       // reset UI elements to default state
+       $(".pickview").removeClass("active disabled");
+       $(".pickviewneg").addClass("active");
+
+       if (h) {
+           // if there are items in the hash, hide all rows that are
+           // hidden by default, show all rows that are shown by default
+           $('[id^="row-"]').hide();
+           $.each($(".pickviewneg").text().trim().split(/ +/), function (i, v) {
+               v = v.trim().toLowerCase();
+               $('[id^="row-"]').filter('[id*="-' + v + '"]').show();
+           });
+
+           // show the customizer
+           $("#customize").collapse("show");
+
+           // loop through the has items and change the UI element and row visibilities accordingly
+           $.each(h.split(","), function (i, v) {
+               if (v.indexOf("-") == 0) {
+                   // this is a "negative" item: when present, hide these rows
+                   v = v.replace(/^-/, '');
+                   $('[id^="row-"]').filter('[id*="-' + v + '"]').hide();
+                   $(".view." + v).find("button").removeClass("active disabled");
+                   $("button.pickviewneg." + v).removeClass("active");
+               } else {
+                   // this is a regular item: when present, show these rows
+                   $('[id^="row-"]').filter('[id*="-' + v + '"]').show();
+                   $(".view." + v).find("button").addClass("active disabled");
+                   $("button.pickview." + v).addClass("active");
+               }
+           });
+
+           // show the week view
+           $("#weekview").attr("src", "week-view.html" + window.location.hash).removeClass("hidden");
+
+           // show the custom .ics link
+           $("#ical-link").removeClass("hidden");
+
+       } else {
+           // if the hash is empty, show all and hide weekview
+           $('[id^="row-"]').show();
+           $("#ical-link, #weekview").addClass("hidden");
+       }
+   }
+
+   $(".pickview, .pickviewneg").click(function () {
+       var h = window.location.hash;
+       var item = $(this).text().trim().toLowerCase();
+       if ($(this).hasClass("pickviewneg")) {
+           item = "-" + item;
+       }
+
+       re = new RegExp('(^|#|,)' + item + "(,|$)");
+       if (h.match(re) == null) {
+           if (h.replace("#", "").length == 0) {
+               h = item;
+           } else {
+               h += "," + item;
+           }
+           h = h.replace(/^#?,/, '');
+       } else {
+           h = h.replace(re, "$2").replace(/^#?,/, '');
+       }
+       window.location.hash = h.replace(/^#$/, '');
+       toggle_visibility();
+   });
+
+   $(document).ready(function () {
+       toggle_visibility();
+   });
+
+   $(".modal").on("show.bs.modal", function () {
+       var i = $(this).find(".frame");
+       if ($(i).data("src")) {
+           $.get($(i).data("src"), function (data, status, xhr) {
+               var t = xhr.getResponseHeader("content-type");
+               if (t.indexOf("text/plain") > -1) {
+                   data = "<pre class='agenda'>" + data + "</pre>";
+               } else if(t.indexOf("text/html") > -1) {
+                   $(i).addClass("well");
+               } else {
+                   data = "<p>Unknown type: " + xhr.getResponseHeader("content-type") + "</p>";
+               }
+               $(i).html(data);
+           });
+       }
+   });
+  </script>
 {% endblock %}

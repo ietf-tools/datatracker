@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% load ietf_filters %}
+
+{% block title %}IPR Admin - {% for s in states %}{{ s.name }}{% if not forloop.last %}/{% endif %}{% endfor %} Disclosures{% endblock %}
+
+{% block content %}
+  <h1>IPR Admin - {% for s in states %}{{ s.name }}{% if not forloop.last %}/{% endif %}{% endfor %} Disclosures</h1>
+
+  <p class="buttonlist">
+    <a class="btn btn-default" href="{% url "ietf.ipr.views.showlist" %}">Back to IPR Disclosure Page</a>
+  </p>
+
+  <ul class="nav nav-tabs" role="tablist">
+    {% for name, link, selected in tabs %}
+      <li {% if selected %}class="active"{% endif %}><a href="{{ link }}">{{ name }}</a></li>
+    {% endfor %}
+  </ul>
+
+  {% include "ipr/ipr_table.html" %}
+
+{% endblock %}

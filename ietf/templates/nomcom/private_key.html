@@ -1,34 +1,36 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
+{% load bootstrap3 %}
+
 {% block subtitle %}- Enter private key{% endblock %}
 
 {% block nomcom_content %}
-<h2>Enter private key</h2>
+  <h2>Enter private key</h2>
 
-{% if message %}
-<div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
-{% endif %}
+  {% if message %}
+    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
+  {% endif %}
 
+  <p>In order to access the {{ nomcom.group }} data you have to enter your private key. Please paste it in the text area below. The key must be in the following format:</p>
 
-<p>In order to access the {{ nomcom.group }} data you have to enter your private key. Please paste it in the text area below. The key must be in the following format:</p>
+  <pre>
+  -----BEGIN PRIVATE KEY-----
+  MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDC1WgGTQjX1BHC
+  jecwXk05g/r3feSAcErTQwszpjg3tixqQ+tLXQ2HuQLFDgWT26jd4FR7UPMUC9lE
+  ...
+  8JA+eKl1wgzm/y+TwEbdxnj950jch0nqZUm+kx3omy9GRAx9qWP5r7Ot4Fx8uBbo
+  CKn79FUPkVdlG8miRUY2UIU=
+  -----END PRIVATE KEY-----
+  </pre>
 
-<pre>
------BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDC1WgGTQjX1BHC
-jecwXk05g/r3feSAcErTQwszpjg3tixqQ+tLXQ2HuQLFDgWT26jd4FR7UPMUC9lE
-...
-8JA+eKl1wgzm/y+TwEbdxnj950jch0nqZUm+kx3omy9GRAx9qWP5r7Ot4Fx8uBbo
-CKn79FUPkVdlG8miRUY2UIU=
------END PRIVATE KEY-----
-</pre>
+  <p>If you don't have a private key, please contact the group chair. You can leave the key empty and continue navigation without access to the encrypted data.</p>
 
-<p>If you don't have a private key, please contact the group chair. You can leave the key empty and continue navigation without access to the encrypted data.</p>
-
-<form enctype="multipart/form-data" action="" method="post">{% csrf_token %}
-<table>
-{{ form }}
-</table>
-<p><input type="submit" value="Enter key" /></p>
-</form>
+  <form enctype="multipart/form-data" role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

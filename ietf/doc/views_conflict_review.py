@@ -23,7 +23,7 @@ from ietf.utils.textupload import get_cleaned_text_file_content
 
 class ChangeStateForm(forms.Form):
     review_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev"), label="Conflict review state", empty_label=None, required=True)
-    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history", required=False)
+    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False)
 
 @role_required("Area Director", "Secretariat")
 def change_state(request, name, option=None):
@@ -114,8 +114,8 @@ def send_conflict_eval_email(request,review):
                 msg)
 
 class UploadForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label="Conflict review response", help_text="Edit the conflict review response", required=False)
-    txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file", required=False)
+    content = forms.CharField(widget=forms.Textarea, label="Conflict review response", help_text="Edit the conflict review response.", required=False)
+    txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file.", required=False)
 
     def clean_content(self):
         return self.cleaned_data["content"].replace("\r", "")
@@ -265,7 +265,7 @@ def default_approval_text(review):
 
 
 class AnnouncementForm(forms.Form):
-    announcement_text = forms.CharField(widget=forms.Textarea, label="IETF Conflict Review Announcement", help_text="Edit the announcement message", required=True)
+    announcement_text = forms.CharField(widget=forms.Textarea, label="IETF Conflict Review Announcement", help_text="Edit the announcement message.", required=True)
 
 @role_required("Secretariat")
 def approve(request, name):
@@ -324,13 +324,13 @@ def approve(request, name):
                               context_instance=RequestContext(request))
 
 class SimpleStartReviewForm(forms.Form):
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
+    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
 
 class StartReviewForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), 
                                 label="Shepherding AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev", slug__in=("needshep", "adrev")), empty_label=None, required=False)
-    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
+    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
 
     def __init__(self, *args, **kwargs):

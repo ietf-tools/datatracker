@@ -1,83 +1,83 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
+
 {% load ietf_filters %}
 {% load future %}
 
-{% block doctype %}{% endblock %}
-{% block title %}IPR Search Result{% endblock %}
-
-{% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
-{% endblock %}
+{% block title %}IPR disclosures{% endblock %}
 
 {% block content %}
+  {% include "ipr/search_form.html" %}
 
-{% include "ipr/search_form.html" %}
-<br>
-        {% block search_result %}
-        <table cellpadding="1" cellspacing="0" border="0">
+  <h2>{% block search_header %}Patent owner/applicant search result{% endblock %}</h2>
 
-           <tr><td colspan="3"><b>{% block search_header %}Patent Owner/Applicant Search Result{% endblock %}</b></td></tr>
-           {% if not iprs %}
-          <tr>
-             <td></td>
-             <td colspan="2"><b>{% block search_failed %}No IPR disclosures have been submitted by <i>{{ q }}</i>{% endblock %}</b></td>
-          </tr>
-           {% else %}
-          <tr><td colspan="3">Total number of IPR disclosures found: {{ iprs|length }} </td></tr>
-          {% block iprlist %}
-             {% for ipr in iprs %}
-             {% if user|has_role:"Secretariat" %}{% ifchanged %}<tr><td colspan="3"><h3>{{ ipr.state.name }}</h3></td></tr>{% endifchanged %}{% endif %}
-             <tbody bgcolor="#{% cycle 'eeeeee','dddddd' as bgcolor %}">
-            <tr valign="top">
-               <td colspan="3">
-                  {% block intro_prefix %}IPR that was submitted by <b><i>{{ q }}</i></b>, and{% endblock %}
-                              {% block related %}
-                                {% with ipr.iprdocrel_set.all as iprdocrels %}
-                                  {% if not iprdocrels %}
-                                    is not related to a specific IETF contribution.
-                                  {% else %}
-                                     is related to
-                                     {% for item in iprdocrels %}
-                                       {% if forloop.last and forloop.counter > 1 %}and{% endif %}
-                                       <b><i>{{ item.formatted_name|rfcspace }}, "{{ item.document.document.title }}"</i></b>{% if not forloop.last and forloop.counter > 1 %},{% endif %}
-                                     {% endfor %}
-                                  {% endif %}
-                                {% endwith %}
-                              {% endblock %}
-                  {% block intro_suffix %}{% endblock %}
-               </td>
-            </tr>
-            <tr valign="top">
-               <td width="100">{{ ipr.time|date:"Y-m-d" }}</td>
-               <td width="90"><li>ID # {{ ipr.id }}</li></td>
-               <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">"{{ ipr.title }}"</a></td>
-            </tr>
-            {% for item in ipr.updates.all %}
-                        {% if item != ipr %}
-            <tr valign="top">
-               <td width="100">{{ item.target.time|date:"Y-m-d" }}</td>
-               <td width="90"><li>ID # {{ item.target.id }}</li></td>
-               <td>
-                  IPR disclosure ID# {{ ipr.id }} <a href="{% url "ietf.ipr.views.show" id=ipr.id %}">"{{ ipr.title }}"</a>
-                  Updates <a href="{% url "ietf.ipr.views.show" id=item.target.id %}">{{ item.target.title }}</a>
-               </td>
-            </tr>
-                        {% endif %}
-            {% endfor %}
-             </tbody>
-             {% endfor %}
-          {% endblock %}
-           {% endif %}
-        </table>
+  {% block search_result %}
+    {% if not iprs %}
+      <p class="alert alert-info">
+        {% block search_failed %}No IPR disclosures have been submitted by <i>{{ q }}</i>.{% endblock %}
+      </p>
+    {% else %}
+      <p class="alert alert-info">
+        Total number of IPR disclosures found: <b>{{ iprs|length }}</b>.
+      </p>
+
+      <table class="table table-condensed table-striped">
+        <thead><th>Date</th><th>ID</th><th>Statement</th></thead>
+
+        {% block iprlist %}
+          {% for ipr in iprs %}
+            <tbody>
+              {% if user|has_role:"Secretariat" %}{% ifchanged %}<tr><td colspan="3"><h3>{{ ipr.state.name }}</h3></td></tr>{% endifchanged %}{% endif %}
+              <tr>
+                <th class="warning" colspan="3">
+	          {% block intro_prefix %}IPR that was submitted by <i>{{ q }}</i> and{% endblock %}
+
+	          {% block related %}
+                    {% with ipr.iprdocrel_set.all as iprdocrels %}
+	              {% if not iprdocrels %}
+	                is not related to a specific IETF contribution.
+	              {% else %}
+	                is related to
+	                {% for item in iprdocrels %}
+	                  {% if forloop.last and forloop.counter > 1 %}and{% endif %}
+                          <i>{{ item.formatted_name|rfcspace }} ("{{ item.document.document.title }}")</i>{% if not forloop.last and forloop.counter > 1 %},{% endif %}
+	                {% endfor %}
+	              {% endif %}
+	            {% endwith %}
+	          {% endblock %}
+	          {% block intro_suffix %}{% endblock %}
+                </th>
+              </tr>
+
+              <tr>
+                <td class="text-nowrap">{{ ipr.time|date:"Y-m-d" }}</td>
+                <td>{{ ipr.id }}</td>
+                <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a></td>
+              </tr>
+
+              {% for item in ipr.updates.all %}
+                {% if item != ipr %}
+                  <tr>
+                    <td class="text-nowrap">{{ item.target.time|date:"Y-m-d" }}</td>
+                    <td>{{ item.target.id }}</td>
+                    <td>
+                      IPR disclosure #{{ ipr.id }}: <a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a>
+                      <br>Updates: <a href="{% url "ietf.ipr.views.show" id=item.target.id %}">{{ item.target.title }}</a>
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          {% endfor %}
         {% endblock %}
-        <hr><br>
+      </table>
+    {% endif %}
+  {% endblock %}
 
-        <a href="{% url "ietf.ipr.views.showlist" %}">Back to IPR Disclosure Page</a>
-        <br>
+  <p class="buttonlist">
+    <a class="btn btn-default" href="{% url "ietf.ipr.views.showlist" %}">Back to IPR disclosure page</a>
+  </p>
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript" src="/js/lib/jquery-1.8.2.min.js"></script>
-<script type="text/javascript" src="/js/ipr-search.js"></script>
+  <script type="text/javascript" src="/js/ipr-search.js"></script>
 {% endblock %}

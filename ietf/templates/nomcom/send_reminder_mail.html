@@ -1,48 +1,59 @@
 {% extends "nomcom/nomcom_private_base.html" %}
+
+{% load bootstrap3 %}
 {% load ietf_filters %}
 
 {% block subtitle %} - Send reminder messages {% endblock %}
 
 {% block nomcom_content %}
 
-<h2>Send a message to the selected nominees reminding them to {{reminder_description}}</h2>
+  <h2>Send remider to {{reminder_description}}</h2>
 
-<p>These are the nominees that are in the '{{state_description}}' state for the listed positions. </p>
+  <p>The message that will be sent is as follows:</p>
+  <pre>{{ mail_template.content|wrap_text:80 }}</pre>
 
-<p>The message that will be sent is shown below the list of nominees. </p>
-
-<form method="post" action="">{% csrf_token %}
-  <h3>Nominees who have not responded</h2>
-
-  {% if message %}
-    <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+  {% if mail_template %}
+    <p>
+      <a class="btn btn-default" href="{% url "nomcom_edit_template" year mail_template.id %}">Edit the message</a>
+    </p>
   {% endif %}
 
-  <table class="ietf-table ietf-doctable">
-  <tr>
-    <th>&#x2713;</th>
-    <th>Nominees</th>
-    <th>Positions</th>
-  </tr>
-  {% for nominee in nominees %}
-  <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-    <td><input class="batch-select" type="checkbox" value="{{ nominee.id }}" name="selected" checked="checked"/></td>
-    <td>{{ nominee }}</td>
-    <td>{{nominee.interesting_positions|join:", "}}</td>
-  </tr>
-  {% endfor %}
-  </table>
+  <p>These are the nominees that are in the '{{state_description}}' state for the listed positions. </p>
 
-  <div style="padding: 8px 0 8px 0;"></div>
+  <p>The message that will be sent is shown below the list of nominees. </p>
 
-  <div class="submitrow">
-    <input type="submit" name="submit" value="Submit request"/>
-  </div>
+  {% bootstrap_messages %}
 
-</form>
+  {% if message %}
+    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
+  {% endif %}
 
-<p>The message that will be sent is as follows: {% if mail_template %}<a href="{% url "nomcom_edit_template" year mail_template.id %}">(Edit the message)</a>{% endif %}</p>
+  <form method="post" role="form">
+    {% csrf_token %}
+    <table class="table table-condensed table-striped">
+      <thead>
+        <tr>
+	  <th><span class="fa fa-check"></span></th>
+	  <th>Nominee</th>
+	  <th>Positions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for nominee in nominees %}
+          <tr>
+	    <td>
+	      <input class="batch-select" type="checkbox" value="{{ nominee.id }}" name="selected" checked="checked">
+	    </td>
+	    <td>{{ nominee }}</td>
+	    <td>{{nominee.interesting_positions|join:", "}}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-<pre>{{ mail_template.content|wrap_text:80 }}</pre>
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" name="submit" value="Submit request">
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

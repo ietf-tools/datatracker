@@ -1,126 +1,129 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
 {% load future %}
+
+{% load bootstrap3 %}
 
 {% block title %}{{ cl.long_name }}{% endblock %}
 
 {% block content %}
-<h1>{{ cl.long_name }}</h1>
-<div id="mytabs" class="yui-navset">
-<ul class="yui-nav">
-  <li class="selected"><a href="#view"><em>Documents</em></a></li>
-  <li><a href="#documents"><em>Explicitly added</em></a></li>
-  <li><a href="#rules"><em>Rules</em></a></li>
-  <li><a href="#custom"><em>Display customization</em></a></li>
-  <li><a href="#info"><em>Exports</em></a></li>
-</ul>
+  <h1>{{ cl.long_name }}</h1>
 
-<div class="yui-content">
+  {% bootstrap_messages %}
 
-<div id="view">
-{% include "community/view_list.html" %}
-</div>
+  <ul class="nav nav-tabs nav-memory" role="tablist">
+    <li class="active"><a href="#view" data-toggle="tab">Documents</a></li>
+    <li><a href="#documents" data-toggle="tab">Explicitly added</a></li>
+    <li><a href="#rules" data-toggle="tab">Rules</a></li>
+    <li><a href="#custom" data-toggle="tab">Display customization</a></li>
+    <li><a href="#info" data-toggle="tab">Exports</a></li>
+  </ul>
 
-<div id="documents">
-<h2>Documents explicitly included, from a document search.</a></h2>
-<p>
-In order to add some individual documents to your list you have to:
-</p>
-<ul>
-   <li>Search for the document or documents you want to add using the datatracker search form.</li>
-   <li>In the search result you'll find a link to add individual documents to your list.</li>
-</ul>
-<p>
-   <a href="/doc/search"><b>Go to the Search Form to search for and add specific documents</b></a>
-</p>
+  <div class="tab-content">
+    <div class="tab-pane active" id="view">
+      {% include "community/view_list.html" %}
+    </div>
 
-<table class="ietf-table">
- <tr><th>Name</th><th>State</th><th>Title</th><th>Remove from list</th></tr>
-{% for doc in cl.added_ids.all %}
-<tr class="{% cycle 'oddrow','evenrow' %}">
-  <td>{{ doc.display_name }}</td>
-  <td>{{ doc.get_state }}</td>
-  <td><a href="{{ doc.get_absolute_url }}"</a>{{ doc.title }}</td>
-  <td><a href="{% url "community_remove_document" cl.pk doc.pk %}">Remove</a></td>
-</tr>
-{% endfor %}
-</table>
-</div>
+    <div class="tab-pane" id="documents">
+      <p>
+        In order to add some individual documents to your list, you have to:
+      </p>
+      <ul>
+        <li>Search for the document or documents you want to add using the datatracker search form.</li>
+        <li>In the search results, you'll find a link to add individual documents to your list.</li>
+      </ul>
+      <a class="btn btn-default" href="/doc/search">Document search</a>
 
-<div id="rules">
-<h2>Rules added to this list</h2>
-<table class="ietf-table">
- <tr><th>Rule</th><th>Value</th><th>Documents</th><th>Remove from list</th></tr>
-{% for rule in cl.rule_set.all %}
-{% with rule.get_callable_rule as callable %}
-<tr class="{% cycle 'oddrow','evenrow' %}">
-  <td>{{ callable.description }}</td>
-  <td>{{ callable.show_value }}</td>
-  <td>{% with rule.cached_ids.count as count %}{{ count }} document{{ count|pluralize }}{% endwith %}</td>
-  <td><a href="{% url "community_remove_rule" cl.pk rule.pk %}">Remove</a></td>
-</tr>
-{% endwith %}
-{% endfor %}
-</table>
+      <table class="table table-condensed table-striped">
+        <thead>
+	  <tr>
+	    <th>Name</th><th>State</th><th>Title</th><th></th>
+	  </tr>
+        </thead>
+        <tbody>
+	  {% for doc in cl.added_ids.all %}
+	    <tr>
+	      <td>{{ doc.display_name }}</td>
+	      <td>{{ doc.get_state }}</td>
+	      <td><a href="{{ doc.get_absolute_url }}">{{ doc.title }}</a></td>
+	      <td><a class="btn btn-danger btn-xs" href="{% url "community_remove_document" cl.pk doc.pk %}">Remove</a></td>
+	    </tr>
+	  {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-<h3>Add a new rule</h3>
-<form method="post" action="#rules">{% csrf_token %}
-{{ rule_form.as_p }}
-<input type="submit" name="save_rule" value="Add rule" />
-</form>
-<div class="rule_values" style="display: none;">
-{% for entry in rule_form.get_all_options %}
-<div class="{{ entry.type }}">
-  <select>
-  {% for option in  entry.options %}
-    <option value={{ option.0 }}>{{ option.1|safe }}</option>
-  {% endfor %}
-  </select>
-</div>
-{% endfor %}
-</div>
-</div>
+    <div class="tab-pane" id="rules">
+      <table class="table table-condensed table-striped">
+        <thead>
+	  <tr><th>Rule</th><th>Value</th><th>Documents</th><th></th></tr>
+        </thead>
+        <tbody>
+	  {% for rule in cl.rule_set.all %}
+	    {% with rule.get_callable_rule as callable %}
+	      <tr>
+	        <td>{{ callable.description }}</td>
+	        <td>{{ callable.show_value }}</td>
+	        <td>{% with rule.cached_ids.count as count %}{{ count }} document{{ count|pluralize }}{% endwith %}</td>
+	        <td><a class="btn btn-danger btn-xs" href="{% url "community_remove_rule" cl.pk rule.pk %}">Remove</a></td>
+	      </tr>
+	    {% endwith %}
+	  {% endfor %}
+        </tbody>
+      </table>
 
-<div id="custom">
-{% include "community/customize_display.html" %}
-</div>
+      <h3>Add a new rule</h3>
 
-<div id="info">
-<p>Feel free to share the following links if you need it.</p>
-<ul>
- <li><a href="{{ cl.secret }}/view/">Read only view for {{ cl.long_name }}</a></li>
- <li><a href="{{ cl.secret }}/changes/feed/">Feed for every change in status of {{ cl.long_name }}</a></li>
- <li><a href="{{ cl.secret }}/changes/significant/feed/">Feed for significant change in status of {{ cl.long_name }}</a></li>
- <li><a href="{{ cl.secret }}/subscribe/">Subscribe to the mailing list for every change in status of {{ cl.long_name }}</a></li>
- <li><a href="{{ cl.secret }}/subscribe/significant/">Subscribe to the mailing list for significant change in status of {{ cl.long_name }}</a></li>
-</ul>
+      <form role="form" method="post">
+        {% csrf_token %}
+        {% bootstrap_form rule_form %}
 
-<p>Export your list to CSV format</p>
-<ul>
- <li><a href="csv/">CSV for {{ cl.long_name }}</a></li>
- <li><a href="{{ cl.secret }}/csv/">Read only CSV for {{ cl.long_name }}</a></li>
-</ul>
-</div>
+        {% buttons %}
+          <input type="submit" class="btn btn-primary" name="save_rule" value="Add rule">
+        {% endbuttons %}
+      </form>
+    </div>
 
-</div>
-</div>
+    <div class="tab-pane" id="custom">
+      {% include "community/customize_display.html" %}
+    </div>
+
+    <div class="tab-pane" id="info">
+      <p>Feel free to share the following links if you need to:</p>
+
+      <ul>
+        <li><a href="{{ cl.secret }}/view/">Read only view for {{ cl.long_name }}</a></li>
+        <li><a href="{{ cl.secret }}/changes/feed/">Feed for every change in status of {{ cl.long_name }}</a></li>
+        <li><a href="{{ cl.secret }}/changes/significant/feed/">Feed for significant change in status of {{ cl.long_name }}</a></li>
+        <li><a href="{{ cl.secret }}/subscribe/">Subscribe to the mailing list for every change in status of {{ cl.long_name }}</a></li>
+        <li><a href="{{ cl.secret }}/subscribe/significant/">Subscribe to the mailing list for significant change in status of {{ cl.long_name }}</a></li>
+      </ul>
+
+      <p>Export your list to CSV format:</p>
+      <ul>
+        <li><a href="csv/">CSV for {{ cl.long_name }}</a></li>
+        <li><a href="{{ cl.secret }}/csv/">Read only CSV for {{ cl.long_name }}</a></li>
+      </ul>
+    </div>
+  </div>
+
 {% endblock %}
 
-{% block js %}
-  <script type="text/javascript" src="/js/community.js"></script>
-{% endblock js %}
+{% comment %}
+XXX scrolling jumps around when using this, unfortunately
+<script>
+$('.nav-memory a').click(function (e) {
+e.preventDefault();
+$(this).tab('show');
+});
 
-{% block scripts %}
-var tabView = new YAHOO.widget.TabView('mytabs');
-var url = location.href.split('#'); 
-if (url[1]) { 
-  url[1] = "#"+url[1];
-  var tabs = tabView.get('tabs'); 
-  for (var i = 0; i < tabs.length; i++) { 
-    if (url[1].indexOf(tabs[i].get('href')) == 0) {
-      tabView.set('activeIndex', i);
-      break; 
-     } 
-  } 
-} 
-{% endblock %}
+// store the currently selected tab in the hash value
+$("ul.nav-tabs > li > a").on("shown.bs.tab", function (e) {
+var id = $(e.target).attr("href").substr(1);
+window.location.hash = id;
+});
+
+// on load of the page: switch to the currently selected tab
+var hash = window.location.hash;
+$('.nav-memory a[href="' + hash + '"]').tab('show');
+</script>
+{% endcomment %}

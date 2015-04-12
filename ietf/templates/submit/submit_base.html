@@ -1,22 +1,31 @@
 {% extends "base.html" %}
 
 {% block pagehead %}
-{{ block.super }}
-<link rel="stylesheet" type="text/css" href="/css/submit.css"></link>
+  {{ block.super }}
 {% endblock %}
-
 
 {% block content %}
-<h1>IETF Internet-Draft Submission </h1>
+  <h1>Internet-Draft submission </h1>
 
-<div class="ietf-navset">
-{% if selected == "index" %}<span class="selected">Upload</span>{% else %}<a href="{% url "submit_upload_submission" %}">Upload</a>{% endif %} |
-{% if selected == "status" %}<span class="selected">Status</span>{% else %}<a href="{% url "submit_search_submission" %}">Status</a>{% endif %} |
-{% if selected == "instructions" %}<span class="selected">Tool Instructions</span>{% else %}<a href="{% url "submit_tool_instructions" %}">Tool Instructions</a>{% endif %} |
-{% if selected == "notewell" %}<span class="selected">NOTE WELL</span>{% else %}<a href="{% url "submit_note_well" %}">NOTE WELL</a>{% endif %} |
-{% if selected == "approvals" %}<span class="selected">Approvals</span>{% else %}<a href="{% url "submit_approvals" %}">Approvals</a>{% endif %}
-</div>
+  <ul class="nav nav-tabs" role="tablist">
+    <li {% if selected == "index" %}class="active"{% endif %}>
+      <a href="{% url "submit_upload_submission" %}">Upload</a>
+    </li>
+    <li {% if selected == "status" %}class="active"{% endif %}>
+      <a href="{% url "submit_search_submission" %}">Status</a>
+    </li>
+    <li {% if selected == "instructions" %}class="active"{% endif %}>
+      <a href="{% url "submit_tool_instructions" %}">Instructions</a>
+    </li>
+    <li {% if selected == "notewell" %}class="active"{% endif %}>
+      <a href="{% url "submit_note_well" %}">Note Well</a>
+    </li>
+    <li {% if selected == "approvals" %}class="active"{% endif %}>
+      <a href="{% url "submit_approvals" %}">Approvals</a>
+    </li>
+  </ul>
 
-{% block submit_content %}
-{% endblock %}
+  {% block submit_content %}
+  {% endblock %}
+
 {% endblock %}

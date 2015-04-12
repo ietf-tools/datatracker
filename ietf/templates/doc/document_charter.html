@@ -2,150 +2,209 @@
 
 {% load ietf_filters %}
 
-{% block title %}{{ doc.canonical_name }}-{{ doc.rev }}{% endblock %}
-
 {% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
+  <link rel="alternate" type="application/atom+xml" href="/feed/group-changes/{{ group.acronym }}/">
 {% endblock %}
 
+{% block title %}{{ doc.title }}{% endblock %}
+
 {% block content %}
-{{ top|safe }}
+  {{ top|safe }}
 
-{% include "doc/revisions_list.html" %}
+  {% include "doc/revisions_list.html" %}
 
-<div class="ietf-box metabox">
-  <div>
-    {% if snapshot %}Snapshot of{% endif %}
-    {% if doc.get_state_slug != "approved" %}Proposed{% endif %}
-    Charter for "{{ group.name }}"
-    (<a href="{{ group.about_url }}">{{ group.acronym }}</a>) {{ group.type.name }}
-  </div>
+  <table class="table table-condensed">
+    <thead id="message-row">
+       <tr>
+	  {% if doc.rev != latest_rev %}
+	  <th colspan="4" class="alert-warning">&nbsp;The information below is for an old version of the document</th>
+	  {% else %}
+	  <th colspan="4">&nbsp;</th>
+	  {% endif %}  
+       </tr>
+    </thead>
 
-  <table id="metatable" width="100%">
-    <tr>
-      <td>Title:</td>
-      <td>
-        <a
-          {% if not snapshot and can_manage %}
-          class="editlink" href="{% url "charter_change_title" name=doc.name %}"
-          {% endif %}>
-            {{ doc.title }}
-        </a>
-      </td>
-    </tr>
-    <tr>
-      <td>WG State:</td>
-      <td>{{ group.state.name }}</td>
-    </tr>
-    <tr>
-      <td><a href="/doc/help/state/charter/">Charter State</a>:</td>
-      <td>
-        <div>
-        <a title="{{ doc.get_state.desc }}"
-            {% if not snapshot and can_manage %}
-               class="editlink" href="{% url "charter_change_state" name=doc.name %}"
-            {% endif %}>
-            {{ doc.get_state.name }}
-        </a>
-        {% if chartering == "initial" %} - (Initial Chartering){% endif %}
-        {% if chartering == "rechartering" %} - (Rechartering){% endif %}
-        </div>
+    <tbody>
+      <tr>
+	 <th rowspan="{{table_rows.doc}}">Document</th>
+      </tr>
 
-        {% if not snapshot and chartering %}
-        <div class="telechat">
-          <a 
-            {% if user|has_role:"Area Director,Secretariat" %}
-              class="editlink" href="{% url "charter_telechat_date" name=doc.name %}"
-            {% endif %}>
-            {% if not telechat %}Not on agenda of IESG telechat{% else %}On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat{% endif %}
-          </a>
-        </div>
+      <tr>
+	<th>
+	  {% if doc.get_state_slug != "approved" %}
+	    Proposed charter
+	  {% else %}
+	    Charter
+	  {% endif %}
+	</th>
+	<td class="edit"></td>
+	<td>
+	  {{ group.name }} {{ group.type.name }}
+	  <a href="{{ group.about_url }}">({{ group.acronym }})</a>
 
-        {% if ballot_summary %}
-        <div class="ballot-summary">
-          ({{ ballot_summary }})
-        </div>
-        {% endif %}
+	  {% if snapshot %}
+	    <span class="label label-warning">Snapshot</span>
+	  {% endif %}
+	</td>
+      </tr>
 
-        {% endif %}
-      </td>
-    </tr>
+      <tr>
+	<th>Title</th>
+	<td class="edit">
+	  {% if not snapshot and can_manage %}
+	    {% doc_edit_button "charter_change_title" name=doc.name %}
+	  {% endif %}
+	</td>
+	<td>{{ doc.title }}</td>
+      </tr>
 
-   <tr>
-    <td>Responsible AD:</td>
-    <td><a {% if user|has_role:"Area Director,Secretariat" %}class="editlink" href="{% url "charter_edit_ad" name=doc.name %}"{% endif %}>{{ doc.ad|default:"none" }}</a> </td>
-   </tr>
+      <tr>
+	<th>Last updated</th>
+	<td class="edit"></td>
+	<td>{{ doc.time|date:"Y-m-d" }}</td>
+      </tr>
 
-    <tr><td colspan='2'><hr size='1' noshade /></td></tr>
+      <tr>
+	<th><a href="/doc/help/state/charter/">State</a></th>
+	<td class="edit">
+	  {% if not snapshot and can_manage %}
+	    {% doc_edit_button "charter_change_state" name=doc.name %}
+	  {% endif %}
+	</td>
+	<td>
+	  <span title="{{ doc.get_state.desc }}">{{ doc.get_state.name }}</span>
 
-    <tr>
-      <td>Send notices to:</td>
-      <td><a {% if user|has_role:"Area Director,Secretariat" %} 
-                  class="editlink" href="{% url "charter_edit_notify" name=doc.name %}"
-             {% endif %}>
-             {{ doc.notify|default:"none" }}
-          </a>
-      </td>
-    </tr>
+	  {% if chartering == "initial" %}
+	    <span class="label label-info">Initial chartering</span>
+	  {% endif %}
+	  {% if chartering == "rechartering" %}
+	    <span class="label label-info">Rechartering</span>
+	  {% endif %}
+	</td>
+      </tr>
 
-    <tr><td>Last updated:</td><td> {{ doc.time|date:"Y-m-d" }}</td></tr>
+    </tbody>
+    <tbody>
 
-    <tr><td colspan='2'><hr size='1' noshade /></td></tr>
+      <tr>
+	 <th rowspan="{{table_rows.wg}}">WG</th>
+      </tr>
+
+      <tr>
+	<th>State</th>
+	<td class="edit"></td>
+	<td>{{ group.state.name }}</td>
+      </tr>
+
+    </tbody>
+    <tbody>
+
+      <tr>
+	 <th rowspan="{{table_rows.iesg}}">IESG</th>
+      </tr>
+
+      {% if not snapshot and chartering %}
+	<tr>
+	  <th>Telechat date</th>
+	  <td class="edit">
+	    {% if can_manage %}
+	      {% doc_edit_button "charter_telechat_date" name=doc.name %}
+	    {% endif %}
+	  </td>
+	  <td>
+	    {% if not telechat %}
+	      (None)
+	    {% else %}
+	      On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat
+	    {% endif %}
+
+	    {% if ballot_summary %}
+	      <br><i>{{ ballot_summary }}</i>
+	    {% endif %}
+	  </td>
+      {% endif %}
+
+      <tr>
+	<th>Responsible AD</th>
+	<td class="edit">
+	  {% if can_manage %}
+	    {% doc_edit_button "charter_edit_ad" name=doc.name %}
+	  {% endif %}
+	</td>
+	<td>
+	  {{ doc.ad|default:"(None)" }}
+	</td>
+      </tr>
+
+      <tr>
+	<th>Send notices to</th>
+	<td class="edit">
+	  {% if can_manage %}
+	    {% doc_edit_button "charter_edit_notify" name=doc.name %}
+	  {% endif %}
+	</td>
+	<td>
+	  {{ doc.notify|default:"(None)" }}
+	</td>
+      </tr>
+
+    </tbody>
   </table>
 
-  <div class="links">
-    <a href="/feed/group-changes/{{ group.acronym }}/">Atom feed</a>
-  </div>
-
-  <div class="actions">
+  <p class="buttonlist">
     {% if not snapshot and can_manage %}
-    {% if chartering  %}
-      {% url "charter_startstop_process" name=doc.name option='abandon' as abandon_url %}{% if abandon_url %}<a class="button" href="{{ abandon_url }}">Abandon Effort</a>{% endif %}
+      {% if chartering %}
+        {% url "charter_startstop_process" name=doc.name option='abandon' as abandon_url %}
+        {% if abandon_url %}
+          <a class="btn btn-danger" href="{{ abandon_url }}">Abandon chartering</a>
+        {% endif %}
 
-      {% if user|has_role:"Secretariat" %}
-        {% url "charter_approve" name=doc.name as approve_url %}{% if approve_url %}<a class="button" href="{{ approve_url }}">Approve Charter</a>{% endif %}
-      {% endif %}
+        {% if user|has_role:"Secretariat" %}
+          {% url "charter_approve" name=doc.name as approve_url %}
+          {% if approve_url %}
+            <a class="btn btn-warning" href="{{ approve_url }}">Approve charter</a>
+          {% endif %}
+        {% endif %}
 
-    {% else %}
-      {% if group.state_id == "proposed" or group.state_id == "bof" %}
-        {% url "charter_submit" name=doc.name option='initcharter' as start_url %}{% if start_url %}<a class="button" href="{{ start_url }}">Start Chartering</a>{% endif %}
       {% else %}
-        {% url "charter_submit" name=doc.name option='recharter' as recharter_url %}{% if recharter_url %}<a class="button" href="{{ recharter_url }}">Recharter</a>{% endif %}
+
+        {% if group.state_id == "proposed" or group.state_id == "bof" %}
+          {% url "charter_submit" name=doc.name option='initcharter' as start_url %}
+          {% if start_url %}
+            <a class="btn btn-default" href="{{ start_url }}">Start chartering</a>
+          {% endif %}
+        {% else %}
+          {% url "charter_submit" name=doc.name option='recharter' as recharter_url %}
+          {% if recharter_url %}
+            <a class="btn btn-default" href="{{ recharter_url }}">Recharter</a>
+          {% endif %}
+        {% endif %}
       {% endif %}
     {% endif %}
+  </p>
 
+  <h2>Charter<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h2>
+
+  {% if not snapshot and can_manage and chartering and group.state_id != "conclude" %}
+    <p><a class="btn btn-default" href="{% url "charter_submit" name=doc.name %}">Change charter text</a></p>
+  {% endif %}
+
+  {% if doc.rev != "" %}
+    {{ content|safe|keep_spacing|sanitize_html|wordwrap:80|safe }}
+  {% endif %}
+
+  {% if not snapshot and chartering %}
+    <h2>Proposed milestones</h2>
+    {% if can_manage %}
+      <p><a class="btn btn-primary" href="{% url "group_edit_charter_milestones" group_type=doc.group.type_id acronym=doc.group.acronym %}">Edit milestones</a></p>
     {% endif %}
-  </div>
-</div>
 
-<p>Other versions: <a href="{{ txt_url }}">plain text</a></p>
-
-<h3>Charter {{ doc.canonical_name }}-{{ doc.rev }}
-
-{% if not snapshot and can_manage and chartering and group.state_id != "conclude" %}
-<a class="edit" href="{% url "charter_submit" name=doc.name %}">Change charter text</a>
-{% endif %}
-</h3>
-
-{% if doc.rev != "" %}
-<div class="document-markup">
-  {{ content|safe|keep_spacing|sanitize_html|wordwrap:80|safe }}
-</div>
-{% endif %}
-
-{% if not snapshot and chartering %}
-<h3>Proposed Milestones
-{% if can_manage %}
-<a class="edit" href="{% url "group_edit_charter_milestones" group_type=doc.group.type_id acronym=doc.group.acronym %}">Edit charter milestones</a>
-{% endif %}
-</h3>
-
-{% if milestones %}
-{% include "group/milestones.html" %}
-{% else %}
-<p>No milestones for charter found.</p>
-{% endif %}
-{% endif %}
+    {% if milestones %}
+      {% include "group/milestones.html" %}
+    {% else %}
+      <p>No milestones for charter found.</p>
+    {% endif %}
+  {% endif %}
 
 {% endblock %}
 

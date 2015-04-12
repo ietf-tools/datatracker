@@ -1,60 +1,60 @@
 {% load ietf_filters ballot_icon %}
-<div class="agenda-doc">
-  <div class="ballot-icon-column">
-    {% ballot_icon doc %}
-  </div>
 
-  <div>
-    <a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
+<div class="pull-right">{% ballot_icon doc %}</div>
+
+<dl class="dl-horizontal">
+  <dt>
+    {% if doc.stream %}
+      {{ doc.stream }} stream
+    {% endif %}
+  </dt>
+
+  <dd class="no-table">
     {% with doc.rfc_number as rfc_number %}
-    {% if rfc_number %}
-    <a href="http://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">[txt]</a>
-    {% else %}
-    <a href="{{doc.href}}">[txt]</a>
-    {% endif %}
+      {% if rfc_number %}
+        <a href="//www.rfc-editor.org/rfc/rfc{{rfc_number}}/">
+      {% else %}
+          <a href="{{doc.href}}">
+      {% endif %}
+      <span class="fa fa-file"></span></a>
     {% endwith %}
+    <a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
+  </dd>
 
-    <span class="stream">{% if doc.stream %} - {{ doc.stream }} stream{% endif %}</span>
+  <dt>{{ doc.intended_std_level }}</dt><dd><b>{{ doc.title }}</b></dd>
 
-    <br/>{{ doc.title }} ({{ doc.intended_std_level }})
+  {% if doc.note %}
+    <dt>Note</dt><dd>{{ doc.note|linebreaksbr }}</dd>
+  {% endif %}
 
+  <dt>Token</dt><dd>{{ doc.ad }} ({{ doc.area_acronym|upper }} area)</dd>
 
-    {% if doc.note %}
-    <br/>Note: {{ doc.note|linebreaksbr }}
-    {% endif %}
-
-    {% if doc.ipr %}
-    <br />
-    <h5>IPR:</h5>
-     <ul>
-     {% for ipr in doc.ipr %}
-        {% if ipr.disclosure.state.slug == "posted" %}
-        <li><a href="/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a></li>
-        {% endif %}
-     {% endfor %}
-     </ul>
-
-    {% endif %}
-
-    <br/>Token: {{ doc.ad }} ({{ doc.area_acronym }} area)
-
-    {% with doc.active_defer_event as defer %}
+  {% with doc.active_defer_event as defer %}
     {% if defer %}
-    <br/>Was deferred by {{ defer.by }} on {{ defer.time|date:"Y-m-d" }}
+      <dt>Deferred by</dt><dd>{{ defer.by }} on {{ defer.time|date:"Y-m-d" }}</dd>
     {% endif %}
-    {% endwith %}
+  {% endwith %}
 
-    {% if doc.iana_review_state %}
-    <br/>IANA Review: {{ doc.iana_review_state }}
-    {% endif %}
+  {% if doc.iana_review_state %}
+    <dt>IANA review</dt><dd>{{ doc.iana_review_state }}<dd>
+  {% endif %}
 
-    {% if doc.consensus %}
-    <br/>Consensus: {{ doc.consensus }}
-    {% endif %}
+  {% if doc.consensus %}
+    <dt>Consensus</dt><dd>{{ doc.consensus }}</dd>
+  {% endif %}
 
-    {% if doc.lastcall_expires %}
-    <br/>Last call expires: {{ doc.lastcall_expires|date:"Y-m-d" }}
-    {% endif %}
+  {% if doc.lastcall_expires %}
+    <dt>Last call expires</dt><dd>{{ doc.lastcall_expires|date:"Y-m-d" }}</dd>
+  {% endif %}
 
-  </div>
-</div>
+  {% if doc.ipr %}
+    <dt>IPR</dt>
+    <dd>
+      {% for ipr in doc.ipr %}
+        {% if ipr.disclosure.state_id == "posted" %}
+          <a href="/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a><br>
+        {% endif %}
+      {% endfor %}
+    </dd>
+  {% endif %}
+</dl>

@@ -144,6 +144,7 @@ function read_only_result(msg) {
             $(".agenda_save_box").css("right", "10px");
             $(".agenda_save_box").css("bottom", "auto");
             $(".agenda_save_box").css("border", "3px solid blue");
+            $(".agenda_save_box").css("z-index", "2000");
         }
     } else {
         $(".agenda_save_box").html("please login to save");

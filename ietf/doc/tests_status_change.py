@@ -41,25 +41,25 @@ class StatusChangeTests(TestCase):
         r = self.client.post(url,dict(document_name="bogus",title="Bogus Title",ad="",create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         ## Must set a name
         r = self.client.post(url,dict(document_name="",title="Bogus Title",ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         ## Must not choose a document name that already exists
         r = self.client.post(url,dict(document_name="imaginary-mid-review",title="Bogus Title",ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         ## Must set a title
         r = self.client.post(url,dict(document_name="bogus",title="",ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         # successful status change start
         r = self.client.post(url,dict(document_name="imaginary-new",title="A new imaginary status change",ad=ad_strpk,
@@ -90,7 +90,7 @@ class StatusChangeTests(TestCase):
         r = self.client.post(url,dict(new_state=""))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         # successful change to AD Review
         adrev_pk = str(State.objects.get(slug='adrev',type__slug='statchg').pk)
@@ -283,7 +283,7 @@ class StatusChangeTests(TestCase):
         messages_before = len(outbox)
         r = self.client.post(url,dict(last_call_text='stuff',send_last_call_request='Save+and+Request+Last+Call'))
         self.assertEqual(r.status_code,200)
-        self.assertTrue( 'Last Call Requested' in ''.join(wrap(r.content,2**16)))
+        self.assertTrue( 'Last call requested' in ''.join(wrap(r.content,2**16)))
         self.assertEqual(len(outbox), messages_before + 1)
         self.assertTrue('iesg-secretary' in outbox[-1]['To'])
         self.assertTrue('Last Call:' in outbox[-1]['Subject'])
@@ -307,7 +307,7 @@ class StatusChangeTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form.approve')),1)
+        self.assertEqual(len(q('[type=submit]:contains("Send announcement")')), 1)
         # There should be two messages to edit
         self.assertEqual(q('input#id_form-TOTAL_FORMS').val(),'2')
         self.assertTrue( '(rfc9999) to Internet Standard' in ''.join(wrap(r.content,2**16)))
@@ -345,30 +345,27 @@ class StatusChangeTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form.edit-status-change-rfcs')),1)
+        self.assertEqual(len(q('#content [type=submit]:contains("Save")')),1)
         # There should be three rows on the form
-        self.assertEqual(len(q('tr[id^=relation_row]')),3)
+        self.assertEqual(len(q('#content .row')),3)
 
         # Try to add a relation to an RFC that doesn't exist
         r = self.client.post(url,dict(new_relation_row_blah="rfc9997",
-                                      statchg_relation_row_blah="tois",
-                                      Submit="Submit"))
+                                      statchg_relation_row_blah="tois"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
 
        # Try to add a relation leaving the relation type blank
         r = self.client.post(url,dict(new_relation_row_blah="rfc9999",
-                                      statchg_relation_row_blah="",
-                                      Submit="Submit"))
+                                      statchg_relation_row_blah=""))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
 
        # Try to add a relation with an unknown relationship type
         r = self.client.post(url,dict(new_relation_row_blah="rfc9999",
-                                      statchg_relation_row_blah="badslug",
-                                      Submit="Submit"))
+                                      statchg_relation_row_blah="badslug"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
@@ -379,8 +376,7 @@ class StatusChangeTests(TestCase):
                                       new_relation_row_foo="rfc9998",
                                       statchg_relation_row_foo="tobcp",
                                       new_relation_row_nob="rfc14",
-                                      statchg_relation_row_nob="tohist",
-                                      Submit="Submit"))
+                                      statchg_relation_row_nob="tohist"))
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.relateddocument_set.count(),3)

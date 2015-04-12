@@ -1,39 +1,42 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
-{% block subtitle %} - Merging nominee email addresses {% endblock %}
+{% load bootstrap3 %}
+
+{% block subtitle %} - Merging emails {% endblock %}
 
 {% block nomcom_content %}
 
   <h2>Merging nominee email addresses</h2>
+
   <p>
-   If a nominee has been nominated with multiple email addresses, the nominee will
-   appear multiple times in the nomination list, as the email address is used as
-   the unique identifier for each nominee.  In order to permit comments and nominations
-   to be submitted under multiple email addresses, there is a list of secondary email
-   addresses which needs to be kept up-to-date.  When nominations of one particular nominee
-   have already been made under different email addresses, the nomination comments from the
-   secondary address also needs to be merged with those under the primary address.
+    If a nominee has been nominated with multiple email addresses, the nominee will
+    appear multiple times in the nomination list, as the email address is used as
+    the unique identifier for each nominee.  In order to permit comments and nominations
+    to be submitted under multiple email addresses, there is a list of secondary email
+    addresses which needs to be kept up-to-date.  When nominations of one particular nominee
+    have already been made under different email addresses, the nomination comments from the
+    secondary address also needs to be merged with those under the primary address.
   </p>
+
   <p>
     It doesn't matter particularly which email address is used as primary, as far as the
     nominee information maintenance goes, but it's probably handier for the nomcom if the
     primary address is the one which the nominee prefers at the time.
   </p>
 
-
   {% if message %}
-    <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
   {% endif %}
 
-  {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
+  {% bootstrap_messages %}
 
-  <form id="nominateform" action="" method="post">{% csrf_token %}
-    {{ form }}
+  <form id="nominateform" role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-    <div class="submitrow">
-      <input type="submit" value="Save" name="save" />
-    </div>
-
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="Save" name="save">
+    {% endbuttons %}
   </form>
 
 {% endblock %}

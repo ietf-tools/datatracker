@@ -1,152 +1,173 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
 
-{% block morecss %}
-table.userProfile {
-  text-align: left;
-}
-th {
-  vertical-align: top;
-  text-align: right !important;
-  font-weight: bold !important;
-}
-.active {
-  color: #008000;
-  color: #008000;
-}
-.inactive {
-  color: #800000;
-  text-decoration: line-through;
-}
-.even {
-  background-color: #e0e0ff;
-}
-.odd {
-  background-color: #ffffff;
-}
-{% endblock %}
-
-{% block pagehead %}
-<script type="text/javascript">
-  function init_form()
-  {
-    // Make sure emails are styled correctly
-    var inputs = document.getElementsByTagName("input");
-    for (var input in inputs)
-    {
-      if (inputs[input].type=="checkbox")
-      {
-        style_email(inputs[input]);
-      }
-    }
-  }
-
-  function style_email(e)
-  {
-    var span = document.getElementById(e.id.replace("controller_","span_"));
-    if (!span) { return; }
-    if (e.checked)
-    {
-      span.className = 'active';
-    }
-    else
-    {
-      span.className = 'inactive';
-    }
-  }
-
-  function add_email()
-  {
-    var button_row = document.getElementById("add_email_row");
-    var tr = document.createElement("tr");
-    tr.appendChild(document.createElement("th"));
-    tr.appendChild(document.createElement("td"));
-    var td = document.createElement("td");
-    var input = document.createElement("input");
-    input.style.width="100%";
-    var date = new Date;
-    input.name = "new_email_"+date.getTime();
-    td.appendChild(input);
-    tr.appendChild(td);
-    button_row.parentNode.insertBefore(tr,button_row);
-  }
-</script>
-{% endblock %}
-
-{% block bodyAttrs %}onload='init_form();'{% endblock %}
+{% load widget_tweaks %}
 
 {% block title %}Profile for {{ user }}{% endblock %}
 
 {% block content %}
-<h1>User information for {{ user.username }}</h1>
+  <h1>Profile for {{ user.username }}</h1>
 
-<form method="post">{% csrf_token %}
-<table class="userProfile">
-  <tr>
-    <th>User name:</th>
-    <td></td>
-    <td>{{ user.username }}</td>
-  </tr>
-  {% for role in roles %}
-  <tr>
-    <th>{% if forloop.first %}Roles:{% endif %}</th>
-    <td></td>
-    <td class='{% cycle 'even' 'odd'%}'>{{ role.name }} in {{ role.group.acronym|upper }} ({{ role.group.type }})</td>
-    <td class='{% cycle 'even' 'odd'%}'>
-      <select name="role_email_{{role.id}}">
-        {% for email in emails %}<option value="{{email.address}}"{% if email.address == role.email.address %} selected="selected"{% endif %} class='{% if email.active %}active{% else %}inactive{% endif %}'>{{email}}</option>
-     {% endfor %}</select></td>
-  </tr>
-  {% endfor %}
-  <tr><th>Email:</th><td ></td><td colspan="2"><i>Active email
-     addresses are checked, inactive addresses unchecked.<br/>
-     Inactive addresses will not be used for email delivery from the
-     datatracker<br/> or in draft aliases; the first one in the list below
-     will be used instead in that case.</i></td></tr>
-  {% for email in emails %}
-  <tr>
-    <th></th>
-    <td></td>
-    <td colspan="2">
-    <input type="checkbox" id="controller_{{email.address}}" name="{{email.address}}" {% if email.active %}checked="checked"{% else %}{% endif %} onchange="style_email(this)"/>
-    <span id="span_{{email.address}}">{{email}}</span></td>
-  </tr>
-  {% endfor %}
-  <tr id="add_email_row">
-    <th></th>
-    <td></td>
-    <td colspan='2'><input type="button" value="Add Email Address" onclick="add_email()"/></td>
-  </tr>
-  <tr><td colspan="2"></td><td colspan="2"><i>Note: Email addresses cannot be deleted, only deactivated.</i></td></tr>
-  <tr>
-    <th>{{person_form.name.label}}:</th>
-    <td></td>
-    <td colspan='2'>{{person_form.name}} - The preferred form of your name</td>
-  </tr>
-  <tr>
-    <th>{{person_form.ascii.label}}:</th>
-    <td></td>
-    <td colspan='2'>{{person_form.ascii}} - Your name as rendered in ASCII (Latin, unaccented) characters</td>
-  </tr>
-  <tr>
-    <th>{{person_form.ascii_short.label}}:</th>
-    <td></td>
-    <td colspan='2'>{{person_form.ascii_short}} - Short form, if any, of your name as rendered in ASCII (blank is okay)</td>
-  </tr>
-  <tr>
-    <th>{{person_form.affiliation.label}}:</th>
-    <td></td>
-    <td colspan='2'>{{person_form.affiliation}} - Employer, university, sponsor, etc.</td>
-  </tr>
-  <tr>
-    <th>Mailing Address:</th>
-    <td></td>
-    <td colspan='2'>{{person_form.address}}</td>
-  </tr>
+  <form class="form-horizontal" role="form" method="post">
+    {% csrf_token %}
 
-<td colspan="4"><div width='100%' align='right'><input type="submit" value="Commit Changes" /></div></td></tr>
-</table>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">User name</label>
+      <div class="col-sm-10">
+        <p class="form-control-static">{{ user.username }}</p>
+      </div>
+    </div>
 
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Roles</label>
+      <div class="col-sm-10">
+        {% for role in roles %}
+          <div class="row">
+	    <div class="col-sm-5">
+	      <select class="form-control" name="role_email_{{role.id}}">
+	        {% for email in emails %}
+	          <option value="{{email.address}}" {% if email.address == role.email.address %}selected{% endif %}>
+	            {% if email.active %}
+	              {{email}}
+	            {% else %}
+	              ({{email}})
+	            {% endif %}
+	          </option>
+	        {% endfor %}
+	      </select>
+	    </div>
+	    <div class="col-sm-7">
+	      <span class="help-block">Email to use for <i>{{ role.name|lower }}</i> role in {{ role.group.acronym|upper }} ({{ role.group.type }}).</span>
+	    </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
 
-</form>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Email addresses</label>
+      <div class="col-sm-10">
+        <div class="row">
+	  <div class="col-sm-5" id="emails">
+	    {% for email in emails %}
+	      <div class="checkbox">
+	        <label>
+	          <input type="checkbox" name="{{email.address}}" {% if email.active %}checked{% endif %} onchange="style_email(0, this)">
+	          {{email}}
+	        </label>
+	      </div>
+	    {% endfor %}
+	  </div>
+	  <div class="col-sm-7">
+	    <span class="help-block">Note: Email addresses cannot be deleted, only deactivated.</span>
+	  </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+        <button class="btn btn-default btn-sm" onclick="add_email(); return false">Add email address</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-2 control-label">{{person_form.name.label}}</label>
+      <div class="col-sm-10">
+        <div class="row">
+	  <div class="col-sm-5">
+	    {{person_form.name|add_class:"form-control"}}
+	  </div>
+	  <div class="col-sm-7">
+	    <span class="help-block">The preferred form of your name.</span>
+	  </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-2 control-label">{{person_form.ascii.label|upper}}</label>
+      <div class="col-sm-10">
+        <div class="row">
+	  <div class="col-sm-5">
+	    {{person_form.ascii|add_class:"form-control"}}
+	  </div>
+	  <div class="col-sm-7">
+	    <span class="help-block">Your name as rendered in ASCII (Latin, unaccented) characters.</span>
+	  </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-2 control-label">{{person_form.ascii_short.label|upper}}</label>
+      <div class="col-sm-10">
+        <div class="row">
+	  <div class="col-sm-5">
+	    {{person_form.ascii_short|add_class:"form-control"}}
+	  </div>
+	  <div class="col-sm-7">
+	    <span class="help-block">Short form, if any, of your name as rendered in ASCII (blank is okay).</span>
+	  </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-2 control-label">{{person_form.affiliation.label}}</label>
+      <div class="col-sm-10">
+        <div class="row">
+	  <div class="col-sm-5">
+	    {{person_form.affiliation|add_class:"form-control"}}
+	  </div>
+	  <div class="col-sm-7">
+	    <span class="help-block">Employer, university, sponsor, etc.</span>
+	  </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Postal address</label>
+      <div class="col-sm-10">
+        <div class="row">
+	  <div class="col-sm-5">
+	    {{person_form.address|add_class:"form-control"}}
+	  </div>
+	  <div class="col-sm-7">
+	    <span class="help-block">Postal mailing address.</span>
+	  </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </div>
+    </div>
+  </form>
 {% endblock %}
+
+{% block js %}
+  <script>
+   $(document).ready(function() {
+       $("input[type=checkbox]").each(style_email);
+   });
+
+   function style_email(i, e) {
+       if (e.checked) {
+           $(e).parent().addClass("text-success");;
+           $(e).parent().removeClass("text-danger line-through");
+       } else {
+           $(e).parent().addClass("text-danger line-through");
+           $(e).parent().removeClass("text-success");
+       }
+   }
+
+   function add_email() {
+       $("#emails").append('<input type="email" class="form-control" name="new_email_' + $.now() + '" placeholder="Enter new email address...">');
+       $("#emails").children().last().focus();
+   }
+  </script>
+{% endblock %}
+

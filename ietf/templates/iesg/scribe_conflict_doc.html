@@ -1,23 +1,23 @@
-    <li>
-      {{ doc.title }}
+<li>
+  {{ doc.title }}
 
-      <br><a href="{% url "doc_view" name=doc.canonical_name %}">{{doc.canonical_name}}</a>
-              <a href="{{doc.href}}">[txt]</a>
+  <br><a href="{% url "doc_view" name=doc.canonical_name %}">{{doc.canonical_name}}</a>
+  <a href="{{doc.href}}">[txt]</a>
 
-      <div style="padding-left:20px">
-          {{ doc.conflictdoc.title }} ({{ doc.conflictdoc.stream }}: {{ doc.conflictdoc.intended_std_level }})
-          <br><a href="{% url "doc_view" name=doc.conflictdoc.canonical_name %}">{{ doc.conflictdoc.canonical_name }}</a>
-                  <a href="{{doc.conflictdoc.href}}">[txt]</a>
-          {% if doc.conflictdoc.note %}
-          <br>Note: {{ doc.conflictdoc.note|linebreaksbr }}
-          {% endif %}
-          {% for ipr in doc.conflictdoc.ipr %}
-              {% if ipr.disclosure.state.slug == "posted" %}
-                  <br>IPR: <a href="https://{{ domain }}/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a>
-              {% endif %}
-          {% endfor %} 
-      </div>
-      Token: {{ doc.ad }}
+  <div style="padding-left:20px">
+    {{ doc.conflictdoc.title }} ({{ doc.conflictdoc.stream }}: {{ doc.conflictdoc.intended_std_level }})
+    <br><a href="{% url "doc_view" name=doc.conflictdoc.canonical_name %}">{{ doc.conflictdoc.canonical_name }}</a>
+    <a href="{{doc.conflictdoc.href}}">[txt]</a>
+    {% if doc.conflictdoc.note %}
+      <br>Note: {{ doc.conflictdoc.note|linebreaksbr }}
+    {% endif %}
+    {% for ipr in doc.conflictdoc.ipr %}
+      {% if ipr.disclosure.state.slug == "posted" %}
+        <br>IPR: <a href="https://{{ domain }}/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a>
+      {% endif %}
+    {% endfor %} 
+  </div>
+  Token: {{ doc.ad }}
 
-      {% include "iesg/scribe_doc_ballot.html" %}
-    </li>
+  {% include "iesg/scribe_doc_ballot.html" %}
+</li>

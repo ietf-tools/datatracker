@@ -1,102 +1,69 @@
 {% extends "base.html" %}
 
-{% block title %}
-{% if group %}
-Edit {{ group.type.name }} {{ group.acronym }}
-{% else %}
-Start chartering new group
-{% endif %}
-{% endblock %}
+{% load bootstrap3 %}
+{% load ietf_filters %}
 
-{% block morecss %}
-form.edit td { padding-bottom: .5em; }
-form.edit #id_name,
-form.edit #id_list_email,
-form.edit #id_list_subscribe,
-form.edit #id_list_archive,
-form.edit #id_urls,
-form.edit #id_comments { width: 400px; }
-form.edit input[type=checkbox] { vertical-align: middle; }
-form.edit #id_urls { height: 4em; }
+{% block title %}
+  {% if group %}
+    Edit {{ group.type.name }} {{ group.acronym }}
+  {% else %}
+    Start chartering new group
+  {% endif %}
 {% endblock %}
 
 {% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/token-input.css"></link>
+  <link rel="stylesheet" href="/css/lib/select2.css">
+  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
 {% endblock %}
 
 {% block content %}
-{% load ietf_filters %}
-<h1>
-{% if action == "edit" %}
-Edit {{ group.type.name }} {{ group.acronym }}
-{% else %} 
-  {% if action == "charter" %}
-Start chartering new group
-  {% else %}
-Create new group or BoF
-  {% endif %}
-{% endif %}
-</h1>
-
-<p>Note that persons with authorization to manage information, e.g.
-chairs and delegates, need a Datatracker account to actually do
-so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
-
-<form class="edit" action="" method="post">{% csrf_token %}
-  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
-  <table>
-    {% for field in form.visible_fields %}
-    <tr>
-      <th>{{ field.label_tag }} {% if field.field.required %}*{% endif %}</th>
-      <td>{{ field }}
-      {% if field.name == "ad" and request.user|has_role:"Area Director" %}
-      <label><input type="checkbox" name="ad" value="{{ request.user.person.pk }}" /> Assign to me</label>
-      {% endif %}
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-      {{ field.errors }}
-      </td>
-    </tr>
-    {% if field.name == "acronym" and form.confirm_msg %}
-    <tr>
-      <td></td>
-      <td><input name="confirmed" type="checkbox"{% if form.autoenable_confirm %} checked="checked"{% endif %}/>
-      {{ form.confirm_msg }}
-      </td>
-    </tr>
+  <h1>
+    {% if action == "edit" %}
+      Edit {{ group.type.name }} {{ group.acronym }}
+    {% elif action == "charter" %}
+      Start chartering new group
+    {% else %}
+      Create new group or BOF
     {% endif %}
-    {% endfor %}
-    <tr>
-      <td></td>
-      <td class="actions">
-	{% if action == "edit" %}
-          <a class="button" href="{{ group.about_url }}">Cancel</a>
-          <input class="button" type="submit" value="Save"/>
-        {% else %} 
-           {% if action == "charter" %}
-              <input type="submit" value="Start chartering"/>
-           {% else %}
-              <input type="submit" value="Create group or bof"/>
-           {% endif %}
-	{% endif %}
-      </td>
-    </tr>
-  </table>
-</form>
+  </h1>
+
+  {% bootstrap_messages %}
+
+  <p class="alert alert-info">Note that persons with authorization to manage information, e.g.
+    chairs and delegates, need a datatracker account to actually do
+    so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
+
+  <form class="form-horizontal" role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form layout='horizontal' %}
+
+    {% buttons layout='horizontal' %}
+      {% if action == "edit" %}
+        <button class="btn btn-primary" type="submit">Submit</button>
+        <a class="btn btn-default pull-right" href="{{ group.about_url }}">Back</a>
+      {% elif action == "charter" %}
+        <button class="btn btn-primary" type="submit">Start chartering</button>
+      {% else %}
+        <button class="btn btn-primary" type="submit">Create group or BOF</button>
+      {% endif %}
+    {% endbuttons %}
+  </form>
 {% endblock %}
 
-{% block content_end %}
-<script type="text/javascript" src="/js/lib/jquery.tokeninput.js"></script>
-<script type="text/javascript" src="/js/lib/json2.js"></script>
-<script type="text/javascript" src="/js/tokenized-field.js"></script>
-<script>
-jQuery(function () {
-    if (jQuery('input[name="confirmed"]').length > 0) {
-        jQuery('input[name="acronym"]').change(function() {
-            // make sure we don't accidentally confirm another acronym
-            jQuery('input[name="confirmed"]').closest("tr").remove();
-            jQuery('input[name="acronym"]').siblings(".errorlist").remove();
-        });
-    }
-});
-</script>
+{% block js %}
+  <script src="/js/lib/select2-3.5.2.min.js"></script>
+  <script src="/js/select2-field.js"></script>
+  <script>
+   $(document).ready(function () {
+       $("#id_acronym").closest(".form-group").each(function() {
+           // fixup styling a bit in case the confirm checkbox is shown
+           if ($(this).next().find("#id_confirm_acronym").length > 0) {
+               $(this).css("margin-bottom", 0);
+               $(this).find(".help-block").css("margin-bottom", 0);
+               if ($(this).hasClass("has-error"))
+                   $(this).next().addClass("has-error");
+           }
+       });
+   });
+  </script>
 {% endblock %}

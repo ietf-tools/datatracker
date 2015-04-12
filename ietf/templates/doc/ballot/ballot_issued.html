@@ -1,19 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Ballot for {{ doc }} issued{% endblock %}
+{% block title %}Ballot issued for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Ballot for {{ doc }} issued</h1>
+  <h1>Ballot issued<br><small>{{ doc }}</small></h1>
 
-<p>Ballot has been sent out.</p>
+  <p>Ballot has been sent out.</p>
 
-{% if doc.telechat_date %}
-<p>The document is currently on the {{ doc.telechat_date }} telechat agenda.</p>
-{% else %}
-<p>The document is not on any telechat agenda.</p>
-{% endif %}
+  {% if doc.telechat_date %}
+    <p>The document is currently on the {{ doc.telechat_date }} telechat agenda.</p>
+  {% else %}
+    <p>The document is not on any telechat agenda.</p>
+  {% endif %}
 
-<div class="actions">
-  <a href="{{ back_url }}">Back to document</a>
-</div>
+  <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
 {% endblock %}

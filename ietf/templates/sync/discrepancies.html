@@ -2,36 +2,36 @@
 
 {% block title %}Sync discrepancies{% endblock %}
 
-{% block morecss %}
-table.discrepancies td { padding-right: 0.2em; }
-{% endblock %}
-
 {% block content %}
-<h1>Sync discrepancies</h1>
+  <h1>Sync discrepancies</h1>
 
-{% for title, docs in sections %}
-<h3>{{ title }}</h3>
+  {% for title, docs in sections %}
+    <h2>{{ title }}</h2>
 
-{% if docs %}
-<table class="discrepancies">
-<tr>
-  <td>Draft Name</td>
-  <td>IESG state</td>
-  <td>RFC Editor state</td>
-  <td>IANA Action state</td>
-</tr>
-{% for d in docs %}
-<tr id="d{{ d.pk }}">
-  <td><a href="{{ d.get_absolute_url }}">{{ d.name }}</a></td>
-  <td>{{ d.iesg_state|default:"-" }}</td>
-  <td>{{ d.rfc_state|default:"-" }}</td>
-  <td>{{ d.iana_action_state|default:"-" }}</td>
-</tr>
-{% endfor %}
-</table>
-{% else %}
-<p>None found.</p>
-{% endif %}
+    {% if docs %}
+      <table class="table table-condensed table-striped">
+        <thead>
+          <tr>
+            <th>Draft name</th>
+            <th>IESG state</th>
+            <th>RFC Editor state</th>
+            <th>IANA Action state</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in docs %}
+            <tr id="d{{ d.pk }}">
+              <td><a href="{{ d.get_absolute_url }}">{{ d.name }}</a></td>
+              <td>{{ d.iesg_state|default:"" }}</td>
+              <td>{{ d.rfc_state|default:"" }}</td>
+              <td>{{ d.iana_action_state|default:"" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-muted">(None)</p>
+    {% endif %}
 
-{% endfor %}
+  {% endfor %}
 {% endblock %}

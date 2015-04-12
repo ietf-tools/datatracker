@@ -3,48 +3,31 @@
 {% block subtitle %} - Desired Expertise {% endblock %}
 
 {% block nomcom_content %}
-  <h2>Desired Expertise</h2>
-  <div style="width: 60em; margin: 1em;">
+  <h2>Desired expertise</h2>
+
+  <p>
     These pages contain the current summaries of desired expertise for open
     positions, provided to the Nomcom by the IESG, IAB, and IAOC. As the Nomcom
     proceeds, per BCP 10, we receive input from the community on the
     qualifications required for the positions. The Nomcom bases selections on
     all of this information. These pages may be updated periodically.
+  </p>
+
+  <ul class="nav nav-tabs" role="tablist">
+    {% for position in positions %}
+      <li {% if forloop.first %}class="active"{% endif %}>
+        <a data-toggle="tab" role="tab" href="#{{ position.name|slugify }}">{{ position.name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <div class="tab-content">
+    {% for position in positions %}
+      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ position.name|slugify }}">
+        <h3>{{ position.description }}</h3>
+        {{ position.get_requirement|linebreaks}}
+      </div>
+    {% endfor %}
   </div>
-
-  <div id="mytabs" class="yui-navset">
-     <ul class="yui-nav">
-	{% for position in positions %}
-	<li><a href="#{{ position.name }}"><em>{{ position.name }}</em></a></li>
-	{% endfor %}
-     </ul>
-
-     Click on a position above to view the summary of desired expertise for that position
-     <div class="yui-content">
-	{% for position in positions %}
-	<div id="{{ position.name }}">
-	   <h3>{{ position.description }}</h3>
-	   {{ position.get_requirement|linebreaks}}
-	</div>
-	{% endfor %}
-     </div>
-  </div>
-
-  <script type="text/javascript">
-  //<![CDATA[
-  var tabView = new YAHOO.widget.TabView('mytabs');
-  var url = location.href.split('#');
-  if (url[1]) {
-    url[1] = "#"+url[1];
-    var tabs = tabView.get('tabs');
-    for (var i = 0; i < tabs.length; i++) {
-      if (url[1].indexOf(tabs[i].get('href')) == 0) {
-        tabView.set('activeIndex', i);
-        break;
-      }
-    }
-  }
-  //]]>
-  </script>
 
 {% endblock %}

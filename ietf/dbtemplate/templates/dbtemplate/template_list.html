@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "ietf.html" %}
 
 {% block content %}
 <h1>Defined templates for group {{ group }}</h1>
@@ -6,7 +6,7 @@
 {% if template_list %}
 <ul>
 {% for template in template_list %}
-  <li><a href="{% url template_edit group.acronym template.id %}">{{ template }}</a></li>
+  <li><a href="{% url "template_edit" group.acronym template.id %}">{{ template }}</a></li>
 {% endfor %}
 </ul>
 {% else %}

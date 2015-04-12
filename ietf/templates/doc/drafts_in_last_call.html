@@ -1,15 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Internet-Drafts in IETF Last Call{% endblock %}
+{% block title %}Internet-Drafts in IETF last call{% endblock %}
 
 {% block content %}
-<h1>Internet-Drafts in IETF Last Call</h1>
+  <h1>Internet-Drafts in IETF last call</h1>
 
-{% include "doc/search/search_results.html" %}
+  {% include "doc/search/search_results.html" %}
 
-{% endblock %}
-
-{% block js %}
-<script type="text/javascript" src="/js/utils.js"></script>
-<script type="text/javascript" src="/js/doc-search.js"></script>
 {% endblock %}

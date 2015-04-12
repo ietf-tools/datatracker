@@ -1,19 +1,21 @@
-{% extends "registration/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Confirm Profile Update{% endblock %}
+{% block title %}Profile update{% endblock %}
 
 {% block content %}
-<div id="confirm_profile_update">
-<h1>Confirm Confirm Profile Update</h1>
-{% if success %}
-<p>Your account has been successfully updated to reflect the change(s) you submitted.</p>
-{% for email in new_emails %}
-<p><b>A confirmation email has been sent to {{email}}. It will be added to your account after you click on the link it contains.</b></p>
-{% endfor %}
-<p>You may <a href="{% url "ietf.ietfauth.views.profile" %}">continue editing your profile</a>.</p>
-{% else %}
-<p>An error has occured when attempting to update your account.<p>
-{% if error %}<p>{{ error }}</p>{% endif %}
-{% endif %}
-</div>
+  {% if success %}
+    <h1>Profile update successful</h1>
+
+    <p>Your account has been successfully updated to reflect the changes you submitted.</p>
+    {% for email in new_emails %}
+      <p class="alert alert-info"><b>A confirmation email has been sent to {{email}}.</b> The email will be activated after you click on the link it contains.</p>
+    {% endfor %}
+    <a class="btn btn-default" href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
+  {% else %}
+    <h1>Profile update unsuccessful</h1>
+    <p >An error has occurred when attempting to update your account.<p>
+      {% if error %}
+        <p class="alert alert-danger">{{ error }}</p>
+      {% endif %}
+  {% endif %}
 {% endblock %}

@@ -33,7 +33,7 @@ class ChangeStateTests(TestCase):
         login_testing_unauthorized(self, "secretary", url)
 
         first_state = draft.get_state("draft-iesg")
-        next_states = first_state.next_states
+        next_states = first_state.next_states.all()
 
         # normal get
         r = self.client.get(url)
@@ -42,14 +42,14 @@ class ChangeStateTests(TestCase):
         self.assertEqual(len(q('form select[name=state]')), 1)
         
         if next_states:
-            self.assertTrue(len(q('.next-states form input[type=hidden]')) > 0)
+            self.assertEqual(len(q('[type=submit][value="%s"]' % next_states[0].name)), 1)
 
             
         # faulty post
         r = self.client.post(url, dict(state=State.objects.get(used=True, type="draft", slug="active").pk))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state("draft-iesg"), first_state)
 
@@ -81,7 +81,7 @@ class ChangeStateTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('.prev-state form input[name="state"]')), 1)
+        self.assertEqual(len(q('form [type=submit][value="%s"]' % first_state.name)), 1)
 
     def test_pull_from_rfc_queue(self):
         draft = make_test_data()
@@ -127,7 +127,7 @@ class ChangeStateTests(TestCase):
         r = self.client.post(url, dict(state="foobarbaz"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state("draft-iana-review"), first_state)
 
@@ -149,7 +149,7 @@ class ChangeStateTests(TestCase):
         
         self.assertTrue(not draft.latest_event(type="changed_ballot_writeup_text"))
         r = self.client.post(url, dict(state=State.objects.get(used=True, type="draft-iesg", slug="lc-req").pk))
-        self.assertContains(r, "Your request to issue the Last Call")
+        self.assertTrue("Your request to issue" in r.content)
 
         # last call text
         e = draft.latest_event(WriteupDocEvent, type="changed_last_call_text")
@@ -195,7 +195,7 @@ class EditInfoTests(TestCase):
         r = self.client.post(url, dict(ad="123456789"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.ad, prev_ad)
 
@@ -413,7 +413,7 @@ class ResurrectTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[type=submit]')), 1)
+        self.assertEqual(len(q('form [type=submit]')), 1)
 
 
         # request resurrect
@@ -448,7 +448,7 @@ class ResurrectTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[type=submit]')), 1)
+        self.assertEqual(len(q('form [type=submit]')), 1)
 
         # complete resurrect
         events_before = draft.docevent_set.count()
@@ -691,7 +691,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form.change-stream')),1) 
+        self.assertEqual(len(q('[type=submit]:contains("Save")')), 1)
 
         # shift to ISE stream
         messages_before = len(outbox)
@@ -744,13 +744,13 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form.change-intended-status')),1)
+        self.assertEqual(len(q('[type=submit]:contains("Save")')), 1)
 
         # don't allow status level to be cleared
         r = self.client.post(url,dict(intended_std_level=""))
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
         
         # change intended status level
         messages_before = len(outbox)
@@ -770,7 +770,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form.telechat-date')),1)
+        self.assertEqual(len(q('[type=submit]:contains("Save")')), 1)
 
         # set a date
         self.assertFalse(self.doc.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
@@ -793,7 +793,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form.edit-iesg-note')),1)
+        self.assertEqual(len(q('[type=submit]:contains("Save")')),1)
 
         # post
         r = self.client.post(url,dict(note='ZpyQFGmA\r\nZpyQFGmA'))
@@ -870,7 +870,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.post(url, dict(shepherd=two_answers))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
     def test_doc_change_shepherd_email(self):
         self.doc.shepherd = None
@@ -916,15 +916,16 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('span[id=doc_edit_shepherd_writeup]')),1)
+        self.assertEqual(len(q('#content a:contains("Edit")')), 1)
 
         # Try again when no longer a shepherd.
 
         self.doc.shepherd = None
+        self.doc.save()
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('span[id=doc_edit_shepherd_writeup]')),1)
+        self.assertEqual(len(q('#content a:contains("Edit")')), 0)
 
     def test_doc_change_shepherd_writeup(self):
         url = urlreverse('doc_edit_shepherd_writeup',kwargs=dict(name=self.docname))
@@ -1039,7 +1040,7 @@ class RequestPublicationTests(TestCase):
         q = PyQuery(r.content)
         subject = q('input#id_subject')[0].get("value")
         self.assertTrue("Document Action" in subject)
-        body = q('.request-publication #id_body').text()
+        body = q('#id_body').text()
         self.assertTrue("Informational" in body)
         self.assertTrue("IAB" in body)
 
@@ -1248,38 +1249,34 @@ class ChangeReplacesTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form[class=change-replaces]')), 1)
+        self.assertEqual(len(q('[type=submit]:contains("Save")')), 1)
         
         # Post that says replacea replaces base a
-        self.assertEquals(self.basea.get_state().slug,'active')
-        repljson='{"%d":"%s"}'%(DocAlias.objects.get(name=self.basea.name).id,self.basea.name)
-        r = self.client.post(url, dict(replaces=repljson))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(self.basea.get_state().slug,'active')
+        r = self.client.post(url, dict(replaces=str(DocAlias.objects.get(name=self.basea.name).id)))
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(RelatedDocument.objects.filter(relationship__slug='replaces',source=self.replacea).count(),1) 
-        self.assertEquals(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
+        self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
 
         # Post that says replaceboth replaces both base a and base b
         url = urlreverse('doc_change_replaces', kwargs=dict(name=self.replaceboth.name))
-        self.assertEquals(self.baseb.get_state().slug,'expired')
-        repljson='{"%d":"%s","%d":"%s"}'%(DocAlias.objects.get(name=self.basea.name).id,self.basea.name,
-                                          DocAlias.objects.get(name=self.baseb.name).id,self.baseb.name)
-        r = self.client.post(url, dict(replaces=repljson))
-        self.assertEquals(r.status_code, 302)
-        self.assertEquals(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
-        self.assertEquals(Document.objects.get(name='draft-test-base-b').get_state().slug,'repl')
+        self.assertEqual(self.baseb.get_state().slug,'expired')
+        r = self.client.post(url, dict(replaces=str(DocAlias.objects.get(name=self.basea.name).id) + "," + str(DocAlias.objects.get(name=self.baseb.name).id)))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
+        self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'repl')
 
         # Post that undoes replaceboth
-        repljson='{}'
-        r = self.client.post(url, dict(replaces=repljson))
-        self.assertEquals(r.status_code, 302)
-        self.assertEquals(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl') # Because A is still also replaced by replacea
-        self.assertEquals(Document.objects.get(name='draft-test-base-b').get_state().slug,'expired')
+        r = self.client.post(url, dict(replaces=""))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl') # Because A is still also replaced by replacea
+        self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'expired')
 
         # Post that undoes replacea
         url = urlreverse('doc_change_replaces', kwargs=dict(name=self.replacea.name))
-        r = self.client.post(url, dict(replaces=repljson))
-        self.assertEquals(r.status_code, 302)
-        self.assertEquals(Document.objects.get(name='draft-test-base-a').get_state().slug,'active')
+        r = self.client.post(url, dict(replaces=""))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'active')
 

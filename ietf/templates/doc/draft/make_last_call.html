@@ -1,39 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}Make Last Call for {{ doc.name }}{% endblock %}
+{% load bootstrap3 %}
 
-{% block morecss %}
-form.approve-ballot pre {
-  margin: 0;
-  padding: 4px;
-  border-top: 4px solid #eee;
-  border-bottom: 4px solid #eee;
-}
-form.approve-ballot .announcement {
-  overflow-x: auto;
-  overflow-y: scroll;
-  width: 800px;
-  height: 400px;
-  border: 1px solid #bbb;
-}
-{% endblock %}
+{% block title %}Make last call for {{ doc.name }}{% endblock %}
 
 {% block content %}
-<h1>Make Last Call for {{ doc.name }}</h1>
+  <h1>Make last call<br><small>{{ doc.name }}</small></h1>
 
-<p>Make last call for following draft:</p>
+  {% bootstrap_messages %}
 
-<div>{{ doc.file_tag }} ({{ doc.group.acronym }}) - {{ doc.intended_std_level.name }}</div>
+  <p class="alert alert-info">
+    <b>Last call for:</b>
+    {{ doc.name }} ({{ doc.group.acronym }}) to {{ doc.intended_std_level.name }}
+  </p>
 
-<form style="margin-top:20px" action="" method="post">{% csrf_token %}
-  <table>
-    {{ form.as_table }}
-  </table>
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-  <div class="actions">
-    <a href="{{ doc.get_absolute_url }}">Back</a>
-    <input type="reset" value="Reset">
-    <input type="submit" value="Make Last Call"/>
-  </div>
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Make last call</button>
+      <button type="reset" class="btn btn-warning">Reset</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
+
 {% endblock %}

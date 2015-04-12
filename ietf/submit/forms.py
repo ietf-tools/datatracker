@@ -132,7 +132,7 @@ class UploadForm(forms.Form):
             # check existing
             existing = Submission.objects.filter(name=self.parsed_draft.filename, rev=self.parsed_draft.revision).exclude(state__in=("posted", "cancel"))
             if existing:
-                raise forms.ValidationError(mark_safe('Submission with same name and revision is currently being processed. <a href="%s">Check the status here</a>' % urlreverse("submit_submission_status", kwargs={ 'submission_id': existing[0].pk })))
+                raise forms.ValidationError(mark_safe('Submission with same name and revision is currently being processed. <a href="%s">Check the status here.</a>' % urlreverse("submit_submission_status", kwargs={ 'submission_id': existing[0].pk })))
 
             # cut-off
             if self.parsed_draft.revision == '00' and self.in_first_cut_off:
@@ -255,7 +255,7 @@ class EditSubmissionForm(forms.ModelForm):
     pages = forms.IntegerField(required=True)
     abstract = forms.CharField(widget=forms.Textarea, required=True)
 
-    note = forms.CharField(label=mark_safe(u'Comment to<br/> the Secretariat'), widget=forms.Textarea, required=False)
+    note = forms.CharField(label=mark_safe(u'Comment to the Secretariat'), widget=forms.Textarea, required=False)
 
     class Meta:
         model = Submission

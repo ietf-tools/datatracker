@@ -5,9 +5,9 @@ Cc: {{ cc_email }}
 
 Dear {{ to_name }}:
 
-{% wordwrap 80 %}
+{% filter wordwrap:80 %}
 An IPR disclosure that pertains to your {{ doc_info }} was submitted to the IETF Secretariat on {{ ipr.submitted_date|date:"Y-m-d" }} and has been posted on the "IETF Page of Intellectual Property Rights Disclosures" (https://datatracker.ietf.org/ipr/{{ ipr.pk }}/). The title of the IPR disclosure is "{{ ipr.title }}"
-{% endwordwrap %}
+{% endfilter %}
 
 Thank you
 

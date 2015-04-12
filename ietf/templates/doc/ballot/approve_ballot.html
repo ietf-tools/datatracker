@@ -1,45 +1,25 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Approve ballot for {{ doc }}{% endblock %}
 
-{% block morecss %}
-form.approve-ballot pre {
-  margin: 0;
-  padding: 4px;
-  border-top: 4px solid #eee;
-  border-bottom: 4px solid #eee;
-}
-form.approve-ballot .announcement {
-  overflow-x: auto;
-  overflow-y: scroll;
-  width: 800px;
-  height: 400px;
-  border: 1px solid #bbb;
-}
-{% endblock %}
-
 {% block content %}
-<h1>Approve Ballot for {{ doc }}</h1>
+  <h1>Approve ballot<br><small>{{ doc }}</small></h1>
 
-<div>IETF announcement:</div>
-
-<form class="approve-ballot" action="" method="post">{% csrf_token %}
-
-  <div class="announcement">
+  <form role="form" method="post">
+    {% csrf_token %}
     <pre>{{ announcement }}</pre>
-  </div>
 
-  <div class="actions">
-    <a href="{% url "doc_ballot_approvaltext" name=doc.name %}">Back</a>
-    {% if action == "to_announcement_list" %}
-    <input type="submit" value="Notify the RFC Editor, send out the announcement and close ballot"/>
-    {% endif %}
-    {% if action == "to_rfc_editor" %}
-    <input type="submit" value="Send message to the RFC Editor and close ballot"/>
-    {% endif %}
-    {% if action == "do_not_publish" %}
-    <input type="submit" value="Send message to the RFC Editor (DNP) and close ballot"/>
-    {% endif %}    
-  </div>
-</form>
+    {% buttons %}
+      {% if action == "to_announcement_list" %}
+        <button class="btn btn-warning" type="submit">Notify RFC Editor, send announcement & close ballot</button>
+      {% elif action == "to_rfc_editor" %}
+        <button class="btn btn-warning" type="submit">Email RFC Editor & close ballot</button>
+      {% elif action == "do_not_publish" %}
+        <button class="btn btn-warning" type="submit">Email RFC Editor (DNP) & close ballot"/>
+      {% endif %}
+      <a class="btn btn-default pull-right" href="{% url "doc_ballot_approvaltext" name=doc.name %}">Back</a>
+      {% endbuttons %}
+  </form>
 {% endblock %}

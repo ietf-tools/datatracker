@@ -174,9 +174,9 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=last_call_text]')), 1)
-        self.assertEqual(len(q('input[type=submit][value*="Save Last Call"]')), 1)
-        # we're secretariat, so we got The Link 
-        self.assertEqual(len(q('a:contains("Make Last Call")')), 1)
+        self.assertTrue(q('[type=submit]:contains("Save")'))
+        # we're Secretariat, so we got The Link
+        self.assertEqual(len(q('a:contains("Issue last call")')), 1)
         
         # subject error
         r = self.client.post(url, dict(
@@ -184,7 +184,7 @@ class BallotWriteupsTests(TestCase):
                 save_last_call_text="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('ul.errorlist')) > 0)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         # save
         r = self.client.post(url, dict(
@@ -243,7 +243,7 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
-        self.assertEqual(len(q('input[type=submit][value*="Save Ballot Writeup"]')), 1)
+        self.assertTrue(q('[type=submit]:contains("Save")'))
         self.assertTrue("IANA does not" in r.content)
 
         # save
@@ -317,7 +317,7 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=approval_text]')), 1)
-        self.assertEqual(len(q('input[type=submit][value*="Save Approval"]')), 1)
+        self.assertTrue(q('[type=submit]:contains("Save")'))
 
         # save
         r = self.client.post(url, dict(
@@ -365,8 +365,8 @@ class ApproveBallotTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue("send out the announcement" in q('.actions input[type=submit]')[0].get('value').lower())
-        self.assertEqual(len(q('.announcement pre:contains("Subject: Protocol Action")')), 1)
+        self.assertTrue(q('[type=submit]:contains("send announcement")'))
+        self.assertEqual(len(q('form pre:contains("Subject: Protocol Action")')), 1)
 
         # approve
         mailbox_before = len(outbox)
@@ -466,7 +466,7 @@ class DeferUndeferTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form.defer')),1)
+        self.assertEqual(len(q('[type=submit]:contains("Defer ballot")')),1)
 
         # defer
         mailbox_before = len(outbox)
@@ -521,7 +521,7 @@ class DeferUndeferTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form.undefer')),1)
+        self.assertEqual(len(q('[type=submit]:contains("Undefer ballot")')),1)
 
         # undefer
         mailbox_before = len(outbox)

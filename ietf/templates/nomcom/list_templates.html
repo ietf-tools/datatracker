@@ -1,29 +1,32 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
+{% block subtitle %} - Defined templates{% endblock %}
+
 {% block nomcom_content %}
-<h2>Defined templates for {{ nomcom.group }}</h2>
+  <h2>Defined templates</h2>
 
-{% if template_list %}
-<ul>
-{% for template in template_list %}
-  <li><a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a></li>
-{% endfor %}
-</ul>
-{% else %}
-  <p>There are no templates defined for this group.</p>
-{% endif %}
-
-<h2>Defined templates for positions in {{ nomcom.group }}</h2>
-{% if positions %}
-  {% for position in positions %}
-  <h3>{{ position.name }}</h3>
+  {% if template_list %}
     <ul>
-    {% for template in position.get_templates %}
-      <li><a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a></li>
-    {% endfor %}
+      {% for template in template_list %}
+        <li><a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a></li>
+      {% endfor %}
     </ul>
-  {% endfor %}
-{% else %}
-  <p>There are no positions defined.</p>
-{% endif %}
+  {% else %}
+    <p>There are no templates defined for this group.</p>
+  {% endif %}
+
+
+  <h2>Defined templates for positions</h2>
+  {% if positions %}
+    {% for position in positions %}
+      <h3>{{ position.name }}</h3>
+      <ul>
+        {% for template in position.get_templates %}
+          <li><a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a></li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  {% else %}
+    <p>There are no positions defined.</p>
+  {% endif %}
 {% endblock nomcom_content %}

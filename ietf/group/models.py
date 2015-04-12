@@ -23,8 +23,8 @@ class GroupInfo(models.Model):
     list_archive = models.CharField(max_length=255, blank=True)
     comments = models.TextField(blank=True)
 
-    unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group", blank=True)
-    unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group", blank=True)
+    unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group.", blank=True)
+    unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group.", blank=True)
 
     def __unicode__(self):
         return self.name
@@ -151,7 +151,7 @@ class GroupMilestoneInfo(models.Model):
     state = models.ForeignKey(GroupMilestoneStateName)
     desc = models.CharField(verbose_name="Description", max_length=500)
     due = models.DateField()
-    resolved = models.CharField(max_length=50, blank=True, help_text="Explanation of why milestone is resolved (usually \"Done\"), or empty if still due")
+    resolved = models.CharField(max_length=50, blank=True, help_text="Explanation of why milestone is resolved (usually \"Done\"), or empty if still due.")
 
     docs = models.ManyToManyField('doc.Document', blank=True)
 
@@ -211,7 +211,7 @@ class Role(models.Model):
     name = models.ForeignKey(RoleName)
     group = models.ForeignKey(Group)
     person = models.ForeignKey(Person)
-    email = models.ForeignKey(Email, help_text="Email address used by person for this role")
+    email = models.ForeignKey(Email, help_text="Email address used by person for this role.")
     def __unicode__(self):
         return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
 
@@ -226,7 +226,7 @@ class RoleHistory(models.Model):
     name = models.ForeignKey(RoleName)
     group = models.ForeignKey(GroupHistory)
     person = models.ForeignKey(Person)
-    email = models.ForeignKey(Email, help_text="Email address used by person for this role")
+    email = models.ForeignKey(Email, help_text="Email address used by person for this role.")
     def __unicode__(self):
         return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym)
 

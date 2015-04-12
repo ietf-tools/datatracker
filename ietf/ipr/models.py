@@ -13,11 +13,11 @@ from ietf.message.models import Message
 
 class IprDisclosureBase(models.Model):
     by                  = models.ForeignKey(Person) # who was logged in, or System if nobody was logged in
-    compliant           = models.BooleanField(default=True) # complies to RFC3979
+    compliant           = models.BooleanField("Complies to RFC3979", default=True)
     docs                = models.ManyToManyField(DocAlias, through='IprDocRel')
     holder_legal_name   = models.CharField(max_length=255)
-    notes               = models.TextField(blank=True)
-    other_designations  = models.CharField(blank=True, max_length=255)
+    notes               = models.TextField("Additional notes", blank=True)
+    other_designations  = models.CharField("Designations for other contributions", blank=True, max_length=255)
     rel                 = models.ManyToManyField('self', through='RelatedIpr', symmetrical=False)
     state               = models.ForeignKey(IprDisclosureStateName)
     submitter_name      = models.CharField(max_length=255)
@@ -100,7 +100,7 @@ class HolderIprDisclosure(IprDisclosureBase):
     has_patent_pending       = models.BooleanField(default=False)
     holder_contact_email     = models.EmailField()
     holder_contact_name      = models.CharField(max_length=255)
-    holder_contact_info      = models.TextField(blank=True)
+    holder_contact_info      = models.TextField(blank=True, help_text="Address, phone, etc.")
     licensing                = models.ForeignKey(IprLicenseTypeName)
     licensing_comments       = models.TextField(blank=True)
     submitter_claims_all_terms_disclosed = models.BooleanField(default=False)
@@ -108,7 +108,7 @@ class HolderIprDisclosure(IprDisclosureBase):
 class ThirdPartyIprDisclosure(IprDisclosureBase):
     ietfer_name              = models.CharField(max_length=255) # "Whose Personal Belief Triggered..."
     ietfer_contact_email     = models.EmailField()
-    ietfer_contact_info      = models.TextField(blank=True)
+    ietfer_contact_info      = models.TextField(blank=True, help_text="Address, phone, etc.")
     patent_info              = models.TextField()
     has_patent_pending       = models.BooleanField(default=False)
 
@@ -116,7 +116,7 @@ class NonDocSpecificIprDisclosure(IprDisclosureBase):
     '''A Generic IPR Disclosure w/ patent information'''
     holder_contact_name      = models.CharField(max_length=255)
     holder_contact_email     = models.EmailField()
-    holder_contact_info      = models.TextField(blank=True)
+    holder_contact_info      = models.TextField(blank=True, help_text="Address, phone, etc.")
     patent_info              = models.TextField()
     has_patent_pending       = models.BooleanField(default=False)
     statement                = models.TextField() # includes licensing info
@@ -124,7 +124,7 @@ class NonDocSpecificIprDisclosure(IprDisclosureBase):
 class GenericIprDisclosure(IprDisclosureBase):
     holder_contact_name      = models.CharField(max_length=255)
     holder_contact_email     = models.EmailField()
-    holder_contact_info      = models.TextField(blank=True)
+    holder_contact_info      = models.TextField(blank=True, help_text="Address, phone, etc.")
     statement                = models.TextField() # includes licensing info
 
 class IprDocRel(models.Model):

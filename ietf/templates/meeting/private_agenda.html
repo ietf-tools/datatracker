@@ -1,30 +1,19 @@
 {% extends "base.html" %}
-{% load ietf_filters %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% load humanize %}
-
-{% block morecss %}
-{% for area in area_list %}
-.{{ area.upcase_acronym}}-scheme, .meeting_event th.{{ area.upcase_acronym}}-scheme, #{{ area.upcase_acronym }}-groups, #selector-{{ area.upcase_acronym }} { color:{{ area.fg_color }}; background-color: {{ area.bg_color }} }
-{% endfor %}
-{% endblock morecss %}
 
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: {{ schedule.owner }} / {{ schedule.name }}{% endblock %}
-{% load agenda_custom_tags %}
 
-{% block start_content_table %}{% endblock %}
-{% block end_content_table %}{% endblock %}
+{% block morecss %}
+  {% for area in area_list %}
+    .{{ area.upcase_acronym}}-scheme, .meeting_event th.{{ area.upcase_acronym}}-scheme, #{{ area.upcase_acronym }}-groups, #selector-{{ area.upcase_acronym }} { color:{{ area.fg_color }}; background-color: {{ area.bg_color }} }
+  {% endfor %}
+{% endblock morecss %}
 
 {% block content %}
+  <div id="read_only">
+    <p>You do not have access this agenda. It belongs to {{ schedule.owner }}.</p>
 
-<div id="read_only">
-<p>
-You do not have access this agenda. It belongs to {{ schedule.owner }}.
-</p>
-<p>
-<a href="{% url "ietf.meeting.views.edit_agendas" meeting.number %}">List your meetings</a>.
-</p>
-<div class="wrapper custom_text_stuff">
-</div>
+    <p><a href="{% url "ietf.meeting.views.edit_agendas" meeting.number %}">List your meetings</a>.</p>
 
+    <div class="wrapper custom_text_stuff"></div>
+  </div>
 {% endblock %}

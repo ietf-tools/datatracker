@@ -1,87 +1,37 @@
 {% extends "base.html" %}
-{% comment %}<!--
-Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions 
-are met:
-
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided
-   with the distribution.
-
- * Neither the name of the Nokia Corporation and/or its
-   subsidiary(-ies) nor the names of its contributors may be used
-   to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--->
-{% endcomment %}
 {% load ietf_filters %}
+
 {% block title %}{{ group.name }} ({{ group.acronym }}) - {% block group_subtitle %}{% endblock %}{% endblock %}
 
-{% block morecss %}
-.ietf-navset {
-    background:#214197 url(/images/yui/sprite.png) repeat-x left -1400px;
-    color:white;
-    border:1px solid black;
-    padding:4px;
-}
-.ietf-navset .selected { font-weight:bold; padding: 0 3px; }
-.ietf-navset a, .ietf-navset a:visited { color: white; padding:0 3px; }
-
-.ietf-group-details { float:right; padding: 4px;margin-top:16px; margin-left: 16px; }
-.ietf-group-details tr { vertical-align: top; }
-.ietf-concluded-bg {background-color: #F8F8D0; }
-.ietf-concluded-warning { background:red;color:white;padding:2px 2px;}
-.ietf-proposed-bg { }
-.ietf-proposed-warning { background:green;color:white;padding:2px 2px;}
-.ietf-box th { font-weight: bold; padding-top: 1em; text-align: left; }
-.ietf-box tr:first-child th { padding-top: 0; }
-{% endblock morecss %}
-
 {% block content %}
-<div {% if group.state_id == "dormant" or group.state_id == "conclude" %}class="ietf-concluded-bg"{% endif %} {% if group.state_id == "proposed" %}class="ietf-proposed-bg"{% endif %}>
 
-<h1>{{ group.name}} ({{ group.acronym }})
-  {% if group.state_id == "dormant" or group.state_id == "conclude" %}<br/><span class="ietf-concluded-warning">(concluded {{ group.type.name }})</span>{% endif %}
-  {% if group.state_id == "proposed" %}<br/><span class="ietf-proposed-warning">(proposed {{ group.type.name }})</span>{% endif %}
-</h1>
+  <h1>{{ group.name}} ({{ group.acronym }})
+    {% if group.state_id == "dormant" or group.state_id == "conclude" %}
+      <span class="label label-warning">Concluded {{ group.type.name }}</span>
+    {% endif %}
+    {% if group.state_id == "proposed" %}
+      <span class="label label-info">Proposed {{ group.type.name }}</span>
+    {% endif %}
+  </h1>
 
-<div class="ietf-navset">
-  <div>
+  <ul class="nav nav-tabs" role="tablist">
     {% for name, url in menu_entries %}
-      <a {% if selected_menu_entry == name.lower %}class="selected"{% else %}href="{{ url }}"{% endif %}>{{ name }}</a> {% if not forloop.last %} | {% endif %}
+      <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
+        <a href="{{ url }}">{{ name }}</a>
+      </li>
     {% endfor %}
-  </div>
+  </ul>
 
   {% if menu_actions %}
-  <div class="actions">
-    {% for name, url in menu_actions %}
-    <a href="{{ url }}">{{ name }}</a>
-    {% endfor %}
-  </div>
+    <div class="buttonlist">
+      {% for name, url in menu_actions %}
+        <a class="btn {% if name == "Request closing group" %}btn-warning{% else %}btn-default{% endif %}" href="{{ url }}">{{ name }}</a>
+      {% endfor %}
+    </div>
   {% endif %}
-</div>
 
-{% block group_content %}
-{% endblock group_content %}
+  {% block group_content %}
+  {% endblock group_content %}
 
-</div>
 {% endblock content %}

@@ -1,55 +1,55 @@
-{% extends "registration/base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Release information{% endblock %}
 
 {% block content %}
-<div id="release">
-<h2><a href="https://trac.tools.ietf.org/tools/ietfdb/browser/tags/{{entry.version}}">Version {{ entry.version }}</a>, released {{ entry.date }}</h2>
-<p style="font-size: 90%">
-      {% if entry.prev %}&larr;&nbsp;<a href="/release/{{entry.prev.version}}/">previous release</a>{% else %}<span style="color: grey">&larr; previous release</span>{% endif %}
-      |
-      {% if entry.next %}<a href="/release/{{entry.next.version}}/">next release</a>&nbsp;&rarr;{% else %}<span style="color: grey">next release &rarr;</span>{% endif %}
-</p>
+<div class="col-sm-12">
+  <h1>
+    <a href="//trac.tools.ietf.org/tools/ietfdb/browser/tags/{{entry.version}}">
+      Version {{ entry.version }}</a>
+    <br><small>Released {{ entry.date }}</small>
+  </h1>
 
-<p>
-   {% if coverage %}
-   Tested:
-      <b>Code</b>: {{coverage.code.percentage|stringformat:".2f"}}%, &nbsp;
-      <b>Templates</b>: {{coverage.template.percentage|stringformat:".2f"}}%, &nbsp;
-      <b>URLs</b>: {{coverage.url.percentage|stringformat:".2f"}}% &nbsp;
-   {% endif %}
-   {% if code_coverage_url %}
-      <br/>
-      (A <a href="{{code_coverage_url}}">code test coverage report</a> dated {{code_coverage_time}} is available.)
-   {% endif %}
-</p>
+  <ul class="pager">
+    <li class="previous {% if not entry.prev %}disabled{% endif %}">
+      <a href="{% if entry.prev %}/release/{{entry.prev.version}}/{% else %}#{% endif %}"><span class="fa fa-long-arrow-left"></span> Previous release</a>
+    </li>
+    <li class="next {% if not entry.next %}disabled{% endif %}">
+      <a href="{% if entry.next %}/release/{{entry.next.version}}/{% else %}#{% endif %}">Next release <span class="fa fa-long-arrow-right"></span></a>
+    </li>
+  </ul>
 
+  <p>
+     {% if coverage %}
+     Tested:
+	<b>Code</b>: {{coverage.code.percentage|stringformat:".2f"}}%, &nbsp;
+	<b>Templates</b>: {{coverage.template.percentage|stringformat:".2f"}}%, &nbsp;
+	<b>URLs</b>: {{coverage.url.percentage|stringformat:".2f"}}% &nbsp;
+     {% endif %}
+     {% if code_coverage_url %}
+	<br/>
+	(A <a href="{{code_coverage_url}}">code test coverage report</a> dated {{code_coverage_time}} is available.)
+     {% endif %}
+  </p>
 
+  <h2>{{ entry.version }} release notes</h2>
 
-<p>
-   <h2>Release Notes:</h2>
-   <tt>
-      <pre>
-{{entry.logentry|safe}}
-      </pre>
-   </tt>
-</p>
+  <pre>{{entry.logentry|safe}}</pre>
 
-<h2>Release list:</h2>
-<table style="margin-left: 3em">
-{% for item in releases %}
-    {% ifchanged %}<tr><td><h3>{{ item.date|slice:"7:11" }}</h3></td><tr>{% endifchanged %}    
-    <tr>
-       <td style="text-align: right; padding: 0.1em 0.5em;"><a href="/release/{{item.version}}/">{{ item.version }}</a></td>
-       <td style="text-align: right; padding: 0.1em 0.5em;">{{ item.date|slice:":11" }}</td>
-       <td style="text-align: left;  padding: 0.1em 0.5em;">{{ item.title }}</td>       
-       <!--
-       <td style="text-align: right; padding: 0.2em 0.5em;">{{ item.date|slice:"12:20" }}</td>
-       <td style="text-align: right; padding: 0.2em 0.5em;">{{ item.date|slice:"21:" }}</td>
-       -->
-    </tr>
-{% endfor %}
-</table>
-
+  <h2>Release list:</h2>
+  <table style="margin-left: 3em">
+  {% for item in releases %}
+      {% ifchanged %}<tr><td><h3>{{ item.date|slice:"7:11" }}</h3></td><tr>{% endifchanged %}    
+      <tr>
+	 <td style="text-align: right; padding: 0.1em 0.5em; min-width: 4em;"><a href="/release/{{item.version}}/">{{ item.version }}</a></td>
+	 <td style="text-align: right; padding: 0.1em 0.5em; min-width: 8em;">{{ item.date|slice:":11" }}</td>
+	 <td style="text-align: left;  padding: 0.1em 0.5em;">{{ item.title }}</td>       
+	 <!--
+	 <td style="text-align: right; padding: 0.2em 0.5em;">{{ item.date|slice:"12:20" }}</td>
+	 <td style="text-align: right; padding: 0.2em 0.5em;">{{ item.date|slice:"21:" }}</td>
+	 -->
+      </tr>
+  {% endfor %}
+  </table>
 </div>
 {% endblock %}

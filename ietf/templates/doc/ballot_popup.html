@@ -1,14 +1,37 @@
 {% load ietf_filters %}
-<div class="ballot-popup">
-  <div class="content">
-    {{ ballot_content }}
-  </div>
-  <div class="actions">
 
-    {% if request.user|has_role:"Area Director" %}
-    <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot_id %}" class="button" style="margin-right: 1em;">Edit Position</a>
+<div class="modal-header">
+  <button type="button" class="close" data-dismiss="modal">
+    <span aria-hidden="true">&times;</span>
+    <span class="sr-only">Close</span>
+  </button>
+  <h4 class="modal-title" id="modal-title-{{ ballot_id }}">Ballot for {{ doc.name }}</h4>
+  {% if deferred %}
+    <p>Ballot deferred by {{ deferred.by }} on {{ deferred.time|date:"Y-m-d" }}.</p>
+  {% endif %}
+</div>
+
+<div class="modal-body">
+  {{ ballot_content }}
+</div>
+
+<div class="modal-footer">
+  {% if editable and user|has_role:"Area Director,Secretariat" %}
+    {% if user|has_role:"Area Director" %}
+      <a class="btn btn-default" href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot_id %}">Edit position</a>
     {% endif %}
 
-    <a href="" class="button close">Close</a>
-  </div>
+    {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
+      {% if deferred %}
+        <a class="btn btn-default" href="{% url "doc_undefer_ballot" name=doc.name %}">Undefer ballot</a>
+      {% else %}
+        <a class="btn btn-warning" href="{% url "doc_defer_ballot" name=doc.name %}">Defer ballot</a>
+      {% endif %}
+
+      {% if user|has_role:"Secretariat" %}
+        <a class="btn btn-danger" href="{% url "doc_clear_ballot" name=doc.name %}">Clear ballot</a>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+  <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
 </div>

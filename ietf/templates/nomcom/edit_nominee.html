@@ -1,28 +1,27 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 
+{% load bootstrap3 %}
 {% load nomcom_tags %}
 
-{% block subtitle %} - Edit nominee {{ nominee }}{% endblock %}
+{% block subtitle %} - Edit Nominee {{ nominee }}{% endblock %}
 
 {% block nomcom_content %}
 
-<p>Back to list of <a href="{% url "nomcom_private_index" year %}">nominees</a></p>
+  {% bootstrap_messages %}
 
-<h2>Edit email of {{ nominee }} </h2>
+  <h2>Edit email<br><small>{{ nominee }}</small></h2>
 
-{% if message %}
-<div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
-{% endif %}
+  {% if message %}
+    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
+  {% endif %}
 
-{% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
-
-<form enctype="multipart/form-data" action="" method="post">{% csrf_token %}
-<table>
-{{ form }}
-</table>
-<p><input type="submit" value="Save" /></p>
-</form>
-
-
+  <form role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="Save">
+      <a class="btn btn-default pull-right" href="{% url "nomcom_private_index" year %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

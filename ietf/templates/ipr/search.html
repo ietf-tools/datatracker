@@ -1,19 +1,11 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% block title %}IPR Search{% endblock %}
 
-{% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/ipr.css"></link>
-{% endblock %}
+{% block title %}IPR search{% endblock %}
 
 {% block content %}
-
-{% include "ipr/search_form.html" %}
-
-<p><a href="{% url "ietf.ipr.views.showlist" %}">Back to IPR Disclosure Page</a></p>
+  {% include "ipr/search_form.html" %}
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript" src="/js/lib/jquery-1.8.2.min.js"></script>
-<script type="text/javascript" src="/js/ipr-search.js"></script>
+  <script type="text/javascript" src="/js/ipr-search.js"></script>
 {% endblock %}

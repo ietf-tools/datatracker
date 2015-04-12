@@ -1,42 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}Last Call text for {{ doc }}{% endblock %}
+{% load bootstrap3 %}
+{% load ietf_filters %}
 
-{% block morecss %}
-form #id_last_call_text {
-  width: 700px;
-  height: 600px;
-}
-{% endblock %}
+{% block title %}Last call text for {{ doc }}{% endblock %}
 
 {% block content %}
-<h1>Last Call text for {{ doc }}</h1>
+  <h1>Last call text<br><small>{{ doc }}</small></h1>
 
-<form class="edit-last-call-text" action="" method="post">{% csrf_token %}
+  {% bootstrap_messages %}
 
-  {{ last_call_form.last_call_text }}
+  <form class="edit-last-call-text" role="form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form last_call_form %}
 
-  <p>{{ last_call_form.last_call_text.errors }}</p>
-  
-{% comment %}
-  {% if can_request_last_call and need_intended_status %}
-  <p>You need to select intended status of {{ need_intended_status }} and regenerate last call text to request last call.</p>
-  {% endif %}
-{% endcomment %}
-    
-  <div class="actions">
-    <a href="{{ back_url }}">Back</a>
-    <input type="submit" name="save_last_call_text" value="Save Last Call Text" />
-    <input type="submit" name="regenerate_last_call_text" value="Regenerate Last Call Text" />
-    <input style="margin-left: 8px" type="submit" name="send_last_call_request" value="Save and Request Last Call" />
-  </div>
-</form>
-
-{% load ietf_filters %}
-{% if user|has_role:"Secretariat" %}
-<p>
-<a href="{% url "doc_make_last_call" name=doc.name %}">Make Last Call</a>
-</p>
-{% endif %}
-
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="save_last_call_text">Save text</button>
+      <button type="submit" class="btn btn-info" name="send_last_call_request">Save text & request last call</button>
+      {% if user|has_role:"Secretariat" %}
+        <a class="btn btn-danger" href="{% url "doc_make_last_call" name=doc.name %}">Make last call</a>
+      {% endif %}
+      <button type="submit" class="btn btn-warning" name="regenerate_last_call_text">Reset to template text</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock%}

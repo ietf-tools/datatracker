@@ -1,55 +1,54 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "ipr/search_result.html" %}
+
 {% load ietf_filters %}
-{% load future %}
+{% block search_header %}Working Group search results{% endblock %}
 
-        {% block search_result %}
-        <table cellpadding="1" cellspacing="0" border="0">
-           <tr><td colspan="3"><b>{% block search_header %}Working Group Search Result{% endblock %}</b></td></tr>
-           {% if not iprs %}
+{% block search_result %}
+  <p class="alert alert-info">Total number of {{ q }} WG IPR disclosures found: <b>{{ iprs|length }}</b>. </p>
+
+  {% if docs %}
+    <table class="table table-condensed table-striped">
+      <thead>
+        <th>Date</th>
+        <th>ID</th>
+        <th>Statement</th>
+      </thead>
+
+      <tbody>
+        {% for alias in docs %}
           <tr>
-             <td></td>
-             <td colspan="2">
-            <b>No IPR disclosures related to the <i>{{ q }}</i> working group have been submitted.</b>
-             </td>
+            <th class="warning" colspan="3">
+	      IPR related to {{ alias.name|rfcspace|lstrip:"0"|rfcnospace }} ("{{ alias.document.title }}"){% if alias.related %} that was {{ alias.relation|lower }} {{ alias.related.source|rfcspace|lstrip:"0"|rfcnospace  }} ("{{ alias.related.source.title|escape }}"){% endif %}{% if alias.product_of_this_wg %}, a product of the {{ q }} WG{% endif %}:
+            </th>
           </tr>
-          <tr><td colspan="3">Total number of IPR disclosures found: {{ iprs|length }} </td></tr>
-           {% else %}
-          <tr><td colspan="3">Total number of IPR disclosures found: {{ iprs|length }} </td></tr>
 
-          {% block iprlist %}
-             {% for alias in docs %}
-             <tbody bgcolor="#{% cycle 'dadada','eaeaea' as bgcolor %}">
-                        <tr>
-               <td colspan="3">
-                              IPR that is related to <b><i>{{ alias.name|rfcspace|lstrip:"0"|rfcnospace }}, "{{ alias.document.title }}"{% if alias.related %}, that was {{ alias.relation|lower }} {{ alias.related.source|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ alias.related.source.title|escape }}"{% endif %}
-                  </i></b>{% if alias.product_of_this_wg %} which is a product of Working Group <b><i>{{ q }}</i></b>{% endif %}
-               </td>
-            </tr>
-            {% if alias.document.ipr %}
-               {% for ipr in alias.document.ipr %}
-                  <tr valign="top">
-                 <td width="100">{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
-                 <td width="90"><li>ID # {{ ipr.disclosure.id }}</li></td>
-                 <td>
-                    {% for item in ipr.disclosure.updates.all %}
-                                       {% if item.target.state_id == "posted" %}
-                                          IPR disclosure ID# {{ item.target.id }}, "<a href="{% url "ietf.ipr.views.show" item.target.id %}">{{ item.target.title }}</a>" Updated by
-                                       {% endif %}
-                    {% endfor %}
-                                    <a href="{% url "ietf.ipr.views.show" ipr.disclosure.id %}">"{{ ipr.disclosure.title }}"</a>
-                 </td>
-                  </tr>
-               {% endfor %}
-            {% else %}
+          {% if alias.document.ipr %}
+            {% for ipr in alias.document.ipr %}
+              <tr>
+                <td class="text-nowrap">{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
+                <td>{{ ipr.disclosure.id }}</td>
+                <td>
+                  {% for item in ipr.disclosure.updates.all %}
+                    {% if item.target.state_id == "posted" %}
+                      IPR disclosure #{{ item.target.id }}: <a href="{% url "ietf.ipr.views.show" item.target.id %}">{{ item.target.title }}</a><br>Updated by:
+	            {% endif %}
+	          {% endfor %}
+                  <a href="{% url "ietf.ipr.views.show" ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a>
+                </td>
+              </tr>
+            {% endfor %}
+
+          {% else %}
+
             <tr>
-               <td></td>
-               <td colspan="2"><b>No IPR disclosures related to <i>{{ alias.name|rfcspace|lstrip:"0" }}</i> have been submitted</b></td>
+              <td></td>
+              <td></td>
+              <td>No IPR disclosures related to <i>{{ alias.name|rfcspace|lstrip:"0" }}</i> have been submitted.</td>
             </tr>
-            {% endif %}
-             </tbody>
-             {% endfor %}
-          {% endblock %}
-           {% endif %}
-        </table>
-        {% endblock %}
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+{% endblock %}

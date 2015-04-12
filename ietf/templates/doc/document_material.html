@@ -2,117 +2,123 @@
 
 {% load ietf_filters %}
 
-{% block title %}{{ doc.canonical_name }}-{{ doc.rev }}{% endblock %}
-
-{% block pagehead %}
-<link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
-{% endblock %}
+{% block title %}{{ doc.title }}{% endblock %}
 
 {% block content %}
-{{ top|safe }}
+  {{ top|safe }}
 
-{% include "doc/revisions_list.html" %}
+  {% include "doc/revisions_list.html" %}
 
-<div class="ietf-box metabox">
-  <div>
-    {% if snapshot %}Snapshot of{% endif %} {% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }} for <a href="{{ doc.group.about_url }}">{{ doc.group.acronym }}</a> group
-  </div>
+  <table class="table table-condensed">
+    <thead id="message-row">
+       <tr>
+	  {% if doc.rev != latest_rev %}
+	  <th colspan="4" class="alert-warning">&nbsp;The information below is for an old version of the document</th>
+	  {% else %}
+	  <th colspan="4">&nbsp;</th>
+	  {% endif %}  
+       </tr>
+    </thead>
 
-  <table id="metatable" width="100%">
     <tr>
-      <td>Title:</td>
+      <th>{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}</th>
+      <td class="edit"></td>
       <td>
-        {% if not snapshot and can_manage_material %}
-            {% url "material_edit" name=doc.name action="title" as editurl %}
-            {{ doc.title | format_editable:editurl }} 
-        {% else %}
-            {{ doc.title }}
+        {{ doc.group.name }}
+        <a href="{{ doc.group.about_url }}">({{ doc.group.acronym }})</a> {{ doc.group.type.name }}
+
+        {% if snapshot %}
+          <span class="label label-warning">Snapshot</span>
         {% endif %}
       </td>
+    </tr>
+
+    <tr>
+      <th>Title</th>
+      <td class="edit">
+        {% if not snapshot and can_manage_material %}
+          {% doc_edit_button "material_edit" name=doc.name action="title" %}
+        {% endif %}
+      </td>
+      <td>{{ doc.title }}</td>
     </tr>
 
     {% if doc.abstract %}
-    <tr>
-     <td>Abstract:</td>
-     <td> 
-        {% if not snapshot and can_manage_material %}
-          {% url "material_edit" name=doc.name action="abstract" as editurl %}
-          {{ doc.abstract | format_editable_snippet:editurl }} 
-        {% else %}
-          {{ doc.abstract | format_snippet }} 
-        {% endif %}
-     </td>
-    </tr>
+      <tr>
+        <th>Abstract</th>
+        <td class="edit">
+          {% if not snapshot and can_manage_material %}
+            {% doc_edit_button "material_edit" name=doc.name action="abstract" %}
+          {% endif %}
+        </td>
+        <td>{{ doc.abstract|format_snippet }}</td>
+      </tr>
     {% endif %}
 
     <tr>
-      <td>State:</td>
-      <td>
+      <th>State</th>
+      <td class="edit">
         {% if not snapshot and can_manage_material %}
-          {% url "material_edit" name=doc.name action="state" as editurl %}
-          {{ doc.get_state.name | format_editable:editurl }}
-        {% else %}
-          {{ doc.get_state.name }}
+          {% doc_edit_button "material_edit" name=doc.name action="state" %}
         {% endif %}
       </td>
+      <td>{{ doc.get_state.name }}</td>
     </tr>
 
     {% if other_types %}
-    <tr>
-      <td>Other versions:</td>
-      <td>
-        {% for t, url in other_types %}
-          <a href="{{ url }}">{{ t }}</a>{% if not forloop.last %},{% endif %}
-        {% endfor %}
-      </td>
-    </tr>
+      <tr>
+        <th>Other versions</th>
+        <td class="edit"></td>
+        <td>
+          {% for t, url in other_types %}
+            <a href="{{ url }}">{{ t }}</a>{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        </td>
+      </tr>
     {% endif %}
 
     {% if presentations or can_manage_material %}
-    <tr>
-      <td>On Agenda:</td>
-      <td>
-         <a {% if not snapshot and can_manage_material %} class="editlink" href="{% url "material_presentations" name=doc.name %}"{%endif%}>
-         {% if presentations %}
-           {% for pres in presentations %}{{pres.session.short_name}} at {{pres.session.meeting}} {% if pres.rev != doc.rev %}(version -{{pres.rev}}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
-         {% else %}
-           None
-         {% endif %}
-        </a>
-      </td>        
-    </tr>
+      <tr>
+        <th>On Agenda</th>
+        <td class="edit">
+          {% if not snapshot and can_manage_material %}
+            {% doc_edit_button "material_presentations" name=doc.name %}
+          {% endif %}
+        </td>
+
+        <td>
+          {% if presentations %}
+            {% for pres in presentations %}{{ pres.session.short_name }} at {{ pres.session.meeting }} {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+          {% else %}
+            None
+          {% endif %}
+        </td>
+      </tr>
     {% endif %}
 
     <tr>
-      <td>Last updated:</td>
+      <th>Last updated</th>
+      <td class="edit"></td>
       <td>{{ doc.time|date:"Y-m-d" }}</td>
     </tr>
-
-    {% if not snapshot and can_manage_material %}
-    <tr><td colspan="2">
-      <a class="button" href="{% url "material_edit" name=doc.name action="revise" %}">Upload New Revision</a>
-    </td><tr/>
-    {% endif %}
-
   </table>
-</div>
 
-{% if doc.rev and content != None %}
-  <h3>{{ doc.title }}</h3>
-  
-  <div class="markup_draft">
+  <p class="buttonlist">
+    {% if not snapshot and can_manage_material %}
+      <a class="btn btn-default" href="{% url "material_edit" name=doc.name action="revise" %}">Upload New Revision</a>
+    {% endif %}
+  </p>
+
+  <h2>{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}<br><small>{{ doc.name }}</small></h2>
+
+  {% if doc.rev and content != None %}
     {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
-  </div>
-{% else %}
-  <p>Not available as plain text.</p>
-  
-  {% if other_types %}
-    <p class="download-instead"><a href="{{ other_types.0.1 }}">Download as {{ other_types.0.0.upper }}</a></p>
+  {% else %}
+    <p>Not available as plain text.</p>
+
+    {% if other_types %}
+      <p class="download-instead"><a href="{{ other_types.0.1 }}">Download as {{ other_types.0.0.upper }}</a></p>
+    {% endif %}
   {% endif %}
-{% endif %}
 
-{% endblock %}
-
-{% block content_end %}
-<script src="/js/snippet.js" type="text/javascript"></script>
 {% endblock %}

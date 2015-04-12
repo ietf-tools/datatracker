@@ -1,23 +1,26 @@
 {% extends "submit/submit_base.html" %}
-{% block title %}Cancel Pre-Approval{% endblock %}
 
-{% block morecss %}
-{{ block.super }}
-form.actions { margin-top: 1em; }
-form.actions a { display: inline-block; margin-right: 1em; }
-{% endblock %}
+{% load bootstrap3 %}
+
+{% block title %}Cancel pre-approval{% endblock %}
 
 {% block submit_content %}
 
-<h2>Cancel Pre-Approval</h2>
+  <h2>Cancel pre-approval</h2>
 
-Pre-approval of <b>{{ preapproval.name }}</b> by {{ preapproval.by }}
-on {{ preapproval.time }}.
+  <p>
+    Pre-approval of <b>{{ preapproval.name }}</b> by <b>{{ preapproval.by }}</b>
+    on <b>{{ preapproval.time }}</b>.
+  </p>
 
-<form class="actions" action="" method="post">{% csrf_token %}
-  <a class="button" href="{% url "submit_approvals" %}#preapprovals">Don't cancel</a>
-  <input type="hidden" name="action" value="cancel" />
-  <input class="button" type="submit" value="Cancel pre-approval" />
-</form>
+  <form class="actions" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="cancel">
+
+    {% buttons %}
+      <button type="submit" class="btn btn-danger">Cancel pre-approval</button>
+      <a class="btn btn-default pull-right" href="{% url "submit_approvals" %}#preapprovals">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

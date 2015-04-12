@@ -1,13 +1,13 @@
 {% extends "liaisons/overview.html" %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% block title %}Pending Liaison Statements{% endblock %}
+
+{% block title %}Pending liaison statements{% endblock %}
 
 {% block content-title %}
-<h1>Pending Liaison Statements</h1>
+  <h1>Pending liaison statements</h1>
 {% endblock %}
 
 {% block management-links %}
-<ul>
-<li><a href="{% url "liaison_list" %}">Return to liaison list</a></li>
-</ul>
+  <p>
+    <a class="btn btn-default" href="{% url "liaison_list" %}">Return to liaison list</a>
+  </p>
 {% endblock %}

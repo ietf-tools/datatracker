@@ -1,92 +1,66 @@
 {% extends "base.html" %}
 
+{% load bootstrap3 %}
+
 {% block title %}Change position for {{ ad.plain_name }} on {{ doc }}{% endblock %}
 
-{% block morecss %}
-div.ballot-deferred {
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-form.position-form .position ul {
-  padding: 0;
-  margin: 0;
-}
-form.position-form .position li {
-  list-style-type: none;
-  float: left;
-  padding-right: 10px;
-}
-form.position-form .last-edited {
-  font-style: italic;
-}
-form.position-form .discuss-text {
-  padding-top: 20px
-}
-form.position-form #id_discuss,
-form.position-form #id_comment {
-  width: 700px;
-  height: 250px;
-}
-form.position-form .comment-text {
-  margin-top: 20px;
-}
-div.question {
-   font-size: 173%;
-   padding-left: 5px;
-   padding-bottom: 10px;
-}
-{% endblock %}
-
 {% block content %}
-<h1>Change position for {{ ad.plain_name }} on {{ doc }}</h1>
+  <h1>Change position for {{ ad.plain_name }}<br><small>{{ doc }}</small></h1>
 
-<div class="question">{{ ballot.ballot_type.question }}</div>
+  {% bootstrap_messages %}
 
-{% if ballot_deferred %}
-<div class="ballot-deferred">Ballot deferred by {{ ballot_deferred.by }} on {{ ballot_deferred.time|date:"Y-m-d" }}.</div>
-{% endif %}
+  <div class="question">{{ ballot.ballot_type.question }}</div>
 
-<form class="position-form" action="" method="post">{% csrf_token %}
-  <div>
-  <span class="position">{{ form.position }}</span>
-  <span class="actions">
-    <input type="submit" name="send_mail" value="Save and send email"/>
-    <input type="submit" value="Save"/>
-    {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
-    {% if ballot_deferred %}<input type="submit" name="Undefer" value="Undefer"/>{% else %}<input type="submit" name="Defer" value="Defer"/>{% endif %}
-    {% endif %}
-  </span>
-  </div>
+  {% if ballot_deferred %}
+    <p class="alert alert-info">
+      Ballot deferred by {{ ballot_deferred.by }} on {{ ballot_deferred.time|date:"Y-m-d" }}.
+    </p>
+  {% endif %}
 
-  <div style="clear:left"></div>
-  
-  <div class="discuss-widgets"{% if not show_discuss_text %} style="display:none"{% endif %}>
-  <div class="discuss-text">
-    {{ form.discuss.label_tag }}
-    {% if old_pos and old_pos.discuss_time %}<span class="last-edited">(last edited {{ old_pos.discuss_time }})</span>{% endif %}
-  </div>
-  {{ form.discuss.errors }}
-  {{ form.discuss }}
-  </div>
-  
-  <div class="comment-text">
-    {{ form.comment.label_tag }}
-    {% if old_pos and old_pos.comment_time %}<span class="last-edited">(last edited {{ old_pos.comment_time }}){% endif %}</span>
-  </div>
-  {{ form.comment }}
+  <form role="form" method="post">
+    {% csrf_token %}
 
-  <div class="actions">
-    <a href="{{ return_to_url }}">Back</a>
-  </div>
-  
-  {{ form.return_to_url }}
+    {% for field in form %}
+      {% bootstrap_field field %}
+      {% if field.name == "discuss" and old_pos and old_pos.discuss_time %}
+        <span class="help-block">Last edited {{ old_pos.discuss_time }}</span>
+      {% elif field.name == "comment" and old_pos and old_pos.comment_time %}
+        <span class="help-block">Last edited {{ old_pos.comment_time }}</span>
+      {% endif %}
+    {% endfor %}
 
-</form>
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="send_mail">Save & send email</button>
+      <input type="submit" class="btn btn-default" value="Save">
+
+      {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
+        {% if ballot_deferred %}
+          <input type="submit" class="btn btn-warning" name="Undefer" value="Undefer ballot">
+        {% else %}
+          <input type="submit" class="btn btn-danger" name="Defer" value="Defer ballot">
+        {% endif %}
+      {% endif %}
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
 {% endblock %}
 
-{% block content_end %}
-<script>
-  var blockingPositions = {{ blocking_positions|safe }};
-</script>
-<script type="text/javascript" src="/js/doc-edit-position.js"></script>
+{% block js %}
+  <script>
+    var block_pos = {{ blocking_positions|safe }};
+
+    function discussToggle(val) {
+        if (val in block_pos) {
+            $("#div_id_discuss").show();
+        } else {
+            $("#div_id_discuss").hide();
+        }
+    }
+   
+   $("input[name=position]").click(function () {
+       discussToggle($(this).val());
+   });
+
+   discussToggle($("input[name=position]:checked").val());
+  </script>
 {% endblock %}

@@ -1,39 +1,24 @@
 {% extends "base.html" %}
 
-{% block morecss %}
-.warning {
-  font-weight: bold;
-  color: #a00;
-}
-{% endblock %}
+{% load bootstrap3 %}
 
 {% block title %}
-Change the responsible AD for {{ charter.canonical_name }}-{{ charter.rev }}
+  Change responsible AD for {{ charter.canonical_name }}-{{ charter.rev }}
 {% endblock %}
 
 {% block content %}
-<h1>Change the responsible AD for {{ charter.canonical_name }}-{{ charter.rev }}</h1>
+  <h1>Change responsible AD<br><small>{{ charter.canonical_name }}-{{ charter.rev }}</small></h1>
 
-<form class="edit-info" action="" enctype="multipart/form-data" method="post">{% csrf_token %}
-  <table>
-    {% for field in form.visible_fields %}
-    <tr>
-      <th>{{ field.label_tag }}</th>
-      <td>
-        {{ field }}
-        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-        {{ field.errors }}
-      </td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td></td>
-      <td class="actions">
-        <a href="{% url "doc_view" name=charter.canonical_name %}">Back</a>
-        <input type="submit" value="Submit"/>
-      </td>
-    </tr>
-  </table>
-</form>
+  {% bootstrap_messages %}
+
+  <form role="form" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=charter.canonical_name %}">Back</a>
+    {% endbuttons %}
+  </form>
 
 {% endblock %}

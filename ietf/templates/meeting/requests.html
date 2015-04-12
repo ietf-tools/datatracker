@@ -1,64 +1,118 @@
-{% extends "base.html" %}{% load ietf_filters %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% block title %}IETF {{ meeting.num }} Meeting Timeslot Requests{% endblock %}
-{% block morecss %}
-@media print {
-  .title { font-size: 1.0cm !important; padding-top: 6cm; text-align: center;}
-  .loc { text-align:center; font-size: 0.75cm} 
-}
-.loc { width: 100% }
-h2 { border-style: none none solid none ; page-break-before: always;}
-h3 { color: #0000a0 }
-th { text-align: right; vertical-align: text-top; }
-.even { background-color: #fff; }
-.odd { background-color: #ddf; }
-.h { text-align: center; border-style: none none solid none; border-width: 1px;}
-.conflict { background-color: #fbb; }
-.conflic2 { background-color: #fd6; }
-.conflic3 { background-color: #ff8; }
-.status { text-align: center; background-color: #004; color: #fff; }
-.no-req {border-style: solid; border-width: 1px; padding: 5px; font-weight:bold ; background-color: #333; color: #fff}
+{% extends "base.html" %}
 
-{% endblock morecss %}
+{% load ietf_filters %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block title %}IETF {{ meeting.num }} timeslot requests{% endblock %}
 
 {% block content %}
-<h1 class="title">IETF {{ meeting.number }} Meeting Timeslot Requests</h1>
-<div class="loc">{{meeting.city}}, {{meeting.country}} -- {{meeting.venue_name}} </div>
+  <div class="row">
+    <div class="col-md-10">
 
-<table>
-{% for session in sessions %}
-{% if session.group.parent %}
-{% ifchanged %} 
-</table>
-<h2><a name="{{session.group.parent.acronym}}">{{session.group.parent.acronym|upper}} - {{session.group.parent.name}}</a></h2>
-<div class="no-req">No schedule request:{% for group in groups_not_meeting %}{% if group.parent.id == session.group.parent.id %} {{group.acronym|upper}}{%endif%}{% endfor %}</div></br>
-<table>
-<tr>
-  <td class="h"></td>
-  <th class="h">Duration</th>
-  <th class="h">Size</th>
-  <th class="h">Requested By</th>
-  <th class="h">Area Director</th>
-  <th class="h">Conflicts</th>
-  <th class="h">Special Requests</th>
-{% endifchanged %}
-{%ifchanged%}
-<tr><td class="status" colspan="7"><!-- {{session.group.parent.id}} -->{{session.status}}</td></tr>
-{%endifchanged%}
-<tr class="{% if forloop.counter|divisibleby:2 %}even{% else %}odd{% endif %}">
-  <th valign="top"><a href="{% url "ietf.secr.sreq.views.edit_mtg" num=meeting.number acronym=session.group.acronym %}">{{session.group.acronym|upper}}</a></th>
-  <td valign="top" align="center">{% if not session.requested_duration %}<i>{{session.status}}</i>{%else%} {{session.requested_duration|stringformat:"s"|slice:"0:4"}} {% endif %}</td>
-  <td valign="top" align="center">{{session.attendees}}</td>
-  <td valign="top">
-    <a href="mailto:{{session.requested_by.email_address}}">{{session.requested_by}}</a>
-  </td>
-  <td valign="top">
-    {% if session.group.ad_role %}<a href="mailto:{{session.group.ad_role.email.address}}">{{session.group.ad_role.person}}</a> {%endif%}
-  </td>
-  <td width="30%" valign="top">{%if session.requested_duration%}<span>{% for constraint in session.constraints %}{%ifchanged%}</span><span class="{{constraint.name.slug}}">{%endifchanged%} {% if constraint %} {% if not forloop.first %}, {%endif%}{{constraint.brief_display}}{% if constraint.target.parent.id != constraint.source.parent.id and not constraint.person %} ({{constraint.target.parent.acronym}}){%endif%} {% endif %} {% endfor %}</span>{%endif%}</td>
-  <td width="30%" valign="top">{% if session.comments %}<i><font color="#800000">{{session.comments|linebreaksbr}}</font></i>{% endif %}</td>
-</tr>
-{% endif %}
-{% endfor %}
-</table>
-{% endblock %} 
+      <h1 class="title">IETF {{ meeting.number }} timeslot requests<br>
+        <small>{{meeting.city}}, {{meeting.country}} -- {{meeting.venue_name}}</small>
+      </h1>
+
+      {% regroup sessions by group.parent as area_sessions %}
+      {% for area in area_sessions %}
+        <h2 class="anchor-target" id="{{area.grouper.acronym}}">
+          {{area.grouper.acronym|upper}} <small>{{area.grouper.name}}</small>
+        </h2>
+        <p class="alert alert-info">
+          <b>No timeslot request received for:</b>
+          {% for group in groups_not_meeting %}
+            {% if group.parent.id == area.grouper.id %}
+              {{ group.acronym }}
+            {% endif %}
+          {% endfor %}
+        </p>
+
+        <table class="table table-condensed table-striped">
+          <thead>
+	    <tr>
+	      <th>Group</th>
+	      <th>Length</th>
+	      <th>Size</th>
+	      <th>Requester</th>
+	      <th>AD</th>
+	      <th>Conflicts</th>
+	      <th>Special requests</th>
+	    </tr>
+          </thead>
+          <tbody>
+	    {% for session in area.list %}
+	      {% ifchanged %}
+	        <tr><th class="warning" colspan="7">{{session.status|capfirst}}</th></tr>
+	      {% endifchanged %}
+
+	      <tr>
+	        <th>
+	          <a href="{% url "ietf.secr.sreq.views.edit_mtg" num=meeting.number acronym=session.group.acronym %}">
+	            {{session.group.acronym}}
+	          </a>
+	        </th>
+
+	        <td class="text-right">
+	          {% if session.requested_duration %}
+	            {{session.requested_duration|stringformat:"s"|slice:"0:4"}}
+	          {% endif %}
+	        </td>
+
+	        <td class="text-right">{{session.attendees|default:""}}</td>
+
+	        <td>
+	          <a href="mailto:{{session.requested_by.email_address}}">{{session.requested_by}}</a>
+	        </td>
+
+	        <td>
+                  {% if session.group.ad_role %}
+                    <a href="mailto:{{ session.group.ad_role.email.address }}">{{ session.group.ad_role.person }}</a>
+	          {% endif %}
+	        </td>
+
+	        <td>
+	          {% if session.requested_duration %}
+	            {% regroup session.constraints by name as prioritized_constraints %}
+	            {% for grouped_constraint in prioritized_constraints %}
+	              {% if not forloop.first %}
+	                {% ifchanged grouped_constraint.grouper %}<br>{% endifchanged %}
+	              {% endif %}
+	              {% for constraint in grouped_constraint.list %}
+	                {% if constraint.target.parent.id == constraint.source.parent.id and not constraint.person %}
+	                  <b>
+	                {% endif %}
+	                {% if constraint.name.slug == "bethere" %}
+	                  {{constraint.brief_display|clean_whitespace}}{% if not forloop.last %}, {% endif %}
+	                {% else %}
+	                  <span class="{% if constraint.name.slug == "conflict" %}text-danger{% elif constraint.name.slug == "conflic2" %}text-warning{% elif constraint.name.slug == "conflic3" %}text-success{% else %}{{constraint.name.slug}}{% endif %}">
+		            {{constraint.brief_display}}
+	                  </span>
+	                {% endif %}
+	                {% if constraint.target.parent.id == constraint.source.parent.id and not constraint.person %}
+	                  </b>
+	                {% endif %}
+	              {% endfor %}
+	            {% endfor %}
+	          {% endif %}
+	        </td>
+
+	        <td>
+	          {% if session.comments %}{{session.comments|linebreaksbr}}{% endif %}
+	        </td>
+	      </tr>
+	    {% endfor %}
+          </tbody>
+        </table>
+      {% endfor %}
+    </div>
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        {% for area in area_sessions %}
+          <li><a href="#{{area.grouper.acronym}}">{{ area.grouper.acronym|upper }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+{% endblock %}
