@@ -5,39 +5,32 @@
 {% block content %}
 <div class="row">
    <div class="col-md-12">
-   <div class="text-center">
-      <img class="ietflogo" src="/images/ietflogo.png" alt="IETF">
-      {% if server_mode == "production" %}
-      <h1>IETF Datatracker</h1>
-      {% else %}
-      <h1 style="color:#ff0000">IETF Datatracker -- Development Mode</h1>
-      {% endif %}
-   </div>
-   </div>
-</div>
+      <div class="text-center padded">
+	 <img class="ietflogo" src="/images/ietflogo.png" alt="IETF">
+	 {% if server_mode != "production" %}
+	 <h1>Datatracker</h1>
+	 {% else %}
+	 <h1 style="color:#ff0000">Datatracker -- Development Mode</h1>
+	 {% endif %}
+	<p class="center-block">
 
-<div class="row">
-   <div class="col-md-12">
-      <h2>Search Documents</h2>
-      {% include "doc/search/search_form.html" %}
+	   The IETF Datatracker is the day-to-day front-end to the IETF database for people
+	   who work on IETF standards.<br/>
+	   It contains data about the documents, working groups,
+	   meetings, agendas, minutes, presentations, and more, of the IETF.
 
-   </div>
-</div>
-<div class="row">
-   <hr/>
-   <div class="col-md-4 col-md-offset-1">
-      <h2>About this site</h2>
-      <p>The IETF Datatracker is the IETF's web system for managing organizational information, such as:</p>
-   </div>
-   <div class="col-md-7">
-      <div class="h2"></div>
-      <ul class="list-group list-unstyled">
-	 <li><a href="{% url "doc_search" %}">Internet-Drafts (I-Ds) and Requests for Comments (RFCs)</a></li>
-	 <li><a href="/ipr/">IPR disclosures</a></li>
-	 <li><a href="/liaison/">Liaison statements</a></li>
-	 <li><a href="/meeting/agenda/">Meeting agendas</a> and <a href="/meeting/">session agendas, slides and minutes</a></li>
-	 <li><a href="/iesg/agenda/">IESG telechat agendas</a></li>
-      </ul>
+	</p>
+	<p class="center-block">
+
+	   The primary public face of the IETF is at <a href="https://www.ietf.org/">www.ietf.org</a>.
+
+	</p>
+      </div>
+
+      <div class="padded">
+	<h2>IETF Document Search</h2>
+	{% include "doc/search/search_form.html" %}
+      </div>
    </div>
 </div>
 
