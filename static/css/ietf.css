@@ -338,6 +338,15 @@ table.materials .snippable {
   padding: 0.2em 0.5em;
 }
 
+.padded {
+  padding: 1em 1em;
+  line-height: 1.4142;
+}
+
+a.padded {
+  line-height: 2.0;
+}
+
 footer {
   font-family: "PT Sans Caption", "Trebuchet", "Seravek", sans-serif;
   font-size: 0.7071em;
