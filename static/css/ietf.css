@@ -121,7 +121,7 @@ label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
 .position-block    { background-color: #d4584d; } /* @alert-danger-bg */
 .position-yes      { background-color: #67F72B; } /* @brand-success */
 .position-noobj    { background-color: #D1F7C1; } /* lighten(@brand-success) */
-.position-abstain  { background-color: #f6d73c; } /* darken(@brand-info) */
+.position-abstain  { background-color: #f69f74; } /* @brand-warning */
 .position-recuse   { background-color: #808080; }
 .position-norecord { background-color: inherit; }
 .ballot-icon table td { border: 1px solid #ddd; height: 10px; width: 8px; }
