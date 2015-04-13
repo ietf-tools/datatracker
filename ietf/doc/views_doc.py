@@ -97,7 +97,6 @@ def document_main(request, name, rev=None):
             if a.startswith("rfc"):
                 return redirect("doc_view", name=a)
 
-    group = doc.group
     if doc.type_id == 'conflrev':
         conflictdoc = doc.related_that_doc('conflrev')[0].document
     
@@ -130,6 +129,9 @@ def document_main(request, name, rev=None):
             gh = find_history_active_at(doc.group, doc.time)
             if gh:
                 group = gh
+
+    # set this after we've found the right doc instance
+    group = doc.group
 
     top = render_document_top(request, doc, "document", name)
 
@@ -244,7 +246,7 @@ def document_main(request, name, rev=None):
         elif group.type_id in ("rg", "wg"):
             submission = "%s %s" % (group.acronym, group.type)
             if group.type_id == "wg":
-                submission = "<a href=\"%s\">%s</a>" % (urlreverse("group_home", kwargs=dict(group_type=doc.group.type_id, acronym=doc.group.acronym)), submission)
+                submission = "<a href=\"%s\">%s</a>" % (urlreverse("group_home", kwargs=dict(group_type=group.type_id, acronym=group.acronym)), submission)
             if doc.stream_id and doc.get_state_slug("draft-stream-%s" % doc.stream_id) == "c-adopt":
                 submission = "candidate for %s" % submission
 
