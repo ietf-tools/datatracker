@@ -533,7 +533,7 @@ def pos_to_label(text):
     """Return a valid Bootstrap3 label type for a ballot position."""
     return {
         'Yes':          'success',
-        'No Objection': 'info',
+        'No Objection': 'pass',
         'Abstain':      'warning',
         'Discuss':      'danger',
         'Block':        'danger',
