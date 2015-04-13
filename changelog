@@ -24,7 +24,7 @@ ietfdb (6.0.0) ietf; urgency=medium
   menus, and PT Mono for monospaced documents are from ParaType, and are
   served by Google Fonts.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  13 Apr 2015 20:23:56 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Apr 2015 20:31:48 +0000
 
 ietfdb (5.13.1) ietf; urgency=medium
 
