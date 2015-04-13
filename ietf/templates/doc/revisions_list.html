@@ -2,7 +2,7 @@
   <li class="disabled"><a><b>Versions</b></a></li>
   {% for rev in revisions %}
     <li {% if rev == doc.rev %}{% if rev == latest_rev %}class="active"{% else %}class="warning"{% endif %}{% endif %}>
-      <a href="{% url "doc_view" name=doc.name %}{% if not forloop.last %}{{ rev }}/{% endif %}" >{{ rev }}</a>
+      <a href="{% url "doc_view" name=doc.name %}{% if not forloop.last %}{{ rev }}/{% endif %}" {% if rev != "00" and rev != latest_rev %}rel="nofollow"{% endif %} >{{ rev }}</a>
     </li>
   {% endfor %}
 </ul>
