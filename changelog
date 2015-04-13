@@ -1,3 +1,31 @@
+ietfdb (6.0.0) ietf; urgency=medium
+
+  **Facelift using Bootstrap**
+
+  During more than a year, from July 2013 to late 2014, Lars Eggert,
+  <lars@netapp.com>, has worked intensively on a major facelift to the
+  datatracker, porting the GUI to Bootstrap. The work took 287 separate
+  commits , and comprised changes to 1016 different files.
+
+  This work has turned the IETF Datatracker website into a responsive website
+  which support use on a much larger variety of devices, from small mobile
+  devices to desktops.
+
+  The work relies heavily on the capabilities of Bootstrap, and continues to
+  use the Django framework which the datatracker has been build on since
+  version 2.00.
+
+  Additional page conversion work has been done by Ole Laursen, with final
+  style tweaks, bug-fixes and adaptations by Henrik Levkowetz in order to take
+  care of some remaining rough edges and give it a distinct colour palette and
+  a matching selection of fonts.
+
+  The fonts, PT Serif for body text, PT Sans Caption for headers, PT Sans for
+  menus, and PT Mono for monospaced documents are from ParaType, and are
+  served by Google Fonts.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Apr 2015 20:23:56 +0000
+
 ietfdb (5.13.1) ietf; urgency=medium
 
   This is a bugfix release, to have a clean slate before merging in the
