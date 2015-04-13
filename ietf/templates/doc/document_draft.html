@@ -154,8 +154,14 @@
 	 
       <tr>
 	{% if doc.stream %}
-	  <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">
-	    {% if doc.stream.slug == "ietf" %} WG {% else %} {{ doc.stream }} {% endif %} state
+	  <th>
+	     {% if doc.stream.slug != "legacy" %}
+	     <a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">
+		{% if doc.stream.slug == "ietf" %} WG {% else %} {{ doc.stream }} {% endif %} state
+	     </a>
+	     {% else %}
+		Legacy state
+	     {% endif %}
 	  </th>
 	  <td class="edit">
 	    {% if doc.stream and can_edit_stream_info %}
