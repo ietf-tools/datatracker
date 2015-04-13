@@ -562,6 +562,10 @@ class DocHistory(DocumentInfo):
     def groupmilestone_set(self):
         return self.doc.groupmilestone_set
 
+    @property
+    def docalias_set(self):
+        return self.doc.docalias_set
+
     class Meta:
         verbose_name = "document history"
         verbose_name_plural = "document histories"
