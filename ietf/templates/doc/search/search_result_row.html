@@ -29,10 +29,6 @@
       {% if doc.has_errata %}
         <a class="label label-danger" href="//www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
       {% endif %}
-
-      {% if doc.pages %}
-        <br><small class="text-muted">{{doc.pages}} page{{ doc.pages|pluralize }}</small>
-      {% endif %}
     </p>
 
     {% if user|has_role:"Secretariat" and doc.reschedule_form %}
@@ -56,6 +52,10 @@
     {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
       <wbr><span class="label label-warning">Expires soon</span>
     {% endif %}
+
+    {% if doc.pages %}
+      <br><small class="text-muted">{{doc.pages}} page{{ doc.pages|pluralize }}</small>
+    {% endif %}
   </td>
 
   {% include "doc/search/status_columns.html" %}
@@ -73,7 +73,7 @@
       {% if doc.ad %}
         <p>{{ doc.ad|default:"" }}</p>
       {% endif %}
-      {% if doc.shepherd %}<small class="text-muted">{{doc.shepherd|default:""}}</small>{% endif %}
+      {% if doc.shepherd %}<small class="text-muted">{{doc.shepherd|emailwrap|default:""}}</small>{% endif %}
     </td>
   {% else %}
      <td></td>
