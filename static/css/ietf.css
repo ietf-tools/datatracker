@@ -366,6 +366,6 @@ footer {
 */
 
 
-tbody.plain tr th { border-top: 0; text-align: right }
-tbody.plain tr:first-child th { border-top: 0; text-align: left }
+tbody.plain tr th { border-top: 0; text-align: right; max-width: 12em;}
+tbody.plain tr:first-child th { border-top: 0; text-align: left; width: 6em; }
 tbody.plain tr td { border-top: 0; }
