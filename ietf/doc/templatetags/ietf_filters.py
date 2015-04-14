@@ -585,3 +585,8 @@ def urlize_html(html, autoescape=False):
             textNode.replaceWith(BeautifulSoup(urlizedText))
 
         return str(soup)
+
+@register.filter
+def emailwrap(email):
+    email = str(email)
+    return mark_safe(email.replace('@', '<wbr>@'))
