@@ -18,7 +18,7 @@
   </td>
 
   <td class="doc">
-    <p>
+    <div>
       <a href="{{ doc.get_absolute_url }}">{% if doc.get_state_slug == "rfc" %}RFC {{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}</a>
 
       {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}
@@ -29,7 +29,7 @@
       {% if doc.has_errata %}
         <a class="label label-danger" href="//www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
       {% endif %}
-    </p>
+    </div>
 
     {% if user|has_role:"Secretariat" and doc.reschedule_form %}
       <div class="form-group">
