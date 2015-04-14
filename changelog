@@ -49,8 +49,8 @@ ietfdb (5.13.1) ietf; urgency=medium
   * Fixed style attributes which resulted in red text on red background for
     some error messages
 
-  * Buildbot changes: Separated out the schedulers for trunk, personal/* and
-    branch/*.  Corrected regex patterns which extract unittest details.  Added
+  * Buildbot changes: Separated out the schedulers for trunk, personal/ * and
+    branch/ *.  Corrected regex patterns which extract unittest details.  Added
     a first tentative email notifier.  Added ForceSchedulers, in order to be
     able to force builds.
 
