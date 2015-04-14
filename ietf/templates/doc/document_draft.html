@@ -31,7 +31,7 @@
        </tr>
     </thead>
 
-    <tbody>
+    <tbody class="plain">
       <tr>
 	 <th rowspan="{{table_rows.doc}}">Document</th>
       </tr>
@@ -146,7 +146,7 @@
       {% endif %}
 
     </tbody>
-    <tbody>
+    <tbody class="plain">
 
       <tr>
 	 <th rowspan="{{table_rows.stream}}">Stream</th>
@@ -243,7 +243,7 @@
       {% endif %}
 
     </tbody>
-    <tbody>
+    <tbody class="plain">
 
       <tr>
 	 <th rowspan="{{table_rows.iesg}}">IESG</th>
@@ -329,7 +329,7 @@
     </tbody>
 
     {% if iana_review_state %}
-    <tbody>
+    <tbody class="plain">
       <tr>
 	 <th rowspan="{{table_rows.iana}}">IANA</th>
       </tr>
@@ -360,7 +360,7 @@
     </tbody>
     {% endif %}
 
-    <tbody>
+    <tbody class="plain">
 
       {% if rfc_editor_state %}
 	<tr>

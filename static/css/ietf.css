@@ -351,3 +351,21 @@ footer {
   font-family: "PT Sans Caption", "Trebuchet", "Seravek", sans-serif;
   font-size: 0.7071em;
 }
+
+/* This applies to the top navbar submenu popouts*/
+/* 
+.nav.navbar-nav .dropdown-submenu ul {
+    
+}
+*/
+/* This applies to the side menubar submenu popouts */
+/*
+.nav.nav-stacked .dropdown-submenu ul {
+
+}
+*/
+
+
+tbody.plain tr th { border-top: 0; text-align: right }
+tbody.plain tr:first-child th { border-top: 0; text-align: left }
+tbody.plain tr td { border-top: 0; }
