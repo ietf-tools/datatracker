@@ -1,3 +1,56 @@
+ietfdb (6.0.1) ietf; urgency=medium
+
+  This is a bugfix release which irons out some wringles discovered after
+  deployment of 6.0.0.
+
+  * Merged in [9505] from rjsparks@nostrum.com:
+    Added a checkbox to cc the group list address on ballot positions if a
+    document belongs to a group. Add better tests of the checkboxes on that
+    form.  
+
+  * Provided a different shortcut icon for the datatracker when run in 
+    development or test mode.  Fixes issue #1667.
+
+  * Added back the development mode header on the frontpage.
+
+  * Adapted session_draft_list() code to handle the case when there is 
+    multiple agendas for a given group acronym.  Fixes some server 500 results 
+    when trying to get pdf bundles for the plenary sessions for ietf 71.
+
+  * Put back the schema specifier for IANA and RFC-editor URLs -- they are 
+    needed in parts of the code.
+
+  * Put back the value attribute for the name/value pair of many input and
+    button elements which lost the value attribute in the conversion, in order
+    to let the backing form code determine which button was pressed.  Fixes
+    issue #1668.
+
+  * Shaved off some more vertical space in the document tables.  Builds on 
+    [9494], addresses #1660, #1663, #1665.
+
+  * Introduced a couple of changes to the document list row format to make 
+    rows take up less vertical space: Moved the page count in under the date, 
+    so it won't add vertical space, and made shepherd email addresses break 
+    across lines if needed, instead of squashing the column widths of the other 
+    columns.
+
+  * Made it clearer on the document iesg review page and the ballot popup 
+    page which ADs mentioned are ex-ADs, by adding parentheses in addition to 
+    the dimmed text.  Fixes issue #1664
+
+  * Removed all subsection horizontal lines from the document meta tables, 
+    on suggestion from mnot@pobox.com.  Addresses issue #1659.
+
+  * Added a missing templatetag library load instruction for bootstrap3.  
+    Addresses issue #1662.
+
+  * Replaced google-served fonts with self-hosted ones.  After a testing
+    period with the current 'access plus 4 hours' Cache-Control setting,
+    we should probably increase the cache control for external static files.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Apr 2015 19:24:15 +0000
+
+
 ietfdb (6.0.0) ietf; urgency=medium
 
   **Facelift using Bootstrap**
