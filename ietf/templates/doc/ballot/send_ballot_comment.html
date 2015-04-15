@@ -37,6 +37,15 @@
       </div>
     {% endif %}
 
+    {% if doc.group.list_email %}
+      <div class="checkbox">
+        <label>
+          <input type="checkbox" name="cc_group_list" value="1" checked>
+          <b>Cc:</b> {{ doc.group.list_email }}
+        </label>
+      </div>
+    {% endif %}
+
     <div class="form-group">
       <label>Subject</label>
       <input class="form-control" type="text" placeholder="{{ subject }}" disabled>

@@ -290,6 +290,8 @@ def send_ballot_comment(request, name, ballot_id):
         cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
         if request.POST.get("cc_state_change") and doc.notify:
             cc.extend(doc.notify.split(','))
+        if request.POST.get("cc_group_list") and doc.group.list_email:
+            cc.append(doc.group.list_email)
 
         send_mail_text(request, to, frm, subject, body, cc=u", ".join(cc))
             
