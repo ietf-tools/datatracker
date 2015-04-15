@@ -467,17 +467,18 @@ def convert_to_pdf(doc_name):
 
 def session_draft_list(num, session):
     try:
-        agenda = Document.objects.filter(type="agenda",
+        agendas = Document.objects.filter(type="agenda",
                                          session__meeting__number=num,
                                          session__group__acronym=session,
-                                         states=State.objects.get(type="agenda", slug="active")).distinct().get()
+                                         states=State.objects.get(type="agenda", slug="active")).distinct()
     except Document.DoesNotExist:
         raise Http404
 
     drafts = set()
-    content = read_agenda_file(num, agenda)
-    if content:
-        drafts.update(re.findall('(draft-[-a-z0-9]*)', content))
+    for agenda in agendas:
+        content = read_agenda_file(num, agenda)
+        if content:
+            drafts.update(re.findall('(draft-[-a-z0-9]*)', content))
 
     result = []
     for draft in drafts:
