@@ -8,11 +8,11 @@
       <div class="text-center padded">
 	 <img class="ietflogo" src="/images/ietflogo.png" alt="IETF">
 	 {% if server_mode != "production" %}
-	 <h1>Datatracker</h1>
+	 <h1 style="color:#ff0000">Datatracker -- {{ server_mode|capfirst }} Mode</h1>
 	 {% else %}
-	 <h1 style="color:#ff0000">Datatracker -- Development Mode</h1>
+         <h1>Datatracker</h1>
 	 {% endif %}
-	<p class="center-block">
+	 <p class="center-block">
 
 	   The IETF Datatracker is the day-to-day front-end to the IETF database for people
 	   who work on IETF standards.<br/>
