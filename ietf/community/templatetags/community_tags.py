@@ -16,10 +16,10 @@ def get_user_managed_lists(user):
     try:
         person = user.person
         groups = []
-        managed_areas = [i.group for i in Role.objects.filter(name__slug='ad', email__in=person.email_set.all())]
+        managed_areas = [i.group for i in Role.objects.filter(name__slug='ad', group__type__slug='area', group__state__slug='active', email__in=person.email_set.all())]
         for area in managed_areas:
             groups.append(CommunityList.objects.get_or_create(group=area)[0])
-        managed_wg = [i.group for i in Role.objects.filter(name__slug='chair', group__type__slug='wg', email__in=person.email_set.all())]
+        managed_wg = [i.group for i in Role.objects.filter(name__slug='chair', group__type__slug='wg', group__state__slug__in=('active','bof'), email__in=person.email_set.all())]
         for wg in managed_wg:
             groups.append(CommunityList.objects.get_or_create(group=wg)[0])
         lists['group'] = groups
