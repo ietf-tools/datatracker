@@ -1,13 +1,14 @@
 # -*- conf-mode -*-
 coverage>=3.7.1
-#cssselect>=0.6.1                # for PyQuery
+#cssselect>=0.6.1               # for PyQuery
 decorator>=3.4.0
-#defusedxml>=0.4.1               # for TastyPie
+#defusedxml>=0.4.1              # for TastyPie
 django-bootstrap3>=5.1.1
+django-typogrify>=1.3.1
 django-widget-tweaks>=1.3
 docutils>=0.12                  
-#lxml>=3.4.0                     # for PyQuery; 
-mimeparse>=0.1.3                # for TastPie
+#lxml>=3.4.0                    # for PyQuery; 
+mimeparse>=0.1.3		# for TastPie
 MySQL-python>=1.2.5
 pathlib>=1.0
 pyflakes>=0.8.1
