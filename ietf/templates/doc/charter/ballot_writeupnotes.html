@@ -19,8 +19,8 @@
     </span>
 
     {% buttons %}
-      <button type="submit" class="btn btn-primary" name="save_ballot_writeup">Save</button>
-      <button type="submit" class="btn btn-warning" name="send_ballot">Save & {% if ballot_issued %}re-{% endif %}issue ballot</button>
+      <button type="submit" class="btn btn-primary" name="save_ballot_writeup" value="Save Ballot Writeup">Save</button>
+      <button type="submit" class="btn btn-warning" name="send_ballot" value="Save and Re-Issue Ballot">Save & {% if ballot_issued %}re-{% endif %}issue ballot</button>
       <a class="btn btn-default pull-right" href="{% url "doc_writeup" name=charter.name %}">Back</a>
     {% endbuttons %}
   </form>
