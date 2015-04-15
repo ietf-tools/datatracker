@@ -23,7 +23,11 @@
 
     {% block pagehead %}{% endblock %}
 
+    {% if server_mode and server_mode == "production" %}
     <link rel="shortcut icon" href="/images/ietf-icon-blue3.png">
+    {% else %}
+    <link rel="shortcut icon" href="/images/ietf-icon-red3.png">
+    {% endif %}
     <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
   </head>
 
