@@ -152,7 +152,7 @@ class EditPositionTests(TestCase):
         # send
         mailbox_before = len(outbox)
 
-        r = self.client.post(url, dict(cc="test@example.com", cc_state_change="1"))
+        r = self.client.post(url, dict(cc="test@example.com", cc_state_change="1",cc_group_list="1"))
         self.assertEqual(r.status_code, 302)
 
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -162,6 +162,17 @@ class EditPositionTests(TestCase):
         self.assertTrue(draft.name in m['Subject'])
         self.assertTrue("clearer title" in str(m))
         self.assertTrue("Test!" in str(m))
+        self.assertTrue("somebody@example.com" in m['Cc'])
+        self.assertTrue("test@example.com" in m['Cc'])
+        self.assertTrue(draft.group.list_email)
+        self.assertTrue(draft.group.list_email in m['Cc'])
+
+        r = self.client.post(url, dict(cc=""))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), mailbox_before + 2)
+        m = outbox[-1]
+        self.assertEqual(m['Cc'],None)
+
 
 class BallotWriteupsTests(TestCase):
     def test_edit_last_call_text(self):
