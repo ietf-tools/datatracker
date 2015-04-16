@@ -87,7 +87,12 @@ def ballot_icon(context, doc):
     positions = list(doc.active_ballot().active_ad_positions().items())
     positions.sort(key=sort_key)
 
-    res = ['<a href="%s" data-toggle="modal" data-target="#modal-%d" title="IESG positions (click to show more)" class="ballot-icon"><table>' % (
+    right_click_string = ''
+    if has_role(user, "Area Director"):
+        right_click_string = 'oncontextmenu="window.location.href=\'%s\';return false;"' %  urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk))
+
+    res = ['<a %s href="%s" data-toggle="modal" data-target="#modal-%d" title="IESG positions (click to show more)" class="ballot-icon"><table>' % (
+            right_click_string,
             urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
             ballot.pk)]
 
