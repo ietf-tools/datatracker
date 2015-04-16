@@ -2,6 +2,7 @@ from functools import wraps
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404
 from django.utils.http import urlquote
@@ -65,7 +66,11 @@ def check_permissions(func):
             session = slide.session_set.all()[0]
             group = session.group
 
-        login = request.user.person
+        try:
+            login = request.user.person
+        except ObjectDoesNotExist:
+            return HttpResponseForbidden("User not authorized to access group: %s" % group.acronym)
+            
         groups = [group]
         if group.parent:
             groups.append(group.parent)
