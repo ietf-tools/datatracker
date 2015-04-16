@@ -63,7 +63,7 @@
           <th>More info</th>
           <td>
             {% for url in urls %}
-              <a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}<br>{% endif %}
+              <a href="{{ url.url }}">{% firstof url.name url.url %}</a>{% if not forloop.last %}<br>{% endif %}
             {% endfor %}
           </td>
         {% endif %}
