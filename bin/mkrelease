@@ -230,7 +230,7 @@ $do svn commit $VERFILE $SETTINGS -m "Set version info and settings back to deve
 note "\nCreating new tag 'tags/dev/$DEV' from $SRC"
 $do svn cp $REPO/$SRC $REPO/tags/dev/$DEV -m "Creating new tag 'tags/dev/$DEV' from $SRC"
 
-$do svn update
+$do svn update -q
 
 echo "
 Hi,
