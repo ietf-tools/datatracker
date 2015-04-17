@@ -1,6 +1,6 @@
 ietfdb (6.0.1) ietf; urgency=medium
 
-  This is a bugfix release which irons out some wringles discovered after
+  This is a bugfix release which irons out some wrinkles discovered after
   deployment of 6.0.0.
 
   * Merged in [9505] from rjsparks@nostrum.com:
