@@ -912,11 +912,12 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
             handle_upload_file(file,disk_filename,meeting,material_type.slug)
 
             # set Doc state
-            state = State.objects.get(type=doc.type,slug='active' if doc.type.slug!='slides' else 'archived')
             if doc.type.slug=='slides':
-                doc.set_state(state)
+                doc.set_state(State.objects.get(type=doc.type,slug='archived'))
                 doc.set_state(State.objects.get(type='reuse_policy',slug='single'))
-
+            else:
+                doc.set_state(State.objects.get(type=doc.type,slug='active'))
+                
             # create session relationship, per Henrik we should associate documents to all sessions
             # for the current meeting (until tools support different materials for diff sessions)
             for s in sessions:
