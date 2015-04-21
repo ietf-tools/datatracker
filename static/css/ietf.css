@@ -84,7 +84,12 @@ body { padding-top: 70px; }
 
 .navbar-brand > img {
   display: inline;
-  margin-top: -7px;
+  padding-right: 1em;
+  margin-top: -5px;
+}
+
+.navbar-brand {
+  margin-top: -2px;	
 }
 
 /* Hack to make anchor-targets take up a bit more space vertically
@@ -97,10 +102,6 @@ body { padding-top: 70px; }
   height: 65px;
   margin-top: -65px;
 }
-
-/* Style navbar buttons */
-/* .navbar-btn { color:#777; } */
-/* .navbar-btn:hover { color: #333; } */
 
 /* Make the panel title font normally large */
 .panel-title { font-size: 14px }
@@ -353,9 +354,9 @@ footer {
 }
 
 /* This applies to the top navbar submenu popouts*/
-/* 
+/*
 .nav.navbar-nav .dropdown-submenu ul {
-    
+
 }
 */
 /* This applies to the side menubar submenu popouts */

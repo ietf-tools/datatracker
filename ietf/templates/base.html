@@ -38,6 +38,7 @@
   </head>
 
   <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url "group_menu_data" %}">
+    {% with server_mode="production" %}
       <nav class="navbar {% if server_mode and server_mode == "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top" role="navigation">
         <div class="container-fluid">
 	  <div class="navbar-header">
@@ -50,13 +51,11 @@
 	    <a class="navbar-brand" href="/">
 	       <img alt="IETF Logo" src="/images/ietflogo-small-transparent.png">
 	       {% if not user.is_authenticated %}
-	       <div style="display: inline; vertical-align: top; padding-left: 1em;">
 		  {% if server_mode and server_mode == "production" %}
 		  Datatracker
 		  {% else %}
 		  <b><i>Development mode</i></b>
 		  {% endif %}
-	       </div>
 	       {% endif %}
 	    </a>
 	  </div>
@@ -70,9 +69,9 @@
               {% include "base/menu.html" with flavor="top" %}
             </ul>
 
-	    <form class="navbar-form navbar-right hidden-sm hidden-xs" action="/doc/search/" role="search">
+	    <form class="navbar-form navbar-right hidden-xs" action="/doc/search/" role="search">
 	      <div class="form-group">
-	        <input class="form-control" type="text" name="name" placeholder="Document search">
+	        <input class="form-control input-sm" type="text" name="name" placeholder="Document search">
 	        <input type="hidden" name="activedrafts" value="on">
 	        <input type="hidden" name="rfcs" value="on">
 	      </div>
@@ -80,7 +79,7 @@
 	  </div>
         </div>
       </nav>
-
+    {% endwith %}
       <div class="container-fluid">
         {% if messages %}
           <div class="row">
