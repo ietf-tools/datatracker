@@ -237,7 +237,8 @@ def confirm(request, acronym):
     if 'resources' in form:
         form['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in form['resources'].split(',')]
     if 'bethere' in form:
-        form['bethere'] = Person.objects.filter(pk__in=form['bethere'].split(','))
+        person_id_list = [ id for id in form['bethere'].split(',') if id ]
+        form['bethere'] = Person.objects.filter(pk__in=person_id_list)
     meeting = get_meeting()
     group = get_object_or_404(Group,acronym=acronym)
     login = request.user.person
