@@ -44,9 +44,10 @@
       {% endif %}
     {% endif %}
 
-    <p class="alert alert-info"><b>Summary:</b> {{ summary }}</p>
     {% if not ballot_open %}
       <p class="alert alert-warning"><b>Note:</b> This ballot was opened for revision {{ ballot.rev }} and is now closed.</p>
+    {% else %}
+      <p class="alert alert-info"><b>Summary:</b> {{ summary }}</p>
     {% endif %}
 
     {% if ballot.ballot_type.question %}
