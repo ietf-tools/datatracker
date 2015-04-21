@@ -39,6 +39,7 @@ class SearchablePersonsField(forms.CharField):
         kwargs["max_length"] = 1000
         self.max_entries = max_entries
         self.only_users = only_users
+        assert model in [ Email, Person ]
         self.model = model
 
         super(SearchablePersonsField, self).__init__(*args, **kwargs)
@@ -56,7 +57,10 @@ class SearchablePersonsField(forms.CharField):
             value = ""
         if isinstance(value, basestring):
             pks = self.parse_select2_value(value)
-            value = self.model.objects.filter(pk__in=pks).select_related("person")
+            if self.model == Person:
+                value = self.model.objects.filter(pk__in=pks)
+            if self.model == Email:
+                value = self.model.objects.filter(pk__in=pks).select_related("person")
         if isinstance(value, self.model):
             value = [value]
 
@@ -68,7 +72,7 @@ class SearchablePersonsField(forms.CharField):
         if self.only_users:
             self.widget.attrs["data-ajax-url"] += "?user=1" # require a Datatracker account
 
-        return u",".join(e.address for e in value)
+        return u",".join(str(p.pk) for p in value)
 
     def clean(self, value):
         value = super(SearchablePersonsField, self).clean(value)
