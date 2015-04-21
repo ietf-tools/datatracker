@@ -53,7 +53,7 @@
   {% if community_lists %}
     <li><a href="{{ community_lists.personal.get_manage_url }}">My tracked docs</a></li>
     {% for cl in community_lists.group %}
-      <li><a href="{{ cl.get_manage_url }}">WG {{ cl.short_name }} docs</a></li>
+      <li><a href="{{ cl.get_manage_url }}">{{ cl.short_name }} {{cl.group.type.slug}} docs</a></li>
     {% endfor %}
   {% else %}
     <li><a rel="nofollow" href="/accounts/login/?next={{request.get_full_path|urlencode}}">Sign in to track docs</a></li>
