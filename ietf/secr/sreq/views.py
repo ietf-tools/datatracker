@@ -22,7 +22,7 @@ from ietf.person.models import Person
 # Globals
 # -------------------------------------------------
 SESSION_REQUEST_EMAIL = 'session-request@ietf.org'
-AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair')
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair','IRTF Chair')
 
 # -------------------------------------------------
 # Helper Functions
