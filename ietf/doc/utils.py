@@ -487,9 +487,6 @@ def get_initial_notify(doc,extra=None):
             for editor in Email.objects.filter(role__name="editor", role__group=doc.group):
                 receivers.append(editor.address)
 
-            if doc.group.list_email:
-                receivers.append(doc.group.list_email)
-
         receivers.append("%s@%s" % (doc.name, settings.DRAFT_ALIAS_DOMAIN))
         receivers.append("%s.ad@%s" % (doc.name, settings.DRAFT_ALIAS_DOMAIN))
         receivers.append("%s.shepherd@%s" % (doc.name, settings.DRAFT_ALIAS_DOMAIN))
