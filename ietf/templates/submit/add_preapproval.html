@@ -1,4 +1,6 @@
 {% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load humanize %}
 {% load bootstrap3 %}
@@ -8,7 +10,7 @@
 {% load ietf_filters %}
 
 {% block submit_content %}
-
+  {% origin %}
   {% bootstrap_messages %}
 
   <h2>Add pre-approval</h2>

@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ietf_filters %}
 {% load future %}
@@ -6,6 +8,7 @@
 {% block title %}IPR disclosures{% endblock %}
 
 {% block content %}
+  {% origin %}
   {% include "ipr/search_form.html" %}
 
   <h2>{% block search_header %}Patent owner/applicant search result{% endblock %}</h2>

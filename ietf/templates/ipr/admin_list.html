@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ietf_filters %}
 
 {% block title %}IPR Admin - {% for s in states %}{{ s.name }}{% if not forloop.last %}/{% endif %}{% endfor %} Disclosures{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>IPR Admin - {% for s in states %}{{ s.name }}{% if not forloop.last %}/{% endif %}{% endfor %} Disclosures</h1>
 
   <p class="buttonlist">

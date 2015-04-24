@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
@@ -9,6 +11,7 @@
 {% block title %}Make last call for {{ doc.name }}{% endblock %}
 
 {% block content %}
+  {% origin %}
 
   <h1>Make last call<br><small>{{doc.name}}</small></h1>
 

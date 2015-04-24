@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load nomcom_tags %}
 
 {% block title %}NomCom {{ year }}{% block subtitle %}{% endblock %}{% endblock %}
 
 {% block content %}
+  {% origin %}
 
   <h1>NomCom {{ year }}</h1>
 

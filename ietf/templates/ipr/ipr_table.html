@@ -1,3 +1,5 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
 {% load ietf_filters %}
 <table class="table table-condensed table-striped ipr-table">
   <thead>
@@ -32,7 +34,7 @@
 
           {% for item in ipr.relatedipr_target_set.all %}
             {% if item.source.state_id == "posted" %}
-              <div>Updated by ID <a href="{% url "ietf.ipr.views.show" item.source.id %}">#{{ item.source.id }}</a>.<div>
+              <div>Updated by ID <a href="{% url "ietf.ipr.views.show" item.source.id %}">#{{ item.source.id }}</a>.</div>
             {% endif %}
           {% endfor %}
         </td>

@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}Index of all Internet-Drafts and RFCs{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Index of all Internet-Drafts and RFCs</h1>
 
   <p>This page lists all Internet-Drafts and RFCs. The main purpose of

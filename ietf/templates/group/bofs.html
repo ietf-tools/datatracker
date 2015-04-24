@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}BOFs{% endblock %}
 
 {% block content %}
+  {% origin %}
   {% load ietf_filters %}
 
   <h1>Birds-of-a-feather (BOF) groups</h1>

@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}IESG review decisions in {{ timeframe }}{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>IESG review decisions in {{ timeframe }}</h1>
 
   <p>Showing review decisions announced in {{ timeframe }}.</p>

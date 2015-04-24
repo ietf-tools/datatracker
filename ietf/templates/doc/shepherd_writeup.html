@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}
   Shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
 {% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
 
   <pre>{{writeup}}</pre>

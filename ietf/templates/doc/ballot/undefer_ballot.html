@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
 {% block title %}Undefer ballot for {{ doc }}{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Undefer ballot<br><small>{{ doc }}</small></h1>
 
   <form role="form" class="undefer" method="post">

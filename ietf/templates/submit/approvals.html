@@ -1,11 +1,13 @@
 {% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}Draft submission approvals{% endblock %}
 
 {% load ietf_filters %}
 
 {% block submit_content %}
-
+  {% origin %}
   {% if user.is_authenticated %}
     <h2 class="anchor-target" id="approvals">Submissions you can approve</h2>
 

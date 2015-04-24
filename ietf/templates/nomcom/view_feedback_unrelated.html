@@ -1,11 +1,13 @@
 {% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load nomcom_tags %}
 
 {% block subtitle %} - View unrelated feedback{% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   <h2>Feedback not related to nominees</h2>
 
   <ul class="nav nav-tabs" role="tablist">

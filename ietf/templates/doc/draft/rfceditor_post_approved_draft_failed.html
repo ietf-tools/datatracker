@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}Posting approved I-D to RFC Editor failed{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Posting approved I-D to RFC Editor failed</h1>
 
   <p>Sorry, when trying to notify the RFC Editor through HTTP, we hit an

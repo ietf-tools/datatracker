@@ -1,8 +1,11 @@
 {% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
 {% block nomcom_content %}
+  {% origin %}
   <h2>Position: {{ position }}</h2>
   <dl>
     <dt>Description:</dt>

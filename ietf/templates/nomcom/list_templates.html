@@ -1,8 +1,10 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% block subtitle %} - Defined templates{% endblock %}
 
 {% block nomcom_content %}
+  {% origin %}
   <h2>Defined templates</h2>
 
   {% if template_list %}

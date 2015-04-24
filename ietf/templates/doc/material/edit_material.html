@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
 {% block title %}{% if action == "new" or action == "revise" %}Upload{% else %}Edit{% endif %} {{ document_type.name }} for group {{ group.name }} ({{ group.acronym }}){% endblock %}
 
 {% block content %}
+  {% origin %}
 
   <h1>{% if action == "new" or action == "revise" %}Upload{% else %}Edit{% endif %} {{ document_type.name }}<br><small>{{ group.name }} ({{ group.acronym }})</small></h1>
 

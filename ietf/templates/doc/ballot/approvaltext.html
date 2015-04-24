@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 {% load ietf_filters %}
@@ -6,6 +8,7 @@
 {% block title %}Approval announcement writeup for {{ doc }}{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Approval announcement writeup<br><small>{{ doc }}</small></h1>
 
   {% bootstrap_messages %}

@@ -1,11 +1,13 @@
 {% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load nomcom_tags %}
 
 {% block subtitle %} - View feedback {% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   <h2>Feedback related to nominees</h2>
 
   <table class="table table-condensed table-striped">

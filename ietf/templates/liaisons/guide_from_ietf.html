@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ietf_filters %}
 
 {% block title %}Liaison statements from the IETF - guidelines for completing the "Cc:" field{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Liaison statements from the IETF<br><small>Guidelines for completing the "Cc:" field</small></h1>
 
   <p>The individuals copied on a liaison statement that is sent by the IETF to another Standards Development Organization (SDO) depend on the IETF entity that is sending the liaison statement.</p>

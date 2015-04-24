@@ -1,4 +1,6 @@
 {% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
@@ -7,7 +9,7 @@
 {% block title %}Adjust meta-data of submitted {{ submission.name }}{% endblock %}
 
 {% block submit_content %}
-
+  {% origin %}
   {% bootstrap_messages %}
 
   <div class="modal fade" id="twopages" tabindex="-1" role="dialog" aria-labelledby="twopageslabel" aria-hidden="true">

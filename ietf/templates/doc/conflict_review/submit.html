@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
@@ -7,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Edit conflict review<br><small>{{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}</small></h1>
 
   {% bootstrap_messages %}

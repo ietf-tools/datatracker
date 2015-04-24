@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block pagehead %}
   {{ block.super }}
 {% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Internet-Draft submission </h1>
 
   <ul class="nav nav-tabs" role="tablist">

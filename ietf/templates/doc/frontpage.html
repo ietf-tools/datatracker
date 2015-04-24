@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}IETF Datatracker{% if server_mode != "production" %} -- Development Mode{% endif %}{% endblock %}
 
 {% block content %}
+  {% origin %}
 <div class="row">
    <div class="col-md-12">
       <div class="text-center padded">

@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block morecss %}
 td.aliasname { white-space:nowrap;}
@@ -7,6 +9,7 @@ td.aliasname { white-space:nowrap;}
 {% block title %}Document email aliases{% if doc %} for {{doc.name}}{% endif %}{% endblock %}
 
 {% block content %}
+  {% origin %}
 <h1>Document email aliases{% if doc %} for {{doc.name}}{% endif %}</h1>
 {% regroup aliases|dictsort:"doc_name" by doc_name as alias_list %}
 <table class="ietf-table">

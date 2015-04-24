@@ -1,4 +1,6 @@
 {% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 {% load nomcom_tags %}
@@ -6,7 +8,7 @@
 {% block subtitle %} - Nominate{% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   <h2>Candidate nomination</h2>
 
   {% bootstrap_messages %}

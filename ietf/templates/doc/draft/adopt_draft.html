@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
 {% block title %}Manage Document Adoption of {{ doc }} in Group{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Manage Document Adoption of {{ doc }} in Group</h1>
 
   <p class="alert alert-info">You can begin managing the group state of this draft.</p>

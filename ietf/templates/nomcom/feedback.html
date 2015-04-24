@@ -1,4 +1,6 @@
 {% extends base_template %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 {% load nomcom_tags %}
@@ -6,7 +8,7 @@
 {% block subtitle %} - Feedback{% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   <p class="alert alert-info">
     First select a nominee from the list of nominees to provide input about that nominee.
     This will fill in the non-editable fields in the form.

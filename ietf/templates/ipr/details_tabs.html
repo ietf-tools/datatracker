@@ -1,3 +1,5 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
 <ul class="nav nav-tabs" role="tablist">
   {% for name, link, selected in tabs %}
     <li {% if selected %}class="active"{% endif %}><a href="{{ link }}">{{ name }}</a></li>

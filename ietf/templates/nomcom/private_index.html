@@ -1,9 +1,11 @@
 {% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block subtitle %} - Administration {% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   <h2>Nomination status</h2>
 
   <table class="table table-condensed table-striped">

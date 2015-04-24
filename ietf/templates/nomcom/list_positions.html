@@ -1,9 +1,11 @@
 {% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block subtitle %} - Positions{% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   <h2>Positions in {{ nomcom.group }}</h2>
 
   <a class="btn btn-default" href="{% url "nomcom_add_position" year %}">Add new position</a>

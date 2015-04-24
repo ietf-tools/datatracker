@@ -1,4 +1,6 @@
 {% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
@@ -9,6 +11,7 @@
 {% block subtitle %} - Settings{% endblock %}
 
 {% block nomcom_content %}
+  {% origin %}
   <h2>Settings</h2>
 
   {% if message %}

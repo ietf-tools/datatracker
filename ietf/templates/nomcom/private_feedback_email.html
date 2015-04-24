@@ -1,12 +1,13 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load bootstrap3 %}
 {% load nomcom_tags %}
 
 {% block subtitle %} - Provide feedback email{% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   {% if message %}
     <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
   {% endif %}

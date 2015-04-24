@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
@@ -10,6 +12,7 @@
 {% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Change document shepherd<br><small>{{ doc.name }}-{{ doc.rev }}</small></h1>
 
   <p>The shepherd needs to have a Datatracker account. A new account can be

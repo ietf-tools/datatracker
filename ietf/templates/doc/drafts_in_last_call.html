@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}Internet-Drafts in IETF last call{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Internet-Drafts in IETF last call</h1>
 
   {% include "doc/search/search_results.html" %}

@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}Profile update{% endblock %}
 
 {% block content %}
+  {% origin %}
   {% if success %}
     <h1>Profile update successful</h1>
 

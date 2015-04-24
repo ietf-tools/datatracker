@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}Upcoming Presentations{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Upcoming Presentations<br><small>{{doc.title}}<br>{{doc.name}}</small></h1>
 
   <ul>

@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}Cancelled subscription to {{ cl.long_name }}{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Cancelled subscription to {{ cl.long_name }}</h1>
 
   <p>

@@ -1,9 +1,12 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load ietf_filters %}
 
 {% block title %}RFC status changes{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>RFC status changes</h1>
 
   {% if user|has_role:"Area Director,Secretariat" %}

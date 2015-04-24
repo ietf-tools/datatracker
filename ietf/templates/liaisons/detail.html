@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ietf_filters %}
 
@@ -6,6 +8,7 @@
 
 
 {% block content %}
+  {% origin %}
   <h1>
     Liaison statement<br><small>{% include 'liaisons/liaison_title.html' %}</small>
   </h1>

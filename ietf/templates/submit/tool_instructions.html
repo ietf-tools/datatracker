@@ -1,8 +1,11 @@
 {% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}I-D Submission tool instructions{% endblock %}
 
 {% block submit_content %}
+  {% origin %}
   <h2>I-D submission tool instructions</h2>
 
   <p><b>Tool URL:</b> <a href="{% url "submit_upload_submission" %}">https://datatracker.ietf.org{% url "submit_upload_submission" %}</a></p>
@@ -19,30 +22,29 @@
 
   <p>
     <b>Form buttons and resulting actions</b>:
-
-    <table class="table table-condensed table-striped">
-      <tr>
-	<th>.txt format</th>
-	<td>Button to select a plain-text file of an I-D from a user's local file system. A plain-text version is mandatory and leaving the field blank will cause an error.</td>
-      </tr>
-      <tr>
-	<th>.xml format</th>
-	<td>Button to select an XML file of an I-D from a user's local file system. </td>
-      </tr>
-      <tr>
-	<th>.pdf format</th>
-	<td>Button to select a PDF file of an I-D from a user's local file system. </td>
-      </tr>
-      <tr>
-	<th>.ps format</th>
-	<td>Button to select a postscript file of an I-D from a user's local file system. </td>
-      </tr>
-      <tr>
-	<th>Upload</th>
-	<td>Button to upload the document(s). The tool will begin parsing the plain-text document and validate the document. The parsed meta-data will be displayed for user confirmation along with the validation results.</td>
-      </tr>
-    </table>
   </p>
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th>.txt format</th>
+      <td>Button to select a plain-text file of an I-D from a user's local file system. A plain-text version is mandatory and leaving the field blank will cause an error.</td>
+    </tr>
+    <tr>
+      <th>.xml format</th>
+      <td>Button to select an XML file of an I-D from a user's local file system. </td>
+    </tr>
+    <tr>
+      <th>.pdf format</th>
+      <td>Button to select a PDF file of an I-D from a user's local file system. </td>
+    </tr>
+    <tr>
+      <th>.ps format</th>
+      <td>Button to select a postscript file of an I-D from a user's local file system. </td>
+    </tr>
+    <tr>
+      <th>Upload</th>
+      <td>Button to upload the document(s). The tool will begin parsing the plain-text document and validate the document. The parsed meta-data will be displayed for user confirmation along with the validation results.</td>
+    </tr>
+  </table>
 
   <h3>Validation screen</h3>
   <p>
@@ -110,7 +112,7 @@
       <td>Button to cancel the current submission. A user will be prompted for a confirmation before the submission is canceled. Once confirmed, the current suissio
 	n will be canceled, the uploaded document(s) will be deleted permanently from the server, and a notification message will be sent to all authors with the IP address of the user who just canceled the submission.</td>
     </tr>
-  </table
+  </table>
 
   <h3>Status screen</h3>
   <p>

@@ -1,10 +1,11 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load ietf_filters %}
 {% load future %}
 
 {% block group_content %}
-
+  {% origin %}
   <table class="table table-condensed table-striped ietf">
     <thead>
       <tr>

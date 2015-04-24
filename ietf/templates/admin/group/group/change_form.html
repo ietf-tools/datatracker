@@ -1,7 +1,10 @@
 {% extends "admin/change_form.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load i18n %}
 
 {% block object-tools %}
+  {% origin %}
   {% if change %}{% if not is_popup %}
     <ul class="object-tools">
       {% if original.type_id == "sdo" %}

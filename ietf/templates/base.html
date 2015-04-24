@@ -1,4 +1,6 @@
 <!DOCTYPE html> {% load ietf_filters %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -38,7 +40,7 @@
   </head>
 
   <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url "group_menu_data" %}">
-    {% with server_mode="production" %}
+    {% with debug_server_mode="production" %}
       <nav class="navbar {% if server_mode and server_mode == "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top" role="navigation">
         <div class="container-fluid">
 	  <div class="navbar-header">
@@ -165,6 +167,7 @@
       <script src="/js/lib/bootstrap.min.js"></script>
       <script src="/js/ietf.js"></script>
       {% block js %}{% endblock %}
+      {% include "debug.html" %}
   </body>
 </html>
 

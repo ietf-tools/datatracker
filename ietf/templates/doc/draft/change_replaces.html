@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
@@ -12,6 +14,7 @@
 {% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Change documents replaced by<br><small>{{ doc }}</small></h1>
 
   <form role="form" method="post">

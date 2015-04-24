@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 {% load ietf_filters %}
@@ -6,6 +8,7 @@
 {% block title %}WG {{ announcement }} announcement writeup for {{ charter.chartered_group.acronym }}{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>WG {{ announcement }} announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
 
   {% bootstrap_messages %}

@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 
 {% block title %}Ballot writeup and notes for {{ charter.chartered_group }}{% endblock %}
 
 {% block content %}
+  {% origin %}
 
   <h1>Ballot writeup and notes<br><small>{{ charter.chartered_group }}</small></h1>
 

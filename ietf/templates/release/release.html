@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}Release information{% endblock %}
 
 {% block content %}
+  {% origin %}
 <div class="col-sm-12">
   <h1>
     <a href="//trac.tools.ietf.org/tools/ietfdb/browser/tags/{{entry.version}}">

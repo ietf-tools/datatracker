@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load ietf_filters %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 
 {% block title %}IETF {{ meeting.number }} Meeting Agenda{% endblock %}
@@ -39,6 +40,7 @@
 
 
 {% block content %}
+  {% origin %}
   <div class="wrapper custom_text_stuff">
     <div style="ui-icon ui-icon-arrow-1-w" id="close_ietf_menubar">
       &lt;

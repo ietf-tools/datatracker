@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 {% load ietf_filters %}
@@ -17,6 +19,7 @@
 {% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>
     {% if action == "edit" %}
       Edit {{ group.type.name }} {{ group.acronym }}

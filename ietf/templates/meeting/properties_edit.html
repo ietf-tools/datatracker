@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load ietf_filters %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
@@ -38,6 +40,7 @@ jQuery.ajaxSetup({
 {% endblock js %}
 
 {% block content %}
+  {% origin %}
 </tr></table></div>
 <div class="wrapper custom_text_stuff">
 <div style="ui-icon ui-icon-arrow-1-w" id="close_ietf_menubar">

@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block pagehead %}
   <link rel="alternate" type="application/atom+xml" title="Changes on {{ cl.long_name }}" href="../changes/feed/" />
@@ -8,6 +10,7 @@
 {% block title %}{{ cl.long_name }}{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>{{ cl.long_name }}</h1>
   <p>
     Subscribe to notification email lists:

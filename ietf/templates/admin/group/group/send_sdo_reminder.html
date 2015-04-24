@@ -1,4 +1,6 @@
 {% extends "admin/base_site.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load i18n admin_modify %}
 
@@ -16,6 +18,7 @@
 {% endif %}{% endblock %}
 
 {% block content %}
+  {% origin %}
   <div id="content-main">
     <h1>Send a reminder to {% if sdo %}{{ sdo }} SDO Liaison Manager{% else %}all SDO Liaison Managers{% endif %}</h1>
 

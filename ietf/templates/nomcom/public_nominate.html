@@ -1,4 +1,6 @@
 {% extends "nomcom/nomcom_public_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 {% load nomcom_tags %}
@@ -6,7 +8,7 @@
 {% block subtitle %} - Nominate{% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   {% if message %}
     <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
   {% endif %}

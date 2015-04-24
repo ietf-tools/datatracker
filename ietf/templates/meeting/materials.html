@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ietf_filters %}
 
@@ -7,6 +9,7 @@
 {% block title %}IETF {{ meeting_num }} preliminary &amp; interim materials{% endblock %}
 
 {% block content %}
+  {% origin %}
   <div class="row">
     <div class="col-md-10">
 

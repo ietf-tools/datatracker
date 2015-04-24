@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: {{ schedule.owner }} / {{ schedule.name }}{% endblock %}
 
@@ -9,6 +11,7 @@
 {% endblock morecss %}
 
 {% block content %}
+  {% origin %}
   <div id="read_only">
     <p>You do not have access this agenda. It belongs to {{ schedule.owner }}.</p>
 

@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ietf_filters ipr_filters bootstrap3 widget_tweaks %}
 {% load future %}
@@ -11,6 +13,7 @@
 {% endblock %}
 
 {% block content %}
+  {% origin %}
 
   {% if form.instance|to_class_name == "HolderIprDisclosure" %}
     <h1>The Patent Disclosure and Licensing Declaration Template for Specific IPR Disclosures</h1>

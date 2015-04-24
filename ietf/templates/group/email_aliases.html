@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block morecss %}
 td.aliasname { white-space:nowrap;}
@@ -7,6 +9,7 @@ td.aliasname { white-space:nowrap;}
 {% block title %}Group email aliases{% if group %} for {{group.acronym}}{% endif %}{% endblock %}
 
 {% block content %}
+  {% origin %}
 <h1>Group email aliases{% if group %} for {{group.acronym}}{% endif %}</h1>
 {% regroup aliases|dictsort:"acronym" by acronym as alias_list %}
 <table class="ietf-table">

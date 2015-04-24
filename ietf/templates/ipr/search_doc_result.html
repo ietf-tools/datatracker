@@ -1,4 +1,6 @@
 {% extends "ipr/search_result.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
 
 {% load ietf_filters %}
 
@@ -10,9 +12,11 @@
   {% if iprs %}
     <table class="table table-condensed table-striped">
       <thead>
-        <th>Date</th>
-        <th>ID</th>
-        <th>Statement</th>
+        <tr>
+          <th>Date</th>
+	  <th>ID</th>
+	  <th>Statement</th>
+	</tr>
       </thead>
 
       <tbody>
@@ -31,9 +35,11 @@
 
   <table class="table table-condensed table-striped">
     <thead>
-      <th>Date</th>
-      <th>ID</th>
-      <th>Statement</th>
+      <tr>
+	<th>Date</th>
+	<th>ID</th>
+	<th>Statement</th>
+      </tr>
     </thead>
 
     <tbody>

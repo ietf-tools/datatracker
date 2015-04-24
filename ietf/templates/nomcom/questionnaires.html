@@ -1,9 +1,11 @@
 {% extends "nomcom/nomcom_public_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block subtitle %} - Questionnaires {% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   <h2>Questionnaires</h2>
 
   <ul class="nav nav-tabs" role="tablist">

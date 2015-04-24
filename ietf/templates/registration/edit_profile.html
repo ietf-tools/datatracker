@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load widget_tweaks %}
 
 {% block title %}Profile for {{ user }}{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Profile for {{ user.username }}</h1>
 
   <form class="form-horizontal" role="form" method="post">

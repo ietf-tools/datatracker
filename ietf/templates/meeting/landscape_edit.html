@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load ietf_filters %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
@@ -102,6 +104,7 @@ promiselist.push(ss_promise);
 
 
 {% block content %}
+  {% origin %}
 <div id="read_only">
   <p>You do not have write permission to agenda: {{schedule.name}}</p>
   <p>Please save this agenda to your account first.</p>

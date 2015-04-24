@@ -1,4 +1,6 @@
 {% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load bootstrap3 %}
 {% load ietf_filters %}
@@ -6,7 +8,7 @@
 {% block subtitle %} - Send reminder messages {% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   <h2>Send remider to {{reminder_description}}</h2>
 
   <p>The message that will be sent is as follows:</p>

@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ietf_filters ipr_filters %}
 {% load future %}
@@ -10,6 +12,7 @@
 {% endblock %}
 
 {% block content %}
+  {% origin %}
   <div id="ipr-details">
 
     <h1>IPR Details<br><small>{{ ipr.title }}</small></h1>
@@ -101,7 +104,7 @@
       <div class="alert alert-info">This update was notified to the submitter of the IPR that is being updated on: {{ ipr.update_notified_date|date:"Y-m-d" }}</div>
     {% endif %}
 
-    <h2 role="form" class="form-horizontal">
+    <div role="form" class="form-horizontal">
 
       <h2>{% cycle 'I','II','III','IV','V','VI','VII','VIII' as section %}.
         {% if ipr|to_class_name == "ThirdPartyIprDisclosure" %}Possible{% endif %}
@@ -128,7 +131,7 @@
         {% endif %}
 
         {% if ipr.ietfer_name or ipr.ietfer_contact_email or ipr.ietfer_contact_info %}
-          <h2 colspan="2">{% cycle section %}. Contact Information for the IETF Participant Whose Personal Belief Triggered this Disclosure</h2>
+          <h2>{% cycle section %}. Contact Information for the IETF Participant Whose Personal Belief Triggered this Disclosure</h2>
 
           <dl class="dl-horizontal">
             <dt>Name</dt>
@@ -237,7 +240,7 @@
             <dd>{{ ipr.notes|linebreaks }}</dd>
           </dl>
         {% endif %}
-    </h2>
+    </div>
 
     <p class="help-block">Only those sections of the relevant entry form where the submitter provided information are displayed.</p>
 

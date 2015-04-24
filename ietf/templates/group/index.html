@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ietf_filters %}
 
 {% block title %}Other RFC streams{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Other RFC streams</h1>
 
   <table class="table table-condensed table-striped">

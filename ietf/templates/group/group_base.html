@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ietf_filters %}
 
 {% block title %}{{ group.name }} ({{ group.acronym }}) - {% block group_subtitle %}{% endblock %}{% endblock %}
 
 {% block content %}
+  {% origin %}
 
   <h1>{{ group.name}} ({{ group.acronym }})
     {% if group.state_id == "dormant" or group.state_id == "conclude" %}

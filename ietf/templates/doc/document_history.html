@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load ietf_filters %}
 {% load future %}
 
@@ -13,6 +15,7 @@
 {% endblock %}
 
 {% block content %}
+  {% origin %}
   {{ top|safe }}
 
   {% if diff_revisions and diff_revisions|length > 1 %}

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load ietf_filters %}
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
@@ -7,6 +8,7 @@
 {% block title %}IAB/IESG Nominating Committee{% endblock %}
 
 {% block content %}
+  {% origin %}
   <div class="row">
     <div class="col-md-10">
 

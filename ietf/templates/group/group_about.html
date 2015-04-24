@@ -1,9 +1,11 @@
 {% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ietf_filters %}
 
 {% block group_content %}
-
+  {% origin %}
   {% if group.state_id == "conclude" %}
     <p class="alert alert-warning"><b>Note:</b> The data for concluded {{ group.type.name }}s is occasionally incorrect.</p>
   {% endif %}

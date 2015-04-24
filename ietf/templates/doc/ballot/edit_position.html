@@ -1,10 +1,12 @@
 {% extends "base.html" %}
-
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load bootstrap3 %}
 
 {% block title %}Change position for {{ ad.plain_name }} on {{ doc }}{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Change position for {{ ad.plain_name }}<br><small>{{ doc }}</small></h1>
 
   {% bootstrap_messages %}

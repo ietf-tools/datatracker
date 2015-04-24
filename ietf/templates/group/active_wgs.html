@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block title %}Active IETF working groups{% endblock %}
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
 {% block content %}
+  {% origin %}
   <div class="row">
     <div class="col-md-10">
 

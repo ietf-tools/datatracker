@@ -1,6 +1,9 @@
 {% extends "liaisons/detail.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% block content %}
+  {% origin %}
   {{ block.super }}
 
   <form role="form" method="post">

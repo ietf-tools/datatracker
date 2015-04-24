@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 
 {% load ballot_icon %}
 {% load ietf_filters %}
@@ -10,6 +12,7 @@
 {% block title %}Documents on future IESG telechat agendas{% endblock %}
 
 {% block content %}
+  {% origin %}
   <h1>Documents on future IESG telechat agendas</h1>
 
   {% if user|has_role:"Secretariat" %}

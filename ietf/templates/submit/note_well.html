@@ -1,7 +1,10 @@
 {% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% block title %}Note Well{% endblock %}
 
 {% block submit_content %}
+  {% origin %}
   <h2>Note Well</h2>
 
   <p>Any submission to the IETF intended by the Contributor for publication as all or part of an IETF Internet-Draft or RFC and any statement made within the context of an IETF activity is considered an "IETF Contribution". Such statements include oral statements in IETF sessions, as well as written and electronic communications made at any time or place, which are addressed to:</p>

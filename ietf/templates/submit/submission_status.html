@@ -1,12 +1,13 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
 {% load ietf_filters submit_tags %}
 {% load future %}
 
 {% block title %}Submission status of {{ submission.name }}-{{ submission.rev }}{% endblock %}
 
 {% block submit_content %}
-
+  {% origin %}
   {% if submission.state_id != "uploaded" %}
     <h2>Submission status: {{ submission.state.name }}</h2>
   {% endif %}

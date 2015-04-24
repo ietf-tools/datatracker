@@ -1,10 +1,13 @@
 {% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
 
 {% load ietf_filters %}
 
 {% block group_subtitle %}Materials{% endblock %}
 
 {% block group_content %}
+  {% origin %}
   {% load ietf_filters %}
 
   {% if doc_types %}
