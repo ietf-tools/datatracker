@@ -18,8 +18,8 @@ from ietf.person.models import Person
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail_text
 
-#QUEUE_URL = "http://www.rfc-editor.org/queue2.xml"
-#INDEX_URL = "http://www.rfc-editor.org/rfc/rfc-index.xml"
+#QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
+#INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 #POST_APPROVED_DRAFT_URL = "https://www.rfc-editor.org/sdev/jsonexp/jsonparser.php"
 
 MIN_QUEUE_RESULTS = 10

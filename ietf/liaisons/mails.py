@@ -30,7 +30,7 @@ def notify_pending_by_email(request, liaison):
 
     # Broken: this does not find the list of approvers for the sending body
     # For now, we are sending to statements@ietf.org so the Secretariat can nudge
-    # Bug 880: http://trac.tools.ietf.org/tools/ietfdb/ticket/880
+    # Bug 880: https://trac.tools.ietf.org/tools/ietfdb/ticket/880
     #
     # from ietf.liaisons.utils import IETFHM
     #

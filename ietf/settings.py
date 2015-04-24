@@ -276,8 +276,8 @@ INTERNAL_IPS = (
 )
 
 # no slash at end
-IDTRACKER_BASE_URL = "http://datatracker.ietf.org"
-RFCDIFF_PREFIX = "//www.ietf.org/rfcdiff"
+IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
+RFCDIFF_PREFIX = "https://www.ietf.org/rfcdiff"
 
 # Valid values:
 # 'production', 'test', 'development'
@@ -352,22 +352,22 @@ INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
 
 # Mailing list info URL for lists hosted on the IETF servers
-MAILING_LIST_INFO_URL = "//www.ietf.org/mailman/listinfo/%(list_addr)s"
+MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
 
 # Ideally, more of these would be local -- but since we don't support
 # versions right now, we'll point to external websites
 DOC_HREFS = {
-    "charter": "//www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
-    "draft": "//www.ietf.org/archive/id/{doc.name}-{doc.rev}.txt",
-    "slides": "//www.ietf.org/slides/{doc.name}-{doc.rev}",
-    "conflrev": "//www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
-    "statchg": "//www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
+    "charter": "https://www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
+    "draft": "https://www.ietf.org/archive/id/{doc.name}-{doc.rev}.txt",
+    "slides": "https://www.ietf.org/slides/{doc.name}-{doc.rev}",
+    "conflrev": "https://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
+    "statchg": "https://www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
 }
 
 MEETING_DOC_HREFS = {
     "agenda": "/meeting/{meeting}/agenda/{doc.group.acronym}/",
-    "minutes": "//www.ietf.org/proceedings/{meeting}/minutes/{doc.external_url}",
-    "slides": "//www.ietf.org/proceedings/{meeting}/slides/{doc.external_url}",
+    "minutes": "https://www.ietf.org/proceedings/{meeting}/minutes/{doc.external_url}",
+    "slides": "https://www.ietf.org/proceedings/{meeting}/slides/{doc.external_url}",
     "recording": "{doc.external_url}",
 }
 
@@ -393,14 +393,14 @@ IANA_APPROVE_EMAIL = "drafts-approval@icann.org"
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
-IANA_SYNC_PROTOCOLS_URL = "http://www.iana.org/protocols/"
+IANA_SYNC_PROTOCOLS_URL = "https://www.iana.org/protocols/"
 
 RFC_TEXT_RSYNC_SOURCE="ftp.rfc-editor.org::rfcs-text-only"
 
 RFC_EDITOR_SYNC_PASSWORD="secret"
-RFC_EDITOR_SYNC_NOTIFICATION_URL = "http://www.rfc-editor.org/parser/parser.php"
-RFC_EDITOR_QUEUE_URL = "http://www.rfc-editor.org/queue2.xml"
-RFC_EDITOR_INDEX_URL = "http://www.rfc-editor.org/rfc/rfc-index.xml"
+RFC_EDITOR_SYNC_NOTIFICATION_URL = "https://www.rfc-editor.org/parser/parser.php"
+RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
+RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 
 # Liaison Statement Tool settings
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'

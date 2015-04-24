@@ -179,7 +179,7 @@ def document_main(request, name, rev=None):
             possible_types = ["txt", "pdf", "ps"]
             found_types = [t for t in possible_types if os.path.exists(base_path + t)]
 
-            base = "http://www.rfc-editor.org/rfc/"
+            base = "https://www.rfc-editor.org/rfc/"
 
             file_urls = []
             for t in found_types:
@@ -190,7 +190,7 @@ def document_main(request, name, rev=None):
                 file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
 
             if "txt" in found_types:
-                file_urls.append(("html", "http://tools.ietf.org/html/" + name))
+                file_urls.append(("html", "https://tools.ietf.org/html/" + name))
 
             if not found_types:
                 content = "This RFC is not currently available online."
@@ -209,10 +209,10 @@ def document_main(request, name, rev=None):
             possible_types = ["pdf", "xml", "ps"]
             found_types = ["txt"] + [t for t in possible_types if os.path.exists(base_path + t)]
 
-            tools_base = "http://tools.ietf.org/"
+            tools_base = "https://tools.ietf.org/"
 
             if doc.get_state_slug() == "active":
-                base = "http://www.ietf.org/id/"
+                base = "https://www.ietf.org/id/"
             else:
                 base = tools_base + "id/"
 

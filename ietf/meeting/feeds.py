@@ -11,7 +11,7 @@ class LatestMeetingMaterialFeed(Feed):
     feed_type = Atom1Feed
     link = "/meeting/"
     language = "en"
-    base_url = "http://www3.ietf.org/proceedings/"
+    base_url = "https://www.ietf.org/proceedings/"
 
     def items(self):
         objs = []

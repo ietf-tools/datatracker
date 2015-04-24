@@ -36,7 +36,7 @@ from django.conf.urls import patterns
 from django.views.generic import RedirectView
 
 urlpatterns = patterns('',
-    (r'^telechat/.*$', RedirectView.as_view(url='http://www.ietf.org/iesg/minutes.html')),
+    (r'^telechat/.*$', RedirectView.as_view(url='https://www.ietf.org/iesg/minutes.html')),
     (r'^ann/(?:ind|new|prev)/$', RedirectView.as_view(url="/iesg/decisions/", permanent=True )),
     (r'^telechatdates/$', RedirectView.as_view(url='/admin/iesg/telechatdate/')),
 

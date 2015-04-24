@@ -19,7 +19,7 @@ class SubmissionAdmin(admin.ModelAdmin):
 
     def draft_link(self, instance):
         if instance.state_id == "posted":
-            return '<a href="http://www.ietf.org/id/%s-%s.txt">%s</a>' % (instance.name, instance.rev, instance.name)
+            return '<a href="https://www.ietf.org/id/%s-%s.txt">%s</a>' % (instance.name, instance.rev, instance.name)
         else:
             return instance.name
     draft_link.allow_tags = True

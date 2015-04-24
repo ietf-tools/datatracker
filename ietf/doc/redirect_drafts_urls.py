@@ -17,5 +17,5 @@ urlpatterns = patterns('',
      (r'^(?P<name>[^/]+)/(related/)?$', RedirectView.as_view(url='/doc/%(name)s/')),
      (r'^wgid/(?P<id>\d+)/$', lambda request, id: HttpResponsePermanentRedirect("/wg/%s/" % get_object_or_404(Group, id=id).acronym)),
      (r'^wg/(?P<acronym>[^/]+)/$', RedirectView.as_view(url='/wg/%(acronym)s/')),
-     (r'^all_id(?:_txt)?.html$', RedirectView.as_view(url='http://www.ietf.org/id/all_id.txt')),
+     (r'^all_id(?:_txt)?.html$', RedirectView.as_view(url='https://www.ietf.org/id/all_id.txt')),
 )

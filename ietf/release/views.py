@@ -12,9 +12,9 @@ import changelog
 
 def trac_links(text):
     # changeset links
-    text = re.sub(r'\[(\d+)\]', r'<a href="http://wiki.tools.ietf.org/tools/ietfdb/changeset/\1">[\1]</a>', text)
+    text = re.sub(r'\[(\d+)\]', r'<a href="https://wiki.tools.ietf.org/tools/ietfdb/changeset/\1">[\1]</a>', text)
     # issue links
-    text = re.sub(r'#(\d+)', r'<a href="http://wiki.tools.ietf.org/tools/ietfdb/ticket/\1">#\1</a>', text)
+    text = re.sub(r'#(\d+)', r'<a href="https://wiki.tools.ietf.org/tools/ietfdb/ticket/\1">#\1</a>', text)
     return text
 
 

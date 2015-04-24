@@ -239,7 +239,7 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
         full_url = diff_url = diff_urls[(e.doc.name, e.rev)]
 
         if doc.type_id in "draft": # work around special diff url for drafts
-            full_url = "http://tools.ietf.org/id/" + diff_url + ".txt"
+            full_url = "https://tools.ietf.org/id/" + diff_url + ".txt"
 
         # build links
         links = r'<a href="%s">\1</a>' % full_url
@@ -247,7 +247,7 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
             links += ""
 
         if prev != None:
-            links += ' (<a href="http:%s?url1=%s&url2=%s">diff from previous</a>)' % (settings.RFCDIFF_PREFIX, urllib.quote(prev, safe="~"), urllib.quote(diff_url, safe="~"))
+            links += ' (<a href="https:%s?url1=%s&url2=%s">diff from previous</a>)' % (settings.RFCDIFF_PREFIX, urllib.quote(prev, safe="~"), urllib.quote(diff_url, safe="~"))
 
         # replace the bold filename part
         e.desc = re.sub(r"<b>(.+-[0-9][0-9].txt)</b>", links, e.desc)

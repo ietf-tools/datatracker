@@ -164,7 +164,7 @@ def _atom_view(request, clist, significant=False):
         notifications = notifications.filter(listnotification__significant=True)
 
     host = request.get_host()
-    feed_url = 'http://%s%s' % (host, request.get_full_path())
+    feed_url = 'https://%s%s' % (host, request.get_full_path())
     feed_id = uuid.uuid5(uuid.NAMESPACE_URL, feed_url.encode('utf-8'))
     title = '%s RSS Feed' % clist.long_name()
     if significant:

@@ -61,10 +61,10 @@ class PlainParser(FileParser):
             if extra_chars:
                 if len(extra_chars) == 1:
                     self.parsed_info.add_error((u'The name contains a disallowed character: %s ' % (', '.join(set(extra_chars))).decode('ascii','replace')) +
-                                                u'(see http://www.ietf.org/id-info/guidelines.html#naming for details).')
+                                                u'(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
                 else:
                     self.parsed_info.add_error((u'The name contains disallowed characters: %s ' % (', '.join(set(extra_chars))).decode('ascii','replace')) +
-                                                u'(see http://www.ietf.org/id-info/guidelines.html#naming for details).')
+                                                u'(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
             match_revision = revisionre.match(name)
             if match_revision:
                 self.parsed_info.metadata.rev = match_revision.group(1)
