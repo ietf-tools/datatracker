@@ -6,6 +6,8 @@ import datetime
 import types
 from email.utils import parseaddr
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import ConsensusDocEvent
 from django import template
 from django.conf import settings
@@ -458,7 +460,7 @@ def format_history_text(text, trunc_words=25):
 
 @register.filter
 def format_snippet(text, trunc_words=25): 
-    full = mark_safe(keep_spacing(collapsebr(linebreaksbr(urlize(sanitize_html(text))))))
+    full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_html(urlize(text))))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
         return mark_safe(u'<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="fa fa-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
