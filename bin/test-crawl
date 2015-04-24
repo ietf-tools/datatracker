@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 
 import os, sys, re, datetime, argparse, traceback, tempfile, json
+import html5lib
+import debug    # pyflakes:ignore
 
-# args
+# Set up import path to find our own Django
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
+if not basedir in sys.path:
+    sys.path.insert(0, basedir)
+
+# Parse args now, so we can use custom settings when importing django
 parser = argparse.ArgumentParser(
     description="""Perform a test crawl of the project. For each found URL, the HTTP
     response status is printed. If it's not OK/redirect, FAIL is
@@ -18,16 +25,13 @@ parser.add_argument('--logfile', dest='logfile', help='write to logfile')
 
 args = parser.parse_args()
 
-# boilerplate
-basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
-sys.path = [ basedir ] + sys.path
-
-settings_module = args.settings or "ietf.settings"
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module)
+# Import Django, call setup()
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", args.settings or "ietf.settings")
 
 import django
 import django.test
+
+django.setup()
 
 # prevent memory from leaking when settings.DEBUG=True
 from django.db import connection
@@ -36,27 +40,13 @@ class DontSaveQueries(object):
         pass
 connection.queries = DontSaveQueries()
 
+from ietf.name.models import DocTypeName
+
+# --- Constants ---
+
 MAX_URL_LENGTH = 500
 
-slow_threshold = args.slow_threshold
-
-initial_urls = []
-initial_urls.extend(args.urls)
-
-if args.url_file:
-    with open(args.url_file) as f:
-        for line in f:
-            line = line.partition("#")[0].strip()
-            if line:
-                initial_urls.append(line)
-
-if not initial_urls:
-    initial_urls.append("/")
-    initial_urls.append("/api/v1")
-
-visited = set()
-urls = {} # url -> referrer
-referrers = {}
+# --- Functions ---
 
 def strip_url(url):
     if url.startswith("http://testserver"):
@@ -102,20 +92,32 @@ def extract_tastypie_urls(content):
                     uri = object_list[i]["resource_uri"]
                     yield uri
 
-django.setup()
-client = django.test.Client(Accept='text/html,text/plain,application/json')
-
-for url in initial_urls:
-    urls[url] = "[initial]"
-
-errors = 0
-count = 0
-
-start_time = datetime.datetime.now()
-
-logfile = None
-if args.logfile:
-    logfile = open(args.logfile, "w")
+def check_html_valid(url, response):
+    global parser, validated_urls, doc_types, warnings
+    # derive a key for urls like this by replacing primary keys
+    key = url
+    key = re.sub("/[0-9.]+/",   "/nnnn/", key)
+    key = re.sub("/.+@.+/",    "/x@x.org/", key)
+    key = re.sub("#.*$",       "", key)
+    key = re.sub("\?.*$",       "", key)
+    key = re.sub("/rfc[0-9]+/",   "/rfcnnnn/", key)
+    key = re.sub("/wg/[a-z0-9-]+/",   "/wg/foo/", key)
+    for slug in doc_types:
+        key = re.sub("/%s-.*/"%slug, "/%s-nnnn/"%slug, key)
+    if not key in validated_urls:
+        if hasattr(response, "content"):
+            content = response.content
+        else:
+            content = response.streaming_content
+        try:
+            validated_urls[key] = True
+            parser.parse(content)
+        except Exception:
+            e = SyntaxWarning("ParseError")
+            for err in parser.errors:
+                pos, code, data = err
+                tags.append(u"WARN invalid html: Position %s: %s" % (pos, code))
+            warnings += 1
 
 def log(s):
     print(s)
@@ -133,84 +135,143 @@ def get_referrers(url):
         ref_list.append(url)
     return ref_list
 
-while urls:
-    url, referrer = urls.popitem()
+# --- GLobals ---
 
-    visited.add(url)
+slow_threshold = args.slow_threshold
 
-    try:
-        timestamp = datetime.datetime.now()
-        r = client.get(url)
-        elapsed = datetime.datetime.now() - timestamp
-    except KeyboardInterrupt:
-        log(" ... was fetching %s" % url)
-        sys.exit(1)
-    except:
-        log("500 %.3fs %s FAIL (from: [ %s ])" % ((datetime.datetime.now() - timestamp).total_seconds(), url, (",\n\t".join(get_referrers(url)))))
-        log("=============")
-        log(traceback.format_exc())
-        log("=============")
-        errors += 1
-    else:
-        tags = []
+visited = set()
+urls = {} # url -> referrer
+referrers = {}
 
-        if r.status_code in (301, 302):
-            u = strip_url(r["Location"])
-            if u not in visited and u not in urls:
-                urls[u] = referrer # referrer is original referrer, not redirected url
-                referrers[u] = referrer
+initial_urls = []
+initial_urls.extend(args.urls)
 
-        elif r.status_code == 200:
-            ctype = r["Content-Type"]
-            if ";" in ctype:
-                ctype = ctype[:ctype.index(";")]
+if args.url_file:
+    with open(args.url_file) as f:
+        for line in f:
+            line = line.partition("#")[0].strip()
+            if line:
+                initial_urls.append(line)
 
-            if ctype == "text/html":
-                try:
-                    for u in extract_html_urls(r.content):
-                        if u not in visited and u not in urls:
-                            urls[u] = url
-                            referrers[u] = url
-                except:
-                    log("error extracting HTML urls from %s" % url)
-                    log("=============")
-                    log(traceback.format_exc())
-                    log("=============")
-            elif ctype == "application/json":
-                try:
-                    for u in extract_tastypie_urls(r.content):
-                        if u not in visited and u not in urls:
-                            urls[u] = url
-                            referrers[u] = url
-                except:
-                    log("error extracting urls from %s" % url)
-                    log("=============")
-                    log(traceback.format_exc())
-                    log("=============")
-        else:
-            tags.append(u"FAIL for %s\n   (from %s)" % (url, referrer))
+if not initial_urls:
+    initial_urls.append("/")
+    initial_urls.append("/api/v1")
+
+for url in initial_urls:
+    urls[url] = "[initial]"
+
+parser = html5lib.HTMLParser(strict=True)
+
+validated_urls = {}
+
+doc_types = [ t.slug for t in DocTypeName.objects.all() ]
+
+errors = 0
+warnings = 0
+count = 0
+
+start_time = datetime.datetime.now()
+
+client = django.test.Client(Accept='text/html,text/plain,application/json')
+
+logfile = None
+if args.logfile:
+    logfile = open(args.logfile, "w")
+
+validated_urls = {}
+
+# --- Main ---
+
+if __name__ == "__main__":
+
+    while urls:
+        url, referrer = urls.popitem()
+
+        visited.add(url)
+
+        try:
+            timestamp = datetime.datetime.now()
+            r = client.get(url)
+            elapsed = datetime.datetime.now() - timestamp
+        except KeyboardInterrupt:
+            log(" ... was fetching %s" % url)
+            sys.exit(1)
+        except:
+            log("500 %.3fs %s FAIL (from: [ %s ])" % ((datetime.datetime.now() - timestamp).total_seconds(), url, (",\n\t".join(get_referrers(url)))))
+            log("=============")
+            log(traceback.format_exc())
+            log("=============")
             errors += 1
+        else:
+            tags = []
 
-        if elapsed.total_seconds() > slow_threshold:
-            tags.append("SLOW")
+            if r.status_code in (301, 302):
+                u = strip_url(r["Location"])
+                if u not in visited and u not in urls:
+                    urls[u] = referrer # referrer is original referrer, not redirected url
+                    referrers[u] = referrer
 
-        acc_time = (timestamp - start_time).total_seconds()
-        acc_secs = (timestamp - start_time).total_seconds()
-        hrs = acc_secs // (60*60)
-        min = (acc_secs % (60*60)) // 60
-        sec = acc_secs % 60
+            elif r.status_code == 200:
+                ctype = r["Content-Type"]
+                if ";" in ctype:
+                    ctype = ctype[:ctype.index(";")]
 
-        if (len(visited) % 100) == 1:
-            log("\nElapsed  Visited  Queue Code   Time  Url  ...  Notes")
+                if ctype == "text/html":
+                    try:
+                        for u in extract_html_urls(r.content):
+                            if u not in visited and u not in urls:
+                                urls[u] = url
+                                referrers[u] = url
 
-        log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), r.status_code, elapsed.total_seconds(), url, " ".join(tags)))
+                        check_html_valid(url, r)
 
-if logfile:
-    logfile.close()
-    sys.stderr.write("Output written to %s\n\n" % logfile.name)
+                    except:
+                        log("error extracting HTML urls from %s" % url)
+                        log("=============")
+                        log(traceback.format_exc())
+                        log("=============")
 
-if errors > 0:
-    sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
-    sys.exit(1)
-else:
-    sys.stderr.write("Found no errors.")
+                elif ctype == "application/json":
+                    try:
+                        for u in extract_tastypie_urls(r.content):
+                            if u not in visited and u not in urls:
+                                urls[u] = url
+                                referrers[u] = url
+                    except:
+                        log("error extracting urls from %s" % url)
+                        log("=============")
+                        log(traceback.format_exc())
+                        log("=============")
+
+            else:
+                tags.append(u"FAIL for %s\n   (from %s)" % (url, referrer))
+                errors += 1
+
+            if elapsed.total_seconds() > slow_threshold:
+                tags.append("SLOW")
+
+            acc_time = (timestamp - start_time).total_seconds()
+            acc_secs = (timestamp - start_time).total_seconds()
+            hrs = acc_secs // (60*60)
+            min = (acc_secs % (60*60)) // 60
+            sec = acc_secs % 60
+
+            if (len(visited) % 100) == 1:
+                log("\nElapsed  Visited  Queue Code   Time  Url  ...  Notes")
+
+            log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), r.status_code, elapsed.total_seconds(), url, " ".join(tags)))
+
+    if logfile:
+        logfile.close()
+        sys.stderr.write("Output written to %s\n\n" % logfile.name)
+
+    if errors > 0:
+        sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
+        sys.exit(1)
+    else:
+        sys.stderr.write("Found no errors.")
+    if warnings > 0:
+        sys.stderr.write("Found %s warnings, grep output for WARN for details\n" % warnings)
+        sys.exit(1)
+    else:
+        sys.stderr.write("Found no warnings.")
