@@ -4,8 +4,8 @@
     <subtitle type="text">{{ subtitle }}</subtitle>
     <id>{{ id }}</id>
     <updated>{{ updated|date:"Y-m-d\TH:i:sO" }}</updated>
-    <link rel="alternate" type="text/html" hreflang="en" href="http://{{ request.get_host }}/"/>
-    <link rel="self" type="application/atom+xml" href="http://{{ request.get_host }}{{ request.get_full_path }}"/>
+    <link rel="alternate" type="text/html" hreflang="en" href="https://{{ request.get_host }}/"/>
+    <link rel="self" type="application/atom+xml" href="https://{{ request.get_host }}{{ request.get_full_path }}"/>
 
     {% for entry in entries %}
     <entry>

@@ -103,7 +103,7 @@
       <th>Document</th>
       <td>
         {% if submission.state_id == "posted" %}
-          <a href="//www.ietf.org/id/{{ submission.name }}-{{submission.rev}}.txt">{{ submission.name }}</a>
+          <a href="https://www.ietf.org/id/{{ submission.name }}-{{submission.rev}}.txt">{{ submission.name }}</a>
         {% else %}
           {{ submission.name }}
         {% endif %}

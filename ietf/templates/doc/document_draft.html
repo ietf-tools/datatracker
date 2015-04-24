@@ -45,7 +45,7 @@
 	<td>
 	  {% if doc.get_state_slug == "rfc" %}
 	    RFC - {{ doc.std_level }}
-	    ({% if published %}{{ published.time|date:"F Y" }}{% else %}publication date unknown{% endif %}{% if has_errata %}; <a href="//www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}" rel="nofollow">Errata</a>{% else %}; No errata{% endif %})
+	    ({% if published %}{{ published.time|date:"F Y" }}{% else %}publication date unknown{% endif %}{% if has_errata %}; <a href="https://www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}" rel="nofollow">Errata</a>{% else %}; No errata{% endif %})
 
 	    {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
 	    {% if updated_by %}<div>Updated by {{ updated_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
@@ -373,7 +373,7 @@
 	<tr>
 	  <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">RFC Editor state</a></th>
 	  <td class="edit"></td>
-	  <td><a href="//www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ rfc_editor_state }}</a></td>
+	  <td><a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ rfc_editor_state }}</a></td>
 	</tr>
       {% endif %}
 
@@ -385,10 +385,10 @@
     <a class="btn btn-default btn-xs" href="{% url "ipr_search" %}?submit=draft&amp;id={{ doc.name }}" rel="nofollow"><span class="fa fa-bolt"></span> IPR {% if doc.related_ipr %} <span class="badge">{{doc.related_ipr|length}}</span>{% endif %}</a>
     <a class="btn btn-default btn-xs" href="{% url "doc_references" doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
     <a class="btn btn-default btn-xs" href="{% url "doc_referenced_by" doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
-    <a class="btn btn-default btn-xs" href="//www.ietf.org/tools/idnits?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank"><span class="fa fa-exclamation"></span> Nits</a>
-    <a class="btn btn-default btn-xs" href="//www.google.com/search?as_q={{ doc.name }}&amp;as_sitesearch={{ search_archive }}" rel="nofollow" target="_blank"><span class="fa fa-search"></span> Search lists</a>
+    <a class="btn btn-default btn-xs" href="https://www.ietf.org/tools/idnits?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank"><span class="fa fa-exclamation"></span> Nits</a>
+    <a class="btn btn-default btn-xs" href="https://www.google.com/search?as_q={{ doc.name }}&amp;as_sitesearch={{ search_archive }}" rel="nofollow" target="_blank"><span class="fa fa-search"></span> Search lists</a>
     {% if user|has_role:"Area Director" %}
-      <a class="btn btn-default btn-xs" href="//www.iesg.org/bin/c5i?mid=6&amp;rid=77&amp;target={{ doc.name }}" rel="nofollow" target="_blank">Search lists (ARO)</a>
+      <a class="btn btn-default btn-xs" href="https://www.iesg.org/bin/c5i?mid=6&amp;rid=77&amp;target={{ doc.name }}" rel="nofollow" target="_blank">Search lists (ARO)</a>
     {% endif %}
     {% if user.is_authenticated %}
       {% if tracking_document %}

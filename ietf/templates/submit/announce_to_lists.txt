@@ -16,10 +16,10 @@ The IETF datatracker status page for this draft is:
 https://datatracker.ietf.org/doc/{{ submission.name }}/
 
 There's also a htmlized version available at:
-http://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
+https://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
 {% if submission.rev != "00" %}
 A diff from the previous version is available at:
-http:{{settings.RFCDIFF_PREFIX}}?url2={{ submission.name }}-{{ submission.rev }}
+https:{{settings.RFCDIFF_PREFIX}}?url2={{ submission.name }}-{{ submission.rev }}
 {% endif %}
 
 Please note that it may take a couple of minutes from the time of submission

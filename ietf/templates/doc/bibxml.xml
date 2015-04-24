@@ -11,5 +11,5 @@
       <abstract><t>{{doc.abstract}}</t></abstract>
    </front>
    <seriesInfo name='Internet-Draft' value='{{doc.name}}-{{doc.rev}}' />
-   <format type='TXT' target='http://www.ietf.org/internet-drafts/{{doc.name}}-{{doc.rev}}.txt' />
+   <format type='TXT' target='https://www.ietf.org/internet-drafts/{{doc.name}}-{{doc.rev}}.txt' />
 </reference>

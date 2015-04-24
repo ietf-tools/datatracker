@@ -14,7 +14,7 @@ The IESG would also like the IRSG or RFC-Editor to review the comments in the da
 A URL of this {{ doc_type }} is:
 {{ doc_url }}
 
-The process for such documents is described {% if doc.stream_id == 'ise' %}at http://www.rfc-editor.org/indsubs.html {% else %}{% if doc.stream_id == 'irtf' %}in RFC 5743 {% endif %} {% endif %}
+The process for such documents is described {% if doc.stream_id == 'ise' %}at https://www.rfc-editor.org/indsubs.html {% else %}{% if doc.stream_id == 'irtf' %}in RFC 5743 {% endif %} {% endif %}
 
 Thank you,
 

@@ -123,7 +123,7 @@
       <th class="text-nowrap">Attachments</th>
       <td>
         {% for doc in liaison.attachments.all %}
-          <a href="//datatracker.ietf.org/documents/LIAISON/{{ doc.external_url }}">{{ doc.title }}</a>
+          <a href="https://datatracker.ietf.org/documents/LIAISON/{{ doc.external_url }}">{{ doc.title }}</a>
           {% if not forloop.last %}<br>{% endif %}
         {% empty %}
           (None)

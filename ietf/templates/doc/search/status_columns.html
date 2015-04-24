@@ -34,7 +34,7 @@
     {% endfor %}
 
     {% if doc|state:"draft-rfceditor" %}
-      <br>RFC Editor: <a href="//www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
+      <br>RFC Editor: <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
     {% endif %}
 
   {% else %}{# RFC #}

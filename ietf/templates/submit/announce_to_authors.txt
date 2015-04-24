@@ -9,10 +9,10 @@ Title:		{{ submission.title }}
 Document date:	{{ submission.document_date|date:"Y-m-d" }}
 Group:		{{ group }}
 Pages:		{{ submission.pages }}
-URL:            http://www.ietf.org/internet-drafts/{{ submission.name }}-{{ submission.rev }}.txt
+URL:            https://www.ietf.org/internet-drafts/{{ submission.name }}-{{ submission.rev }}.txt
 Status:         https://datatracker.ietf.org/doc/{{ submission.name }}/
-Htmlized:       http://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
-{% if submission.rev != "00" %}Diff:           http:{{rfcdiff_prefix}}?url2={{ submission.name }}-{{ submission.rev }}{% endif %}
+Htmlized:       https://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
+{% if submission.rev != "00" %}Diff:           https:{{rfcdiff_prefix}}?url2={{ submission.name }}-{{ submission.rev }}{% endif %}
 
 Abstract:
 {{ submission.abstract }}

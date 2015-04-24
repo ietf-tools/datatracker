@@ -48,7 +48,7 @@
           <a class="btn btn-default" href="/meeting/agenda-utc">Agenda in UTC timezone</a>
         {% endif %}
         <a class="btn btn-default" href="/meeting/{{schedule.meeting.number}}/agenda.txt">Plaintext agenda</a>
-        <a class="btn btn-default" href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/">Tools-style agenda</a>
+        <a class="btn btn-default" href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/">Tools-style agenda</a>
       </p>
 
       {# cache this part for 5 minutes -- it takes 3-6 seconds to generate #}
@@ -195,12 +195,12 @@
 	          </td>
                   <td class="hidden-xs" colspan="3">
                     {% if item.timeslot.show_location and item.timeslot.get_location %}
-                      <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+                      <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 	            {% endif %}
 	          </td>
                   <td class="visible-xs">
                     {% if item.timeslot.show_location and item.timeslot.get_location %}
-	              <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+	              <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 	            {% endif %}
 	          </td>
                   <td colspan="2">
@@ -225,12 +225,12 @@
 	              </th>
                       <td class="hidden-xs" colspan="3">
                         {% if item.timeslot.show_location and item.timeslot.get_location %}
-	                  <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+	                  <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 	                {% endif %}
 	              </td>
                       <td class="visible-xs">
                         {% if item.timeslot.show_location and item.timeslot.get_location %}
-	                  <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+	                  <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 	                {% endif %}
 	              </td>
 
@@ -240,7 +240,7 @@
 
 	              <td>
                         {% if item.timeslot.show_location and item.timeslot.get_location %}
-	                  <a href="//tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+	                  <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
 	                {% endif %}
 	              </td>
 

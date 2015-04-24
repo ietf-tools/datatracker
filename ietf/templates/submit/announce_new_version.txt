@@ -1,6 +1,6 @@
 {% autoescape off %}
 A new version (-{{ submission.rev }}) has been submitted for {{ submission.name }}:
-http://www.ietf.org/internet-drafts/{{ submission.name }}-{{ submission.rev }}.txt
+https://www.ietf.org/internet-drafts/{{ submission.name }}-{{ submission.rev }}.txt
 {% if msg %}
 {{ msg|striptags }}
 {% endif %}
@@ -9,7 +9,7 @@ The IETF datatracker page for this Internet-Draft is:
 https://datatracker.ietf.org/doc/{{ submission.name }}/
 
 Diff from previous version:
-http:{{rfcdiff_prefix}}?url2={{ submission.name }}-{{ submission.rev }}
+https:{{rfcdiff_prefix}}?url2={{ submission.name }}-{{ submission.rev }}
 
 Please note that it may take a couple of minutes from the time of submission
 until the htmlized version and diff are available at tools.ietf.org.

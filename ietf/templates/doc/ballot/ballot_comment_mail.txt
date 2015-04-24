@@ -6,7 +6,7 @@ email addresses included in the To and CC lines. (Feel free to cut this
 introductory paragraph, however.)
 
 {% if doc.type_id == "draft" %}
-Please refer to http://www.ietf.org/iesg/statement/discuss-criteria.html
+Please refer to https://www.ietf.org/iesg/statement/discuss-criteria.html
 for more information about IESG DISCUSS and COMMENT positions.
 {% endif %}
 
