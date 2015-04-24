@@ -102,6 +102,7 @@ def check_html_valid(url, response):
     key = re.sub("\?.*$",       "", key)
     key = re.sub("/rfc[0-9]+/",   "/rfcnnnn/", key)
     key = re.sub("/wg/[a-z0-9-]+/",   "/wg/foo/", key)
+    key = re.sub("/rg/[a-z0-9-]+/",   "/rg/foo/", key)
     for slug in doc_types:
         key = re.sub("/%s-.*/"%slug, "/%s-nnnn/"%slug, key)
     if not key in validated_urls:
