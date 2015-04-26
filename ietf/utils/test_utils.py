@@ -323,7 +323,7 @@ class TestCase(django.test.TestCase):
 
     def assertValidHTML(self, data):
         try:
-            parser.parse(data)
+            self.parser.parse(data)
         except Exception as e:
             raise self.failureException(str(e))
 
