@@ -1092,7 +1092,6 @@ class AdoptDraftTests(TestCase):
         self.assertEqual(draft.group.acronym, "mars")
         self.assertEqual(draft.stream_id, "ietf")
         self.assertEqual(draft.docevent_set.count() - events_before, 5)
-        self.assertTrue(mars.list_email in draft.notify)
         self.assertTrue('draft-ietf-mars-test@ietf.org' in draft.notify)
         self.assertTrue('draft-ietf-mars-test.ad@ietf.org' in draft.notify)
         self.assertTrue('draft-ietf-mars-test.shepherd@ietf.org' in draft.notify)
@@ -1100,6 +1099,8 @@ class AdoptDraftTests(TestCase):
         self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
         self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
+
+        self.assertFalse(mars.list_email in draft.notify)
 
 class ChangeStreamStateTests(TestCase):
     def test_set_tags(self):
