@@ -53,11 +53,11 @@ Parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 
 {% with doc.active_ballot as ballot %}
   {% if ballot %}
-    <small><pre>
-      Yes  No-Objection  Discuss  Abstain  Recuse
+<small><pre>
+                              Yes  No-Objection  Discuss  Abstain  Recuse
       {% for pos in ballot.all_positions %}{% if pos.old_ad %}{{pos.ad.plain_name|bracket|ljust:"22"}}{%else%}{{pos.ad.plain_name|ljust:"22"}}{%endif%} {{pos|bracketpos:"yes"}}    {{pos|bracketpos:"noobj"}}       {{pos|bracketpos:"discuss"}}    {{pos|bracketpos:"abstain"}}    {{pos|bracketpos:"recuse"}}
       {% endfor %}
-    </pre></small>
+</pre></small>
 
     {% if num|startswith:"2." %}
       <p>____ open positions<br>
