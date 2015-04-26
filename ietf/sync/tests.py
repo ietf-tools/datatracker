@@ -131,11 +131,11 @@ class IANASyncTests(TestCase):
     def test_iana_review_mail(self):
         draft = make_test_data()
 
-        msg = u"""From: "%(person)s via RT" <drafts-lastcall@iana.org>
-Date: Thu, 10 May 2012 12:00:00 +0000
+        msg_template = u"""From: "%(person)s via RT" <drafts-lastcall@iana.org>
+Date: Thu, 10 May 2012 12:00:0%(rtime)d +0000
 Subject: [IANA #12345] Last Call: <%(draft)s-%(rev)s.txt> (Long text) to Informational RFC
 
-(BEGIN IANA LAST CALL COMMENTS)
+(BEGIN IANA %(tag)s)
 
 IESG:
 
@@ -151,30 +151,35 @@ Thanks,
 IANA “Fake Test” Person
 ICANN
 
-(END IANA LAST CALL COMMENTS)
+(END IANA %(tag)s)
 """
 
-        msg = msg % dict(person=Person.objects.get(user__username="iana").name,
-                         draft=draft.name,
-                         rev=draft.rev)
+        tags = ("LAST CALL COMMENTS","COMMENTS")
+        for tag in tags:
+            msg = msg_template % dict(person=Person.objects.get(user__username="iana").name,
+                                      draft=draft.name,
+                                      rev=draft.rev,
+                                      tag=tag,
+                                      rtime=tags.index(tag))
  
-        doc_name, review_time, by, comment = iana.parse_review_email(msg.encode('utf-8'))
+            doc_name, review_time, by, comment = iana.parse_review_email(msg.encode('utf-8'))
 
-        self.assertEqual(doc_name, draft.name)
-#        self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 5, 0, 0))
-        self.assertEqual(by, Person.objects.get(user__username="iana"))
-        self.assertTrue("there are no IANA Actions" in comment.replace("\n", ""))
+            self.assertEqual(doc_name, draft.name)
+#            self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 5, 0, 0))
+            self.assertEqual(by, Person.objects.get(user__username="iana"))
+            self.assertTrue("there are no IANA Actions" in comment.replace("\n", ""))
 
-        iana.add_review_comment(doc_name, review_time, by, comment)
+            events_before = DocEvent.objects.filter(doc=draft, type="iana_review").count()
+            iana.add_review_comment(doc_name, review_time, by, comment)
 
-        e = draft.latest_event(type="iana_review")
-        self.assertTrue(e)
-        self.assertEqual(e.desc, comment)
-        self.assertEqual(e.by, by)
+            e = draft.latest_event(type="iana_review")
+            self.assertTrue(e)
+            self.assertEqual(e.desc, comment)
+            self.assertEqual(e.by, by)
 
-        # make sure it doesn't create duplicates
-        iana.add_review_comment(doc_name, review_time, by, comment)
-        self.assertEqual(DocEvent.objects.filter(doc=draft, type="iana_review").count(), 1)
+            # make sure it doesn't create duplicates
+            iana.add_review_comment(doc_name, review_time, by, comment)
+            self.assertEqual(DocEvent.objects.filter(doc=draft, type="iana_review").count(), events_before+1)
 
     def test_notify_page(self):
         # check that we can get the notify page

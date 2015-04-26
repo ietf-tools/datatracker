@@ -252,10 +252,16 @@ def parse_review_email(text):
 
     # comment
     body = msg.get_payload().decode('quoted-printable').replace("\r", "")
-    b = body.find("(BEGIN IANA LAST CALL COMMENTS)")
-    e = body.find("(END IANA LAST CALL COMMENTS)")
-
-    comment = body[b + len("(BEGIN IANA LAST CALL COMMENTS)"):e].strip()
+    if "BEGIN IANA LAST CALL COMMENTS" in body:
+        b = body.find("(BEGIN IANA LAST CALL COMMENTS)")
+        e = body.find("(END IANA LAST CALL COMMENTS)")
+        comment = body[b + len("(BEGIN IANA LAST CALL COMMENTS)"):e].strip()
+    elif "BEGIN IANA COMMENTS" in body:
+        b = body.find("(BEGIN IANA COMMENTS)")
+        e = body.find("(END IANA COMMENTS)")
+        comment = body[b + len("(BEGIN IANA COMMENTS)"):e].strip()
+    else:
+        comment = ""
 
     # strip leading IESG:
     if comment.startswith("IESG:"):
@@ -266,16 +272,21 @@ def parse_review_email(text):
     if m:
         comment = comment[:m.start()].rstrip()
 
+    m = re.search(r"<(.*)>", msg["From"])
+    if m:
+        comment = '(Via %s): %s' % ( m.group(1).strip() , comment )
+
     return doc_name, review_time, by, comment
 
 def add_review_comment(doc_name, review_time, by, comment):
-    try:
-        e = DocEvent.objects.get(doc__name=doc_name, time=review_time, type="iana_review")
-    except DocEvent.DoesNotExist:
-        doc = Document.objects.get(name=doc_name)
-        e = DocEvent(doc=doc, time=review_time, type="iana_review")
+    if comment:
+        try:
+            e = DocEvent.objects.get(doc__name=doc_name, time=review_time, type="iana_review")
+        except DocEvent.DoesNotExist:
+            doc = Document.objects.get(name=doc_name)
+            e = DocEvent(doc=doc, time=review_time, type="iana_review")
 
-    e.desc = comment
-    e.by = by
+        e.desc = comment
+        e.by = by
 
-    e.save()
+        e.save()
