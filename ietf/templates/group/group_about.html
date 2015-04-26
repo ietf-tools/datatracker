@@ -111,10 +111,11 @@
 
   {% if group.features.has_chartering_process %}
     <h2>Charter for {% if group.state_id == "proposed" %}proposed{% endif %} {{ group.type.desc.title }}</h2>
-    <p>{{ group.charter_text|linebreaks }}</p>
+    {# the linebreaks filter adds <p/>, no surrounding <p/> necessary: #}
+    {{ group.charter_text|linebreaks }}
   {% else %}
     <h2>About</h2>
-    <p>{{ group.description|default:"No description yet."|linebreaks }}</p>
+    {{ group.description|default:"No description yet."|linebreaks }}
   {% endif %}
 
   {% if group.features.has_milestones %}
