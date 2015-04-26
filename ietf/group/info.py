@@ -430,12 +430,17 @@ def group_about(request, acronym, group_type=None):
 
     can_manage = can_manage_group_type(request.user, group.type_id)
 
+    table_rows = dict(group=5, personnel=0, )
+    table_rows["group"] += 1 if group.groupurl_set.count() else 0
+    table_rows["personnel"] += len(group.personnel)
+
     return render(request, 'group/group_about.html',
                   construct_group_menu_context(request, group, "charter" if group.features.has_chartering_process else "about", group_type, {
                       "milestones_in_review": group.groupmilestone_set.filter(state="review"),
                       "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
                       "requested_close": requested_close,
                       "can_manage": can_manage,
+                      "table_rows": table_rows,
                   }))
 
 
