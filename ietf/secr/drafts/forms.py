@@ -141,7 +141,7 @@ class EditModelForm(forms.ModelForm):
     # use this method to set attrs which keeps other meta info from model.
     def __init__(self, *args, **kwargs):
         super(EditModelForm, self).__init__(*args, **kwargs)
-        self.fields['ad'].queryset = Person.objects.filter(role__name='ad')
+        self.fields['ad'].queryset = Person.objects.filter(role__name='ad').distinct()
         self.fields['title'].label='Document Name'
         self.fields['title'].widget=forms.Textarea()
         self.fields['rev'].widget.attrs['size'] = 2
