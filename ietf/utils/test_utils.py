@@ -35,6 +35,7 @@
 import os
 import re
 import sys
+import html5lib
 from datetime import datetime
 import urllib2 as urllib
 from difflib import unified_diff
@@ -286,6 +287,8 @@ class TestCase(django.test.TestCase):
     We don't flush the database, as that triggers a re-load of initial_data.
     """
 
+    parser = html5lib.HTMLParser(strict=True)
+
     def _fixture_setup(self):
         global loaded_fixtures
 
@@ -316,3 +319,15 @@ class TestCase(django.test.TestCase):
                 loaded_fixtures += fixtures
 
         super(TestCase, self)._fixture_setup()
+
+
+    def assertValidHTML(self, data):
+        try:
+            parser.parse(data)
+        except Exception as e:
+            raise self.failureException(str(e))
+
+    def assertValidHTMLResponse(self, resp):
+        self.assertHttpOK(resp)
+        self.assertTrue(resp['Content-Type'].startswith('text/html'))
+        self.assertValidHTML(resp.content)
