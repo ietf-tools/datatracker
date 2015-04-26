@@ -11,11 +11,9 @@
   {% endif %}
 
   <table class="table table-condensed">
+     <tbody>
     <tr>
-      <th rowspan="7">{{ group.type.name }}</th>
-    </tr>
-
-    <tr>
+      <th rowspan="{{table_rows.group}}">{{ group.type.name }}</th>
       <th>Name</th>
       <td>{{ group.name }}</td>
     </tr>
@@ -59,22 +57,26 @@
       {% endif %}
     </tr>
 
-    <tr>
+
       {% with group.groupurl_set.all as urls %}
         {% if urls %}
+	<tr>
           <th>More info</th>
           <td>
             {% for url in urls %}
               <a href="{{ url.url }}">{% firstof url.name url.url %}</a>{% if not forloop.last %}<br>{% endif %}
             {% endfor %}
           </td>
+	</tr>
         {% endif %}
       {% endwith %}
-    </tr>
-
-    <tr><th rowspan="{{group.personnel|length|add:"1"}}">Personnel</th></tr>
+    </tbody>
+    <tbody>
     {% for slug, label, roles in group.personnel %}
       <tr>
+	{% if forloop.first %}
+	<th rowspan="{{table_rows.personnel}}">Personnel</th>
+	{% endif %}
         <th>{{ label }}</th>
         <td>
           {% for r in roles %}
@@ -86,18 +88,24 @@
       </tr>
     {% endfor %}
 
-    {% if group.list_email %}
-      <tr><th rowspan="4">Mailing list</th></tr>
+    </tbody>
 
-      <tr><th>Address</th><td>{{ group.list_email|urlize }}</td></tr>
+
+    {% if group.list_email %}
+    <tbody>
+      <tr>
+	 <th rowspan="3">Mailing list</th>
+	 <th>Address</th><td>{{ group.list_email|urlize }}</td>
+      </tr>
       <tr><th>To subscribe</th><td>{{ group.list_subscribe|urlize }}</td></tr>
       <tr><th>Archive</th><td>{{ group.list_archive|urlize }}</td></tr>
+    </tbody>
     {% endif %}
 
     {% if group.state_id != "conclude" %}
-      <tr><th rowspan="3">Jabber chat</th></tr>
-
+    <tbody>
       <tr>
+	 <th rowspan="2">Jabber chat</th>
         <th>Room address</th>
         <td><a href="xmpp://{{ group.acronym }}@jabber.ietf.org">xmpp://{{ group.acronym }}@jabber.ietf.org</a></td>
       </tr>
@@ -106,6 +114,7 @@
         <th>Logs</th>
         <td><a href="https://jabber.ietf.org/logs/{{ group.acronym }}/">https://jabber.ietf.org/logs/{{ group.acronym }}/</a></td>
       </tr>
+    </tbody>
     {% endif %}
   </table>
 
