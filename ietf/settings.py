@@ -206,7 +206,6 @@ INSTALLED_APPS = (
     'bootstrap3',
     'form_utils',
     'tastypie',
-    'typogrify',
     'widget_tweaks',
     # IETF apps
     'ietf.api',
