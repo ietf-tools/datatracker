@@ -146,7 +146,7 @@
         <iframe seamless class="hidden" id="weekview"></iframe>
 
         <table class="table table-condensed table-striped">
-          {% for item in schedule.assignments.all %}
+          {% for item in filtered_assignments.all %}
 
             {% ifchanged item.timeslot.time|date:"Y-m-d" %}
               <tr><th class="gap" colspan="6"></th></tr>
@@ -335,7 +335,7 @@
     </div>
     <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
-        {% for item in schedule.assignments.all %}
+        {% for item in filtered_assignments.all %}
           {% ifchanged item.timeslot.time|date:"Y-m-d" %}
             <li><a href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a></li>
           {% endifchanged %}

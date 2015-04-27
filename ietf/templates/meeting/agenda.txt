@@ -8,7 +8,7 @@
 {% filter center:72 %}Updated {{ updated|date:"Y-m-d H:i:s T" }}{% endfilter %}
 
 {% filter center:72 %}IETF agendas are subject to change, up to and during the meeting.{% endfilter %}
-{% for item in schedule.assignments.all.distinct %}{% ifchanged  %}
+{% for item in filtered_assignments.all.distinct %}{% ifchanged  %}
 
 
 {{ item.timeslot.time|date:"l"|upper }}, {{ item.timeslot.time|date:"F j, Y" }}

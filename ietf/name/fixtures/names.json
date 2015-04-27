@@ -1414,7 +1414,7 @@
   "order": 0,
   "used": true,
   "name": "None Selected",
-  "desc": ""
+  "desc": "[None selected]"
  },
  "model": "name.iprlicensetypename",
  "pk": "none-selected"
@@ -2078,6 +2078,26 @@
  },
  "model": "name.timeslottypename",
  "pk": "reserved"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Leadership",
+  "desc": "Leadership Meetings"
+ },
+ "model": "name.timeslottypename",
+ "pk": "lead"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Off Agenda",
+  "desc": "Other Meetings Not Published on Agenda"
+ },
+ "model": "name.timeslottypename",
+ "pk": "offagenda"
 },
 {
  "fields": {

@@ -370,7 +370,7 @@ class TimeSlot(models.Model):
         return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
     def end_time(self):
         return self.time + self.duration
-    def get_location(self):
+    def get_hidden_location(self):
         location = self.location
         if location:
             location = location.name
@@ -378,6 +378,10 @@ class TimeSlot(models.Model):
             location = self.meeting.reg_area
         elif self.type_id == "break":
             location = self.meeting.break_area
+        return location
+
+    def get_location(self):
+        location = self.get_hidden_location()
         if not self.show_location:
             location = ""
         return location
@@ -626,8 +630,7 @@ class Schedule(models.Model):
                  .distinct() )
 
     def groups(self):
-        return Group.objects.filter(type__slug__in=['wg', 'rg', 'ag', 'iab'], parent__isnull=False,
-            session__scheduledsession__schedule=self).distinct().order_by('parent__acronym', 'acronym')
+        return Group.objects.filter(type__slug__in=['wg', 'rg', 'ag', 'iab'], parent__isnull=False, session__scheduledsession__schedule=self).exclude(session__scheduledsession__timeslot__type__in=['lead','offagenda']).distinct().order_by('parent__acronym', 'acronym')
 
     # calculate badness of entire schedule
     def calc_badness(self):
