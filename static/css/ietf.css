@@ -58,7 +58,7 @@ body { padding-top: 70px; }
 /* See http://eichefam.net/2012/04/12/scrollable-menus-in-bootstrap/ */
 .dropdown-submenu:hover > .dropdown-menu {
 		height: auto;
-		max-height: 650px;
+		max-height: 500px;
 		overflow-x: hidden;
 		overflow-y: auto;
 }
