@@ -1,3 +1,101 @@
+ietfdb (6.0.2) ietf; urgency=medium
+
+  This is a minor release, containing a few new development support features,
+  HTML cleanup, and good number bugfixes from lars@netapp.com,
+  rjsparks@nostrum.com, rcross@amsl.com and henrik@levkowetz.com
+
+  * Added html validation to the test crawler; it will now report html 
+    which fails validation with 'WARN' indications.  Reorganized the code 
+    somewhat, collecting functions, globals, etc. in groups.
+
+  * Fixed all cases of invalid html found by the test crawler.
+
+  * Reduced the padding for compact tables.  This hopefully fixes issue 
+    #1689.
+
+  * Addressed another bug related to using SearchablePersonsField to choose 
+    Person objects, rather than Email objects.  If one uses this for Person 
+    objects, then object.address isn't going to be terribly useful in the form 
+    ,,:-).  Addresses issue #1684, #1685 and #1686.
+
+  * Provided the IRTF chair with access to the session request tool.  Fixes 
+    issue #1687.
+
+  * Removed emtpy items from the must-be-there list before handing the list 
+    to Person.objects.filter(pk__in=...).  Fixes issues #1684, #1685
+
+  * Merged in [9558] from rcross@amsl.com:
+    Eliminated MultipleObjectsReturned when editing draft.  Fixes issue #1678.
+
+  * Merged in [9554] from rcross@amsl.com:
+    Fixes #1692.  Drag-and-Drop slide re-ordering no longer works in 
+    secr/proceedings.  Consolidate / update JQuery-UI.   
+
+  * Merged in [9548] from rjsparks@nostrum.com:
+    Allow IANA to switch to (BEGIN IANA COMMENTS) at their leisure. Make 
+    sure the captured events are obviously from IANA.  
+
+  * Merged in [9546] from rcross@amsl.com:
+    Fixes alignment of ballot position headers in IESG agenda moderator 
+    package.   
+
+  * Merged in [9541] and [9542] from rjsparks@nostrum.com:
+    Quit putting the group email list address in the initially generated
+    Notify field.  Updated the tests accordingly.
+
+  * Merged in [9527] from rcross@amsl.com:
+    Made it possible to add minutes / agenda after deleting them.  Fixes issue
+    #1680.
+
+  * Updated a bunch of links from http: to https: based on a patch from 
+    lars@netapp.com.
+
+  * Merged in [9525] from lars@netapp.com:
+    Make the menu bar search field appear on slightly smaller screen widths. 
+
+  * Merged in [9524] from lars@netapp.com:
+    Add some shim js libraries for IE8 and earlier (see
+    http://getbootstrap.com/getting-started/#template) Fix HTML structural
+    errors in the template.  Wrap some HTML comments into Django comments, so
+    they don't get sent to the client. 
+
+  * Merged in [9519] from rcross@amsl.com:
+    Fixed an issue where RelatedObjectDoesNotExist would be raised when User
+    has no Person.  Fixes issue #1676.
+
+  * Merged in [9518] from rjsparks@nostrum.com:
+    Allow an AD to jump straight to the ballot editing page by right-clicking
+    any ballot grid. Fixes #1669.  
+
+  * Merged in [9516] from rjsparks@nostrum.com:
+    Don't show needed positions for closed ballots. Fixes #1622.  
+
+  * Merged in [9514] from rjsparks@nostrum.com:
+    If the name attached to an additional-info URL for a group is blank, 
+    show the URL instead. Fixes #1523 and #1657.  
+
+  * Merged in [9513] from rjsparks@nostrum.com:
+    Don't show concluded groups in the community list section of the 
+    navbar. Fixes bug #1652.  
+
+  * Removed local copies of html5lib and tastypie, and updated
+    requirements.txt to include them.  Removed typogrify from the requirements
+    list; it isn't used.
+
+  * Added pip and setuptools, required in virtualenv, to requirements.txt,
+    in order to simplify buildbot testing of package installation and version 
+    testing.
+
+  * Added copyright lines and template origin to the html templates.  
+
+  * Added support for an 'origin' template tag which will insert the name 
+    of the template file (within a html comment) into the page content when 
+    TEMPLATE_DEBUG is True; with the purpose of more easily being able to 
+    identify the templates from which page content comes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Apr 2015 08:56:36 +0000
+
+
 ietfdb (6.0.1) ietf; urgency=medium
 
   This is a bugfix release which irons out some wrinkles discovered after
