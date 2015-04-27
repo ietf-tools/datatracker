@@ -270,9 +270,8 @@ if __name__ == "__main__":
         sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
         sys.exit(1)
     else:
-        sys.stderr.write("Found no errors.")
+        sys.stderr.write("Found no errors.\n")
     if warnings > 0:
         sys.stderr.write("Found %s warnings, grep output for WARN for details\n" % warnings)
-        sys.exit(0)
     else:
-        sys.stderr.write("Found no warnings.")
+        sys.stderr.write("Found no warnings.\n")
