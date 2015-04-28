@@ -94,7 +94,9 @@ body { padding-top: 70px; }
 
 /* Hack to make anchor-targets take up a bit more space vertically
  to work around the position fixed navbar which otherwise covers them */
-.anchor-target:before {
+h2.anchor-target:before,
+h3.anchor-target:before,	
+h4.anchor-target:before {
   content: '';
   display: block;
   position: relative;
