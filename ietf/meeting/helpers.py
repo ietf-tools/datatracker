@@ -66,7 +66,9 @@ def build_all_agenda_slices(meeting):
     time_slices = []
     date_slices = {}
 
-    for ts in meeting.timeslot_set.exclude(type__in=['reg','break']).order_by('time','name'):
+    #for ts in meeting.timeslot_set.exclude(type__in=['reg','break']).order_by('time','name'):
+    #for ts in meeting.timeslot_set.exclude(type__in=['reg','break','lead','offagenda','other']).order_by('time','name'):
+    for ts in meeting.timeslot_set.filter(type__in=['session',]).order_by('time','name'):
     #for ts in meeting.timeslot_set.exclude(type__in=['reg','break','other']).order_by('time','name'):
     #for ts in meeting.timeslot_set.order_by('time','name'):
     #for ts in meeting.timeslot_set.filter(type='offagenda').order_by('time','name'):
