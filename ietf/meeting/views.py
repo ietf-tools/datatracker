@@ -261,7 +261,7 @@ def edit_agenda(request, num=None, owner=None, name=None):
 
     #rooms = meeting.room_set.order_by("capacity")
     #rooms = rooms.all()
-    rooms = meeting.room_set.filter(timeslot__type__slug='session').distinct().order_by("capacity")
+    rooms = meeting.room_set.filter(session_types__slug='session').distinct().order_by("capacity")
     saveas = SaveAsForm()
     saveasurl=reverse(edit_agenda,
                       args=[meeting.number, schedule.owner_email(), schedule.name])
@@ -644,7 +644,7 @@ def ical_agenda(request, num=None, name=None, ext=None):
 
 def meeting_requests(request, num=None) :
     meeting = get_meeting(num)
-    sessions = Session.objects.filter(meeting__number=meeting.number,group__parent__isnull = False).exclude(requested_by=0).order_by("group__parent__acronym","status__slug","group__acronym")
+    sessions = Session.objects.filter(meeting__number=meeting.number, type__slug='session', group__parent__isnull = False).exclude(requested_by=0).order_by("group__parent__acronym","status__slug","group__acronym")
 
     groups_not_meeting = Group.objects.filter(state='Active',type__in=['WG','RG','BOF']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym")
 

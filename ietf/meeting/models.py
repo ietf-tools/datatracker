@@ -161,7 +161,10 @@ class Meeting(models.Model):
 
     @property
     def sessions_that_can_meet(self):
-        return self.session_set.exclude(status__slug='notmeet').exclude(status__slug='disappr').exclude(status__slug='deleted').exclude(status__slug='apprw')
+        qs = self.session_set.exclude(status__slug='notmeet').exclude(status__slug='disappr').exclude(status__slug='deleted').exclude(status__slug='apprw')
+        # Restrict graphical scheduling to meeting requests (Sessions) of type 'session' for now
+        qs = qs.filter(type__slug='session')
+        return qs
 
     def sessions_that_can_be_placed(self):
         from django.db.models import Q
@@ -286,6 +289,7 @@ class Room(models.Model):
     name = models.CharField(max_length=255)
     capacity = models.IntegerField(null=True, blank=True)
     resources = models.ManyToManyField(ResourceAssociation, blank = True)
+    session_types = models.ManyToManyField(TimeSlotTypeName, blank = True)
 
     def __unicode__(self):
         return "%s size: %s" % (self.name, self.capacity)
@@ -851,7 +855,8 @@ class Session(models.Model):
     meeting = models.ForeignKey(Meeting)
     name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting.")
     short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
-    group = models.ForeignKey(Group)    # The group type determines the session type.  BOFs also need to be added as a group.
+    type = models.ForeignKey(TimeSlotTypeName)
+    group = models.ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)
     requested = models.DateTimeField(default=datetime.datetime.now)
@@ -1007,7 +1012,13 @@ class Session(models.Model):
         else:
             return "The agenda has not been uploaded yet."
 
-    def type(self):
+    # FIXME - This used to be called 'type'. It is only used in agenda.csv and agenda.txt.
+    # It will return the _wrong thing_ if you look back at an agenda of an earlier meeting
+    # where group X was a BOF at the time, but is now a WG.
+    # It also doesn't return anything useful for RG, area sessions, or anything that's not group type 'wg'.
+    # A better thing to do is find a way to note when a meeting was a BoF meeting and use that, removing this
+    # function altogether.
+    def lame_description(self):
         if self.group.type.slug in [ "wg" ]:
             return "BOF" if self.group.state.slug in ["bof", "bof-conc"] else "WG"
         else:

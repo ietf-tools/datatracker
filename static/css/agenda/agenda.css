@@ -71,6 +71,7 @@
     background-color:#2647A0;
     width:100px; /* otherwise we get overlap */
     min-width:100px;
+    min-height:40px;
     font-size:12px;
     position:absolute; /* makes it float independent of scroll */
     z-index:100; /* meeting events will be on top otherwise */
@@ -244,7 +245,7 @@ tr.agenda_slot{
 td.agenda_slot{
     /* overflow-y:auto; */
     /* height:20px; */
-    height: 40px;
+    height: 45px;
     /* min-height:20px; */
 }
 

@@ -527,6 +527,7 @@ class DocTestCase(TestCase):
             status = SessionStatusName.objects.create(slug='scheduled', name='Scheduled'),
             modified = datetime.datetime.now(),
             requested_by = Person.objects.get(user__username="marschairman"),
+            type_id = "session",
             )
         SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
 

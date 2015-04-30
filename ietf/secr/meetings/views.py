@@ -105,13 +105,17 @@ def build_nonsession(meeting,schedule):
                               short=get_session(slot).short,
                               group=get_session(slot).group,
                               requested_by=system,
-                              status_id='sched')
+                              status_id='sched',
+                              type=slot.type,
+                             )
         else:
             session, __ = Session.objects.get_or_create(meeting=meeting,
                               name=slot.name,
                               group=secretariat,
                               requested_by=system,
-                              status_id='sched')
+                              status_id='sched',
+                              type=slot.type,
+                             )
         session.save()
 
         ts = TimeSlot.objects.create(type=slot.type,
@@ -469,7 +473,9 @@ def non_session(request, meeting_id, schedule_name):
                                   short=short,
                                   group=group,
                                   requested_by=Person.objects.get(name='(system)'),
-                                  status_id='sched')
+                                  status_id='sched',
+                                  type=type,
+                             )
             session.save()
             
             # create association

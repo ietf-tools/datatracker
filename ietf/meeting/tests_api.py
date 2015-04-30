@@ -204,7 +204,7 @@ class ApiTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         info = json.loads(r.content)
-        self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.agenda.scheduledsession_set.all()]))
+        self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.agenda.scheduledsession_set.filter(session__type_id='session')]))
 
         schedule = meeting.agenda
         url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",

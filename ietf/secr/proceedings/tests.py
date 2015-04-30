@@ -75,7 +75,7 @@ class BluesheetTestCase(TestCase):
         make_test_data()
         meeting = Meeting.objects.filter(type='interim').first()
         group = Group.objects.get(acronym='mars')
-        Session.objects.create(meeting=meeting,group=group,requested_by_id=1,status_id='sched')
+        Session.objects.create(meeting=meeting,group=group,requested_by_id=1,status_id='sched',type_id='session')
         url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'acronym':'mars'})
         upfile = StringIO('dummy file')
         upfile.name = "scan1.pdf"
