@@ -67,7 +67,7 @@ def backfill_91_other_meetings(apps, schema_editor):
                     (  9, 17,  0,  120, 'offagenda', [secr],     sea_pearl_12,    'Reception', "Companion's Reception"), # Should this appear on agenda?
                     (  9, 19,  0,  180, 'offagenda', [isocfell], rainbow_23,      'Dinner', 'ISOC Fellows Reception/Dinner'),
                     (  9, 19,  0,  180, 'offagenda', [secr],     lehua_suite,     'Meeting', 'Huawei'),
-                    (  9, 21,  0,  180, 'lead',      [secr],     sea_pearl_12,    'Gathering', 'AMS/IESG/IABIAOC Gathering'),
+                    (  9, 21,  0,  180, 'lead',      [secr],     sea_pearl_12,    'Gathering', 'AMS/IESG/IAB/IAOC Gathering'),
                     ( 10,  0,  0, 1440, 'offagenda', [secr],     south_pacific_1, 'Terminal Room', 'Terminal Room Open to Attendees'),
                     ( 10,  7,  0,  120, 'lead',      [iesg,iab], south_pacific_2, 'Breakfast', 'IESG/IAB Breakfast'),
                     ( 10,  7,  0,  120, 'lead',      [nomcom],   iolani_67,       'Breakfast', 'Nomcom Breakfast'),

@@ -388,7 +388,6 @@ def agenda(request, num=None, name=None, base=None, ext=None):
 
 #TODO - let the IAB in
 @role_required('Area Director','Secretariat')
-@ensure_csrf_cookie
 def agenda_by_room(request,num=None):
     meeting = get_meeting(num) 
     schedule = get_schedule(meeting)
@@ -399,6 +398,25 @@ def agenda_by_room(request,num=None):
         day = ss.timeslot.time.date()
         ss_by_day[day].append(ss)
     return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"ss_by_day":ss_by_day})
+
+@role_required('Area Director','Secretariat')
+def agenda_by_type(request,num=None,type=None):
+    meeting = get_meeting(num) 
+    schedule = get_schedule(meeting)
+    scheduledsessions = schedule.scheduledsession_set.order_by('session__type__slug','timeslot__time')
+    if type:
+        scheduledsessions = scheduledsessions.filter(session__type__slug=type)
+    return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"scheduledsessions":scheduledsessions})
+
+@role_required('Area Director','Secretariat')
+def agenda_by_type_ics(request,num=None,type=None):
+    meeting = get_meeting(num) 
+    schedule = get_schedule(meeting)
+    scheduledsessions = schedule.scheduledsession_set.order_by('session__type__slug','timeslot__time')
+    if type:
+        scheduledsessions = scheduledsessions.filter(session__type__slug=type)
+    updated = meeting_updated(meeting)
+    return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":scheduledsessions},content_type="text/calendar")
 
 def read_agenda_file(num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to

@@ -53,10 +53,15 @@ def build_timeslots(meeting,room=None):
     or adding a room.
     '''
     slots = meeting.timeslot_set.filter(type='session')
+
+    # Don't do anything if the room is not capable of handling sessions
+    if not room.session_types.filter(slug='session'):
+        return
+
     if room:
         rooms = [room]
     else:
-        rooms = meeting.room_set.all()
+        rooms = meeting.room_set.filter(session_types__slug='session')
     if not slots or room:
         # if we are just building timeslots for a new room, the room argument was passed,
         # then we need to use current meeting times as a template, not the last meeting times
