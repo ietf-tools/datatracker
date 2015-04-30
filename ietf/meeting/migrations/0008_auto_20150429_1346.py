@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('name', '0004_auto_20150318_1140'),
-        ('meeting', '0006_auto_20150429_1224'),
+        ('meeting', '0007_auto_20150429_1224'),
     ]
 
     operations = [

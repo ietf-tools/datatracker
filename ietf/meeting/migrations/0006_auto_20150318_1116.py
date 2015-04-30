@@ -130,9 +130,9 @@ def backfill_91_other_meetings(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0004_auto_20150308_0446'),
+        ('meeting', '0005_auto_20150430_0847'),
         ('name',    '0004_auto_20150318_1140'),
-        ('group',   '0003_auto_20150304_0743'),
+        ('group',   '0004_auto_20150430_0847'),
         ('person',  '0004_auto_20150308_0440'),
     ]
 
