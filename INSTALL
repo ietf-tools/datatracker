@@ -18,28 +18,43 @@ General Instructions for Deployment of a New Release
 
       cp $oldreleasenumber/ietf/settings_local.py $releasenumber/ietf/
 
- 3. Change into the directory of the new release and run migrations::
+ 3. Change into the directory of the new release: and run migrations::
 
       cd $releasenumber
-      PYTHONPATH=$PWD ietf/manage.py migrate
+
+
+ 3.5 Optionally, set up a Python virtual environment:
+
+      virtualenv .
+      source bin/activate
+
+ 4. Install requirements (make sure your pip is reasonably fresh first).
+    The following will install required python modules locally if you
+    are using a virtualenv, or globally if you are not:
+
+      pip install -r requirements.txt
+
+ 5. Run migrations:
+
+      ietf/manage.py migrate
+
+ 6. Back out one directory level, then re-point the 'web' symlink::
+
       cd ..
-
- 4. Then re-point the 'web' symlink::
-
       rm ./web; ln -s $releasenumber web
 
- 5. Restart apache::
+ 7. Restart apache::
 
       sudo /etc/init.d/apache2 restart
 
- 6. It's now also a good idea to go to the datatracker front page:
+ 8. It's now also a good idea to go to the datatracker front page:
 
       http://datatracker.ietf.org/
 
     to check that it's alive and kicking, and displaying the new release
     number at the bottom of the left-side menubar :-)
 
- 7. If things **aren't** cool, revert the symlink step, re-pointing the
+ 9. If things **aren't** cool, revert the symlink step, re-pointing the
     symlink to the release that was running before the new release, and restart
     apache again to roll back to that.
 
