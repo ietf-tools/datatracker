@@ -12,7 +12,7 @@ Pages:		{{ submission.pages }}
 URL:            https://www.ietf.org/internet-drafts/{{ submission.name }}-{{ submission.rev }}.txt
 Status:         https://datatracker.ietf.org/doc/{{ submission.name }}/
 Htmlized:       https://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
-{% if submission.rev != "00" %}Diff:           https:{{rfcdiff_prefix}}?url2={{ submission.name }}-{{ submission.rev }}{% endif %}
+{% if submission.rev != "00" %}Diff:           {{rfcdiff_base_url}}?url2={{ submission.name }}-{{ submission.rev }}{% endif %}
 
 Abstract:
 {{ submission.abstract }}

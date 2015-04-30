@@ -46,7 +46,7 @@
   </td>
 
   <td class="text-nowrap">
-    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}<a href="{{ rfcdiff_prefix }}?url2={{ doc.name }}-{{ doc.rev }}">{% endif %}{% if doc.get_state_slug == "rfc" %}{{ doc.latest_revision_date|date:"Y-m" }}{% else %}{{ doc.latest_revision_date|date:"Y-m-d" }}{% endif %}{% if doc.latest_revision_date|timesince_days|new_enough:request %}{% if doc.get_state_slug != "rfc" %}</a>{% endif %}
+    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}<a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">{% endif %}{% if doc.get_state_slug == "rfc" %}{{ doc.latest_revision_date|date:"Y-m" }}{% else %}{{ doc.latest_revision_date|date:"Y-m-d" }}{% endif %}{% if doc.latest_revision_date|timesince_days|new_enough:request %}{% if doc.get_state_slug != "rfc" %}</a>{% endif %}
       <wbr><span class="label label-success">New</span>
     {% endif %}
 

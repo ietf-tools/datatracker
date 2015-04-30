@@ -188,7 +188,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'ietf.context_processors.revision_info',
     'ietf.secr.context_processors.secr_revision_info',
     'ietf.secr.context_processors.static',
-    'ietf.context_processors.rfcdiff_prefix',
+    'ietf.context_processors.rfcdiff_base_url',
 )
 
 INSTALLED_APPS = (
@@ -276,7 +276,7 @@ INTERNAL_IPS = (
 
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
-RFCDIFF_PREFIX = "https://www.ietf.org/rfcdiff"
+RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
 
 # Valid values:
 # 'production', 'test', 'development'

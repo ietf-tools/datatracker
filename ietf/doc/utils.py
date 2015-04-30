@@ -247,7 +247,7 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
             links += ""
 
         if prev != None:
-            links += ' (<a href="https:%s?url1=%s&url2=%s">diff from previous</a>)' % (settings.RFCDIFF_PREFIX, urllib.quote(prev, safe="~"), urllib.quote(diff_url, safe="~"))
+            links += ' (<a href="%s?url1=%s&url2=%s">diff from previous</a>)' % (settings.RFCDIFF_BASE_URL, urllib.quote(prev, safe="~"), urllib.quote(diff_url, safe="~"))
 
         # replace the bold filename part
         e.desc = re.sub(r"<b>(.+-[0-9][0-9].txt)</b>", links, e.desc)
