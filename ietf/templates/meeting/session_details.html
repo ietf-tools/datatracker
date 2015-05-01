@@ -12,11 +12,11 @@
     <h2>{{ session.name }}</h2>
   {% endif %}
 
-  {% if session.sessionpresentation_set.all.count %}
+  {% if filtered_sessionpresentation_set %}
     <p>Materials:</p>
 
     <ul>
-      {% for pres in session.sessionpresentation_set.all %}
+      {% for pres in filtered_sessionpresentation_set %}
         <li><a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{ pres.document.name }}-{{ pres.rev }}</a></li>
       {% endfor %}
     </ul>

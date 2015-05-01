@@ -138,7 +138,7 @@ class ApiTests(TestCase):
         timeslots_before = meeting.timeslot_set.count()
         url = urlreverse("ietf.meeting.ajax.timeslot_roomsurl", kwargs=dict(num=meeting.number))
 
-        post_data = { "name": "new room", "capacity": "50" , "resources": []}
+        post_data = { "name": "new room", "capacity": "50" , "resources": [], "session_types":["session"]}
 
         # unauthorized post
         r = self.client.post(url, post_data)

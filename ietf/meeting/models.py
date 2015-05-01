@@ -287,6 +287,7 @@ class ResourceAssociation(models.Model):
 class Room(models.Model):
     meeting = models.ForeignKey(Meeting)
     name = models.CharField(max_length=255)
+    functional_name = models.CharField(max_length=255, blank = True)
     capacity = models.IntegerField(null=True, blank=True)
     resources = models.ManyToManyField(ResourceAssociation, blank = True)
     session_types = models.ManyToManyField(TimeSlotTypeName, blank = True)
@@ -374,6 +375,7 @@ class TimeSlot(models.Model):
         return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
     def end_time(self):
         return self.time + self.duration
+
     def get_hidden_location(self):
         location = self.location
         if location:
@@ -389,6 +391,16 @@ class TimeSlot(models.Model):
         if not self.show_location:
             location = ""
         return location
+
+    def get_functional_location(self):
+        name_parts = []
+        room = self.location
+        if room and room.functional_name:
+            name_parts.append(room.functional_name)
+        location = self.get_hidden_location()
+        if location:
+            name_parts.append(location)
+        return ' - '.join(name_parts)
 
     @property
     def tz(self):

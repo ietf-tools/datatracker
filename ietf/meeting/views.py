@@ -394,7 +394,7 @@ def agenda_by_room(request,num=None):
     ss_by_day = OrderedDict()
     for day in schedule.scheduledsession_set.dates('timeslot__time','day'):
         ss_by_day[day]=[]
-    for ss in schedule.scheduledsession_set.order_by('timeslot__location','timeslot__time'):
+    for ss in schedule.scheduledsession_set.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
         day = ss.timeslot.time.date()
         ss_by_day[day].append(ss)
     return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"ss_by_day":ss_by_day})
@@ -673,7 +673,7 @@ def meeting_requests(request, num=None) :
 
 def session_details(request, num, acronym, date=None, week_day=None, seq=None) :
     meeting = get_meeting(num)
-    sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym)
+    sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['session','plenary','other'])
 
     if not sessions:
         sessions = Session.objects.filter(meeting=meeting,short=acronym) 
@@ -720,11 +720,14 @@ def session_details(request, num, acronym, date=None, week_day=None, seq=None) :
         ss = session.scheduledsession_set.filter(schedule=meeting.agenda).order_by('timeslot__time')
         if ss:
             scheduled_time = ','.join([x.timeslot.time.strftime("%A %b-%d %H%M") for x in ss])
+        # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
+        filtered_sessionpresentation_set = [p for p in session.sessionpresentation_set.all() if p.document.get_state_slug(p.document.type_id)!='deleted']
         return render(request, "meeting/session_details.html",
                       { 'session':sessions[0] ,
                         'meeting' :meeting ,
                         'acronym' :acronym,
                         'time': scheduled_time,
+                        'filtered_sessionpresentation_set': filtered_sessionpresentation_set
                       })
     else:
         return render(request, "meeting/session_list.html",

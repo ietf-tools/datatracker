@@ -9,8 +9,8 @@ li.roomlistentry { font-weight: 400; }
 ul.sessionlist { list-style:none; padding-left:2em; margin-bottom:10px;}
 li.sessionlistentry { font-size:62%; }
 
-.lead:after { content: " (DO NOT POST)"; color:red; }
-.offagenda:after { content:" (not published on agenda)"; }
+.type-lead:after { content: " (DO NOT POST)"; color:red; }
+.type-offagenda:after { content:" (not published on agenda)"; }
 
 {% endblock %}
 
@@ -21,13 +21,13 @@ li.sessionlistentry { font-size:62%; }
 <ul class="daylist">
 {% for day,sessions in ss_by_day.items %}
 <li class="daylistentry {% cycle 'even' 'odd' %}">{{day|date:'l, j F Y'}}
-{% regroup sessions by timeslot.get_hidden_location as room_list %}
+{% regroup sessions by timeslot.get_functional_location as room_list %}
 <ul class="roomlist">
 {% for room in room_list %}
 <li class="roomlistentry">{{room.grouper|default:"Location Unavailable"}}
 <ul class="sessionlist">
 {% for ss in room.list %}
-<li class="sessionlistentry {{ss.timeslot.type.slug}}">{{ss.timeslot.time|date:"H:i"}}-{{ss.timeslot.end_time|date:"H:i"}} {{ss.session.short_name}}</li>
+<li class="sessionlistentry type-{{ss.timeslot.type.slug}}">{{ss.timeslot.time|date:"H:i"}}-{{ss.timeslot.end_time|date:"H:i"}} {{ss.session.short_name}}</li>
 {% endfor %}
 </ul>
 </li>

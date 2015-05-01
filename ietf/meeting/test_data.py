@@ -59,20 +59,20 @@ def make_meeting_test_data():
     meeting.agenda = schedule
     meeting.save()
 
-    doc = Document.objects.create(name='agenda-mars-ietf-42', type_id='agenda', title="Agenda", external_url="agenda-mars.txt",group=mars)
+    doc = Document.objects.create(name='agenda-mars-ietf-42', type_id='agenda', title="Agenda", external_url="agenda-mars.txt",group=mars,rev='00')
     doc.set_state(State.objects.get(type=doc.type_id, slug="active"))
     mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
 
-    doc = Document.objects.create(name='minutes-mars-ietf-42', type_id='minutes', title="Minutes", external_url="minutes-mars.txt",group=mars)
+    doc = Document.objects.create(name='minutes-mars-ietf-42', type_id='minutes', title="Minutes", external_url="minutes-mars.txt",group=mars,rev='00')
     doc.set_state(State.objects.get(type=doc.type_id, slug="active"))
     mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
 
-    doc = Document.objects.create(name='slides-mars-ietf-42', type_id='slides', title="Slideshow", external_url="slides-mars.txt",group=mars)
+    doc = Document.objects.create(name='slides-mars-ietf-42', type_id='slides', title="Slideshow", external_url="slides-mars.txt",group=mars,rev='00')
     doc.set_state(State.objects.get(type=doc.type_id, slug="active"))
     doc.set_state(State.objects.get(type='reuse_policy',slug='single'))
     mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
 
-    doc = Document.objects.create(name='slides-mars-ietf-42-deleted', type_id='slides', title="Bad Slideshow", external_url="slides-mars-deleted.txt",group=mars)
+    doc = Document.objects.create(name='slides-mars-ietf-42-deleted', type_id='slides', title="Bad Slideshow", external_url="slides-mars-deleted.txt",group=mars,rev='00')
     doc.set_state(State.objects.get(type=doc.type_id, slug="deleted"))
     doc.set_state(State.objects.get(type='reuse_policy',slug='single'))
     mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
