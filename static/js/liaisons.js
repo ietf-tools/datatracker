@@ -238,20 +238,13 @@ $(document).ready(function () {
 
             var selected_id = purpose.val();
 
-            if (selected_id == '1' || selected_id == '2' || selected_id == '5') {
+            if (selected_id == '1' || selected_id == '2') {
+                deadline.prop('required',true);
                 deadlinecontainer.show();
             } else {
+                deadline.prop('required',false);
                 deadlinecontainer.hide();
                 deadline.val('');
-            }
-
-            if (selected_id == '5') {
-                othercontainer.show();
-                deadlinecontainer.find("label").removeClass("required");
-            } else {
-                othercontainer.hide();
-                other_purpose.val('');
-                deadlinecontainer.find("label").addClass("required");
             }
         };
 
