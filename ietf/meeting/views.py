@@ -384,8 +384,7 @@ def agenda(request, num=None, name=None, base=None, ext=None):
     filtered_assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
     return render(request, "meeting/"+base+ext, {"schedule":schedule, "filtered_assignments":filtered_assignments, "updated": updated}, content_type=mimetype[ext])
 
-#TODO - let the IAB in
-@role_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat','IAB')
 def agenda_by_room(request,num=None):
     meeting = get_meeting(num) 
     schedule = get_schedule(meeting)
@@ -397,7 +396,7 @@ def agenda_by_room(request,num=None):
         ss_by_day[day].append(ss)
     return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"ss_by_day":ss_by_day})
 
-@role_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat','IAB')
 def agenda_by_type(request,num=None,type=None):
     meeting = get_meeting(num) 
     schedule = get_schedule(meeting)
@@ -406,7 +405,7 @@ def agenda_by_type(request,num=None,type=None):
         scheduledsessions = scheduledsessions.filter(session__type__slug=type)
     return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"scheduledsessions":scheduledsessions})
 
-@role_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat','IAB')
 def agenda_by_type_ics(request,num=None,type=None):
     meeting = get_meeting(num) 
     schedule = get_schedule(meeting)

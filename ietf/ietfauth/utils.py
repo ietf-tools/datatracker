@@ -46,6 +46,7 @@ def has_role(user, role_names, *args, **kwargs):
         role_qs = {
 	    "Area Director": Q(person=person, name__in=("pre-ad", "ad"), group__type="area", group__state="active"),
 	    "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
+            "IAB" : Q(person=person, name="member", group__acronym="iab"),
 	    "IANA": Q(person=person, name="auth", group__acronym="iana"),
             "RFC Editor": Q(person=person, name="auth", group__acronym="rfceditor"),
             "ISE" : Q(person=person, name="chair", group__acronym="ise"),
