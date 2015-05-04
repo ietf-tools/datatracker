@@ -22,8 +22,8 @@ scheduled = SessionStatusName.objects.get(slug='sched')
 
 for meeting in Meeting.objects.filter(type="ietf").order_by("date"):
     print "Checking %s schedules ..." % meeting
-    brk, __ = Session.objects.get_or_create(meeting=meeting, group=secretariat, requested_by=system, status=scheduled, name='Break', )
-    reg, __ = Session.objects.get_or_create(meeting=meeting, group=secretariat, requested_by=system, status=scheduled, name='Registration', )
+    brk, __ = Session.objects.get_or_create(meeting=meeting, group=secretariat, requested_by=system, status=scheduled, name='Break', type_id='break',)
+    reg, __ = Session.objects.get_or_create(meeting=meeting, group=secretariat, requested_by=system, status=scheduled, name='Registration', type_id='reg',)
 
     for schedule in meeting.schedule_set.all():
         print "  Checking for missing Break and Reg sessions in %s" % schedule

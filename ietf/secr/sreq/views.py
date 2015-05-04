@@ -270,7 +270,9 @@ def confirm(request, acronym):
                                       requested_by=login,
                                       requested_duration=datetime.timedelta(0,int(duration)),
                                       comments=form['comments'],
-                                      status=SessionStatusName.objects.get(slug=slug))
+                                      status=SessionStatusName.objects.get(slug=slug),
+                                      type_id='session',
+                                     )
                 session_save(new_session)
                 if 'resources' in form:
                     new_session.resources = form['resources']
@@ -383,7 +385,9 @@ def edit_mtg(request, num, acronym):
                                               requested_by=login,
                                               requested_duration=duration,
                                               comments=form.cleaned_data['comments'],
-                                              status=SessionStatusName.objects.get(slug='schedw'))
+                                              status=SessionStatusName.objects.get(slug='schedw'),
+                                              type_id='session',
+                                             )
                         new_session.save()
                     else:
                         duration = datetime.timedelta(0,int(form.cleaned_data['length_session2']))
@@ -405,7 +409,9 @@ def edit_mtg(request, num, acronym):
                                               requested_by=login,
                                               requested_duration=duration,
                                               comments=form.cleaned_data['comments'],
-                                              status=SessionStatusName.objects.get(slug='apprw'))
+                                              status=SessionStatusName.objects.get(slug='apprw'),
+                                              type_id='session',
+                                             )
                         new_session.save()
                     else:
                         duration = datetime.timedelta(0,int(form.cleaned_data['length_session3']))

@@ -66,7 +66,7 @@ def build_all_agenda_slices(meeting):
     time_slices = []
     date_slices = {}
 
-    for ts in meeting.timeslot_set.exclude(type__in=['reg','break']).order_by('time','name'):
+    for ts in meeting.timeslot_set.filter(type__in=['session',]).order_by('time','name'):
             ymd = ts.time.date()
 
             if ymd not in date_slices and ts.location != None:
@@ -80,13 +80,10 @@ def build_all_agenda_slices(meeting):
     time_slices.sort()
     return time_slices,date_slices
 
-def get_scheduledsessions_from_schedule(schedule):
-   ss = schedule.scheduledsession_set.filter(timeslot__location__isnull = False).exclude(session__isnull = True).order_by('timeslot__time','timeslot__name','session__group__group')
-
-   return ss
-
 def get_all_scheduledsessions_from_schedule(schedule):
-   ss = schedule.scheduledsession_set.filter(timeslot__location__isnull = False).order_by('timeslot__time','timeslot__name')
+   ss = schedule.scheduledsession_set.filter(timeslot__location__isnull = False)
+   ss = ss.filter(session__type__slug='session')
+   ss = ss.order_by('timeslot__time','timeslot__name')
 
    return ss
 

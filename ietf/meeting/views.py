@@ -6,6 +6,7 @@ import re
 import tarfile
 import urllib
 from tempfile import mkstemp
+from collections import OrderedDict
 
 import debug                            # pyflakes:ignore
 
@@ -258,8 +259,7 @@ def edit_agenda(request, num=None, owner=None, name=None):
     meeting_base_url = request.build_absolute_uri(meeting.base_url())
     site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
 
-    rooms = meeting.room_set.order_by("capacity")
-    rooms = rooms.all()
+    rooms = meeting.room_set.filter(session_types__slug='session').distinct().order_by("capacity")
     saveas = SaveAsForm()
     saveasurl=reverse(edit_agenda,
                       args=[meeting.number, schedule.owner_email(), schedule.name])
@@ -367,6 +367,7 @@ def edit_agendas(request, num=None, order=None):
 def agenda(request, num=None, name=None, base=None, ext=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.html'
+    # This is misleading - urls.py doesn't send ics through here anymore
     mimetype = {
         ".html":"text/html; charset=%s"%settings.DEFAULT_CHARSET,
         ".txt": "text/plain; charset=%s"%settings.DEFAULT_CHARSET,
@@ -380,7 +381,39 @@ def agenda(request, num=None, name=None, base=None, ext=None):
         return render(request, "meeting/no-"+base+ext, {'meeting':meeting }, content_type=mimetype[ext])
 
     updated = meeting_updated(meeting)
-    return render(request, "meeting/"+base+ext, {"schedule":schedule, "updated": updated}, content_type=mimetype[ext])
+    filtered_assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
+    return render(request, "meeting/"+base+ext, {"schedule":schedule, "filtered_assignments":filtered_assignments, "updated": updated}, content_type=mimetype[ext])
+
+@role_required('Area Director','Secretariat','IAB')
+def agenda_by_room(request,num=None):
+    meeting = get_meeting(num) 
+    schedule = get_schedule(meeting)
+    ss_by_day = OrderedDict()
+    for day in schedule.scheduledsession_set.dates('timeslot__time','day'):
+        ss_by_day[day]=[]
+    for ss in schedule.scheduledsession_set.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
+        day = ss.timeslot.time.date()
+        ss_by_day[day].append(ss)
+    return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"ss_by_day":ss_by_day})
+
+@role_required('Area Director','Secretariat','IAB')
+def agenda_by_type(request,num=None,type=None):
+    meeting = get_meeting(num) 
+    schedule = get_schedule(meeting)
+    scheduledsessions = schedule.scheduledsession_set.order_by('session__type__slug','timeslot__time')
+    if type:
+        scheduledsessions = scheduledsessions.filter(session__type__slug=type)
+    return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"scheduledsessions":scheduledsessions})
+
+@role_required('Area Director','Secretariat','IAB')
+def agenda_by_type_ics(request,num=None,type=None):
+    meeting = get_meeting(num) 
+    schedule = get_schedule(meeting)
+    scheduledsessions = schedule.scheduledsession_set.order_by('session__type__slug','timeslot__time')
+    if type:
+        scheduledsessions = scheduledsessions.filter(session__type__slug=type)
+    updated = meeting_updated(meeting)
+    return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":scheduledsessions},content_type="text/calendar")
 
 def read_agenda_file(num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
@@ -611,7 +644,7 @@ def ical_agenda(request, num=None, name=None, ext=None):
             elif item[0] == '~':
                 include_types |= set([item[1:]])
 
-    assignments = schedule.assignments.filter(
+    assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda']).filter(
         Q(timeslot__type__slug__in = include_types) |
         Q(session__group__acronym__in = include) |
         Q(session__group__parent__acronym__in = include)
@@ -626,7 +659,7 @@ def ical_agenda(request, num=None, name=None, ext=None):
 
 def meeting_requests(request, num=None) :
     meeting = get_meeting(num)
-    sessions = Session.objects.filter(meeting__number=meeting.number,group__parent__isnull = False).exclude(requested_by=0).order_by("group__parent__acronym","status__slug","group__acronym")
+    sessions = Session.objects.filter(meeting__number=meeting.number, type__slug='session', group__parent__isnull = False).exclude(requested_by=0).order_by("group__parent__acronym","status__slug","group__acronym")
 
     groups_not_meeting = Group.objects.filter(state='Active',type__in=['WG','RG','BOF']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym")
 
@@ -637,7 +670,7 @@ def meeting_requests(request, num=None) :
 
 def session_details(request, num, acronym, date=None, week_day=None, seq=None) :
     meeting = get_meeting(num)
-    sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym)
+    sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['session','plenary','other'])
 
     if not sessions:
         sessions = Session.objects.filter(meeting=meeting,short=acronym) 
@@ -684,11 +717,14 @@ def session_details(request, num, acronym, date=None, week_day=None, seq=None) :
         ss = session.scheduledsession_set.filter(schedule=meeting.agenda).order_by('timeslot__time')
         if ss:
             scheduled_time = ','.join([x.timeslot.time.strftime("%A %b-%d %H%M") for x in ss])
+        # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
+        filtered_sessionpresentation_set = [p for p in session.sessionpresentation_set.all() if p.document.get_state_slug(p.document.type_id)!='deleted']
         return render(request, "meeting/session_details.html",
                       { 'session':sessions[0] ,
                         'meeting' :meeting ,
                         'acronym' :acronym,
                         'time': scheduled_time,
+                        'filtered_sessionpresentation_set': filtered_sessionpresentation_set
                       })
     else:
         return render(request, "meeting/session_list.html",

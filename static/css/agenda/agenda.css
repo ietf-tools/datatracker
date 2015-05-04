@@ -18,6 +18,8 @@
 
 .content table { border-collapse: separate; border-spacing: 2px; }
 
+.container-fluid {padding-right: 0; padding-left:0;}
+
 .ietf-navbar { background-color: #edf5ff; padding:0; border: 1px solid #89d; margin-top:4px; width: 130px; }
 .ietf-navbar ul { padding: 0; margin: 0; }
 .ietf-navbar ul li { list-style: none; padding: 0; margin: 0; font-size: 93%; padding: 2px 0px 2px 0px; }
@@ -69,6 +71,7 @@
     background-color:#2647A0;
     width:100px; /* otherwise we get overlap */
     min-width:100px;
+    min-height:40px;
     font-size:12px;
     position:absolute; /* makes it float independent of scroll */
     z-index:100; /* meeting events will be on top otherwise */
@@ -242,7 +245,7 @@ tr.agenda_slot{
 td.agenda_slot{
     /* overflow-y:auto; */
     /* height:20px; */
-    height: 40px;
+    height: 45px;
     /* min-height:20px; */
 }
 

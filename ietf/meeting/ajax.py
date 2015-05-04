@@ -158,6 +158,8 @@ AddSlotForm = modelform_factory(TimeSlot, exclude=('meeting','name','location','
 # no authorization required to list.
 def timeslot_slotlist(request, mtg):
     slots = mtg.timeslot_set.all()
+    # Restrict graphical editing to slots of type 'session' for now
+    slots = slots.filter(type__slug='session')
     json_array=[]
     for slot in slots:
         json_array.append(slot.json_dict(request.build_absolute_uri('/')))
