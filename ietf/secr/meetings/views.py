@@ -55,7 +55,7 @@ def build_timeslots(meeting,room=None):
     slots = meeting.timeslot_set.filter(type='session')
 
     # Don't do anything if the room is not capable of handling sessions
-    if not room.session_types.filter(slug='session'):
+    if room and not room.session_types.filter(slug='session'):
         return
 
     if room:
