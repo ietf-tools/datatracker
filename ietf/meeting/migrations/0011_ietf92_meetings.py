@@ -103,7 +103,8 @@ def backfill_92_other_meetings(apps, schema_editor):
                     ( 22, 19,  0,  120, 'offagenda', [iab],      florentine,      'Meeting', 'IAB PrivSec program'),
                     ( 22,  8, 30,   90, 'lead',      [iesg],     pavilion,        'Breakfast', None),
                     ( 22,  9,  0,  150, 'lead',      [iesg],     pavilion,        'Meeting', None),
-                    ( 22, 11, 30,  150, 'lead',      [iab,iesg], pavilion,        'Lunch', 'IESG/IAB Lunch'),
+                    ( 22, 11, 30,  150, 'lead',      [iab],      pavilion,        'Lunch', 'IAB Lunch with the IESG'),
+                    ( 22, 11, 30,  150, 'lead',      [iesg],     pavilion,        'Lunch', 'IESG Lunch with the IAB'),
                     ( 22, 14,  0,  180, 'lead',      [iab],      pavilion,        'Meeting', None),
                     ( 22,  9,  0,  480, 'offagenda', [secr],     terrace,         'Meeting', 'RootOPS'),
                     ( 22, 16, 30,   60, 'offagenda', [secr],     panorama,        'Reception', "Companion's Reception"), # Should this appear on agenda?
@@ -117,7 +118,8 @@ def backfill_92_other_meetings(apps, schema_editor):
                     ( 23,  8,  0,  600, 'offagenda', [secr],     regency_foyer,   'T-Shirt Distribution', 'T-shirt Distribution'),
                     ( 23,  0,  0, 1440, 'offagenda', [secr],     regency,         'Lounge', 'Lounge'),
                     ( 23, 11, 30,  180, 'offagenda', [secr],     executive,       'Lunch', 'ICANN Lunch'),
-                    ( 23,  7,  0,  120, 'lead',      [iab,iesg], pavilion,        'Breakfast', 'IESG/IAB Breakfast'),
+                    ( 23,  7,  0,  120, 'lead',      [iesg],     pavilion,        'Breakfast', 'IESG Breakfast with the IAB'),
+                    ( 23,  7,  0,  120, 'lead',      [iab],      pavilion,        'Breakfast', 'IAB Breakfast with the IESG'),
                     ( 23, 11, 30,   90, 'offagenda', [secr],     pavilion,        'Meeting', 'OPS Directorate Meeting'),
                     ( 23, 19,  0,  120, 'offagenda', [secr],     pavilion,        'Meeting', 'ACE'),
                     ( 23,  7, 30,   90, 'offagenda', [secr],     terrace,         'Meeting', 'NRO ECG'),
@@ -162,7 +164,9 @@ def backfill_92_other_meetings(apps, schema_editor):
                     ( 26, 19, 30,  150, 'offagenda', [secr],     royal,           'Meeting', 'Lavabit'),
                     ( 27,  0,  0,  900, 'offagenda', [secr],     brasserie,       'Terminal Room', 'Terminal Room Open to Attendees'),
                     ( 27,  7, 30,   90, 'offagenda', [secr],     executive,       'Meeting', 'Post-Con with Ray'),
-                    ( 27, 13, 30,   90, 'lead',      [iab,iesg], pavilion,        'Lunch', 'IESG/IAB Lunch'),
+                    ( 27,  7, 30,   75, 'offagenda', [secr],     state,           'Breakfast', 'Gen-art'),
+                    ( 27, 13, 30,   90, 'lead',      [iab],      pavilion,        'Lunch', 'IAB Lunch with the IESG'),
+                    ( 27, 13, 30,   90, 'lead',      [iesg],     pavilion,        'Lunch', 'IESG Lunch with the IAB'),
                    ]:
 
                 ts = ietf92.timeslot_set.create(type_id=type_id, name=slotname, 
