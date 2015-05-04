@@ -259,8 +259,6 @@ def edit_agenda(request, num=None, owner=None, name=None):
     meeting_base_url = request.build_absolute_uri(meeting.base_url())
     site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
 
-    #rooms = meeting.room_set.order_by("capacity")
-    #rooms = rooms.all()
     rooms = meeting.room_set.filter(session_types__slug='session').distinct().order_by("capacity")
     saveas = SaveAsForm()
     saveasurl=reverse(edit_agenda,
