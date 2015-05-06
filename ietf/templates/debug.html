@@ -9,7 +9,7 @@
     <p>
       {{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)
       {% if sql_queries|length != 0 %}
-        <a class="btn btn-default btn-sm" onclick="document.getElementById('debug-query-table').style.display='';">Show</a>
+        <a class="btn btn-default btn-sm" onclick="document.getElementById('debug-query-table').style.display='table';">Show</a>
       {% endif %}
     </p>
     <table class="table table-condensed table-striped" id="debug-query-table" style="display: none;">

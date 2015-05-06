@@ -22,6 +22,9 @@ from ietf.liaisons.fields import select2_id_liaison_json
 
 @can_submit_liaison_required
 def add_liaison(request, liaison=None):
+    if 'incoming' in request.GET.keys() and not can_add_incoming_liaison(request.user):
+        return HttpResponseForbidden("Restricted to users who are authorized to submit incoming liaison statements")
+
     if request.method == 'POST':
         form = liaison_form_factory(request, data=request.POST.copy(),
                                     files = request.FILES, liaison=liaison)
