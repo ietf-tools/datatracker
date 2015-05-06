@@ -138,7 +138,7 @@ class ApiTests(TestCase):
         timeslots_before = meeting.timeslot_set.count()
         url = urlreverse("ietf.meeting.ajax.timeslot_roomsurl", kwargs=dict(num=meeting.number))
 
-        post_data = { "name": "new room", "capacity": "50" , "resources": []}
+        post_data = { "name": "new room", "capacity": "50" , "resources": [], "session_types":["session"]}
 
         # unauthorized post
         r = self.client.post(url, post_data)
@@ -152,7 +152,10 @@ class ApiTests(TestCase):
         self.assertTrue(meeting.room_set.filter(name="new room"))
 
         timeslots_after = meeting.timeslot_set.count()
-        self.assertEqual((timeslots_after - timeslots_before), (meeting.room_set.count() - 1) * timeslots_before)
+        # It's not clear that what that ajax function is doing is the right thing to do,
+        # but it currently makes a new timeslot for any existing timeslot.
+        # The condition tested below relies on the timeslots before this test all having different start and end times
+        self.assertEqual( timeslots_after, 2 * timeslots_before)
 
     def test_delete_room(self):
         meeting = make_meeting_test_data()
@@ -201,7 +204,7 @@ class ApiTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         info = json.loads(r.content)
-        self.assertEqual(set([x['short_name'] for x in info]),set(['mars','ames']))
+        self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.agenda.scheduledsession_set.filter(session__type_id='session')]))
 
         schedule = meeting.agenda
         url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",
@@ -209,7 +212,7 @@ class ApiTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         info = json.loads(r.content)
-        self.assertEqual(len(info),2)
+        self.assertEqual(len(info),schedule.scheduledsession_set.count())
 
 
     def test_slot_json(self):

@@ -438,7 +438,9 @@ def interim(request, acronym):
             Session.objects.create(meeting=meeting,
                                    group=group,
                                    requested_by=request.user.person,
-                                   status_id='sched')
+                                   status_id='sched',
+                                   type_id='session',
+                                  )
 
             create_interim_directory()
             make_directories(meeting)

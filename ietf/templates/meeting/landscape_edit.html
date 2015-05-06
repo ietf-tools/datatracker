@@ -110,6 +110,8 @@ promiselist.push(ss_promise);
   <p>Please save this agenda to your account first.</p>
 </div>
 
+<div class="content"> {% comment %} For preserving styling across the facelift {% endcomment %}
+
 <div class="wrapper custom_text_stuff">
 
 
@@ -206,10 +208,11 @@ promiselist.push(ss_promise);
 </div>
 
 
-<table id="meetings" class="ietf-navbar" style="width:100%">
+{%comment%}<table id="meetings" class="ietf-navbar" style="width:100%">{%endcomment%}
+<table id="meetings" class="ietf-navbar" >
 <tr>
   <th class="schedule_title"><div id="pageloaded" style="display:none">loaded</div><div id="spinner"><!-- spinney goes here --></div></th>
-  <th></th>
+  {% comment %}<th></th>{% endcomment %}
 {% for day in time_slices %}
   <th colspan="{{date_slices|colWidth:day}}" id="{{day|date:'Y-m-d'}}-btn" class=" day_{{day}} agenda_slot_title agenda_slot_unavailable">
     <div id="close_{{day|date:'Y-m-d'}}" class="close top_left very_small close_day">x</div>
@@ -226,7 +229,7 @@ promiselist.push(ss_promise);
 
 <tr>
       <th class="th_column"><button id="show_all_button" class="styled_button">show all</button></th>
-      <th><!-- resources --></th>
+      {% comment %}<th><!-- resources --></th>{% endcomment %}
     {% for day in time_slices %}
 	  {% for slot in date_slices|lookup:day %}
 	      <th class="day_{{day}}-{{slot.0|date:'Hi'}} day_{{day}} room_title ">{{slot.0|date:'Hi'}}-{{slot.1|date:'Hi'}} </th>
@@ -246,6 +249,7 @@ promiselist.push(ss_promise);
       <div class="close very_small close_room top_left small_button" id="close_{{r.name|to_acceptable_id}}">X</div>
       <div class="right room_name">{{r.name}} <span class="capacity">({{r.capacity}})</span></div>
     </th>
+{% comment 'The secretariat is not using these features' %}
     <th class="room_features">
       <div class="resource_list">
       {% for resource in r.resources.all %}
@@ -255,6 +259,7 @@ promiselist.push(ss_promise);
       {% endfor %}
       </div>
     </th>
+{% endcomment %}
     {% for day in time_slices %}
       {% for slot in date_slices|lookup:day %}
         <td id="{{r.dom_id}}_{{day}}_{{slot.0|date:'Hi'}}" class="day_{{day}} agenda-column-{{day}}-{{slot.0|date:'Hi'}} agenda_slot agenda_slot_unavailable" capacity="{{r.capacity}}" ></td>
@@ -371,5 +376,7 @@ promiselist.push(ss_promise);
   </div>
 
 </div>
+
+</div> {% comment %} End of .content div {% endcomment %}
 
 {% endblock %}

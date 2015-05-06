@@ -1172,6 +1172,10 @@ Session.prototype.event_template = function() {
     }
     //console.log("acronym", groupacronym, this.group.acronym, this.visible_title());
 
+    var durationstring="";
+    if (this.requested_duration!="0.0") {
+         durationstring = " ("+this.requested_duration+")"
+    }
     // see comment in ietf.ccs, and
     // http://stackoverflow.com/questions/5148041/does-firefox-support-position-relative-on-table-elements
     return "<div class='meeting_box_container' session_id=\""+this.session_id+"\"><div class=\"meeting_box "+bucket_list_style+"\" ><table class='meeting_event "+
@@ -1183,7 +1187,7 @@ Session.prototype.event_template = function() {
         this.wg_scheme()+" "+
         this.area_scheme() +" meeting_obj'>"+
         this.visible_title()+
-        "<span> ("+this.requested_duration+")</span>" +
+        "<span>" + durationstring + "</span>" +
         "</th><td class=\"ourconflicts\"></td>"+pinned+"</tr></table>"+ area_mark +"</div></div>";
 };
 

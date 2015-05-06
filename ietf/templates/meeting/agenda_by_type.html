@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block morecss %}
+
+ul.typelist { list-style:none; padding-left:0; }
+li.typelistentry { font-size:162%; font-weight:700; }
+li.even { background-color:#EDF5FF; }
+li.odd { background-color:white; }
+ul.daylist {list-style:none; padding-left:0; margin-bottom:20px;}
+li.daylistentry { margin-left:2em; font-weight: 400; }
+
+.sessiontable {margin-left:2em; font-size:62%;}
+.sessiontable td {padding-right: 1em;}
+
+.typelabel { font-size:162%; font-weight:700; }
+.daylabel { font-size:162%;  font-weight:400; }
+.even { background-color:#EDF5FF; }
+.odd { background-color:white; }
+{% comment %}li.sessionlistentry { font-size:62%; }{% endcomment %}
+
+.type-lead:after { content: " (DO NOT POST)"; color:red; }
+.type-offagenda:after { content:" (not published on agenda)"; }
+
+{% endblock %}
+
+{% block title %}Agenda for {{meeting}} by Session Type{% endblock %}
+
+{% block content %}
+<h1>Agenda for {{meeting}} by Session Type</h1>
+{% regroup scheduledsessions by session.type.slug as type_list %}
+<ul class="typelist">
+{% for type in type_list %}
+  <li class="typelistentry {% cycle 'even' 'odd' %}">
+    {{type.grouper}} <a id="ical-link" class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_by_type_ics" num=meeting.number type=type.grouper %}">Download to Calendar</a>
+    <ul class="daylist">
+    {% regroup type.list by timeslot.time|date:"l Y-M-d" as daylist %}
+    {% for day in daylist %}
+      <li class="daylistentry">
+        {{ day.grouper }}
+        <table class="sessiontable">
+        {% for ss in day.list %}
+          <tr>
+            <td>{{ss.timeslot.time|date:"H:i"}}-{{ss.timeslot.end_time|date:"H:i"}}</td>
+            <td>{{ss.timeslot.get_hidden_location}}</td>
+            <td class="type-{{ss.session.type.slug}}">{{ss.session.short_name}}</td>
+          </tr>
+        {% endfor %} 
+        </table>
+       </li>
+     {% endfor %}
+     </ul>
+   </li>
+{% endfor %}
+</ul>
+{% endblock %}
