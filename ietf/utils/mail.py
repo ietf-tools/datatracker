@@ -21,6 +21,7 @@ import time
 import copy
 import textwrap
 import traceback
+import datetime
 
 # Testing mode:
 # import ietf.utils.mail
@@ -228,6 +229,19 @@ def condition_message(to, frm, subject, msg, cc, extra):
             if v:
                 msg[k] = v
 
+def show_that_mail_was_sent(request,leadline,msg,bcc):
+        if request and request.user:
+            from ietf.ietfauth.utils import has_role
+            if has_role(request.user,['Area Director','Secretariat','IANA','RFC Editor','ISE','IAD','IRTF Chair','WG Chair','RG Chair','WG Secretary','RG Secretary']):
+                info =  "%s at %s %s\n" % (leadline,datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),settings.TIME_ZONE)
+                info += "Subject: %s\n" % msg.get('Subject','[no subject]')
+                info += "To: %s\n" % msg.get('To','[no to]')
+                if msg.get('Cc'):
+                    info += "Cc: %s\n" % msg.get('Cc')
+                if bcc:
+                    info += "Bcc: %s\n" % bcc
+                messages.info(request,info,extra_tags='preformatted',fail_silently=True)
+
 def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None):
     """Send MIME message with content already filled in."""
     
@@ -238,6 +252,9 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     # and EMAIL_PORT=2025 in settings_local.py
     debugging = getattr(settings, "USING_DEBUG_EMAIL_SERVER", False) and settings.EMAIL_HOST == 'localhost' and settings.EMAIL_PORT == 2025
 
+    if settings.SERVER_MODE == 'development':
+        show_that_mail_was_sent(request,'In production, email would have been sent',msg,bcc)
+
     if test_mode or debugging or settings.SERVER_MODE == 'production':
         try:
             send_smtp(msg,bcc)
@@ -245,6 +262,8 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
             log_smtp_exception(e)
             build_warning_message(request, e)
             send_error_email(e)
+
+        show_that_mail_was_sent(request,'Email was sent',msg,bcc)
             
     elif settings.SERVER_MODE == 'test':
 	if toUser:
