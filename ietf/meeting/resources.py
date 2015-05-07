@@ -10,8 +10,8 @@ from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
-    type = ToOneField(MeetingTypeNameResource, 'type')
-    agenda = ToOneField('ietf.meeting.resources.ScheduleResource', 'agenda', null=True)
+    type             = ToOneField(MeetingTypeNameResource, 'type')
+    agenda           = ToOneField('ietf.meeting.resources.ScheduleResource', 'agenda', null=True)
     class Meta:
         queryset = Meeting.objects.all()
         #resource_name = 'meeting'
@@ -22,6 +22,10 @@ class MeetingResource(ModelResource):
             "city": ALL,
             "country": ALL,
             "time_zone": ALL,
+            "idsubmit_cutoff_day_offset_00": ALL,
+            "idsubmit_cutoff_day_offset_01": ALL,
+            "idsubmit_cutoff_time_utc": ALL,
+            "idsubmit_cutoff_warning_days": ALL,
             "venue_name": ALL,
             "venue_addr": ALL,
             "break_area": ALL,
@@ -70,18 +74,22 @@ class ConstraintResource(ModelResource):
         }
 api.meeting.register(ConstraintResource())
 
+from ietf.name.resources import TimeSlotTypeNameResource
 class RoomResource(ModelResource):
-    meeting = ToOneField(MeetingResource, 'meeting')
-    resources = ToManyField(ResourceAssociationResource, 'resources', null=True)
+    meeting          = ToOneField(MeetingResource, 'meeting')
+    resources        = ToManyField(ResourceAssociationResource, 'resources', null=True)
+    session_types    = ToManyField(TimeSlotTypeNameResource, 'session_types', null=True)
     class Meta:
         queryset = Room.objects.all()
         #resource_name = 'room'
         filtering = { 
             "id": ALL,
             "name": ALL,
+            "functional_name": ALL,
             "capacity": ALL,
             "meeting": ALL_WITH_RELATIONS,
             "resources": ALL_WITH_RELATIONS,
+            "session_types": ALL_WITH_RELATIONS,
         }
 api.meeting.register(RoomResource())
 
@@ -105,15 +113,16 @@ api.meeting.register(ScheduleResource())
 
 from ietf.group.resources import GroupResource
 from ietf.doc.resources import DocumentResource
-from ietf.name.resources import SessionStatusNameResource
+from ietf.name.resources import TimeSlotTypeNameResource, SessionStatusNameResource
 from ietf.person.resources import PersonResource
 class SessionResource(ModelResource):
-    meeting = ToOneField(MeetingResource, 'meeting')
-    group = ToOneField(GroupResource, 'group')
-    requested_by = ToOneField(PersonResource, 'requested_by')
-    status = ToOneField(SessionStatusNameResource, 'status')
-    materials = ToManyField(DocumentResource, 'materials', null=True)
-    resources = ToManyField(ResourceAssociationResource, 'resources', null=True)
+    meeting          = ToOneField(MeetingResource, 'meeting')
+    type             = ToOneField(TimeSlotTypeNameResource, 'type')
+    group            = ToOneField(GroupResource, 'group')
+    requested_by     = ToOneField(PersonResource, 'requested_by')
+    status           = ToOneField(SessionStatusNameResource, 'status')
+    materials        = ToManyField(DocumentResource, 'materials', null=True)
+    resources        = ToManyField(ResourceAssociationResource, 'resources', null=True)
     requested_duration = api.TimedeltaField()
     class Meta:
         queryset = Session.objects.all()
@@ -130,6 +139,7 @@ class SessionResource(ModelResource):
             "scheduled": ALL,
             "modified": ALL,
             "meeting": ALL_WITH_RELATIONS,
+            "type": ALL_WITH_RELATIONS,
             "group": ALL_WITH_RELATIONS,
             "requested_by": ALL_WITH_RELATIONS,
             "status": ALL_WITH_RELATIONS,
