@@ -319,7 +319,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.features.customize_workflow and (is_chair or can_manage):
         actions.append((u"Customize workflow", urlreverse("ietf.group.edit.customize_workflow", kwargs=kwargs)))
 
-    if group.state_id in ("active", "dormant") and can_manage:
+    if group.state_id in ("active", "dormant") and not group.type_id in ["sdo", "rfcedtyp", "isoc", ] and can_manage:
         actions.append((u"Request closing group", urlreverse("ietf.group.edit.conclude", kwargs=kwargs)))
 
     d = {

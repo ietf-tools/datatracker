@@ -102,7 +102,7 @@
     </tbody>
     {% endif %}
 
-    {% if group.state_id != "conclude" %}
+    {% if group.state_id != "conclude" and group.type_id != "sdo" and group.type_id != "rfcedtyp" and group.type_id != "isoc" %}
     <tbody>
       <tr>
 	 <th rowspan="2">Jabber chat</th>
