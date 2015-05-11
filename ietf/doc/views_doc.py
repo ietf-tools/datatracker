@@ -352,10 +352,10 @@ def document_main(request, name, rev=None):
         # group label.  This would be easy if all browsers supported the rowspan="0" (zero)
         # semantics of the html standard, but only Firefox and Opera do, so we have to count
         # how many entries there will be in each section here, instead.  Bah!
-        table_rows = dict(doc=5, stream=3, iesg=5, iana=3, rfced=2)
+        table_rows = dict(doc=4, stream=2, iesg=4, iana=2, rfced=1)
         table_rows['doc'] += 1 if replaces or can_edit_stream_info else 0
         table_rows['doc'] += 1 if replaced_by  else 0
-        table_rows['doc'] += 1 if doc.get_state_slug != "rfc" else 0
+        table_rows['doc'] += 1 if doc.get_state_slug() != "rfc" else 0
         table_rows['doc'] += 1 if conflict_reviews else 0
 
         table_rows['stream'] += 1 if consensus else 0

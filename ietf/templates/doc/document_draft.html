@@ -36,10 +36,7 @@
 
     <tbody class="plain">
       <tr>
-	 <th rowspan="{{table_rows.doc}}">Document</th>
-      </tr>
-
-      <tr>
+	<th rowspan="{{table_rows.doc}}">Document</th>
 	<th>Type</th>
 	<td class="edit"></td>
 	<td>
@@ -150,12 +147,8 @@
 
     </tbody>
     <tbody class="plain">
-
       <tr>
-	 <th rowspan="{{table_rows.stream}}">Stream</th>
-      </tr>
-	 
-      <tr>
+	<th rowspan="{{table_rows.stream}}">Stream</th>
 	{% if doc.stream %}
 	  <th>
 	     {% if doc.stream.slug != "legacy" %}
@@ -247,12 +240,8 @@
 
     </tbody>
     <tbody class="plain">
-
       <tr>
-	 <th rowspan="{{table_rows.iesg}}">IESG</th>
-      </tr>
-
-      <tr>
+	<th rowspan="{{table_rows.iesg}}">IESG</th>
 	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
 	<td class="edit">
 	  {% if iesg_state and can_edit %}
@@ -334,10 +323,7 @@
     {% if iana_review_state %}
     <tbody class="plain">
       <tr>
-	 <th rowspan="{{table_rows.iana}}">IANA</th>
-      </tr>
-
-      <tr>
+	<th rowspan="{{table_rows.iana}}">IANA</th>
 	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
 	<td class="edit">
 	  {% if can_edit_iana_state %}
@@ -367,10 +353,7 @@
 
       {% if rfc_editor_state %}
 	<tr>
-	   <th rowspan="{{table_rows.rfced}}">RFC Editor</th>
-	</tr>
-
-	<tr>
+	  <th rowspan="{{table_rows.rfced}}">RFC Editor</th>
 	  <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">RFC Editor state</a></th>
 	  <td class="edit"></td>
 	  <td><a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ rfc_editor_state }}</a></td>
