@@ -1,3 +1,50 @@
+ietfdb (6.0.3) ietf; urgency=medium
+
+  This this release provides the capaability to manage and graphically
+  schedule additional meeting types, including leadership meetings.  It
+  also fixes a number of issues, mostly related to the recent facelift.
+
+  Details:
+
+  * Merged in [9604] from rcross@amsl.com:
+    Update IAOC email in Announcement app.   
+
+  * Merged in [9603] from rjsparks@nostrum.com:
+
+    - Added functionality which allows the secretariat to manage more meeting 
+      types, including leadership meetings.
+    - Backfilled those types of meetings from IETF91 and IETF92.
+    - Addressed several facelift issues in the meeting application.
+
+  * Merged in [9595] from rcross@amsl.com:
+    Fixed an issue where an authorized individual was unable to add an
+    incoming liaison.  Fixed a problem with the incoming liaison form
+    requiring a deadline date for information only statements.  
+
+  * Fixed an issue where the https: schema inadvertently had been included in
+    RFCDIFF_PREFIX, causing duplicate schema specifications in some places.
+    Changed name to RFCDIFF_BASE_URL and cleaned out the duplicate schema
+    specifiers.
+
+  * Added a check for model changes which haven't been captured in migrations
+    to the release script.
+
+  * Added 5 migrations for changes in model field help-text strings which
+    changed in the facelift.  Also fixed the expression of the help text for
+    NomCom.reminder_interval so the text itself doesn't contain quite as much
+    whitespace.
+
+  * Aligned the table header fields with the table columns in the doc history
+    page.  Marked the action text safe so as to make embedded links show up as
+    links.
+
+  * Reduce the max height of submenus to avoid them extending below the screen
+    bottom edge when used from the top navbar (which won't scroll).  The new
+    value works on 1024x768 screens for the current areas.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 May 2015 11:23:56 -0700
+
+
 ietfdb (6.0.2) ietf; urgency=medium
 
   This is a minor release, containing a few new development support features,

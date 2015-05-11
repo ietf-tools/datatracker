@@ -435,8 +435,8 @@ class RescheduleOnAgendaTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         d_header_pos = r.content.find("IESG telechat %s" % d.isoformat())
-        draft_pos = r.content.find(draft.name)
-        self.assertTrue(d_header_pos < draft_pos)
+        draft_pos = r.content[d_header_pos:].find(draft.name)
+        self.assertTrue(draft_pos>0)
 
         self.assertTrue(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
         self.assertEqual(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, d)

@@ -180,6 +180,10 @@ pre {
   font-size: 14px;
 }
 
+.preformatted {
+    white-space: pre;
+}
+
 /* Make ampersands pretty */
 /* This sets ampersand in a different font than the rest of the text. Fancy, but it's
 really better to select a pretty font in the first place.  Additionally, _which_ 'pretty'
