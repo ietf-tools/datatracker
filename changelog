@@ -6,8 +6,30 @@ ietfdb (6.0.3) ietf; urgency=medium
 
   Details:
 
+  * Removed inappropriate group actions and information from external group 
+    info pages.  Fixes issue #1651.
+
+  * Removed a number of action buttons which aren't relevant for RFCs.  
+    Fixes issue #1698.
+
+  * Fixed a wrong row count for stream meta-info when displaying RFCs.  
+    Also fixed a 'missing columns' html warning. Fixes issue #1697.
+
+  * Merged in [9608] from rjsparks@nostrum.com:
+    Show leadership when and where mail was sent at the time it is sent.  
+
+  * Fixed a problem with nomcom classification forms showing too many 
+    fields.
+
+  * Tweaked the missing id submission revision message to work also with 
+    non-ascii characters in the draft name.  Changed the disallowed character 
+    error message to be more useful by providing the found document name and 
+    byte codes for the disallowed characters.
+
+  * Updated the api resources file with new meeting model fields.
+
   * Merged in [9604] from rcross@amsl.com:
-    Update IAOC email in Announcement app.   
+    Updated the IAOC email address in Announcement app.   
 
   * Merged in [9603] from rjsparks@nostrum.com:
 
