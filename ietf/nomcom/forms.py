@@ -534,8 +534,7 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
 
     class Meta:
         model = Feedback
-        fields = ('author',
-                  'nominee_name',
+        fields = ('nominee_name',
                   'nominee_email',
                   'nominator_email',
                   'confirmation',
