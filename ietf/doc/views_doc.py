@@ -302,7 +302,7 @@ def document_main(request, name, rev=None):
         # remaining actions
         actions = []
 
-        if can_adopt_draft(request.user, doc):
+        if can_adopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"]:
             actions.append(("Manage Document Adoption in Group", urlreverse('doc_adopt_draft', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() == "expired" and not resurrected_by and can_edit:
@@ -311,14 +311,14 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() == "expired" and has_role(request.user, ("Secretariat",)):
             actions.append(("Resurrect", urlreverse('doc_resurrect', kwargs=dict(name=doc.name))))
 
-        if (doc.get_state_slug() != "expired" and doc.stream_id in ("ise", "irtf")
+        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ise", "irtf")
             and can_edit_stream_info and not conflict_reviews):
             label = "Begin IETF Conflict Review"
             if not doc.intended_std_level:
                 label += " (note that intended status is not set)"
             actions.append((label, urlreverse('conflict_review_start', kwargs=dict(name=doc.name))))
 
-        if (doc.get_state_slug() != "expired" and doc.stream_id in ("iab", "ise", "irtf")
+        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("iab", "ise", "irtf")
             and can_edit_stream_info):
             label = "Request Publication"
             if not doc.intended_std_level:
@@ -327,7 +327,7 @@ def document_main(request, name, rev=None):
                 label += " (Warning: the IESG state indicates ongoing IESG processing)"
             actions.append((label, urlreverse('doc_request_publication', kwargs=dict(name=doc.name))))
 
-        if doc.get_state_slug() != "expired" and doc.stream_id in ("ietf",):
+        if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",):
             if not iesg_state and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('doc_edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
             elif can_edit_stream_info and (not iesg_state or iesg_state.slug == 'watching'):
