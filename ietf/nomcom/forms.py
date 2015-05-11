@@ -757,7 +757,7 @@ FullFeedbackFormSet = forms.modelformset_factory(
         form=MutableFeedbackForm,
         can_order=False,
         can_delete=False,
-        fields='__all__',
+        fields=('type',),
     )
 
 
