@@ -28,5 +28,6 @@
 /etc
 /local
 /lib
+/share
 /include
 /latest-coverage.json

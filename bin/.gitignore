@@ -14,3 +14,10 @@
 /coverage
 /coverage2
 /coverage-2.7
+/rst2*
+/rstpep2*
+/ipy*
+/ipcluster*
+/ipcontroller*
+/ipengine*
+/iptest*
