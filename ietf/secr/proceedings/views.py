@@ -80,7 +80,8 @@ def get_extras(meeting):
     groups = []
     sessions = Session.objects.filter(meeting=meeting).exclude(group__parent__acronym__in=('app','gen','int','ops','rai','rtg','sec','tsv','irtf'))
     for session in sessions:
-        if get_timeslot(session).type.slug == 'session' and session.materials.all():
+        timeslot = get_timeslot(session)
+        if timeslot and timeslot.type.slug == 'session' and session.materials.all():
             groups.append(session.group)
     return groups
 
