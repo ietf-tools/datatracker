@@ -6,6 +6,18 @@ ietfdb (6.0.3) ietf; urgency=medium
 
   Details:
 
+  * Merged in [9619] from rjsparks@nostrum.com:
+    Copy the RFC Editor on new version messages for drafts in any stream if
+    the RFC Editor is already working on the draft. Fixes bug #1700.  
+
+  * Merged in [9618] from rcross@amsl.com:
+    Make proceedings generation more robust.   
+
+  * Added a missing html doctype element for a popup page.
+
+  * Don't show the unused 'author' field in the public nomcom feedback 
+    form.  Fixes issue #1699.
+
   * Removed inappropriate group actions and information from external group 
     info pages.  Fixes issue #1651.
 
