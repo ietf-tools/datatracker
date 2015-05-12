@@ -120,7 +120,7 @@ def announce_new_version(request, submission, draft, state_change_msg):
         to_email.append("IRSG <irsg@irtf.org>")
 
     # if it has been sent to the RFC Editor, keep them in the loop
-    if draft.get_state_slug("draft-iesg") in ("ann", "rfcqueue"):
+    if draft.get_state_slug("draft-rfceditor") is not None:
         to_email.append("RFC Editor <rfc-editor@rfc-editor.org>")
 
     active_ballot = draft.active_ballot()
