@@ -207,7 +207,7 @@ read -p "Continue with the commit? [Y/n] "
 
 if [ "$ARG_COMMIT" != 0 ]; then
     echo "Svn update:"
-    svn up
+    svn update -q
     echo "Committing the merge:"
     echo ""
     svn commit -m "Merged in [$rev] from $who:
