@@ -174,10 +174,10 @@ DEV="$(printf %d.%d.%d.dev0 $MAJOR $MINOR $NEXT)"
 note "Checking that changelog information is available"
 changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
 [ "$changes" ] || die "No changelog information for $VER found"
-note "$changes"
+#note "$changes"
 
 note "Checking that we don't have any model changes that haven't been captured in migrations"
-svn makemigrations | tee /dev/stderr | grep "^No changes detected$" || die "Model changes without migrations found."
+ietf/manage.py makemigrations | tee /dev/stderr | grep "^No changes detected$" || die "Model changes without migrations found."
 
 note "Running the tests suite and writing release coverage data ..."
 $do ietf/manage.py test --settings=ietf.settings_releasetest --save-version-coverage=$VER
