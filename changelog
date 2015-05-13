@@ -79,7 +79,7 @@ ietfdb (6.0.3) ietf; urgency=medium
     bottom edge when used from the top navbar (which won't scroll).  The new
     value works on 1024x768 screens for the current areas.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  13 May 2015 17:07:57 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 May 2015 17:23:41 +0000
 
 
 ietfdb (6.0.2) ietf; urgency=medium
