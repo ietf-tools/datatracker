@@ -60,7 +60,7 @@
           </thead>
           <tbody>
             {% for doc in section.docs %}
-              {% include "doc/search/search_result_row.html" %}
+              {% include "doc/search/search_result_row.html" with color_row_positions=True %}
             {% endfor %}
           </tbody>
         </table>
