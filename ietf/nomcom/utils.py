@@ -363,6 +363,10 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
     if author:
         context.update({'nominator': author.person.name,
                         'nominator_email': author.address})
+    else:
+        context.update({'nominator': 'Anonymous',
+                        'nominator_email': ''})
+
     path = nomcom_template_path + NOMINATION_EMAIL_TEMPLATE
     send_mail(None, to_email, from_email, subject, path, context)
 
