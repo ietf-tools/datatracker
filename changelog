@@ -1,10 +1,13 @@
 ietfdb (6.0.3) ietf; urgency=medium
 
-  This this release provides the capaability to manage and graphically
+  This this release provides the capability to manage and graphically
   schedule additional meeting types, including leadership meetings.  It
   also fixes a number of issues, mostly related to the recent facelift.
 
   Details:
+
+  * If the author of a nomcom nomination is unknown, use 'Anonymous' and no
+    email address in outgoing messages, instead of '$author'.
 
   * Merged in [9619] from rjsparks@nostrum.com:
     Copy the RFC Editor on new version messages for drafts in any stream if
@@ -76,7 +79,7 @@ ietfdb (6.0.3) ietf; urgency=medium
     bottom edge when used from the top navbar (which won't scroll).  The new
     value works on 1024x768 screens for the current areas.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  06 May 2015 11:23:56 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 May 2015 17:07:57 +0000
 
 
 ietfdb (6.0.2) ietf; urgency=medium
