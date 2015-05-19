@@ -95,7 +95,7 @@
         {% if p.pos.blocking and p.discuss %}
           <div class="panel panel-danger">
             <div class="panel-heading">
-              <h5 class="panel-title"><b>{{ p.pos.name }}</b> ({{ p.discuss_time|date:"Y-m-d" }} for -{{ p.get_dochistory.rev}})</h5>
+              <h5 class="panel-title"><b>{{ p.pos.name }}</b> ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev}}{% endif %})</h5>
             </div>
             <div class="panel-body"><pre class="ballot">{{ p.discuss|wrap_text:80|escape|urlize }}</pre></div>
           </div>
@@ -104,7 +104,7 @@
         {% if p.comment %}
           <div class="panel panel-{{ p.pos|pos_to_label }}">
             <div class="panel-heading">
-              <h5 class="panel-title"><b>Comment</b> ({{ p.comment_time|date:"Y-m-d" }} for -{{ p.get_dochistory.rev}})</h5>
+              <h5 class="panel-title"><b>Comment</b> ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev}}{% endif %})</h5>
             </div>
             <div class="panel-body"><pre class="ballot">{{ p.comment|wrap_text:80|escape|urlize }}</pre></div>
           </div>
