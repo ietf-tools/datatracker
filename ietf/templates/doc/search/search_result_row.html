@@ -45,18 +45,26 @@
     {% endif %}
   </td>
 
-  <td class="text-nowrap">
-    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}<a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">{% endif %}{% if doc.get_state_slug == "rfc" %}{{ doc.latest_revision_date|date:"Y-m" }}{% else %}{{ doc.latest_revision_date|date:"Y-m-d" }}{% endif %}{% if doc.latest_revision_date|timesince_days|new_enough:request %}{% if doc.get_state_slug != "rfc" %}</a>{% endif %}
-      <wbr><span class="label label-success">New</span>
+  <td>
+    <span class="text-nowrap">
+    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}<a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">{% endif %}
+       {% if doc.get_state_slug == "rfc" %}{{ doc.latest_revision_date|date:"Y-m" }}{% else %}{{ doc.latest_revision_date|date:"Y-m-d" }}{% endif %}
+    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}</a>{% endif %}
+    </span>
+
+    {% if doc.pages %}
+      <br><small class="text-muted">{{doc.pages}} page{{ doc.pages|pluralize }}</small>
+    {% endif %}
+
+
+    {% if doc.latest_revision_date|timesince_days|new_enough:request %}
+    <wbr><span class="label label-success">New</span>
     {% endif %}
 
     {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
       <wbr><span class="label label-warning">Expires soon</span>
     {% endif %}
 
-    {% if doc.pages %}
-      <br><small class="text-muted">{{doc.pages}} page{{ doc.pages|pluralize }}</small>
-    {% endif %}
   </td>
 
   {% include "doc/search/status_columns.html" %}
@@ -72,9 +80,9 @@
   {% if ad_name == None or ad_name != doc.ad.plain_name %}
     <td class="ad">
       {% if doc.ad %}
-        <p>{{ doc.ad|default:"" }}</p>
+        <div><a title="AD" href="mailto:doc.ad.email.address">{{ doc.ad }}</a></div>
       {% endif %}
-      {% if doc.shepherd %}<small class="text-muted">{{doc.shepherd|emailwrap|default:""}}</small>{% endif %}
+      {% if doc.shepherd %}<a title="Shepherd" href="{{doc.shepherd}}"><small class="text-muted">{{doc.shepherd|emailwrap|default:""}}</small></a>{% endif %}
     </td>
   {% else %}
      <td></td>
