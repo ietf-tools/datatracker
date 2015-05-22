@@ -11,4 +11,6 @@ urlpatterns = patterns('',
      (r'^expires_soon/', views.expires_soon),
      (r'^full_draft/(?P<enabled>.*)$', views.full_draft),
      (r'^full_draft/', views.full_draft),
+     (r'^left_menu/(?P<enabled>.*)$', views.left_menu),
+     (r'^left_menu/', views.left_menu),
 )

@@ -50,5 +50,16 @@
     <a class="btn btn-default {% if full_draft == "on" %}active{% endif %}" href="/accounts/settings/full_draft/on">On</a>
   </div>
 
+  <h2 class="ietf-divider">Show the left-hand menu?</h2>
+
+  <p>Show the left-hand menu on all regular pages? This defaults to on.</p>
+
+  <div class="btn-group btn-group-justified">
+    <a class="btn btn-default {% if left_menu == "off" %}active{% endif %}" href="/accounts/settings/left_menu/off">Off</a>
+    <a class="btn btn-default {% if left_menu == "on" %}active{% endif %}" href="/accounts/settings/left_menu/on">On</a>
+  </div>
+
+
+
 {% endblock %}
 
