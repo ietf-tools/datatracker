@@ -32,6 +32,10 @@ body { padding-top: 70px; }
 	-webkit-border-radius: 0 6px 6px 6px;
 	-moz-border-radius: 0 6px 6px 6px;
 	border-radius: 0 6px 6px 6px;
+	line-height: 1.2;
+}
+.dropdown-submenu > .dropdown-menu li a{
+	line-height: 1.2;
 }
 .dropdown-submenu > a:after {
 	display: block;
@@ -379,3 +383,5 @@ tbody.plain tr td { border-top: 0; }
 
 
 td.ad div { border-bottom: solid #ccc 1px; }
+
+.milestone { font-style: italic; }	
