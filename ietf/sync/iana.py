@@ -215,19 +215,29 @@ def update_history_with_changes(changes, send_email=True):
     return added_events, warnings
 
 
+def find_document_name(text):
+    prefixes = ['draft','conflict-review','status-change','charter']
+    leading_delimiter_re = '(?<![-a-zA-Z0-9])'
+    prefix_re = '(%s)' % '|'.join(prefixes)
+    tail_re = '(-[a-z0-9]+)+?(-\d\d\.txt)?'
+    trailing_delimiter_re = '((?![-a-zA-Z0-9])|$)'
+    name_re = '%s(%s%s)%s' % (leading_delimiter_re, prefix_re, tail_re, trailing_delimiter_re)
+    m = re.search(name_re,text)
+    return m and m.group(0).lower()
+
+def strip_version_extension(text):
+    if re.search(r"\.\w{3}$", text): # strip off extension
+        text = text[:-4]
+    if re.search(r"-\d{2}$", text): # strip off revision
+        text = text[:-3]
+    return text
+
 def parse_review_email(text):
     msg = email.message_from_string(text)
 
     # doc
-    doc_name = ""
-    m = re.search(r"<([^>]+)>", msg["Subject"])
-    if m:
-        doc_name = m.group(1).lower()
-        if re.search(r"\.\w{3}$", doc_name): # strip off extension
-            doc_name = doc_name[:-4]
-
-        if re.search(r"-\d{2}$", doc_name): # strip off revision
-            doc_name = doc_name[:-3]
+    doc_name = find_document_name(msg["Subject"]) or ""
+    doc_name = strip_version_extension(doc_name)
 
     # date
     review_time = datetime.datetime.now()
@@ -252,14 +262,18 @@ def parse_review_email(text):
 
     # comment
     body = msg.get_payload().decode('quoted-printable').replace("\r", "")
-    if "BEGIN IANA LAST CALL COMMENTS" in body:
-        b = body.find("(BEGIN IANA LAST CALL COMMENTS)")
-        e = body.find("(END IANA LAST CALL COMMENTS)")
-        comment = body[b + len("(BEGIN IANA LAST CALL COMMENTS)"):e].strip()
-    elif "BEGIN IANA COMMENTS" in body:
-        b = body.find("(BEGIN IANA COMMENTS)")
-        e = body.find("(END IANA COMMENTS)")
-        comment = body[b + len("(BEGIN IANA COMMENTS)"):e].strip()
+
+    begin_search = re.search('\(BEGIN\s+IANA\s+(LAST\s+CALL\s+)?COMMENTS?(\s*:\s*[a-zA-Z0-9-\.]*)?\s*\)',body)
+    end_search = re.search('\(END\s+IANA\s+(LAST\s+CALL\s+)?COMMENTS?\)',body)
+    if begin_search and end_search:
+        begin_string = begin_search.group(0)
+        end_string = end_search.group(0)
+        b = body.find(begin_string)
+        e = body.find(end_string)
+        comment = body[b + len(begin_string):e].strip()
+        embedded_name = strip_version_extension(find_document_name(begin_string) or "")
+        if embedded_name:
+            doc_name = embedded_name
     else:
         comment = ""
 
