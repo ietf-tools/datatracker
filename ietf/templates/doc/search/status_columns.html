@@ -15,6 +15,12 @@
 
     <wbr>{{ doc|state_age_colored }}
 
+    {% if doc|state:"draft-rfceditor" %}
+      <wbr>: <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
+    {% endif %}
+
+    
+
     {% if doc.telechat_date %}
       <br>IESG telechat: {{ doc.telechat_date }}
     {% endif %}
@@ -25,17 +31,23 @@
       {% endif %}
     {% endwith %}
 
+    {% if doc.stream %}
+      <br>
+      {% if doc|state:"stream" %}
+	{{ doc|state:"stream" }}{% if doc.intended_std_level %}:<wbr>{% endif %}
+      {% else %}
+	{{ doc.stream }} RFC stream{% if doc.intended_std_level %}:<wbr>{% endif %}
+      {% endif %}
+    {% endif %}
+
     {% if doc.intended_std_level %}
-      <br>{{ doc.intended_std_level }}
+      {{ doc.intended_std_level }}
     {% endif %}
 
     {% for m in doc.milestones %}
+      {% if forloop.first %}<br>{% else %}, {% endif %}
       <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>
     {% endfor %}
-
-    {% if doc|state:"draft-rfceditor" %}
-      <br>RFC Editor: <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
-    {% endif %}
 
   {% else %}{# RFC #}
     {{ doc.std_level|safe }} RFC
@@ -49,14 +61,6 @@
     {% endif %}
   {% endif %}
 
-  {% if doc.stream %}
-    <br>
-    {% if doc|state:"stream" %}
-      {{ doc|state:"stream" }}
-    {% else %}
-      {{ doc.stream }} RFC stream
-    {% endif %}
-  {% endif %}
 
 
 </td>
