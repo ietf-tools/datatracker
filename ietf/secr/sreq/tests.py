@@ -100,7 +100,26 @@ class EditRequestCase(TestCase):
     pass
     
 class NotMeetingCase(TestCase):
-    pass
+
+    def test_not_meeting(self):
+
+        make_test_data()
+        group = Group.objects.get(acronym='mars')
+        url = reverse('sessions_no_session',kwargs={'acronym':group.acronym}) 
+        self.client.login(username="secretary", password="secretary+password")
+
+        r = self.client.get(url,follow=True)
+        # If the view invoked by that get throws an exception (such as an integrity error),
+        # the traceback from this test will talk about a TransactionManagementError and
+        # yell about executing queries before the end of an 'atomic' block
+
+        # This is a sign of a problem - a get shouldn't have a side-effect like this one does
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue('A message was sent to notify not having a session' in r.content)
+
+        r = self.client.get(url,follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue('is already marked as not meeting' in r.content)
 
 class RetrievePreviousCase(TestCase):
     pass
