@@ -337,6 +337,34 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.charter.name, "charter-ietf-testwg")
         self.assertEqual(group.charter.rev, "00-00")
 
+    def test_create_rg(self):
+
+        make_test_data()
+
+        url = urlreverse('group_create', kwargs=dict(group_type="rg"))
+        login_testing_unauthorized(self, "secretary", url)
+
+        irtf = Group.objects.get(acronym='irtf')
+        num_rgs = len(Group.objects.filter(type="rg"))
+
+        proposed_state = GroupStateName.objects.get(slug="proposed")
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form input[name=acronym]')), 1)
+        self.assertEqual(q('form input[name=parent]').attr('value'),'%s'%irtf.pk)
+
+        r = self.client.post(url, dict(acronym="testrg", name="Testing RG", state=proposed_state.pk, parent=irtf.pk))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(Group.objects.filter(type="rg")), num_rgs + 1)
+        group = Group.objects.get(acronym="testrg")
+        self.assertEqual(group.name, "Testing RG")
+        self.assertEqual(group.charter.name, "charter-irtf-testrg")
+        self.assertEqual(group.charter.rev, "00-00")
+        self.assertEqual(group.parent.acronym,'irtf')
+
     def test_create_based_on_existing_bof(self):
         make_test_data()
 

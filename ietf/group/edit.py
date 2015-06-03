@@ -63,6 +63,7 @@ class GroupForm(forms.Form):
         if self.group_type == "rg":
             self.fields['ad'].widget = forms.HiddenInput()
             self.fields['parent'].queryset = self.fields['parent'].queryset.filter(acronym="irtf")
+            self.fields['parent'].initial = self.fields['parent'].queryset.first()
             self.fields['parent'].widget = forms.HiddenInput()
         else:
             self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type="area")
@@ -247,7 +248,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             diff('name', "Name")
             diff('acronym', "Acronym")
             diff('state', "State")
-            diff('parent', "IETF Area")
+            diff('parent', "IETF Area" if group.type=="wg" else "Group parent")
             diff('list_email', "Mailing list email")
             diff('list_subscribe', "Mailing list subscribe address")
             diff('list_archive', "Mailing list archive")
