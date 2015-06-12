@@ -78,7 +78,7 @@ def get_extras(meeting):
     Gather "extras" which are one off groups. ie iab-wcit(86)
     '''
     groups = []
-    sessions = Session.objects.filter(meeting=meeting).exclude(group__parent__acronym__in=('app','gen','int','ops','rai','rtg','sec','tsv','irtf'))
+    sessions = Session.objects.filter(meeting=meeting).exclude(group__parent__type__in=('area','irtf'))
     for session in sessions:
         timeslot = get_timeslot(session)
         if timeslot and timeslot.type.slug == 'session' and session.materials.all():
