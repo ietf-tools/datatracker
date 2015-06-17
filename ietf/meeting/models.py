@@ -638,16 +638,6 @@ class Schedule(models.Model):
             self._cached_sessions_that_can_meet = self.meeting.sessions_that_can_meet.all()
         return self._cached_sessions_that_can_meet
 
-    def area_list(self):
-        return ( self.assignments.filter(session__group__type__slug__in=['wg', 'rg', 'ag', 'iab'],
-                                         session__group__parent__isnull=False)
-                 .order_by('session__group__parent__acronym')
-                 .values_list('session__group__parent__acronym', flat=True)
-                 .distinct() )
-
-    def groups(self):
-        return Group.objects.filter(type__slug__in=['wg', 'rg', 'ag', 'iab'], parent__isnull=False, session__scheduledsession__schedule=self).exclude(session__scheduledsession__timeslot__type__in=['lead','offagenda']).distinct().order_by('parent__acronym', 'acronym')
-
     # calculate badness of entire schedule
     def calc_badness(self):
         # now calculate badness
@@ -768,6 +758,35 @@ class ScheduledSession(models.Model):
         ss["pinned"]   = self.pinned
         return ss
 
+    def slug(self):
+        """Return sensible id string for session, e.g. suitable for use as HTML anchor."""
+        components = []
+
+        if not self.timeslot:
+            components.append("unknown")
+
+        if not self.session or not (getattr(self.session, "historic_group") or self.session.group):
+            components.append("unknown")
+        else:
+            components.append(self.timeslot.time.strftime("%a-%H%M"))
+
+            g = getattr(self.session, "historic_group", None) or self.session.group
+
+            if self.timeslot.type_id in ('break', 'reg', 'other'):
+                components.append(g.acronym)
+
+            if self.timeslot.type_id in ('session', 'plenary'):
+                if self.timeslot.type_id == "plenary":
+                    components.append("1plenary")
+                else:
+                    p = getattr(g, "historic_parent", None) or g.parent
+                    if p and p.type_id in ("area", "irtf"):
+                        components.append(p.acronym)
+
+                components.append(g.acronym)
+
+        return u"-".join(components).lower()
+
 class Constraint(models.Model):
     """
     Specifies a constraint on the scheduling.
@@ -886,14 +905,30 @@ class Session(models.Model):
 
     # Should work on how materials are captured so that deleted things are no longer associated with the session
     # (We can keep the information about something being added to and removed from a session in the document's history)
+    def get_material(self, material_type, only_one):
+        if hasattr(self, "prefetched_active_materials"):
+            l = [d for d in self.prefetched_active_materials if d.type_id == material_type]
+            for d in l:
+                d.meeting_related = lambda: True
+        else:
+            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by("order")
+
+        if only_one:
+            if l:
+                return l[0]
+            else:
+                return None
+        else:
+            return l
+
     def agenda(self):
-        return self.materials.filter(type='agenda').exclude(states__type='agenda',states__slug='deleted').first()
+        return self.get_material("agenda", only_one=True)
 
     def minutes(self):
-        return self.materials.filter(type='minutes').exclude(states__type='minutes',states__slug='deleted').first()
+        return self.get_material("minutes", only_one=True)
 
     def slides(self):
-        return list(self.materials.filter(type='slides').exclude(states__type='slides',states__slug='deleted').order_by('order'))
+        return list(self.get_material("slides", only_one=False))
 
     def __unicode__(self):
         if self.meeting.type_id == "interim":
@@ -907,9 +942,6 @@ class Session(models.Model):
             if ss:
                 ss0name = ','.join([x.timeslot.time.strftime("%a-%H%M") for x in ss])
         return u"%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
-
-    def is_bof(self):
-        return self.group.is_bof();
 
     @property
     def short_name(self):
@@ -994,7 +1026,7 @@ class Session(models.Model):
         sess1['name']           = str(self.name)
         sess1['title']          = str(self.short_name)
         sess1['short_name']     = str(self.short_name)
-        sess1['bof']            = str(self.is_bof())
+        sess1['bof']            = str(self.group.is_bof())
         sess1['agenda_note']    = str(self.agenda_note)
         sess1['attendees']      = str(self.attendees)
         sess1['status']         = str(self.status)
@@ -1024,18 +1056,6 @@ class Session(models.Model):
         else:
             return "The agenda has not been uploaded yet."
 
-    # FIXME - This used to be called 'type'. It is only used in agenda.csv and agenda.txt.
-    # It will return the _wrong thing_ if you look back at an agenda of an earlier meeting
-    # where group X was a BOF at the time, but is now a WG.
-    # It also doesn't return anything useful for RG, area sessions, or anything that's not group type 'wg'.
-    # A better thing to do is find a way to note when a meeting was a BoF meeting and use that, removing this
-    # function altogether.
-    def lame_description(self):
-        if self.group.type.slug in [ "wg" ]:
-            return "BOF" if self.group.state.slug in ["bof", "bof-conc"] else "WG"
-        else:
-            return ""
-
     def ical_status(self):
         if self.status.slug == 'canceled': # sic
             return "CANCELLED"
@@ -1050,13 +1070,13 @@ class Session(models.Model):
         if not hasattr(self, '_agenda_file'):
             self._agenda_file = ""
 
-            docs = self.materials.filter(type="agenda", states__type="agenda", states__slug="active")
-            if not docs:
+            agenda = self.agenda()
+            if not agenda:
                 return ""
 
             # we use external_url at the moment, should probably regularize
             # the filenames to match the document name instead
-            filename = docs[0].external_url
+            filename = agenda.external_url
             self._agenda_file = "%s/agenda/%s" % (self.meeting.number, filename)
             
         return self._agenda_file
