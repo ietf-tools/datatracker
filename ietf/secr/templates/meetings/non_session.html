@@ -28,7 +28,7 @@
             <td>{{ item.name }}</td>
             <td>{{ item.session.short }}</td>
             <td>{{ item.session.group.acronym }}</td>
-            {% if item.type.slug == 'other' or item.type.slug == 'plenary' %}
+            {% if item.type.slug != 'break' and item.type.slug != 'registration' %}
               <td><a href="{% url "meetings_non_session_edit" meeting_id=meeting.number schedule_name=schedule.name slot_id=item.id %}">{{ item.location }}</a></td>
             {% else %}
               <td>{{ item.location }}</td>
