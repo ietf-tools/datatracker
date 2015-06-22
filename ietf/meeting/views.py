@@ -15,11 +15,10 @@ from django.shortcuts import render, render_to_response, redirect
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.db.models import Q
+from django.db.models import Q, Min, Max
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
-from django.db.models import Max
 from django.forms.models import modelform_factory
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.forms import ModelForm
@@ -611,6 +610,59 @@ def week_view(request, num=None):
     template = "meeting/week-view.html"
     return render_to_response(template,
             {"timeslots":timeslots,"render_types":["Session","Other","Break","Plenary"]}, context_instance=RequestContext(request))
+
+@role_required('Secretariat')
+def room_view(request, num=None):
+    meeting = get_meeting(num)
+
+    rooms = meeting.room_set.order_by('functional_name','name')
+    if rooms.count() == 0:
+        raise Http404
+
+    scheduledsessions = meeting.agenda.scheduledsession_set.all()
+    unavailable = meeting.timeslot_set.filter(type__slug='unavail')
+    if (unavailable.count() + scheduledsessions.count()) == 0 :
+        raise Http404
+
+    earliest = None
+    latest = None
+
+    if scheduledsessions:
+        earliest = scheduledsessions.aggregate(Min('timeslot__time'))['timeslot__time__min']
+        latest =  scheduledsessions.aggregate(Max('timeslot__time'))['timeslot__time__max']
+        
+    if unavailable:
+        earliest_unavailable = unavailable.aggregate(Min('time'))['time__min']
+        if not earliest or ( earliest_unavailable and earliest_unavailable < earliest ):
+            earliest = earliest_unavailable
+        latest_unavailable = unavailable.aggregate(Max('time'))['time__max']
+        if not latest or ( latest_unavailable and latest_unavailable > latest ):
+            latest = latest_unavailable
+
+    if not (earliest and latest):
+        raise Http404
+
+    base_time = earliest
+    base_day = datetime.datetime(base_time.year,base_time.month,base_time.day)
+
+    day = base_day
+    days = []
+    while day <= latest :
+        days.append(day)
+        day += datetime.timedelta(days=1)
+
+    unavailable = list(unavailable)
+    for t in unavailable:
+        t.delta_from_beginning = (t.time - base_time).total_seconds()
+        t.day = (t.time-base_day).days
+
+    scheduledsessions = list(scheduledsessions)
+    for ss in scheduledsessions:
+        ss.delta_from_beginning = (ss.timeslot.time - base_time).total_seconds()
+        ss.day = (ss.timeslot.time-base_day).days
+
+    template = "meeting/room-view.html"
+    return render(request, template,{"meeting":meeting,"unavailable":unavailable,"scheduledsessions":scheduledsessions,"rooms":rooms,"days":days})
 
 def ical_agenda(request, num=None, name=None, ext=None):
     meeting = get_meeting(num)
