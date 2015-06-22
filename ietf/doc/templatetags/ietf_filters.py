@@ -401,20 +401,18 @@ def unescape(text):
 
 @register.filter(name='new_enough')
 def new_enough(x,request):
-    days = 14
-    if "new_enough" in request.COOKIES:
-        value = request.COOKIES["new_enough"]
-        if value.isdigit():
-            days = int(value)
+    days = settings.USER_PREFERENCE_DEFAULTS["new_enough"]
+    value = request.COOKIES.get("new_enough", None)
+    if value and value.isdigit():
+        days = int(value)
     return x < days
 
 @register.filter(name='expires_soon')
 def expires_soon(x,request):
-    days = 14
-    if "expires_soon" in request.COOKIES:
-        value = request.COOKIES["expires_soon"]
-        if value.isdigit():
-            days = int(value)
+    days = settings.USER_PREFERENCE_DEFAULTS["expires_soon"]
+    value = request.COOKIES.get("expires_soon", None)
+    if value and value.isdigit():
+        days = int(value)
     return x > -days
 
 @register.filter(name='startswith')

@@ -23,7 +23,7 @@
   {% endif %}
 
   <li><a href="{% url "create_account" %}">{% if request.user.is_authenticated %}Manage account{% else %}New account{% endif %}</a></li>
-  <li><a href="{%url "ietf.cookies.views.settings" %}" rel="nofollow">Settings</a></li>
+  <li><a href="{%url "ietf.cookies.views.preferences" %}" rel="nofollow">Preferences</a></li>
 
   {% if user|has_role:"Area Director" %}
     {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}

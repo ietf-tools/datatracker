@@ -523,6 +523,14 @@ GROUP_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
 POSTCONFIRM_PATH   = "/a/postconfirm/test-wrapper"
 
+USER_PREFERENCE_DEFAULTS = {
+    "expires_soon"  : "14",
+    "new_enough"    : "14",
+    "full_draft"    : "off",
+    "left_menu"     : "on",
+}
+
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *            # pyflakes:ignore

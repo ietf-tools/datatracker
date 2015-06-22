@@ -20,12 +20,12 @@
   <p>This setting affects how many days are considered "new enough" to get the special highlighting in the documents table. Default setting is 14 days.</p>
 
   <div class="btn-group btn-group-justified">
-    <a class="btn btn-default {% if new_enough == 7 %}active{% endif %}" href="/accounts/settings/new_enough/7">7 days</a>
-    <a class="btn btn-default {% if new_enough == 14 %}active{% endif %}" href="/accounts/settings/new_enough/14">14 days</a>
-    <a class="btn btn-default {% if new_enough == 21 %}active{% endif %}" href="/accounts/settings/new_enough/21">21 days</a>
-    <a class="btn btn-default {% if new_enough == 30 %}active{% endif %}" href="/accounts/settings/new_enough/30">30 days</a>
-    <a class="btn btn-default {% if new_enough == 60 %}active{% endif %}" href="/accounts/settings/new_enough/60">60 days</a>
-    <a class="btn btn-default {% if new_enough == 90 %}active{% endif %}" href="/accounts/settings/new_enough/90">90 days</a>
+    <a class="btn btn-default {% if new_enough ==  '7' %}active{% endif %}" href="/accounts/settings/new_enough/7">7 days</a>
+    <a class="btn btn-default {% if new_enough == '14' %}active{% endif %}" href="/accounts/settings/new_enough/14">14 days</a>
+    <a class="btn btn-default {% if new_enough == '21' %}active{% endif %}" href="/accounts/settings/new_enough/21">21 days</a>
+    <a class="btn btn-default {% if new_enough == '30' %}active{% endif %}" href="/accounts/settings/new_enough/30">30 days</a>
+    <a class="btn btn-default {% if new_enough == '60' %}active{% endif %}" href="/accounts/settings/new_enough/60">60 days</a>
+    <a class="btn btn-default {% if new_enough == '90' %}active{% endif %}" href="/accounts/settings/new_enough/90">90 days</a>
   </div>
 
   <h2 class="ietf-divider">How many days is considered "soon"?</h2>
@@ -33,12 +33,12 @@
   <p>This setting tells what is considered "soon" when showing documents that are going to be expire soon. Default setting is 14 days.</p>
 
   <div class="btn-group btn-group-justified">
-    <a class="btn btn-default {% if expires_soon == 7 %}active{% endif %}" href="/accounts/settings/expires_soon/7">7 days</a>
-    <a class="btn btn-default {% if expires_soon == 14 %}active{% endif %}" href="/accounts/settings/expires_soon/14">14 days</a>
-    <a class="btn btn-default {% if expires_soon == 21 %}active{% endif %}" href="/accounts/settings/expires_soon/21">21 days</a>
-    <a class="btn btn-default {% if expires_soon == 30 %}active{% endif %}" href="/accounts/settings/expires_soon/30">30 days</a>
-    <a class="btn btn-default {% if expires_soon == 60 %}active{% endif %}" href="/accounts/settings/expires_soon/60">60 days</a>
-    <a class="btn btn-default {% if expires_soon == 90 %}active{% endif %}" href="/accounts/settings/expires_soon/90">90 days</a>
+    <a class="btn btn-default {% if expires_soon ==  '7' %}active{% endif %}" href="/accounts/settings/expires_soon/7">7 days</a>
+    <a class="btn btn-default {% if expires_soon == '14' %}active{% endif %}" href="/accounts/settings/expires_soon/14">14 days</a>
+    <a class="btn btn-default {% if expires_soon == '21' %}active{% endif %}" href="/accounts/settings/expires_soon/21">21 days</a>
+    <a class="btn btn-default {% if expires_soon == '30' %}active{% endif %}" href="/accounts/settings/expires_soon/30">30 days</a>
+    <a class="btn btn-default {% if expires_soon == '60' %}active{% endif %}" href="/accounts/settings/expires_soon/60">60 days</a>
+    <a class="btn btn-default {% if expires_soon == '90' %}active{% endif %}" href="/accounts/settings/expires_soon/90">90 days</a>
   </div>
 
   <h2 class="ietf-divider">Show full document text by default?</h2>
@@ -46,8 +46,8 @@
   <p>Show the full text immediately on the document page instead of only showing beginning of it. This defaults to off.</p>
 
   <div class="btn-group btn-group-justified">
-    <a class="btn btn-default {% if full_draft == "off" %}active{% endif %}" href="/accounts/settings/full_draft/off">Off</a>
-    <a class="btn btn-default {% if full_draft == "on" %}active{% endif %}" href="/accounts/settings/full_draft/on">On</a>
+    <a class="btn btn-default {% if full_draft == 'off' %}active{% endif %}" href="/accounts/settings/full_draft/off">Off</a>
+    <a class="btn btn-default {% if full_draft ==  'on' %}active{% endif %}" href="/accounts/settings/full_draft/on">On</a>
   </div>
 
   <h2 class="ietf-divider">Show the left-hand menu?</h2>
@@ -55,8 +55,8 @@
   <p>Show the left-hand menu on all regular pages? This defaults to on.</p>
 
   <div class="btn-group btn-group-justified">
-    <a class="btn btn-default {% if left_menu == "off" %}active{% endif %}" href="/accounts/settings/left_menu/off">Off</a>
-    <a class="btn btn-default {% if left_menu == "on" %}active{% endif %}" href="/accounts/settings/left_menu/on">On</a>
+    <a class="btn btn-default {% if left_menu == 'off' %}active{% endif %}" href="/accounts/settings/left_menu/off">Off</a>
+    <a class="btn btn-default {% if left_menu ==  'on' %}active{% endif %}" href="/accounts/settings/left_menu/on">On</a>
   </div>
 
 

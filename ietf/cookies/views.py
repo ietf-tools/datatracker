@@ -2,76 +2,53 @@
 
 from django.shortcuts import render_to_response as render
 from django.template import RequestContext
+from django.conf import settings
 
-def settings(request, new_enough = -1, expires_soon = -1, full_draft = "", left_menu=""):
-    if new_enough < 0:
-        if "new_enough" in request.COOKIES and request.COOKIES["new_enough"].isdigit():
-            new_enough = int(request.COOKIES["new_enough"])
-        else:
-            new_enough = 14
-    if expires_soon < 0:
-        if "expires_soon" in request.COOKIES and request.COOKIES["expires_soon"].isdigit():
-            expires_soon = int(request.COOKIES["expires_soon"])
-        else:
-            expires_soon = 14
-    if full_draft == "":
-        if "full_draft" in request.COOKIES:
-            full_draft = request.COOKIES["full_draft"]
-            if full_draft != 'on' and full_draft != 'off':
-                full_draft = "off"
-        else:
-            full_draft = "off"
-    if left_menu == "":
-        if "left_menu" in request.COOKIES:
-            left_menu = request.COOKIES["left_menu"]
-            if left_menu != 'on' and left_menu != 'off':
-                left_menu = "on"
-        else:
-            left_menu = "on"
-    return render("cookies/settings.html",
-           {
-            "new_enough" : new_enough,
-            "expires_soon" : expires_soon,
-            "full_draft" : full_draft,
-            "left_menu": left_menu,
-            }, context_instance=RequestContext(request))
+import debug                            # pyflakes:ignore
 
-def new_enough(request, days="14"):
-    try:
-        days = int(days)
-    except:
-        days = 0
-    if days == 0:
-        days = 14
-    response = settings(request, new_enough=days)
-    response.set_cookie("new_enough", days, 315360000)
+def preferences(request, **kwargs):
+    preferences = request.COOKIES.copy()
+    new_cookies = {}
+    del_cookies = []
+    for key in settings.USER_PREFERENCE_DEFAULTS.keys():
+        if key in kwargs:
+            if kwargs[key] == None:
+                del_cookies += [key]
+            else:
+                # ignore bad kwargs
+                if key in ['new_enough', 'expires_soon'] and not kwargs[key].isdigit():
+                    pass
+                elif key in ['full_draft', 'left_menu'] and not kwargs[key] in ['on', 'off']:
+                    pass
+                else:
+                    preferences[key] = new_cookies[key] = kwargs[key]
+        if not key in preferences or preferences[key] in [None, 'None', ''] or key in del_cookies:
+            preferences[key] = settings.USER_PREFERENCE_DEFAULTS[key]
+        # reset bad cookie values
+        if key in ['new_enough', 'expires_soon'] and not preferences[key].isdigit():
+            preferences[key] = settings.USER_PREFERENCE_DEFAULTS[key]
+            del_cookies += [key]
+        elif key in ['full_draft', 'left_menu'] and not preferences[key] in ['on', 'off']:
+            preferences[key] = settings.USER_PREFERENCE_DEFAULTS[key]
+            del_cookies += [key]
+    request.COOKIES.update(preferences)
+    response = render("cookies/settings.html", preferences, context_instance=RequestContext(request))
+    for key in new_cookies:
+        response.set_cookie(key, new_cookies[key], settings.SESSION_COOKIE_AGE)
+    for key in del_cookies:
+        response.delete_cookie(key)
     return response
 
-def expires_soon(request, days="14"):
-    try:
-        days = int(days)
-    except:
-        days = 0
-    if days == 0:
-        days = 14
-    response = settings(request, expires_soon=days)
-    response.set_cookie("expires_soon", days, 315360000)
-    return response
+def new_enough(request, days=None):
+    return preferences(request, new_enough=days)
 
-def full_draft(request, enabled="off"):
-    if enabled != "on" and enabled != "off":
-        enabled = "off"
-    response = settings(request, full_draft=enabled)
-    response.set_cookie("full_draft", enabled, 315360000)
-    return response
+def expires_soon(request, days=None):
+    return preferences(request, expires_soon=days)
 
-def left_menu(request, enabled="on"):
-    if enabled != "on" and enabled != "off":
-        enabled = "on"
-    # Propagate the new setting immediately, to render the settings page
-    # iteself according to the setting:
-    request.COOKIES["left_menu"] = enabled 
-    response = settings(request, left_menu=enabled)
-    response.set_cookie("left_menu", enabled, 315360000)
-    return response
+
+def full_draft(request, enabled=None):
+    return preferences(request, full_draft=enabled)
+
+def left_menu(request, enabled=None):
+    return preferences(request, left_menu=enabled)
 

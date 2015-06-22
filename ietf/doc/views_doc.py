@@ -143,7 +143,7 @@ def document_main(request, name, rev=None):
 
     # specific document types
     if doc.type_id == "draft":
-        split_content = not ( request.GET.get('include_text') or request.COOKIES.get("full_draft", "") == "on" )
+        split_content = not ( request.GET.get('include_text') or request.COOKIES.get("full_draft", settings.USER_PREFERENCE_DEFAULTS["full_draft"]) == "on" )
 
         iesg_state = doc.get_state("draft-iesg")
         iesg_state_summary = doc.friendly_state()
