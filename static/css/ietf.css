@@ -195,6 +195,13 @@ pre {
     white-space: pre;
 }
 
+/* Some chunks of text are likely to be pasted into fields from other editing environments
+   which do various things with line-wrapping. Preserve whitespace to the extent possible. */
+.pasted {
+    white-space: pre-wrap;
+    word-break: keep-all;
+}
+
 /* Make ampersands pretty */
 /* This sets ampersand in a different font than the rest of the text. Fancy, but it's
 really better to select a pretty font in the first place.  Additionally, _which_ 'pretty'

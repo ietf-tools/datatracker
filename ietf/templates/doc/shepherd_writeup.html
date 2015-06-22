@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
+{% load ietf_filters %}
 
 {% block title %}
   Shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
@@ -10,7 +11,7 @@
   {% origin %}
   <h1>Shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
 
-  <pre>{{writeup}}</pre>
+  <pre class="pasted">{{writeup|escape|urlize}}</pre>
 
   {% if can_edit %}
     <a class="btn btn-primary" href="{% url "doc_edit_shepherd_writeup" name=doc.name %}">Edit</a>
