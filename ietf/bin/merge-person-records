@@ -56,6 +56,11 @@ for subevent in source.submissionevent_set.all():
     subevent.by = target
     subevent.save()
 
+# merge Messages
+for message in source.message_set.all():
+    message.by = target
+    message.save()
+
 # check for any remaining relationships and delete if none
 objs = [source]
 opts = Person._meta
