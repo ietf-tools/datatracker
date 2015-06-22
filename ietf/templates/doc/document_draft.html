@@ -363,16 +363,24 @@
     </tbody>
   </table>
 
-  <p class="buttonlist">
+  <div class="buttonlist">
     <a class="btn btn-default btn-xs" href="mailto:{{ doc.name }}@tools.ietf.org?subject=Mail%20regarding%20{{ doc.name }}"><span class="fa fa-envelope-o"></span> Email authors</a>
     <a class="btn btn-default btn-xs" href="{% url "ipr_search" %}?submit=draft&amp;id={{ doc.name }}" rel="nofollow"><span class="fa fa-bolt"></span> IPR {% if doc.related_ipr %} <span class="badge">{{doc.related_ipr|length}}</span>{% endif %}</a>
     <a class="btn btn-default btn-xs" href="{% url "doc_references" doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
     <a class="btn btn-default btn-xs" href="{% url "doc_referenced_by" doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
     <a class="btn btn-default btn-xs" href="https://www.ietf.org/tools/idnits?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank"><span class="fa fa-exclamation"></span> Nits</a>
-    <a class="btn btn-default btn-xs" href="https://www.google.com/search?as_q={{ doc.name }}&amp;as_sitesearch={{ search_archive }}" rel="nofollow" target="_blank"><span class="fa fa-search"></span> Search lists</a>
-    {% if user|has_role:"Area Director" %}
-      <a class="btn btn-default btn-xs" href="https://www.iesg.org/bin/c5i?mid=6&amp;rid=77&amp;target={{ doc.name }}" rel="nofollow" target="_blank">Search lists (ARO)</a>
-    {% endif %}
+    <span class="dropdown">
+      <button class="btn btn-default btn-xs dropdown-toggle" type="button" id="ddSearchMenu" data-toggle="dropdown" aria-expanded="true">
+          <span class="fa fa-search"></span> Search lists <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu" role="menu">
+        <li role="presentation"><a role="menuitem" href="https://mailarchive.ietf.org/arch/search?q={{ doc.name }}" rel="nofollow" target="_blank">IETF Mail Archive</a></li>
+        <li role="presentation"><a role="menuitem" href="https://www.google.com/search?as_q={{ doc.name }}&amp;as_sitesearch={{ search_archive }}" rel="nofollow" target="_blank">Google</a></li>
+        {% if user|has_role:"Area Director" %}
+          <li role="presentation"><a role="menuitem" href="https://www.iesg.org/bin/c5i?mid=6&amp;rid=77&amp;target={{ doc.name }}" rel="nofollow" target="_blank">ARO</a> </li>
+        {% endif %}
+      </ul>
+    </span>
     {% if user.is_authenticated %}
       {% if tracking_document %}
         <a class="btn btn-default btn-xs community-list-add-remove-doc" href="{% url "community_remove_track_document" doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark-o"></span> Untrack</a>
@@ -392,7 +400,7 @@
         <a class="btn btn-default btn-xs" href="{{ url }}">{{ label|capfirst_allcaps }}</a>
       {% endfor %}
     {% endif %}
-  </p>
+  </div>
 
   {% if doc.get_state_slug == "active" or doc.get_state_slug == "rfc" %}
     {{ content|safe }}
