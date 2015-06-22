@@ -5,6 +5,7 @@
 
 fg_group_colors = dict()
 fg_group_colors['APP']="#008"
+fg_group_colors['ART']="#808"
 fg_group_colors['GEN']="#080"
 fg_group_colors['INT']="#088"
 fg_group_colors['OPS']="#800"
@@ -17,6 +18,7 @@ fg_group_colors['IETF']="blue"
 
 bg_group_colors = dict()
 bg_group_colors['APP']="#eef"
+bg_group_colors['ART']="#fef"
 bg_group_colors['GEN']="#efe"
 bg_group_colors['INT']="#eff"
 bg_group_colors['OPS']="#fee"
