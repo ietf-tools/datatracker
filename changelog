@@ -78,7 +78,7 @@ ietfdb (6.0.4) ietf; urgency=medium
 
   * Wrap liaison statements on 78 characters rather than 71.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jun 2015 12:20:11 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jun 2015 20:03:08 +0000
 
 
 ietfdb (6.0.3) ietf; urgency=medium
