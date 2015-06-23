@@ -389,6 +389,7 @@
            $("#weekview").attr("src", "week-view.html" + window.location.hash).removeClass("hidden");
 
            // show the custom .ics link
+           $("#ical-link").attr("href",$("#ical-link").attr("href").split("?")[0]+"?"+h);
            $("#ical-link").removeClass("hidden");
 
        } else {
