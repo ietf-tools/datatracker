@@ -1,6 +1,89 @@
+ietfdb (6.0.4) ietf; urgency=medium
+
+  This is a minor release which provides some style tweaks, the ability to
+  set a user preference to not show the left-hand menu, and a substantial
+  number of bugfixes:
+
+  * Merged in [9672] from rjsparks@nostrum.com:
+    Restore the hash to the customized ical link.  Fixes #1732.
+
+  * Merged in [9671] from rcross@amsl.com:
+    Convert PPT materials to PDF.  Fixes #1724.
+
+  * Merged in [9668] from rjsparks@nostrum.com:
+    Draw the right number of days in the secretariats room view.  
+
+  * Merged in [9666] from rcross@amsl.com:
+    Area names hardcoded in Proceedings app.   Fixes #1723.
+
+  * Merged in [9663] from rjsparks@nostrum.com:
+    Try a different way of wrapping ballot/comment fields and shepherd 
+    writeups. Related to #1673.
+
+  * Merged in [9662] from rcross@amsl.com:
+    Add Message objects to merge-person-records.   
+
+  * Merged in [9654] from rjsparks@nostrum.com:
+    Add searches across the web-based archive tool to the document's page. 
+    Collapse all the searches, including ARO for ADs, under a dropdown. 
+    Partially addresses #1701.  
+
+  * Merged in [9652] and [9653] from rjsparks@nostrum.com:
+    Provide color for ART.
+
+  * Merged in [9651] from rjsparks@nostrum.com:
+    Adds a graphical overview of each day by room for the secretariat to 
+    assist with scheduling additional meetings.  
+
+  * Added preference editing support for the left_menu preference setting, 
+    and refactored the preference handling code substantially.  Related to 
+    issues #1659 and #1663.
+
+  * Merged in [9650] from rjsparks@nostrum.com:
+    Set the parent for newly created RGs. Be more robust if an RG has no 
+    parent. Test creation of an RG. Fixes #1718 and #1719.  
+
+  * Merged in [9649] from rjsparks@nostrum.com:
+    Provide a session type for sessions created to say a group is not 
+    meeting. Add a test for the no_meeting view. Fixes #1720.  
+
+  * Merged in [9641] from rjsparks@nostrum.com:
+    Make parsing IANA mail for comments more flexible.  
+
+  * Merged in [9639] from rjsparks@nostrum.com:
+    Only show document versions for positions when the position is on an 
+    older version. (Reapplying earlier fix). Fixes #1711.  
+
+  * Merged in [9637] from rjsparks@nostrum.com:
+    Color agenda/documents rows with position taken when viewing as an AD. 
+    Fixes bug #1679.  
+
+  * Merged in [9626] from rjsparks@nostrum.com:
+    Restore the discuss-box hiding feature when a position is not blocking. 
+    Fixes bug #1688.  
+
+  * Additional tweaks to document lists, trying to reduce the number of 
+    lines consumed by the status column.
+
+  * Reduced the submenu line-height somewhat.  Related to issue #1708.
+
+  * Fixed incorrect output of unmatched <div/> closing elements, left after 
+    [9643].
+
+  * Added a preference to not display the left-hand menubar.  Addresses 
+    issues #1659 and #1663.
+
+  * Tweaked the document list display slightly, to sqeeze in a little bit 
+    more info on a page.  Addresses issue # 1663.
+
+  * Wrap liaison statements on 78 characters rather than 71.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jun 2015 12:20:11 -0700
+
+
 ietfdb (6.0.3) ietf; urgency=medium
 
-  This this release provides the capability to manage and graphically
+  This release provides the capability to manage and graphically
   schedule additional meeting types, including leadership meetings.  It
   also fixes a number of issues, mostly related to the recent facelift.
 
@@ -75,7 +158,7 @@ ietfdb (6.0.3) ietf; urgency=medium
     page.  Marked the action text safe so as to make embedded links show up as
     links.
 
-  * Reduce the max height of submenus to avoid them extending below the screen
+  * Reduced the max height of submenus to avoid them extending below the screen
     bottom edge when used from the top navbar (which won't scroll).  The new
     value works on 1024x768 screens for the current areas.
 
@@ -629,7 +712,7 @@ ietfdb (5.11.0) ietf; urgency=medium
 
   **Django 1.7**
 
-  This relese upgrades Django from 1.6.4 to 1.7.1, and tastypie from 0.11.1 to
+  This release upgrades Django from 1.6.4 to 1.7.1, and tastypie from 0.11.1 to
   0.12.1.  It changes the database migrations infrastructure from that provided
   by "south", to the builtin replacement newly introduced with Django 1.7.
 
