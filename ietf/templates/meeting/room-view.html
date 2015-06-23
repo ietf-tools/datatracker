@@ -150,8 +150,6 @@
 
        var i;
        var text="";
-       var start_day = items[0].day;
-       var end_day = start_day;
 
        var day_start = 23*60+59;
        var day_end = 0;
@@ -166,9 +164,6 @@
 
                if (start_time < day_start) { day_start = start_time; }
                if (end_time > day_end) { day_end = end_time; }
-
-               if (items[i].day < start_day) { start_day = items[i].day; }
-               if (items[i].day > end_day) { end_day = items[i].day; }
            }
        }
 
@@ -176,7 +171,7 @@
        var header_height = height * 0.05;
        var header_offset = $('#daytabs').height();
 
-       var num_days = end_day - start_day + 1;
+       var num_days = {{days|length}};
        var num_minutes = day_end - day_start;
        var minute_height = (height - header_height - header_offset)/num_minutes;
        var body = document.body;
