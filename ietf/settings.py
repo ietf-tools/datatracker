@@ -473,6 +473,7 @@ SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
 SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 SECR_STATIC_URL = '/secretariat/'
+SECR_PPT2PDF_COMMAND = ['/usr/bin/goffice','--headless','--convert-to','pdf','--outdir']
 
 USE_ETAGS=True
 

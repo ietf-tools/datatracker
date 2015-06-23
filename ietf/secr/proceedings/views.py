@@ -3,6 +3,7 @@ import glob
 import itertools
 import os
 import shutil
+import subprocess
 
 import debug                            # pyflakes:ignore
 
@@ -31,6 +32,7 @@ from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, 
     gen_attendees, gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries,
     gen_progress, gen_research, gen_training, create_proceedings, create_interim_directory,
     create_recording )
+from ietf.utils.log import log
 
 # -------------------------------------------------
 # Globals 
@@ -187,6 +189,31 @@ def parsedate(d):
     '''
     return (d.strftime('%Y'),d.strftime('%m'),d.strftime('%d'))
 
+def is_powerpoint(doc):
+    '''
+    Returns true if document is a Powerpoint presentation
+    '''
+    return doc.file_extension() in ('ppt','pptx')
+
+def post_process(doc):
+    '''
+    Does post processing on uploaded file.
+    - Convert PPT to PDF
+    '''
+    if is_powerpoint(doc) and hasattr(settings,'SECR_PPT2PDF_COMMAND'):
+        try:
+            cmd = settings.SECR_PPT2PDF_COMMAND
+            cmd.append(doc.get_file_path())                                 # outdir
+            cmd.append(os.path.join(doc.get_file_path(),doc.external_url))  # filename
+            subprocess.check_call(cmd)
+        except (subprocess.CalledProcessError, OSError) as error:
+            log("Error converting PPT: %s" % (error))
+            return
+        # change extension
+        base,ext = os.path.splitext(doc.external_url)
+        doc.external_url = base + '.pdf'
+        doc.save()
+        
 # -------------------------------------------------
 # AJAX Functions
 # -------------------------------------------------
@@ -678,7 +705,8 @@ def replace_slide(request, slide_id):
 
             new_slide.external_url = disk_filename
             new_slide.save()
-
+            post_process(new_slide)
+            
             # create DocEvent uploaded
             DocEvent.objects.create(doc=slide,
                                     by=request.user.person,
@@ -913,7 +941,8 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
             DocAlias.objects.get_or_create(name=doc.name, document=doc)
 
             handle_upload_file(file,disk_filename,meeting,material_type.slug)
-
+            post_process(doc)
+            
             # set Doc state
             if doc.type.slug=='slides':
                 doc.set_state(State.objects.get(type=doc.type,slug='archived'))
