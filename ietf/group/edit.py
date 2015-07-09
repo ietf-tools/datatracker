@@ -31,7 +31,7 @@ class GroupForm(forms.Form):
     acronym = forms.CharField(max_length=10, label="Acronym", required=True)
     state = forms.ModelChoiceField(GroupStateName.objects.all(), label="State", required=True)
     chairs = SearchableEmailsField(label="Chairs", required=False, only_users=True)
-    secretaries = SearchableEmailsField(label="Secretarias", required=False, only_users=True)
+    secretaries = SearchableEmailsField(label="Secretaries", required=False, only_users=True)
     techadv = SearchableEmailsField(label="Technical Advisors", required=False, only_users=True)
     delegates = SearchableEmailsField(label="Delegates", required=False, only_users=True, max_entries=MAX_GROUP_DELEGATES,
                                       help_text=mark_safe("Chairs can delegate the authority to update the state of group documents - at most %s persons at a given time." % MAX_GROUP_DELEGATES))
