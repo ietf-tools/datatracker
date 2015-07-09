@@ -75,7 +75,7 @@
 	          To be able to return to the customized view later, bookmark the resulting URL.
 	        </p>
 
-	        <p>Groups displayed in <i>italics</i> are BOFs.</p>
+	        <p>Groups displayed in <b><i>italics</i></b> are BOFs.</p>
 
 
 	        {% regroup schedule.groups by parent.acronym as area_sessions %}
@@ -97,8 +97,8 @@
 		            {% for wg in area.list %}
 		              <div class="btn-group btn-group-xs btn-group-justified">
 			        <button class="btn btn-default pickview {{wg.acronym}}">
-			          {% if wg.wg.is_bof %}
-			            <i>{{wg.acronym}}</i>
+			          {% if wg.is_bof %}
+			            <b><i>{{wg.acronym}}</i></b>
 			          {% else %}
 			            {{wg.acronym}}
 			          {% endif %}
