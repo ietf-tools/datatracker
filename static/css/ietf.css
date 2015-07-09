@@ -100,7 +100,8 @@ body { padding-top: 70px; }
  to work around the position fixed navbar which otherwise covers them */
 h2.anchor-target:before,
 h3.anchor-target:before,	
-h4.anchor-target:before {
+h4.anchor-target:before,
+div.anchor-target:before {
   content: '';
   display: block;
   position: relative;

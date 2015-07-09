@@ -8,9 +8,9 @@
     <a name="session.group-{{ session.group.acronym }}"></a>
     {% endcomment %}
     {% if session.name %}
-      {{ session.name }}
+      <div class="anchor-target" id="{{ session.name }}">{{ session.name }}</div>
     {% else %}
-      {{session.group.acronym}}
+      <div class="anchor-target" id="{{session.group.acronym}}">{{session.group.acronym}}</div>
       {% if session.group.state.slug == "bof" %}
         <span class="label label-success">{{ session.group.state.slug|upper }}</span>
       {% endif %}
