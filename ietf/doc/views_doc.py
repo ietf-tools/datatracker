@@ -201,7 +201,7 @@ def document_main(request, name, rev=None):
         else:
             filename = "%s-%s.txt" % (draft_name, doc.rev)
 
-            content = get_document_content(filename, os.path.join(settings.INTERNET_DRAFT_PATH, filename),
+            content = get_document_content(filename, os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, filename),
                                            split_content, markup=True)
 
             # file types

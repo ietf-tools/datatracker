@@ -347,7 +347,11 @@ IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
 IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
 IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
+# Move drafts to this directory when they expire
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
+# The following directory contains linked copies of all drafts, but don't
+# write anything to this directory -- its content is maintained by ghostlinkd:
+INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/www/www6s/archive/id'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
 
 # Mailing list info URL for lists hosted on the IETF servers

@@ -336,6 +336,7 @@ Man                    Expires September 22, 2015               [Page 3]
         if not os.path.exists(self.id_dir):
             os.mkdir(self.id_dir)
         settings.INTERNET_DRAFT_PATH = self.id_dir
+        settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR = self.id_dir
         f = open(os.path.join(self.id_dir, 'draft-ietf-mars-test-01.txt'), 'w')
         f.write(self.draft_text)
         f.close()
