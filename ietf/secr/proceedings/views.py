@@ -508,7 +508,7 @@ def main(request):
         meetings = Meeting.objects.filter(type='ietf').order_by('-number')
     else:
         # select meetings still within the cutoff period
-        meetings = Meeting.objects.filter(type='ietf',date__gt=datetime.datetime.today() - datetime.timedelta(days=settings.SUBMISSION_CORRECTION_DAYS)).order_by('number')
+        meetings = Meeting.objects.filter(type='ietf',date__gt=datetime.datetime.today() - datetime.timedelta(days=settings.MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS)).order_by('number')
 
     groups = get_my_groups(request.user)
     interim_meetings = Meeting.objects.filter(type='interim',session__group__in=groups).order_by('-date')
