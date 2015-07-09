@@ -65,7 +65,7 @@
 
 
     {% if doc.latest_revision_date|timesince_days|new_enough:request %}
-    <wbr><span class="label label-success">New</span>
+    <wbr><span class="label label-success pull-right">New</span>
     {% endif %}
 
     {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
