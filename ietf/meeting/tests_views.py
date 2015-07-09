@@ -183,7 +183,7 @@ class MeetingTests(TestCase):
         r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(meeting_num=meeting.number)))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        row = q('#content td:contains("%s")' % str(session.group.acronym)).closest("tr")
+        row = q('#content td div:contains("%s")' % str(session.group.acronym)).closest("tr")
         self.assertTrue(row.find('a:contains("Agenda")'))
         self.assertTrue(row.find('a:contains("Minutes")'))
         self.assertTrue(row.find('a:contains("Slideshow")'))
