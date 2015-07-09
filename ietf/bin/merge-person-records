@@ -25,7 +25,7 @@ args = parser.parse_args()
 source = Person.objects.get(pk=args.source_id)
 target = Person.objects.get(pk=args.target_id)
 
-print "Merging person {}({}) to {}({})".format(source.name,source.pk,target.name,target.pk)
+print "Merging person {}({}) to {}({})".format(source.ascii,source.pk,target.ascii,target.pk)
 response = raw_input('Ok to continue y/n? ')
 if response.lower() != 'y':
     sys.exit()
@@ -72,10 +72,10 @@ deletable_objects, perms_needed, protected = admin.utils.get_deleted_objects(
     objs, opts, user, admin_site, using)
     
 if len(deletable_objects) > 1:
-    print "Not Deleting Person: {}({})".format(source.name,source.pk)
+    print "Not Deleting Person: {}({})".format(source.ascii,source.pk)
     print "Related objects remain:"
     pprint.pprint(deletable_objects[1])
 
 else:
-    print "Deleting Person: {}({})".format(source.name,source.pk)
+    print "Deleting Person: {}({})".format(source.ascii,source.pk)
     source.delete()
