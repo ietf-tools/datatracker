@@ -92,7 +92,7 @@ def document_main(request, name, rev=None):
 
     # take care of possible redirections
     aliases = DocAlias.objects.filter(document=doc).values_list("name", flat=True)
-    if doc.type_id == "draft" and not name.startswith("rfc"):
+    if rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
         for a in aliases:
             if a.startswith("rfc"):
                 return redirect("doc_view", name=a)
