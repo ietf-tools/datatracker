@@ -33,7 +33,7 @@ class Submission(models.Model):
     pages = models.IntegerField(null=True, blank=True)
     authors = models.TextField(blank=True, help_text="List of author names and emails, one author per line, e.g. \"John Doe &lt;john@example.org&gt;\".")
     note = models.TextField(blank=True)
-    replaces = models.CharField(max_length=255, blank=True)
+    replaces = models.CharField(max_length=1000, blank=True)
 
     first_two_pages = models.TextField(blank=True)
     file_types = models.CharField(max_length=50, blank=True)

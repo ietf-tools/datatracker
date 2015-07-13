@@ -1,0 +1,12 @@
+  {% for field in replaces_form %}
+  <tr{% if field.errors %} class="error"{% endif %}>
+    <th>{{ field.label_tag }}</th>
+    <td>
+      {{ field }}
+      {% if field.help_text %}
+      <div class="helptext">{{ field.help_text }}</div>
+      {% endif %}
+      {{ field.errors }}
+    </td>
+  </tr>
+  {% endfor %}

@@ -345,6 +345,8 @@ def document_main(request, name, rev=None):
 
         replaces = [d.name for d in doc.related_that_doc("replaces")]
         replaced_by = [d.name for d in doc.related_that("replaces")]
+        possibly_replaces = [d.name for d in doc.related_that_doc("possibly-replaces")]
+        possibly_replaced_by = [d.name for d in doc.related_that("possibly-replaces")]
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
@@ -355,6 +357,8 @@ def document_main(request, name, rev=None):
         table_rows = dict(doc=4, stream=2, iesg=4, iana=2, rfced=1)
         table_rows['doc'] += 1 if replaces or can_edit_stream_info else 0
         table_rows['doc'] += 1 if replaced_by  else 0
+        table_rows['doc'] += 1 if possibly_replaces  else 0
+        table_rows['doc'] += 1 if possibly_replaced_by  else 0
         table_rows['doc'] += 1 if doc.get_state_slug() != "rfc" else 0
         table_rows['doc'] += 1 if conflict_reviews else 0
 
@@ -396,6 +400,8 @@ def document_main(request, name, rev=None):
 
                                        replaces=replaces,
                                        replaced_by=replaced_by,
+                                       possibly_replaces=possibly_replaces,
+                                       possibly_replaced_by=possibly_replaced_by,
                                        updates=[prettify_std_name(d.name) for d in doc.related_that_doc("updates")],
                                        updated_by=[prettify_std_name(d.document.canonical_name()) for d in doc.related_that("updates")],
                                        obsoletes=[prettify_std_name(d.name) for d in doc.related_that_doc("obs")],

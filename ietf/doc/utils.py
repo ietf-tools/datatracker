@@ -10,8 +10,7 @@ from django.db.models.query import EmptyQuerySet
 from django.forms import ValidationError
 from django.utils.html import strip_tags, escape
 
-from ietf.utils import markup_txt
-from ietf.doc.models import Document, DocHistory
+from ietf.doc.models import Document, DocHistory, State
 from ietf.doc.models import DocAlias, RelatedDocument, BallotType, DocReminder
 from ietf.doc.models import DocEvent, BallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import save_document_in_history, STATUSCHANGE_RELATIONS
@@ -19,7 +18,7 @@ from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
 from ietf.person.models import Email
 from ietf.ietfauth.utils import has_role
-from ietf.utils import draft
+from ietf.utils import draft, markup_txt
 from ietf.utils.mail import send_mail
 
 #FIXME - it would be better if this lived in ietf/doc/mails.py, but there's
@@ -314,9 +313,9 @@ def update_reminder(doc, reminder_type_slug, event, due_date):
             reminder.active = False
             reminder.save()
 
-def prettify_std_name(n):
+def prettify_std_name(n, spacing=" "):
     if re.match(r"(rfc|bcp|fyi|std)[0-9]+", n):
-        return n[:3].upper() + " " + n[3:]
+        return n[:3].upper() + spacing + n[3:]
     else:
         return n
 
@@ -458,6 +457,75 @@ def rebuild_reference_relations(doc,filename=None):
         ret['unfound']=list(unfound) 
 
     return ret
+
+def collect_email_addresses(emails, doc):
+    for author in doc.authors.all():
+        if author.address not in emails:
+            emails[author.address] = '"%s"' % (author.person.name)
+    if doc.group and doc.group.acronym != 'none':
+        for role in doc.group.role_set.filter(name='chair'):
+            if role.email.address not in emails:
+                emails[role.email.address] = '"%s"' % (role.person.name)
+        if doc.group.type.slug == 'wg':
+            address = '%s-ads@tools.ietf.org' % doc.group.acronym
+            if address not in emails:
+                emails[address] = '"%s-ads"' % (doc.group.acronym)
+        elif doc.group.type.slug == 'rg':
+            for role in doc.group.parent.role_set.filter(name='chair'):
+                if role.email.address not in emails:
+                    emails[role.email.address] = '"%s"' % (role.person.name)
+    if doc.shepherd and doc.shepherd.address not in emails:
+        emails[doc.shepherd.address] = u'"%s"' % (doc.shepherd.person.name or "")
+
+def set_replaces_for_document(request, doc, new_replaces, by, email_subject, email_comment=""):
+    emails = {}
+    collect_email_addresses(emails, doc)
+
+    relationship = DocRelationshipName.objects.get(slug='replaces')
+    old_replaces = doc.related_that_doc("replaces")
+
+    for d in old_replaces:
+        if d not in new_replaces:
+            collect_email_addresses(emails, d.document)
+            RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
+            if not RelatedDocument.objects.filter(target=d, relationship=relationship):
+                s = 'active' if d.document.expires > datetime.datetime.now() else 'expired'
+                d.document.set_state(State.objects.get(type='draft', slug=s))
+
+    for d in new_replaces:
+        if d not in old_replaces:
+            collect_email_addresses(emails, d.document)
+            RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
+            d.document.set_state(State.objects.get(type='draft', slug='repl'))
+
+    e = DocEvent(doc=doc, by=by, type='changed_document')
+    new_replaces_names = u", ".join(d.name for d in new_replaces) or u"None"
+    old_replaces_names = u", ".join(d.name for d in old_replaces) or u"None"
+    e.desc = u"This document now replaces <b>%s</b> instead of %s" % (new_replaces_names, old_replaces_names)
+    e.save()
+
+    # make sure there are no lingering suggestions duplicating new replacements
+    RelatedDocument.objects.filter(source=doc, target__in=new_replaces, relationship="possibly-replaces").delete()
+
+    email_desc = e.desc.replace(", ", "\n    ")
+
+    if email_comment:
+        email_desc += "\n" + email_comment
+
+    to = [
+        u'%s <%s>' % (emails[email], email) if emails[email] else u'<%s>' % email
+        for email in sorted(emails)
+    ]
+
+    from ietf.doc.mails import html_to_text
+
+    send_mail(request, to,
+              "DraftTracker Mail System <iesg-secretary@ietf.org>",
+              email_subject,
+              "doc/mail/change_notice.txt",
+              dict(text=html_to_text(email_desc),
+                   doc=doc,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
 def check_common_doc_name_rules(name):
     """Check common rules for document names for use in forms, throws

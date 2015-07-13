@@ -69,6 +69,7 @@
 
     <h3>Submitter</h3>
     {% include "submit/submitter_form.html" %}
+    {% include "submit/replaces_form.html" %}
 
     {% for form in author_forms %}
       <div {% if forloop.last %}id="cloner"{% endif %}>
