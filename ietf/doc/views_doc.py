@@ -478,7 +478,7 @@ def document_main(request, name, rev=None):
             content = get_document_content(filename, pathname, split=False, markup=True)
 
         ballot_summary = None
-        if doc.get_state_slug() in ("iesgeval"):
+        if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
             ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
 
         table_rows = dict(doc=4, wg=2, iesg=3)
