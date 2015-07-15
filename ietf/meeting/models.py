@@ -895,6 +895,9 @@ class Session(models.Model):
     def slides(self):
         return list(self.materials.filter(type='slides').exclude(states__type='slides',states__slug='deleted').order_by('order'))
 
+    def drafts(self):
+        return list(self.materials.filter(type='draft'))
+
     def __unicode__(self):
         if self.meeting.type_id == "interim":
             return self.meeting.number
