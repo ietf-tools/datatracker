@@ -61,6 +61,16 @@ for message in source.message_set.all():
     message.by = target
     message.save()
 
+# merge Constraints
+for constraint in source.constraint_set.all():
+    constraint.person = target
+    constraint.save()
+
+# merge Roles
+for role in source.role_set.all():
+    role.person = target
+    role.save()
+
 # check for any remaining relationships and delete if none
 objs = [source]
 opts = Person._meta
