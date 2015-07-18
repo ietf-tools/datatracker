@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, re, datetime, argparse, traceback, tempfile, json
+import os, sys, re, datetime, argparse, traceback, tempfile, json, subprocess
 import html5lib
 import debug    # pyflakes:ignore
 
@@ -22,6 +22,8 @@ parser.add_argument('--slow', dest='slow_threshold', type=float, default=1.0,
                     help='responses taking longer than this (in seconds) results in SLOW being printed')
 parser.add_argument('--settings', dest='settings', help='custom settings file')
 parser.add_argument('--logfile', dest='logfile', help='write to logfile')
+parser.add_argument('--validator-nu', dest='validator_nu', action='store_true',
+                    help='Use validator.nu instead of html5lib for HTML validation')
 
 args = parser.parse_args()
 
@@ -92,7 +94,7 @@ def extract_tastypie_urls(content):
                     uri = object_list[i]["resource_uri"]
                     yield uri
 
-def check_html_valid(url, response):
+def check_html_valid(url, response, args):
     global parser, validated_urls, doc_types, warnings
     # derive a key for urls like this by replacing primary keys
     key = url
@@ -110,15 +112,30 @@ def check_html_valid(url, response):
             content = response.content
         else:
             content = response.streaming_content
-        try:
-            validated_urls[key] = True
-            parser.parse(content)
-        except Exception:
-            e = SyntaxWarning("ParseError")
-            for err in parser.errors:
-                pos, code, data = err
-                tags.append(u"WARN invalid html: Position %s: %s" % (pos, code))
-            warnings += 1
+        validated_urls[key] = True
+        if args.validator_nu:
+            v = subprocess.Popen(["java", "-jar", basedir + "/bin/vnu.jar",
+                                  "--format", "json", "-"],
+                                 stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+            for m in json.loads(v.communicate(content)[1])["messages"]:
+                t = m["subType"] if m["type"] == "info" else m["type"]
+                tags.append("\n%s\tLine %d: %s" %
+                            (t.upper(), m["lastLine"], m["message"]))
+                tags.append("\n\t%s" % m["extract"].replace('\n', ' '))
+                tags.append("\n\t%s%s" %
+                            (" " * m["hiliteStart"], "^" * m["hiliteLength"]))
+                warnings += 1
+        else:
+            try:
+                parser.parse(content)
+            except Exception:
+                e = SyntaxWarning("ParseError")
+                for err in parser.errors:
+                    pos, code, data = err
+                    tags.append(u"WARN invalid html: Position %s: %s" %
+                                (pos, code))
+                warnings += 1
+
 
 def log(s):
     print(s)
@@ -224,7 +241,7 @@ if __name__ == "__main__":
                                 urls[u] = url
                                 referrers[u] = url
 
-                        check_html_valid(url, r)
+                        check_html_valid(url, r, args)
 
                     except:
                         log("error extracting HTML urls from %s" % url)
