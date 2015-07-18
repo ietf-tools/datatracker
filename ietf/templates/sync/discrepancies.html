@@ -23,7 +23,7 @@
         </thead>
         <tbody>
           {% for d in docs %}
-            <tr id="d{{ d.pk }}">
+            <tr>
               <td><a href="{{ d.get_absolute_url }}">{{ d.name }}</a></td>
               <td>{{ d.iesg_state|default:"" }}</td>
               <td>{{ d.rfc_state|default:"" }}</td>
