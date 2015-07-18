@@ -38,7 +38,7 @@ class FromWidget(Select):
 
 class ReadOnlyWidget(Widget):
     def render(self, name, value, attrs=None):
-        html = u'<div id="id_%s" class="form-control" style="height: auto; min-height: 34px;">%s</div>' % (conditional_escape(name), conditional_escape(value or ''))
+        html = u'<div id="id_%s" class="form-control widget">%s</div>' % (conditional_escape(name), conditional_escape(value or ''))
         return mark_safe(html)
 
 
@@ -67,8 +67,8 @@ class ShowAttachmentsWidget(Widget):
 
     def render(self, name, value, attrs=None):
         html = u'<div id="id_%s">' % name
-        html += u'<span style="display: none" class="showAttachmentsEmpty form-control" style="height: auto; min-height: 34px;">No files attached</span>'
-        html += u'<div class="attachedFiles form-control" style="height: auto; min-height: 34px;">'
+        html += u'<span style="display: none" class="showAttachmentsEmpty form-control widget">No files attached</span>'
+        html += u'<div class="attachedFiles form-control widget">'
         if value and isinstance(value, QuerySet):
             for attachment in value:
                 html += u'<a class="initialAttach" href="%s%s">%s</a><br />' % (settings.LIAISON_ATTACH_URL, conditional_escape(attachment.external_url), conditional_escape(attachment.title))
