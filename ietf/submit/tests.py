@@ -203,9 +203,12 @@ class SubmitTests(TestCase):
         self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
         self.assertTrue(name in unicode(outbox[-2]))
         self.assertTrue("mars" in unicode(outbox[-2]))
+        # Check "Review of suggested possible replacements for..." mail
         self.assertTrue("review" in outbox[-1]["Subject"].lower())
         self.assertTrue(name in unicode(outbox[-1]))
         self.assertTrue(sug_replaced_alias.name in unicode(outbox[-1]))
+        self.assertTrue("ameschairman" in outbox[-1]["To"].lower())
+        self.assertTrue("marschairman" in outbox[-1]["To"].lower())
 
     def test_submit_existing(self):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
