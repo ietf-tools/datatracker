@@ -156,6 +156,11 @@ def document_main(request, name, rev=None):
                                     person__user=request.user)))
         can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
 
+        can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
+
+        is_author = unicode(request.user) in set([email.address for email in doc.authors.all()])
+        can_view_possibly_replaces = can_edit_replaces or is_author
+
         rfc_number = name[3:] if name.startswith("") else None
         draft_name = None
         for a in aliases:
@@ -357,8 +362,9 @@ def document_main(request, name, rev=None):
         table_rows = dict(doc=4, stream=2, iesg=4, iana=2, rfced=1)
         table_rows['doc'] += 1 if replaces or can_edit_stream_info else 0
         table_rows['doc'] += 1 if replaced_by  else 0
-        table_rows['doc'] += 1 if possibly_replaces  else 0
-        table_rows['doc'] += 1 if possibly_replaced_by  else 0
+        if can_view_possibly_replaces:
+            table_rows['doc'] += 1 if possibly_replaces  else 0
+            table_rows['doc'] += 1 if possibly_replaced_by  else 0
         table_rows['doc'] += 1 if doc.get_state_slug() != "rfc" else 0
         table_rows['doc'] += 1 if conflict_reviews else 0
 
@@ -390,6 +396,8 @@ def document_main(request, name, rev=None):
                                        can_edit_notify=can_edit_notify,
                                        can_edit_iana_state=can_edit_iana_state,
                                        can_edit_consensus=can_edit_consensus,
+                                       can_edit_replaces=can_edit_replaces,
+                                       can_view_possibly_replaces=can_view_possibly_replaces,
 
                                        rfc_number=rfc_number,
                                        draft_name=draft_name,
