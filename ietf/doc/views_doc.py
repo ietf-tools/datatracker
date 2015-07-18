@@ -348,22 +348,6 @@ def document_main(request, name, rev=None):
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
-        # We'd like to group rows in the document information table, with a first row giving the
-        # group label.  This would be easy if all browsers supported the rowspan="0" (zero)
-        # semantics of the html standard, but only Firefox and Opera do, so we have to count
-        # how many entries there will be in each section here, instead.  Bah!
-        table_rows = dict(doc=4, stream=2, iesg=4, iana=2, rfced=1)
-        table_rows['doc'] += 1 if replaces or can_edit_stream_info else 0
-        table_rows['doc'] += 1 if replaced_by  else 0
-        table_rows['doc'] += 1 if doc.get_state_slug() != "rfc" else 0
-        table_rows['doc'] += 1 if conflict_reviews else 0
-
-        table_rows['stream'] += 1 if consensus else 0
-        table_rows['stream'] += 1 if shepherd_writeup or can_edit_shepherd_writeup else 0
-        table_rows['stream'] += 1 if published and started_iesg_process and published.time < started_iesg_process.time else 0
-
-        table_rows['iesg'] += 1 if iesg_state and (doc.note or can_edit) else 0
-
         return render_to_response("doc/document_draft.html",
                                   dict(doc=doc,
                                        group=group,
@@ -375,9 +359,6 @@ def document_main(request, name, rev=None):
                                        snapshot=snapshot,
                                        latest_revision=latest_revision,
                                        latest_rev=latest_rev,
-
-                                       table_rows=table_rows,
-
                                        can_edit=can_edit,
                                        can_change_stream=can_change_stream,
                                        can_edit_stream_info=can_edit_stream_info,
@@ -447,8 +428,6 @@ def document_main(request, name, rev=None):
 
         can_manage = can_manage_group_type(request.user, doc.group.type_id)
 
-        table_rows = dict(doc=5, wg=2, iesg=3)
-
         return render_to_response("doc/document_charter.html",
                                   dict(doc=doc,
                                        top=top,
@@ -463,7 +442,6 @@ def document_main(request, name, rev=None):
                                        group=group,
                                        milestones=milestones,
                                        can_manage=can_manage,
-                                       table_rows=table_rows,
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -481,9 +459,6 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
             ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
 
-        table_rows = dict(doc=4, wg=2, iesg=3)
-        table_rows['iesg'] += 1 if not snapshot else 0
-
         return render_to_response("doc/document_conflict_review.html",
                                   dict(doc=doc,
                                        top=top,
@@ -495,7 +470,6 @@ def document_main(request, name, rev=None):
                                        conflictdoc=conflictdoc,
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent'),
-                                       table_rows=table_rows,
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -520,9 +494,6 @@ def document_main(request, name, rev=None):
         else:
             sorted_relations=None
 
-        table_rows = dict(doc=5, wg=2, iesg=3)
-        table_rows['iesg'] += sorted_relations.count() if sorted_relations else 0
-
         return render_to_response("doc/document_status_change.html",
                                   dict(doc=doc,
                                        top=top,
@@ -534,7 +505,6 @@ def document_main(request, name, rev=None):
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-pend','appr-sent'),
                                        sorted_relations=sorted_relations,
-                                       table_rows=table_rows,
                                        ),
                                   context_instance=RequestContext(request))
 
