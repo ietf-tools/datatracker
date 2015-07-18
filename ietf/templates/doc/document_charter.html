@@ -28,11 +28,9 @@
     </thead>
 
     <tbody>
-      <tr>
-	 <th rowspan="{{table_rows.doc}}">Document</th>
-      </tr>
 
       <tr>
+	<th>Document</th>
 	<th>
 	  {% if doc.get_state_slug != "approved" %}
 	    Proposed charter
@@ -52,6 +50,7 @@
       </tr>
 
       <tr>
+        <td class="plain"></td>
 	<th>Title</th>
 	<td class="edit">
 	  {% if not snapshot and can_manage %}
@@ -62,12 +61,14 @@
       </tr>
 
       <tr>
+        <td class="plain"></td>
 	<th>Last updated</th>
 	<td class="edit"></td>
 	<td>{{ doc.time|date:"Y-m-d" }}</td>
       </tr>
 
       <tr>
+        <td class="plain"></td>
 	<th><a href="/doc/help/state/charter/">State</a></th>
 	<td class="edit">
 	  {% if not snapshot and can_manage %}
@@ -87,27 +88,33 @@
       </tr>
 
     </tbody>
+
     <tbody>
-
       <tr>
-	 <th rowspan="{{table_rows.wg}}">WG</th>
-      </tr>
-
-      <tr>
+	<th>WG</th>
 	<th>State</th>
 	<td class="edit"></td>
 	<td>{{ group.state.name }}</td>
       </tr>
-
     </tbody>
-    <tbody>
 
+    <tbody>
       <tr>
-	 <th rowspan="{{table_rows.iesg}}">IESG</th>
+	<th>IESG</th>
+	<th>Responsible AD</th>
+	<td class="edit">
+	  {% if can_manage %}
+	    {% doc_edit_button "charter_edit_ad" name=doc.name %}
+	  {% endif %}
+	</td>
+	<td>
+	  {{ doc.ad|default:"(None)" }}
+	</td>
       </tr>
 
       {% if not snapshot and chartering %}
 	<tr>
+	  <td class="plain"></td>
 	  <th>Telechat date</th>
 	  <td class="edit">
 	    {% if can_manage %}
@@ -125,21 +132,11 @@
 	      <br><i>{{ ballot_summary }}</i>
 	    {% endif %}
 	  </td>
+      </tr>
       {% endif %}
 
       <tr>
-	<th>Responsible AD</th>
-	<td class="edit">
-	  {% if can_manage %}
-	    {% doc_edit_button "charter_edit_ad" name=doc.name %}
-	  {% endif %}
-	</td>
-	<td>
-	  {{ doc.ad|default:"(None)" }}
-	</td>
-      </tr>
-
-      <tr>
+	<td class="plain"></td>
 	<th>Send notices to</th>
 	<td class="edit">
 	  {% if can_manage %}

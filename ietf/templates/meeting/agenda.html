@@ -184,7 +184,7 @@
             {% endif %}
 
             {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
-              {% with session_id=item.timeslot.time|date:"D-Hi"|lower|add:"-"|add:item.session.group.acronym|lower %}
+              {% with session_id=item.timeslot.time|date:"D-Hi"|lower|add:"-"|add:item.session.group.acronym|lower|add:"-"|add:item.timeslot.get_location|slugify %}
                 <tr id="row-{{session_id}}">
 	          <td class="text-nowrap text-right">
 	            {% if "-utc" in request.path %}

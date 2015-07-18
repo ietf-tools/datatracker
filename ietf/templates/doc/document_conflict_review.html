@@ -25,10 +25,7 @@
 
     <tbody>
       <tr>
-	 <th rowspan="{{table_rows.doc}}">Document</th>
-      </tr>
-
-      <tr>
+	<th>Document</th>
 	<th>
 	  {% if doc.get_state_slug not in approved_states %}
 	    Proposed conflict review
@@ -50,12 +47,14 @@
       </tr>
 
       <tr>
+      	<td class="plain"></td>
 	<th>Last updated</th>
 	<td class="edit"></td>
 	<td>{{ doc.time|date:"Y-m-d" }}</td>
       </tr>
 
       <tr>
+      	<td class="plain"></td>
 	<th><a href="/doc/help/state/conflict-review/">State</a></th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
@@ -70,12 +69,21 @@
     </tbody>
     <tbody>
       <tr>
-	 <th rowspan="{{table_rows.iesg}}">IESG</th>
+	<th>IESG</th>
+	<th>Shepherding AD</th>
+	<td class="edit">
+	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+	    <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_ad" name=doc.name %}">Edit</a>
+	  {% endif %}
+	</td>
+	<td>
+	  {{doc.ad}}
+	</td>
       </tr>
-
 
       {% if not snapshot %}
 	<tr>
+	  <td class="plain"></td>
 	  <th>Telechat date</th>
 	  <td class="edit">
 	    {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
@@ -98,18 +106,7 @@
       {% endif %}
 
       <tr>
-	<th>Shepherding AD</th>
-	<td class="edit">
-	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-	    <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_ad" name=doc.name %}">Edit</a>
-	  {% endif %}
-	</td>
-	<td>
-	  {{doc.ad}}
-	</td>
-      </tr>
-
-      <tr>
+	<td class="plain"></td>
 	<th>Send notices to</th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
