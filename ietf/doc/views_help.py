@@ -8,10 +8,10 @@ from ietf.doc.utils import get_tags_for_stream_id
 
 def state_help(request, type):
     slug, title = {
-        "draft-iesg": ("draft-iesg", "IESG States For Internet-Drafts"),
-        "draft-rfceditor": ("draft-rfceditor", "RFC Editor States For Internet-Drafts"),
-        "draft-iana-action": ("draft-iana-action", "IANA Action States For Internet-Drafts"),
-        "draft-stream-ietf": ("draft-stream-ietf", "IETF Stream States For Internet-Drafts"),
+        "draft-iesg": ("draft-iesg", "IESG States for Internet-Drafts"),
+        "draft-rfceditor": ("draft-rfceditor", "RFC Editor States for Internet-Drafts"),
+        "draft-iana-action": ("draft-iana-action", "IANA Action States for Internet-Drafts"),
+        "draft-stream-ietf": ("draft-stream-ietf", "IETF Stream States for Internet-Drafts"),
         "charter": ("charter", "Charter States"),
         "conflict-review": ("conflrev", "Conflict Review States"),
         "status-change": ("statchg", "RFC Status Change States"),
