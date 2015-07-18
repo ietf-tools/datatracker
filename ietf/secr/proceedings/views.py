@@ -941,7 +941,6 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
             DocAlias.objects.get_or_create(name=doc.name, document=doc)
 
             handle_upload_file(file,disk_filename,meeting,material_type.slug)
-            post_process(doc)
             
             # set Doc state
             if doc.type.slug=='slides':
@@ -967,7 +966,8 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
                                        rev=doc.rev,
                                        desc='New revision available',
                                        time=now)
-
+            
+            post_process(doc)
             create_proceedings(meeting,group)
             messages.success(request,'File uploaded sucessfully')
 
