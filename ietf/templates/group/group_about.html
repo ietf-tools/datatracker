@@ -67,6 +67,7 @@
       {% with group.groupurl_set.all as urls %}
         {% if urls %}
 	<tr>
+          <td class="plain"></td>
           <th>More info</th>
           <td>
             {% for url in urls %}
