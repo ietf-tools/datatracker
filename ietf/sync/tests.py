@@ -402,9 +402,11 @@ class RFCSyncTests(TestCase):
         self.assertEqual(len(warnings), 0)
 
         self.assertEqual(draft.get_state_slug("draft-rfceditor"), "edit")
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "rfcqueue")
         self.assertEqual(set(draft.tags.all()), set(DocTagName.objects.filter(slug__in=("iana", "ref"))))
-        self.assertEqual(draft.docevent_set.all()[0].type, "changed_state")
-        self.assertEqual(draft.docevent_set.all()[1].type, "rfc_editor_received_announcement")
+        self.assertEqual(draft.docevent_set.all()[0].type, "changed_state") # changed draft-iesg state
+        self.assertEqual(draft.docevent_set.all()[1].type, "changed_state") # changed draft-rfceditor state
+        self.assertEqual(draft.docevent_set.all()[2].type, "rfc_editor_received_announcement")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("RFC Editor queue" in outbox[-1]["Subject"])
