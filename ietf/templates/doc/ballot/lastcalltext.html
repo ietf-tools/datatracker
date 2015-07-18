@@ -18,9 +18,9 @@
     {% bootstrap_form last_call_form %}
 
     {% if can_request_last_call and need_intended_status %}
-      <span class="help-block">
+      <div class="help-block">
         You need to select intended status of {{ need_intended_status }} and regenerate last call text to request last call.
-      </span>
+      </div>
     {% endif %}
 
     {% buttons %}

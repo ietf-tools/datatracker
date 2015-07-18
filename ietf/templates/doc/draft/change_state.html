@@ -21,11 +21,11 @@
     {% bootstrap_form form %}
 
     {% if state and state.slug == "rfcqueue" %}
-      <span class="help-block">
+      <div class="help-block">
         <b>Note:</b> If you pull the draft out of the
         <i>{{ state.name }}</i> state, the RFC Editor and IANA will be notified
         by email with this comment, so they can update their queues.
-      </span>
+      </div>
     {% endif %}
 
     {% buttons %}

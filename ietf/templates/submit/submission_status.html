@@ -203,13 +203,12 @@
   </table>
 
   {% if can_edit %}
-    <p>
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="edit">
-        <button class="btn btn-warning" type="submit" value="adjust">Adjust meta-data</button>
-      </form>
-    </p>
+    <p></p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit">
+      <button class="btn btn-warning" type="submit" value="adjust">Adjust meta-data</button>
+    </form>
     <p>Leads to manual post by the secretariat.</p>
 
     {% if passes_idnits and not errors %}
@@ -247,35 +246,29 @@
 
   {% if can_cancel %}
     <h2>Cancel submission</h2>
-    <p>
-      <form id="cancel-submission" method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="cancel">
-        <button class="btn btn-danger" type="submit">Cancel submission</button>
-      </form>
-    </p>
-    <p>Deletes the uploaded file{{ submission.file_types|split:","|pluralize }} permanently.</p>
+    <form id="cancel-submission" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="cancel">
+      <button class="btn btn-danger" type="submit" data-toggle="tooltip" title="Deletes the uploaded file{{ submission.file_types|split:","|pluralize }} permanently.">Cancel submission</button>
+    </form>
   {% endif %}
 
   {% if can_group_approve %}
     <h2>Approve submission</h2>
-    <p>
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="approve">
         <button class="btn btn-danger" type="submit">Approve this submission</button>
       </form>
-    </p>
   {% endif %}
 
   {% if can_force_post %}
-    <p>
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="forcepost">
-        <button class="btn btn-danger" type="submit">Force post of submission</button>
-      </form>
-    </p>
+    <p></p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="forcepost">
+      <button class="btn btn-danger" type="submit">Force post of submission</button>
+    </form>
   {% endif %}
 
   {% if show_send_full_url %}
@@ -292,12 +285,11 @@
         button. An email will then be sent to the authors and submitter
         (if submitter email was entered): {{ confirmation_list|join:", " }}.</p>
 
-      <p>
-        <form method="post">{% csrf_token %}
-          <input type="hidden" name="action" value="sendfullurl">
-          <button class="btn btn-danger" type="submit">Request full access URL</button>
-        </form>
-      </p>
+      <p></p>
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="action" value="sendfullurl">
+        <button class="btn btn-danger" type="submit">Request full access URL</button>
+      </form>
     </div>
   {% endif %}
 

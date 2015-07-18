@@ -30,13 +30,7 @@ def two_pages_decorated_with_errors(submission, errors):
         return mark_safe('<pre>%s</pre>' % escape(pages))
     result = '<pre>\n'
     for line in pages.split('\n'):
-        if line.find('%s-%s' % (submission.name, submission.rev)) > -1:
-            result += '<div class="bg-danger"><b>'
-            result += escape(line)
-            result += '\n'
-            result += '</b></div>\n'
-        else:
-            result += escape(line)
-            result += '\n'
+        result += escape(line)
+        result += '\n'
     result += '</pre>pre>\n'
     return mark_safe(result)

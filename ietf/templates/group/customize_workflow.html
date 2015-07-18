@@ -53,7 +53,7 @@
                   </button>
                 </div>
               </div>
-              <form id="nexts{{ state.pk }}" class="set-next-states collapse out" method="post" action="">{% csrf_token %}
+              <form id="nexts{{ state.pk }}" class="set-next-states collapse out" method="post">{% csrf_token %}
                 <div>Select the next states:</div>
 
                 {% for checked, default, s in state.next_states_checkboxes %}
@@ -91,7 +91,7 @@
 
     <table class="table tag-table">
       <thead>
-        <tr> 
+        <tr>
 	  <th>Tag</th>
 	  <th>Turn on/off</th>
         </tr>
@@ -112,4 +112,5 @@
         {% endfor %}
       </tbody>
     </table>
+</div>
 {% endblock content %}

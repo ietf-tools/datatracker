@@ -93,13 +93,13 @@ body { padding-top: 70px; }
 }
 
 .navbar-brand {
-  margin-top: -2px;	
+  margin-top: -2px;
 }
 
 /* Hack to make anchor-targets take up a bit more space vertically
  to work around the position fixed navbar which otherwise covers them */
 h2.anchor-target:before,
-h3.anchor-target:before,	
+h3.anchor-target:before,
 h4.anchor-target:before,
 div.anchor-target:before {
   content: '';
@@ -392,11 +392,8 @@ footer {
 */
 
 
-tbody.plain tr th { border-top: 0; text-align: right; max-width: 12em;}
-tbody.plain tr:first-child th { border-top: 0; text-align: left; width: 6em; }
-tbody.plain tr td { border-top: 0; }
-
+table tbody td.plain, table tbody th.plain { border-top: 0; }
 
 td.ad div { border-bottom: solid #ccc 1px; }
 
-.milestone { font-style: italic; }	
+.milestone { font-style: italic; }

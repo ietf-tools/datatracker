@@ -39,7 +39,7 @@
 	      </select>
 	    </div>
 	    <div class="col-sm-7">
-	      <span class="help-block">Email to use for <i>{{ role.name|lower }}</i> role in {{ role.group.acronym|upper }} ({{ role.group.type }}).</span>
+	      <div class="help-block">Email to use for <i>{{ role.name|lower }}</i> role in {{ role.group.acronym|upper }} ({{ role.group.type }}).</div>
 	    </div>
           </div>
         {% endfor %}
@@ -61,7 +61,7 @@
 	    {% endfor %}
 	  </div>
 	  <div class="col-sm-7">
-	    <span class="help-block">Note: Email addresses cannot be deleted, only deactivated.</span>
+	    <div class="help-block">Note: Email addresses cannot be deleted, only deactivated.</div>
 	  </div>
         </div>
       </div>
@@ -81,7 +81,7 @@
 	    {{person_form.name|add_class:"form-control"}}
 	  </div>
 	  <div class="col-sm-7">
-	    <span class="help-block">The preferred form of your name.</span>
+	    <div class="help-block">The preferred form of your name.</div>
 	  </div>
         </div>
       </div>
@@ -95,7 +95,7 @@
 	    {{person_form.ascii|add_class:"form-control"}}
 	  </div>
 	  <div class="col-sm-7">
-	    <span class="help-block">Your name as rendered in ASCII (Latin, unaccented) characters.</span>
+	    <div class="help-block">Your name as rendered in ASCII (Latin, unaccented) characters.</div>
 	  </div>
         </div>
       </div>
@@ -109,11 +109,11 @@
 	    {{person_form.ascii_short|add_class:"form-control"}}
 	  </div>
 	  <div class="col-sm-7">
-	    <span class="help-block">
+	    <div class="help-block">
 	       Example: A. Nonymous.  Fill in this with initials and surname only if 
 	       taking the initials and surname of your ASCII name above produces an incorrect
 	       initials-only form. (Blank is ok).
-	    </span>
+	    </div>
 	  </div>
         </div>
       </div>
@@ -127,7 +127,7 @@
 	    {{person_form.affiliation|add_class:"form-control"}}
 	  </div>
 	  <div class="col-sm-7">
-	    <span class="help-block">Employer, university, sponsor, etc.</span>
+	    <div class="help-block">Employer, university, sponsor, etc.</div>
 	  </div>
         </div>
       </div>
@@ -141,7 +141,7 @@
 	    {{person_form.address|add_class:"form-control"}}
 	  </div>
 	  <div class="col-sm-7">
-	    <span class="help-block">Postal mailing address.</span>
+	    <div class="help-block">Postal mailing address.</div>
 	  </div>
         </div>
       </div>

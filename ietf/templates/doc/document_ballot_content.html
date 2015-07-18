@@ -6,16 +6,7 @@
       <h4><span class="label label-{{ n|pos_to_label }}"> {{ n.name }}</span></h4>
       {% for p in positions|dictsort:"ad.last_name" %}
         <div>
-          {% if p.old_ad %}<span class="text-muted">({% endif %}
-	    {% if p.comment or p.discuss %}
-	      <a href="#{{ p.ad.plain_name|slugify }}">
-	    {% endif %}
-	    {{ p.ad.plain_name }}
-	    {% if p.comment or p.discuss %}
-	      </a>
-	    {% endif %}
-	    {% if user|has_role:"Secretariat" %}</a>{% endif %}
-            {% if p.old_ad %})</span>{% endif %}
+          {% if p.old_ad %}<span class="text-muted">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ p.ad.plain_name|slugify }}">{% endif %}{{ p.ad.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.old_ad %})</span>{% endif %}
         </div>
       {% empty %}
         (None)
@@ -77,9 +68,7 @@
     {% for n, positions in position_groups %}
       {% for p in positions|dictsort:"ad.last_name" %}
         <h4 class="anchor-target" id="{{ p.ad.plain_name|slugify }}">
-          {% if p.old_ad %}<span class="text-muted">({% endif %}
-            {{ p.ad.plain_name }}
-            {% if p.old_ad %})</span>{% endif %}
+          {% if p.old_ad %}<span class="text-muted">({% endif %}{{ p.ad.plain_name }}{% if p.old_ad %})</span>{% endif %}
             <span class="pull-right">
               {% if p.old_positions %}
                 <span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>

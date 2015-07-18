@@ -8,7 +8,7 @@
   {% origin %}
   <p class="alert alert-warning">Are you sure you want to delete all data about {{ nomcom.group.name }}?</p>
 
-  <form action="" method="post">
+  <form method="post">
     {% csrf_token %}
     <input type="hidden" name="post" value="yes">
     <input class="btn btn-danger" type="submit" value="Yes, I'm sure">

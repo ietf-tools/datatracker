@@ -17,9 +17,9 @@
     {% csrf_token %}
     {% bootstrap_form ballot_writeup_form %}
 
-    <span class="help-block">
+    <div class="help-block">
       Technical summary, Working Group summary, document quality, personnel, RFC Editor note, IRTF note, IESG note, IANA note. This text will be appended to all announcements and messages to the IRTF or RFC Editor.
-    </span>
+    </div>
 
     {% buttons %}
       <button type="submit" class="btn btn-primary" name="save_ballot_writeup" value="Save Ballot Writeup">Save</button>

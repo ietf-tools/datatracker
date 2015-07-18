@@ -17,9 +17,9 @@
     {% csrf_token %}
     {% bootstrap_form ballot_writeup_form %}
 
-    <span class="help-block">
+    <div class="help-block">
       Working group summary, personnel, IAB note, IESG note, IANA note.
-    </span>
+    </div>
 
     {% buttons %}
       <button type="submit" class="btn btn-primary" name="save_ballot_writeup" value="Save Ballot Writeup">Save</button>

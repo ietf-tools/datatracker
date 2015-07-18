@@ -50,7 +50,7 @@
     <h3>Or revert to previous state</h3>
 
     <div class="prev-state">
-      <form action="" method="post">{% csrf_token %}
+      <form method="post">{% csrf_token %}
         <input type="hidden" name="charter_state" value="{{ prev_charter_state.pk }}" />
         <input type="hidden" name="state" value="{{ prev_state.slug }}" />
         <input type="submit" value="Back to {{ prev_charter_state.name }}" />
