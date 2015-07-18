@@ -3,11 +3,11 @@
 {% load origin %}
 {% load bootstrap3 %}
 
-{% block title %}Change position for {{ ad.plain_name }} on {{ doc }}{% endblock %}
+{% block title %}Change position for {{ ad.plain_name }}{% endblock %}
 
 {% block content %}
   {% origin %}
-  <h1>Change position for {{ ad.plain_name }}<br><small>{{ doc }}</small></h1>
+  <h1>Change position for {{ ad.plain_name }} regarding <br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
   {% bootstrap_messages %}
 
@@ -44,7 +44,6 @@
           <input type="submit" class="btn btn-danger" name="Defer" value="Defer ballot">
         {% endif %}
       {% endif %}
-      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
     {% endbuttons %}
   </form>
 {% endblock %}

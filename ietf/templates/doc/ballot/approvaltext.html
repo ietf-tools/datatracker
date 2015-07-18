@@ -9,7 +9,7 @@
 
 {% block content %}
   {% origin %}
-  <h1>Approval announcement writeup<br><small>{{ doc }}</small></h1>
+  <h1>Approval announcement writeup<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
   {% bootstrap_messages %}
 
@@ -23,7 +23,6 @@
       {% if user|has_role:"Secretariat" and can_announce %}
         <a class="btn btn-default" href="{% url "doc_approve_ballot" name=doc.name %}">Approve ballot</a>
       {% endif %}
-      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
     {% endbuttons %}
   </form>
 

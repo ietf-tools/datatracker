@@ -9,7 +9,7 @@
 
 {% block content %}
   {% origin %}
-  <h1>Last call text<br><small>{{ doc }}</small></h1>
+  <h1>Last call text<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
   {% bootstrap_messages %}
 
@@ -32,7 +32,6 @@
       {% if user|has_role:"Secretariat" and can_make_last_call %}
         <a class="btn btn-danger" href="{% url "doc_make_last_call" name=doc.name %}">Issue last call</a>
       {% endif %}
-      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
     {% endbuttons %}
   </form>
 

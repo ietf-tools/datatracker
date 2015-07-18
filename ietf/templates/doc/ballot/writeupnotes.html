@@ -9,7 +9,7 @@
 {% block content %}
   {% origin %}
 
-  <h1>Ballot writeup and notes<br><small>{{ doc }}</small></h1>
+  <h1>Ballot writeup and notes<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
   {% bootstrap_messages %}
 
@@ -24,7 +24,6 @@
     {% buttons %}
       <button type="submit" class="btn btn-primary" name="save_ballot_writeup" value="Save Ballot Writeup">Save</button>
       <button type="submit" class="btn btn-warning" name="issue_ballot" value="Save and Issue Ballot">Save & {% if ballot_issued %}re-{% endif %}issue ballot</button>
-      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
     {% endbuttons %}
   </form>
 
