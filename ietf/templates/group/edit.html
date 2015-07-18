@@ -36,7 +36,7 @@
     chairs and delegates, need a datatracker account to actually do
     so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
 
-  <form class="form-horizontal" role="form" method="post">
+  <form class="form-horizontal" method="post">
     {% csrf_token %}
     {% bootstrap_form form layout='horizontal' %}
 

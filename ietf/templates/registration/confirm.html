@@ -21,7 +21,7 @@
     {% bootstrap_messages %}
 
     <p>In order to complete the setup of your account with login name {{ email }}, please choose a password:</p>
-    <form role="form" method="post">
+    <form method="post">
       {% csrf_token %}
       {% bootstrap_form form %}
 

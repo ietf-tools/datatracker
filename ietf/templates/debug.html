@@ -4,23 +4,21 @@
   {% load ietf_filters %}
   {% load future %}
 
-  <div id="debug" style="clear: left;">
-    <h3>SQL Queries</h3>
+  <div id="debug">
+  <hr>
     <p>
       {{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)
       {% if sql_queries|length != 0 %}
-        <a class="btn btn-default btn-sm" onclick="document.getElementById('debug-query-table').style.display='table';">Show</a>
+        <a class="btn btn-default btn-xs"
+           onclick="$('#debug-query-table').toggleClass('hide');">Show</a>
       {% endif %}
     </p>
-    <table class="table table-condensed table-striped" id="debug-query-table" style="display: none;">
-      <col width="1"></col>
-      <col></col>
-      <col width="1"></col>
+    <table class="table table-condensed table-striped hide" id="debug-query-table">
       <thead>
         <tr>
-	  <th scope="col">#</th>
-	  <th scope="col">SQL</th>
-	  <th scope="col">Time</th>
+	  <th>#</th>
+	  <th>SQL</th>
+	  <th>Time</th>
         </tr>
       </thead>
       <tbody>

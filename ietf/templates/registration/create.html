@@ -21,7 +21,7 @@
       <div class="col-md-6">
         <h1>Account creation</h1>
         <p>Please enter your email address in order to create a new datatracker account.</p>
-        <form role="form" method="post">
+        <form method="post">
           {% csrf_token %}
           {% bootstrap_form form %}
 

@@ -16,7 +16,7 @@
     <p><a class="btn btn-info" href="{% url "state_help" type="charter" %}">Help on states</a></p>
   {% endif %}
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
     {% for field in form.visible_fields %}
       {% bootstrap_field field %}

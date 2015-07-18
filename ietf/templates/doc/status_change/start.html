@@ -14,7 +14,7 @@
 
   <p><a class="btn btn-default" href="{% url "state_help" type="status-change"  %}">Help on states</a></p>
 
-  <form class="start-rfc-status-change-review" role="form" method="post">
+  <form class="start-rfc-status-change-review" method="post">
     {% csrf_token %}
 
     <label class="control-label">Affected RFCs</label>

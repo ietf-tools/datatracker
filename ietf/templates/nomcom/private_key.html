@@ -28,7 +28,7 @@
 
   <p>If you don't have a private key, please contact the group chair. You can leave the key empty and continue navigation without access to the encrypted data.</p>
 
-  <form enctype="multipart/form-data" role="form" method="post">
+  <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
     {% buttons %}

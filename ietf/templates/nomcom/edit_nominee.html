@@ -16,7 +16,7 @@
     <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
   {% endif %}
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
     {% buttons %}

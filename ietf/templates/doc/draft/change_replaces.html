@@ -17,7 +17,7 @@
   {% origin %}
   <h1>Change documents replaced by<br><small>{{ doc }}</small></h1>
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
 
     {% bootstrap_form form %}

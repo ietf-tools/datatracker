@@ -83,7 +83,7 @@
             <span class="noActionTaken">Action Needed</span>
           {% endif %}
           {% if can_take_care %}
-            <form method="post" role="form" class="pull-right">
+            <form method="post" class="pull-right">
 	      {% csrf_token %}
 	      <input class="btn btn-warning btn-xs" type="submit" value="Mark as action taken" name='do_action_taken'>
             </form>

@@ -35,7 +35,7 @@
 
   <h2>Nominees by position</h2>
 
-  <form class="form-inline" role="form" method="get">
+  <form class="form-inline" method="get">
     <div class="form-group">
       <label>State: </label>
       <select class="form-control input-sm" name="state">
@@ -67,7 +67,7 @@
 
 
   {% if is_chair %}
-    <form class="form-inline" id="batch-action-form" method="post" role="form">{% csrf_token %}
+    <form class="form-inline" id="batch-action-form" method="post">{% csrf_token %}
   {% endif %}
 
   <table class="table table-condensed table-striped">

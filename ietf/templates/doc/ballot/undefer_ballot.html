@@ -10,7 +10,7 @@
   {% origin %}
   <h1>Undefer ballot<br><small>{{ doc }}</small></h1>
 
-  <form role="form" class="undefer" method="post">
+  <form class="undefer" method="post">
     {% csrf_token %}
     <p class="alert alert-danger">
       <b>Undefer the ballot for {{ doc }}?</b>

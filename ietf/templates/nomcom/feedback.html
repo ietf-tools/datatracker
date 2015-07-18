@@ -51,7 +51,7 @@
       <div class="col-sm-8 col-sm-pull-4">
         <h3>Provide feedback</h3>
 
-        <form id="feedbackform" role="form" method="post">
+        <form id="feedbackform" method="post">
           {% csrf_token %}
           {% bootstrap_form form %}
           {% buttons %}

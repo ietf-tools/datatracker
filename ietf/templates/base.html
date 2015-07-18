@@ -41,7 +41,7 @@
 
   <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url "group_menu_data" %}">
     {% with debug_server_mode="production" %}
-      <nav class="navbar {% if server_mode and server_mode == "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top" role="navigation">
+      <nav class="navbar {% if server_mode and server_mode == "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top">
         <div class="container-fluid">
 	  <div class="navbar-header">
 	    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse">
@@ -146,6 +146,7 @@
 	    </div>
 	  </div>
         </footer>
+        {% include "debug.html" %}
       </div>
       <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
       <script>window.jQuery || document.write('<script src="/js/lib/jquery-1.11.2.min.js"><\/script>')</script>
@@ -159,7 +160,6 @@
       <script src="/js/lib/bootstrap.min.js"></script>
       <script src="/js/ietf.js"></script>
       {% block js %}{% endblock %}
-      {% include "debug.html" %}
   </body>
 </html>
 

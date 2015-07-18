@@ -11,7 +11,7 @@
 
   <h1>Edit RFCs affected by status change</h1>
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
 
     {% include "doc/status_change/edit_related_rows.html" %}

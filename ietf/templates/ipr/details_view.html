@@ -104,7 +104,7 @@
       <div class="alert alert-info">This update was notified to the submitter of the IPR that is being updated on: {{ ipr.update_notified_date|date:"Y-m-d" }}</div>
     {% endif %}
 
-    <div role="form" class="form-horizontal">
+    <div class="form-horizontal">
 
       <h2>{% cycle 'I','II','III','IV','V','VI','VII','VIII' as section %}.
         {% if ipr|to_class_name == "ThirdPartyIprDisclosure" %}Possible{% endif %}

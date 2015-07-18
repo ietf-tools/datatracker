@@ -10,7 +10,7 @@
   {% origin %}
   <h1>Edit Upcoming Presentations<br><small>{{doc.title}}<br>{{doc.name}}<br>at {{session}}</small></h1>
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
 
     {% bootstrap_form form %}

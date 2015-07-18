@@ -32,7 +32,7 @@
     datatracker account. New accounts can be <a href="{% url "create_account" %}">created here</a>.
   </p>
 
-  <form action="" role="form" method="post">
+  <form action="" method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
 

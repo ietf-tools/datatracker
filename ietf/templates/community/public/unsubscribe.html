@@ -24,7 +24,7 @@
       Cancel your subscription to the email list for notifications of {% if significant %}significant {% endif %}changes on {{ cl.long_name }}.
     </p>
 
-    <form role="form" method="post">
+    <form method="post">
       {% csrf_token %}
       {% bootstrap_form form %}
 

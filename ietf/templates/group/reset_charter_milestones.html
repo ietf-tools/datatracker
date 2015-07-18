@@ -18,7 +18,7 @@
     {% endif %}
   </p>
 
-  <form method="post" role="form" id="reset-charter-milestones">{% csrf_token %}
+  <form method="post" id="reset-charter-milestones">{% csrf_token %}
     {% for milestone in current_milestones %}
       <div class="checkbox">
         <label>

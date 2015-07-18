@@ -12,7 +12,7 @@
 
   {% bootstrap_messages %}
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
     <p class="help-block">The comment will be added to the history trail.</p>

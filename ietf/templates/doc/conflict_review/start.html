@@ -18,7 +18,7 @@
     <p><a class="btn btn-info" href="{% url "state_help" type="conflict-review" %}">Help on states</a></p>
   {% endif %}
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
 

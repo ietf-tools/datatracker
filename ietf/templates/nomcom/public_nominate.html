@@ -16,7 +16,7 @@
   {% bootstrap_messages %}
 
   {% if nomcom|has_publickey %}
-    <form id="nominate-form" role="form" method="post">
+    <form id="nominate-form" method="post">
       {% csrf_token %}
       {% bootstrap_form form %}
       {% buttons %}

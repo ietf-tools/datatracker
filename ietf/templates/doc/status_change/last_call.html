@@ -13,7 +13,7 @@
 
   {% bootstrap_messages %}
 
-  <form class="edit-last-call-text" role="form" method="post">
+  <form class="edit-last-call-text" method="post">
     {% csrf_token %}
     {% bootstrap_form last_call_form %}
 

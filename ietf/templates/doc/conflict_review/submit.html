@@ -16,7 +16,7 @@
 
   <p class="alert alert-info">The text will be submitted as <strong>{{ review.canonical_name }}-{{ next_rev }}</strong></p>
 
-  <form role="form" enctype="multipart/form-data" method="post">
+  <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
 

@@ -16,7 +16,7 @@
     <div class="alert alert-warning">{{ warning }}</div>
   {% endfor %}
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
 

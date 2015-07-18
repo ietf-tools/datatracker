@@ -2,7 +2,7 @@
 {% load widget_tweaks %}
 {% load ietf_filters %}
 
-<form role="form" id="search_form" class="form-horizontal" action="{% url "doc_search" %}">
+<form id="search_form" class="form-horizontal" action="{% url "doc_search" %}">
 
   <div class="input-group search_field">
     {{ form.name|add_class:"form-control"|attr:"placeholder:Document name, number, title, etc." }}

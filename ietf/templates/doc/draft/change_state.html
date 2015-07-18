@@ -16,7 +16,7 @@
     <a class="btn btn-info" href="{% url "state_help" type="draft-iesg" %}">Help on states</a>
   </p>
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
 
@@ -39,7 +39,7 @@
 
     <div class="buttonlist">
       {% for n in next_states %}
-        <form role="form" method="post">
+        <form method="post">
           {% csrf_token %}
           <input type="hidden" name="state" value="{{ n.pk }}">
           <input class="btn btn-default" type="submit" value="{{ n.name }}">
@@ -51,7 +51,7 @@
   {% if to_iesg_eval %}
     <h2>You could also jump directly to</h2>
 
-    <form role="form" method="post">
+    <form method="post">
       {% csrf_token %}
       <input type="hidden" name="state" value="{{ to_iesg_eval.pk }}">
       <input class="btn btn-warning" type="submit" value="{{ to_iesg_eval.name }}">
@@ -63,7 +63,7 @@
   {% if prev_state %}
     <h2>Or revert to previous state</h2>
 
-    <form role="form" method="post">
+    <form method="post">
       {% csrf_token %}
       <input type="hidden" name="state" value="{{ prev_state.pk }}">
       <input class="btn btn-danger" type="submit" value="Revert to {{ prev_state.name }}">

@@ -17,7 +17,7 @@
     {{ doc.name }} ({{ doc.group.acronym }}) to {{ doc.intended_std_level.name }}
   </p>
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
 

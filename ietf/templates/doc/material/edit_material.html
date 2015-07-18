@@ -28,7 +28,7 @@
     <h2>Upload New Revision</h2>
   {% endif %}
 
-  <form class="upload-material" role="form" method="post" enctype="multipart/form-data" data-nameprefix="{{ document_type.slug }}-{{ group.acronym }}-">
+  <form class="upload-material" method="post" enctype="multipart/form-data" data-nameprefix="{{ document_type.slug }}-{{ group.acronym }}-">
     {% csrf_token %}
 
     {% bootstrap_form form %}

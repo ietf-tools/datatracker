@@ -6,7 +6,7 @@
   {% origin %}
   {{ block.super }}
 
-  <form role="form" method="post">
+  <form method="post">
     {% csrf_token %}
     <input class="btn btn-primary" type="submit" value="Approve" name='do_approval' />
   </form>
