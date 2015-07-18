@@ -22,7 +22,7 @@
     </thead>
     <tbody>
       {% for state in states %}
-        <tr class="anchor-target" id="{{ state.slug }}">
+        <tr class="anchor-target" id="{{ state.slug|default:"idexists" }}">
           <th>{{ state.name }}</th>
           <td>{{ state.desc|safe|linebreaksbr }}</td>
           {% if has_next_states %}
