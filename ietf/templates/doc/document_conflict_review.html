@@ -16,14 +16,14 @@
     <thead id="message-row">
        <tr>
 	  {% if doc.rev != latest_rev %}
-	  <th colspan="4" class="alert-warning">&nbsp;The information below is for an old version of the document</th>
+	  <th colspan="4" class="alert-warning">The information below is for an old version of the document</th>
 	  {% else %}
-	  <th colspan="4">&nbsp;</th>
-	  {% endif %}  
+	  <th colspan="4"></th>
+	  {% endif %}
        </tr>
     </thead>
 
-    <tbody class="plain">
+    <tbody>
       <tr>
 	 <th rowspan="{{table_rows.doc}}">Document</th>
       </tr>
@@ -137,7 +137,8 @@
   {% endif %}
 
   {% if doc.rev %}
-    <p>{{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}</p>
+    <p></p>
+    {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
   {% endif %}
 
 {% endblock %}

@@ -1,5 +1,6 @@
 # -*- conf-mode -*-
 
+personal/lars/6.0.5.dev0@9734		# Obsoleted - don't use 'bleach'
 personal/lars/6.0.5.dev0@9732		# Already fixed in a different merge
 personal/lars/6.0.5.dev0@9731		# Jquery update; wait with this to the CDN branch comes in
 personal/lars/6.0.5.dev0@9730		# Jquery update; wait with this to the CDN branch comes in

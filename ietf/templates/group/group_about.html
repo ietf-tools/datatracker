@@ -27,6 +27,8 @@
       {% if group.parent and group.parent.type_id == "area" %}
         <th>{{ group.parent.type.name }}</th>
         <td>{{ group.parent.name }} ({{ group.parent.acronym }})</td>
+      {% else %}
+        <th></th><td></td>
       {% endif %}
     </tr>
 

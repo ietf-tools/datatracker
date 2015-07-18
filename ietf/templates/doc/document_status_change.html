@@ -12,18 +12,14 @@
 
   {% include "doc/revisions_list.html" %}
 
-  {% if doc.rev != latest_rev %}
-      <p class="alert alert-warning"> The information below is for an old version of the document</p>
-  {% endif %}  
-
   <table class="table table-condensed">
     <thead id="message-row">
        <tr>
 	  {% if doc.rev != latest_rev %}
-	  <th colspan="4" class="alert-warning">&nbsp;The information below is for an old version of the document</th>
+	  <th colspan="4" class="alert-warning">The information below is for an old version of the document</th>
 	  {% else %}
-	  <th colspan="4">&nbsp;</th>
-	  {% endif %}  
+	  <th colspan="4"></th>
+	  {% endif %}
        </tr>
     </thead>
 
@@ -82,9 +78,9 @@
       </tr>
 
     </tbody>
-    <tbody class="plain">
+    <tbody>
       <tr>
-	 <th rowspan="{{table_rows.doc}}">IESG</th>
+	 <th rowspan="4">IESG</th>
       </tr>
 
       <tr>

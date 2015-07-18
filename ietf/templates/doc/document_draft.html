@@ -9,6 +9,10 @@
   <meta name="description" content="{{ doc.title }} {% if doc.get_state_slug == "rfc" %}(RFC {{ rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %}){% else %}(Internet-Draft, {{ doc.time|date:"Y" }}){% endif %}">
 {% endblock %}
 
+{% block morecss %}
+  .inline	{ display: inline; }
+{% endblock %}
+
 {% block title %}
   {% if doc.get_state_slug == "rfc" %}
     RFC {{ rfc_number }}
@@ -34,7 +38,7 @@
        </tr>
     </thead>
 
-    <tbody class="plain">
+    <tbody>
       <tr>
 	<th rowspan="{{table_rows.doc}}">Document</th>
 	<th>Type</th>
@@ -146,7 +150,7 @@
       {% endif %}
 
     </tbody>
-    <tbody class="plain">
+    <tbody>
       <tr>
 	<th rowspan="{{table_rows.stream}}">Stream</th>
 	{% if doc.stream %}
@@ -239,7 +243,7 @@
       {% endif %}
 
     </tbody>
-    <tbody class="plain">
+    <tbody>
       <tr>
 	<th rowspan="{{table_rows.iesg}}">IESG</th>
 	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
@@ -321,7 +325,7 @@
     </tbody>
 
     {% if iana_review_state %}
-    <tbody class="plain">
+    <tbody>
       <tr>
 	<th rowspan="{{table_rows.iana}}">IANA</th>
 	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
@@ -349,7 +353,7 @@
     </tbody>
     {% endif %}
 
-    <tbody class="plain">
+    <tbody>
 
       {% if rfc_editor_state %}
 	<tr>
@@ -369,7 +373,7 @@
     <a class="btn btn-default btn-xs" href="{% url "doc_references" doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
     <a class="btn btn-default btn-xs" href="{% url "doc_referenced_by" doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
     <a class="btn btn-default btn-xs" href="https://www.ietf.org/tools/idnits?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank"><span class="fa fa-exclamation"></span> Nits</a>
-    <span class="dropdown">
+    <div class="dropdown inline">
       <button class="btn btn-default btn-xs dropdown-toggle" type="button" id="ddSearchMenu" data-toggle="dropdown" aria-expanded="true">
           <span class="fa fa-search"></span> Search lists <span class="caret"></span>
       </button>
@@ -380,7 +384,7 @@
           <li role="presentation"><a role="menuitem" href="https://www.iesg.org/bin/c5i?mid=6&amp;rid=77&amp;target={{ doc.name }}" rel="nofollow" target="_blank">ARO</a> </li>
         {% endif %}
       </ul>
-    </span>
+    </div>
     {% if user.is_authenticated %}
       {% if tracking_document %}
         <a class="btn btn-default btn-xs community-list-add-remove-doc" href="{% url "community_remove_track_document" doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark-o"></span> Untrack</a>
