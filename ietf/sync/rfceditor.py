@@ -163,8 +163,15 @@ def update_drafts_from_queue(drafts):
             send_mail_text(None, "iesg-secretary@ietf.org", None,
                            '%s in RFC Editor queue' % d.name,
                            'The announcement for %s has been received by the RFC Editor.' % d.name)
-
-
+            # change draft-iesg state to RFC Ed Queue
+            prev_iesg_state = State.objects.get(used=True, type="draft-iesg", slug="ann")
+            next_iesg_state = State.objects.get(used=True, type="draft-iesg", slug="rfcqueue")
+            save_document_in_history(d)
+            d.set_state(next_iesg_state)
+            add_state_change_event(d, system, prev_iesg_state, next_iesg_state)
+            changed.add(name)
+            
+        # check draft-rfceditor state
         if prev_state != next_state:
             save_document_in_history(d)
 
