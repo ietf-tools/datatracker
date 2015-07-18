@@ -437,16 +437,23 @@ def session_agenda(request, num, session):
 
     if d:
         agenda = d[0]
-        content = read_agenda_file(num, agenda) or "<!doctype html><html lang=en><head><meta charset=utf-8><title>Error</title></head><body><p>Could not read agenda file</p></body></html>"
+        html5_preamble = "<!doctype html><html lang=en><head><meta charset=utf-8><title>%s</title></head><body>"
+        html5_postamble = "</body></html>"
+        content = read_agenda_file(num, agenda)
         _, ext = os.path.splitext(agenda.external_url)
         ext = ext.lstrip(".").lower()
 
         if ext == "txt":
+            if not content:
+                content = "Could not read agenda file '%s'" % agenda.external_url
             return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
         elif ext == "pdf":
             return HttpResponse(content, content_type="application/pdf")
         else:
-            return HttpResponse(content)
+            if not content:
+                content = "<p>Could not read agenda file '%s'</p>" % agenda.external_url
+                agenda = "Error"
+            return HttpResponse((html5_preamble % agenda) + content + html5_postamble)
 
     raise Http404("No agenda for the %s session of IETF %s is available" % (session, num))
 

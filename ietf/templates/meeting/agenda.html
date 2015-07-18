@@ -424,7 +424,7 @@
                if (t.indexOf("text/plain") > -1) {
                    data = "<pre class='agenda'>" + data + "</pre>";
                } else if(t.indexOf("text/html") > -1) {
-                   $(i).addClass("well");
+                   // nothing to do here
                } else {
                    data = "<p>Unknown type: " + xhr.getResponseHeader("content-type") + "</p>";
                }
