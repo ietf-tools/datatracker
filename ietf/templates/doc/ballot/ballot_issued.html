@@ -6,7 +6,7 @@
 
 {% block content %}
   {% origin %}
-  <h1>Ballot issued<br><small>{{ doc }}</small></h1>
+  <h1>Ballot issued<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
   <p>Ballot has been sent out.</p>
 
@@ -16,5 +16,4 @@
     <p>The document is not on any telechat agenda.</p>
   {% endif %}
 
-  <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
 {% endblock %}

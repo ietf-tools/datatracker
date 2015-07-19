@@ -8,7 +8,7 @@
 
 {% block content %}
   {% origin %}
-  <h1>Approve ballot<br><small>{{ doc }}</small></h1>
+  <h1>Approve ballot<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
   <form method="post">
     {% csrf_token %}
@@ -22,7 +22,6 @@
       {% elif action == "do_not_publish" %}
         <button class="btn btn-warning" type="submit">Email RFC Editor (DNP) & close ballot"/>
       {% endif %}
-      <a class="btn btn-default pull-right" href="{% url "doc_ballot_approvaltext" name=doc.name %}">Back</a>
       {% endbuttons %}
   </form>
 {% endblock %}

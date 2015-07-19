@@ -10,7 +10,7 @@
 
 {% block content %}
   {% origin %}
-  <h1>Send ballot position for {{ ad }}</h1>
+  <h1>Send ballot position for {{ ad }} on <a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></h1>
 
   <form method="post">
     {% csrf_token %}
@@ -61,7 +61,6 @@
 
     {% buttons %}
       <button type="submit" class="btn btn-danger">Send</button>
-      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
     {% endbuttons %}
   </form>
 

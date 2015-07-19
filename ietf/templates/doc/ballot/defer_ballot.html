@@ -8,7 +8,7 @@
 
 {% block content %}
   {% origin %}
-  <h1>Defer ballot<br><small>{{ doc }}</small></h1>
+  <h1>Defer ballot<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
   <form method="post">
     {% csrf_token %}
@@ -19,7 +19,6 @@
     </p>
 
     {% buttons %}
-      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
       <button type="submit" class="btn btn-danger">Defer ballot</button>
     {% endbuttons %}
   </form>
