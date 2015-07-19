@@ -84,7 +84,7 @@ email messages to the Responsible Area Director. (It should be in a
 separate email because this questionnaire is publicly available.) 
 
 (11) Identify any ID nits the Document Shepherd has found in this
-document. (See http://www.ietf.org/tools/idnits/ and the Internet-Drafts
+document. (See https://www.ietf.org/tools/idnits/ and the Internet-Drafts
 Checklist). Boilerplate checks are not enough; this check needs to be
 thorough.
 
@@ -214,7 +214,7 @@ email messages to the Responsible Area Director. (It should be in a
 separate email because this questionnaire is publicly available.) 
 
 (11) Identify any ID nits the Document Shepherd has found in this
-document. (See http://www.ietf.org/tools/idnits/ and the Internet-Drafts
+document. (See https://www.ietf.org/tools/idnits/ and the Internet-Drafts
 Checklist). Boilerplate checks are not enough; this check needs to be
 thorough.
 
