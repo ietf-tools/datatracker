@@ -49,6 +49,11 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+        url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="area"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("farfut" in r.content)
+
     def test_wg_summaries(self):
         draft = make_test_data()
         group = draft.group

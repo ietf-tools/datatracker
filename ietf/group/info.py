@@ -194,8 +194,14 @@ def active_groups(request, group_type):
         return active_wgs(request)
     elif group_type == "rg":
         return active_rgs(request)
+    elif group_type == "area":
+        return active_areas(request)
     else:
         raise Http404
+
+def active_areas(request):
+	areas = Group.objects.filter(type="area", state="active").order_by("name")  
+	return render(request, 'group/active_areas.html', {'areas': areas })
 
 def active_wgs(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")

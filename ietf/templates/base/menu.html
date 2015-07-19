@@ -14,6 +14,7 @@
     <ul class="dropdown-menu" role="menu">
   {% endif %}
 
+<li><a href="{% url "ietf.group.info.active_groups" group_type="area" %}">Active areas</a></li>
 <li><a href="{% url "ietf.group.info.active_groups" group_type="wg" %}">Active WGs</a></li>
 <li><a href="{% url "ietf.group.info.active_groups" group_type="rg" %}">Active RGs</a></li>
 
