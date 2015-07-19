@@ -67,6 +67,15 @@ def validate_submission(submission):
 
     return errors
 
+def has_been_replaced_by(name):
+    docs=Document.objects.filter(name=name)
+
+    if docs:
+        doc=docs[0]
+        return doc.related_that("replaces")
+
+    return None
+
 def validate_submission_rev(name, rev):
     if not rev:
         return 'Revision not found'
@@ -86,6 +95,10 @@ def validate_submission_rev(name, rev):
 
         if rev != expected:
             return 'Invalid revision (revision %02d is expected)' % expected
+
+    replaced_by=has_been_replaced_by(name)
+    if replaced_by:
+        return 'This document has been replaced by %s' % ",".join(rd.name for rd in replaced_by)
 
     return None
 
