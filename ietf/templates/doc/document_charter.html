@@ -31,7 +31,7 @@
 
       <tr>
 	<th>Document</th>
-	<th>
+	<th class="text-right">
 	  {% if doc.get_state_slug != "approved" %}
 	    Proposed charter
 	  {% else %}
@@ -49,8 +49,8 @@
 	</td>
       </tr>
 
-      <tr>
-        <td class="plain"></td>
+      <tr class="plain">
+        <td></td>
 	<th>Title</th>
 	<td class="edit">
 	  {% if not snapshot and can_manage %}
@@ -60,15 +60,15 @@
 	<td>{{ doc.title }}</td>
       </tr>
 
-      <tr>
-        <td class="plain"></td>
+      <tr class="plain">
+        <td></td>
 	<th>Last updated</th>
 	<td class="edit"></td>
 	<td>{{ doc.time|date:"Y-m-d" }}</td>
       </tr>
 
-      <tr>
-        <td class="plain"></td>
+      <tr class="plain">
+        <td></td>
 	<th><a href="/doc/help/state/charter/">State</a></th>
 	<td class="edit">
 	  {% if not snapshot and can_manage %}
@@ -92,7 +92,7 @@
     <tbody>
       <tr>
 	<th>WG</th>
-	<th>State</th>
+	<th class="text-right">State</th>
 	<td class="edit"></td>
 	<td>{{ group.state.name }}</td>
       </tr>
@@ -101,7 +101,7 @@
     <tbody>
       <tr>
 	<th>IESG</th>
-	<th>Responsible AD</th>
+	<th class="text-right">Responsible AD</th>
 	<td class="edit">
 	  {% if can_manage %}
 	    {% doc_edit_button "charter_edit_ad" name=doc.name %}
@@ -113,8 +113,8 @@
       </tr>
 
       {% if not snapshot and chartering %}
-	<tr>
-	  <td class="plain"></td>
+	<tr class="plain">
+	  <td></td>
 	  <th>Telechat date</th>
 	  <td class="edit">
 	    {% if can_manage %}
@@ -135,8 +135,8 @@
       </tr>
       {% endif %}
 
-      <tr>
-	<td class="plain"></td>
+      <tr class="plain">
+	<td></td>
 	<th>Send notices to</th>
 	<td class="edit">
 	  {% if can_manage %}

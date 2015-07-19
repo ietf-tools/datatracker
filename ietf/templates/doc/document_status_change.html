@@ -26,7 +26,7 @@
     <tbody>
       <tr>
 	<th>Document</th>
-	<th>
+	<th class="text-right">
 	  {% if doc.get_state_slug not in approved_states %}
 	    Proposed status change
 	  {% else %}
@@ -46,8 +46,8 @@
 	</td>
       </tr>
 
-      <tr>
-        <th class="plain"></th>
+      <tr class="plain">
+        <th></th>
 	<th>Last updated</th>
 	<td class="edit"></td>
 	<td>{{ doc.time|date:"Y-m-d" }}</td>
@@ -56,16 +56,16 @@
 
     {% regroup sorted_relations by relationship.name as relation_groups %}
       {% for relation_group in relation_groups %}
-	<tr>
-          <th class="plain"></th>
+	<tr class="plain">
+          <th></th>
 	  <th>{{relation_group.grouper}}</th>
 	  <td class="edit"></td>
 	  <td>{% for rel in relation_group.list %}{{rel.target.document.canonical_name|upper|urlize_ietf_docs}}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
 	</tr>
       {% endfor %}
 
-      <tr>
-        <th class="plain"></th>
+      <tr class="plain">
+        <th></th>
 	<th><a href="{% url "state_help" type="status-change" %}">State</a></th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
@@ -81,7 +81,7 @@
     <tbody>
       <tr>
 	<th>IESG</th>
-	<th>Telechat date</th>
+	<th class="text-right">Telechat date</th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
 	    <a class="btn btn-default btn-xs pull-right" href="{% url "status_change_telechat_date" name=doc.name %}">Edit</a>
@@ -101,8 +101,8 @@
 	</td>
       </tr>
 
-      <tr>
-        <th class="plain"></th>
+      <tr class="plain">
+        <th></th>
 	<th>Shepherding AD</th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
@@ -114,8 +114,8 @@
 	</td>
       </tr>
 
-      <tr>
-        <th class="plain"></th>
+      <tr class="plain">
+        <th></th>
 	<th>Send notices to</th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
