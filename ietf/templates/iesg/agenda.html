@@ -9,18 +9,7 @@
 {% endblock %}
 
 {% block morecss %}
-  {% comment %}
-  FACELIFT: This is an ugly hack to suppress some whitespace in bootstrap-3.2.0.
-  Will hopefully be fixed in later versions, so this can be removed.
-  {% endcomment %}
-  .clearfix:before, .clearfix:after, .dl-horizontal dd:before, .dl-horizontal dd:after,
-  .container:before, .container:after, .container-fluid:before, .container-fluid:after,
-  .row:before, .row:after, .form-horizontal .form-group:before, .form-horizontal .form-group:after,
-  .btn-toolbar:before, .btn-toolbar:after, .btn-group-vertical>.btn-group:before,
-  .btn-group-vertical>.btn-group:after, .nav:before, .nav:after, .navbar:before,
-  .navbar:after, .navbar-header:before, .navbar-header:after, .navbar-collapse:before,
-  .navbar-collapse:after, .pager:before, .pager:after, .panel-body:before,
-  .panel-body:after, .modal-footer:before, .modal-footer:after {
+  .dl-horizontal dd:before, .dl-horizontal dd:after, .panel-body:after {
   content: none;
   }
 {% endblock %}
@@ -137,15 +126,6 @@
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
         {% for num, section in sections %}
           {% if num|sectionlevel <= 1 %}
-	    {% comment %}
-	    {% ifchanged num|cut:"."|make_list|first %}
-	    {% if not forloop.first %}</ul>{% endif %}
-	    {% endifchanged %}
-	    <li><a href="#{{num}}">{{ section.title|safe }}</a>
-	    {% if num|sectionlevel == 1 %}
-	    {% if not forloop.last %}<ul>{% endif %}
-	    {% endif %}
-	    {% endcomment %}
 	    <li><a href="#{{num}}">{{ section.title|safe }}</a></li>
 	  {% endif %}
 	{% endfor %}
