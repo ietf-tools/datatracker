@@ -21,7 +21,8 @@ from ietf.group.utils import get_group_or_404
 from ietf.ietfauth.utils import has_role
 from ietf.person.fields import SearchableEmailsField
 from ietf.person.models import Person, Email
-from ietf.group.mails import email_iesg_secretary_re_charter, email_iesg_secretary_personnel_change
+from ietf.group.mails import ( email_iesg_secretary_re_charter, email_iesg_secretary_personnel_change,
+    email_interested_parties_re_changed_delegates )
 from ietf.utils.ordereddict import insert_after_in_ordered_dict
 
 MAX_GROUP_DELEGATES = 3
@@ -275,6 +276,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                     if deleted:
                         change_text=title + ' deleted: ' + ", ".join(x.formatted_email() for x in deleted)
                         personnel_change_text+=change_text+"\n"
+                    email_interested_parties_re_changed_delegates(request, group, title, added, deleted)
 
             if personnel_change_text!="":
                 email_iesg_secretary_personnel_change(request, group, personnel_change_text)

@@ -32,6 +32,38 @@ def email_iesg_secretary_personnel_change(request, group, text):
     full_subject = u"Personnel change for %s working group" % (group.acronym)
     send_mail_text(request, to, None, full_subject,text)
 
+def email_interested_parties_re_changed_delegates(request, group, title, added, deleted):
+
+    # Send to management and chairs
+    to = []
+    if group.ad_role():
+        to.append(group.ad_role().email.formatted_email())
+    elif group.type_id == "rg":
+        to.append("IRTF Chair <irtf-chair@irtf.org>")
+
+    for r in group.role_set.filter(name="chair"):
+        to.append(r.formatted_email())
+
+    # Send to the delegates who were added or deleted
+    for delegate in added:
+        to.append(delegate.formatted_email())
+
+    for delegate in deleted:
+        to.append(delegate.formatted_email())
+
+    personnel_change_text=""
+    if added:
+        change_text=title + ' added: ' + ", ".join(x.formatted_email() for x in added)
+        personnel_change_text+=change_text+"\n"
+    if deleted:
+        change_text=title + ' deleted: ' + ", ".join(x.formatted_email() for x in deleted)
+        personnel_change_text+=change_text+"\n"
+
+    if to:
+        full_subject = u"%s changed for %s working group" % (title, group.acronym)
+        send_mail_text(request, to, None, full_subject,personnel_change_text)
+
+
 def email_milestones_changed(request, group, changes):
     def wrap_up_email(to, text):
 
