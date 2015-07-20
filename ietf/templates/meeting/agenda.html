@@ -41,19 +41,20 @@
         <b>Note:</b> IETF agendas are subject to change, up to and during a meeting.
       </p>
 
-      <p class="noprint ">
+      <h4>Alternative Agenda Presentation Formats:</h4>
+      <p class="noprint h6 text-center">
         {% if "-utc" in request.path %}
-          <a href="{% url 'ietf.meeting.views.agenda' num=schedule.meeting.number %}">Agenda in local timezone</a>,
+          <a href="{% url 'ietf.meeting.views.agenda' num=schedule.meeting.number %}">Agenda in local timezone</a> |
         {% else %}
-          {% comment %}<a href="{% url 'ietf.meeting.views.agenda' base='agenda-utc' %}">Agenda in UTC timezone</a>,{% endcomment %}
-          <a href="/meeting/agenda-utc">Agenda in UTC timezone</a>,
+          {% comment %}<a href="{% url 'ietf.meeting.views.agenda' base='agenda-utc' %}">Agenda in UTC timezone</a> | {% endcomment %}
+          <a href="/meeting/agenda-utc">Agenda in UTC timezone</a> |
         {% endif %}
-        <a href="{% url 'ietf.meeting.views.agenda' num=schedule.meeting.number ext='.txt' %}">Plaintext agenda</a>,
+        <a href="{% url 'ietf.meeting.views.agenda' num=schedule.meeting.number ext='.txt' %}">Plaintext agenda</a> | 
         <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/">Tools-style agenda</a>
         {% if user|has_role:"Secretariat,Area Director,IAB" %}
-          ,
-          <a href="{% url 'ietf.meeting.views.agenda_by_room' num=schedule.meeting.number%}">List by Room</a>,
-          <a href="{% url 'ietf.meeting.views.agenda_by_type' num=schedule.meeting.number%}">List by Type</a>,
+          |
+          <a href="{% url 'ietf.meeting.views.agenda_by_room' num=schedule.meeting.number%}">List by Room</a> |
+          <a href="{% url 'ietf.meeting.views.agenda_by_type' num=schedule.meeting.number%}">List by Type</a> |
           <a href="{% url 'ietf.meeting.views.room_view' num=schedule.meeting.number%}">Room Grid</a>
         {% endif %}
       </p>
