@@ -7,6 +7,7 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response
 from django.conf import settings
 from django.http import HttpResponse
+from django.utils.html import escape
 
 import changelog
 
@@ -33,7 +34,7 @@ def release(request, version=None):
     entries = dict((entry.version, entry) for entry in log_entries)
     if version == None or version not in entries:
         version = log_entries[0].version
-    entries[version].logentry = trac_links(entries[version].logentry.strip('\n'))
+    entries[version].logentry = trac_links(escape(entries[version].logentry.strip('\n')))
 
     code_coverage_url = None
     code_coverage_time = None
