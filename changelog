@@ -1,3 +1,82 @@
+ietfdb (6.1.0) ietf; urgency=medium
+
+  * Merged in Ole's submit-time draft replacement information work, as 
+    tested and updated by Robert and Adam.
+
+  * Added escaping of changelist content for the /release/ pages.
+
+  * Merged in [9821] from rcross@amsl.com:
+    Allow Secretariat to submit drafts during blackout period.  Fixes #1755.  
+
+  * Merged in [9813] from rjsparks@nostrum.com:
+    Added navigation to the new secretariat agenda tools. Changed the buttons 
+    at the top of the agenda.html page to links.
+
+  * Merged in [9812] from suresh.krishnan@ericsson.com:
+    Added code to inform ADs, chairs and delegates of WG personnel changes.
+    Fixes #1310.
+
+  * Merged in [9809] from lars@netapp.com:
+    Added some whitespace to make wrapping AD names in ballots a bit easier to
+    read. 
+
+  * Merged in [9806] from lars@netapp.com:
+    Fixed a longstanging formatting issue with the ballot popup.  
+
+  * Merged in [9803] from lars@netapp.com:
+    Converted a few more URLs from http to https.  
+
+  * Reverted some look-and-feel changes that came in with recent document
+    metadata html and python refactoring, which undid fixes related to issues
+    #1659 and #1663.
+
+  * Merged in [9802] from bartosz.balazinski@interdigital.com:
+    Fixed references (relative to absolute) in template
+    ietf/templates/group/active_areas.html, fixed build failure on unused
+    import in file 0006_auto_20150718_0509.py, 
+
+  * Merged in [9733], [9735], [9737], [9738], [9766], [9774], [9778], [9781],
+    [9783], [9784], [9789] and [9800] from lars@netapp.com: Fixed a bunch of
+    HTML validation issues identified by test-crawl --validator-nu. 
+
+  * Merged in [9796] from suresh.krishnan@ericsson.com:
+    Don't allow submission for drafts that have been replaced. Fixed #1619. 
+
+  * Merged in [9792] from jmh@joelhalpern.com:
+    Removed misleading back buttons from document metadata modification pages.
+    Fixes #1671.  
+
+  * Merged in [9788] from rcross@amsl.com:
+    Have RFC sync change the IESG state of draft to RFC Ed Queue when draft 
+    appears in queue.  Fixes #1750.   
+
+  * Merged in [9782] from lars@netapp.com:
+    Made title capitalization consistent with other pages.  
+
+  * Merged in [9779] from lars@netapp.com:
+    Removed the code that used to calculate table_rows, now that the HTML
+    doesn't use it anymore.  
+
+  * Merged in [9775] from rcross@amsl.com:
+    Added proposed groups to Blue Dot Report.  Fixes #1747.   
+
+  * Merged in [9765] from lars@netapp.com:
+    Added option to crawl as a logged-in user (--user).
+    Add --pedantic option for vnu crawl, which stops the crawl on (most) errors.
+    Randomized the order in which URLs are crawled, so that repeated crawls don't
+    hit the same URLs in the same order. 
+
+  * Merged in [9736] from lars@netapp.com:
+    Updated the README now that the facelift has happened, and removed the
+    outdated TODO.  
+
+  * Merged in [9726] from lars@netapp.com:
+    Added HTML5 validation based on validator.nu to test-crawl, with the
+    --validator-nu option.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Jul 2015 07:53:59 -0700
+
+
 ietfdb (6.0.4) ietf; urgency=medium
 
   This is a minor release which provides some style tweaks, the ability to
