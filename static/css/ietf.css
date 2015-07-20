@@ -398,3 +398,5 @@ tbody tr.plain:first-child th { text-align: left; width: 6em; }
 td.ad div { border-bottom: solid #ccc 1px; }
 
 .milestone { font-style: italic; }
+
+.adname { padding-bottom: .5em; line-height: 1em;}
