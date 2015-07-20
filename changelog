@@ -1,5 +1,7 @@
 ietfdb (6.1.0) ietf; urgency=medium
 
+  **IETF 93 Code Sprint**
+
   * Merged in Ole's submit-time draft replacement information work, as 
     tested and updated by Robert and Adam.
 
