@@ -17,7 +17,7 @@ from ietf.meeting.models import Meeting
 from ietf.submit.utils import expirable_submissions, expire_submission, ensure_person_email_info_exists
 from ietf.person.models import Person
 from ietf.group.models import Group
-from ietf.doc.models import Document, DocEvent, State, BallotDocEvent, BallotPositionDocEvent, DocumentAuthor
+from ietf.doc.models import Document, DocAlias, DocEvent, State, BallotDocEvent, BallotPositionDocEvent, DocumentAuthor
 from ietf.submit.models import Submission, Preapproval
 
 class SubmitTests(TestCase):
@@ -86,7 +86,7 @@ class SubmitTests(TestCase):
 
         return status_url
 
-    def supply_submitter(self, name, status_url, submitter_name, submitter_email):
+    def supply_extra_metadata(self, name, status_url, submitter_name, submitter_email, replaces):
         # check the page
         r = self.client.get(status_url)
         q = PyQuery(r.content)
@@ -99,10 +99,12 @@ class SubmitTests(TestCase):
             "action": action,
             "submitter-name": submitter_name,
             "submitter-email": submitter_email,
+            "replaces": replaces,
         })
 
         submission = Submission.objects.get(name=name)
         self.assertEqual(submission.submitter, u"%s <%s>" % (submitter_name, submitter_email))
+        self.assertEqual(submission.replaces, ",".join(d.name for d in DocAlias.objects.filter(pk__in=replaces.split(",") if replaces else [])))
 
         return r
 
@@ -122,6 +124,27 @@ class SubmitTests(TestCase):
         # submit new -> supply submitter info -> approve
         draft = make_test_data()
 
+        # prepare draft to suggest replace
+        sug_replaced_draft = Document.objects.create(
+            name="draft-ietf-ames-sug-replaced",
+            time=datetime.datetime.now(),
+            type_id="draft",
+            title="Draft to be suggested to be replaced",
+            stream_id="ietf",
+            group=Group.objects.get(acronym="ames"),
+            abstract="Blahblahblah.",
+            rev="01",
+            pages=2,
+            intended_std_level_id="ps",
+            ad=draft.ad,
+            expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+            notify="aliens@example.mars",
+            note="",
+        )
+        sug_replaced_draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
+        sug_replaced_alias = DocAlias.objects.create(document=sug_replaced_draft, name=sug_replaced_draft.name)
+
+
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
 
@@ -129,7 +152,9 @@ class SubmitTests(TestCase):
 
         # supply submitter info, then draft should be in and ready for approval
         mailbox_before = len(outbox)
-        r = self.supply_submitter(name, status_url, "Author Name", "author@example.com")
+        replaced_alias = draft.docalias_set.first()
+        r = self.supply_extra_metadata(name, status_url, "Author Name", "author@example.com",
+                                       replaces=str(replaced_alias.pk) + "," + str(sug_replaced_alias.pk))
 
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
@@ -155,10 +180,11 @@ class SubmitTests(TestCase):
 
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
-        new_revision = draft.latest_event()
+        new_revision = draft.latest_event(type="new_revision")
         self.assertEqual(draft.group.acronym, "mars")
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, "Author Name")
+        self.assertTrue(draft.latest_event(type="added_suggested_replaces"))
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, u"%s-%s.txt" % (name, rev))))
         self.assertEqual(draft.type_id, "draft")
@@ -168,12 +194,22 @@ class SubmitTests(TestCase):
         self.assertEqual(draft.authors.count(), 1)
         self.assertEqual(draft.authors.all()[0].get_name(), "Author Name")
         self.assertEqual(draft.authors.all()[0].address, "author@example.com")
-        self.assertEqual(len(outbox), mailbox_before + 2)
-        self.assertTrue((u"I-D Action: %s" % name) in outbox[-2]["Subject"])
-        self.assertTrue("Author Name" in unicode(outbox[-2]))
-        self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
+        self.assertEqual(draft.relations_that_doc("replaces").count(), 1)
+        self.assertTrue(draft.relations_that_doc("replaces").first().target, replaced_alias)
+        self.assertEqual(draft.relations_that_doc("possibly-replaces").count(), 1)
+        self.assertTrue(draft.relations_that_doc("possibly-replaces").first().target, sug_replaced_alias)
+        self.assertEqual(len(outbox), mailbox_before + 4)
+        self.assertTrue((u"I-D Action: %s" % name) in outbox[-3]["Subject"])
+        self.assertTrue("Author Name" in unicode(outbox[-3]))
+        self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
+        self.assertTrue(name in unicode(outbox[-2]))
+        self.assertTrue("mars" in unicode(outbox[-2]))
+        # Check "Review of suggested possible replacements for..." mail
+        self.assertTrue("review" in outbox[-1]["Subject"].lower())
         self.assertTrue(name in unicode(outbox[-1]))
-        self.assertTrue("mars" in unicode(outbox[-1]))
+        self.assertTrue(sug_replaced_alias.name in unicode(outbox[-1]))
+        self.assertTrue("ameschairman" in outbox[-1]["To"].lower())
+        self.assertTrue("marschairman" in outbox[-1]["To"].lower())
 
     def test_submit_existing(self):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
@@ -215,7 +251,7 @@ class SubmitTests(TestCase):
 
         # supply submitter info, then previous authors get a confirmation email
         mailbox_before = len(outbox)
-        r = self.supply_submitter(name, status_url, "Submitter Name", "submitter@example.com")
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "submitter@example.com", replaces="")
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
@@ -285,7 +321,7 @@ class SubmitTests(TestCase):
 
         # supply submitter info, then draft should be be ready for email auth
         mailbox_before = len(outbox)
-        r = self.supply_submitter(name, status_url, "Submitter Name", "submitter@example.com")
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "submitter@example.com", replaces="")
 
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
@@ -375,7 +411,7 @@ class SubmitTests(TestCase):
 
     def test_edit_submission_and_force_post(self):
         # submit -> edit
-        make_test_data()
+        draft = make_test_data()
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -413,6 +449,7 @@ class SubmitTests(TestCase):
             "edit-pages": "123",
             "submitter-name": "Some Random Test Person",
             "submitter-email": "random@example.com",
+            "replaces": str(draft.docalias_set.all().first().pk),
             "edit-note": "no comments",
             "authors-0-name": "Person 1",
             "authors-0-email": "person1@example.com",
@@ -429,6 +466,7 @@ class SubmitTests(TestCase):
         self.assertEqual(submission.pages, 123)
         self.assertEqual(submission.note, "no comments")
         self.assertEqual(submission.submitter, "Some Random Test Person <random@example.com>")
+        self.assertEqual(submission.replaces, draft.docalias_set.all().first().name)
         self.assertEqual(submission.state_id, "manual")
 
         authors = submission.authors_parsed()

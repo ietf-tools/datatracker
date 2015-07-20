@@ -11,7 +11,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocReminder, DocumentAuthor, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
-    WriteupDocEvent, BallotDocEvent)
+    WriteupDocEvent, BallotDocEvent, DocRelationshipName)
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.name.models import StreamName, IntendedStdLevelName, DocTagName
 from ietf.group.models import Group
@@ -1255,11 +1255,14 @@ class ChangeReplacesTests(TestCase):
         self.assertEqual(len(q('[type=submit]:contains("Save")')), 1)
         
         # Post that says replacea replaces base a
+        RelatedDocument.objects.create(source=self.replacea, target=self.basea.docalias_set.first(),
+                                       relationship=DocRelationshipName.objects.get(slug="possibly-replaces"))
         self.assertEqual(self.basea.get_state().slug,'active')
         r = self.client.post(url, dict(replaces=str(DocAlias.objects.get(name=self.basea.name).id)))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(RelatedDocument.objects.filter(relationship__slug='replaces',source=self.replacea).count(),1) 
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
+        self.assertTrue(not RelatedDocument.objects.filter(relationship='possibly-replaces', source=self.replacea))
 
         # Post that says replaceboth replaces both base a and base b
         url = urlreverse('doc_change_replaces', kwargs=dict(name=self.replaceboth.name))
@@ -1281,3 +1284,21 @@ class ChangeReplacesTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'active')
 
+    def test_review_possibly_replaces(self):
+        replaced = self.basea.docalias_set.first()
+        RelatedDocument.objects.create(source=self.replacea, target=replaced,
+                                       relationship=DocRelationshipName.objects.get(slug="possibly-replaces"))
+
+        url = urlreverse('doc_review_possibly_replaces', kwargs=dict(name=self.replacea.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form[name=review-suggested-replaces]')), 1)
+
+        r = self.client.post(url, dict(replaces=[replaced.pk]))
+        self.assertEquals(r.status_code, 302)
+        self.assertTrue(not self.replacea.related_that_doc("possibly-replaces"))
+        self.assertEqual(len(self.replacea.related_that_doc("replaces")), 1)
+        self.assertEquals(Document.objects.get(pk=self.basea.pk).get_state().slug, 'repl')

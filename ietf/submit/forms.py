@@ -12,6 +12,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
+from ietf.doc.fields import SearchableDocAliasesField
 from ietf.meeting.models import Meeting
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.utils import validate_submission_rev, validate_submission_document_date
@@ -249,6 +250,9 @@ class NameEmailForm(forms.Form):
         if email:
             line += u" <%s>" % email
         return line
+
+class ReplacesForm(forms.Form):
+    replaces = SearchableDocAliasesField(required=False, help_text="Any drafts that this document replaces (approval required for replacing a draft you are not the author of)")
 
 class EditSubmissionForm(forms.ModelForm):
     title = forms.CharField(required=True, max_length=255)

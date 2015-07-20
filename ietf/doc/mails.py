@@ -13,6 +13,7 @@ from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDoc
 from ietf.doc.utils import needed_ballot_positions
 from ietf.person.models import Person
 from ietf.group.models import Group, Role
+from ietf.doc.models import Document
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
@@ -488,3 +489,30 @@ def email_stream_tags_changed(request, doc, added_tags, removed_tags, by, commen
                    by=by,
                    comment=comment))
 
+def send_review_possibly_replaces_request(request, doc):
+    to_email = []
+
+    if doc.stream_id == "ietf":
+        to_email.extend(r.formatted_email() for r in Role.objects.filter(group=doc.group, name="chair").select_related("email", "person"))
+    elif doc.stream_id == "iab":
+        to_email.append("IAB Stream <iab-stream@iab.org>")
+    elif doc.stream_id == "ise":
+        to_email.append("Independent Submission Editor <rfc-ise@rfc-editor.org>")
+    elif doc.stream_id == "irtf":
+        to_email.append("IRSG <irsg@irtf.org>")
+
+    possibly_replaces = Document.objects.filter(name__in=[alias.name for alias in doc.related_that_doc("possibly-replaces")])
+    other_chairs = Role.objects.filter(group__in=[other.group for other in possibly_replaces], name="chair").select_related("email", "person")
+    to_email.extend(r.formatted_email() for r in other_chairs)
+
+    if not to_email:
+        to_email.append("internet-drafts@ietf.org")
+
+    if to_email:
+        send_mail(request, list(set(to_email)), settings.DEFAULT_FROM_EMAIL,
+                  'Review of suggested possible replacements for %s-%s needed' % (doc.name, doc.rev),
+                  'doc/mail/review_possibly_replaces_request.txt', {
+                      'doc': doc,
+                      'possibly_replaces': doc.related_that_doc("possibly-replaces"),
+                      'review_url': settings.IDTRACKER_BASE_URL + urlreverse("doc_review_possibly_replaces", kwargs={ "name": doc.name }),
+                  })

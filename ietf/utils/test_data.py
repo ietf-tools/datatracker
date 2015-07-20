@@ -149,6 +149,7 @@ def make_test_data():
         parent=area,
         list_email="ames-wg@ietf.org",
         )
+    ames_wg = group
     charter = Document.objects.create(
         name="charter-ietf-" + group.acronym,
         type_id="charter",
@@ -174,10 +175,13 @@ def make_test_data():
     # group personnel
     create_person(mars_wg, "chair", name="WG Chair Man", username="marschairman")
     create_person(mars_wg, "delegate", name="WG Delegate", username="marsdelegate")
-    
     mars_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     mars_wg.save()
 
+    create_person(ames_wg, "chair", name="WG Chair Man", username="ameschairman")
+    create_person(ames_wg, "delegate", name="WG Delegate", username="amesdelegate")
+    ames_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
+    ames_wg.save()
 
     # draft
     draft = Document.objects.create(

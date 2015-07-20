@@ -156,6 +156,11 @@ def document_main(request, name, rev=None):
                                     person__user=request.user)))
         can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
 
+        can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
+
+        is_author = unicode(request.user) in set([email.address for email in doc.authors.all()])
+        can_view_possibly_replaces = can_edit_replaces or is_author
+
         rfc_number = name[3:] if name.startswith("") else None
         draft_name = None
         for a in aliases:
@@ -345,6 +350,8 @@ def document_main(request, name, rev=None):
 
         replaces = [d.name for d in doc.related_that_doc("replaces")]
         replaced_by = [d.name for d in doc.related_that("replaces")]
+        possibly_replaces = [d.name for d in doc.related_that_doc("possibly-replaces")]
+        possibly_replaced_by = [d.name for d in doc.related_that("possibly-replaces")]
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
@@ -367,6 +374,8 @@ def document_main(request, name, rev=None):
                                        can_edit_notify=can_edit_notify,
                                        can_edit_iana_state=can_edit_iana_state,
                                        can_edit_consensus=can_edit_consensus,
+                                       can_edit_replaces=can_edit_replaces,
+                                       can_view_possibly_replaces=can_view_possibly_replaces,
 
                                        rfc_number=rfc_number,
                                        draft_name=draft_name,
@@ -377,6 +386,8 @@ def document_main(request, name, rev=None):
 
                                        replaces=replaces,
                                        replaced_by=replaced_by,
+                                       possibly_replaces=possibly_replaces,
+                                       possibly_replaced_by=possibly_replaced_by,
                                        updates=[prettify_std_name(d.name) for d in doc.related_that_doc("updates")],
                                        updated_by=[prettify_std_name(d.document.canonical_name()) for d in doc.related_that("updates")],
                                        obsoletes=[prettify_std_name(d.name) for d in doc.related_that_doc("obs")],

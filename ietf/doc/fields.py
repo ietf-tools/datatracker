@@ -4,6 +4,8 @@ from django.utils.html import escape
 from django import forms
 from django.core.urlresolvers import reverse as urlreverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import Document, DocAlias
 from ietf.doc.utils import uppercase_std_abbreviated_name
 

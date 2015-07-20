@@ -100,7 +100,37 @@
 	  </td>
 	</tr>
       {% endif %}
-      
+
+      {% if can_view_possibly_replaces %}
+          {% if possibly_replaces %}
+            <tr>
+              <th>Possibly Replaces</th>
+              <td class="edit">
+                {% if can_edit_replaces %}
+                  <a class="btn btn-default btn-xs" href="{% url "doc_review_possibly_replaces" name=doc.name %}">Edit</a>
+                {% endif %}
+              </td>
+              <td>
+                {{ possibly_replaces|join:", "|urlize_ietf_docs }}
+              </td>
+            </tr>
+          {% endif %}
+
+          {% if possibly_replaced_by %}
+            <tr>
+              <th>Possibly Replaced By</th>
+              <td class="edit">
+                {% if can_edit_replaces %}
+                  {% comment %}<a class="btn btn-default btn-xs" href="{% url "doc_review_possibly_replaces" name=doc.name %}">Edit</a>{% endcomment %}
+                {% endif %}
+              </td>
+              <td>
+                {{ possibly_replaced_by|join:", "|urlize_ietf_docs }}
+              </td>
+            </tr>
+          {% endif %}
+      {% endif %}
+
       <tr class="plain">
         <th></th>
 	<th>Stream</th>

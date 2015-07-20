@@ -295,6 +295,17 @@
 },
 {
  "fields": {
+  "order": 0,
+  "revname": "Possibly Replaced By",
+  "used": true,
+  "name": "Possibly Replaces",
+  "desc": ""
+ },
+ "model": "name.docrelationshipname",
+ "pk": "possibly-replaces"
+},
+{
+ "fields": {
   "order": 3,
   "revname": "Possibly Referenced By",
   "used": true,

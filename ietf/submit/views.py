@@ -6,14 +6,13 @@ from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from django.core.validators import validate_email, ValidationError
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, redirect
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import get_object_or_404, redirect, render
 
-from ietf.doc.models import Document
+from ietf.doc.models import Document, DocAlias
+from ietf.doc.utils import prettify_std_name
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
-from ietf.submit.forms import UploadForm, NameEmailForm, EditSubmissionForm, PreapprovalForm
+from ietf.submit.forms import UploadForm, NameEmailForm, EditSubmissionForm, PreapprovalForm, ReplacesForm
 from ietf.submit.mail import send_full_url, send_approval_request_to_group, send_submission_confirmation, submission_confirmation_email_list, send_manual_post_request
 from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName
 from ietf.submit.utils import approvable_submissions_for_user, preapprovals_for_user, recently_approved_by_user
@@ -98,18 +97,15 @@ def upload_submission(request):
     else:
         form = UploadForm(request=request)
 
-    return render_to_response('submit/upload_submission.html',
+    return render(request, 'submit/upload_submission.html',
                               {'selected': 'index',
-                               'form': form},
-                              context_instance=RequestContext(request))
+                               'form': form})
 
 def note_well(request):
-    return render_to_response('submit/note_well.html', {'selected': 'notewell'},
-                              context_instance=RequestContext(request))
+    return render(request, 'submit/note_well.html', {'selected': 'notewell'})
 
 def tool_instructions(request):
-    return render_to_response('submit/tool_instructions.html', {'selected': 'instructions'},
-                              context_instance=RequestContext(request))
+    return render(request, 'submit/tool_instructions.html', {'selected': 'instructions'})
 
 def search_submission(request):
     error = None
@@ -120,11 +116,10 @@ def search_submission(request):
         if submission:
             return redirect(submission_status, submission_id=submission.pk)
         error = 'No valid submission found for %s' % name
-    return render_to_response('submit/search_submission.html',
+    return render(request, 'submit/search_submission.html',
                               {'selected': 'status',
                                'error': error,
-                               'name': name},
-                              context_instance=RequestContext(request))
+                               'name': name})
 
 def can_edit_submission(user, submission, access_token):
     key_matched = access_token and submission.access_token() == access_token
@@ -153,12 +148,7 @@ def submission_status(request, submission_id, access_token=None):
 
     confirmation_list = submission_confirmation_email_list(submission)
 
-    try:
-        preapproval = Preapproval.objects.get(name=submission.name)
-    except Preapproval.DoesNotExist:
-        preapproval = None
-
-    requires_group_approval = submission.rev == '00' and submission.group and submission.group.type_id in ("wg", "rg", "ietf", "irtf", "iab", "iana", "rfcedtyp") and not preapproval
+    requires_group_approval = (submission.rev == '00' and submission.group and submission.group.type_id in ("wg", "rg", "ietf", "irtf", "iab", "iana", "rfcedtyp") and not Preapproval.objects.filter(name=submission.name).exists())
 
     requires_prev_authors_approval = Document.objects.filter(name=submission.name)
 
@@ -175,6 +165,7 @@ def submission_status(request, submission_id, access_token=None):
 
 
     submitter_form = NameEmailForm(initial=submission.submitter_parsed(), prefix="submitter")
+    replaces_form = ReplacesForm(initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -183,8 +174,12 @@ def submission_status(request, submission_id, access_token=None):
                 return HttpResponseForbidden("You do not have permission to perfom this action")
 
             submitter_form = NameEmailForm(request.POST, prefix="submitter")
-            if submitter_form.is_valid():
+            replaces_form = ReplacesForm(request.POST)
+            validations = [submitter_form.is_valid(), replaces_form.is_valid()]
+            if all(validations):
                 submission.submitter = submitter_form.cleaned_line()
+                replaces = replaces_form.cleaned_data.get("replaces", [])
+                submission.replaces = ",".join(o.name for o in replaces)
 
                 if requires_group_approval:
                     submission.state = DraftSubmissionStateName.objects.get(slug="grp-appr")
@@ -209,7 +204,11 @@ def submission_status(request, submission_id, access_token=None):
                     else:
                         desc = u"sent confirmation email to submitter and authors: %s" % u", ".join(sent_to)
 
-                create_submission_event(request, submission, u"Set submitter to \"%s\" and %s" % (submission.submitter, desc))
+                msg = u"Set submitter to \"%s\", replaces to %s and %s" % (
+                    submission.submitter,
+                    ", ".join(prettify_std_name(r.name) for r in replaces) if replaces else "(none)",
+                    desc)
+                create_submission_event(request, submission, msg)
 
                 if access_token:
                     return redirect("submit_submission_status_by_hash", submission_id=submission.pk, access_token=access_token)
@@ -271,23 +270,23 @@ def submission_status(request, submission_id, access_token=None):
             # something went wrong, turn this into a GET and let the user deal with it
             return HttpResponseRedirect("")
 
-    return render_to_response('submit/submission_status.html',
-                              {'selected': 'status',
-                               'submission': submission,
-                               'errors': errors,
-                               'passes_idnits': passes_idnits,
-                               'submitter_form': submitter_form,
-                               'message': message,
-                               'can_edit': can_edit,
-                               'can_force_post': can_force_post,
-                               'can_group_approve': can_group_approve,
-                               'can_cancel': can_cancel,
-                               'show_send_full_url': show_send_full_url,
-                               'requires_group_approval': requires_group_approval,
-                               'requires_prev_authors_approval': requires_prev_authors_approval,
-                               'confirmation_list': confirmation_list,
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'submit/submission_status.html', {
+        'selected': 'status',
+        'submission': submission,
+        'errors': errors,
+        'passes_idnits': passes_idnits,
+        'submitter_form': submitter_form,
+        'replaces_form': replaces_form,
+        'message': message,
+        'can_edit': can_edit,
+        'can_force_post': can_force_post,
+        'can_group_approve': can_group_approve,
+        'can_cancel': can_cancel,
+        'show_send_full_url': show_send_full_url,
+        'requires_group_approval': requires_group_approval,
+        'requires_prev_authors_approval': requires_prev_authors_approval,
+        'confirmation_list': confirmation_list,
+    })
 
 
 def edit_submission(request, submission_id, access_token=None):
@@ -312,14 +311,17 @@ def edit_submission(request, submission_id, access_token=None):
 
         edit_form = EditSubmissionForm(request.POST, instance=submission, prefix="edit")
         submitter_form = NameEmailForm(request.POST, prefix="submitter")
+        replaces_form = ReplacesForm(request.POST)
         author_forms = [ NameEmailForm(request.POST, email_required=False, prefix=prefix)
                          for prefix in request.POST.getlist("authors-prefix")
                          if prefix != "authors-" ]
 
         # trigger validation of all forms
-        validations = [edit_form.is_valid(), submitter_form.is_valid()] + [ f.is_valid() for f in author_forms ]
+        validations = [edit_form.is_valid(), submitter_form.is_valid(), replaces_form.is_valid()] + [ f.is_valid() for f in author_forms ]
         if all(validations):
             submission.submitter = submitter_form.cleaned_line()
+            replaces = replaces_form.cleaned_data.get("replaces", [])
+            submission.replaces = ",".join(o.name for o in replaces)
             submission.authors = "\n".join(f.cleaned_line() for f in author_forms)
             edit_form.save(commit=False) # transfer changes
 
@@ -350,20 +352,21 @@ def edit_submission(request, submission_id, access_token=None):
     else:
         edit_form = EditSubmissionForm(instance=submission, prefix="edit")
         submitter_form = NameEmailForm(initial=submission.submitter_parsed(), prefix="submitter")
+        replaces_form = ReplacesForm(initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
         author_forms = [ NameEmailForm(initial=author, email_required=False, prefix="authors-%s" % i)
                          for i, author in enumerate(submission.authors_parsed()) ]
 
-    return render_to_response('submit/edit_submission.html',
+    return render(request, 'submit/edit_submission.html',
                               {'selected': 'status',
                                'submission': submission,
                                'edit_form': edit_form,
                                'submitter_form': submitter_form,
+                               'replaces_form': replaces_form,
                                'author_forms': author_forms,
                                'empty_author_form': empty_author_form,
                                'errors': errors,
                                'form_errors': form_errors,
-                              },
-                              context_instance=RequestContext(request))
+                              })
 
 
 def confirm_submission(request, submission_id, auth_token):
@@ -379,10 +382,10 @@ def confirm_submission(request, submission_id, auth_token):
 
         return redirect("doc_view", name=submission.name)
 
-    return render_to_response('submit/confirm_submission.html', {
+    return render(request, 'submit/confirm_submission.html', {
         'submission': submission,
         'key_matched': key_matched,
-    }, context_instance=RequestContext(request))
+    })
 
 
 def approvals(request):
@@ -392,13 +395,12 @@ def approvals(request):
     days = 30
     recently_approved = recently_approved_by_user(request.user, datetime.date.today() - datetime.timedelta(days=days))
 
-    return render_to_response('submit/approvals.html',
+    return render(request, 'submit/approvals.html',
                               {'selected': 'approvals',
                                'approvals': approvals,
                                'preapprovals': preapprovals,
                                'recently_approved': recently_approved,
-                               'days': days },
-                              context_instance=RequestContext(request))
+                               'days': days })
 
 
 @role_required("Secretariat", "WG Chair", "RG Chair")
@@ -421,11 +423,10 @@ def add_preapproval(request):
     else:
         form = PreapprovalForm()
 
-    return render_to_response('submit/add_preapproval.html',
+    return render(request, 'submit/add_preapproval.html',
                               {'selected': 'approvals',
                                'groups': groups,
-                               'form': form },
-                              context_instance=RequestContext(request))
+                               'form': form })
 
 @role_required("Secretariat", "WG Chair", "RG Chair")
 def cancel_preapproval(request, preapproval_id):
@@ -439,7 +440,6 @@ def cancel_preapproval(request, preapproval_id):
 
         return HttpResponseRedirect(urlreverse("submit_approvals") + "#preapprovals")
 
-    return render_to_response('submit/cancel_preapproval.html',
+    return render(request, 'submit/cancel_preapproval.html',
                               {'selected': 'approvals',
-                               'preapproval': preapproval },
-                              context_instance=RequestContext(request))
+                               'preapproval': preapproval })

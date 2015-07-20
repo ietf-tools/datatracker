@@ -6,6 +6,12 @@
 
 {% block title %}Submission status of {{ submission.name }}-{{ submission.rev }}{% endblock %}
 
+{% block pagehead %}
+  {{ block.super }}
+  <link rel="stylesheet" href="/css/lib/select2.css">
+  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
+{% endblock %}
+
 {% block submit_content %}
   {% origin %}
   {% if submission.state_id != "uploaded" %}
@@ -26,7 +32,7 @@
     </p>
   {% endif %}
 
-  {% if submitter_form.errors %}
+  {% if submitter_form.errors or replaces_form.errors %}
     <p class="alert alert-danger">Please fix errors in the form below.</p>
   {% endif %}
 
@@ -217,6 +223,7 @@
       <form class="idsubmit" method="post">
         {% csrf_token %}
         {% include "submit/submitter_form.html" %}
+        {% include "submit/replaces_form.html" %}
         <input type="hidden" name="action" value="autopost">
         <button class="btn btn-primary" type="submit">Post submission</button>
       </form>
@@ -240,6 +247,12 @@
       <table class="table table-condensed table-striped">
         <tr><th>Name</th><td>{{ submission.submitter_parsed.name }}</td></tr>
         <tr><th>Email address</th><td>{{ submission.submitter_parsed.email }}</td></tr>
+      </table>
+    {% endif %}
+    {% if submission.replaces %}
+      <h3>Replaced documents</h3>
+      <table class="table table-condensed table-striped">
+        <tr><th>Replaces</th><td>{{ submission.replaces|split:","|join:", "|urlize_ietf_docs }}</td></tr>
       </table>
     {% endif %}
   {% endif %}
@@ -312,4 +325,9 @@
 
   {% include "submit/problem-reports-footer.html" %}
 
+{% endblock %}
+
+{% block js %}
+  <script src="/js/lib/select2-3.5.2.min.js"></script>
+  <script src="/js/select2-field.js"></script>
 {% endblock %}

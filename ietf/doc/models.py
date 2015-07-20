@@ -654,6 +654,8 @@ EVENT_TYPES = [
     ("completed_resurrect", "Completed resurrect"),
     ("changed_consensus", "Changed consensus"),
     ("published_rfc", "Published RFC"),
+    ("added_suggested_replaces", "Added suggested replacement relationships"),
+    ("reviewed_suggested_replaces", "Reviewed suggested replacement relationships"),
 
     # WG events
     ("changed_group", "Changed group"),
