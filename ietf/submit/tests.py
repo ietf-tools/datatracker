@@ -13,6 +13,7 @@ from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 from ietf.utils.test_utils import TestCase
+from ietf.meeting.models import Meeting
 from ietf.submit.utils import expirable_submissions, expire_submission, ensure_person_email_info_exists
 from ietf.person.models import Person
 from ietf.group.models import Group
@@ -608,6 +609,29 @@ class SubmitTests(TestCase):
         r = self.client.get(urlreverse("submit_tool_instructions"))
         self.assertEquals(r.status_code, 200)
         
+    def test_blackout_access(self):
+        make_test_data()
+        
+        # get
+        url = urlreverse('submit_upload_submission')
+        # set meeting to today so we're in blackout period
+        meeting = Meeting.get_current_meeting()
+        meeting.date = datetime.datetime.today()
+        meeting.save()
+        
+        # regular user, no access
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('input[type=file][name=txt]')), 0)
+        
+        # Secretariat has access
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('input[type=file][name=txt]')), 1)
+
 class ApprovalsTestCase(TestCase):
     def test_approvals(self):
         make_test_data()

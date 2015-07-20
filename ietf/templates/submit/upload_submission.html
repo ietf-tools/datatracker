@@ -1,7 +1,7 @@
 {% extends "submit/submit_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load ietf_filters %}
 {% load bootstrap3 %}
 
 {% block title %}Upload{% endblock %}
@@ -10,6 +10,10 @@
   {% origin %}
   {% bootstrap_messages %}
 
+  {% if form.shutdown and user|has_role:"Secretariat" %}
+  <p class="bg-warning">WARNING: currently in draft submission blackout period</p>
+  {% endif %}
+  
   {% if form.cutoff_warning %}
     <div class="cutoff-warning">
       {{ form.cutoff_warning|safe }}
@@ -28,7 +32,7 @@
     six months. They may be updated, replaced, or obsoleted by other
     documents at any time.</p>
 
-  {% if not form.shutdown %}
+  {% if not form.shutdown or user|has_role:"Secretariat" %}
     <p>If you run into problems when submitting an Internet-Draft
       using this and the following pages, you may alternatively submit
       your draft by email to

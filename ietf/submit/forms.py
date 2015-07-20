@@ -9,8 +9,9 @@ from django.core.urlresolvers import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.models import Group
 from ietf.doc.models import Document
+from ietf.group.models import Group
+from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Meeting
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.utils import validate_submission_rev, validate_submission_document_date
@@ -32,6 +33,7 @@ class UploadForm(forms.Form):
 
         self.remote_ip = request.META.get('REMOTE_ADDR', None)
 
+        self.request = request
         self.in_first_cut_off = False
         self.cutoff_warning = ""
         self.shutdown = False
@@ -104,7 +106,7 @@ class UploadForm(forms.Form):
         return self.clean_file("xml", XMLParser)
 
     def clean(self):
-        if self.shutdown:
+        if self.shutdown and not has_role(self.request.user, "Secretariat"):
             raise forms.ValidationError('The tool is shut down')
 
         # sanity check that paths exist (for development servers)
