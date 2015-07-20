@@ -618,7 +618,7 @@ def week_view(request, num=None):
     return render_to_response(template,
             {"timeslots":timeslots,"render_types":["Session","Other","Break","Plenary"]}, context_instance=RequestContext(request))
 
-@role_required('Secretariat')
+@role_required('Area Director','Secretariat','IAB')
 def room_view(request, num=None):
     meeting = get_meeting(num)
 
