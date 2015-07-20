@@ -400,3 +400,5 @@ td.ad div { border-bottom: solid #ccc 1px; }
 .milestone { font-style: italic; }
 
 .adname { padding-bottom: .5em; line-height: 1em;}
+
+h1 .small .pull-right { line-height: normal }

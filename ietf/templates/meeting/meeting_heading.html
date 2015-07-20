@@ -9,5 +9,10 @@
       {{ meeting.end_date|date:"F " }}
     {% endif %}
     {{ meeting.end_date|date:"j, Y" }}
+    <div class="pull-right">
+     Updated {{ updated|date:"Y-m-d \a\t G:i:s (T)" }}
+    </>
+
   </small>
+
 </h1>

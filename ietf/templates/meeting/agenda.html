@@ -33,16 +33,9 @@
   <div class="row">
     <div class="col-md-10">
 
-      {% include "meeting/meeting_heading.html" with meeting=schedule.meeting %}
+      {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=updated %}
 
-      <p class="label label-info">Updated {{ updated|date:"Y-m-d \a\t G:i:s (T)" }}</p>
-      <p></p>
-      <p class="alert alert-info">
-        <b>Note:</b> IETF agendas are subject to change, up to and during a meeting.
-      </p>
-
-      <h4>Alternative Agenda Presentation Formats:</h4>
-      <p class="noprint h6 text-center">
+      <p class="noprint h6 text-center panel panel-heading ">
         {% if "-utc" in request.path %}
           <a href="{% url 'ietf.meeting.views.agenda' num=schedule.meeting.number %}">Agenda in local timezone</a> |
         {% else %}
@@ -63,7 +56,12 @@
       {% load cache %}
       {% cache 300 ietf_meeting_agenda_utc schedule.meeting.number request.path %}
 
-        <h2>Agenda</h2>
+        <h1>Agenda</h1>
+
+	<p class="alert alert-info">
+	  <b>Note:</b> IETF agendas are subject to change, up to and during a meeting.
+	</p>
+
 
         <div class="panel-group" id="accordion">
           <div class="panel panel-default">
