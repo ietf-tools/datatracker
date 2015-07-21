@@ -401,4 +401,4 @@ td.ad div { border-bottom: solid #ccc 1px; }
 
 .adname { padding-bottom: .5em; line-height: 1em;}
 
-h1 .small .pull-right { line-height: normal }
+h1 small .pull-right { margin-top: 10.5px; }
