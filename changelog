@@ -2,6 +2,12 @@ ietfdb (6.1.0) ietf; urgency=medium
 
   **IETF 93 Code Sprint**
 
+  This release contains the datatracker bugfixes and enhancements from the
+  IETF-93 Code Sprint.  It contains a lot of HTML validity fixes which
+  makes our HTML even cleaner, fixes a number of issues, and introduces
+  support for providing information about draft replacements at draft
+  submissions time.  Many thanks to everyone who contributed!
+
   * Merged in Ole's submit-time draft replacement information work, as 
     tested and updated by Robert and Adam.
 
