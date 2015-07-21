@@ -82,7 +82,7 @@ ietfdb (6.1.0) ietf; urgency=medium
     Added HTML5 validation based on validator.nu to test-crawl, with the
     --validator-nu option.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  20 Jul 2015 07:53:59 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Jul 2015 10:13:10 +0000
 
 
 ietfdb (6.0.4) ietf; urgency=medium
