@@ -7,9 +7,6 @@ class PSParser(FileParser):
     # no other file parsing is recommended
     def critical_parse(self):
         super(PSParser, self).critical_parse()
-        self.parse_filename_extension()
+        self.parse_filename_extension('ps')
+        self.parse_file_type('ps', 'application/postscript')
         return self.parsed_info
-
-    def parse_filename_extension(self):
-        if not self.fd.name.endswith('.ps'):
-            self.parsed_info.add_error('Format of this document must be PS')

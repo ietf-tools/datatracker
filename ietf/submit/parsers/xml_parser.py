@@ -7,9 +7,7 @@ class XMLParser(FileParser):
     # no other file parsing is recommended
     def critical_parse(self):
         super(XMLParser, self).critical_parse()
-        self.parse_filename_extension()
+        self.parse_filename_extension('xml')
+        self.parse_file_type('xml', 'application/xml')
         return self.parsed_info
-
-    def parse_filename_extension(self):
-        if not self.fd.name.endswith('.xml'):
-            self.parsed_info.add_error('Format of this document must be XML')
+    

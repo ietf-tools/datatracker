@@ -1,8 +1,5 @@
-import datetime
 import re
 
-from django.conf import settings
-from django.template.defaultfilters import filesizeformat
 from ietf.submit.parsers.base import FileParser
 
 
@@ -15,16 +12,11 @@ class PlainParser(FileParser):
     # no other file parsing is recommended
     def critical_parse(self):
         super(PlainParser, self).critical_parse()
-        self.parse_max_size()
+        self.parse_filename_extension('txt')
+        self.parse_file_type('txt', 'text/plain')
         self.parse_file_charset()
         self.parse_name()
         return self.parsed_info
-
-    def parse_max_size(self):
-        if self.fd.size > settings.IDSUBMIT_MAX_PLAIN_DRAFT_SIZE:
-            self.parsed_info.add_error('File size is larger than %s' % filesizeformat(settings.IDSUBMIT_MAX_PLAIN_DRAFT_SIZE))
-        self.parsed_info.metadata.file_size = self.fd.size
-        self.parsed_info.metadata.submission_date = datetime.date.today()
 
     def parse_file_charset(self):
         import magic
