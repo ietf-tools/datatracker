@@ -13,14 +13,12 @@
       {{ doc.friendly_state|safe }}
     {% endif %}
 
-    <wbr>{{ doc|state_age_colored }}
-
     {% if doc|state:"draft-rfceditor" %}
       <wbr>: <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
     {% endif %}
 
+    <wbr>{{ doc|state_age_colored }}
     
-
     {% if doc.telechat_date %}
       <br>IESG telechat: {{ doc.telechat_date }}
     {% endif %}
