@@ -23,10 +23,10 @@
        </tr>
     </thead>
 
-    <tbody>
+    <tbody class="meta">
       <tr>
 	<th>Document</th>
-	<th class="text-right">
+	<th>
 	  {% if doc.get_state_slug not in approved_states %}
 	    Proposed conflict review
 	  {% else %}
@@ -46,14 +46,14 @@
 	</td>
       </tr>
 
-      <tr class="plain">
+      <tr>
       	<td></td>
 	<th>Last updated</th>
 	<td class="edit"></td>
 	<td>{{ doc.time|date:"Y-m-d" }}</td>
       </tr>
 
-      <tr class="plain">
+      <tr>
       	<td></td>
 	<th><a href="/doc/help/state/conflict-review/">State</a></th>
 	<td class="edit">
@@ -67,10 +67,10 @@
       </tr>
 
     </tbody>
-    <tbody>
+    <tbody class="meta">
       <tr>
 	<th>IESG</th>
-	<th class="text-right">Shepherding AD</th>
+	<th>Shepherding AD</th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
 	    <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_ad" name=doc.name %}">Edit</a>
@@ -82,7 +82,7 @@
       </tr>
 
       {% if not snapshot %}
-	<tr class="plain">
+	<tr>
 	  <td></td>
 	  <th>Telechat date</th>
 	  <td class="edit">
@@ -105,7 +105,7 @@
 	</tr>
       {% endif %}
 
-      <tr class="plain">
+      <tr>
 	<td></td>
 	<th>Send notices to</th>
 	<td class="edit">

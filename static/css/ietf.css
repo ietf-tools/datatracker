@@ -392,7 +392,12 @@ footer {
 */
 
 
-table tbody td.plain, table tbody th.plain { border-top: 0; }
+table tbody.meta th, table tbody.meta td { border-top: 0; }
+
+table tbody.meta th:nth-child(2), table tbody.meta td:nth-child(2) {
+	text-align: right;
+}
+
 
 td.ad div { border-bottom: solid #ccc 1px; }
 
