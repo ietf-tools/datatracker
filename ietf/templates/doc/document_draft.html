@@ -41,7 +41,7 @@
     <tbody>
       <tr>
 	<th>Document</th>
-	<th class="text-right">Type</th>
+	<th>Type</th>
 	<td class="edit"></td>
 	<td>
 	  {% if doc.get_state_slug == "rfc" %}
@@ -63,8 +63,8 @@
 	</td>
       </tr>
 
-      <tr class="plain">
-      	<th></th>
+      <tr>
+      	<th class="plain"></th>
 	<th>Last updated</th>
 	<td class="edit"></td>
 	<td>
@@ -76,8 +76,8 @@
       </tr>
 
       {% if replaces or can_edit_stream_info %}
-	<tr class="plain">
-	  <th></th>
+	<tr>
+	  <th class="plain"></th>
 	  <th>Replaces</th>
 	  <td class="edit">
 	    {% if can_edit_stream_info %}
@@ -91,8 +91,8 @@
       {% endif %}
 
       {% if replaced_by %}
-	<tr class="plain">
-	  <th></th>
+	<tr>
+	  <th class="plain"></th>
 	  <th>Replaced by</th>
 	  <td class="edit"></td>
 	  <td>
@@ -131,8 +131,8 @@
           {% endif %}
       {% endif %}
 
-      <tr class="plain">
-        <th></th>
+      <tr>
+        <th class="plain"></th>
 	<th>Stream</th>
 	<td class="edit">
 	  {% if can_change_stream %}
@@ -145,8 +145,8 @@
       </tr>
 
       {% if doc.get_state_slug != "rfc" %}
-	<tr class="plain">
-	  <th></th>
+	<tr>
+	  <th class="plain"></th>
 	  <th>Intended RFC status</th>
 	  <td class="edit">
 	    {% if can_edit or can_edit_stream_info %}
@@ -159,8 +159,8 @@
 	</tr>
       {% endif %}
 
-      <tr class="plain">
-        <th></th>
+      <tr>
+        <th class="plain"></th>
 	<th>Formats</th>
 	<td class="edit"></td>
 	<td>
@@ -178,8 +178,8 @@
       </tr>
 
       {% if conflict_reviews %}
-	<tr class="plain">
-          <th></th>
+	<tr>
+          <th class="plain"></th>
 	  <th>IETF conflict review</th>
 	  <td class="edit"></td>
 	  <td>{{ conflict_reviews|join:", "|urlize_ietf_docs }}</td>
@@ -191,7 +191,7 @@
       <tr>
 	<th>Stream</th>
 	{% if doc.stream %}
-	  <th class="text-right">
+	  <th>
 	     {% if doc.stream.slug != "legacy" %}
 	     <a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">
 		{% if doc.stream.slug == "ietf" %} WG {% else %} {{ doc.stream }} {% endif %} state
@@ -217,15 +217,15 @@
 	    {% endif %}
 	  </td>
 	{% else %}
-	  <th class="text-right">Stream state</th>
+	  <th>Stream state</th>
 	  <td class="edit"></td>
 	  <td>(No stream defined)</td>
 	{% endif %}
       </tr>
 
       {% if consensus %}
-	<tr class="plain">
-	  <th></th>
+	<tr>
+	  <th class="plain"></th>
 	  <th>Consensus</th>
 	  <td class="edit">
 	    {% if can_edit or can_edit_stream_info %}
@@ -238,8 +238,8 @@
 	</tr>
       {% endif %}
 
-      <tr class="plain">
-        <th></th>
+      <tr>
+        <th class="plain"></th>
 	<th>Document shepherd</th>
 	<td class="edit">
 	  {% if can_edit_stream_info %}
@@ -254,8 +254,8 @@
       </tr>
 
       {% if shepherd_writeup or can_edit_shepherd_writeup %}
-	<tr class="plain">
-	  <th></th>
+	<tr>
+	  <th class="plain"></th>
 	  <th>Shepherd write-up</th>
 	  <td class="edit">
 	    {% if can_edit_shepherd_writeup %}
@@ -277,8 +277,8 @@
       {% endif %}
 
       {% if published and started_iesg_process and published.time < started_iesg_process.time %}
-	<tr class="plain">
-	  <th></th>
+	<tr>
+	  <th class="plain"></th>
 	  <th colspan="3" class="warning">This information refers to IESG processing after the RFC was initially published:</th>
 	</tr>
       {% endif %}
@@ -287,7 +287,7 @@
     <tbody>
       <tr>
 	<th>IESG</th>
-	<th class="text-right"><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
+	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
 	<td class="edit">
 	  {% if iesg_state and can_edit %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_state" name=doc.name %}">Edit</a>
@@ -298,8 +298,8 @@
 	</td>
       </tr>
 
-      <tr class="plain">
-        <th></th>
+      <tr>
+        <th class="plain"></th>
 	<th>Telechat date</th>
 	<td class="edit">
 	  {% if can_edit %}
@@ -324,8 +324,8 @@
 	</td>
       </tr>
 
-      <tr class="plain">
-        <th></th>
+      <tr>
+        <th class="plain"></th>
 	<th>Responsible AD</th>
 	<td class="edit">
 	  {% if can_edit %}
@@ -339,8 +339,8 @@
 
       {% if iesg_state %}
 	{% if doc.note or can_edit %}
-	  <tr class="plain">
-	    <th></th>
+	  <tr>
+	    <th class="plain"></th>
 	    <th>IESG note</th>
 	    <td class="edit">
 	      {% if can_edit %}
@@ -354,8 +354,8 @@
 	{% endif %}
       {% endif %}
 
-      <tr class="plain">
-        <th></th>
+      <tr>
+        <th class="plain"></th>
 	<th>Send notices to</th>
 	<td class="edit">
 	  {% if can_edit_notify %}
@@ -373,7 +373,7 @@
     <tbody>
       <tr>
 	<th>IANA</th>
-	<th class="text-right"><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
+	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
 	<td class="edit">
 	  {% if can_edit_iana_state %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-review" %}">Edit</a>
@@ -384,8 +384,8 @@
 	</td>
       </tr>
 
-      <tr class="plain">
-        <th></th>
+      <tr>
+        <th class="plain"></th>
 	<th>IANA action state</th>
 	<td class="edit">
 	  {% if can_edit_iana_state %}
@@ -403,7 +403,7 @@
       {% if rfc_editor_state %}
 	<tr>
 	  <th>RFC Editor</th>
-	  <th class="text-right"><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">RFC Editor state</a></th>
+	  <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">RFC Editor state</a></th>
 	  <td class="edit"></td>
 	  <td><a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ rfc_editor_state }}</a></td>
 	</tr>
