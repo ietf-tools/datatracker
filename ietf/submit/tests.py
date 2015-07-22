@@ -9,6 +9,8 @@ from django.core.urlresolvers import reverse as urlreverse
 from StringIO import StringIO
 from pyquery import PyQuery
 
+import debug                            # pyflakes:ignore
+
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
@@ -39,25 +41,26 @@ class SubmitTests(TestCase):
         shutil.rmtree(self.repository_dir)
         shutil.rmtree(self.archive_dir)
 
-    def submission_txt_file(self, name, rev):
+    def submission_file(self, name, rev, group, format, templatename):
         # construct appropriate text draft
-        f = open(os.path.join(settings.BASE_DIR, "submit", "test_submission.txt"))
+        f = open(os.path.join(settings.BASE_DIR, "submit", templatename))
         template = f.read()
         f.close()
 
         submission_text = template % dict(
             date=datetime.date.today().strftime("%d %B %Y"),
-            expire=(datetime.date.today() + datetime.timedelta(days=100)).strftime("%Y-%m-%d"),
+            expiration=(datetime.date.today() + datetime.timedelta(days=100)).strftime("%d %B, %Y"),
             year=datetime.date.today().strftime("%Y"),
-            month_year=datetime.date.today().strftime("%B, %Y"),
+            month=datetime.date.today().strftime("%B"),
             name="%s-%s" % (name, rev),
+            group=group or "",
             )
 
-        txt_file = StringIO(str(submission_text))
-        txt_file.name = "somename.txt"
-        return txt_file
+        file = StringIO(str(submission_text))
+        file.name = "%s-%s.%s" % (name, rev, format)
+        return file
 
-    def do_submission(self, name, rev):
+    def do_submission(self, name, rev, group=None, formats=["txt",]):
         # break early in case of missing configuration
         self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
 
@@ -67,15 +70,23 @@ class SubmitTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)
+        self.assertEqual(len(q('input[type=file][name=xml]')), 1)
 
         # submit
-        txt_file = self.submission_txt_file(name, rev)
+        files = {}
+        for format in formats:
+            files[format] = self.submission_file(name, rev, group, format, "test_submission.%s" % format)
 
-        r = self.client.post(url,
-                             dict(txt=txt_file))
+        r = self.client.post(url, files)
+        if r.status_code != 302:
+            q = PyQuery(r.content)
+            print(q('div.has-error span.help-block div').text)
+
         self.assertEqual(r.status_code, 302)
+
         status_url = r["Location"]
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
+        for format in formats:
+            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.%s" % (name, rev, format))))
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
         self.assertTrue(re.search('\s+Summary:\s+0\s+errors|No nits found', submission.idnits_message))
@@ -120,7 +131,7 @@ class SubmitTests(TestCase):
 
         return confirm_url
 
-    def test_submit_new_wg(self):
+    def submit_new_wg(self, formats):
         # submit new -> supply submitter info -> approve
         draft = make_test_data()
 
@@ -147,8 +158,9 @@ class SubmitTests(TestCase):
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
+        group = "mars"
 
-        status_url = self.do_submission(name, rev)
+        status_url = self.do_submission(name, rev, group, formats)
 
         # supply submitter info, then draft should be in and ready for approval
         mailbox_before = len(outbox)
@@ -211,7 +223,16 @@ class SubmitTests(TestCase):
         self.assertTrue("ameschairman" in outbox[-1]["To"].lower())
         self.assertTrue("marschairman" in outbox[-1]["To"].lower())
 
-    def test_submit_existing(self):
+    def test_submit_new_wg_txt(self):
+        self.submit_new_wg(["txt"])
+
+    def text_submit_new_wg_xml(self):
+        self.submit_new_wg(["xml"])
+
+    def text_submit_new_wg_txt_xml(self):
+        self.submit_new_wg(["txt", "xml"])
+
+    def submit_existing(self, formats):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
         draft = make_test_data()
         prev_author = draft.documentauthor_set.all()[0]
@@ -241,13 +262,14 @@ class SubmitTests(TestCase):
 
         name = draft.name
         rev = "%02d" % (int(draft.rev) + 1)
+        group = draft.group
 
         # write the old draft in a file so we can check it's moved away
         old_rev = draft.rev
         with open(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev)), 'w') as f:
             f.write("a" * 2000)
 
-        status_url = self.do_submission(name, rev)
+        status_url = self.do_submission(name, rev, group, formats)
 
         # supply submitter info, then previous authors get a confirmation email
         mailbox_before = len(outbox)
@@ -310,14 +332,24 @@ class SubmitTests(TestCase):
         self.assertTrue(name in unicode(outbox[-1]))
         self.assertTrue("mars" in unicode(outbox[-1]))
 
-    def test_submit_new_individual(self):
+    def test_submit_existing_txt(self):
+        self.submit_existing(["txt"])
+
+    def test_submit_existing_xml(self):
+        self.submit_existing(["xml"])
+
+    def test_submit_existing_txt_xml(self):
+        self.submit_existing(["txt", "xml"])
+
+    def submit_new_individual(self, formats):
         # submit new -> supply submitter info -> confirm
         draft = make_test_data()
 
         name = "draft-authorname-testing-tests"
         rev = "00"
+        group = None
 
-        status_url = self.do_submission(name, rev)
+        status_url = self.do_submission(name, rev, group, formats)
 
         # supply submitter info, then draft should be be ready for email auth
         mailbox_before = len(outbox)
@@ -354,6 +386,15 @@ class SubmitTests(TestCase):
         new_revision = draft.latest_event()
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, "Submitter Name")
+
+    def test_submit_new_individual_txt(self):
+        self.submit_new_individual(["txt"])
+
+    def test_submit_new_individual_xml(self):
+        self.submit_new_individual(["xml"])
+
+    def test_submit_new_individual_txt_xml(self):
+        self.submit_new_individual(["txt", "xml"])
 
     def test_submit_new_wg_with_dash(self):
         make_test_data()
@@ -579,35 +620,17 @@ class SubmitTests(TestCase):
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
+        group = "mars"
 
-        txt_file = self.submission_txt_file(name, rev)
-
-        # the checks for other file types are currently embarrassingly
-        # dumb, so don't bother constructing proper XML/PS/PDF draft
-        # files
-        xml_file = StringIO('<?xml version="1.0" encoding="utf-8"?>\n<draft>This is XML</draft>')
-        xml_file.name = "somename.xml"
-
-        pdf_file = StringIO('%PDF-1.5\nThis is PDF')
-        pdf_file.name = "somename.pdf"
-
-        ps_file = StringIO('%!PS-Adobe-2.0\nThis is PostScript')
-        ps_file.name = "somename.ps"
-        
-        r = self.client.post(urlreverse('submit_upload_submission'), dict(
-            txt=txt_file,
-            xml=xml_file,
-            pdf=pdf_file,
-            ps=ps_file,
-        ))
-        self.assertEqual(r.status_code, 302)
+        self.do_submission(name, rev, group, ["txt", "xml", "ps", "pdf"])
 
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
 
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
         self.assertTrue(name in open(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))).read())
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))))
-        self.assertTrue('This is XML' in open(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))).read())
+        self.assertTrue(name in open(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))).read())
+        self.assertTrue('<?xml version="1.0" encoding="US-ASCII"?>' in open(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))).read())
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.pdf" % (name, rev))))
         self.assertTrue('This is PDF' in open(os.path.join(self.staging_dir, u"%s-%s.pdf" % (name, rev))).read())
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.ps" % (name, rev))))

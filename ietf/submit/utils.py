@@ -353,21 +353,24 @@ def cancel_submission(submission):
     remove_submission_files(submission)
 
 def rename_submission_files(submission, prev_rev, new_rev):
-    for ext in submission.file_types.split(','):
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, prev_rev, ext))
-        dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, new_rev, ext))
-        os.rename(source, dest)
+    from ietf.submit.forms import SubmissionUploadForm
+    for ext in SubmissionUploadForm.base_fields.keys():
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, prev_rev, ext))
+        dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, new_rev, ext))
+        if os.path.exists(source):
+            os.rename(source, dest)
 
 def move_files_to_repository(submission):
-    for ext in submission.file_types.split(','):
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
-        dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s%s' % (submission.name, submission.rev, ext))
+    from ietf.submit.forms import SubmissionUploadForm
+    for ext in SubmissionUploadForm.base_fields.keys():
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
+        dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
         if os.path.exists(source):
             os.rename(source, dest)
         else:
             if os.path.exists(dest):
                 log("Intended to move '%s' to '%s', but found source missing while destination exists.")
-            else:
+            elif ext in submission.file_types.split(','):
                 raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
 def remove_submission_files(submission):

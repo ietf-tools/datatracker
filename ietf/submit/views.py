@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 import datetime
 import os
+import xml2rfc
 
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
@@ -8,94 +9,127 @@ from django.core.validators import validate_email, ValidationError
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import Document, DocAlias
 from ietf.doc.utils import prettify_std_name
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
-from ietf.submit.forms import UploadForm, NameEmailForm, EditSubmissionForm, PreapprovalForm, ReplacesForm
+from ietf.submit.forms import SubmissionUploadForm, NameEmailForm, EditSubmissionForm, PreapprovalForm, ReplacesForm
 from ietf.submit.mail import send_full_url, send_approval_request_to_group, send_submission_confirmation, submission_confirmation_email_list, send_manual_post_request
 from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName
 from ietf.submit.utils import approvable_submissions_for_user, preapprovals_for_user, recently_approved_by_user
 from ietf.submit.utils import check_idnits, found_idnits, validate_submission, create_submission_event
 from ietf.submit.utils import post_submission, cancel_submission, rename_submission_files
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
+from ietf.utils.draft import Draft
+
 
 def upload_submission(request):
     if request.method == 'POST':
         try:
-            form = UploadForm(request, data=request.POST, files=request.FILES)
+            form = SubmissionUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
-                # save files
-                file_types = []
-                for ext in ['txt', 'pdf', 'xml', 'ps']:
+                authors = []
+                file_name = {}
+                abstract = None
+                file_size = None
+                for ext in form.fields.keys():
                     f = form.cleaned_data[ext]
                     if not f:
                         continue
-                    file_types.append('.%s' % ext)
-
-                    draft = form.parsed_draft
-
-                    name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (draft.filename, draft.revision, ext))
+                    
+                    name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (form.filename, form.revision, ext))
+                    file_name[ext] = name
                     with open(name, 'wb+') as destination:
                         for chunk in f.chunks():
                             destination.write(chunk)
 
-                # check idnits
-                text_path = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (draft.filename, draft.revision))
-                idnits_message = check_idnits(text_path)
-
-                # extract author lines
-                authors = []
-                for author in draft.get_author_list():
-                    full_name, first_name, middle_initial, last_name, name_suffix, email, company = author
-
-                    line = full_name.replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
-                    email = (email or "").strip()
-
-                    if email:
+                if form.cleaned_data['xml']:
+                    if not form.cleaned_data['txt']:
                         try:
-                            validate_email(email)
-                        except ValidationError:
-                            email = ""
+                            file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
+                            pagedwriter = xml2rfc.PaginatedTextRfcWriter(form.xmltree, quiet=True)
+                            pagedwriter.write(file_name['txt'])
+                            file_size = os.stat(file_name['txt']).st_size
+                        except Exception as e:
+                            raise ValidationError("Exception: %s" % e)
+                    # Some meta-information, such as the page-count, can only
+                    # be retrieved from the generated text file.  Provide a
+                    # parsed draft object to get at that kind of information.
+                    with open(file_name['txt']) as txt_file:
+                        form.parsed_draft = Draft(txt_file.read(), txt_file.name)
 
-                    if email:
-                        line += u" <%s>" % email
+                else:
+                    file_size = form.cleaned_data['txt'].size
 
-                    authors.append(line)
+                if form.authors:
+                    authors = form.authors
+                else:
+                    # If we don't have an xml file, try to extract the
+                    # relevant information from the text file
+                    for author in form.parsed_draft.get_author_list():
+                        full_name, first_name, middle_initial, last_name, name_suffix, email, company = author
+
+                        line = full_name.replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
+                        email = (email or "").strip()
+
+                        if email:
+                            try:
+                                validate_email(email)
+                            except ValidationError:
+                                email = ""
+
+                        if email:
+                            line += u" <%s>" % email
+
+                        authors.append(line)
+
+                if form.abstract:
+                    abstract = form.abstract
+                else:
+                    abstract = form.parsed_draft.get_abstract()
+
+                # check idnits
+                idnits_message = check_idnits(file_name['txt'])
 
                 # save submission
-                submission = Submission.objects.create(
-                    state=DraftSubmissionStateName.objects.get(slug="uploaded"),
-                    remote_ip=form.remote_ip,
-                    name=draft.filename,
-                    group=form.group,
-                    title=draft.get_title(),
-                    abstract=draft.get_abstract(),
-                    rev=draft.revision,
-                    pages=draft.get_pagecount(),
-                    authors="\n".join(authors),
-                    note="",
-                    first_two_pages=''.join(draft.pages[:2]),
-                    file_size=form.cleaned_data['txt'].size,
-                    file_types=','.join(file_types),
-                    submission_date=datetime.date.today(),
-                    document_date=draft.get_creation_date(),
-                    replaces="",
-                    idnits_message=idnits_message,
-                    )
+                try:
+                    submission = Submission.objects.create(
+                        state=DraftSubmissionStateName.objects.get(slug="uploaded"),
+                        remote_ip=form.remote_ip,
+                        name=form.filename,
+                        group=form.group,
+                        title=form.title,
+                        abstract=abstract,
+                        rev=form.revision,
+                        pages=form.parsed_draft.get_pagecount(),
+                        authors="\n".join(authors),
+                        note="",
+                        first_two_pages=''.join(form.parsed_draft.pages[:2]),
+                        file_size=file_size,
+                        file_types=','.join(form.file_types),
+                        submission_date=datetime.date.today(),
+                        document_date=form.parsed_draft.get_creation_date(),
+                        replaces="",
+                        idnits_message=idnits_message,
+                        )
+                except Exception as e:
+                    import sys
+                    sys.stderr.write("Exception: %s\n" % e)
 
                 create_submission_event(request, submission, desc="Uploaded submission")
 
                 return redirect("submit_submission_status_by_hash", submission_id=submission.pk, access_token=submission.access_token())
         except IOError as e:
             if "read error" in str(e): # The server got an IOError when trying to read POST data
-                form = UploadForm(request=request)
+                form = SubmissionUploadForm(request=request)
                 form._errors = {}
                 form._errors["__all__"] = form.error_class(["There was a failure receiving the complete form data -- please try again."])
             else:
                 raise
     else:
-        form = UploadForm(request=request)
+        form = SubmissionUploadForm(request=request)
 
     return render(request, 'submit/upload_submission.html',
                               {'selected': 'index',

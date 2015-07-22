@@ -1,6 +1,9 @@
 import os
+import re
 import datetime
 import pytz
+import xml2rfc
+import tempfile
 
 from django import forms
 from django.conf import settings
@@ -23,14 +26,14 @@ from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils.draft import Draft
 
 
-class UploadForm(forms.Form):
-    txt = forms.FileField(label=u'.txt format', required=True)
+class SubmissionUploadForm(forms.Form):
+    txt = forms.FileField(label=u'.txt format', required=False)
     xml = forms.FileField(label=u'.xml format', required=False)
     pdf = forms.FileField(label=u'.pdf format', required=False)
-    ps = forms.FileField(label=u'.ps format', required=False)
+    ps  = forms.FileField(label=u'.ps format', required=False)
 
     def __init__(self, request, *args, **kwargs):
-        super(UploadForm, self).__init__(*args, **kwargs)
+        super(SubmissionUploadForm, self).__init__(*args, **kwargs)
 
         self.remote_ip = request.META.get('REMOTE_ADDR', None)
 
@@ -41,7 +44,13 @@ class UploadForm(forms.Form):
         self.set_cutoff_warnings()
 
         self.group = None
+        self.filename = None
+        self.revision = None
+        self.title = None
+        self.abstract = None
+        self.authors = []
         self.parsed_draft = None
+        self.file_types = []
 
     def set_cutoff_warnings(self):
         now = datetime.datetime.now(pytz.utc)
@@ -93,7 +102,6 @@ class UploadForm(forms.Form):
 
         return f
 
-
     def clean_txt(self):
         return self.clean_file("txt", PlainParser)
 
@@ -101,7 +109,7 @@ class UploadForm(forms.Form):
         return self.clean_file("pdf", PDFParser)
 
     def clean_ps(self):
-        return self.clean_file("ps", PSParser)
+        return self.clean_file("ps",  PSParser)
 
     def clean_xml(self):
         return self.clean_file("xml", XMLParser)
@@ -116,37 +124,100 @@ class UploadForm(forms.Form):
             if not os.path.exists(getattr(settings, s)):
                 raise forms.ValidationError('%s defined in settings.py does not exist' % s)
 
+        for ext in ['txt', 'pdf', 'xml', 'ps']:
+            f = self.cleaned_data.get(ext, None)
+            if not f:
+                continue
+            self.file_types.append('.%s' % ext)
+        if not ('.txt' in self.file_types or '.xml' in self.file_types):
+            raise forms.ValidationError('You must submit either a .txt or an .xml file; didn\'t find either.')
+
+        #debug.show('self.cleaned_data["xml"]')
+        if self.cleaned_data.get('xml'):
+            #if not self.cleaned_data.get('txt'):
+            xml_file = self.cleaned_data.get('xml')
+            tfh, tfn = tempfile.mkstemp(suffix='.xml')
+            try:
+                # We need to write the xml file to disk in order to hand it
+                # over to the xml parser.  XXX FIXME: investigate updating
+                # xml2rfc to be able to work with file handles to in-memory
+                # files.
+                with open(tfn, 'wb+') as tf:
+                    for chunk in xml_file.chunks():
+                        tf.write(chunk)
+                os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
+                parser = xml2rfc.XmlRfcParser(tfn, quiet=True)
+                self.xmltree = parser.parse()
+                ok, errors = self.xmltree.validate()
+                if not ok:
+                    raise forms.ValidationError(errors)
+                self.xmlroot = self.xmltree.getroot()
+                draftname = self.xmlroot.attrib.get('docName')
+                revmatch = re.search("-[0-9][0-9]$", draftname)
+                if revmatch:
+                    self.revision = draftname[-2:]
+                    self.filename = draftname[:-3]
+                else:
+                    self.revision = None
+                    self.filename = draftname
+                self.title = self.xmlroot.find('front/title').text
+                self.abstract = self.xmlroot.find('front/abstract').text
+                self.author_list = []
+                author_info = self.xmlroot.findall('front/author')
+                for author in author_info:
+                    author_dict = dict(
+                        company = author.find('organization').text,
+                        last_name = author.attrib.get('surname'),
+                        full_name = author.attrib.get('fullname'),
+                        email = author.find('address/email').text,
+                    )
+                    self.author_list.append(author_dict)
+                    line = "%(full_name)s <%(email)s>" % author_dict
+                    self.authors.append(line)
+            except Exception as e:
+                raise forms.ValidationError("Exception: %s" % e)
+            finally:
+                os.close(tfh)
+                os.unlink(tfn)
+
         if self.cleaned_data.get('txt'):
             # try to parse it
             txt_file = self.cleaned_data['txt']
             txt_file.seek(0)
             self.parsed_draft = Draft(txt_file.read(), txt_file.name)
+            self.filename = self.parsed_draft.filename
+            self.revision = self.parsed_draft.revision
+            self.title    = self.parsed_draft.get_title()
             txt_file.seek(0)
 
-            if not self.parsed_draft.filename:
-                raise forms.ValidationError("Draft parser could not extract a valid draft name from the .txt file")
+            if not self.filename:
+                raise forms.ValidationError("Draft parser could not extract a valid draft name from the upload")
 
-            if not self.parsed_draft.get_title():
-                raise forms.ValidationError("Draft parser could not extract a valid title from the .txt file")
+            if not self.revision:
+                raise forms.ValidationError("Draft parser could not extract a valid draft revision from the upload")
 
+            if not self.title:
+                raise forms.ValidationError("Draft parser could not extract a valid title from the upload")
+
+        if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
             # check group
             self.group = self.deduce_group()
 
             # check existing
-            existing = Submission.objects.filter(name=self.parsed_draft.filename, rev=self.parsed_draft.revision).exclude(state__in=("posted", "cancel"))
+            existing = Submission.objects.filter(name=self.filename, rev=self.revision).exclude(state__in=("posted", "cancel"))
             if existing:
                 raise forms.ValidationError(mark_safe('Submission with same name and revision is currently being processed. <a href="%s">Check the status here.</a>' % urlreverse("submit_submission_status", kwargs={ 'submission_id': existing[0].pk })))
 
             # cut-off
-            if self.parsed_draft.revision == '00' and self.in_first_cut_off:
+            if self.revision == '00' and self.in_first_cut_off:
                 raise forms.ValidationError(mark_safe(self.cutoff_warning))
 
             # check thresholds
             today = datetime.date.today()
 
             self.check_submissions_tresholds(
-                "for the draft %s" % self.parsed_draft.filename,
-                dict(name=self.parsed_draft.filename, rev=self.parsed_draft.revision, submission_date=today),
+                "for the draft %s" % self.filename,
+                dict(name=self.filename, rev=self.revision, submission_date=today),
                 settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME, settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE,
             )
             self.check_submissions_tresholds(
@@ -166,19 +237,19 @@ class UploadForm(forms.Form):
                 settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
             )
 
-        return super(UploadForm, self).clean()
+        return super(SubmissionUploadForm, self).clean()
 
     def check_submissions_tresholds(self, which, filter_kwargs, max_amount, max_size):
         submissions = Submission.objects.filter(**filter_kwargs)
 
         if len(submissions) > max_amount:
             raise forms.ValidationError("Max submissions %s has been reached for today (maximum is %s submissions)." % (which, max_amount))
-        if sum(s.file_size for s in submissions) > max_size * 1024 * 1024:
+        if sum(s.file_size for s in submissions if s.file_size) > max_size * 1024 * 1024:
             raise forms.ValidationError("Max uploaded amount %s has been reached for today (maximum is %s MB)." % (which, max_size))
 
     def deduce_group(self):
         """Figure out group from name or previously submitted draft, returns None if individual."""
-        name = self.parsed_draft.filename
+        name = self.filename
         existing_draft = Document.objects.filter(name=name, type="draft")
         if existing_draft:
             group = existing_draft[0].group
