@@ -1,10 +1,10 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
 {% load ietf_filters %}
 
-{% if not docs and not skip_no_matches_warning %}
-  <div class="alert alert-info">
-    No documents match your query.
-  </div>
+{% if not docs %}
+  {% if not skip_no_matches_warning %}
+    <div class="alert alert-info">No documents match your query.</div>
+  {% endif %}
 {% else %}
 
   {% if meta.max %}
