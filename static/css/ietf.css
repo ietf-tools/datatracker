@@ -396,6 +396,11 @@ table tbody.meta th, table tbody.meta td { border-top: 0; }
 
 table tbody.meta th:nth-child(2), table tbody.meta td:nth-child(2) {
 	text-align: right;
+	width: 9em;
+}
+
+table tbody.meta th:first-child, table tbody.meta td:first-child {
+	width: 6em;
 }
 
 
