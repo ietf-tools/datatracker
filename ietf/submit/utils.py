@@ -253,6 +253,10 @@ def update_replaces_from_submission(request, submission, draft):
 
         rdoc = r.document
 
+        if rdoc == draft:
+            continue
+
+        # TODO - I think the .exists() is in the wrong place below....
         if (is_secretariat
             or (draft.group in is_chair_of and (rdoc.group.type_id == "individ" or rdoc.group in is_chair_of))
             or (submitter_email and rdoc.authors.filter(address__iexact=submitter_email)).exists()):

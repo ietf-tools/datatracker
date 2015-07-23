@@ -396,6 +396,26 @@ class SubmitTests(TestCase):
     def test_submit_new_individual_txt_xml(self):
         self.submit_new_individual(["txt", "xml"])
 
+    def test_submit_update_replacing_self(self):
+        draft = make_test_data()
+        name = draft.name
+        rev = '%02d'%(int(draft.rev)+1)
+        status_url = self.do_submission(name,rev)
+        mailbox_before = len(outbox)
+        replaced_alias = draft.docalias_set.first()
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
+        self.assertEqual(r.status_code, 302)
+        status_url = r["Location"]
+        r = self.client.get(status_url)
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        confirm_url = self.extract_confirm_url(outbox[-1])
+        mailbox_before = len(outbox)
+        r = self.client.post(confirm_url)
+        self.assertEqual(r.status_code, 302)
+        draft = Document.objects.get(docalias__name=name)
+        self.assertEqual(draft.rev, rev)
+        self.assertEqual(draft.relateddocument_set.filter(relationship_id='replaces').count(),0)
+
     def test_submit_new_wg_with_dash(self):
         make_test_data()
 
