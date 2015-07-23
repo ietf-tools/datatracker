@@ -110,10 +110,14 @@ $(document).ready(function () {
 	    dataType: 'json',
 	    success: function(response){
 		if (response.success) {
-                    trigger.parent().find(".tooltip").remove();
-                    // it would be neater to swap in remove link
-                    trigger.replaceWith('<span class="fa fa-tag text-danger"></span>');
+                trigger.parent().find(".tooltip").remove();
+                trigger.find("span.fa").toggleClass("fa-bookmark fa-bookmark-o");
+                if (trigger.hasClass('btn')) {
+                    trigger.attr('disabled', true).blur();
+                } else {
+                    trigger.contents().unwrap().blur();
                 }
+            }
 	    }
 	});
     });

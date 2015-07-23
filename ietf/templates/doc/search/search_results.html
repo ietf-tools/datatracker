@@ -16,11 +16,7 @@
   <table class="table table-condensed table-striped">
     <thead>
       <tr>
-        <th>
-	  {% if show_add_to_list and user.is_authenticated %}
-	    <span class="fa fa-bookmark"></span>
-	  {% endif %}
-        </th>
+        <th></th>
 
         {% for h in meta.headers %}
           {% if h.title != "Title" %}
