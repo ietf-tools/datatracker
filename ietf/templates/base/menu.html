@@ -25,7 +25,7 @@
 
   {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
   <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>New work</li>
-  <li><a href="{% url "ietf.group.info.chartering_groups" %}">Chartering WGs</a></li>
+  <li><a href="{% url "ietf.group.info.chartering_groups" %}">Chartering groups</a></li>
   <li><a href="{% url "ietf.group.info.bofs" group_type="wg" %}">BOFs</a></li>
 
   {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
