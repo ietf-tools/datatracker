@@ -298,12 +298,12 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         entries.append(("Materials", urlreverse("ietf.group.info.materials", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
     if group.features.has_documents:
-        entries.append(("Dependency Graph", urlreverse("ietf.group.info.dependencies_pdf", kwargs=kwargs)))
+        entries.append((mark_safe("Dependency graph &raquo;"), urlreverse("ietf.group.info.dependencies_pdf", kwargs=kwargs)))
 
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
-        entries.append((mark_safe("List Archive &raquo;"), group.list_archive))
+        entries.append((mark_safe("List archive &raquo;"), group.list_archive))
     if group.has_tools_page():
-        entries.append((mark_safe("Tools %s Page &raquo;" % group.type.name), "https://tools.ietf.org/%s/%s/" % (group.type_id, group.acronym)))
+        entries.append((mark_safe("Tools page &raquo;"), "https://tools.ietf.org/%s/%s/" % (group.type_id, group.acronym)))
 
 
     # actions
