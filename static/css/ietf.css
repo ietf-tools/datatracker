@@ -391,9 +391,16 @@ footer {
 }
 */
 
-tbody tr.plain td, tbody tr.plain th { border-top: 0px; }
-tbody tr.plain th { text-align: right; width: 9em; }
-tbody tr.plain:first-child th { text-align: left; width: 6em; }
+
+table tbody.meta th, table tbody.meta td { border-top: 0; }
+table tbody.meta th:first-child, table tbody.meta td:first-child {
+	width: 6em;
+}
+table tbody.meta th:nth-child(2), table tbody.meta td:nth-child(2) {
+	text-align: right;
+	width: 9em;
+}
+
 
 td.ad div { border-bottom: solid #ccc 1px; }
 

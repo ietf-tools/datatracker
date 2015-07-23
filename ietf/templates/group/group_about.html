@@ -10,8 +10,9 @@
     <p class="alert alert-warning"><b>Note:</b> The data for concluded {{ group.type.name }}s is occasionally incorrect.</p>
   {% endif %}
 
+  <br>
   <table class="table table-condensed">
-     <tbody>
+     <tbody class="meta">
     <tr>
       <th>{{ group.type.name }}</th>
       <th>Name</th>
@@ -19,13 +20,13 @@
     </tr>
 
     <tr>
-      <td class="plain"></td>
+      <td></td>
       <th>Acronym</th>
       <td>{{ group.acronym }}</td>
     </tr>
 
     <tr>
-      <td class="plain"></td>
+      <td></td>
       {% if group.parent and group.parent.type_id == "area" %}
         <th>{{ group.parent.type.name }}</th>
         <td>{{ group.parent.name }} ({{ group.parent.acronym }})</td>
@@ -35,7 +36,7 @@
     </tr>
 
     <tr>
-      <td class="plain"></td>
+      <td></td>
       <th>State</th>
       <td>
         {{ group.state.name }}
@@ -47,7 +48,7 @@
 
     {% if group.features.has_chartering_process %}
       <tr>
-        <td class="plain"></td>
+        <td></td>
         <th>Charter</th>
         <td>
           {% if group.charter %}
@@ -67,7 +68,7 @@
       {% with group.groupurl_set.all as urls %}
         {% if urls %}
 	<tr>
-          <td class="plain"></td>
+          <td></td>
           <th>More info</th>
           <td>
             {% for url in urls %}
@@ -78,13 +79,13 @@
         {% endif %}
       {% endwith %}
     </tbody>
-    <tbody>
+    <tbody class="meta">
     {% for slug, label, roles in group.personnel %}
       <tr>
 	{% if forloop.first %}
 	<th>Personnel</th>
   {% else %}
-  <td class="plain"></td>
+  <td></td>
 	{% endif %}
         <th>{{ label }}</th>
         <td>
@@ -101,18 +102,18 @@
 
 
     {% if group.list_email %}
-    <tbody>
+    <tbody class="meta">
       <tr>
 	 <th>Mailing list</th>
 	 <th>Address</th><td>{{ group.list_email|urlize }}</td>
       </tr>
-      <tr><td class="plain"></td><th>To subscribe</th><td>{{ group.list_subscribe|urlize }}</td></tr>
-      <tr><td class="plain"></td><th>Archive</th><td>{{ group.list_archive|urlize }}</td></tr>
+      <tr><td></td><th>To subscribe</th><td>{{ group.list_subscribe|urlize }}</td></tr>
+      <tr><td></td><th>Archive</th><td>{{ group.list_archive|urlize }}</td></tr>
     </tbody>
     {% endif %}
 
     {% if group.state_id != "conclude" and group.type_id != "sdo" and group.type_id != "rfcedtyp" and group.type_id != "isoc" %}
-    <tbody>
+    <tbody class="meta">
       <tr>
 	 <th>Jabber chat</th>
         <th>Room address</th>
@@ -120,7 +121,7 @@
       </tr>
 
       <tr>
-        <td class="plain"></td>
+        <td></td>
         <th>Logs</th>
         <td><a href="https://jabber.ietf.org/logs/{{ group.acronym }}/">https://jabber.ietf.org/logs/{{ group.acronym }}/</a></td>
       </tr>

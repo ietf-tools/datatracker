@@ -23,10 +23,10 @@
        </tr>
     </thead>
 
-    <tbody>
+    <tbody class="meta">
       <tr>
 	<th>Document</th>
-	<th class="text-right">
+	<th>
 	  {% if doc.get_state_slug not in approved_states %}
 	    Proposed status change
 	  {% else %}
@@ -46,7 +46,7 @@
 	</td>
       </tr>
 
-      <tr class="plain">
+      <tr>
         <th></th>
 	<th>Last updated</th>
 	<td class="edit"></td>
@@ -56,7 +56,7 @@
 
     {% regroup sorted_relations by relationship.name as relation_groups %}
       {% for relation_group in relation_groups %}
-	<tr class="plain">
+	<tr>
           <th></th>
 	  <th>{{relation_group.grouper}}</th>
 	  <td class="edit"></td>
@@ -64,7 +64,7 @@
 	</tr>
       {% endfor %}
 
-      <tr class="plain">
+      <tr>
         <th></th>
 	<th><a href="{% url "state_help" type="status-change" %}">State</a></th>
 	<td class="edit">
@@ -78,10 +78,10 @@
       </tr>
 
     </tbody>
-    <tbody>
+    <tbody class="meta">
       <tr>
 	<th>IESG</th>
-	<th class="text-right">Telechat date</th>
+	<th>Telechat date</th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
 	    <a class="btn btn-default btn-xs pull-right" href="{% url "status_change_telechat_date" name=doc.name %}">Edit</a>
@@ -101,7 +101,7 @@
 	</td>
       </tr>
 
-      <tr class="plain">
+      <tr>
         <th></th>
 	<th>Shepherding AD</th>
 	<td class="edit">
@@ -114,7 +114,7 @@
 	</td>
       </tr>
 
-      <tr class="plain">
+      <tr>
         <th></th>
 	<th>Send notices to</th>
 	<td class="edit">
