@@ -41,7 +41,7 @@
     <tbody class="meta">
       <tr>
 	<th>Document</th>
-	<th class="text-right">Type</th>
+	<th>Type</th>
 	<td class="edit"></td>
 	<td>
 	  {% if doc.get_state_slug == "rfc" %}
@@ -191,7 +191,7 @@
       <tr>
 	<th>Stream</th>
 	{% if doc.stream %}
-	  <th class="text-right">
+	  <th>
 	     {% if doc.stream.slug != "legacy" %}
 	     <a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">
 		{% if doc.stream.slug == "ietf" %} WG {% else %} {{ doc.stream }} {% endif %} state
@@ -217,7 +217,7 @@
 	    {% endif %}
 	  </td>
 	{% else %}
-	  <th class="text-right">Stream state</th>
+	  <th>Stream state</th>
 	  <td class="edit"></td>
 	  <td>(No stream defined)</td>
 	{% endif %}
@@ -287,7 +287,7 @@
     <tbody class="meta">
       <tr>
 	<th>IESG</th>
-	<th class="text-right"><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
+	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
 	<td class="edit">
 	  {% if iesg_state and can_edit %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_state" name=doc.name %}">Edit</a>
@@ -373,7 +373,7 @@
     <tbody class="meta">
       <tr>
 	<th>IANA</th>
-	<th class="text-right"><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
+	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
 	<td class="edit">
 	  {% if can_edit_iana_state %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-review" %}">Edit</a>
@@ -403,7 +403,7 @@
       {% if rfc_editor_state %}
 	<tr>
 	  <th>RFC Editor</th>
-	  <th class="text-right"><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">RFC Editor state</a></th>
+	  <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">RFC Editor state</a></th>
 	  <td class="edit"></td>
 	  <td><a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ rfc_editor_state }}</a></td>
 	</tr>
