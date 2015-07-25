@@ -1,3 +1,55 @@
+ietfdb (6.2.0) ietf; urgency=medium
+
+  **XML-Only Draft Submission**
+
+  This release adds draft submission metadata extraction from xml files, if
+  they are made part of a draft submission, and it permits submission of only
+  draft XML files without an accompanying text file, as long as conversion of the
+  submitted XML to text format succeeds.  The release also contains numerous
+  style, text and bug fixes from Lars Eggert, and improvements to the ability to
+  accept draft replacement information at drafts submission time.
+
+  * Merged in [9875] from rjsparks@nostrum.com:
+    Improved the form validation for the submission replaces form. Commit
+    ready for merge.
+
+  * Merged in [9862] from rjsparks@nostrum.com:
+    Ignore suggestions that a draft replaces itself.  
+
+  * Merged in [9849] from lars@netapp.com:
+    Made nav title capitalization consistent with other text.  Consistently
+    add arrows for tabs that navigate away from the site. Shorten some text. 
+
+  * Merged in [9857] from lars@netapp.com:
+    Applied more of the styling from the current meta tables.  
+
+  * Merged in [9856] from lars@netapp.com:
+    Styled the metadata tables for groups, documents, etc. like Henrik 
+    prefers. 
+
+  * Merged in [9855] from lars@netapp.com:
+    Fixed bugs in adding/removing documents to personal ID list. 
+
+  * Merged in [9852] from lars@netapp.com:
+    Fixed display of AD and shepherd names, and also fix the respective 
+    mailto: links. 
+
+  * Merged in [9851] from lars@netapp.com:
+    Fixed the logic, so that if there are no matches and we don't want a warning
+    saying that, there is also no empty table being produced. 
+
+  * Merged in [9850] from lars@netapp.com:
+    Moved state length notification after RFC Editor status (looks better). 
+
+  * Merged in support of xml-source only drafts submissions from 
+    personal/henrik/submitxml/.
+
+  * Merged in [9843] from lars@netapp.com:
+    Converted two remaining protocol-relative URLs to https.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jul 2015 05:08:02 -0700
+
+
 ietfdb (6.1.0) ietf; urgency=medium
 
   **IETF 93 Code Sprint**

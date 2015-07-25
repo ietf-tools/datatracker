@@ -199,7 +199,7 @@ def submission_status(request, submission_id, access_token=None):
 
 
     submitter_form = NameEmailForm(initial=submission.submitter_parsed(), prefix="submitter")
-    replaces_form = ReplacesForm(initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
+    replaces_form = ReplacesForm(name=submission.name,initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -208,7 +208,7 @@ def submission_status(request, submission_id, access_token=None):
                 return HttpResponseForbidden("You do not have permission to perfom this action")
 
             submitter_form = NameEmailForm(request.POST, prefix="submitter")
-            replaces_form = ReplacesForm(request.POST)
+            replaces_form = ReplacesForm(request.POST, name=submission.name)
             validations = [submitter_form.is_valid(), replaces_form.is_valid()]
             if all(validations):
                 submission.submitter = submitter_form.cleaned_line()
@@ -345,7 +345,7 @@ def edit_submission(request, submission_id, access_token=None):
 
         edit_form = EditSubmissionForm(request.POST, instance=submission, prefix="edit")
         submitter_form = NameEmailForm(request.POST, prefix="submitter")
-        replaces_form = ReplacesForm(request.POST)
+        replaces_form = ReplacesForm(request.POST,name=submission.name)
         author_forms = [ NameEmailForm(request.POST, email_required=False, prefix=prefix)
                          for prefix in request.POST.getlist("authors-prefix")
                          if prefix != "authors-" ]
@@ -386,7 +386,7 @@ def edit_submission(request, submission_id, access_token=None):
     else:
         edit_form = EditSubmissionForm(instance=submission, prefix="edit")
         submitter_form = NameEmailForm(initial=submission.submitter_parsed(), prefix="submitter")
-        replaces_form = ReplacesForm(initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
+        replaces_form = ReplacesForm(name=submission.name,initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
         author_forms = [ NameEmailForm(initial=author, email_required=False, prefix="authors-%s" % i)
                          for i, author in enumerate(submission.authors_parsed()) ]
 

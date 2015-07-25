@@ -113,9 +113,10 @@ class SubmitTests(TestCase):
             "replaces": replaces,
         })
 
-        submission = Submission.objects.get(name=name)
-        self.assertEqual(submission.submitter, u"%s <%s>" % (submitter_name, submitter_email))
-        self.assertEqual(submission.replaces, ",".join(d.name for d in DocAlias.objects.filter(pk__in=replaces.split(",") if replaces else [])))
+        if r.status_code == 302:
+            submission = Submission.objects.get(name=name)
+            self.assertEqual(submission.submitter, u"%s <%s>" % (submitter_name, submitter_email))
+            self.assertEqual(submission.replaces, ",".join(d.name for d in DocAlias.objects.filter(pk__in=replaces.split(",") if replaces else [])))
 
         return r
 
@@ -396,7 +397,7 @@ class SubmitTests(TestCase):
     def test_submit_new_individual_txt_xml(self):
         self.submit_new_individual(["txt", "xml"])
 
-    def test_submit_update_replacing_self(self):
+    def test_submit_update_individual(self):
         draft = make_test_data()
         name = draft.name
         rev = '%02d'%(int(draft.rev)+1)
@@ -404,6 +405,18 @@ class SubmitTests(TestCase):
         mailbox_before = len(outbox)
         replaced_alias = draft.docalias_set.first()
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue('cannot replace itself' in r.content)
+        replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue('cannot replace an RFC' in r.content)
+        replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
+        replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue('approved by the IESG and cannot' in r.content)
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)

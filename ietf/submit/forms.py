@@ -325,6 +325,22 @@ class NameEmailForm(forms.Form):
 class ReplacesForm(forms.Form):
     replaces = SearchableDocAliasesField(required=False, help_text="Any drafts that this document replaces (approval required for replacing a draft you are not the author of)")
 
+    def __init__(self, *args, **kwargs):
+        self.name = kwargs.pop("name")
+        super(ReplacesForm, self).__init__(*args, **kwargs)
+
+    def clean_replaces(self):
+        for alias in self.cleaned_data['replaces']:
+            if alias.document.name == self.name:
+                raise forms.ValidationError("A draft cannot replace itself.")
+            if alias.document.type_id != "draft":
+                raise forms.ValidationError("A draft can only replace another draft")
+            if alias.document.get_state_slug() == "rfc":
+                raise forms.ValidationError("A draft cannot replace an RFC")
+            if alias.document.get_state_slug('draft-iesg') in ('approved','ann','rfcqueue'):
+                raise forms.ValidationError(alias.name+" is approved by the IESG and cannot be replaced")
+        return self.cleaned_data['replaces']
+
 class EditSubmissionForm(forms.ModelForm):
     title = forms.CharField(required=True, max_length=255)
     rev = forms.CharField(label=u'Revision', max_length=2, required=True)
