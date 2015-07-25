@@ -47,7 +47,7 @@ ietfdb (6.2.0) ietf; urgency=medium
   * Merged in [9843] from lars@netapp.com:
     Converted two remaining protocol-relative URLs to https.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jul 2015 05:08:02 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2015 16:32:25 +0000
 
 
 ietfdb (6.1.0) ietf; urgency=medium
