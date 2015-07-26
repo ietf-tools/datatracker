@@ -166,6 +166,10 @@ DEV="$(printf %d.%d.%d.dev0 $MAJOR $MINOR $NEXT)"
 
 #cd $DIR ??
 
+note "Collecting static files"
+$do ietf/manage.py collectstatic --noinput --ignore=bower.json --ignore='README.*'
+$do svn commit static/lib/ -m "Updated static files under static/lib/"
+
 # note "Checking that there's a recent test-crawler log"
 # touch -d $RDATE .svn/.latest-commit
 # TCLOG=$(ls -t ../test-crawl-*.log | head -n 1)
