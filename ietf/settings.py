@@ -21,8 +21,15 @@ sys.path.append(os.path.abspath(BASE_DIR + "/.."))
 
 import datetime
 
+from ietf import __version__
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
+
+# Valid values:
+# 'production', 'test', 'development'
+# Override this in settings_local.py if it's not the desired setting:
+SERVER_MODE = 'development'
 
 # Domain name of the IETF
 IETF_DOMAIN = 'ietf.org'
@@ -91,8 +98,34 @@ USE_TZ = False
 
 MEDIA_URL = 'https://www.ietf.org/'
 
-STATIC_URL = "/"
-STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
+# Absolute path to the directory static files should be collected to.
+# Example: "/var/www/example.com/static/"
+STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/lib/")
+
+
+SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE = True
+
+# URL to use when referring to static files located in STATIC_ROOT.
+if SERVER_MODE != 'production' and SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE:
+    STATIC_URL = "/lib/"
+else:
+    STATIC_URL = "https://www.ietf.org/lib/dt/%s/"%__version__
+
+# Destination for components handled by djangobower
+COMPONENT_ROOT = STATIC_ROOT
+
+# List of finder classes that know how to find static files in
+# various locations.
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'ietf.storage.CdnStorageFinder',
+)
+
+
+# Absolute path to the files not served through the staticfiles app
+STATIC_LOCAL = os.path.abspath(BASE_DIR + "/../static/")
+
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
@@ -191,19 +224,26 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'ietf.context_processors.rfcdiff_base_url',
 )
 
+# Additional locations of static files
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
+
 INSTALLED_APPS = (
     # Django apps
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'django.contrib.sitemaps',
     'django.contrib.admin',
     'django.contrib.admindocs',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
     'django.contrib.humanize',
     'django.contrib.messages',
+    'django.contrib.sessions',
+    'django.contrib.sitemaps',
+    'django.contrib.sites',
+    'django.contrib.staticfiles',
     # External apps 
     'bootstrap3',
+    'djangobwr',
     'form_utils',
     'tastypie',
     'widget_tweaks',
@@ -277,11 +317,6 @@ INTERNAL_IPS = (
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
-
-# Valid values:
-# 'production', 'test', 'development'
-# Override this in settings_local.py if it's not true
-SERVER_MODE = 'development'
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
