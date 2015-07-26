@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
+{% load staticfiles %}
 {% load ietf_filters %}
 {% load humanize %}
 
@@ -14,7 +15,7 @@
 
 {% block js %}
   <script type="text/javascript" src="/js/agenda/jquery-1.8.2.min.js"></script>
-  <script src="/js/lib/jquery.cookie.min.js"></script>
+  <script src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
   <script>
    jQuery.ajaxSetup({
        crossDomain: false, // obviates need for sameOrigin test

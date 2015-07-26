@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% load bootstrap3 %}
 
 {% block title %}Email submitter of {{ ipr.title }}{% endblock %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="/css/lib/datepicker3.css">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/datepicker3.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -29,5 +29,5 @@
 {% endblock %}
 
 {% block js %}
-  <script src="/js/lib/bootstrap-datepicker.js"></script>
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.js' %}"></script>
 {% endblock %}
