@@ -227,6 +227,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 # Additional locations of static files
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, '../bootstrap/static'),
 )
 
 INSTALLED_APPS = (
