@@ -355,6 +355,10 @@ class IetfTestRunner(DiscoverRunner):
             print "     Changing TEMPLATE_STRING_IF_INVALID to '' during testing."
             settings.TEMPLATE_STRING_IF_INVALID = ''
 
+        if settings.SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE != True:
+            print "     Changing SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE to 'True' during testing."
+            settings.SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE = True
+
         assert not settings.IDTRACKER_BASE_URL.endswith('/')
 
         # Try to set up an SMTP test server.  In case other test runs are
