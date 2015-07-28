@@ -121,7 +121,7 @@ COMPONENT_ROOT = STATIC_ROOT
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'ietf.utils.storage.CdnStorageFinder',
+    'ietf.utils.bower_storage.BowerStorageFinder',
 )
 
 
