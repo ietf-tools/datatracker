@@ -72,9 +72,10 @@ for n,a in api._api_list:
         (r'^api/v1/', include(a.urls)),
     )
 
+# This is needed to serve files which are not handled by collectstatic:
 if settings.SERVER_MODE in ('development', 'test'):
     urlpatterns += patterns('',
-        (r'^(?P<path>(?:images|css|js|test|static|fonts|lib|other)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL}),
+        (r'^(?P<path>(?:images|css|js|test|static)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL}),
         (r'^(?P<path>admin/(?:img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL}),
         (r'^(?P<path>secretariat/(img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL}),
         (r'^(?P<path>robots\.txt)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL+"dev/"}),
