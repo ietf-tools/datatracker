@@ -1,13 +1,12 @@
 Handling of External Javascript and CSS Components 
 ==================================================
 
-This directory (``ietf/static/``) exists for the sole purpose of providing a
-visible location for ``ietf/static/bower.json``, a bower_ file which lists the
+The file ``bower.json`` in this direcory is a bower_ file which lists the
 external web assets used by the datatracker.
 
-In order to update the version of a component listed in
-``ietf/static/bower.json``, or add a new one, you should edit ``bower.json``,
-and then run the management command::
+In order to update the version of a component listed in ``ietf/bower.json``,
+or add a new one, you should edit ``bower.json``, and then run the management
+command::
 
     $ ietf/manage.py bower_install
 
@@ -26,7 +25,9 @@ management command.)
 The ``bower_install`` command is not run automatically by ``bin/mkrelease``,
 since it needs an updated ``bower.json`` in order to do anything interesting;
 and we're not running ``bower update`` since some package releases break
-compatibility.  So when you're intending to 
-
+compatibility.  So when you're intending to update an external web asset to a
+newer version, you need to edit the ``bower.json`` file, run ``manage.py
+bower_install``, verify that the new version doesn't break things, and then
+commit the new files under ``static\lib\`` and the updated ``bower.json``.
 
 .. _bower: http://bower.io/
