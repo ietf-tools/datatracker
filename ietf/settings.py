@@ -108,8 +108,10 @@ SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE = True
 # URL to use when referring to static files located in STATIC_ROOT.
 if SERVER_MODE != 'production' and SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE:
     STATIC_URL = "/lib/"
+    STATIC_CDN_PATH = STATIC_ROOT
 else:
     STATIC_URL = "https://www.ietf.org/lib/dt/%s/"%__version__
+    STATIC_CDN_PATH = "/a/www/www6s/lib/dt/%s/"%__version__
 
 # Destination for components handled by djangobower
 COMPONENT_ROOT = STATIC_ROOT
@@ -119,7 +121,7 @@ COMPONENT_ROOT = STATIC_ROOT
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'ietf.storage.CdnStorageFinder',
+    'ietf.utils.storage.CdnStorageFinder',
 )
 
 
