@@ -65,7 +65,7 @@ def strip_url(url):
     return url
 
 def extract_html_urls(content):
-    for m in re.finditer(r'(<(?:a|link) [^>]*href=[\'"]([^"]+)[\'"][^>]*>)', content):
+    for m in re.finditer(r'(<(?:(?:a|link) [^>]*href|(?:img|script) [^>]*src)=[\'"]([^"]+)[\'"][^>]*>)', content):
         if re.search(r'rel=["\']?nofollow["\']', m.group(1)):
             continue
 
