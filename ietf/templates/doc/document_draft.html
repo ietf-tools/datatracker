@@ -413,7 +413,7 @@
   </table>
 
   <div class="buttonlist">
-    <a class="btn btn-default btn-xs" href="mailto:{{ doc.name }}@tools.ietf.org?subject=Mail%20regarding%20{{ doc.name }}"><span class="fa fa-envelope-o"></span> Email authors</a>
+    <a class="btn btn-default btn-xs" href="mailto:{{ doc.name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}"><span class="fa fa-envelope-o"></span> Email authors</a>
     <a class="btn btn-default btn-xs" href="{% url "ipr_search" %}?submit=draft&amp;id={{ doc.name }}" rel="nofollow"><span class="fa fa-bolt"></span> IPR {% if doc.related_ipr %} <span class="badge">{{doc.related_ipr|length}}</span>{% endif %}</a>
     <a class="btn btn-default btn-xs" href="{% url "doc_references" doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
     <a class="btn btn-default btn-xs" href="{% url "doc_referenced_by" doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
