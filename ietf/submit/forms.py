@@ -150,7 +150,6 @@ class SubmissionUploadForm(forms.Form):
                 parser = xml2rfc.XmlRfcParser(tfn, quiet=True)
                 self.xmltree = parser.parse()
                 ok, errors = self.xmltree.validate()
-                debug.type('errors')
                 if not ok:
                     # Each error has properties:
                     #
@@ -174,16 +173,16 @@ class SubmissionUploadForm(forms.Form):
                 else:
                     self.revision = None
                     self.filename = draftname
-                self.title = self.xmlroot.find('front/title').text
-                self.abstract = self.xmlroot.find('front/abstract').text
+                self.title = self.xmlroot.findtext('front/title')
+                self.abstract = self.xmlroot.findtext('front/abstract')
                 self.author_list = []
                 author_info = self.xmlroot.findall('front/author')
                 for author in author_info:
                     author_dict = dict(
-                        company = author.find('organization').text,
+                        company = author.findtext('organization'),
                         last_name = author.attrib.get('surname'),
                         full_name = author.attrib.get('fullname'),
-                        email = author.find('address/email').text,
+                        email = author.findtext('address/email'),
                     )
                     self.author_list.append(author_dict)
                     line = "%(full_name)s <%(email)s>" % author_dict
