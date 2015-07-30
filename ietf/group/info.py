@@ -189,15 +189,42 @@ def wg_charters_by_acronym(request, group_type):
                   { 'groups': groups },
                   content_type='text/plain; charset=UTF-8')
 
-def active_groups(request, group_type):
-    if group_type == "wg":
+def active_groups(request, group_type=None):
+
+    if not group_type:
+        return active_group_types(request)
+    elif group_type == "wg":
         return active_wgs(request)
     elif group_type == "rg":
         return active_rgs(request)
+    elif group_type == "ag":
+        return active_ags(request)
     elif group_type == "area":
         return active_areas(request)
+    elif group_type == "team":
+        return active_teams(request)
+    elif group_type == "dir":
+        return active_dirs(request)
     else:
         raise Http404
+
+def active_group_types(request):
+    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','team','dir','area'])
+    return render(request, 'group/active_groups.html', {'grouptypes':grouptypes})
+
+def active_dirs(request):
+    dirs = Group.objects.filter(type="dir", state="active").order_by("name")
+    for group in dirs:
+        group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
+        group.ads = sorted(roles(group, "ad"), key=extract_last_name)
+        group.secretaries = sorted(roles(group, "secr"), key=extract_last_name)
+    return render(request, 'group/active_dirs.html', {'dirs' : dirs })
+
+def active_teams(request):
+    teams = Group.objects.filter(type="team", state="active").order_by("name")
+    for group in teams:
+        group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
+    return render(request, 'group/active_teams.html', {'teams' : teams })
 
 def active_areas(request):
 	areas = Group.objects.filter(type="area", state="active").order_by("name")  
@@ -234,6 +261,15 @@ def active_rgs(request):
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
 
     return render(request, 'group/active_rgs.html', { 'irtf': irtf, 'groups': groups })
+    
+def active_ags(request):
+
+    groups = Group.objects.filter(type="ag", state="active").order_by("acronym")
+    for group in groups:
+        group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
+        group.ads = sorted(roles(group, "ad"), key=extract_last_name)
+
+    return render(request, 'group/active_ags.html', { 'groups': groups })
     
 def bofs(request, group_type):
     groups = Group.objects.filter(type=group_type, state="bof")

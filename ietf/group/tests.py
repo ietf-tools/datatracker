@@ -63,21 +63,25 @@ class GroupTests(TestCase):
         make_test_data()
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
             client = Client(Accept='application/pdf')
-            r = client.get(urlreverse("ietf.group.info.dependencies_dot",
-                kwargs=dict(acronym=group.acronym)))
-            self.assertTrue(r.status_code == 200, "Failed to receive "
-                "a dot dependency graph for group: %s"%group.acronym)
-            self.assertGreater(len(r.content), 0, "Dot dependency graph for group "
-                "%s has no content"%group.acronym)
+            for url in [ urlreverse("ietf.group.info.dependencies_dot",kwargs=dict(acronym=group.acronym)),
+                         urlreverse("ietf.group.info.dependencies_dot",kwargs=dict(acronym=group.acronym,group_type=group.type_id)),
+                       ]:
+                r = client.get(url)
+                self.assertTrue(r.status_code == 200, "Failed to receive "
+                    "a dot dependency graph for group: %s"%group.acronym)
+                self.assertGreater(len(r.content), 0, "Dot dependency graph for group "
+                    "%s has no content"%group.acronym)
 
     def test_group_document_dependency_pdffile(self):
         make_test_data()
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
             client = Client(Accept='application/pdf')
-            r = client.get(urlreverse("ietf.group.info.dependencies_pdf",
-                kwargs=dict(acronym=group.acronym)))
-            self.assertTrue(r.status_code == 200, "Failed to receive "
-                "a pdf dependency graph for group: %s"%group.acronym)
-            self.assertGreater(len(r.content), 0, "Pdf dependency graph for group "
-                "%s has no content"%group.acronym)
+            for url in [ urlreverse("ietf.group.info.dependencies_pdf",kwargs=dict(acronym=group.acronym)),
+                         urlreverse("ietf.group.info.dependencies_pdf",kwargs=dict(acronym=group.acronym,group_type=group.type_id)),
+                       ]:
+                r = client.get(url)
+                self.assertTrue(r.status_code == 200, "Failed to receive "
+                    "a pdf dependency graph for group: %s"%group.acronym)
+                self.assertGreater(len(r.content), 0, "Pdf dependency graph for group "
+                    "%s has no content"%group.acronym)
             

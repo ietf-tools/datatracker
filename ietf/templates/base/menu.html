@@ -1,5 +1,5 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
-{% load ietf_filters community_tags wg_menu streams_menu %}
+{% load ietf_filters community_tags wg_menu streams_menu active_groups_menu %}
 
 {% if flavor != "top" %}
   {% include "base/menu_user.html" %}
@@ -14,9 +14,9 @@
     <ul class="dropdown-menu" role="menu">
   {% endif %}
 
-<li><a href="{% url "ietf.group.info.active_groups" group_type="area" %}">Active areas</a></li>
 <li><a href="{% url "ietf.group.info.active_groups" group_type="wg" %}">Active WGs</a></li>
 <li><a href="{% url "ietf.group.info.active_groups" group_type="rg" %}">Active RGs</a></li>
+<li class="dropdown-submenu group-menu"><a href="{% url "ietf.group.info.active_groups" %}">Other</a>{% active_groups_menu %} </li>
 
   {% if flavor == "top" %}<li class="divider visible-lg-block"></li>{% endif %}
   <li {%if flavor == "top" %}class="dropdown-header visible-lg-block"{% else %}class="nav-header hidden-nojs"{% endif %}>By area/parent</li>
