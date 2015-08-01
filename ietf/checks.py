@@ -12,7 +12,7 @@ def check_cdn_directory_exists(app_configs, **kwargs):
        path will contain the datatracker release version.
     """
     errors = []
-    if not os.path.exists(settings.STATIC_ROOT):
+    if settings.SERVER_MODE == 'production' and not os.path.exists(settings.STATIC_ROOT):
         errors.append(checks.Error(
             "The static files directory has not been set up.",
             hint="Please run 'ietf/manage.py collectstatic'.",
