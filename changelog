@@ -32,7 +32,7 @@ ietfdb (6.3.0) ietf; urgency=medium
   * Improved the handling of failed xml2rfc conversions when no txt document
     is submitted.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  01 Aug 2015 03:14:10 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Aug 2015 14:52:37 +0000
 
 
 ietfdb (6.2.0) ietf; urgency=medium
