@@ -100,21 +100,22 @@ MEDIA_URL = 'https://www.ietf.org/'
 
 # Absolute path to the directory static files should be collected to.
 # Example: "/var/www/example.com/static/"
-STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/lib/")
 
+CDN_ROOT = "/a/www/www6s/lib/dt"
 
 SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE = True
 
 # URL to use when referring to static files located in STATIC_ROOT.
 if SERVER_MODE != 'production' and SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE:
-    STATIC_URL = "/lib/"
-    STATIC_CDN_PATH = STATIC_ROOT
+    STATIC_URL = "/static/"
+    STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
 else:
     STATIC_URL = "https://www.ietf.org/lib/dt/%s/"%__version__
-    STATIC_CDN_PATH = "/a/www/www6s/lib/dt/%s/"%__version__
+    STATIC_ROOT = CDN_ROOT + "%s/"%__version__
 
 # Destination for components handled by djangobower
-COMPONENT_ROOT = STATIC_ROOT
+COMPONENT_ROOT = BASE_DIR + "/externals/static/"
+COMPONENT_URL  = STATIC_URL
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -123,11 +124,6 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     'ietf.utils.bower_storage.BowerStorageFinder',
 )
-
-
-# Absolute path to the files not served through the staticfiles app
-STATIC_LOCAL = os.path.abspath(BASE_DIR + "/../static/")
-
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
@@ -222,14 +218,14 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'ietf.context_processors.server_mode',
     'ietf.context_processors.revision_info',
     'ietf.secr.context_processors.secr_revision_info',
-    'ietf.secr.context_processors.static',
     'ietf.context_processors.rfcdiff_base_url',
 )
 
-# Additional locations of static files
+# Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, '../bootstrap/static'),
+    os.path.join(BASE_DIR, 'secr/static'),
+    os.path.join(BASE_DIR, 'externals/static'),
 )
 
 INSTALLED_APPS = (
@@ -359,9 +355,9 @@ if SERVER_MODE != 'production':
     if len(TEST_CODE_COVERAGE_CHECKER.collector._collectors) == 0:
         TEST_CODE_COVERAGE_CHECKER.start()
 
-TEST_CODE_COVERAGE_REPORT_PATH = "static/coverage/"
+TEST_CODE_COVERAGE_REPORT_PATH = "coverage/"
 TEST_CODE_COVERAGE_REPORT_URL = os.path.join(STATIC_URL, TEST_CODE_COVERAGE_REPORT_PATH, "index.html")
-TEST_CODE_COVERAGE_REPORT_DIR = os.path.join(STATIC_ROOT, TEST_CODE_COVERAGE_REPORT_PATH)
+TEST_CODE_COVERAGE_REPORT_DIR = os.path.join(BASE_DIR, "static", TEST_CODE_COVERAGE_REPORT_PATH)
 TEST_CODE_COVERAGE_REPORT_FILE = os.path.join(TEST_CODE_COVERAGE_REPORT_DIR, "index.html")
 
 # WG Chair configuration
@@ -527,7 +523,6 @@ SECR_BLUE_SHEET_URL = '//datatracker.ietf.org/documents/blue_sheet.rtf'
 SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
 SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
-SECR_STATIC_URL = '/secretariat/'
 SECR_PPT2PDF_COMMAND = ['/usr/bin/soffice','--headless','--convert-to','pdf','--outdir']
 
 USE_ETAGS=True
