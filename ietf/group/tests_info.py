@@ -10,11 +10,12 @@ import debug                            # pyflakes:ignore
 
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
+from django.core.urlresolvers import NoReverseMatch
 
 from ietf.doc.models import Document, DocAlias, DocEvent, State
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, MilestoneGroupEvent
 from ietf.group.utils import save_group_in_history
-from ietf.name.models import DocTagName, GroupStateName
+from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
 from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
@@ -48,11 +49,37 @@ class GroupPagesTests(TestCase):
         url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="rg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        self.assertTrue('Active Research Groups' in r.content)
 
         url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="area"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("farfut" in r.content)
+        self.assertTrue("Far Future (farfut)" in r.content)
+
+        url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="ag"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Area Groups" in r.content)
+
+        url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="dir"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Directorates" in r.content)
+
+        url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="team"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Active Teams" in r.content)
+
+        url = urlreverse('ietf.group.info.active_groups', kwargs=dict())
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Directorate" in r.content)
+        self.assertTrue("AG" in r.content)
+
+        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','area','dir','team']).values_list('slug',flat=True):
+            with self.assertRaises(NoReverseMatch):
+                url=urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type=slug))
 
     def test_wg_summaries(self):
         draft = make_test_data()
@@ -195,14 +222,17 @@ class GroupPagesTests(TestCase):
             due=datetime.date.today() + datetime.timedelta(days=100))
         milestone.docs.add(draft)
 
-        url = group.about_url()
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue(group.name in r.content)
-        self.assertTrue(group.acronym in r.content)
-        self.assertTrue("This is a charter." in r.content)
-        self.assertTrue(milestone.desc in r.content)
-        self.assertTrue(milestone.docs.all()[0].name in r.content)
+        for url in [group.about_url(),
+                    urlreverse('ietf.group.info.group_about',kwargs=dict(acronym=group.acronym)),
+                    urlreverse('ietf.group.info.group_about',kwargs=dict(acronym=group.acronym,group_type=group.type_id)),
+                   ]:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(group.name in r.content)
+            self.assertTrue(group.acronym in r.content)
+            self.assertTrue("This is a charter." in r.content)
+            self.assertTrue(milestone.desc in r.content)
+            self.assertTrue(milestone.docs.all()[0].name in r.content)
 
     def test_group_about(self):
         make_test_data()
@@ -214,12 +244,16 @@ class GroupPagesTests(TestCase):
             state_id="active",
         )
 
-        url = group.about_url()
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue(group.name in r.content)
-        self.assertTrue(group.acronym in r.content)
-        self.assertTrue(group.description in r.content)
+        for url in [group.about_url(),
+                    urlreverse('ietf.group.info.group_about',kwargs=dict(acronym=group.acronym)),
+                    urlreverse('ietf.group.info.group_about',kwargs=dict(acronym=group.acronym,group_type=group.type_id)),
+                   ]:
+            url = group.about_url()
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(group.name in r.content)
+            self.assertTrue(group.acronym in r.content)
+            self.assertTrue(group.description in r.content)
 
     def test_materials(self):
         make_test_data()
@@ -235,11 +269,15 @@ class GroupPagesTests(TestCase):
         doc.set_state(State.objects.get(type="slides", slug="active"))
         DocAlias.objects.create(name=doc.name, document=doc)
 
-        url = urlreverse("group_materials", kwargs={ 'acronym': group.acronym })
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue(doc.title in r.content)
-        self.assertTrue(doc.name in r.content)
+        for url in [ urlreverse("group_materials", kwargs={ 'acronym': group.acronym }),
+                     urlreverse("group_materials", kwargs={ 'acronym': group.acronym , 'group_type': group.type_id}),
+                   ]:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(doc.title in r.content)
+            self.assertTrue(doc.name in r.content)
+
+        url =  urlreverse("group_materials", kwargs={ 'acronym': group.acronym })
 
         # try deleting the document and check it's gone
         doc.set_state(State.objects.get(type="slides", slug="deleted"))
@@ -474,6 +512,19 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.groupurl_set.all()[0].url, "http://mars.mars")
         self.assertEqual(group.groupurl_set.all()[0].name, "MARS site")
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))))
+
+    def test_initial_charter(self):
+        make_test_data()
+        group = Group.objects.get(acronym="mars")
+        for url in [ urlreverse('ietf.group.edit.submit_initial_charter', kwargs={'acronym':group.acronym}),
+                     urlreverse('ietf.group.edit.submit_initial_charter', kwargs={'acronym':group.acronym,'group_type':group.type_id}),
+                   ]:
+            login_testing_unauthorized(self, "secretary", url)
+            r = self.client.get(url,follow=True)
+            self.assertEqual(r.status_code,200) 
+            self.assertTrue(r.redirect_chain[0][0].endswith(urlreverse('charter_submit',kwargs={'name':group.charter.name,'option':'initcharter'})))
+            self.client.logout()
+                    
 
     def test_conclude(self):
         make_test_data()
@@ -998,11 +1049,13 @@ expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf
     def tearDown(self):
         os.unlink(self.group_alias_file.name)
 
-    def testNothing(self):
-        url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(acronym="mars"))
-        r = self.client.get(url)
-        self.assertTrue(all([x in r.content for x in ['mars-ads@','mars-chairs@']]))
-        self.assertFalse(any([x in r.content for x in ['ames-ads@','ames-chairs@']]))
+    def testEmailAliases(self):
+
+        for testdict in [dict(acronym="mars"),dict(acronym="mars",group_type="wg")]:
+            url = urlreverse('ietf.group.info.email_aliases', kwargs=testdict)
+            r = self.client.get(url)
+            self.assertTrue(all([x in r.content for x in ['mars-ads@','mars-chairs@']]))
+            self.assertFalse(any([x in r.content for x in ['ames-ads@','ames-chairs@']]))
 
         url = urlreverse('ietf.group.info.email_aliases', kwargs=dict())
         login_testing_unauthorized(self, "plain", url)

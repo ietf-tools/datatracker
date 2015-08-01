@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}Active Teams{% endblock %}
+
+
+{% block content %}
+  {% origin %}
+  <h1>Active Teams</h1>
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Team</th>
+        <th>Name</th>
+        <th>Chairs</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for group in teams %}
+        <tr>
+          <td><a href="{% url "ietf.group.info.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
+          <td>{{ group.name }}</td>
+          <td>
+            {% for chair in group.chairs %}
+              <a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}

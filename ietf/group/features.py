@@ -20,6 +20,7 @@ class GroupFeatures(object):
             self.default_tab = "group_docs"
         elif group.type_id in ("team",):
             self.has_materials = True
+            self.default_tab = "group_about"
 
         if self.has_chartering_process:
             self.about_page = "group_charter"

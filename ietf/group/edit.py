@@ -167,13 +167,28 @@ def get_or_create_initial_charter(group, group_type):
     return charter
 
 @login_required
-def submit_initial_charter(request, group_type, acronym=None):
-    if not can_manage_group_type(request.user, group_type):
-        return HttpResponseForbidden("You don't have permission to access this view")
+def submit_initial_charter(request, group_type=None, acronym=None):
+
+    # This needs refactoring.
+    # The signature assumed you could have groups with the same name, but with different types, which we do not allow.
+    # Consequently, this can be called with an existing group acronym and a type 
+    # that doesn't match the existing group type. The code below essentially ignores the group_type argument.
+    #
+    # If possible, the use of get_or_create_initial_charter should be moved
+    # directly into charter_submit, and this function should go away.
+
+    if acronym==None:
+        raise Http404
 
     group = get_object_or_404(Group, acronym=acronym)
     if not group.features.has_chartering_process:
         raise Http404
+
+    # This is where we start ignoring the passed in group_type
+    group_type = group.type_id
+
+    if not can_manage_group_type(request.user, group_type):
+        return HttpResponseForbidden("You don't have permission to access this view")
 
     if not group.charter:
         group.charter = get_or_create_initial_charter(group, group_type)
