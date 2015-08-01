@@ -7,6 +7,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.six import string_types
 
+import debug                            # pyflakes:ignore
+
 class Command(BaseCommand):
     help = "Compare coverage between the latest release and the latest test run."
     option_list = BaseCommand.option_list + (
@@ -49,7 +51,9 @@ class Command(BaseCommand):
         self.stdout.write("\nShowing coverage differeces between %s and %s:\n" % (mversion, lversion))
         for section in sections:
             mcoverage = master_coverage[section]["covered"]
+            mformat   = master_coverage[section].get("format", 1)
             lcoverage = latest_coverage[section]["covered"]
+            lformat   = latest_coverage[section].get("format", 1)
             #
             mkeys = mcoverage.keys()
             lkeys = lcoverage.keys()
@@ -57,16 +61,31 @@ class Command(BaseCommand):
             keys = list(lkeys)
             keys.sort()
             header_written = False
+
             for key in keys:
                 if not key in mcoverage:
-                    mcoverage[key] = None
-                if type(mcoverage[key]) is float or type(lcoverage[key]) is float:
-                    mval = ("%5.1f" % (100*mcoverage[key])) if mcoverage[key] else "-"
-                    lval = ("%5.1f  %%" % (100*lcoverage[key])) if lcoverage[key] else "-   "
+                    mlines, mcov = None, None
                 else:
-                    mval = mcoverage[key]
-                    lval = lcoverage[key]
-                if mcoverage[key] != lcoverage[key]:
+                    if   mformat == 1:
+                        mlines, mcov = None, mcoverage[key]
+                    elif mformat == 2:
+                        mlines, mcov = mcoverage[key]
+                    else:
+                        raise CommandError("The release coverage data has an unknown format ('%s'), quitting." % mformat)
+                if   lformat == 1:
+                    llines, lcov = None, lcoverage[key]
+                elif lformat == 2:
+                    llines, lcov = lcoverage[key]
+                else:
+                    raise CommandError("The latest coverage data has an unknown format ('%s'), quitting." % lformat)
+                    
+                if type(mcov) is float or type(lcov) is float:
+                    mval = ("%5.1f" % (100*mcov)) if mcov else "-"
+                    lval = ("%5.1f  %%" % (100*lcov)) if lcov else "-   "
+                else:
+                    mval = mcov
+                    lval = lcov
+                if mcov != lcov:
                     if not header_written:
                         self.stdout.write(self.diff_line_format %
                             ("\n%s"%section.capitalize(), mversion[:7], lversion[:7]))
