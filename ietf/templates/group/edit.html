@@ -55,7 +55,7 @@
 
 {% block js %}
   <script src="{% static 'select2/select2.min.js' %}"></script>
-  <script src="/js/select2-field.js"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
   <script>
    $(document).ready(function () {
        $("#id_acronym").closest(".form-group").each(function() {

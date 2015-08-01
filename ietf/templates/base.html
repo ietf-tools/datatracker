@@ -18,9 +18,9 @@
     {% endcomment %}
 
     <link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.min.css' %}">
-    <link rel="stylesheet" href="{% static 'custom-bootstrap/css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'custom-bootstrap/css/bootstrap-theme.min.css' %}">
-    <link rel="stylesheet" href="/css/ietf.css">
+    <link rel="stylesheet" href="{% static 'ietf/bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/bootstrap/css/bootstrap-theme.min.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
     <style>
      {% block morecss %}{% endblock %}
     </style>
@@ -32,11 +32,11 @@
     {% block pagehead %}{% endblock %}
 
     {% if server_mode and server_mode == "production" %}
-    <link rel="shortcut icon" href="/images/ietf-icon-blue3.png">
+    <link rel="shortcut icon" href="{% static 'ietf/images/ietf-icon-blue3.png' %}">
     {% else %}
-    <link rel="shortcut icon" href="/images/ietf-icon-red3.png">
+    <link rel="shortcut icon" href="{% static 'ietf/images/ietf-icon-red3.png' %}">
     {% endif %}
-    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="{% static 'ietf/images/apple-touch-icon.png' %}">
   </head>
 
   <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url "group_menu_data" %}">
@@ -51,7 +51,7 @@
 	      <span class="icon-bar"></span>
 	    </button>
 	    <a class="navbar-brand" href="/">
-	       <img alt="IETF Logo" src="/images/ietflogo-small-transparent.png">
+	       <img alt="IETF Logo" src="{% static 'ietf/images/ietflogo-small-transparent.png' %}">
 	       {% if not user.is_authenticated %}
 		  {% if server_mode and server_mode == "production" %}
 		  Datatracker
@@ -156,8 +156,8 @@
       <script>$(".visible-nojs").removeClass("visible-nojs");</script>
       <script>$(".hidden-nojs").removeClass("hidden-nojs");</script>
       <script src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
-      <script src="{% static 'custom-bootstrap/js/bootstrap.min.js' %}"></script>
-      <script src="/js/ietf.js"></script>
+      <script src="{% static 'ietf/bootstrap/js/bootstrap.min.js' %}"></script>
+      <script src="{% static 'ietf/js/ietf.js' %}"></script>
       {% block js %}{% endblock %}
   </body>
 </html>

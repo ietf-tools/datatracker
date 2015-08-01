@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% load bootstrap3 %}
 
 {% block title %}Begin RFC status change review{% endblock %}
@@ -36,5 +36,5 @@
 {% endblock %}
 
 {% block js %}
-  <script src="/js/status-change-edit-relations.js"></script>
+  <script src="{% static 'ietf/js/status-change-edit-relations.js' %}"></script>
 {% endblock %}

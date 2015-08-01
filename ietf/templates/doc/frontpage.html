@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% block title %}IETF Datatracker{% if server_mode != "production" %} -- Development Mode{% endif %}{% endblock %}
 
 {% block content %}
@@ -9,7 +9,7 @@
 <div class="row">
    <div class="col-md-12">
       <div class="text-center padded">
-	 <img class="ietflogo" src="/images/ietflogo.png" alt="IETF">
+	 <img class="ietflogo" src="{% static 'ietf/images/ietflogo.png' %}" alt="IETF">
 	 {% if server_mode != "production" %}
 	 <h1 style="color:#ff0000">Datatracker -- {{ server_mode|capfirst }} Mode</h1>
 	 {% else %}

@@ -1,10 +1,11 @@
 {% extends "base_site.html" %}
+{% load staticfiles %}
 
 {% block title %}Telechat{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
-  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/telechat.css" />
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'secr/css/telechat.css' %}" />
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 

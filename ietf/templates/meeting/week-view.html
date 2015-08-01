@@ -1,6 +1,6 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}{% origin %}
-
+{% load staticfiles %}
 <html> <head>
   <script type="text/javascript">
    // first some helpers from what used to be agenda2.js
@@ -505,7 +505,7 @@
 
        var minimize_func = function (e) { return function(){minimize(e);} }
        var img = document.createElement("img");
-       img.src = "/images/agenda-weekview/close.png";
+       img.src = "{% static 'ietf/images/agenda-weekview/close.png' %}";
        img.style.cssFloat="right";
        img.onclick = minimize_func(e);
        img.style.cursor="pointer";

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% block title %}IPR search{% endblock %}
 
 {% block content %}
@@ -10,5 +10,5 @@
 {% endblock %}
 
 {% block js %}
-  <script type="text/javascript" src="/js/ipr-search.js"></script>
+  <script type="text/javascript" src="{% static 'ietf/js/ipr-search.js' %}"></script>
 {% endblock %}

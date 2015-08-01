@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load future %}
-
+{% load staticfiles %}
 {% load bootstrap3 %}
 
 {% block title %}{{ cl.long_name }}{% endblock %}
@@ -34,7 +34,7 @@
         <li>Search for the document or documents you want to add using the datatracker search form.</li>
         <li>In the search results, you'll find a link to add individual documents to your list.</li>
       </ul>
-      <a class="btn btn-default" href="/doc/search">Document search</a>
+      <a class="btn btn-default" href="/doc/search/">Document search</a>
 
       <table class="table table-condensed table-striped">
         <thead>
