@@ -7,15 +7,15 @@ from django.core import checks
 def check_cdn_directory_exists(app_configs, **kwargs):
     """This checks that the path from which the CDN will serve static files for
        this version of the datatracker actually exists.  In development and test
-       mode this will normally be just STATIC_ROOT, but in production it will be
-       a symlink to STATIC_ROOT, with a path containing the datatracker release
-       version.
+       mode STATIC_ROOT will normally be just static/, but in production it will be
+       set to a different part of the file system which is served via CDN, and the
+       path will contain the datatracker release version.
     """
     errors = []
-    if not os.path.exists(settings.STATIC_CDN_PATH):
+    if not os.path.exists(settings.STATIC_ROOT):
         errors.append(checks.Error(
-            'The CDN static files path has not been set up',
-            hint='Set up this symlink:\n\t%s -> %s' % (settings.STATIC_CDN_PATH, settings.STATIC_ROOT),
+            "The static files directory has not been set up.",
+            hint="Please run 'ietf/manage.py collectstatic'.",
             obj=None,
             id='datatracker.E001',
         ))
