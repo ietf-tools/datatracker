@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import os.path
+#import json
+#from pathlib import Path
 
 from textwrap import dedent
 from email.mime.text import MIMEText
@@ -8,6 +10,8 @@ from email.mime.multipart import MIMEMultipart
 
 from django.conf import settings
 from django.test import TestCase
+
+import debug                            # pyflakes:ignore
 
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.mail import send_mail_text, send_mail_mime, outbox 
@@ -59,3 +63,31 @@ class TestSMTPServer(TestCase):
         len_before = len(outbox)
         send_complex_mail('good@example.com,poison@example.com')
         self.assertEqual(len(outbox),len_before+2)
+
+
+
+
+## One might think that the code below would work, but it doesn't ...
+
+# def list_static_files(path):
+#     r = Path(settings.STATIC_ROOT)
+#     p = r / path
+#     files =  list(p.glob('**/*'))
+#     relfn = [ str(file.relative_to(r)) for file in files ] 
+#     return relfn
+# 
+# class TestBowerStaticFiles(TestCase):
+# 
+#     def test_bower_static_file_finder(self):
+#         from django.templatetags.static import static
+#         bower_json = os.path.join(settings.BASE_DIR, 'bower.json')
+#         with open(bower_json) as file:
+#             bower_info = json.load(file)
+#         for asset in bower_info["dependencies"]:
+#             files = list_static_files(asset)
+#             self.assertGreater(len(files), 0)
+#             for file in files:
+#                 url = static(file)
+#                 debug.show('url')
+#                 r = self.client.get(url)
+#                 self.assertEqual(r.status_code, 200)
