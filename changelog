@@ -1,3 +1,40 @@
+ietfdb (6.3.0) ietf; urgency=medium
+
+  **Active area, directorate, team, and area group pages**
+
+  This release provides new group overview pages for active areas, area
+  groups, teams, and directorates.  It also improves the error reporting when
+  drafts are submitted with invalid XML, providing line numbers and specifics
+  for the issues found.  Additionally, there are a few bug fixes.
+
+  * Merged in [9924] from rjsparks@nostrum.com:
+    Added views of active areas, area groups, teams, and directorates.  Added
+    navigation to those views to the base menus.  Unified the URL patterns
+    shared between group/urls and group/urls_info, exposing the same view at,
+    e.g., /group/stir and /wg/stir/.  Improved testing, primarily of
+    group/info.py 
+
+  * Merged in [9901] from rcross@amsl.com:
+    Fixed matching audio file names with rooms.   
+
+  * Provided a document's rfc number (if any) as part of the document fields 
+    exposed in the json api.
+
+  * Changed the code for meta-data extraction from xml files to not break 
+    if a sought-after element is missing.
+
+  * Updated the meta-data error message to say 'errors ... below' instead of
+    'errors ... above', to match the relative placement of text and error
+    indications.
+
+  * Improved the error reporting for invalid xml file submissions.
+
+  * Improved the handling of failed xml2rfc conversions when no txt document
+    is submitted.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Aug 2015 03:14:10 -0700
+
+
 ietfdb (6.2.0) ietf; urgency=medium
 
   **XML-Only Draft Submission**
