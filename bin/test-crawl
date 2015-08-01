@@ -2,7 +2,6 @@
 
 import os, sys, re, datetime, argparse, traceback, tempfile, json, subprocess
 import html5lib
-import debug    # pyflakes:ignore
 import random
 
 # Set up import path to find our own Django
@@ -41,6 +40,9 @@ import django
 import django.test
 
 django.setup()
+
+# This needs to come after we set up sys path to include the local django
+import debug    # pyflakes:ignore
 
 # prevent memory from leaking when settings.DEBUG=True
 from django.db import connection
@@ -103,10 +105,6 @@ def extract_tastypie_urls(content):
 
 def check_html_valid(url, response, args):
     global parser, validated_urls, doc_types, warnings
-    # These URLs have known issues, skip them until those are fixed
-    if re.search('(/secr|admin/)|/doc/.*/edit/info/', url):
-        log("%s blacklisted; skipping HTML validation" % url)
-        return
     key = url
     if not args.validate_all:
         # derive a key for urls like this by replacing primary keys
@@ -123,6 +121,13 @@ def check_html_valid(url, response, args):
             key = re.sub("/%s-.*/"%slug, "/%s-nnnn/"%slug, key)
 
     if not key in validated_urls:
+
+        # These URLs have known issues, skip them until those are fixed
+        if re.search('(/secr|admin/)|/doc/.*/edit/info/', url):
+            log("%s blacklisted; skipping HTML validation" % url)
+            validated_urls[key] = True
+            return
+
         if hasattr(response, "content"):
             content = response.content
         else:
