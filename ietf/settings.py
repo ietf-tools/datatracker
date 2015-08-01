@@ -101,7 +101,7 @@ MEDIA_URL = 'https://www.ietf.org/'
 # Absolute path to the directory static files should be collected to.
 # Example: "/var/www/example.com/static/"
 
-CDN_ROOT = "/a/www/www6s/lib/dt"
+
 
 SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE = True
 
@@ -111,7 +111,7 @@ if SERVER_MODE != 'production' and SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE:
     STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
 else:
     STATIC_URL = "https://www.ietf.org/lib/dt/%s/"%__version__
-    STATIC_ROOT = CDN_ROOT + "%s/"%__version__
+    STATIC_ROOT = "/a/www/www6s/lib/dt/%s/"%__version__
 
 # Destination for components handled by djangobower
 COMPONENT_ROOT = BASE_DIR + "/externals/static/"
