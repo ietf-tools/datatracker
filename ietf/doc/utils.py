@@ -467,7 +467,7 @@ def collect_email_addresses(emails, doc):
             if role.email.address not in emails:
                 emails[role.email.address] = '"%s"' % (role.person.name)
         if doc.group.type.slug == 'wg':
-            address = '%s-ads@tools.ietf.org' % doc.group.acronym
+            address = '%s-ads@ietf.org' % doc.group.acronym
             if address not in emails:
                 emails[address] = '"%s-ads"' % (doc.group.acronym)
         elif doc.group.type.slug == 'rg':

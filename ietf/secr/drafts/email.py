@@ -147,7 +147,7 @@ def get_fullcc_list(draft):
                 emails[role.email.address] = '"%s"' % (role.person.name)
         # add AD
         if draft.group.type.slug == 'wg':    
-            emails['%s-ads@tools.ietf.org' % draft.group.acronym] = '"%s-ads"' % (draft.group.acronym)
+            emails['%s-ads@ietf.org' % draft.group.acronym] = '"%s-ads"' % (draft.group.acronym)
         elif draft.group.type.slug == 'rg':
             email = draft.group.parent.role_set.filter(name='chair')[0].email
             emails[email.address] = '"%s"' % (email.person.name)

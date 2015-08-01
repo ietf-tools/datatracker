@@ -179,7 +179,7 @@ def generate_approval_mail_approved(request, doc):
         doc.group.name_with_wg = doc.group.name + " Working Group"
         if doc.group.list_email:
             cc.append("%s mailing list <%s>" % (doc.group.acronym, doc.group.list_email))
-        cc.append("%s chair <%s-chairs@tools.ietf.org>" % (doc.group.acronym, doc.group.acronym))
+        cc.append("%s chair <%s-chairs@ietf.org>" % (doc.group.acronym, doc.group.acronym))
     else:
         doc.group.name_with_wg = doc.group.name
 

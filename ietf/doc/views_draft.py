@@ -582,7 +582,7 @@ def to_iesg(request,name):
             doc.save()
 
             extra = {}
-            extra['Cc'] = "%s-chairs@tools.ietf.org, iesg-secretary@ietf.org, %s" % (doc.group.acronym,doc.notify)
+            extra['Cc'] = "%s-chairs@ietf.org, iesg-secretary@ietf.org, %s" % (doc.group.acronym,doc.notify)
             send_mail(request=request,
                       to = doc.ad.email_address(),
                       frm = login.formatted_email(),
