@@ -6,6 +6,12 @@
 
 {% load submit_tags %}
 
+{% block pagehead %}
+  {{ block.super }}
+  <link rel="stylesheet" href="/css/lib/select2.css">
+  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
+{% endblock %}
+
 {% block title %}Adjust meta-data of submitted {{ submission.name }}{% endblock %}
 
 {% block submit_content %}
@@ -88,4 +94,9 @@
   <p>
     {% include "submit/problem-reports-footer.html" %}
   </p>
+{% endblock %}
+
+{% block js %}
+  <script src="/js/lib/select2-3.5.2.min.js"></script>
+  <script src="/js/select2-field.js"></script>
 {% endblock %}
