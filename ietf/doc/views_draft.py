@@ -13,6 +13,8 @@ from django.contrib.auth.decorators import login_required
 from django.template.defaultfilters import pluralize
 from django.contrib import messages
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import ( Document, DocAlias, RelatedDocument, State,
     StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS,
     save_document_in_history )
@@ -582,7 +584,7 @@ def to_iesg(request,name):
             doc.save()
 
             extra = {}
-            extra['Cc'] = "%s-chairs@tools.ietf.org, iesg-secretary@ietf.org, %s" % (doc.group.acronym,doc.notify)
+            extra['Cc'] = "%s-chairs@ietf.org, iesg-secretary@ietf.org, %s" % (doc.group.acronym,doc.notify)
             send_mail(request=request,
                       to = doc.ad.email_address(),
                       frm = login.formatted_email(),

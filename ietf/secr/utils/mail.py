@@ -6,7 +6,7 @@ def get_ad_email_list(group):
     '''
     emails = []
     if group.type.slug == 'wg':    
-        emails.append('%s-ads@tools.ietf.org' % group.acronym)
+        emails.append('%s-ads@ietf.org' % group.acronym)
     elif group.type.slug == 'rg' and group.parent:
         emails.append(group.parent.role_set.filter(name='chair')[0].email.address)
     return emails

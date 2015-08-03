@@ -136,7 +136,8 @@ class SubmissionUploadForm(forms.Form):
         if self.cleaned_data.get('xml'):
             #if not self.cleaned_data.get('txt'):
             xml_file = self.cleaned_data.get('xml')
-            tfh, tfn = tempfile.mkstemp(suffix='.xml')
+            name, ext = os.path.splitext(os.path.basename(xml_file.name))
+            tfh, tfn = tempfile.mkstemp(prefix=name+'-', suffix='.xml')
             try:
                 # We need to write the xml file to disk in order to hand it
                 # over to the xml parser.  XXX FIXME: investigate updating
@@ -150,7 +151,19 @@ class SubmissionUploadForm(forms.Form):
                 self.xmltree = parser.parse()
                 ok, errors = self.xmltree.validate()
                 if not ok:
-                    raise forms.ValidationError(errors)
+                    # Each error has properties:
+                    #
+                    #     message:  the message text
+                    #     domain:   the domain ID (see lxml.etree.ErrorDomains)
+                    #     type:     the message type ID (see lxml.etree.ErrorTypes)
+                    #     level:    the log level ID (see lxml.etree.ErrorLevels)
+                    #     line:     the line at which the message originated (if applicable)
+                    #     column:   the character column at which the message originated (if applicable)
+                    #     filename: the name of the file in which the message originated (if applicable)
+                    raise forms.ValidationError(
+                            [ forms.ValidationError("One or more XML validation errors occurred when processing the XML file:") ] +
+                            [ forms.ValidationError("%s: Line %s: %s" % (xml_file.name, e.line, e.message), code="%s"%e.type) for e in errors ]
+                        )
                 self.xmlroot = self.xmltree.getroot()
                 draftname = self.xmlroot.attrib.get('docName')
                 revmatch = re.search("-[0-9][0-9]$", draftname)
@@ -160,22 +173,24 @@ class SubmissionUploadForm(forms.Form):
                 else:
                     self.revision = None
                     self.filename = draftname
-                self.title = self.xmlroot.find('front/title').text
-                self.abstract = self.xmlroot.find('front/abstract').text
+                self.title = self.xmlroot.findtext('front/title')
+                self.abstract = self.xmlroot.findtext('front/abstract')
                 self.author_list = []
                 author_info = self.xmlroot.findall('front/author')
                 for author in author_info:
                     author_dict = dict(
-                        company = author.find('organization').text,
+                        company = author.findtext('organization'),
                         last_name = author.attrib.get('surname'),
                         full_name = author.attrib.get('fullname'),
-                        email = author.find('address/email').text,
+                        email = author.findtext('address/email'),
                     )
                     self.author_list.append(author_dict)
                     line = "%(full_name)s <%(email)s>" % author_dict
                     self.authors.append(line)
+            except forms.ValidationError:
+                raise
             except Exception as e:
-                raise forms.ValidationError("Exception: %s" % e)
+                raise forms.ValidationError("Exception when trying to process the XML file: %s" % e)
             finally:
                 os.close(tfh)
                 os.unlink(tfn)

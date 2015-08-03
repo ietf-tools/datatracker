@@ -47,13 +47,13 @@ def upload_submission(request):
 
                 if form.cleaned_data['xml']:
                     if not form.cleaned_data['txt']:
+                        file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
                         try:
-                            file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
                             pagedwriter = xml2rfc.PaginatedTextRfcWriter(form.xmltree, quiet=True)
                             pagedwriter.write(file_name['txt'])
-                            file_size = os.stat(file_name['txt']).st_size
                         except Exception as e:
-                            raise ValidationError("Exception: %s" % e)
+                            raise ValidationError("Error from xml2rfc: %s" % e)
+                        file_size = os.stat(file_name['txt']).st_size
                     # Some meta-information, such as the page-count, can only
                     # be retrieved from the generated text file.  Provide a
                     # parsed draft object to get at that kind of information.
@@ -128,6 +128,10 @@ def upload_submission(request):
                 form._errors["__all__"] = form.error_class(["There was a failure receiving the complete form data -- please try again."])
             else:
                 raise
+        except ValidationError as e:
+            form = SubmissionUploadForm(request=request)
+            form._errors = {}
+            form._errors["__all__"] = form.error_class(["There was a failure converting the xml file to text -- please verify that your xml file is valid.  (%s)" % e.message])
     else:
         form = SubmissionUploadForm(request=request)
 
