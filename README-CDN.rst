@@ -20,6 +20,9 @@ externals, and how deployment is done.
 Serving Static Files via CDN
 ============================
 
+Production Mode
+---------------
+
 If resources served over a CDN and/or with a high max-age don't have different
 URLs for different versions, then any component upgrade which is accompanied
 by a change in template functionality will have a long transition time
@@ -45,10 +48,28 @@ The result is that all static files collected via the ``collectstatic``
 command will be placed in a location served via CDN, with the release
 version being part of the URL.
 
+Development Mode
+----------------
+
 In development mode, ``STATIC_URL`` is set to ``/static/``, and Django's
 ``staticfiles`` infrastructure makes the static files available under that
-local URL root.
+local URL root (unless you set
+``settings.SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE`` to ``False``).  It is not
+necessary to actually populate the ``static/`` directory by running
+``collectstatic`` in order for static files to be served when running
+``ietf/manage.py runserver`` -- the ``runserver`` command has extra support
+for finding and serving static files without running collectstatic.
 
+In order to work backwards from a file served in development mode to the
+location from which it is served, the mapping is as follows::
+
+	==============================	==============================	
+	Development URL			Working copy location
+	==============================	==============================	
+	localhost:8000/static/ietf/*	ietf/static/ietf/*
+	localhost:8000/static/secr/*	ietf/secr/static/secr/*
+	localhost:8000/static/*		ietf/externals/static/*
+	==============================	==============================	
 
 Handling of External Javascript and CSS Components 
 ==================================================
@@ -156,67 +177,7 @@ During deployment, it is now necessary to run the management command::
 
   $ ietf/manage.py collectstatic
 
-before activating a new release.  The deployment README file has been updated
-accordingly, and now reads as follows::
+before activating a new release.  
 
-    In order to fetch a new release of the django datatracker code, simply
-    check out the appropriate tag from svn:
-
-      svn co http://svn.tools.ietf.org/svn/tools/ietfdb/tags/$releasenumber
-
-    Don't forget to copy $releasenumber/ietf/settings_local.py from the
-    old release to the new one; otherwise it won't work!
-
-      cp $oldreleasenumber/ietf/settings_local.py $releasenumber/ietf/
-
-    Change into the new directory:
-
-      cd $releasenumber
-
-    Next, upgrade pip and install requirements:
-
-      pip install --upgrade pip
-      pip install -r requirements.txt
-
-    Run migrations:
-
-      ietf/manage.py migrate
-
-    * NEW *
-    Move static files to the appropriate directory for serving via CDN:
-
-      ietf/manage.py collectstatic
-
-    * NEW *
-    Run some basic datatracker system checks:
-
-      ietf/manage.py check
-
-    Change back out to the parent directory:
-
-      cd ..
-
-    and then re-point the 'web' symlink:
-
-      rm ./web; ln -s $releasenumber web
-
-    and finally restart apache:
-
-      sudo /etc/init.d/apache2 restart
-
-    It's now also a good idea to go to the datatracker front page:
-
-      http://datatracker.ietf.org/
-
-    to check that it's alive and kicking, and displaying the new release
-    number at the bottom of the left-side menubar :-) -- if not, revert the
-    symlink step, re-pointing the symlink to the release that was running
-    before the new release, and restart apache again to roll back to that.
-
-    Finally, make sure the datatracker rsyncs over to IETFB, and then run the
-    PIP commands on ietfb as well:
-
-      ssh ietfb
-      pip install --upgrade pip
-      pip install -r requirements.txt
-
+The deployment ``README`` file at ``/a/www/ietf-datatracker/README`` has been
+updated accordingly.
