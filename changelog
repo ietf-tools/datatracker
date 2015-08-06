@@ -28,7 +28,7 @@ ietfdb (6.4.0) ietf; urgency=medium
   A note about that has been added to the README file in the datatracker
   deployment directory.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  06 Aug 2015 10:40:46 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Aug 2015 18:34:36 +0000
 
 
 ietfdb (6.3.0) ietf; urgency=medium
