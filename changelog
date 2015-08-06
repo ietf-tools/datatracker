@@ -1,3 +1,36 @@
+ietfdb (6.4.0) ietf; urgency=medium
+
+  **Serve static assets via CDN**
+
+  This release adds support for serving static files through a CDN, rather
+  than having them served by the datatracker webserver.  This will both
+  offload the datatracker webserver and speed up retrieval of static files.
+
+  By default, all external static assets (such as jquery, bootstrap,
+  font-awesome, qunit, select2) are served via CDN, while the datatracker's
+  own static files are not.  It is expected that the more stable datatracker
+  static files will be migrated to be served via CDN also, over time.
+
+  This release also adds support for easy update of external javascript, font,
+  and css libraries by means of a new management command 'bower_install' which
+  makes use of the 'bower' package manager.  Use of this management command
+  requires that bower be installed on the development platform.  
+
+  When deploying this and following releases, a new action is needed in order
+  to make the appropriate static content available for serving via CDN:
+
+  After checking out the release and creating the symlink to the new release
+  in the datatracker deployment directory, it is now also necessary to create
+  a new symlink within a directory which is served through the CDN:
+
+    $ ln -s /a/www/ietf-datatracker/$releasenumber/static/lib /www/www6s/lib/dt/$releasenumber
+
+  A note about that has been added to the README file in the datatracker
+  deployment directory.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Aug 2015 10:40:46 +0000
+
+
 ietfdb (6.3.0) ietf; urgency=medium
 
   **Active area, directorate, team, and area group pages**
