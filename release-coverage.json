@@ -17549,6 +17549,7 @@
         "ietf/utils/management/commands/import_htpasswd": 0.0, 
         "ietf/utils/management/commands/makefixture": 0.0, 
         "ietf/utils/management/commands/pyflakes": 0.6027397260273972, 
+        "ietf/utils/bower_storage": 0.0, 
         "ietf/utils/markup_txt": 1.0, 
         "ietf/utils/ordereddict": 1.0, 
         "ietf/utils/pipe": 0.875, 

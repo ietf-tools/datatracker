@@ -1,11 +1,11 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}{% origin %}
-
+{% load staticfiles %}
 <html> <head>
-  <link rel="stylesheet" href="/css/bootstrap.min.css"> {% comment %} This sets box-sizing: border-box {% endcomment %}
-  <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-  <script src="/js/lib/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="{% static 'ietf/bootstrap/css/bootstrap.min.css' %}"> {% comment %} This sets box-sizing: border-box {% endcomment %}
+  <link rel="stylesheet" href="{% static 'ietf/bootstrap/css/bootstrap-theme.min.css' %}">
+  <script src="{% static 'jquery/jquery.min.js' %}"></script>
+  <script src="{% static 'ietf/bootstrap/js/bootstrap.min.js' %}"></script>
   <script type="text/javascript">
 
    var room_names = [{% for room in rooms %}"{{room.name}}"{% if not forloop.last %},{% endif %}{% endfor %}];
@@ -480,7 +480,7 @@
 
        var minimize_func = function (e) { return function(){minimize(e);} }
        var img = document.createElement("img");
-       img.src = "/images/agenda-weekview/close.png";
+       img.src = "{% static 'ietf/images/agenda-weekview/close.png' %}";
        img.style.cssFloat="right";
        img.onclick = minimize_func(e);
        img.style.cursor="pointer";

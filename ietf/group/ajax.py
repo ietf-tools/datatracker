@@ -16,7 +16,7 @@ def group_json(request, acronym):
                                    sort_keys=True, indent=2),
                         content_type="text/json")
 
-@cache_control(public=True)
+@cache_control(public=True, max_age=30*60)
 @cache_page(30 * 60)
 def group_menu_data(request):
     groups = Group.objects.filter(state="active", type__in=("wg", "rg"), parent__state="active").order_by("acronym")

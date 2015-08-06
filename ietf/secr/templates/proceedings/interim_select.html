@@ -1,10 +1,10 @@
 {% extends "base_site.html" %}
 {% load ietf_filters %}
-
+{% load staticfiles %}
 {% block title %}Proceedings{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 

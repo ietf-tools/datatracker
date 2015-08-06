@@ -1,6 +1,7 @@
 {% extends "base_secr.html" %}
 {% load i18n %}
 {% load ietf_filters %}
+{% load staticfiles %}
 
 {% block title %}{{ title }}{% if user|has_role:"Secretariat" %} Secretariat Dashboard {% else %} WG Chair Dashboard {% endif %}{% endblock %}
 
@@ -32,7 +33,7 @@
         
     </div>
     <div id="footer-logo">
-      <a href="https://www.amsl.com/"><img src="{{ SECR_STATIC_URL }}img/ams_logo.png" alt="AMS" align="right" border="0" hspace="5" /></a>
+      <a href="https://www.amsl.com/"><img src="{% static 'secr/img/ams_logo.png' %}" alt="AMS" align="right" border="0" hspace="5" /></a>
     </div>
 </div>
 {% endblock %}

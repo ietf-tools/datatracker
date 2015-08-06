@@ -1,9 +1,10 @@
 {% extends "base_site.html" %}
+{% load staticfiles %}
 
 {% block title %}Groups - View{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 

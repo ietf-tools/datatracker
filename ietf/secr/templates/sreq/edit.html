@@ -1,15 +1,15 @@
 {% extends "base_site.html" %}
-
+{% load staticfiles %}
 {% block title %}Sessions - Edit{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/sessions.js"></script>
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+  <script type="text/javascript" src="{% static 'secr/js/sessions.js' %}"></script>
 
-  <link rel="stylesheet" href="/css/lib/select2.css">
-  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
-  <script src="/js/lib/select2-3.5.2.min.js"></script>
-  <script src="/js/select2-field.js"></script>
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/css/select2-field.js' %}"></script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 

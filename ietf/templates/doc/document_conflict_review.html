@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% load ietf_filters %}
 
 {% block title %}{{ doc.title }}{% endblock %}
@@ -55,7 +55,7 @@
 
       <tr>
       	<td></td>
-	<th><a href="/doc/help/state/conflict-review/">State</a></th>
+	<th><a href="doc/help/state/conflict-review/">State</a></th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
 	    <a title="{{ doc.get_state.desc }}" class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_change_state" name=doc.name %}">Edit</a>

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% load bootstrap3 %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="/css/lib/datepicker3.css">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/datepicker3.css' %}">
 {% endblock %}
 
 {% block title %}Make last call for {{ doc.name }}{% endblock %}
@@ -36,7 +36,7 @@
 
 
 {% block js %}
-  <script src="/js/lib/bootstrap-datepicker.js"></script>
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.js' %}"></script>
   <script>
    $('#id_last_call_sent_date, #id_last_call_expiration_date').datepicker({
        format: "yyyy-mm-dd",

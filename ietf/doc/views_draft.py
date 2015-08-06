@@ -13,6 +13,8 @@ from django.contrib.auth.decorators import login_required
 from django.template.defaultfilters import pluralize
 from django.contrib import messages
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import ( Document, DocAlias, RelatedDocument, State,
     StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS,
     save_document_in_history )

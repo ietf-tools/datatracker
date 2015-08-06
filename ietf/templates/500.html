@@ -1,9 +1,10 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
+{% load staticfiles %}
 {% block title %}500 Internal Server Error{% endblock %}
 {% block content %}
 
-  <img class="ietflogo" src="/images/ietflogo.png" alt="IETF" style="width: 10em">
+  <img class="ietflogo" src="{% static 'ietf/images/ietflogo.png' %}" alt="IETF" style="width: 10em">
 
   <h2>Internal Server Error.</h2>
 

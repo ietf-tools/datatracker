@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% load bootstrap3 %}
 {% load ietf_filters %}
 
@@ -14,8 +14,8 @@
 {% endblock %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="/css/lib/select2.css">
-  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -54,8 +54,8 @@
 {% endblock %}
 
 {% block js %}
-  <script src="/js/lib/select2-3.5.2.min.js"></script>
-  <script src="/js/select2-field.js"></script>
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
   <script>
    $(document).ready(function () {
        $("#id_acronym").closest(".form-group").each(function() {

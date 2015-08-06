@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% load bootstrap3 %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="/css/lib/select2.css">
-  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
-  <link rel="stylesheet" href="/css/lib/datepicker3.css">
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/datepicker3.css' %}">
 {% endblock %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -96,8 +96,8 @@
 {% endblock %}
 
 {% block js %}
-  <script src="/js/lib/select2-3.5.2.min.js"></script>
-  <script src="/js/select2-field.js"></script>
-  <script src="/js/lib/bootstrap-datepicker.js"></script>
-  <script src="/js/edit-milestones.js"></script>
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.js' %}"></script>
+  <script src="{% static 'ietf/js/edit-milestones.js' %}"></script>
 {% endblock %}

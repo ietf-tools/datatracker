@@ -30,4 +30,5 @@
 /lib
 /share
 /include
+/static
 /latest-coverage.json

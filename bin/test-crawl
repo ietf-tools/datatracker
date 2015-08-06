@@ -27,9 +27,13 @@ parser.add_argument('--validator-nu', dest='validator_nu', action='store_true',
                     help='Use validator.nu instead of html5lib for HTML validation')
 parser.add_argument('--pedantic', action='store_true',
                     help='Stop the crawl on the first HTML validation issue')
+parser.add_argument('--random', action='store_true',
+                    help='Crawl URLs randomly')
 parser.add_argument('--validate-all', dest='validate_all', action='store_true', default=False,
                     help='Run html 5 validation on all pages, without skipping similar urls. '
                     '(The default is to only run validation on one of /foo/1/, /foo/2/, /foo/3/, etc.)')
+parser.add_argument('-v', '--verbose', action='store_true', default=False,
+                    help='Be more verbose')
 
 args = parser.parse_args()
 
@@ -59,13 +63,18 @@ MAX_URL_LENGTH = 500
 
 # --- Functions ---
 
+def note(s):
+    if args.verbose:
+        sys.stderr.write(s)
+        sys.stderr.write('\n')
+
 def strip_url(url):
     if url.startswith("http://testserver"):
         url = url[len("http://testserver"):]
     return url
 
 def extract_html_urls(content):
-    for m in re.finditer(r'(<(?:a|link) [^>]*href=[\'"]([^"]+)[\'"][^>]*>)', content):
+    for m in re.finditer(r'(<(?:(?:a|link) [^>]*href|(?:img|script) [^>]*src)=[\'"]([^"]+)[\'"][^>]*>)', content):
         if re.search(r'rel=["\']?nofollow["\']', m.group(1)):
             continue
 
@@ -108,20 +117,36 @@ def check_html_valid(url, response, args):
     key = url
     if not args.validate_all:
         # derive a key for urls like this by replacing primary keys
-        key = re.sub("/[0-9.]+/",   "/nnnn/", key)
-        key = re.sub("/.+@.+/",    "/x@x.org/", key)
-        key = re.sub("#.*$",       "", key)
         key = re.sub("\?.*$",       "", key)
-        key = re.sub("/rfc[0-9]+/",   "/rfcnnnn/", key)
-        key = re.sub("/wg/[a-z0-9-]+/",   "/wg/foo/", key)
-        key = re.sub("/rg/[a-z0-9-]+/",   "/rg/foo/", key)
-        key = re.sub("/ipr/[0-9]+/",   "/ipr/nnnn/", key)
+        key = re.sub("#.*$",       "", key)
+        key = re.sub("/.+@.+/",    "/x@x.org/", key)
+        key = re.sub("/[0-9.]+/",   "/nnnn/", key)
+        key = re.sub("/[0-9.]+/",   "/mmmm/", key)
+        key = re.sub("/ag/[a-z0-9-]+/",   "/ag/foo/", key)
+        key = re.sub("/area/[a-z0-9-]+/",   "/area/foo/", key)
+        key = re.sub("/bcp[0-9]+/",   "/bcpnnn/", key)
+        key = re.sub("/conflict-review-[a-z0-9-]+/",   "/conflrev-foo/", key)
+        key = re.sub("/dir/[a-z0-9-]+/",   "/dir/foo/", key)
         key = re.sub("/draft-[a-z0-9-]+/",   "/draft-foo/", key)
+        key = re.sub("/group/[a-z0-9-]+/",   "/group/foo/", key)
+        key = re.sub("/ipr/search/.*",   "/ipr/search/", key)
+        key = re.sub("/release/[0-9dev.]+/",   "/release/n.n.n/", key)
+        key = re.sub("/rfc[0-9]+/",   "/rfcnnnn/", key)
+        key = re.sub("/rg/[a-z0-9-]+/",   "/rg/foo/", key)
+        key = re.sub("/secr/srec/nnnn/[0-9a-z-]+/", "/secr/sreq/nn/bar/", key)
+        key = re.sub("/state/[a-z0-9-]+/",   "/state/foo/", key)
+        key = re.sub("/state/[a-z0-9-]+/[a-z0-9-]+/",   "/state/foo/bar/", key)
+        key = re.sub("/status-change-[a-z0-9-]+/",   "/statchg-foo/", key)
+        key = re.sub("/std[0-9]+/",   "/stdnnn/", key)
+        key = re.sub("/submit/status/nnnn/[0-9a-f]+/", "/submit/status/nnnn/bar/", key)
+        key = re.sub("/team/[a-z0-9-]+/",   "/team/foo/", key)
+        key = re.sub("/wg/[a-z0-9-]+/",   "/wg/foo/", key)
+
         for slug in doc_types:
             key = re.sub("/%s-.*/"%slug, "/%s-nnnn/"%slug, key)
 
     if not key in validated_urls:
-
+        note('Validate: %-32s: %s' % (url[:32], key))
         # These URLs have known issues, skip them until those are fixed
         if re.search('(/secr|admin/)|/doc/.*/edit/info/', url):
             log("%s blacklisted; skipping HTML validation" % url)
@@ -159,6 +184,14 @@ def check_html_valid(url, response, args):
                                 (pos, code))
                 warnings += 1
 
+def skip_url(url):
+    for pattern in (
+            "^/community/[0-9]+/remove_document/",
+            "^/community/personal/",
+        ):
+        if re.search(pattern, url):
+            return True
+    return False
 
 def log(s):
     print(s)
@@ -237,11 +270,17 @@ if __name__ == "__main__":
             sys.exit(1)
 
     while urls:
-        # popitem() is documented to be random, but really isn't
-        url = random.choice(urls.keys())
-        referrer = urls.pop(url)
+        if args.random:
+            # popitem() is documented to be random, but really isn't
+            url = random.choice(urls.keys())
+            referrer = urls.pop(url)
+        else:
+            url, referrer = urls.popitem()
 
         visited.add(url)
+
+        if skip_url(url):
+            continue
 
         try:
             timestamp = datetime.datetime.now()
@@ -298,7 +337,7 @@ if __name__ == "__main__":
                         log("=============")
 
             else:
-                tags.append(u"FAIL for %s\n   (from %s)" % (url, referrer))
+                tags.append(u"FAIL  (from %s)" % (referrer, ))
                 errors += 1
 
             if elapsed.total_seconds() > slow_threshold:

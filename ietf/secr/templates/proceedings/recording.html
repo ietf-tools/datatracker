@@ -1,14 +1,15 @@
 {% extends "base_site.html" %}
+{% load staticfiles %}
 
 {% block title %}Proceedings{% endblock %}
 
 {% block extrastyle %}{{ block.super }}
-<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery-ui-1.11.4.custom.css" />
+<link rel="stylesheet" type="text/css" href="{% static 'secr/css/jquery-ui-1.11.4.custom.css' %}" />
 {% endblock %}
 
 {% block extrahead %}{{ block.super }}
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.11.4.custom.min.js"></script>
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/proceedings-recording.js"></script>
+  <script type="text/javascript" src="{% static 'secr/js/jquery-ui-1.11.4.custom.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'secr/js/proceedings-recording.js' %}"></script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 

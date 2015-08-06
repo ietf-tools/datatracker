@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% load ietf_filters ipr_filters bootstrap3 widget_tweaks %}
 {% load future %}
 
 {% block title %}{% if form.instance %}Edit IPR #{{ form.instance.id }}{% else %}New IPR{% endif %}{% endblock %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="/css/lib/select2.css">
-  <link rel="stylesheet" href="/css/lib/select2-bootstrap.css">
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -245,8 +245,8 @@
 {% endblock %}
 
 {% block js %}
-  <script src="/js/lib/select2-3.5.2.min.js"></script>
-  <script src="/js/select2-field.js"></script>
-  <script src="/js/lib/bootstrap-datepicker.js"></script>
-  <script src="/js/ipr-edit.js"></script>
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.js' %}"></script>
+  <script src="{% static 'ietf/js/ipr-edit.js' %}"></script>
 {% endblock %}

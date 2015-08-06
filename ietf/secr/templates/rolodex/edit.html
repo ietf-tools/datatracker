@@ -1,9 +1,10 @@
 {% extends "base_site.html" %}
+{% load staticfiles %}
 
 {% block title %}Rolodex - Edit{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/dynamic_inlines.js"></script>
+  <script type="text/javascript" src="{% static 'secr/js/dynamic_inlines.js' %}"></script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 

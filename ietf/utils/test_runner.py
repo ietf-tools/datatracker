@@ -178,12 +178,12 @@ class CoverageReporter(Reporter):
         self.find_code_units(None)
 
         total = Numbers()
-        result = {"coverage": 0.0, "covered": {}}
+        result = {"coverage": 0.0, "covered": {}, "format": 2, }
         for cu in self.code_units:
             try:
                 analysis = self.coverage._analyze(cu)
                 nums = analysis.numbers
-                result["covered"][cu.name] = nums.pc_covered/100.0
+                result["covered"][cu.name] = (nums.n_statements, nums.pc_covered/100.0)
                 total += nums
             except KeyboardInterrupt:                   # pragma: not covered
                 raise
@@ -221,7 +221,7 @@ class CoverageTest(TestCase):
             if self.runner.run_full_test_suite:
                 # Permit 0.02% variation in results -- otherwise small code changes become a pain
                 fudge_factor = 0.0002   # 0.02% -- a small change in the last digit we show
-                self.assertGreaterEqual(test_coverage, master_coverage-fudge_factor,
+                self.assertGreaterEqual(test_coverage, master_coverage - fudge_factor,
                     msg = "The %s coverage percentage is now lower (%.2f%%) than for version %s (%.2f%%)" %
                         ( test, test_coverage*100, latest_coverage_version, master_coverage*100, ))
                 self.assertLessEqual(len(test_missing), len(master_missing),
@@ -331,14 +331,17 @@ class IetfTestRunner(DiscoverRunner):
                 "template": {
                     "coverage": 0.0, 
                     "covered": {},
+                    "format": 1,        # default format, coverage data in 'covered' are just fractions
                 },
                 "url": {
                     "coverage": 0.0, 
                     "covered": {},
+                    "format": 1,
                 },
                 "code": {
                     "coverage": 0.0, 
                     "covered": {},
+                    "format": 1,
                 },
             }
 

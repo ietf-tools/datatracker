@@ -1,11 +1,12 @@
 {% extends "base_site.html" %}
+{% load staticfiles %}
 
 {% block title %}Roles{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery-ui-1.11.4.custom.css" />
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.11.4.custom.min.js"></script>
-  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'secr/css/jquery-ui-1.11.4.custom.css' %}" />
+  <script type="text/javascript" src="{% static 'secr/js/jquery-ui-1.11.4.custom.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
   
   <script type="text/javascript">
     $(document).ready(function() {
@@ -15,7 +16,7 @@
       
       $('#id_group').change(function(){
         var loadUrl = "/secr/roles/ajax/get-roles/" + $(this).val() + "/";
-        var ajax_load = "<img class='loading' src='{{ SECR_STATIC_URL }}img/ajax-loader.gif' alt='loading...' />";
+        var ajax_load = "<img class='loading' src='{% static 'secr/img/ajax-loader.gif' %}' alt='loading...' />";
         var text = $(this).val();
         $("#id_group_acronym").val(text);
         $("#roles-list").html(ajax_load).load(loadUrl);  

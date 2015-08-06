@@ -1,14 +1,14 @@
 # Copyright The IETF Trust 2007, 2009, All Rights Reserved
 
+from django.conf import settings
 from django.conf.urls import patterns, include
 from django.contrib import admin
 from django.views.generic import TemplateView
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
 from ietf import api
-
-from django.conf import settings
 
 admin.autodiscover()
 api.autodiscover()
@@ -72,12 +72,24 @@ for n,a in api._api_list:
         (r'^api/v1/', include(a.urls)),
     )
 
+# This is needed to serve files during testing
 if settings.SERVER_MODE in ('development', 'test'):
-    urlpatterns += patterns('',
-        (r'^(?P<path>(?:images|css|js|test|static|fonts|other)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
-        (r'^(?P<path>admin/(?:img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
-        (r'^(?P<path>secretariat/(img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
-        (r'^(?P<path>robots\.txt)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT+"dev/"}),
-        (r'^_test500/$', lambda x: None),
-        (r'^environment/$', 'ietf.help.views.environment'),
-	)
+    urlpatterns += ( staticfiles_urlpatterns()
+        + patterns('',
+            (r'^_test500/$', lambda x: None),
+            (r'^environment/$', 'ietf.help.views.environment'),
+            ## maybe preserve some static legacy URLs ?
+            (r'^(?P<path>(?:images|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT+'ietf/'}),
+        )
+    )
+
+# This is needed to serve files which are not handled by collectstatic :
+# if settings.SERVER_MODE in ('development', 'test'):
+#     urlpatterns += patterns('',
+#         (r'^(?P<path>(?:images|css|js|test|static)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL}),
+#         (r'^(?P<path>admin/(?:img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL}),
+#         (r'^(?P<path>secretariat/(img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL}),
+#         (r'^(?P<path>robots\.txt)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL+"dev/"}),
+#         (r'^_test500/$', lambda x: None),
+#         (r'^environment/$', 'ietf.help.views.environment'),
+# 	)

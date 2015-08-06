@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
+{% load staticfiles %}
 {% load ietf_filters %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: {{schedule.owner}} / {{ schedule.name }}{% endblock %}
 {% load agenda_custom_tags %}
 {% block pagehead %}
-<link rel='stylesheet' type='text/css' href='/css/agenda/jquery-ui-themes/jquery-ui-1.8.11.custom.css' />
-<link rel='stylesheet' type='text/css' href='/css/agenda/base2.css' />
-<link rel='stylesheet' type='text/css' href='/css/agenda/agenda.css' />
+<link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/jquery-ui-themes/jquery-ui-1.8.11.custom.css' %}" />
+<link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/base2.css' %}" />
+<link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/agenda.css' %}" />
 {% endblock pagehead %}
 
 {% block js %}
-<script type="text/javascript" src="/js/agenda/jquery-1.8.2.min.js"></script>
-<script src="/js/lib/jquery.cookie.min.js"></script>
+<script type="text/javascript" src="{% static 'ietf/js/agenda/jquery-1.8.2.min.js' %}"></script>
+<script src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script>
 jQuery.ajaxSetup({
     crossDomain: false, // obviates need for sameOrigin test
@@ -26,17 +26,17 @@ jQuery.ajaxSetup({
     }
 });
 </script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery-ui.custom.js'></script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.widget.js'></script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.droppable.js'></script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.sortable.js'></script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.accordion.js'></script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.draggable.js'></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery-ui.custom.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.widget.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.droppable.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.sortable.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.accordion.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.draggable.js' %}"></script>
 
-<script type='text/javascript' src='/js/agenda/agenda_listeners.js'></script>
-<script type='text/javascript' src='/js/agenda/agenda_helpers.js'></script>
-<script type='text/javascript' src='/js/agenda/agenda_property_utils.js'></script>
-<script type='text/javascript' src='/js/agenda/agenda_properties_edit.js'></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_listeners.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_helpers.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_property_utils.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_properties_edit.js' %}"></script>
 {% endblock js %}
 
 {% block content %}

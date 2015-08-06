@@ -1,17 +1,18 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+{% load staticfiles %}
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>{% block title %}{% endblock %}</title>
-<link rel="stylesheet" type="text/css" href="{% block stylesheet %}{{ SECR_STATIC_URL }}css/base.css{% endblock %}" />
-<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/forms.css" />
-<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/custom.css" />
+<link rel="stylesheet" type="text/css" href="{% block stylesheet %}{% static 'secr/css/base.css' %}{% endblock %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'secr/css/forms.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'secr/css/custom.css' %}" />
 {% if not server_mode == "production" %}
-<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/test.css" />
+<link rel="stylesheet" type="text/css" href="{% static 'secr/css/test.css' %}" />
 {% endif %}
 {% block extrastyle %}{% endblock %}
 
 {% block extrahead %}
-<script type="text/javascript" src="/js/lib/jquery-1.11.2.min.js"></script>
+<script type="text/javascript" src="{% static 'jquery/jquery.min.js' %}"></script>
 {% endblock %}
 
 {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}

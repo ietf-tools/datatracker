@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
+{% load staticfiles %}
 {% load ietf_filters %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 
 {% block morecss %}
@@ -19,13 +19,13 @@
 {% block title %}IETF {{ meeting.number }} Meeting Agenda{% endblock %}
 {% load agenda_custom_tags %}
 {% block pagehead %}
-<link rel='stylesheet' type='text/css' href='/css/agenda/jquery-ui-themes/jquery-ui-1.8.11.custom.css' />
-<link rel='stylesheet' type='text/css' href='/css/agenda/agenda.css' />
+<link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/jquery-ui-themes/jquery-ui-1.8.11.custom.css' %}" />
+<link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/agenda.css' %}" />
 {% endblock pagehead %}
 
 {% block js %}
-<script type="text/javascript" src="/js/agenda/jquery-1.8.2.min.js"></script>
-<script src="/js/lib/jquery.cookie.min.js"></script>
+<script type="text/javascript" src="{% static 'ietf/js/agenda/jquery-1.8.2.min.js' %}"></script>
+<script src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script>
 jQuery.ajaxSetup({
     crossDomain: false, // obviates need for sameOrigin test
@@ -36,18 +36,18 @@ jQuery.ajaxSetup({
     }
 });
 </script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery-ui.custom.min.js'></script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.widget.min.js'></script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.droppable.min.js'></script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.sortable.min.js'></script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.accordion.min.js'></script>
-<script type='text/javascript' src='/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.draggable.min.js'></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/minified/jquery-ui.custom.min.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.widget.min.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.droppable.min.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.sortable.min.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.accordion.min.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/minified/jquery.ui.draggable.min.js' %}"></script>
 
-<script type='text/javascript' src='/js/agenda/spin/dist/spin.min.js'></script>
-<script type='text/javascript' src='/js/agenda/agenda_edit.js'></script>
-<script type='text/javascript' src='/js/agenda/agenda_helpers.js'></script>
-<script type='text/javascript' src='/js/agenda/agenda_objects.js'></script>
-<script type='text/javascript' src='/js/agenda/agenda_listeners.js'></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/spin/dist/spin.min.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_edit.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_helpers.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_objects.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_listeners.js' %}"></script>
 
 
 <script type='text/javascript'>
@@ -254,7 +254,7 @@ promiselist.push(ss_promise);
       <div class="resource_list">
       {% for resource in r.resources.all %}
       <span class="resource_image">
-      <img src="/images/{{ resource.icon }}" height=24 alt="{{resource.desc}}" title="{{resource.desc}}"/>
+      <img src="{% static 'ietf/images/{{ resource.icon }}' %}" height=24 alt="{{resource.desc}}" title="{{resource.desc}}"/>
       </span>
       {% endfor %}
       </div>
