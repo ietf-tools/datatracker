@@ -12,18 +12,18 @@ ietfdb (6.4.0) ietf; urgency=medium
   static files will be migrated to be served via CDN also, over time.
 
   This release also adds support for easy update of external javascript, font,
-  and css libraries by means of a new management command 'bower_install' which
-  makes use of the 'bower' package manager.  Use of this management command
+  and css libraries by means of a new management command "bower_install" which
+  makes use of the "bower" package manager.  Use of this management command
   requires that bower be installed on the development platform.  
 
   When deploying this and following releases, a new action is needed in order
   to make the appropriate static content available for serving via CDN:
 
-  After checking out the release and creating the symlink to the new release
-  in the datatracker deployment directory, it is now also necessary to create
-  a new symlink within a directory which is served through the CDN:
+  After checking out the release, before creating the symlink to the new release
+  in the datatracker deployment directory, it is now also necessary to run
+  the "collectstatic" action::
 
-    $ ln -s /a/www/ietf-datatracker/$releasenumber/static/lib /www/www6s/lib/dt/$releasenumber
+    $ ietf/manage.py collectstatic
 
   A note about that has been added to the README file in the datatracker
   deployment directory.
