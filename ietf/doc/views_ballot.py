@@ -27,6 +27,7 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
+from ietf.eventmail.utils import gather_addresses
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -284,10 +285,13 @@ def send_ballot_comment(request, name, ballot_id):
                                  blocking_name=blocking_name,
                                  settings=settings))
     frm = ad.role_email("ad").formatted_email()
-    to = "The IESG <iesg@ietf.org>"
+    to = gather_addresses('ballot_saved',doc=doc)
         
     if request.method == 'POST':
-        cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
+        cc = gather_addresses('ballot_saved_cc',doc=doc)
+        explicit_cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
+        if explicit_cc: 
+            cc.extend(explicit_cc)
         if request.POST.get("cc_state_change") and doc.notify:
             cc.extend(doc.notify.split(','))
         if request.POST.get("cc_group_list") and doc.group.list_email:
@@ -712,7 +716,7 @@ def approve_ballot(request, name):
 
         if action == "to_announcement_list":
             send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                   override={ "To": "IANA <%s>"%settings.IANA_APPROVE_EMAIL, "CC": None, "Bcc": None, "Reply-To": None})
+                                   override={ "To": ",".join(gather_addresses('ballot_approved_ietf_stream_iana')), "CC": None, "Bcc": None, "Reply-To": None})
 
         msg = infer_message(announcement)
         msg.by = login

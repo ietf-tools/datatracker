@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}Mail Recipients{% endblock %}
+
+
+{% block content %}
+  {% origin %}
+  <h1>Mail Recipients</h1>
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Recipient</th>
+        <th>Event</th>
+        <th>Template</th>
+        <th>Code</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for ingredient in ingredients %}
+        <tr>
+          <td><span title="{{ingredient.desc}}">{{ingredient.slug}}</span></td>
+          <td>
+            {% for recipe in ingredient.recipe_set.all %}
+              <a href="{% url 'ietf.eventmail.views.show_patterns' recipe.slug %}" title="{{recipe.desc}}">{{recipe.slug}}{% if not forloop.last %}, {%endif%}
+            {% endfor %}
+          </td>
+          <td>{{ingredient.template}}</td>
+          <td>{% if ingredient.code %}<pre>{{ingredient.code}}</pre>{% endif %}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}

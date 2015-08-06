@@ -15,6 +15,7 @@ from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.eventmail.utils import gather_addresses
 
 
 class EditPositionTests(TestCase):
@@ -171,7 +172,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before + 2)
         m = outbox[-1]
-        self.assertEqual(m['Cc'],None)
+        self.assertEqual(m['Cc'],','.join(gather_addresses('ballot_saved_cc',doc=draft)))
 
 
 class BallotWriteupsTests(TestCase):

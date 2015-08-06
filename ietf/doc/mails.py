@@ -14,6 +14,7 @@ from ietf.doc.utils import needed_ballot_positions
 from ietf.person.models import Person
 from ietf.group.models import Group, Role
 from ietf.doc.models import Document
+from ietf.eventmail.utils import gather_addresses
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
@@ -170,16 +171,13 @@ def generate_approval_mail_approved(request, doc):
     else:
         action_type = "Document"
 
-    cc = []
-    cc.extend(settings.DOC_APPROVAL_EMAIL_CC)
+    to = gather_addresses('ballot_approved_ietf_stream',doc=doc)
+    cc = gather_addresses('ballot_approved_ietf_stream_cc',doc=doc)
 
     # the second check catches some area working groups (like
     # Transport Area Working Group)
     if doc.group.type_id not in ("area", "individ", "ag") and not doc.group.name.endswith("Working Group"):
         doc.group.name_with_wg = doc.group.name + " Working Group"
-        if doc.group.list_email:
-            cc.append("%s mailing list <%s>" % (doc.group.acronym, doc.group.list_email))
-        cc.append("%s chair <%s-chairs@tools.ietf.org>" % (doc.group.acronym, doc.group.acronym))
     else:
         doc.group.name_with_wg = doc.group.name
 
@@ -206,6 +204,7 @@ def generate_approval_mail_approved(request, doc):
                             dict(doc=doc,
                                  docs=[doc],
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                                 to=",\n    ".join(to),
                                  cc=",\n    ".join(cc),
                                  doc_type=doc_type,
                                  made_by=made_by,
@@ -309,7 +308,7 @@ def email_resurrection_completed(request, doc, requester):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
 def email_ballot_deferred(request, doc, by, telechat_date):
-    to = "iesg@ietf.org"
+    to = gather_addresses('ballot_deferred',doc=doc)
     frm = "DraftTracker Mail System <iesg-secretary@ietf.org>"
     send_mail(request, to, frm,
               "IESG Deferred Ballot notification: %s" % doc.file_tag(),
@@ -320,7 +319,7 @@ def email_ballot_deferred(request, doc, by, telechat_date):
                    telechat_date=telechat_date))
 
 def email_ballot_undeferred(request, doc, by, telechat_date):
-    to = "iesg@ietf.org"
+    to = gather_addresses('ballot_deferred',doc=doc)
     frm = "DraftTracker Mail System <iesg-secretary@ietf.org>"
     send_mail(request, to, frm,
               "IESG Undeferred Ballot notification: %s" % doc.file_tag(),

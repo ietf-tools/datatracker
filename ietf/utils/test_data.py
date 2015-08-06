@@ -12,6 +12,7 @@ from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateNa
 from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
 from ietf.person.models import Person, Email
+from ietf.eventmail.models import Recipe, Ingredient
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None):
     """Add person/user/email and role."""
@@ -329,5 +330,13 @@ def make_test_data():
     other_doc_factory('agenda','agenda-42-mars')
     other_doc_factory('minutes','minutes-42-mars')
     other_doc_factory('slides','slides-42-mars-1')
+
+    # EventMail tokens used by the views
+    # This won't allow testing the results of the production configuration - if we want to do that, we'll need to
+    # extract the production data either directly, or as a fixture
+    ingredient = Ingredient.objects.create(slug='bogus_ingredient',desc='Bogus Ingredient',template='bogus@example.com')
+    for slug in [u'ballot_approved_ietf_stream', u'ballot_approved_ietf_stream_cc', u'ballot_approved_ietf_stream_iana', u'ballot_deferred', u'ballot_saved', u'ballot_saved_cc']:
+        r=Recipe.objects.create(slug=slug,desc=slug)
+        r.ingredients=[ingredient]
 
     return draft

@@ -212,6 +212,7 @@ INSTALLED_APPS = (
     'ietf.community',
     'ietf.dbtemplate',
     'ietf.doc',
+    'ietf.eventmail',
     'ietf.group',
     'ietf.idindex',
     'ietf.iesg',
@@ -388,10 +389,8 @@ CACHES = {
 }
 
 IPR_EMAIL_TO = 'ietf-ipr@ietf.org'
-DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
 
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
-IANA_APPROVE_EMAIL = "drafts-approval@icann.org"
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
