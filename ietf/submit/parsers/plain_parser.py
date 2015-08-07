@@ -4,6 +4,8 @@ from ietf.submit.parsers.base import FileParser
 
 
 class PlainParser(FileParser):
+    ext = 'txt'
+    mimetype = 'text/plain'
 
     def __init__(self, fd):
         super(PlainParser, self).__init__(fd)
@@ -12,8 +14,6 @@ class PlainParser(FileParser):
     # no other file parsing is recommended
     def critical_parse(self):
         super(PlainParser, self).critical_parse()
-        self.parse_filename_extension('txt')
-        self.parse_file_type('txt', 'text/plain')
         self.parse_file_charset()
         self.parse_name()
         return self.parsed_info

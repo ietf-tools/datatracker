@@ -130,7 +130,7 @@ class SubmissionUploadForm(forms.Form):
                 continue
             self.file_types.append('.%s' % ext)
         if not ('.txt' in self.file_types or '.xml' in self.file_types):
-            raise forms.ValidationError('You must submit either a .txt or an .xml file; didn\'t find either.')
+            raise forms.ValidationError('You must submit at least a valid .txt or a valid .xml file; didn\'t find either.')
 
         #debug.show('self.cleaned_data["xml"]')
         if self.cleaned_data.get('xml'):

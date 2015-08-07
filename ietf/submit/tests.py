@@ -726,6 +726,61 @@ class SubmitTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)
 
+    def submit_bad_file(self, name, formats):
+
+        make_test_data()
+
+        rev = ""
+        group = None
+
+        # break early in case of missing configuration
+        self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
+
+        # get
+        url = urlreverse('submit_upload_submission')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        # submit
+        files = {}
+        for format in formats:
+            files[format] = self.submission_file(name, rev, group, "bad", "test_submission.bad")
+
+        r = self.client.post(url, files)
+
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form .has-error")) > 0)
+        m = q('div.has-error span.help-block').text()
+
+        return r, q, m
+        
+    def test_submit_bad_file_txt(self):
+        r, q, m = self.submit_bad_file("some name", ["txt"])
+        self.assertIn('Invalid characters were found in the name', m)
+        self.assertIn('Expected the TXT file to have extension ".txt"', m)
+        self.assertIn('Expected an TXT file of type "text/plain"', m)
+        self.assertIn('document does not contain a legitimate name', m)
+
+    def test_submit_bad_file_xml(self):
+        r, q, m = self.submit_bad_file("some name", ["xml"])
+        self.assertIn('Invalid characters were found in the name', m)
+        self.assertIn('Expected the XML file to have extension ".xml"', m)
+        self.assertIn('Expected an XML file of type "application/xml"', m)
+
+    def test_submit_bad_file_pdf(self):
+        r, q, m = self.submit_bad_file("some name", ["pdf"])
+        self.assertIn('Invalid characters were found in the name', m)
+        self.assertIn('Expected the PDF file to have extension ".pdf"', m)
+        self.assertIn('Expected an PDF file of type "application/pdf"', m)
+
+    def test_submit_bad_file_ps(self):
+        r, q, m = self.submit_bad_file("some name", ["ps"])
+        self.assertIn('Invalid characters were found in the name', m)
+        self.assertIn('Expected the PS file to have extension ".ps"', m)
+        self.assertIn('Expected an PS file of type "application/postscript"', m)
+
 class ApprovalsTestCase(TestCase):
     def test_approvals(self):
         make_test_data()
