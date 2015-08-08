@@ -2,7 +2,7 @@ import time
 from pyquery import PyQuery 
 from unittest import skipIf
 
-from django.test import LiveServerTestCase
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.group import colors
@@ -29,7 +29,7 @@ def condition_data():
 
    
 @skipIf(skip_selenium, skip_message)
-class ScheduleEditTests(LiveServerTestCase):
+class ScheduleEditTests(StaticLiveServerTestCase):
     def setUp(self):
         condition_data()
         self.driver = webdriver.PhantomJS(service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
