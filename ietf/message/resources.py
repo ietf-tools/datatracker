@@ -17,6 +17,7 @@ class MessageResource(ModelResource):
     related_docs     = ToManyField(DocumentResource, 'related_docs', null=True)
     class Meta:
         queryset = Message.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'message'
         filtering = { 
             "id": ALL,
@@ -41,6 +42,7 @@ class SendQueueResource(ModelResource):
     message          = ToOneField(MessageResource, 'message')
     class Meta:
         queryset = SendQueue.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'sendqueue'
         filtering = { 
             "id": ALL,

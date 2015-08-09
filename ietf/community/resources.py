@@ -17,6 +17,7 @@ class CommunityListResource(ModelResource):
     added_ids        = ToManyField(DocumentResource, 'added_ids', null=True)
     class Meta:
         queryset = CommunityList.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'communitylist'
         filtering = { 
             "id": ALL,
@@ -34,6 +35,7 @@ class ExpectedChangeResource(ModelResource):
     document         = ToOneField(DocumentResource, 'document')
     class Meta:
         queryset = ExpectedChange.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'expectedchange'
         filtering = { 
             "id": ALL,
@@ -47,6 +49,7 @@ class DisplayConfigurationResource(ModelResource):
     community_list   = ToOneField(CommunityListResource, 'community_list')
     class Meta:
         queryset = DisplayConfiguration.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'displayconfiguration'
         filtering = { 
             "id": ALL,
@@ -61,6 +64,7 @@ class ListNotificationResource(ModelResource):
     event            = ToOneField(DocEventResource, 'event')
     class Meta:
         queryset = ListNotification.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'listnotification'
         filtering = { 
             "id": ALL,
@@ -75,6 +79,7 @@ class RuleResource(ModelResource):
     cached_ids       = ToManyField(DocumentResource, 'cached_ids', null=True)
     class Meta:
         queryset = Rule.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'rule'
         filtering = { 
             "id": ALL,
@@ -90,6 +95,7 @@ class EmailSubscriptionResource(ModelResource):
     community_list   = ToOneField(CommunityListResource, 'community_list')
     class Meta:
         queryset = EmailSubscription.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'emailsubscription'
         filtering = { 
             "id": ALL,
@@ -104,6 +110,7 @@ class DocumentChangeDatesResource(ModelResource):
     document         = ToOneField(DocumentResource, 'document')
     class Meta:
         queryset = DocumentChangeDates.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'documentchangedates'
         filtering = { 
             "id": ALL,

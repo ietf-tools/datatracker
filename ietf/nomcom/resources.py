@@ -13,6 +13,7 @@ class NomComResource(ModelResource):
     group            = ToOneField(GroupResource, 'group')
     class Meta:
         queryset = NomCom.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'nomcom'
         filtering = { 
             "id": ALL,
@@ -33,6 +34,7 @@ class PositionResource(ModelResource):
     incumbent        = ToOneField(EmailResource, 'incumbent', null=True)
     class Meta:
         queryset = Position.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'position'
         filtering = { 
             "id": ALL,
@@ -54,6 +56,7 @@ class NomineeResource(ModelResource):
     nominee_position = ToManyField(PositionResource, 'nominee_position', null=True)
     class Meta:
         queryset = Nominee.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'nominee'
         filtering = { 
             "id": ALL,
@@ -68,6 +71,7 @@ class ReminderDatesResource(ModelResource):
     nomcom           = ToOneField(NomComResource, 'nomcom')
     class Meta:
         queryset = ReminderDates.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'reminderdates'
         filtering = { 
             "id": ALL,
@@ -83,6 +87,7 @@ class NomineePositionResource(ModelResource):
     state            = ToOneField(NomineePositionStateNameResource, 'state')
     class Meta:
         queryset = NomineePosition.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'nomineeposition'
         filtering = { 
             "id": ALL,
@@ -103,6 +108,7 @@ class FeedbackResource(ModelResource):
     nominees         = ToManyField(NomineeResource, 'nominees', null=True)
     class Meta:
         queryset = Feedback.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'feedback'
         filtering = { 
             "id": ALL,
@@ -126,6 +132,7 @@ class NominationResource(ModelResource):
     user             = ToOneField(UserResource, 'user')
     class Meta:
         queryset = Nomination.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'nomination'
         filtering = { 
             "id": ALL,

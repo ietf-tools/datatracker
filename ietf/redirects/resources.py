@@ -11,6 +11,7 @@ from ietf.redirects.models import *     # pyflakes:ignore
 class RedirectResource(ModelResource):
     class Meta:
         queryset = Redirect.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'redirect'
         filtering = { 
             "id": ALL,
@@ -24,6 +25,7 @@ api.redirects.register(RedirectResource())
 class SuffixResource(ModelResource):
     class Meta:
         queryset = Suffix.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'suffix'
         filtering = { 
             "id": ALL,
@@ -37,6 +39,7 @@ class CommandResource(ModelResource):
     suffix           = ToOneField(SuffixResource, 'suffix', null=True)
     class Meta:
         queryset = Command.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'command'
         filtering = { 
             "id": ALL,

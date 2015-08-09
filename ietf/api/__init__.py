@@ -5,9 +5,11 @@ import datetime
 from django.conf import settings
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
+from django.utils.encoding import force_text
 
 from tastypie.api import Api
-from tastypie.serializers import Serializer
+from tastypie.bundle import Bundle
+from tastypie.serializers import Serializer as BaseSerializer
 from tastypie.exceptions import BadRequest, ApiFieldError
 from tastypie.utils.mime import determine_format, build_content_type
 from tastypie.utils import is_valid_jsonp_callback_value
@@ -16,6 +18,58 @@ from tastypie.fields import ApiField
 import debug                            # pyflakes:ignore
 
 _api_list = []
+
+class Serializer(BaseSerializer):
+    def to_html(self, data, options=None):
+        """
+        Reserved for future usage.
+
+        The desire is to provide HTML output of a resource, making an API
+        available to a browser. This is on the TODO list but not currently
+        implemented.
+        """
+        from django.template.loader import render_to_string as render
+
+        options = options or {}
+
+        serialized = self.to_simple_html(data, options)
+        return render("api/base.html", {"data": serialized})
+
+    def to_simple_html(self, data, options):
+        """
+        """
+        from django.template.loader import render_to_string as render
+        #
+        if isinstance(data, (list, tuple)):
+            return render("api/listitem.html", {"data": [self.to_simple_html(item, options) for item in data]})
+        if isinstance(data, dict):
+            return render("api/dictitem.html", {"data": dict((key, self.to_simple_html(val, options)) for (key, val) in data.items())})
+        elif isinstance(data, Bundle):
+            return render("api/dictitem.html", {"data":dict((key, self.to_simple_html(val, options)) for (key, val) in data.data.items())})
+        elif hasattr(data, 'dehydrated_type'):
+            debug.show('data')
+            if getattr(data, 'dehydrated_type', None) == 'related' and data.is_m2m == False:
+                return render("api/relitem.html", {"fk": data.fk_resource, "val": self.to_simple_html(data.value, options)})
+            elif getattr(data, 'dehydrated_type', None) == 'related' and data.is_m2m == True:
+                render("api/listitem.html", {"data": [self.to_simple_html(bundle, options) for bundle in data.m2m_bundles]})
+            else:
+                return self.to_simple_html(data.value, options)
+        elif isinstance(data, datetime.datetime):
+            return self.format_datetime(data)
+        elif isinstance(data, datetime.date):
+            return self.format_date(data)
+        elif isinstance(data, datetime.time):
+            return self.format_time(data)
+        elif isinstance(data, bool):
+            return data
+        elif isinstance(data, (six.integer_types, float)):
+            return data
+        elif data is None:
+            return None
+        elif isinstance(data, basestring) and data.startswith("/api/v1/"):  # XXX Will not work for Python 3
+            return render("api/relitem.html", {"fk": data, "val": data.split('/')[-2]})
+        else:
+            return force_text(data)
 
 for _app in settings.INSTALLED_APPS:
     _module_dict = globals()

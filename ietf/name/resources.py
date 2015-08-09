@@ -11,6 +11,7 @@ from ietf.name.models import *          # pyflakes:ignore
 class TimeSlotTypeNameResource(ModelResource):
     class Meta:
         queryset = TimeSlotTypeName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'timeslottypename'
         filtering = { 
             "slug": ALL,
@@ -24,6 +25,7 @@ api.name.register(TimeSlotTypeNameResource())
 class GroupStateNameResource(ModelResource):
     class Meta:
         queryset = GroupStateName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'groupstatename'
         filtering = { 
             "slug": ALL,
@@ -37,6 +39,7 @@ api.name.register(GroupStateNameResource())
 class DocTagNameResource(ModelResource):
     class Meta:
         queryset = DocTagName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'doctagname'
         filtering = { 
             "slug": ALL,
@@ -50,6 +53,7 @@ api.name.register(DocTagNameResource())
 class IntendedStdLevelNameResource(ModelResource):
     class Meta:
         queryset = IntendedStdLevelName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'intendedstdlevelname'
         filtering = { 
             "slug": ALL,
@@ -63,6 +67,7 @@ api.name.register(IntendedStdLevelNameResource())
 class LiaisonStatementPurposeNameResource(ModelResource):
     class Meta:
         queryset = LiaisonStatementPurposeName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'liaisonstatementpurposename'
         filtering = { 
             "slug": ALL,
@@ -77,6 +82,7 @@ class DraftSubmissionStateNameResource(ModelResource):
     next_states      = ToManyField('ietf.name.resources.DraftSubmissionStateNameResource', 'next_states', null=True)
     class Meta:
         queryset = DraftSubmissionStateName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'draftsubmissionstatename'
         filtering = { 
             "slug": ALL,
@@ -91,6 +97,7 @@ api.name.register(DraftSubmissionStateNameResource())
 class DocTypeNameResource(ModelResource):
     class Meta:
         queryset = DocTypeName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'doctypename'
         filtering = { 
             "slug": ALL,
@@ -104,6 +111,7 @@ api.name.register(DocTypeNameResource())
 class RoleNameResource(ModelResource):
     class Meta:
         queryset = RoleName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'rolename'
         filtering = { 
             "slug": ALL,
@@ -117,6 +125,7 @@ api.name.register(RoleNameResource())
 class StdLevelNameResource(ModelResource):
     class Meta:
         queryset = StdLevelName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'stdlevelname'
         filtering = { 
             "slug": ALL,
@@ -130,6 +139,7 @@ api.name.register(StdLevelNameResource())
 class GroupTypeNameResource(ModelResource):
     class Meta:
         queryset = GroupTypeName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'grouptypename'
         filtering = { 
             "slug": ALL,
@@ -143,6 +153,7 @@ api.name.register(GroupTypeNameResource())
 class GroupMilestoneStateNameResource(ModelResource):
     class Meta:
         queryset = GroupMilestoneStateName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'groupmilestonestatename'
         filtering = { 
             "slug": ALL,
@@ -156,6 +167,7 @@ api.name.register(GroupMilestoneStateNameResource())
 class SessionStatusNameResource(ModelResource):
     class Meta:
         queryset = SessionStatusName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'sessionstatusname'
         filtering = { 
             "slug": ALL,
@@ -169,6 +181,7 @@ api.name.register(SessionStatusNameResource())
 class DocReminderTypeNameResource(ModelResource):
     class Meta:
         queryset = DocReminderTypeName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'docremindertypename'
         filtering = { 
             "slug": ALL,
@@ -182,6 +195,7 @@ api.name.register(DocReminderTypeNameResource())
 class ConstraintNameResource(ModelResource):
     class Meta:
         queryset = ConstraintName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'constraintname'
         filtering = { 
             "slug": ALL,
@@ -196,6 +210,7 @@ api.name.register(ConstraintNameResource())
 class MeetingTypeNameResource(ModelResource):
     class Meta:
         queryset = MeetingTypeName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'meetingtypename'
         filtering = { 
             "slug": ALL,
@@ -209,6 +224,7 @@ api.name.register(MeetingTypeNameResource())
 class DocRelationshipNameResource(ModelResource):
     class Meta:
         queryset = DocRelationshipName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'docrelationshipname'
         filtering = { 
             "slug": ALL,
@@ -223,6 +239,7 @@ api.name.register(DocRelationshipNameResource())
 class RoomResourceNameResource(ModelResource):
     class Meta:
         queryset = RoomResourceName.objects.all()
+        serializer = api.Serializer()
         resource_name = 'roomresourcename' # Needed because tastypie otherwise removes 'resource' from the name
         filtering = { 
             "slug": ALL,
@@ -236,6 +253,7 @@ api.name.register(RoomResourceNameResource())
 class FeedbackTypeNameResource(ModelResource):
     class Meta:
         queryset = FeedbackTypeName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'feedbacktypename'
         filtering = { 
             "slug": ALL,
@@ -249,6 +267,7 @@ api.name.register(FeedbackTypeNameResource())
 class StreamNameResource(ModelResource):
     class Meta:
         queryset = StreamName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'streamname'
         filtering = { 
             "slug": ALL,
@@ -262,6 +281,7 @@ api.name.register(StreamNameResource())
 class BallotPositionNameResource(ModelResource):
     class Meta:
         queryset = BallotPositionName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'ballotpositionname'
         filtering = { 
             "slug": ALL,
@@ -276,6 +296,7 @@ api.name.register(BallotPositionNameResource())
 class DBTemplateTypeNameResource(ModelResource):
     class Meta:
         queryset = DBTemplateTypeName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'dbtemplatetypename'
         filtering = { 
             "slug": ALL,
@@ -289,6 +310,7 @@ api.name.register(DBTemplateTypeNameResource())
 class NomineePositionStateNameResource(ModelResource):
     class Meta:
         queryset = NomineePositionStateName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'nomineepositionstatename'
         filtering = { 
             "slug": ALL,
@@ -304,6 +326,7 @@ api.name.register(NomineePositionStateNameResource())
 class IprDisclosureStateNameResource(ModelResource):
     class Meta:
         queryset = IprDisclosureStateName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'iprdisclosurestatename'
         filtering = { 
             "slug": ALL,
@@ -317,6 +340,7 @@ api.name.register(IprDisclosureStateNameResource())
 class IprEventTypeNameResource(ModelResource):
     class Meta:
         queryset = IprEventTypeName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'ipreventtypename'
         filtering = { 
             "slug": ALL,
@@ -330,6 +354,7 @@ api.name.register(IprEventTypeNameResource())
 class IprLicenseTypeNameResource(ModelResource):
     class Meta:
         queryset = IprLicenseTypeName.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'iprlicensetypename'
         filtering = { 
             "slug": ALL,

@@ -18,6 +18,7 @@ class IprDisclosureBaseResource(ModelResource):
     rel              = ToManyField('ietf.ipr.resources.IprDisclosureBaseResource', 'rel', null=True)
     class Meta:
         queryset = IprDisclosureBase.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'iprdisclosurebase'
         filtering = { 
             "id": ALL,
@@ -42,6 +43,7 @@ class IprDocRelResource(ModelResource):
     document         = ToOneField(DocAliasResource, 'document')
     class Meta:
         queryset = IprDocRel.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'iprdocrel'
         filtering = { 
             "id": ALL,
@@ -64,6 +66,7 @@ class HolderIprDisclosureResource(ModelResource):
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         queryset = HolderIprDisclosure.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'holderiprdisclosure'
         filtering = { 
             "id": ALL,
@@ -105,6 +108,7 @@ class ThirdPartyIprDisclosureResource(ModelResource):
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         queryset = ThirdPartyIprDisclosure.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'thirdpartyiprdisclosure'
         filtering = { 
             "id": ALL,
@@ -136,6 +140,7 @@ class RelatedIprResource(ModelResource):
     relationship     = ToOneField(DocRelationshipNameResource, 'relationship')
     class Meta:
         queryset = RelatedIpr.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'relatedipr'
         filtering = { 
             "id": ALL,
@@ -156,6 +161,7 @@ class NonDocSpecificIprDisclosureResource(ModelResource):
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         queryset = NonDocSpecificIprDisclosure.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'nondocspecificiprdisclosure'
         filtering = { 
             "id": ALL,
@@ -192,6 +198,7 @@ class GenericIprDisclosureResource(ModelResource):
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         queryset = GenericIprDisclosure.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'genericiprdisclosure'
         filtering = { 
             "id": ALL,
@@ -226,6 +233,7 @@ class IprEventResource(ModelResource):
     in_reply_to      = ToOneField(MessageResource, 'in_reply_to', null=True)
     class Meta:
         queryset = IprEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'iprevent'
         filtering = { 
             "id": ALL,
@@ -252,6 +260,7 @@ class LegacyMigrationIprEventResource(ModelResource):
     iprevent_ptr     = ToOneField(IprEventResource, 'iprevent_ptr')
     class Meta:
         queryset = LegacyMigrationIprEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'legacymigrationiprevent'
         filtering = { 
             "id": ALL,
