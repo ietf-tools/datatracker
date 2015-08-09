@@ -21,6 +21,7 @@ class LiaisonStatementResource(ModelResource):
     attachments      = ToManyField(DocumentResource, 'attachments', null=True)
     class Meta:
         queryset = LiaisonStatement.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'liaisonstatement'
         filtering = { 
             "id": ALL,

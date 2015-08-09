@@ -10,6 +10,7 @@ from ietf.iesg.models import *          # pyflakes:ignore
 class TelechatDateResource(ModelResource):
     class Meta:
         queryset = TelechatDate.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'telechatdate'
         filtering = { 
             "id": ALL,
@@ -20,6 +21,7 @@ api.iesg.register(TelechatDateResource())
 class TelechatResource(ModelResource):
     class Meta:
         queryset = Telechat.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'telechat'
         filtering = { 
             "telechat_id": ALL,
@@ -36,6 +38,7 @@ api.iesg.register(TelechatResource())
 class TelechatAgendaItemResource(ModelResource):
     class Meta:
         queryset = TelechatAgendaItem.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'telechatagendaitem'
         filtering = { 
             "id": ALL,

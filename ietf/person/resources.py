@@ -13,6 +13,7 @@ class PersonResource(ModelResource):
     user             = ToOneField(UserResource, 'user', null=True)
     class Meta:
         queryset = Person.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'person'
         filtering = { 
             "id": ALL,
@@ -30,6 +31,7 @@ class EmailResource(ModelResource):
     person           = ToOneField(PersonResource, 'person', null=True)
     class Meta:
         queryset = Email.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'email'
         filtering = { 
             "address": ALL,
@@ -43,6 +45,7 @@ class AliasResource(ModelResource):
     person           = ToOneField(PersonResource, 'person')
     class Meta:
         queryset = Alias.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'alias'
         filtering = { 
             "id": ALL,
@@ -57,6 +60,7 @@ class PersonHistoryResource(ModelResource):
     user             = ToOneField(UserResource, 'user', null=True)
     class Meta:
         queryset = PersonHistory.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'personhistory'
         filtering = { 
             "id": ALL,

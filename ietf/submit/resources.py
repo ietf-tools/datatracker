@@ -13,6 +13,7 @@ class PreapprovalResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     class Meta:
         queryset = Preapproval.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'preapproval'
         filtering = { 
             "id": ALL,
@@ -29,6 +30,7 @@ class SubmissionResource(ModelResource):
     group            = ToOneField(GroupResource, 'group', null=True)
     class Meta:
         queryset = Submission.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'submission'
         filtering = { 
             "id": ALL,
@@ -61,6 +63,7 @@ class SubmissionEventResource(ModelResource):
     by               = ToOneField(PersonResource, 'by', null=True)
     class Meta:
         queryset = SubmissionEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'submissionevent'
         filtering = { 
             "id": ALL,

@@ -14,6 +14,7 @@ class MeetingResource(ModelResource):
     agenda           = ToOneField('ietf.meeting.resources.ScheduleResource', 'agenda', null=True)
     class Meta:
         queryset = Meeting.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'meeting'
         filtering = { 
             "id": ALL,
@@ -42,6 +43,7 @@ class ResourceAssociationResource(ModelResource):
     name = ToOneField(RoomResourceNameResource, 'name')
     class Meta:
         queryset = ResourceAssociation.objects.all()
+        serializer = api.Serializer()
         resource_name = 'resourceassociation'
         filtering = { 
             "id": ALL,
@@ -62,6 +64,7 @@ class ConstraintResource(ModelResource):
     name = ToOneField(ConstraintNameResource, 'name')
     class Meta:
         queryset = Constraint.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'constraint'
         filtering = { 
             "id": ALL,
@@ -81,6 +84,7 @@ class RoomResource(ModelResource):
     session_types    = ToManyField(TimeSlotTypeNameResource, 'session_types', null=True)
     class Meta:
         queryset = Room.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'room'
         filtering = { 
             "id": ALL,
@@ -99,6 +103,7 @@ class ScheduleResource(ModelResource):
     owner = ToOneField(PersonResource, 'owner')
     class Meta:
         queryset = Schedule.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'schedule'
         filtering = { 
             "id": ALL,
@@ -126,6 +131,7 @@ class SessionResource(ModelResource):
     requested_duration = api.TimedeltaField()
     class Meta:
         queryset = Session.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'session'
         filtering = { 
             "id": ALL,
@@ -157,6 +163,7 @@ class TimeSlotResource(ModelResource):
     duration = api.TimedeltaField()
     class Meta:
         queryset = TimeSlot.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'timeslot'
         filtering = { 
             "id": ALL,
@@ -179,6 +186,7 @@ class ScheduledSessionResource(ModelResource):
     extendedfrom = ToOneField('ietf.meeting.resources.ScheduledSessionResource', 'extendedfrom', null=True)
     class Meta:
         queryset = ScheduledSession.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'scheduledsession'
         filtering = { 
             "id": ALL,
@@ -201,6 +209,7 @@ class SessionPresentationResource(ModelResource):
     document         = ToOneField(DocumentResource, 'document')
     class Meta:
         queryset = SessionPresentation.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'sessionpresentation'
         filtering = { 
             "id": ALL,

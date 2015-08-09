@@ -32,6 +32,7 @@ class {{model.name}}Resource(ModelResource):{% if model.foreign_keys %}{% for fk
     {{fk.name|ljust:"16"}} = ToManyField({{fk.rmodel_name}}, '{{fk.name}}', null=True){% endfor %}{% endif %}
     class Meta:
         queryset = {{model.name}}.objects.all()
+        serializer = api.Serializer()
         #resource_name = '{{model.resource_name}}'
         filtering = { {% for name in model.plain_names %}
             "{{ name }}": ALL,{%endfor%}{% for name in model.fk_names%}

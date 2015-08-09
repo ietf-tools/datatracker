@@ -15,6 +15,7 @@ class DBTemplateResource(ModelResource):
     group            = ToOneField(GroupResource, 'group', null=True)
     class Meta:
         queryset = DBTemplate.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'dbtemplate'
         filtering = { 
             "id": ALL,

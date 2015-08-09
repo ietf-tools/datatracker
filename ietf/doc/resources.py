@@ -14,6 +14,7 @@ class BallotTypeResource(ModelResource):
     positions        = ToManyField(BallotPositionNameResource, 'positions', null=True)
     class Meta:
         queryset = BallotType.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'ballottype'
         filtering = { 
             "id": ALL,
@@ -34,6 +35,7 @@ class DeletedEventResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     class Meta:
         queryset = DeletedEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'deletedevent'
         filtering = { 
             "id": ALL,
@@ -47,6 +49,7 @@ api.doc.register(DeletedEventResource())
 class StateTypeResource(ModelResource):
     class Meta:
         queryset = StateType.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'statetype'
         filtering = { 
             "slug": ALL,
@@ -59,6 +62,7 @@ class StateResource(ModelResource):
     next_states      = ToManyField('ietf.doc.resources.StateResource', 'next_states', null=True)
     class Meta:
         queryset = State.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'state'
         filtering = { 
             "id": ALL,
@@ -89,6 +93,7 @@ class DocumentResource(ModelResource):
     rfc              = CharField(attribute='rfc_number', null=True)
     class Meta:
         queryset = Document.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'document'
         filtering = { 
             "time": ALL,
@@ -122,6 +127,7 @@ class DocumentAuthorResource(ModelResource):
     author           = ToOneField(EmailResource, 'author')
     class Meta:
         queryset = DocumentAuthor.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'documentauthor'
         filtering = { 
             "id": ALL,
@@ -137,6 +143,7 @@ class DocEventResource(ModelResource):
     doc              = ToOneField(DocumentResource, 'doc')
     class Meta:
         queryset = DocEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'docevent'
         filtering = { 
             "id": ALL,
@@ -157,6 +164,7 @@ class StateDocEventResource(ModelResource):
     state            = ToOneField(StateResource, 'state', null=True)
     class Meta:
         queryset = StateDocEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'statedocevent'
         filtering = { 
             "id": ALL,
@@ -178,6 +186,7 @@ class ConsensusDocEventResource(ModelResource):
     docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
     class Meta:
         queryset = ConsensusDocEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'consensusdocevent'
         filtering = { 
             "id": ALL,
@@ -195,6 +204,7 @@ class DocAliasResource(ModelResource):
     document         = ToOneField(DocumentResource, 'document')
     class Meta:
         queryset = DocAlias.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'docalias'
         filtering = { 
             "id": ALL,
@@ -210,6 +220,7 @@ class TelechatDocEventResource(ModelResource):
     docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
     class Meta:
         queryset = TelechatDocEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'telechatdocevent'
         filtering = { 
             "id": ALL,
@@ -230,6 +241,7 @@ class DocReminderResource(ModelResource):
     type             = ToOneField(DocReminderTypeNameResource, 'type')
     class Meta:
         queryset = DocReminder.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'docreminder'
         filtering = { 
             "id": ALL,
@@ -247,6 +259,7 @@ class LastCallDocEventResource(ModelResource):
     docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
     class Meta:
         queryset = LastCallDocEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'lastcalldocevent'
         filtering = { 
             "id": ALL,
@@ -267,6 +280,7 @@ class NewRevisionDocEventResource(ModelResource):
     docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
     class Meta:
         queryset = NewRevisionDocEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'newrevisiondocevent'
         filtering = { 
             "id": ALL,
@@ -287,6 +301,7 @@ class WriteupDocEventResource(ModelResource):
     docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
     class Meta:
         queryset = WriteupDocEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'writeupdocevent'
         filtering = { 
             "id": ALL,
@@ -307,6 +322,7 @@ class InitialReviewDocEventResource(ModelResource):
     docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
     class Meta:
         queryset = InitialReviewDocEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'initialreviewdocevent'
         filtering = { 
             "id": ALL,
@@ -328,6 +344,7 @@ class BallotDocEventResource(ModelResource):
     ballot_type      = ToOneField(BallotTypeResource, 'ballot_type')
     class Meta:
         queryset = BallotDocEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'ballotdocevent'
         filtering = { 
             "id": ALL,
@@ -348,6 +365,7 @@ class RelatedDocumentResource(ModelResource):
     relationship     = ToOneField(DocRelationshipNameResource, 'relationship')
     class Meta:
         queryset = RelatedDocument.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'relateddocument'
         filtering = { 
             "id": ALL,
@@ -375,6 +393,7 @@ class DocHistoryResource(ModelResource):
     authors          = ToManyField(EmailResource, 'authors', null=True)
     class Meta:
         queryset = DocHistory.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'dochistory'
         filtering = { 
             "id": ALL,
@@ -416,6 +435,7 @@ class BallotPositionDocEventResource(ModelResource):
     pos              = ToOneField(BallotPositionNameResource, 'pos')
     class Meta:
         queryset = BallotPositionDocEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'ballotpositiondocevent'
         filtering = { 
             "id": ALL,
@@ -441,6 +461,7 @@ class DocHistoryAuthorResource(ModelResource):
     author           = ToOneField(EmailResource, 'author')
     class Meta:
         queryset = DocHistoryAuthor.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'dochistoryauthor'
         filtering = { 
             "id": ALL,
@@ -457,6 +478,7 @@ class RelatedDocHistoryResource(ModelResource):
     relationship     = ToOneField(DocRelationshipNameResource, 'relationship')
     class Meta:
         queryset = RelatedDocHistory.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'relateddochistory'
         filtering = { 
             "id": ALL,

@@ -20,6 +20,7 @@ class GroupResource(ModelResource):
     unused_tags = ToManyField(DocTagNameResource, 'unused_tags', null=True)
     class Meta:
         queryset = Group.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'group'
         filtering = { 
             "id": ALL,
@@ -47,6 +48,7 @@ class GroupStateTransitionsResource(ModelResource):
     next_states = ToManyField('ietf.doc.resources.StateResource', 'next_states', null=True)
     class Meta:
         queryset = GroupStateTransitions.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'groupstatetransitions'
         filtering = { 
             "id": ALL,
@@ -63,6 +65,7 @@ class GroupMilestoneResource(ModelResource):
     docs = ToManyField('ietf.doc.resources.DocumentResource', 'docs', null=True)
     class Meta:
         queryset = GroupMilestone.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'groupmilestone'
         filtering = { 
             "id": ALL,
@@ -88,6 +91,7 @@ class GroupHistoryResource(ModelResource):
     unused_tags = ToManyField(DocTagNameResource, 'unused_tags', null=True)
     class Meta:
         queryset = GroupHistory.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'grouphistory'
         filtering = { 
             "id": ALL,
@@ -113,6 +117,7 @@ class GroupURLResource(ModelResource):
     group = ToOneField(GroupResource, 'group')
     class Meta:
         queryset = GroupURL.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'groupurl'
         filtering = { 
             "id": ALL,
@@ -131,6 +136,7 @@ class RoleResource(ModelResource):
     email = ToOneField(EmailResource, 'email')
     class Meta:
         queryset = Role.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'role'
         filtering = { 
             "id": ALL,
@@ -147,6 +153,7 @@ class GroupEventResource(ModelResource):
     by = ToOneField(PersonResource, 'by')
     class Meta:
         queryset = GroupEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'groupevent'
         filtering = { 
             "id": ALL,
@@ -167,6 +174,7 @@ class RoleHistoryResource(ModelResource):
     email = ToOneField(EmailResource, 'email')
     class Meta:
         queryset = RoleHistory.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'rolehistory'
         filtering = { 
             "id": ALL,
@@ -185,6 +193,7 @@ class GroupMilestoneHistoryResource(ModelResource):
     docs = ToManyField('ietf.doc.resources.DocumentResource', 'docs', null=True)
     class Meta:
         queryset = GroupMilestoneHistory.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'groupmilestonehistory'
         filtering = { 
             "id": ALL,
@@ -207,6 +216,7 @@ class MilestoneGroupEventResource(ModelResource):
     milestone = ToOneField(GroupMilestoneResource, 'milestone')
     class Meta:
         queryset = MilestoneGroupEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'milestonegroupevent'
         filtering = { 
             "id": ALL,
@@ -229,6 +239,7 @@ class ChangeStateGroupEventResource(ModelResource):
     state = ToOneField(GroupStateNameResource, 'state')
     class Meta:
         queryset = ChangeStateGroupEvent.objects.all()
+        serializer = api.Serializer()
         #resource_name = 'changestategroupevent'
         filtering = { 
             "id": ALL,
