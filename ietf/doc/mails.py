@@ -14,7 +14,7 @@ from ietf.doc.utils import needed_ballot_positions
 from ietf.person.models import Person
 from ietf.group.models import Group, Role
 from ietf.doc.models import Document
-from ietf.eventmail.utils import gather_addresses
+from ietf.mailtoken.utils import gather_addresses
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]

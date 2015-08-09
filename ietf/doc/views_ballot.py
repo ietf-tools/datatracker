@@ -27,7 +27,7 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.eventmail.utils import gather_addresses
+from ietf.mailtoken.utils import gather_addresses
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),

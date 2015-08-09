@@ -13,22 +13,22 @@
     <thead>
       <tr>
         <th>Recipient</th>
-        <th>Event</th>
+        <th>Events</th>
         <th>Template</th>
         <th>Code</th>
       </tr>
     </thead>
     <tbody>
-    {% for ingredient in ingredients %}
+    {% for recipient in recipients %}
         <tr>
-          <td><span title="{{ingredient.desc}}">{{ingredient.slug}}</span></td>
+          <td><span title="{{recipient.desc}}">{{recipient.slug}}</span></td>
           <td>
-            {% for recipe in ingredient.recipe_set.all %}
-              <a href="{% url 'ietf.eventmail.views.show_patterns' recipe.slug %}" title="{{recipe.desc}}">{{recipe.slug}}{% if not forloop.last %}, {%endif%}
+            {% for mailtoken in recipient.mailtoken_set.all %}
+              <a href="{% url 'ietf.mailtoken.views.show_tokens' mailtoken.slug %}" title="{{mailtoken.desc}}">{{mailtoken.slug}}{% if not forloop.last %}, {%endif%}
             {% endfor %}
           </td>
-          <td>{{ingredient.template}}</td>
-          <td>{% if ingredient.code %}<pre>{{ingredient.code}}</pre>{% endif %}</td>
+          <td>{{recipient.template}}</td>
+          <td>{% if recipient.code %}<pre>{{recipient.code}}</pre>{% endif %}</td>
         </tr>
     {% endfor %}
     </tbody>

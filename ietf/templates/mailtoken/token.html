@@ -17,13 +17,13 @@
       </tr>
     </thead>
     <tbody>
-    {% for recipe in recipes %}
+    {% for mailtoken in mailtokens %}
         <tr>
-          <td><span title="{{recipe.desc}}">{{recipe.slug}}</span></td>
+          <td><span title="{{mailtoken.desc}}">{{mailtoken.slug}}</span></td>
           <td>
-            {% for ingredient in recipe.ingredients.all %}
-              {% comment %}<span title="{{ingredient.desc}}">{{ingredient.slug}}</span>{% endcomment %}
-              <a href="{% url 'ietf.eventmail.views.show_ingredients' ingredient.slug %}" title="{{ingredient.desc}}">{{ingredient.slug}}</a>{% if not forloop.last %}, {% endif %}
+            {% for recipient in mailtoken.recipients.all %}
+              {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
+              <a href="{% url 'ietf.mailtoken.views.show_recipients' recipient.slug %}" title="{{recipient.desc}}">{{recipient.slug}}</a>{% if not forloop.last %}, {% endif %}
             {% endfor %}
           </td>
         </tr>

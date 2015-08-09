@@ -2,42 +2,42 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data
-from ietf.eventmail.models import Ingredient
+from ietf.mailtoken.models import Recipient
 
 class EventMailTests(TestCase):
 
     def setUp(self):
         make_test_data()
 
-    def test_show_patterns(self):
+    def test_show_tokens(self):
 
-        url = urlreverse('ietf.eventmail.views.show_patterns')
+        url = urlreverse('ietf.mailtoken.views.show_tokens')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue('ballot_saved_cc' in r.content)
    
-        url = urlreverse('ietf.eventmail.views.show_patterns',kwargs=dict(eventmail_slug='ballot_saved_cc'))
+        url = urlreverse('ietf.mailtoken.views.show_tokens',kwargs=dict(mailtoken_slug='ballot_saved_cc'))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue('ballot_saved_cc' in r.content)
 
     def test_show_recipients(self):
 
-        url = urlreverse('ietf.eventmail.views.show_ingredients')
+        url = urlreverse('ietf.mailtoken.views.show_recipients')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue('bogus' in r.content)
    
-        url = urlreverse('ietf.eventmail.views.show_ingredients',kwargs=dict(ingredient_slug='bogus'))
+        url = urlreverse('ietf.mailtoken.views.show_recipients',kwargs=dict(recipient_slug='bogus'))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue('bogus' in r.content)
 
-class IngredientTests(TestCase):
+class RecipientTests(TestCase):
 
-    def test_ingredient_functions(self):
+    def test_recipient_functions(self):
         draft = make_test_data()
-        ingredient = Ingredient.objects.first()
-        for funcname in [name for name in dir(ingredient) if name.startswith('gather_')]:
-            func=getattr(ingredient,funcname)
+        recipient = Recipient.objects.first()
+        for funcname in [name for name in dir(recipient) if name.startswith('gather_')]:
+            func=getattr(recipient,funcname)
             func(**{'doc':draft,'group':draft.group})

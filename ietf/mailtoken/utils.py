@@ -1,20 +1,20 @@
 
 from django.core.exceptions import ObjectDoesNotExist
 
-from ietf.eventmail.models import Recipe
+from ietf.mailtoken.models import MailToken
 
 def gather_addresses(slug,**kwargs):
     
     addrs = []
 
     try:
-       recipe = Recipe.objects.get(slug=slug)
+       mailtoken = MailToken.objects.get(slug=slug)
     except ObjectDoesNotExist:
        # TODO remove the raise here, or find a better way to detect runtime misconfiguration
        raise
        return addrs
 
-    for ingredient in recipe.ingredients.all():
-        addrs.extend(ingredient.gather(**kwargs))
+    for recipient in mailtoken.recipients.all():
+        addrs.extend(recipient.gather(**kwargs))
 
     return addrs

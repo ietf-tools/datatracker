@@ -15,7 +15,7 @@ from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.eventmail.utils import gather_addresses
+from ietf.mailtoken.utils import gather_addresses
 
 
 class EditPositionTests(TestCase):
