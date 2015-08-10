@@ -8,6 +8,7 @@ from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent, BallotPosition
 from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import send_mail_text
+from ietf.mailtoken.utils import gather_addresses
 
 def charter_name_for_group(group):
     if group.type_id == "rg":
@@ -126,6 +127,8 @@ def default_action_text(group, charter, by):
                                    techadv=group.role_set.filter(name="techadv"),
                                    milestones=group.groupmilestone_set.filter(state="charter"),
                                    action_type=action,
+                                   to=",    ".join(gather_addresses('ballot_approved_charter',doc=charter,group=group)),
+                                   cc=",    ".join(gather_addresses('ballot_approved_charter_cc',doc=charter,group=group)),
                                    ))
 
     e.save()

@@ -12,7 +12,7 @@ from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent, DocTagName
 from ietf.doc.utils import needed_ballot_positions
 from ietf.person.models import Person
-from ietf.group.models import Group, Role
+from ietf.group.models import Role
 from ietf.doc.models import Document
 from ietf.mailtoken.utils import gather_addresses
 
@@ -217,27 +217,16 @@ def generate_approval_mail_rfc_editor(request, doc):
     disapproved = doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
 
-    to = []
-    if doc.group.type_id != "individ":
-        for r in doc.group.role_set.filter(name="chair").select_related():
-            to.append(r.formatted_email())
-
-    if doc.stream_id in ("ise", "irtf"):
-        # include ISE/IRTF chairs
-        g = Group.objects.get(acronym=doc.stream_id)
-        for r in g.role_set.filter(name="chair").select_related():
-            to.append(r.formatted_email())
-
-    if doc.stream_id == "irtf":
-        # include IRSG
-        to.append('"Internet Research Steering Group" <irsg@irtf.org>')
+    to = gather_addresses('ballot_approved_conflrev', doc=doc)
+    cc = gather_addresses('ballot_approved_conflrev_cc', doc=doc)
 
     return render_to_string("doc/mail/approval_mail_rfc_editor.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  doc_type=doc_type,
                                  disapproved=disapproved,
-                                 to=", ".join(to),
+                                 to=",\n    ".join(to),
+                                 cc=",\n    ".join(cc),
                                  )
                             )
 
