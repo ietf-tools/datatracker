@@ -30,7 +30,7 @@
                     {% endif %}
               </dd> 
               <dt>Date</dt>
-              <dd>{{ feedback.time|date:"Y-m-d" }})</dd>
+              <dd>{{ feedback.time|date:"Y-m-d" }}</dd>
 
               {% if ft.slug == "nomina" %}
                 {% for fn in feedback.nomination_set.all %}
