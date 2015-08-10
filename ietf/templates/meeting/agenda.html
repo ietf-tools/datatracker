@@ -84,29 +84,28 @@
 	        <p>Groups displayed in <b><i>italics</i></b> are BOFs.</p>
 
 
-	        {% regroup schedule.groups by parent.acronym as area_sessions %}
-	        <table class="table table-condensed">
+                <table class="table table-condensed">
 	          <thead>
 		    <tr>
-		      {% for area in area_sessions %}
-		        <th style="width:{% widthratio 1 area_sessions|length 100 %}%">
-		          <button class="btn btn-default btn-block pickview {{area.grouper|lower}}">{{area.grouper|upper}}</button>
+                      {% for p in group_parents %}
+                        <th style="width:{% widthratio 1 group_parents|length 100 %}%">
+                          <button class="btn btn-default btn-block pickview {{p.acronym|lower}}">{{p.acronym|upper}}</button>
 		        </th>
 		      {% endfor %}
 		    </tr>
 	          </thead>
 	          <tbody>
 		    <tr>
-		      {% for area in area_sessions %}
-		        <td class="view {{area.grouper|lower}}">
+                      {% for p in group_parents %}
+                        <td class="view {{p.acronym|lower}}">
 		          <div class="btn-group-vertical btn-block">
-		            {% for wg in area.list %}
+                            {% for group in p.group_list %}
 		              <div class="btn-group btn-group-xs btn-group-justified">
-			        <button class="btn btn-default pickview {{wg.acronym}}">
-			          {% if wg.is_bof %}
-			            <b><i>{{wg.acronym}}</i></b>
+                                <button class="btn btn-default pickview {{group.acronym}}">
+                                  {% if group.is_bof %}
+                                    <i>{{group.acronym}}</i>
 			          {% else %}
-			            {{wg.acronym}}
+                                    {{group.acronym}}
 			          {% endif %}
 			        </button>
 		              </div>
@@ -134,8 +133,8 @@
 
         <h2>Download as .ics</h2>
         <p class="buttonlist">
-          {% for area in schedule.area_list %}
-            <a class="btn btn-default" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}?{{area|upper}},-~Other,-~Plenary">{{area|upper}}</a>
+          {% for p in group_parents %}
+            <a class="btn btn-default" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}?{{p.acronym|upper}},-~Other,-~Plenary">{{p.acronym|upper}}</a>
           {% endfor %}
           <a class="btn btn-default" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}">Non-area events</a>
           <a id="ical-link" class="hidden btn btn-primary" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}">Customized schedule</a>
@@ -152,7 +151,7 @@
         <iframe seamless class="hidden" id="weekview"></iframe>
 
         <table class="table table-condensed table-striped">
-          {% for item in filtered_assignments.all %}
+          {% for item in filtered_assignments %}
 
             {% ifchanged item.timeslot.time|date:"Y-m-d" %}
               <tr><th class="gap" colspan="6"></th></tr>
@@ -190,8 +189,7 @@
             {% endif %}
 
             {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
-              {% with session_id=item.timeslot.time|date:"D-Hi"|lower|add:"-"|add:item.session.group.acronym|lower|add:"-"|add:item.timeslot.get_location|slugify %}
-                <tr id="row-{{session_id}}">
+                <tr id="row-{{ item.slug }}">
 	          <td class="text-nowrap text-right">
 	            {% if "-utc" in request.path %}
 	              {{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
@@ -208,122 +206,120 @@
 	            {{item.timeslot.name}}
 	          </td>
                 </tr>
-              {% endwith %}
             {% endif %}
 
             {% if item.timeslot.type.slug = 'session' or item.timeslot.type.slug == 'plenary' %}
-              {% if item.session.group %}
-                {% with session_id=item.timeslot.time|date:"D-Hi"|lower|add:"-"|add:item.area|default:"unknown"|lower|add:"-"|add:item.session.group.acronym|lower %}
-                  <tr id="row-{{session_id}}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
+              {% if item.session.historic_group %}
+                <tr id="row-{{item.slug}}" data-ske="row-{{ item.slug }}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
+		  {% if item.timeslot.type.slug == 'plenary' %}
+	            <th class="text-nowrap text-right">
+		      {% if "-utc" in request.path %}
+			{{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
+		      {% else %}
+			{{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
+		      {% endif %}
+		    </th>
+		    <td colspan="3">
+		      {% if item.timeslot.show_location and item.timeslot.get_location %}
+			<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+		      {% endif %}
+		    </td>
 
-	            {% if item.timeslot.type.slug == 'plenary' %}
-	              <th class="text-nowrap text-right">
-                        {% if "-utc" in request.path %}
-	                  {{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
-	                {% else %}
-	                  {{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
-	                {% endif %}
-	              </th>
-                      <td colspan="3">
-                        {% if item.timeslot.show_location and item.timeslot.get_location %}
-	                  <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
-	                {% endif %}
-	              </td>
+		  {% else %}
+		    <td></td>
 
-	            {% else %}
-                      <td></td>
+                    <td>
+                      {% if item.timeslot.show_location and item.timeslot.get_location %}
+                        <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+                      {% endif %}
+                    </td>
 
-	              <td>
-                        {% if item.timeslot.show_location and item.timeslot.get_location %}
-	                  <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
-	                {% endif %}
-	              </td>
+		      <td><span class="hidden-xs">{{item.session.historic_group.historic_parent.acronym}}</span></td>
 
-                      <td><span class="hidden-xs">{{item.session.group.parent.acronym}}</span></td>
+                    <td>
+                      {% if item.session.historic_group.charter %}
+                        <a href="{{item.session.historic_group.charter.get_absolute_url}}">{{item.session.historic_group.acronym}}</a>
+                      {% else %}
+                        {{item.session.historic_group.acronym}}
+                      {% endif %}
+                    </td>
+                  {% endif %}
 
-	              <td>
-	                {% if item.session.group.charter %}
-	                  <a href="{{item.session.group.charter.get_absolute_url}}">{{item.session.group.acronym}}</a>
-	                {% else %}
-	                  {{item.session.group.acronym}}
-	                {% endif %}
-	              </td>
-	            {% endif %}
+                  <td>
+                    {% if item.session.agenda %}
+                      <a href="/meeting/{{ schedule.meeting.number }}/agenda/{{ item.session.historic_group.acronym }}/">
+                    {% endif %}
+                    {% if item.timeslot.type.slug == 'plenary' %}
+                      {{item.timeslot.name}}
+                    {% else %}
+                      {{item.session.historic_group.name}}
+                    {% endif %}
+                    {% if item.session.agenda %}
+                      </a>
+                    {% endif %}
 
-	            <td>
-	              {% if item.session.agenda %}
-	                <a href="/meeting/{{ schedule.meeting.number }}/agenda/{{ item.session.group.acronym }}/">
-	              {% endif %}
-	              {% if item.timeslot.type.slug == 'plenary' %}
-	                {{item.timeslot.name}}
-	              {% else %}
-	                {{item.session.group.name}}
-	              {% endif %}
-	              {% if item.session.agenda %}
-	                </a>
-	              {% endif %}
+                    {% if item.session.historic_group.state_id = "bof" %}
+                      <span class="label label-success pull-right">BOF</span>
+                    {% endif %}
 
-	              {% if item.session.group.state.name = "BOF" %}
-	                <span class="label label-success pull-right">BOF</span>
-	              {% endif %}
+                    {% if item.session.agenda_note %}
+                      <br><span class="text-danger">{{item.session.agenda_note}}</span>
+                    {% endif %}
 
-	              {% if item.session.agenda_note %}
-	                <br><span class="text-danger">{{item.session.agenda_note}}</span>
-	              {% endif %}
+                    <div class="modal fade" id="modal-{{ item.slug }}" tabindex="-1" role="dialog" aria-labelledby="label-{{ item.slug }}" aria-hidden="true">
+                      <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title" id="label-{{item.slug}}">
+                              Meeting materials for
+                              {% if item.timeslot.type.slug == 'plenary' %}{{item.timeslot.name}}{% else %}{{item.session.historic_group.name}}{% endif %}
 
-	              <div class="modal fade" id="modal-{{ session_id }}" tabindex="-1" role="dialog" aria-labelledby="label-{{ session_id }}" aria-hidden="true">
-	                <div class="modal-dialog modal-lg">
-	                  <div class="modal-content">
-		            <div class="modal-header">
-		              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		              <h4 class="modal-title" id="label-{{session_id}}">
-		                Meeting materials for
-		                {% if item.timeslot.type.slug == 'plenary' %}{{item.timeslot.name}}{% else %}{{item.session.group.name}}{% endif %}
+                            </h4>
+                          </div>
+                          <div class="modal-body">
+                            {% with item.session.agenda as agenda %}
+                              {% if agenda %}
+                                {% if agenda.file_extension == "txt" or agenda.file_extension == "html" or agenda.file_extension == "htm" %}
+                                  <h4>Agenda</h4>
+                                  <div class="frame" data-src="{{agenda.href}}"></div>
+                                {% else %}
+                                  <span class="label label-info">Agenda submitted as {{agenda.file_extension|upper}}</span>
+                                {% endif %}
+                              {% else %}
+                                <span class="label label-warning">No agenda submitted</span>
+                              {% endif %}
+                            {% endwith %}
 
-		              </h4>
-		            </div>
-		            <div class="modal-body">
-		              {% if item.session.agenda %}
-		                {% if item.session.agenda.file_extension == "txt" or item.session.agenda.file_extension == "html" or item.session.agenda.file_extension == "htm" %}
-		                  <h4>Agenda</h4>
-		                  <div class="frame" data-src="{{item.session.agenda.href}}"></div>
-		                {% else %}
-		                  <span class="label label-info">Agenda submitted as {{item.session.agenda.file_extension|upper}}</span>
-		                {% endif %}
-		              {% else %}
-		                <span class="label label-warning">No agenda submitted</span>
-		              {% endif %}
-
-		              {% if item.session.slides %}
-		                <h4>Slides</h4>
-		                <ul class="fa-ul list-unstyled">
-		                  {% for slide in item.session.slides %}
-		                    <li>
-		                      <span class="fa-li fa fa-file-{{slide.file_extension|lower}}-o"></span>
-		                      <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>
-		                    </li>
-		                  {% endfor %}
-		                </ul>
-		              {% endif %}
-		            </div>
-		            <div class="modal-footer">
-		              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-		            </div>
-	                  </div>
-	                </div>
-	              </div>
-	            </td>
-                    <td class="text-nowrap">
-                    <span class="hidden-xs">
-	              {% if item.session.agenda %}
-	                <button class="btn btn-default btn-xs" data-toggle="modal" data-target="#modal-{{session_id}}"><span class="fa fa-arrows-alt" title="Show meeting materials"></span></button>
-	                <a class="btn btn-default btn-xs" href="/meeting/{{schedule.meeting.number}}/agenda/{{item.session.group.acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="fa fa-file-archive-o"></span></a>
-	                <a class="btn btn-default btn-xs" href="/meeting/{{ schedule.meeting.number }}/agenda/{{item.session.group.acronym}}-drafts.pdf" title="Download meeting materials as PDF file"><span class="fa fa-file-pdf-o"></span></a>
-	              {% endif %}
-	              </span>
-	            </td>
-                  </tr>
-                {% endwith %}
+			    {% if item.session.slides %}
+			      <h4>Slides</h4>
+			      <ul class="fa-ul list-unstyled">
+				{% for slide in item.session.slides %}
+				  <li>
+				    <span class="fa-li fa fa-file-{{slide.file_extension|lower}}-o"></span>
+				    <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>
+				  </li>
+				{% endfor %}
+			      </ul>
+			    {% endif %}
+			  </div>
+			  <div class="modal-footer">
+			    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			  </div>
+			</div>
+		      </div>
+		    </div>
+		  </td>
+		  <td class="text-nowrap">
+		  <span class="hidden-xs">
+		    {% if item.session.agenda %}
+		      <button class="btn btn-default btn-xs" data-toggle="modal" data-target="#modal-{{item.slug}}"><span class="fa fa-arrows-alt" title="Show meeting materials"></span></button>
+		      <a class="btn btn-default btn-xs" href="/meeting/{{schedule.meeting.number}}/agenda/{{item.session.historic_group.acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="fa fa-file-archive-o"></span></a>
+		      <a class="btn btn-default btn-xs" href="/meeting/{{ schedule.meeting.number }}/agenda/{{item.session.historic_group.acronym}}-drafts.pdf" title="Download meeting materials as PDF file"><span class="fa fa-file-pdf-o"></span></a>
+		    {% endif %}
+		    </span>
+		  </td>
+		</tr>
               {% endif %}
             {% endif %}
           {% endfor %}
@@ -332,7 +328,7 @@
     </div>
     <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
-        {% for item in filtered_assignments.all %}
+        {% for item in filtered_assignments %}
           {% ifchanged item.timeslot.time|date:"Y-m-d" %}
             <li><a href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a></li>
           {% endifchanged %}

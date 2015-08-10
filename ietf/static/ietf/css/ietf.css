@@ -101,6 +101,7 @@ body { padding-top: 70px; }
 h2.anchor-target:before,
 h3.anchor-target:before,
 h4.anchor-target:before,
+tr th.anchor-target:before,
 div.anchor-target:before {
   content: '';
   display: block;

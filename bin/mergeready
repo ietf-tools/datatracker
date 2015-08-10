@@ -198,8 +198,13 @@ def get_list(repo, filename):
                 continue
             try:
                 note("   '%s'" % line)
-                changeset = line.split()[0]
-                branch, rev = changeset.split('@')
+                parts = line.split()
+                if len(parts) >1 and parts[1] == '@':
+                    branch, rev = parts[0], parts[2]
+                    changeset = "%s@%s" % (branch, rev)
+                else:
+                    changeset = parts[0]
+                    branch, rev = changeset.split('@')
                 if branch.startswith('/'):
                     branch = branch[1:]
                 if not (rev in merged_revs and branch == merged_revs[rev]):

@@ -7,33 +7,36 @@ import tarfile
 import urllib
 from tempfile import mkstemp
 from collections import OrderedDict
+import csv
+import json
 
 import debug                            # pyflakes:ignore
 
 from django import forms
-from django.shortcuts import render, render_to_response, redirect
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.db.models import Q, Min, Max
-from django.template import RequestContext
-from django.template.loader import render_to_string
+from django.db.models import Min, Max
 from django.conf import settings
 from django.forms.models import modelform_factory
-from django.views.decorators.csrf import ensure_csrf_cookie
 from django.forms import ModelForm
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ietf.doc.models import Document, State
 from ietf.group.models import Group
 from ietf.ietfauth.utils import role_required, has_role
-from ietf.meeting.models import Meeting, TimeSlot, Session, Schedule, Room
+from ietf.meeting.models import Meeting, Session, Schedule, Room
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_scheduledsessions_from_schedule
 from ietf.meeting.helpers import get_modified_from_scheduledsessions
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, meeting_updated
+from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
+from ietf.meeting.helpers import convert_draft_to_pdf
 from ietf.utils.pipe import pipe
+from ietf.utils.pdf import pdf_pages
 
 def materials(request, meeting_num=None):
     meeting = get_meeting(meeting_num)
@@ -45,12 +48,12 @@ def materials(request, meeting_num=None):
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.REQUEST:
         pass
     elif now > cor_cut_off_date:
-        return render_to_response("meeting/materials_upload_closed.html", {
+        return render(request, "meeting/materials_upload_closed.html", {
             'meeting_num': meeting_num,
             'begin_date': begin_date,
             'cut_off_date': cut_off_date,
             'cor_cut_off_date': cor_cut_off_date
-        }, context_instance=RequestContext(request))
+        })
 
     #sessions  = Session.objects.filter(meeting__number=meeting_num, timeslot__isnull=False)
     schedule = get_schedule(meeting, None)
@@ -62,14 +65,14 @@ def materials(request, meeting_num=None):
     iab       = sessions.filter(group__parent__acronym = 'iab')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
-    return render_to_response("meeting/materials.html", {
+    return render(request, "meeting/materials.html", {
         'meeting_num': meeting_num,
         'plenaries': plenaries, 'ietf': ietf, 'training': training, 'irtf': irtf, 'iab': iab,
         'cut_off_date': cut_off_date,
         'cor_cut_off_date': cor_cut_off_date,
         'submission_started': now > begin_date,
         'cache_version': cache_version,
-    }, context_instance=RequestContext(request))
+    })
 
 def current_materials(request):
     meetings = Meeting.objects.exclude(number__startswith='interim-').order_by('-number')
@@ -77,17 +80,6 @@ def current_materials(request):
         return redirect(materials, meetings[0].number)
     else:
         raise Http404
-
-def get_user_agent(request):
-    if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
-        user_agent = "iPhone"
-    elif 'user_agent' in request.REQUEST:
-        user_agent = request.REQUEST['user_agent']
-    elif 'HTTP_USER_AGENT' in request.META:
-        user_agent = request.META["HTTP_USER_AGENT"]
-    else:
-        user_agent = ""
-    return user_agent
 
 def ascii_alphanumeric(string):
     return re.match(r'^[a-zA-Z0-9]*$', string)
@@ -266,12 +258,12 @@ def edit_agenda(request, num=None, owner=None, name=None):
     can_see, can_edit,secretariat = agenda_permissions(meeting, schedule, user)
 
     if not can_see:
-        return HttpResponse(render_to_string("meeting/private_agenda.html",
+        return render(request, "meeting/private_agenda.html",
                                              {"schedule":schedule,
                                               "meeting": meeting,
                                               "meeting_base_url":meeting_base_url,
-                                              "hide_menu": True},
-                                             RequestContext(request)), status=403, content_type="text/html")
+                                              "hide_menu": True
+                                          }, status=403, content_type="text/html")
 
     scheduledsessions = get_all_scheduledsessions_from_schedule(schedule)
 
@@ -366,12 +358,10 @@ def edit_agendas(request, num=None, order=None):
 def agenda(request, num=None, name=None, base=None, ext=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.html'
-    # This is misleading - urls.py doesn't send ics through here anymore
     mimetype = {
         ".html":"text/html; charset=%s"%settings.DEFAULT_CHARSET,
         ".txt": "text/plain; charset=%s"%settings.DEFAULT_CHARSET,
-        ".ics":"text/calendar; charset=%s"%settings.DEFAULT_CHARSET,
-        ".csv":"text/csv; charset=%s"%settings.DEFAULT_CHARSET,
+        ".csv": "text/csv; charset=%s"%settings.DEFAULT_CHARSET,
     }
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
@@ -381,7 +371,123 @@ def agenda(request, num=None, name=None, base=None, ext=None):
 
     updated = meeting_updated(meeting)
     filtered_assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
-    return render(request, "meeting/"+base+ext, {"schedule":schedule, "filtered_assignments":filtered_assignments, "updated": updated}, content_type=mimetype[ext])
+    filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
+
+    if ext == ".csv":
+        return agenda_csv(schedule, filtered_assignments)
+
+    # extract groups hierarchy, it's a little bit complicated because
+    # we can be dealing with historic groups
+    seen = set()
+    groups = [a.session.historic_group for a in filtered_assignments
+              if a.session
+              and a.session.historic_group
+              and a.session.historic_group.type_id in ('wg', 'rg', 'ag', 'iab')
+              and a.session.historic_group.historic_parent]
+    group_parents = []
+    for g in groups:
+        if g.historic_parent.acronym not in seen:
+            group_parents.append(g.historic_parent)
+            seen.add(g.historic_parent.acronym)
+
+    seen = set()
+    for p in group_parents:
+        p.group_list = []
+        for g in groups:
+            if g.acronym not in seen and g.historic_parent.acronym == p.acronym:
+                p.group_list.append(g)
+                seen.add(g.acronym)
+
+        p.group_list.sort(key=lambda g: g.acronym)
+
+    return render(request, "meeting/"+base+ext, {
+        "schedule": schedule,
+        "filtered_assignments": filtered_assignments,
+        "updated": updated,
+        "group_parents": group_parents,
+    }, content_type=mimetype[ext])
+
+def agenda_csv(schedule, filtered_assignments):
+    response = HttpResponse(content_type="text/csv; charset=%s"%settings.DEFAULT_CHARSET)
+    writer = csv.writer(response, delimiter=',', quoting=csv.QUOTE_ALL)
+
+    headings = ["Date", "Start", "End", "Session", "Room", "Area", "Acronym", "Type", "Description", "Session ID", "Agenda", "Slides"]
+
+    def write_row(row):
+        encoded_row = [v.encode('utf-8') if isinstance(v, unicode) else v for v in row]
+
+        while len(encoded_row) < len(headings):
+            encoded_row.append(None) # produce empty entries at the end as necessary
+
+        writer.writerow(encoded_row)
+
+    def agenda_field(item):
+        agenda_doc = item.session.agenda()
+        if agenda_doc:
+            return "http://www.ietf.org/proceedings/{schedule.meeting.number}/agenda/{agenda.external_url}".format(schedule=schedule, agenda=agenda_doc)
+        else:
+            return ""
+
+    def slides_field(item):
+        return "|".join("http://www.ietf.org/proceedings/{schedule.meeting.number}/slides/{slide.external_url}".format(schedule=schedule, slide=slide) for slide in item.session.slides())
+
+    write_row(headings)
+
+    for item in filtered_assignments:
+        row = []
+        row.append(item.timeslot.time.strftime("%Y-%m-%d"))
+        row.append(item.timeslot.time.strftime("%H%M"))
+        row.append(item.timeslot.end_time().strftime("%H%M"))
+
+        if item.timeslot.type_id == "break":
+            row.append(item.timeslot.type.name)
+            row.append(schedule.meeting.break_area)
+            row.append("")
+            row.append("")
+            row.append("")
+            row.append(item.timeslot.name)
+            row.append("b{}".format(item.timeslot.pk))
+        elif item.timeslot.type_id == "reg":
+            row.append(item.timeslot.type.name)
+            row.append(schedule.meeting.reg_area)
+            row.append("")
+            row.append("")
+            row.append("")
+            row.append(item.timeslot.name)
+            row.append("r{}".format(item.timeslot.pk))
+        elif item.timeslot.type_id == "other":
+            row.append("None")
+            row.append(item.timeslot.location.name)
+            row.append("")
+            row.append(item.session.historic_group.acronym)
+            row.append(item.session.historic_group.historic_parent.acronym.upper() if item.session.historic_group.historic_parent else "")
+            row.append(item.session.name)
+            row.append(item.session.pk)
+        elif item.timeslot.type_id == "plenary":
+            row.append(item.session.name)
+            row.append(item.timeslot.location.name)
+            row.append("")
+            row.append(item.session.historic_group.acronym if item.session.historic_group else "")
+            row.append("")
+            row.append(item.session.name)
+            row.append(item.session.pk)
+            row.append(agenda_field(item))
+            row.append(slides_field(item))
+        elif item.timeslot.type_id == "session":
+            row.append(item.timeslot.name)
+            row.append(item.timeslot.location.name)
+            row.append(item.session.historic_group.historic_parent.acronym.upper() if item.session.historic_group.historic_parent else "")
+            row.append(item.session.historic_group.acronym if item.session.historic_group else "")
+            row.append("BOF" if item.session.historic_group.state_id in ("bof", "bof-conc") else item.session.historic_group.type.name)
+            row.append(item.session.historic_group.name if item.session.historic_group else "")
+            row.append(item.session.pk)
+            row.append(agenda_field(item))
+            row.append(slides_field(item))
+
+        if len(row) > 3:
+            write_row(row)
+
+    return response
 
 @role_required('Area Director','Secretariat','IAB')
 def agenda_by_room(request,num=None):
@@ -414,18 +520,6 @@ def agenda_by_type_ics(request,num=None,type=None):
     updated = meeting_updated(meeting)
     return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":scheduledsessions},content_type="text/calendar")
 
-def read_agenda_file(num, doc):
-    # XXXX FIXME: the path fragment in the code below should be moved to
-    # settings.py.  The *_PATH settings should be generalized to format()
-    # style python format, something like this:
-    #  DOC_PATH_FORMAT = { "agenda": "/foo/bar/agenda-{meeting.number}/agenda-{meeting-number}-{doc.group}*", }
-    path = os.path.join(settings.AGENDA_PATH, "%s/agenda/%s" % (num, doc.external_url))
-    if os.path.exists(path):
-        with open(path) as f:
-            return f.read()
-    else:
-        return None
-
 def session_agenda(request, num, session):
     d = Document.objects.filter(type="agenda", session__meeting__number=num)
     if session == "plenaryt":
@@ -456,53 +550,6 @@ def session_agenda(request, num, session):
             return HttpResponse((html5_preamble % agenda) + content + html5_postamble)
 
     raise Http404("No agenda for the %s session of IETF %s is available" % (session, num))
-
-def convert_to_pdf(doc_name):
-    inpath = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, doc_name + ".txt")
-    outpath = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, doc_name + ".pdf")
-
-    try:
-        infile = open(inpath, "r")
-    except IOError:
-        return
-
-    t,tempname = mkstemp()
-    os.close(t)
-    tempfile = open(tempname, "w")
-
-    pageend = 0;
-    newpage = 0;
-    formfeed = 0;
-    for line in infile:
-        line = re.sub("\r","",line)
-        line = re.sub("[ \t]+$","",line)
-        if re.search("\[?[Pp]age [0-9ivx]+\]?[ \t]*$",line):
-            pageend=1
-            tempfile.write(line)
-            continue
-        if re.search("^[ \t]*\f",line):
-            formfeed=1
-            tempfile.write(line)
-            continue
-        if re.search("^ *INTERNET.DRAFT.+[0-9]+ *$",line) or re.search("^ *Internet.Draft.+[0-9]+ *$",line) or re.search("^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$",line) or re.search("^RFC.+[0-9]+$",line):
-            newpage=1
-        if re.search("^[ \t]*$",line) and pageend and not newpage:
-            continue
-        if pageend and newpage and not formfeed:
-            tempfile.write("\f")
-        pageend=0
-        formfeed=0
-        newpage=0
-        tempfile.write(line)
-
-    infile.close()
-    tempfile.close()
-    t,psname = mkstemp()
-    os.close(t)
-    pipe("enscript --margins 76::76: -B -q -p "+psname + " " +tempname)
-    os.unlink(tempname)
-    pipe("ps2pdf "+psname+" "+outpath)
-    os.unlink(psname)
 
 def session_draft_list(num, session):
     try:
@@ -548,8 +595,8 @@ def session_draft_tarfile(request, num, session):
     for doc_name in drafts:
         pdf_path = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, doc_name + ".pdf")
 
-        if (not os.path.exists(pdf_path)):
-            convert_to_pdf(doc_name)
+        if not os.path.exists(pdf_path):
+            convert_draft_to_pdf(doc_name)
 
         if os.path.exists(pdf_path):
             try:
@@ -566,18 +613,6 @@ def session_draft_tarfile(request, num, session):
     os.unlink(mfn)
     return response
 
-def pdf_pages(file):
-    try:
-        infile = open(file, "r")
-    except IOError:
-        return 0
-    for line in infile:
-        m = re.match('\] /Count ([0-9]+)',line)
-        if m:
-            return int(m.group(1))
-    return 0
-
-
 def session_draft_pdf(request, num, session):
     drafts = session_draft_list(num, session);
     curr_page = 1
@@ -588,10 +623,10 @@ def session_draft_pdf(request, num, session):
 
     for draft in drafts:
         pdf_path = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, draft + ".pdf")
-        if (not os.path.exists(pdf_path)):
-            convert_to_pdf(draft)
+        if not os.path.exists(pdf_path):
+            convert_draft_to_pdf(draft)
 
-        if (os.path.exists(pdf_path)):
+        if os.path.exists(pdf_path):
             pages = pdf_pages(pdf_path)
             pdfmarks.write("[/Page "+str(curr_page)+" /View [/XYZ 0 792 1.0] /Title (" + draft + ") /OUT pdfmark\n")
             pdf_list = pdf_list + " " + pdf_path
@@ -612,11 +647,62 @@ def session_draft_pdf(request, num, session):
 
 def week_view(request, num=None):
     meeting = get_meeting(num)
-    timeslots = TimeSlot.objects.filter(meeting=meeting)
+    schedule = get_schedule(meeting)
 
-    template = "meeting/week-view.html"
-    return render_to_response(template,
-            {"timeslots":timeslots,"render_types":["Session","Other","Break","Plenary"]}, context_instance=RequestContext(request))
+    if not schedule:
+        raise Http404
+
+    filtered_assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
+    filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
+    
+    items = []
+    for a in filtered_assignments:
+        # we don't HTML escape any of these as the week-view code is using createTextNode
+        item = {
+            "key": str(a.timeslot.pk),
+            "day": a.timeslot.time.strftime("%w"),
+            "time": a.timeslot.time.strftime("%H%M") + "-" + a.timeslot.end_time().strftime("%H%M"),
+            "duration": a.timeslot.duration.seconds,
+            "time_id": a.timeslot.time.strftime("%m%d%H%M"),
+            "dayname": "{weekday}, {month} {day_of_month}, {year}".format(
+                weekday=a.timeslot.time.strftime("%A").upper(),
+                month=a.timeslot.time.strftime("%B"),
+                day_of_month=a.timeslot.time.strftime("%d").lstrip("0"),
+                year=a.timeslot.time.strftime("%Y"),
+            ),
+            "type": a.timeslot.type.name
+        }
+
+        if a.session:
+            if a.session.historic_group:
+                item["group"] = a.session.historic_group.acronym
+
+            if a.session.name:
+                item["name"] = a.session.name
+            elif a.timeslot.type_id == "break":
+                item["name"] = a.timeslot.name
+                item["area"] = a.timeslot.type_id
+                item["group"] = a.timeslot.type_id
+            elif a.session.historic_group:
+                item["name"] = a.session.historic_group.name
+                if a.session.historic_group.state_id == "bof":
+                    item["name"] += " BOF"
+
+                item["state"] = a.session.historic_group.state.name
+                if a.session.historic_group.historic_parent:
+                    item["area"] = a.session.historic_group.historic_parent.acronym
+
+            if a.timeslot.show_location:
+                item["room"] = a.timeslot.get_location()
+
+            if a.session and a.session.agenda():
+                item["agenda"] = a.session.agenda().get_absolute_url()
+
+        items.append(item)
+
+    return render(request, "meeting/week-view.html", {
+        "items": json.dumps(items),
+    })
 
 @role_required('Area Director','Secretariat','IAB')
 def room_view(request, num=None):
@@ -695,39 +781,39 @@ def ical_agenda(request, num=None, name=None, ext=None):
     #   edu, ietf, tools, iesg, iab
 
     for item in filter:
-        if item:
-            if item[0] == '-' and item[1] == '~':
-                include_types -= set([item[2:]])
-            elif item[0] == '-':
-                exclude.append(item[1:])
-            elif item[0] == '~':
-                include_types |= set([item[1:]])
+        if len(item) > 2 and item[0] == '-' and item[1] == '~':
+            include_types -= set([item[2:]])
+        elif len(item) > 1 and item[0] == '-':
+            exclude.append(item[1:])
+        elif len(item) > 1 and item[0] == '~':
+            include_types |= set([item[1:]])
 
-    assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda']).filter(
-        Q(timeslot__type__slug__in = include_types) |
-        Q(session__group__acronym__in = include) |
-        Q(session__group__parent__acronym__in = include)
-        ).exclude(session__group__acronym__in = exclude).distinct()
-        #.exclude(Q(session__group__isnull = False),
-        #Q(session__group__acronym__in = exclude) |
-        #Q(session__group__parent__acronym__in = exclude))
+    assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
+    assignments = preprocess_assignments_for_agenda(assignments, meeting)
 
-    return HttpResponse(render_to_string("meeting/agenda.ics",
-        {"schedule":schedule, "assignments":assignments, "updated":updated},
-        RequestContext(request)), content_type="text/calendar")
+    assignments = [a for a in assignments if
+                   (a.timeslot.type_id in include_types
+                    or (a.session.historic_group and a.session.historic_group.acronym in include)
+                    or (a.session.historic_group and a.session.historic_group.historic_parent and a.session.historic_group.historic_parent.acronym in include))
+                   and (not a.session.historic_group or a.session.historic_group.acronym not in exclude)]
 
-def meeting_requests(request, num=None) :
+    return render(request, "meeting/agenda.ics", {
+        "schedule": schedule,
+        "assignments": assignments,
+        "updated": updated
+    }, content_type="text/calendar")
+
+def meeting_requests(request, num=None):
     meeting = get_meeting(num)
     sessions = Session.objects.filter(meeting__number=meeting.number, type__slug='session', group__parent__isnull = False).exclude(requested_by=0).order_by("group__parent__acronym","status__slug","group__acronym")
 
     groups_not_meeting = Group.objects.filter(state='Active',type__in=['WG','RG','BOF']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym")
 
-    return render_to_response("meeting/requests.html",
+    return render(request, "meeting/requests.html",
         {"meeting": meeting, "sessions":sessions,
-         "groups_not_meeting": groups_not_meeting},
-        context_instance=RequestContext(request))
+         "groups_not_meeting": groups_not_meeting})
 
-def session_details(request, num, acronym, date=None, week_day=None, seq=None) :
+def session_details(request, num, acronym, date=None, week_day=None, seq=None):
     meeting = get_meeting(num)
     sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['session','plenary','other'])
 
@@ -775,7 +861,7 @@ def session_details(request, num, acronym, date=None, week_day=None, seq=None) :
         scheduled_time = "Not yet scheduled"
         ss = session.scheduledsession_set.filter(schedule=meeting.agenda).order_by('timeslot__time')
         if ss:
-            scheduled_time = ','.join([x.timeslot.time.strftime("%A %b-%d %H%M") for x in ss])
+            scheduled_time = ','.join(x.timeslot.time.strftime("%A %b-%d %H%M") for x in ss)
         # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
         filtered_sessionpresentation_set = [p for p in session.sessionpresentation_set.all() if p.document.get_state_slug(p.document.type_id)!='deleted']
         return render(request, "meeting/session_details.html",

@@ -81,12 +81,7 @@
    }
 
    // then actual script
-   var items = new Array();
-   {% autoescape off %}
-
-   {% for slot in timeslots %} {% if slot.type.name in render_types %}
-   items.push({key:"{{slot.pk}}",day:{{slot.time|date:"w"}}, time:"{{slot.time|date:"Hi"}}-{{slot.end_time|date:"Hi"}}", duration:{{slot.duration.seconds}}, time_id:"{{slot.time|date:"mdHi"}}", type:"{{slot.type}}", {% if slot.session.name %}name:"{{slot.session.name|escapejs}}",{% if slot.session.group.acronym %} wg:"{{slot.session.group.acronym}}",{%endif%}{% else %}{% if slot.type.name == "Break" %}name:"{{slot.name|escapejs}}", area:"break", wg:"break",{% else %}name:"{{slot.session.group.name|escapejs}}{%if slot.session.group.state.name = "BOF"%} BOF{%endif%}",wg:"{{slot.session.group.acronym}}",state:"{{slot.session.group.state}}",area:"{{slot.session.group.parent.acronym}}",{% endif %}{% endif %} {% if slot.show_location %}room:"{{slot.get_location}}",{% endif %} dayname:"{{ slot.time|date:"l"|upper }}, {{ slot.time|date:"F j, Y" }}"{% if slot.session.agenda %}, agenda:"{{slot.session.agenda.get_absolute_url}}"{% endif %} });{% endif %}{% endfor %}
-   {% endautoescape %}
+   var items = {{ items|safe }};
 
    /* Saturday events need to be moved to the day -1 */
    for (var i = 0; i < items.length; i++)
@@ -154,10 +149,10 @@
        // Current types are:
        //   Session, Other, Break, Plenary
 
-       if ("wg" in item)
+       if ("group" in item)
        {
-	   if (include[(item.wg).toLowerCase()]) { return true; }
-	   if (include["-"+(item.wg).toLowerCase()]) { return false; }
+           if (include[(item.group).toLowerCase()]) { return true; }
+           if (include["-"+(item.group).toLowerCase()]) { return false; }
        }
        if ("state" in item)
        {
@@ -211,7 +206,7 @@
        {
 	   if (is_visible(items[i]))
 	       /*
-		  if (!("wg" in items[i]) || (include[(items[i].wg).toLowerCase()] 
+                 if (!("group" in items[i]) || (include[(items[i].group).toLowerCase()]
 		  || include[(items[i].area).toLowerCase()]))
 		*/
 	   {
@@ -322,7 +317,7 @@
        {
 	   if (is_visible(items[i]))
 	       /*
-		  if (!("wg" in items[i]) || (include[(items[i].wg).toLowerCase()] 
+                 if (!("group" in items[i]) || (include[(items[i].group).toLowerCase()]
 		  || include[(items[i].area).toLowerCase()]))
 		*/
 	   {
@@ -389,9 +384,9 @@
 
 	       var label = items[i].name;
 	       if (label.length === 0) { label = "Free Slot"; }
-	       if (items[i].wg && fg[items[i].area])
+	       if (items[i].group && fg[items[i].area])
 	       {
-		   label = label + " (" + items[i].wg + ")";
+		   label = label + " (" + items[i].group + ")";
 	       }
 	       var bold = document.createElement("span");
 	       bold.appendChild(document.createTextNode(label));

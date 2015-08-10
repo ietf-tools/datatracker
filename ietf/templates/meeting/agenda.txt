@@ -8,7 +8,7 @@
 {% filter center:72 %}Updated {{ updated|date:"Y-m-d H:i:s T" }}{% endfilter %}
 
 {% filter center:72 %}IETF agendas are subject to change, up to and during the meeting.{% endfilter %}
-{% for item in filtered_assignments.all.distinct %}{% ifchanged  %}
+{% for item in filtered_assignments %}{% ifchanged  %}
 
 
 {{ item.timeslot.time|date:"l"|upper }}, {{ item.timeslot.time|date:"F j, Y" }}
@@ -17,10 +17,10 @@
 {{ item.timeslot.time_desc }}  {{ item.session.name }} - {{ item.timeslot.location.name }}
 
    {{ item.session.agenda_text.strip|indent:"3" }}
-{% endif %}{%          if item.timeslot.type.slug == "session" %}{% if item.session.group  %}{% ifchanged %}
+{% endif %}{%          if item.timeslot.type.slug == "session" %}{% if item.session.historic_group  %}{% ifchanged %}
 
 {{ item.timeslot.time_desc }}  {{ item.timeslot.name }}
-{% endifchanged %}{{ item.timeslot.location.name|ljust:14 }}  	{{ item.session.group.parent.acronym|upper|ljust:4 }}	{{ item.session.group.acronym|ljust:10 }}  	{{ item.session.group.name }} {{ item.session.lame_description }}{% if item.session.agenda_note %} - {{ item.session.agenda_note }}{% endif %}
+{% endifchanged %}{{ item.timeslot.location.name|ljust:14 }}  	{{ item.session.historic_group.historic_parent.acronym|upper|ljust:4 }}	{{ item.session.historic_group.acronym|ljust:10 }}  	{{ item.session.historic_group.name }} {% if item.session.historic_group.state_id == "bof" %}BOF{% elif item.session.historic_group.type_id == "wg" %}WG{% endif %}{% if item.session.agenda_note %} - {{ item.session.agenda_note }}{% endif %}
 {% endif %}{% endif %}{% if item.timeslot.type.slug == "break" %}
 {{ item.timeslot.time_desc }}  {{ item.timeslot.name }}{% if schedule.meeting.break_area and item.timeslot.show_location %} - {{ schedule.meeting.break_area }}{% endif %}{% endif %}{%            if item.timeslot.type.slug == "other" %}
 {{ item.timeslot.time_desc }}  {{ item.timeslot.name }} - {{ item.timeslot.location.name }}{% endif %}{% endfor %}
