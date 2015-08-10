@@ -27,7 +27,7 @@ def make_recipients(apps):
 
     rc(slug='doc_authors',
        desc="The document's authors",
-       template='{{doc.name}}@ietf.org')
+       template='{% if doc.type_id == "draft" %}{{doc.name}}@ietf.org{% endif %}')
 
     rc(slug='doc_notify',
        desc="The addresses in the document's notify field",

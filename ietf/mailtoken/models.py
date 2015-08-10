@@ -30,10 +30,11 @@ class Recipient(models.Model):
         if hasattr(self,'gather_%s'%self.slug):
             retval.extend(eval('self.gather_%s(**kwargs)'%self.slug))
         if self.template:
-            rendering = Template(self.template).render(Context(kwargs))
+            rendering = Template('{%% autoescape off %%}%s{%% endautoescape %%}'%self.template).render(Context(kwargs))
             if rendering:
-                retval.extend(rendering.split(','))
+                retval.extend([x.strip() for x in rendering.split(',')])
 
+        retval = list(set(retval))
         return retval
 
     def gather_doc_group_chairs(self, **kwargs):
