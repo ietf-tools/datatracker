@@ -32,7 +32,7 @@ $(document).ready(function () {
 
         var submit = milestonesForm.find("[type=submit]");
         submit.text(submit.data("label" + action));
-        if (milestonesForm.find(".edit-milestone.changed").length > 0 || action == "review")
+        if (milestonesForm.find(".edit-milestone.changed,.edit-milestone.delete").length > 0 || action == "review")
             submit.show();
         else
             submit.hide();
