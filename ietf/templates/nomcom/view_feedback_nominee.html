@@ -24,7 +24,11 @@
             {% if forloop.first %}<p></p>{% else %}<hr>{% endif %}
             <dl class="dl-horizontal">
               <dt>From</dt>
-              <dd>{{ feedback.author|formatted_email|default:"Anonymous" }}</dd>
+              <dd>{{ feedback.author|formatted_email|default:"Anonymous" }}
+                    {% if ft.slug == "nomina" and feedback.nomination_set.first.share_nominator %}
+                        <span class="bg-info"> OK to share name with nominee</span>
+                    {% endif %}
+              </dd> 
               <dt>Date</dt>
               <dd>{{ feedback.time|date:"Y-m-d" }})</dd>
 
