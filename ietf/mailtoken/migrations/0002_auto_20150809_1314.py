@@ -194,6 +194,31 @@ def make_mailtokens(apps):
                                 'doc_affecteddoc_notify',
                                ])
 
+    mt_factory(slug='last_call_requested',
+               desc='Recipients when AD requests a last call',
+               recipient_slugs=['iesg_secretary',])
+
+    mt_factory(slug='last_call_requested_cc',
+               desc='Copied when AD requests a last call',
+               recipient_slugs=['doc_ad',
+                                'doc_shepherd',
+                                'doc_notify'])
+
+    mt_factory(slug='last_call_issued',
+               desc='Recipients when a last call is issued',
+               recipient_slugs=['ietf_announce',])
+
+    mt_factory(slug='last_call_issued_cc',
+               desc='Copied when a last call is issued',
+               recipient_slugs=['doc_ad',
+                                'doc_shepherd',
+                                'doc_authors',
+                                'doc_notify',
+                                'doc_group_list_email',
+                                'doc_group_chairs',
+                                'doc_affecteddoc_authors',
+                                'doc_affecteddoc_group_chairs',
+                                'doc_affecteddoc_notify'])
 
 def forward(apps, schema_editor):
 

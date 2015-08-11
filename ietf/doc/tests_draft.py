@@ -330,7 +330,7 @@ class EditInfoTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form select[name=intended_std_level]')), 1)
-        self.assertTrue('@' in q('form input[name=notify]')[0].get('value'))
+        self.assertEqual(None,q('form input[name=notify]')[0].value)
 
         # add
         events_before = draft.docevent_set.count()
@@ -734,7 +734,7 @@ class IndividualInfoFormsTests(TestCase):
         # Regenerate does not save!
         self.assertEqual(self.doc.notify,'TJ2APh2P@ietf.org')
         q = PyQuery(r.content)
-        self.assertTrue('TJ2Aph2P' not in q('form input[name=notify]')[0].value)
+        self.assertEqual(None,q('form input[name=notify]')[0].value)
 
     def test_doc_change_intended_status(self):
         url = urlreverse('doc_change_intended_status', kwargs=dict(name=self.docname))
@@ -1092,9 +1092,7 @@ class AdoptDraftTests(TestCase):
         self.assertEqual(draft.group.acronym, "mars")
         self.assertEqual(draft.stream_id, "ietf")
         self.assertEqual(draft.docevent_set.count() - events_before, 5)
-        self.assertTrue('draft-ietf-mars-test@ietf.org' in draft.notify)
-        self.assertTrue('draft-ietf-mars-test.ad@ietf.org' in draft.notify)
-        self.assertTrue('draft-ietf-mars-test.shepherd@ietf.org' in draft.notify)
+        self.assertEqual(draft.notify,"aliens@example.mars")
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
         self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))

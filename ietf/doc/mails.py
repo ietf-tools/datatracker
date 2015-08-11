@@ -105,14 +105,11 @@ def generate_ballot_writeup(request, doc):
     
 def generate_last_call_announcement(request, doc):
     expiration_date = datetime.date.today() + datetime.timedelta(days=14)
-    cc = []
     if doc.group.type_id in ("individ", "area"):
         group = "an individual submitter"
         expiration_date += datetime.timedelta(days=14)
     else:
         group = "the %s WG (%s)" % (doc.group.name, doc.group.acronym)
-        if doc.group.list_email:
-            cc.append(doc.group.list_email)
 
     doc.filled_title = textwrap.fill(doc.title, width=70, subsequent_indent=" " * 3)
     
@@ -127,7 +124,8 @@ def generate_last_call_announcement(request, doc):
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url() + "ballot/",
                                  expiration_date=expiration_date.strftime("%Y-%m-%d"), #.strftime("%B %-d, %Y"),
-                                 cc=", ".join("<%s>" % e for e in cc),
+                                 to=",\n   ".join(gather_addresses('last_call_issued',doc=doc)),
+                                 cc=",\n   ".join(gather_addresses('last_call_issued_cc',doc=doc)),
                                  group=group,
                                  docs=[ doc ],
                                  urls=[ settings.IDTRACKER_BASE_URL + doc.get_absolute_url() ],
@@ -256,14 +254,17 @@ def generate_publication_request(request, doc):
                             )
 
 def send_last_call_request(request, doc):
-    to = "iesg-secretary@ietf.org"
+    to = gather_addresses('last_call_requested',doc=doc)
+    cc = gather_addresses('last_call_requested_cc',doc=doc)
     frm = '"DraftTracker Mail System" <iesg-secretary@ietf.org>'
     
     send_mail(request, to, frm,
               "Last Call: %s" % doc.file_tag(),
               "doc/mail/last_call_request.txt",
               dict(docs=[doc],
-                   doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+                   doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                  ),
+              cc=cc)
 
 def email_resurrect_requested(request, doc, by):
     to = "I-D Administrator <internet-drafts@ietf.org>"

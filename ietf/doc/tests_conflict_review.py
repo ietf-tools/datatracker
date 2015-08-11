@@ -189,9 +189,7 @@ class ConflictReviewTests(TestCase):
         # Regenerate does not save!
         self.assertEqual(doc.notify,newlist)
         q = PyQuery(r.content)
-        self.assertTrue('draft-imaginary-irtf-submission@ietf.org' in q('form input[name=notify]')[0].value)
-        self.assertTrue('irtf-chair@ietf.org' in q('form input[name=notify]')[0].value)
-        self.assertTrue('foo@bar.baz.com' not in q('form input[name=notify]')[0].value)
+        self.assertEqual(None,q('form input[name=notify]')[0].value)
 
     def test_edit_ad(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')

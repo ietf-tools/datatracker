@@ -196,8 +196,7 @@ class EditCharterTests(TestCase):
         self.assertEqual(charter.notify,newlist)
         q = PyQuery(r.content)
         formlist = q('form input[name=notify]')[0].value
-        self.assertTrue('marschairman@ietf.org' in formlist)
-        self.assertFalse('someone@example.com' in formlist)
+        self.assertEqual(formlist, None)
 
     def test_edit_ad(self):
         make_test_data()

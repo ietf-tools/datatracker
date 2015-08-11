@@ -127,8 +127,8 @@ def default_action_text(group, charter, by):
                                    techadv=group.role_set.filter(name="techadv"),
                                    milestones=group.groupmilestone_set.filter(state="charter"),
                                    action_type=action,
-                                   to=",    ".join(gather_addresses('ballot_approved_charter',doc=charter,group=group)),
-                                   cc=",    ".join(gather_addresses('ballot_approved_charter_cc',doc=charter,group=group)),
+                                   to=",\n    ".join(gather_addresses('ballot_approved_charter',doc=charter,group=group)),
+                                   cc=",\n    ".join(gather_addresses('ballot_approved_charter_cc',doc=charter,group=group)),
                                    ))
 
     e.save()

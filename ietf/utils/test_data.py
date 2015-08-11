@@ -335,7 +335,7 @@ def make_test_data():
     # This won't allow testing the results of the production configuration - if we want to do that, we'll need to
     # extract the production data either directly, or as a fixture
     recipient = Recipient.objects.create(slug='bogus_recipient',desc='Bogus Recipient',template='bogus@example.com')
-    for slug in [u'ballot_approved_charter', u'ballot_approved_charter_cc', u'ballot_approved_conflrev', u'ballot_approved_conflrev_cc', u'ballot_approved_ietf_stream', u'ballot_approved_ietf_stream_cc', u'ballot_approved_ietf_stream_iana', u'ballot_approved_status_change', u'ballot_approved_status_change_cc', u'ballot_deferred', u'ballot_saved', u'ballot_saved_cc']:
+    for slug in [u'ballot_approved_charter', u'ballot_approved_charter_cc', u'ballot_approved_conflrev', u'ballot_approved_conflrev_cc', u'ballot_approved_ietf_stream', u'ballot_approved_ietf_stream_cc', u'ballot_approved_ietf_stream_iana', u'ballot_approved_status_change', u'ballot_approved_status_change_cc', u'ballot_deferred', u'ballot_saved', u'ballot_saved_cc', u'last_call_issued', u'last_call_issued_cc', u'last_call_requested', u'last_call_requested_cc']:
         m = MailToken.objects.create(slug=slug,desc=slug)
         m.recipients=[recipient]
 
