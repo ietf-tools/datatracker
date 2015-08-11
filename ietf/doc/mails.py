@@ -405,18 +405,16 @@ def extra_automation_headers(doc):
 def email_last_call_expired(doc):
     text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.get_state("draft-iesg").name
     
-    to = gather_addresses('last_call_expired',doc=doc)
-    cc = gather_addresses('last_call_expired_cc',doc=doc)
-
     send_mail(None,
-              ",\n  ".join(to),
+              gather_addresses('last_call_expired',doc=doc)
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
               "Last Call Expired: %s" % doc.file_tag(),
               "doc/mail/change_notice.txt",
               dict(text=text,
                    doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
-              cc=",\n  ".join(cc))
+              cc = gather_addresses('last_call_expired_cc',doc=doc)
+              )
 
 def stream_state_email_recipients(doc, extra_recipients=[]):
     persons = set()
