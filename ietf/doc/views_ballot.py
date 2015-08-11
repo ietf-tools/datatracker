@@ -758,7 +758,8 @@ def make_last_call(request, name):
             send_mail_preformatted(request, announcement)
             if doc.type.slug == 'draft':
                 send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                       override={ "To": "IANA <drafts-lastcall@icann.org>", "CC": None, "Bcc": None, "Reply-To": None})
+                                       override={ "To": ",\n  ".join(gather_addresses('last_call_issued_iana',doc=doc)), 
+                                                  "CC": None, "Bcc": None, "Reply-To": None})
 
             msg = infer_message(announcement)
             msg.by = login
