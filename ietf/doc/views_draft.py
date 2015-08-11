@@ -583,9 +583,9 @@ def to_iesg(request,name):
             doc.save()
 
             extra = {}
-            extra['Cc'] = ",\n   ".join(gather_addresses('pubreq_iesg_cc',doc=doc))
+            extra['Cc'] = gather_addresses('pubreq_iesg_cc',doc=doc)
             send_mail(request=request,
-                      to = ",\n   ".join(gather_addresses('pubreq_iesg',doc=doc)),
+                      to = gather_addresses('pubreq_iesg',doc=doc),
                       frm = login.formatted_email(),
                       subject = "Publication has been requested for %s-%s" % (doc.name,doc.rev),
                       template = "doc/submit_to_iesg_email.txt",
@@ -1133,7 +1133,7 @@ def request_publication(request, name):
 
     m = Message()
     m.frm = request.user.person.formatted_email()
-    m.to = ",\n   ".join(gather_addresses('pubreq_rfced',doc=doc))
+    m.to = gather_addresses('pubreq_rfced',doc=doc)
     m.by = request.user.person
 
     next_state = State.objects.get(used=True, type="draft-stream-%s" % doc.stream.slug, slug="rfc-edit")
@@ -1163,7 +1163,7 @@ def request_publication(request, name):
             send_mail_message(request, m)
 
             # IANA copy
-            m.to = ",   ".join(gather_addresses('pubreq_rfced_iana',doc=doc))
+            m.to = gather_addresses('pubreq_rfced_iana',doc=doc)
             send_mail_message(request, m, extra=extra_automation_headers(doc))
 
             e = DocEvent(doc=doc, type="requested_publication", by=request.user.person)
@@ -1299,6 +1299,7 @@ def adopt_draft(request, name):
 
                 update_reminder(doc, "stream-s", e, due_date)
 
+                # TODO: Replace this with a message that's explicitly about the document adoption
                 email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
 
             # comment

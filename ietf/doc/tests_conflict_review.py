@@ -70,7 +70,6 @@ class ConflictReviewTests(TestCase):
         self.assertTrue(review_doc.latest_event(DocEvent,type="added_comment").desc.startswith("IETF conflict review requested"))
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith("IETF conflict review initiated"))
         self.assertTrue('Conflict Review requested' in outbox[-1]['Subject'])
-        self.assertTrue(settings.IANA_EVAL_EMAIL in outbox[-1]['To'])
         
         # verify you can't start a review when a review is already in progress
         r = self.client.post(url,dict(ad="Aread Irector",create_in_state="Needs Shepherd",notify='ipu@ietf.org'))
@@ -118,8 +117,8 @@ class ConflictReviewTests(TestCase):
         self.assertTrue(doc in [x.target.document for x in review_doc.relateddocument_set.filter(relationship__slug='conflrev')])
         self.assertEqual(len(outbox), messages_before + 2)
         self.assertTrue('Conflict Review requested' in outbox[-1]['Subject'])
-        self.assertTrue(any('iesg-secretary@ietf.org' in x['To'] for x in outbox[-2:]))
-        self.assertTrue(any(settings.IANA_EVAL_EMAIL in x['To'] for x in outbox[-2:]))
+        #self.assertTrue(any('iesg-secretary@ietf.org' in x['To'] for x in outbox[-2:]))
+        #self.assertTrue(any(settings.IANA_EVAL_EMAIL in x['To'] for x in outbox[-2:]))
 
 
     def test_change_state(self):

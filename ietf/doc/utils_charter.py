@@ -127,8 +127,8 @@ def default_action_text(group, charter, by):
                                    techadv=group.role_set.filter(name="techadv"),
                                    milestones=group.groupmilestone_set.filter(state="charter"),
                                    action_type=action,
-                                   to=",\n    ".join(gather_addresses('ballot_approved_charter',doc=charter,group=group)),
-                                   cc=",\n    ".join(gather_addresses('ballot_approved_charter_cc',doc=charter,group=group)),
+                                   to=gather_addresses('ballot_approved_charter',doc=charter,group=group),
+                                   cc=gather_addresses('ballot_approved_charter_cc',doc=charter,group=group),
                                    ))
 
     e.save()
@@ -149,6 +149,8 @@ def default_review_text(group, charter, by):
                                    milestones=group.groupmilestone_set.filter(state="charter"),
                                    review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
                                    review_type="new" if group.state_id == "proposed" else "recharter",
+                                   to=gather_addresses('charter_external_review',group=group),
+                                   cc=gather_addresses('charter_external_review_cc',group=group)
                                    )
                               )
     e.save()

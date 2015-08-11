@@ -3,7 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from ietf.mailtoken.models import MailToken
 
-def gather_addresses(slug,**kwargs):
+def gather_address_list(slug,**kwargs):
     
     addrs = []
 
@@ -18,3 +18,6 @@ def gather_addresses(slug,**kwargs):
         addrs.extend(recipient.gather(**kwargs))
 
     return list(set(addrs))
+
+def gather_addresses(slug,**kwargs):
+    return ",\n   ".join(gather_address_list(slug,**kwargs))

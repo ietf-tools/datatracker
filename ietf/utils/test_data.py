@@ -335,8 +335,11 @@ def make_test_data():
     # This won't allow testing the results of the production configuration - if we want to do that, we'll need to
     # extract the production data either directly, or as a fixture
     recipient = Recipient.objects.create(slug='bogus_recipient',desc='Bogus Recipient',template='bogus@example.com')
-    for slug in ['ballot_approved_charter', 'ballot_approved_charter_cc', 'ballot_approved_conflrev', 'ballot_approved_conflrev_cc', 'ballot_approved_ietf_stream', 'ballot_approved_ietf_stream_cc', 'ballot_approved_ietf_stream_iana', 'ballot_approved_status_change', 'ballot_approved_status_change_cc', 'ballot_deferred', 'ballot_saved', 'ballot_saved_cc', 'last_call_expired', 'last_call_expired_cc', 'last_call_issued', 'last_call_issued_cc', 'last_call_issued_iana', 'last_call_requested', 'last_call_requested_cc', 'pubreq_iesg', 'pubreq_iesg_cc', 'pubreq_rfced', 'pubreq_rfced_iana']:
+    for slug in ['ballot_approved_charter', 'ballot_approved_charter_cc', 'ballot_approved_conflrev', 'ballot_approved_conflrev_cc', 'ballot_approved_ietf_stream', 'ballot_approved_ietf_stream_cc', 'ballot_approved_ietf_stream_iana', 'ballot_approved_status_change', 'ballot_approved_status_change_cc', 'ballot_deferred', 'ballot_saved', 'ballot_saved_cc', 'charter_external_review', 'charter_external_review_cc', 'conflrev_requested', 'conflrev_requested_cc', 'conflrev_requested_iana', 'doc_stream_changed', 'last_call_expired', 'last_call_expired_cc', 'last_call_issued', 'last_call_issued_cc', 'last_call_issued_iana', 'last_call_requested', 'last_call_requested_cc', 'pubreq_iesg', 'pubreq_iesg_cc', 'pubreq_rfced', 'pubreq_rfced_iana']:
         m = MailToken.objects.create(slug=slug,desc=slug)
         m.recipients=[recipient]
+    # Well, this isn't working out so well - Recipients that have code backing up their gather sometimes refer to other Recipients...
+    for slug in ['doc_authors','doc_group_chairs','doc_notify','doc_stream_owner','stream_managers']:
+        Recipient.objects.create(slug=slug,desc="Bogus Recipient",template='bogus@example.com')
 
     return draft

@@ -27,7 +27,7 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.mailtoken.utils import gather_addresses
+from ietf.mailtoken.utils import gather_addresses, gather_address_list
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -288,7 +288,7 @@ def send_ballot_comment(request, name, ballot_id):
     to = gather_addresses('ballot_saved',doc=doc)
         
     if request.method == 'POST':
-        cc = gather_addresses('ballot_saved_cc',doc=doc)
+        cc = gather_address_list('ballot_saved_cc',doc=doc)
         explicit_cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
         if explicit_cc: 
             cc.extend(explicit_cc)
@@ -716,7 +716,7 @@ def approve_ballot(request, name):
 
         if action == "to_announcement_list":
             send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                   override={ "To": ",".join(gather_addresses('ballot_approved_ietf_stream_iana')), "CC": None, "Bcc": None, "Reply-To": None})
+                                   override={ "To": gather_addresses('ballot_approved_ietf_stream_iana'), "CC": None, "Bcc": None, "Reply-To": None})
 
         msg = infer_message(announcement)
         msg.by = login
@@ -758,7 +758,7 @@ def make_last_call(request, name):
             send_mail_preformatted(request, announcement)
             if doc.type.slug == 'draft':
                 send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                       override={ "To": ",\n  ".join(gather_addresses('last_call_issued_iana',doc=doc)), 
+                                       override={ "To": gather_addresses('last_call_issued_iana',doc=doc), 
                                                   "CC": None, "Bcc": None, "Reply-To": None})
 
             msg = infer_message(announcement)

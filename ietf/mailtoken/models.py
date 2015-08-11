@@ -97,4 +97,21 @@ class Recipient(models.Model):
             addrs.append(sg_map[kwargs['group'].type_id])
         return addrs 
 
+    def gather_stream_managers(self, **kwargs):
+        addrs = []
+        manager_map = dict(ise  = '<rfc-ise@rfc-editor.org>',
+                           irtf = '<irtf-chair@irtf.org>',
+                           ietf = '<iesg@ietf.org>',
+                           iab  = '<iab-chair@iab.org>')
+        if 'streams' in kwargs:
+            for stream in kwargs['streams']:
+                if stream in manager_map:
+                    addrs.append(manager_map[stream])
+        return addrs
+
+    def gather_doc_stream_manager(self, **kwargs):
+        addrs = []
+        if 'doc' in kwargs:
+            addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':[kwargs['doc'].stream_id]}))
+        return addrs
 

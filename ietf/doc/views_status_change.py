@@ -299,8 +299,8 @@ def default_approval_text(status_change,relateddoc):
                                     approved_text = current_text,
                                     action=action,
                                     newstatus=newstatus(relateddoc),
-                                    to=",\n    ".join(gather_addresses('ballot_approved_status_change',doc=status_change)),
-                                    cc=",\n    ".join(gather_addresses('ballot_approved_status_change_cc',doc=status_change)),
+                                    to=gather_addresses('ballot_approved_status_change',doc=status_change),
+                                    cc=gather_addresses('ballot_approved_status_change_cc',doc=status_change),
                                    )
                               )
 

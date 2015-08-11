@@ -30,13 +30,12 @@ def email_state_changed(request, doc, text):
 
 def email_stream_changed(request, doc, old_stream, new_stream, text=""):
     """Email the change text to the notify group and to the stream chairs"""
-    to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
-
-    # These use comprehension to deal with conditions when there might be more than one chair listed for a stream
+    streams = []
     if old_stream:
-        to.extend([r.formatted_email() for r in Role.objects.filter(group__acronym=old_stream.slug, name='chair')])
+        streams.append(old_stream.slug)
     if new_stream:
-        to.extend([r.formatted_email() for r in Role.objects.filter(group__acronym=new_stream.slug, name='chair')])
+        streams.append(new_stream.slug)
+    to = gather_addresses('doc_stream_changed',doc=doc,streams=streams)
 
     if not to:
         return
@@ -124,8 +123,8 @@ def generate_last_call_announcement(request, doc):
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url() + "ballot/",
                                  expiration_date=expiration_date.strftime("%Y-%m-%d"), #.strftime("%B %-d, %Y"),
-                                 to=",\n   ".join(gather_addresses('last_call_issued',doc=doc)),
-                                 cc=",\n   ".join(gather_addresses('last_call_issued_cc',doc=doc)),
+                                 to=gather_addresses('last_call_issued',doc=doc),
+                                 cc=gather_addresses('last_call_issued_cc',doc=doc),
                                  group=group,
                                  docs=[ doc ],
                                  urls=[ settings.IDTRACKER_BASE_URL + doc.get_absolute_url() ],
@@ -169,9 +168,6 @@ def generate_approval_mail_approved(request, doc):
     else:
         action_type = "Document"
 
-    to = gather_addresses('ballot_approved_ietf_stream',doc=doc)
-    cc = gather_addresses('ballot_approved_ietf_stream_cc',doc=doc)
-
     # the second check catches some area working groups (like
     # Transport Area Working Group)
     if doc.group.type_id not in ("area", "individ", "ag") and not doc.group.name.endswith("Working Group"):
@@ -202,8 +198,8 @@ def generate_approval_mail_approved(request, doc):
                             dict(doc=doc,
                                  docs=[doc],
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
-                                 to=",\n    ".join(to),
-                                 cc=",\n    ".join(cc),
+                                 to = gather_addresses('ballot_approved_ietf_stream',doc=doc),
+                                 cc = gather_addresses('ballot_approved_ietf_stream_cc',doc=doc),
                                  doc_type=doc_type,
                                  made_by=made_by,
                                  contacts=contacts,
@@ -215,16 +211,13 @@ def generate_approval_mail_rfc_editor(request, doc):
     disapproved = doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
 
-    to = gather_addresses('ballot_approved_conflrev', doc=doc)
-    cc = gather_addresses('ballot_approved_conflrev_cc', doc=doc)
-
     return render_to_string("doc/mail/approval_mail_rfc_editor.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  doc_type=doc_type,
                                  disapproved=disapproved,
-                                 to=",\n    ".join(to),
-                                 cc=",\n    ".join(cc),
+                                 to = gather_addresses('ballot_approved_conflrev', doc=doc),
+                                 cc = gather_addresses('ballot_approved_conflrev_cc', doc=doc),
                                  )
                             )
 

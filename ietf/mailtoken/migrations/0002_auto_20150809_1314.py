@@ -63,7 +63,11 @@ def make_recipients(apps):
 
     rc(slug='doc_stream_manager',
        desc="The manager of the document's stream",
-       template='{% if doc.stream_id == "ise" %}<rfc-ise@rfc-editor.org>{% endif %}{% if doc.stream_id == "irtf" %}<irtf-chair@irtf.org>{% endif %}{% if doc.stream_id == "ietf" %}<iesg@ietf.org>{% endif %}')
+       template=None )
+
+    rc(slug='stream_managers',
+       desc="The managers of any related streams",
+       template=None )
 
     rc(slug='conflict_review_stream_manager',
        desc="The stream manager of a document being reviewed for IETF stream conflicts",
@@ -81,6 +85,10 @@ def make_recipients(apps):
        desc="IANA's draft last call address",
        template='IANA <drafts-lastcall@icann.org>')
 
+    rc(slug='iana_eval',
+       desc="IANA's draft evaluation address",
+       template='IANA <drafts-eval@icann.org>')
+
     rc(slug='iana',
        desc="IANA",
        template='<iana@iana.org>')
@@ -96,6 +104,7 @@ def make_recipients(apps):
     rc(slug='group_chairs',
        desc="The group's chairs",
        template="{{group.acronym}}-chairs@ietf.org")
+
 
 def make_mailtokens(apps):
 
@@ -260,6 +269,38 @@ def make_mailtokens(apps):
     mt_factory(slug='pubreq_rfced_iana',
                desc='Recipients for IANA message when a non-IETF stream manager requests publication',
                recipient_slugs=['iana_approve',])
+
+    mt_factory(slug='charter_external_review',
+               desc='Recipients for a charter external review',
+               recipient_slugs=['ietf_announce',]) 
+
+    mt_factory(slug='charter_external_review_cc',
+               desc='Copied on a charter external review',
+               recipient_slugs=['group_mail_list',]) 
+
+    mt_factory(slug='conflrev_requested',
+               desc="Recipients for a stream manager's request for an IETF conflict review",
+               recipient_slugs=['iesg_secretary'])
+
+    mt_factory(slug='conflrev_requested_cc',
+               desc="Copied on a stream manager's request for an IETF conflict review",
+               recipient_slugs=['iesg',
+                                'doc_notify',
+                                'doc_affecteddoc_authors',
+                                'doc_affecteddoc_group_chairs',
+                                'doc_affecteddoc_notify',
+                               ])
+
+    mt_factory(slug='conflrev_requested_iana',
+               desc="Recipients for IANA message when a stream manager requests an IETF conflict review",
+               recipient_slugs=['iana_eval',])
+
+    mt_factory(slug='doc_stream_changed',
+               desc="Recipients for notification when a document's stream changes",
+               recipient_slugs=['stream_managers',
+                                'doc_notify',
+                               ])
+               
 
 def forward(apps, schema_editor):
 

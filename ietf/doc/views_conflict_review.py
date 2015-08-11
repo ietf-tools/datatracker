@@ -20,6 +20,7 @@ from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_st
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.mailtoken.utils import gather_addresses
 
 class ChangeStateForm(forms.Form):
     review_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev"), label="Conflict review state", empty_label=None, required=True)
@@ -88,6 +89,8 @@ def change_state(request, name, option=None):
 def send_conflict_review_started_email(request, review):
     msg = render_to_string("doc/conflict_review/review_started.txt",
                             dict(frm = settings.DEFAULT_FROM_EMAIL,
+                                 to = gather_addresses('conflrev_requested',doc=review),
+                                 cc = gather_addresses('conflrev_requested_cc',doc=review),
                                  by = request.user.person,
                                  review = review,
                                  reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,
@@ -98,8 +101,8 @@ def send_conflict_review_started_email(request, review):
         send_mail_preformatted(request,msg)
     email_iana(request, 
                review.relateddocument_set.get(relationship__slug='conflrev').target.document,
-               settings.IANA_EVAL_EMAIL,
-                msg)
+               gather_addresses('conflrev_requested_iana',doc=review),
+               msg)
 
 def send_conflict_eval_email(request,review):
     msg = render_to_string("doc/eval_email.txt",
