@@ -4,6 +4,12 @@
 
 {% block title %}Release information{% endblock %}
 
+{% block morecss %}
+.version { text-align: right; padding: 0.1em 0.5em; min-width: 4em; }
+.date { text-align: right; padding: 0.1em 0.5em; min-width: 8em; }
+.comment { text-align: left;  padding: 0.1em 0.5em; }
+{% endblock %}
+
 {% block content %}
   {% origin %}
 <div class="col-sm-12">
@@ -44,15 +50,17 @@
   <h2>Release list:</h2>
   <table style="margin-left: 3em">
   {% for item in releases %}
-      {% ifchanged %}<tr><td><h3>{{ item.date|slice:"7:11" }}</h3></td><tr>{% endifchanged %}    
+      {% ifchanged %}
       <tr>
-	 <td style="text-align: right; padding: 0.1em 0.5em; min-width: 4em;"><a href="/release/{{item.version}}/">{{ item.version }}</a></td>
-	 <td style="text-align: right; padding: 0.1em 0.5em; min-width: 8em;">{{ item.date|slice:":11" }}</td>
-	 <td style="text-align: left;  padding: 0.1em 0.5em;">{{ item.title }}</td>       
-	 <!--
-	 <td style="text-align: right; padding: 0.2em 0.5em;">{{ item.date|slice:"12:20" }}</td>
-	 <td style="text-align: right; padding: 0.2em 0.5em;">{{ item.date|slice:"21:" }}</td>
-	 -->
+        <td><h3>{{ item.date|slice:"7:11" }}</h3></td>
+        <td></td>
+        <td></td>
+      </tr>
+      {% endifchanged %}    
+      <tr>
+        <td class="version"><a href="/release/{{item.version}}/">{{ item.version }}</a></td>
+        <td class="date">{{ item.date|slice:":11" }}</td>
+        <td class="comment">{{ item.title }}</td>       
       </tr>
   {% endfor %}
   </table>
