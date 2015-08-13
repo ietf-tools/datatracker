@@ -18,8 +18,9 @@ from ietf.doc.models import ( Document, DocHistory, State, DocEvent, BallotDocEv
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, get_chartering_type )
 from ietf.doc.utils_charter import ( historic_milestones_for_charter,
-    approved_revision, default_review_text, default_action_text, email_state_changed,
+    approved_revision, default_review_text, default_action_text,
     generate_ballot_writeup, generate_issue_ballot_mail, next_approved_revision, next_revision )
+from ietf.doc.mails import email_state_changed
 from ietf.group.models import ChangeStateGroupEvent, MilestoneGroupEvent
 from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_group_type
 from ietf.ietfauth.utils import has_role, role_required
@@ -142,7 +143,8 @@ def change_state(request, name, option=None):
                 if message or charter_state.slug == "intrev" or charter_state.slug == "extrev":
                     email_iesg_secretary_re_charter(request, group, "Charter state changed to %s" % charter_state.name, message)
 
-                email_state_changed(request, charter, "State changed to %s." % charter_state)
+                # TODO - do we need a seperate set of recipients for state changes to charters vrs other kind of documents
+                email_state_changed(request, charter, "State changed to %s." % charter_state, 'doc_state_edited')
 
                 if charter_state.slug == "intrev" and group.type_id == "wg":
                     if request.POST.get("ballot_wo_extern"):
@@ -266,7 +268,7 @@ def change_title(request, name, option=None):
                 charter.save()
                 if message:
                     email_iesg_secretary_re_charter(request, group, "Charter title changed to %s" % new_title, message)
-                email_state_changed(request, charter, "Title changed to %s." % new_title)
+                email_state_changed(request, charter, "Title changed to %s." % new_title,'doc_state_edited')
             return redirect('doc_view', name=charter.name)
     else:
         form = ChangeTitleForm(charter=charter)

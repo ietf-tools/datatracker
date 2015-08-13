@@ -232,7 +232,7 @@ class BallotWriteupsTests(TestCase):
                 send_last_call_request="1"))
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "lc-req")
-        self.assertEqual(len(outbox), mailbox_before + 2)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
 
@@ -387,7 +387,7 @@ class ApproveBallotTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "ann")
-        self.assertEqual(len(outbox), mailbox_before + 3)
+        self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("Protocol Action" in outbox[-2]['Subject'])
         # the IANA copy
         self.assertTrue("Protocol Action" in outbox[-1]['Subject'])
@@ -409,7 +409,7 @@ class ApproveBallotTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "dead")
-        self.assertEqual(len(outbox), mailbox_before + 2)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("NOT be published" in str(outbox[-1]))
 
 
@@ -441,11 +441,10 @@ class MakeLastCallTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "lc")
         self.assertEqual(draft.latest_event(LastCallDocEvent, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
-        self.assertEqual(len(outbox), mailbox_before + 3)
+        self.assertEqual(len(outbox), mailbox_before + 2)
 
-        self.assertTrue("Last Call" in outbox[-3]['Subject'])
-        # the IANA copy
         self.assertTrue("Last Call" in outbox[-2]['Subject'])
+        self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue("Last Call" in draft.message_set.order_by("-time")[0].subject)
 
 class DeferUndeferTestCase(TestCase):
@@ -491,8 +490,8 @@ class DeferUndeferTestCase(TestCase):
         if doc.type_id in defer_states:
            self.assertEqual(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
         self.assertTrue(doc.active_defer_event())
-        self.assertEqual(len(outbox), mailbox_before + 3)
-        self.assertTrue("State Update" in outbox[-3]['Subject'])
+        self.assertEqual(len(outbox), mailbox_before + 2)
+        #self.assertTrue("State Update" in outbox[-3]['Subject'])
         self.assertTrue("Telechat update" in outbox[-2]['Subject'])
         self.assertTrue("Deferred" in outbox[-1]['Subject'])
         self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])
@@ -546,9 +545,8 @@ class DeferUndeferTestCase(TestCase):
         if doc.type_id in undefer_states:
            self.assertEqual(doc.get_state(undefer_states[doc.type_id][0]).slug,undefer_states[doc.type_id][1])
         self.assertFalse(doc.active_defer_event())
-        self.assertEqual(len(outbox), mailbox_before + 3)
-        self.assertTrue("Telechat update" in outbox[-3]['Subject'])
-        self.assertTrue("State Update" in outbox[-2]['Subject'])
+        self.assertEqual(len(outbox), mailbox_before + 2)
+        self.assertTrue("Telechat update" in outbox[-2]['Subject'])
         self.assertTrue("Undeferred" in outbox[-1]['Subject'])
         self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])
 

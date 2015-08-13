@@ -1,13 +1,11 @@
 import re, datetime, os
 
 from django.template.loader import render_to_string
-from django.utils.html import strip_tags
 from django.conf import settings
 
 from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent, BallotPositionDocEvent
 from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
-from ietf.utils.mail import send_mail_text
 from ietf.mailtoken.utils import gather_addresses
 
 def charter_name_for_group(group):
@@ -84,19 +82,6 @@ def historic_milestones_for_charter(charter, rev):
 
     return res
     
-def email_state_changed(request, doc, text):
-    to = [e.strip() for e in doc.notify.replace(';', ',').split(',')]
-    if not to:
-        return
-    
-    text = strip_tags(text)
-    text += "\n\n"
-    text += "URL: %s" % (settings.IDTRACKER_BASE_URL + doc.get_absolute_url())
-
-    send_mail_text(request, to, None,
-                   "State changed: %s-%s" % (doc.canonical_name(), doc.rev),
-                   text)
-
 def generate_ballot_writeup(request, doc):
     e = WriteupDocEvent()
     e.type = "changed_ballot_writeup_text"

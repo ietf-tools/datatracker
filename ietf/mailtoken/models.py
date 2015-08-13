@@ -85,11 +85,11 @@ class Recipient(models.Model):
                 addrs.extend(Recipient.objects.get(slug='doc_notify').gather(**{'doc':reldoc.document}))
         return addrs
 
-    def gather_conflict_review_stream_owner(self, **kwargs):
+    def gather_conflict_review_stream_manager(self, **kwargs):
         addrs = []
         if 'doc' in kwargs:
             for reldoc in kwargs['doc'].related_that_doc(['conflrev']):
-                addrs.extend(Recipient.objects.get(slug='doc_stream_owner').gather(**{'doc':reldoc.document}))
+                addrs.extend(Recipient.objects.get(slug='doc_stream_manager').gather(**{'doc':reldoc.document}))
         return addrs
 
     def gather_conflict_review_steering_group(self,**kwargs):

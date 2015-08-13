@@ -110,7 +110,7 @@ def change_state(request, name):
                 doc.time = e.time
                 doc.save()
 
-                email_state_changed(request, doc, msg)
+                email_state_changed(request, doc, msg,'doc_state_edited')
 
 
                 if prev_state and prev_state.slug in ("ann", "rfcqueue") and new_state.slug not in ("rfcqueue", "pub"):

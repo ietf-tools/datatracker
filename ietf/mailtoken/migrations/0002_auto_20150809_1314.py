@@ -328,7 +328,19 @@ def make_mailtokens(apps):
                                ])
 
     mt_factory(slug='doc_state_edited',
-               desc="Recipients when a document's state is manutally edited",
+               desc="Recipients when a document's state is manually edited",
+               recipient_slugs=['doc_notify',
+                                'doc_ad',
+                                'doc_authors',
+                                'doc_shepherd',
+                                'doc_group_chairs',
+                                'doc_affecteddoc_authors',
+                                'doc_affecteddoc_group_chairs',
+                                'doc_affecteddoc_notify',
+                               ])
+
+    mt_factory(slug='doc_iana_state_changed',
+               desc="Recipients when IANA state information for a document changes ",
                recipient_slugs=['doc_notify',
                                 'doc_ad',
                                 'doc_authors',

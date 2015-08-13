@@ -96,8 +96,8 @@ class EditCharterTests(TestCase):
             if slug in ("intrev", "iesgrev"):
                 self.assertTrue(find_event("created_ballot"))
 
-            self.assertEqual(len(outbox), mailbox_before + 1)
-            self.assertTrue("state changed" in outbox[-1]['Subject'].lower())
+            self.assertEqual(len(outbox), mailbox_before + 2)
+            self.assertTrue("state changed" in outbox[-2]['Subject'].lower())
                     
     def test_edit_telechat_date(self):
         make_test_data()

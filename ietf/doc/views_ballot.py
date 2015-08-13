@@ -18,7 +18,7 @@ from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotP
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
-    email_state_changed, extra_automation_headers, generate_last_call_announcement, 
+    extra_automation_headers, generate_last_call_announcement, 
     generate_issue_ballot_mail, generate_ballot_writeup, generate_approval_mail )
 from ietf.doc.lastcall import request_last_call
 from ietf.iesg.models import TelechatDate
@@ -69,8 +69,6 @@ def do_undefer_ballot(request, doc):
     doc.save()
 
     update_telechat(request, doc, login, telechat_date)
-    if e:
-        email_state_changed(request, doc, e.desc)
     email_ballot_undeferred(request, doc, login.plain_name(), telechat_date)
     
 def position_to_ballot_choice(position):
@@ -367,9 +365,6 @@ def defer_ballot(request, name):
         doc.time = (e and e.time) or datetime.datetime.now()
         doc.save()
 
-        if e:
-            email_state_changed(request, doc, e.desc)
-
         update_telechat(request, doc, login, telechat_date)
         email_ballot_deferred(request, doc, login.plain_name(), telechat_date)
 
@@ -461,9 +456,6 @@ def lastcalltext(request, name):
 
                     doc.time = (e and e.time) or datetime.datetime.now()
                     doc.save()
-
-                    if e:
-                        email_state_changed(request, doc, e.desc)
 
                     request_last_call(request, doc)
                     
@@ -699,14 +691,10 @@ def approve_ballot(request, name):
 
         e.save()
         
-        change_description = e.desc + " and state has been changed to %s" % doc.get_state("draft-iesg").name
-        
         e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
 
         doc.time = (e and e.time) or datetime.datetime.now()
         doc.save()
-
-        email_state_changed(request, doc, change_description)
 
         # send announcement
 
@@ -785,10 +773,6 @@ def make_last_call(request, name):
             doc.time = (e and e.time) or datetime.datetime.now()
             doc.save()
 
-            change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, new_state.name)
-
-            email_state_changed(request, doc, change_description)
-            
             e = LastCallDocEvent(doc=doc, by=login)
             e.type = "sent_last_call"
             e.desc = "The following Last Call announcement was sent out:<br><br>"

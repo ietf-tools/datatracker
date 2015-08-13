@@ -205,7 +205,7 @@ def update_history_with_changes(changes, send_email=True):
                     doc.set_state(state)
 
                     if send_email and (state != prev_state):
-                        email_state_changed(None, doc, "IANA %s state changed to %s" % (kind, state.name))
+                        email_state_changed(None, doc, "IANA %s state changed to %s" % (kind, state.name),'doc_iana_state_changed')
 
                 if doc.time < timestamp:
                     doc.time = timestamp

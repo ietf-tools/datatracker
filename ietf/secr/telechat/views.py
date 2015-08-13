@@ -261,7 +261,7 @@ def doc_detail(request, date, name):
                     doc.time = (e and e.time) or datetime.datetime.now()
                     doc.save()
 
-                    email_state_changed(request, doc, e.desc)
+                    email_state_changed(request, doc, e.desc, 'doc_state_edited')
     
                     if new_state.slug == "lc-req":
                         request_last_call(request, doc)

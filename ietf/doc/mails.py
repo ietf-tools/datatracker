@@ -16,8 +16,8 @@ from ietf.group.models import Role
 from ietf.doc.models import Document
 from ietf.mailtoken.utils import gather_addresses, gather_address_list
 
-def email_state_changed(request, doc, text):
-    to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
+def email_state_changed(request, doc, text, mailtoken_id=None):
+    to = gather_address_list(mailtoken_id or 'doc_state_edited',doc=doc)
     if not to:
         return
     
