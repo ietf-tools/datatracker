@@ -111,7 +111,6 @@ def change_state(request, name):
                 doc.save()
 
                 email_state_changed(request, doc, msg)
-                email_ad(request, doc, doc.ad, login, msg)
 
 
                 if prev_state and prev_state.slug in ("ann", "rfcqueue") and new_state.slug not in ("rfcqueue", "pub"):
@@ -450,6 +449,7 @@ def change_intention(request, name):
                 doc.time = e.time
                 doc.save()
 
+                # TODO: Build explicit changed_intended_publication_status
                 email_ad(request, doc, doc.ad, login, email_desc)
 
             return HttpResponseRedirect(doc.get_absolute_url())
@@ -726,6 +726,7 @@ def edit_info(request, name):
             doc.time = datetime.datetime.now()
 
             if changes and not new_document:
+                #TODO - use the 'this thing changed' messages instead
                 email_ad(request, doc, orig_ad, login, "\n".join(changes))
                 
             doc.save()

@@ -37,6 +37,10 @@ def make_recipients(apps):
        desc="The document's group chairs (if the document is assigned to a working or research group)",
        template=None)
 
+    rc(slug='doc_group_delegates',
+       desc="The document's group delegates (if the document is assigned to a working or research group)",
+       template=None)
+
     rc(slug='doc_affecteddoc_authors',
        desc="The authors of the subject documents of a conflict-review or status-change",
        template=None)
@@ -105,6 +109,9 @@ def make_recipients(apps):
        desc="The group's chairs",
        template="{{group.acronym}}-chairs@ietf.org")
 
+    rc(slug='group_responsible_directors',
+       desc="The group's responsible AD(s) or IRTF chair",
+       template=None)
 
 def make_mailtokens(apps):
 
@@ -300,7 +307,51 @@ def make_mailtokens(apps):
                recipient_slugs=['stream_managers',
                                 'doc_notify',
                                ])
+
+    mt_factory(slug='doc_stream_state_edited',
+               desc="Recipients when the stream state of a document is manually edited",
+               recipient_slugs=['doc_group_chairs',
+                                'doc_group_delegates',
+                                'doc_shepherd',
+                                'doc_authors',
+                               ]) 
+
+    mt_factory(slug='group_milestones_edited',
+               desc="Recipients when any of a group's milestones are edited",
+               recipient_slugs=['group_responsible_directors',
+                                'group_chairs',
+                               ])
                
+    mt_factory(slug='group_approved_milestones_edited',
+               desc="Recipients when the set of approved milestones for a group are edited",
+               recipient_slugs=['group_mail_list',
+                               ])
+
+    mt_factory(slug='doc_state_edited',
+               desc="Recipients when a document's state is manutally edited",
+               recipient_slugs=['doc_notify',
+                                'doc_ad',
+                                'doc_authors',
+                                'doc_shepherd',
+                                'doc_group_chairs',
+                                'doc_affecteddoc_authors',
+                                'doc_affecteddoc_group_chairs',
+                                'doc_affecteddoc_notify',
+                               ])
+
+    mt_factory(slug='doc_telechat_details_changed',
+               desc="Recipients when a document's telechat date or other telechat specific details are changed",
+               recipient_slugs=['iesg',
+                                'iesg-secretary',
+                                'doc_notify',
+                                'doc_authors',
+                                'doc_shepherd',
+                                'doc_group_chairs',
+                                'doc_affecteddoc_authors',
+                                'doc_affecteddoc_group_chairs',
+                                'doc_affecteddoc_notify',
+                               ])
+
 
 def forward(apps, schema_editor):
 

@@ -12,6 +12,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.group.models import Group
 from ietf.group.utils import milestone_reviewer_for_group_type
+from ietf.mailtoken.utils import gather_address_list
 
 def email_iesg_secretary_re_charter(request, group, subject, text):
     to = ["iesg-secretary@ietf.org"]
@@ -77,26 +78,18 @@ def email_milestones_changed(request, group, changes):
 
         send_mail_text(request, to, None, subject, text)
 
-    # first send to management and chairs
-    to = []
-    if group.ad_role():
-        to.append(group.ad_role().email.formatted_email())
-    elif group.type_id == "rg":
-        to.append("IRTF Chair <irtf-chair@irtf.org>")
-
-    for r in group.role_set.filter(name="chair"):
-        to.append(r.formatted_email())
-
+    # first send to those who should see any edits (such as management and chairs)
+    to = gather_address_list('group_milestones_edited',group=group)
     if to:
         wrap_up_email(to, u"\n\n".join(c + "." for c in changes))
 
-    # then send to group
-    if group.list_email:
-        review_re = re.compile("Added .* for review, due")
-        to = [ group.list_email ]
-        msg = u"\n\n".join(c + "." for c in changes if not review_re.match(c))
-        if msg:
-            wrap_up_email(to, msg)
+    # then send only the approved milestones to those who shouldn't be 
+    # bothered with milestones pending approval 
+    review_re = re.compile("Added .* for review, due")
+    to = gather_address_list('group_approved_milestones_edited',group=group)
+    msg = u"\n\n".join(c + "." for c in changes if not review_re.match(c))
+    if to and msg:
+        wrap_up_email(to, msg)
 
 
 def email_milestone_review_reminder(group, grace_period=7):

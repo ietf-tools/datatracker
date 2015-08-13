@@ -81,7 +81,8 @@ class IANASyncTests(TestCase):
         e = draft.latest_event(StateDocEvent, type="changed_state", state_type="draft-iana-action")
         self.assertEqual(e.desc, "IANA Action state changed to <b>Waiting on RFC Editor</b> from In Progress")
 #        self.assertEqual(e.time, datetime.datetime(2011, 10, 9, 5, 0)) # check timezone handling
-        self.assertEqual(len(outbox), mailbox_before + 3 * 2)
+        self.assertEqual(len(outbox), mailbox_before + 3 )
+        # TODO look sensibly at the message here
 
         # make sure it doesn't create duplicates
         added_events, warnings = iana.update_history_with_changes(changes)

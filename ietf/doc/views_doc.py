@@ -51,7 +51,6 @@ from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_wi
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event )
 from ietf.community.models import CommunityList
-from ietf.doc.mails import email_ad
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group_type, can_manage_materials
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, role_required
@@ -59,6 +58,7 @@ from ietf.name.models import StreamName, BallotPositionName
 from ietf.person.models import Email
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
+from ietf.doc.mails import email_ad
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -878,6 +878,7 @@ def add_comment(request, name):
             e.save()
 
             if doc.type_id == "draft":
+                # TODO - build an explicit message for when a comment is added
                 email_ad(request, doc, doc.ad, login,
                             "A new comment added by %s" % login.name)
             return redirect("doc_history", name=doc.name)

@@ -3,6 +3,8 @@
 from django.db import models
 from django.template import Template, Context
 
+from ietf.group.models import Role
+
 class MailToken(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     desc = models.TextField(blank=True)
@@ -41,8 +43,16 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             doc=kwargs['doc']
-            if doc.group.type.slug in ['wg','rg']:
+            if doc.group and doc.group.type.slug in ['wg','rg']:
                 addrs.append('%s-chairs@ietf.org'%doc.group.acronym)
+        return addrs
+
+    def gather_doc_group_delegates(self, **kwargs):
+        addrs = []
+        if 'doc' in kwargs:
+            doc=kwargs['doc']
+            if doc.group and doc.group.type.slug in ['wg','rg']:
+                addrs.extend(Role.objects.filter(group=doc.group,name='delegate').values_list('email__address',flat=True))
         return addrs
 
     def gather_doc_group_mail_list(self, **kwargs):
@@ -115,3 +125,11 @@ class Recipient(models.Model):
             addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':[kwargs['doc'].stream_id]}))
         return addrs
 
+    def gather_group_responsible_directors(self, **kwargs):
+        addrs = []
+        if 'group' in kwargs:
+            group = kwargs['group']
+            addrs.extend(Role.objects.filter(group=group,name='ad').values_list('email__address',flat=True))
+            if group.type_id=='rg':
+                addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':['irtf']}))
+        return addrs

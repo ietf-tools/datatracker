@@ -72,9 +72,8 @@ class ChangeStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count(), events_before + 2)
         self.assertTrue("Test comment" in draft.docevent_set.all()[0].desc)
         self.assertTrue("IESG state changed" in draft.docevent_set.all()[1].desc)
-        self.assertEqual(len(outbox), mailbox_before + 2)
-        self.assertTrue("State Update Notice" in outbox[-2]['Subject'])
-        self.assertTrue(draft.name in outbox[-1]['Subject'])
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("State Update Notice" in outbox[-1]['Subject'])
 
         
         # check that we got a previous state now
@@ -101,7 +100,7 @@ class ChangeStateTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "review-e")
-        self.assertEqual(len(outbox), mailbox_before + 2 + 1)
+        self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue(draft.name in outbox[-1]['Subject'])
         self.assertTrue("changed state" in outbox[-1]['Subject'])
         self.assertTrue("is no longer" in str(outbox[-1]))
@@ -1095,7 +1094,7 @@ class AdoptDraftTests(TestCase):
         self.assertEqual(draft.notify,"aliens@example.mars")
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
 
         self.assertFalse(mars.list_email in draft.notify)
@@ -1137,7 +1136,7 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 2)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("tags changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("plain@example.com" in unicode(outbox[-1]))
 
@@ -1181,7 +1180,7 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
 
 class ChangeReplacesTests(TestCase):

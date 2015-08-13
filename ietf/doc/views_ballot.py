@@ -17,7 +17,7 @@ from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotP
     BallotType, LastCallDocEvent, WriteupDocEvent, save_document_in_history, IESG_SUBSTATE_TAGS )
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
-from ietf.doc.mails import ( email_ad, email_ballot_deferred, email_ballot_undeferred, 
+from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
     email_state_changed, extra_automation_headers, generate_last_call_announcement, 
     generate_issue_ballot_mail, generate_ballot_writeup, generate_approval_mail )
 from ietf.doc.lastcall import request_last_call
@@ -464,7 +464,6 @@ def lastcalltext(request, name):
 
                     if e:
                         email_state_changed(request, doc, e.desc)
-                        email_ad(request, doc, doc.ad, login, e.desc)
 
                     request_last_call(request, doc)
                     
@@ -708,7 +707,6 @@ def approve_ballot(request, name):
         doc.save()
 
         email_state_changed(request, doc, change_description)
-        email_ad(request, doc, doc.ad, login, change_description)
 
         # send announcement
 
@@ -790,7 +788,6 @@ def make_last_call(request, name):
             change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, new_state.name)
 
             email_state_changed(request, doc, change_description)
-            email_ad(request, doc, doc.ad, login, change_description)
             
             e = LastCallDocEvent(doc=doc, by=login)
             e.type = "sent_last_call"

@@ -9,12 +9,12 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
-from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent, DocTagName
+from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.doc.utils import needed_ballot_positions
 from ietf.person.models import Person
 from ietf.group.models import Role
 from ietf.doc.models import Document
-from ietf.mailtoken.utils import gather_addresses
+from ietf.mailtoken.utils import gather_addresses, gather_address_list
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
@@ -35,7 +35,7 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
         streams.append(old_stream.slug)
     if new_stream:
         streams.append(new_stream.slug)
-    to = gather_addresses('doc_stream_changed',doc=doc,streams=streams)
+    to = gather_address_list('doc_stream_changed',doc=doc,streams=streams)
 
     if not to:
         return
@@ -74,6 +74,7 @@ def email_authors(request, doc, subject, text):
 def html_to_text(html):
     return strip_tags(html.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("<br>", "\n"))
     
+#TODO Expunge this
 def email_ad(request, doc, ad, changed_by, text, subject=None):
     if not ad or not changed_by or ad == changed_by:
         return
@@ -406,7 +407,7 @@ def email_last_call_expired(doc):
     text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.get_state("draft-iesg").name
     
     send_mail(None,
-              gather_addresses('last_call_expired',doc=doc)
+              gather_addresses('last_call_expired',doc=doc),
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
               "Last Call Expired: %s" % doc.file_tag(),
               "doc/mail/change_notice.txt",
@@ -416,27 +417,8 @@ def email_last_call_expired(doc):
               cc = gather_addresses('last_call_expired_cc',doc=doc)
               )
 
-def stream_state_email_recipients(doc, extra_recipients=[]):
-    persons = set()
-    res = []
-    for r in Role.objects.filter(group=doc.group, name__in=("chair", "delegate")).select_related("person", "email"):
-        res.append(r.formatted_email())
-        persons.add(r.person)
-
-    for email in doc.authors.all():
-        if email.person not in persons:
-            res.append(email.formatted_email())
-            persons.add(email.person)
-
-    for e in extra_recipients:
-        if e.person not in persons:
-            res.append(e.formatted_email())
-            persons.add(e.person)
-
-    return res
-
 def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=""):
-    recipients = stream_state_email_recipients(doc)
+    recipients = gather_address_list('doc_stream_state_edited',doc=doc)
 
     state_type = (prev_state or new_state).type
 
@@ -452,12 +434,8 @@ def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=
                    comment=comment))
 
 def email_stream_tags_changed(request, doc, added_tags, removed_tags, by, comment=""):
-    extra_recipients = []
 
-    if DocTagName.objects.get(slug="sheph-u") in added_tags and doc.shepherd:
-        extra_recipients.append(doc.shepherd)
-
-    recipients = stream_state_email_recipients(doc, extra_recipients)
+    recipients = gather_address_list('doc_stream_state_edited',doc=doc)
 
     send_mail(request, recipients, settings.DEFAULT_FROM_EMAIL,
               u"Tags changed for %s" % doc.name,

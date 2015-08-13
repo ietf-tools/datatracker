@@ -232,7 +232,7 @@ class BallotWriteupsTests(TestCase):
                 send_last_call_request="1"))
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "lc-req")
-        self.assertEqual(len(outbox), mailbox_before + 3)
+        self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
 
@@ -387,7 +387,7 @@ class ApproveBallotTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "ann")
-        self.assertEqual(len(outbox), mailbox_before + 4)
+        self.assertEqual(len(outbox), mailbox_before + 3)
         self.assertTrue("Protocol Action" in outbox[-2]['Subject'])
         # the IANA copy
         self.assertTrue("Protocol Action" in outbox[-1]['Subject'])
@@ -409,7 +409,7 @@ class ApproveBallotTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "dead")
-        self.assertEqual(len(outbox), mailbox_before + 3)
+        self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("NOT be published" in str(outbox[-1]))
 
 
@@ -441,11 +441,11 @@ class MakeLastCallTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "lc")
         self.assertEqual(draft.latest_event(LastCallDocEvent, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
-        self.assertEqual(len(outbox), mailbox_before + 4)
+        self.assertEqual(len(outbox), mailbox_before + 3)
 
-        self.assertTrue("Last Call" in outbox[-4]['Subject'])
-        # the IANA copy
         self.assertTrue("Last Call" in outbox[-3]['Subject'])
+        # the IANA copy
+        self.assertTrue("Last Call" in outbox[-2]['Subject'])
         self.assertTrue("Last Call" in draft.message_set.order_by("-time")[0].subject)
 
 class DeferUndeferTestCase(TestCase):

@@ -18,18 +18,18 @@ from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
 from ietf.utils import draft, markup_txt
 from ietf.utils.mail import send_mail
+from ietf.mailtoken.utils import gather_address_list
 
-#FIXME - it would be better if this lived in ietf/doc/mails.py, but there's
+#TODO FIXME - it would be better if this lived in ietf/doc/mails.py, but there's
 #        an import order issue to work out.
 def email_update_telechat(request, doc, text):
-    to = set(['iesg@ietf.org','iesg-secretary@ietf.org'])
-    to.update(set([x.strip() for x in doc.notify.replace(';', ',').split(',')]))
+    to = gather_address_list('doc_telechat_details_changed',doc=doc)
 
     if not to:
         return
     
     text = strip_tags(text)
-    send_mail(request, list(to), None,
+    send_mail(request, to, None,
               "Telechat update notice: %s" % doc.file_tag(),
               "doc/mail/update_telechat.txt",
               dict(text=text,

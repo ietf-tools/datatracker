@@ -17,7 +17,7 @@ def gather_address_list(slug,**kwargs):
     for recipient in mailtoken.recipients.all():
         addrs.extend(recipient.gather(**kwargs))
 
-    return list(set(addrs))
+    return list(set([addr for addr in addrs if addr]))
 
 def gather_addresses(slug,**kwargs):
     return ",\n   ".join(gather_address_list(slug,**kwargs))
