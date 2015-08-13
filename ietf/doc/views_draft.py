@@ -450,7 +450,7 @@ def change_intention(request, name):
                 doc.save()
 
                 # TODO: Build explicit changed_intended_publication_status
-                email_ad(request, doc, doc.ad, login, email_desc)
+                email_state_changed(request, doc, email_desc,'doc_state_edited')
 
             return HttpResponseRedirect(doc.get_absolute_url())
 

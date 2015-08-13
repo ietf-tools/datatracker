@@ -133,3 +133,11 @@ class Recipient(models.Model):
             if group.type_id=='rg':
                 addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':['irtf']}))
         return addrs
+
+    def gather_doc_group_responsible_directors(self, **kwargs):
+        addrs = []
+        if 'doc' in kwargs:
+            group = kwargs['doc'].group
+            if group:
+                addrs.extend(Recipient.objects.get(slug='group_responsible_directors').gather(**{'group':group}))
+        return addrs

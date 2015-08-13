@@ -113,6 +113,10 @@ def make_recipients(apps):
        desc="The group's responsible AD(s) or IRTF chair",
        template=None)
 
+    rc(slug='doc_group_responsible_directors',
+       desc="The document's group's responsible AD(s) or IRTF chair",
+       template=None)
+
 def make_mailtokens(apps):
 
     Recipient=apps.get_model('mailtoken','Recipient')
@@ -364,6 +368,30 @@ def make_mailtokens(apps):
                                 'doc_affecteddoc_notify',
                                ])
 
+    mt_factory(slug='doc_pulled_from_rfc_queue',
+               desc="Recipients when a document is taken out of the RFC's editor queue before publication",
+               recipient_slugs=['iana',
+                                'rfc_editor',
+                               ])
+
+    mt_factory(slug='doc_pulled_from_rfc_queue_cc',
+               desc="Recipients when a document is taken out of the RFC's editor queue before publication",
+               recipient_slugs=['iesg-secretary',
+                                'doc_ad', 
+                                'doc_notify',
+                                'doc_authors',
+                                'doc_shepherd',
+                                'doc_group_chairs',
+                               ])
+
+    mt_factory(slug='doc_replacement_changed',
+               desc="Recipients when what a document replaces or is replaced by changes",
+               recipient_slugs=['doc_authors',
+                                'doc_notify',
+                                'doc_shepherd',
+                                'doc_group_chairs',
+                                'doc_group_responsible_directors',
+                               ]) 
 
 def forward(apps, schema_editor):
 

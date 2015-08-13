@@ -456,35 +456,15 @@ def rebuild_reference_relations(doc,filename=None):
 
     return ret
 
-def collect_email_addresses(emails, doc):
-    for author in doc.authors.all():
-        if author.address not in emails:
-            emails[author.address] = '"%s"' % (author.person.name)
-    if doc.group and doc.group.acronym != 'none':
-        for role in doc.group.role_set.filter(name='chair'):
-            if role.email.address not in emails:
-                emails[role.email.address] = '"%s"' % (role.person.name)
-        if doc.group.type.slug == 'wg':
-            address = '%s-ads@tools.ietf.org' % doc.group.acronym
-            if address not in emails:
-                emails[address] = '"%s-ads"' % (doc.group.acronym)
-        elif doc.group.type.slug == 'rg':
-            for role in doc.group.parent.role_set.filter(name='chair'):
-                if role.email.address not in emails:
-                    emails[role.email.address] = '"%s"' % (role.person.name)
-    if doc.shepherd and doc.shepherd.address not in emails:
-        emails[doc.shepherd.address] = u'"%s"' % (doc.shepherd.person.name or "")
-
 def set_replaces_for_document(request, doc, new_replaces, by, email_subject, email_comment=""):
-    emails = {}
-    collect_email_addresses(emails, doc)
+    to = gather_address_list('doc_replacement_changed',doc=doc)
 
     relationship = DocRelationshipName.objects.get(slug='replaces')
     old_replaces = doc.related_that_doc("replaces")
 
     for d in old_replaces:
         if d not in new_replaces:
-            collect_email_addresses(emails, d.document)
+            to.extend(gather_address_list('doc_replacement_changed',doc=d.document))
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
                 s = 'active' if d.document.expires > datetime.datetime.now() else 'expired'
@@ -492,7 +472,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, ema
 
     for d in new_replaces:
         if d not in old_replaces:
-            collect_email_addresses(emails, d.document)
+            to.extend(gather_address_list('doc_replacement_changed',doc=d.document))
             RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
             d.document.set_state(State.objects.get(type='draft', slug='repl'))
 
@@ -510,10 +490,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, ema
     if email_comment:
         email_desc += "\n" + email_comment
 
-    to = [
-        u'%s <%s>' % (emails[email], email) if emails[email] else u'<%s>' % email
-        for email in sorted(emails)
-    ]
+    to = list(set([addr for addr in to if addr]))
 
     from ietf.doc.mails import html_to_text
 

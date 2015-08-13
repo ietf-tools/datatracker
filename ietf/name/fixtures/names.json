@@ -4409,6 +4409,14 @@
 },
 {
  "fields": {
+  "template": null,
+  "desc": "The document's group's responsible AD(s) or IRTF chair"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "doc_group_responsible_directors"
+},
+{
+ "fields": {
   "template": "{{doc.notify}}",
   "desc": "The addresses in the document's notify field"
  },
@@ -4761,6 +4769,45 @@
  },
  "model": "mailtoken.mailtoken",
  "pk": "doc_iana_state_changed"
+},
+{
+ "fields": {
+  "recipients": [
+   "iana",
+   "rfc_editor"
+  ],
+  "desc": "Recipients when a document is taken out of the RFC's editor queue before publication"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_pulled_from_rfc_queue"
+},
+{
+ "fields": {
+  "recipients": [
+   "doc_ad",
+   "doc_authors",
+   "doc_group_chairs",
+   "doc_notify",
+   "doc_shepherd"
+  ],
+  "desc": "Recipients when a document is taken out of the RFC's editor queue before publication"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_pulled_from_rfc_queue_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "doc_authors",
+   "doc_group_chairs",
+   "doc_group_responsible_directors",
+   "doc_notify",
+   "doc_shepherd"
+  ],
+  "desc": "Recipients when what a document replaces or is replaced by changes"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_replacement_changed"
 },
 {
  "fields": {

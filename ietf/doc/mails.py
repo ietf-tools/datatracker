@@ -52,8 +52,8 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
 
 def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
     extra=extra_automation_headers(doc)
-    extra['Cc'] = 'iesg-secretary@ietf.org'
-    send_mail(request, ["IANA <iana@iana.org>", "RFC Editor <rfc-editor@rfc-editor.org>"], None,
+    extra['Cc'] = gather_addresses('doc_pulled_from_rfc_queue_cc',doc=doc)
+    send_mail(request, gather_address_list('doc_pulled_from_rfc_queue',doc=doc), None,
               "%s changed state from %s to %s" % (doc.name, prev_state.name, next_state.name),
               "doc/mail/pulled_from_rfc_queue_email.txt",
               dict(doc=doc,
