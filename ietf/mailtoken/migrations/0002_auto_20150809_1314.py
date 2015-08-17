@@ -153,6 +153,10 @@ def make_recipients(apps):
        desc="Any ADs holding an active DISCUSS position on a given document",
        template=None)
 
+    rc(slug='group_changed_personnel',
+       desc="Any personnel who were added or deleted when a group's personnel changes",
+       template='{{ changed_personnel | join:", " }}')
+
 def make_mailtokens(apps):
 
     Recipient=apps.get_model('mailtoken','Recipient')
@@ -429,8 +433,12 @@ def make_mailtokens(apps):
                                 'doc_group_responsible_directors',
                                ]) 
 
-    mt_factory(slug='charter_state_message_provided',
-               desc="Recipients for extra message when provided on the charter state editing form",
+    mt_factory(slug='charter_state_edit_admin_needed',
+               desc="Recipients for message to adminstrators when a charter state edit needs followon administrative action",
+               recipient_slugs=['iesg_secretary'])
+
+    mt_factory(slug='group_closure_requested',
+               desc="Recipients for message requesting closure of a group",
                recipient_slugs=['iesg_secretary'])
 
     mt_factory(slug='doc_expires_soon',
@@ -508,7 +516,7 @@ def make_mailtokens(apps):
                                ])
 
     mt_factory(slug='sub_new_version',
-               desc="Recipient for notification of a new version of an existing document",
+               desc="Recipients for notification of a new version of an existing document",
                recipient_slugs=['doc_notify',
                                 'doc_ad',
                                 'non_ietf_stream_manager',
@@ -516,6 +524,33 @@ def make_mailtokens(apps):
                                 'doc_discussing_ads',
                                ])
 
+    mt_factory(slug='milestone_review_reminder',
+               desc="Recipients for reminder message that unapproved milestone changes need review",
+               recipient_slugs=['group_responsible_directors',
+                               ])
+
+    mt_factory(slug='milestone_review_reminder_cc',
+               desc="Copied on reminder message that unapproved milestone changes need review",
+               recipient_slugs=['group_chairs',
+                               ])
+
+    mt_factory(slug='milestones_due_soon',
+               desc='Recipients for reminder message for milestones about to become overdue',
+               recipient_slugs=['group_chairs',
+                               ])
+
+    mt_factory(slug='milestones_overdue',
+               desc='Recipients for message about milestones that are overdue',
+               recipient_slugs=['group_chairs',
+                               ])
+
+    mt_factory(slug='group_personnel_change',
+               desc="Recipients for a message noting changes in a group's personnel",
+               recipient_slugs=['iesg_secretary',
+                                'group_responsible_directors',
+                                'group_chairs',
+                                'group_changed_personnel',
+                               ])
 
 def forward(apps, schema_editor):
 

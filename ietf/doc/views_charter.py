@@ -29,7 +29,7 @@ from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.group.mails import email_iesg_secretary_re_charter
+from ietf.group.mails import email_admin_re_charter
 
 class ChangeStateForm(forms.Form):
     charter_state = forms.ModelChoiceField(State.objects.filter(used=True, type="charter"), label="Charter state", empty_label=None, required=False)
@@ -141,7 +141,7 @@ def change_state(request, name, option=None):
                 charter.save()
 
                 if message or charter_state.slug == "intrev" or charter_state.slug == "extrev":
-                    email_iesg_secretary_re_charter(request, group, "Charter state changed to %s" % charter_state.name, message)
+                    email_admin_re_charter(request, group, "Charter state changed to %s" % charter_state.name, message,'charter_state_edit_admin_needed')
 
                 # TODO - do we need a seperate set of recipients for state changes to charters vrs other kind of documents
                 email_state_changed(request, charter, "State changed to %s." % charter_state, 'doc_state_edited')
@@ -267,7 +267,7 @@ def change_title(request, name, option=None):
                 charter.time = datetime.datetime.now()
                 charter.save()
                 if message:
-                    email_iesg_secretary_re_charter(request, group, "Charter title changed to %s" % new_title, message)
+                    email_admin_re_charter(request, group, "Charter title changed to %s" % new_title, message,'charter_state_edit_admin_needed')
                 email_state_changed(request, charter, "Title changed to %s." % new_title,'doc_state_edited')
             return redirect('doc_view', name=charter.name)
     else:
@@ -645,7 +645,7 @@ def approve(request, name):
 
         fix_charter_revision_after_approval(charter, login)
 
-        email_iesg_secretary_re_charter(request, group, "Charter state changed to %s" % new_charter_state.name, change_description)
+        email_admin_re_charter(request, group, "Charter state changed to %s" % new_charter_state.name, change_description,'charter_state_edit_admin_needed')
 
         # move milestones over
         milestones_to_delete = list(group.groupmilestone_set.filter(state__in=("active", "review")))

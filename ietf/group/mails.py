@@ -14,8 +14,8 @@ from ietf.group.models import Group
 from ietf.group.utils import milestone_reviewer_for_group_type
 from ietf.mailtoken.utils import gather_address_list
 
-def email_iesg_secretary_re_charter(request, group, subject, text):
-    to = gather_address_list('charter_state_message_provided',group=group)
+def email_admin_re_charter(request, group, subject, text, mailtoken):
+    to = gather_address_list(mailtoken,group=group)
     full_subject = u"Regarding %s %s: %s" % (group.type.name, group.acronym, subject)
     text = strip_tags(text)
 
@@ -28,41 +28,10 @@ def email_iesg_secretary_re_charter(request, group, subject, text):
                    )
               )
 
-def email_iesg_secretary_personnel_change(request, group, text):
-    to = ["iesg-secretary@ietf.org"]
+def email_personnel_change(request, group, text, changed_personnel):
+    to = gather_address_list('group_personnel_change',group=group,changed_personnel=changed_personnel)
     full_subject = u"Personnel change for %s working group" % (group.acronym)
     send_mail_text(request, to, None, full_subject,text)
-
-def email_interested_parties_re_changed_delegates(request, group, title, added, deleted):
-
-    # Send to management and chairs
-    to = []
-    if group.ad_role():
-        to.append(group.ad_role().email.formatted_email())
-    elif group.type_id == "rg":
-        to.append("IRTF Chair <irtf-chair@irtf.org>")
-
-    for r in group.role_set.filter(name="chair"):
-        to.append(r.formatted_email())
-
-    # Send to the delegates who were added or deleted
-    for delegate in added:
-        to.append(delegate.formatted_email())
-
-    for delegate in deleted:
-        to.append(delegate.formatted_email())
-
-    personnel_change_text=""
-    if added:
-        change_text=title + ' added: ' + ", ".join(x.formatted_email() for x in added)
-        personnel_change_text+=change_text+"\n"
-    if deleted:
-        change_text=title + ' deleted: ' + ", ".join(x.formatted_email() for x in deleted)
-        personnel_change_text+=change_text+"\n"
-
-    if to:
-        full_subject = u"%s changed for %s working group" % (title, group.acronym)
-        send_mail_text(request, to, None, full_subject,personnel_change_text)
 
 
 def email_milestones_changed(request, group, changes):
@@ -94,17 +63,11 @@ def email_milestones_changed(request, group, changes):
 
 def email_milestone_review_reminder(group, grace_period=7):
     """Email reminders about milestones needing review to management."""
-    to = []
-
-    if group.ad_role():
-        to.append(group.ad_role().email.formatted_email())
-    elif group.type_id == "rg":
-        to.append("IRTF Chair <irtf-chair@irtf.org>")
+    to = gather_address_list('milestone_review_reminder',group=group)
+    cc = gather_address_list('milestone_review_reminder_cc',group=group)
 
     if not to:
         return False
-
-    cc = [r.formatted_email() for r in group.role_set.filter(name="chair")]
 
     now = datetime.datetime.now()
     too_early = True
@@ -139,7 +102,7 @@ def groups_with_milestones_needing_review():
     return Group.objects.filter(groupmilestone__state="review").distinct()
 
 def email_milestones_due(group, early_warning_days):
-    to = [r.formatted_email() for r in group.role_set.filter(name="chair")]
+    to = gather_address_list('milestones_due_soon',group=group)
 
     today = datetime.date.today()
     early_warning = today + datetime.timedelta(days=early_warning_days)
@@ -166,7 +129,7 @@ def groups_needing_milestones_due_reminder(early_warning_days):
     return Group.objects.filter(state="active", groupmilestone__due__in=[today, today + datetime.timedelta(days=early_warning_days)], groupmilestone__resolved="", groupmilestone__state="active").distinct()
 
 def email_milestones_overdue(group):
-    to = [r.formatted_email() for r in group.role_set.filter(name="chair")]
+    to = gather_address_list('milestones_overdue',group=group)
 
     today = datetime.date.today()
 

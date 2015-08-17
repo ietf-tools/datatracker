@@ -4465,6 +4465,14 @@
 },
 {
  "fields": {
+  "template": "{{ changed_personnel | join:\", \" }}",
+  "desc": "Any personnel who were added or deleted when a group's personnel changes"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "group_changed_personnel"
+},
+{
+ "fields": {
   "template": "{{ group.list_email }}",
   "desc": "The group's mailing list"
  },
@@ -4796,10 +4804,10 @@
   "recipients": [
    "iesg_secretary"
   ],
-  "desc": "Recipients for extra message when provided on the charter state editing form"
+  "desc": "Recipients for message to adminstrators when a charter state edit needs followon administrative action"
  },
  "model": "mailtoken.mailtoken",
- "pk": "charter_state_message_provided"
+ "pk": "charter_state_edit_admin_needed"
 },
 {
  "fields": {
@@ -5008,6 +5016,16 @@
 {
  "fields": {
   "recipients": [
+   "iesg_secretary"
+  ],
+  "desc": "Recipients for message requesting closure of a group"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "group_closure_requested"
+},
+{
+ "fields": {
+  "recipients": [
    "group_chairs",
    "group_responsible_directors"
   ],
@@ -5015,6 +5033,19 @@
  },
  "model": "mailtoken.mailtoken",
  "pk": "group_milestones_edited"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_chairs",
+   "group_changed_personnel",
+   "group_responsible_directors",
+   "iesg_secretary"
+  ],
+  "desc": "Recipients for a message noting changes in a group's personnel"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "group_personnel_change"
 },
 {
  "fields": {
@@ -5097,6 +5128,46 @@
  },
  "model": "mailtoken.mailtoken",
  "pk": "last_call_requested_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_chairs"
+  ],
+  "desc": "Recipients for reminder message for milestones about to become overdue"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "milestones_due_soon"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_chairs"
+  ],
+  "desc": "Recipients for message about milestones that are overdue"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "milestones_overdue"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_responsible_directors"
+  ],
+  "desc": "Recipients for reminder message that unapproved milestone changes need review"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "milestone_review_reminder"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_chairs"
+  ],
+  "desc": "Copied on reminder message that unapproved milestone changes need review"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "milestone_review_reminder_cc"
 },
 {
  "fields": {
@@ -5253,7 +5324,7 @@
    "doc_notify",
    "rfc_editor_if_doc_in_queue"
   ],
-  "desc": "Recipient for notification of a new version of an existing document"
+  "desc": "Recipients for notification of a new version of an existing document"
  },
  "model": "mailtoken.mailtoken",
  "pk": "sub_new_version"
