@@ -524,7 +524,7 @@ class ExpireIDsTests(TestCase):
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("aread@ietf.org" in str(outbox[-1])) # author
-        self.assertTrue("marschairman@ietf.org" in str(outbox[-1]))
+        self.assertTrue("mars-chairs@ietf.org" in str(outbox[-1]))
         
     def test_expire_drafts(self):
         from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft

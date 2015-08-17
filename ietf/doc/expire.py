@@ -7,9 +7,10 @@ from pathlib import Path
 
 from ietf.utils.mail import send_mail
 from ietf.doc.models import Document, DocEvent, State, save_document_in_history, IESG_SUBSTATE_TAGS
-from ietf.person.models import Person, Email
+from ietf.person.models import Person 
 from ietf.meeting.models import Meeting
 from ietf.doc.utils import add_state_change_event
+from ietf.mailtoken.utils import gather_address_list
 
 
 
@@ -70,10 +71,8 @@ def send_expire_warning_for_draft(doc):
 
     expiration = doc.expires.date()
 
-    to = [e.formatted_email() for e in doc.authors.all() if not e.address.startswith("unknown-email")]
-    cc = None
-    if doc.group.type_id in ("wg", "rg"):
-        cc = [e.formatted_email() for e in Email.objects.filter(role__group=doc.group, role__name="chair") if not e.address.startswith("unknown-email")]
+    to = gather_address_list('doc_expires_soon',doc=doc)
+    cc = gather_address_list('doc_expires_soon_cc',doc=doc)
 
     s = doc.get_state("draft-iesg")
     state = s.name if s else "I-D Exists"
@@ -91,21 +90,23 @@ def send_expire_warning_for_draft(doc):
                   cc=cc)
 
 def send_expire_notice_for_draft(doc):
-    if not doc.ad or doc.get_state_slug("draft-iesg") == "dead":
+    if doc.get_state_slug("draft-iesg") == "dead":
         return
 
     s = doc.get_state("draft-iesg")
     state = s.name if s else "I-D Exists"
 
     request = None
-    to = doc.ad.role_email("ad").formatted_email()
+    to = gather_address_list('doc_expired',doc=doc)
+    cc = gather_address_list('doc_expired_cc',doc=doc)
     send_mail(request, to,
               "I-D Expiring System <ietf-secretariat-reply@ietf.org>",
               u"I-D was expired %s" % doc.file_tag(),
               "doc/draft/id_expired_email.txt",
               dict(doc=doc,
                    state=state,
-                   ))
+                   ),
+              cc=cc)
 
 def move_draft_files_to_archive(doc, rev):
     def move_file(f):

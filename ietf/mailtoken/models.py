@@ -3,8 +3,6 @@
 from django.db import models
 from django.template import Template, Context
 
-from ietf.group.models import Role
-
 class MailToken(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     desc = models.TextField(blank=True)
@@ -52,7 +50,7 @@ class Recipient(models.Model):
         if 'doc' in kwargs:
             doc=kwargs['doc']
             if doc.group and doc.group.type.slug in ['wg','rg']:
-                addrs.extend(Role.objects.filter(group=doc.group,name='delegate').values_list('email__address',flat=True))
+                addrs.extend(doc.group.role_set.filter(name='delegate').values_list('email__address',flat=True))
         return addrs
 
     def gather_doc_group_mail_list(self, **kwargs):
@@ -125,11 +123,19 @@ class Recipient(models.Model):
             addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':[kwargs['doc'].stream_id]}))
         return addrs
 
+    def gather_doc_non_ietf_stream_manager(self, **kwargs):
+        addrs = []
+        if 'doc' in kwargs:
+            doc = kwargs['doc']
+            if doc.stream_id and doc.stream_id != 'ietf':
+                addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':[doc.stream_id,]}))
+        return addrs
+
     def gather_group_responsible_directors(self, **kwargs):
         addrs = []
         if 'group' in kwargs:
             group = kwargs['group']
-            addrs.extend(Role.objects.filter(group=group,name='ad').values_list('email__address',flat=True))
+            addrs.extend(group.role_set.filter(name='ad').values_list('email__address',flat=True))
             if group.type_id=='rg':
                 addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':['irtf']}))
         return addrs
@@ -140,4 +146,63 @@ class Recipient(models.Model):
             group = kwargs['doc'].group
             if group:
                 addrs.extend(Recipient.objects.get(slug='group_responsible_directors').gather(**{'group':group}))
+        return addrs
+
+    def gather_submission_authors(self, **kwargs):
+        addrs = []
+        if 'submission' in kwargs:
+            submission = kwargs['submission']
+            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]) 
+        return addrs
+
+    def gather_submission_group_chairs(self, **kwargs):
+        addrs = []
+        if 'submission' in kwargs:
+            submission = kwargs['submission']
+            if submission.group: 
+                addrs.extend(Recipient.objects.get(slug='group_chairs').gather(**{'group':submission.group}))
+        return addrs
+
+    def gather_submission_confirmers(self, **kwargs):
+        """If a submitted document is revising an existing document, the confirmers 
+           are the authors of that existing document. Otherwise, the confirmers
+           are the authors and submitter of the submitted document."""
+
+        addrs=[]
+        if 'submission' in kwargs:
+            submission = kwargs['submission']
+            doc=submission.existing_document()
+            if doc:
+                addrs.extend([i.author.formatted_email() for i in doc.documentauthor_set.all() if not i.author.invalid_address()])
+            else:
+                addrs.extend([u"%s <%s>" % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]])
+                if submission.submitter_parsed()["email"]: 
+                    addrs.append(submission.submitter)
+        return addrs
+
+    def gather_submission_group_mail_list(self, **kwargs):
+        addrs=[]
+        if 'submission' in kwargs:
+            submission = kwargs['submission']
+            if submission.group:  
+                addrs.extend(Recipient.objects.get(slug='group_mail_list').gather(**{'group':submission.group}))
+        return addrs
+
+    def gather_rfc_editor_if_doc_in_queue(self, **kwargs):
+        addrs=[]
+        if 'doc' in kwargs:
+            doc = kwargs['doc']
+            if doc.get_state_slug("draft-rfceditor") is not None:
+                addrs.extend(Recipient.objects.get(slug='rfc_editor').gather(**{}))
+        return addrs
+
+    def gather_doc_discussing_ads(self, **kwargs):
+        addrs=[]
+        if 'doc' in kwargs:
+            doc = kwargs['doc']
+            active_ballot = doc.active_ballot()
+            if active_ballot:
+                for ad, pos in active_ballot.active_ad_positions().iteritems():
+                    if pos and pos.pos_id == "discuss":
+                        addrs.append(ad.role_email("ad").address)
         return addrs

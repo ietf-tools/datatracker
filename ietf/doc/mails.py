@@ -261,7 +261,7 @@ def send_last_call_request(request, doc):
               cc=cc)
 
 def email_resurrect_requested(request, doc, by):
-    to = "I-D Administrator <internet-drafts@ietf.org>"
+    to = gather_address_list('resurrection_requested',doc=doc)
 
     if by.role_set.filter(name="secr", group__acronym="secretariat"):
         e = by.role_email("secr", group="secretariat")
@@ -277,12 +277,7 @@ def email_resurrect_requested(request, doc, by):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
 def email_resurrection_completed(request, doc, requester):
-    if requester.role_set.filter(name="secr", group__acronym="secretariat"):
-        e = requester.role_email("secr", group="secretariat")
-    else:
-        e = requester.role_email("ad")
-
-    to = e.formatted_email()
+    to = gather_address_list('resurrection_completed',doc=doc)
     frm = "I-D Administrator <internet-drafts-reply@ietf.org>"
     send_mail(request, to, frm,
               "I-D Resurrection Completed - %s" % doc.file_tag(),

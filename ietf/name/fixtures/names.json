@@ -4386,6 +4386,14 @@
 {
  "fields": {
   "template": null,
+  "desc": "Any ADs holding an active DISCUSS position on a given document"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "doc_discussing_ads"
+},
+{
+ "fields": {
+  "template": null,
   "desc": "The document's group chairs (if the document is assigned to a working or research group)"
  },
  "model": "mailtoken.recipient",
@@ -4414,6 +4422,14 @@
  },
  "model": "mailtoken.recipient",
  "pk": "doc_group_responsible_directors"
+},
+{
+ "fields": {
+  "template": null,
+  "desc": "The document's stream manager if the document is not in the IETF stream"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "doc_non_ietf_stream_manager"
 },
 {
  "fields": {
@@ -4529,6 +4545,14 @@
 },
 {
  "fields": {
+  "template": "internet-drafts@ietf.org",
+  "desc": "The internet drafts ticketing system"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "internet_drafts"
+},
+{
+ "fields": {
   "template": "<rfc-editor@rfc-editor.org>",
   "desc": "The RFC Editor"
  },
@@ -4538,10 +4562,58 @@
 {
  "fields": {
   "template": null,
+  "desc": "The RFC Editor if a document is in the RFC Editor queue"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "rfc_editor_if_doc_in_queue"
+},
+{
+ "fields": {
+  "template": null,
   "desc": "The managers of any related streams"
  },
  "model": "mailtoken.recipient",
  "pk": "stream_managers"
+},
+{
+ "fields": {
+  "template": null,
+  "desc": "The authors of a submitted draft"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "submission_authors"
+},
+{
+ "fields": {
+  "template": null,
+  "desc": "The people who can confirm a draft submission"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "submission_confirmers"
+},
+{
+ "fields": {
+  "template": null,
+  "desc": "The chairs of a submitted draft belonging to a group"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "submission_group_chairs"
+},
+{
+ "fields": {
+  "template": null,
+  "desc": "The people who can confirm a draft submission"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "submission_group_mail_list"
+},
+{
+ "fields": {
+  "template": "{{submission.submitter}}",
+  "desc": "The person that submitted a draft"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "submission_submitter"
 },
 {
  "fields": {
@@ -4724,6 +4796,16 @@
   "recipients": [
    "iesg_secretary"
   ],
+  "desc": "Recipients for extra message when provided on the charter state editing form"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "charter_state_message_provided"
+},
+{
+ "fields": {
+  "recipients": [
+   "iesg_secretary"
+  ],
   "desc": "Recipients for a stream manager's request for an IETF conflict review"
  },
  "model": "mailtoken.mailtoken",
@@ -4752,6 +4834,52 @@
  },
  "model": "mailtoken.mailtoken",
  "pk": "conflrev_requested_iana"
+},
+{
+ "fields": {
+  "recipients": [
+   "doc_authors"
+  ],
+  "desc": "Recipients for notification of a document's expiration"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_expired"
+},
+{
+ "fields": {
+  "recipients": [
+   "doc_group_chairs",
+   "doc_group_responsible_directors",
+   "doc_notify",
+   "doc_shepherd"
+  ],
+  "desc": "Copied on notification of a document's expiration"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_expired_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "doc_authors"
+  ],
+  "desc": "Recipients for notification of impending expiration of a document"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_expires_soon"
+},
+{
+ "fields": {
+  "recipients": [
+   "doc_group_chairs",
+   "doc_group_responsible_directors",
+   "doc_notify",
+   "doc_shepherd"
+  ],
+  "desc": "Copied on  notification of impending expiration of a document"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_expires_soon_cc"
 },
 {
  "fields": {
@@ -5012,5 +5140,122 @@
  },
  "model": "mailtoken.mailtoken",
  "pk": "pubreq_rfced_iana"
+},
+{
+ "fields": {
+  "recipients": [
+   "doc_ad",
+   "iesg_secretary"
+  ],
+  "desc": "Recipients when a draft resurrection request has been completed"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "resurrection_completed"
+},
+{
+ "fields": {
+  "recipients": [
+   "internet_drafts"
+  ],
+  "desc": "Recipients of a request to change the state of a draft away from 'Dead'"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "resurrection_requested"
+},
+{
+ "fields": {
+  "recipients": [
+   "ietf_announce"
+  ],
+  "desc": "Recipients for the announcement of a successfully submitted draft"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "sub_announced"
+},
+{
+ "fields": {
+  "recipients": [
+   "submission_group_mail_list"
+  ],
+  "desc": "Copied on the announcement of a successfully submitted draft"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "sub_announced_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "submission_authors",
+   "submission_confirmers"
+  ],
+  "desc": "Recipients for the announcement to the authors of a successfully submitted draft"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "sub_announced_to_authors"
+},
+{
+ "fields": {
+  "recipients": [
+   "submission_group_chairs"
+  ],
+  "desc": "Recipients for a message requesting group chair approval of a draft submission"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "sub_chair_approval_requested"
+},
+{
+ "fields": {
+  "recipients": [
+   "submission_confirmers"
+  ],
+  "desc": "Recipients for a message requesting confirmation of a draft submission"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "sub_confirmation_requested"
+},
+{
+ "fields": {
+  "recipients": [
+   "submission_confirmers"
+  ],
+  "desc": "Recipients for a message with the full URL for managing a draft submission"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "sub_management_url_requested"
+},
+{
+ "fields": {
+  "recipients": [
+   "internet_drafts"
+  ],
+  "desc": "Recipients for a manual post request for a draft submission"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "sub_manual_post_requested"
+},
+{
+ "fields": {
+  "recipients": [
+   "submission_authors",
+   "submission_group_chairs",
+   "submission_submitter"
+  ],
+  "desc": "Copied on a manual post request for a draft submission"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "sub_manual_post_requested_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "doc_ad",
+   "doc_discussing_ads",
+   "doc_notify",
+   "rfc_editor_if_doc_in_queue"
+  ],
+  "desc": "Recipient for notification of a new version of an existing document"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "sub_new_version"
 }
 ]

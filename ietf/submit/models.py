@@ -3,6 +3,7 @@ import datetime
 
 from django.db import models
 
+from ietf.doc.models import Document
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.name.models import DraftSubmissionStateName
@@ -62,6 +63,8 @@ class Submission(models.Model):
     def access_token(self):
         return generate_access_token(self.access_key)
 
+    def existing_document(self):
+        return Document.objects.filter(name=self.name).first()
 
 class SubmissionEvent(models.Model):
     submission = models.ForeignKey(Submission)

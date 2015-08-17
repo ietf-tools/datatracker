@@ -15,7 +15,7 @@ from ietf.group.utils import milestone_reviewer_for_group_type
 from ietf.mailtoken.utils import gather_address_list
 
 def email_iesg_secretary_re_charter(request, group, subject, text):
-    to = ["iesg-secretary@ietf.org"]
+    to = gather_address_list('charter_state_message_provided',group=group)
     full_subject = u"Regarding %s %s: %s" % (group.type.name, group.acronym, subject)
     text = strip_tags(text)
 

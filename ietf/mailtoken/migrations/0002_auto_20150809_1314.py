@@ -117,6 +117,42 @@ def make_recipients(apps):
        desc="The document's group's responsible AD(s) or IRTF chair",
        template=None)
 
+    rc(slug='internet_drafts',
+       desc="The internet drafts ticketing system",
+       template='internet-drafts@ietf.org')
+
+    rc(slug='submission_submitter',
+       desc="The person that submitted a draft",
+       template='{{submission.submitter}}')
+
+    rc(slug='submission_authors',
+       desc="The authors of a submitted draft",
+       template=None)
+
+    rc(slug='submission_group_chairs',
+       desc="The chairs of a submitted draft belonging to a group",
+       template=None)
+
+    rc(slug='submission_confirmers',
+       desc="The people who can confirm a draft submission",
+       template=None)
+
+    rc(slug='submission_group_mail_list',
+       desc="The people who can confirm a draft submission",
+       template=None)
+
+    rc(slug='doc_non_ietf_stream_manager',
+       desc="The document's stream manager if the document is not in the IETF stream",
+       template=None)
+
+    rc(slug='rfc_editor_if_doc_in_queue',
+       desc="The RFC Editor if a document is in the RFC Editor queue",
+       template=None)
+
+    rc(slug='doc_discussing_ads',
+       desc="Any ADs holding an active DISCUSS position on a given document",
+       template=None)
+
 def make_mailtokens(apps):
 
     Recipient=apps.get_model('mailtoken','Recipient')
@@ -392,6 +428,94 @@ def make_mailtokens(apps):
                                 'doc_group_chairs',
                                 'doc_group_responsible_directors',
                                ]) 
+
+    mt_factory(slug='charter_state_message_provided',
+               desc="Recipients for extra message when provided on the charter state editing form",
+               recipient_slugs=['iesg_secretary'])
+
+    mt_factory(slug='doc_expires_soon',
+               desc="Recipients for notification of impending expiration of a document",
+               recipient_slugs=['doc_authors'])
+
+    mt_factory(slug='doc_expires_soon_cc',
+               desc="Copied on  notification of impending expiration of a document",
+               recipient_slugs=['doc_notify',
+                                'doc_shepherd',
+                                'doc_group_chairs',
+                                'doc_group_responsible_directors',
+                               ])
+
+    mt_factory(slug='doc_expired',
+               desc="Recipients for notification of a document's expiration",
+               recipient_slugs=['doc_authors'])
+
+    mt_factory(slug='doc_expired_cc',
+               desc="Copied on notification of a document's expiration",
+               recipient_slugs=['doc_notify',
+                                'doc_shepherd',
+                                'doc_group_chairs',
+                                'doc_group_responsible_directors',
+                               ])
+
+    mt_factory(slug='resurrection_requested',
+               desc="Recipients of a request to change the state of a draft away from 'Dead'",
+               recipient_slugs=['internet_drafts',])
+
+    mt_factory(slug='resurrection_completed',
+               desc="Recipients when a draft resurrection request has been completed",
+               recipient_slugs=['iesg_secretary',
+                                'doc_ad',
+                               ])
+
+    mt_factory(slug='sub_manual_post_requested',
+               desc="Recipients for a manual post request for a draft submission",
+               recipient_slugs=['internet_drafts',
+                               ])
+
+    mt_factory(slug='sub_manual_post_requested_cc',
+               desc="Copied on a manual post request for a draft submission",
+               recipient_slugs=['submission_submitter',
+                                'submission_authors',
+                                'submission_group_chairs',
+                               ])
+
+    mt_factory(slug='sub_chair_approval_requested',
+               desc="Recipients for a message requesting group chair approval of a draft submission",
+               recipient_slugs=['submission_group_chairs',])
+
+    mt_factory(slug='sub_confirmation_requested',
+               desc="Recipients for a message requesting confirmation of a draft submission",
+               recipient_slugs=['submission_confirmers',])
+
+    mt_factory(slug='sub_management_url_requested',
+               desc="Recipients for a message with the full URL for managing a draft submission",
+               recipient_slugs=['submission_confirmers',])
+
+    mt_factory(slug='sub_announced',
+               desc="Recipients for the announcement of a successfully submitted draft",
+               recipient_slugs=['ietf_announce',
+                               ])
+
+    mt_factory(slug='sub_announced_cc',
+               desc="Copied on the announcement of a successfully submitted draft",
+               recipient_slugs=['submission_group_mail_list',
+                               ])
+
+    mt_factory(slug='sub_announced_to_authors',
+               desc="Recipients for the announcement to the authors of a successfully submitted draft",
+               recipient_slugs=['submission_authors',
+                                'submission_confirmers',
+                               ])
+
+    mt_factory(slug='sub_new_version',
+               desc="Recipient for notification of a new version of an existing document",
+               recipient_slugs=['doc_notify',
+                                'doc_ad',
+                                'non_ietf_stream_manager',
+                                'rfc_editor_if_doc_in_queue',
+                                'doc_discussing_ads',
+                               ])
+
 
 def forward(apps, schema_editor):
 
