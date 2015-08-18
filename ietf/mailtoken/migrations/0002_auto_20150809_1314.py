@@ -165,6 +165,10 @@ def make_recipients(apps):
        desc="The ipr disclosure handling system",
        template='ietf-ipr@ietf.org')
 
+    rc(slug='ipr_submitter',
+       desc="The submitter of an IPR disclosure",
+       template='{% if ipr.submitter_email %}{{ ipr.submitter_email }}{% endif %}')
+
     rc(slug='logged_in_person',
        desc="The person currently logged into the datatracker who initiated a given action",
        template='{% if person and person.email_address %}{{ person.email_address }}{% endif %}')
@@ -628,9 +632,18 @@ def make_mailtokens(apps):
                                ])
 
     mt_factory(slug='ipr_disclosure_submitted',
-               desc="Recipients when an IPR notification is submitted",
+               desc="Recipients when an IPR disclosure is submitted",
                recipient_slugs=['ipr_requests',
                                ])
+
+    mt_factory(slug='ipr_disclosure_followup',
+               desc="Recipients when the secretary follows up on an IPR disclosure submission",
+               recipient_slugs=['ipr_submitter',
+                               ])
+
+    mt_factory(slug='ipr_disclosure_followup_cc',
+               desc="Copied when the secretary follows up on an IPR disclosure submission",
+               recipient_slugs=[])
 
 def forward(apps, schema_editor):
 

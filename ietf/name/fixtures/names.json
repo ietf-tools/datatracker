@@ -4569,6 +4569,14 @@
 },
 {
  "fields": {
+  "template": "{% if ipr.submitter_email %}{{ ipr.submitter_email }}{% endif %}",
+  "desc": "The submitter of an IPR disclosure"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "ipr_submitter"
+},
+{
+ "fields": {
   "template": "{% if person and person.email_address %}{{ person.email_address }}{% endif %}",
   "desc": "The person currently logged into the datatracker who initiated a given action"
  },
@@ -5074,9 +5082,27 @@
 {
  "fields": {
   "recipients": [
+   "ipr_submitter"
+  ],
+  "desc": "Recipients when the secretary follows up on an IPR disclosure submission"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "ipr_disclosure_followup"
+},
+{
+ "fields": {
+  "recipients": [],
+  "desc": "Copied when the secretary follows up on an IPR disclosure submission"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "ipr_disclosure_followup_cc"
+},
+{
+ "fields": {
+  "recipients": [
    "ipr_requests"
   ],
-  "desc": "Recipients when an IPR notification is submitted"
+  "desc": "Recipients when an IPR disclosure is submitted"
  },
  "model": "mailtoken.mailtoken",
  "pk": "ipr_disclosure_submitted"

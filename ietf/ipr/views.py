@@ -35,7 +35,7 @@ from ietf.person.models import Person
 from ietf.secr.utils.document import get_rfc_num, is_draft
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message
-from ietf.mailtoken.utils import gather_address_list
+from ietf.mailtoken.utils import gather_address_list, gather_addresses
 
 # ----------------------------------------------------------------
 # Globals
@@ -379,7 +379,8 @@ def email(request, id):
     else:
         reply_to = get_reply_to()
         initial = { 
-            'to': ipr.submitter_email,
+            'to': gather_addresses('ipr_disclosure_followup',ipr=ipr),
+            'cc': gather_addresses('ipr_disclosure_followup_cc',ipr=ipr),
             'frm': settings.IPR_EMAIL_FROM,
             'subject': 'Regarding {}'.format(ipr.title),
             'reply_to': reply_to,
