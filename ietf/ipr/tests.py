@@ -3,7 +3,6 @@ import urllib
 
 from pyquery import PyQuery
 
-from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import DocAlias
@@ -16,6 +15,7 @@ from ietf.message.models import Message
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
+from ietf.mailtoken.utils import gather_addresses
 
 
 class IprTests(TestCase):
@@ -519,7 +519,7 @@ I would like to revoke this declaration.
 From: joe@test.com
 Date: {}
 Subject: test
-""".format(settings.IPR_EMAIL_TO,datetime.datetime.now().ctime())
+""".format(gather_addresses('ipr_disclosure_submitted'),datetime.datetime.now().ctime())
         result = process_response_email(message_string)
         self.assertIsNone(result)
         

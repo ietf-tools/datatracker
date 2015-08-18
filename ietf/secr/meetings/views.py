@@ -25,8 +25,8 @@ from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm,
 from ietf.secr.proceedings.views import build_choices, handle_upload_file, make_directories
 from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.sreq.views import get_initial_session
-from ietf.secr.utils.mail import get_cc_list
 from ietf.secr.utils.meeting import get_session, get_timeslot
+from ietf.mailtoken.utils import gather_address_list
 
 
 # prep for agenda changes
@@ -188,9 +188,8 @@ def send_notifications(meeting, groups, person):
     now = datetime.datetime.now()
     for group in groups:
         sessions = group.session_set.filter(meeting=meeting)
-        to_email = sessions[0].requested_by.role_email('chair').address
-        # TODO confirm list, remove requested_by from cc, add session-request@ietf.org?
-        cc_list = get_cc_list(group)
+        to_email = gather_address_list('session_scheduled',group=group,person=sessions[0].requested_by)
+        cc_list = gather_address_list('session_scheduled_cc',group=group,person=sessions[0].requested_by)
         from_email = ('"IETF Secretariat"','agenda@ietf.org')
         if len(sessions) == 1:
             subject = '%s - Requested session has been scheduled for IETF %s' % (group.acronym, meeting.number)

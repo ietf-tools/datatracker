@@ -1,7 +1,6 @@
-
 from django.core.exceptions import ObjectDoesNotExist
 
-from ietf.mailtoken.models import MailToken
+from ietf.mailtoken.models import MailToken, Recipient
 
 def gather_address_list(slug,**kwargs):
     
@@ -21,3 +20,8 @@ def gather_address_list(slug,**kwargs):
 
 def gather_addresses(slug,**kwargs):
     return ",\n   ".join(gather_address_list(slug,**kwargs))
+
+def get_base_ipr_request_address():
+    return Recipient.objects.get(slug='ipr_requests').gather()[0]
+
+

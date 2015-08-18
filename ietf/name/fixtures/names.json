@@ -4557,7 +4557,23 @@
   "desc": "The internet drafts ticketing system"
  },
  "model": "mailtoken.recipient",
- "pk": "internet_drafts"
+ "pk": "internet_draft_requests"
+},
+{
+ "fields": {
+  "template": "ietf-ipr@ietf.org",
+  "desc": "The ipr disclosure handling system"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "ipr_requests"
+},
+{
+ "fields": {
+  "template": "{% if person and person.email_address %}{{ person.email_address }}{% endif %}",
+  "desc": "The person currently logged into the datatracker who initiated a given action"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "logged_in_person"
 },
 {
  "fields": {
@@ -4574,6 +4590,14 @@
  },
  "model": "mailtoken.recipient",
  "pk": "rfc_editor_if_doc_in_queue"
+},
+{
+ "fields": {
+  "template": "session-request@ietf.org",
+  "desc": "The session request ticketing system"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "session_requests"
 },
 {
  "fields": {
@@ -5050,6 +5074,16 @@
 {
  "fields": {
   "recipients": [
+   "ipr_requests"
+  ],
+  "desc": "Recipients when an IPR notification is submitted"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "ipr_disclosure_submitted"
+},
+{
+ "fields": {
+  "recipients": [
    "doc_authors",
    "doc_notify",
    "doc_shepherd",
@@ -5226,12 +5260,124 @@
 {
  "fields": {
   "recipients": [
-   "internet_drafts"
+   "internet_draft_requests"
   ],
   "desc": "Recipients of a request to change the state of a draft away from 'Dead'"
  },
  "model": "mailtoken.mailtoken",
  "pk": "resurrection_requested"
+},
+{
+ "fields": {
+  "recipients": [
+   "session_requests"
+  ],
+  "desc": "Recipients for a normal meeting session request"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "session_requested"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_chairs",
+   "group_mail_list",
+   "group_responsible_directors",
+   "logged_in_person"
+  ],
+  "desc": "Copied on a normal meeting session request"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "session_requested_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_responsible_directors"
+  ],
+  "desc": "Recipients for a meeting session request for more than 2 sessions"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "session_requested_long"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_chairs",
+   "logged_in_person",
+   "session_requests"
+  ],
+  "desc": "Copied on a meeting session request for more than 2 sessions"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "session_requested_long_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "session_requests"
+  ],
+  "desc": "Recipients for a message cancelling a session request"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "session_request_cancelled"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_chairs",
+   "group_mail_list",
+   "group_responsible_directors",
+   "logged_in_person"
+  ],
+  "desc": "Copied on a message cancelling a session request"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "session_request_cancelled_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "session_requests"
+  ],
+  "desc": "Recipients for a message noting a group plans to not meet"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "session_request_not_meeting"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_chairs",
+   "group_mail_list",
+   "group_responsible_directors",
+   "logged_in_person"
+  ],
+  "desc": "Copied on a message noting a group plans to not meet"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "session_request_not_meeting_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_chairs"
+  ],
+  "desc": "Recipients for details when a session has been scheduled"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "session_scheduled"
+},
+{
+ "fields": {
+  "recipients": [
+   "group_mail_list",
+   "group_responsible_directors"
+  ],
+  "desc": "Recipients for details when a session has been scheduled"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "session_scheduled_cc"
 },
 {
  "fields": {
@@ -5297,7 +5443,7 @@
 {
  "fields": {
   "recipients": [
-   "internet_drafts"
+   "internet_draft_requests"
   ],
   "desc": "Recipients for a manual post request for a draft submission"
  },

@@ -388,7 +388,7 @@ CACHES = {
     }
 }
 
-IPR_EMAIL_TO = 'ietf-ipr@ietf.org'
+IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
 

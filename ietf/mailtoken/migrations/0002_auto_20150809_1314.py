@@ -117,7 +117,7 @@ def make_recipients(apps):
        desc="The document's group's responsible AD(s) or IRTF chair",
        template=None)
 
-    rc(slug='internet_drafts',
+    rc(slug='internet_draft_requests',
        desc="The internet drafts ticketing system",
        template='internet-drafts@ietf.org')
 
@@ -156,6 +156,18 @@ def make_recipients(apps):
     rc(slug='group_changed_personnel',
        desc="Any personnel who were added or deleted when a group's personnel changes",
        template='{{ changed_personnel | join:", " }}')
+
+    rc(slug='session_requests',
+       desc="The session request ticketing system",
+       template='session-request@ietf.org')
+
+    rc(slug='ipr_requests',
+       desc="The ipr disclosure handling system",
+       template='ietf-ipr@ietf.org')
+
+    rc(slug='logged_in_person',
+       desc="The person currently logged into the datatracker who initiated a given action",
+       template='{% if person and person.email_address %}{{ person.email_address }}{% endif %}')
 
 def make_mailtokens(apps):
 
@@ -467,7 +479,7 @@ def make_mailtokens(apps):
 
     mt_factory(slug='resurrection_requested',
                desc="Recipients of a request to change the state of a draft away from 'Dead'",
-               recipient_slugs=['internet_drafts',])
+               recipient_slugs=['internet_draft_requests',])
 
     mt_factory(slug='resurrection_completed',
                desc="Recipients when a draft resurrection request has been completed",
@@ -477,7 +489,7 @@ def make_mailtokens(apps):
 
     mt_factory(slug='sub_manual_post_requested',
                desc="Recipients for a manual post request for a draft submission",
-               recipient_slugs=['internet_drafts',
+               recipient_slugs=['internet_draft_requests',
                                ])
 
     mt_factory(slug='sub_manual_post_requested_cc',
@@ -550,6 +562,74 @@ def make_mailtokens(apps):
                                 'group_responsible_directors',
                                 'group_chairs',
                                 'group_changed_personnel',
+                               ])
+
+    mt_factory(slug='session_requested',
+               desc="Recipients for a normal meeting session request",
+               recipient_slugs=['session_requests',
+                               ]) 
+
+    mt_factory(slug='session_requested_cc',
+               desc="Copied on a normal meeting session request",
+               recipient_slugs=['group_mail_list',
+                                'group_chairs',
+                                'group_responsible_directors',
+                                'logged_in_person',
+                               ]) 
+
+    mt_factory(slug='session_requested_long',
+               desc="Recipients for a meeting session request for more than 2 sessions",
+               recipient_slugs=['group_responsible_directors',
+                               ])
+     
+    mt_factory(slug='session_requested_long_cc',
+               desc="Copied on a meeting session request for more than 2 sessions",
+               recipient_slugs=['session_requests',
+                                'group_chairs',
+                                'logged_in_person',
+                               ])
+
+    mt_factory(slug='session_request_cancelled',
+               desc="Recipients for a message cancelling a session request",
+               recipient_slugs=['session_requests',
+                               ])
+
+    mt_factory(slug='session_request_cancelled_cc',
+               desc="Copied on a message cancelling a session request",
+               recipient_slugs=['group_mail_list',
+                                'group_chairs',
+                                'group_responsible_directors',
+                                'logged_in_person',
+                               ]) 
+
+    mt_factory(slug='session_request_not_meeting',
+               desc="Recipients for a message noting a group plans to not meet",
+               recipient_slugs=['session_requests',
+                               ])
+
+    mt_factory(slug='session_request_not_meeting_cc',
+               desc="Copied on a message noting a group plans to not meet",
+               recipient_slugs=['group_mail_list',
+                                'group_chairs',
+                                'group_responsible_directors',
+                                'logged_in_person',
+                               ]) 
+
+    mt_factory(slug='session_scheduled',
+               desc="Recipients for details when a session has been scheduled",
+               recipient_slugs=['session_requester',
+                                'group_chairs',
+                               ])
+
+    mt_factory(slug='session_scheduled_cc',
+               desc="Recipients for details when a session has been scheduled",
+               recipient_slugs=['group_mail_list',
+                                'group_responsible_directors',
+                               ])
+
+    mt_factory(slug='ipr_disclosure_submitted',
+               desc="Recipients when an IPR notification is submitted",
+               recipient_slugs=['ipr_requests',
                                ])
 
 def forward(apps, schema_editor):

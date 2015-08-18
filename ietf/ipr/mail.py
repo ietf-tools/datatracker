@@ -5,13 +5,13 @@ from dateutil.tz import tzoffset
 import os
 import pytz
 import re
-from django.conf import settings
 from django.template.loader import render_to_string
 
 from ietf.ipr.models import IprEvent
 from ietf.message.models import Message
 from ietf.person.models import Person
 from ietf.utils.log import log
+from ietf.mailtoken.utils import get_base_ipr_request_address
 
 # ----------------------------------------------------------------
 # Date Functions
@@ -89,7 +89,7 @@ def get_pseudo_submitter(ipr):
 def get_reply_to():
     """Returns a new reply-to address for use with an outgoing message.  This is an
     address with "plus addressing" using a random string.  Guaranteed to be unique"""
-    local,domain = settings.IPR_EMAIL_TO.split('@')
+    local,domain = get_base_ipr_request_address().split('@')
     while True:
         rand = base64.urlsafe_b64encode(os.urandom(12))
         address = "{}+{}@{}".format(local,rand,domain)
@@ -167,7 +167,7 @@ def process_response_email(msg):
     to = message.get('To')
     
     # exit if this isn't a response we're interested in (with plus addressing)
-    local,domain = settings.IPR_EMAIL_TO.split('@')
+    local,domain = get_base_ipr_request_address().split('@')
     if not re.match(r'^{}\+[a-zA-Z0-9_\-]{}@{}'.format(local,'{16}',domain),to):
         return None
     

@@ -35,6 +35,7 @@ from ietf.person.models import Person
 from ietf.secr.utils.document import get_rfc_num, is_draft
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message
+from ietf.mailtoken.utils import gather_address_list
 
 # ----------------------------------------------------------------
 # Globals
@@ -379,7 +380,7 @@ def email(request, id):
         reply_to = get_reply_to()
         initial = { 
             'to': ipr.submitter_email,
-            'frm': settings.IPR_EMAIL_TO,
+            'frm': settings.IPR_EMAIL_FROM,
             'subject': 'Regarding {}'.format(ipr.title),
             'reply_to': reply_to,
         }
@@ -474,7 +475,8 @@ def new(request, type, updates=None):
                 desc="Disclosure Submitted")
 
             # send email notification
-            send_mail(request, settings.IPR_EMAIL_TO, ('IPR Submitter App', 'ietf-ipr@ietf.org'),
+            to = gather_address_list('ipr_disclosure_submitted')
+            send_mail(request, to, ('IPR Submitter App', 'ietf-ipr@ietf.org'),
                 'New IPR Submission Notification',
                 "ipr/new_update_email.txt",
                 {"ipr": disclosure,})
