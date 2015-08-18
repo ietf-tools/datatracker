@@ -328,7 +328,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                                       help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
                                       required=False)
 
-    fieldsets = [('Candidate Nomination', ('position', 'candidate_name',
+    fieldsets = [('Candidate Nomination', ('share_nominator','position', 'candidate_name',
                   'candidate_email', 'candidate_phone', 'comments', 'confirmation'))]
 
     def __init__(self, *args, **kwargs):
@@ -338,7 +338,8 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
         super(NominateForm, self).__init__(*args, **kwargs)
 
-        fieldset = ['position',
+        fieldset = ['share_nominator',
+                    'position',
                     'candidate_name',
                     'candidate_email', 'candidate_phone',
                     'comments']
@@ -357,6 +358,9 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                                nomination wishes to be anonymous. The confirmation email will be sent to the address given here,
                                and the address will also be captured as part of the registered nomination.)"""
                 self.fields['nominator_email'].help_text = help_text
+                self.fields['share_nominator'].help_text = """(Nomcom Chair/Member: Check this box if the person providing this nomination
+                                                              has indicated they will allow NomCom to share their name as one of the people
+                                                              nominating this candidate."""
         else:
             fieldset.append('confirmation')
 
@@ -371,6 +375,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         position = self.cleaned_data['position']
         comments = self.cleaned_data['comments']
         confirmation = self.cleaned_data['confirmation']
+        share_nominator = self.cleaned_data['share_nominator']
         nomcom_template_path = '/nomcom/%s/' % self.nomcom.group.acronym
 
         author = None
@@ -397,6 +402,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
         nomination.nominee = nominee
         nomination.comments = feedback
+        nomination.share_nominator = share_nominator
         nomination.user = self.user
 
         if commit:
@@ -418,7 +424,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
     class Meta:
         model = Nomination
-        fields = ('position', 'nominator_email', 'candidate_name',
+        fields = ('share_nominator', 'position', 'nominator_email', 'candidate_name',
                   'candidate_email', 'candidate_phone')
 
 
