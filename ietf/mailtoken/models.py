@@ -3,6 +3,8 @@
 from django.db import models
 from django.template import Template, Context
 
+from ietf.group.models import Role
+
 class MailToken(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     desc = models.TextField(blank=True)
@@ -205,4 +207,47 @@ class Recipient(models.Model):
                 for ad, pos in active_ballot.active_ad_positions().iteritems():
                     if pos and pos.pos_id == "discuss":
                         addrs.append(ad.role_email("ad").address)
+        return addrs
+
+    def gather_ipr_updatedipr_contacts(self, **kwargs):
+        addrs=[]
+        if 'ipr' in kwargs:
+            ipr = kwargs['ipr']
+            for rel in ipr.updates:
+                if rel.target.submitter_email:
+                    addrs.append(rel.target.submitter_email)
+                elif hasattr(rel.target,'ietfer_email') and rel.target.ietfer_email:
+                    addrs.append(rel.target.ietfer_email)
+        return addrs
+                
+    def gather_ipr_updatedipr_holders(self, **kwargs):
+        addrs=[]
+        if 'ipr' in kwargs:
+            ipr = kwargs['ipr']
+            for disc in ipr.recursively_updates():
+                if hasattr(ipr,'holder_contact_email') and ipr.holder_contact_email:
+                    addrs.append(ipr.holder_contact_email)
+        return addrs
+
+    def gather_doc_ipr_group_or_ad(self, **kwargs):
+        """A document's group email list if the document is a group document, 
+           otherwise, the document's AD if the document is active, otherwise 
+           the IETF chair"""
+        addrs=[]
+        if 'doc' in kwargs:
+            doc=kwargs['doc']
+            if doc.group and doc.group.acronym == 'none':
+                if doc.ad and doc.get_state_slug('draft')=='active':
+                    addrs.extend(Recipient.objects.get(slug='doc_ad').gather(**kwargs))
+                else:
+                    addrs.extend(Role.objects.filter(group__acronym='gen',name='ad').values_list('email__address',flat=True))
+            else:
+                addrs.extend(Recipient.objects.get(slug='doc_group_mail_list').gather(**kwargs)) 
+        return addrs
+
+    def gather_liaison_manager(self, **kwargs):
+        addrs=[]
+        if 'group' in kwargs:
+            group=kwargs['group']
+            addrs.extend(group.role_set.filter(name='liaiman').values_list('email__address',flat=True))
         return addrs

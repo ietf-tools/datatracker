@@ -489,7 +489,7 @@ I would like to revoke this declaration.
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),len_before+2)
         self.assertTrue('george@acme.com' in outbox[len_before]['To'])
-        self.assertTrue('aread@ietf.org' in outbox[len_before+1]['To'])
+        self.assertTrue('draft-ietf-mars-test@ietf.org' in outbox[len_before+1]['To'])
         self.assertTrue('mars-wg@ietf.org' in outbox[len_before+1]['Cc'])
 
     def test_process_response_email(self):

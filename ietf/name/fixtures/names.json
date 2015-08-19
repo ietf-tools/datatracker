@@ -4426,6 +4426,14 @@
 {
  "fields": {
   "template": null,
+  "desc": "Leadership for a document that has a new IPR disclosure"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "doc_ipr_group_or_ad"
+},
+{
+ "fields": {
+  "template": null,
   "desc": "The document's stream manager if the document is not in the IETF stream"
  },
  "model": "mailtoken.recipient",
@@ -4561,6 +4569,14 @@
 },
 {
  "fields": {
+  "template": "ipr-announce@ietf.org",
+  "desc": "The IETF IPR announce list"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "ipr_announce"
+},
+{
+ "fields": {
   "template": "ietf-ipr@ietf.org",
   "desc": "The ipr disclosure handling system"
  },
@@ -4574,6 +4590,70 @@
  },
  "model": "mailtoken.recipient",
  "pk": "ipr_submitter"
+},
+{
+ "fields": {
+  "template": null,
+  "desc": "The submitter (or ietf participant if the submitter is not available) of all IPR disclosures updated directly by this disclosure, without recursing to what the updated disclosures might have updated."
+ },
+ "model": "mailtoken.recipient",
+ "pk": "ipr_updatedipr_contacts"
+},
+{
+ "fields": {
+  "template": null,
+  "desc": "The holders of all IPR disclosures updated by disclosure and disclosures updated by those and so on."
+ },
+ "model": "mailtoken.recipient",
+ "pk": "ipr_updatedipr_holders"
+},
+{
+ "fields": {
+  "template": "{{liaison.cc}}",
+  "desc": "The addresses captured in the Cc field of the liaison statement form"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "liaison_cc"
+},
+{
+ "fields": {
+  "template": null,
+  "desc": "The assigned liaison manager for an external group "
+ },
+ "model": "mailtoken.recipient",
+ "pk": "liaison_manager"
+},
+{
+ "fields": {
+  "template": "{{liaison.response_contact}}",
+  "desc": "The addresses captured in the response contact field of the liaison statement form"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "liaison_response_contact"
+},
+{
+ "fields": {
+  "template": "statements@ietf.org",
+  "desc": "The IETF liaison statement ticketing system"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "liaison_statements_list"
+},
+{
+ "fields": {
+  "template": "{{liaison.technical_contact}}",
+  "desc": "The addresses captured in the technical contact field of the liaison statement form"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "liaison_technical_contact"
+},
+{
+ "fields": {
+  "template": "{{liaison.to_contact}}",
+  "desc": "The addresses captured in the To field of the liaison statement form"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "liaison_to_contact"
 },
 {
  "fields": {
@@ -5110,6 +5190,48 @@
 {
  "fields": {
   "recipients": [
+   "doc_authors"
+  ],
+  "desc": "Recipients when an IPR disclosure calls out a given document"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "ipr_posted_on_doc"
+},
+{
+ "fields": {
+  "recipients": [
+   "doc_ipr_group_or_ad",
+   "ipr_announce"
+  ],
+  "desc": "Copied when an IPR disclosure calls out a given document"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "ipr_posted_on_doc_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "ipr_submitter"
+  ],
+  "desc": "Recipients for a message confirming that a disclosure has been posted"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "ipr_posting_confirmation"
+},
+{
+ "fields": {
+  "recipients": [
+   "ipr_updatedipr_contacts",
+   "ipr_updatedipr_holders"
+  ],
+  "desc": "Copied on a message confirming that a disclosure has been posted"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "ipr_posting_confirmation_cc"
+},
+{
+ "fields": {
+  "recipients": [
    "doc_authors",
    "doc_notify",
    "doc_shepherd",
@@ -5188,6 +5310,70 @@
  },
  "model": "mailtoken.mailtoken",
  "pk": "last_call_requested_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "liaison_statements_list"
+  ],
+  "desc": "Recipients for a message that a pending liaison statement needs approval"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "liaison_approval_requested"
+},
+{
+ "fields": {
+  "recipients": [
+   "liaison_to_contact"
+  ],
+  "desc": "Recipients for a message about a liaison statement deadline that is approaching."
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "liaison_deadline_soon"
+},
+{
+ "fields": {
+  "recipients": [
+   "liaison_cc",
+   "liaison_response_contact",
+   "liaison_technical_contact"
+  ],
+  "desc": "Copied on a message about a liaison statement deadline that is approaching."
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "liaison_deadline_soon_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "liaison_manager"
+  ],
+  "desc": "Recipients for a message requesting an updated list of authorized individuals"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "liaison_manager_update_request"
+},
+{
+ "fields": {
+  "recipients": [
+   "liaison_to_contact"
+  ],
+  "desc": "Recipient for a message when a new liaison statement is posted"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "liaison_statement_posted"
+},
+{
+ "fields": {
+  "recipients": [
+   "liaison_cc",
+   "liaison_response_contact",
+   "liaison_technical_contact"
+  ],
+  "desc": "Copied on a message when a new liaison statement is posted"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "liaison_statement_posted_cc"
 },
 {
  "fields": {

@@ -7,16 +7,13 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail_text
 from ietf.liaisons.utils import role_persons_with_fixed_email
 from ietf.group.models import Role
+from ietf.mailtoken.utils import gather_address_list
 
 def send_liaison_by_email(request, liaison):
     subject = u'New Liaison Statement, "%s"' % (liaison.title)
     from_email = settings.LIAISON_UNIVERSAL_FROM
-    to_email = liaison.to_contact.split(',')
-    cc = liaison.cc.split(',')
-    if liaison.technical_contact:
-        cc += liaison.technical_contact.split(',')
-    if liaison.response_contact:
-        cc += liaison.response_contact.split(',')
+    to_email = gather_address_list('liaison_statement_posted',liaison=liaison)
+    cc = gather_address_list('liaison_statement_posted_cc',liaison=liaison)
     bcc = ['statements@ietf.org']
     body = render_to_string('liaisons/liaison_mail.txt', dict(
             liaison=liaison,
@@ -42,13 +39,14 @@ def notify_pending_by_email(request, liaison):
     #     to_email.append('%s <%s>' % person.email())
     subject = u'New Liaison Statement, "%s" needs your approval' % (liaison.title)
     from_email = settings.LIAISON_UNIVERSAL_FROM
+    to = gather_address_list('liaison_approval_requested',liaison=liaison)
     body = render_to_string('liaisons/pending_liaison_mail.txt', dict(
             liaison=liaison,
             url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=liaison.pk)),
             referenced_url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.related_to.pk)) if liaison.related_to else None,
             ))
     # send_mail_text(request, to_email, from_email, subject, body)
-    send_mail_text(request, ['statements@ietf.org'], from_email, subject, body)
+    send_mail_text(request, to, from_email, subject, body)
 
 def send_sdo_reminder(sdo):
     roles = Role.objects.filter(name="liaiman", group=sdo)
@@ -58,7 +56,7 @@ def send_sdo_reminder(sdo):
     manager_role = roles[0]
     
     subject = 'Request for update of list of authorized individuals'
-    to_email = manager_role.email.address
+    to_email = gather_address_list('liaison_manager_update_request',group=sdo)
     name = manager_role.person.plain_name()
 
     authorized_list = role_persons_with_fixed_email(sdo, "auth")
@@ -95,12 +93,8 @@ def possibly_send_deadline_reminder(liaison):
         days_msg = 'expires %s' % PREVIOUS_DAYS[days_to_go]
 
     from_email = settings.LIAISON_UNIVERSAL_FROM
-    to_email = liaison.to_contact.split(',')
-    cc = liaison.cc.split(',')
-    if liaison.technical_contact:
-        cc += liaison.technical_contact.split(',')
-    if liaison.response_contact:
-        cc += liaison.response_contact.split(',')
+    to_email = gather_address_list('liaison_deadline_soon',liaison=liaison)
+    cc = gather_address_list('liaison_deadline_soon_cc',liaison=liaison)
     bcc = 'statements@ietf.org'
     body = render_to_string('liaisons/liaison_deadline_mail.txt',
                             dict(liaison=liaison,

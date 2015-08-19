@@ -129,6 +129,8 @@ def get_update_submitter_emails(ipr):
         else:
             email_to_iprs[email] = [related.target]
         
+    # TODO: This has not been converted to use mailtoken. It is complicated.
+    # When converting it, it will need something like ipr_submitter_ietfer_or_holder perhaps
     for email in email_to_iprs:
         context = dict(
             to_email=email,

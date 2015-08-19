@@ -161,6 +161,10 @@ def make_recipients(apps):
        desc="The session request ticketing system",
        template='session-request@ietf.org')
 
+    rc(slug='logged_in_person',
+       desc="The person currently logged into the datatracker who initiated a given action",
+       template='{% if person and person.email_address %}{{ person.email_address }}{% endif %}')
+
     rc(slug='ipr_requests',
        desc="The ipr disclosure handling system",
        template='ietf-ipr@ietf.org')
@@ -169,9 +173,47 @@ def make_recipients(apps):
        desc="The submitter of an IPR disclosure",
        template='{% if ipr.submitter_email %}{{ ipr.submitter_email }}{% endif %}')
 
-    rc(slug='logged_in_person',
-       desc="The person currently logged into the datatracker who initiated a given action",
-       template='{% if person and person.email_address %}{{ person.email_address }}{% endif %}')
+    rc(slug='ipr_updatedipr_contacts',
+       desc="The submitter (or ietf participant if the submitter is not available) "
+             "of all IPR disclosures updated directly by this disclosure, without recursing "
+             "to what the updated disclosures might have updated.",
+       template=None)
+
+    rc(slug='ipr_updatedipr_holders',
+       desc="The holders of all IPR disclosures updated by disclosure and disclosures updated by those and so on.",
+       template=None)
+
+    rc(slug='ipr_announce',
+       desc="The IETF IPR announce list",
+       template='ipr-announce@ietf.org')
+
+    rc(slug='doc_ipr_group_or_ad',
+       desc="Leadership for a document that has a new IPR disclosure",
+       template=None)
+
+    rc(slug='liaison_to_contact',
+       desc="The addresses captured in the To field of the liaison statement form",
+       template='{{liaison.to_contact}}')
+
+    rc(slug='liaison_cc',
+       desc="The addresses captured in the Cc field of the liaison statement form",
+       template='{{liaison.cc}}')
+
+    rc(slug='liaison_technical_contact',
+       desc="The addresses captured in the technical contact field of the liaison statement form",
+       template='{{liaison.technical_contact}}')
+
+    rc(slug='liaison_response_contact',
+       desc="The addresses captured in the response contact field of the liaison statement form",
+       template='{{liaison.response_contact}}')
+ 
+    rc(slug='liaison_statements_list',
+       desc="The IETF liaison statement ticketing system",
+       template='statements@ietf.org')
+
+    rc(slug='liaison_manager',
+       desc="The assigned liaison manager for an external group ",
+       template=None)
 
 def make_mailtokens(apps):
 
@@ -644,6 +686,62 @@ def make_mailtokens(apps):
     mt_factory(slug='ipr_disclosure_followup_cc',
                desc="Copied when the secretary follows up on an IPR disclosure submission",
                recipient_slugs=[])
+
+    mt_factory(slug='ipr_posting_confirmation',
+               desc="Recipients for a message confirming that a disclosure has been posted",
+               recipient_slugs=['ipr_submitter',
+                               ])
+
+    mt_factory(slug='ipr_posting_confirmation_cc',
+               desc="Copied on a message confirming that a disclosure has been posted",
+               recipient_slugs=['ipr_updatedipr_contacts',
+                                'ipr_updatedipr_holders',
+                               ])
+
+    mt_factory(slug='ipr_posted_on_doc',
+               desc="Recipients when an IPR disclosure calls out a given document",
+               recipient_slugs=['doc_authors',
+                               ]) 
+
+    mt_factory(slug='ipr_posted_on_doc_cc',
+               desc="Copied when an IPR disclosure calls out a given document",
+               recipient_slugs=['doc_ipr_group_or_ad',
+                                'ipr_announce',
+                               ]) 
+
+    mt_factory(slug='liaison_statement_posted',
+               desc="Recipient for a message when a new liaison statement is posted",
+               recipient_slugs=['liaison_to_contact',
+                               ])
+
+    mt_factory(slug='liaison_statement_posted_cc',
+               desc="Copied on a message when a new liaison statement is posted",
+               recipient_slugs=['liaison_cc',
+                                'liaison_technical_contact',
+                                'liaison_response_contact',
+                               ])
+
+    mt_factory(slug='liaison_approval_requested',
+               desc="Recipients for a message that a pending liaison statement needs approval",
+               recipient_slugs=['liaison_statements_list',
+                               ])
+
+    mt_factory(slug='liaison_deadline_soon',
+               desc="Recipients for a message about a liaison statement deadline that is approaching.",
+               recipient_slugs=['liaison_to_contact',
+                               ])
+
+    mt_factory(slug='liaison_deadline_soon_cc',
+               desc="Copied on a message about a liaison statement deadline that is approaching.",
+               recipient_slugs=['liaison_cc',
+                                'liaison_technical_contact',
+                                'liaison_response_contact',
+                               ])
+
+    mt_factory(slug='liaison_manager_update_request',
+               desc="Recipients for a message requesting an updated list of authorized individuals",
+               recipient_slugs=['liaison_manager',
+                               ])
 
 def forward(apps, schema_editor):
 
