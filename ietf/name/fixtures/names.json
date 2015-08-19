@@ -4329,6 +4329,14 @@
 },
 {
  "fields": {
+  "template": "{{commenter}}",
+  "desc": "The person providing a comment to nomcom"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "commenter"
+},
+{
+ "fields": {
   "template": null,
   "desc": "The steering group (e.g. IRSG) of a document being reviewed for IETF stream conflicts"
  },
@@ -4345,7 +4353,7 @@
 },
 {
  "fields": {
-  "template": "{% if doc.ad %}{{doc.ad.email_address}}{% endif %}",
+  "template": "{% if doc.ad %}<{{doc.ad.email_address}}>{% endif %}",
   "desc": "The document's responsible Area Director"
  },
  "model": "mailtoken.recipient",
@@ -4377,7 +4385,7 @@
 },
 {
  "fields": {
-  "template": "{% if doc.type_id == \"draft\" %}{{doc.name}}@ietf.org{% endif %}",
+  "template": "{% if doc.type_id == \"draft\" %}<{{doc.name}}@ietf.org>{% endif %}",
   "desc": "The document's authors"
  },
  "model": "mailtoken.recipient",
@@ -4449,7 +4457,7 @@
 },
 {
  "fields": {
-  "template": "{% if doc.shepherd %}{{doc.shepherd.address}}{% endif %}",
+  "template": "{% if doc.shepherd %}<{{doc.shepherd.address}}>{% endif %}",
   "desc": "The document's shepherd"
  },
  "model": "mailtoken.recipient",
@@ -4481,7 +4489,7 @@
 },
 {
  "fields": {
-  "template": "{{ group.list_email }}",
+  "template": "<{{ group.list_email }}>",
   "desc": "The group's mailing list"
  },
  "model": "mailtoken.recipient",
@@ -4561,7 +4569,15 @@
 },
 {
  "fields": {
-  "template": "internet-drafts@ietf.org",
+  "template": "<ietf-secretariat-reply@ietf.org>",
+  "desc": "The Secretariat"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "ietf_secretariat"
+},
+{
+ "fields": {
+  "template": "<internet-drafts@ietf.org>",
   "desc": "The internet drafts ticketing system"
  },
  "model": "mailtoken.recipient",
@@ -4577,7 +4593,7 @@
 },
 {
  "fields": {
-  "template": "ietf-ipr@ietf.org",
+  "template": "<ietf-ipr@ietf.org>",
   "desc": "The ipr disclosure handling system"
  },
  "model": "mailtoken.recipient",
@@ -4633,7 +4649,7 @@
 },
 {
  "fields": {
-  "template": "statements@ietf.org",
+  "template": "<statements@ietf.org>",
   "desc": "The IETF liaison statement ticketing system"
  },
  "model": "mailtoken.recipient",
@@ -4657,11 +4673,35 @@
 },
 {
  "fields": {
-  "template": "{% if person and person.email_address %}{{ person.email_address }}{% endif %}",
+  "template": "{% if person and person.email_address %}<{{ person.email_address }}>{% endif %}",
   "desc": "The person currently logged into the datatracker who initiated a given action"
  },
  "model": "mailtoken.recipient",
  "pk": "logged_in_person"
+},
+{
+ "fields": {
+  "template": "{{nomcom.group.get_chair.email.address}}",
+  "desc": "The chair of a given nomcom"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "nomcom_chair"
+},
+{
+ "fields": {
+  "template": "{{nominator}}",
+  "desc": "The person that submitted a nomination to nomcom"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "nominator"
+},
+{
+ "fields": {
+  "template": "{{nominee}}",
+  "desc": "The person nominated for a position"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "nominee"
 },
 {
  "fields": {
@@ -4681,7 +4721,7 @@
 },
 {
  "fields": {
-  "template": "session-request@ietf.org",
+  "template": "<session-request@ietf.org>",
   "desc": "The session request ticketing system"
  },
  "model": "mailtoken.recipient",
@@ -5414,6 +5454,87 @@
  },
  "model": "mailtoken.mailtoken",
  "pk": "milestone_review_reminder_cc"
+},
+{
+ "fields": {
+  "recipients": [
+   "commenter"
+  ],
+  "desc": "Recipients for a message confirming a comment was made"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "nomcom_comment_receipt_requested"
+},
+{
+ "fields": {
+  "recipients": [
+   "nominee"
+  ],
+  "desc": "Recipients for the questionairre that nominees should complete"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "nomcom_questionnaire"
+},
+{
+ "fields": {
+  "recipients": [
+   "nominee"
+  ],
+  "desc": "Recipients for a message reminding a nominee to return a completed questionairre response"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "nomcom_questionnaire_reminder"
+},
+{
+ "fields": {
+  "recipients": [
+   "nominee"
+  ],
+  "desc": "Recipeints of message reminding a nominee to accept or decline a nomination"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "nomination_accept_reminder"
+},
+{
+ "fields": {
+  "recipients": [
+   "ietf_secretariat",
+   "nomcom_chair"
+  ],
+  "desc": "Recipients for a message noting that a nomination caused a new Person record to be created in the datatracker"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "nomination_created_person"
+},
+{
+ "fields": {
+  "recipients": [
+   "nominee"
+  ],
+  "desc": "Recipients the first time a person is nominated for a position, asking them to accept or decline the nomination"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "nomination_new_nominee"
+},
+{
+ "fields": {
+  "recipients": [
+   "nominator"
+  ],
+  "desc": "Recipients for a message confirming a nomination was made"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "nomination_receipt_requested"
+},
+{
+ "fields": {
+  "recipients": [
+   "nomcom_chair"
+  ],
+  "desc": "Recipients for a message noting a new nomination has been received"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "nomination_received"
 },
 {
  "fields": {

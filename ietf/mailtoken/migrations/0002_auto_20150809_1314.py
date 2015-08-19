@@ -25,9 +25,13 @@ def make_recipients(apps):
        desc='The Secretariat',
        template='<iesg-secretary@ietf.org>')
 
+    rc(slug='ietf_secretariat',
+       desc='The Secretariat',
+       template='<ietf-secretariat-reply@ietf.org>')
+
     rc(slug='doc_authors',
        desc="The document's authors",
-       template='{% if doc.type_id == "draft" %}{{doc.name}}@ietf.org{% endif %}')
+       template='{% if doc.type_id == "draft" %}<{{doc.name}}@ietf.org>{% endif %}')
 
     rc(slug='doc_notify',
        desc="The addresses in the document's notify field",
@@ -55,11 +59,11 @@ def make_recipients(apps):
 
     rc(slug='doc_shepherd',
        desc="The document's shepherd",
-       template='{% if doc.shepherd %}{{doc.shepherd.address}}{% endif %}' )
+       template='{% if doc.shepherd %}<{{doc.shepherd.address}}>{% endif %}' )
 
     rc(slug='doc_ad',
        desc="The document's responsible Area Director",
-       template='{% if doc.ad %}{{doc.ad.email_address}}{% endif %}' )
+       template='{% if doc.ad %}<{{doc.ad.email_address}}>{% endif %}' )
 
     rc(slug='doc_group_mail_list',
        desc="The list address of the document's group",
@@ -99,7 +103,7 @@ def make_recipients(apps):
 
     rc(slug='group_mail_list',
        desc="The group's mailing list",
-       template='{{ group.list_email }}')
+       template='<{{ group.list_email }}>')
 
     rc(slug='group_steering_group',
        desc="The group's steering group (IESG or IRSG)",
@@ -119,7 +123,7 @@ def make_recipients(apps):
 
     rc(slug='internet_draft_requests',
        desc="The internet drafts ticketing system",
-       template='internet-drafts@ietf.org')
+       template='<internet-drafts@ietf.org>')
 
     rc(slug='submission_submitter',
        desc="The person that submitted a draft",
@@ -159,15 +163,15 @@ def make_recipients(apps):
 
     rc(slug='session_requests',
        desc="The session request ticketing system",
-       template='session-request@ietf.org')
+       template='<session-request@ietf.org>')
 
     rc(slug='logged_in_person',
        desc="The person currently logged into the datatracker who initiated a given action",
-       template='{% if person and person.email_address %}{{ person.email_address }}{% endif %}')
+       template='{% if person and person.email_address %}<{{ person.email_address }}>{% endif %}')
 
     rc(slug='ipr_requests',
        desc="The ipr disclosure handling system",
-       template='ietf-ipr@ietf.org')
+       template='<ietf-ipr@ietf.org>')
 
     rc(slug='ipr_submitter',
        desc="The submitter of an IPR disclosure",
@@ -209,11 +213,27 @@ def make_recipients(apps):
  
     rc(slug='liaison_statements_list',
        desc="The IETF liaison statement ticketing system",
-       template='statements@ietf.org')
+       template='<statements@ietf.org>')
 
     rc(slug='liaison_manager',
        desc="The assigned liaison manager for an external group ",
        template=None)
+
+    rc(slug='nominator',
+       desc="The person that submitted a nomination to nomcom",
+       template='{{nominator}}')
+
+    rc(slug='nominee',
+       desc="The person nominated for a position",
+       template='{{nominee}}')
+
+    rc(slug='nomcom_chair',
+       desc="The chair of a given nomcom",
+       template='{{nomcom.group.get_chair.email.address}}')
+
+    rc(slug='commenter',
+       desc="The person providing a comment to nomcom",
+       template='{{commenter}}')
 
 def make_mailtokens(apps):
 
@@ -741,6 +761,48 @@ def make_mailtokens(apps):
     mt_factory(slug='liaison_manager_update_request',
                desc="Recipients for a message requesting an updated list of authorized individuals",
                recipient_slugs=['liaison_manager',
+                               ])
+
+    mt_factory(slug='nomination_received',
+               desc="Recipients for a message noting a new nomination has been received",
+               recipient_slugs=['nomcom_chair',
+                               ])
+
+    mt_factory(slug='nomination_receipt_requested',
+               desc="Recipients for a message confirming a nomination was made",
+               recipient_slugs=['nominator', 
+                               ])
+
+    mt_factory(slug='nomcom_comment_receipt_requested',
+               desc="Recipients for a message confirming a comment was made",
+               recipient_slugs=['commenter', 
+                               ])
+
+    mt_factory(slug='nomination_created_person',
+               desc="Recipients for a message noting that a nomination caused a "
+                     "new Person record to be created in the datatracker",
+               recipient_slugs=['ietf_secretariat',
+                                'nomcom_chair',
+                               ])
+    mt_factory(slug='nomination_new_nominee',
+               desc="Recipients the first time a person is nominated for a position, "
+                     "asking them to accept or decline the nomination",
+               recipient_slugs=['nominee',
+                               ])
+
+    mt_factory(slug='nomination_accept_reminder',
+               desc="Recipeints of message reminding a nominee to accept or decline a nomination",
+               recipient_slugs=['nominee',
+                               ])
+
+    mt_factory(slug='nomcom_questionnaire',
+               desc="Recipients for the questionairre that nominees should complete",
+               recipient_slugs=['nominee',
+                               ])
+
+    mt_factory(slug='nomcom_questionnaire_reminder',
+               desc="Recipients for a message reminding a nominee to return a completed questionairre response",
+               recipient_slugs=['nominee',
                                ])
 
 def forward(apps, schema_editor):
