@@ -963,7 +963,7 @@ class IndividualInfoFormsTests(TestCase):
         
 
 class SubmitToIesgTests(TestCase):
-    def verify_permissions(self):
+    def test_verify_permissions(self):
 
         def verify_fail(username):
             if username:
@@ -986,7 +986,7 @@ class SubmitToIesgTests(TestCase):
         for username in ['marschairman','secretary','ad']:
             verify_can_see(username)
         
-    def cancel_submission(self):
+    def test_cancel_submission(self):
         url = urlreverse('doc_to_iesg', kwargs=dict(name=self.docname))
         self.client.login(username="marschairman", password="marschairman+password")
 
@@ -996,7 +996,7 @@ class SubmitToIesgTests(TestCase):
         doc = Document.objects.get(pk=self.doc.pk)
         self.assertTrue(doc.get_state('draft-iesg')==None)
 
-    def confirm_submission(self):
+    def test_confirm_submission(self):
         url = urlreverse('doc_to_iesg', kwargs=dict(name=self.docname))
         self.client.login(username="marschairman", password="marschairman+password")
 
