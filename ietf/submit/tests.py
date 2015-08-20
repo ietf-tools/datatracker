@@ -710,7 +710,7 @@ class SubmitTests(TestCase):
         url = urlreverse('submit_upload_submission')
         # set meeting to today so we're in blackout period
         meeting = Meeting.get_current_meeting()
-        meeting.date = datetime.datetime.today()
+        meeting.date = datetime.datetime.utcnow()
         meeting.save()
         
         # regular user, no access
