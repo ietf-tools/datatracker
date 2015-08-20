@@ -63,14 +63,6 @@ def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               extra=extra)
 
-
-def email_authors(request, doc, subject, text):
-    to = [x.strip() for x in doc.author_list().split(',')]
-    if not to:
-        return
-    
-    send_mail_text(request, to, None, subject, text)
-
 def html_to_text(html):
     return strip_tags(html.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("<br>", "\n"))
     
