@@ -260,7 +260,9 @@ def default_approval_text(review):
                                     conflictdoc = conflictdoc,
                                     conflictdoc_url = settings.IDTRACKER_BASE_URL+conflictdoc.get_absolute_url(),
                                     receiver=receiver,
-                                    approved_review = current_text
+                                    approved_review = current_text,
+                                    to = gather_addresses('ballot_approved_conflrev',doc=review),
+                                    cc = gather_addresses('ballot_approved_conflrev_cc',doc=review),
                                    )
                               )
 

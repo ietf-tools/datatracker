@@ -17,7 +17,7 @@ from ietf.group.utils import save_group_in_history
 from ietf.name.models import DocTagName, GroupStateName
 from ietf.person.models import Person, Email
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.group.mails import ( email_milestone_review_reminder, email_milestones_due,
@@ -444,6 +444,7 @@ class GroupEditTests(TestCase):
         area = group.parent
         ad = Person.objects.get(name="Aread Irector")
         state = GroupStateName.objects.get(slug="bof")
+        empty_outbox()
         r = self.client.post(url,
                              dict(name="Mars Not Special Interest Group",
                                   acronym="mars",
@@ -474,6 +475,10 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.groupurl_set.all()[0].url, "http://mars.mars")
         self.assertEqual(group.groupurl_set.all()[0].name, "MARS site")
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))))
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('Personnel change' in outbox[0]['Subject'])
+        for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
+            self.assertTrue(prefix+'@' in outbox[0]['To'])
 
     def test_conclude(self):
         make_test_data()
@@ -500,6 +505,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(instructions="Test instructions"))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue('iesg-secretary@' in outbox[-1]['To'])
         # the WG remains active until the Secretariat takes action
         group = Group.objects.get(acronym=group.acronym)
         self.assertEqual(group.state_id, "active")
@@ -602,6 +608,11 @@ class MilestoneTests(TestCase):
         self.assertTrue("Added milestone" in m.milestonegroupevent_set.all()[0].desc)
         self.assertEqual(len(outbox),mailbox_before+2)
         self.assertFalse(any('Review Required' in x['Subject'] for x in outbox[-2:]))
+        self.assertTrue('Milestones changed' in outbox[-2]['Subject'])
+        self.assertTrue('mars-chairs@' in outbox[-2]['To'])
+        self.assertTrue('aread@' in outbox[-2]['To'])
+        self.assertTrue('Milestones changed' in outbox[-1]['Subject'])
+        self.assertTrue('mars-wg@' in outbox[-1]['To'])
 
     def test_add_milestone_as_chair(self):
         m1, m2, group = self.create_test_milestones()

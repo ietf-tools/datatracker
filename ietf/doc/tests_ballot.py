@@ -152,7 +152,7 @@ class EditPositionTests(TestCase):
         # send
         mailbox_before = len(outbox)
 
-        r = self.client.post(url, dict(cc="test@example.com", cc_state_change="1",cc_group_list="1"))
+        r = self.client.post(url, dict(cc="test298347@example.com", cc_state_change="1",cc_group_list="1"))
         self.assertEqual(r.status_code, 302)
 
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -162,16 +162,18 @@ class EditPositionTests(TestCase):
         self.assertTrue(draft.name in m['Subject'])
         self.assertTrue("clearer title" in str(m))
         self.assertTrue("Test!" in str(m))
+        self.assertTrue("iesg@" in m['To'])
         self.assertTrue("somebody@example.com" in m['Cc'])
-        self.assertTrue("test@example.com" in m['Cc'])
+        self.assertTrue("test298347@example.com" in m['Cc'])
         self.assertTrue(draft.group.list_email)
         self.assertTrue(draft.group.list_email in m['Cc'])
 
         r = self.client.post(url, dict(cc=""))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before + 2)
-        #TODO this would be a good place to test actual mailtoken expansions
-        #if we can find a way to get the real, or at least representative, data in place.
+        m = outbox[-1]
+        self.assertTrue("iesg@" in m['To'])
+        self.assertFalse(draft.group.list_email in m['Cc'])
 
 
 class BallotWriteupsTests(TestCase):
@@ -235,6 +237,8 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
+        self.assertTrue('iesg-secretary@' in outbox[-1]['To'])
+        self.assertTrue('aread@' in outbox[-1]['Cc'])
 
     def test_edit_ballot_writeup(self):
         draft = make_test_data()
@@ -389,12 +393,18 @@ class ApproveBallotTests(TestCase):
         self.assertEqual(draft.get_state_slug("draft-iesg"), "ann")
         self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("Protocol Action" in outbox[-2]['Subject'])
+        self.assertTrue("ietf-announce" in outbox[-2]['To'])
+        self.assertTrue("rfc-editor" in outbox[-2]['Cc'])
         # the IANA copy
         self.assertTrue("Protocol Action" in outbox[-1]['Subject'])
         self.assertTrue(not outbox[-1]['CC'])
+        self.assertTrue('drafts-approval@icann.org' in outbox[-1]['To'])
         self.assertTrue("Protocol Action" in draft.message_set.order_by("-time")[0].subject)
 
     def test_disapprove_ballot(self):
+        # This tests a codepath that is not used in production
+        # and that has already had some drift from usefulness (it results in a
+        # older-style conflict review response). 
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="nopubadw"))
 
@@ -411,7 +421,6 @@ class ApproveBallotTests(TestCase):
         self.assertEqual(draft.get_state_slug("draft-iesg"), "dead")
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("NOT be published" in str(outbox[-1]))
-
 
 class MakeLastCallTests(TestCase):
     def test_make_last_call(self):
@@ -441,10 +450,17 @@ class MakeLastCallTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "lc")
         self.assertEqual(draft.latest_event(LastCallDocEvent, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
+
         self.assertEqual(len(outbox), mailbox_before + 2)
 
         self.assertTrue("Last Call" in outbox[-2]['Subject'])
+        self.assertTrue("ietf-announce@" in outbox[-2]['To'])
+        for prefix in ['draft-ietf-mars-test','mars-chairs','aread']:
+            self.assertTrue(prefix+"@" in outbox[-2]['Cc'])
+
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
+        self.assertTrue("drafts-lastcall@icann.org" in outbox[-1]['To'])
+
         self.assertTrue("Last Call" in draft.message_set.order_by("-time")[0].subject)
 
 class DeferUndeferTestCase(TestCase):
@@ -490,11 +506,16 @@ class DeferUndeferTestCase(TestCase):
         if doc.type_id in defer_states:
            self.assertEqual(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
         self.assertTrue(doc.active_defer_event())
+
         self.assertEqual(len(outbox), mailbox_before + 2)
-        #self.assertTrue("State Update" in outbox[-3]['Subject'])
-        self.assertTrue("Telechat update" in outbox[-2]['Subject'])
+
+        self.assertTrue('Telechat update' in outbox[-2]['Subject'])
+        self.assertTrue('iesg-secretary@' in outbox[-2]['To'])
+        self.assertTrue('iesg@' in outbox[-2]['To'])
+
         self.assertTrue("Deferred" in outbox[-1]['Subject'])
         self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])
+        self.assertTrue('iesg@' in outbox[-1]['To'])
 
         # Ensure it's not possible to defer again
         r = self.client.get(url)
@@ -547,8 +568,11 @@ class DeferUndeferTestCase(TestCase):
         self.assertFalse(doc.active_defer_event())
         self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("Telechat update" in outbox[-2]['Subject'])
+        self.assertTrue('iesg-secretary@' in outbox[-2]['To'])
+        self.assertTrue('iesg@' in outbox[-2]['To'])
         self.assertTrue("Undeferred" in outbox[-1]['Subject'])
         self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])
+        self.assertTrue('iesg@' in outbox[-1]['To'])
 
         # Ensure it's not possible to undefer again
         r = self.client.get(url)

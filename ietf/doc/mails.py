@@ -201,6 +201,8 @@ def generate_approval_mail_approved(request, doc):
                             )
 
 def generate_approval_mail_rfc_editor(request, doc):
+    # This is essentially dead code - it is only exercised if the IESG ballots on some other stream's document,
+    # which does not happen now that we have conflict reviews.
     disapproved = doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
 

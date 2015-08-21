@@ -322,8 +322,10 @@ class StatusChangeTests(TestCase):
         
         self.assertEqual(len(outbox), messages_before + 2)
         self.assertTrue('Action:' in outbox[-1]['Subject'])
-        self.assertTrue('(rfc9999) to Internet Standard' in ''.join(wrap(unicode(outbox[-1])+unicode(outbox[-2]),2**16)))
+        self.assertTrue('ietf-announce' in outbox[-1]['To'])
+        self.assertTrue('rfc-editor' in outbox[-1]['Cc'])
         self.assertTrue('(rfc9998) to Historic' in ''.join(wrap(unicode(outbox[-1])+unicode(outbox[-2]),2**16)))
+        self.assertTrue('(rfc9999) to Internet Standard' in ''.join(wrap(unicode(outbox[-1])+unicode(outbox[-2]),2**16)))
 
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('The following approval message was sent'))       
 

@@ -476,7 +476,7 @@ def make_mailtokens(apps):
     mt_factory(slug='doc_telechat_details_changed',
                desc="Recipients when a document's telechat date or other telechat specific details are changed",
                recipient_slugs=['iesg',
-                                'iesg-secretary',
+                                'iesg_secretary',
                                 'doc_notify',
                                 'doc_authors',
                                 'doc_shepherd',
@@ -494,7 +494,7 @@ def make_mailtokens(apps):
 
     mt_factory(slug='doc_pulled_from_rfc_queue_cc',
                desc="Recipients when a document is taken out of the RFC's editor queue before publication",
-               recipient_slugs=['iesg-secretary',
+               recipient_slugs=['iesg_secretary',
                                 'doc_ad', 
                                 'doc_notify',
                                 'doc_authors',

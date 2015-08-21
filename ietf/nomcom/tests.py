@@ -501,6 +501,19 @@ class NomcomViewsTest(TestCase):
         return self.nominate_view(public=False)
         self.client.logout()
 
+    def test_public_nominate_with_automatic_questionnaire(self):
+        nomcom = get_nomcom_by_year(self.year)
+        nomcom.send_questionnaire = True
+        nomcom.save()
+        login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
+        empty_outbox()
+        self.nominate_view(public=True)
+        self.assertEqual(len(outbox), 4)
+        # test_public_nominate checks the other messages
+        self.assertTrue('Questionnaire' in outbox[2]['Subject'])
+        self.assertTrue('nominee@' in outbox[2]['To'])
+
+
     def nominate_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
         nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
@@ -640,7 +653,7 @@ class NomcomViewsTest(TestCase):
 
         empty_outbox()
         self.feedback_view(public=True)
-        self.assertTrue(len(outbox),1)
+        self.assertEqual(len(outbox),1)
         self.assertFalse('confirmation' in outbox[0]['Subject'])
 
     def test_private_feedback(self):
@@ -897,6 +910,8 @@ class ReminderTest(TestCase):
         response = self.client.post(url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(outbox), messages_before + 2)
+        self.assertTrue('nominee1@' in outbox[-2]['To'])
+        self.assertTrue('nominee2@' in outbox[-1]['To'])
 
     def test_remind_questionnaire_view(self):
         url = reverse('nomcom_send_reminder_mail', kwargs={'year': NOMCOM_YEAR,'type':'questionnaire'})
@@ -906,4 +921,5 @@ class ReminderTest(TestCase):
         response = self.client.post(url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(outbox), messages_before + 1)
+        self.assertTrue('nominee1@' in outbox[-1]['To'])
 

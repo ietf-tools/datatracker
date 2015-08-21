@@ -92,8 +92,8 @@ def email_milestone_review_reminder(group, grace_period=7):
                    milestones=milestones,
                    reviewer=milestone_reviewer_for_group_type(group.type_id),
                    url=settings.IDTRACKER_BASE_URL + urlreverse("group_edit_milestones", kwargs=dict(group_type=group.type_id, acronym=group.acronym)),
-                   cc=cc,
-               )
+               ),
+               cc=cc,
              )
 
     return True

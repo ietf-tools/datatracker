@@ -5076,7 +5076,8 @@
    "doc_authors",
    "doc_group_chairs",
    "doc_notify",
-   "doc_shepherd"
+   "doc_shepherd",
+   "iesg_secretary"
   ],
   "desc": "Recipients when a document is taken out of the RFC's editor queue before publication"
  },
@@ -5148,7 +5149,8 @@
    "doc_group_chairs",
    "doc_notify",
    "doc_shepherd",
-   "iesg"
+   "iesg",
+   "iesg_secretary"
   ],
   "desc": "Recipients when a document's telechat date or other telechat specific details are changed"
  },
