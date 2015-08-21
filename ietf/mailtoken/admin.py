@@ -12,6 +12,6 @@ admin.site.register(Recipient, RecipientAdmin)
 
 class MailTokenAdmin(admin.ModelAdmin):
     list_display = [ 'slug', 'desc',  ]
-    filter_horizontal = [ 'recipients' ]
+    filter_horizontal = [ 'to', 'cc',  ]
 admin.site.register(MailToken, MailTokenAdmin)
 

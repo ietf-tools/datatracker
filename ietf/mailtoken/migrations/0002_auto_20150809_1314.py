@@ -240,570 +240,509 @@ def make_mailtokens(apps):
     Recipient=apps.get_model('mailtoken','Recipient')
     MailToken=apps.get_model('mailtoken','MailToken')
 
-    def mt_factory(slug,desc,recipient_slugs):
+    def mt_factory(slug,desc,to_slugs,cc_slugs=[]):
         m = MailToken.objects.create(slug=slug, desc=desc)
-        m.recipients = Recipient.objects.filter(slug__in=recipient_slugs)
+        m.to = Recipient.objects.filter(slug__in=to_slugs)
+        m.cc = Recipient.objects.filter(slug__in=cc_slugs)
 
     mt_factory(slug='ballot_saved',
-               desc='Recipients when a new ballot position (with discusses, other blocking positions, or comments) is saved',
-               recipient_slugs=['iesg'])
-
-    mt_factory(slug='ballot_saved_cc',
-               desc='Copied when a new ballot position (with discusses, other blocking positions, or comments) is saved',
-               recipient_slugs=['doc_authors',
-                                'doc_group_chairs',
-                                'doc_shepherd',
-                                'doc_affecteddoc_authors',
-                                'doc_affecteddoc_group_chairs',
-                                'doc_affecteddoc_notify',
-                                'conflict_review_stream_manager',
-                                ])
+               desc="Recipients when a new ballot position "
+                    "(with discusses, other blocking positions, "
+                    "or comments) is saved",
+               to_slugs=['iesg'],
+               cc_slugs=['doc_authors',
+                         'doc_group_chairs',
+                         'doc_shepherd',
+                         'doc_affecteddoc_authors',
+                         'doc_affecteddoc_group_chairs',
+                         'doc_affecteddoc_notify',
+                         'conflict_review_stream_manager',
+                        ]
+              )
 
     mt_factory(slug='ballot_deferred',
-               desc='Recipients when a ballot is deferred to or undeferred from a future telechat',
-               recipient_slugs=['iesg',
-                                'iesg_secretary',
-                                'doc_group_chairs',
-                                'doc_notify',
-                                'doc_authors',
-                                'doc_shepherd',
-                                'doc_affecteddoc_authors',
-                                'doc_affecteddoc_group_chairs',
-                                'doc_affecteddoc_notify',
-                                'conflict_review_stream_manager',
-                                ])
+               desc="Recipients when a ballot is deferred to "
+                    "or undeferred from a future telechat",
+               to_slugs=['iesg',
+                         'iesg_secretary',
+                         'doc_group_chairs',
+                         'doc_notify',
+                         'doc_authors',
+                         'doc_shepherd',
+                         'doc_affecteddoc_authors',
+                         'doc_affecteddoc_group_chairs',
+                         'doc_affecteddoc_notify',
+                         'conflict_review_stream_manager',
+                        ],
+              )
 
     mt_factory(slug='ballot_approved_ietf_stream',
-               desc='Recipients when an IETF stream document ballot is approved',
-               recipient_slugs=['ietf_announce'])
-
-    mt_factory(slug='ballot_approved_ietf_stream_cc',
-               desc='Copied when an IETF stream document ballot is approved',
-               recipient_slugs=['iesg',
-                                'doc_notify',
-                                'doc_ad',
-                                'doc_authors',
-                                'doc_shepherd',
-                                'doc_group_mail_list',
-                                'doc_group_chairs',
-                                'rfc_editor',
-                                ])
+               desc="Recipients when an IETF stream document ballot is approved",
+               to_slugs=['ietf_announce'],
+               cc_slugs=['iesg',
+                         'doc_notify',
+                         'doc_ad',
+                         'doc_authors',
+                         'doc_shepherd',
+                         'doc_group_mail_list',
+                         'doc_group_chairs',
+                         'rfc_editor',
+                         ],
+              )
  
     mt_factory(slug='ballot_approved_ietf_stream_iana',
-               desc='Recipients for IANA message when an IETF stream document ballot is approved',
-               recipient_slugs=['iana_approve'])
+               desc="Recipients for IANA message when an IETF stream document ballot is approved",
+               to_slugs=['iana_approve'])
 
     mt_factory(slug='ballot_approved_conflrev',
-               desc='Recipients when a conflict review ballot is approved',
-               recipient_slugs=['conflict_review_stream_manager',
-                                'conflict_review_steering_group',
-                                'doc_affecteddoc_authors',
-                                'doc_affecteddoc_group_chairs',
-                                'doc_affecteddoc_notify',
-                                'doc_notify',
-                                ])
-
-    mt_factory(slug='ballot_approved_conflrev_cc',
-               desc='Copied when a conflict review ballot is approved',
-               recipient_slugs=['iesg',
-                                'ietf_announce',
-                                'iana',
-                                ])
+               desc="Recipients when a conflict review ballot is approved",
+               to_slugs=['conflict_review_stream_manager',
+                         'conflict_review_steering_group',
+                         'doc_affecteddoc_authors',
+                         'doc_affecteddoc_group_chairs',
+                         'doc_affecteddoc_notify',
+                         'doc_notify',
+                        ],
+               cc_slugs=['iesg',
+                         'ietf_announce',
+                         'iana',
+                        ],
+              )
 
     mt_factory(slug='ballot_approved_charter',
-               desc='Recipients when a charter is approved',
-               recipient_slugs=['ietf_announce',])
-            
-    mt_factory(slug='ballot_approved_charter_cc',
-               desc='Copied when a charter is approved',
-               recipient_slugs=['group_mail_list',
-                                'group_steering_group',
-                                'group_chairs',
-                                'doc_notify',
-                               ])
+               desc="Recipients when a charter is approved",
+               to_slugs=['ietf_announce',],
+               cc_slugs=['group_mail_list',
+                         'group_steering_group',
+                         'group_chairs',
+                         'doc_notify',
+                        ],
+              )
             
     mt_factory(slug='ballot_approved_status_change',
-               desc='Recipients when a status change is approved',
-               recipient_slugs=['ietf_announce',])
-            
-    mt_factory(slug='ballot_approved_status_change_cc',
-               desc='Copied when a status change is approved',
-               recipient_slugs=['iesg',
-                                'rfc_editor',
-                                'doc_notify',
-                                'doc_affectddoc_authors',
-                                'doc_affecteddoc_group_chairs',
-                                'doc_affecteddoc_notify',
-                               ])
+               desc="Recipients when a status change is approved",
+               to_slugs=['ietf_announce',],
+               cc_slugs=['iesg',
+                         'rfc_editor',
+                         'doc_notify',
+                         'doc_affectddoc_authors',
+                         'doc_affecteddoc_group_chairs',
+                         'doc_affecteddoc_notify',
+                        ],
+              )
 
     mt_factory(slug='last_call_requested',
-               desc='Recipients when AD requests a last call',
-               recipient_slugs=['iesg_secretary',])
-
-    mt_factory(slug='last_call_requested_cc',
-               desc='Copied when AD requests a last call',
-               recipient_slugs=['doc_ad',
-                                'doc_shepherd',
-                                'doc_notify'])
+               desc="Recipients when AD requests a last call",
+               to_slugs=['iesg_secretary',],
+               cc_slugs=['doc_ad',
+                         'doc_shepherd',
+                         'doc_notify',
+                        ],
+              )
 
     mt_factory(slug='last_call_issued',
-               desc='Recipients when a last call is issued',
-               recipient_slugs=['ietf_announce',])
-
-    mt_factory(slug='last_call_issued_cc',
-               desc='Copied when a last call is issued',
-               recipient_slugs=['doc_ad',
-                                'doc_shepherd',
-                                'doc_authors',
-                                'doc_notify',
-                                'doc_group_list_email',
-                                'doc_group_chairs',
-                                'doc_affecteddoc_authors',
-                                'doc_affecteddoc_group_chairs',
-                                'doc_affecteddoc_notify'])
+               desc="Recipients when a last call is issued",
+               to_slugs=['ietf_announce',],
+               cc_slugs=['doc_ad',
+                         'doc_shepherd',
+                         'doc_authors',
+                         'doc_notify',
+                         'doc_group_list_email',
+                         'doc_group_chairs',
+                         'doc_affecteddoc_authors',
+                         'doc_affecteddoc_group_chairs',
+                         'doc_affecteddoc_notify',
+                        ]
+              )
 
     mt_factory(slug='last_call_issued_iana',
-               desc='Recipients for IANA message when a last call is issued',
-               recipient_slugs=['iana_last_call'])
+               desc="Recipients for IANA message when a last call is issued",
+               to_slugs=['iana_last_call'])
 
     mt_factory(slug='last_call_expired',
-               desc='Recipients when a last call has expired',
-               recipient_slugs=['iesg',
-                                'doc_notify',
-                                'doc_authors',
-                                'doc_shepherd',
-                               ])
-
-    mt_factory(slug='last_call_expired_cc',
-               desc='Copied when a last call has expired',
-               recipient_slugs=['iesg_secretary',])
+               desc="Recipients when a last call has expired",
+               to_slugs=['iesg',
+                         'doc_notify',
+                         'doc_authors',
+                         'doc_shepherd',
+                        ],
+               cc_slugs=['iesg_secretary',],
+              )
 
     mt_factory(slug='pubreq_iesg',
-               desc='Recipients when a draft is submitted to the IESG',
-               recipient_slugs=['doc_ad',])
-
-    mt_factory(slug='pubreq_iesg_cc',
-               desc='Copied when a draft is submitted to the IESG',
-               recipient_slugs=['iesg_secretary',
-                                'doc_notify',
-                                'doc_shepherd',
-                                'doc_group_chairs',
-                               ])
+               desc="Recipients when a draft is submitted to the IESG",
+               to_slugs=['doc_ad',],
+               cc_slugs=['iesg_secretary',
+                         'doc_notify',
+                         'doc_shepherd',
+                         'doc_group_chairs',
+                        ],
+              )
 
     mt_factory(slug='pubreq_rfced',
-               desc='Recipients when a non-IETF stream manager requests publication',
-               recipient_slugs=['rfc_editor',
-                               ])
+               desc="Recipients when a non-IETF stream manager requests publication",
+               to_slugs=['rfc_editor',])
 
     mt_factory(slug='pubreq_rfced_iana',
-               desc='Recipients for IANA message when a non-IETF stream manager requests publication',
-               recipient_slugs=['iana_approve',])
+               desc="Recipients for IANA message when a non-IETF stream manager "
+                    "requests publication",
+               to_slugs=['iana_approve',])
 
     mt_factory(slug='charter_external_review',
-               desc='Recipients for a charter external review',
-               recipient_slugs=['ietf_announce',]) 
-
-    mt_factory(slug='charter_external_review_cc',
-               desc='Copied on a charter external review',
-               recipient_slugs=['group_mail_list',]) 
+               desc="Recipients for a charter external review",
+               to_slugs=['ietf_announce',],
+               cc_slugs=['group_mail_list',], 
+              ) 
 
     mt_factory(slug='conflrev_requested',
                desc="Recipients for a stream manager's request for an IETF conflict review",
-               recipient_slugs=['iesg_secretary'])
-
-    mt_factory(slug='conflrev_requested_cc',
-               desc="Copied on a stream manager's request for an IETF conflict review",
-               recipient_slugs=['iesg',
-                                'doc_notify',
-                                'doc_affecteddoc_authors',
-                                'doc_affecteddoc_group_chairs',
-                                'doc_affecteddoc_notify',
-                               ])
+               to_slugs=['iesg_secretary'],
+               cc_slugs=['iesg',
+                         'doc_notify',
+                         'doc_affecteddoc_authors',
+                         'doc_affecteddoc_group_chairs',
+                         'doc_affecteddoc_notify',
+                        ],
+              )
 
     mt_factory(slug='conflrev_requested_iana',
-               desc="Recipients for IANA message when a stream manager requests an IETF conflict review",
-               recipient_slugs=['iana_eval',])
+               desc="Recipients for IANA message when a stream manager requests "
+                    "an IETF conflict review",
+               to_slugs=['iana_eval',])
 
     mt_factory(slug='doc_stream_changed',
                desc="Recipients for notification when a document's stream changes",
-               recipient_slugs=['stream_managers',
-                                'doc_notify',
-                               ])
+               to_slugs=['stream_managers',
+                         'doc_notify',
+                        ])
 
     mt_factory(slug='doc_stream_state_edited',
                desc="Recipients when the stream state of a document is manually edited",
-               recipient_slugs=['doc_group_chairs',
-                                'doc_group_delegates',
-                                'doc_shepherd',
-                                'doc_authors',
-                               ]) 
+               to_slugs=['doc_group_chairs',
+                         'doc_group_delegates',
+                         'doc_shepherd',
+                         'doc_authors',
+                        ]) 
 
     mt_factory(slug='group_milestones_edited',
                desc="Recipients when any of a group's milestones are edited",
-               recipient_slugs=['group_responsible_directors',
-                                'group_chairs',
-                               ])
+               to_slugs=['group_responsible_directors',
+                         'group_chairs',
+                        ])
                
     mt_factory(slug='group_approved_milestones_edited',
                desc="Recipients when the set of approved milestones for a group are edited",
-               recipient_slugs=['group_mail_list',
-                               ])
+               to_slugs=['group_mail_list',
+                        ])
 
     mt_factory(slug='doc_state_edited',
                desc="Recipients when a document's state is manually edited",
-               recipient_slugs=['doc_notify',
-                                'doc_ad',
-                                'doc_authors',
-                                'doc_shepherd',
-                                'doc_group_chairs',
-                                'doc_affecteddoc_authors',
-                                'doc_affecteddoc_group_chairs',
-                                'doc_affecteddoc_notify',
-                               ])
+               to_slugs=['doc_notify',
+                         'doc_ad',
+                         'doc_authors',
+                         'doc_shepherd',
+                         'doc_group_chairs',
+                         'doc_affecteddoc_authors',
+                         'doc_affecteddoc_group_chairs',
+                         'doc_affecteddoc_notify',
+                        ])
 
     mt_factory(slug='doc_iana_state_changed',
                desc="Recipients when IANA state information for a document changes ",
-               recipient_slugs=['doc_notify',
-                                'doc_ad',
-                                'doc_authors',
-                                'doc_shepherd',
-                                'doc_group_chairs',
-                                'doc_affecteddoc_authors',
-                                'doc_affecteddoc_group_chairs',
-                                'doc_affecteddoc_notify',
-                               ])
+               to_slugs=['doc_notify',
+                         'doc_ad',
+                         'doc_authors',
+                         'doc_shepherd',
+                         'doc_group_chairs',
+                         'doc_affecteddoc_authors',
+                         'doc_affecteddoc_group_chairs',
+                         'doc_affecteddoc_notify',
+                        ])
 
     mt_factory(slug='doc_telechat_details_changed',
-               desc="Recipients when a document's telechat date or other telechat specific details are changed",
-               recipient_slugs=['iesg',
-                                'iesg_secretary',
-                                'doc_notify',
-                                'doc_authors',
-                                'doc_shepherd',
-                                'doc_group_chairs',
-                                'doc_affecteddoc_authors',
-                                'doc_affecteddoc_group_chairs',
-                                'doc_affecteddoc_notify',
-                               ])
+               desc="Recipients when a document's telechat date or other "
+                    "telechat specific details are changed",
+               to_slugs=['iesg',
+                         'iesg_secretary',
+                         'doc_notify',
+                         'doc_authors',
+                         'doc_shepherd',
+                         'doc_group_chairs',
+                         'doc_affecteddoc_authors',
+                         'doc_affecteddoc_group_chairs',
+                         'doc_affecteddoc_notify',
+                        ])
 
     mt_factory(slug='doc_pulled_from_rfc_queue',
-               desc="Recipients when a document is taken out of the RFC's editor queue before publication",
-               recipient_slugs=['iana',
-                                'rfc_editor',
-                               ])
-
-    mt_factory(slug='doc_pulled_from_rfc_queue_cc',
-               desc="Recipients when a document is taken out of the RFC's editor queue before publication",
-               recipient_slugs=['iesg_secretary',
-                                'doc_ad', 
-                                'doc_notify',
-                                'doc_authors',
-                                'doc_shepherd',
-                                'doc_group_chairs',
-                               ])
+               desc="Recipients when a document is taken out of the RFC's editor queue "
+                    "before publication",
+               to_slugs=['iana',
+                         'rfc_editor',
+                        ],
+               cc_slugs=['iesg_secretary',
+                         'doc_ad', 
+                         'doc_notify',
+                         'doc_authors',
+                         'doc_shepherd',
+                         'doc_group_chairs',
+                        ],
+              )
 
     mt_factory(slug='doc_replacement_changed',
                desc="Recipients when what a document replaces or is replaced by changes",
-               recipient_slugs=['doc_authors',
-                                'doc_notify',
-                                'doc_shepherd',
-                                'doc_group_chairs',
-                                'doc_group_responsible_directors',
-                               ]) 
+               to_slugs=['doc_authors',
+                         'doc_notify',
+                         'doc_shepherd',
+                         'doc_group_chairs',
+                         'doc_group_responsible_directors',
+                        ]) 
 
     mt_factory(slug='charter_state_edit_admin_needed',
-               desc="Recipients for message to adminstrators when a charter state edit needs followon administrative action",
-               recipient_slugs=['iesg_secretary'])
+               desc="Recipients for message to adminstrators when a charter state edit "
+                    "needs followon administrative action",
+               to_slugs=['iesg_secretary'])
 
     mt_factory(slug='group_closure_requested',
                desc="Recipients for message requesting closure of a group",
-               recipient_slugs=['iesg_secretary'])
+               to_slugs=['iesg_secretary'])
 
     mt_factory(slug='doc_expires_soon',
                desc="Recipients for notification of impending expiration of a document",
-               recipient_slugs=['doc_authors'])
-
-    mt_factory(slug='doc_expires_soon_cc',
-               desc="Copied on  notification of impending expiration of a document",
-               recipient_slugs=['doc_notify',
-                                'doc_shepherd',
-                                'doc_group_chairs',
-                                'doc_group_responsible_directors',
-                               ])
+               to_slugs=['doc_authors'],
+               cc_slugs=['doc_notify',
+                         'doc_shepherd',
+                         'doc_group_chairs',
+                         'doc_group_responsible_directors',
+                        ],
+              )
 
     mt_factory(slug='doc_expired',
                desc="Recipients for notification of a document's expiration",
-               recipient_slugs=['doc_authors'])
-
-    mt_factory(slug='doc_expired_cc',
-               desc="Copied on notification of a document's expiration",
-               recipient_slugs=['doc_notify',
-                                'doc_shepherd',
-                                'doc_group_chairs',
-                                'doc_group_responsible_directors',
-                               ])
+               to_slugs=['doc_authors'],
+               cc_slugs=['doc_notify',
+                         'doc_shepherd',
+                         'doc_group_chairs',
+                         'doc_group_responsible_directors',
+                        ],
+              )
 
     mt_factory(slug='resurrection_requested',
                desc="Recipients of a request to change the state of a draft away from 'Dead'",
-               recipient_slugs=['internet_draft_requests',])
+               to_slugs=['internet_draft_requests',])
 
     mt_factory(slug='resurrection_completed',
                desc="Recipients when a draft resurrection request has been completed",
-               recipient_slugs=['iesg_secretary',
-                                'doc_ad',
-                               ])
+               to_slugs=['iesg_secretary',
+                         'doc_ad',
+                        ])
 
     mt_factory(slug='sub_manual_post_requested',
                desc="Recipients for a manual post request for a draft submission",
-               recipient_slugs=['internet_draft_requests',
-                               ])
-
-    mt_factory(slug='sub_manual_post_requested_cc',
-               desc="Copied on a manual post request for a draft submission",
-               recipient_slugs=['submission_submitter',
-                                'submission_authors',
-                                'submission_group_chairs',
-                               ])
+               to_slugs=['internet_draft_requests',],
+               cc_slugs=['submission_submitter',
+                         'submission_authors',
+                         'submission_group_chairs',
+                        ],
+              )
 
     mt_factory(slug='sub_chair_approval_requested',
-               desc="Recipients for a message requesting group chair approval of a draft submission",
-               recipient_slugs=['submission_group_chairs',])
+               desc="Recipients for a message requesting group chair approval of "
+                    "a draft submission",
+               to_slugs=['submission_group_chairs',])
 
     mt_factory(slug='sub_confirmation_requested',
                desc="Recipients for a message requesting confirmation of a draft submission",
-               recipient_slugs=['submission_confirmers',])
+               to_slugs=['submission_confirmers',])
 
     mt_factory(slug='sub_management_url_requested',
                desc="Recipients for a message with the full URL for managing a draft submission",
-               recipient_slugs=['submission_confirmers',])
+               to_slugs=['submission_confirmers',])
 
     mt_factory(slug='sub_announced',
                desc="Recipients for the announcement of a successfully submitted draft",
-               recipient_slugs=['ietf_announce',
-                               ])
-
-    mt_factory(slug='sub_announced_cc',
-               desc="Copied on the announcement of a successfully submitted draft",
-               recipient_slugs=['submission_group_mail_list',
-                               ])
+               to_slugs=['ietf_announce',
+                        ],
+               cc_slugs=['submission_group_mail_list',
+                        ],
+              )
 
     mt_factory(slug='sub_announced_to_authors',
-               desc="Recipients for the announcement to the authors of a successfully submitted draft",
-               recipient_slugs=['submission_authors',
-                                'submission_confirmers',
-                               ])
+               desc="Recipients for the announcement to the authors of a successfully "
+                    "submitted draft",
+               to_slugs=['submission_authors',
+                         'submission_confirmers',
+                        ])
 
     mt_factory(slug='sub_new_version',
                desc="Recipients for notification of a new version of an existing document",
-               recipient_slugs=['doc_notify',
-                                'doc_ad',
-                                'non_ietf_stream_manager',
-                                'rfc_editor_if_doc_in_queue',
-                                'doc_discussing_ads',
-                               ])
+               to_slugs=['doc_notify',
+                         'doc_ad',
+                         'non_ietf_stream_manager',
+                         'rfc_editor_if_doc_in_queue',
+                         'doc_discussing_ads',
+                        ])
 
     mt_factory(slug='milestone_review_reminder',
                desc="Recipients for reminder message that unapproved milestone changes need review",
-               recipient_slugs=['group_responsible_directors',
-                               ])
-
-    mt_factory(slug='milestone_review_reminder_cc',
-               desc="Copied on reminder message that unapproved milestone changes need review",
-               recipient_slugs=['group_chairs',
-                               ])
+               to_slugs=['group_responsible_directors',],
+               cc_slugs=['group_chairs', ],
+              )
 
     mt_factory(slug='milestones_due_soon',
-               desc='Recipients for reminder message for milestones about to become overdue',
-               recipient_slugs=['group_chairs',
-                               ])
+               desc="Recipients for reminder message for milestones about to become overdue",
+               to_slugs=['group_chairs', ])
 
     mt_factory(slug='milestones_overdue',
-               desc='Recipients for message about milestones that are overdue',
-               recipient_slugs=['group_chairs',
-                               ])
+               desc="Recipients for message about milestones that are overdue",
+               to_slugs=['group_chairs', ])
 
     mt_factory(slug='group_personnel_change',
                desc="Recipients for a message noting changes in a group's personnel",
-               recipient_slugs=['iesg_secretary',
-                                'group_responsible_directors',
-                                'group_chairs',
-                                'group_changed_personnel',
-                               ])
+               to_slugs=['iesg_secretary',
+                         'group_responsible_directors',
+                         'group_chairs',
+                         'group_changed_personnel',
+                        ])
 
     mt_factory(slug='session_requested',
                desc="Recipients for a normal meeting session request",
-               recipient_slugs=['session_requests',
-                               ]) 
-
-    mt_factory(slug='session_requested_cc',
-               desc="Copied on a normal meeting session request",
-               recipient_slugs=['group_mail_list',
-                                'group_chairs',
-                                'group_responsible_directors',
-                                'logged_in_person',
-                               ]) 
+               to_slugs=['session_requests', ], 
+               cc_slugs=['group_mail_list',
+                         'group_chairs',
+                         'group_responsible_directors',
+                         'logged_in_person',
+                        ],
+              ) 
 
     mt_factory(slug='session_requested_long',
                desc="Recipients for a meeting session request for more than 2 sessions",
-               recipient_slugs=['group_responsible_directors',
-                               ])
-     
-    mt_factory(slug='session_requested_long_cc',
-               desc="Copied on a meeting session request for more than 2 sessions",
-               recipient_slugs=['session_requests',
-                                'group_chairs',
-                                'logged_in_person',
-                               ])
+               to_slugs=['group_responsible_directors', ],
+               cc_slugs=['session_requests',
+                         'group_chairs',
+                         'logged_in_person',
+                               ],
+              )
 
     mt_factory(slug='session_request_cancelled',
                desc="Recipients for a message cancelling a session request",
-               recipient_slugs=['session_requests',
-                               ])
-
-    mt_factory(slug='session_request_cancelled_cc',
-               desc="Copied on a message cancelling a session request",
-               recipient_slugs=['group_mail_list',
-                                'group_chairs',
-                                'group_responsible_directors',
-                                'logged_in_person',
-                               ]) 
+               to_slugs=['session_requests', ],
+               cc_slugs=['group_mail_list',
+                         'group_chairs',
+                         'group_responsible_directors',
+                         'logged_in_person',
+                        ],
+              )
 
     mt_factory(slug='session_request_not_meeting',
                desc="Recipients for a message noting a group plans to not meet",
-               recipient_slugs=['session_requests',
-                               ])
-
-    mt_factory(slug='session_request_not_meeting_cc',
-               desc="Copied on a message noting a group plans to not meet",
-               recipient_slugs=['group_mail_list',
-                                'group_chairs',
-                                'group_responsible_directors',
-                                'logged_in_person',
-                               ]) 
+               to_slugs=['session_requests', ],
+               cc_slugs=['group_mail_list',
+                         'group_chairs',
+                         'group_responsible_directors',
+                         'logged_in_person',
+                        ], 
+              )
 
     mt_factory(slug='session_scheduled',
                desc="Recipients for details when a session has been scheduled",
-               recipient_slugs=['session_requester',
-                                'group_chairs',
-                               ])
-
-    mt_factory(slug='session_scheduled_cc',
-               desc="Recipients for details when a session has been scheduled",
-               recipient_slugs=['group_mail_list',
-                                'group_responsible_directors',
-                               ])
+               to_slugs=['session_requester',
+                         'group_chairs',
+                        ],
+               cc_slugs=['group_mail_list',
+                         'group_responsible_directors',
+                        ],
+              )
 
     mt_factory(slug='ipr_disclosure_submitted',
                desc="Recipients when an IPR disclosure is submitted",
-               recipient_slugs=['ipr_requests',
-                               ])
+               to_slugs=['ipr_requests', ])
 
     mt_factory(slug='ipr_disclosure_followup',
                desc="Recipients when the secretary follows up on an IPR disclosure submission",
-               recipient_slugs=['ipr_submitter',
-                               ])
-
-    mt_factory(slug='ipr_disclosure_followup_cc',
-               desc="Copied when the secretary follows up on an IPR disclosure submission",
-               recipient_slugs=[])
+               to_slugs=['ipr_submitter', ],)
 
     mt_factory(slug='ipr_posting_confirmation',
                desc="Recipients for a message confirming that a disclosure has been posted",
-               recipient_slugs=['ipr_submitter',
-                               ])
-
-    mt_factory(slug='ipr_posting_confirmation_cc',
-               desc="Copied on a message confirming that a disclosure has been posted",
-               recipient_slugs=['ipr_updatedipr_contacts',
-                                'ipr_updatedipr_holders',
-                               ])
+               to_slugs=['ipr_submitter', ],
+               cc_slugs=['ipr_updatedipr_contacts',
+                         'ipr_updatedipr_holders',
+                        ],
+              )
 
     mt_factory(slug='ipr_posted_on_doc',
                desc="Recipients when an IPR disclosure calls out a given document",
-               recipient_slugs=['doc_authors',
-                               ]) 
-
-    mt_factory(slug='ipr_posted_on_doc_cc',
-               desc="Copied when an IPR disclosure calls out a given document",
-               recipient_slugs=['doc_ipr_group_or_ad',
-                                'ipr_announce',
-                               ]) 
+               to_slugs=['doc_authors', ], 
+               cc_slugs=['doc_ipr_group_or_ad',
+                         'ipr_announce',
+                        ], 
+              )
 
     mt_factory(slug='liaison_statement_posted',
                desc="Recipient for a message when a new liaison statement is posted",
-               recipient_slugs=['liaison_to_contact',
-                               ])
-
-    mt_factory(slug='liaison_statement_posted_cc',
-               desc="Copied on a message when a new liaison statement is posted",
-               recipient_slugs=['liaison_cc',
-                                'liaison_technical_contact',
-                                'liaison_response_contact',
-                               ])
+               to_slugs=['liaison_to_contact', ],
+               cc_slugs=['liaison_cc',
+                         'liaison_technical_contact',
+                         'liaison_response_contact',
+                        ],
+              )
 
     mt_factory(slug='liaison_approval_requested',
                desc="Recipients for a message that a pending liaison statement needs approval",
-               recipient_slugs=['liaison_statements_list',
-                               ])
+               to_slugs=['liaison_statements_list',
+                        ])
 
     mt_factory(slug='liaison_deadline_soon',
-               desc="Recipients for a message about a liaison statement deadline that is approaching.",
-               recipient_slugs=['liaison_to_contact',
-                               ])
-
-    mt_factory(slug='liaison_deadline_soon_cc',
-               desc="Copied on a message about a liaison statement deadline that is approaching.",
-               recipient_slugs=['liaison_cc',
-                                'liaison_technical_contact',
-                                'liaison_response_contact',
-                               ])
+               desc="Recipients for a message about a liaison statement deadline that is "
+                    "approaching.",
+               to_slugs=['liaison_to_contact',
+                        ],
+               cc_slugs=['liaison_cc',
+                         'liaison_technical_contact',
+                         'liaison_response_contact',
+                        ],
+              )
 
     mt_factory(slug='liaison_manager_update_request',
                desc="Recipients for a message requesting an updated list of authorized individuals",
-               recipient_slugs=['liaison_manager',
-                               ])
+               to_slugs=['liaison_manager', ])
 
     mt_factory(slug='nomination_received',
                desc="Recipients for a message noting a new nomination has been received",
-               recipient_slugs=['nomcom_chair',
-                               ])
+               to_slugs=['nomcom_chair', ])
 
     mt_factory(slug='nomination_receipt_requested',
                desc="Recipients for a message confirming a nomination was made",
-               recipient_slugs=['nominator', 
-                               ])
+               to_slugs=['nominator', ])
 
     mt_factory(slug='nomcom_comment_receipt_requested',
                desc="Recipients for a message confirming a comment was made",
-               recipient_slugs=['commenter', 
-                               ])
+               to_slugs=['commenter', ])
 
     mt_factory(slug='nomination_created_person',
                desc="Recipients for a message noting that a nomination caused a "
                      "new Person record to be created in the datatracker",
-               recipient_slugs=['ietf_secretariat',
-                                'nomcom_chair',
-                               ])
+               to_slugs=['ietf_secretariat',
+                         'nomcom_chair',
+                        ],
+              )
+
     mt_factory(slug='nomination_new_nominee',
                desc="Recipients the first time a person is nominated for a position, "
                      "asking them to accept or decline the nomination",
-               recipient_slugs=['nominee',
-                               ])
+               to_slugs=['nominee', ])
 
     mt_factory(slug='nomination_accept_reminder',
                desc="Recipeints of message reminding a nominee to accept or decline a nomination",
-               recipient_slugs=['nominee',
-                               ])
+               to_slugs=['nominee', ])
 
     mt_factory(slug='nomcom_questionnaire',
                desc="Recipients for the questionairre that nominees should complete",
-               recipient_slugs=['nominee',
-                               ])
+               to_slugs=['nominee', ])
 
     mt_factory(slug='nomcom_questionnaire_reminder',
-               desc="Recipients for a message reminding a nominee to return a completed questionairre response",
-               recipient_slugs=['nominee',
-                               ])
+               desc="Recipients for a message reminding a nominee to return a "
+                    "completed questionairre response",
+               to_slugs=['nominee', ])
 
 def forward(apps, schema_editor):
 

@@ -35,8 +35,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='mailtoken',
-            name='recipients',
-            field=models.ManyToManyField(to='mailtoken.Recipient', null=True, blank=True),
+            name='cc',
+            field=models.ManyToManyField(related_name='used_in_cc', null=True, to='mailtoken.Recipient', blank=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='mailtoken',
+            name='to',
+            field=models.ManyToManyField(related_name='used_in_to', null=True, to='mailtoken.Recipient', blank=True),
             preserve_default=True,
         ),
     ]

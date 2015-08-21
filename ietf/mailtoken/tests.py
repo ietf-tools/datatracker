@@ -13,12 +13,12 @@ class EventMailTests(TestCase):
         url = urlreverse('ietf.mailtoken.views.show_tokens')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('ballot_saved_cc' in r.content)
+        self.assertTrue('ballot_saved' in r.content)
    
-        url = urlreverse('ietf.mailtoken.views.show_tokens',kwargs=dict(mailtoken_slug='ballot_saved_cc'))
+        url = urlreverse('ietf.mailtoken.views.show_tokens',kwargs=dict(mailtoken_slug='ballot_saved'))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('ballot_saved_cc' in r.content)
+        self.assertTrue('ballot_saved' in r.content)
 
     def test_show_recipients(self):
 

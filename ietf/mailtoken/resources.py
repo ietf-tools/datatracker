@@ -20,14 +20,16 @@ class RecipientResource(ModelResource):
 api.mailtoken.register(RecipientResource())
 
 class MailTokenResource(ModelResource):
-    recipients      = ToManyField(RecipientResource, 'recipients', null=True)
+    to      = ToManyField(RecipientResource, 'to', null=True)
+    cc      = ToManyField(RecipientResource, 'cc', null=True)
     class Meta:
         queryset = MailToken.objects.all()
         #resource_name = 'mailtoken'
         filtering = { 
             "slug": ALL,
             "desc": ALL,
-            "recipients": ALL_WITH_RELATIONS,
+            "to": ALL_WITH_RELATIONS,
+            "cc": ALL_WITH_RELATIONS,
         }
 api.mailtoken.register(MailTokenResource())
 

@@ -20,11 +20,18 @@
     {% for mailtoken in mailtokens %}
         <tr>
           <td><span title="{{mailtoken.desc}}">{{mailtoken.slug}}</span></td>
-          <td>
-            {% for recipient in mailtoken.recipients.all %}
+          <td>To: 
+            {% for recipient in mailtoken.to.all %}
               {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
               <a href="{% url 'ietf.mailtoken.views.show_recipients' recipient.slug %}" title="{{recipient.desc}}">{{recipient.slug}}</a>{% if not forloop.last %}, {% endif %}
             {% endfor %}
+            {% if mailtoken.cc.exists %}
+              <br/>Cc:
+              {% for recipient in mailtoken.cc.all %}
+                {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
+                <a href="{% url 'ietf.mailtoken.views.show_recipients' recipient.slug %}" title="{{recipient.desc}}">{{recipient.slug}}</a>{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            {% endif %}
           </td>
         </tr>
     {% endfor %}

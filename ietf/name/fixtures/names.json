@@ -4777,7 +4777,13 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "doc_notify",
+   "group_chairs",
+   "group_mail_list",
+   "group_steering_group"
+  ],
+  "to": [
    "ietf_announce"
   ],
   "desc": "Recipients when a charter is approved"
@@ -4787,20 +4793,12 @@
 },
 {
  "fields": {
-  "recipients": [
-   "doc_notify",
-   "group_chairs",
-   "group_mail_list",
-   "group_steering_group"
+  "cc": [
+   "iana",
+   "iesg",
+   "ietf_announce"
   ],
-  "desc": "Copied when a charter is approved"
- },
- "model": "mailtoken.mailtoken",
- "pk": "ballot_approved_charter_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "to": [
    "conflict_review_steering_group",
    "conflict_review_stream_manager",
    "doc_affecteddoc_authors",
@@ -4815,29 +4813,7 @@
 },
 {
  "fields": {
-  "recipients": [
-   "iana",
-   "iesg",
-   "ietf_announce"
-  ],
-  "desc": "Copied when a conflict review ballot is approved"
- },
- "model": "mailtoken.mailtoken",
- "pk": "ballot_approved_conflrev_cc"
-},
-{
- "fields": {
-  "recipients": [
-   "ietf_announce"
-  ],
-  "desc": "Recipients when an IETF stream document ballot is approved"
- },
- "model": "mailtoken.mailtoken",
- "pk": "ballot_approved_ietf_stream"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [
    "doc_ad",
    "doc_authors",
    "doc_group_chairs",
@@ -4847,14 +4823,18 @@
    "iesg",
    "rfc_editor"
   ],
-  "desc": "Copied when an IETF stream document ballot is approved"
+  "to": [
+   "ietf_announce"
+  ],
+  "desc": "Recipients when an IETF stream document ballot is approved"
  },
  "model": "mailtoken.mailtoken",
- "pk": "ballot_approved_ietf_stream_cc"
+ "pk": "ballot_approved_ietf_stream"
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "iana_approve"
   ],
   "desc": "Recipients for IANA message when an IETF stream document ballot is approved"
@@ -4864,7 +4844,14 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "doc_affecteddoc_group_chairs",
+   "doc_affecteddoc_notify",
+   "doc_notify",
+   "iesg",
+   "rfc_editor"
+  ],
+  "to": [
    "ietf_announce"
   ],
   "desc": "Recipients when a status change is approved"
@@ -4874,21 +4861,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "doc_affecteddoc_group_chairs",
-   "doc_affecteddoc_notify",
-   "doc_notify",
-   "iesg",
-   "rfc_editor"
-  ],
-  "desc": "Copied when a status change is approved"
- },
- "model": "mailtoken.mailtoken",
- "pk": "ballot_approved_status_change_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "conflict_review_stream_manager",
    "doc_affecteddoc_authors",
    "doc_affecteddoc_group_chairs",
@@ -4907,7 +4881,16 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "conflict_review_stream_manager",
+   "doc_affecteddoc_authors",
+   "doc_affecteddoc_group_chairs",
+   "doc_affecteddoc_notify",
+   "doc_authors",
+   "doc_group_chairs",
+   "doc_shepherd"
+  ],
+  "to": [
    "iesg"
   ],
   "desc": "Recipients when a new ballot position (with discusses, other blocking positions, or comments) is saved"
@@ -4917,23 +4900,10 @@
 },
 {
  "fields": {
-  "recipients": [
-   "conflict_review_stream_manager",
-   "doc_affecteddoc_authors",
-   "doc_affecteddoc_group_chairs",
-   "doc_affecteddoc_notify",
-   "doc_authors",
-   "doc_group_chairs",
-   "doc_shepherd"
+  "cc": [
+   "group_mail_list"
   ],
-  "desc": "Copied when a new ballot position (with discusses, other blocking positions, or comments) is saved"
- },
- "model": "mailtoken.mailtoken",
- "pk": "ballot_saved_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "to": [
    "ietf_announce"
   ],
   "desc": "Recipients for a charter external review"
@@ -4943,17 +4913,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "group_mail_list"
-  ],
-  "desc": "Copied on a charter external review"
- },
- "model": "mailtoken.mailtoken",
- "pk": "charter_external_review_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "iesg_secretary"
   ],
   "desc": "Recipients for message to adminstrators when a charter state edit needs followon administrative action"
@@ -4963,7 +4924,14 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "doc_affecteddoc_authors",
+   "doc_affecteddoc_group_chairs",
+   "doc_affecteddoc_notify",
+   "doc_notify",
+   "iesg"
+  ],
+  "to": [
    "iesg_secretary"
   ],
   "desc": "Recipients for a stream manager's request for an IETF conflict review"
@@ -4973,21 +4941,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "doc_affecteddoc_authors",
-   "doc_affecteddoc_group_chairs",
-   "doc_affecteddoc_notify",
-   "doc_notify",
-   "iesg"
-  ],
-  "desc": "Copied on a stream manager's request for an IETF conflict review"
- },
- "model": "mailtoken.mailtoken",
- "pk": "conflrev_requested_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "iana_eval"
   ],
   "desc": "Recipients for IANA message when a stream manager requests an IETF conflict review"
@@ -4997,7 +4952,13 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "doc_group_chairs",
+   "doc_group_responsible_directors",
+   "doc_notify",
+   "doc_shepherd"
+  ],
+  "to": [
    "doc_authors"
   ],
   "desc": "Recipients for notification of a document's expiration"
@@ -5007,20 +4968,13 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
    "doc_group_chairs",
    "doc_group_responsible_directors",
    "doc_notify",
    "doc_shepherd"
   ],
-  "desc": "Copied on notification of a document's expiration"
- },
- "model": "mailtoken.mailtoken",
- "pk": "doc_expired_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "to": [
    "doc_authors"
   ],
   "desc": "Recipients for notification of impending expiration of a document"
@@ -5030,20 +4984,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "doc_group_chairs",
-   "doc_group_responsible_directors",
-   "doc_notify",
-   "doc_shepherd"
-  ],
-  "desc": "Copied on  notification of impending expiration of a document"
- },
- "model": "mailtoken.mailtoken",
- "pk": "doc_expires_soon_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "doc_ad",
    "doc_affecteddoc_authors",
    "doc_affecteddoc_group_chairs",
@@ -5060,7 +5002,15 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "doc_ad",
+   "doc_authors",
+   "doc_group_chairs",
+   "doc_notify",
+   "doc_shepherd",
+   "iesg_secretary"
+  ],
+  "to": [
    "iana",
    "rfc_editor"
   ],
@@ -5071,22 +5021,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "doc_ad",
-   "doc_authors",
-   "doc_group_chairs",
-   "doc_notify",
-   "doc_shepherd",
-   "iesg_secretary"
-  ],
-  "desc": "Recipients when a document is taken out of the RFC's editor queue before publication"
- },
- "model": "mailtoken.mailtoken",
- "pk": "doc_pulled_from_rfc_queue_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "doc_authors",
    "doc_group_chairs",
    "doc_group_responsible_directors",
@@ -5100,7 +5036,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "doc_ad",
    "doc_affecteddoc_authors",
    "doc_affecteddoc_group_chairs",
@@ -5117,7 +5054,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "doc_notify",
    "stream_managers"
   ],
@@ -5128,7 +5066,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "doc_authors",
    "doc_group_chairs",
    "doc_group_delegates",
@@ -5141,7 +5080,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "doc_affecteddoc_authors",
    "doc_affecteddoc_group_chairs",
    "doc_affecteddoc_notify",
@@ -5159,7 +5099,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "group_mail_list"
   ],
   "desc": "Recipients when the set of approved milestones for a group are edited"
@@ -5169,7 +5110,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "iesg_secretary"
   ],
   "desc": "Recipients for message requesting closure of a group"
@@ -5179,7 +5121,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "group_chairs",
    "group_responsible_directors"
   ],
@@ -5190,7 +5133,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "group_chairs",
    "group_changed_personnel",
    "group_responsible_directors",
@@ -5203,7 +5147,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "ipr_submitter"
   ],
   "desc": "Recipients when the secretary follows up on an IPR disclosure submission"
@@ -5213,15 +5158,8 @@
 },
 {
  "fields": {
-  "recipients": [],
-  "desc": "Copied when the secretary follows up on an IPR disclosure submission"
- },
- "model": "mailtoken.mailtoken",
- "pk": "ipr_disclosure_followup_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "ipr_requests"
   ],
   "desc": "Recipients when an IPR disclosure is submitted"
@@ -5231,7 +5169,11 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "doc_ipr_group_or_ad",
+   "ipr_announce"
+  ],
+  "to": [
    "doc_authors"
   ],
   "desc": "Recipients when an IPR disclosure calls out a given document"
@@ -5241,18 +5183,11 @@
 },
 {
  "fields": {
-  "recipients": [
-   "doc_ipr_group_or_ad",
-   "ipr_announce"
+  "cc": [
+   "ipr_updatedipr_contacts",
+   "ipr_updatedipr_holders"
   ],
-  "desc": "Copied when an IPR disclosure calls out a given document"
- },
- "model": "mailtoken.mailtoken",
- "pk": "ipr_posted_on_doc_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "to": [
    "ipr_submitter"
   ],
   "desc": "Recipients for a message confirming that a disclosure has been posted"
@@ -5262,18 +5197,10 @@
 },
 {
  "fields": {
-  "recipients": [
-   "ipr_updatedipr_contacts",
-   "ipr_updatedipr_holders"
+  "cc": [
+   "iesg_secretary"
   ],
-  "desc": "Copied on a message confirming that a disclosure has been posted"
- },
- "model": "mailtoken.mailtoken",
- "pk": "ipr_posting_confirmation_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "to": [
    "doc_authors",
    "doc_notify",
    "doc_shepherd",
@@ -5286,27 +5213,7 @@
 },
 {
  "fields": {
-  "recipients": [
-   "iesg_secretary"
-  ],
-  "desc": "Copied when a last call has expired"
- },
- "model": "mailtoken.mailtoken",
- "pk": "last_call_expired_cc"
-},
-{
- "fields": {
-  "recipients": [
-   "ietf_announce"
-  ],
-  "desc": "Recipients when a last call is issued"
- },
- "model": "mailtoken.mailtoken",
- "pk": "last_call_issued"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [
    "doc_ad",
    "doc_affecteddoc_authors",
    "doc_affecteddoc_group_chairs",
@@ -5316,14 +5223,18 @@
    "doc_notify",
    "doc_shepherd"
   ],
-  "desc": "Copied when a last call is issued"
+  "to": [
+   "ietf_announce"
+  ],
+  "desc": "Recipients when a last call is issued"
  },
  "model": "mailtoken.mailtoken",
- "pk": "last_call_issued_cc"
+ "pk": "last_call_issued"
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "iana_last_call"
   ],
   "desc": "Recipients for IANA message when a last call is issued"
@@ -5333,7 +5244,12 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "doc_ad",
+   "doc_notify",
+   "doc_shepherd"
+  ],
+  "to": [
    "iesg_secretary"
   ],
   "desc": "Recipients when AD requests a last call"
@@ -5343,19 +5259,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "doc_ad",
-   "doc_notify",
-   "doc_shepherd"
-  ],
-  "desc": "Copied when AD requests a last call"
- },
- "model": "mailtoken.mailtoken",
- "pk": "last_call_requested_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "liaison_statements_list"
   ],
   "desc": "Recipients for a message that a pending liaison statement needs approval"
@@ -5365,7 +5270,12 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "liaison_cc",
+   "liaison_response_contact",
+   "liaison_technical_contact"
+  ],
+  "to": [
    "liaison_to_contact"
   ],
   "desc": "Recipients for a message about a liaison statement deadline that is approaching."
@@ -5375,19 +5285,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "liaison_cc",
-   "liaison_response_contact",
-   "liaison_technical_contact"
-  ],
-  "desc": "Copied on a message about a liaison statement deadline that is approaching."
- },
- "model": "mailtoken.mailtoken",
- "pk": "liaison_deadline_soon_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "liaison_manager"
   ],
   "desc": "Recipients for a message requesting an updated list of authorized individuals"
@@ -5397,7 +5296,12 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "liaison_cc",
+   "liaison_response_contact",
+   "liaison_technical_contact"
+  ],
+  "to": [
    "liaison_to_contact"
   ],
   "desc": "Recipient for a message when a new liaison statement is posted"
@@ -5407,19 +5311,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "liaison_cc",
-   "liaison_response_contact",
-   "liaison_technical_contact"
-  ],
-  "desc": "Copied on a message when a new liaison statement is posted"
- },
- "model": "mailtoken.mailtoken",
- "pk": "liaison_statement_posted_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "group_chairs"
   ],
   "desc": "Recipients for reminder message for milestones about to become overdue"
@@ -5429,7 +5322,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "group_chairs"
   ],
   "desc": "Recipients for message about milestones that are overdue"
@@ -5439,7 +5333,10 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "group_chairs"
+  ],
+  "to": [
    "group_responsible_directors"
   ],
   "desc": "Recipients for reminder message that unapproved milestone changes need review"
@@ -5449,17 +5346,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "group_chairs"
-  ],
-  "desc": "Copied on reminder message that unapproved milestone changes need review"
- },
- "model": "mailtoken.mailtoken",
- "pk": "milestone_review_reminder_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "commenter"
   ],
   "desc": "Recipients for a message confirming a comment was made"
@@ -5469,7 +5357,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "nominee"
   ],
   "desc": "Recipients for the questionairre that nominees should complete"
@@ -5479,7 +5368,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "nominee"
   ],
   "desc": "Recipients for a message reminding a nominee to return a completed questionairre response"
@@ -5489,7 +5379,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "nominee"
   ],
   "desc": "Recipeints of message reminding a nominee to accept or decline a nomination"
@@ -5499,7 +5390,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "ietf_secretariat",
    "nomcom_chair"
   ],
@@ -5510,7 +5402,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "nominee"
   ],
   "desc": "Recipients the first time a person is nominated for a position, asking them to accept or decline the nomination"
@@ -5520,7 +5413,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "nominator"
   ],
   "desc": "Recipients for a message confirming a nomination was made"
@@ -5530,7 +5424,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "nomcom_chair"
   ],
   "desc": "Recipients for a message noting a new nomination has been received"
@@ -5540,7 +5435,13 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "doc_group_chairs",
+   "doc_notify",
+   "doc_shepherd",
+   "iesg_secretary"
+  ],
+  "to": [
    "doc_ad"
   ],
   "desc": "Recipients when a draft is submitted to the IESG"
@@ -5550,20 +5451,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "doc_group_chairs",
-   "doc_notify",
-   "doc_shepherd",
-   "iesg_secretary"
-  ],
-  "desc": "Copied when a draft is submitted to the IESG"
- },
- "model": "mailtoken.mailtoken",
- "pk": "pubreq_iesg_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "rfc_editor"
   ],
   "desc": "Recipients when a non-IETF stream manager requests publication"
@@ -5573,7 +5462,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "iana_approve"
   ],
   "desc": "Recipients for IANA message when a non-IETF stream manager requests publication"
@@ -5583,7 +5473,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "doc_ad",
    "iesg_secretary"
   ],
@@ -5594,7 +5485,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "internet_draft_requests"
   ],
   "desc": "Recipients of a request to change the state of a draft away from 'Dead'"
@@ -5604,7 +5496,13 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "group_chairs",
+   "group_mail_list",
+   "group_responsible_directors",
+   "logged_in_person"
+  ],
+  "to": [
    "session_requests"
   ],
   "desc": "Recipients for a normal meeting session request"
@@ -5614,20 +5512,12 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
    "group_chairs",
-   "group_mail_list",
-   "group_responsible_directors",
-   "logged_in_person"
+   "logged_in_person",
+   "session_requests"
   ],
-  "desc": "Copied on a normal meeting session request"
- },
- "model": "mailtoken.mailtoken",
- "pk": "session_requested_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "to": [
    "group_responsible_directors"
   ],
   "desc": "Recipients for a meeting session request for more than 2 sessions"
@@ -5637,19 +5527,13 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
    "group_chairs",
-   "logged_in_person",
-   "session_requests"
+   "group_mail_list",
+   "group_responsible_directors",
+   "logged_in_person"
   ],
-  "desc": "Copied on a meeting session request for more than 2 sessions"
- },
- "model": "mailtoken.mailtoken",
- "pk": "session_requested_long_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "to": [
    "session_requests"
   ],
   "desc": "Recipients for a message cancelling a session request"
@@ -5659,20 +5543,13 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
    "group_chairs",
    "group_mail_list",
    "group_responsible_directors",
    "logged_in_person"
   ],
-  "desc": "Copied on a message cancelling a session request"
- },
- "model": "mailtoken.mailtoken",
- "pk": "session_request_cancelled_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "to": [
    "session_requests"
   ],
   "desc": "Recipients for a message noting a group plans to not meet"
@@ -5682,20 +5559,11 @@
 },
 {
  "fields": {
-  "recipients": [
-   "group_chairs",
+  "cc": [
    "group_mail_list",
-   "group_responsible_directors",
-   "logged_in_person"
+   "group_responsible_directors"
   ],
-  "desc": "Copied on a message noting a group plans to not meet"
- },
- "model": "mailtoken.mailtoken",
- "pk": "session_request_not_meeting_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "to": [
    "group_chairs"
   ],
   "desc": "Recipients for details when a session has been scheduled"
@@ -5705,18 +5573,10 @@
 },
 {
  "fields": {
-  "recipients": [
-   "group_mail_list",
-   "group_responsible_directors"
+  "cc": [
+   "submission_group_mail_list"
   ],
-  "desc": "Recipients for details when a session has been scheduled"
- },
- "model": "mailtoken.mailtoken",
- "pk": "session_scheduled_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "to": [
    "ietf_announce"
   ],
   "desc": "Recipients for the announcement of a successfully submitted draft"
@@ -5726,17 +5586,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "submission_group_mail_list"
-  ],
-  "desc": "Copied on the announcement of a successfully submitted draft"
- },
- "model": "mailtoken.mailtoken",
- "pk": "sub_announced_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "submission_authors",
    "submission_confirmers"
   ],
@@ -5747,7 +5598,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "submission_group_chairs"
   ],
   "desc": "Recipients for a message requesting group chair approval of a draft submission"
@@ -5757,7 +5609,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "submission_confirmers"
   ],
   "desc": "Recipients for a message requesting confirmation of a draft submission"
@@ -5767,7 +5620,8 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "submission_confirmers"
   ],
   "desc": "Recipients for a message with the full URL for managing a draft submission"
@@ -5777,7 +5631,12 @@
 },
 {
  "fields": {
-  "recipients": [
+  "cc": [
+   "submission_authors",
+   "submission_group_chairs",
+   "submission_submitter"
+  ],
+  "to": [
    "internet_draft_requests"
   ],
   "desc": "Recipients for a manual post request for a draft submission"
@@ -5787,19 +5646,8 @@
 },
 {
  "fields": {
-  "recipients": [
-   "submission_authors",
-   "submission_group_chairs",
-   "submission_submitter"
-  ],
-  "desc": "Copied on a manual post request for a draft submission"
- },
- "model": "mailtoken.mailtoken",
- "pk": "sub_manual_post_requested_cc"
-},
-{
- "fields": {
-  "recipients": [
+  "cc": [],
+  "to": [
    "doc_ad",
    "doc_discussing_ads",
    "doc_notify",

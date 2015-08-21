@@ -8,7 +8,8 @@ from ietf.group.models import Role
 class MailToken(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     desc = models.TextField(blank=True)
-    recipients = models.ManyToManyField('Recipient', null=True, blank=True)
+    to   = models.ManyToManyField('Recipient', null=True, blank=True, related_name='used_in_to')
+    cc   = models.ManyToManyField('Recipient', null=True, blank=True, related_name='used_in_cc')
 
     class Meta:
         ordering = ["slug"]

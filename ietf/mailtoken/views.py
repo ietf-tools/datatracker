@@ -2,19 +2,21 @@
 
 from inspect import getsourcelines
 
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 
 from ietf.mailtoken.models import MailToken, Recipient
 
 def show_tokens(request, mailtoken_slug=None):
     mailtokens = MailToken.objects.all()
     if mailtoken_slug:
-        mailtokens = mailtokens.filter(slug=mailtoken_slug) # TODO better 404 behavior here and below
+        get_object_or_404(MailToken,slug=mailtoken_slug)
+        mailtokens = mailtokens.filter(slug=mailtoken_slug) 
     return render(request,'mailtoken/token.html',{'mailtoken_slug':mailtoken_slug,
                                                   'mailtokens':mailtokens})
 def show_recipients(request, recipient_slug=None):
     recipients = Recipient.objects.all()
     if recipient_slug:
+        get_object_or_404(Recipient,slug=recipient_slug)
         recipients = recipients.filter(slug=recipient_slug)
     for recipient in recipients:
         fname = 'gather_%s'%recipient.slug
