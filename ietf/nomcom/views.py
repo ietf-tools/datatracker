@@ -324,6 +324,7 @@ def nominate(request, year, public):
         if form.is_valid():
             form.save()
             message = ('success', 'Your nomination has been registered. Thank you for the nomination.')
+            form = NominateForm(nomcom=nomcom, user=request.user, public=public)
     else:
         form = NominateForm(nomcom=nomcom, user=request.user, public=public)
 
@@ -383,6 +384,8 @@ def feedback(request, year, public):
         if form.is_valid():
             form.save()
             message = ('success', 'Your feedback has been registered.')
+            form = FeedbackForm(nomcom=nomcom, user=request.user, public=public,
+                                position=position, nominee=nominee)
     else:
         form = FeedbackForm(nomcom=nomcom, user=request.user, public=public,
                             position=position, nominee=nominee)
