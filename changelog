@@ -43,7 +43,7 @@ ietfdb (6.4.1) ietf; urgency=medium
 
   * Improved the verification of submitted file extensions and mimetype.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  23 Aug 2015 19:15:30 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Aug 2015 19:41:24 +0000
 
 
 ietfdb (6.4.0) ietf; urgency=medium
