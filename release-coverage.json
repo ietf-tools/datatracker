@@ -22335,7 +22335,7 @@
   }, 
   "6.4.1": {
     "code": {
-      "coverage": 0.6865782809474155, 
+      "coverage": 0.6865666083199881, 
       "covered": {
         "ietf/__init__": [
           6, 
@@ -23174,8 +23174,8 @@
           1.0
         ], 
         "ietf/release/views": [
-          44, 
-          0.9772727272727273
+          43, 
+          0.9767441860465117
         ], 
         "ietf/secr/__init__": [
           4, 
@@ -24237,7 +24237,7 @@
         "utils/header_change_content.txt": false
       }
     }, 
-    "time": "2015-08-23T19:05:38Z", 
+    "time": "2015-08-23T19:31:50Z", 
     "url": {
       "coverage": 0.586, 
       "covered": {
