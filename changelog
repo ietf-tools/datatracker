@@ -1,3 +1,51 @@
+ietfdb (6.4.1) ietf; urgency=medium
+
+  This is a minor release with various enhancements and bugfixes:
+
+  * Merged in [10026] from rcross@amsl.com:
+    Fixed an issue with the select2-field.js path in templates.   
+
+  * Merged in [10004] from rjsparks@nostrum.com:
+    Return new forms instead of validated forms for nomcom nominations and 
+    feedback. Fixes #1703.  
+
+  * Merged in [9996] from olau@iola.dk:
+    Fixed missing save button when deleting milestones. Fixes #1762. 
+
+  * Merged in [10002] from rjsparks@nostrum.com:
+    Added a checkbox to the nomination form to indicate permission to nomcom 
+    to share the nominator's name with the nominee.  
+
+  * Added a migration for the Nomination.share_nominator field.
+
+  * Merged in [9989] from rjsparks@nostrum.com:
+    Restored the color bands to the email-alias page.  
+
+  * Merged in [9966],[9967],[9968],[9969] from lars@netapp.com:
+    Fixed HTML errors.
+
+  * Fixed the day-of-week agenda links to not pull the agenda up so high 
+    that the start of the day is obscured by the top navbar.
+
+  * Merged in [9669] from olau@iola.dk:
+    Makede the meeting agenda code use the historic info available for groups.
+    In the process, added some select_related/prefetch_related code to cut the
+    number of database queries in the agenda down from 4000-5000 to about 50.
+    Rewritten agenda CSV code to use Python arrays rather than a template for
+    improved readability/reuse. Rewritten week view to assemble its data in
+    Python. Plus a few other minor cleanups, e.g. lame_description is now
+    gone.  Fixes #1088.
+
+  * Added a very simple html version of the json API, to make it easier to 
+    explore the api manually.
+
+  * Makede the selenium tests work with statifiles.
+
+  * Improved the verification of submitted file extensions and mimetype.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Aug 2015 19:15:30 +0000
+
+
 ietfdb (6.4.0) ietf; urgency=medium
 
   **Serve static assets via CDN**
@@ -576,8 +624,8 @@ ietfdb (5.13.1) ietf; urgency=medium
   * Fixed style attributes which resulted in red text on red background for
     some error messages
 
-  * Buildbot changes: Separated out the schedulers for trunk, personal/ * and
-    branch/ *.  Corrected regex patterns which extract unittest details.  Added
+  * Buildbot changes: Separated out the schedulers for trunk, personal/\*and
+    branch/\*.  Corrected regex patterns which extract unittest details.  Added
     a first tentative email notifier.  Added ForceSchedulers, in order to be
     able to force builds.
 
