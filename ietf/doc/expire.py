@@ -10,8 +10,7 @@ from ietf.doc.models import Document, DocEvent, State, save_document_in_history,
 from ietf.person.models import Person 
 from ietf.meeting.models import Meeting
 from ietf.doc.utils import add_state_change_event
-from ietf.mailtoken.utils import gather_address_list
-
+from ietf.mailtoken.utils import gather_address_lists
 
 
 def expirable_draft(draft):
@@ -71,8 +70,7 @@ def send_expire_warning_for_draft(doc):
 
     expiration = doc.expires.date()
 
-    to = gather_address_list('doc_expires_soon',doc=doc)
-    cc = gather_address_list('doc_expires_soon_cc',doc=doc)
+    (to,cc) = gather_address_lists('doc_expires_soon',doc=doc)
 
     s = doc.get_state("draft-iesg")
     state = s.name if s else "I-D Exists"
@@ -97,8 +95,7 @@ def send_expire_notice_for_draft(doc):
     state = s.name if s else "I-D Exists"
 
     request = None
-    to = gather_address_list('doc_expired',doc=doc)
-    cc = gather_address_list('doc_expired_cc',doc=doc)
+    (to,cc) = gather_address_lists('doc_expired',doc=doc)
     send_mail(request, to,
               "I-D Expiring System <ietf-secretariat-reply@ietf.org>",
               u"I-D was expired %s" % doc.file_tag(),

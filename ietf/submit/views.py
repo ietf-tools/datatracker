@@ -23,7 +23,7 @@ from ietf.submit.utils import check_idnits, found_idnits, validate_submission, c
 from ietf.submit.utils import post_submission, cancel_submission, rename_submission_files
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 from ietf.utils.draft import Draft
-from ietf.mailtoken.utils import gather_address_list
+from ietf.mailtoken.utils import gather_address_lists
 
 
 def upload_submission(request):
@@ -181,7 +181,9 @@ def submission_status(request, submission_id, access_token=None):
     can_force_post = is_secretariat and submission.state.next_states.filter(slug="posted")
     show_send_full_url = not key_matched and not is_secretariat and submission.state_id not in ("cancel", "posted")
 
-    confirmation_list = gather_address_list('sub_confirmation_requested',submission=submission)
+    addrs = gather_address_lists('sub_confirmation_requested',submission=submission)
+    confirmation_list = addrs.to
+    confirmation_list.extend(addrs.cc)
 
     requires_group_approval = (submission.rev == '00' and submission.group and submission.group.type_id in ("wg", "rg", "ietf", "irtf", "iab", "iana", "rfcedtyp") and not Preapproval.objects.filter(name=submission.name).exists())
 

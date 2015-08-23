@@ -12,10 +12,10 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.group.models import Group
 from ietf.group.utils import milestone_reviewer_for_group_type
-from ietf.mailtoken.utils import gather_address_list
+from ietf.mailtoken.utils import gather_address_lists
 
 def email_admin_re_charter(request, group, subject, text, mailtoken):
-    to = gather_address_list(mailtoken,group=group)
+    (to,cc) = gather_address_lists(mailtoken,group=group)
     full_subject = u"Regarding %s %s: %s" % (group.type.name, group.acronym, subject)
     text = strip_tags(text)
 
@@ -25,17 +25,18 @@ def email_admin_re_charter(request, group, subject, text, mailtoken):
                    group=group,
                    group_url=settings.IDTRACKER_BASE_URL + group.about_url(),
                    charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=group.charter.name)) if group.charter else "[no charter]",
-                   )
-              )
+                   ),
+              cc=cc,
+             )
 
 def email_personnel_change(request, group, text, changed_personnel):
-    to = gather_address_list('group_personnel_change',group=group,changed_personnel=changed_personnel)
+    (to, cc) = gather_address_lists('group_personnel_change',group=group,changed_personnel=changed_personnel)
     full_subject = u"Personnel change for %s working group" % (group.acronym)
-    send_mail_text(request, to, None, full_subject,text)
+    send_mail_text(request, to, None, full_subject, text, cc=cc)
 
 
 def email_milestones_changed(request, group, changes):
-    def wrap_up_email(to, text):
+    def wrap_up_email(addrs, text):
 
         subject = u"Milestones changed for %s %s" % (group.acronym, group.type.name)
         if re.search("Added .* for review, due",text):
@@ -45,26 +46,25 @@ def email_milestones_changed(request, group, changes):
         text += "\n\n"
         text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + group.about_url())
 
-        send_mail_text(request, to, None, subject, text)
+        send_mail_text(request, addrs.to, None, subject, text, cc=addrs.cc)
 
     # first send to those who should see any edits (such as management and chairs)
-    to = gather_address_list('group_milestones_edited',group=group)
-    if to:
-        wrap_up_email(to, u"\n\n".join(c + "." for c in changes))
+    addrs = gather_address_lists('group_milestones_edited',group=group)
+    if addrs.to or addrs.cc:
+        wrap_up_email(addrs, u"\n\n".join(c + "." for c in changes))
 
     # then send only the approved milestones to those who shouldn't be 
     # bothered with milestones pending approval 
     review_re = re.compile("Added .* for review, due")
-    to = gather_address_list('group_approved_milestones_edited',group=group)
+    addrs = gather_address_lists('group_approved_milestones_edited',group=group)
     msg = u"\n\n".join(c + "." for c in changes if not review_re.match(c))
-    if to and msg:
-        wrap_up_email(to, msg)
+    if (addrs.to or addrs.cc) and msg:
+        wrap_up_email(addrs, msg)
 
 
 def email_milestone_review_reminder(group, grace_period=7):
     """Email reminders about milestones needing review to management."""
-    to = gather_address_list('milestone_review_reminder',group=group)
-    cc = gather_address_list('milestone_review_reminder_cc',group=group)
+    (to, cc) = gather_address_lists('milestone_review_reminder',group=group)
 
     if not to:
         return False
@@ -102,7 +102,7 @@ def groups_with_milestones_needing_review():
     return Group.objects.filter(groupmilestone__state="review").distinct()
 
 def email_milestones_due(group, early_warning_days):
-    to = gather_address_list('milestones_due_soon',group=group)
+    (to, cc) = gather_address_lists('milestones_due_soon',group=group)
 
     today = datetime.date.today()
     early_warning = today + datetime.timedelta(days=early_warning_days)
@@ -120,7 +120,9 @@ def email_milestones_due(group, early_warning_days):
                    today=today,
                    early_warning_days=early_warning_days,
                    url=settings.IDTRACKER_BASE_URL + group.about_url(),
-                   ))
+                   ),
+              cc=cc,
+             )
 
 def groups_needing_milestones_due_reminder(early_warning_days):
     """Return groups having milestones that are either
@@ -129,7 +131,7 @@ def groups_needing_milestones_due_reminder(early_warning_days):
     return Group.objects.filter(state="active", groupmilestone__due__in=[today, today + datetime.timedelta(days=early_warning_days)], groupmilestone__resolved="", groupmilestone__state="active").distinct()
 
 def email_milestones_overdue(group):
-    to = gather_address_list('milestones_overdue',group=group)
+    (to, cc) = gather_address_lists('milestones_overdue',group=group)
 
     today = datetime.date.today()
 
@@ -145,7 +147,9 @@ def email_milestones_overdue(group):
               dict(group=group,
                    milestones=milestones,
                    url=settings.IDTRACKER_BASE_URL + group.about_url(),
-                   ))
+                   ),
+              cc=cc,
+             )
 
 def groups_needing_milestones_overdue_reminder(grace_period=30):
     cut_off = datetime.date.today() - datetime.timedelta(days=grace_period)

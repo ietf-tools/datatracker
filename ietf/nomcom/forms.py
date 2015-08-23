@@ -20,7 +20,7 @@ from ietf.person.models import Email
 from ietf.person.fields import SearchableEmailField
 from ietf.utils.fields import MultiEmailField
 from ietf.utils.mail import send_mail
-from ietf.mailtoken.utils import gather_address_list
+from ietf.mailtoken.utils import gather_address_lists
 
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -408,12 +408,12 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
             if author:
                 subject = 'Nomination receipt'
                 from_email = settings.NOMCOM_FROM_EMAIL
-                to_email = gather_address_list('nomination_receipt_requested',nominator=author.address)
+                (to_email, cc) = gather_address_lists('nomination_receipt_requested',nominator=author.address)
                 context = {'nominee': nominee.email.person.name,
                           'comments': comments,
                           'position': position.name}
                 path = nomcom_template_path + NOMINATION_RECEIPT_TEMPLATE
-                send_mail(None, to_email, from_email, subject, path, context)
+                send_mail(None, to_email, from_email, subject, path, context, cc=cc)
 
         return nomination
 
@@ -526,12 +526,12 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
             if author:
                 subject = "NomCom comment confirmation"
                 from_email = settings.NOMCOM_FROM_EMAIL
-                to_email = gather_address_list('nomcom_comment_receipt_requested',commenter=author.address)
+                (to_email, cc) = gather_address_lists('nomcom_comment_receipt_requested',commenter=author.address)
                 context = {'nominee': self.nominee.email.person.name,
                            'comments': comments,
                            'position': self.position.name}
                 path = nomcom_template_path + FEEDBACK_RECEIPT_TEMPLATE
-                send_mail(None, to_email, from_email, subject, path, context)
+                send_mail(None, to_email, from_email, subject, path, context, cc=cc)
 
     class Meta:
         model = Feedback

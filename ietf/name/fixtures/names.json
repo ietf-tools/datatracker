@@ -4721,6 +4721,14 @@
 },
 {
  "fields": {
+  "template": null,
+  "desc": "The person that requested a meeting slot for a given group"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "session_requester"
+},
+{
+ "fields": {
   "template": "<session-request@ietf.org>",
   "desc": "The session request ticketing system"
  },
@@ -4845,6 +4853,7 @@
 {
  "fields": {
   "cc": [
+   "doc_affecteddoc_authors",
    "doc_affecteddoc_group_chairs",
    "doc_affecteddoc_notify",
    "doc_notify",
@@ -5038,6 +5047,20 @@
  "fields": {
   "cc": [],
   "to": [
+   "doc_group_chairs",
+   "doc_group_responsible_directors",
+   "doc_non_ietf_stream_manager",
+   "iesg_secretary"
+  ],
+  "desc": "Recipients for suggestions that this doc replaces or is replace by some other document"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_replacement_suggested"
+},
+{
+ "fields": {
+  "cc": [],
+  "to": [
    "doc_ad",
    "doc_affecteddoc_authors",
    "doc_affecteddoc_group_chairs",
@@ -5220,6 +5243,7 @@
    "doc_affecteddoc_notify",
    "doc_authors",
    "doc_group_chairs",
+   "doc_group_mail_list",
    "doc_notify",
    "doc_shepherd"
   ],
@@ -5564,7 +5588,8 @@
    "group_responsible_directors"
   ],
   "to": [
-   "group_chairs"
+   "group_chairs",
+   "session_requester"
   ],
   "desc": "Recipients for details when a session has been scheduled"
  },
@@ -5650,6 +5675,7 @@
   "to": [
    "doc_ad",
    "doc_discussing_ads",
+   "doc_non_ietf_stream_manager",
    "doc_notify",
    "rfc_editor_if_doc_in_queue"
   ],

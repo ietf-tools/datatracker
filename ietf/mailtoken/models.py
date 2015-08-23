@@ -252,3 +252,10 @@ class Recipient(models.Model):
             group=kwargs['group']
             addrs.extend(group.role_set.filter(name='liaiman').values_list('email__address',flat=True))
         return addrs
+
+    def gather_session_requester(self, **kwargs):
+        addrs=[]
+        if 'session' in kwargs:
+            session = kwargs['session']
+            addrs.append(session.requested_by.role_email('chair').address)
+        return addrs

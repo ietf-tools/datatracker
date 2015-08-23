@@ -79,7 +79,7 @@ def make_recipients(apps):
 
     rc(slug='conflict_review_stream_manager',
        desc="The stream manager of a document being reviewed for IETF stream conflicts",
-       template = None )
+       template=None )
 
     rc(slug='conflict_review_steering_group',
        desc="The steering group (e.g. IRSG) of a document being reviewed for IETF stream conflicts",
@@ -165,6 +165,10 @@ def make_recipients(apps):
        desc="The session request ticketing system",
        template='<session-request@ietf.org>')
 
+    rc(slug='session_requester',
+       desc="The person that requested a meeting slot for a given group",
+       template=None)
+
     rc(slug='logged_in_person',
        desc="The person currently logged into the datatracker who initiated a given action",
        template='{% if person and person.email_address %}<{{ person.email_address }}>{% endif %}')
@@ -241,6 +245,17 @@ def make_mailtokens(apps):
     MailToken=apps.get_model('mailtoken','MailToken')
 
     def mt_factory(slug,desc,to_slugs,cc_slugs=[]):
+
+        # Try to protect ourselves from typos
+        all_slugs = to_slugs[:]
+        all_slugs.extend(cc_slugs)
+        for recipient_slug in all_slugs:
+            try:
+                Recipient.objects.get(slug=recipient_slug)
+            except Recipient.DoesNotExist:
+                print "****Some rule tried to use",recipient_slug
+                raise
+
         m = MailToken.objects.create(slug=slug, desc=desc)
         m.to = Recipient.objects.filter(slug__in=to_slugs)
         m.cc = Recipient.objects.filter(slug__in=cc_slugs)
@@ -325,7 +340,7 @@ def make_mailtokens(apps):
                cc_slugs=['iesg',
                          'rfc_editor',
                          'doc_notify',
-                         'doc_affectddoc_authors',
+                         'doc_affecteddoc_authors',
                          'doc_affecteddoc_group_chairs',
                          'doc_affecteddoc_notify',
                         ],
@@ -347,7 +362,7 @@ def make_mailtokens(apps):
                          'doc_shepherd',
                          'doc_authors',
                          'doc_notify',
-                         'doc_group_list_email',
+                         'doc_group_mail_list',
                          'doc_group_chairs',
                          'doc_affecteddoc_authors',
                          'doc_affecteddoc_group_chairs',
@@ -577,7 +592,7 @@ def make_mailtokens(apps):
                desc="Recipients for notification of a new version of an existing document",
                to_slugs=['doc_notify',
                          'doc_ad',
-                         'non_ietf_stream_manager',
+                         'doc_non_ietf_stream_manager',
                          'rfc_editor_if_doc_in_queue',
                          'doc_discussing_ads',
                         ])
@@ -743,6 +758,16 @@ def make_mailtokens(apps):
                desc="Recipients for a message reminding a nominee to return a "
                     "completed questionairre response",
                to_slugs=['nominee', ])
+
+    mt_factory(slug='doc_replacement_suggested',
+               desc="Recipients for suggestions that this doc replaces or is replace by "
+                     "some other document",
+               to_slugs=['doc_group_chairs',
+                         'doc_group_responsible_directors',
+                         'doc_non_ietf_stream_manager',
+                         'iesg_secretary',
+                        ])
+
 
 def forward(apps, schema_editor):
 

@@ -15,7 +15,7 @@ from ietf.message.models import Message
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.mailtoken.utils import gather_addresses
+from ietf.mailtoken.utils import gather_address_lists
 
 
 class IprTests(TestCase):
@@ -537,11 +537,13 @@ I would like to revoke this declaration.
         self.assertTrue('joe@test.com' in outbox[0]['To'])
         
         # test process response uninteresting message
+        addrs = gather_address_lists('ipr_disclosure_submitted').as_strings()
         message_string = """To: {}
+Cc: {}
 From: joe@test.com
 Date: {}
 Subject: test
-""".format(gather_addresses('ipr_disclosure_submitted'),datetime.datetime.now().ctime())
+""".format(addrs.to, addrs.cc, datetime.datetime.now().ctime())
         result = process_response_email(message_string)
         self.assertIsNone(result)
         

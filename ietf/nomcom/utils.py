@@ -18,7 +18,7 @@ from django.utils.encoding import smart_str
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person
-from ietf.mailtoken.utils import gather_address_list
+from ietf.mailtoken.utils import gather_address_lists
 from ietf.utils.pipe import pipe
 from ietf.utils import unaccent
 from ietf.utils.mail import send_mail_text, send_mail
@@ -208,7 +208,7 @@ def send_accept_reminder_to_nominee(nominee_position):
     nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
     mail_path = nomcom_template_path + NOMINEE_ACCEPT_REMINDER_TEMPLATE
     nominee = nominee_position.nominee
-    to_email = gather_address_list('nomination_accept_reminder',nominee=nominee.email.address)
+    (to_email, cc) = gather_address_lists('nomination_accept_reminder',nominee=nominee.email.address)
 
     hash = get_hash_nominee_position(today, nominee_position.id)
     accept_url = reverse('nomcom_process_nomination_status',
@@ -234,7 +234,7 @@ def send_accept_reminder_to_nominee(nominee_position):
     body = render_to_string(mail_path, context)
     path = '%s%d/%s' % (nomcom_template_path, position.id, QUESTIONNAIRE_TEMPLATE)
     body += '\n\n%s' % render_to_string(path, context)
-    send_mail_text(None, to_email, from_email, subject, body)
+    send_mail_text(None, to_email, from_email, subject, body, cc=cc)
 
 def send_questionnaire_reminder_to_nominee(nominee_position):
     subject = 'Reminder: please complete the Nomcom questionnaires for your nomination.'
@@ -245,7 +245,7 @@ def send_questionnaire_reminder_to_nominee(nominee_position):
     nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
     mail_path = nomcom_template_path + NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE
     nominee = nominee_position.nominee
-    to_email = gather_address_list('nomcom_questionnaire_reminder',nominee=nominee.email.address)
+    (to_email,cc) = gather_address_lists('nomcom_questionnaire_reminder',nominee=nominee.email.address)
 
     context = {'nominee': nominee,
                'position': position,
@@ -254,7 +254,7 @@ def send_questionnaire_reminder_to_nominee(nominee_position):
     body = render_to_string(mail_path, context)
     path = '%s%d/%s' % (nomcom_template_path, position.id, QUESTIONNAIRE_TEMPLATE)
     body += '\n\n%s' % render_to_string(path, context)
-    send_mail_text(None, to_email, from_email, subject, body)
+    send_mail_text(None, to_email, from_email, subject, body, cc=cc)
 
 def send_reminder_to_nominees(nominees,type):
     addrs = []
@@ -295,18 +295,18 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
         # send email to secretariat and nomcomchair to warn about the new person
         subject = 'New person is created'
         from_email = settings.NOMCOM_FROM_EMAIL
-        to_email = gather_address_list('nomination_created_person',nomcom=nomcom)
+        (to_email, cc) = gather_address_lists('nomination_created_person',nomcom=nomcom)
         context = {'email': email.address,
                    'fullname': email.person.name,
                    'person_id': email.person.id}
         path = nomcom_template_path + INEXISTENT_PERSON_TEMPLATE
-        send_mail(None, to_email, from_email, subject, path, context)
+        send_mail(None, to_email, from_email, subject, path, context, cc=cc)
 
     if nominee_position_created:
         # send email to nominee
         subject = 'IETF Nomination Information'
         from_email = settings.NOMCOM_FROM_EMAIL
-        to_email = gather_address_list('nomination_new_nominee',nominee=email.address)
+        (to_email, cc) = gather_address_lists('nomination_new_nominee',nominee=email.address)
         domain = Site.objects.get_current().domain
         today = datetime.date.today().strftime('%Y%m%d')
         hash = get_hash_nominee_position(today, nominee_position.id)
@@ -332,13 +332,13 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
                    'decline_url': decline_url}
 
         path = nomcom_template_path + NOMINEE_EMAIL_TEMPLATE
-        send_mail(None, to_email, from_email, subject, path, context)
+        send_mail(None, to_email, from_email, subject, path, context, cc=cc)
 
         # send email to nominee with questionnaire
         if nomcom.send_questionnaire:
             subject = '%s Questionnaire' % position
             from_email = settings.NOMCOM_FROM_EMAIL
-            to_email = gather_address_list('nomcom_questionnaire',nominee=email.address)
+            (to_email, cc) = gather_address_lists('nomcom_questionnaire',nominee=email.address)
             context = {'nominee': email.person.name,
                       'position': position.name}
             path = '%s%d/%s' % (nomcom_template_path,
@@ -347,12 +347,12 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
             path = '%s%d/%s' % (nomcom_template_path,
                                 position.id, QUESTIONNAIRE_TEMPLATE)
             body += '\n\n%s' % render_to_string(path, context)
-            send_mail_text(None, to_email, from_email, subject, body)
+            send_mail_text(None, to_email, from_email, subject, body, cc=cc)
 
     # send emails to nomcom chair
     subject = 'Nomination Information'
     from_email = settings.NOMCOM_FROM_EMAIL
-    to_email = gather_address_list('nomination_received',nomcom=nomcom)
+    (to_email, cc) = gather_address_lists('nomination_received',nomcom=nomcom)
     context = {'nominee': email.person.name,
                'nominee_email': email.address,
                'position': position.name}
@@ -365,7 +365,7 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
                         'nominator_email': ''})
 
     path = nomcom_template_path + NOMINATION_EMAIL_TEMPLATE
-    send_mail(None, to_email, from_email, subject, path, context)
+    send_mail(None, to_email, from_email, subject, path, context, cc=cc)
 
     return nominee
 

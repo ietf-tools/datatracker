@@ -6,7 +6,7 @@ from django.conf import settings
 from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent, BallotPositionDocEvent
 from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
-from ietf.mailtoken.utils import gather_addresses
+from ietf.mailtoken.utils import gather_address_lists
 
 def charter_name_for_group(group):
     if group.type_id == "rg":
@@ -99,6 +99,7 @@ def default_action_text(group, charter, by):
     else:
         action = "Rechartered"
 
+    addrs = gather_address_lists('ballot_approved_charter',doc=charter,group=group).as_strings(compact=False)
     e = WriteupDocEvent(doc=charter, by=by)
     e.by = by
     e.type = "changed_action_announcement"
@@ -112,14 +113,15 @@ def default_action_text(group, charter, by):
                                    techadv=group.role_set.filter(name="techadv"),
                                    milestones=group.groupmilestone_set.filter(state="charter"),
                                    action_type=action,
-                                   to=gather_addresses('ballot_approved_charter',doc=charter,group=group),
-                                   cc=gather_addresses('ballot_approved_charter_cc',doc=charter,group=group),
+                                   to=addrs.to,
+                                   cc=addrs.cc,
                                    ))
 
     e.save()
     return e
 
 def default_review_text(group, charter, by):
+    addrs=gather_address_lists('charter_external_review',group=group).as_strings(compact=False)
     e = WriteupDocEvent(doc=charter, by=by)
     e.by = by
     e.type = "changed_review_announcement"
@@ -134,8 +136,8 @@ def default_review_text(group, charter, by):
                                    milestones=group.groupmilestone_set.filter(state="charter"),
                                    review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
                                    review_type="new" if group.state_id == "proposed" else "recharter",
-                                   to=gather_addresses('charter_external_review',group=group),
-                                   cc=gather_addresses('charter_external_review_cc',group=group)
+                                   to=addrs.to,
+                                   cc=addrs.cc,
                                    )
                               )
     e.save()

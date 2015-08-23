@@ -16,7 +16,7 @@ from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import groups_by_session
 from ietf.utils.mail import send_mail
 from ietf.person.models import Person
-from ietf.mailtoken.utils import gather_address_list
+from ietf.mailtoken.utils import gather_address_lists
 
 # -------------------------------------------------
 # Globals
@@ -113,8 +113,7 @@ def send_notification(group,meeting,login,session,action):
     session argument is a dictionary of fields from the session request form
     action argument is a string [new|update].
     '''
-    to_email = gather_address_list('session_requested',group=group,person=login)
-    cc_list = gather_address_list('session_requested_cc',group=group,person=login)
+    (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=login)
     from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
     subject = '%s - New Meeting Session Request for IETF %s' % (group.acronym, meeting.number)
     template = 'sreq/session_request_notification.txt'
@@ -137,8 +136,7 @@ def send_notification(group,meeting,login,session,action):
     # change headers TO=ADs, CC=session-request, submitter and cochairs
     if session.get('length_session3',None):
         context['session']['num_session'] = 3
-        to_email = gather_address_list('session_requested_long',group=group,person=login)
-        cc_list = gather_address_list('session_requested_long_cc',group=group,person=login)
+        (to_email, cc_list) = gather_address_lists('session_requested_long',group=group,person=login)
         subject = '%s - Request for meeting session approval for IETF %s' % (group.acronym, meeting.number)
         template = 'sreq/session_approval_notification.txt'
         #status_text = 'the %s Directors for approval' % group.parent
@@ -209,8 +207,7 @@ def cancel(request, acronym):
         session.scheduledsession_set.all().delete()
 
     # send notifitcation
-    to_email = gather_address_list('session_request_cancelled',group=group,person=login)
-    cc_list = gather_address_list('session_request_cancelled_cc',group=group,person=login)
+    (to_email, cc_list) = gather_address_lists('session_request_cancelled',group=group,person=login)
     from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
     subject = '%s - Cancelling a meeting request for IETF %s' % (group.acronym, meeting.number)
     send_mail(request, to_email, from_email, subject, 'sreq/session_cancel_notification.txt',
@@ -626,8 +623,7 @@ def no_session(request, acronym):
     session_save(session)
 
     # send notification
-    to_email = gather_address_list('session_request_not_meeting',group=group,person=login)
-    cc_list = gather_address_list('session_request_not_meeting_cc',group=group,person=login)
+    (to_email, cc_list) = gather_address_lists('session_request_not_meeting',group=group,person=login)
     from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
     subject = '%s - Not having a session at IETF %s' % (group.acronym, meeting.number)
     send_mail(request, to_email, from_email, subject, 'sreq/not_meeting_notification.txt',

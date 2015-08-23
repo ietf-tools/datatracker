@@ -37,7 +37,7 @@ from ietf.person.models import Person, Email
 from ietf.secr.lib.template import jsonapi
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.mailtoken.utils import gather_addresses
+from ietf.mailtoken.utils import gather_address_lists
 
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
@@ -582,10 +582,11 @@ def to_iesg(request,name):
 
             doc.save()
 
+            addrs= gather_address_lists('pubreq_iesg',doc=doc)
             extra = {}
-            extra['Cc'] = gather_addresses('pubreq_iesg_cc',doc=doc)
+            extra['Cc'] = addrs.as_strings().cc
             send_mail(request=request,
-                      to = gather_addresses('pubreq_iesg',doc=doc),
+                      to = addrs.to,
                       frm = login.formatted_email(),
                       subject = "Publication has been requested for %s-%s" % (doc.name,doc.rev),
                       template = "doc/submit_to_iesg_email.txt",
@@ -1134,7 +1135,7 @@ def request_publication(request, name):
 
     m = Message()
     m.frm = request.user.person.formatted_email()
-    m.to = gather_addresses('pubreq_rfced',doc=doc)
+    (m.to, m.cc) = gather_address_lists('pubreq_rfced',doc=doc)
     m.by = request.user.person
 
     next_state = State.objects.get(used=True, type="draft-stream-%s" % doc.stream.slug, slug="rfc-edit")
@@ -1164,7 +1165,7 @@ def request_publication(request, name):
             send_mail_message(request, m)
 
             # IANA copy
-            m.to = gather_addresses('pubreq_rfced_iana',doc=doc)
+            (m.to, m.cc) = gather_address_lists('pubreq_rfced_iana',doc=doc)
             send_mail_message(request, m, extra=extra_automation_headers(doc))
 
             e = DocEvent(doc=doc, type="requested_publication", by=request.user.person)

@@ -27,7 +27,7 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.mailtoken.utils import gather_addresses, gather_address_list
+from ietf.mailtoken.utils import gather_address_lists
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -283,19 +283,20 @@ def send_ballot_comment(request, name, ballot_id):
                                  blocking_name=blocking_name,
                                  settings=settings))
     frm = ad.role_email("ad").formatted_email()
-    to = gather_addresses('ballot_saved',doc=doc)
+    
+    addrs = gather_address_lists('ballot_saved',doc=doc)
         
     if request.method == 'POST':
-        cc = gather_address_list('ballot_saved_cc',doc=doc)
-        explicit_cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
-        if explicit_cc: 
-            cc.extend(explicit_cc)
+        # The send_ballot_comments form provides an unusual case where the form separates out 
+        # the cc addresses to be edited before sending into a separate field
+        # TODO: We should consider undoing this, and going back at most to an "extra_cc" model
+        cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
         if request.POST.get("cc_state_change") and doc.notify:
             cc.extend(doc.notify.split(','))
         if request.POST.get("cc_group_list") and doc.group.list_email:
             cc.append(doc.group.list_email)
 
-        send_mail_text(request, to, frm, subject, body, cc=u", ".join(cc))
+        send_mail_text(request, addrs.to, frm, subject, body, cc=u", ".join(cc))
             
         return HttpResponseRedirect(return_to_url)
   
@@ -304,7 +305,8 @@ def send_ballot_comment(request, name, ballot_id):
                                    subject=subject,
                                    body=body,
                                    frm=frm,
-                                   to=to,
+                                   to=addrs.as_strings().to,
+                                   cc=addrs.as_strings().cc,
                                    ad=ad,
                                    can_send=d or c,
                                    back_url=back_url,
@@ -701,8 +703,9 @@ def approve_ballot(request, name):
         send_mail_preformatted(request, announcement)
 
         if action == "to_announcement_list":
+            addrs = gather_address_lists('ballot_approved_ietf_stream_iana').as_strings(compact=False)
             send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                   override={ "To": gather_addresses('ballot_approved_ietf_stream_iana'), "CC": None, "Bcc": None, "Reply-To": None})
+                                   override={ "To": addrs.to, "CC": addrs.cc, "Bcc": None, "Reply-To": None})
 
         msg = infer_message(announcement)
         msg.by = login
@@ -743,9 +746,9 @@ def make_last_call(request, name):
         if form.is_valid():
             send_mail_preformatted(request, announcement)
             if doc.type.slug == 'draft':
+                addrs = gather_address_lists('last_call_issued_iana',doc=doc).as_strings(compact=False)
                 send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                       override={ "To": gather_addresses('last_call_issued_iana',doc=doc), 
-                                                  "CC": None, "Bcc": None, "Reply-To": None})
+                                       override={ "To": addrs.to, "CC": addrs.cc, "Bcc": None, "Reply-To": None})
 
             msg = infer_message(announcement)
             msg.by = login

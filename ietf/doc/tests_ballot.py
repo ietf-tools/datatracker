@@ -173,7 +173,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 2)
         m = outbox[-1]
         self.assertTrue("iesg@" in m['To'])
-        self.assertFalse(draft.group.list_email in m['Cc'])
+        self.assertFalse(m['Cc'] and draft.group.list_email in m['Cc'])
 
 
 class BallotWriteupsTests(TestCase):

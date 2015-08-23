@@ -22,7 +22,7 @@ from ietf.name.models import DocRelationshipName, StdLevelName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.mailtoken.utils import gather_addresses
+from ietf.mailtoken.utils import gather_address_lists
 
 class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)
@@ -290,7 +290,8 @@ def default_approval_text(status_change,relateddoc):
     else:
         action = "Document Action"
 
-    
+
+    addrs = gather_address_lists('ballot_approved_status_change',doc=status_change).as_strings(compact=False)
     text = render_to_string("doc/status_change/approval_text.txt",
                                dict(status_change=status_change,
                                     status_change_url = settings.IDTRACKER_BASE_URL+status_change.get_absolute_url(),
@@ -299,8 +300,8 @@ def default_approval_text(status_change,relateddoc):
                                     approved_text = current_text,
                                     action=action,
                                     newstatus=newstatus(relateddoc),
-                                    to=gather_addresses('ballot_approved_status_change',doc=status_change),
-                                    cc=gather_addresses('ballot_approved_status_change_cc',doc=status_change),
+                                    to=addrs.to,
+                                    cc=addrs.cc,
                                    )
                               )
 

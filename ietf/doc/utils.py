@@ -18,12 +18,12 @@ from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
 from ietf.utils import draft, markup_txt
 from ietf.utils.mail import send_mail
-from ietf.mailtoken.utils import gather_address_list
+from ietf.mailtoken.utils import gather_address_lists
 
 #TODO FIXME - it would be better if this lived in ietf/doc/mails.py, but there's
 #        an import order issue to work out.
 def email_update_telechat(request, doc, text):
-    to = gather_address_list('doc_telechat_details_changed',doc=doc)
+    (to, cc) = gather_address_lists('doc_telechat_details_changed',doc=doc)
 
     if not to:
         return
@@ -33,7 +33,8 @@ def email_update_telechat(request, doc, text):
               "Telechat update notice: %s" % doc.file_tag(),
               "doc/mail/update_telechat.txt",
               dict(text=text,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=cc)
 
 def get_state_types(doc):
     res = []
@@ -457,14 +458,18 @@ def rebuild_reference_relations(doc,filename=None):
     return ret
 
 def set_replaces_for_document(request, doc, new_replaces, by, email_subject, email_comment=""):
-    to = gather_address_list('doc_replacement_changed',doc=doc)
+    addrs = gather_address_lists('doc_replacement_changed',doc=doc)
+    to = set(addrs.to)
+    cc = set(addrs.cc)
 
     relationship = DocRelationshipName.objects.get(slug='replaces')
     old_replaces = doc.related_that_doc("replaces")
 
     for d in old_replaces:
         if d not in new_replaces:
-            to.extend(gather_address_list('doc_replacement_changed',doc=d.document))
+            other_addrs = gather_address_lists('doc_replacement_changed',doc=d.document)
+            to.update(other_addrs.to)
+            cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
                 s = 'active' if d.document.expires > datetime.datetime.now() else 'expired'
@@ -472,7 +477,9 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, ema
 
     for d in new_replaces:
         if d not in old_replaces:
-            to.extend(gather_address_list('doc_replacement_changed',doc=d.document))
+            other_addrs = gather_address_lists('doc_replacement_changed',doc=d.document)
+            to.update(other_addrs.to)
+            cc.update(other_addrs.cc)
             RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
             d.document.set_state(State.objects.get(type='draft', slug='repl'))
 
@@ -490,17 +497,16 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, ema
     if email_comment:
         email_desc += "\n" + email_comment
 
-    to = list(set([addr for addr in to if addr]))
-
     from ietf.doc.mails import html_to_text
 
-    send_mail(request, to,
+    send_mail(request, list(to),
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
               email_subject,
               "doc/mail/change_notice.txt",
               dict(text=html_to_text(email_desc),
                    doc=doc,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=list(cc))
 
 def check_common_doc_name_rules(name):
     """Check common rules for document names for use in forms, throws

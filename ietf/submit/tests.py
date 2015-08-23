@@ -221,8 +221,8 @@ class SubmitTests(TestCase):
         self.assertTrue("review" in outbox[-1]["Subject"].lower())
         self.assertTrue(name in unicode(outbox[-1]))
         self.assertTrue(sug_replaced_alias.name in unicode(outbox[-1]))
-        self.assertTrue("ameschairman" in outbox[-1]["To"].lower())
-        self.assertTrue("marschairman" in outbox[-1]["To"].lower())
+        self.assertTrue("ames-chairs@" in outbox[-1]["To"].lower())
+        self.assertTrue("mars-chairs@" in outbox[-1]["To"].lower())
 
     def test_submit_new_wg_txt(self):
         self.submit_new_wg(["txt"])
