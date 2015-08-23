@@ -42,8 +42,10 @@
   </p>
 
   <h2>{{ entry.version }} release notes</h2>
+  <pre>
+  {% if entry.title %}<b>{{entry.title}}</b>
 
-  <pre>{{entry.logentry|safe}}
+{% endif %}{{entry.logentry|safe}}
 
  -- {{entry.author}} &lt;{{entry.email}}&gt;  {{entry.date}}</pre>
 
