@@ -7,7 +7,6 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response
 from django.conf import settings
 from django.http import HttpResponse
-from django.utils.html import escape
 
 import changelog
 
