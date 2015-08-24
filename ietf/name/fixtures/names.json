@@ -4473,7 +4473,7 @@
 },
 {
  "fields": {
-  "template": "{{group.acronym}}-chairs@ietf.org",
+  "template": "<{{group.acronym}}-chairs@ietf.org>",
   "desc": "The group's chairs"
  },
  "model": "mailtoken.recipient",
@@ -4897,6 +4897,8 @@
    "doc_affecteddoc_notify",
    "doc_authors",
    "doc_group_chairs",
+   "doc_group_mail_list",
+   "doc_notify",
    "doc_shepherd"
   ],
   "to": [

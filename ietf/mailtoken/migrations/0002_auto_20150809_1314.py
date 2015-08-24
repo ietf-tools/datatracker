@@ -111,7 +111,7 @@ def make_recipients(apps):
 
     rc(slug='group_chairs',
        desc="The group's chairs",
-       template="{{group.acronym}}-chairs@ietf.org")
+       template="<{{group.acronym}}-chairs@ietf.org>")
 
     rc(slug='group_responsible_directors',
        desc="The group's responsible AD(s) or IRTF chair",
@@ -265,7 +265,9 @@ def make_mailtokens(apps):
                     "(with discusses, other blocking positions, "
                     "or comments) is saved",
                to_slugs=['iesg'],
-               cc_slugs=['doc_authors',
+               cc_slugs=['doc_notify',
+                         'doc_group_mail_list',
+                         'doc_authors',
                          'doc_group_chairs',
                          'doc_shepherd',
                          'doc_affecteddoc_authors',

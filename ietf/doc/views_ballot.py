@@ -28,6 +28,7 @@ from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtoken.forms import CcSelectForm
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -287,18 +288,21 @@ def send_ballot_comment(request, name, ballot_id):
     addrs = gather_address_lists('ballot_saved',doc=doc)
         
     if request.method == 'POST':
-        # The send_ballot_comments form provides an unusual case where the form separates out 
-        # the cc addresses to be edited before sending into a separate field
-        # TODO: We should consider undoing this, and going back at most to an "extra_cc" model
-        cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
-        if request.POST.get("cc_state_change") and doc.notify:
-            cc.extend(doc.notify.split(','))
-        if request.POST.get("cc_group_list") and doc.group.list_email:
-            cc.append(doc.group.list_email)
+        cc = []
+        cc_select_form = CcSelectForm(data=request.POST,mailtoken_slug='ballot_saved',mailtoken_context={'doc':doc})
+        if cc_select_form.is_valid():
+            cc.extend(cc_select_form.get_selected_addresses())
+        extra_cc = [x.strip() for x in request.POST.get("extra_cc","").split(',') if x.strip()]
+        if extra_cc:
+            cc.extend(extra_cc)
 
         send_mail_text(request, addrs.to, frm, subject, body, cc=u", ".join(cc))
             
         return HttpResponseRedirect(return_to_url)
+
+    else: 
+
+        cc_select_form = CcSelectForm(mailtoken_slug='ballot_saved',mailtoken_context={'doc':doc})
   
     return render_to_response('doc/ballot/send_ballot_comment.html',
                               dict(doc=doc,
@@ -306,10 +310,10 @@ def send_ballot_comment(request, name, ballot_id):
                                    body=body,
                                    frm=frm,
                                    to=addrs.as_strings().to,
-                                   cc=addrs.as_strings().cc,
                                    ad=ad,
                                    can_send=d or c,
                                    back_url=back_url,
+                                   cc_select_form = cc_select_form,
                                   ),
                               context_instance=RequestContext(request))
 

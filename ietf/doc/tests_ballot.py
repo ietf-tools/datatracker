@@ -147,12 +147,12 @@ class EditPositionTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form input[name="cc"]')) > 0)
+        self.assertTrue(len(q('form input[name="extra_cc"]')) > 0)
 
         # send
         mailbox_before = len(outbox)
 
-        r = self.client.post(url, dict(cc="test298347@example.com", cc_state_change="1",cc_group_list="1"))
+        r = self.client.post(url, dict(extra_cc="test298347@example.com", cc_tokens=['doc_notify','doc_group_chairs']))
         self.assertEqual(r.status_code, 302)
 
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -163,10 +163,14 @@ class EditPositionTests(TestCase):
         self.assertTrue("clearer title" in str(m))
         self.assertTrue("Test!" in str(m))
         self.assertTrue("iesg@" in m['To'])
+        # cc_token doc_group_chairs
+        self.assertTrue("mars-chairs@" in m['Cc'])
+        # cc_token doc_notify
         self.assertTrue("somebody@example.com" in m['Cc'])
+        # cc_token doc_group_email_list was not selected
+        self.assertFalse(draft.group.list_email in m['Cc'])
+        # extra-cc    
         self.assertTrue("test298347@example.com" in m['Cc'])
-        self.assertTrue(draft.group.list_email)
-        self.assertTrue(draft.group.list_email in m['Cc'])
 
         r = self.client.post(url, dict(cc=""))
         self.assertEqual(r.status_code, 302)
