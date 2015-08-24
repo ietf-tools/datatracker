@@ -23,8 +23,11 @@
         <tr>
           <td><span title="{{recipient.desc}}">{{recipient.slug}}</span></td>
           <td>
-            {% for mailtoken in recipient.mailtoken_set.all %}
-              <a href="{% url 'ietf.mailtoken.views.show_tokens' mailtoken.slug %}" title="{{mailtoken.desc}}">{{mailtoken.slug}}{% if not forloop.last %}, {%endif%}
+            {% for mailtoken in recipient.used_in_to.all %}
+              <a href="{% url 'ietf.mailtoken.views.show_tokens' mailtoken.slug %}" title="{{mailtoken.desc}}">{{mailtoken.slug}}</a>{% if not forloop.last %}, {%endif%}
+            {% endfor %}{% if recipient.used_in_to.exists and recipient.used_in_cc.exists %},{% endif %}
+            {% for mailtoken in recipient.used_in_cc.all %}
+              <a href="{% url 'ietf.mailtoken.views.show_tokens' mailtoken.slug %}" title="{{mailtoken.desc}}">{{mailtoken.slug}}</a>{% if not forloop.last %}, {%endif%}
             {% endfor %}
           </td>
           <td>{{recipient.template}}</td>

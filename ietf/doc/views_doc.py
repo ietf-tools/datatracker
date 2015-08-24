@@ -59,6 +59,7 @@ from ietf.person.models import Email
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
 from ietf.doc.mails import email_ad
+from ietf.mailtoken.utils import gather_relevant_expansions
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -73,6 +74,7 @@ def render_document_top(request, doc, tab, name):
     if doc.type_id == "draft" or (doc.type_id == "charter" and doc.group.type_id == "wg"):
         tabs.append(("IESG Writeups", "writeup", urlreverse("doc_writeup", kwargs=dict(name=name)), True))
 
+    tabs.append(("Email expansions","email",urlreverse("doc_email", kwargs=dict(name=name)), True))
     tabs.append(("History", "history", urlreverse("doc_history", kwargs=dict(name=name)), True))
 
     if name.startswith("rfc"):
@@ -572,6 +574,18 @@ def document_main(request, name, rev=None):
 
 
 
+def document_email(request,name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "email", name)
+
+    expansions = gather_relevant_expansions(doc=doc)
+    
+    return render(request, "doc/document_email.html",
+                            dict(doc=doc,
+                                 top=top,
+                                 expansions=expansions,
+                                )
+                 )
 
 
 def document_history(request, name):

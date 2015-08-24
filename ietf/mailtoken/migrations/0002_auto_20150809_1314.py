@@ -103,7 +103,7 @@ def make_recipients(apps):
 
     rc(slug='group_mail_list',
        desc="The group's mailing list",
-       template='<{{ group.list_email }}>')
+       template='{% if group.list_email %}<{{ group.list_email }}>{% endif %}')
 
     rc(slug='group_steering_group',
        desc="The group's steering group (IESG or IRSG)",
@@ -111,7 +111,7 @@ def make_recipients(apps):
 
     rc(slug='group_chairs',
        desc="The group's chairs",
-       template="<{{group.acronym}}-chairs@ietf.org>")
+       template="{% if group and group.acronym %}<{{group.acronym}}-chairs@ietf.org>{% endif %}")
 
     rc(slug='group_responsible_directors',
        desc="The group's responsible AD(s) or IRTF chair",
@@ -429,7 +429,8 @@ def make_mailtokens(apps):
 
     mt_factory(slug='doc_stream_changed',
                desc="Recipients for notification when a document's stream changes",
-               to_slugs=['stream_managers',
+               to_slugs=['doc_authors',
+                         'stream_managers',
                          'doc_notify',
                         ])
 

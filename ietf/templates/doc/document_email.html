@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+{% load future %}
+
+{% block title %}Email expansions for {{ doc.name }}-{{ doc.rev }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  {{ top|safe }}
+
+  <h2>Recipient Expansions</h2>
+
+  <table class="table table-condensed table-striped ietf">
+    <thead>
+      <tr>
+        <th>MailToken</th>
+        <th>To</th>
+        <th>Cc</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for token,desc,to,cc in expansions %}
+        <tr>
+          <td><a href="{% url 'ietf.mailtoken.views.show_tokens' token %}"
+                 title="{{desc}}">{{token}}</a></td>
+          <td> {{to|join:', '}}</td>
+          <td> {{cc|join:', '}}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% comment %}
+  <table class="table table-condensed table-striped ietf">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Rev.</th>
+        <th>By</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for e in events %}
+        <tr class="anchor-target" id="history-{{ e.pk }}">
+          <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
+          <td class="text-center">{{ e.rev }}</td>
+          <td>{{ e.by|escape }}</td>
+          <td>{{ e.desc|format_history_text|safe }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endcomment %}
+{% endblock content %}

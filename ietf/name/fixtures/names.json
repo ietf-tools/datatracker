@@ -4473,7 +4473,7 @@
 },
 {
  "fields": {
-  "template": "<{{group.acronym}}-chairs@ietf.org>",
+  "template": "{% if group and group.acronym %}<{{group.acronym}}-chairs@ietf.org>{% endif %}",
   "desc": "The group's chairs"
  },
  "model": "mailtoken.recipient",
@@ -4489,7 +4489,7 @@
 },
 {
  "fields": {
-  "template": "<{{ group.list_email }}>",
+  "template": "{% if group.list_email %}<{{ group.list_email }}>{% endif %}",
   "desc": "The group's mailing list"
  },
  "model": "mailtoken.recipient",
@@ -5081,6 +5081,7 @@
  "fields": {
   "cc": [],
   "to": [
+   "doc_authors",
    "doc_notify",
    "stream_managers"
   ],
