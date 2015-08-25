@@ -417,6 +417,20 @@ def email_last_call_expired(doc):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc = addrs.cc)
 
+def email_comment(request, doc, comment):
+    (to, cc) = gather_address_lists('doc_added_comment',doc=doc)
+
+    send_mail(request, to, None, "Comment added to %s history"%doc.name,
+              "doc/mail/comment_added_email.txt",
+              dict(
+                comment=comment,
+                doc=doc,
+                by=request.user.person,
+                url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+              ),
+              cc = cc)
+
+
 def email_adopted(request, doc, prev_state, new_state, by, comment=""):
     (to, cc) = gather_address_lists('doc_adopted_by_group',doc=doc)
 

@@ -718,8 +718,9 @@ class AddCommentTestCase(TestCase):
         self.assertEqual("This is a test.", draft.latest_event().desc)
         self.assertEqual("added_comment", draft.latest_event().type)
         self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue("updated" in outbox[-1]['Subject'])
+        self.assertTrue("Comment added" in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
+        self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To'])
 
         # Make sure we can also do it as IANA
         self.client.login(username="iana", password="iana+password")

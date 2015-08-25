@@ -783,6 +783,15 @@ def make_mailtokens(apps):
                         ],
               )
 
+    mt_factory(slug='doc_added_comment',
+               desc="Recipients for a message when a new comment is manually entered into the document's history",
+               to_slugs=['doc_authors',
+                         'doc_group_chairs',
+                         'doc_shepherd',
+                         'doc_group_responsible_directors', 
+                         'doc_non_ietf_stream_manager',
+                        ])
+
 
 def forward(apps, schema_editor):
 

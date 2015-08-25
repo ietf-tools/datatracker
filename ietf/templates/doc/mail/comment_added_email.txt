@@ -1,0 +1,12 @@
+{% autoescape off %}
+Please DO NOT reply to this email.
+
+{{by}} added the following comment to the history of {{doc.name}}
+
+{{ comment.desc }}
+
+The document can be found at
+I-D: {{ doc.file_tag|safe }}
+ID Tracker URL: {{ url }}
+
+{% endautoescape%}

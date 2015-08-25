@@ -58,7 +58,7 @@ from ietf.name.models import StreamName, BallotPositionName
 from ietf.person.models import Email
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
-from ietf.doc.mails import email_ad
+from ietf.doc.mails import email_comment 
 from ietf.mailtoken.utils import gather_relevant_expansions
 
 def render_document_top(request, doc, tab, name):
@@ -906,10 +906,8 @@ def add_comment(request, name):
             e.desc = c
             e.save()
 
-            if doc.type_id == "draft":
-                # TODO - build an explicit message for when a comment is added
-                email_ad(request, doc, doc.ad, login,
-                            "A new comment added by %s" % login.name)
+            email_comment(request, doc, e)
+
             return redirect("doc_history", name=doc.name)
     else:
         form = AddCommentForm()
