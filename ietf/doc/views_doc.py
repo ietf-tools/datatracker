@@ -571,19 +571,34 @@ def document_main(request, name, rev=None):
     raise Http404
 
 
-
+def get_email_aliases(name):
+    if name:
+        pattern = re.compile('^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
+    else:
+        pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
+    aliases = []
+    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+        for line in virtual_file.readlines():
+            m = pattern.match(line)
+            if m:
+                aliases.append({'doc_name':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
+    return aliases
 
 
 def document_email(request,name):
     doc = get_object_or_404(Document, docalias__name=name)
     top = render_document_top(request, doc, "email", name)
 
+    aliases = get_email_aliases(name) if doc.type_id=='draft' else None
+
     expansions = gather_relevant_expansions(doc=doc)
     
     return render(request, "doc/document_email.html",
                             dict(doc=doc,
                                  top=top,
+                                 aliases=aliases,
                                  expansions=expansions,
+                                 ietf_domain=settings.IETF_DOMAIN,
                                 )
                  )
 
@@ -999,20 +1014,12 @@ def edit_notify(request, name):
 
 def email_aliases(request,name=''):
     doc = get_object_or_404(Document, name=name) if name else None
-    if name:
-        pattern = re.compile('^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
-    else:
+    if not name:
         # require login for the overview page, but not for the
-        # document-specific pages handled above
+        # document-specific pages 
         if not request.user.is_authenticated():
                 return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
-        pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
-    aliases = []
-    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            if m:
-                aliases.append({'doc_name':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
+    aliases = get_email_aliases(name)
 
     return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
 

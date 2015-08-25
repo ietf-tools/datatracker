@@ -66,7 +66,7 @@ urlpatterns = patterns('',
     (r'^(?P<name>[A-Za-z0-9._+-]+)/doc.json$', views_doc.document_json),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/(?P<ballot_id>[0-9]+)/$', views_doc.ballot_popup),
 
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/email-aliases/$', views_doc.email_aliases),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/email-aliases/$', RedirectView.as_view(pattern_name='doc_email', permanent=False),name='doc_specific_email_aliases'),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_draft.change_state, name='doc_change_state'), # IESG state
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/(?P<state_type>iana-action|iana-review)/$', views_draft.change_iana_state, name='doc_change_iana_state'),

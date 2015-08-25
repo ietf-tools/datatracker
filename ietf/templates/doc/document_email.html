@@ -10,6 +10,21 @@
   {% origin %}
   {{ top|safe }}
 
+  {% if aliases %}
+  <h2>Email Aliases</h2>
+  
+  <table class="table table-condensed table-striped ietf">
+    <tbody>
+      {% for alias in aliases %}
+        <tr>
+          <td>{{ doc.name }}{{ alias.alias_type|default:''}}@{{ietf_domain}}</td>
+          <td>{{ alias.expansion }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
   <h2>Recipient Expansions</h2>
 
   <table class="table table-condensed table-striped ietf">
