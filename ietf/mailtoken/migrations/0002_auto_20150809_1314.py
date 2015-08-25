@@ -771,6 +771,18 @@ def make_mailtokens(apps):
                          'iesg_secretary',
                         ])
 
+    mt_factory(slug='doc_adopted_by_group',
+               desc="Recipients for notification that a document has been adopted by a group",
+               to_slugs=['doc_authors',
+                         'doc_group_chairs',
+                         'doc_group_mail_list',
+                        ],
+               cc_slugs=['doc_ad',
+                         'doc_shepherd',
+                         'doc_notify',
+                        ],
+              )
+
 
 def forward(apps, schema_editor):
 

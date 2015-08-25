@@ -19,7 +19,7 @@ from ietf.doc.models import ( Document, DocAlias, RelatedDocument, State,
 from ietf.doc.mails import ( email_ad, email_pulled_from_rfc_queue, email_resurrect_requested,
     email_resurrection_completed, email_state_changed, email_stream_changed,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
-    generate_publication_request  )
+    generate_publication_request, email_adopted  )
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
@@ -1301,8 +1301,7 @@ def adopt_draft(request, name):
 
                 update_reminder(doc, "stream-s", e, due_date)
 
-                # TODO: Replace this with a message that's explicitly about the document adoption
-                email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
+                email_adopted(request, doc, prev_state, new_state, by, comment)
 
             # comment
             if comment:

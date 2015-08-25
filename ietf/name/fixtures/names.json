@@ -4964,6 +4964,23 @@
 {
  "fields": {
   "cc": [
+   "doc_ad",
+   "doc_notify",
+   "doc_shepherd"
+  ],
+  "to": [
+   "doc_authors",
+   "doc_group_chairs",
+   "doc_group_mail_list"
+  ],
+  "desc": "Recipients for notification that a document has been adopted by a group"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_adopted_by_group"
+},
+{
+ "fields": {
+  "cc": [
    "doc_group_chairs",
    "doc_group_responsible_directors",
    "doc_notify",

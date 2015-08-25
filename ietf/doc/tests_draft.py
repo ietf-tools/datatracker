@@ -1135,9 +1135,10 @@ class AdoptDraftTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 5)
         self.assertEqual(draft.notify,"aliens@example.mars")
         self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[-1]))
-        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("has adopted" in outbox[-1]["Subject"].lower())
+        self.assertTrue("mars-chairs@ietf.org" in outbox[-1]['To'])
+        self.assertTrue("draft-ietf-mars-test@" in outbox[-1]['To'])
+        self.assertTrue("mars-wg@" in outbox[-1]['To'])
 
         self.assertFalse(mars.list_email in draft.notify)
 
