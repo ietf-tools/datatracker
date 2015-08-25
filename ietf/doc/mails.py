@@ -417,6 +417,20 @@ def email_last_call_expired(doc):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc = addrs.cc)
 
+def email_intended_status_changed(request, doc, text):
+    (to,cc) = gather_address_lists('doc_intended_status_changed',doc=doc)
+
+    if not to:
+        return
+    
+    text = strip_tags(text)
+    send_mail(request, to, None,
+              "Intended Status for %s changed to %s" % (doc.file_tag(),doc.intended_std_level),
+              "doc/mail/intended_status_changed_email.txt",
+              dict(text=text,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=cc)
+
 def email_comment(request, doc, comment):
     (to, cc) = gather_address_lists('doc_added_comment',doc=doc)
 

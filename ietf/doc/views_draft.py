@@ -19,7 +19,7 @@ from ietf.doc.models import ( Document, DocAlias, RelatedDocument, State,
 from ietf.doc.mails import ( email_ad, email_pulled_from_rfc_queue, email_resurrect_requested,
     email_resurrection_completed, email_state_changed, email_stream_changed,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
-    generate_publication_request, email_adopted  )
+    generate_publication_request, email_adopted, email_intended_status_changed )
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
@@ -449,8 +449,7 @@ def change_intention(request, name):
                 doc.time = e.time
                 doc.save()
 
-                # TODO: Build explicit changed_intended_publication_status
-                email_state_changed(request, doc, email_desc,'doc_state_edited')
+                email_intended_status_changed(request, doc, email_desc)
 
             return HttpResponseRedirect(doc.get_absolute_url())
 

@@ -789,7 +789,10 @@ class IndividualInfoFormsTests(TestCase):
         self.doc = Document.objects.get(name=self.docname)
         self.assertEqual(self.doc.intended_std_level_id,'bcp')
         self.assertEqual(len(outbox),messages_before+1)
+        self.assertTrue('Intended Status ' in outbox[-1]['Subject'])
+        self.assertTrue('mars-chairs@' in outbox[-1]['To'])
         self.assertTrue('ZpyQFGmA' in str(outbox[-1]))
+
         self.assertTrue('ZpyQFGmA' in self.doc.latest_event(DocEvent,type='added_comment').desc)
        
     def test_doc_change_telechat_date(self):

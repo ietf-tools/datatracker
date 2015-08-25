@@ -5045,6 +5045,21 @@
 },
 {
  "fields": {
+  "cc": [],
+  "to": [
+   "doc_authors",
+   "doc_group_chairs",
+   "doc_group_responsible_directors",
+   "doc_non_ietf_stream_manager",
+   "doc_shepherd"
+  ],
+  "desc": "Recipients for a message when a document's intended publication status changes"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_intended_status_changed"
+},
+{
+ "fields": {
   "cc": [
    "doc_ad",
    "doc_authors",

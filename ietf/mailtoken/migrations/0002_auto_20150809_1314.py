@@ -792,7 +792,15 @@ def make_mailtokens(apps):
                          'doc_non_ietf_stream_manager',
                         ])
 
-
+    mt_factory(slug='doc_intended_status_changed',
+               desc="Recipients for a message when a document's intended publication status changes",
+               to_slugs=['doc_authors',
+                         'doc_group_chairs',
+                         'doc_shepherd',
+                         'doc_group_responsible_directors', 
+                         'doc_non_ietf_stream_manager',
+                        ])
+               
 def forward(apps, schema_editor):
 
     make_recipients(apps)
