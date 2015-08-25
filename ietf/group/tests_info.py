@@ -1009,24 +1009,35 @@ expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf
     def tearDown(self):
         os.unlink(self.group_alias_file.name)
 
-    def testNothing(self):
-        url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(acronym="mars"))
+    def testAliases(self):
+        url = urlreverse('old_group_email_aliases', kwargs=dict(acronym="mars"))
         r = self.client.get(url)
-        self.assertTrue(all([x in r.content for x in ['mars-ads@','mars-chairs@']]))
-        self.assertFalse(any([x in r.content for x in ['ames-ads@','ames-chairs@']]))
+        self.assertEqual(r.status_code, 302)
 
         url = urlreverse('ietf.group.info.email_aliases', kwargs=dict())
         login_testing_unauthorized(self, "plain", url)
         r = self.client.get(url)
+        self.assertTrue(r.status_code,200)
         self.assertTrue(all([x in r.content for x in ['mars-ads@','mars-chairs@','ames-ads@','ames-chairs@']]))
 
         url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
         self.assertTrue('mars-ads@' in r.content)
 
         url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(group_type="rg"))
         r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
         self.assertFalse('mars-ads@' in r.content)
+
+    def testExpansions(self):
+        url = urlreverse('ietf.group.info.email', kwargs=dict(acronym="mars"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertTrue('Email Aliases' in r.content)
+        self.assertTrue('mars-ads@ietf.org' in r.content)
+        self.assertTrue('group_personnel_change' in r.content)
+ 
 
 
 class AjaxTests(TestCase):

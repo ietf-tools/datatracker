@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.conf.urls import patterns
+from django.conf.urls import patterns, url
+
+from django.views.generic import RedirectView
 
 urlpatterns = patterns('',
     (r'^groupmenu.json', 'ietf.group.ajax.group_menu_data', None, "group_menu_data"),
@@ -15,6 +17,7 @@ urlpatterns = patterns('',
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/$', 'ietf.group.info.group_home', None, "group_home"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/documents/$', 'ietf.group.info.group_documents', None, "group_docs"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/charter/$', 'ietf.group.info.group_about', None, 'group_charter'),
+    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/email/$', 'ietf.group.info.email'),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/history/$', 'ietf.group.info.history'),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/deps/dot/$', 'ietf.group.info.dependencies_dot'),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/deps/pdf/$', 'ietf.group.info.dependencies_pdf'),
@@ -30,7 +33,6 @@ urlpatterns = patterns('',
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/$', 'ietf.group.info.materials', None, "group_materials"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/$', 'ietf.doc.views_material.choose_material_type'),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/(?P<doc_type>[\w-]+)/$', 'ietf.doc.views_material.edit_material', { 'action': "new" }, "group_new_material"),
-    (r'^(?P<acronym>[A-Za-z0-9._+-]+)/email-aliases/$', 'ietf.group.info.email_aliases'),
+    url(r'^(?P<acronym>[A-Za-z0-9._+-]+)/email-aliases/$', RedirectView.as_view(pattern_name='ietf.group.info.email',permanent=False),name='old_group_email_aliases'),
 )
-
 

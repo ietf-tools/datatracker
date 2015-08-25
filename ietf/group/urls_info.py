@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2008, All Rights Reserved
 
-from django.conf.urls import patterns
+from django.conf.urls import patterns, url
 from django.views.generic import RedirectView
 
 from ietf.group import info, edit, milestones
@@ -23,6 +23,7 @@ urlpatterns = patterns('',
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/$', info.group_home, None, "group_home"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/documents/$', info.group_documents, None, "group_docs"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/charter/$', info.group_about, None, 'group_charter'),
+    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/email/$', info.email),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/history/$', info.history),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/deps/dot/$', info.dependencies_dot),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/deps/pdf/$', info.dependencies_pdf),
@@ -33,5 +34,5 @@ urlpatterns = patterns('',
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/milestones/charter/$', milestones.edit_milestones, {'milestone_set': "charter"}, "group_edit_charter_milestones"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/milestones/charter/reset/$', milestones.reset_charter_milestones, None, "group_reset_charter_milestones"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/workflow/$', edit.customize_workflow),
-    (r'^(?P<acronym>[A-Za-z0-9._+-]+)/email-aliases/$', 'ietf.group.info.email_aliases'),
+    url(r'^(?P<acronym>[A-Za-z0-9._+-]+)/email-aliases/$', RedirectView.as_view(pattern_name='ietf.group.info.email',permanent=False),name='old_group_email_aliases'),
 )

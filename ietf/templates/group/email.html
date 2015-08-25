@@ -1,23 +1,20 @@
-{% extends "base.html" %}
+{% extends "group/group_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters %}
 {% load future %}
 
-{% block title %}Email expansions for {{ doc.name }}-{{ doc.rev }}{% endblock %}
-
-{% block content %}
+{% block group_content %}
   {% origin %}
-  {{ top|safe }}
 
   {% if aliases %}
   <h2>Email Aliases</h2>
-  
+
   <table class="table table-condensed table-striped ietf">
     <tbody>
       {% for alias in aliases %}
         <tr>
-          <td>{{ doc.name }}{{ alias.alias_type|default:''}}@{{ietf_domain}}</td>
+          <td>{{ group.acronym }}{{ alias.alias_type|default:''}}@{{ietf_domain}}</td>
           <td>{{ alias.expansion }}</td>
         </tr>
       {% endfor %}
@@ -46,4 +43,5 @@
       {% endfor %}
     </tbody>
   </table>
-{% endblock content %}
+
+{% endblock %}
