@@ -78,7 +78,8 @@ class EditCharterTests(TestCase):
         for slug in ("intrev", "extrev", "iesgrev"):
             s = State.objects.get(used=True, type="charter", slug=slug)
             events_before = charter.docevent_set.count()
-            mailbox_before = len(outbox)
+
+            empty_outbox()
         
             r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
             self.assertEqual(r.status_code, 302)
@@ -96,7 +97,11 @@ class EditCharterTests(TestCase):
             if slug in ("intrev", "iesgrev"):
                 self.assertTrue(find_event("created_ballot"))
 
-            self.assertEqual(len(outbox), mailbox_before + 2)
+            self.assertEqual(len(outbox), 3 if slug=="intrev" else 2 )
+
+            if slug=="intrev":
+                self.assertTrue("Internal WG Review" in outbox[-3]['Subject'])
+                self.assertTrue(all([x in outbox[-3]['To'] for x in ['iab@','iesg@']]))
 
             self.assertTrue("state changed" in outbox[-2]['Subject'].lower())
             self.assertTrue("iesg-secretary@" in outbox[-2]['To'])

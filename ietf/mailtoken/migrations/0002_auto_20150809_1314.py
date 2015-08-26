@@ -13,6 +13,10 @@ def make_recipients(apps):
        desc='The IESG',
        template='The IESG <iesg@ietf.org>')
 
+    rc(slug='iab',
+       desc='The IAB',
+       template='The IAB <iab@iab.org>')
+
     rc(slug='ietf_announce',
        desc='The IETF Announce list',
        template='IETF-Announce <ietf-announce@ietf.org>')
@@ -461,6 +465,7 @@ def make_mailtokens(apps):
                          'doc_shepherd',
                          'doc_group_chairs',
                          'doc_affecteddoc_authors',
+                         'doc_group_responsible_directors',
                          'doc_affecteddoc_group_chairs',
                          'doc_affecteddoc_notify',
                         ])
@@ -793,12 +798,20 @@ def make_mailtokens(apps):
                         ])
 
     mt_factory(slug='doc_intended_status_changed',
-               desc="Recipients for a message when a document's intended publication status changes",
+               desc="Recipients for a message when a document's intended "
+                    "publication status changes",
                to_slugs=['doc_authors',
                          'doc_group_chairs',
                          'doc_shepherd',
                          'doc_group_responsible_directors', 
                          'doc_non_ietf_stream_manager',
+                        ])
+
+    mt_factory(slug='charter_internal_review',
+               desc="Recipients for message noting that internal review has "
+                     "started on a charter",
+               to_slugs=['iesg',
+                         'iab',
                         ])
                
 def forward(apps, schema_editor):

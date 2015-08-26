@@ -4513,6 +4513,14 @@
 },
 {
  "fields": {
+  "template": "The IAB <iab@iab.org>",
+  "desc": "The IAB"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "iab"
+},
+{
+ "fields": {
   "template": "<iana@iana.org>",
   "desc": "IANA"
  },
@@ -4926,6 +4934,18 @@
  "fields": {
   "cc": [],
   "to": [
+   "iab",
+   "iesg"
+  ],
+  "desc": "Recipients for message noting that internal review has started on a charter"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "charter_internal_review"
+},
+{
+ "fields": {
+  "cc": [],
+  "to": [
    "iesg_secretary"
   ],
   "desc": "Recipients for message to adminstrators when a charter state edit needs followon administrative action"
@@ -5116,6 +5136,7 @@
    "doc_affecteddoc_notify",
    "doc_authors",
    "doc_group_chairs",
+   "doc_group_responsible_directors",
    "doc_notify",
    "doc_shepherd"
   ],

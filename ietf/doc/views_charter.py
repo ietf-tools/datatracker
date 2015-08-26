@@ -20,7 +20,7 @@ from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
 from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     approved_revision, default_review_text, default_action_text,
     generate_ballot_writeup, generate_issue_ballot_mail, next_approved_revision, next_revision )
-from ietf.doc.mails import email_state_changed
+from ietf.doc.mails import email_state_changed, email_charter_internal_review
 from ietf.group.models import ChangeStateGroupEvent, MilestoneGroupEvent
 from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_group_type
 from ietf.ietfauth.utils import has_role, role_required
@@ -140,6 +140,9 @@ def change_state(request, name, option=None):
                 charter.time = datetime.datetime.now()
                 charter.save()
 
+                if charter_state.slug == 'intrev':
+                    email_charter_internal_review(request,charter)
+
                 if message or charter_state.slug == "intrev" or charter_state.slug == "extrev":
                     email_admin_re_charter(request, group, "Charter state changed to %s" % charter_state.name, message,'charter_state_edit_admin_needed')
 
@@ -204,9 +207,9 @@ def change_state(request, name, option=None):
 
     info_msg = {}
     if group.type_id == "wg":
-        info_msg[state_pk("infrev")] = 'The %s "%s" (%s) has been set to Informal IESG review by %s.' % (group.type.name, group.name, group.acronym, login.plain_name())
-        info_msg[state_pk("intrev")] = 'The %s "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat and inform the IAB.' % (group.type.name, group.name, group.acronym, login.plain_name())
-        info_msg[state_pk("extrev")] = 'The %s "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (group.type.name, group.name, group.acronym, login.plain_name())
+        info_msg[state_pk("infrev")] = 'The proposed charter for %s "%s" (%s) has been set to Informal IESG review by %s.' % (group.type.name, group.name, group.acronym, login.plain_name())
+        info_msg[state_pk("intrev")] = 'The proposed charter for %s "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat if it has not already been placed.' % (group.type.name, group.name, group.acronym, login.plain_name())
+        info_msg[state_pk("extrev")] = 'The proposed charter for %s "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (group.type.name, group.name, group.acronym, login.plain_name())
 
     states_for_ballot_wo_extern = State.objects.none()
     if group.type_id == "wg":

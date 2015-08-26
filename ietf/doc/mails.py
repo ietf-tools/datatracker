@@ -1,5 +1,6 @@
 # generation of mails 
 
+import os
 import textwrap, datetime
 
 from django.template.loader import render_to_string
@@ -10,7 +11,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
-from ietf.doc.utils import needed_ballot_positions
+from ietf.doc.utils import needed_ballot_positions, get_document_content
 from ietf.person.models import Person
 from ietf.group.models import Role
 from ietf.doc.models import Document
@@ -513,3 +514,25 @@ def send_review_possibly_replaces_request(request, doc):
                    possibly_replaces=doc.related_that_doc("possibly-replaces"),
                    review_url=settings.IDTRACKER_BASE_URL + urlreverse("doc_review_possibly_replaces", kwargs={ "name": doc.name })),
               cc=list(cc),)
+
+def email_charter_internal_review(request, charter):
+    addrs = gather_address_lists('charter_internal_review',doc=charter,group=charter.group)
+    filename = '%s-%s.txt' % (charter.canonical_name(),charter.rev)
+    charter_text = get_document_content(
+                        filename,
+                        os.path.join(settings.CHARTER_PATH,filename),
+                        split=False,
+                        markup=False,
+                   )
+    send_mail(request, addrs.to, settings.DEFAULT_FROM_EMAIL,
+              'Internal WG Review: %s (%s)'%(charter.group.name,charter.group.acronym),
+              'doc/mail/charter_internal_review.txt',
+              dict(charter=charter,
+                   chairs=charter.group.role_set.filter(name='chair').values_list('person__name',flat=True),
+                   ads=charter.group.role_set.filter(name='ad').values_list('person__name',flat=True),
+                   charter_text=charter_text,
+                   milestones=charter.group.groupmilestone_set.filter(state="charter"),
+              ),
+              cc=addrs.cc,
+              extra={'Reply-To':"iesg@ietf.org"},
+             )
