@@ -457,7 +457,7 @@ def agenda_csv(schedule, filtered_assignments):
             row.append("r{}".format(item.timeslot.pk))
         elif item.timeslot.type_id == "other":
             row.append("None")
-            row.append(item.timeslot.location.name)
+            row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append("")
             row.append(item.session.historic_group.acronym)
             row.append(item.session.historic_group.historic_parent.acronym.upper() if item.session.historic_group.historic_parent else "")
@@ -465,7 +465,7 @@ def agenda_csv(schedule, filtered_assignments):
             row.append(item.session.pk)
         elif item.timeslot.type_id == "plenary":
             row.append(item.session.name)
-            row.append(item.timeslot.location.name)
+            row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append("")
             row.append(item.session.historic_group.acronym if item.session.historic_group else "")
             row.append("")
@@ -475,7 +475,7 @@ def agenda_csv(schedule, filtered_assignments):
             row.append(slides_field(item))
         elif item.timeslot.type_id == "session":
             row.append(item.timeslot.name)
-            row.append(item.timeslot.location.name)
+            row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append(item.session.historic_group.historic_parent.acronym.upper() if item.session.historic_group.historic_parent else "")
             row.append(item.session.historic_group.acronym if item.session.historic_group else "")
             row.append("BOF" if item.session.historic_group.state_id in ("bof", "bof-conc") else item.session.historic_group.type.name)
