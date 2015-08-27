@@ -687,14 +687,14 @@ def document_writeup(request, name):
                          "",
                          [("WG Review Announcement",
                            text_from_writeup("changed_review_announcement"),
-                           urlreverse("ietf.doc.views_charter.announcement_text", kwargs=dict(name=doc.name, ann="review")))]
+                           urlreverse("ietf.doc.views_charter.review_announcement_text", kwargs=dict(name=doc.name)))]
                          ))
 
         sections.append(("WG Action Announcement",
                          "",
                          [("WG Action Announcement",
                            text_from_writeup("changed_action_announcement"),
-                           urlreverse("ietf.doc.views_charter.announcement_text", kwargs=dict(name=doc.name, ann="action")))]
+                           urlreverse("ietf.doc.views_charter.action_announcement_text", kwargs=dict(name=doc.name)))]
                          ))
 
         if doc.latest_event(BallotDocEvent, type="created_ballot"):

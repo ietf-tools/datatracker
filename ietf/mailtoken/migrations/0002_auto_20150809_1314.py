@@ -243,6 +243,10 @@ def make_recipients(apps):
        desc="The person providing a comment to nomcom",
        template='{{commenter}}')
 
+    rc(slug='new_work',
+       desc="The IETF New Work list",
+       template='<new-work@ietf.org>')
+
 def make_mailtokens(apps):
 
     Recipient=apps.get_model('mailtoken','Recipient')
@@ -409,11 +413,22 @@ def make_mailtokens(apps):
                     "requests publication",
                to_slugs=['iana_approve',])
 
+    mt_factory(slug='charter_internal_review',
+               desc="Recipients for message noting that internal review has "
+                     "started on a charter",
+               to_slugs=['iesg',
+                         'iab',
+                        ])
+               
     mt_factory(slug='charter_external_review',
                desc="Recipients for a charter external review",
                to_slugs=['ietf_announce',],
                cc_slugs=['group_mail_list',], 
               ) 
+
+    mt_factory(slug='charter_external_review_new_work',
+               desc="Recipients for a message to new-work about a charter review",
+               to_slugs=['new_work',])
 
     mt_factory(slug='conflrev_requested',
                desc="Recipients for a stream manager's request for an IETF conflict review",
@@ -807,13 +822,6 @@ def make_mailtokens(apps):
                          'doc_non_ietf_stream_manager',
                         ])
 
-    mt_factory(slug='charter_internal_review',
-               desc="Recipients for message noting that internal review has "
-                     "started on a charter",
-               to_slugs=['iesg',
-                         'iab',
-                        ])
-               
 def forward(apps, schema_editor):
 
     make_recipients(apps)

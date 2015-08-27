@@ -4689,6 +4689,14 @@
 },
 {
  "fields": {
+  "template": "<new-work@ietf.org>",
+  "desc": "The IETF New Work list"
+ },
+ "model": "mailtoken.recipient",
+ "pk": "new_work"
+},
+{
+ "fields": {
   "template": "{{nomcom.group.get_chair.email.address}}",
   "desc": "The chair of a given nomcom"
  },
@@ -4929,6 +4937,17 @@
  },
  "model": "mailtoken.mailtoken",
  "pk": "charter_external_review"
+},
+{
+ "fields": {
+  "cc": [],
+  "to": [
+   "new_work"
+  ],
+  "desc": "Recipients for a message to new-work about a charter review"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "charter_external_review_new_work"
 },
 {
  "fields": {

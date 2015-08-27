@@ -27,7 +27,7 @@ from ietf.ietfauth.utils import has_role, role_required
 from ietf.name.models import GroupStateName
 from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
-from ietf.utils.mail import send_mail_preformatted
+from ietf.utils.mail import send_mail_preformatted 
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.group.mails import email_admin_re_charter
 
@@ -427,42 +427,124 @@ def submit(request, name=None, option=None):
                                'name': name },
                               context_instance=RequestContext(request))
 
-class AnnouncementTextForm(forms.Form):
+class ActionAnnouncementTextForm(forms.Form):
     announcement_text = forms.CharField(widget=forms.Textarea, required=True)
 
     def clean_announcement_text(self):
         return self.cleaned_data["announcement_text"].replace("\r", "")
 
+
+class ReviewAnnouncementTextForm(forms.Form):
+    announcement_text = forms.CharField(widget=forms.Textarea, required=True)
+    new_work_text = forms.CharField(widget=forms.Textarea, required=True)
+
+    def clean_announcement_text(self):
+        return self.cleaned_data["announcement_text"].replace("\r", "")
+
+
 @role_required('Area Director','Secretariat')
-def announcement_text(request, name, ann):
-    """Editing of announcement text"""
+def review_announcement_text(request, name):
+    """Editing of review announcement text"""
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
 
     login = request.user.person
 
-    if ann in ("action", "review"):
-        existing = charter.latest_event(WriteupDocEvent, type="changed_%s_announcement" % ann)
+    existing = charter.latest_event(WriteupDocEvent, type="changed_review_announcement")
+    existing_new_work = charter.latest_event(WriteupDocEvent, type="changed_new_work_text")
+
     if not existing:
-        if ann == "action":
-            existing = default_action_text(group, charter, login)
-        elif ann == "review":
-            existing = default_review_text(group, charter, login)
+        (existing, existing_new_work) = default_review_text(group, charter, login)
 
     if not existing:
         raise Http404
 
-    form = AnnouncementTextForm(initial=dict(announcement_text=existing.text))
+    new_work_text = existing_new_work.text
+
+    form = ReviewAnnouncementTextForm(initial=dict(announcement_text=existing.text,new_work_text=new_work_text))
 
     if request.method == 'POST':
-        form = AnnouncementTextForm(request.POST)
+        form = ReviewAnnouncementTextForm(request.POST)
+        if "save_text" in request.POST and form.is_valid():
+
+            now = datetime.datetime.now()
+            (e1, e2) = (None, None)
+
+            t = form.cleaned_data['announcement_text']
+            if t != existing.text:
+                e1 = WriteupDocEvent(doc=charter, by=login)
+                e1.by = login
+                e1.type = "changed_review_announcement" 
+                e1.desc = "%s review text was changed" % (group.type.name)
+                e1.text = t
+                e1.time = now
+                e1.save()
+
+            t = form.cleaned_data['new_work_text']
+            if t != new_work_text:
+                e2 = WriteupDocEvent(doc=charter, by=login)
+                e2.by = login
+                e2.type = "changed_new_work_text" 
+                e2.desc = "%s new work message text was changed" % (group.type.name)
+                e2.text = t
+                e2.time = now
+                e2.save()
+
+            if e1 or e2:
+                charter.time = now
+                charter.save()
+
+            if request.GET.get("next", "") == "approve":
+                return redirect('charter_approve', name=charter.canonical_name())
+
+            return redirect('doc_writeup', name=charter.canonical_name())
+
+        if "regenerate_text" in request.POST:
+            (e1, e2) = default_review_text(group, charter, login)
+            form = ReviewAnnouncementTextForm(initial=dict(announcement_text=e1.text,new_work_text=e2.text))
+
+        if any([x in request.POST for x in ['send_annc_only','send_nw_only','send_both']]) and form.is_valid():
+            if any([x in request.POST for x in ['send_annc_only','send_both']]):
+                parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
+                messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
+            if any([x in request.POST for x in ['send_nw_only','send_both']]):
+                parsed_msg = send_mail_preformatted(request, form.cleaned_data['new_work_text'])
+                messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
+            return redirect('doc_writeup', name=charter.name)
+
+    return render_to_response('doc/charter/review_announcement_text.html',
+                              dict(charter=charter,
+                                   back_url=urlreverse("doc_writeup", kwargs=dict(name=charter.name)),
+                                   announcement_text_form=form,
+                                   ),
+                              context_instance=RequestContext(request))
+
+@role_required('Area Director','Secretariat')
+def action_announcement_text(request, name):
+    """Editing of action announcement text"""
+    charter = get_object_or_404(Document, type="charter", name=name)
+    group = charter.group
+
+    login = request.user.person
+
+    existing = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
+    if not existing:
+            existing = default_action_text(group, charter, login)
+
+    if not existing:
+        raise Http404
+
+    form = ActionAnnouncementTextForm(initial=dict(announcement_text=existing.text))
+
+    if request.method == 'POST':
+        form = ActionAnnouncementTextForm(request.POST)
         if "save_text" in request.POST and form.is_valid():
             t = form.cleaned_data['announcement_text']
             if t != existing.text:
                 e = WriteupDocEvent(doc=charter, by=login)
                 e.by = login
-                e.type = "changed_%s_announcement" % ann
-                e.desc = "%s %s text was changed" % (group.type.name, ann)
+                e.type = "changed_action_announcement" 
+                e.desc = "%s action text was changed" % group.type.name
                 e.text = t
                 e.save()
 
@@ -475,21 +557,16 @@ def announcement_text(request, name, ann):
             return redirect('doc_writeup', name=charter.canonical_name())
 
         if "regenerate_text" in request.POST:
-            if ann == "action":
-                e = default_action_text(group, charter, login)
-            elif ann == "review":
-                e = default_review_text(group, charter, login)
-            # make sure form has the updated text
-            form = AnnouncementTextForm(initial=dict(announcement_text=e.text))
+            e = default_action_text(group, charter, login)
+            form = ActionAnnouncementTextForm(initial=dict(announcement_text=e.text))
 
         if "send_text" in request.POST and form.is_valid():
             parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
             messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
             return redirect('doc_writeup', name=charter.name)
 
-    return render_to_response('doc/charter/announcement_text.html',
+    return render_to_response('doc/charter/action_announcement_text.html',
                               dict(charter=charter,
-                                   announcement=ann,
                                    back_url=urlreverse("doc_writeup", kwargs=dict(name=charter.name)),
                                    announcement_text_form=form,
                                    ),

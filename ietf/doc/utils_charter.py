@@ -6,6 +6,7 @@ from django.conf import settings
 from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent, BallotPositionDocEvent
 from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
+from ietf.utils.mail import parse_preformatted
 from ietf.mailtoken.utils import gather_address_lists
 
 def charter_name_for_group(group):
@@ -120,28 +121,51 @@ def default_action_text(group, charter, by):
     e.save()
     return e
 
+def derive_new_work_text(review_text,group):
+    addrs= gather_address_lists('charter_external_review_new_work',group=group).as_strings()
+    (m,_,_) = parse_preformatted(review_text,
+                                 override={'To':addrs.to,
+                                           'Cc':addrs.cc,
+                                           'From':'The IESG <iesg@ietf.org>',
+                                           'Reply_to':'<iesg@ietf.org>'})
+    if not addrs.cc:
+        del m['Cc']
+    return m.as_string()
+
 def default_review_text(group, charter, by):
+    now = datetime.datetime.now()
     addrs=gather_address_lists('charter_external_review',group=group).as_strings(compact=False)
-    e = WriteupDocEvent(doc=charter, by=by)
-    e.by = by
-    e.type = "changed_review_announcement"
-    e.desc = "%s review text was changed" % group.type.name
-    e.text = render_to_string("doc/charter/review_text.txt",
+
+    e1 = WriteupDocEvent(doc=charter, by=by)
+    e1.by = by
+    e1.type = "changed_review_announcement"
+    e1.desc = "%s review text was changed" % group.type.name
+    e1.text = render_to_string("doc/charter/review_text.txt",
                               dict(group=group,
-                                   charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
-                                   charter_text=read_charter_text(charter),
-                                   chairs=group.role_set.filter(name="chair"),
-                                   secr=group.role_set.filter(name="secr"),
-                                   techadv=group.role_set.filter(name="techadv"),
-                                   milestones=group.groupmilestone_set.filter(state="charter"),
-                                   review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
-                                   review_type="new" if group.state_id == "proposed" else "recharter",
-                                   to=addrs.to,
-                                   cc=addrs.cc,
+                                    charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
+                                    charter_text=read_charter_text(charter),
+                                    chairs=group.role_set.filter(name="chair"),
+                                    secr=group.role_set.filter(name="secr"),
+                                    techadv=group.role_set.filter(name="techadv"),
+                                    milestones=group.groupmilestone_set.filter(state="charter"),
+                                    review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
+                                    review_type="new" if group.state_id == "proposed" else "recharter",
+                                    to=addrs.to,
+                                    cc=addrs.cc,
                                    )
                               )
-    e.save()
-    return e
+    e1.time = now
+    e1.save()
+    
+    e2 = WriteupDocEvent(doc=charter, by=by)
+    e2.by = by
+    e2.type = "changed_new_work_text"
+    e2.desc = "%s review text was changed" % group.type.name
+    e2.text = derive_new_work_text(e1.text,group)
+    e2.time = now
+    e2.save()
+
+    return (e1,e2)
 
 def generate_issue_ballot_mail(request, doc, ballot):
     active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active", email__role__group__type="area").distinct()
