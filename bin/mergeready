@@ -250,6 +250,7 @@ ready  = get_list(repo, 'ready-for-merge')
 hold   = get_list(repo, 'hold-for-merge')
 ready += get_ready_commits(repo, 'personal')
 ready += get_ready_commits(repo, 'branch/amsl')
+ready += get_ready_commits(repo, 'branch/iola')
 
 ready_commits = {}
 not_passed = {}
