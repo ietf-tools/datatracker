@@ -822,6 +822,14 @@ def make_mailtokens(apps):
                          'doc_non_ietf_stream_manager',
                         ])
 
+    mt_factory(slug='doc_iesg_processing_started',
+               desc="Recipients for a message when the IESG begins processing a document ",
+               to_slugs=['doc_authors',
+                         'doc_ad',
+                         'doc_shepherd',
+                         'doc_group_chairs',
+                        ])
+
 def forward(apps, schema_editor):
 
     make_recipients(apps)

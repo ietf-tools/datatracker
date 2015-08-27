@@ -16,10 +16,11 @@ from django.contrib import messages
 from ietf.doc.models import ( Document, DocAlias, RelatedDocument, State,
     StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS,
     save_document_in_history )
-from ietf.doc.mails import ( email_ad, email_pulled_from_rfc_queue, email_resurrect_requested,
+from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_requested,
     email_resurrection_completed, email_state_changed, email_stream_changed,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
-    generate_publication_request, email_adopted, email_intended_status_changed )
+    generate_publication_request, email_adopted, email_intended_status_changed,
+    email_iesg_processing_document )
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
@@ -669,8 +670,6 @@ def edit_info(request, name):
                 e.desc = "IESG process started in state <b>%s</b>" % doc.get_state("draft-iesg").name
                 e.save()
                     
-            orig_ad = doc.ad
-
             changes = []
 
             def desc(attr, new, old):
@@ -720,14 +719,14 @@ def edit_info(request, name):
                 e.type = "changed_document"
                 e.save()
 
+            # Todo - chase this
             update_telechat(request, doc, login,
                             r['telechat_date'], r['returning_item'])
 
             doc.time = datetime.datetime.now()
 
-            if changes and not new_document:
-                #TODO - use the 'this thing changed' messages instead
-                email_ad(request, doc, orig_ad, login, "\n".join(changes))
+            if changes:
+                email_iesg_processing_document(request, doc, changes)
                 
             doc.save()
             return HttpResponseRedirect(doc.get_absolute_url())

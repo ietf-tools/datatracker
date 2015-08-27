@@ -5086,6 +5086,20 @@
  "fields": {
   "cc": [],
   "to": [
+   "doc_ad",
+   "doc_authors",
+   "doc_group_chairs",
+   "doc_shepherd"
+  ],
+  "desc": "Recipients for a message when the IESG begins processing a document "
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "doc_iesg_processing_started"
+},
+{
+ "fields": {
+  "cc": [],
+  "to": [
    "doc_authors",
    "doc_group_chairs",
    "doc_group_responsible_directors",

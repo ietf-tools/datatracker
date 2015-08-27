@@ -373,7 +373,9 @@ class EditInfoTests(TestCase):
         self.assertEqual(draft.docevent_set.count(), events_before + 3)
         events = list(draft.docevent_set.order_by('time', 'id'))
         self.assertEqual(events[-3].type, "started_iesg_process")
-        self.assertEqual(len(outbox), mailbox_before)
+        self.assertEqual(len(outbox), mailbox_before+1)
+        self.assertTrue('IESG processing' in outbox[-1]['Subject'])
+        self.assertTrue('draft-ietf-mars-test2@' in outbox[-1]['To']) 
 
         # Redo, starting in publication requested to make sure WG state is also set
         draft.unset_state('draft-iesg')

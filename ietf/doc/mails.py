@@ -67,24 +67,18 @@ def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               extra=extra)
 
+def email_iesg_processing_document(request, doc, changes):
+    addrs = gather_address_lists('doc_iesg_processing_started',doc=doc)
+    send_mail(request, addrs.to, None,
+              'IESG processing details changed for %s' % doc.name,
+              'doc/mail/email_iesg_processing.txt', 
+              dict(doc=doc,
+                   changes=changes),
+              cc=addrs.cc)
+
 def html_to_text(html):
     return strip_tags(html.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("<br>", "\n"))
     
-#TODO Expunge this
-def email_ad(request, doc, ad, changed_by, text, subject=None):
-    if not ad or not changed_by or ad == changed_by:
-        return
-
-    to = ad.role_email("ad").formatted_email()
-    send_mail(request, to,
-              "DraftTracker Mail System <iesg-secretary@ietf.org>",
-              "%s updated by %s" % (doc.file_tag(), changed_by.plain_name()),
-              "doc/mail/change_notice.txt",
-              dict(text=html_to_text(text),
-                   doc=doc,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
-
-
 def generate_ballot_writeup(request, doc):
     e = doc.latest_event(type="iana_review")
     iana = e.desc if e else ""
