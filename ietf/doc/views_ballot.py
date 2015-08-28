@@ -539,12 +539,24 @@ def ballot_writeupnotes(request, name):
                     pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
                     pos.save()
 
+                    # Consider mailing this position to 'ballot_saved'
+
                 approval = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
                 if not approval:
                     approval = generate_approval_mail(request, doc)
 
                 msg = generate_issue_ballot_mail(request, doc, ballot)
-                send_mail_preformatted(request, msg)
+
+                addrs = gather_address_lists('ballot_issued',doc=doc).as_strings()
+                override = {'To':addrs.to}
+                if addrs.cc:
+                    override['CC'] = addrs.cc
+                send_mail_preformatted(request, msg, override=override)
+
+                addrs = gather_address_lists('ballot_issued_iana',doc=doc).as_strings()
+                override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "Bcc": None , "Reply-To": None}
+                if addrs.cc:
+                    override['CC'] = addrs.cc
                 send_mail_preformatted(request, msg, extra=extra_automation_headers(doc),
                                        override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "CC": None, "Bcc": None , "Reply-To": None})
 

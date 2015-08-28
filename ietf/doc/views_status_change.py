@@ -107,7 +107,11 @@ def send_status_change_eval_email(request,doc):
                                  doc_url = settings.IDTRACKER_BASE_URL+doc.get_absolute_url(),
                                  )
                            )
-    send_mail_preformatted(request,msg)
+    addrs = gather_address_lists('ballot_issued',doc=doc)
+    override = {'To':addrs.to }
+    if addrs.cc:
+        override['Cc'] = addrs.cc
+    send_mail_preformatted(request,msg,override=override)
 
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Status change text", help_text="Edit the status change text.", required=False)

@@ -356,6 +356,14 @@ def make_mailtokens(apps):
                         ],
               )
 
+    mt_factory(slug='ballot_issued',
+               desc="Recipients when a ballot is issued",
+               to_slugs=['iesg',])
+
+    mt_factory(slug='ballot_issued_iana',
+               desc="Recipients for IANA message when a ballot is issued",
+               to_slugs=['iana_eval',])
+
     mt_factory(slug='last_call_requested',
                desc="Recipients when AD requests a last call",
                to_slugs=['iesg_secretary',],

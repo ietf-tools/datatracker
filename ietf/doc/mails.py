@@ -10,9 +10,8 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
-from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
+from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.doc.utils import needed_ballot_positions, get_document_content
-from ietf.person.models import Person
 from ietf.group.models import Role
 from ietf.doc.models import Document
 from ietf.mailtoken.utils import gather_address_lists
@@ -308,66 +307,14 @@ def email_ballot_undeferred(request, doc, by, telechat_date):
               cc=cc)
 
 def generate_issue_ballot_mail(request, doc, ballot):
-    active_ads = Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area").distinct()
     
-    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ballot=ballot).order_by("-time", '-id').select_related('ad')
-
-    # format positions and setup discusses and comments
-    ad_feedback = []
-    seen = set()
-    active_ad_positions = []
-    inactive_ad_positions = []
-    for p in positions:
-        if p.ad in seen:
-            continue
-
-        seen.add(p.ad)
-        
-        def formatted(val):
-            if val:
-                return "[ X ]"
-            else:
-                return "[   ]"
-
-        fmt = u"%-21s%-10s%-11s%-9s%-10s" % (
-            p.ad.plain_name()[:21],
-            formatted(p.pos_id == "yes"),
-            formatted(p.pos_id == "noobj"),
-            formatted(p.pos_id == "discuss"),
-            "[ R ]" if p.pos_id == "recuse" else formatted(p.pos_id == "abstain"),
-            )
-
-        if p.ad in active_ads:
-            active_ad_positions.append(fmt)
-            if not p.pos_id == "discuss":
-                p.discuss = ""
-            if p.comment or p.discuss:
-                ad_feedback.append(p)
-        else:
-            inactive_ad_positions.append(fmt)
-        
-    active_ad_positions.sort()
-    inactive_ad_positions.sort()
-    ad_feedback.sort(key=lambda p: p.ad.plain_name())
-
     e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
     last_call_expires = e.expires if e else None
-
-    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
-    approval_text = e.text if e else ""
-
-    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
-    ballot_writeup = e.text if e else ""
 
     return render_to_string("doc/mail/issue_ballot_mail.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
-                                 active_ad_positions=active_ad_positions,
-                                 inactive_ad_positions=inactive_ad_positions,
-                                 ad_feedback=ad_feedback,
                                  last_call_expires=last_call_expires,
-                                 approval_text=approval_text,
-                                 ballot_writeup=ballot_writeup,
                                  needed_ballot_positions=
                                    needed_ballot_positions(doc,
                                      doc.active_ballot().active_ad_positions().values()

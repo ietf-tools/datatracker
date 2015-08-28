@@ -69,6 +69,7 @@ def change_state(request, name, option=None):
                         pos.pos_id = "yes"
                         pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
                         pos.save()
+                        # Consider mailing that position to 'ballot_saved'
                     send_conflict_eval_email(request,review)
 
 
@@ -114,11 +115,17 @@ def send_conflict_eval_email(request,review):
                                  doc_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
                                  )
                            )
-    send_mail_preformatted(request,msg)
+    addrs = gather_address_lists('ballot_issued',doc=review).as_strings()
+    override = {'To':addrs.to}
+    if addrs.cc:
+        override['Cc']=addrs.cc
+    send_mail_preformatted(request,msg,override=override)
+    addrs = gather_address_lists('ballot_issued_iana',doc=review).as_strings()
     email_iana(request, 
                review.relateddocument_set.get(relationship__slug='conflrev').target.document,
-               settings.IANA_EVAL_EMAIL,
-                msg)
+               addrs.to,
+               msg,
+               addrs.cc)
 
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Conflict review response", help_text="Edit the conflict review response.", required=False)

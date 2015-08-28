@@ -4906,6 +4906,28 @@
 },
 {
  "fields": {
+  "cc": [],
+  "to": [
+   "iesg"
+  ],
+  "desc": "Recipients when a ballot is issued"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "ballot_issued"
+},
+{
+ "fields": {
+  "cc": [],
+  "to": [
+   "iana_eval"
+  ],
+  "desc": "Recipients for IANA message when a ballot is issued"
+ },
+ "model": "mailtoken.mailtoken",
+ "pk": "ballot_issued_iana"
+},
+{
+ "fields": {
   "cc": [
    "conflict_review_stream_manager",
    "doc_affecteddoc_authors",

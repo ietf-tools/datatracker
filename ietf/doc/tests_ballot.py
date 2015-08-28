@@ -12,7 +12,7 @@ from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 
@@ -278,36 +278,8 @@ class BallotWriteupsTests(TestCase):
         url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
 
-        ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
 
-        def create_pos(num, vote, comment="", discuss=""):
-            ad = Person.objects.get(name="Ad No%s" % num)
-            e = BallotPositionDocEvent()
-            e.doc = draft
-            e.ballot = ballot
-            e.by = ad
-            e.ad = ad
-            e.pos = BallotPositionName.objects.get(slug=vote)
-            e.type = "changed_ballot_position"
-            e.comment = comment
-            if e.comment:
-                e.comment_time = datetime.datetime.now()
-            e.discuss = discuss
-            if e.discuss:
-                e.discuss_time = datetime.datetime.now()
-            e.save()
-
-        # active
-        create_pos(1, "yes", discuss="discuss1 " * 20)
-        create_pos(2, "noobj", comment="comment2 " * 20)
-        create_pos(3, "discuss", discuss="discuss3 " * 20, comment="comment3 " * 20)
-        create_pos(4, "abstain")
-        create_pos(5, "recuse")
-
-        # inactive
-        create_pos(9, "yes")
-
-        mailbox_before = len(outbox)
+        empty_outbox()
         
         r = self.client.post(url, dict(
                 ballot_writeup="This is a test.",
@@ -316,15 +288,12 @@ class BallotWriteupsTests(TestCase):
         draft = Document.objects.get(name=draft.name)
 
         self.assertTrue(draft.latest_event(type="sent_ballot_announcement"))
-        self.assertEqual(len(outbox), mailbox_before + 2)
-        issue_email = outbox[-2]
-        self.assertTrue("Evaluation:" in issue_email['Subject'])
-        self.assertTrue("comment1" not in str(issue_email))
-        self.assertTrue("comment2" in str(issue_email))
-        self.assertTrue("comment3" in str(issue_email))
-        self.assertTrue("discuss3" in str(issue_email))
-        self.assertTrue("This is a test" in str(issue_email))
-        self.assertTrue("The IESG has approved" in str(issue_email))
+        self.assertEqual(len(outbox), 2)
+        self.assertTrue('Evaluation:' in outbox[-2]['Subject'])
+        self.assertTrue('iesg@' in outbox[-2]['To'])
+        self.assertTrue('Evaluation:' in outbox[-1]['Subject'])
+        self.assertTrue('drafts-eval@' in outbox[-1]['To'])
+        self.assertTrue('X-IETF-Draft-string' in outbox[-1])
 
     def test_edit_approval_text(self):
         draft = make_test_data()
