@@ -23,6 +23,7 @@ from ietf.submit.utils import check_idnits, found_idnits, validate_submission, c
 from ietf.submit.utils import post_submission, cancel_submission, rename_submission_files
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 from ietf.utils.draft import Draft
+from ietf.utils.log import log
 
 
 def upload_submission(request):
@@ -115,8 +116,8 @@ def upload_submission(request):
                         idnits_message=idnits_message,
                         )
                 except Exception as e:
-                    import sys
-                    sys.stderr.write("Exception: %s\n" % e)
+                    log("Exception: %s\n" % e)
+                    raise
 
                 create_submission_event(request, submission, desc="Uploaded submission")
 
