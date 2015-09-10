@@ -116,7 +116,7 @@ class SubmissionUploadForm(forms.Form):
 
     def clean(self):
         if self.shutdown and not has_role(self.request.user, "Secretariat"):
-            raise forms.ValidationError('The tool is shut down')
+            raise forms.ValidationError('The submission tool is currently shut down')
 
         # sanity check that paths exist (for development servers)
         for s in ("IDSUBMIT_STAGING_PATH", "IDSUBMIT_IDNITS_BINARY",
@@ -190,7 +190,7 @@ class SubmissionUploadForm(forms.Form):
             except forms.ValidationError:
                 raise
             except Exception as e:
-                raise forms.ValidationError("Exception when trying to process the XML file: %s" % e)
+                raise forms.ValidationError("An exception occurred when trying to process the XML file: %s" % e)
             finally:
                 os.close(tfh)
                 os.unlink(tfn)
@@ -205,14 +205,14 @@ class SubmissionUploadForm(forms.Form):
             self.title    = self.parsed_draft.get_title()
             txt_file.seek(0)
 
-            if not self.filename:
-                raise forms.ValidationError("Draft parser could not extract a valid draft name from the upload")
+        if not self.filename:
+            raise forms.ValidationError("Could not extract a valid draft name from the upload")
 
-            if not self.revision:
-                raise forms.ValidationError("Draft parser could not extract a valid draft revision from the upload")
+        if not self.revision:
+            raise forms.ValidationError("Could not extract a valid draft revision from the upload")
 
-            if not self.title:
-                raise forms.ValidationError("Draft parser could not extract a valid title from the upload")
+        if not self.title:
+            raise forms.ValidationError("Could not extract a valid title from the upload")
 
         if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
             # check group
@@ -221,7 +221,7 @@ class SubmissionUploadForm(forms.Form):
             # check existing
             existing = Submission.objects.filter(name=self.filename, rev=self.revision).exclude(state__in=("posted", "cancel"))
             if existing:
-                raise forms.ValidationError(mark_safe('Submission with same name and revision is currently being processed. <a href="%s">Check the status here.</a>' % urlreverse("submit_submission_status", kwargs={ 'submission_id': existing[0].pk })))
+                raise forms.ValidationError(mark_safe('A submission with same name and revision is currently being processed. <a href="%s">Check the status here.</a>' % urlreverse("submit_submission_status", kwargs={ 'submission_id': existing[0].pk })))
 
             # cut-off
             if self.revision == '00' and self.in_first_cut_off:
