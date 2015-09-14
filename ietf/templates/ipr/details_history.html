@@ -41,7 +41,7 @@
           </td>
           <td>{{ e.by }}</td>
           {% if e.message %}
-            <td>{{ e.message|render_message_for_history|format_history_text:"100" }}
+            <td>{{ e.message|render_message_for_history|format_history_text:"100"|safe }}
               {% if e.response_due %}
                 <br>Response Due: {{ e.response_due|date:"Y-m-d" }}
               {% endif %}
