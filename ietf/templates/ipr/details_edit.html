@@ -138,7 +138,7 @@
 
             <div class="col-md-6">
               {{ draft_form.id }}
-              {{ draft_form.document }}
+              {{ draft_form.document }}{% if draft_form.document.errors %}<div class="alert alert-danger">{{ draft_form.document.errors }}</div>{% endif %}
             </div>
 
             <div class="col-md-2">
