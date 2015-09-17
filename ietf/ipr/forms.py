@@ -91,8 +91,8 @@ class AddEmailForm(forms.Form):
         return self.cleaned_data
 
 class DraftForm(forms.ModelForm):
-    document = SearchableDocAliasField(label="I-D name/RFC number", required=False, doc_type="draft")
-    
+    document = SearchableDocAliasField(label="I-D name/RFC number", required=True, doc_type="draft")
+
     class Meta:
         model = IprDocRel
         fields = '__all__'
