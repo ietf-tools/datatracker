@@ -4,6 +4,8 @@ import os, sys, re
 
 from copy import copy
 
+import datetime
+
 # boilerplate
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../web/"))
 sys.path = [ basedir ] + sys.path
@@ -145,6 +147,7 @@ for doc in qs:
         original_notify = doc.notify
         new_notify = ', '.join(list(items))
         doc.notify = new_notify
+        doc.time = datetime.datetime.now()
         doc.save()
         e = DocEvent(type="added_comment",doc=doc,time=doc.time,by=by)
         e.desc = "Notify list changed from %s to %s"% (original_notify, new_notify if new_notify else '(None)')
