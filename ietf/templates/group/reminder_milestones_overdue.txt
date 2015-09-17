@@ -1,7 +1,0 @@
-{% autoescape off %}{% filter wordwrap:73 %}This is a reminder that milestones in "{{ group.name }}" are overdue.
-
-{% for m in milestones %}"{{ m.desc }}" is overdue{% if m.months_overdue > 0 %} with {{ m.months_overdue }} month{{ m.months_overdue|pluralize }}{% endif %}!
-
-{% endfor %}
-URL: {{ url }}
-{% endfilter %}{% endautoescape %}

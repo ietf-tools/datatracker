@@ -1,7 +1,0 @@
-{% autoescape off %}{% filter wordwrap:73 %}This is a reminder that milestones in "{{ group.name }}" are soon due.
-
-{% for m in milestones %}"{{ m.desc }}" is due {% if m.due == today %}today!{% else %}in {{ early_warning_days }} days.{% endif %}
-
-{% endfor %}
-URL: {{ url }}
-{% endfilter %}{% endautoescape %}

@@ -5463,41 +5463,6 @@
  "fields": {
   "cc": [],
   "to": [
-   "group_chairs"
-  ],
-  "desc": "Recipients for reminder message for milestones about to become overdue"
- },
- "model": "mailtrigger.mailtrigger",
- "pk": "milestones_due_soon"
-},
-{
- "fields": {
-  "cc": [],
-  "to": [
-   "group_chairs"
-  ],
-  "desc": "Recipients for message about milestones that are overdue"
- },
- "model": "mailtrigger.mailtrigger",
- "pk": "milestones_overdue"
-},
-{
- "fields": {
-  "cc": [
-   "group_chairs"
-  ],
-  "to": [
-   "group_responsible_directors"
-  ],
-  "desc": "Recipients for reminder message that unapproved milestone changes need review"
- },
- "model": "mailtrigger.mailtrigger",
- "pk": "milestone_review_reminder"
-},
-{
- "fields": {
-  "cc": [],
-  "to": [
    "commenter"
   ],
   "desc": "Recipients for a message confirming a comment was made"

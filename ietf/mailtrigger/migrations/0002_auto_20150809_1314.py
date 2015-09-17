@@ -628,20 +628,6 @@ def make_mailtriggers(apps):
                          'doc_discussing_ads',
                         ])
 
-    mt_factory(slug='milestone_review_reminder',
-               desc="Recipients for reminder message that unapproved milestone changes need review",
-               to_slugs=['group_responsible_directors',],
-               cc_slugs=['group_chairs', ],
-              )
-
-    mt_factory(slug='milestones_due_soon',
-               desc="Recipients for reminder message for milestones about to become overdue",
-               to_slugs=['group_chairs', ])
-
-    mt_factory(slug='milestones_overdue',
-               desc="Recipients for message about milestones that are overdue",
-               to_slugs=['group_chairs', ])
-
     mt_factory(slug='group_personnel_change',
                desc="Recipients for a message noting changes in a group's personnel",
                to_slugs=['iesg_secretary',
