@@ -7,7 +7,7 @@ class CcSelectForm(forms.Form):
     cc_choices = forms.MultipleChoiceField(
                    label='Cc',
                    choices=[],
-                   widget=forms.CheckboxSelectMultiple(attrs={'frob':'knob'}),
+                   widget=forms.CheckboxSelectMultiple(),
                 )
 
     def __init__(self, mailtrigger_slug, mailtrigger_context, *args, **kwargs):
