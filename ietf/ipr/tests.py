@@ -15,7 +15,7 @@ from ietf.message.models import Message
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 
 class IprTests(TestCase):

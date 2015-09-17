@@ -23,7 +23,7 @@ from ietf.submit.utils import check_idnits, found_idnits, validate_submission, c
 from ietf.submit.utils import post_submission, cancel_submission, rename_submission_files
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 from ietf.utils.draft import Draft
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 
 def upload_submission(request):

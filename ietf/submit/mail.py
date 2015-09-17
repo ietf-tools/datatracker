@@ -8,7 +8,7 @@ from ietf.doc.models import Document
 from ietf.person.models import Person
 from ietf.message.models import Message
 from ietf.utils.accesstoken import generate_access_token
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 def send_submission_confirmation(request, submission):
     subject = 'Confirm submission of I-D %s' % submission.name

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from ietf.mailtoken.models import MailToken, Recipient
+from ietf.mailtrigger.models import MailTrigger, Recipient
 
 class RecipientAdmin(admin.ModelAdmin):
     list_display = [ 'slug', 'desc', 'template', 'has_code', ]
@@ -10,8 +10,8 @@ class RecipientAdmin(admin.ModelAdmin):
 admin.site.register(Recipient, RecipientAdmin)
 
 
-class MailTokenAdmin(admin.ModelAdmin):
+class MailTriggerAdmin(admin.ModelAdmin):
     list_display = [ 'slug', 'desc',  ]
     filter_horizontal = [ 'to', 'cc',  ]
-admin.site.register(MailToken, MailTokenAdmin)
+admin.site.register(MailTrigger, MailTriggerAdmin)
 

@@ -18,7 +18,7 @@ from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
 from ietf.utils import draft, markup_txt
 from ietf.utils.mail import send_mail
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 #TODO FIXME - it would be better if this lived in ietf/doc/mails.py, but there's
 #        an import order issue to work out.
@@ -524,7 +524,7 @@ def check_common_doc_name_rules(name):
         raise ValidationError(errors)
 
 def get_initial_notify(doc,extra=None):
-    # With the mailtoken based changes, a document's notify should start empty
+    # With the mailtrigger based changes, a document's notify should start empty
     receivers = []
 
     if extra:

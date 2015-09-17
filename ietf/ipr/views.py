@@ -34,7 +34,7 @@ from ietf.person.models import Person
 from ietf.secr.utils.document import get_rfc_num, is_draft
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 # ----------------------------------------------------------------
 # Globals

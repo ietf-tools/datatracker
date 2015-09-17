@@ -219,7 +219,7 @@ INSTALLED_APPS = (
     'ietf.ipr',
     'ietf.liaisons',
     'ietf.mailinglists',
-    'ietf.mailtoken',
+    'ietf.mailtrigger',
     'ietf.meeting',
     'ietf.message',
     'ietf.name',

@@ -20,7 +20,7 @@ from ietf.person.models import Email
 from ietf.person.fields import SearchableEmailField
 from ietf.utils.fields import MultiEmailField
 from ietf.utils.mail import send_mail
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)

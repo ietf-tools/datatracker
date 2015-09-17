@@ -18,7 +18,7 @@ from django.utils.encoding import smart_str
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.pipe import pipe
 from ietf.utils import unaccent
 from ietf.utils.mail import send_mail_text, send_mail

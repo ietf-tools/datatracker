@@ -5,7 +5,7 @@ from django.template import Template, Context
 
 from ietf.group.models import Role
 
-class MailToken(models.Model):
+class MailTrigger(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     desc = models.TextField(blank=True)
     to   = models.ManyToManyField('Recipient', null=True, blank=True, related_name='used_in_to')

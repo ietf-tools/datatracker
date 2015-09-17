@@ -1,5 +1,5 @@
 from collections import namedtuple
-from ietf.mailtoken.models import MailToken, Recipient
+from ietf.mailtrigger.models import MailTrigger, Recipient
 from ietf.submit.models import Submission
 
 class AddrLists(namedtuple('AddrLists',['to','cc'])):
@@ -15,15 +15,15 @@ class AddrLists(namedtuple('AddrLists',['to','cc'])):
         return namedtuple('AddrListsAsStrings',['to','cc'])(to=to_string,cc=cc_string)
 
 def gather_address_lists(slug, **kwargs):
-    mailtoken = MailToken.objects.get(slug=slug)
+    mailtrigger = MailTrigger.objects.get(slug=slug)
 
     to = set()
-    for recipient in mailtoken.to.all():
+    for recipient in mailtrigger.to.all():
         to.update(recipient.gather(**kwargs))
     to.discard('')
 
     cc = set()
-    for recipient in mailtoken.cc.all():
+    for recipient in mailtrigger.cc.all():
         cc.update(recipient.gather(**kwargs))
     cc.discard('')
 
@@ -32,7 +32,7 @@ def gather_address_lists(slug, **kwargs):
 def gather_relevant_expansions(**kwargs):
 
     def starts_with(prefix):
-        return MailToken.objects.filter(slug__startswith=prefix).values_list('slug',flat=True)
+        return MailTrigger.objects.filter(slug__startswith=prefix).values_list('slug',flat=True)
 
     relevant = set() 
     
@@ -74,10 +74,10 @@ def gather_relevant_expansions(**kwargs):
         relevant.update(starts_with('sub_'))
 
     rule_list = []
-    for mailtoken in MailToken.objects.filter(slug__in=relevant):
-        addrs = gather_address_lists(mailtoken.slug,**kwargs)
+    for mailtrigger in MailTrigger.objects.filter(slug__in=relevant):
+        addrs = gather_address_lists(mailtrigger.slug,**kwargs)
         if addrs.to or addrs.cc:
-            rule_list.append((mailtoken.slug,mailtoken.desc,addrs.to,addrs.cc))
+            rule_list.append((mailtrigger.slug,mailtrigger.desc,addrs.to,addrs.cc))
     return sorted(rule_list)
 
 def get_base_ipr_request_address():

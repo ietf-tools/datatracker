@@ -26,7 +26,7 @@ from ietf.secr.proceedings.views import build_choices, handle_upload_file, make_
 from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 
 # prep for agenda changes

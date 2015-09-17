@@ -10,7 +10,7 @@ from ietf.doc.models import Document, DocEvent, State, save_document_in_history,
 from ietf.person.models import Person 
 from ietf.meeting.models import Meeting
 from ietf.doc.utils import add_state_change_event
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 
 def expirable_draft(draft):

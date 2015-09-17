@@ -30,16 +30,16 @@
   <table class="table table-condensed table-striped ietf">
     <thead>
       <tr>
-        <th>MailToken</th>
+        <th>Mail Trigger</th>
         <th>To</th>
         <th>Cc</th>
       </tr>
     </thead>
     <tbody>
-      {% for token,desc,to,cc in expansions %}
+      {% for trigger,desc,to,cc in expansions %}
         <tr>
-          <td><a href="{% url 'ietf.mailtoken.views.show_tokens' token %}"
-                 title="{{desc}}">{{token}}</a></td>
+          <td><a href="{% url 'ietf.mailtrigger.views.show_triggers' trigger %}"
+                 title="{{desc}}">{{trigger}}</a></td>
           <td> {{to|join:', '}}</td>
           <td> {{cc|join:', '}}</td>
         </tr>

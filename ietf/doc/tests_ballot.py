@@ -152,7 +152,7 @@ class EditPositionTests(TestCase):
         # send
         mailbox_before = len(outbox)
 
-        r = self.client.post(url, dict(extra_cc="test298347@example.com", cc_tokens=['doc_notify','doc_group_chairs']))
+        r = self.client.post(url, dict(extra_cc="test298347@example.com", cc_choices=['doc_notify','doc_group_chairs']))
         self.assertEqual(r.status_code, 302)
 
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -163,11 +163,11 @@ class EditPositionTests(TestCase):
         self.assertTrue("clearer title" in str(m))
         self.assertTrue("Test!" in str(m))
         self.assertTrue("iesg@" in m['To'])
-        # cc_token doc_group_chairs
+        # cc_choice doc_group_chairs
         self.assertTrue("mars-chairs@" in m['Cc'])
-        # cc_token doc_notify
+        # cc_choice doc_notify
         self.assertTrue("somebody@example.com" in m['Cc'])
-        # cc_token doc_group_email_list was not selected
+        # cc_choice doc_group_email_list was not selected
         self.assertFalse(draft.group.list_email in m['Cc'])
         # extra-cc    
         self.assertTrue("test298347@example.com" in m['Cc'])

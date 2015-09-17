@@ -4332,7 +4332,7 @@
   "template": "{{commenter}}",
   "desc": "The person providing a comment to nomcom"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "commenter"
 },
 {
@@ -4340,7 +4340,7 @@
   "template": null,
   "desc": "The steering group (e.g. IRSG) of a document being reviewed for IETF stream conflicts"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "conflict_review_steering_group"
 },
 {
@@ -4348,7 +4348,7 @@
   "template": null,
   "desc": "The stream manager of a document being reviewed for IETF stream conflicts"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "conflict_review_stream_manager"
 },
 {
@@ -4356,7 +4356,7 @@
   "template": "{% if doc.ad %}<{{doc.ad.email_address}}>{% endif %}",
   "desc": "The document's responsible Area Director"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_ad"
 },
 {
@@ -4364,7 +4364,7 @@
   "template": null,
   "desc": "The authors of the subject documents of a conflict-review or status-change"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_affecteddoc_authors"
 },
 {
@@ -4372,7 +4372,7 @@
   "template": null,
   "desc": "The chairs of groups of the subject documents of a conflict-review or status-change"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_affecteddoc_group_chairs"
 },
 {
@@ -4380,7 +4380,7 @@
   "template": null,
   "desc": "The notify field of the subject documents of a conflict-review or status-change"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_affecteddoc_notify"
 },
 {
@@ -4388,7 +4388,7 @@
   "template": "{% if doc.type_id == \"draft\" %}<{{doc.name}}@ietf.org>{% endif %}",
   "desc": "The document's authors"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_authors"
 },
 {
@@ -4396,7 +4396,7 @@
   "template": null,
   "desc": "Any ADs holding an active DISCUSS position on a given document"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_discussing_ads"
 },
 {
@@ -4404,7 +4404,7 @@
   "template": null,
   "desc": "The document's group chairs (if the document is assigned to a working or research group)"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_group_chairs"
 },
 {
@@ -4412,7 +4412,7 @@
   "template": null,
   "desc": "The document's group delegates (if the document is assigned to a working or research group)"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_group_delegates"
 },
 {
@@ -4420,7 +4420,7 @@
   "template": null,
   "desc": "The list address of the document's group"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_group_mail_list"
 },
 {
@@ -4428,7 +4428,7 @@
   "template": null,
   "desc": "The document's group's responsible AD(s) or IRTF chair"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_group_responsible_directors"
 },
 {
@@ -4436,7 +4436,7 @@
   "template": null,
   "desc": "Leadership for a document that has a new IPR disclosure"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_ipr_group_or_ad"
 },
 {
@@ -4444,7 +4444,7 @@
   "template": null,
   "desc": "The document's stream manager if the document is not in the IETF stream"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_non_ietf_stream_manager"
 },
 {
@@ -4452,7 +4452,7 @@
   "template": "{{doc.notify}}",
   "desc": "The addresses in the document's notify field"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_notify"
 },
 {
@@ -4460,7 +4460,7 @@
   "template": "{% if doc.shepherd %}<{{doc.shepherd.address}}>{% endif %}",
   "desc": "The document's shepherd"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_shepherd"
 },
 {
@@ -4468,7 +4468,7 @@
   "template": null,
   "desc": "The manager of the document's stream"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "doc_stream_manager"
 },
 {
@@ -4476,7 +4476,7 @@
   "template": "{% if group and group.acronym %}<{{group.acronym}}-chairs@ietf.org>{% endif %}",
   "desc": "The group's chairs"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "group_chairs"
 },
 {
@@ -4484,7 +4484,7 @@
   "template": "{{ changed_personnel | join:\", \" }}",
   "desc": "Any personnel who were added or deleted when a group's personnel changes"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "group_changed_personnel"
 },
 {
@@ -4492,7 +4492,7 @@
   "template": "{% if group.list_email %}<{{ group.list_email }}>{% endif %}",
   "desc": "The group's mailing list"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "group_mail_list"
 },
 {
@@ -4500,7 +4500,7 @@
   "template": null,
   "desc": "The group's responsible AD(s) or IRTF chair"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "group_responsible_directors"
 },
 {
@@ -4508,7 +4508,7 @@
   "template": null,
   "desc": "The group's steering group (IESG or IRSG)"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "group_steering_group"
 },
 {
@@ -4516,7 +4516,7 @@
   "template": "The IAB <iab@iab.org>",
   "desc": "The IAB"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "iab"
 },
 {
@@ -4524,7 +4524,7 @@
   "template": "<iana@iana.org>",
   "desc": "IANA"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "iana"
 },
 {
@@ -4532,7 +4532,7 @@
   "template": "IANA <drafts-approval@icann.org>",
   "desc": "IANA's draft approval address"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "iana_approve"
 },
 {
@@ -4540,7 +4540,7 @@
   "template": "IANA <drafts-eval@icann.org>",
   "desc": "IANA's draft evaluation address"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "iana_eval"
 },
 {
@@ -4548,7 +4548,7 @@
   "template": "IANA <drafts-lastcall@icann.org>",
   "desc": "IANA's draft last call address"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "iana_last_call"
 },
 {
@@ -4556,7 +4556,7 @@
   "template": "The IESG <iesg@ietf.org>",
   "desc": "The IESG"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "iesg"
 },
 {
@@ -4564,7 +4564,7 @@
   "template": "<iesg-secretary@ietf.org>",
   "desc": "The Secretariat"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "iesg_secretary"
 },
 {
@@ -4572,7 +4572,7 @@
   "template": "IETF-Announce <ietf-announce@ietf.org>",
   "desc": "The IETF Announce list"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "ietf_announce"
 },
 {
@@ -4580,7 +4580,7 @@
   "template": "<ietf-secretariat-reply@ietf.org>",
   "desc": "The Secretariat"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "ietf_secretariat"
 },
 {
@@ -4588,7 +4588,7 @@
   "template": "<internet-drafts@ietf.org>",
   "desc": "The internet drafts ticketing system"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "internet_draft_requests"
 },
 {
@@ -4596,7 +4596,7 @@
   "template": "ipr-announce@ietf.org",
   "desc": "The IETF IPR announce list"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "ipr_announce"
 },
 {
@@ -4604,7 +4604,7 @@
   "template": "<ietf-ipr@ietf.org>",
   "desc": "The ipr disclosure handling system"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "ipr_requests"
 },
 {
@@ -4612,7 +4612,7 @@
   "template": "{% if ipr.submitter_email %}{{ ipr.submitter_email }}{% endif %}",
   "desc": "The submitter of an IPR disclosure"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "ipr_submitter"
 },
 {
@@ -4620,7 +4620,7 @@
   "template": null,
   "desc": "The submitter (or ietf participant if the submitter is not available) of all IPR disclosures updated directly by this disclosure, without recursing to what the updated disclosures might have updated."
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "ipr_updatedipr_contacts"
 },
 {
@@ -4628,7 +4628,7 @@
   "template": null,
   "desc": "The holders of all IPR disclosures updated by disclosure and disclosures updated by those and so on."
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "ipr_updatedipr_holders"
 },
 {
@@ -4636,7 +4636,7 @@
   "template": "{{liaison.cc}}",
   "desc": "The addresses captured in the Cc field of the liaison statement form"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "liaison_cc"
 },
 {
@@ -4644,7 +4644,7 @@
   "template": null,
   "desc": "The assigned liaison manager for an external group "
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "liaison_manager"
 },
 {
@@ -4652,7 +4652,7 @@
   "template": "{{liaison.response_contact}}",
   "desc": "The addresses captured in the response contact field of the liaison statement form"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "liaison_response_contact"
 },
 {
@@ -4660,7 +4660,7 @@
   "template": "<statements@ietf.org>",
   "desc": "The IETF liaison statement ticketing system"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "liaison_statements_list"
 },
 {
@@ -4668,7 +4668,7 @@
   "template": "{{liaison.technical_contact}}",
   "desc": "The addresses captured in the technical contact field of the liaison statement form"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "liaison_technical_contact"
 },
 {
@@ -4676,7 +4676,7 @@
   "template": "{{liaison.to_contact}}",
   "desc": "The addresses captured in the To field of the liaison statement form"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "liaison_to_contact"
 },
 {
@@ -4684,7 +4684,7 @@
   "template": "{% if person and person.email_address %}<{{ person.email_address }}>{% endif %}",
   "desc": "The person currently logged into the datatracker who initiated a given action"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "logged_in_person"
 },
 {
@@ -4692,7 +4692,7 @@
   "template": "<new-work@ietf.org>",
   "desc": "The IETF New Work list"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "new_work"
 },
 {
@@ -4700,7 +4700,7 @@
   "template": "{{nomcom.group.get_chair.email.address}}",
   "desc": "The chair of a given nomcom"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "nomcom_chair"
 },
 {
@@ -4708,7 +4708,7 @@
   "template": "{{nominator}}",
   "desc": "The person that submitted a nomination to nomcom"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "nominator"
 },
 {
@@ -4716,7 +4716,7 @@
   "template": "{{nominee}}",
   "desc": "The person nominated for a position"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "nominee"
 },
 {
@@ -4724,7 +4724,7 @@
   "template": "<rfc-editor@rfc-editor.org>",
   "desc": "The RFC Editor"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "rfc_editor"
 },
 {
@@ -4732,7 +4732,7 @@
   "template": null,
   "desc": "The RFC Editor if a document is in the RFC Editor queue"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "rfc_editor_if_doc_in_queue"
 },
 {
@@ -4740,7 +4740,7 @@
   "template": null,
   "desc": "The person that requested a meeting slot for a given group"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "session_requester"
 },
 {
@@ -4748,7 +4748,7 @@
   "template": "<session-request@ietf.org>",
   "desc": "The session request ticketing system"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "session_requests"
 },
 {
@@ -4756,7 +4756,7 @@
   "template": null,
   "desc": "The managers of any related streams"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "stream_managers"
 },
 {
@@ -4764,7 +4764,7 @@
   "template": null,
   "desc": "The authors of a submitted draft"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "submission_authors"
 },
 {
@@ -4772,7 +4772,7 @@
   "template": null,
   "desc": "The people who can confirm a draft submission"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "submission_confirmers"
 },
 {
@@ -4780,7 +4780,7 @@
   "template": null,
   "desc": "The chairs of a submitted draft belonging to a group"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "submission_group_chairs"
 },
 {
@@ -4788,7 +4788,7 @@
   "template": null,
   "desc": "The people who can confirm a draft submission"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "submission_group_mail_list"
 },
 {
@@ -4796,7 +4796,7 @@
   "template": "{{submission.submitter}}",
   "desc": "The person that submitted a draft"
  },
- "model": "mailtoken.recipient",
+ "model": "mailtrigger.recipient",
  "pk": "submission_submitter"
 },
 {
@@ -4812,7 +4812,7 @@
   ],
   "desc": "Recipients when a charter is approved"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ballot_approved_charter"
 },
 {
@@ -4832,7 +4832,7 @@
   ],
   "desc": "Recipients when a conflict review ballot is approved"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ballot_approved_conflrev"
 },
 {
@@ -4852,7 +4852,7 @@
   ],
   "desc": "Recipients when an IETF stream document ballot is approved"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ballot_approved_ietf_stream"
 },
 {
@@ -4863,7 +4863,7 @@
   ],
   "desc": "Recipients for IANA message when an IETF stream document ballot is approved"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ballot_approved_ietf_stream_iana"
 },
 {
@@ -4881,7 +4881,7 @@
   ],
   "desc": "Recipients when a status change is approved"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ballot_approved_status_change"
 },
 {
@@ -4901,7 +4901,7 @@
   ],
   "desc": "Recipients when a ballot is deferred to or undeferred from a future telechat"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ballot_deferred"
 },
 {
@@ -4912,7 +4912,7 @@
   ],
   "desc": "Recipients when a ballot is issued"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ballot_issued"
 },
 {
@@ -4923,7 +4923,7 @@
   ],
   "desc": "Recipients for IANA message when a ballot is issued"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ballot_issued_iana"
 },
 {
@@ -4944,7 +4944,7 @@
   ],
   "desc": "Recipients when a new ballot position (with discusses, other blocking positions, or comments) is saved"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ballot_saved"
 },
 {
@@ -4957,7 +4957,7 @@
   ],
   "desc": "Recipients for a charter external review"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "charter_external_review"
 },
 {
@@ -4968,7 +4968,7 @@
   ],
   "desc": "Recipients for a message to new-work about a charter review"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "charter_external_review_new_work"
 },
 {
@@ -4980,7 +4980,7 @@
   ],
   "desc": "Recipients for message noting that internal review has started on a charter"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "charter_internal_review"
 },
 {
@@ -4991,7 +4991,7 @@
   ],
   "desc": "Recipients for message to adminstrators when a charter state edit needs followon administrative action"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "charter_state_edit_admin_needed"
 },
 {
@@ -5008,7 +5008,7 @@
   ],
   "desc": "Recipients for a stream manager's request for an IETF conflict review"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "conflrev_requested"
 },
 {
@@ -5019,7 +5019,7 @@
   ],
   "desc": "Recipients for IANA message when a stream manager requests an IETF conflict review"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "conflrev_requested_iana"
 },
 {
@@ -5034,7 +5034,7 @@
   ],
   "desc": "Recipients for a message when a new comment is manually entered into the document's history"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_added_comment"
 },
 {
@@ -5051,7 +5051,7 @@
   ],
   "desc": "Recipients for notification that a document has been adopted by a group"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_adopted_by_group"
 },
 {
@@ -5067,7 +5067,7 @@
   ],
   "desc": "Recipients for notification of a document's expiration"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_expired"
 },
 {
@@ -5083,7 +5083,7 @@
   ],
   "desc": "Recipients for notification of impending expiration of a document"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_expires_soon"
 },
 {
@@ -5101,7 +5101,7 @@
   ],
   "desc": "Recipients when IANA state information for a document changes "
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_iana_state_changed"
 },
 {
@@ -5115,7 +5115,7 @@
   ],
   "desc": "Recipients for a message when the IESG begins processing a document "
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_iesg_processing_started"
 },
 {
@@ -5130,7 +5130,7 @@
   ],
   "desc": "Recipients for a message when a document's intended publication status changes"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_intended_status_changed"
 },
 {
@@ -5149,7 +5149,7 @@
   ],
   "desc": "Recipients when a document is taken out of the RFC's editor queue before publication"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_pulled_from_rfc_queue"
 },
 {
@@ -5164,7 +5164,7 @@
   ],
   "desc": "Recipients when what a document replaces or is replaced by changes"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_replacement_changed"
 },
 {
@@ -5178,7 +5178,7 @@
   ],
   "desc": "Recipients for suggestions that this doc replaces or is replace by some other document"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_replacement_suggested"
 },
 {
@@ -5197,7 +5197,7 @@
   ],
   "desc": "Recipients when a document's state is manually edited"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_state_edited"
 },
 {
@@ -5210,7 +5210,7 @@
   ],
   "desc": "Recipients for notification when a document's stream changes"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_stream_changed"
 },
 {
@@ -5224,7 +5224,7 @@
   ],
   "desc": "Recipients when the stream state of a document is manually edited"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_stream_state_edited"
 },
 {
@@ -5243,7 +5243,7 @@
   ],
   "desc": "Recipients when a document's telechat date or other telechat specific details are changed"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "doc_telechat_details_changed"
 },
 {
@@ -5254,7 +5254,7 @@
   ],
   "desc": "Recipients when the set of approved milestones for a group are edited"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "group_approved_milestones_edited"
 },
 {
@@ -5265,7 +5265,7 @@
   ],
   "desc": "Recipients for message requesting closure of a group"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "group_closure_requested"
 },
 {
@@ -5277,7 +5277,7 @@
   ],
   "desc": "Recipients when any of a group's milestones are edited"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "group_milestones_edited"
 },
 {
@@ -5291,7 +5291,7 @@
   ],
   "desc": "Recipients for a message noting changes in a group's personnel"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "group_personnel_change"
 },
 {
@@ -5302,7 +5302,7 @@
   ],
   "desc": "Recipients when the secretary follows up on an IPR disclosure submission"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ipr_disclosure_followup"
 },
 {
@@ -5313,7 +5313,7 @@
   ],
   "desc": "Recipients when an IPR disclosure is submitted"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ipr_disclosure_submitted"
 },
 {
@@ -5327,7 +5327,7 @@
   ],
   "desc": "Recipients when an IPR disclosure calls out a given document"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ipr_posted_on_doc"
 },
 {
@@ -5341,7 +5341,7 @@
   ],
   "desc": "Recipients for a message confirming that a disclosure has been posted"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "ipr_posting_confirmation"
 },
 {
@@ -5357,7 +5357,7 @@
   ],
   "desc": "Recipients when a last call has expired"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "last_call_expired"
 },
 {
@@ -5378,7 +5378,7 @@
   ],
   "desc": "Recipients when a last call is issued"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "last_call_issued"
 },
 {
@@ -5389,7 +5389,7 @@
   ],
   "desc": "Recipients for IANA message when a last call is issued"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "last_call_issued_iana"
 },
 {
@@ -5404,7 +5404,7 @@
   ],
   "desc": "Recipients when AD requests a last call"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "last_call_requested"
 },
 {
@@ -5415,7 +5415,7 @@
   ],
   "desc": "Recipients for a message that a pending liaison statement needs approval"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "liaison_approval_requested"
 },
 {
@@ -5430,7 +5430,7 @@
   ],
   "desc": "Recipients for a message about a liaison statement deadline that is approaching."
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "liaison_deadline_soon"
 },
 {
@@ -5441,7 +5441,7 @@
   ],
   "desc": "Recipients for a message requesting an updated list of authorized individuals"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "liaison_manager_update_request"
 },
 {
@@ -5456,7 +5456,7 @@
   ],
   "desc": "Recipient for a message when a new liaison statement is posted"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "liaison_statement_posted"
 },
 {
@@ -5467,7 +5467,7 @@
   ],
   "desc": "Recipients for reminder message for milestones about to become overdue"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "milestones_due_soon"
 },
 {
@@ -5478,7 +5478,7 @@
   ],
   "desc": "Recipients for message about milestones that are overdue"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "milestones_overdue"
 },
 {
@@ -5491,7 +5491,7 @@
   ],
   "desc": "Recipients for reminder message that unapproved milestone changes need review"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "milestone_review_reminder"
 },
 {
@@ -5502,7 +5502,7 @@
   ],
   "desc": "Recipients for a message confirming a comment was made"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "nomcom_comment_receipt_requested"
 },
 {
@@ -5513,7 +5513,7 @@
   ],
   "desc": "Recipients for the questionairre that nominees should complete"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "nomcom_questionnaire"
 },
 {
@@ -5524,7 +5524,7 @@
   ],
   "desc": "Recipients for a message reminding a nominee to return a completed questionairre response"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "nomcom_questionnaire_reminder"
 },
 {
@@ -5535,7 +5535,7 @@
   ],
   "desc": "Recipeints of message reminding a nominee to accept or decline a nomination"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "nomination_accept_reminder"
 },
 {
@@ -5547,7 +5547,7 @@
   ],
   "desc": "Recipients for a message noting that a nomination caused a new Person record to be created in the datatracker"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "nomination_created_person"
 },
 {
@@ -5558,7 +5558,7 @@
   ],
   "desc": "Recipients the first time a person is nominated for a position, asking them to accept or decline the nomination"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "nomination_new_nominee"
 },
 {
@@ -5569,7 +5569,7 @@
   ],
   "desc": "Recipients for a message confirming a nomination was made"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "nomination_receipt_requested"
 },
 {
@@ -5580,7 +5580,7 @@
   ],
   "desc": "Recipients for a message noting a new nomination has been received"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "nomination_received"
 },
 {
@@ -5596,7 +5596,7 @@
   ],
   "desc": "Recipients when a draft is submitted to the IESG"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "pubreq_iesg"
 },
 {
@@ -5607,7 +5607,7 @@
   ],
   "desc": "Recipients when a non-IETF stream manager requests publication"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "pubreq_rfced"
 },
 {
@@ -5618,7 +5618,7 @@
   ],
   "desc": "Recipients for IANA message when a non-IETF stream manager requests publication"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "pubreq_rfced_iana"
 },
 {
@@ -5630,7 +5630,7 @@
   ],
   "desc": "Recipients when a draft resurrection request has been completed"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "resurrection_completed"
 },
 {
@@ -5641,7 +5641,7 @@
   ],
   "desc": "Recipients of a request to change the state of a draft away from 'Dead'"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "resurrection_requested"
 },
 {
@@ -5657,7 +5657,7 @@
   ],
   "desc": "Recipients for a normal meeting session request"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "session_requested"
 },
 {
@@ -5672,7 +5672,7 @@
   ],
   "desc": "Recipients for a meeting session request for more than 2 sessions"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "session_requested_long"
 },
 {
@@ -5688,7 +5688,7 @@
   ],
   "desc": "Recipients for a message cancelling a session request"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "session_request_cancelled"
 },
 {
@@ -5704,7 +5704,7 @@
   ],
   "desc": "Recipients for a message noting a group plans to not meet"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "session_request_not_meeting"
 },
 {
@@ -5719,7 +5719,7 @@
   ],
   "desc": "Recipients for details when a session has been scheduled"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "session_scheduled"
 },
 {
@@ -5732,7 +5732,7 @@
   ],
   "desc": "Recipients for the announcement of a successfully submitted draft"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "sub_announced"
 },
 {
@@ -5744,7 +5744,7 @@
   ],
   "desc": "Recipients for the announcement to the authors of a successfully submitted draft"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "sub_announced_to_authors"
 },
 {
@@ -5755,7 +5755,7 @@
   ],
   "desc": "Recipients for a message requesting group chair approval of a draft submission"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "sub_chair_approval_requested"
 },
 {
@@ -5766,7 +5766,7 @@
   ],
   "desc": "Recipients for a message requesting confirmation of a draft submission"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "sub_confirmation_requested"
 },
 {
@@ -5777,7 +5777,7 @@
   ],
   "desc": "Recipients for a message with the full URL for managing a draft submission"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "sub_management_url_requested"
 },
 {
@@ -5792,7 +5792,7 @@
   ],
   "desc": "Recipients for a manual post request for a draft submission"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "sub_manual_post_requested"
 },
 {
@@ -5807,7 +5807,7 @@
   ],
   "desc": "Recipients for notification of a new version of an existing document"
  },
- "model": "mailtoken.mailtoken",
+ "model": "mailtrigger.mailtrigger",
  "pk": "sub_new_version"
 }
 ]

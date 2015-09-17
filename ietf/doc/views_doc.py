@@ -59,7 +59,7 @@ from ietf.person.models import Email
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
 from ietf.doc.mails import email_comment 
-from ietf.mailtoken.utils import gather_relevant_expansions
+from ietf.mailtrigger.utils import gather_relevant_expansions
 
 def render_document_top(request, doc, tab, name):
     tabs = []

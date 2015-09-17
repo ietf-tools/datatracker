@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='MailToken',
+            name='MailTrigger',
             fields=[
                 ('slug', models.CharField(max_length=32, serialize=False, primary_key=True)),
                 ('desc', models.TextField(blank=True)),
@@ -34,15 +34,15 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.AddField(
-            model_name='mailtoken',
+            model_name='mailtrigger',
             name='cc',
-            field=models.ManyToManyField(related_name='used_in_cc', null=True, to='mailtoken.Recipient', blank=True),
+            field=models.ManyToManyField(related_name='used_in_cc', null=True, to='mailtrigger.Recipient', blank=True),
             preserve_default=True,
         ),
         migrations.AddField(
-            model_name='mailtoken',
+            model_name='mailtrigger',
             name='to',
-            field=models.ManyToManyField(related_name='used_in_to', null=True, to='mailtoken.Recipient', blank=True),
+            field=models.ManyToManyField(related_name='used_in_to', null=True, to='mailtrigger.Recipient', blank=True),
             preserve_default=True,
         ),
     ]

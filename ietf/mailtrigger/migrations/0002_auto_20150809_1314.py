@@ -5,7 +5,7 @@ from django.db import migrations
 
 def make_recipients(apps):
 
-    Recipient=apps.get_model('mailtoken','Recipient')
+    Recipient=apps.get_model('mailtrigger','Recipient')
 
     rc = Recipient.objects.create
 
@@ -247,10 +247,10 @@ def make_recipients(apps):
        desc="The IETF New Work list",
        template='<new-work@ietf.org>')
 
-def make_mailtokens(apps):
+def make_mailtriggers(apps):
 
-    Recipient=apps.get_model('mailtoken','Recipient')
-    MailToken=apps.get_model('mailtoken','MailToken')
+    Recipient=apps.get_model('mailtrigger','Recipient')
+    MailTrigger=apps.get_model('mailtrigger','MailTrigger')
 
     def mt_factory(slug,desc,to_slugs,cc_slugs=[]):
 
@@ -264,7 +264,7 @@ def make_mailtokens(apps):
                 print "****Some rule tried to use",recipient_slug
                 raise
 
-        m = MailToken.objects.create(slug=slug, desc=desc)
+        m = MailTrigger.objects.create(slug=slug, desc=desc)
         m.to = Recipient.objects.filter(slug__in=to_slugs)
         m.cc = Recipient.objects.filter(slug__in=cc_slugs)
 
@@ -841,21 +841,21 @@ def make_mailtokens(apps):
 def forward(apps, schema_editor):
 
     make_recipients(apps)
-    make_mailtokens(apps)
+    make_mailtriggers(apps)
 
 def reverse(apps, schema_editor):
 
-    Recipient=apps.get_model('mailtoken','Recipient')
-    MailToken=apps.get_model('mailtoken','MailToken')
+    Recipient=apps.get_model('mailtrigger','Recipient')
+    MailTrigger=apps.get_model('mailtrigger','MailTrigger')
 
     Recipient.objects.all().delete()
-    MailToken.objects.all().delete()
+    MailTrigger.objects.all().delete()
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('mailtoken', '0001_initial'),
+        ('mailtrigger', '0001_initial'),
     ]
 
     operations = [

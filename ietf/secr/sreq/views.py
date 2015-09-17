@@ -16,7 +16,7 @@ from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import groups_by_session
 from ietf.utils.mail import send_mail
 from ietf.person.models import Person
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 # -------------------------------------------------
 # Globals

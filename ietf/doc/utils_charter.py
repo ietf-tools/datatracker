@@ -6,7 +6,7 @@ from django.conf import settings
 from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent 
 from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import parse_preformatted
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 def charter_name_for_group(group):
     if group.type_id == "rg":

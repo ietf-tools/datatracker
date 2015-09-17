@@ -38,7 +38,7 @@ from ietf.person.models import Person, Email
 from ietf.secr.lib.template import jsonapi
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)

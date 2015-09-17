@@ -14,10 +14,10 @@ from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, Consens
 from ietf.doc.utils import needed_ballot_positions, get_document_content
 from ietf.group.models import Role
 from ietf.doc.models import Document
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
-def email_state_changed(request, doc, text, mailtoken_id=None):
-    (to,cc) = gather_address_lists(mailtoken_id or 'doc_state_edited',doc=doc)
+def email_state_changed(request, doc, text, mailtrigger_id=None):
+    (to,cc) = gather_address_lists(mailtrigger_id or 'doc_state_edited',doc=doc)
     if not to:
         return
     

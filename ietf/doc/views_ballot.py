@@ -27,8 +27,8 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.mailtoken.utils import gather_address_lists
-from ietf.mailtoken.forms import CcSelectForm
+from ietf.mailtrigger.utils import gather_address_lists
+from ietf.mailtrigger.forms import CcSelectForm
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -289,7 +289,7 @@ def send_ballot_comment(request, name, ballot_id):
         
     if request.method == 'POST':
         cc = []
-        cc_select_form = CcSelectForm(data=request.POST,mailtoken_slug='ballot_saved',mailtoken_context={'doc':doc})
+        cc_select_form = CcSelectForm(data=request.POST,mailtrigger_slug='ballot_saved',mailtrigger_context={'doc':doc})
         if cc_select_form.is_valid():
             cc.extend(cc_select_form.get_selected_addresses())
         extra_cc = [x.strip() for x in request.POST.get("extra_cc","").split(',') if x.strip()]
@@ -302,7 +302,7 @@ def send_ballot_comment(request, name, ballot_id):
 
     else: 
 
-        cc_select_form = CcSelectForm(mailtoken_slug='ballot_saved',mailtoken_context={'doc':doc})
+        cc_select_form = CcSelectForm(mailtrigger_slug='ballot_saved',mailtrigger_context={'doc':doc})
   
     return render_to_response('doc/ballot/send_ballot_comment.html',
                               dict(doc=doc,

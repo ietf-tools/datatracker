@@ -7,7 +7,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail_text
 from ietf.liaisons.utils import role_persons_with_fixed_email
 from ietf.group.models import Role
-from ietf.mailtoken.utils import gather_address_lists
+from ietf.mailtrigger.utils import gather_address_lists
 
 def send_liaison_by_email(request, liaison):
     subject = u'New Liaison Statement, "%s"' % (liaison.title)

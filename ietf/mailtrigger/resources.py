@@ -5,7 +5,7 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS  # pyflakes:ignore
 
 from ietf import api
 
-from ietf.mailtoken.models import *                            # pyflakes:ignore
+from ietf.mailtrigger.models import *                            # pyflakes:ignore
 
 
 class RecipientResource(ModelResource):
@@ -17,19 +17,19 @@ class RecipientResource(ModelResource):
             "desc": ALL,
             "template": ALL,
         }
-api.mailtoken.register(RecipientResource())
+api.mailtrigger.register(RecipientResource())
 
-class MailTokenResource(ModelResource):
+class MailTriggerResource(ModelResource):
     to      = ToManyField(RecipientResource, 'to', null=True)
     cc      = ToManyField(RecipientResource, 'cc', null=True)
     class Meta:
-        queryset = MailToken.objects.all()
-        #resource_name = 'mailtoken'
+        queryset = MailTrigger.objects.all()
+        #resource_name = 'mailtrigger'
         filtering = { 
             "slug": ALL,
             "desc": ALL,
             "to": ALL_WITH_RELATIONS,
             "cc": ALL_WITH_RELATIONS,
         }
-api.mailtoken.register(MailTokenResource())
+api.mailtrigger.register(MailTriggerResource())
 

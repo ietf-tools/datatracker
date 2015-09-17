@@ -41,9 +41,9 @@ objects += ietf.doc.models.StateType.objects.all()
 objects += ietf.doc.models.State.objects.all()
 objects += ietf.doc.models.BallotType.objects.all()
 
-import ietf.mailtoken.models
-objects += ietf.mailtoken.models.Recipient.objects.all()
-objects += ietf.mailtoken.models.MailToken.objects.all()
+import ietf.mailtrigger.models
+objects += ietf.mailtrigger.models.Recipient.objects.all()
+objects += ietf.mailtrigger.models.MailTrigger.objects.all()
 
 output("names", objects)
 

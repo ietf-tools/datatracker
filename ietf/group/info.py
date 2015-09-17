@@ -57,7 +57,7 @@ from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_
 from ietf.group.utils import can_manage_materials, get_group_or_404
 from ietf.utils.pipe import pipe
 from ietf.settings import MAILING_LIST_INFO_URL
-from ietf.mailtoken.utils import gather_relevant_expansions
+from ietf.mailtrigger.utils import gather_relevant_expansions
 
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
