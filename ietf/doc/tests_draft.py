@@ -708,7 +708,7 @@ class ExpireLastCallTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call Expired" in outbox[-1]["Subject"])
         self.assertTrue('iesg-secretary@' in outbox[-1]['Cc'])
-        self.assertTrue('iesg@' in outbox[-1]['To'])
+        self.assertTrue('aread@' in outbox[-1]['To'])
         self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To'])
 
 class IndividualInfoFormsTests(TestCase):
