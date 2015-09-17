@@ -138,7 +138,8 @@ class Recipient(models.Model):
         addrs = []
         if 'group' in kwargs:
             group = kwargs['group']
-            addrs.extend(group.role_set.filter(name='ad').values_list('email__address',flat=True))
+            if not group.acronym=='none':
+                addrs.extend(group.role_set.filter(name='ad').values_list('email__address',flat=True))
             if group.type_id=='rg':
                 addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':['irtf']}))
         return addrs
@@ -147,7 +148,7 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             group = kwargs['doc'].group
-            if group:
+            if group and not group.acronym=='none':
                 addrs.extend(Recipient.objects.get(slug='group_responsible_directors').gather(**{'group':group}))
         return addrs
 
