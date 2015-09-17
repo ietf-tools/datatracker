@@ -20,7 +20,7 @@ class MailTrigger(models.Model):
 class Recipient(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     desc = models.TextField(blank=True)
-    template = models.CharField(max_length=512, null=True, blank=True)
+    template = models.TextField(null=True, blank=True)
 
     class Meta:
         ordering = ["slug"]
