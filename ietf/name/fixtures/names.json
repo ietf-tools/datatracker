@@ -5136,11 +5136,11 @@
 {
  "fields": {
   "cc": [
-   "doc_ad",
    "doc_authors",
    "doc_group_chairs",
    "doc_notify",
    "doc_shepherd",
+   "iesg",
    "iesg_secretary"
   ],
   "to": [
@@ -5350,10 +5350,10 @@
    "iesg_secretary"
   ],
   "to": [
+   "doc_ad",
    "doc_authors",
    "doc_notify",
-   "doc_shepherd",
-   "iesg"
+   "doc_shepherd"
   ],
   "desc": "Recipients when a last call has expired"
  },

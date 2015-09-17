@@ -394,7 +394,7 @@ def make_mailtriggers(apps):
 
     mt_factory(slug='last_call_expired',
                desc="Recipients when a last call has expired",
-               to_slugs=['iesg',
+               to_slugs=['doc_ad',
                          'doc_notify',
                          'doc_authors',
                          'doc_shepherd',
@@ -526,7 +526,7 @@ def make_mailtriggers(apps):
                          'rfc_editor',
                         ],
                cc_slugs=['iesg_secretary',
-                         'doc_ad', 
+                         'iesg', 
                          'doc_notify',
                          'doc_authors',
                          'doc_shepherd',
