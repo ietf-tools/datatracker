@@ -1015,24 +1015,24 @@ class Session(models.Model):
             sess1['group']          = self.group.json_dict(host_scheme)
             sess1['group_href']     = urljoin(host_scheme, self.group.json_url())
             if self.group.parent is not None:
-                sess1['area']           = str(self.group.parent.acronym).upper()
-            sess1['description']    = str(self.group.name)
+                sess1['area']           = self.group.parent.acronym.upper()
+            sess1['description']    = self.group.name.encode('utf-8')
             sess1['group_id']       = str(self.group.pk)
         reslist = []
         for r in self.resources.all():
             reslist.append(r.json_dict(host_scheme))
         sess1['resources']      = reslist
         sess1['session_id']     = str(self.pk)
-        sess1['name']           = str(self.name)
-        sess1['title']          = str(self.short_name)
-        sess1['short_name']     = str(self.short_name)
+        sess1['name']           = self.name.encode('utf-8')
+        sess1['title']          = self.short_name.encode('utf-8')
+        sess1['short_name']     = self.short_name.encode('utf-8')
         sess1['bof']            = str(self.group.is_bof())
-        sess1['agenda_note']    = str(self.agenda_note)
+        sess1['agenda_note']    = self.agenda_note.encode('utf-8')
         sess1['attendees']      = str(self.attendees)
-        sess1['status']         = str(self.status)
+        sess1['status']         = self.status.name.encode('utf-8')
         if self.comments is not None:
-            sess1['comments']       = str(self.comments)
-        sess1['requested_time'] = str(self.requested.strftime("%Y-%m-%d"))
+            sess1['comments']       = self.comments.encode('utf-8')
+        sess1['requested_time'] = self.requested.strftime("%Y-%m-%d")
         # the related person object sometimes does not exist in the dataset.
         try:
             if self.requested_by is not None:
