@@ -157,7 +157,7 @@
               <tr><th class="gap" colspan="6"></th></tr>
               <tr class="warning">
                 <th colspan="6">
-		   %# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
+		   {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
 		   <div class="anchor-target" id="{{item.timeslot.time|slugify}}"/>
 	          {% if "-utc" in request.path %}
 	            {{ item.timeslot.utc_start_time|date:"l, F j, Y" }} (UTC)
