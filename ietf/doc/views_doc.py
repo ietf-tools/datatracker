@@ -953,8 +953,7 @@ def edit_notify(request, name):
                 if set(new_notify.split(',')) != set(doc.notify.split(',')):
                     e = make_notify_changed_event(request, doc, login.person, new_notify)
                     doc.notify = new_notify
-                    doc.time = e.time
-                    doc.save()
+                    doc.save_with_history([e])
                 return redirect('doc_view', name=doc.name)
 
         elif "regenerate_addresses" in request.POST:

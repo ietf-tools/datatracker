@@ -87,6 +87,20 @@ def email_ad(request, doc, ad, changed_by, text, subject=None):
                    doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
+def email_update_telechat(request, doc, text):
+    to = set(['iesg@ietf.org','iesg-secretary@ietf.org'])
+    to.update(set([x.strip() for x in doc.notify.replace(';', ',').split(',')]))
+
+    if not to:
+        return
+    
+    text = strip_tags(text)
+    send_mail(request, list(to), None,
+              "Telechat update notice: %s" % doc.file_tag(),
+              "doc/mail/update_telechat.txt",
+              dict(text=text,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+
 
 def generate_ballot_writeup(request, doc):
     e = doc.latest_event(type="iana_review")

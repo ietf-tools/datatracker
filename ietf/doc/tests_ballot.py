@@ -125,7 +125,7 @@ class EditPositionTests(TestCase):
     def test_send_ballot_comment(self):
         draft = make_test_data()
         draft.notify = "somebody@example.com"
-        draft.save()
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         ad = Person.objects.get(name="Aread Irector")
 
@@ -355,8 +355,8 @@ class BallotWriteupsTests(TestCase):
         # test regenerate when it's a conflict review
         draft.group = Group.objects.get(type="individ")
         draft.stream_id = "irtf"
-        draft.save()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEqual(r.status_code, 200)
@@ -492,8 +492,8 @@ class DeferUndeferTestCase(TestCase):
            self.assertEqual(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
         self.assertTrue(doc.active_defer_event())
         self.assertEqual(len(outbox), mailbox_before + 3)
-        self.assertTrue("State Update" in outbox[-3]['Subject'])
-        self.assertTrue("Telechat update" in outbox[-2]['Subject'])
+        self.assertTrue("Telechat update" in outbox[-3]['Subject'])
+        self.assertTrue("State Update" in outbox[-2]['Subject'])
         self.assertTrue("Deferred" in outbox[-1]['Subject'])
         self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])
 
@@ -526,7 +526,6 @@ class DeferUndeferTestCase(TestCase):
         defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'],statchg=['statchg','defer'])
         if doc.type_id in defer_states:
             doc.set_state(State.objects.get(used=True, type=defer_states[doc.type_id][0],slug=defer_states[doc.type_id][1]))
-            doc.save()
 
         # get
         r = self.client.get(url)

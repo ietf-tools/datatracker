@@ -16,8 +16,7 @@ from django.contrib import messages
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, RelatedDocument, State,
-    StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS,
-    save_document_in_history )
+    StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS)
 from ietf.doc.mails import ( email_ad, email_pulled_from_rfc_queue, email_resurrect_requested,
     email_resurrection_completed, email_state_changed, email_stream_changed,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
@@ -87,17 +86,17 @@ def change_state(request, name):
             prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
             new_tags = [tag] if tag else []
             if new_state != prev_state or set(new_tags) != set(prev_tags):
-                save_document_in_history(doc)
-                
                 doc.set_state(new_state)
 
                 doc.tags.remove(*prev_tags)
                 doc.tags.add(*new_tags)
 
+                events = []
+
                 e = add_state_change_event(doc, login, prev_state, new_state,
                                            prev_tags=prev_tags, new_tags=new_tags)
 
-                msg = e.desc
+                events.append(e)
 
                 if comment:
                     c = DocEvent(type="added_comment")
@@ -106,10 +105,11 @@ def change_state(request, name):
                     c.desc = comment
                     c.save()
 
-                    msg += "\n" + comment
-                
-                doc.time = e.time
-                doc.save()
+                    events.append(c)
+
+                doc.save_with_history(events)
+
+                msg = u"\n".join(e.desc for e in events)
 
                 email_state_changed(request, doc, msg)
                 email_ad(request, doc, doc.ad, login, msg)
@@ -187,14 +187,11 @@ def change_iana_state(request, name, state_type):
             new_state = form.cleaned_data['state']
 
             if new_state != prev_state:
-                save_document_in_history(doc)
-                
                 doc.set_state(new_state)
 
-                e = add_state_change_event(doc, request.user.person, prev_state, new_state)
+                events = [add_state_change_event(doc, request.user.person, prev_state, new_state)]
 
-                doc.time = e.time
-                doc.save()
+                doc.save_with_history(events)
 
             return HttpResponseRedirect(doc.get_absolute_url())
 
@@ -243,27 +240,28 @@ def change_stream(request, name):
                     elif "irsg@irtf.org" not in doc.notify:
                         doc.notify += ", irsg@irtf.org"
 
-                save_document_in_history(doc)
-                
                 doc.stream = new_stream
                 doc.group = Group.objects.get(type="individ")
+
+                events = []
 
                 e = DocEvent(doc=doc,by=login,type='changed_document')
                 e.desc = u"Stream changed to <b>%s</b> from %s"% (new_stream, old_stream or "None")
                 e.save()
 
-                email_desc = e.desc
+                events.append(e)
 
                 if comment:
                     c = DocEvent(doc=doc,by=login,type="added_comment")
                     c.desc = comment
                     c.save()
-                    email_desc += "\n"+c.desc
-                
-                doc.time = e.time
-                doc.save()
+                    events.append(c)
 
-                email_stream_changed(request, doc, old_stream, new_stream, email_desc)
+                doc.save_with_history(events)
+
+                msg = u"\n".join(e.desc for e in events)
+
+                email_stream_changed(request, doc, old_stream, new_stream, msg)
 
             return HttpResponseRedirect(doc.get_absolute_url())
 
@@ -326,16 +324,11 @@ def replaces(request, name):
             by = request.user.person
 
             if new_replaces != old_replaces:
-                save_document_in_history(doc)
-                doc.time = datetime.datetime.now()
-                doc.save()
+                events = set_replaces_for_document(request, doc, new_replaces, by=by,
+                                                   email_subject="%s replacement status updated by %s" % (doc.name, by),
+                                                   comment=comment)
 
-                set_replaces_for_document(request, doc, new_replaces, by=by,
-                                          email_subject="%s replacement status updated by %s" % (doc.name, by),
-                                          email_comment=comment)
-
-                if comment:
-                    DocEvent.objects.create(doc=doc, by=by, type="added_comment", desc=comment)
+                doc.save_with_history(events)
 
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
@@ -380,22 +373,22 @@ def review_possibly_replaces(request, name):
             comment = form.cleaned_data['comment'].strip()
             by = request.user.person
 
-            save_document_in_history(doc)
-            doc.time = datetime.datetime.now()
-            doc.save()
+            events = []
 
             # all suggestions reviewed, so get rid of them
-            DocEvent.objects.create(doc=doc, by=by, type="reviewed_suggested_replaces",
-                                    desc="Reviewed suggested replacement relationships: %s" % ", ".join(d.name for d in suggested))
+            events.append(DocEvent.objects.create(doc=doc, by=by, type="reviewed_suggested_replaces",
+                                                  desc="Reviewed suggested replacement relationships: %s" % ", ".join(d.name for d in suggested)))
             RelatedDocument.objects.filter(source=doc, target__in=suggested,relationship__slug='possibly-replaces').delete()
 
             if new_replaces != old_replaces:
-                set_replaces_for_document(request, doc, new_replaces, by=by,
-                                          email_subject="%s replacement status updated by %s" % (doc.name, by),
-                                          email_comment=comment)
+                events.extend(set_replaces_for_document(request, doc, new_replaces, by=by,
+                                                        email_subject="%s replacement status updated by %s" % (doc.name, by),
+                                                        comment=comment))
 
             if comment:
-                DocEvent.objects.create(doc=doc, by=by, type="added_comment", desc=comment)
+                events.append(DocEvent.objects.create(doc=doc, by=by, type="added_comment", desc=comment))
+
+            doc.save_with_history(events)
 
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
@@ -432,26 +425,25 @@ def change_intention(request, name):
             old_level = doc.intended_std_level
 
             if new_level != old_level:
-                save_document_in_history(doc)
-                
                 doc.intended_std_level = new_level
 
+                events = []
                 e = DocEvent(doc=doc,by=login,type='changed_document')
                 e.desc = u"Intended Status changed to <b>%s</b> from %s"% (new_level,old_level) 
                 e.save()
-
-                email_desc = e.desc
+                events.append(e)
 
                 if comment:
                     c = DocEvent(doc=doc,by=login,type="added_comment")
                     c.desc = comment
                     c.save()
-                    email_desc += "\n"+c.desc
-                
-                doc.time = e.time
-                doc.save()
+                    events.append(c)
 
-                email_ad(request, doc, doc.ad, login, email_desc)
+                doc.save_with_history(events)
+
+                msg = u"\n".join(e.desc for e in events)
+
+                email_ad(request, doc, doc.ad, login, msg)
 
             return HttpResponseRedirect(doc.get_absolute_url())
 
@@ -538,27 +530,27 @@ def to_iesg(request,name):
 
         if request.POST.get("confirm", ""): 
 
-            save_document_in_history(doc)
+            by = request.user.person
 
-            login = request.user.person
+            events = []
 
             changes = []
 
             if not doc.get_state("draft-iesg"):
-
                 e = DocEvent()
                 e.type = "started_iesg_process"
-                e.by = login
+                e.by = by
                 e.doc = doc
                 e.desc = "IESG process started in state <b>%s</b>" % target_state['iesg'].name
                 e.save()
+                events.append(e)
 
             for state_type in ['draft-iesg','draft-stream-ietf']:
                 prev_state=doc.get_state(state_type)
                 new_state = target_state[target_map[state_type]]
                 if not prev_state==new_state:
                     doc.set_state(new_state)
-                    add_state_change_event(doc=doc,by=login,prev_state=prev_state,new_state=new_state)
+                    events.append(add_state_change_event(doc=doc,by=by,prev_state=prev_state,new_state=new_state))
 
             if not doc.ad == ad :
                 doc.ad = ad
@@ -574,23 +566,22 @@ def to_iesg(request,name):
                 changes.append(previous_writeup.text)
 
             for c in changes:
-                e = DocEvent(doc=doc, by=login)
+                e = DocEvent(doc=doc, by=by)
                 e.desc = c
                 e.type = "changed_document"
                 e.save()
+                events.append(e)
 
-            doc.time = datetime.datetime.now()
-
-            doc.save()
+            doc.save_with_history(events)
 
             extra = {}
             extra['Cc'] = "%s-chairs@ietf.org, iesg-secretary@ietf.org, %s" % (doc.group.acronym,doc.notify)
             send_mail(request=request,
                       to = doc.ad.email_address(),
-                      frm = login.formatted_email(),
+                      frm = by.formatted_email(),
                       subject = "Publication has been requested for %s-%s" % (doc.name,doc.rev),
                       template = "doc/submit_to_iesg_email.txt",
-                      context = dict(doc=doc,login=login,url="%s%s"%(settings.IDTRACKER_BASE_URL,doc.get_absolute_url()),),
+                      context = dict(doc=doc,by=by,url="%s%s"%(settings.IDTRACKER_BASE_URL,doc.get_absolute_url()),),
                       extra = extra)
 
         return HttpResponseRedirect(doc.get_absolute_url())
@@ -614,8 +605,6 @@ def edit_info(request, name):
     if doc.get_state_slug() == "expired":
         raise Http404
 
-    login = request.user.person
-
     new_document = False
     if not doc.get_state("draft-iesg"): # FIXME: should probably receive "new document" as argument to view instead of this
         new_document = True
@@ -630,27 +619,26 @@ def edit_info(request, name):
                             initial=dict(ad=doc.ad_id,
                                          telechat_date=initial_telechat_date))
         if form.is_valid():
-            save_document_in_history(doc)
-            
+            by = request.user.person
+
             r = form.cleaned_data
+            events = []
+
             if new_document:
                 doc.set_state(r['create_in_state'])
 
                 # Is setting the WG state here too much of a hidden side-effect?
                 if r['create_in_state'].slug=='pub-req':
-                    if doc.stream and ( doc.stream.slug=='ietf' ) and doc.group and ( doc.group.type.name=='WG'):
+                    if doc.stream and doc.stream.slug=='ietf' and doc.group and doc.group.type_id == 'wg':
                         submitted_state = State.objects.get(type='draft-stream-ietf',slug='sub-pub')
                         doc.set_state(submitted_state)
                         e = DocEvent()
                         e.type = "changed_document"
-                        e.by = login
+                        e.by = by
                         e.doc = doc
                         e.desc = "Working group state set to %s" % submitted_state.name
                         e.save()
-
-                # fix so Django doesn't barf in the diff below because these
-                # fields can't be NULL
-                doc.ad = r['ad']
+                        events.append(e)
 
                 replaces = Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces")
                 if replaces:
@@ -662,14 +650,16 @@ def edit_info(request, name):
                     e.doc = doc
                     e.desc = "Earlier history may be found in the Comment Log for <a href=\"%s\">%s</a>" % (replaces[0], replaces[0].get_absolute_url())
                     e.save()
+                    events.append(e)
 
                 e = DocEvent()
                 e.type = "started_iesg_process"
-                e.by = login
+                e.by = by
                 e.doc = doc
                 e.desc = "IESG process started in state <b>%s</b>" % doc.get_state("draft-iesg").name
                 e.save()
-                    
+                events.append(e)
+
             orig_ad = doc.ad
 
             changes = []
@@ -716,20 +706,18 @@ def edit_info(request, name):
                     doc.group = r["area"]
 
             for c in changes:
-                e = DocEvent(doc=doc, by=login)
-                e.desc = c
-                e.type = "changed_document"
-                e.save()
+                events.append(DocEvent.objects.create(doc=doc, by=by, desc=c, type="changed_document"))
 
-            update_telechat(request, doc, login,
-                            r['telechat_date'], r['returning_item'])
+            e = update_telechat(request, doc, by,
+                                r['telechat_date'], r['returning_item'])
+            if e:
+                events.append(e)
 
-            doc.time = datetime.datetime.now()
+            doc.save_with_history(events)
 
             if changes and not new_document:
-                email_ad(request, doc, orig_ad, login, "\n".join(changes))
-                
-            doc.save()
+                email_ad(request, doc, orig_ad, by, "\n".join(changes))
+
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
         init = dict(intended_std_level=doc.intended_std_level_id,
@@ -753,7 +741,6 @@ def edit_info(request, name):
                               dict(doc=doc,
                                    form=form,
                                    user=request.user,
-                                   login=login,
                                    ballot_issued=doc.latest_event(type="sent_ballot_announcement")),
                               context_instance=RequestContext(request))
 
@@ -764,12 +751,12 @@ def request_resurrect(request, name):
     if doc.get_state_slug() != "expired":
         raise Http404
 
-    login = request.user.person
-
     if request.method == 'POST':
-        email_resurrect_requested(request, doc, login)
+        by = request.user.person
+
+        email_resurrect_requested(request, doc, by)
         
-        e = DocEvent(doc=doc, by=login)
+        e = DocEvent(doc=doc, by=by)
         e.type = "requested_resurrect"
         e.desc = "Resurrection was requested"
         e.save()
@@ -788,24 +775,22 @@ def resurrect(request, name):
     if doc.get_state_slug() != "expired":
         raise Http404
 
-    login = request.user.person
-
     if request.method == 'POST':
-        save_document_in_history(doc)
-        
         e = doc.latest_event(type__in=('requested_resurrect', "completed_resurrect"))
         if e and e.type == 'requested_resurrect':
             email_resurrection_completed(request, doc, requester=e.by)
             
-        e = DocEvent(doc=doc, by=login)
+        events = []
+        e = DocEvent(doc=doc, by=request.user.person)
         e.type = "completed_resurrect"
         e.desc = "Resurrection was completed"
         e.save()
-        
+        events.append(e)
+
         doc.set_state(State.objects.get(used=True, type="draft", slug="active"))
         doc.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
-        doc.time = datetime.datetime.now()
-        doc.save()
+        doc.save_with_history(events)
+
         return HttpResponseRedirect(doc.get_absolute_url())
   
     return render_to_response('doc/draft/resurrect.html',
@@ -817,7 +802,7 @@ class IESGNoteForm(forms.Form):
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
 
     def clean_note(self):
-        # not muning the database content to use html line breaks --
+        # not munging the database content to use html line breaks --
         # that has caused a lot of pain in the past.
         return self.cleaned_data['note'].replace('\r', '').strip()
 
@@ -843,12 +828,12 @@ def edit_iesg_note(request, name):
                     else:
                         log_message = "Note added '%s'" % new_note
 
-                doc.note = new_note
-                doc.save()
-
                 c = DocEvent(type="added_comment", doc=doc, by=login)
                 c.desc = log_message
                 c.save()
+
+                doc.note = new_note
+                doc.save_with_history([c])
 
             return redirect('doc_view', name=doc.name)
     else:
@@ -956,27 +941,24 @@ def edit_shepherd(request, name):
         if form.is_valid():
 
             if form.cleaned_data['shepherd'] != doc.shepherd:
+                events = []
 
-                save_document_in_history(doc)
-    
                 doc.shepherd = form.cleaned_data['shepherd']
-                doc.save()
-       
+
                 c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
                 c.desc = "Document shepherd changed to "+ (doc.shepherd.person.name if doc.shepherd else "(None)")
                 c.save()
+                events.append(c)
     
                 if doc.shepherd and (doc.shepherd.formatted_email() not in doc.notify):
-                    login = request.user.person
                     addrs = doc.notify
                     if addrs:
                         addrs += ', '
                     addrs += doc.shepherd.formatted_email()
-                    make_notify_changed_event(request, doc, login, addrs, c.time)
+                    events.append(make_notify_changed_event(request, doc, request.user.person, addrs, c.time))
                     doc.notify = addrs
     
-                doc.time = c.time
-                doc.save()
+                doc.save_with_history(events)
 
             else:
                 messages.info(request,"The selected shepherd was already assigned - no changes have been made.")
@@ -1015,14 +997,15 @@ def change_shepherd_email(request, name):
         form = ChangeShepherdEmailForm(request.POST, initial=initial)
         if form.is_valid():
             if form.cleaned_data['shepherd'] != doc.shepherd:
-                save_document_in_history(doc)
-
                 doc.shepherd = form.cleaned_data['shepherd']
-                doc.save()
-   
+
+                events = []
                 c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
                 c.desc = "Document shepherd email changed"
                 c.save()
+                events.append(c)
+
+                doc.save_with_history(events)
             else:
                 messages.info(request,"The selected shepherd address was already assigned - no changes have been made.")
 
@@ -1058,15 +1041,14 @@ def edit_ad(request, name):
     if request.method == 'POST':
         form = AdForm(request.POST)
         if form.is_valid():
-
             doc.ad = form.cleaned_data['ad']
-            doc.save()
-    
-            login = request.user.person
-            c = DocEvent(type="added_comment", doc=doc, by=login)
+
+            c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
             c.desc = "Shepherding AD changed to "+doc.ad.name
             c.save()
 
+            doc.save_with_history([c])
+    
             return redirect('doc_view', name=doc.name)
 
     else:
@@ -1142,6 +1124,8 @@ def request_publication(request, name):
     if request.method == 'POST' and not request.POST.get("reset"):
         form = PublicationForm(request.POST)
         if form.is_valid():
+            events = []
+
             if not request.REQUEST.get("skiprfceditorpost"):
                 # start by notifying the RFC Editor
                 import ietf.sync.rfceditor
@@ -1170,14 +1154,16 @@ def request_publication(request, name):
             e = DocEvent(doc=doc, type="requested_publication", by=request.user.person)
             e.desc = "Sent request for publication to the RFC Editor"
             e.save()
+            events.append(e)
 
             # change state
             prev_state = doc.get_state(next_state.type_id)
             if next_state != prev_state:
                 doc.set_state(next_state)
                 e = add_state_change_event(doc, request.user.person, prev_state, next_state)
-                doc.time = e.time
-                doc.save()
+                if e:
+                    events.append(e)
+                doc.save_with_history(events)
 
             return redirect('doc_view', name=doc.name)
 
@@ -1246,10 +1232,7 @@ def adopt_draft(request, name):
         if form.is_valid():
             # adopt
             by = request.user.person
-
-            save_document_in_history(doc)
-
-            doc.time = datetime.datetime.now()
+            events = []
 
             group = form.cleaned_data["group"]
             if group.type.slug == "rg":
@@ -1266,6 +1249,7 @@ def adopt_draft(request, name):
                 if doc.stream:
                     e.desc += u" from %s" % doc.stream.name
                 e.save()
+                events.append(e)
                 old_stream = doc.stream
                 doc.stream = new_stream
                 if old_stream != None:
@@ -1278,13 +1262,12 @@ def adopt_draft(request, name):
                 if doc.group.type_id != "individ":
                     e.desc += " from %s (%s)" % (doc.group.name, doc.group.acronym.upper())
                 e.save()
+                events.append(e)
                 doc.group = group
 
             new_notify = get_initial_notify(doc,extra=doc.notify)
-            make_notify_changed_event(request, doc, by, new_notify, doc.time)
+            events.append(make_notify_changed_event(request, doc, by, new_notify, doc.time))
             doc.notify = new_notify
-
-            doc.save()
 
             comment = form.cleaned_data["comment"].strip()
 
@@ -1293,6 +1276,7 @@ def adopt_draft(request, name):
             if new_state != prev_state:
                 doc.set_state(new_state)
                 e = add_state_change_event(doc, by, prev_state, new_state, timestamp=doc.time)
+                events.append(e)
 
                 due_date = None
                 if form.cleaned_data["weeks"] != None:
@@ -1307,6 +1291,9 @@ def adopt_draft(request, name):
                 e = DocEvent(type="added_comment", time=doc.time, by=by, doc=doc)
                 e.desc = comment
                 e.save()
+                events.append(e)
+
+            doc.save_with_history(events)
 
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
@@ -1382,10 +1369,8 @@ def change_stream_state(request, name, state_type):
         form = ChangeStreamStateForm(request.POST, doc=doc, state_type=state_type)
         if form.is_valid():
             by = request.user.person
+            events = []
 
-            save_document_in_history(doc)
-
-            doc.time = datetime.datetime.now()
             comment = form.cleaned_data["comment"].strip()
 
             # state
@@ -1393,6 +1378,7 @@ def change_stream_state(request, name, state_type):
             if new_state != prev_state:
                 doc.set_state(new_state)
                 e = add_state_change_event(doc, by, prev_state, new_state, timestamp=doc.time)
+                events.append(e)
 
                 due_date = None
                 if form.cleaned_data["weeks"] != None:
@@ -1419,6 +1405,7 @@ def change_stream_state(request, name, state_type):
                     l.append(u"Tag%s %s cleared." % (pluralize(removed_tags), ", ".join(t.name for t in removed_tags)))
                 e.desc = " ".join(l)
                 e.save()
+                events.append(e)
 
                 email_stream_tags_changed(request, doc, added_tags, removed_tags, by, comment)
 
@@ -1427,6 +1414,9 @@ def change_stream_state(request, name, state_type):
                 e = DocEvent(type="added_comment", time=doc.time, by=by, doc=doc)
                 e.desc = comment
                 e.save()
+                events.append(e)
+
+            doc.save_with_history(events)
 
             return HttpResponseRedirect(doc.get_absolute_url())
     else:

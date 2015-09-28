@@ -27,6 +27,10 @@ class EditCharterTests(TestCase):
     def tearDown(self):
         shutil.rmtree(self.charter_dir)
 
+    def write_charter_file(self, charter):
+        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (charter.canonical_name(), charter.rev)), "w") as f:
+            f.write("This is a charter.")
+
     def test_startstop_process(self):
         make_test_data()
 
@@ -43,6 +47,8 @@ class EditCharterTests(TestCase):
             self.assertEqual(r.status_code, 200)
 
             # post
+            self.write_charter_file(charter)
+
             r = self.client.post(url, dict(message="test message"))
             self.assertEqual(r.status_code, 302)
             if option == "abandon":
@@ -349,8 +355,7 @@ class EditCharterTests(TestCase):
         url = urlreverse('charter_approve', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
-        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (charter.canonical_name(), charter.rev)), "w") as f:
-            f.write("This is a charter.")
+        self.write_charter_file(charter)
 
         p = Person.objects.get(name="Aread Irector")
 

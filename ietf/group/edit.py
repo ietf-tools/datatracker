@@ -150,7 +150,7 @@ def get_or_create_initial_charter(group, group_type):
     try:
         charter = Document.objects.get(docalias__name=charter_name)
     except Document.DoesNotExist:
-        charter = Document(
+        charter = Document.objects.create(
             name=charter_name,
             type_id="charter",
             title=group.name,
@@ -158,7 +158,6 @@ def get_or_create_initial_charter(group, group_type):
             abstract=group.name,
             rev="00-00",
         )
-        charter.save()
         charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
 
         # Create an alias as well

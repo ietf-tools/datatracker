@@ -5,7 +5,6 @@ import datetime
 from django.db.models import Q
 
 from ietf.doc.models import Document, State, DocEvent, LastCallDocEvent, WriteupDocEvent
-from ietf.doc.models import save_document_in_history
 from ietf.doc.models import IESG_SUBSTATE_TAGS
 from ietf.person.models import Person
 from ietf.doc.utils import add_state_change_event
@@ -50,8 +49,6 @@ def expire_last_call(doc):
     else:
         raise ValueError("Unexpected document type to expire_last_call(): %s" % doc.type)
 
-    save_document_in_history(doc)
-
     prev_state = doc.get_state(new_state.type_id)
     doc.set_state(new_state)
 
@@ -60,8 +57,7 @@ def expire_last_call(doc):
 
     system = Person.objects.get(name="(System)")
     e = add_state_change_event(doc, system, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
-                    
-    doc.time = (e and e.time) or datetime.datetime.now()
-    doc.save()
+    if e:
+        doc.save_with_history([e])
 
     email_last_call_expired(doc)

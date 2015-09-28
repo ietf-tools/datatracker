@@ -1,6 +1,6 @@
-import os, datetime, shutil, textwrap, json
+import os, datetime, textwrap, json
 
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, Http404
+from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse as urlreverse
 from django.template import RequestContext
@@ -14,12 +14,13 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, State, DocEvent, BallotDocEvent,
     BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent,
-    WriteupDocEvent, save_document_in_history )
+    WriteupDocEvent )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, get_chartering_type )
 from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     approved_revision, default_review_text, default_action_text, email_state_changed,
-    generate_ballot_writeup, generate_issue_ballot_mail, next_approved_revision, next_revision )
+    generate_ballot_writeup, generate_issue_ballot_mail, next_revision,
+    change_group_state_after_charter_approval, fix_charter_revision_after_approval)
 from ietf.group.models import ChangeStateGroupEvent, MilestoneGroupEvent
 from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_group_type
 from ietf.ietfauth.utils import has_role, role_required
@@ -65,7 +66,7 @@ def change_state(request, name, option=None):
     if charter.get_state_slug() != "infrev" or (initial_review and initial_review.expires < datetime.datetime.now()) or chartering_type == "rechartering":
         initial_review = None
 
-    login = request.user.person
+    by = request.user.person
 
     if request.method == 'POST':
         form = ChangeStateForm(request.POST, group=group)
@@ -97,7 +98,7 @@ def change_state(request, name, option=None):
                     group.save()
                     e = ChangeStateGroupEvent(group=group, type="changed_state")
                     e.time = group.time
-                    e.by = login
+                    e.by = by
                     e.state_id = group.state.slug
                     e.desc = "Group state changed to %s from %s" % (group.state, oldstate)
                     e.save()
@@ -112,32 +113,30 @@ def change_state(request, name, option=None):
             message = clean['message']
 
             if charter_state != charter.get_state():
-                # Charter state changed
-                save_document_in_history(charter)
-
+                events = []
                 prev_state = charter.get_state()
                 new_state = charter_state
                 charter.set_state(new_state)
                 charter.rev = charter_rev
 
                 if option != "abandon":
-                    add_state_change_event(charter, login, prev_state, new_state)
+                    e = add_state_change_event(charter, by, prev_state, new_state)
+                    if e:
+                        events.append(e)
                 else:
                     # kill hanging ballots
-                    close_open_ballots(charter, login)
+                    close_open_ballots(charter, by)
 
                     # Special log for abandoned efforts
-                    e = DocEvent(type="changed_document", doc=charter, by=login)
+                    e = DocEvent(type="changed_document", doc=charter, by=by)
                     e.desc = "IESG has abandoned the chartering effort"
                     e.save()
+                    events.append(e)
 
                 if comment:
-                    c = DocEvent(type="added_comment", doc=charter, by=login)
-                    c.desc = comment
-                    c.save()
+                    events.append(DocEvent.objects.create(type="added_comment", doc=charter, by=by, desc=comment))
 
-                charter.time = datetime.datetime.now()
-                charter.save()
+                charter.save_with_history(events)
 
                 if message or charter_state.slug == "intrev" or charter_state.slug == "extrev":
                     email_iesg_secretary_re_charter(request, group, "Charter state changed to %s" % charter_state.name, message)
@@ -146,19 +145,19 @@ def change_state(request, name, option=None):
 
                 if charter_state.slug == "intrev" and group.type_id == "wg":
                     if request.POST.get("ballot_wo_extern"):
-                        create_ballot_if_not_open(charter, login, "r-wo-ext")
+                        create_ballot_if_not_open(charter, by, "r-wo-ext")
                     else:
-                        create_ballot_if_not_open(charter, login, "r-extrev")
-                    default_review_text(group, charter, login)
-                    default_action_text(group, charter, login)
+                        create_ballot_if_not_open(charter, by, "r-extrev")
+                    default_review_text(group, charter, by)
+                    default_action_text(group, charter, by)
                 elif charter_state.slug == "iesgrev":
-                    create_ballot_if_not_open(charter, login, "approve")
+                    create_ballot_if_not_open(charter, by, "approve")
                 elif charter_state.slug == "approved":
-                    change_group_state_after_charter_approval(group, login)
-                    fix_charter_revision_after_approval(charter, login)
+                    change_group_state_after_charter_approval(group, by)
+                    fix_charter_revision_after_approval(charter, by)
 
             if charter_state.slug == "infrev" and clean["initial_time"] and clean["initial_time"] != 0:
-                e = InitialReviewDocEvent(type="initial_review", by=login, doc=charter)
+                e = InitialReviewDocEvent(type="initial_review", by=by, doc=charter)
                 e.expires = datetime.datetime.now() + datetime.timedelta(weeks=clean["initial_time"])
                 e.desc = "Initial review time expires %s" % e.expires.strftime("%Y-%m-%d")
                 e.save()
@@ -178,10 +177,10 @@ def change_state(request, name, option=None):
                 init = dict()
             elif option == "initcharter":
                 hide = ['charter_state']
-                init = dict(initial_time=1, message='%s has initiated chartering of the proposed %s:\n "%s" (%s).' % (login.plain_name(), group.type.name, group.name, group.acronym))
+                init = dict(initial_time=1, message='%s has initiated chartering of the proposed %s:\n "%s" (%s).' % (by.plain_name(), group.type.name, group.name, group.acronym))
             elif option == "abandon":
                 hide = ['initial_time', 'charter_state']
-                init = dict(message='%s has abandoned the chartering effort on the %s:\n "%s" (%s).' % (login.plain_name(), group.type.name, group.name, group.acronym))
+                init = dict(message='%s has abandoned the chartering effort on the %s:\n "%s" (%s).' % (by.plain_name(), group.type.name, group.name, group.acronym))
         form = ChangeStateForm(hide=hide, initial=init, group=group)
 
     prev_charter_state = None
@@ -202,9 +201,9 @@ def change_state(request, name, option=None):
 
     info_msg = {}
     if group.type_id == "wg":
-        info_msg[state_pk("infrev")] = 'The %s "%s" (%s) has been set to Informal IESG review by %s.' % (group.type.name, group.name, group.acronym, login.plain_name())
-        info_msg[state_pk("intrev")] = 'The %s "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat and inform the IAB.' % (group.type.name, group.name, group.acronym, login.plain_name())
-        info_msg[state_pk("extrev")] = 'The %s "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (group.type.name, group.name, group.acronym, login.plain_name())
+        info_msg[state_pk("infrev")] = 'The %s "%s" (%s) has been set to Informal IESG review by %s.' % (group.type.name, group.name, group.acronym, by.plain_name())
+        info_msg[state_pk("intrev")] = 'The %s "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat and inform the IAB.' % (group.type.name, group.name, group.acronym, by.plain_name())
+        info_msg[state_pk("extrev")] = 'The %s "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (group.type.name, group.name, group.acronym, by.plain_name())
 
     states_for_ballot_wo_extern = State.objects.none()
     if group.type_id == "wg":
@@ -213,7 +212,6 @@ def change_state(request, name, option=None):
     return render_to_response('doc/charter/change_state.html',
                               dict(form=form,
                                    doc=group.charter,
-                                   login=login,
                                    option=option,
                                    prev_charter_state=prev_charter_state,
                                    title=title,
@@ -242,7 +240,7 @@ def change_title(request, name, option=None):
     group = charter.group
     if not can_manage_group_type(request.user, group.type_id):
         return HttpResponseForbidden("You don't have permission to access this view")
-    login = request.user.person
+    by = request.user.person
     if request.method == 'POST':
         form = ChangeTitleForm(request.POST, charter=charter)
         if form.is_valid():
@@ -253,17 +251,19 @@ def change_title(request, name, option=None):
             message = clean['message']
             prev_title = charter.title
             if new_title != prev_title:
-                # Charter title changed
-                save_document_in_history(charter)
-                charter.title=new_title
+                events = []
+                charter.title = new_title
                 charter.rev = charter_rev
+
                 if not comment:
                     comment = "Changed charter title from '%s' to '%s'." % (prev_title, new_title)
-                event = DocEvent(type="added_comment", doc=charter, by=login)
-                event.desc = comment
-                event.save()
-                charter.time = datetime.datetime.now()
-                charter.save()
+                e = DocEvent(type="added_comment", doc=charter, by=by)
+                e.desc = comment
+                e.save()
+                events.append(e)
+
+                charter.save_with_history(events)
+
                 if message:
                     email_iesg_secretary_re_charter(request, group, "Charter title changed to %s" % new_title, message)
                 email_state_changed(request, charter, "Title changed to %s." % new_title)
@@ -274,7 +274,6 @@ def change_title(request, name, option=None):
     return render_to_response('doc/charter/change_title.html',
                               dict(form=form,
                                    doc=group.charter,
-                                   login=login,
                                    title=title,
                                    ),
                               context_instance=RequestContext(request))
@@ -297,23 +296,24 @@ def edit_ad(request, name):
     """Change the responsible Area Director for this charter."""
 
     charter = get_object_or_404(Document, type="charter", name=name)
-    login = request.user.person
+    by = request.user.person
 
     if request.method == 'POST':
         form = AdForm(request.POST)
         if form.is_valid():
             new_ad = form.cleaned_data['ad']
             if new_ad != charter.ad:
-                save_document_in_history(charter)
-                e = DocEvent(doc=charter, by=login)
+                events = []
+                e = DocEvent(doc=charter, by=by)
                 e.desc = "Responsible AD changed to %s" % new_ad.plain_name()
                 if charter.ad:
                    e.desc += " from %s" % charter.ad.plain_name()
                 e.type = "changed_document"
                 e.save()
+                events.append(e)
+
                 charter.ad = new_ad
-                charter.time = e.time
-                charter.save()
+                charter.save_with_history(events)
 
             return redirect('doc_view', name=charter.name)
     else:
@@ -372,16 +372,17 @@ def submit(request, name=None, option=None):
     if request.method == 'POST':
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
-            save_document_in_history(charter)
             # Also save group history so we can search for it
             save_group_in_history(group)
 
             charter.rev = next_rev
 
+            events = []
             e = NewRevisionDocEvent(doc=charter, by=request.user.person, type="new_revision")
             e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
             e.rev = charter.rev
             e.save()
+            events.append(e)
 
             # Save file on disk
             form.save(group, charter.rev)
@@ -389,8 +390,7 @@ def submit(request, name=None, option=None):
             if option in ['initcharter','recharter'] and charter.ad == None:
                 charter.ad = getattr(group.ad_role(),'person',None)
 
-            charter.time = datetime.datetime.now()
-            charter.save()
+            charter.save_with_history(events)
 
             if option:
                 return redirect('charter_startstop_process', name=charter.name, option=option)
@@ -434,15 +434,15 @@ def announcement_text(request, name, ann):
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
 
-    login = request.user.person
+    by = request.user.person
 
     if ann in ("action", "review"):
         existing = charter.latest_event(WriteupDocEvent, type="changed_%s_announcement" % ann)
     if not existing:
         if ann == "action":
-            existing = default_action_text(group, charter, login)
+            existing = default_action_text(group, charter, by)
         elif ann == "review":
-            existing = default_review_text(group, charter, login)
+            existing = default_review_text(group, charter, by)
 
     if not existing:
         raise Http404
@@ -454,15 +454,14 @@ def announcement_text(request, name, ann):
         if "save_text" in request.POST and form.is_valid():
             t = form.cleaned_data['announcement_text']
             if t != existing.text:
-                e = WriteupDocEvent(doc=charter, by=login)
-                e.by = login
+                e = WriteupDocEvent(doc=charter, by=by)
+                e.by = by
                 e.type = "changed_%s_announcement" % ann
                 e.desc = "%s %s text was changed" % (group.type.name, ann)
                 e.text = t
                 e.save()
 
-                charter.time = e.time
-                charter.save()
+                charter.save_with_history([e])
 
             if request.GET.get("next", "") == "approve":
                 return redirect('charter_approve', name=charter.canonical_name())
@@ -471,9 +470,9 @@ def announcement_text(request, name, ann):
 
         if "regenerate_text" in request.POST:
             if ann == "action":
-                e = default_action_text(group, charter, login)
+                e = default_action_text(group, charter, by)
             elif ann == "review":
-                e = default_review_text(group, charter, login)
+                e = default_review_text(group, charter, by)
             # make sure form has the updated text
             form = AnnouncementTextForm(initial=dict(announcement_text=e.text))
 
@@ -505,7 +504,7 @@ def ballot_writeupnotes(request, name):
     if not ballot:
         raise Http404
 
-    login = request.user.person
+    by = request.user.person
 
     approval = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
 
@@ -522,8 +521,7 @@ def ballot_writeupnotes(request, name):
         if form.is_valid():
             t = form.cleaned_data["ballot_writeup"]
             if t != existing.text:
-                e = WriteupDocEvent(doc=charter, by=login)
-                e.by = login
+                e = WriteupDocEvent(doc=charter, by=by)
                 e.type = "changed_ballot_writeup_text"
                 e.desc = "Ballot writeup was changed"
                 e.text = t
@@ -532,11 +530,11 @@ def ballot_writeupnotes(request, name):
                 existing = e
 
             if "send_ballot" in request.POST and approval:
-                if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=login, ballot=ballot):
+                if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=by, ballot=ballot):
                     # sending the ballot counts as a yes
-                    pos = BallotPositionDocEvent(doc=charter, by=login)
+                    pos = BallotPositionDocEvent(doc=charter, by=by)
                     pos.type = "changed_ballot_position"
-                    pos.ad = login
+                    pos.ad = by
                     pos.pos_id = "yes"
                     pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
                     pos.save()
@@ -544,8 +542,8 @@ def ballot_writeupnotes(request, name):
                 msg = generate_issue_ballot_mail(request, charter, ballot)
                 send_mail_preformatted(request, msg)
 
-                e = DocEvent(doc=charter, by=login)
-                e.by = login
+                e = DocEvent(doc=charter, by=by)
+                e.by = by
                 e.type = "sent_ballot_announcement"
                 e.desc = "Ballot has been sent"
                 e.save()
@@ -564,57 +562,17 @@ def ballot_writeupnotes(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
-def change_group_state_after_charter_approval(group, by):
-    new_state = GroupStateName.objects.get(slug="active")
-    if group.state == new_state:
-        return None
-
-    save_group_in_history(group)
-    group.state = new_state
-    group.time = datetime.datetime.now()
-    group.save()
-
-    # create an event for the group state change, too
-    e = ChangeStateGroupEvent(group=group, type="changed_state")
-    e.time = group.time
-    e.by = by
-    e.state_id = "active"
-    e.desc = "Charter approved, group active"
-    e.save()
-
-    return e
-
-def fix_charter_revision_after_approval(charter, by):
-    # according to spec, 00-02 becomes 01, so copy file and record new revision
-    try:
-        old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-        new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
-        shutil.copy(old, new)
-    except IOError:
-        return HttpResponse("There was an error copying %s to %s" %
-                            ('%s-%s.txt' % (charter.canonical_name(), charter.rev),
-                             '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev))))
-
-    e = NewRevisionDocEvent(doc=charter, by=by, type="new_revision")
-    e.rev = next_approved_revision(charter.rev)
-    e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), e.rev)
-    e.save()
-
-    charter.rev = e.rev
-    charter.time = e.time
-    charter.save()
-
 @role_required("Secretariat")
 def approve(request, name):
     """Approve charter, changing state, fixing revision, copying file to final location."""
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
 
-    login = request.user.person
+    by = request.user.person
 
     e = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     if not e:
-        announcement = default_action_text(group, charter, login).text
+        announcement = default_action_text(group, charter, by).text
     else:
         announcement = e.text
 
@@ -622,26 +580,31 @@ def approve(request, name):
         new_charter_state = State.objects.get(used=True, type="charter", slug="approved")
         prev_charter_state = charter.get_state()
 
-        save_document_in_history(charter)
         charter.set_state(new_charter_state)
 
-        close_open_ballots(charter, login)
+        close_open_ballots(charter, by)
 
+        events = []
         # approve
-        e = DocEvent(doc=charter, by=login)
+        e = DocEvent(doc=charter, by=by)
         e.type = "iesg_approved"
         e.desc = "IESG has approved the charter"
         e.save()
+        events.append(e)
 
         change_description = e.desc
 
-        group_state_change_event = change_group_state_after_charter_approval(group, login)
+        group_state_change_event = change_group_state_after_charter_approval(group, by)
         if group_state_change_event:
             change_description += " and group state has been changed to %s" % group.state.name
 
-        add_state_change_event(charter, login, prev_charter_state, new_charter_state)
+        e = add_state_change_event(charter, by, prev_charter_state, new_charter_state)
+        if e:
+            events.append(e)
 
-        fix_charter_revision_after_approval(charter, login)
+        fix_charter_revision_after_approval(charter, by)
+
+        charter.save_with_history(events)
 
         email_iesg_secretary_re_charter(request, group, "Charter state changed to %s" % new_charter_state.name, change_description)
 
@@ -664,7 +627,7 @@ def approve(request, name):
                     o.state_id = "active"
                     o.save()
                     MilestoneGroupEvent.objects.create(
-                        group=group, type="changed_milestone", by=login,
+                        group=group, type="changed_milestone", by=by,
                         desc="Changed milestone \"%s\", set state to active from review" % o.desc,
                         milestone=o)
 
@@ -681,7 +644,7 @@ def approve(request, name):
                 m.save()
 
                 MilestoneGroupEvent.objects.create(
-                    group=group, type="changed_milestone", by=login,
+                    group=group, type="changed_milestone", by=by,
                     desc="Added milestone \"%s\", due %s, from approved charter" % (m.desc, m.due),
                     milestone=m)
 
@@ -691,7 +654,7 @@ def approve(request, name):
             m.save()
 
             MilestoneGroupEvent.objects.create(
-                group=group, type="changed_milestone", by=login,
+                group=group, type="changed_milestone", by=by,
                 desc="Deleted milestone \"%s\", not present in approved charter" % m.desc,
                 milestone=m)
 

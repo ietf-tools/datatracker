@@ -1,4 +1,4 @@
-import re, datetime, os
+import re, datetime, os, shutil
 
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
@@ -6,8 +6,12 @@ from django.conf import settings
 
 from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent, BallotPositionDocEvent
 from ietf.person.models import Person
+from ietf.group.models import ChangeStateGroupEvent
+from ietf.name.models import GroupStateName
 from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import send_mail_text
+from ietf.utils.log import log
+from ietf.group.utils import save_group_in_history
 
 def charter_name_for_group(group):
     if group.type_id == "rg":
@@ -45,6 +49,45 @@ def read_charter_text(doc):
             return f.read()
     except IOError:
         return "Error: couldn't read charter text"
+
+def change_group_state_after_charter_approval(group, by):
+    new_state = GroupStateName.objects.get(slug="active")
+    if group.state == new_state:
+        return None
+
+    save_group_in_history(group)
+    group.state = new_state
+    group.time = datetime.datetime.now()
+    group.save()
+
+    # create an event for the group state change, too
+    e = ChangeStateGroupEvent(group=group, type="changed_state")
+    e.time = group.time
+    e.by = by
+    e.state_id = "active"
+    e.desc = "Charter approved, group active"
+    e.save()
+
+    return e
+
+def fix_charter_revision_after_approval(charter, by):
+    # according to spec, 00-02 becomes 01, so copy file and record new revision
+    try:
+        old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+        new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
+        shutil.copy(old, new)
+    except IOError:
+        log("There was an error copying %s to %s" % (old, new))
+
+    events = []
+    e = NewRevisionDocEvent(doc=charter, by=by, type="new_revision")
+    e.rev = next_approved_revision(charter.rev)
+    e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), e.rev)
+    e.save()
+    events.append(e)
+
+    charter.rev = e.rev
+    charter.save_with_history(events)
 
 def historic_milestones_for_charter(charter, rev):
     """Return GroupMilestone/GroupMilestoneHistory objects for charter

@@ -4,7 +4,7 @@
 import datetime, json
 
 from django.http import HttpResponseForbidden, HttpResponseRedirect, Http404
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render, render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
@@ -14,7 +14,7 @@ from django.conf import settings
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotPositionDocEvent,
-    BallotType, LastCallDocEvent, WriteupDocEvent, save_document_in_history, IESG_SUBSTATE_TAGS )
+    BallotType, LastCallDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import ( email_ad, email_ballot_deferred, email_ballot_undeferred, 
@@ -44,12 +44,12 @@ def do_undefer_ballot(request, doc):
     Helper function to perform undefer of ballot.  Takes the Request object, for use in 
     logging, and the Document object.
     '''
-    login = request.user.person
+    by = request.user.person
     telechat_date = TelechatDate.objects.active().order_by("date")[0].date
-    save_document_in_history(doc)
 
     new_state = doc.get_state()
-    prev_tags = new_tags = []
+    prev_tags = []
+    new_tags = []
 
     if doc.type_id == 'draft':
         new_state = State.objects.get(used=True, type="draft-iesg", slug='iesg-eva')
@@ -62,15 +62,21 @@ def do_undefer_ballot(request, doc):
     doc.set_state(new_state)
     doc.tags.remove(*prev_tags)
 
-    e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
-    
-    doc.time = (e and e.time) or datetime.datetime.now()
-    doc.save()
+    events = []
+    state_change_event = add_state_change_event(doc, by, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+    if state_change_event:
+        events.append(state_change_event)
 
-    update_telechat(request, doc, login, telechat_date)
+    e = update_telechat(request, doc, by, telechat_date)
     if e:
-        email_state_changed(request, doc, e.desc)
-    email_ballot_undeferred(request, doc, login.plain_name(), telechat_date)
+        events.append(e)
+
+    if events:
+        doc.save_with_history(events)
+
+    if state_change_event:
+        email_state_changed(request, doc, state_change_event.desc)
+    email_ballot_undeferred(request, doc, by.plain_name(), telechat_date)
     
 def position_to_ballot_choice(position):
     for v, label in BALLOT_CHOICES:
@@ -342,10 +348,9 @@ def defer_ballot(request, name):
     telechat_date = TelechatDate.objects.active().order_by("date")[1].date
 
     if request.method == 'POST':
-        save_document_in_history(doc)
-
         new_state = doc.get_state()
-        prev_tags = new_tags = []
+        prev_tags = []
+        new_tags = []
 
         if doc.type_id == 'draft':
             new_state = State.objects.get(used=True, type="draft-iesg", slug='defer')
@@ -358,15 +363,20 @@ def defer_ballot(request, name):
         doc.set_state(new_state)
         doc.tags.remove(*prev_tags)
 
-        e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
-        
-        doc.time = (e and e.time) or datetime.datetime.now()
-        doc.save()
+        events = []
 
+        state_change_event = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+        if state_change_event:
+            events.append(state_change_event)
+
+        e = update_telechat(request, doc, login, telechat_date)
         if e:
-            email_state_changed(request, doc, e.desc)
+            events.append(e)
 
-        update_telechat(request, doc, login, telechat_date)
+        doc.save_with_history(events)
+
+        if state_change_event:
+            email_state_changed(request, doc, e.desc)
         email_ballot_deferred(request, doc, login.plain_name(), telechat_date)
 
         return HttpResponseRedirect(doc.get_absolute_url())
@@ -443,8 +453,6 @@ def lastcalltext(request, name):
                     e.save()
                 
                 if "send_last_call_request" in request.POST:
-                    save_document_in_history(doc)
-
                     prev_state = doc.get_state("draft-iesg")
                     new_state = State.objects.get(used=True, type="draft-iesg", slug='lc-req')
 
@@ -455,10 +463,9 @@ def lastcalltext(request, name):
 
                     e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
 
-                    doc.time = (e and e.time) or datetime.datetime.now()
-                    doc.save()
-
                     if e:
+                        doc.save_with_history([e])
+
                         email_state_changed(request, doc, e.desc)
                         email_ad(request, doc, doc.ad, login, e.desc)
 
@@ -666,19 +673,17 @@ def approve_ballot(request, name):
 
         prev_state = doc.get_state("draft-iesg")
         prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+        events = []
 
         if new_state.slug == "ann" and new_state.slug != prev_state.slug and not request.REQUEST.get("skiprfceditorpost"):
             # start by notifying the RFC Editor
             import ietf.sync.rfceditor
             response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
             if error:
-                return render_to_response('doc/draft/rfceditor_post_approved_draft_failed.html',
-                                  dict(name=doc.name,
-                                       response=response,
-                                       error=error),
-                                  context_instance=RequestContext(request))
-
-        save_document_in_history(doc)
+                return render(request, 'doc/draft/rfceditor_post_approved_draft_failed.html',
+                              dict(name=doc.name,
+                                   response=response,
+                                   error=error))
 
         doc.set_state(new_state)
         doc.tags.remove(*prev_tags)
@@ -693,15 +698,17 @@ def approve_ballot(request, name):
         else:
             e.type = "iesg_approved"
             e.desc = "IESG has approved the document"
-
         e.save()
+        events.append(e)
         
         change_description = e.desc + " and state has been changed to %s" % doc.get_state("draft-iesg").name
         
         e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
 
-        doc.time = (e and e.time) or datetime.datetime.now()
-        doc.save()
+        if e:
+            events.append(e)
+
+        doc.save_with_history(events)
 
         email_state_changed(request, doc, change_description)
         email_ad(request, doc, doc.ad, login, change_description)
@@ -761,10 +768,10 @@ def make_last_call(request, name):
             msg.save()
             msg.related_docs.add(doc)
 
-            save_document_in_history(doc)
-
             new_state = doc.get_state()
-            prev_tags = new_tags = []
+            prev_tags = []
+            new_tags = []
+            events = []
 
             if doc.type.slug == 'draft':
                 new_state = State.objects.get(used=True, type="draft-iesg", slug='lc')
@@ -778,10 +785,8 @@ def make_last_call(request, name):
             doc.tags.remove(*prev_tags)
 
             e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
-
-            doc.time = (e and e.time) or datetime.datetime.now()
-            doc.save()
-
+            if e:
+                events.append(e)
             change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, new_state.name)
 
             email_state_changed(request, doc, change_description)
@@ -796,6 +801,7 @@ def make_last_call(request, name):
                 e.time = datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time())
             e.expires = form.cleaned_data['last_call_expiration_date']
             e.save()
+            events.append(e)
 
             # update IANA Review state
             if doc.type.slug == 'draft':
@@ -803,7 +809,11 @@ def make_last_call(request, name):
                 if not prev_state:
                     next_state = State.objects.get(used=True, type="draft-iana-review", slug="need-rev")
                     doc.set_state(next_state)
-                    add_state_change_event(doc, login, prev_state, next_state)
+                    e = add_state_change_event(doc, login, prev_state, next_state)
+                    if e:
+                        events.append(e)
+
+            doc.save_with_history(events)
 
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
