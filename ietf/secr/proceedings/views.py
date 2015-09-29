@@ -368,10 +368,12 @@ def delete_material(request,slide_id):
     doc.set_state(state)
 
     # create   deleted_document
-    DocEvent.objects.create(doc=doc,
-                            by=request.user.person,
-                            type='deleted',
-                            desc="State set to deleted")
+    e = DocEvent.objects.create(doc=doc,
+                                by=request.user.person,
+                                type='deleted',
+                                desc="State set to deleted")
+
+    doc.save_with_history([e])
 
     create_proceedings(meeting,group)
 
