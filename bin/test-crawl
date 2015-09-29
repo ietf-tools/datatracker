@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, re, datetime, argparse, traceback, tempfile, json, subprocess
+import os, sys, re, datetime, argparse, traceback, json, subprocess
 import html5lib
 import random
 
