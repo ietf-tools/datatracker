@@ -12,6 +12,7 @@ def state_help(request, type):
         "draft-rfceditor": ("draft-rfceditor", "RFC Editor States for Internet-Drafts"),
         "draft-iana-action": ("draft-iana-action", "IANA Action States for Internet-Drafts"),
         "draft-stream-ietf": ("draft-stream-ietf", "IETF Stream States for Internet-Drafts"),
+        "draft-stream-irtf": ("draft-stream-irtf", "IRTF Stream States for Internet-Drafts"),
         "charter": ("charter", "Charter States"),
         "conflict-review": ("conflrev", "Conflict Review States"),
         "status-change": ("statchg", "RFC Status Change States"),
