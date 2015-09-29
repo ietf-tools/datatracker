@@ -380,7 +380,7 @@ def email(request, id):
         initial = { 
             'to': ipr.submitter_email,
             'frm': settings.IPR_EMAIL_TO,
-            'subject': 'Regarding {}'.format(ipr.title),
+            'subject': u'Regarding {}'.format(ipr.title),
             'reply_to': reply_to,
         }
         form = MessageModelForm(initial=initial)
