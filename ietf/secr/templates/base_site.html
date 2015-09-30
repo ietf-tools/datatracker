@@ -13,7 +13,7 @@
     </td>
     <td align="right">
       <br>
-      <span class="login">{% if user|has_role:"Secretariat" %}Secretariat {% endif %}Logged in: <a href="/accounts/profile/">{{ user }}</a>  | <a href="/accounts/logout/">Log out</a></span>
+      <span class="login">{% if user|has_role:"Secretariat" %}Secretariat {% endif %}Logged in: <a href="/accounts/profile/">{{ user }}</a>  | <a rel="nofollow" href="/accounts/logout/">Log out</a></span>
     </td>
   </tr>
 </table>
