@@ -124,7 +124,6 @@ class IndexTests(TestCase):
 
         e = LastCallDocEvent.objects.create(doc=draft, type="sent_last_call", expires=datetime.datetime.now() + datetime.timedelta(days=14), by=draft.ad)
 
-        DocAlias.objects.create(name="rfc1234", document=draft)
         t = get_fields(all_id2_txt())
         self.assertEqual(t[11], e.expires.strftime("%Y-%m-%d"))
 
