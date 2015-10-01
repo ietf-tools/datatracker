@@ -24,7 +24,9 @@
           <tr>
             <td class="text-nowrap">{{ ipr.time|date:"Y-m-d" }}</td>
             <td>{{ ipr.id }}</td>
-            <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a></td>
+            <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a>
+                {% if ipr.updates %} <br/>(Updates ID#: {% for upd in ipr.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
+            </td>
           </tr>
         {% endfor %}
       </tbody>
@@ -57,7 +59,9 @@
                 <tr>
                   <td class="text-nowrap">{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
                   <td>{{ ipr.disclosure.id }}</td>
-                  <td><a href="{% url "ietf.ipr.views.show" id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a></td>
+                  <td><a href="{% url "ietf.ipr.views.show" id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a>
+                      {% if ipr.disclosure.updates %} <br/>(Updates ID#: {% for upd in ipr.disclosure.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
+                  </td>
                 </tr>
               {% endif %}
             {% endfor %}
