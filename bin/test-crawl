@@ -38,7 +38,7 @@ parser.add_argument('-v', '--verbose', action='store_true', default=False,
 args = parser.parse_args()
 
 # Import Django, call setup()
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", args.settings or "ietf.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", args.settings or "ietf.settings_testcrawl")
 
 import django
 import django.test
