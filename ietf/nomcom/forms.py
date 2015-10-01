@@ -591,8 +591,7 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
 
     class Meta:
         model = Feedback
-        fields = ('positions',
-                  'comments')
+        fields = ( 'comments', )
 
 class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
     content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }))
