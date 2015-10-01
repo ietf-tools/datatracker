@@ -2,6 +2,7 @@
 
 from django.conf.urls import patterns, include
 from django.views.generic import RedirectView
+from django.conf import settings
 
 from ietf.group import info, edit
 
@@ -19,5 +20,5 @@ urlpatterns = patterns('',
     (r'^bofs/$', info.bofs),
     (r'^email-aliases/$', 'ietf.group.info.email_aliases'),
     (r'^bofs/create/$', edit.edit, {'action': "create"}, "bof_create"),
-    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/', include('ietf.group.urls_info_details')),
+    (r'^%(acronym)s/' % settings.URL_REGEXPS, include('ietf.group.urls_info_details')),
 )

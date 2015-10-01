@@ -23,7 +23,7 @@ from ietf.utils.test_utils import login_testing_unauthorized
 class StatusChangeTests(TestCase):
     def test_start_review(self):
 
-        url = urlreverse('start_rfc_status_change',kwargs=dict(name=""))
+        url = urlreverse('start_rfc_status_change')
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get should succeed and get a reasonable form

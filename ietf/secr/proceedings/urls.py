@@ -1,9 +1,10 @@
 from django.conf.urls import patterns, url
+from django.conf import settings
 
 urlpatterns = patterns('ietf.secr.proceedings.views',
     url(r'^$', 'main', name='proceedings'),
     url(r'^ajax/generate-proceedings/(?P<meeting_num>\d{1,3})/$', 'ajax_generate_proceedings', name='proceedings_ajax_generate_proceedings'),
-    url(r'^ajax/get-sessions/(?P<meeting_num>\d{1,3})/(?P<acronym>[A-Za-z0-9_\-\+]+)/', 'ajax_get_sessions', name='proceedings_ajax_get_sessions'),
+    url(r'^ajax/get-sessions/(?P<meeting_num>\d{1,3})/%(acronym)s/' % settings.URL_REGEXPS, 'ajax_get_sessions', name='proceedings_ajax_get_sessions'),
     url(r'^ajax/order-slide/$', 'ajax_order_slide', name='proceedings_ajax_order_slide'),
     # special offline URL for testing proceedings build
     url(r'^build/(?P<meeting_num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',
@@ -21,11 +22,11 @@ urlpatterns = patterns('ietf.secr.proceedings.views',
     # NOTE: we have two entries here which both map to upload_unified, passing session_id or acronym
     url(r'^(?P<meeting_num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/(?P<session_id>\d{1,6})/$',
         'upload_unified', name='proceedings_upload_unified'),
-    url(r'^(?P<meeting_num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',
+    url(r'^(?P<meeting_num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/%(acronym)s/$' % settings.URL_REGEXPS,
         'upload_unified', name='proceedings_upload_unified'),
     # interim stuff
     url(r'^interim/$', 'select_interim', name='proceedings_select_interim'),
     url(r'^interim/(?P<meeting_num>interim-\d{4}-[A-Za-z0-9_\-\+]+)/delete/$', 'delete_interim_meeting',
         name='proceedings_delete_interim_meeting'),
-    url(r'^interim/(?P<acronym>[A-Za-z0-9_\-\+]+)/$', 'interim', name='proceedings_interim'),
+    url(r'^interim/%(acronym)s/$' % settings.URL_REGEXPS, 'interim', name='proceedings_interim'),
 )
