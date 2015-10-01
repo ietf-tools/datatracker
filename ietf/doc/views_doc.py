@@ -645,9 +645,10 @@ def document_writeup(request, name):
                          "<em>Draft</em> of message to be sent <em>after</em> approval:",
                          writeups))
 
-        writeups.append(("Announcement",
-                         text_from_writeup("changed_ballot_approval_text"),
-                         urlreverse("doc_ballot_approvaltext", kwargs=dict(name=doc.name))))
+        if doc.get_state("draft-iesg"):
+            writeups.append(("Announcement",
+                             text_from_writeup("changed_ballot_approval_text"),
+                             urlreverse("doc_ballot_approvaltext", kwargs=dict(name=doc.name))))
 
         writeups.append(("Ballot Text",
                          text_from_writeup("changed_ballot_writeup_text"),
