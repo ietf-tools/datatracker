@@ -7,6 +7,8 @@ import copy
 import os
 import sys
 import re
+import timedelta
+from timedeltafield import TimedeltaField
 
 import debug                            # pyflakes:ignore
 
@@ -15,9 +17,7 @@ from django.conf import settings
 # mostly used by json_dict()
 #from django.template.defaultfilters import slugify, date as date_format, time as time_format
 from django.template.defaultfilters import date as date_format
-import timedelta
-
-from timedeltafield import TimedeltaField
+from django.utils.text import slugify
 
 from ietf.doc.models import Document
 from ietf.group.models import Group
@@ -774,6 +774,7 @@ class ScheduledSession(models.Model):
 
             if self.timeslot.type_id in ('break', 'reg', 'other'):
                 components.append(g.acronym)
+                components.append(slugify(self.session.name))
 
             if self.timeslot.type_id in ('session', 'plenary'):
                 if self.timeslot.type_id == "plenary":
