@@ -81,8 +81,8 @@
 	          To be able to return to the customized view later, bookmark the resulting URL.
 	        </p>
 
+		{% if group_parents|length %}
 	        <p>Groups displayed in <b><i>italics</i></b> are BOFs.</p>
-
 
                 <table class="table table-condensed">
 	          <thead>
@@ -116,7 +116,9 @@
 		    </tr>
 	          </tbody>
 	        </table>
-
+		{% else %}
+		<blockquote><i>No WG / RG data available -- no WG / RG sessions have been scheduled yet.</i></blockquote>
+		{% endif %}
 	        <p>Also show sessions of these groups:</p>
 	        <div class="btn-group btn-group-justified">
 	          <div class="btn-group"><button class="btn btn-default pickviewneg active iepg"> IEPG</button></div>
@@ -158,7 +160,7 @@
               <tr class="warning">
                 <th colspan="6">
 		   {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
-		   <div class="anchor-target" id="{{item.timeslot.time|slugify}}"/>
+		   <div class="anchor-target" id="{{item.timeslot.time|slugify}}"></div>
 	          {% if "-utc" in request.path %}
 	            {{ item.timeslot.utc_start_time|date:"l, F j, Y" }} (UTC)
 	          {% else %}
