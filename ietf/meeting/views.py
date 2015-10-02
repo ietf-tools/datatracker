@@ -709,13 +709,13 @@ def room_view(request, num=None):
     meeting = get_meeting(num)
 
     rooms = meeting.room_set.order_by('functional_name','name')
-    if rooms.count() == 0:
-        raise Http404
+    if not rooms:
+        return HttpResponse("No rooms defined yet")
 
     scheduledsessions = meeting.agenda.scheduledsession_set.all()
     unavailable = meeting.timeslot_set.filter(type__slug='unavail')
-    if (unavailable.count() + scheduledsessions.count()) == 0 :
-        raise Http404
+    if not (unavailable or scheduledsessions):
+        return HttpResponse("No sessions/timeslots available yet")
 
     earliest = None
     latest = None
