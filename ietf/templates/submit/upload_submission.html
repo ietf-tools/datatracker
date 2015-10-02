@@ -43,6 +43,13 @@
 
       <h2>Upload an Internet-Draft</h2>
 
+      <p>
+	 <i>Either a plain-text document or a valid .xml file which can be processed by the xml2rfc
+	 processor <b>must</b> be provided.<br/>
+	 If no .txt file is provided, one will be generated from the .xml file.<br/>
+	 Other file types are optional.</i>
+      </p>
+
       <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {% bootstrap_form form %}
