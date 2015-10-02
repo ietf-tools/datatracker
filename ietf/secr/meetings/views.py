@@ -359,12 +359,13 @@ def blue_sheet_generate(request, meeting_id):
     '''
     Generate bluesheets
     '''
-    meeting = get_object_or_404(Meeting, number=meeting_id)
+    if request.POST:
+        meeting = get_object_or_404(Meeting, number=meeting_id)
 
-    groups = Group.objects.filter(session__meeting=meeting).order_by('acronym')
-    create_blue_sheets(meeting, groups)
+        groups = Group.objects.filter(session__meeting=meeting).order_by('acronym')
+        create_blue_sheets(meeting, groups)
 
-    messages.success(request, 'Blue Sheets generated')
+        messages.success(request, 'Blue Sheets generated')
     return redirect('meetings_blue_sheet', meeting_id=meeting.number)
 
 @role_required('Secretariat')

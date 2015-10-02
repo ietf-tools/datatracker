@@ -19,8 +19,13 @@
   <h2>Blue Sheet</h2>
   <h1> Meeting {{ meeting.number }}</h1>
   
+  <form style="display:inline" method="post" action="{% url "meetings_blue_sheet_generate" meeting_id=meeting.number%}">{% csrf_token %}
+    <p>
+      <input type="submit" value="Generate Blue Sheets">
+    </p>
+  </form>
+
   <p>
-  <a href="{% url "meetings_blue_sheet_generate" meeting_id=meeting.number%}">Generate Blue Sheets</a><br />
   <a href="{{ url }}">Download</a> latest Blue Sheets.
   </p>
   <hr />
