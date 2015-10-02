@@ -206,10 +206,20 @@ class SubmissionUploadForm(forms.Form):
             txt_file.seek(0)
 
         if not self.filename:
-            raise forms.ValidationError("Could not extract a valid draft name from the upload")
+            raise forms.ValidationError("Could not extract a valid draft name from the upload"
+                "To fix this in a text upload, please make sure that the full draft name including "
+                "revision number appears centered on its own line below the document title on the "
+                "first page.  In an xml upload, please make sure that the top-level <rfc/> "
+                "element has a docName attribute which provides the full draft name including "
+                "revision number.")
 
         if not self.revision:
-            raise forms.ValidationError("Could not extract a valid draft revision from the upload")
+            raise forms.ValidationError("Could not extract a valid draft revision from the upload.  "
+                "To fix this in a text upload, please make sure that the full draft name including "
+                "revision number appears centered on its own line below the document title on the "
+                "first page.  In an xml upload, please make sure that the top-level <rfc/> "
+                "element has a docName attribute which provides the full draft name including "
+                "revision number.")
 
         if not self.title:
             raise forms.ValidationError("Could not extract a valid title from the upload")
