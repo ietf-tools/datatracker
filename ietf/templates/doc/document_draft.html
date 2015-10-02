@@ -80,7 +80,7 @@
 	  <th></th>
 	  <th>Replaces</th>
 	  <td class="edit">
-	    {% if can_edit_stream_info %}
+            {% if can_edit_stream_info and not snapshot %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_change_replaces" name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
@@ -106,7 +106,7 @@
             <tr>
               <th>Possibly Replaces</th>
               <td class="edit">
-                {% if can_edit_replaces %}
+                {% if can_edit_replaces and not snapshot %}
                   <a class="btn btn-default btn-xs" href="{% url "doc_review_possibly_replaces" name=doc.name %}">Edit</a>
                 {% endif %}
               </td>
@@ -120,7 +120,7 @@
             <tr>
               <th>Possibly Replaced By</th>
               <td class="edit">
-                {% if can_edit_replaces %}
+                {% if can_edit_replaces and not snapshot %}
                   {% comment %}<a class="btn btn-default btn-xs" href="{% url "doc_review_possibly_replaces" name=doc.name %}">Edit</a>{% endcomment %}
                 {% endif %}
               </td>
@@ -135,7 +135,7 @@
         <th></th>
 	<th>Stream</th>
 	<td class="edit">
-	  {% if can_change_stream %}
+          {% if can_change_stream and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_stream" name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
@@ -149,8 +149,8 @@
 	  <th></th>
 	  <th>Intended RFC status</th>
 	  <td class="edit">
-	    {% if can_edit or can_edit_stream_info %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_change_intended_status" name=doc.name %}">Edit</a>
+            {% if can_edit_stream_info and not snapshot %}
+              <a class="btn btn-default btn-xs" href="{% url "doc_change_intended_status" name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -201,7 +201,7 @@
 	     {% endif %}
 	  </th>
 	  <td class="edit">
-	    {% if doc.stream and can_edit_stream_info %}
+            {% if doc.stream and can_edit_stream_info and doc.stream.slug != "legacy" and not snapshot %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_change_stream_state" name=doc.name state_type=stream_state_type_slug %}">Edit</a>
 	    {% endif %}
 	  </td>
@@ -228,7 +228,7 @@
 	  <th></th>
 	  <th>Consensus</th>
 	  <td class="edit">
-	    {% if can_edit or can_edit_stream_info %}
+            {% if can_edit_stream_info and not snapshot %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
@@ -241,13 +241,15 @@
       <tr>
         <th></th>
 	<th>Document shepherd</th>
-	<td class="edit">
-	  {% if can_edit_stream_info %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_edit_shepherd" name=doc.name %}">Edit</a>
-	  {% elif is_shepherd %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_shepherd_email" name=doc.name %}">Change Email</a>
-	  {% endif %}
-	</td>
+        <td class="edit">
+          {% if not snapshot %}
+            {% if can_edit_stream_info %}
+              <a class="btn btn-default btn-xs" href="{% url "doc_edit_shepherd" name=doc.name %}">Edit</a>
+            {% elif is_shepherd %}
+              <a class="btn btn-default btn-xs" href="{% url "doc_change_shepherd_email" name=doc.name %}">Change Email</a>
+            {% endif %}
+          {% endif %}
+        </td>
 	<td>
 	  {% if doc.shepherd %}{{ doc.shepherd.person }}{% else %}No shepherd assigned{% endif %}
 	</td>
@@ -258,7 +260,7 @@
 	  <th></th>
 	  <th>Shepherd write-up</th>
 	  <td class="edit">
-	    {% if can_edit_shepherd_writeup %}
+            {% if can_edit_shepherd_writeup and not snapshot %}
 	      {% url "doc_edit_shepherd_writeup" name=doc.name as doc_edit_url %}
 	      {% if doc_edit_url %}
 		<a class="btn btn-default btn-xs" href="{{doc_edit_url}}">Edit</a>
@@ -289,7 +291,7 @@
 	<th>IESG</th>
 	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
 	<td class="edit">
-	  {% if iesg_state and can_edit %}
+          {% if iesg_state and can_edit and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_state" name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
@@ -302,7 +304,7 @@
         <th></th>
 	<th>Telechat date</th>
 	<td class="edit">
-	  {% if can_edit %}
+          {% if can_edit and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_telechat_date" name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
@@ -328,7 +330,7 @@
         <th></th>
 	<th>Responsible AD</th>
 	<td class="edit">
-	  {% if can_edit %}
+          {% if can_edit and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_ad" name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
@@ -343,7 +345,7 @@
 	    <th></th>
 	    <th>IESG note</th>
 	    <td class="edit">
-	      {% if can_edit %}
+              {% if can_edit and not snapshot %}
 		<a class="btn btn-default btn-xs" href="{% url "doc_change_iesg_note" name=doc.name %}">Edit</a>
 	      {% endif %}
 	    </td>
@@ -358,7 +360,7 @@
         <th></th>
 	<th>Send notices to</th>
 	<td class="edit">
-	  {% if can_edit_notify %}
+          {% if can_edit_notify and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_notify" name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
@@ -375,7 +377,7 @@
 	<th>IANA</th>
 	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
 	<td class="edit">
-	  {% if can_edit_iana_state %}
+          {% if can_edit_iana_state and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-review" %}">Edit</a>
 	  {% endif %}
 	</td>
@@ -388,7 +390,7 @@
         <th></th>
 	<th>IANA action state</th>
 	<td class="edit">
-	  {% if can_edit_iana_state %}
+          {% if can_edit_iana_state and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-action" %}">Edit</a>
 	  {% endif %}
 	</td>
