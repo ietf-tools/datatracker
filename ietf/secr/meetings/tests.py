@@ -95,7 +95,7 @@ class MainTestCase(TestCase):
 
         url = reverse('meetings_blue_sheet_generate',kwargs={'meeting_id':meeting.number})
         self.client.login(username="secretary", password="secretary+password")
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(response.status_code, 302)
         self.assertTrue(os.path.exists(self.bluesheet_path))
         

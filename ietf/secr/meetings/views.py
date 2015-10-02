@@ -359,9 +359,9 @@ def blue_sheet_generate(request, meeting_id):
     '''
     Generate bluesheets
     '''
-    if request.POST:
-        meeting = get_object_or_404(Meeting, number=meeting_id)
+    meeting = get_object_or_404(Meeting, number=meeting_id)
 
+    if request.method == "POST":
         groups = Group.objects.filter(session__meeting=meeting).order_by('acronym')
         create_blue_sheets(meeting, groups)
 
