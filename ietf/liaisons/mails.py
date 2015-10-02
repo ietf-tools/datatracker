@@ -22,6 +22,7 @@ def send_liaison_by_email(request, liaison):
             liaison=liaison,
             url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.pk)),
             referenced_url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.related_to.pk)) if liaison.related_to else None,
+            liaison_attach_url=settings.LIAISON_ATTACH_URL,
             ))
 
     send_mail_text(request, to_email, from_email, subject, body, cc=", ".join(cc), bcc=", ".join(bcc))
@@ -46,6 +47,7 @@ def notify_pending_by_email(request, liaison):
             liaison=liaison,
             url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=liaison.pk)),
             referenced_url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.related_to.pk)) if liaison.related_to else None,
+            liaison_attach_url=settings.LIAISON_ATTACH_URL,
             ))
     # send_mail_text(request, to_email, from_email, subject, body)
     send_mail_text(request, ['statements@ietf.org'], from_email, subject, body)
@@ -107,6 +109,7 @@ def possibly_send_deadline_reminder(liaison):
                                  days_msg=days_msg,
                                  url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=liaison.pk)),
                                  referenced_url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.related_to.pk)) if liaison.related_to else None,
+                                 liaison_attach_url=settings.LIAISON_ATTACH_URL,
                                  ))
     
     send_mail_text(None, to_email, from_email, subject, body, cc=cc, bcc=bcc)

@@ -449,7 +449,7 @@ RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 # Liaison Statement Tool settings
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
 LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'
-LIAISON_ATTACH_URL = '/documents/LIAISON/'
+LIAISON_ATTACH_URL = 'https://datatracker.ietf.org/documents/LIAISON/'
 
 # NomCom Tool settings
 ROLODEX_URL = ""

@@ -13,7 +13,7 @@ Body: {{ liaison.body }}
 Attachments:
 {% for doc in liaison.attachments.all %}
     {{ doc.title }}
-    https://datatracker.ietf.org/documents/LIAISON/{{ doc.external_url }}
+    {{ liaison_attach_url }}{{ doc.external_url }}
 {% empty %}
 No document has been attached
 {% endfor %}{% endautoescape %}

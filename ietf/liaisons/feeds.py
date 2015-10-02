@@ -7,6 +7,7 @@ from django.utils.feedgenerator import Atom1Feed
 from django.template.loader import render_to_string
 from django.db.models import Q
 from django.core.urlresolvers import reverse as urlreverse, reverse_lazy
+from django.conf import settings
 
 from ietf.group.models import Group
 from ietf.liaisons.models import LiaisonStatement
@@ -17,7 +18,6 @@ from ietf.liaisons.models import LiaisonStatement
 class LiaisonStatementsFeed(Feed):
     feed_type = Atom1Feed
     link = reverse_lazy("liaison_list")
-    description_template = "liaisons/feed_item_description.html"
 
     def get_object(self, request, kind, search=None):
         obj = {}
@@ -75,7 +75,10 @@ class LiaisonStatementsFeed(Feed):
 	if obj.has_key('filter'):
 	    qs = qs.filter(**obj['filter'])
 	if obj.has_key('limit'):
-	    qs = qs[:obj['limit']]
+            qs = qs[:obj['limit']]
+
+        qs = qs.prefetch_related("attachments")
+
 	return qs
 
     def title(self, obj):
@@ -86,6 +89,13 @@ class LiaisonStatementsFeed(Feed):
 
     def item_title(self, item):
         return render_to_string("liaisons/liaison_title.html", { 'liaison': item }).strip()
+
+    def item_description(self, item):
+        return render_to_string("liaisons/feed_item_description.html", {
+            'liaison': item,
+            "liaison_attach_url": settings.LIAISON_ATTACH_URL,
+            "attachments": item.attachments.all(),
+        })
 
     def item_link(self, item):
         return urlreverse("liaison_detail", kwargs={ "object_id": item.pk })

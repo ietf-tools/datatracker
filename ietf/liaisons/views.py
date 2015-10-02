@@ -5,8 +5,8 @@ from email.utils import parseaddr
 
 from django.core.validators import validate_email, ValidationError
 from django.http import HttpResponse, HttpResponseForbidden
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import get_object_or_404, redirect, render
+from django.conf import settings
 
 from ietf.liaisons.models import LiaisonStatement
 from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaison,
@@ -39,12 +39,10 @@ def add_liaison(request, liaison=None):
     else:
         form = liaison_form_factory(request, liaison=liaison)
 
-    return render_to_response(
-        'liaisons/edit.html',
-        {'form': form,
-         'liaison': liaison},
-        context_instance=RequestContext(request),
-    )
+    return render(request, 'liaisons/edit.html', {
+        'form': form,
+        'liaison': liaison
+    })
 
 
 @can_submit_liaison_required
@@ -105,14 +103,15 @@ def liaison_list(request):
 
     approvable = approvable_liaison_statements(request.user).count()
 
-    return render_to_response('liaisons/overview.html', {
+    return render(request, 'liaisons/overview.html', {
         "liaisons": liaisons,
         "can_manage": approvable or can_send_incoming or can_send_outgoing,
         "approvable": approvable,
         "can_send_incoming": can_send_incoming,
         "can_send_outgoing": can_send_outgoing,
         "sort": sort,
-    }, context_instance=RequestContext(request))
+        "liaison_attach_url": settings.LIAISON_ATTACH_URL,
+    })
 
 def ajax_select2_search_liaison_statements(request):
     q = [w.strip() for w in request.GET.get('q', '').split() if w.strip()]
@@ -133,9 +132,9 @@ def ajax_select2_search_liaison_statements(request):
 def liaison_approval_list(request):
     liaisons = approvable_liaison_statements(request.user).order_by("-submitted")
 
-    return render_to_response('liaisons/approval_list.html', {
+    return render(request, 'liaisons/approval_list.html', {
         "liaisons": liaisons,
-    }, context_instance=RequestContext(request))
+    })
 
 
 @can_submit_liaison_required
@@ -149,10 +148,10 @@ def liaison_approval_detail(request, object_id):
         send_liaison_by_email(request, liaison)
         return redirect('liaison_list')
 
-    return render_to_response('liaisons/approval_detail.html', {
+    return render(request, 'liaisons/approval_detail.html', {
         "liaison": liaison,
         "is_approving": True,
-    }, context_instance=RequestContext(request))
+    })
 
 
 def _can_take_care(liaison, user):
@@ -205,12 +204,13 @@ def liaison_detail(request, object_id):
 
     relations = liaison.liaisonstatement_set.exclude(approved=None)
 
-    return render_to_response("liaisons/detail.html", {
+    return render(request, "liaisons/detail.html", {
         "liaison": liaison,
         "can_edit": can_edit,
         "can_take_care": can_take_care,
         "relations": relations,
-    }, context_instance=RequestContext(request))
+        "liaison_attach_url": settings.LIAISON_ATTACH_URL,
+    })
 
 def liaison_edit(request, object_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
