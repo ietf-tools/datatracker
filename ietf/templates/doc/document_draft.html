@@ -291,7 +291,7 @@
 	<th>IESG</th>
 	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
 	<td class="edit">
-          {% if started_iesg_process and iesg_state and iesg_state.slug != "expired" and can_edit and not snapshot %}
+          {% if started_iesg_process and doc.get_state_slug != "expired" and can_edit and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_state" name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
