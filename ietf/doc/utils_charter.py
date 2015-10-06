@@ -150,8 +150,8 @@ def generate_ballot_writeup(request, doc):
     e.doc = doc
     e.desc = u"Ballot writeup was generated"
     e.text = unicode(render_to_string("doc/charter/ballot_writeup.txt"))
-    e.save()
-    
+
+    # caller is responsible for saving, if necessary
     return e
 
 def default_action_text(group, charter, by):

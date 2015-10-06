@@ -13,12 +13,15 @@ from ietf.doc.mails import send_last_call_request, email_last_call_expired
 
 def request_last_call(request, doc):
     if not doc.latest_event(type="changed_ballot_writeup_text"):
-        generate_ballot_writeup(request, doc)
+        e = generate_ballot_writeup(request, doc)
+        e.save()
     if not doc.latest_event(type="changed_ballot_approval_text"):
-        generate_approval_mail(request, doc)
+        e = generate_approval_mail(request, doc)
+        e.save()
     if not doc.latest_event(type="changed_last_call_text"):
-        generate_last_call_announcement(request, doc)
-    
+        e = generate_last_call_announcement(request, doc)
+        e.save()
+
     send_last_call_request(request, doc)
     
     e = DocEvent()

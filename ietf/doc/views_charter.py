@@ -554,6 +554,8 @@ def ballot_writeupnotes(request, name):
                 e.save()
 
                 existing = e
+            elif existing.pk == None:
+                existing.save()
 
             if "send_ballot" in request.POST and approval:
                 if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=by, ballot=ballot):

@@ -112,8 +112,8 @@ def generate_ballot_writeup(request, doc):
     e.doc = doc
     e.desc = u"Ballot writeup was generated"
     e.text = unicode(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
-    e.save()
-    
+
+    # caller is responsible for saving, if necessary
     return e
     
 def generate_last_call_announcement(request, doc):
@@ -154,8 +154,8 @@ def generate_last_call_announcement(request, doc):
     e.doc = doc
     e.desc = u"Last call announcement was generated"
     e.text = unicode(mail)
-    e.save()
 
+    # caller is responsible for saving, if necessary
     return e
     
 
@@ -173,8 +173,8 @@ def generate_approval_mail(request, doc):
     e.doc = doc
     e.desc = u"Ballot approval text was generated"
     e.text = unicode(mail)
-    e.save()
 
+    # caller is responsible for saving, if necessary
     return e
 
 def generate_approval_mail_approved(request, doc):

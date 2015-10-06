@@ -451,6 +451,8 @@ def lastcalltext(request, name):
                     e.desc = "Last call announcement was changed"
                     e.text = t
                     e.save()
+                elif existing.pk == None:
+                    existing.save()
                 
                 if "send_last_call_request" in request.POST:
                     prev_state = doc.get_state("draft-iesg")
@@ -477,7 +479,8 @@ def lastcalltext(request, name):
         
         if "regenerate_last_call_text" in request.POST:
             e = generate_last_call_announcement(request, doc)
-            
+            e.save()
+
             # make sure form has the updated text
             form = LastCallTextForm(initial=dict(last_call_text=e.text))
 
@@ -530,6 +533,8 @@ def ballot_writeupnotes(request, name):
                 e.desc = "Ballot writeup was changed"
                 e.text = t
                 e.save()
+            elif existing.pk == None:
+                existing.save()
 
             if "issue_ballot" in request.POST:
                 create_ballot_if_not_open(doc, login, "approve")
@@ -548,6 +553,7 @@ def ballot_writeupnotes(request, name):
                 approval = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
                 if not approval:
                     approval = generate_approval_mail(request, doc)
+                    approval.save()
 
                 msg = generate_issue_ballot_mail(request, doc, ballot)
                 send_mail_preformatted(request, msg)
@@ -612,9 +618,12 @@ def ballot_approvaltext(request, name):
                     e.desc = "Ballot approval text was changed"
                     e.text = t
                     e.save()
+                elif existing.pk == None:
+                    existing.save()
                 
         if "regenerate_approval_text" in request.POST:
             e = generate_approval_mail(request, doc)
+            e.save()
 
             # make sure form has the updated text
             form = ApprovalTextForm(initial=dict(approval_text=e.text))
@@ -642,15 +651,15 @@ def approve_ballot(request, name):
 
     login = request.user.person
 
-    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
-    if not e:
-        e = generate_approval_mail(request, doc)
-    approval_text = e.text
+    approval_mail_event = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
+    if not approval_mail_event:
+        approval_mail_event = generate_approval_mail(request, doc)
+    approval_text = approval_mail_event.text
 
-    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
-    if not e:
-        e = generate_ballot_writeup(request, doc)
-    ballot_writeup = e.text
+    ballot_writeup_event = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
+    if not ballot_writeup_event:
+        ballot_writeup_event = generate_ballot_writeup(request, doc)
+    ballot_writeup = ballot_writeup_event.text
     
     if "NOT be published" in approval_text:
         action = "do_not_publish"
@@ -674,6 +683,11 @@ def approve_ballot(request, name):
         prev_state = doc.get_state("draft-iesg")
         prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
         events = []
+
+        if approval_mail_event.pk == None:
+            approval_mail_event.save()
+        if ballot_writeup_event.pk == None:
+            ballot_writeup_event.save()
 
         if new_state.slug == "ann" and new_state.slug != prev_state.slug and not request.REQUEST.get("skiprfceditorpost"):
             # start by notifying the RFC Editor
@@ -748,16 +762,19 @@ def make_last_call(request, name):
 
     login = request.user.person
 
-    e = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
-    if not e:
-        if doc.type.slug != 'draft':
+    announcement_event = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
+    if not announcement_event:
+        if doc.type_id != 'draft':
             raise Http404
-        e = generate_last_call_announcement(request, doc)
-    announcement = e.text
+        announcement_event = generate_last_call_announcement(request, doc)
+    announcement = announcement_event.text
 
     if request.method == 'POST':
         form = MakeLastCallForm(request.POST)
         if form.is_valid():
+            if announcement_event.pk == None:
+                announcement_event.save()
+
             send_mail_preformatted(request, announcement)
             if doc.type.slug == 'draft':
                 send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
