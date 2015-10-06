@@ -21,6 +21,10 @@ def charter_name_for_group(group):
 
     return "charter-%s-%s" % (top_org, group.acronym)
 
+def split_charter_name(charter_name):
+    top_org, group_acronym = charter_name.split("-")[1:]
+    return top_org, group_acronym
+
 def next_revision(rev):
     if rev == "":
         return "00-00"

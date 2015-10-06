@@ -9,7 +9,8 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
     TelechatDocEvent, WriteupDocEvent )
-from ietf.doc.utils_charter import next_revision, default_review_text, default_action_text
+from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
+    charter_name_for_group )
 from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
@@ -269,6 +270,40 @@ class EditCharterTests(TestCase):
         with open(os.path.join(self.charter_dir, charter.canonical_name() + "-" + charter.rev + ".txt")) as f:
             self.assertEqual(f.read(),
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
+
+    def test_submit_initial_charter(self):
+        make_test_data()
+
+        group = Group.objects.get(acronym="mars")
+        # get rid of existing charter
+        charter = group.charter
+        group.charter = None
+        group.save()
+        charter.delete()
+        charter = None
+
+        url = urlreverse('charter_submit', kwargs=dict(name=charter_name_for_group(group)))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form input[name=txt]')), 1)
+
+        # create charter
+        test_file = StringIO("Simple test")
+        test_file.name = "unnamed"
+
+        r = self.client.post(url, dict(txt=test_file))
+        self.assertEqual(r.status_code, 302)
+
+        charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
+        self.assertEqual(charter.rev, "00-00")
+        self.assertTrue("new_revision" in charter.latest_event().type)
+
+        group = Group.objects.get(pk=group.pk)
+        self.assertEqual(group.charter, charter)
 
     def test_edit_announcement_text(self):
         draft = make_test_data()

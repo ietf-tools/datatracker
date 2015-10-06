@@ -1,7 +1,7 @@
 import os, datetime, textwrap, json
 
 from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, Http404
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render_to_response, get_object_or_404, redirect, render
 from django.core.urlresolvers import reverse as urlreverse
 from django.template import RequestContext
 from django import forms
@@ -12,16 +12,17 @@ from django.contrib.auth.decorators import login_required
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocHistory, State, DocEvent, BallotDocEvent,
-    BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent,
+from ietf.doc.models import ( Document, DocAlias, DocHistory, State, DocEvent,
+    BallotDocEvent, BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent,
     WriteupDocEvent )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, get_chartering_type )
 from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     approved_revision, default_review_text, default_action_text, email_state_changed,
     generate_ballot_writeup, generate_issue_ballot_mail, next_revision,
-    change_group_state_after_charter_approval, fix_charter_revision_after_approval)
-from ietf.group.models import ChangeStateGroupEvent, MilestoneGroupEvent
+    change_group_state_after_charter_approval, fix_charter_revision_after_approval,
+    split_charter_name)
+from ietf.group.models import Group, ChangeStateGroupEvent, MilestoneGroupEvent
 from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_group_type
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.name.models import GroupStateName
@@ -346,22 +347,31 @@ class UploadForm(forms.Form):
                 destination.write(self.cleaned_data['content'].encode("utf-8"))
 
 @login_required
-def submit(request, name=None, option=None):
+def submit(request, name, option=None):
     if not name.startswith('charter-'):
         raise Http404
 
-    charter = get_object_or_404(Document, type="charter", name=name)
-    group = charter.group
+    charter = Document.objects.filter(type="charter", name=name).first()
+    if charter:
+        group = charter.group
+        charter_canonical_name = charter.canonical_name()
+        charter_rev = charter.rev
+    else:
+        top_org, group_acronym = split_charter_name(name)
+        group = get_object_or_404(Group, acronym=group_acronym)
+        charter_canonical_name = name
+        charter_rev = "00-00"
 
-    if not can_manage_group_type(request.user, group.type_id):
+    if not can_manage_group_type(request.user, group.type_id) or not group.features.has_chartering_process:
         return HttpResponseForbidden("You don't have permission to access this view")
 
-    path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-    not_uploaded_yet = charter.rev.endswith("-00") and not os.path.exists(path)
 
-    if not_uploaded_yet:
+    path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter_canonical_name, charter_rev))
+    not_uploaded_yet = charter_rev.endswith("-00") and not os.path.exists(path)
+
+    if not_uploaded_yet or not charter:
         # this case is special - we recently chartered or rechartered and have no file yet
-        next_rev = charter.rev
+        next_rev = charter_rev
     else:
         # search history for possible collisions with abandoned efforts
         prev_revs = list(charter.history_set.order_by('-time').values_list('rev', flat=True))
@@ -375,7 +385,23 @@ def submit(request, name=None, option=None):
             # Also save group history so we can search for it
             save_group_in_history(group)
 
-            charter.rev = next_rev
+            if not charter:
+                charter = Document.objects.create(
+                    name=name,
+                    type_id="charter",
+                    title=group.name,
+                    group=group,
+                    abstract=group.name,
+                    rev=next_rev,
+                )
+                DocAlias.objects.create(name=charter.name, document=charter)
+
+                charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
+
+                group.charter = charter
+                group.save()
+            else:
+                charter.rev = next_rev
 
             events = []
             e = NewRevisionDocEvent(doc=charter, by=request.user.person, type="new_revision")
@@ -397,17 +423,17 @@ def submit(request, name=None, option=None):
             else:
                 return redirect("doc_view", name=charter.name)
     else:
-        init = { "content": ""}
-        c = charter
+        init = { "content": "" }
 
-        if not_uploaded_yet:
+        if not_uploaded_yet and charter:
             # use text from last approved revision
             last_approved = charter.rev.split("-")[0]
-            h = charter.history_set.filter(rev=last_approved).order_by("-time", "-id")
+            h = charter.history_set.filter(rev=last_approved).order_by("-time", "-id").first()
             if h:
-                c = h[0]
+                charter_canonical_name = h.canonical_name()
+                charter_rev = h.rev
 
-        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (c.canonical_name(), c.rev))
+        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter_canonical_name, charter_rev))
 
         try:
             with open(filename, 'r') as f:
@@ -415,12 +441,12 @@ def submit(request, name=None, option=None):
         except IOError:
             pass
         form = UploadForm(initial=init)
-    return render_to_response('doc/charter/submit.html',
-                              {'form': form,
-                               'next_rev': next_rev,
-                               'group': group,
-                               'name': name },
-                              context_instance=RequestContext(request))
+    return render(request, 'doc/charter/submit.html', {
+        'form': form,
+        'next_rev': next_rev,
+        'group': group,
+        'name': name,
+    })
 
 class AnnouncementTextForm(forms.Form):
     announcement_text = forms.CharField(widget=forms.Textarea, required=True)
