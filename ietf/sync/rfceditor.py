@@ -147,7 +147,7 @@ def update_drafts_from_queue(drafts):
             continue
 
         if not state or state not in state_mapping:
-            warnings.append("unknown state '%s'" % state)
+            warnings.append("unknown state '%s' for %s" % (state, name))
             continue
 
         d = drafts_in_db[name]
