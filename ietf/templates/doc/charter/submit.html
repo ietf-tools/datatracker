@@ -14,7 +14,7 @@
 
   {% bootstrap_messages %}
 
-  <p class="alert alert-info">The text will be submitted as <b>charter-ietf-{{ name }}-{{ next_rev }}</b>.</p>
+  <p class="alert alert-info">The text will be submitted as <b>{{ name }}-{{ next_rev }}</b>.</p>
 
   <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
