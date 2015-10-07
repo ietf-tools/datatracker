@@ -26,11 +26,11 @@
     {% buttons %}
       <button type="submit" class="btn btn-primary" name="save_last_call_text">Save text</button>
       {% if can_request_last_call and not need_intended_status %}
-        <button type="submit" class="btn btn-warning" name="send_last_call_request" value="Save and Request Last Call">Save text & request last call</button>
+        <button type="submit" class="btn btn-primary" name="send_last_call_request" value="Save and Request Last Call">Save text &amp; request last call</button>
       {% endif %}
       <button type="submit" class="btn btn-warning" name="regenerate_last_call_text" value="Gegenerate Last Call Text">Regenerate text</button>
       {% if user|has_role:"Secretariat" and can_make_last_call %}
-        <a class="btn btn-danger" href="{% url "doc_make_last_call" name=doc.name %}">Issue last call</a>
+        <a class="btn btn-primary" href="{% url "doc_make_last_call" name=doc.name %}">Issue last call</a>
       {% endif %}
     {% endbuttons %}
   </form>

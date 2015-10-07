@@ -18,10 +18,10 @@
     {% bootstrap_form approval_text_form %}
 
     {% buttons %}
-      <button type="submit" class="btn btn-primary" name="save_approval_text" value="Save text">Save text</button>
+      <button type="submit" class="btn btn-default" name="save_approval_text" value="Save text">Save text</button>
       <button type="submit" class="btn btn-warning" name="regenerate_approval_text" value="Regenerate text">Regenerate text</button>
       {% if user|has_role:"Secretariat" and can_announce %}
-        <a class="btn btn-default" href="{% url "doc_approve_ballot" name=doc.name %}">Approve ballot</a>
+        <a class="btn btn-primary" href="{% url "doc_approve_ballot" name=doc.name %}">Approve ballot</a>
       {% endif %}
     {% endbuttons %}
   </form>

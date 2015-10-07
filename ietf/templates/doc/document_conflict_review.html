@@ -128,7 +128,7 @@
   {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
     {% if request.user|has_role:"Secretariat" %}
       {% if doc.get_state_slug = 'appr-reqnopub-pend' or doc.get_state_slug = 'appr-noprob-pend' %}
-        <a class="btn btn-warning" href="{% url "conflict_review_approve" name=doc.name %}">Approve conflict review</a>
+        <a class="btn btn-primary" href="{% url "conflict_review_approve" name=doc.name %}">Approve conflict review</a>
       {% endif %}
     {% endif %}
   {% endif %}

@@ -66,7 +66,7 @@
     <form method="post">
       {% csrf_token %}
       <input type="hidden" name="state" value="{{ prev_state.pk }}">
-      <input class="btn btn-danger" type="submit" value="Revert to {{ prev_state.name }}">
+      <input class="btn btn-warning" type="submit" value="Revert to {{ prev_state.name }}">
     </form>
   {% endif %}
 {% endblock %}

@@ -25,7 +25,7 @@
         {% if announcement == "action" %}
           <a type="submit" class="btn btn-default" href="{% url "charter_approve" name=charter.canonical_name %}">Charter approval page</a>
         {% else %}
-          <input type="submit" type="submit" class="btn btn-default" name="send_text" value="Send WG {{ announcement }} announcement" />
+          <input type="submit" type="submit" class="btn btn-primary" name="send_text" value="Send WG {{ announcement }} announcement" />
         {% endif %}
       {% endif %}
 

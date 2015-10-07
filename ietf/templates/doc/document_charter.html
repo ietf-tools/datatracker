@@ -162,7 +162,7 @@
         {% if user|has_role:"Secretariat" %}
           {% url "charter_approve" name=doc.name as approve_url %}
           {% if approve_url %}
-            <a class="btn btn-warning" href="{{ approve_url }}">Approve charter</a>
+            <a class="btn btn-primary" href="{{ approve_url }}">Approve charter</a>
           {% endif %}
         {% endif %}
 

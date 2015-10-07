@@ -16,7 +16,7 @@
 
     {% buttons %}
       <button type="submit" class="btn btn-primary">Send announcement, close ballot & update revision</button>
-      <a class="btn btn-default" href="{% url "charter_edit_announcement" name=charter.canonical_name ann="action" %}?next=approve">Edit/regenerate announcement</a>
+      <a class="btn btn-warning" href="{% url "charter_edit_announcement" name=charter.canonical_name ann="action" %}?next=approve">Edit/regenerate announcement</a>
       <a class="btn btn-default pull-right" href="{% url "doc_view" name=charter.name %}">Back</a>
     {% endbuttons %}
   </form>
