@@ -359,7 +359,8 @@ class EditCharterTests(TestCase):
         url = urlreverse('ietf.doc.views_charter.ballot_writeupnotes', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
-        default_action_text(draft.group, charter, by)
+        e = default_action_text(draft.group, charter, by)
+        e.save()
 
         # normal get
         r = self.client.get(url)

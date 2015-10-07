@@ -175,7 +175,7 @@ def default_action_text(group, charter, by):
                                    action_type=action,
                                    ))
 
-    e.save()
+    # caller is responsible for saving, if necessary
     return e
 
 def default_review_text(group, charter, by):
@@ -195,7 +195,7 @@ def default_review_text(group, charter, by):
                                    review_type="new" if group.state_id == "proposed" else "recharter",
                                    )
                               )
-    e.save()
+    # caller is responsible for saving, if necessary
     return e
 
 def generate_issue_ballot_mail(request, doc, ballot):

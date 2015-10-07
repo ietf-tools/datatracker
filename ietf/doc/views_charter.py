@@ -149,8 +149,10 @@ def change_state(request, name, option=None):
                         create_ballot_if_not_open(charter, by, "r-wo-ext")
                     else:
                         create_ballot_if_not_open(charter, by, "r-extrev")
-                    default_review_text(group, charter, by)
-                    default_action_text(group, charter, by)
+                    e = default_review_text(group, charter, by)
+                    e.save()
+                    e = default_action_text(group, charter, by)
+                    e.save()
                 elif charter_state.slug == "iesgrev":
                     create_ballot_if_not_open(charter, by, "approve")
                 elif charter_state.slug == "approved":
@@ -486,8 +488,8 @@ def announcement_text(request, name, ann):
                 e.desc = "%s %s text was changed" % (group.type.name, ann)
                 e.text = t
                 e.save()
-
-                charter.save_with_history([e])
+            elif existing.pk == None:
+                existing.save()
 
             if request.GET.get("next", "") == "approve":
                 return redirect('charter_approve', name=charter.canonical_name())
@@ -497,8 +499,10 @@ def announcement_text(request, name, ann):
         if "regenerate_text" in request.POST:
             if ann == "action":
                 e = default_action_text(group, charter, by)
+                e.save()
             elif ann == "review":
                 e = default_review_text(group, charter, by)
+                e.save()
             # make sure form has the updated text
             form = AnnouncementTextForm(initial=dict(announcement_text=e.text))
 
