@@ -1,3 +1,69 @@
+ietfdb (6.4.2) ietf; urgency=medium
+
+  This is a bugfix release, with details as follows:
+
+  * Adjusted numerous document action button colours as requested by the 
+    secretariat.  Fixes issue #1803
+
+  * Provided a bit more information in rfc-editor sync warnings.
+
+  * Added an eyecatching symbol to indicate bug-reporting, starting out very 
+    large, with the intention of reducing the size as people get used to it.
+
+  * Fixed an html issue in the agenda template, and added information to be 
+    shown when no WG/RG groups have been scheduled, and the agenda session 
+    customization table is empty.
+
+  * Tweaked the anchor ids for agenda timeslots to avoid identical ids for 
+    different slots.
+
+  * Added information about which the required submission upload format 
+    alternatives are (.txt or .xml).
+
+  * Tweaked the error message for 2 submission form validation errors.
+
+  * Changed the default settings for the test crawler from ietf.settings to 
+    ietf.settings_testcrawl.
+
+  * In [10079], the inline template was inadvertently changed from unicode 
+    to ascii, which breaks a number of pages.  Fixed this.
+
+  * Merged in [10115] from rjsparks@nostrum.com:
+    Remove an extraneous field from the form that lets the nomcom chair paste
+    in a questionnaire response.  
+
+  * Merged in [10109] from rjsparks@nostrum.com:
+    Make it clearer in search results when one IPR disclosure updates another.
+    Fixes #1798.  
+
+  * Fixed a typo in the meeting agenda template.  Fixes issue #1793.
+
+  * Do utf-8 encoding of the fields in the JSON blob for meeting sessions.
+    Fixes issue #1790
+
+  * Merged in [10079] from rcross@amsl.com:
+    Fixed message formatting in IPR event history.   
+
+  * Merged in [10078] from rcross@amsl.com:
+    Resolved issue where partially entered IPR related document info causes
+    500 error.  
+
+  * Added a menu item linking to the session request tool.  Fixes issue #1789.
+
+  * Made some submission form validation errors apply to all uploads, not 
+    only to .txt uploads.  Tweaked som validation error wordings.
+
+  * Merged in [10062] from olau@iola.dk:
+    Fixed a problem with timeslot.location = None in agenda_csv. 
+
+  * Added branch/iola to places checked for 'ready for merge' tags in the 
+    commit messages.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Oct 2015 12:31:56 -0700
+
+
+
 ietfdb (6.4.1) ietf; urgency=medium
 
   This is a minor release with various enhancements and bugfixes:

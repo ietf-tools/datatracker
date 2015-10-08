@@ -15,7 +15,7 @@ def submission_confirmation_email_list(submission):
         doc = Document.objects.get(name=submission.name)
         email_list = [i.author.formatted_email() for i in doc.documentauthor_set.all() if not i.author.invalid_address()]
     except Document.DoesNotExist:
-        email_list = [u"%s <%s>" % (author["name"], author["email"])
+        email_list = [u'"%s" <%s>' % (author["name"], author["email"])
                       for author in submission.authors_parsed() if author["email"]]
         if submission.submitter_parsed()["email"] and submission.submitter not in email_list:
             email_list.append(submission.submitter)
@@ -70,7 +70,7 @@ def send_manual_post_request(request, submission, errors):
     to_email = settings.IDSUBMIT_TO_EMAIL
 
     cc = [submission.submitter]
-    cc += [u"%s <%s>" % (author["name"], author["email"])
+    cc += [u'"%s" <%s>' % (author["name"], author["email"])
            for author in submission.authors_parsed() if author["email"]]
     if submission.group:
         cc += [r.formatted_email() for r in Role.objects.filter(group=submission.group, name="chair").select_related("email", "person")]
@@ -137,7 +137,7 @@ def announce_new_version(request, submission, draft, state_change_msg):
                    'msg': state_change_msg})
 
 def announce_to_authors(request, submission):
-    authors = [u"%s <%s>" % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]
+    authors = [u'"%s" <%s>' % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]
     to_email = list(set(submission_confirmation_email_list(submission) + authors))
     from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     subject = 'New Version Notification for %s-%s.txt' % (submission.name, submission.rev)
