@@ -47,7 +47,7 @@ def check_audio_files(group,meeting):
         room = room.replace(' ','')
         room = room.replace('/','_')
         time = timeslot.time.strftime("%Y%m%d-%H%M")
-        filename = 'ietf{}-{}-{}-*'.format(meeting.number,room,time)
+        filename = 'ietf{}-{}-{}*'.format(meeting.number,room,time)
         path = os.path.join(settings.MEETING_RECORDINGS_DIR,'ietf{}'.format(meeting.number),filename)
         for file in glob.glob(path):
             url = 'https://www.ietf.org/audio/ietf{}/{}'.format(meeting.number,os.path.basename(file))
