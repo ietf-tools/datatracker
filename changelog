@@ -2,6 +2,9 @@ ietfdb (6.4.2) ietf; urgency=medium
 
   This is a bugfix release, with details as follows:
 
+  * Merged in [10144] from rcross@amsl.com:
+    Make email address formatting consistent.   
+
   * Adjusted numerous document action button colours as requested by the 
     secretariat.  Fixes issue #1803
 
