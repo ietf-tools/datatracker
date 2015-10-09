@@ -1,3 +1,19 @@
+ietfdb (6.5.0) ietf; urgency=medium
+
+  This release merges in work from rcross@amsl.com and esanchez@yaco.es which
+  provides a major rewrite of the IETF datatracker liaison support.  It
+  introduces a simplified user interface, new improved and reworked data
+  models, liaison statement history, improved handling of liaison-related
+  emails in many ways, generalisations of liaison sender and recipient
+  handling, making the tool much more flexible, improved search, status
+  overview and attachment handling, and a greatly expanded test coverage.
+
+  This work was funded by the IAOC.  The statement of work is available here:
+  http://iaoc.ietf.org/documents/liaison-sow-04.pdf
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Oct 2015 12:49:53 -0700
+
+
 ietfdb (6.4.2) ietf; urgency=medium
 
   This is a bugfix release, with details as follows:
