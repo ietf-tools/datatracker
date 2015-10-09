@@ -391,6 +391,11 @@ MEETING_RECORDINGS_DIR = '/a/www/audio'
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
 
+# Liaison Statement Tool settings (one is used in DOC_HREFS below)
+LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
+LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/' # should end in a slash
+LIAISON_ATTACH_URL = 'https://www.ietf.org/lib/dt/documents/LIAISON/' # should end in a slash, location should have a symlink to LIAISON_ATTACH_PATH
+
 # Ideally, more of these would be local -- but since we don't support
 # versions right now, we'll point to external websites
 DOC_HREFS = {
@@ -399,8 +404,8 @@ DOC_HREFS = {
     "slides": "https://www.ietf.org/slides/{doc.name}-{doc.rev}",
     "conflrev": "https://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
     "statchg": "https://www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
-    "liaison": "/documents/LIAISON/{doc.external_url}",
-    "liai-att": "/documents/LIAISON/{doc.external_url}",
+    "liaison": "%s{doc.external_url}" % LIAISON_ATTACH_URL,
+    "liai-att": "%s{doc.external_url}" % LIAISON_ATTACH_URL,
 }
 
 MEETING_DOC_HREFS = {
@@ -440,11 +445,6 @@ RFC_EDITOR_SYNC_PASSWORD="secret"
 RFC_EDITOR_SYNC_NOTIFICATION_URL = "https://www.rfc-editor.org/parser/parser.php"
 RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
-
-# Liaison Statement Tool settings
-LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
-LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'
-LIAISON_ATTACH_URL = '/documents/LIAISON/'
 
 # NomCom Tool settings
 ROLODEX_URL = ""
