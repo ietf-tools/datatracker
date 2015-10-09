@@ -274,9 +274,11 @@ def view(request, id):
     
     # must filter for active emails only
     person.emails = person.email_set.filter(active=True)
+    roles = person.role_set.all().order_by('name__name','group__acronym')
     
     return render_to_response('rolodex/view.html', {
-        'person': person},
+        'person': person,
+        'roles': roles},
         RequestContext(request, {}),
     )
 
