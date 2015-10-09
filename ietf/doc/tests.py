@@ -10,6 +10,7 @@ else:
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
 from Cookie import SimpleCookie
+import urlparse
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
@@ -28,7 +29,7 @@ from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
 
-class SearchTestCase(TestCase):
+class SearchTests(TestCase):
     def test_search(self):
         draft = make_test_data()
 
@@ -103,6 +104,46 @@ class SearchTestCase(TestCase):
         r = self.client.get(base_url + "?activedrafts=on&by=state&state=%s&substate=" % draft.get_state("draft-iesg").pk)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in r.content)
+
+    def test_search_for_name(self):
+        draft = make_test_data()
+        save_document_in_history(draft)
+        prev_rev = draft.rev
+        draft.rev = "%02d" % (int(prev_rev) + 1)
+        draft.save()
+
+        # exact match
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name)))
+
+        # prefix match
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(draft.name.split("-")[:-1]))))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name)))
+
+        # match with revision
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name + "-" + prev_rev)))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name, rev=prev_rev)))
+
+        # match with non-existing revision
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name + "-09")))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name)))
+
+        # match with revision and extension
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name + "-" + prev_rev + ".txt")))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name, rev=prev_rev)))
+        
+        # no match
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="draft-ietf-doesnotexist-42")))
+        self.assertEqual(r.status_code, 302)
+
+        parsed = urlparse.urlparse(r["Location"])
+        self.assertEqual(parsed.path, urlreverse("doc_search"))
+        self.assertEqual(urlparse.parse_qs(parsed.query)["name"][0], "draft-ietf-doesnotexist-42")
 
     def test_frontpage(self):
         make_test_data()

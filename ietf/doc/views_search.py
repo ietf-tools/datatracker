@@ -30,20 +30,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import datetime
+import datetime, re
 
 from django import forms
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render_to_response
+from django.core.urlresolvers import reverse as urlreverse
+from django.shortcuts import render
 from django.db.models import Q
-from django.template import RequestContext
-from django.http import Http404, HttpResponseBadRequest, HttpResponse
+from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect
 
 import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList
-from ietf.doc.models import ( Document, DocAlias, State, RelatedDocument, DocEvent,
-    LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
+from ietf.doc.models import ( Document, DocHistory, DocAlias, State, RelatedDocument,
+    DocEvent, LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.expire import expirable_draft
 from ietf.doc.fields import select2_id_doc_name_json
 from ietf.group.models import Group
@@ -384,13 +384,50 @@ def search(request):
 
     doc_is_tracked = get_doc_is_tracked(request, results)
 
-    return render_to_response('doc/search/search.html',
-                              {'form':form, 'docs':results, 'doc_is_tracked':doc_is_tracked, 'meta':meta, },
-                              context_instance=RequestContext(request))
+    return render(request, 'doc/search/search.html', {
+        'form':form, 'docs':results, 'doc_is_tracked':doc_is_tracked, 'meta':meta, },
+    )
 
 def frontpage(request):
     form = SearchForm()
-    return render_to_response('doc/frontpage.html', {'form':form}, context_instance=RequestContext(request))
+    return render(request, 'doc/frontpage.html', {'form':form})
+
+def search_for_name(request, name):
+    def find_unique(n):
+        exact = DocAlias.objects.filter(name=n).first()
+        if exact:
+            return exact.name
+
+        aliases = DocAlias.objects.filter(name__startswith=n)[:2]
+        if len(aliases) == 1:
+            return aliases[0].name
+        return None
+
+    n = name
+
+    # chop away extension
+    extension_split = re.search("^(.+)\.(txt|ps|pdf)$", n)
+    if extension_split:
+        n = extension_split.group(1)
+
+    redirect_to = find_unique(name)
+    if redirect_to:
+        return HttpResponseRedirect(urlreverse("doc_view", kwargs={ "name": redirect_to }))
+    else:
+        # check for embedded rev - this may be ambigious, so don't
+        # chop it off if we don't find a match
+        rev_split = re.search("^(.+)-([0-9]{2})$", n)
+        if rev_split:
+            redirect_to = find_unique(rev_split.group(1))
+            if redirect_to:
+                rev = rev_split.group(2)
+                # check if we can redirect directly to the rev
+                if DocHistory.objects.filter(doc__docalias__name=redirect_to, rev=rev).exists():
+                    return HttpResponseRedirect(urlreverse("doc_view", kwargs={ "name": redirect_to, "rev": rev }))
+                else:
+                    return HttpResponseRedirect(urlreverse("doc_view", kwargs={ "name": redirect_to }))
+
+    return HttpResponseRedirect(urlreverse("doc_search") + "?name=%s&rfcs=on&activedrafts=on" % n)
 
 def ad_dashboard_group(doc):
 
@@ -500,18 +537,18 @@ def docs_for_ad(request, name):
     for d in results:
         d.search_heading = ad_dashboard_group(d)
     #
-    return render_to_response('doc/drafts_for_ad.html',
-                              { 'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name() },
-                              context_instance=RequestContext(request))
+    return render(request, 'doc/drafts_for_ad.html', {
+        'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name()
+    })
 
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
     form = SearchForm({'by':'state','state': lc_state, 'rfcs':'on', 'activedrafts':'on'})
     results, meta = retrieve_search_results(form)
 
-    return render_to_response('doc/drafts_in_last_call.html',
-                              { 'form':form, 'docs':results, 'meta':meta },
-                              context_instance=RequestContext(request))
+    return render(request, 'doc/drafts_in_last_call.html', {
+        'form':form, 'docs':results, 'meta':meta
+    })
 
 def drafts_in_iesg_process(request, last_call_only=None):
     if last_call_only:
@@ -535,11 +572,11 @@ def drafts_in_iesg_process(request, last_call_only=None):
 
             grouped_docs.append((s, docs))
 
-    return render_to_response('doc/drafts_in_iesg_process.html', {
+    return render(request, 'doc/drafts_in_iesg_process.html', {
             "grouped_docs": grouped_docs,
             "title": title,
             "last_call_only": last_call_only,
-            }, context_instance=RequestContext(request))
+            })
 
 def index_all_drafts(request):
     # try to be efficient since this view returns a lot of data
@@ -582,13 +619,12 @@ def index_all_drafts(request):
                       len(names),
                       "<br>".join(names)
                       ))
-    return render_to_response('doc/index_all_drafts.html', { "categories": categories },
-                              context_instance=RequestContext(request))
+    return render(request, 'doc/index_all_drafts.html', { "categories": categories })
 
 def index_active_drafts(request):
     groups = active_drafts_index_by_group()
 
-    return render_to_response("doc/index_active_drafts.html", { 'groups': groups }, context_instance=RequestContext(request))
+    return render(request, "doc/index_active_drafts.html", { 'groups': groups })
 
 def ajax_select2_search_docs(request, model_name, doc_type):
     if model_name == "docalias":
