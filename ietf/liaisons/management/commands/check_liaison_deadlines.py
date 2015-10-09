@@ -11,10 +11,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         today = datetime.date.today()
-        
         cutoff = today - datetime.timedelta(14)
 
-        for l in LiaisonStatement.objects.filter(action_taken=False, deadline__gte=cutoff).exclude(deadline=None):
+        msgs = []
+        for l in LiaisonStatement.objects.filter(deadline__gte=cutoff).exclude(tags__slug='taken'):
             r = possibly_send_deadline_reminder(l)
             if r:
-                print 'Liaison %05s#: Deadline reminder sent!' % l.pk
+                msgs.append('Liaison %05s#: Deadline reminder sent!' % l.pk)
+
+        return '\n'.join(msgs)

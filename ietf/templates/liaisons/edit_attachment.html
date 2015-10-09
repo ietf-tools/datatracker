@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load bootstrap3 widget_tweaks %}
+{% load staticfiles %}
+
+{% block title %}Edit liaison attachment{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'ietf/css/liaisons.css' %}">
+{% endblock %}
+
+{% block morecss %}
+.widget { height: auto; min-height: 34px; }
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Edit liaison attachment</h1>
+
+  {% bootstrap_messages %}
+
+  {% if form.errors %}
+    <div class="alert alert-danger">
+      <p>There were errors in the submitted form -- see below. Please correct these and resubmit.</p>
+    </div>
+  {% endif %}
+
+  {% bootstrap_form_errors form %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+      <a class="btn btn-danger pull-right" href="{% url "ietf.liaisons.views.liaison_edit" object_id=liaison.pk %}">Cancel</a>
+      <button name="save" type="submit" class="btn btn-primary">Save</button>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}
+
+
+

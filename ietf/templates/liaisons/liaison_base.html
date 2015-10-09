@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+{% load staticfiles %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/datepicker3.css' %}">
+{% endblock %}
+
+{% block title %}Liaison Statements - {{ selected_menu_entry|capfirst }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Liaison Statements</h1>
+
+  {% if with_search %}
+    <div class="ietf-box search-form-box">
+      {% include "liaisons/search_form.html" %}
+    </div>
+  {% endif %}
+
+  <ul class="nav nav-tabs" role="tablist">
+    {% for name, url in menu_entries %}
+      <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
+        <a href="{{ url }}">{{ name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% if menu_actions %}
+    <div class="buttonlist">
+      {% for name, url in menu_actions %}
+        <a class="btn btn-default" href="{{ url }}">{{ name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% block group_content %}
+
+    {% if search_conducted and not liaisons %}
+        <div class="alert alert-info">No statements match your query.</div>
+    {% else %}
+        {% include "liaisons/liaison_table.html" %}
+    {% endif %}
+
+  {% endblock group_content %}
+
+{% endblock content %}
+
+{% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.js' %}"></script>
+  <script src="{% static 'ietf/js/liaisons.js' %}"></script>
+{% endblock %}

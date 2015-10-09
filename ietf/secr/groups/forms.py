@@ -6,7 +6,7 @@ from django.db.models import Q
 from ietf.group.models import Group, GroupMilestone, Role
 from ietf.name.models import GroupStateName, GroupTypeName, RoleName
 from ietf.person.models import Person, Email
-
+from ietf.liaisons.models import LiaisonStatementGroupContacts
 
 
 # ---------------------------------------------
@@ -69,6 +69,7 @@ class GroupModelForm(forms.ModelForm):
     parent = forms.ModelChoiceField(queryset=Group.objects.filter(Q(type='area',state='active')|Q(acronym='irtf')),required=False)
     ad = forms.ModelChoiceField(queryset=Person.objects.filter(role__name='ad',role__group__state='active',role__group__type='area'),required=False)
     state = forms.ModelChoiceField(queryset=GroupStateName.objects.exclude(slug__in=('dormant','unknown')),empty_label=None)
+    liaison_contacts = forms.CharField(max_length=255,required=False,label='Default Liaison Contacts')
     
     class Meta:
         model = Group
@@ -82,7 +83,12 @@ class GroupModelForm(forms.ModelForm):
         self.fields['ad'].label = 'Area Director'
         self.fields['comments'].widget.attrs['rows'] = 3
         self.fields['parent'].label = 'Area'
-    
+        
+        if self.instance.pk:
+            lsgc = self.instance.liaisonstatementgroupcontacts_set.first() # there can only be one
+            if lsgc:
+                self.fields['liaison_contacts'].initial = lsgc.contacts
+        
     def clean_parent(self):
         parent = self.cleaned_data['parent']
         type = self.cleaned_data['type']
@@ -111,7 +117,24 @@ class GroupModelForm(forms.ModelForm):
             raise forms.ValidationError('You must choose "active" or "concluded" for research group state')
             
         return self.cleaned_data
+    
+    def save(self, force_insert=False, force_update=False, commit=True):
+        obj = super(GroupModelForm, self).save(commit=False)
+        if commit:
+            obj.save()
+        contacts = self.cleaned_data.get('liaison_contacts')
+        if contacts:
+            try:
+                lsgc = LiaisonStatementGroupContacts.objects.get(group=self.instance)
+                lsgc.contacts = contacts
+                lsgc.save()
+            except LiaisonStatementGroupContacts.DoesNotExist:
+                LiaisonStatementGroupContacts.objects.create(group=self.instance,contacts=contacts)
+        elif LiaisonStatementGroupContacts.objects.filter(group=self.instance):
+            LiaisonStatementGroupContacts.objects.filter(group=self.instance).delete()
         
+        return obj
+
 class RoleForm(forms.Form):
     name = forms.ModelChoiceField(RoleName.objects.filter(slug__in=('chair','editor','secr','techadv')),empty_label=None)
     person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")

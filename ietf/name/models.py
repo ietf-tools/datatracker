@@ -80,4 +80,9 @@ class IprLicenseTypeName(NameModel):
 class IprEventTypeName(NameModel):
     """submitted,posted,parked,removed,rejected,msgin,msgoutcomment,private_comment,
     legacy,update_notify,change_disclosure"""
-    
+class LiaisonStatementState(NameModel):
+    "Pending, Approved, Dead"
+class LiaisonStatementEventTypeName(NameModel):
+    "Submitted, Modified, Approved, Posted, Killed, Resurrected, MsgIn, MsgOut, Comment"
+class LiaisonStatementTagName(NameModel):
+    "Action Required, Action Taken"

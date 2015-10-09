@@ -54,6 +54,7 @@ def has_role(user, role_names, *args, **kwargs):
 	    "IETF Chair": Q(person=person, name="chair", group__acronym="ietf"),
 	    "IRTF Chair": Q(person=person, name="chair", group__acronym="irtf"),
 	    "IAB Chair": Q(person=person, name="chair", group__acronym="iab"),
+	    "IAB Executive Director": Q(person=person, name="execdir", group__acronym="iab"),
             "IAB Group Chair": Q(person=person, name="chair", group__type="iab", group__state="active"),
 	    "WG Chair": Q(person=person,name="chair", group__type="wg", group__state__in=["active","bof", "proposed"]),
 	    "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state__in=["active","bof", "proposed"]),
@@ -64,6 +65,8 @@ def has_role(user, role_names, *args, **kwargs):
             "Nomcom Chair": Q(person=person, name="chair", group__type="nomcom", group__state="active", group__acronym__icontains=kwargs.get('year', '0000')),
             "Nomcom Advisor": Q(person=person, name="advisor", group__type="nomcom", group__state="active", group__acronym__icontains=kwargs.get('year', '0000')),
             "Nomcom": Q(person=person, group__type="nomcom", group__state="active", group__acronym__icontains=kwargs.get('year', '0000')),
+            "Liaison Manager": Q(person=person,name="liaiman",group__type="sdo",group__state="active", ),
+            "Authorized Individual": Q(person=person,name="auth",group__type="sdo",group__state="active", ),
             }
 
         filter_expr = Q()

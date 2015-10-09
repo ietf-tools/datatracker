@@ -1,0 +1,87 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{% load widget_tweaks %}
+{% load ietf_filters %}
+{% load bootstrap3 %}
+
+<form id="search_form" class="form-horizontal" action="{% url "ietf.liaisons.views.liaison_list" state=state %}" method="get">
+
+  <div class="input-group search_field">
+    {{ form.text|add_class:"form-control"|attr:"placeholder:Title, body, identifiers, etc." }}
+    <span class="input-group-btn">
+      <button class="btn btn-primary" type="submit">
+    <span class="fa fa-search"></span>
+    Search
+      </button>
+    </span>
+  </div> <!-- search_field -->
+
+  {{ form.sort }} {# hidden field #}
+
+  <div class="panel-group" id="accordion1">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+      <p class="panel-title toggle_advanced">
+      <a data-toggle="collapse" data-parent="#accordion1" href="#searchcollapse">
+        <span class="fa fa-caret-down"></span> Additional search criteria
+      </a>
+      </p>
+      </div>
+      <div id="searchcollapse" class="panel-collapse collapse visible-nojs">
+        <div class="panel-body">
+
+
+          <div class="form-group search_field">
+            <div class="col-sm-4">
+              <label for="id_source" class="control-label">Source</label>
+            </div>
+            <div class="col-sm-8">
+              {{ form.source|add_class:"form-control" }}
+            </div>
+          </div>
+
+          <div class="form-group search_field">
+            <div class="col-sm-4">
+              <label for="id_destination" class="control-label">Destination</label>
+            </div>
+            <div class="col-sm-8">
+              {{ form.destination|add_class:"form-control" }}
+            </div>
+          </div>
+
+          <div class="form-group search_field">
+            <div class="col-sm-4">
+              <label for="id_start_date" class="control-label">Start Date</label>
+            </div>
+            <div class="col-sm-8">
+              {{ form.start_date|add_class:"form-control" }}
+            </div>
+          </div>
+
+          <div class="form-group search_field">
+            <div class="col-sm-4">
+              <label for="id_end_date" class="control-label">End Date</label>
+            </div>
+            <div class="col-sm-8">
+              {{ form.end_date|add_class:"form-control" }}
+            </div>
+          </div>
+
+
+
+      <div class="form-group search_field">
+        <div class="col-md-offset-4 col-sm-4">
+          <button class="btn btn-default btn-block" type="reset">Clear</button>
+        </div>
+        <div class="col-sm-4">
+          <button class="btn btn-primary btn-block" type="submit">
+        <span class="fa fa-search"></span>
+        Search
+          </button>
+        </div>
+      </div>
+    </div>
+      </div>
+    </div>
+  </div> <!-- accordian1 -->
+</form>
+

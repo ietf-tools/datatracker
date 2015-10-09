@@ -5,7 +5,7 @@
   {% if attachments %}
     <ul>
       {% for doc in attachments %}
-        <li><a href="https://datatracker.ietf.org/documents/LIAISON/{{ doc.external_url }}">{{ doc.title }}</a><br>
+        <li><a href="{{ doc.href }}">{{ doc.title }}</a><br>
       {% endfor %}
     </ul>
   {% else %}

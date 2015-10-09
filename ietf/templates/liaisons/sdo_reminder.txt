@@ -8,8 +8,8 @@ As liaison manager of {{ sdo_name }} you have to provide an updated list of pers
 Current list in our system for {{ sdo_name }} is:
 
 ------
-{% for person in individuals %}
-{{ person.email.0 }} <{{ person.email.1 }}>
+{% for role in individuals %}
+{{ role.person.plain_name }} <{{ role.email.address }}>
 {% endfor %}
 ------
 

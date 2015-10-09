@@ -45,6 +45,7 @@ def add_legacy_fields(group):
     group.techadvisors = group.role_set.filter(name="techadv")
     group.editors = group.role_set.filter(name="editor")
     group.secretaries = group.role_set.filter(name="secr")
+    group.liaison_contacts = group.liaisonstatementgroupcontacts_set.first()
 
     #fill_in_charter_info(group)
 

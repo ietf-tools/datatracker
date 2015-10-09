@@ -1,0 +1,46 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% load ietf_filters %}
+{% load future %}
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>
+            <a href="?sort=date">Date {% if sort == "date" %}<span class="fa fa-caret-down"></span>{% endif %}</a>
+        </th>
+        <th>
+            <a href="?sort=from_groups">From {% if sort == "from_groups" %}<span class="fa fa-caret-down"></span>{% endif %}</a>
+        </th>
+        <th>
+            <a href="?sort=to_groups">To {% if sort == "to_groups" %}<span class="fa fa-caret-down"></span>{% endif %}</a>
+        </th>
+        <th>
+            <a href="?sort=deadline">Deadline {% if sort == "deadline" %}<span class="fa fa-caret-down"></span>{% endif %}</a>
+        </th>
+        <th>
+            <a href="?sort=title">Title {% if sort == "title" %}<span class="fa fa-caret-down"></span>{% endif %}</a>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for liaison in liaisons %}
+        <tr>
+          <td class="text-nowrap">{{ liaison.sort_date|date:"Y-m-d" }}</td>
+          <td>{{ liaison.from_groups_display }}</td>
+          <td>{{ liaison.to_groups_display }}</td>
+          <td class="text-nowrap">{{ liaison.deadline|default:"-"|date:"Y-m-d" }}{% if liaison.deadline and not liaison.action_taken %}<br><span class="label label-warning">Action Needed</span>{% endif %}</td>
+          <td>
+            {% if not liaison.from_contact_id %}
+                {% for doc in liaison.attachments.all %}
+                    <a href="{{ doc.href }}">{{ doc.title }}</a>
+                    <br>
+                {% endfor %}
+            {% else %}
+                <a href="{% url "ietf.liaisons.views.liaison_detail" object_id=liaison.pk %}">{{ liaison.title }}</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>

@@ -2,4 +2,4 @@ The following liaison statement will remain pending (and not public available) i
 
 {% include "liaisons/liaison_mail.txt" %}
 
-Please visit {{ url }} in order to approve the liaison statement.
+Please visit {{ liaison.get_absolute_url }} in order to approve the liaison statement.

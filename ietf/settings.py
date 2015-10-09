@@ -399,6 +399,8 @@ DOC_HREFS = {
     "slides": "https://www.ietf.org/slides/{doc.name}-{doc.rev}",
     "conflrev": "https://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
     "statchg": "https://www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
+    "liaison": "/documents/LIAISON/{doc.external_url}",
+    "liai-att": "/documents/LIAISON/{doc.external_url}",
 }
 
 MEETING_DOC_HREFS = {

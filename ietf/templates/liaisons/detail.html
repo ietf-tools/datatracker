@@ -13,65 +13,68 @@
     Liaison statement<br><small>{% include 'liaisons/liaison_title.html' %}</small>
   </h1>
 
-  <table class="table table-condensed table-striped">
-    <tr>
-      <th class="text-nowrap">Submission date</th>
-      <td>{{ liaison.submitted|date:"Y-m-d" }}</td>
-    </tr>
-    <tr>
-      <th class="text-nowrap">From</th>
-      <td>
-        {{ liaison.from_name }}
-        {% if liaison.from_contact %}(<a href="mailto:{{ liaison.from_contact.address }}">{{ liaison.from_contact.person }}</a>)
-        {% endif %}
-      </td>
-    </tr>
-    <tr>
-      <th class="text-nowrap">To</th>
-      <td>
-        {% if liaison.from_contact %}
-          {{ liaison.to_name }} ({{ liaison.to_contact|parse_email_list }})
-        {% else %}
-          {{ liaison.to_name|urlize }}
-        {% endif %}
-      </td>
-    </tr>
+  {% include "liaisons/detail_tabs.html" %}
+  
+<table class="table table-condensed table-striped">
+<tr>
+  <th>State</th>
+  <td>{{ liaison.state }}</td>
+</tr>
+<tr>
+  <th class="text-nowrap">Submission Date</th>
+  <td>{{ liaison.submitted|date:"Y-m-d" }}</td></tr>
 
-    {% if liaison.from_contact %}
-      <tr>
-        <th class="text-nowrap">Cc</th>
-        <td>
-          {{ liaison.cc|parse_email_list }}
-        </td>
-      </tr>
-    {% endif %}
+{% if liaison.from_contact %}
+<tr>
+  <th class="text-nowrap">Sender</th>
+  <td>
+    <a href="mailto:{{ liaison.from_contact.address }}">{{ liaison.from_contact.person }}</a>
+  </td>
+</tr>
+{% endif %}
 
-    {% if liaison.response_contact %}
-      <tr>
-        <th class="text-nowrap">Response contact</th>
-        <td>
-          {{ liaison.response_contact|parse_email_list }}
-        </td>
-      </tr>
-    {% endif %}
+<tr>
+  <th class="text-nowrap">From</th>
+  <td>{{ liaison.from_groups_display }}</td>
+</tr>
 
-    {% if liaison.technical_contact %}
-      <tr>
-        <th class="text-nowrap">Technical contact</th>
-        <td>
-          {{ liaison.technical_contact|parse_email_list }}
-        </td>
-      </tr>
-    {% endif %}
+<tr>
+  <th class="text-nowrap">To</th>
+  <td>{{ liaison.to_groups_display }}</td>
+</tr>
 
-    {% if liaison.purpose %}
-      <tr>
-        <th class="text-nowrap">Purpose</th>
-        <td>{{ liaison.purpose.name }}</td>
-      </tr>
-    {% endif %}
+{% if liaison.cc_contacts %}
+  <tr>
+    <th class="text-nowrap">Cc</th><td>{{ liaison.cc_contacts|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td>
+  </tr>
+{% endif %}
 
+{% if liaison.response_contacts %}
+  <tr>
+    <th class="text-nowrap">Response Contact</th>
+    <td>{{ liaison.response_contacts|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td>
+  </tr>
+{% endif %}
 
+{% if liaison.technical_contacts %}
+  <tr>
+    <th class="text-nowrap">Technical Contact</th>
+    <td>{{ liaison.technical_contacts|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td>
+  </tr>
+{% endif %}
+
+{% if liaison.action_holder_contacts %}
+  <tr>
+    <th class="text-nowrap">Action Holder Contacts</th>
+    <td>{{ liaison.action_holder_contacts|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td>
+  </tr>
+{% endif %}
+
+  <tr>
+    <th class="text-nowrap">Purpose</th>
+    <td>{{ liaison.purpose.name }}</td>
+  </tr>
+  
     {% if liaison.deadline %}
       <tr>
         <th class="text-nowrap">Deadline</th>
@@ -97,7 +100,7 @@
         <th class="text-nowrap">Liaisons referring to this</th>
         <td>
           {% for rel in relations %}
-            <a href="{% url "liaison_detail" rel.pk %}">
+            <a href="{% url "ietf.liaisons.views.liaison_detail" rel.pk %}">
 	      {% if rel.title %}{{ rel.title }}{% else %}Liaison #{{ rel.pk }}{% endif %}
             </a>
             <br>
@@ -111,7 +114,7 @@
         <tr>
           <th class="text-nowrap">Referenced liaison</th>
           <td>
-            <a href="{% url "liaison_detail" liaison.related_to.pk %}">
+            <a href="{% url "ietf.liaisons.views.liaison_detail" liaison.related_to.pk %}">
 	      {% if liaison.related_to.title %}{{ liaison.related_to.title }}{% else %}Liaison #{{ liaison.related_to.pk }}{% endif %}
             </a>
           </td>
@@ -119,17 +122,46 @@
       {% endif %}
     {% endif %}
 
+    {% if liaison.other_identifiers %}
+      <tr>
+        <th class="text-nowrap">Other Identifiers</th>
+        <td>{{ liaison.other_identifiers }}</td>
+      </tr>
+    {% endif %}
+    
     <tr>
       <th class="text-nowrap">Attachments</th>
       <td>
-        {% for doc in liaison.attachments.all %}
-          <a href="https://datatracker.ietf.org/documents/LIAISON/{{ doc.external_url }}">{{ doc.title }}</a>
+        {% for doc in liaison.active_attachments.all %}
+          <a href="{{ doc.href }}">{{ doc.title }}</a>
           {% if not forloop.last %}<br>{% endif %}
         {% empty %}
           (None)
         {% endfor %}
       </td>
     </tr>
+
+{% if relations_by %}
+<tr>
+  <th class="text-nowrap">Liaisons referred by this one</th>
+  <td>
+    {% for rel in relations_by %}
+      <a href="{% url "ietf.liaisons.views.liaison_detail" rel.pk %}">{% if rel.title %}{{ rel.title }}{% else %}Liaison #{{ rel.pk }}{% endif %}</a><br />
+    {% endfor %}
+  </td>
+</tr>
+{% endif %}
+
+{% if relations_to %}
+<tr>
+  <th class="text-nowrap">Liaisons referring to this one</th>
+  <td>
+    {% for rel in relations_to %}
+      <a href="{% url "ietf.liaisons.views.liaison_detail" rel.pk %}">{% if rel.title %}{{ rel.title }}{% else %}Liaison #{{ rel.pk }}{% endif %}</a><br />
+    {% endfor %}
+  </td>
+</tr>
+{% endif %}
 
     {% if liaison.from_contact and liaison.body %}
       <tr>
@@ -139,12 +171,29 @@
         </td>
       </tr>
     {% endif %}
-  </table>
+    
+</table>
 
-  {% if can_edit %}
-    <p>
-      <a class="btn btn-default" href="{% url "liaison_edit" object_id=liaison.pk %}">Edit liaison</a>
-    </p>
+<p>
+  <form method="post">
+  {% csrf_token %}
+  {% if liaison.state.slug != 'dead' and can_edit %}
+    <a class="btn btn-default" href="{% url "ietf.liaisons.views.liaison_edit" object_id=liaison.pk %}">Edit liaison</a>
   {% endif %}
+  {% if liaison.state.slug != 'dead' and can_reply %}
+    <a class="btn btn-default" href="{% url "ietf.liaisons.views.liaison_reply" object_id=liaison.pk %}">Reply to liaison</a>
+  {% endif %}
+  {% if liaison.state.slug == 'pending' and can_edit %}
+    <input class="btn btn-default" type="submit" value="Approve" name='approved' />
+    <input class="btn btn-default" type="submit" value="Mark as Dead" name='dead' />
+  {% endif %}
+  {% if liaison.state.slug == 'posted' and  user|has_role:"Secretariat" %}
+    <a class="btn btn-default" href="{% url "ietf.liaisons.views.liaison_resend" object_id=liaison.pk %}">Resend statement</a>
+  {% endif %}
+  {% if liaison.state.slug == 'dead' and can_edit %}
+    <input class="btn btn-default" type="submit" value="Resurrect" name='resurrect' />
+  {% endif %}
+  </form>
+</p>
 
 {% endblock %}

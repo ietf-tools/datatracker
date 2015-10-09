@@ -1532,6 +1532,66 @@
 },
 {
  "fields": {
+  "order": 1,
+  "used": true,
+  "name": "Required",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementtagname",
+ "pk": "required"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "Taken",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementtagname",
+ "pk": "taken"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "name": "Pending",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementstate",
+ "pk": "pending"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "Approved",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementstate",
+ "pk": "approved"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "Posted",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementstate",
+ "pk": "posted"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "name": "Dead",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementstate",
+ "pk": "dead"
+},
+{
+ "fields": {
   "order": 0,
   "used": true,
   "name": "IETF",

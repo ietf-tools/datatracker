@@ -1,19 +1,21 @@
 {% load ietf_filters %}{% autoescape off %}Title: {{ liaison.title|clean_whitespace }}
 Submission Date: {{ liaison.submitted|date:"Y-m-d" }}
-URL of the IETF Web page: {{ url }}
+URL of the IETF Web page: {{ liaison.get_absolute_url }}
 {% if liaison.deadline %}Please reply by {{ liaison.deadline }}{% endif %}
-From: {{ liaison.from_name }} ({{ liaison.from_contact.person }} <{{ liaison.reply_to|default:liaison.from_contact.address }}>)
-To: {{ liaison.to_name }} ({{ liaison.to_contact }})
+From: {{ liaison.from_name }} ({{ liaison.from_contact.person }} <{% if liaison.from_contact %}{{ liaison.from_contact.address }}{% endif %}>)
+To: {{ liaison.to_name }} ({{ liaison.to_contacts }})
 Cc: {{ liaison.cc }}
-Response Contact: {{ liaison.response_contact }}
-Technical Contact: {{ liaison.technical_contact }}
+Response Contacts: {{ liaison.response_contacts }}
+Technical Contacts: {{ liaison.technical_contacts }}
 Purpose: {{ liaison.purpose.name }}
-{% if liaison.related_to %}Referenced liaison: {% if liaison.related_to.title %}{{ liaison.related_to.title }}{% else %}Liaison #{{ liaison.related_to.pk }}{% endif %} ({{ referenced_url }}){% endif %}
+{% for related in liaison.source_of_set.all %}
+Referenced liaison: {% if related.target.title %}{{ related.target.title }}{% else %}Liaison #{{ related.target.pk }}{% endif %} ({{ related.target.get_absolute_url }})
+{% endfor %}
 Body: {{ liaison.body }}
 Attachments:
 {% for doc in liaison.attachments.all %}
     {{ doc.title }}
-    https://datatracker.ietf.org/documents/LIAISON/{{ doc.external_url }}
+    {{ doc.href }}
 {% empty %}
 No document has been attached
 {% endfor %}{% endautoescape %}

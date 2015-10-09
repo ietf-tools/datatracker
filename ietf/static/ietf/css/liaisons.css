@@ -1,0 +1,131 @@
+.baseform { 
+    font-size: 12px;
+}
+
+.baseform .fieldset {
+    margin: 1em 0px;
+    border: none;
+    border: 1px solid #8899dd;
+    background-color: #edf5ff;
+}
+
+.baseform .fieldset h2 {
+    background-color: #2647a0;
+    color: white;
+    font-size: 14px;
+    padding: 5px 10px;
+    margin: 0px;
+}
+
+.baseform .field {
+    padding: 0.5em 10px;
+}
+
+.baseform .field label {
+    display: block;
+    width: 150px;
+    float: left;
+    clear: left;
+}
+
+.baseform .field .endfield {
+    clear: left;
+}
+
+.baseform .fieldWidget {
+    margin-left: 150px;
+}
+
+.baseform #baseform-fieldname-purpose_text,
+.baseform #baseform-fieldname-deadline_date {
+    display: none;
+}
+
+.baseform select,
+.baseform textarea,
+.baseform input {
+    border: 1px solid #cccccc;
+}
+
+.baseform input {
+    font-size: 12px;
+}
+
+#id_title,
+.baseformedit #id_from_field,
+.baseform #id_organization,
+.baseform #id_to_poc,
+.baseform #id_response_contacts,
+.baseform #id_technical_contact,
+.baseform #id_cc1,
+.attach_titleField input,
+.baseform textarea {
+    width: 80%;
+}
+
+#id_purpose_text {
+    height: 100px;
+}
+
+#id_body {
+    height: 300px;
+}
+
+.baseform input.disabledAddAttachment {
+    border: none;
+    padding: none;
+    background: none;
+    padding: 0px;
+    margin: 0px;
+    color: black;
+    font-weight: bold;
+}
+
+span.fieldRequired {
+    color: red;
+}
+
+.fieldError {
+    background-color: #ffcc66;
+}
+
+th.sort {
+    background-image: url(/images/sort-header-clear.png);
+    background-repeat: no-repeat;
+    background-position: right center;
+    cursor: pointer;
+}
+
+th.headerSortUp {
+    background-image: url(/images/sort-header-up-filled.png);
+}
+
+th.headerSortDown {
+    background-image: url(/images/sort-header-filled.png);
+}
+
+td span.awaiting {
+    background-color: #ffcc33;
+    border-radius: 3px;
+    float: right;
+    width: 35px;
+    padding: 4px 8px;
+    text-align: center;
+    font-size: 10px;
+}
+
+.noActionTaken, .actionTaken { padding: 2px 5px; }
+.actionTaken { border: 1px solid green; background-color: #ccffbb; }
+.noActionTaken { border: 1px solid red; background-color: #ffccbb; }
+
+input[id$='DELETE'] {
+    display: none;
+}
+
+#id_from_groups + span {
+    display: none;
+}
+
+#id_to_groups + span {
+    display: none;
+}

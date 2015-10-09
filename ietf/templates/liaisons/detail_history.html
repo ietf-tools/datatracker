@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% load future %}
+{% load ietf_filters %}
+
+{% block title %}History for Liaison Statement - {{ liaison.title }}{% endblock %}
+
+{% block content %}
+  <h1>History for Liaison Statement<br><small>{{ liaison.title }}</small></h1>
+
+  {% include "liaisons/detail_tabs.html" %}
+
+  {% comment %}
+  {% if user|has_role:"Area Director,Secretariat,IANA,RFC Editor" %}
+    <p class="buttonlist">
+      <a class="btn btn-default" href="{% url "ipr_add_comment" id=ipr.id %}" title="Add comment to history">Add comment</a>
+      <a class="btn btn-default" href="{% url "ipr_add_email" id=ipr.id %}" title="Add email to history">Add email</a>
+    </p>
+  {% endif %}
+  {% endcomment %}
+
+  <table class="table table-condensed table-striped history">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>By</th>
+        <th>Text</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for e in events %}
+        <tr>
+          <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
+          <td>{{ e.type }}
+            {% if e.response_due and e.response_past_due %}
+              <span class="glyphicon glyphicon-exclamation-sign" title="Response overdue"></span>
+            {% endif %}
+          </td>
+          <td>{{ e.by }}</td>
+          <td>{{ e.desc|format_history_text }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock content %}

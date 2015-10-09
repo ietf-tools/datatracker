@@ -16,7 +16,7 @@ from ietf.liaisons.models import LiaisonStatement
 # to construct a queryset.
 class LiaisonStatementsFeed(Feed):
     feed_type = Atom1Feed
-    link = reverse_lazy("liaison_list")
+    link = reverse_lazy("ietf.liaisons.views.liaison_list")
     description_template = "liaisons/feed_item_description.html"
 
     def get_object(self, request, kind, search=None):
@@ -24,8 +24,8 @@ class LiaisonStatementsFeed(Feed):
 
         if kind == 'recent':
             obj['title'] = 'Recent Liaison Statements'
-	    obj['limit'] = 15
-	    return obj
+            obj['limit'] = 15
+            return obj
 
         if kind == 'from':
             if not search:
@@ -33,7 +33,7 @@ class LiaisonStatementsFeed(Feed):
 
             try:
                 group = Group.objects.get(acronym=search)
-                obj['filter'] = { 'from_group': group }
+                obj['filter'] = { 'from_groups': group }
                 obj['title'] = u'Liaison Statements from %s' % group.name
                 return obj
             except Group.DoesNotExist:
@@ -54,46 +54,47 @@ class LiaisonStatementsFeed(Feed):
             if not search:
                 raise FeedDoesNotExist
 
-            obj['filter'] = dict(to_name__icontains=search)
-            obj['title'] = 'Liaison Statements where to matches %s' % search
+            group = Group.objects.get(acronym=search)
+            obj['filter'] = { 'to_groups': group }
+            obj['title'] = u'Liaison Statements to %s' % group.name
             return obj
 
-	if kind == 'subject':
+        if kind == 'subject':
             if not search:
-		raise FeedDoesNotExist
+                raise FeedDoesNotExist
 
             obj['q'] = [ Q(title__icontains=search) | Q(attachments__title__icontains=search) ]
             obj['title'] = 'Liaison Statements where subject matches %s' % search
             return obj
 
-	raise FeedDoesNotExist
+        raise FeedDoesNotExist
 
     def items(self, obj):
-        qs = LiaisonStatement.objects.all().order_by("-submitted")
-	if obj.has_key('q'):
-	    qs = qs.filter(*obj['q'])
-	if obj.has_key('filter'):
-	    qs = qs.filter(**obj['filter'])
-	if obj.has_key('limit'):
-	    qs = qs[:obj['limit']]
-	return qs
+        qs = LiaisonStatement.objects.all().order_by("-id")
+        if obj.has_key('q'):
+            qs = qs.filter(*obj['q'])
+        if obj.has_key('filter'):
+            qs = qs.filter(**obj['filter'])
+        if obj.has_key('limit'):
+            qs = qs[:obj['limit']]
+        return qs
 
     def title(self, obj):
-	return obj['title']
+        return obj['title']
 
     def description(self, obj):
-	return self.title(obj)
+        return self.title(obj)
 
     def item_title(self, item):
         return render_to_string("liaisons/liaison_title.html", { 'liaison': item }).strip()
 
     def item_link(self, item):
-        return urlreverse("liaison_detail", kwargs={ "object_id": item.pk })
+        return urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ "object_id": item.pk })
 
     def item_pubdate(self, item):
         # this method needs to return a datetime instance, even
-        # though the database has only date, not time 
+        # though the database has only date, not time
         return item.submitted
- 
+
     def item_author_name(self, item):
         return item.from_name
