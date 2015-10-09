@@ -1,5 +1,5 @@
 {% load ietf_filters %}{%load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
-To: IETF-Announce <ietf-announce@ietf.org>{% if cc %}
+To: {{ to }}{% if cc %}
 Cc: {{ cc }}{% endif %}
 Subject: {{ action_type }} Action: '{{ doc.title|clean_whitespace }}' to {{ doc|std_level_prompt }} ({{ doc.filename_with_rev }})
 

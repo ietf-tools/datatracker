@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+{% load ietf_filters %}
+
+{% block title %}WG Review announcement }} announcement writeup for {{ charter.chartered_group.acronym }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>WG Review announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
+
+  {% bootstrap_messages %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form announcement_text_form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="save_text" value="Save">Submit</button>
+      <button type="submit" class="btn btn-warning" name="regenerate_text" value="Regenerate"">Regenerate</button>
+
+      {% if user|has_role:"Secretariat" %}
+          <input type="submit" type="submit" class="btn btn-default" name="send_annc_only" value="Send only to IETF-Announce" />
+          <input type="submit" type="submit" class="btn btn-default" name="send_nw_only" value="Send only to New-Work" />
+          <input type="submit" type="submit" class="btn btn-default" name="send_both" value="Send to both" />
+      {% endif %}
+
+      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock%}

@@ -12,7 +12,7 @@ from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 
@@ -147,12 +147,12 @@ class EditPositionTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q('form input[name="cc"]')) > 0)
+        self.assertTrue(len(q('form input[name="extra_cc"]')) > 0)
 
         # send
         mailbox_before = len(outbox)
 
-        r = self.client.post(url, dict(cc="test@example.com", cc_state_change="1",cc_group_list="1"))
+        r = self.client.post(url, dict(extra_cc="test298347@example.com", cc_choices=['doc_notify','doc_group_chairs']))
         self.assertEqual(r.status_code, 302)
 
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -162,16 +162,22 @@ class EditPositionTests(TestCase):
         self.assertTrue(draft.name in m['Subject'])
         self.assertTrue("clearer title" in str(m))
         self.assertTrue("Test!" in str(m))
+        self.assertTrue("iesg@" in m['To'])
+        # cc_choice doc_group_chairs
+        self.assertTrue("mars-chairs@" in m['Cc'])
+        # cc_choice doc_notify
         self.assertTrue("somebody@example.com" in m['Cc'])
-        self.assertTrue("test@example.com" in m['Cc'])
-        self.assertTrue(draft.group.list_email)
-        self.assertTrue(draft.group.list_email in m['Cc'])
+        # cc_choice doc_group_email_list was not selected
+        self.assertFalse(draft.group.list_email in m['Cc'])
+        # extra-cc    
+        self.assertTrue("test298347@example.com" in m['Cc'])
 
         r = self.client.post(url, dict(cc=""))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before + 2)
         m = outbox[-1]
-        self.assertEqual(m['Cc'],None)
+        self.assertTrue("iesg@" in m['To'])
+        self.assertFalse(m['Cc'] and draft.group.list_email in m['Cc'])
 
 
 class BallotWriteupsTests(TestCase):
@@ -232,9 +238,11 @@ class BallotWriteupsTests(TestCase):
                 send_last_call_request="1"))
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "lc-req")
-        self.assertEqual(len(outbox), mailbox_before + 3)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
+        self.assertTrue('iesg-secretary@' in outbox[-1]['To'])
+        self.assertTrue('aread@' in outbox[-1]['Cc'])
 
     def test_edit_ballot_writeup(self):
         draft = make_test_data()
@@ -270,36 +278,8 @@ class BallotWriteupsTests(TestCase):
         url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
 
-        ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
 
-        def create_pos(num, vote, comment="", discuss=""):
-            ad = Person.objects.get(name="Ad No%s" % num)
-            e = BallotPositionDocEvent()
-            e.doc = draft
-            e.ballot = ballot
-            e.by = ad
-            e.ad = ad
-            e.pos = BallotPositionName.objects.get(slug=vote)
-            e.type = "changed_ballot_position"
-            e.comment = comment
-            if e.comment:
-                e.comment_time = datetime.datetime.now()
-            e.discuss = discuss
-            if e.discuss:
-                e.discuss_time = datetime.datetime.now()
-            e.save()
-
-        # active
-        create_pos(1, "yes", discuss="discuss1 " * 20)
-        create_pos(2, "noobj", comment="comment2 " * 20)
-        create_pos(3, "discuss", discuss="discuss3 " * 20, comment="comment3 " * 20)
-        create_pos(4, "abstain")
-        create_pos(5, "recuse")
-
-        # inactive
-        create_pos(9, "yes")
-
-        mailbox_before = len(outbox)
+        empty_outbox()
         
         r = self.client.post(url, dict(
                 ballot_writeup="This is a test.",
@@ -308,15 +288,12 @@ class BallotWriteupsTests(TestCase):
         draft = Document.objects.get(name=draft.name)
 
         self.assertTrue(draft.latest_event(type="sent_ballot_announcement"))
-        self.assertEqual(len(outbox), mailbox_before + 2)
-        issue_email = outbox[-2]
-        self.assertTrue("Evaluation:" in issue_email['Subject'])
-        self.assertTrue("comment1" not in str(issue_email))
-        self.assertTrue("comment2" in str(issue_email))
-        self.assertTrue("comment3" in str(issue_email))
-        self.assertTrue("discuss3" in str(issue_email))
-        self.assertTrue("This is a test" in str(issue_email))
-        self.assertTrue("The IESG has approved" in str(issue_email))
+        self.assertEqual(len(outbox), 2)
+        self.assertTrue('Evaluation:' in outbox[-2]['Subject'])
+        self.assertTrue('iesg@' in outbox[-2]['To'])
+        self.assertTrue('Evaluation:' in outbox[-1]['Subject'])
+        self.assertTrue('drafts-eval@' in outbox[-1]['To'])
+        self.assertTrue('X-IETF-Draft-string' in outbox[-1])
 
     def test_edit_approval_text(self):
         draft = make_test_data()
@@ -387,14 +364,20 @@ class ApproveBallotTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "ann")
-        self.assertEqual(len(outbox), mailbox_before + 4)
+        self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("Protocol Action" in outbox[-2]['Subject'])
+        self.assertTrue("ietf-announce" in outbox[-2]['To'])
+        self.assertTrue("rfc-editor" in outbox[-2]['Cc'])
         # the IANA copy
         self.assertTrue("Protocol Action" in outbox[-1]['Subject'])
         self.assertTrue(not outbox[-1]['CC'])
+        self.assertTrue('drafts-approval@icann.org' in outbox[-1]['To'])
         self.assertTrue("Protocol Action" in draft.message_set.order_by("-time")[0].subject)
 
     def test_disapprove_ballot(self):
+        # This tests a codepath that is not used in production
+        # and that has already had some drift from usefulness (it results in a
+        # older-style conflict review response). 
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="nopubadw"))
 
@@ -409,9 +392,8 @@ class ApproveBallotTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "dead")
-        self.assertEqual(len(outbox), mailbox_before + 3)
+        self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("NOT be published" in str(outbox[-1]))
-
 
 class MakeLastCallTests(TestCase):
     def test_make_last_call(self):
@@ -441,11 +423,17 @@ class MakeLastCallTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "lc")
         self.assertEqual(draft.latest_event(LastCallDocEvent, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
-        self.assertEqual(len(outbox), mailbox_before + 4)
 
-        self.assertTrue("Last Call" in outbox[-4]['Subject'])
-        # the IANA copy
-        self.assertTrue("Last Call" in outbox[-3]['Subject'])
+        self.assertEqual(len(outbox), mailbox_before + 2)
+
+        self.assertTrue("Last Call" in outbox[-2]['Subject'])
+        self.assertTrue("ietf-announce@" in outbox[-2]['To'])
+        for prefix in ['draft-ietf-mars-test','mars-chairs','aread']:
+            self.assertTrue(prefix+"@" in outbox[-2]['Cc'])
+
+        self.assertTrue("Last Call" in outbox[-1]['Subject'])
+        self.assertTrue("drafts-lastcall@icann.org" in outbox[-1]['To'])
+
         self.assertTrue("Last Call" in draft.message_set.order_by("-time")[0].subject)
 
 class DeferUndeferTestCase(TestCase):
@@ -491,11 +479,16 @@ class DeferUndeferTestCase(TestCase):
         if doc.type_id in defer_states:
            self.assertEqual(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
         self.assertTrue(doc.active_defer_event())
-        self.assertEqual(len(outbox), mailbox_before + 3)
-        self.assertTrue("State Update" in outbox[-3]['Subject'])
-        self.assertTrue("Telechat update" in outbox[-2]['Subject'])
+
+        self.assertEqual(len(outbox), mailbox_before + 2)
+
+        self.assertTrue('Telechat update' in outbox[-2]['Subject'])
+        self.assertTrue('iesg-secretary@' in outbox[-2]['To'])
+        self.assertTrue('iesg@' in outbox[-2]['To'])
+
         self.assertTrue("Deferred" in outbox[-1]['Subject'])
         self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])
+        self.assertTrue('iesg@' in outbox[-1]['To'])
 
         # Ensure it's not possible to defer again
         r = self.client.get(url)
@@ -546,11 +539,13 @@ class DeferUndeferTestCase(TestCase):
         if doc.type_id in undefer_states:
            self.assertEqual(doc.get_state(undefer_states[doc.type_id][0]).slug,undefer_states[doc.type_id][1])
         self.assertFalse(doc.active_defer_event())
-        self.assertEqual(len(outbox), mailbox_before + 3)
-        self.assertTrue("Telechat update" in outbox[-3]['Subject'])
-        self.assertTrue("State Update" in outbox[-2]['Subject'])
+        self.assertEqual(len(outbox), mailbox_before + 2)
+        self.assertTrue("Telechat update" in outbox[-2]['Subject'])
+        self.assertTrue('iesg-secretary@' in outbox[-2]['To'])
+        self.assertTrue('iesg@' in outbox[-2]['To'])
         self.assertTrue("Undeferred" in outbox[-1]['Subject'])
         self.assertTrue(doc.file_tag() in outbox[-1]['Subject'])
+        self.assertTrue('iesg@' in outbox[-1]['To'])
 
         # Ensure it's not possible to undefer again
         r = self.client.get(url)

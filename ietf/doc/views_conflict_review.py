@@ -20,6 +20,7 @@ from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_st
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.mailtrigger.utils import gather_address_lists
 
 class ChangeStateForm(forms.Form):
     review_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev"), label="Conflict review state", empty_label=None, required=True)
@@ -68,6 +69,7 @@ def change_state(request, name, option=None):
                         pos.pos_id = "yes"
                         pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
                         pos.save()
+                        # Consider mailing that position to 'ballot_saved'
                     send_conflict_eval_email(request,review)
 
 
@@ -86,8 +88,11 @@ def change_state(request, name, option=None):
                               context_instance=RequestContext(request))
 
 def send_conflict_review_started_email(request, review):
+    addrs = gather_address_lists('conflrev_requested',doc=review).as_strings(compact=False)
     msg = render_to_string("doc/conflict_review/review_started.txt",
                             dict(frm = settings.DEFAULT_FROM_EMAIL,
+                                 to = addrs.to,
+                                 cc = addrs.cc,
                                  by = request.user.person,
                                  review = review,
                                  reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,
@@ -96,10 +101,13 @@ def send_conflict_review_started_email(request, review):
                            )
     if not has_role(request.user,"Secretariat"):
         send_mail_preformatted(request,msg)
+
+    addrs = gather_address_lists('conflrev_requested_iana',doc=review).as_strings(compact=False)
     email_iana(request, 
                review.relateddocument_set.get(relationship__slug='conflrev').target.document,
-               settings.IANA_EVAL_EMAIL,
-                msg)
+               addrs.to,
+               msg,
+               cc=addrs.cc)
 
 def send_conflict_eval_email(request,review):
     msg = render_to_string("doc/eval_email.txt",
@@ -107,11 +115,17 @@ def send_conflict_eval_email(request,review):
                                  doc_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
                                  )
                            )
-    send_mail_preformatted(request,msg)
+    addrs = gather_address_lists('ballot_issued',doc=review).as_strings()
+    override = {'To':addrs.to}
+    if addrs.cc:
+        override['Cc']=addrs.cc
+    send_mail_preformatted(request,msg,override=override)
+    addrs = gather_address_lists('ballot_issued_iana',doc=review).as_strings()
     email_iana(request, 
                review.relateddocument_set.get(relationship__slug='conflrev').target.document,
-               settings.IANA_EVAL_EMAIL,
-                msg)
+               addrs.to,
+               msg,
+               addrs.cc)
 
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Conflict review response", help_text="Edit the conflict review response.", required=False)
@@ -251,13 +265,16 @@ def default_approval_text(review):
          receiver = 'IRTF'
     else:
          receiver = 'recipient'
+    addrs = gather_address_lists('ballot_approved_conflrev',doc=review).as_strings(compact=False)
     text = render_to_string("doc/conflict_review/approval_text.txt",
                                dict(review=review,
                                     review_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
                                     conflictdoc = conflictdoc,
                                     conflictdoc_url = settings.IDTRACKER_BASE_URL+conflictdoc.get_absolute_url(),
                                     receiver=receiver,
-                                    approved_review = current_text
+                                    approved_review = current_text,
+                                    to = addrs.to,
+                                    cc = addrs.cc,
                                    )
                               )
 

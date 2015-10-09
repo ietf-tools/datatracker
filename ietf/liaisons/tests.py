@@ -333,6 +333,8 @@ class LiaisonManagementTests(TestCase):
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
+        self.assertTrue('marschairman@' in outbox[-1]['To'])
+        self.assertTrue('cc@' in outbox[-1]['Cc'])
         
     def test_add_outgoing_liaison(self):
         make_test_data()
@@ -407,6 +409,7 @@ class LiaisonManagementTests(TestCase):
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
+        self.assertTrue('statements@ietf.org' in outbox[-1]['To'])
         
         # try adding statement to non-predefined organization
         r = self.client.post(url,
@@ -441,6 +444,7 @@ class LiaisonManagementTests(TestCase):
         send_sdo_reminder(Group.objects.filter(type="sdo")[0])
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("authorized individuals" in outbox[-1]["Subject"])
+        self.assertTrue('zrk@ulm.mars' in outbox[-1]['To'])
 
     def test_send_liaison_deadline_reminder(self):
         make_test_data()

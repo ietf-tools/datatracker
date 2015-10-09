@@ -22,6 +22,7 @@ from ietf.name.models import DocRelationshipName, StdLevelName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.mailtrigger.utils import gather_address_lists
 
 class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)
@@ -106,7 +107,11 @@ def send_status_change_eval_email(request,doc):
                                  doc_url = settings.IDTRACKER_BASE_URL+doc.get_absolute_url(),
                                  )
                            )
-    send_mail_preformatted(request,msg)
+    addrs = gather_address_lists('ballot_issued',doc=doc)
+    override = {'To':addrs.to }
+    if addrs.cc:
+        override['Cc'] = addrs.cc
+    send_mail_preformatted(request,msg,override=override)
 
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Status change text", help_text="Edit the status change text.", required=False)
@@ -289,7 +294,8 @@ def default_approval_text(status_change,relateddoc):
     else:
         action = "Document Action"
 
-    
+
+    addrs = gather_address_lists('ballot_approved_status_change',doc=status_change).as_strings(compact=False)
     text = render_to_string("doc/status_change/approval_text.txt",
                                dict(status_change=status_change,
                                     status_change_url = settings.IDTRACKER_BASE_URL+status_change.get_absolute_url(),
@@ -298,6 +304,8 @@ def default_approval_text(status_change,relateddoc):
                                     approved_text = current_text,
                                     action=action,
                                     newstatus=newstatus(relateddoc),
+                                    to=addrs.to,
+                                    cc=addrs.cc,
                                    )
                               )
 

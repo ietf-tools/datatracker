@@ -15,7 +15,7 @@ from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data  import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 
@@ -70,7 +70,6 @@ class ConflictReviewTests(TestCase):
         self.assertTrue(review_doc.latest_event(DocEvent,type="added_comment").desc.startswith("IETF conflict review requested"))
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith("IETF conflict review initiated"))
         self.assertTrue('Conflict Review requested' in outbox[-1]['Subject'])
-        self.assertTrue(settings.IANA_EVAL_EMAIL in outbox[-1]['To'])
         
         # verify you can't start a review when a review is already in progress
         r = self.client.post(url,dict(ad="Aread Irector",create_in_state="Needs Shepherd",notify='ipu@ietf.org'))
@@ -116,10 +115,14 @@ class ConflictReviewTests(TestCase):
         self.assertEquals(review_doc.notify,u'ipu@ietf.org')
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
         self.assertTrue(doc in [x.target.document for x in review_doc.relateddocument_set.filter(relationship__slug='conflrev')])
+
         self.assertEqual(len(outbox), messages_before + 2)
+
         self.assertTrue('Conflict Review requested' in outbox[-1]['Subject'])
-        self.assertTrue(any('iesg-secretary@ietf.org' in x['To'] for x in outbox[-2:]))
-        self.assertTrue(any(settings.IANA_EVAL_EMAIL in x['To'] for x in outbox[-2:]))
+        self.assertTrue('drafts-eval@icann.org' in outbox[-1]['To'])
+
+        self.assertTrue('Conflict Review requested' in outbox[-2]['Subject'])
+        self.assertTrue('iesg-secretary@' in outbox[-2]['To'])
 
 
     def test_change_state(self):
@@ -189,9 +192,7 @@ class ConflictReviewTests(TestCase):
         # Regenerate does not save!
         self.assertEqual(doc.notify,newlist)
         q = PyQuery(r.content)
-        self.assertTrue('draft-imaginary-irtf-submission@ietf.org' in q('form input[name=notify]')[0].value)
-        self.assertTrue('irtf-chair@ietf.org' in q('form input[name=notify]')[0].value)
-        self.assertTrue('foo@bar.baz.com' not in q('form input[name=notify]')[0].value)
+        self.assertEqual(None,q('form input[name=notify]')[0].value)
 
     def test_edit_ad(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
@@ -281,7 +282,7 @@ class ConflictReviewTests(TestCase):
             self.assertTrue( 'NOT be published' in ''.join(wrap(r.content,2**16)))
         
         # submit
-        messages_before = len(outbox)
+        empty_outbox()
         r = self.client.post(url,dict(announcement_text=default_approval_text(doc)))
         self.assertEqual(r.status_code, 302)
 
@@ -289,12 +290,15 @@ class ConflictReviewTests(TestCase):
         self.assertEqual(doc.get_state_slug(),approve_type+'-sent')
         self.assertFalse(doc.ballot_open("conflrev"))
         
-        self.assertEqual(len(outbox), messages_before + 1)
-        self.assertTrue('Results of IETF-conflict review' in outbox[-1]['Subject'])
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('Results of IETF-conflict review' in outbox[0]['Subject'])
+        self.assertTrue('irtf-chair' in outbox[0]['To'])
+        self.assertTrue('ietf-announce@' in outbox[0]['Cc'])
+        self.assertTrue('iana@' in outbox[0]['Cc'])
         if approve_type == 'appr-noprob':
-            self.assertTrue( 'IESG has no problem' in ''.join(wrap(unicode(outbox[-1]),2**16)))
+            self.assertTrue( 'IESG has no problem' in ''.join(wrap(unicode(outbox[0]),2**16)))
         else:
-            self.assertTrue( 'NOT be published' in ''.join(wrap(unicode(outbox[-1]),2**16)))
+            self.assertTrue( 'NOT be published' in ''.join(wrap(unicode(outbox[0]),2**16)))
         
        
     def test_approve_reqnopub(self):

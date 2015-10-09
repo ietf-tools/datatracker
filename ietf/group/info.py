@@ -57,6 +57,7 @@ from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_
 from ietf.group.utils import can_manage_materials, get_group_or_404
 from ietf.utils.pipe import pipe
 from ietf.settings import MAILING_LIST_INFO_URL
+from ietf.mailtrigger.utils import gather_relevant_expansions
 
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
@@ -332,6 +333,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         entries.append(("About", urlreverse("group_about", kwargs=kwargs)))
     if group.features.has_materials and get_group_materials(group).exists():
         entries.append(("Materials", urlreverse("ietf.group.info.materials", kwargs=kwargs)))
+    entries.append(("Email expansions", urlreverse("ietf.group.info.email", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
     if group.features.has_documents:
         entries.append((mark_safe("Dependency graph &raquo;"), urlreverse("ietf.group.info.dependencies_pdf", kwargs=kwargs)))
@@ -480,6 +482,34 @@ def group_about(request, acronym, group_type=None):
                       "can_manage": can_manage,
                   }))
 
+def get_email_aliases(acronym, group_type):
+    if acronym:
+        pattern = re.compile('expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
+    else:
+        pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
+
+    aliases = []
+    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+        for line in virtual_file.readlines():
+            m = pattern.match(line)
+            if m:
+                if acronym or not group_type or Group.objects.filter(acronym=m.group(1),type__slug=group_type):
+                    aliases.append({'acronym':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
+    return aliases
+
+def email(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+
+    aliases = get_email_aliases(acronym, group_type)
+    expansions = gather_relevant_expansions(group=group)
+
+    return render(request, 'group/email.html',
+                  construct_group_menu_context(request, group, "email expansions", group_type, {
+                       'expansions':expansions,
+                       'aliases':aliases,
+                       'group':group,
+                       'ietf_domain':settings.IETF_DOMAIN,
+                  })) 
 
 def history(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
@@ -674,22 +704,13 @@ def dependencies_pdf(request, acronym, group_type=None):
 def email_aliases(request, acronym=None, group_type=None):
     group = get_group_or_404(acronym,group_type) if acronym else None
 
-    if acronym:
-        pattern = re.compile('expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
-    else:
+    if not acronym:
         # require login for the overview page, but not for the group-specific
-        # pages handled above
+        # pages 
         if not request.user.is_authenticated():
                 return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
-        pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
 
-    aliases = []
-    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            if m:
-                if acronym or not group_type or Group.objects.filter(acronym=m.group(1),type__slug=group_type):
-                    aliases.append({'acronym':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
+    aliases = get_email_aliases(acronym, group_type)
 
     return render(request,'group/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'group':group})
 

@@ -1,0 +1,10 @@
+{% autoescape off %}{% filter wordwrap:73 %}
+The {{ doc.group.acronym|upper }} {{ doc.group.type_id|upper }} has adopted {{ doc }} (entered by {{by}})
+
+{% if prev_state %}The document was previously in state {{prev_state.name}}
+
+{% endif %}The document is available at {{ url }}
+{% if comment %}
+
+Comment:
+{{ comment }}{% endif %}{% endfilter %}{% endautoescape %}

@@ -55,6 +55,7 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/(?:(?P<rev>[0-9-]+)/)?$', views_doc.document_main, name="doc_view"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/history/$', views_doc.document_history, name="doc_history"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/writeup/$', views_doc.document_writeup, name="doc_writeup"),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/email/$', views_doc.document_email, name="doc_email"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/shepherdwriteup/$', views_doc.document_shepherd_writeup, name="doc_shepherd_writeup"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/references/$', views_doc.document_references, name="doc_references"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/referencedby/$', views_doc.document_referenced_by, name="doc_referenced_by"),
@@ -65,7 +66,7 @@ urlpatterns = patterns('',
     (r'^(?P<name>[A-Za-z0-9._+-]+)/doc.json$', views_doc.document_json),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/(?P<ballot_id>[0-9]+)/$', views_doc.ballot_popup),
 
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/email-aliases/$', views_doc.email_aliases),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/email-aliases/$', RedirectView.as_view(pattern_name='doc_email', permanent=False),name='doc_specific_email_aliases'),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_draft.change_state, name='doc_change_state'), # IESG state
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/(?P<state_type>iana-action|iana-review)/$', views_draft.change_iana_state, name='doc_change_iana_state'),

@@ -9,12 +9,12 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
     TelechatDocEvent, WriteupDocEvent )
-from ietf.doc.utils_charter import next_revision, default_review_text, default_action_text
+from ietf.doc.utils_charter import next_revision, default_review_text, default_action_text 
 from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 
@@ -78,7 +78,8 @@ class EditCharterTests(TestCase):
         for slug in ("intrev", "extrev", "iesgrev"):
             s = State.objects.get(used=True, type="charter", slug=slug)
             events_before = charter.docevent_set.count()
-            mailbox_before = len(outbox)
+
+            empty_outbox()
         
             r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
             self.assertEqual(r.status_code, 302)
@@ -96,8 +97,17 @@ class EditCharterTests(TestCase):
             if slug in ("intrev", "iesgrev"):
                 self.assertTrue(find_event("created_ballot"))
 
-            self.assertEqual(len(outbox), mailbox_before + 1)
-            self.assertTrue("state changed" in outbox[-1]['Subject'].lower())
+            self.assertEqual(len(outbox), 3 if slug=="intrev" else 2 )
+
+            if slug=="intrev":
+                self.assertTrue("Internal WG Review" in outbox[-3]['Subject'])
+                self.assertTrue(all([x in outbox[-3]['To'] for x in ['iab@','iesg@']]))
+
+            self.assertTrue("state changed" in outbox[-2]['Subject'].lower())
+            self.assertTrue("iesg-secretary@" in outbox[-2]['To'])
+
+            self.assertTrue("State Update Notice" in outbox[-1]['Subject'])
+            self.assertTrue("ames-chairs@" in outbox[-1]['To'])
                     
     def test_edit_telechat_date(self):
         make_test_data()
@@ -196,8 +206,7 @@ class EditCharterTests(TestCase):
         self.assertEqual(charter.notify,newlist)
         q = PyQuery(r.content)
         formlist = q('form input[name=notify]')[0].value
-        self.assertTrue('marschairman@ietf.org' in formlist)
-        self.assertFalse('someone@example.com' in formlist)
+        self.assertEqual(formlist, None)
 
     def test_edit_ad(self):
         make_test_data()
@@ -264,43 +273,101 @@ class EditCharterTests(TestCase):
             self.assertEqual(f.read(),
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
-    def test_edit_announcement_text(self):
+    def test_edit_review_announcement_text(self):
         draft = make_test_data()
         charter = draft.group.charter
 
-        for ann in ("action", "review"):
-            url = urlreverse('ietf.doc.views_charter.announcement_text', kwargs=dict(name=charter.name, ann=ann))
-            self.client.logout()
-            login_testing_unauthorized(self, "secretary", url)
+        url = urlreverse('ietf.doc.views_charter.review_announcement_text', kwargs=dict(name=charter.name))
+        self.client.logout()
+        login_testing_unauthorized(self, "secretary", url)
 
-            # normal get
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertEqual(len(q('textarea[name=announcement_text]')), 1)
-            # as Secretariat, we can send
-            if ann == "review":
-                mailbox_before = len(outbox)
-                by = Person.objects.get(user__username="secretary")
-                r = self.client.post(url, dict(
-                    announcement_text=default_review_text(draft.group, charter, by).text,
-                    send_text="1"))
-                self.assertEqual(len(outbox), mailbox_before + 1)
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('textarea[name=announcement_text]')), 1)
+        self.assertEqual(len(q('textarea[name=new_work_text]')), 1)
 
-            # save
-            r = self.client.post(url, dict(
-                    announcement_text="This is a simple test.",
-                    save_text="1"))
-            self.assertEqual(r.status_code, 302)
-            self.assertTrue("This is a simple test" in charter.latest_event(WriteupDocEvent, type="changed_%s_announcement" % ann).text)
+        by = Person.objects.get(user__username="secretary")
 
-            # test regenerate
-            r = self.client.post(url, dict(
-                    announcement_text="This is a simple test.",
-                    regenerate_text="1"))
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_%s_announcement" % ann).text)
+        (e1, e2) = default_review_text(draft.group, charter, by)
+        announcement_text = e1.text
+        new_work_text = e2.text
+
+        empty_outbox()
+        r = self.client.post(url, dict(
+                announcement_text=announcement_text,
+                new_work_text=new_work_text,
+                send_both="1"))
+        self.assertEqual(len(outbox), 2)
+        self.assertTrue(all(['WG Review' in m['Subject'] for m in outbox]))
+        self.assertTrue('ietf-announce@' in outbox[0]['To'])
+        self.assertTrue('mars-wg@' in outbox[0]['Cc'])
+        self.assertTrue('new-work@' in outbox[1]['To'])
+
+        empty_outbox()
+        r = self.client.post(url, dict(
+                announcement_text=announcement_text,
+                new_work_text=new_work_text,
+                send_annc_only="1"))
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('ietf-announce@' in outbox[0]['To'])
+
+        empty_outbox()
+        r = self.client.post(url, dict(
+                announcement_text=announcement_text,
+                new_work_text=new_work_text,
+                send_nw_only="1"))
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('new-work@' in outbox[0]['To'])
+
+        # save
+        r = self.client.post(url, dict(
+                announcement_text="This is a simple test.",
+                new_work_text="New work gets something different.",
+                save_text="1"))
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue("This is a simple test" in charter.latest_event(WriteupDocEvent, type="changed_review_announcement").text)
+        self.assertTrue("New work gets something different." in charter.latest_event(WriteupDocEvent, type="changed_new_work_text").text)
+
+        # test regenerate
+        r = self.client.post(url, dict(
+                announcement_text="This is a simple test.",
+                new_work_text="Too simple perhaps?",
+                regenerate_text="1"))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_review_announcement").text)
+        self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_new_work_text").text)
+
+    def test_edit_action_announcement_text(self):
+        draft = make_test_data()
+        charter = draft.group.charter
+
+        url = urlreverse('ietf.doc.views_charter.action_announcement_text', kwargs=dict(name=charter.name))
+        self.client.logout()
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('textarea[name=announcement_text]')), 1)
+
+        # save
+        r = self.client.post(url, dict(
+                announcement_text="This is a simple test.",
+                save_text="1"))
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue("This is a simple test" in charter.latest_event(WriteupDocEvent, type="changed_action_announcement").text)
+
+        # test regenerate
+        r = self.client.post(url, dict(
+                announcement_text="This is a simple test.",
+                regenerate_text="1"))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_action_announcement").text)
 
     def test_edit_ballot_writeupnotes(self):
         draft = make_test_data()
@@ -334,11 +401,12 @@ class EditCharterTests(TestCase):
         self.assertTrue("This is a simple test" in charter.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text").text)
 
         # send
-        mailbox_before = len(outbox)
+        empty_outbox()
         r = self.client.post(url, dict(
             ballot_writeup="This is a simple test.",
             send_ballot="1"))
-        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('Evaluation' in outbox[0]['Subject'])
         
     def test_approve(self):
         make_test_data()
@@ -394,7 +462,7 @@ class EditCharterTests(TestCase):
         self.assertEqual(len(q('pre')), 1)
 
         # approve
-        mailbox_before = len(outbox)
+        empty_outbox()
 
         r = self.client.post(url, dict())
         self.assertEqual(r.status_code, 302)
@@ -406,9 +474,12 @@ class EditCharterTests(TestCase):
         self.assertEqual(charter.rev, "01")
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))))
 
-        self.assertEqual(len(outbox), mailbox_before + 2)
-        self.assertTrue("WG Action" in outbox[-1]['Subject'])
-        self.assertTrue("approved" in outbox[-2]['Subject'].lower())
+        self.assertEqual(len(outbox), 2)
+        self.assertTrue("approved" in outbox[0]['Subject'].lower())
+        self.assertTrue("iesg-secretary" in outbox[0]['To'])
+        self.assertTrue("WG Action" in outbox[1]['Subject'])
+        self.assertTrue("ietf-announce" in outbox[1]['To'])
+        self.assertTrue("ames-wg@ietf.org" in outbox[1]['Cc'])
 
         self.assertEqual(group.groupmilestone_set.filter(state="charter").count(), 0)
         self.assertEqual(group.groupmilestone_set.filter(state="active").count(), 2)

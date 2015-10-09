@@ -25,29 +25,15 @@
       <input class="form-control" type="text" placeholder="{{ to }}" disabled>
     </div>
 
+   <div class="form-group">
+   {% bootstrap_form cc_select_form %}
+   </div>
+
     <div class="form-group">
-      <label>Cc</label>
-      <input class="form-control" type="email" name="cc">
+      <label>Additional Cc Addresses</label>
+      <input class="form-control" type="email" name="extra_cc">
       <div class="help-block">Separate email addresses with commas.</div>
     </div>
-
-    {% if doc.notify %}
-      <div class="checkbox">
-        <label>
-          <input type="checkbox" name="cc_state_change" value="1" checked>
-          <b>Cc:</b> {{ doc.notify }}
-        </label>
-      </div>
-    {% endif %}
-
-    {% if doc.group.list_email %}
-      <div class="checkbox">
-        <label>
-          <input type="checkbox" name="cc_group_list" value="1" checked>
-          <b>Cc:</b> {{ doc.group.list_email }}
-        </label>
-      </div>
-    {% endif %}
 
     <div class="form-group">
       <label>Subject</label>

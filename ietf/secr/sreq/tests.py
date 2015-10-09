@@ -5,6 +5,7 @@ from ietf.group.models import Group
 #from ietf.meeting.models import Session
 #from ietf.utils.test_data import make_test_data
 from ietf.meeting.test_data import make_meeting_test_data as make_test_data
+from ietf.utils.mail import outbox, empty_outbox
 
 from pyquery import PyQuery
 
@@ -108,6 +109,8 @@ class NotMeetingCase(TestCase):
         url = reverse('sessions_no_session',kwargs={'acronym':group.acronym}) 
         self.client.login(username="secretary", password="secretary+password")
 
+        empty_outbox()
+
         r = self.client.get(url,follow=True)
         # If the view invoked by that get throws an exception (such as an integrity error),
         # the traceback from this test will talk about a TransactionManagementError and
@@ -120,6 +123,10 @@ class NotMeetingCase(TestCase):
         r = self.client.get(url,follow=True)
         self.assertEqual(r.status_code, 200)
         self.assertTrue('is already marked as not meeting' in r.content)
+
+        self.assertEqual(len(outbox),1)
+        self.assertTrue('Not having a session' in outbox[0]['Subject'])
+        self.assertTrue('session-request@' in outbox[0]['To'])
 
 class RetrievePreviousCase(TestCase):
     pass
