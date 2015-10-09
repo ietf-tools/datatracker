@@ -174,8 +174,8 @@
     
 </table>
 
-<p>
-  <form method="post">
+
+<form method="post">
   {% csrf_token %}
   {% if liaison.state.slug != 'dead' and can_edit %}
     <a class="btn btn-default" href="{% url "ietf.liaisons.views.liaison_edit" object_id=liaison.pk %}">Edit liaison</a>
@@ -193,7 +193,7 @@
   {% if liaison.state.slug == 'dead' and can_edit %}
     <input class="btn btn-default" type="submit" value="Resurrect" name='resurrect' />
   {% endif %}
-  </form>
-</p>
+</form>
+
 
 {% endblock %}
