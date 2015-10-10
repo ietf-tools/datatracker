@@ -39,18 +39,14 @@
           </tr>
         </thead>
         <tbody>
-          {% for role in person.role_set.all %}
+          {% for role in roles %}
             <tr>
                 <td>{{ role.name }} </td>
                 <td>
-                  {% if role.group.type.slug == "wg" %}
-                    <a href="{% url "groups_view" acronym=role.group.acronym %}">{{ role.group.acronym }}</a>
+                  {% if role.group.type.slug == "area" %}
+                      <a href="{% url "areas_view" name=role.group.acronym %}">{{ role.group.acronym }}{% if role.group.state.slug == "conclude" %} (concluded){% endif %}</a>
                   {% else %}
-                    {% if role.group.type.slug == "area" %}
-                      <a href="{% url "areas_view" name=role.group.acronym %}">{{ role.group.acronym }}</a>
-                    {% else %}
-                      {{ role.group }}
-                    {% endif %}
+                    <a href="{% url "groups_view" acronym=role.group.acronym %}">{{ role.group.acronym }}{% if role.group.state.slug == "conclude" %} (concluded){% endif %}</a>
                   {% endif %}
                 </td>
                 <td>{{ role.email }}</td>
