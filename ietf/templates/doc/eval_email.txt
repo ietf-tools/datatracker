@@ -1,5 +1,6 @@
-{% load mail_filters %}{% autoescape off %}To: Internet Engineering Steering Group <iesg@ietf.org>
-From: IESG Secretary <iesg-secretary@ietf.org>
+{% load mail_filters %}{% autoescape off %}To: {{to}} {% if cc %}
+Cc: {{cc}}
+{%endif%}From: IESG Secretary <iesg-secretary@ietf.org>
 Reply-To: IESG Secretary <iesg-secretary@ietf.org>
 Subject: Evaluation: {{doc.title}}
 

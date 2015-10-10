@@ -10,7 +10,7 @@ from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDo
 from ietf.doc.utils import get_document_content, add_state_change_event
 from ietf.person.models import Person
 from ietf.doc.lastcall import request_last_call
-from ietf.doc.mails import email_ad, email_state_changed
+from ietf.doc.mails import email_state_changed
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem, Telechat
 from ietf.iesg.agenda import agenda_data, get_doc_section
 from ietf.ietfauth.utils import role_required
@@ -261,8 +261,7 @@ def doc_detail(request, date, name):
                     doc.time = (e and e.time) or datetime.datetime.now()
                     doc.save()
 
-                    email_state_changed(request, doc, e.desc)
-                    email_ad(request, doc, doc.ad, login, e.desc)
+                    email_state_changed(request, doc, e.desc, 'doc_state_edited')
     
                     if new_state.slug == "lc-req":
                         request_last_call(request, doc)

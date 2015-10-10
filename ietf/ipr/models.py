@@ -92,6 +92,18 @@ class IprDisclosureBase(models.Model):
         else:
             return None
 
+    def recursively_updates(self,disc_set=None):
+        """Returns the set of disclosures updated directly or transitively by this disclosure"""
+        if disc_set == None:
+            disc_set = set()
+        new_candidates = set([y.target.get_child() for y in self.updates])
+        unseen = new_candidates - disc_set
+        disc_set.update(unseen)
+        for disc in unseen:
+            disc_set.update(disc.recursively_updates(disc_set))
+        return disc_set
+        
+
 class HolderIprDisclosure(IprDisclosureBase):
     ietfer_name              = models.CharField(max_length=255, blank=True) # "Whose Personal Belief Triggered..."
     ietfer_contact_email     = models.EmailField(blank=True)

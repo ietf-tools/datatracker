@@ -127,6 +127,25 @@ class Group(GroupInfo):
     def has_tools_page(self):
         return self.type_id in ['wg', ] and self.state_id in ['active', 'dormant', 'replaced', 'conclude']
 
+    def liaison_approvers(self):
+        '''Returns roles that have liaison statement approval authority for group'''
+
+        # a list of tuples, group query kwargs, role query kwargs
+        GROUP_APPROVAL_MAPPING = [
+            ({'acronym':'ietf'},{'name':'chair'}),
+            ({'acronym':'iab'},{'name':'chair'}),
+            ({'type':'area'},{'name':'ad'}),
+            ({'type':'wg'},{'name':'ad'}), ]
+        
+        for group_kwargs,role_kwargs in GROUP_APPROVAL_MAPPING:
+            if self in Group.objects.filter(**group_kwargs):
+                # TODO is there a cleaner way?
+                if self.type == 'wg':
+                    return self.parent.role_set.filter(**role_kwargs)
+                else:
+                    return self.role_set.filter(**role_kwargs)
+        return self.role_set.none()
+
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')
     acronym = models.CharField(max_length=40)

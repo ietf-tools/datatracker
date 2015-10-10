@@ -8,7 +8,7 @@ import urllib2
 from django.utils.http import urlquote
 from django.conf import settings
 
-from ietf.doc.mails import email_ad, email_state_changed
+from ietf.doc.mails import email_state_changed
 from ietf.doc.models import Document, DocEvent, State, StateDocEvent, StateType, save_document_in_history
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person
@@ -205,8 +205,7 @@ def update_history_with_changes(changes, send_email=True):
                     doc.set_state(state)
 
                     if send_email and (state != prev_state):
-                        email_state_changed(None, doc, "IANA %s state changed to %s" % (kind, state.name))
-                        email_ad(None, doc, doc.ad, system, "IANA %s state changed to %s" % (kind, state.name))
+                        email_state_changed(None, doc, "IANA %s state changed to %s" % (kind, state.name),'doc_iana_state_changed')
 
                 if doc.time < timestamp:
                     doc.time = timestamp

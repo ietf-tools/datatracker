@@ -5,7 +5,6 @@ import math
 import datetime
 
 from django.conf import settings
-from django.db.models import Q
 from django.db.models.query import EmptyQuerySet
 from django.forms import ValidationError
 from django.utils.html import strip_tags, escape
@@ -13,29 +12,29 @@ from django.utils.html import strip_tags, escape
 from ietf.doc.models import Document, DocHistory, State
 from ietf.doc.models import DocAlias, RelatedDocument, BallotType, DocReminder
 from ietf.doc.models import DocEvent, BallotDocEvent, NewRevisionDocEvent, StateDocEvent
-from ietf.doc.models import save_document_in_history, STATUSCHANGE_RELATIONS
+from ietf.doc.models import save_document_in_history
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
-from ietf.person.models import Email
 from ietf.ietfauth.utils import has_role
 from ietf.utils import draft, markup_txt
 from ietf.utils.mail import send_mail
+from ietf.mailtrigger.utils import gather_address_lists
 
-#FIXME - it would be better if this lived in ietf/doc/mails.py, but there's
+#TODO FIXME - it would be better if this lived in ietf/doc/mails.py, but there's
 #        an import order issue to work out.
 def email_update_telechat(request, doc, text):
-    to = set(['iesg@ietf.org','iesg-secretary@ietf.org'])
-    to.update(set([x.strip() for x in doc.notify.replace(';', ',').split(',')]))
+    (to, cc) = gather_address_lists('doc_telechat_details_changed',doc=doc)
 
     if not to:
         return
     
     text = strip_tags(text)
-    send_mail(request, list(to), None,
+    send_mail(request, to, None,
               "Telechat update notice: %s" % doc.file_tag(),
               "doc/mail/update_telechat.txt",
               dict(text=text,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=cc)
 
 def get_state_types(doc):
     res = []
@@ -458,35 +457,19 @@ def rebuild_reference_relations(doc,filename=None):
 
     return ret
 
-def collect_email_addresses(emails, doc):
-    for author in doc.authors.all():
-        if author.address not in emails:
-            emails[author.address] = '"%s"' % (author.person.name)
-    if doc.group and doc.group.acronym != 'none':
-        for role in doc.group.role_set.filter(name='chair'):
-            if role.email.address not in emails:
-                emails[role.email.address] = '"%s"' % (role.person.name)
-        if doc.group.type.slug == 'wg':
-            address = '%s-ads@ietf.org' % doc.group.acronym
-            if address not in emails:
-                emails[address] = '"%s-ads"' % (doc.group.acronym)
-        elif doc.group.type.slug == 'rg':
-            for role in doc.group.parent.role_set.filter(name='chair'):
-                if role.email.address not in emails:
-                    emails[role.email.address] = '"%s"' % (role.person.name)
-    if doc.shepherd and doc.shepherd.address not in emails:
-        emails[doc.shepherd.address] = u'"%s"' % (doc.shepherd.person.name or "")
-
 def set_replaces_for_document(request, doc, new_replaces, by, email_subject, email_comment=""):
-    emails = {}
-    collect_email_addresses(emails, doc)
+    addrs = gather_address_lists('doc_replacement_changed',doc=doc)
+    to = set(addrs.to)
+    cc = set(addrs.cc)
 
     relationship = DocRelationshipName.objects.get(slug='replaces')
     old_replaces = doc.related_that_doc("replaces")
 
     for d in old_replaces:
         if d not in new_replaces:
-            collect_email_addresses(emails, d.document)
+            other_addrs = gather_address_lists('doc_replacement_changed',doc=d.document)
+            to.update(other_addrs.to)
+            cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
                 s = 'active' if d.document.expires > datetime.datetime.now() else 'expired'
@@ -494,7 +477,9 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, ema
 
     for d in new_replaces:
         if d not in old_replaces:
-            collect_email_addresses(emails, d.document)
+            other_addrs = gather_address_lists('doc_replacement_changed',doc=d.document)
+            to.update(other_addrs.to)
+            cc.update(other_addrs.cc)
             RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
             d.document.set_state(State.objects.get(type='draft', slug='repl'))
 
@@ -512,20 +497,16 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, ema
     if email_comment:
         email_desc += "\n" + email_comment
 
-    to = [
-        u'%s <%s>' % (emails[email], email) if emails[email] else u'<%s>' % email
-        for email in sorted(emails)
-    ]
-
     from ietf.doc.mails import html_to_text
 
-    send_mail(request, to,
+    send_mail(request, list(to),
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
               email_subject,
               "doc/mail/change_notice.txt",
               dict(text=html_to_text(email_desc),
                    doc=doc,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=list(cc))
 
 def check_common_doc_name_rules(name):
     """Check common rules for document names for use in forms, throws
@@ -543,40 +524,8 @@ def check_common_doc_name_rules(name):
         raise ValidationError(errors)
 
 def get_initial_notify(doc,extra=None):
-    # set change state notice to something sensible
+    # With the mailtrigger based changes, a document's notify should start empty
     receivers = []
-
-    if doc.type.slug=='draft':
-        if doc.group.type_id in ("individ", "area"):
-             for a in doc.authors.all():
-                 receivers.append(a.address)
-        else:
-            receivers.append("%s-chairs@%s" % (doc.group.acronym, settings.DRAFT_ALIAS_DOMAIN))
-            for editor in Email.objects.filter(role__name="editor", role__group=doc.group):
-                receivers.append(editor.address)
-
-        receivers.append("%s@%s" % (doc.name, settings.DRAFT_ALIAS_DOMAIN))
-        receivers.append("%s.ad@%s" % (doc.name, settings.DRAFT_ALIAS_DOMAIN))
-        receivers.append("%s.shepherd@%s" % (doc.name, settings.DRAFT_ALIAS_DOMAIN))
-
-    elif doc.type.slug=='charter':
-        receivers.extend([role.person.formatted_email() for role in doc.group.role_set.filter(name__slug__in=['ad','chair','secr','techadv'])])
-
-    else:
-        pass
-
-    for relation in doc.relateddocument_set.filter(Q(relationship='conflrev')|Q(relationship__in=STATUSCHANGE_RELATIONS)):
-        if relation.relationship.slug=='conflrev':
-            doc_to_review = relation.target.document
-            receivers.extend([x.person.formatted_email() for x in Role.objects.filter(group__acronym=doc_to_review.stream.slug,name='chair')])
-            receivers.append("%s@%s" % (doc_to_review.name, settings.DRAFT_ALIAS_DOMAIN))
-        elif relation.relationship.slug in STATUSCHANGE_RELATIONS:
-            affected_doc = relation.target.document
-            if affected_doc.notify:
-                receivers.extend(affected_doc.notify.split(','))
-
-    if doc.shepherd:
-        receivers.append(doc.shepherd.email_address())
 
     if extra:
         if isinstance(extra,basestring):

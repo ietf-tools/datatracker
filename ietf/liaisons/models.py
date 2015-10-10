@@ -165,6 +165,17 @@ class LiaisonStatement(models.Model):
         self.state = state
         self.save()
 
+    def approver_emails(self):
+        '''Send mail requesting approval of pending liaison statement.  Send mail to
+        the intersection of approvers for all from_groups
+        '''
+        approval_set = set()
+        if self.from_groups.first():
+            approval_set.update(self.from_groups.first().liaison_approvers())
+        if self.from_groups.count() > 1:
+            for group in self.from_groups.all():
+                approval_set.intersection_update(group.liaison_approvers())
+        return list(set([ r.email.address for r in approval_set ]))
 
 class LiaisonStatementAttachment(models.Model):
     statement = models.ForeignKey(LiaisonStatement)

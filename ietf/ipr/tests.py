@@ -3,7 +3,6 @@ import urllib
 
 from pyquery import PyQuery
 
-from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import DocAlias
@@ -15,7 +14,8 @@ from ietf.ipr.utils import get_genitive, get_ipr_summary
 from ietf.message.models import Message
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
+from ietf.mailtrigger.utils import gather_address_lists
 
 
 class IprTests(TestCase):
@@ -251,6 +251,7 @@ class IprTests(TestCase):
         self.assertTrue(len(q("form .has-error")) > 0)
 
         # successful post
+        empty_outbox()
         r = self.client.post(url, {
             "holder_legal_name": "Test Legal",
             "holder_contact_name": "Test Holder",
@@ -262,6 +263,9 @@ class IprTests(TestCase):
             })
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Your IPR disclosure has been submitted" in r.content)
+        self.assertEqual(len(outbox),1)
+        self.assertTrue('New IPR Submission' in outbox[0]['Subject'])
+        self.assertTrue('ietf-ipr@' in outbox[0]['To'])
 
         iprs = IprDisclosureBase.objects.filter(title__icontains="General License Statement")
         self.assertEqual(len(iprs), 1)
@@ -277,6 +281,7 @@ class IprTests(TestCase):
         url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
 
         # successful post
+        empty_outbox()
         r = self.client.post(url, {
             "holder_legal_name": "Test Legal",
             "holder_contact_name": "Test Holder",
@@ -305,6 +310,9 @@ class IprTests(TestCase):
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
         self.assertEqual(ipr.state.slug, 'pending')
         self.assertTrue(isinstance(ipr.get_child(),HolderIprDisclosure))
+        self.assertEqual(len(outbox),1)
+        self.assertTrue('New IPR Submission' in outbox[0]['Subject'])
+        self.assertTrue('ietf-ipr@' in outbox[0]['To'])
 
     def test_new_thirdparty(self):
         """Add a new third-party disclosure.  Note: submitter does not need to be logged in.
@@ -313,6 +321,7 @@ class IprTests(TestCase):
         url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "third-party" })
 
         # successful post
+        empty_outbox()
         r = self.client.post(url, {
             "holder_legal_name": "Test Legal",
             "ietfer_name": "Test Participant",
@@ -338,6 +347,9 @@ class IprTests(TestCase):
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
         self.assertEqual(ipr.state.slug, "pending")
         self.assertTrue(isinstance(ipr.get_child(),ThirdPartyIprDisclosure))
+        self.assertEqual(len(outbox),1)
+        self.assertTrue('New IPR Submission' in outbox[0]['Subject'])
+        self.assertTrue('ietf-ipr@' in outbox[0]['To'])
 
     def test_update(self):
         draft = make_test_data()
@@ -345,6 +357,7 @@ class IprTests(TestCase):
         url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
 
         # successful post
+        empty_outbox()
         r = self.client.post(url, {
             "updates": str(original_ipr.pk),
             "holder_legal_name": "Test Legal",
@@ -374,6 +387,9 @@ class IprTests(TestCase):
         self.assertEqual(ipr.state.slug, 'pending')
 
         self.assertTrue(ipr.relatedipr_source_set.filter(target=original_ipr))
+        self.assertEqual(len(outbox),1)
+        self.assertTrue('New IPR Submission' in outbox[0]['Subject'])
+        self.assertTrue('ietf-ipr@' in outbox[0]['To'])
 
     def test_addcomment(self):
         make_test_data()
@@ -484,12 +500,15 @@ I would like to revoke this declaration.
             name = 'form-%d-type' % i
             data[name] = q('form input[name=%s]'%name).val()
             text_name = 'form-%d-text' % i
-            data[text_name] = q('form textarea[name=%s]'%text_name).text()
+            data[text_name] = q('form textarea[name=%s]'%text_name).html().strip()
+            # Do not try to use
+            #data[text_name] = q('form textarea[name=%s]'%text_name).text()
+            # .text does not work - the field will likely contain <> characters
         r = self.client.post(url, data )
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),len_before+2)
         self.assertTrue('george@acme.com' in outbox[len_before]['To'])
-        self.assertTrue('aread@ietf.org' in outbox[len_before+1]['To'])
+        self.assertTrue('draft-ietf-mars-test@ietf.org' in outbox[len_before+1]['To'])
         self.assertTrue('mars-wg@ietf.org' in outbox[len_before+1]['Cc'])
 
     def test_process_response_email(self):
@@ -506,6 +525,7 @@ I would like to revoke this declaration.
             reply_to=get_reply_to(),
             body='Testing.',
             response_due=yesterday.isoformat())
+        empty_outbox()
         r = self.client.post(url,data,follow=True)
         #print r.content
         self.assertEqual(r.status_code,200)
@@ -513,13 +533,17 @@ I would like to revoke this declaration.
         self.assertEqual(q.count(),1)
         event = q[0].msgevents.first()
         self.assertTrue(event.response_past_due())
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('joe@test.com' in outbox[0]['To'])
         
         # test process response uninteresting message
+        addrs = gather_address_lists('ipr_disclosure_submitted').as_strings()
         message_string = """To: {}
+Cc: {}
 From: joe@test.com
 Date: {}
 Subject: test
-""".format(settings.IPR_EMAIL_TO,datetime.datetime.now().ctime())
+""".format(addrs.to, addrs.cc, datetime.datetime.now().ctime())
         result = process_response_email(message_string)
         self.assertIsNone(result)
         

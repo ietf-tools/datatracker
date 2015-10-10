@@ -1,5 +1,6 @@
-{% load mail_filters %}{% autoescape off %}To: IESG Secretary <iesg-secretary@ietf.org>
-From: {{ frm }}
+{% load mail_filters %}{% autoescape off %}To: {{to}}{% if cc %}
+Cc: {{cc}}
+{% endif %}From: {{ frm }}
 Subject: Conflict Review requested for {{reviewed_doc.name}}
 
 {{ by.name }} has requested a conflict review for:

@@ -1,6 +1,6 @@
 {% load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
-To: {{ review.notify }}
-Cc: The IESG <iesg@ietf.org>, <iana@iana.org>, <ietf-announce@ietf.org> 
+To: {{ to }}
+Cc: {{ cc }}
 Subject: Results of IETF-conflict review for {{conflictdoc.canonical_name}}-{{conflictdoc.rev}}
 
 {% filter wordwrap:73 %}The IESG has completed a review of {{conflictdoc.canonical_name}}-{{conflictdoc.rev}} consistent with RFC5742.

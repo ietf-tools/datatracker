@@ -258,6 +258,7 @@ INSTALLED_APPS = (
     'ietf.ipr',
     'ietf.liaisons',
     'ietf.mailinglists',
+    'ietf.mailtrigger',
     'ietf.meeting',
     'ietf.message',
     'ietf.name',
@@ -428,11 +429,9 @@ CACHES = {
     }
 }
 
-IPR_EMAIL_TO = 'ietf-ipr@ietf.org'
-DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
+IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
-IANA_APPROVE_EMAIL = "drafts-approval@icann.org"
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
@@ -450,7 +449,6 @@ RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 ROLODEX_URL = ""
 NOMCOM_PUBLIC_KEYS_DIR = '/a/www/nomcom/public_keys/'
 NOMCOM_FROM_EMAIL = 'nomcom-chair@ietf.org'
-NOMCOM_ADMIN_EMAIL = DEFAULT_FROM_EMAIL
 OPENSSL_COMMAND = '/usr/bin/openssl'
 DAYS_TO_EXPIRE_NOMINATION_LINK = ''
 DEFAULT_FEEDBACK_TYPE = 'offtopic'
@@ -458,7 +456,6 @@ NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina']
 
 # ID Submission Tool settings
 IDSUBMIT_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
-IDSUBMIT_TO_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 

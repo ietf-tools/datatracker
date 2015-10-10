@@ -1,13 +1,12 @@
 import re, datetime, os
 
 from django.template.loader import render_to_string
-from django.utils.html import strip_tags
 from django.conf import settings
 
-from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent, BallotPositionDocEvent
-from ietf.person.models import Person
+from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent 
 from ietf.utils.history import find_history_active_at
-from ietf.utils.mail import send_mail_text
+from ietf.utils.mail import parse_preformatted
+from ietf.mailtrigger.utils import gather_address_lists
 
 def charter_name_for_group(group):
     if group.type_id == "rg":
@@ -83,19 +82,6 @@ def historic_milestones_for_charter(charter, rev):
 
     return res
     
-def email_state_changed(request, doc, text):
-    to = [e.strip() for e in doc.notify.replace(';', ',').split(',')]
-    if not to:
-        return
-    
-    text = strip_tags(text)
-    text += "\n\n"
-    text += "URL: %s" % (settings.IDTRACKER_BASE_URL + doc.get_absolute_url())
-
-    send_mail_text(request, to, None,
-                   "State changed: %s-%s" % (doc.canonical_name(), doc.rev),
-                   text)
-
 def generate_ballot_writeup(request, doc):
     e = WriteupDocEvent()
     e.type = "changed_ballot_writeup_text"
@@ -113,6 +99,7 @@ def default_action_text(group, charter, by):
     else:
         action = "Rechartered"
 
+    addrs = gather_address_lists('ballot_approved_charter',doc=charter,group=group).as_strings(compact=False)
     e = WriteupDocEvent(doc=charter, by=by)
     e.by = by
     e.type = "changed_action_announcement"
@@ -126,93 +113,68 @@ def default_action_text(group, charter, by):
                                    techadv=group.role_set.filter(name="techadv"),
                                    milestones=group.groupmilestone_set.filter(state="charter"),
                                    action_type=action,
+                                   to=addrs.to,
+                                   cc=addrs.cc,
                                    ))
 
     e.save()
     return e
 
+def derive_new_work_text(review_text,group):
+    addrs= gather_address_lists('charter_external_review_new_work',group=group).as_strings()
+    (m,_,_) = parse_preformatted(review_text,
+                                 override={'To':addrs.to,
+                                           'Cc':addrs.cc,
+                                           'From':'The IESG <iesg@ietf.org>',
+                                           'Reply_to':'<iesg@ietf.org>'})
+    if not addrs.cc:
+        del m['Cc']
+    return m.as_string()
+
 def default_review_text(group, charter, by):
-    e = WriteupDocEvent(doc=charter, by=by)
-    e.by = by
-    e.type = "changed_review_announcement"
-    e.desc = "%s review text was changed" % group.type.name
-    e.text = render_to_string("doc/charter/review_text.txt",
+    now = datetime.datetime.now()
+    addrs=gather_address_lists('charter_external_review',group=group).as_strings(compact=False)
+
+    e1 = WriteupDocEvent(doc=charter, by=by)
+    e1.by = by
+    e1.type = "changed_review_announcement"
+    e1.desc = "%s review text was changed" % group.type.name
+    e1.text = render_to_string("doc/charter/review_text.txt",
                               dict(group=group,
-                                   charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
-                                   charter_text=read_charter_text(charter),
-                                   chairs=group.role_set.filter(name="chair"),
-                                   secr=group.role_set.filter(name="secr"),
-                                   techadv=group.role_set.filter(name="techadv"),
-                                   milestones=group.groupmilestone_set.filter(state="charter"),
-                                   review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
-                                   review_type="new" if group.state_id == "proposed" else "recharter",
+                                    charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
+                                    charter_text=read_charter_text(charter),
+                                    chairs=group.role_set.filter(name="chair"),
+                                    secr=group.role_set.filter(name="secr"),
+                                    techadv=group.role_set.filter(name="techadv"),
+                                    milestones=group.groupmilestone_set.filter(state="charter"),
+                                    review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
+                                    review_type="new" if group.state_id == "proposed" else "recharter",
+                                    to=addrs.to,
+                                    cc=addrs.cc,
                                    )
                               )
-    e.save()
-    return e
+    e1.time = now
+    e1.save()
+    
+    e2 = WriteupDocEvent(doc=charter, by=by)
+    e2.by = by
+    e2.type = "changed_new_work_text"
+    e2.desc = "%s review text was changed" % group.type.name
+    e2.text = derive_new_work_text(e1.text,group)
+    e2.time = now
+    e2.save()
+
+    return (e1,e2)
 
 def generate_issue_ballot_mail(request, doc, ballot):
-    active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active", email__role__group__type="area").distinct()
     
-    seen = []
-    positions = []
-    for p in BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ballot=ballot).order_by("-time", '-id').select_related('ad'):
-        if p.ad not in seen:
-            positions.append(p)
-            seen.append(p.ad)
-
-    # format positions and setup blocking and non-blocking comments
-    ad_feedback = []
-    seen = set()
-    active_ad_positions = []
-    inactive_ad_positions = []
-    for p in positions:
-        if p.ad in seen:
-            continue
-
-        seen.add(p.ad)
-        
-        def formatted(val):
-            if val:
-                return "[ X ]"
-            else:
-                return "[   ]"
-
-        fmt = u"%-21s%-6s%-6s%-8s%-7s" % (
-            p.ad.plain_name(),
-            formatted(p.pos_id == "yes"),
-            formatted(p.pos_id == "no"),
-            formatted(p.pos_id == "block"),
-            formatted(p.pos_id == "abstain"),
-            )
-
-        if p.ad in active_ads:
-            active_ad_positions.append(fmt)
-            if not p.pos or not p.pos.blocking:
-                p.discuss = ""
-            if p.comment or p.discuss:
-                ad_feedback.append(p)
-        else:
-            inactive_ad_positions.append(fmt)
-        
-    active_ad_positions.sort()
-    inactive_ad_positions.sort()
-    ad_feedback.sort(key=lambda p: p.ad.plain_name())
-
-    e = doc.latest_event(WriteupDocEvent, type="changed_action_announcement")
-    approval_text = e.text if e else ""
-
-    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
-    ballot_writeup = e.text if e else ""
+    addrs=gather_address_lists('ballot_issued',doc=doc).as_strings()
 
     return render_to_string("doc/charter/issue_ballot_mail.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
-                                 active_ad_positions=active_ad_positions,
-                                 inactive_ad_positions=inactive_ad_positions,
-                                 ad_feedback=ad_feedback,
-                                 approval_text=approval_text,
-                                 ballot_writeup=ballot_writeup,
+                                 to = addrs.to,
+                                 cc = addrs.cc,
                                  )
                             )
 

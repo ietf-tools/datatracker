@@ -221,8 +221,8 @@ class SubmitTests(TestCase):
         self.assertTrue("review" in outbox[-1]["Subject"].lower())
         self.assertTrue(name in unicode(outbox[-1]))
         self.assertTrue(sug_replaced_alias.name in unicode(outbox[-1]))
-        self.assertTrue("ameschairman" in outbox[-1]["To"].lower())
-        self.assertTrue("marschairman" in outbox[-1]["To"].lower())
+        self.assertTrue("ames-chairs@" in outbox[-1]["To"].lower())
+        self.assertTrue("mars-chairs@" in outbox[-1]["To"].lower())
 
     def test_submit_new_wg_txt(self):
         self.submit_new_wg(["txt"])
@@ -324,6 +324,7 @@ class SubmitTests(TestCase):
         self.assertTrue((u"I-D Action: %s" % name) in outbox[-3]["Subject"])
         self.assertTrue((u"I-D Action: %s" % name) in draft.message_set.order_by("-time")[0].subject)
         self.assertTrue("Author Name" in unicode(outbox[-3]))
+        self.assertTrue("ietf-announce@" in outbox[-3]['To'])
         self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
         self.assertTrue(name in unicode(outbox[-2]))
         self.assertTrue("mars" in unicode(outbox[-2]))
@@ -648,6 +649,9 @@ class SubmitTests(TestCase):
         self.assertTrue("Full URL for managing submission" in outbox[-1]["Subject"])
         self.assertTrue(name in outbox[-1]["Subject"])
 
+        # This could use a test on an 01 from a new author to make sure the logic on
+        # who gets the management url behaves as expected
+
     def test_submit_all_file_types(self):
         make_test_data()
 
@@ -710,7 +714,7 @@ class SubmitTests(TestCase):
         url = urlreverse('submit_upload_submission')
         # set meeting to today so we're in blackout period
         meeting = Meeting.get_current_meeting()
-        meeting.date = datetime.datetime.today()
+        meeting.date = datetime.datetime.utcnow()
         meeting.save()
         
         # regular user, no access

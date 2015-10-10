@@ -21,8 +21,7 @@ from ietf.group.utils import get_group_or_404
 from ietf.ietfauth.utils import has_role
 from ietf.person.fields import SearchableEmailsField
 from ietf.person.models import Person, Email
-from ietf.group.mails import ( email_iesg_secretary_re_charter, email_iesg_secretary_personnel_change,
-    email_interested_parties_re_changed_delegates )
+from ietf.group.mails import ( email_admin_re_charter, email_personnel_change)
 from ietf.utils.ordereddict import insert_after_in_ordered_dict
 
 MAX_GROUP_DELEGATES = 3
@@ -270,6 +269,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             diff('list_archive', "Mailing list archive")
 
             personnel_change_text=""
+            changed_personnel = set()
             # update roles
             for attr, slug, title in [('ad','ad','Shepherding AD'), ('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors"), ('delegates', 'delegate', "Delegates")]:
                 new = clean[attr]
@@ -291,10 +291,10 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                     if deleted:
                         change_text=title + ' deleted: ' + ", ".join(x.formatted_email() for x in deleted)
                         personnel_change_text+=change_text+"\n"
-                    email_interested_parties_re_changed_delegates(request, group, title, added, deleted)
+                    changed_personnel.update(set(old)^set(new))
 
             if personnel_change_text!="":
-                email_iesg_secretary_personnel_change(request, group, personnel_change_text)
+                email_personnel_change(request, group, personnel_change_text, changed_personnel)
 
             # update urls
             new_urls = clean['urls']
@@ -372,7 +372,7 @@ def conclude(request, acronym, group_type=None):
         if form.is_valid():
             instructions = form.cleaned_data['instructions']
 
-            email_iesg_secretary_re_charter(request, group, "Request closing of group", instructions)
+            email_admin_re_charter(request, group, "Request closing of group", instructions, 'group_closure_requested')
 
             e = GroupEvent(group=group, by=request.user.person)
             e.type = "requested_close"

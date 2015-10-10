@@ -1,6 +1,6 @@
 {% load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
-To: IETF-Announce <ietf-announce@ietf.org>
-Cc: RFC Editor <rfc-editor@rfc-editor.org>, {{status_change.notify}}
+To: {{ to }}{% if cc %} 
+Cc: {{ cc }}{% endif %}
 Subject: {{action}}: {{relateddoc.target.document.title}} to {{newstatus}} 
 
 {% filter wordwrap:73 %}The IESG has approved changing the status of the following document:

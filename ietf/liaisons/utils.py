@@ -1,29 +1,12 @@
 from itertools import chain
 
-from ietf.group.models import Group, Role
+from ietf.group.models import Role
 from ietf.liaisons.models import LiaisonStatement
 from ietf.ietfauth.utils import has_role, passes_test_decorator
-
-# a list of tuples, group query kwargs, role query kwargs
-GROUP_APPROVAL_MAPPING = [
-    ({'acronym':'ietf'},{'name':'chair'}),
-    ({'acronym':'iab'},{'name':'chair'}),
-    ({'type':'area'},{'name':'ad'}),
-    ({'type':'wg'},{'name':'ad'})]
 
 can_submit_liaison_required = passes_test_decorator(
     lambda u, *args, **kwargs: can_add_liaison(u),
     "Restricted to participants who are authorized to submit liaison statements on behalf of the various IETF entities")
-
-def approval_roles(group):
-    '''Returns roles that have approval authority for group'''
-    for group_kwargs,role_kwargs in GROUP_APPROVAL_MAPPING:
-        if group in Group.objects.filter(**group_kwargs):
-            # TODO is there a cleaner way?
-            if group.type == 'wg':
-                return Role.objects.filter(group=group.parent,**role_kwargs)
-            else:
-                return Role.objects.filter(group=group,**role_kwargs)
 
 def approvable_liaison_statements(user):
     '''Returns a queryset of Liaison Statements in pending state that user has authority
@@ -36,7 +19,7 @@ def approvable_liaison_statements(user):
     approvable_liaisons = []
     for liaison in liaisons:
         for group in liaison.from_groups.all():
-            if person not in [ r.person for r in approval_roles(group) ]:
+            if person not in [ r.person for r in group.liaison_approvers() ]:
                 break
         else:
             approvable_liaisons.append(liaison.pk)
