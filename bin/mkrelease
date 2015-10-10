@@ -209,7 +209,7 @@ $do svn commit changelog -m "Changelog entry for $VER"
 note "Verifying there's no uncommitted changes ..."
 $do svn st | grep "^[AMGRD] " && die "There seems to be uncommitted changes in this working copy"
 
-note "Updating the version info in $VERFILE and making sure'\$Rev\$' is Ok"
+note "Updating the version info in $VERFILE and making sure'\$Rev\$' is Ok ..."
 $do sed -i -r -e "/^__version__/s/\"[.0-9]+(dev[0-9]+)?\"/\"$VER\"/" \
 	  -e "/^__rev__/s/\".*\"/\"\$Rev:\$\"/" \
 	$VERFILE
@@ -225,20 +225,20 @@ $do svn commit $VERFILE $SETTINGS -m "Set version info to release version $VER b
 note "Creating new tag 'tags/$VER' from $SRC ..."
 $do svn cp $REPO/$SRC $REPO/tags/$VER -m "Creating new tag 'tags/$VER' from $SRC"
 
-note "Updating version and revision info to indicate that the source and branch aren't releases"
+note "Updating version and revision info to indicate that the source and branch aren't releases ..."
 $do sed -i -r -e "/^__version__/s/\"[0-9.]*\"/\"$DEV\"/" \
 	      -e "/^__rev__/s/\"\\\$Rev: (.*) \\\$\"/\"\$Rev:\$ (dev) Latest release: Rev. \1 \"/" \
 	$VERFILE
 
-note "Updating the deployment settings in settings.py to development mode"
+note "Updating the deployment settings in settings.py to development mode ..."
 $do sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' \
 	      -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'development'/" \
 	$SETTINGS
 
-note "Committing the updated version and deployment settings"
+note "Committing the updated version and deployment settings ..."
 $do svn commit $VERFILE $SETTINGS -m "Set version info and settings back to development mode"
 
-note "Creating new tag 'tags/dev/$DEV' from $SRC"
+note "Creating new tag 'tags/dev/$DEV' from $SRC ..."
 $do svn cp $REPO/$SRC $REPO/tags/dev/$DEV -m "Creating new tag 'tags/dev/$DEV' from $SRC"
 
 $do svn update -q
