@@ -27115,20 +27115,2398 @@
   }, 
   "6.5.0": {
     "code": {
-      "coverage": 0.0, 
-      "covered": {}, 
-      "format": 1
+      "coverage": 0.6930051328163052, 
+      "covered": {
+        "ietf/__init__": [
+          6, 
+          0.0
+        ], 
+        "ietf/api/__init__": [
+          115, 
+          0.5130434782608695
+        ], 
+        "ietf/api/management/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/api/management/commands/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/api/management/commands/makeresources": [
+          108, 
+          0.0
+        ], 
+        "ietf/checks": [
+          8, 
+          0.375
+        ], 
+        "ietf/community/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/community/constants": [
+          1, 
+          1.0
+        ], 
+        "ietf/community/display": [
+          140, 
+          0.6071428571428572
+        ], 
+        "ietf/community/forms": [
+          65, 
+          0.4153846153846154
+        ], 
+        "ietf/community/management/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/community/management/commands/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/community/management/commands/update_community_lists": [
+          29, 
+          0.0
+        ], 
+        "ietf/community/management/commands/update_doc_change_dates": [
+          29, 
+          0.0
+        ], 
+        "ietf/community/models": [
+          189, 
+          0.6031746031746031
+        ], 
+        "ietf/community/resources": [
+          65, 
+          1.0
+        ], 
+        "ietf/community/rules": [
+          182, 
+          0.554945054945055
+        ], 
+        "ietf/community/templatetags/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/community/templatetags/community_tags": [
+          30, 
+          0.7666666666666667
+        ], 
+        "ietf/community/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/community/views": [
+          235, 
+          0.1957446808510638
+        ], 
+        "ietf/context_processors": [
+          8, 
+          1.0
+        ], 
+        "ietf/cookies/__init__": [
+          8, 
+          0.625
+        ], 
+        "ietf/cookies/urls": [
+          3, 
+          1.0
+        ], 
+        "ietf/cookies/views": [
+          40, 
+          0.975
+        ], 
+        "ietf/dbtemplate/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/dbtemplate/forms": [
+          23, 
+          0.4782608695652174
+        ], 
+        "ietf/dbtemplate/models": [
+          13, 
+          0.923076923076923
+        ], 
+        "ietf/dbtemplate/resources": [
+          15, 
+          1.0
+        ], 
+        "ietf/dbtemplate/template": [
+          58, 
+          0.7413793103448276
+        ], 
+        "ietf/dbtemplate/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/dbtemplate/views": [
+          29, 
+          0.27586206896551724
+        ], 
+        "ietf/doc/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/doc/expire": [
+          117, 
+          0.9316239316239315
+        ], 
+        "ietf/doc/feeds": [
+          53, 
+          0.9811320754716981
+        ], 
+        "ietf/doc/fields": [
+          66, 
+          0.8939393939393939
+        ], 
+        "ietf/doc/forms": [
+          27, 
+          0.9629629629629629
+        ], 
+        "ietf/doc/lastcall": [
+          48, 
+          0.9166666666666667
+        ], 
+        "ietf/doc/mails": [
+          264, 
+          0.9090909090909091
+        ], 
+        "ietf/doc/management/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/doc/management/commands/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/doc/management/commands/generate_draft_bibxml_files": [
+          31, 
+          0.0
+        ], 
+        "ietf/doc/models": [
+          532, 
+          0.8909774436090225
+        ], 
+        "ietf/doc/redirect_drafts_urls": [
+          6, 
+          1.0
+        ], 
+        "ietf/doc/redirect_idtracker_urls": [
+          3, 
+          1.0
+        ], 
+        "ietf/doc/resources": [
+          239, 
+          1.0
+        ], 
+        "ietf/doc/templatetags/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/doc/templatetags/active_groups_menu": [
+          9, 
+          1.0
+        ], 
+        "ietf/doc/templatetags/ballot_icon": [
+          114, 
+          0.7719298245614036
+        ], 
+        "ietf/doc/templatetags/doc_states": [
+          5, 
+          0.0
+        ], 
+        "ietf/doc/templatetags/ietf_filters": [
+          331, 
+          0.688821752265861
+        ], 
+        "ietf/doc/templatetags/mail_filters": [
+          16, 
+          0.9375
+        ], 
+        "ietf/doc/templatetags/streams_menu": [
+          18, 
+          0.38888888888888884
+        ], 
+        "ietf/doc/templatetags/wg_menu": [
+          17, 
+          0.9411764705882354
+        ], 
+        "ietf/doc/urls": [
+          6, 
+          1.0
+        ], 
+        "ietf/doc/urls_charter": [
+          2, 
+          1.0
+        ], 
+        "ietf/doc/urls_conflict_review": [
+          3, 
+          1.0
+        ], 
+        "ietf/doc/urls_material": [
+          2, 
+          1.0
+        ], 
+        "ietf/doc/urls_status_change": [
+          3, 
+          1.0
+        ], 
+        "ietf/doc/utils": [
+          395, 
+          0.7848101265822786
+        ], 
+        "ietf/doc/utils_charter": [
+          129, 
+          0.7906976744186046
+        ], 
+        "ietf/doc/views_ballot": [
+          508, 
+          0.8897637795275591
+        ], 
+        "ietf/doc/views_charter": [
+          479, 
+          0.8162839248434238
+        ], 
+        "ietf/doc/views_conflict_review": [
+          252, 
+          0.9682539682539683
+        ], 
+        "ietf/doc/views_doc": [
+          523, 
+          0.8393881453154876
+        ], 
+        "ietf/doc/views_draft": [
+          874, 
+          0.8432494279176201
+        ], 
+        "ietf/doc/views_help": [
+          33, 
+          0.696969696969697
+        ], 
+        "ietf/doc/views_material": [
+          213, 
+          0.9248826291079812
+        ], 
+        "ietf/doc/views_search": [
+          396, 
+          0.7196969696969697
+        ], 
+        "ietf/doc/views_status_change": [
+          401, 
+          0.9301745635910224
+        ], 
+        "ietf/feed_urls": [
+          9, 
+          1.0
+        ], 
+        "ietf/group/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/group/ajax": [
+          19, 
+          1.0
+        ], 
+        "ietf/group/colors": [
+          24, 
+          1.0
+        ], 
+        "ietf/group/edit": [
+          306, 
+          0.8856209150326798
+        ], 
+        "ietf/group/features": [
+          21, 
+          1.0
+        ], 
+        "ietf/group/feeds": [
+          38, 
+          0.9736842105263157
+        ], 
+        "ietf/group/info": [
+          440, 
+          0.7
+        ], 
+        "ietf/group/mails": [
+          109, 
+          0.944954128440367
+        ], 
+        "ietf/group/milestones": [
+          224, 
+          0.8571428571428571
+        ], 
+        "ietf/group/models": [
+          158, 
+          0.9367088607594937
+        ], 
+        "ietf/group/resources": [
+          128, 
+          1.0
+        ], 
+        "ietf/group/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/group/urls_info": [
+          4, 
+          1.0
+        ], 
+        "ietf/group/urls_info_details": [
+          2, 
+          1.0
+        ], 
+        "ietf/group/urls_stream": [
+          3, 
+          1.0
+        ], 
+        "ietf/group/utils": [
+          82, 
+          0.5975609756097561
+        ], 
+        "ietf/group/views_stream": [
+          49, 
+          0.9795918367346939
+        ], 
+        "ietf/help/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/help/models": [
+          0, 
+          1.0
+        ], 
+        "ietf/help/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/help/views": [
+          30, 
+          0.5666666666666667
+        ], 
+        "ietf/idindex/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/idindex/generate_all_id2_txt": [
+          6, 
+          0.0
+        ], 
+        "ietf/idindex/generate_all_id_txt": [
+          6, 
+          0.0
+        ], 
+        "ietf/idindex/generate_id_abstracts_txt": [
+          6, 
+          0.0
+        ], 
+        "ietf/idindex/generate_id_index_txt": [
+          6, 
+          0.0
+        ], 
+        "ietf/idindex/index": [
+          173, 
+          0.930635838150289
+        ], 
+        "ietf/iesg/__init__": [
+          8, 
+          0.625
+        ], 
+        "ietf/iesg/agenda": [
+          118, 
+          0.9067796610169492
+        ], 
+        "ietf/iesg/feeds": [
+          29, 
+          0.9655172413793103
+        ], 
+        "ietf/iesg/models": [
+          38, 
+          0.8947368421052632
+        ], 
+        "ietf/iesg/resources": [
+          22, 
+          1.0
+        ], 
+        "ietf/iesg/urls": [
+          3, 
+          1.0
+        ], 
+        "ietf/iesg/views": [
+          246, 
+          0.926829268292683
+        ], 
+        "ietf/ietfauth/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/ietfauth/forms": [
+          164, 
+          0.2621951219512195
+        ], 
+        "ietf/ietfauth/urls": [
+          3, 
+          1.0
+        ], 
+        "ietf/ietfauth/utils": [
+          65, 
+          0.9076923076923077
+        ], 
+        "ietf/ietfauth/views": [
+          120, 
+          0.25
+        ], 
+        "ietf/ipr/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/ipr/feeds": [
+          28, 
+          0.9285714285714286
+        ], 
+        "ietf/ipr/fields": [
+          41, 
+          0.9024390243902439
+        ], 
+        "ietf/ipr/forms": [
+          223, 
+          0.8654708520179372
+        ], 
+        "ietf/ipr/mail": [
+          119, 
+          0.8739495798319328
+        ], 
+        "ietf/ipr/management/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/ipr/management/commands/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/ipr/management/commands/process_email": [
+          18, 
+          0.0
+        ], 
+        "ietf/ipr/models": [
+          135, 
+          0.9037037037037037
+        ], 
+        "ietf/ipr/resources": [
+          123, 
+          1.0
+        ], 
+        "ietf/ipr/sitemaps": [
+          5, 
+          1.0
+        ], 
+        "ietf/ipr/templatetags/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/ipr/templatetags/ipr_filters": [
+          9, 
+          0.6666666666666667
+        ], 
+        "ietf/ipr/urls": [
+          4, 
+          1.0
+        ], 
+        "ietf/ipr/utils": [
+          32, 
+          0.75
+        ], 
+        "ietf/ipr/views": [
+          385, 
+          0.7428571428571429
+        ], 
+        "ietf/legacy_router": [
+          20, 
+          0.0
+        ], 
+        "ietf/liaisons/__init__": [
+          8, 
+          0.625
+        ], 
+        "ietf/liaisons/feeds": [
+          70, 
+          0.8142857142857143
+        ], 
+        "ietf/liaisons/fields": [
+          45, 
+          0.8666666666666667
+        ], 
+        "ietf/liaisons/forms": [
+          305, 
+          0.9049180327868852
+        ], 
+        "ietf/liaisons/mails": [
+          61, 
+          0.8852459016393442
+        ], 
+        "ietf/liaisons/management/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/liaisons/management/commands/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/liaisons/management/commands/check_liaison_deadlines": [
+          15, 
+          1.0
+        ], 
+        "ietf/liaisons/management/commands/remind_update_sdo_list": [
+          26, 
+          0.923076923076923
+        ], 
+        "ietf/liaisons/models": [
+          126, 
+          0.873015873015873
+        ], 
+        "ietf/liaisons/resources": [
+          56, 
+          1.0
+        ], 
+        "ietf/liaisons/sitemaps": [
+          10, 
+          1.0
+        ], 
+        "ietf/liaisons/urls": [
+          5, 
+          1.0
+        ], 
+        "ietf/liaisons/utils": [
+          50, 
+          0.88
+        ], 
+        "ietf/liaisons/views": [
+          306, 
+          0.9019607843137255
+        ], 
+        "ietf/liaisons/widgets": [
+          37, 
+          1.0
+        ], 
+        "ietf/mailinglists/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/mailinglists/urls": [
+          3, 
+          1.0
+        ], 
+        "ietf/mailinglists/views": [
+          6, 
+          1.0
+        ], 
+        "ietf/manage": [
+          11, 
+          0.0
+        ], 
+        "ietf/meeting/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/meeting/ajax": [
+          334, 
+          0.7365269461077844
+        ], 
+        "ietf/meeting/feeds": [
+          31, 
+          1.0
+        ], 
+        "ietf/meeting/helpers": [
+          188, 
+          0.6702127659574468
+        ], 
+        "ietf/meeting/management/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/meeting/management/commands/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/meeting/management/commands/autoplace": [
+          59, 
+          0.0
+        ], 
+        "ietf/meeting/management/commands/schedwrite": [
+          19, 
+          0.0
+        ], 
+        "ietf/meeting/models": [
+          803, 
+          0.638854296388543
+        ], 
+        "ietf/meeting/placement": [
+          479, 
+          0.0
+        ], 
+        "ietf/meeting/resources": [
+          105, 
+          1.0
+        ], 
+        "ietf/meeting/templatetags/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/meeting/templatetags/agenda_custom_tags": [
+          30, 
+          0.5666666666666667
+        ], 
+        "ietf/meeting/test_data": [
+          49, 
+          1.0
+        ], 
+        "ietf/meeting/timedeltafield": [
+          130, 
+          0.5923076923076923
+        ], 
+        "ietf/meeting/urls": [
+          5, 
+          1.0
+        ], 
+        "ietf/meeting/views": [
+          557, 
+          0.6229802513464991
+        ], 
+        "ietf/message/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/message/models": [
+          33, 
+          0.9393939393939393
+        ], 
+        "ietf/message/resources": [
+          26, 
+          1.0
+        ], 
+        "ietf/message/utils": [
+          30, 
+          0.9666666666666667
+        ], 
+        "ietf/message/views": [
+          7, 
+          1.0
+        ], 
+        "ietf/middleware": [
+          31, 
+          0.8709677419354839
+        ], 
+        "ietf/name/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/name/generate_fixtures": [
+          30, 
+          0.0
+        ], 
+        "ietf/name/models": [
+          44, 
+          1.0
+        ], 
+        "ietf/name/resources": [
+          147, 
+          1.0
+        ], 
+        "ietf/name/utils": [
+          10, 
+          0.0
+        ], 
+        "ietf/nomcom/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/nomcom/decorators": [
+          12, 
+          0.5
+        ], 
+        "ietf/nomcom/fields": [
+          25, 
+          0.84
+        ], 
+        "ietf/nomcom/forms": [
+          530, 
+          0.7245283018867924
+        ], 
+        "ietf/nomcom/management/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/nomcom/management/commands/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/nomcom/management/commands/feedback_email": [
+          32, 
+          0.0
+        ], 
+        "ietf/nomcom/management/commands/send_reminders": [
+          25, 
+          1.0
+        ], 
+        "ietf/nomcom/managers": [
+          61, 
+          0.9508196721311475
+        ], 
+        "ietf/nomcom/models": [
+          138, 
+          0.8985507246376812
+        ], 
+        "ietf/nomcom/redirect_ann_urls": [
+          3, 
+          1.0
+        ], 
+        "ietf/nomcom/resources": [
+          77, 
+          1.0
+        ], 
+        "ietf/nomcom/templatetags/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/nomcom/templatetags/nomcom_tags": [
+          52, 
+          0.5192307692307692
+        ], 
+        "ietf/nomcom/test_data": [
+          64, 
+          1.0
+        ], 
+        "ietf/nomcom/urls": [
+          5, 
+          1.0
+        ], 
+        "ietf/nomcom/utils": [
+          254, 
+          0.7165354330708661
+        ], 
+        "ietf/nomcom/views": [
+          485, 
+          0.5092783505154639
+        ], 
+        "ietf/person/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/person/ajax": [
+          7, 
+          1.0
+        ], 
+        "ietf/person/fields": [
+          71, 
+          0.9295774647887324
+        ], 
+        "ietf/person/models": [
+          128, 
+          0.8515625
+        ], 
+        "ietf/person/name": [
+          45, 
+          0.5777777777777778
+        ], 
+        "ietf/person/resources": [
+          36, 
+          1.0
+        ], 
+        "ietf/person/urls": [
+          3, 
+          1.0
+        ], 
+        "ietf/person/views": [
+          35, 
+          0.6285714285714286
+        ], 
+        "ietf/redirects/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/redirects/models": [
+          27, 
+          0.7777777777777777
+        ], 
+        "ietf/redirects/resources": [
+          25, 
+          1.0
+        ], 
+        "ietf/redirects/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/redirects/views": [
+          62, 
+          0.903225806451613
+        ], 
+        "ietf/release/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/release/urls": [
+          3, 
+          1.0
+        ], 
+        "ietf/release/views": [
+          43, 
+          0.9767441860465117
+        ], 
+        "ietf/secr/__init__": [
+          4, 
+          1.0
+        ], 
+        "ietf/secr/announcement/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/announcement/forms": [
+          88, 
+          0.5681818181818182
+        ], 
+        "ietf/secr/announcement/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/announcement/views": [
+          52, 
+          0.7307692307692308
+        ], 
+        "ietf/secr/areas/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/areas/forms": [
+          110, 
+          0.4181818181818182
+        ], 
+        "ietf/secr/areas/templatetags/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/areas/templatetags/custom_tags": [
+          7, 
+          0.0
+        ], 
+        "ietf/secr/areas/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/areas/views": [
+          119, 
+          0.2605042016806723
+        ], 
+        "ietf/secr/console/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/console/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/console/views": [
+          7, 
+          0.7142857142857143
+        ], 
+        "ietf/secr/context_processors": [
+          6, 
+          0.8333333333333333
+        ], 
+        "ietf/secr/drafts/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/drafts/email": [
+          137, 
+          0.5401459854014599
+        ], 
+        "ietf/secr/drafts/forms": [
+          240, 
+          0.6583333333333333
+        ], 
+        "ietf/secr/drafts/notifications": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/drafts/report_id_activity": [
+          5, 
+          0.0
+        ], 
+        "ietf/secr/drafts/report_progress_report": [
+          5, 
+          0.0
+        ], 
+        "ietf/secr/drafts/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/drafts/views": [
+          534, 
+          0.36329588014981273
+        ], 
+        "ietf/secr/groups/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/groups/forms": [
+          134, 
+          0.7761194029850746
+        ], 
+        "ietf/secr/groups/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/groups/views": [
+          185, 
+          0.6270270270270271
+        ], 
+        "ietf/secr/lib/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/lib/template": [
+          20, 
+          0.45
+        ], 
+        "ietf/secr/meetings/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/meetings/blue_sheets": [
+          15, 
+          1.0
+        ], 
+        "ietf/secr/meetings/forms": [
+          131, 
+          0.5267175572519084
+        ], 
+        "ietf/secr/meetings/models": [
+          1, 
+          1.0
+        ], 
+        "ietf/secr/meetings/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/meetings/views": [
+          510, 
+          0.4705882352941177
+        ], 
+        "ietf/secr/middleware/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/middleware/dbquery": [
+          10, 
+          0.0
+        ], 
+        "ietf/secr/middleware/secauth": [
+          23, 
+          0.0
+        ], 
+        "ietf/secr/proceedings/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/proceedings/forms": [
+          98, 
+          0.7346938775510204
+        ], 
+        "ietf/secr/proceedings/models": [
+          44, 
+          0.9090909090909091
+        ], 
+        "ietf/secr/proceedings/proc_utils": [
+          319, 
+          0.3260188087774295
+        ], 
+        "ietf/secr/proceedings/report_progress_report": [
+          8, 
+          0.0
+        ], 
+        "ietf/secr/proceedings/templatetags/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/proceedings/templatetags/ams_filters": [
+          30, 
+          0.5
+        ], 
+        "ietf/secr/proceedings/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/proceedings/views": [
+          515, 
+          0.3262135922330097
+        ], 
+        "ietf/secr/roles/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/roles/forms": [
+          31, 
+          0.0
+        ], 
+        "ietf/secr/roles/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/roles/views": [
+          47, 
+          0.9574468085106383
+        ], 
+        "ietf/secr/rolodex/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/rolodex/forms": [
+          73, 
+          0.452054794520548
+        ], 
+        "ietf/secr/rolodex/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/rolodex/views": [
+          106, 
+          0.22641509433962262
+        ], 
+        "ietf/secr/sreq/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/sreq/forms": [
+          90, 
+          0.7555555555555555
+        ], 
+        "ietf/secr/sreq/templatetags/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/sreq/templatetags/ams_filters": [
+          27, 
+          0.0
+        ], 
+        "ietf/secr/sreq/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/sreq/views": [
+          381, 
+          0.3963254593175853
+        ], 
+        "ietf/secr/telechat/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/telechat/forms": [
+          26, 
+          0.8846153846153847
+        ], 
+        "ietf/secr/telechat/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/secr/telechat/views": [
+          193, 
+          0.2227979274611399
+        ], 
+        "ietf/secr/urls": [
+          3, 
+          1.0
+        ], 
+        "ietf/secr/utils/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/secr/utils/ams_utils": [
+          37, 
+          0.32432432432432434
+        ], 
+        "ietf/secr/utils/decorators": [
+          63, 
+          0.6825396825396826
+        ], 
+        "ietf/secr/utils/document": [
+          15, 
+          0.6666666666666667
+        ], 
+        "ietf/secr/utils/group": [
+          51, 
+          0.5882352941176471
+        ], 
+        "ietf/secr/utils/mail": [
+          16, 
+          0.875
+        ], 
+        "ietf/secr/utils/meeting": [
+          49, 
+          0.7551020408163265
+        ], 
+        "ietf/secr/utils/test": [
+          13, 
+          0.3076923076923077
+        ], 
+        "ietf/submit/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/submit/forms": [
+          284, 
+          0.8485915492957747
+        ], 
+        "ietf/submit/mail": [
+          103, 
+          0.9223300970873787
+        ], 
+        "ietf/submit/models": [
+          61, 
+          0.9508196721311475
+        ], 
+        "ietf/submit/parsers/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/submit/parsers/base": [
+          59, 
+          0.9491525423728814
+        ], 
+        "ietf/submit/parsers/pdf_parser": [
+          7, 
+          1.0
+        ], 
+        "ietf/submit/parsers/plain_parser": [
+          54, 
+          0.8703703703703703
+        ], 
+        "ietf/submit/parsers/ps_parser": [
+          7, 
+          1.0
+        ], 
+        "ietf/submit/parsers/xml_parser": [
+          7, 
+          1.0
+        ], 
+        "ietf/submit/resources": [
+          32, 
+          1.0
+        ], 
+        "ietf/submit/templatetags/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/submit/templatetags/submit_tags": [
+          26, 
+          0.6923076923076923
+        ], 
+        "ietf/submit/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/submit/utils": [
+          303, 
+          0.834983498349835
+        ], 
+        "ietf/submit/views": [
+          273, 
+          0.8791208791208791
+        ], 
+        "ietf/sync/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/sync/discrepancies": [
+          22, 
+          1.0
+        ], 
+        "ietf/sync/iana": [
+          176, 
+          0.8636363636363636
+        ], 
+        "ietf/sync/mails": [
+          7, 
+          0.0
+        ], 
+        "ietf/sync/rfceditor": [
+          340, 
+          0.8058823529411765
+        ], 
+        "ietf/sync/urls": [
+          2, 
+          1.0
+        ], 
+        "ietf/sync/views": [
+          85, 
+          0.6235294117647059
+        ], 
+        "ietf/urls": [
+          21, 
+          0.9047619047619048
+        ], 
+        "ietf/utils/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/utils/accesstoken": [
+          7, 
+          1.0
+        ], 
+        "ietf/utils/aliases": [
+          39, 
+          0.0
+        ], 
+        "ietf/utils/bower_storage": [
+          9, 
+          0.0
+        ], 
+        "ietf/utils/draft": [
+          919, 
+          0.5908596300326442
+        ], 
+        "ietf/utils/draft_search": [
+          6, 
+          1.0
+        ], 
+        "ietf/utils/fields": [
+          39, 
+          0.9743589743589743
+        ], 
+        "ietf/utils/history": [
+          40, 
+          0.7
+        ], 
+        "ietf/utils/html": [
+          27, 
+          1.0
+        ], 
+        "ietf/utils/log": [
+          39, 
+          0.8205128205128206
+        ], 
+        "ietf/utils/mail": [
+          278, 
+          0.7589928057553956
+        ], 
+        "ietf/utils/management/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/utils/management/commands/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/utils/management/commands/coverage_changes": [
+          86, 
+          0.7325581395348837
+        ], 
+        "ietf/utils/management/commands/import_htpasswd": [
+          36, 
+          0.0
+        ], 
+        "ietf/utils/management/commands/makefixture": [
+          128, 
+          0.0
+        ], 
+        "ietf/utils/management/commands/pyflakes": [
+          73, 
+          0.6027397260273972
+        ], 
+        "ietf/utils/markup_txt": [
+          23, 
+          1.0
+        ], 
+        "ietf/utils/ordereddict": [
+          10, 
+          1.0
+        ], 
+        "ietf/utils/pdf": [
+          11, 
+          0.18181818181818182
+        ], 
+        "ietf/utils/pipe": [
+          24, 
+          0.875
+        ], 
+        "ietf/utils/resources": [
+          15, 
+          1.0
+        ], 
+        "ietf/utils/serialize": [
+          16, 
+          0.875
+        ], 
+        "ietf/utils/templatetags/__init__": [
+          0, 
+          1.0
+        ], 
+        "ietf/utils/templatetags/origin": [
+          15, 
+          0.8666666666666667
+        ], 
+        "ietf/utils/test_data": [
+          149, 
+          1.0
+        ], 
+        "ietf/utils/test_smtpserver": [
+          59, 
+          0.8305084745762712
+        ], 
+        "ietf/utils/test_utils": [
+          218, 
+          0.3027522935779816
+        ], 
+        "ietf/utils/textupload": [
+          30, 
+          0.7666666666666667
+        ], 
+        "ietf/utils/timezone": [
+          18, 
+          0.8333333333333333
+        ], 
+        "ietf/utils/unaccent": [
+          35, 
+          0.34285714285714286
+        ], 
+        "ietf/wsgi": [
+          11, 
+          0.0
+        ]
+      }, 
+      "format": 2
     }, 
     "template": {
-      "coverage": 0.0, 
-      "covered": {}, 
-      "format": 1
+      "coverage": 0.685981308411215, 
+      "covered": {
+        "401.html": false, 
+        "404.html": true, 
+        "500.html": true, 
+        "admin/group/group/change_form.html": false, 
+        "admin/group/group/change_list.html": false, 
+        "admin/group/group/send_sdo_reminder.html": false, 
+        "announcement/confirm.html": true, 
+        "announcement/main.html": true, 
+        "areas/add.html": false, 
+        "areas/edit.html": false, 
+        "areas/list.html": true, 
+        "areas/people.html": false, 
+        "areas/view.html": true, 
+        "base.html": true, 
+        "base/menu.html": true, 
+        "base/menu_active_groups.html": true, 
+        "base/menu_user.html": true, 
+        "base/menu_wg.html": true, 
+        "base/menu_wg_modal.html": false, 
+        "base/streams_menu.html": false, 
+        "base_secr.html": true, 
+        "base_site.html": true, 
+        "bootstrap3/field_help_text_and_errors.html": true, 
+        "community/customize_display.html": false, 
+        "community/display_field.html": false, 
+        "community/manage_clist.html": false, 
+        "community/public/atom.xml": false, 
+        "community/public/notification_email.txt": false, 
+        "community/public/subscribe.html": false, 
+        "community/public/subscribe_email.txt": false, 
+        "community/public/subscription_confirm.html": false, 
+        "community/public/unsubscribe.html": false, 
+        "community/public/unsubscribe_email.txt": false, 
+        "community/public/unsubscription_confirm.html": false, 
+        "community/public/view_list.html": false, 
+        "community/raw_view.html": false, 
+        "community/view_list.html": false, 
+        "console/main.html": false, 
+        "cookies/settings.html": true, 
+        "debug.html": true, 
+        "doc/add_comment.html": true, 
+        "doc/ballot/approvaltext.html": true, 
+        "doc/ballot/approve_ballot.html": true, 
+        "doc/ballot/ballot_comment_mail.txt": true, 
+        "doc/ballot/ballot_issued.html": true, 
+        "doc/ballot/clear_ballot.html": false, 
+        "doc/ballot/defer_ballot.html": true, 
+        "doc/ballot/edit_position.html": true, 
+        "doc/ballot/lastcalltext.html": true, 
+        "doc/ballot/send_ballot_comment.html": true, 
+        "doc/ballot/undefer_ballot.html": true, 
+        "doc/ballot/writeupnotes.html": true, 
+        "doc/ballot_popup.html": true, 
+        "doc/bibxml.xml": false, 
+        "doc/change_ad.html": true, 
+        "doc/change_shepherd.html": true, 
+        "doc/change_shepherd_email.html": true, 
+        "doc/change_state.html": true, 
+        "doc/change_title.html": true, 
+        "doc/charter/action_text.txt": true, 
+        "doc/charter/announcement_text.html": true, 
+        "doc/charter/approve.html": true, 
+        "doc/charter/ballot_issued.html": true, 
+        "doc/charter/ballot_writeup.txt": true, 
+        "doc/charter/ballot_writeupnotes.html": true, 
+        "doc/charter/change_ad.html": true, 
+        "doc/charter/change_state.html": true, 
+        "doc/charter/change_title.html": false, 
+        "doc/charter/charter_with_milestones.txt": true, 
+        "doc/charter/group_info.txt": true, 
+        "doc/charter/issue_ballot_mail.txt": true, 
+        "doc/charter/review_text.txt": true, 
+        "doc/charter/submit.html": true, 
+        "doc/conflict_review/approval_text.txt": true, 
+        "doc/conflict_review/approve.html": true, 
+        "doc/conflict_review/review_choices.txt": true, 
+        "doc/conflict_review/review_started.txt": true, 
+        "doc/conflict_review/start.html": true, 
+        "doc/conflict_review/submit.html": true, 
+        "doc/document_ballot.html": true, 
+        "doc/document_ballot_content.html": true, 
+        "doc/document_charter.html": true, 
+        "doc/document_conflict_review.html": true, 
+        "doc/document_draft.html": true, 
+        "doc/document_history.html": true, 
+        "doc/document_material.html": true, 
+        "doc/document_referenced_by.html": true, 
+        "doc/document_references.html": true, 
+        "doc/document_status_change.html": true, 
+        "doc/document_top.html": true, 
+        "doc/document_writeup.html": true, 
+        "doc/draft/adopt_draft.html": true, 
+        "doc/draft/change_ad.html": true, 
+        "doc/draft/change_consensus.html": true, 
+        "doc/draft/change_iana_state.html": true, 
+        "doc/draft/change_intended_status.html": true, 
+        "doc/draft/change_replaces.html": true, 
+        "doc/draft/change_shepherd_writeup.html": true, 
+        "doc/draft/change_state.html": true, 
+        "doc/draft/change_stream.html": true, 
+        "doc/draft/change_stream_state.html": true, 
+        "doc/draft/edit_iesg_note.html": true, 
+        "doc/draft/edit_info.html": true, 
+        "doc/draft/expire_warning_email.txt": true, 
+        "doc/draft/id_expired_email.txt": true, 
+        "doc/draft/last_call_requested.html": true, 
+        "doc/draft/make_last_call.html": true, 
+        "doc/draft/request_publication.html": true, 
+        "doc/draft/request_resurrect.html": true, 
+        "doc/draft/resurrect.html": true, 
+        "doc/draft/review_possibly_replaces.html": true, 
+        "doc/draft/rfceditor_post_approved_draft_failed.html": false, 
+        "doc/drafts_for_ad.html": true, 
+        "doc/drafts_in_iesg_process.html": false, 
+        "doc/drafts_in_last_call.html": true, 
+        "doc/edit_notify.html": true, 
+        "doc/edit_telechat_date.html": true, 
+        "doc/email_aliases.html": true, 
+        "doc/eval_email.txt": true, 
+        "doc/frontpage.html": true, 
+        "doc/index_active_drafts.html": true, 
+        "doc/index_all_drafts.html": true, 
+        "doc/mail/approval_mail.txt": true, 
+        "doc/mail/approval_mail_rfc_editor.txt": true, 
+        "doc/mail/ballot_deferred_email.txt": true, 
+        "doc/mail/ballot_writeup.txt": true, 
+        "doc/mail/change_notice.txt": true, 
+        "doc/mail/issue_ballot_mail.txt": true, 
+        "doc/mail/last_call_announcement.txt": true, 
+        "doc/mail/last_call_request.txt": true, 
+        "doc/mail/publication_request.txt": true, 
+        "doc/mail/pulled_from_rfc_queue_email.txt": true, 
+        "doc/mail/resurrect_completed_email.txt": true, 
+        "doc/mail/resurrect_request_email.txt": true, 
+        "doc/mail/review_possibly_replaces_request.txt": true, 
+        "doc/mail/state_changed_email.txt": true, 
+        "doc/mail/stream_changed_email.txt": true, 
+        "doc/mail/stream_state_changed_email.txt": true, 
+        "doc/mail/stream_tags_changed_email.txt": true, 
+        "doc/mail/update_telechat.txt": true, 
+        "doc/material/choose_material_type.html": true, 
+        "doc/material/edit_material.html": true, 
+        "doc/material/edit_material_presentations.html": true, 
+        "doc/material/material_presentations.html": true, 
+        "doc/relationship_help.html": false, 
+        "doc/revisions_list.html": true, 
+        "doc/search/search.html": true, 
+        "doc/search/search_form.html": true, 
+        "doc/search/search_result_row.html": true, 
+        "doc/search/search_results.html": true, 
+        "doc/search/status_columns.html": true, 
+        "doc/shepherd_writeup.html": true, 
+        "doc/shepherd_writeup.txt": true, 
+        "doc/state_help.html": true, 
+        "doc/status_change/approval_text.txt": true, 
+        "doc/status_change/approve.html": true, 
+        "doc/status_change/edit_related_rows.html": true, 
+        "doc/status_change/edit_relations.html": true, 
+        "doc/status_change/initial_template.txt": true, 
+        "doc/status_change/last_call.html": true, 
+        "doc/status_change/last_call_announcement.txt": true, 
+        "doc/status_change/make_last_call.html": false, 
+        "doc/status_change/start.html": true, 
+        "doc/status_change/status_changes.html": false, 
+        "doc/status_change/submit.html": true, 
+        "doc/submit_to_iesg.html": false, 
+        "doc/submit_to_iesg_email.txt": false, 
+        "drafts/abstract.html": true, 
+        "drafts/add.html": true, 
+        "drafts/approvals.html": true, 
+        "drafts/authors.html": false, 
+        "drafts/confirm.html": false, 
+        "drafts/dates.html": false, 
+        "drafts/edit.html": true, 
+        "drafts/email.html": false, 
+        "drafts/error.html": false, 
+        "drafts/extend.html": false, 
+        "drafts/makerfc.html": false, 
+        "drafts/message_extend.txt": false, 
+        "drafts/message_new.txt": true, 
+        "drafts/message_replace.txt": false, 
+        "drafts/message_resurrect.txt": false, 
+        "drafts/message_revision.txt": false, 
+        "drafts/message_update.txt": false, 
+        "drafts/message_withdraw.txt": false, 
+        "drafts/replace.html": false, 
+        "drafts/report_id_activity.txt": false, 
+        "drafts/report_nudge.html": false, 
+        "drafts/report_progress_report.txt": false, 
+        "drafts/revision.html": true, 
+        "drafts/search.html": true, 
+        "drafts/view.html": true, 
+        "drafts/withdraw.html": false, 
+        "email_failed.html": false, 
+        "googlea30ad1dacffb5e5b.html": true, 
+        "group/1wg-charters-by-acronym.txt": true, 
+        "group/1wg-charters.txt": true, 
+        "group/1wg-summary-by-acronym.txt": true, 
+        "group/1wg-summary.txt": true, 
+        "group/active_ags.html": true, 
+        "group/active_areas.html": true, 
+        "group/active_dirs.html": true, 
+        "group/active_groups.html": true, 
+        "group/active_rgs.html": true, 
+        "group/active_teams.html": true, 
+        "group/active_wgs.html": true, 
+        "group/bofs.html": true, 
+        "group/chartering_groups.html": true, 
+        "group/conclude.html": true, 
+        "group/concluded_groups.html": true, 
+        "group/customize_workflow.html": true, 
+        "group/dot.txt": false, 
+        "group/edit.html": true, 
+        "group/edit_milestones.html": true, 
+        "group/email_aliases.html": true, 
+        "group/email_iesg_secretary_re_charter.txt": true, 
+        "group/feed_item_description.html": true, 
+        "group/group_about.html": true, 
+        "group/group_base.html": true, 
+        "group/group_documents.html": true, 
+        "group/group_entry.txt": true, 
+        "group/group_entry_with_charter.txt": true, 
+        "group/history.html": true, 
+        "group/index.html": true, 
+        "group/materials.html": true, 
+        "group/milestone_form.html": true, 
+        "group/milestones.html": true, 
+        "group/reminder_milestones_due.txt": true, 
+        "group/reminder_milestones_need_review.txt": true, 
+        "group/reminder_milestones_overdue.txt": true, 
+        "group/reset_charter_milestones.html": true, 
+        "group/stream_documents.html": true, 
+        "group/stream_edit.html": true, 
+        "groups/add.html": true, 
+        "groups/blue_dot_report.txt": false, 
+        "groups/charter.html": false, 
+        "groups/edit.html": false, 
+        "groups/edit_gm.html": false, 
+        "groups/people.html": true, 
+        "groups/search.html": false, 
+        "groups/view.html": true, 
+        "groups/view_gm.html": false, 
+        "help/state_index.html": true, 
+        "help/states.html": false, 
+        "idindex/all_id2.txt": true, 
+        "idindex/id_index.txt": true, 
+        "iesg/agenda.html": true, 
+        "iesg/agenda.txt": true, 
+        "iesg/agenda_charter.html": true, 
+        "iesg/agenda_charter.txt": true, 
+        "iesg/agenda_conflict_doc.html": true, 
+        "iesg/agenda_conflict_doc.txt": true, 
+        "iesg/agenda_doc.html": true, 
+        "iesg/agenda_doc.txt": true, 
+        "iesg/agenda_documents.html": true, 
+        "iesg/agenda_package.txt": true, 
+        "iesg/discusses.html": true, 
+        "iesg/feed_item_description.html": true, 
+        "iesg/milestones_needing_review.html": true, 
+        "iesg/moderator_charter.html": true, 
+        "iesg/moderator_conflict_doc.html": true, 
+        "iesg/moderator_doc.html": true, 
+        "iesg/moderator_package.html": true, 
+        "iesg/review_decisions.html": true, 
+        "iesg/scribe_conflict_doc.html": true, 
+        "iesg/scribe_doc.html": true, 
+        "iesg/scribe_doc_ballot.html": true, 
+        "iesg/scribe_template.html": true, 
+        "ietfauth/testemail.html": false, 
+        "includes/activities.html": true, 
+        "includes/awp_add_form.html": true, 
+        "includes/awp_edit_form.html": false, 
+        "includes/awp_view.html": true, 
+        "includes/buttons_back.html": true, 
+        "includes/buttons_next_cancel.html": false, 
+        "includes/buttons_proceed.html": false, 
+        "includes/buttons_save.html": true, 
+        "includes/buttons_save_cancel.html": true, 
+        "includes/buttons_search.html": true, 
+        "includes/buttons_submit.html": false, 
+        "includes/buttons_submit_back.html": true, 
+        "includes/buttons_submit_cancel.html": false, 
+        "includes/docevents.html": true, 
+        "includes/draft_search_results.html": true, 
+        "includes/draft_upload_form.html": true, 
+        "includes/group_search_results.html": false, 
+        "includes/meetings_footer.html": true, 
+        "includes/proceeding_area.html": false, 
+        "includes/proceeding_footer.html": true, 
+        "includes/proceeding_header.html": true, 
+        "includes/proceeding_title.html": false, 
+        "includes/proceedings_functions.html": false, 
+        "includes/search_results_table.html": true, 
+        "includes/session_info.txt": true, 
+        "includes/sessions_footer.html": true, 
+        "includes/sessions_request_form.1_2": false, 
+        "includes/sessions_request_form.html": true, 
+        "includes/sessions_request_view.html": true, 
+        "includes/slides.html": true, 
+        "includes/upload_footer.html": true, 
+        "ipr/add_comment.html": true, 
+        "ipr/add_email.html": true, 
+        "ipr/admin_list.html": true, 
+        "ipr/details.txt": true, 
+        "ipr/details_edit.html": true, 
+        "ipr/details_history.html": true, 
+        "ipr/details_tabs.html": true, 
+        "ipr/details_view.html": true, 
+        "ipr/disclosure.html": true, 
+        "ipr/email.html": false, 
+        "ipr/ipr_table.html": true, 
+        "ipr/list.html": true, 
+        "ipr/migration_licensing.txt": false, 
+        "ipr/new_update_email.txt": true, 
+        "ipr/notify.html": true, 
+        "ipr/posted_document_email.txt": true, 
+        "ipr/posted_generic_email.txt": false, 
+        "ipr/posted_submitter_email.txt": true, 
+        "ipr/removed.html": true, 
+        "ipr/search.html": true, 
+        "ipr/search_doc_list.html": true, 
+        "ipr/search_doc_result.html": true, 
+        "ipr/search_doctitle_result.html": true, 
+        "ipr/search_error.html": false, 
+        "ipr/search_form.html": true, 
+        "ipr/search_holder_result.html": true, 
+        "ipr/search_iprtitle_result.html": true, 
+        "ipr/search_patent_result.html": true, 
+        "ipr/search_result.html": true, 
+        "ipr/search_wg_result.html": true, 
+        "ipr/state.html": false, 
+        "ipr/submitted.html": true, 
+        "ipr/update_submitter_email.txt": true, 
+        "liaisons/detail.html": true, 
+        "liaisons/detail_history.html": true, 
+        "liaisons/detail_tabs.html": true, 
+        "liaisons/edit.html": true, 
+        "liaisons/edit_attachment.html": true, 
+        "liaisons/feed_item_description.html": true, 
+        "liaisons/field_help.html": true, 
+        "liaisons/guide_from_ietf.html": true, 
+        "liaisons/guide_to_ietf.html": true, 
+        "liaisons/help.html": true, 
+        "liaisons/liaison_base.html": true, 
+        "liaisons/liaison_deadline_mail.txt": true, 
+        "liaisons/liaison_mail.txt": true, 
+        "liaisons/liaison_table.html": true, 
+        "liaisons/liaison_title.html": true, 
+        "liaisons/pending_liaison_mail.txt": true, 
+        "liaisons/sdo_reminder.txt": true, 
+        "liaisons/search_form.html": true, 
+        "mailinglists/group_archives.html": true, 
+        "main.html": true, 
+        "meeting/agenda.html": true, 
+        "meeting/agenda.ics": true, 
+        "meeting/agenda.txt": true, 
+        "meeting/agenda_by_room.html": true, 
+        "meeting/agenda_by_type.html": true, 
+        "meeting/agenda_list.html": false, 
+        "meeting/group_materials.html": true, 
+        "meeting/landscape_edit.html": true, 
+        "meeting/materials.html": true, 
+        "meeting/materials_upload_closed.html": false, 
+        "meeting/meeting_heading.html": true, 
+        "meeting/no-agenda.csv": false, 
+        "meeting/no-agenda.html": false, 
+        "meeting/no-agenda.txt": false, 
+        "meeting/private_agenda.html": true, 
+        "meeting/properties_edit.html": false, 
+        "meeting/requests.html": false, 
+        "meeting/room-view.html": true, 
+        "meeting/room_edit.html": false, 
+        "meeting/session_details.html": true, 
+        "meeting/session_list.html": false, 
+        "meeting/timeslot_edit.html": true, 
+        "meeting/week-view.html": true, 
+        "meetings/add.html": false, 
+        "meetings/base_rooms_times.html": true, 
+        "meetings/blue_sheet.html": true, 
+        "meetings/edit_meeting.html": false, 
+        "meetings/main.html": true, 
+        "meetings/non_session.html": true, 
+        "meetings/non_session_edit.html": false, 
+        "meetings/notifications.html": true, 
+        "meetings/rooms.html": true, 
+        "meetings/schedule.html": false, 
+        "meetings/select.html": true, 
+        "meetings/select_group.html": true, 
+        "meetings/session_schedule_notification.txt": true, 
+        "meetings/times.html": true, 
+        "meetings/times_edit.html": false, 
+        "meetings/view.html": true, 
+        "message/message.html": true, 
+        "nomcom/announcements.html": true, 
+        "nomcom/delete_nomcom.html": false, 
+        "nomcom/deleted.html": false, 
+        "nomcom/edit_members.html": true, 
+        "nomcom/edit_members_preview.html": true, 
+        "nomcom/edit_nomcom.html": true, 
+        "nomcom/edit_nominee.html": false, 
+        "nomcom/edit_position.html": false, 
+        "nomcom/edit_template.html": false, 
+        "nomcom/feedback.html": true, 
+        "nomcom/index.html": false, 
+        "nomcom/list_positions.html": false, 
+        "nomcom/list_templates.html": false, 
+        "nomcom/nomcom_private_base.html": true, 
+        "nomcom/nomcom_public_base.html": true, 
+        "nomcom/nomcomform.html": false, 
+        "nomcom/private_feedback_email.html": false, 
+        "nomcom/private_index.html": true, 
+        "nomcom/private_key.html": false, 
+        "nomcom/private_merge.html": true, 
+        "nomcom/private_nominate.html": true, 
+        "nomcom/private_questionnaire.html": true, 
+        "nomcom/process_nomination_status.html": false, 
+        "nomcom/public_nominate.html": true, 
+        "nomcom/questionnaires.html": true, 
+        "nomcom/remove_position.html": false, 
+        "nomcom/requirements.html": true, 
+        "nomcom/send_reminder_mail.html": true, 
+        "nomcom/view_feedback.html": false, 
+        "nomcom/view_feedback_nominee.html": false, 
+        "nomcom/view_feedback_pending.html": false, 
+        "nomcom/view_feedback_unrelated.html": false, 
+        "nomcom/year_index.html": true, 
+        "notify_expirations/body.txt": false, 
+        "notify_expirations/subject.txt": false, 
+        "person/mail/possible_duplicates.txt": true, 
+        "proceedings/acknowledgement.html": false, 
+        "proceedings/agenda.html": false, 
+        "proceedings/area.html": false, 
+        "proceedings/attendee.html": false, 
+        "proceedings/convert.html": false, 
+        "proceedings/edit_slide.html": false, 
+        "proceedings/index.html": false, 
+        "proceedings/interim_directory.html": true, 
+        "proceedings/interim_meeting.html": false, 
+        "proceedings/interim_select.html": false, 
+        "proceedings/irtf.html": false, 
+        "proceedings/main.html": true, 
+        "proceedings/overview.html": false, 
+        "proceedings/plenary.html": false, 
+        "proceedings/proceedings.html": true, 
+        "proceedings/proceedings_template.html": false, 
+        "proceedings/progress.html": false, 
+        "proceedings/recording.html": true, 
+        "proceedings/recording_edit.html": false, 
+        "proceedings/replace_slide.html": false, 
+        "proceedings/rg_irtf.html": false, 
+        "proceedings/select.html": false, 
+        "proceedings/status.html": false, 
+        "proceedings/training.html": false, 
+        "proceedings/upload_presentation.html": false, 
+        "proceedings/upload_unified.html": true, 
+        "proceedings/view.html": false, 
+        "proceedings/wait.html": false, 
+        "registration/add_email_email.txt": false, 
+        "registration/change_password.html": false, 
+        "registration/confirm.html": false, 
+        "registration/confirm_new_email.html": false, 
+        "registration/confirm_profile_update.html": false, 
+        "registration/create.html": false, 
+        "registration/creation_email.txt": false, 
+        "registration/edit_profile.html": true, 
+        "registration/index.html": true, 
+        "registration/logged_out.html": true, 
+        "registration/login.html": true, 
+        "registration/missing_person.html": false, 
+        "registration/password_reset.html": false, 
+        "registration/password_reset_email.txt": false, 
+        "release/about.html": true, 
+        "release/release.html": true, 
+        "release/todo.html": true, 
+        "roles/base_roles.html": false, 
+        "roles/chairs.html": false, 
+        "roles/liaisons.html": false, 
+        "roles/main.html": true, 
+        "roles/roles.html": false, 
+        "rolodex/add.html": false, 
+        "rolodex/add_proceed.html": false, 
+        "rolodex/delete.html": false, 
+        "rolodex/edit.html": false, 
+        "rolodex/search.html": true, 
+        "rolodex/view.html": true, 
+        "sreq/confirm.html": false, 
+        "sreq/edit.html": true, 
+        "sreq/locked.html": false, 
+        "sreq/main.html": true, 
+        "sreq/new.html": true, 
+        "sreq/not_meeting_notification.txt": true, 
+        "sreq/session_approval_notification.txt": false, 
+        "sreq/session_cancel_notification.txt": false, 
+        "sreq/session_request_notification.txt": false, 
+        "sreq/tool_status.html": false, 
+        "sreq/view.html": true, 
+        "submit/add_preapproval.html": true, 
+        "submit/announce_new_version.txt": true, 
+        "submit/announce_to_authors.txt": true, 
+        "submit/announce_to_lists.txt": true, 
+        "submit/approval_request.txt": true, 
+        "submit/approvals.html": true, 
+        "submit/cancel_preapproval.html": true, 
+        "submit/confirm_submission.html": true, 
+        "submit/confirm_submission.txt": true, 
+        "submit/edit_submission.html": true, 
+        "submit/full_url.txt": true, 
+        "submit/manual_post_request.txt": true, 
+        "submit/note_well.html": true, 
+        "submit/problem-reports-footer.html": true, 
+        "submit/replaces_form.html": true, 
+        "submit/search_submission.html": true, 
+        "submit/submission_files.html": true, 
+        "submit/submission_status.html": true, 
+        "submit/submit_base.html": true, 
+        "submit/submitter_form.html": true, 
+        "submit/tool_instructions.html": true, 
+        "submit/upload_submission.html": true, 
+        "sync/discrepancies.html": true, 
+        "sync/discrepancies_report.txt": false, 
+        "sync/notify.html": true, 
+        "sync/rfceditor_undo.html": true, 
+        "telechat/base_telechat.html": true, 
+        "telechat/bash.html": false, 
+        "telechat/doc.html": true, 
+        "telechat/doc_template.html": false, 
+        "telechat/group.html": false, 
+        "telechat/main.html": true, 
+        "telechat/management.html": false, 
+        "telechat/minutes.html": false, 
+        "telechat/roll_call.html": false, 
+        "test/mail_body.txt": false, 
+        "test/mail_subject.txt": false, 
+        "unauthorized.html": false, 
+        "utils/header_change_content.txt": false
+      }
     }, 
-    "time": "2015-10-10T09:52:47Z", 
+    "time": "2015-10-10T10:09:00Z", 
     "url": {
-      "coverage": 0.0, 
-      "covered": {}, 
-      "format": 1
+      "coverage": 0.5956607495069034, 
+      "covered": {
+        "^$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)//email-aliases/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/about/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/charter/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/conclude/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/deps/dot/$": false, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/deps/pdf/$": false, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/documents/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/documents/txt/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/edit/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/history/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/init-charter/": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/materials/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/$": false, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/(?P<doc_type>[\\w-]+)/$": false, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/milestones/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/milestones/charter/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/milestones/charter/reset/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/(?P<acronym>[a-zA-Z0-9-._]+)/workflow/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/1wg-charters-by-acronym.txt": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/1wg-charters.txt": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/1wg-summary-by-acronym.txt": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/1wg-summary.txt": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/bofs/$": true, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/bofs/create/$": false, 
+        "^(?P<group_type>(wg|rg|ag|team|dir|area))/email-aliases/$": true, 
+        "^(?P<path>public)/(?P<script>.*?\\.cgi)(/.*)?$": true, 
+        "^accounts/$": true, 
+        "^accounts/add_email/confirm/(?P<username>[\\w.@+-]+)/(?P<date>[\\d]+)/(?P<email>[\\w.@+-]+)/(?P<hash>[a-f0-9]+)/$": false, 
+        "^accounts/confirm/(?P<username>[\\w.@+-]+)/(?P<date>[\\d]+)/(?P<realm>[\\w]+)/(?P<hash>[a-f0-9]+)/$": false, 
+        "^accounts/create/$": false, 
+        "^accounts/login/$": true, 
+        "^accounts/logout/$": true, 
+        "^accounts/profile/$": true, 
+        "^accounts/reset/$": false, 
+        "^accounts/reset/confirm/(?P<username>[\\w.@+-]+)/(?P<date>[\\d]+)/(?P<realm>[\\w]+)/(?P<hash>[a-f0-9]+)/$": false, 
+        "^accounts/settings/$": true, 
+        "^accounts/settings/expires_soon/": true, 
+        "^accounts/settings/expires_soon/(?P<days>.+)$": true, 
+        "^accounts/settings/full_draft/": true, 
+        "^accounts/settings/full_draft/(?P<enabled>.+)$": true, 
+        "^accounts/settings/left_menu/": true, 
+        "^accounts/settings/left_menu/(?P<enabled>.+)$": true, 
+        "^accounts/settings/new_enough/": true, 
+        "^accounts/settings/new_enough/(?P<days>.+)$": true, 
+        "^api/v1/": true, 
+        "^api/v1/?$": true, 
+        "^community/(?P<list_id>[\\d]+)/remove_document/(?P<document_name>[^/]+)/$": false, 
+        "^community/(?P<list_id>[\\d]+)/remove_rule/(?P<rule_id>[^/]+)/$": false, 
+        "^community/(?P<list_id>[\\d]+)/subscribe/confirm/(?P<email>[\\w.@+-]+)/(?P<date>[\\d]+)/(?P<confirm_hash>[a-f0-9]+)/$": false, 
+        "^community/(?P<list_id>[\\d]+)/subscribe/significant/confirm/(?P<email>[\\w.@+-]+)/(?P<date>[\\d]+)/(?P<confirm_hash>[a-f0-9]+)/$": false, 
+        "^community/(?P<list_id>[\\d]+)/unsubscribe/confirm/(?P<email>[\\w.@+-]+)/(?P<date>[\\d]+)/(?P<confirm_hash>[a-f0-9]+)/$": false, 
+        "^community/(?P<list_id>[\\d]+)/unsubscribe/significant/confirm/(?P<email>[\\w.@+-]+)/(?P<date>[\\d]+)/(?P<confirm_hash>[a-f0-9]+)/$": false, 
+        "^community/add_track_document/(?P<document_name>[^/]+)/$": false, 
+        "^community/group/(?P<acronym>[\\w.@+-]+)/$": false, 
+        "^community/group/(?P<acronym>[\\w.@+-]+)/changes/feed/$": false, 
+        "^community/group/(?P<acronym>[\\w.@+-]+)/changes/significant/feed/$": false, 
+        "^community/group/(?P<acronym>[\\w.@+-]+)/csv/$": false, 
+        "^community/group/(?P<acronym>[\\w.@+-]+)/subscribe/$": false, 
+        "^community/group/(?P<acronym>[\\w.@+-]+)/subscribe/significant/$": false, 
+        "^community/group/(?P<acronym>[\\w.@+-]+)/unsubscribe/$": false, 
+        "^community/group/(?P<acronym>[\\w.@+-]+)/unsubscribe/significant/$": false, 
+        "^community/group/(?P<acronym>[\\w.@+-]+)/view/$": false, 
+        "^community/personal/$": false, 
+        "^community/personal/(?P<secret>[a-f0-9]+)/changes/feed/$": false, 
+        "^community/personal/(?P<secret>[a-f0-9]+)/changes/significant/feed/$": false, 
+        "^community/personal/(?P<secret>[a-f0-9]+)/csv/$": false, 
+        "^community/personal/(?P<secret>[a-f0-9]+)/subscribe/$": false, 
+        "^community/personal/(?P<secret>[a-f0-9]+)/subscribe/significant/$": false, 
+        "^community/personal/(?P<secret>[a-f0-9]+)/unsubscribe/$": false, 
+        "^community/personal/(?P<secret>[a-f0-9]+)/unsubscribe/significant/$": false, 
+        "^community/personal/(?P<secret>[a-f0-9]+)/view/$": false, 
+        "^community/personal/csv/$": false, 
+        "^community/remove_track_document/(?P<document_name>[^/]+)/$": false, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/(?:(?P<rev>[0-9-]+)/)?$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/ballot/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/ballot/(?P<ballot_id>[0-9]+)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/ballot/(?P<ballot_id>[0-9]+)/emailposition/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/ballot/(?P<ballot_id>[0-9]+)/position/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/(?P<ballot_id>[0-9]+)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/conflict-review/ad/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/conflict-review/approve/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/conflict-review/notices/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/conflict-review/start_conflict_review/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/conflict-review/state/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/conflict-review/submit/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/conflict-review/telechat/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/doc.json$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/ad/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/addcomment/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/adopt/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/approvaltext/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/approveballot/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/ballotwriteupnotes/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/clearballot/$": false, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/consensus/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/deferballot/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/iesgnote/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/info/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/lastcalltext/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/makelastcall/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/notify/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/replaces/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/requestpublication/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/requestresurrect/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/resurrect/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/shepherd/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/shepherdemail/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/shepherdwriteup/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/state/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/state/(?P<state_type>draft-stream-[a-z]+)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/state/(?P<state_type>iana-action|iana-review)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/status/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/stream/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/submit-to-iesg/$": false, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/suggested-replaces/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/telechat/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/edit/undeferballot/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/email-aliases/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/history/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/(?P<action>state|title|abstract|revise)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<date>\\d{4}-\\d{2}-\\d{2}(-\\d{4})?)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<date>\\d{4}-\\d{2}-\\d{2}(-\\d{4})?)/(?P<seq>\\d+)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<date>\\d{4}-\\d{2}-\\d{2}(-\\d{4})?)/(?P<seq>\\d+)/edit/$": false, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<date>\\d{4}-\\d{2}-\\d{2}(-\\d{4})?)/edit/$": false, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<seq>\\d+)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<seq>\\d+)/edit/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<week_day>[a-zA-Z]+)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<week_day>[a-zA-Z]+)/(?P<seq>\\d+)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<week_day>[a-zA-Z]+)/(?P<seq>\\d+)/edit/$": false, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<week_day>[a-zA-Z]+)/edit/$": false, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/edit/$": false, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<seq>\\d+)/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/material/sessions/(?P<seq>\\d+)/edit/$": false, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/referencedby/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/references/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/shepherdwriteup/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/status-change/ad/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/status-change/approve/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/status-change/last-call/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/status-change/notices/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/status-change/relations/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/status-change/state/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/status-change/submit/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/status-change/telechat/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/status-change/title/$": true, 
+        "^doc/(?P<name>[A-Za-z0-9._+-]+)/writeup/$": true, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/(?P<ann>action|review)/$": true, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/(?P<option>initcharter|recharter|abandon)/$": true, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/ad/$": true, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/approve/$": true, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/ballotwriteupnotes/$": true, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/notify/$": true, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/state/$": true, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/submit/(?:(?P<option>initcharter|recharter)/)?$": true, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/telechat/$": true, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/title/$": false, 
+        "^doc/(?P<name>charter-[A-Za-z0-9._+-]+)/withmilestones-(?P<rev>[0-9-]+).txt$": true, 
+        "^doc//?$": false, 
+        "^doc/active/$": true, 
+        "^doc/ad/(?P<name>[A-Za-z0-9.-]+)/$": true, 
+        "^doc/ajax/internet_draft/?$": false, 
+        "^doc/all/$": true, 
+        "^doc/email-aliases/$": true, 
+        "^doc/help/relationships/$": false, 
+        "^doc/help/relationships/(?P<subset>\\w+)/$": false, 
+        "^doc/help/state/(?P<type>[\\w-]+)/$": true, 
+        "^doc/iesg/(?P<last_call_only>[A-Za-z0-9.-]+/)?$": false, 
+        "^doc/in-last-call/$": true, 
+        "^doc/rfc-status-changes/$": false, 
+        "^doc/search/$": true, 
+        "^doc/select2search/(?P<model_name>(document|docalias))/(?P<doc_type>draft)/$": true, 
+        "^doc/start-rfc-status-change/(?P<name>[A-Za-z0-9._+-]*)$": true, 
+        "^drafts/wgid/(?P<id>\\d+)/$": false, 
+        "^environment/$": false, 
+        "^feed/document-changes/(?P<name>[A-Za-z0-9._+-]+)/$": true, 
+        "^feed/group-changes/(?P<acronym>[a-zA-Z0-9-]+)/$": true, 
+        "^feed/iesg-agenda/$": true, 
+        "^feed/ipr/$": true, 
+        "^feed/last-call/$": true, 
+        "^feed/liaison/(?P<kind>recent|from|to|subject)/(?:(?P<search>[^/]+)/)?$": true, 
+        "^feed/wg-proceedings/$": true, 
+        "^group/$": true, 
+        "^group/(?P<acronym>[a-z0-9]+).json$": true, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)//email-aliases/$": true, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/about/$": true, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/charter/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/conclude/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/deps/dot/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/deps/pdf/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/documents/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/documents/txt/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/edit/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/history/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/init-charter/": true, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/materials/$": true, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/$": true, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/materials/new/(?P<doc_type>[\\w-]+)/$": true, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/milestones/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/milestones/charter/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/milestones/charter/reset/$": false, 
+        "^group/(?P<acronym>[a-zA-Z0-9-._]+)/workflow/$": false, 
+        "^group/chartering/$": true, 
+        "^group/chartering/create/(?P<group_type>(wg|rg))/$": true, 
+        "^group/concluded/$": true, 
+        "^group/email-aliases/$": true, 
+        "^group/groupmenu.json": true, 
+        "^help/state/(?P<doc>[-\\w]+)/(?P<type>[-\\w]+)/?$": false, 
+        "^help/state/(?P<doc>[-\\w]+)/?$": false, 
+        "^help/state/?$": true, 
+        "^iesg/agenda/(?:(?P<date>\\d{4}-\\d{2}-\\d{2})/)?$": true, 
+        "^iesg/agenda/(?:(?P<date>\\d{4}-\\d{2}-\\d{2})/)?agenda.json$": true, 
+        "^iesg/agenda/(?:(?P<date>\\d{4}-\\d{2}-\\d{2})/)?agenda.txt$": true, 
+        "^iesg/agenda/(?:(?P<date>\\d{4}-\\d{2}-\\d{2})/)?agenda_package.txt$": true, 
+        "^iesg/agenda/(?:(?P<date>\\d{4}-\\d{2}-\\d{2})/)?moderator_package.html$": true, 
+        "^iesg/agenda/(?:(?P<date>\\d{4}-\\d{2}-\\d{2})/)?scribe_template.html$": true, 
+        "^iesg/agenda/documents.txt$": true, 
+        "^iesg/agenda/documents/$": true, 
+        "^iesg/agenda/telechat-(?:(?P<date>\\d{4}-\\d{2}-\\d{2})-)?docs.tgz": true, 
+        "^iesg/decisions/(?:(?P<year>[0-9]{4})/)?$": true, 
+        "^iesg/discusses/$": true, 
+        "^iesg/milestones/$": true, 
+        "^ipr/$": true, 
+        "^ipr/(?P<id>\\d+)/$": true, 
+        "^ipr/(?P<id>\\d+)/addcomment/$": true, 
+        "^ipr/(?P<id>\\d+)/addemail/$": true, 
+        "^ipr/(?P<id>\\d+)/edit/$": false, 
+        "^ipr/(?P<id>\\d+)/email/$": true, 
+        "^ipr/(?P<id>\\d+)/history/$": true, 
+        "^ipr/(?P<id>\\d+)/notify/(?P<type>update|posted)/$": true, 
+        "^ipr/(?P<id>\\d+)/post/$": true, 
+        "^ipr/(?P<id>\\d+)/state/$": false, 
+        "^ipr/about/$": true, 
+        "^ipr/admin/(?P<state>pending|removed|parked)/$": true, 
+        "^ipr/ajax/search/$": false, 
+        "^ipr/by-draft/$": true, 
+        "^ipr/new-(?P<type>(specific|generic|third-party))/$": true, 
+        "^ipr/search/$": true, 
+        "^ipr/update/(?P<id>\\d+)/$": false, 
+        "^liaison/$": true, 
+        "^liaison/(?P<object_id>\\d+)/$": true, 
+        "^liaison/(?P<object_id>\\d+)/delete-attachment/(?P<attach_id>[A-Za-z0-9._+-]+)$": true, 
+        "^liaison/(?P<object_id>\\d+)/edit-attachment/(?P<doc_id>[A-Za-z0-9._+-]+)$": true, 
+        "^liaison/(?P<object_id>\\d+)/edit/$": true, 
+        "^liaison/(?P<object_id>\\d+)/history/$": true, 
+        "^liaison/(?P<object_id>\\d+)/reply/$": true, 
+        "^liaison/(?P<object_id>\\d+)/resend/$": true, 
+        "^liaison/(?P<state>(posted|pending|dead))/$": true, 
+        "^liaison/add/$": true, 
+        "^liaison/add/(?P<type>(incoming|outgoing))/$": true, 
+        "^liaison/ajax/get_info/$": true, 
+        "^liaison/ajax/select2search/$": true, 
+        "^liaison/for_approval/$": true, 
+        "^liaison/for_approval/(?P<object_id>\\d+)/$": true, 
+        "^list/wg/$": true, 
+        "^meeting/$": true, 
+        "^meeting/(?P<meeting_num>\\d+)/materials.html$": true, 
+        "^meeting/(?P<num>\\d+).json$": true, 
+        "^meeting/(?P<num>\\d+)/agenda(-utc)?(?P<ext>.html)?/?$": true, 
+        "^meeting/(?P<num>\\d+)/agenda(?P<ext>.csv)$": true, 
+        "^meeting/(?P<num>\\d+)/agenda(?P<ext>.txt)$": true, 
+        "^meeting/(?P<num>\\d+)/agenda.ics$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/(?P<owner>[A-Za-z0-9-.+_]+@[A-Za-z0-9._]+)/(?P<name>[A-Za-z0-9-:_]+).(?P<ext>.html)?/?$": false, 
+        "^meeting/(?P<num>\\d+)/agenda/(?P<owner>[A-Za-z0-9-.+_]+@[A-Za-z0-9._]+)/(?P<name>[A-Za-z0-9-:_]+).json$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/(?P<owner>[A-Za-z0-9-.+_]+@[A-Za-z0-9._]+)/(?P<name>[A-Za-z0-9-:_]+)/details$": false, 
+        "^meeting/(?P<num>\\d+)/agenda/(?P<owner>[A-Za-z0-9-.+_]+@[A-Za-z0-9._]+)/(?P<name>[A-Za-z0-9-:_]+)/edit$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/(?P<owner>[A-Za-z0-9-.+_]+@[A-Za-z0-9._]+)/(?P<name>[A-Za-z0-9-:_]+)/permissions$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/(?P<owner>[A-Za-z0-9-.+_]+@[A-Za-z0-9._]+)/(?P<name>[A-Za-z0-9-:_]+)/session/(?P<scheduledsession_id>\\d+).json$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/(?P<owner>[A-Za-z0-9-.+_]+@[A-Za-z0-9._]+)/(?P<name>[A-Za-z0-9-:_]+)/sessions.json$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/(?P<session>[A-Za-z0-9-]+)-drafts.pdf$": false, 
+        "^meeting/(?P<num>\\d+)/agenda/(?P<session>[A-Za-z0-9-]+)-drafts.tgz$": false, 
+        "^meeting/(?P<num>\\d+)/agenda/(?P<session>[A-Za-z0-9-]+)/?$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/by-room$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/by-type$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/by-type/(?P<type>[a-z]+)$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/by-type/(?P<type>[a-z]+)/ics$": false, 
+        "^meeting/(?P<num>\\d+)/agenda/edit$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/room-view.html$": true, 
+        "^meeting/(?P<num>\\d+)/agenda/week-view.html$": true, 
+        "^meeting/(?P<num>\\d+)/agendas$": false, 
+        "^meeting/(?P<num>\\d+)/agendas.json$": true, 
+        "^meeting/(?P<num>\\d+)/agendas/edit$": false, 
+        "^meeting/(?P<num>\\d+)/constraint/(?P<constraintid>\\d+).json": false, 
+        "^meeting/(?P<num>\\d+)/requests$": false, 
+        "^meeting/(?P<num>\\d+)/room-view.html$": false, 
+        "^meeting/(?P<num>\\d+)/room/(?P<roomid>\\d+).html$": false, 
+        "^meeting/(?P<num>\\d+)/room/(?P<roomid>\\d+).json$": true, 
+        "^meeting/(?P<num>\\d+)/rooms$": true, 
+        "^meeting/(?P<num>\\d+)/session/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/$": true, 
+        "^meeting/(?P<num>\\d+)/session/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<date>\\d{4}-\\d{2}-\\d{2}(-\\d{4})?)/$": false, 
+        "^meeting/(?P<num>\\d+)/session/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<date>\\d{4}-\\d{2}-\\d{2}(-\\d{4})?)/(?P<seq>\\d+)/$": false, 
+        "^meeting/(?P<num>\\d+)/session/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<seq>\\d+)/$": false, 
+        "^meeting/(?P<num>\\d+)/session/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/(?P<week_day>[a-zA-Z]+)/$": false, 
+        "^meeting/(?P<num>\\d+)/session/(?P<sessionid>\\d+).json": false, 
+        "^meeting/(?P<num>\\d+)/session/(?P<sessionid>\\d+)/constraints.json": true, 
+        "^meeting/(?P<num>\\d+)/sessions.json": true, 
+        "^meeting/(?P<num>\\d+)/timeslot/(?P<slotid>\\d+).json$": true, 
+        "^meeting/(?P<num>\\d+)/timeslots$": false, 
+        "^meeting/(?P<num>\\d+)/timeslots.json$": true, 
+        "^meeting/(?P<num>\\d+)/timeslots/edit$": true, 
+        "^meeting/(?P<num>\\d+)/week-view.html$": false, 
+        "^meeting/agenda(-utc)?(?P<ext>.html)?$": false, 
+        "^meeting/agenda(?P<ext>.csv)$": false, 
+        "^meeting/agenda(?P<ext>.txt)$": false, 
+        "^meeting/agenda.ics$": false, 
+        "^meeting/agenda/$": false, 
+        "^meeting/agenda/agenda.ics$": false, 
+        "^meeting/agenda/edit$": false, 
+        "^meeting/agenda/room-view.html$": false, 
+        "^meeting/agenda/week-view.html$": false, 
+        "^meeting/requests$": false, 
+        "^meeting/room-view.html$": false, 
+        "^meeting/week-view.html$": false, 
+        "^nomcom/$": false, 
+        "^nomcom/(?P<year>\\d{4})/$": true, 
+        "^nomcom/(?P<year>\\d{4})/expertise/$": true, 
+        "^nomcom/(?P<year>\\d{4})/feedback/$": true, 
+        "^nomcom/(?P<year>\\d{4})/nominate/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/chair/position/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/chair/position/(?P<position_id>\\d+)/$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/chair/position/(?P<position_id>\\d+)/remove/$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/chair/position/add/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/chair/templates/$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/chair/templates/(?P<template_id>\\d+)/$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/delete-nomcom/$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/edit-members/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/edit-nomcom/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/edit/nominee/(?P<nominee_id>\\d+)$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/feedback-email/$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/feedback/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/key/$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/merge/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/nominate/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/questionnaire-response/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/send-reminder-mail/(?P<type>\\w+)/$": true, 
+        "^nomcom/(?P<year>\\d{4})/private/view-feedback/$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/view-feedback/nominee/(?P<nominee_id>\\d+)$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/view-feedback/pending/$": false, 
+        "^nomcom/(?P<year>\\d{4})/private/view-feedback/unrelated/$": false, 
+        "^nomcom/(?P<year>\\d{4})/process-nomination-status/(?P<nominee_position_id>\\d+)/(?P<state>[\\w]+)/(?P<date>[\\d]+)/(?P<hash>[a-f0-9]+)/$": false, 
+        "^nomcom/(?P<year>\\d{4})/questionnaires/$": true, 
+        "^nomcom/(?P<year>\\d{4})/requirements/$": false, 
+        "^nomcom/ann/$": true, 
+        "^nomcom/ann/(?P<message_id>\\d+)/$": true, 
+        "^person/(?P<personid>[a-z0-9]+).json$": true, 
+        "^person/search/(?P<model_name>(person|email))/$": true, 
+        "^release/$": true, 
+        "^release/(?P<version>[0-9.]+.*)/$": false, 
+        "^secr/announcement/$": true, 
+        "^secr/announcement/confirm/$": true, 
+        "^secr/areas/$": true, 
+        "^secr/areas/(?P<name>[A-Za-z0-9.-]+)/$": true, 
+        "^secr/areas/(?P<name>[A-Za-z0-9.-]+)/edit/$": false, 
+        "^secr/areas/(?P<name>[A-Za-z0-9.-]+)/people/$": false, 
+        "^secr/areas/(?P<name>[A-Za-z0-9.-]+)/people/modify/$": false, 
+        "^secr/areas/add/$": false, 
+        "^secr/areas/getemails": false, 
+        "^secr/areas/getpeople": false, 
+        "^secr/console/$": false, 
+        "^secr/drafts/$": true, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/$": true, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/abstract/$": true, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/announce/$": true, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/author_delete/(?P<oid>\\d{1,6})$": false, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/authors/$": false, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/confirm/$": false, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/edit/$": true, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/email/$": false, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/extend/$": false, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/makerfc/$": false, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/replace/$": false, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/resurrect/$": false, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/revision/$": false, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/update/$": true, 
+        "^secr/drafts/(?P<id>[A-Za-z0-9._\\-\\+]+)/withdraw/$": false, 
+        "^secr/drafts/add/$": true, 
+        "^secr/drafts/approvals/$": true, 
+        "^secr/drafts/dates/$": false, 
+        "^secr/drafts/nudge-report/$": false, 
+        "^secr/groups/$": false, 
+        "^secr/groups/(?P<acronym>[A-Za-z0-9_\\-\\+\\.]+)/$": true, 
+        "^secr/groups/(?P<acronym>[A-Za-z0-9_\\-\\+\\.]+)/charter/$": false, 
+        "^secr/groups/(?P<acronym>[A-Za-z0-9_\\-\\+\\.]+)/delete/(?P<id>\\d{1,6})/$": true, 
+        "^secr/groups/(?P<acronym>[A-Za-z0-9_\\-\\+\\.]+)/edit/$": true, 
+        "^secr/groups/(?P<acronym>[A-Za-z0-9_\\-\\+\\.]+)/gm/$": false, 
+        "^secr/groups/(?P<acronym>[A-Za-z0-9_\\-\\+\\.]+)/gm/edit/$": false, 
+        "^secr/groups/(?P<acronym>[A-Za-z0-9_\\-\\+\\.]+)/people/$": true, 
+        "^secr/groups/add/$": true, 
+        "^secr/groups/blue-dot-report/$": false, 
+        "^secr/groups/search/$": true, 
+        "^secr/meetings/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/remove/$": false, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/schedule/$": false, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/non_session/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/non_session/delete/(?P<slot_id>\\d{1,6})/$": false, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/non_session/edit/(?P<slot_id>\\d{1,6})/$": false, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/rooms/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/select/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/times/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/times/delete/(?P<time>[0-9\\:]+)/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/times/edit/(?P<time>[0-9\\:]+)/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\\-]+)/unschedule/(?P<session_id>\\d{1,6})/$": false, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/blue_sheet/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/blue_sheet/generate/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/edit/$": true, 
+        "^secr/meetings/(?P<meeting_id>\\d{1,6})/notifications/$": true, 
+        "^secr/meetings/add/$": true, 
+        "^secr/meetings/ajax/get-times/(?P<meeting_id>\\d{1,6})/(?P<day>\\d)/$": false, 
+        "^secr/meetings/blue_sheet/$": false, 
+        "^secr/proceedings/$": true, 
+        "^secr/proceedings/(?P<meeting_num>\\d{1,3})/$": false, 
+        "^secr/proceedings/(?P<meeting_num>\\d{1,3})/recording/$": true, 
+        "^secr/proceedings/(?P<meeting_num>\\d{1,3})/recording/edit/(?P<name>[A-Za-z0-9_\\-\\+]+)$": true, 
+        "^secr/proceedings/(?P<meeting_num>\\d{1,3}|interim-\\d{4}-[A-Za-z0-9_\\-\\+]+)/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/$": true, 
+        "^secr/proceedings/(?P<meeting_num>\\d{1,3}|interim-\\d{4}-[A-Za-z0-9_\\-\\+]+)/(?P<session_id>\\d{1,6})/$": false, 
+        "^secr/proceedings/ajax/generate-proceedings/(?P<meeting_num>\\d{1,3})/$": false, 
+        "^secr/proceedings/ajax/get-sessions/(?P<meeting_num>\\d{1,3})/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/": false, 
+        "^secr/proceedings/ajax/order-slide/$": false, 
+        "^secr/proceedings/build/(?P<meeting_num>\\d{1,3}|interim-\\d{4}-[A-Za-z0-9_\\-\\+]+)/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/$": false, 
+        "^secr/proceedings/delete/(?P<slide_id>[A-Za-z0-9._\\-\\+]+)/$": false, 
+        "^secr/proceedings/edit-slide/(?P<slide_id>[A-Za-z0-9._\\-\\+]+)/$": false, 
+        "^secr/proceedings/interim/$": false, 
+        "^secr/proceedings/interim/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/$": false, 
+        "^secr/proceedings/interim/(?P<meeting_num>interim-\\d{4}-[A-Za-z0-9_\\-\\+]+)/delete/$": false, 
+        "^secr/proceedings/move-slide/(?P<slide_id>[A-Za-z0-9._\\-\\+]+)/(?P<direction>(up|down))/$": false, 
+        "^secr/proceedings/process-pdfs/(?P<meeting_num>\\d{1,3})/$": false, 
+        "^secr/proceedings/progress-report/(?P<meeting_num>\\d{1,3})/$": false, 
+        "^secr/proceedings/replace-slide/(?P<slide_id>[A-Za-z0-9._\\-\\+]+)/$": false, 
+        "^secr/roles/$": true, 
+        "^secr/roles/(?P<acronym>[A-Za-z0-9_\\-\\+\\.]+)/delete/(?P<id>\\d{1,6})/$": true, 
+        "^secr/roles/ajax/get-roles/(?P<acronym>[A-Za-z0-9_\\-\\+\\.]+)/$": false, 
+        "^secr/rolodex/$": true, 
+        "^secr/rolodex/(?P<id>\\d{1,6})/$": true, 
+        "^secr/rolodex/(?P<id>\\d{1,6})/edit/$": false, 
+        "^secr/rolodex/add-proceed/$": false, 
+        "^secr/rolodex/add/$": false, 
+        "^secr/sreq/$": true, 
+        "^secr/sreq/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/$": true, 
+        "^secr/sreq/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/approve/$": false, 
+        "^secr/sreq/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/cancel/$": false, 
+        "^secr/sreq/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/confirm/$": false, 
+        "^secr/sreq/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/edit/$": true, 
+        "^secr/sreq/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/new/$": true, 
+        "^secr/sreq/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/no_session/$": true, 
+        "^secr/sreq/(?P<num>[A-Za-z0-9_\\-\\+]+)/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/edit/$": false, 
+        "^secr/sreq/(?P<num>[A-Za-z0-9_\\-\\+]+)/(?P<acronym>[A-Za-z0-9_\\-\\+]+)/view/$": false, 
+        "^secr/sreq/status/$": false, 
+        "^secr/telechat/$": true, 
+        "^secr/telechat/(?P<date>[0-9\\-]+)/bash/$": false, 
+        "^secr/telechat/(?P<date>[0-9\\-]+)/doc/$": true, 
+        "^secr/telechat/(?P<date>[0-9\\-]+)/doc/(?P<name>[A-Za-z0-9.-]+)/$": false, 
+        "^secr/telechat/(?P<date>[0-9\\-]+)/doc/(?P<name>[A-Za-z0-9.-]+)/(?P<nav>next|previous)/$": false, 
+        "^secr/telechat/(?P<date>[0-9\\-]+)/management/$": false, 
+        "^secr/telechat/(?P<date>[0-9\\-]+)/minutes/$": false, 
+        "^secr/telechat/(?P<date>[0-9\\-]+)/roll-call/$": false, 
+        "^secr/telechat/new/$": false, 
+        "^sitemap-(?P<section>.+).xml$": true, 
+        "^sitemap.xml$": true, 
+        "^stream/$": true, 
+        "^stream/(?P<acronym>[a-zA-Z0-9-]+)/$": true, 
+        "^stream/(?P<acronym>[a-zA-Z0-9-]+)/edit/$": true, 
+        "^submit/$": true, 
+        "^submit/approvals/$": true, 
+        "^submit/approvals/addpreapproval/$": true, 
+        "^submit/approvals/cancelpreapproval/(?P<preapproval_id>[a-f\\d]+)/$": true, 
+        "^submit/note-well/$": true, 
+        "^submit/status/$": true, 
+        "^submit/status/(?P<submission_id>\\d+)/$": true, 
+        "^submit/status/(?P<submission_id>\\d+)/(?P<access_token>[a-f\\d]*)/$": true, 
+        "^submit/status/(?P<submission_id>\\d+)/(?P<access_token>[a-f\\d]+)/edit/$": true, 
+        "^submit/status/(?P<submission_id>\\d+)/confirm/(?P<auth_token>[a-f\\d]+)/$": true, 
+        "^submit/status/(?P<submission_id>\\d+)/edit/$": true, 
+        "^submit/tool-instructions/$": true, 
+        "^sync/(?P<org>\\w+)/notify/(?P<notification>\\w+)/$": true, 
+        "^sync/discrepancies/$": true, 
+        "^sync/rfceditor/undo/": true, 
+        "^templates/(?P<acronym>[\\w.@+-]+)/$": false, 
+        "^templates/(?P<acronym>[\\w.@+-]+)/(?P<template_id>[\\d]+)/$": false
+      }
     }
   }, 
   "version": "6.5.0"
