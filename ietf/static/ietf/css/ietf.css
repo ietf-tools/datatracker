@@ -415,3 +415,10 @@ h1 small .pull-right { margin-top: 10.5px; }
 .large {font-size: 120%;}
 .llarge {font-size: 144%;}
 .lllarge {font-size: 172.8%;}
+
+/* This should not really be needed, but on iPads the navbar form is
+   calculated to be a different width than it should be when we leave this at
+   the bootstrap default auto setting:
+*/
+form.navbar-form input.form-control.input-sm { width: 141px; }
+	
