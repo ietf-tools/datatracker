@@ -27113,5 +27113,23 @@
       }
     }
   }, 
-  "version": "6.4.2"
+  "6.5.0": {
+    "code": {
+      "coverage": 0.0, 
+      "covered": {}, 
+      "format": 1
+    }, 
+    "template": {
+      "coverage": 0.0, 
+      "covered": {}, 
+      "format": 1
+    }, 
+    "time": "2015-10-10T09:52:47Z", 
+    "url": {
+      "coverage": 0.0, 
+      "covered": {}, 
+      "format": 1
+    }
+  }, 
+  "version": "6.5.0"
 }
