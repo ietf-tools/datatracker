@@ -11,7 +11,7 @@ ietfdb (6.5.0) ietf; urgency=medium
   This work was funded by the IAOC.  The statement of work is available here:
   http://iaoc.ietf.org/documents/liaison-sow-04.pdf
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  09 Oct 2015 12:49:53 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Oct 2015 09:54:56 +0000
 
 
 ietfdb (6.4.2) ietf; urgency=medium
