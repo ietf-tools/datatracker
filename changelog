@@ -1,5 +1,7 @@
 ietfdb (6.5.0) ietf; urgency=medium
 
+  **Liaison tool rewrite**
+
   This release merges in work from rcross@amsl.com and esanchez@yaco.es which
   provides a major rewrite of the IETF datatracker liaison support.  It
   introduces a simplified user interface, new improved and reworked data
