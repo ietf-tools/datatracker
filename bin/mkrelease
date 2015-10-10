@@ -57,8 +57,12 @@ function die() {
     exit 1
 }
 
-function note() { 
+function say() { 
 	if [ -n "$VERBOSE" ]; then echo -e "$*"; fi
+}
+
+function note() { 
+	if [ -n "$VERBOSE" ]; then echo -e "\n$*"; fi
 }
 
 # ----------------------------------------------------------------------
@@ -101,7 +105,7 @@ while true ; do
     case "$1" in
 	-h| --help)		usage; exit;;	#	 Show this help, then exit
 	-m| --message)		MSG=$2; shift;;		# Specify a commit message
-	-n| --dry-run)		do="echo";;	#	 Show what would be done	
+	-n| --dry-run)		do="echo ==>";;	#	 Show what would be done	
 	-v| --verbose)		VERBOSE=1;;	#	 Be more talkative
 	-V| --version)		version; exit;;	#	 Show program version, then exit
 	--)			shift; break;;
@@ -137,10 +141,10 @@ elif [ "${DIR%%/*}" = "branch" ]; then
     SRC="branch/${tmp%%/*}"	# keep first subdir under branch/
 fi
 
-note ""
+
 note "Releasing from $SRC"
 
-note "Locating the root of the working copy..."
+note "Locating the root of the working copy ..."
 while [ "${#DIR}" -gt "${#SRC}" ]; do
     [ "$DIR" = "$prev" ] && die "Internal error"
     cd ..
@@ -151,7 +155,7 @@ done
 if [ "$DIR" != "$SRC" ]; then
     die "Couldn't find the root of your '$SRC' working copy"
 fi
-note "  $DIR"
+say "  $DIR"
 
 REPO=${REPO%/}				# remove trailing slash
 SRC=${SRC#/}				# remove leading slash
@@ -166,7 +170,7 @@ DEV="$(printf %d.%d.%d.dev0 $MAJOR $MINOR $NEXT)"
 
 #cd $DIR ??
 
-note "Collecting static files"
+note "Collecting static files ..."
 $do ietf/manage.py collectstatic --noinput --ignore=bower.json --ignore='README.*'
 $do svn commit static/lib/ -m "Updated static files under static/lib/"
 
@@ -175,13 +179,13 @@ $do svn commit static/lib/ -m "Updated static files under static/lib/"
 # TCLOG=$(ls -t ../test-crawl-*.log | head -n 1)
 # [ $TCLOG -nt .svn/.latest-commit ] || die "Looked for ../test-crawl-*.log, but didn't find one newer than the latest repository commit ($RDATE)"
 
-note "Checking that changelog information is available"
+note "Checking that changelog information is available ..."
 changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
 [ "$changes" ] || die "No changelog information for $VER found"
 #note "$changes"
 
-note "Checking that we don't have any model changes that haven't been captured in migrations"
-ietf/manage.py makemigrations | tee /dev/stderr | grep "^No changes detected$" || die "Model changes without migrations found."
+note "Checking that we don't have any model changes that haven't been captured in migrations ..."
+ietf/manage.py makemigrations | tee /dev/stderr | grep -q "^No changes detected$" || die "Model changes without migrations found."
 
 note "Running the tests suite and writing release coverage data ..."
 $do ietf/manage.py test --settings=ietf.settings_releasetest --save-version-coverage=$VER
@@ -191,50 +195,50 @@ $do svn commit release-coverage.json -m "Code coverage data for release $VER"
 
 contributors=$(echo "$changes" | sed 's/\.[ \t\n]/ /'| tr -c "a-z0-9.@-" "\n" | sort | uniq | grep '@' | sed -r -e 's/^\.+//' -e 's/\.+$//' -e 's/^/-c /' || true)
 
-note "Set the current time on the release notes in the changelog file"
+note "Setting the current time on the release notes in the changelog file ..."
 $do sed -r -i -e "1,/^ -- /s/([A-Za-z-]+ <[a-z0-9.-]+@[a-z0-9.-]+>  ).*$/\1$(TZ=UTC date +'%d %b %Y %H:%M:%S %z')/" changelog
-note " $(grep -m1 "^ -- " changelog)"
+say " $(grep -m1 "^ -- " changelog)"
 
-note "Verifying that version $VER doesn't already exist..."
+note "Verifying that version $VER doesn't already exist ..."
 $do svn info $REPO/tags/$VER 2>&1 | $do egrep -q "(Not a valid URL|URL .* non-existent)" || die "The tag '$VER' already exists (or there was an error testing for it)."
-note "  Ok"
+say "  Ok"
 
-note "Committing the changelog..."
+note "Committing the changelog ..."
 $do svn commit changelog -m "Changelog entry for $VER"
 
-note "Verifying there's no uncommitted changes..."
+note "Verifying there's no uncommitted changes ..."
 $do svn st | grep "^[AMGRD] " && die "There seems to be uncommitted changes in this working copy"
 
-note "\nUpdating the version info in $VERFILE and making sure'\$Rev\$' is Ok"
+note "Updating the version info in $VERFILE and making sure'\$Rev\$' is Ok"
 $do sed -i -r -e "/^__version__/s/\"[.0-9]+(dev[0-9]+)?\"/\"$VER\"/" \
 	  -e "/^__rev__/s/\".*\"/\"\$Rev:\$\"/" \
 	$VERFILE
 
-note "\nUpdating the deployment settings in settings.py"
+note "Updating the deployment settings in settings.py"
 $do sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = False/' \
 	      -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'production'/" \
 	$SETTINGS
 
-note "\nCommitting version information for version $VER: $MSG"
+note "Committing version information for version $VER: $MSG ..."
 $do svn commit $VERFILE $SETTINGS -m "Set version info to release version $VER before branching. $MSG"
 
-note "\nCreating new tag 'tags/$VER' from $SRC"
+note "Creating new tag 'tags/$VER' from $SRC ..."
 $do svn cp $REPO/$SRC $REPO/tags/$VER -m "Creating new tag 'tags/$VER' from $SRC"
 
-note "\nUpdating version and revision info to indicate that the source and branch aren't releases"
+note "Updating version and revision info to indicate that the source and branch aren't releases"
 $do sed -i -r -e "/^__version__/s/\"[0-9.]*\"/\"$DEV\"/" \
 	      -e "/^__rev__/s/\"\\\$Rev: (.*) \\\$\"/\"\$Rev:\$ (dev) Latest release: Rev. \1 \"/" \
 	$VERFILE
 
-note "\nUpdating the deployment settings in settings.py to development mode"
+note "Updating the deployment settings in settings.py to development mode"
 $do sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' \
 	      -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'development'/" \
 	$SETTINGS
 
-note "\nCommitting the updated version and deployment settings"
+note "Committing the updated version and deployment settings"
 $do svn commit $VERFILE $SETTINGS -m "Set version info and settings back to development mode"
 
-note "\nCreating new tag 'tags/dev/$DEV' from $SRC"
+note "Creating new tag 'tags/dev/$DEV' from $SRC"
 $do svn cp $REPO/$SRC $REPO/tags/dev/$DEV -m "Creating new tag 'tags/dev/$DEV' from $SRC"
 
 $do svn update -q
