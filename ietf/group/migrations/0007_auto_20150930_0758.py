@@ -21,19 +21,27 @@ def get_rid_of_empty_charters(apps, schema_editor):
         if group.charter:
             charter = group.charter
 
+            # clean up any empty files left behind
+            revisions = set()
+            revisions.add(charter.rev)
+            for h in charter.history_set.all():
+                revisions.add(h.rev)
+
+            for rev in revisions:
+                path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.name, rev))
+                try:
+                    if os.path.exists(path):
+                        with open(path, 'r') as f:
+                            if f.read() == "":
+                                os.remove(path)
+                except IOError:
+                    pass
+
             group.charter = None
             group.save()
 
-            path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.name, charter.rev))
-            try:
-                if os.path.exists(path):
-                    with open(path, 'r') as f:
-                        if f.read() == "":
-                            os.remove(path)
-            except IOError:
-                pass
-
             charter.delete()
+
 
 def fix_empty_rrg_charter(apps, schema_editor):
     Document = apps.get_model("doc", "Document")
