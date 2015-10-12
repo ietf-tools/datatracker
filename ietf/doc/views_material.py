@@ -107,11 +107,11 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
             events = []
 
             if action == "new":
-                doc = Document()
-                doc.type = document_type
-                doc.group = group
-                doc.rev = "00"
-                doc.name = form.cleaned_data["name"]
+                doc = Document.objects.create(
+                    type=document_type,
+                    group=group,
+                    rev="00",
+                    name=form.cleaned_data["name"])
 
                 prev_rev = None
             else:
