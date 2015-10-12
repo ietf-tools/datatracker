@@ -684,10 +684,11 @@ class DocEvent(models.Model):
     desc = models.TextField()
 
     def for_current_revision(self):
-        return self.time >= self.doc.latest_event(NewRevisionDocEvent,type='new_revision').time
+        e = self.doc.latest_event(NewRevisionDocEvent,type='new_revision')
+        return not e or (self.time, self.pk) >= (e.time, e.pk)
 
     def get_dochistory(self):
-        return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time').first()
+        return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time', '-pk').first()
 
     def __unicode__(self):
         return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
