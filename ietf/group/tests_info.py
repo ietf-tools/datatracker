@@ -13,17 +13,14 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.core.urlresolvers import NoReverseMatch
 
 from ietf.doc.models import Document, DocAlias, DocEvent, State
-from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, MilestoneGroupEvent
+from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions 
 from ietf.group.utils import save_group_in_history
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.group.mails import ( email_milestone_review_reminder, email_milestones_due,
-    email_milestones_overdue, groups_needing_milestones_due_reminder,
-    groups_needing_milestones_overdue_reminder, groups_with_milestones_needing_review )
 
 class GroupPagesTests(TestCase):
     def setUp(self):
@@ -482,6 +479,7 @@ class GroupEditTests(TestCase):
         area = group.parent
         ad = Person.objects.get(name="Aread Irector")
         state = GroupStateName.objects.get(slug="bof")
+        empty_outbox()
         r = self.client.post(url,
                              dict(name="Mars Not Special Interest Group",
                                   acronym="mars",
@@ -512,6 +510,10 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.groupurl_set.all()[0].url, "http://mars.mars")
         self.assertEqual(group.groupurl_set.all()[0].name, "MARS site")
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))))
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('Personnel change' in outbox[0]['Subject'])
+        for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
+            self.assertTrue(prefix+'@' in outbox[0]['To'])
 
     def test_initial_charter(self):
         make_test_data()
@@ -551,6 +553,7 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, dict(instructions="Test instructions"))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue('iesg-secretary@' in outbox[-1]['To'])
         # the WG remains active until the Secretariat takes action
         group = Group.objects.get(acronym=group.acronym)
         self.assertEqual(group.state_id, "active")
@@ -653,6 +656,11 @@ class MilestoneTests(TestCase):
         self.assertTrue("Added milestone" in m.milestonegroupevent_set.all()[0].desc)
         self.assertEqual(len(outbox),mailbox_before+2)
         self.assertFalse(any('Review Required' in x['Subject'] for x in outbox[-2:]))
+        self.assertTrue('Milestones changed' in outbox[-2]['Subject'])
+        self.assertTrue('mars-chairs@' in outbox[-2]['To'])
+        self.assertTrue('aread@' in outbox[-2]['To'])
+        self.assertTrue('Milestones changed' in outbox[-1]['Subject'])
+        self.assertTrue('mars-wg@' in outbox[-1]['To'])
 
     def test_add_milestone_as_chair(self):
         m1, m2, group = self.create_test_milestones()
@@ -826,137 +834,6 @@ class MilestoneTests(TestCase):
 
         self.assertEqual(group.charter.docevent_set.count(), events_before + 2) # 1 delete, 1 add
 
-    def test_send_review_needed_reminders(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-        person = Person.objects.get(user__username="marschairman")
-
-        m1 = GroupMilestone.objects.create(group=group,
-                                           desc="Test 1",
-                                           due=datetime.date.today(),
-                                           resolved="",
-                                           state_id="review")
-        MilestoneGroupEvent.objects.create(
-            group=group, type="changed_milestone",
-            by=person, desc='Added milestone "%s"' % m1.desc, milestone=m1,
-            time=datetime.datetime.now() - datetime.timedelta(seconds=60))
-
-        # send
-        mailbox_before = len(outbox)
-        for g in groups_with_milestones_needing_review():
-            email_milestone_review_reminder(g)
-
-        self.assertEqual(len(outbox), mailbox_before) # too early to send reminder
-
-
-        # add earlier added milestone
-        m2 = GroupMilestone.objects.create(group=group,
-                                           desc="Test 2",
-                                           due=datetime.date.today(),
-                                           resolved="",
-                                           state_id="review")
-        MilestoneGroupEvent.objects.create(
-            group=group, type="changed_milestone",
-            by=person, desc='Added milestone "%s"' % m2.desc, milestone=m2,
-            time=datetime.datetime.now() - datetime.timedelta(days=10))
-
-        # send
-        mailbox_before = len(outbox)
-        for g in groups_with_milestones_needing_review():
-            email_milestone_review_reminder(g)
-
-        self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue(group.acronym in outbox[-1]["Subject"])
-        self.assertTrue(m1.desc in unicode(outbox[-1]))
-        self.assertTrue(m2.desc in unicode(outbox[-1]))
-
-    def test_send_milestones_due_reminders(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-
-        early_warning_days = 30
-
-        # due dates here aren't aligned on the last day of the month,
-        # but everything should still work
-
-        m1 = GroupMilestone.objects.create(group=group,
-                                           desc="Test 1",
-                                           due=datetime.date.today(),
-                                           resolved="Done",
-                                           state_id="active")
-        m2 = GroupMilestone.objects.create(group=group,
-                                           desc="Test 2",
-                                           due=datetime.date.today() + datetime.timedelta(days=early_warning_days - 10),
-                                           resolved="",
-                                           state_id="active")
-
-        # send
-        mailbox_before = len(outbox)
-        for g in groups_needing_milestones_due_reminder(early_warning_days):
-            email_milestones_due(g, early_warning_days)
-
-        self.assertEqual(len(outbox), mailbox_before) # none found
-
-        m1.resolved = ""
-        m1.save()
-
-        m2.due = datetime.date.today() + datetime.timedelta(days=early_warning_days)
-        m2.save()
-
-        # send
-        mailbox_before = len(outbox)
-        for g in groups_needing_milestones_due_reminder(early_warning_days):
-            email_milestones_due(g, early_warning_days)
-
-        self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue(group.acronym in outbox[-1]["Subject"])
-        self.assertTrue(m1.desc in unicode(outbox[-1]))
-        self.assertTrue(m2.desc in unicode(outbox[-1]))
-
-    def test_send_milestones_overdue_reminders(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-
-        # due dates here aren't aligned on the last day of the month,
-        # but everything should still work
-
-        m1 = GroupMilestone.objects.create(group=group,
-                                           desc="Test 1",
-                                           due=datetime.date.today() - datetime.timedelta(days=200),
-                                           resolved="Done",
-                                           state_id="active")
-        m2 = GroupMilestone.objects.create(group=group,
-                                           desc="Test 2",
-                                           due=datetime.date.today() - datetime.timedelta(days=10),
-                                           resolved="",
-                                           state_id="active")
-
-        # send
-        mailbox_before = len(outbox)
-        for g in groups_needing_milestones_overdue_reminder(grace_period=30):
-            email_milestones_overdue(g)
-
-        self.assertEqual(len(outbox), mailbox_before) # none found
-
-        m1.resolved = ""
-        m1.save()
-
-        m2.due = self.last_day_of_month(datetime.date.today() - datetime.timedelta(days=300))
-        m2.save()
-        
-        # send
-        mailbox_before = len(outbox)
-        for g in groups_needing_milestones_overdue_reminder(grace_period=30):
-            email_milestones_overdue(g)
-
-        self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue(group.acronym in outbox[-1]["Subject"])
-        self.assertTrue(m1.desc in unicode(outbox[-1]))
-        self.assertTrue(m2.desc in unicode(outbox[-1]))
-
 class CustomizeWorkflowTests(TestCase):
     def test_customize_workflow(self):
         make_test_data()
@@ -1049,26 +926,41 @@ expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf
     def tearDown(self):
         os.unlink(self.group_alias_file.name)
 
-    def testEmailAliases(self):
+    def testAliases(self):
+        url = urlreverse('old_group_email_aliases', kwargs=dict(acronym="mars"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 302)
 
         for testdict in [dict(acronym="mars"),dict(acronym="mars",group_type="wg")]:
-            url = urlreverse('ietf.group.info.email_aliases', kwargs=testdict)
-            r = self.client.get(url)
+            url = urlreverse('old_group_email_aliases', kwargs=testdict)
+            r = self.client.get(url,follow=True)
             self.assertTrue(all([x in r.content for x in ['mars-ads@','mars-chairs@']]))
             self.assertFalse(any([x in r.content for x in ['ames-ads@','ames-chairs@']]))
 
         url = urlreverse('ietf.group.info.email_aliases', kwargs=dict())
         login_testing_unauthorized(self, "plain", url)
         r = self.client.get(url)
+        self.assertTrue(r.status_code,200)
         self.assertTrue(all([x in r.content for x in ['mars-ads@','mars-chairs@','ames-ads@','ames-chairs@']]))
 
         url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
         self.assertTrue('mars-ads@' in r.content)
 
         url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(group_type="rg"))
         r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
         self.assertFalse('mars-ads@' in r.content)
+
+    def testExpansions(self):
+        url = urlreverse('ietf.group.info.email', kwargs=dict(acronym="mars"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertTrue('Email Aliases' in r.content)
+        self.assertTrue('mars-ads@ietf.org' in r.content)
+        self.assertTrue('group_personnel_change' in r.content)
+ 
 
 
 class AjaxTests(TestCase):

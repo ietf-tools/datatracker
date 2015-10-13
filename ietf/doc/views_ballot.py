@@ -17,8 +17,8 @@ from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotP
     BallotType, LastCallDocEvent, WriteupDocEvent, save_document_in_history, IESG_SUBSTATE_TAGS )
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
-from ietf.doc.mails import ( email_ad, email_ballot_deferred, email_ballot_undeferred, 
-    email_state_changed, extra_automation_headers, generate_last_call_announcement, 
+from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
+    extra_automation_headers, generate_last_call_announcement, 
     generate_issue_ballot_mail, generate_ballot_writeup, generate_approval_mail )
 from ietf.doc.lastcall import request_last_call
 from ietf.iesg.models import TelechatDate
@@ -27,6 +27,8 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
+from ietf.mailtrigger.utils import gather_address_lists
+from ietf.mailtrigger.forms import CcSelectForm
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -68,8 +70,6 @@ def do_undefer_ballot(request, doc):
     doc.save()
 
     update_telechat(request, doc, login, telechat_date)
-    if e:
-        email_state_changed(request, doc, e.desc)
     email_ballot_undeferred(request, doc, login.plain_name(), telechat_date)
     
 def position_to_ballot_choice(position):
@@ -284,28 +284,36 @@ def send_ballot_comment(request, name, ballot_id):
                                  blocking_name=blocking_name,
                                  settings=settings))
     frm = ad.role_email("ad").formatted_email()
-    to = "The IESG <iesg@ietf.org>"
+    
+    addrs = gather_address_lists('ballot_saved',doc=doc)
         
     if request.method == 'POST':
-        cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
-        if request.POST.get("cc_state_change") and doc.notify:
-            cc.extend(doc.notify.split(','))
-        if request.POST.get("cc_group_list") and doc.group.list_email:
-            cc.append(doc.group.list_email)
+        cc = []
+        cc_select_form = CcSelectForm(data=request.POST,mailtrigger_slug='ballot_saved',mailtrigger_context={'doc':doc})
+        if cc_select_form.is_valid():
+            cc.extend(cc_select_form.get_selected_addresses())
+        extra_cc = [x.strip() for x in request.POST.get("extra_cc","").split(',') if x.strip()]
+        if extra_cc:
+            cc.extend(extra_cc)
 
-        send_mail_text(request, to, frm, subject, body, cc=u", ".join(cc))
+        send_mail_text(request, addrs.to, frm, subject, body, cc=u", ".join(cc))
             
         return HttpResponseRedirect(return_to_url)
+
+    else: 
+
+        cc_select_form = CcSelectForm(mailtrigger_slug='ballot_saved',mailtrigger_context={'doc':doc})
   
     return render_to_response('doc/ballot/send_ballot_comment.html',
                               dict(doc=doc,
                                    subject=subject,
                                    body=body,
                                    frm=frm,
-                                   to=to,
+                                   to=addrs.as_strings().to,
                                    ad=ad,
                                    can_send=d or c,
                                    back_url=back_url,
+                                   cc_select_form = cc_select_form,
                                   ),
                               context_instance=RequestContext(request))
 
@@ -362,9 +370,6 @@ def defer_ballot(request, name):
         
         doc.time = (e and e.time) or datetime.datetime.now()
         doc.save()
-
-        if e:
-            email_state_changed(request, doc, e.desc)
 
         update_telechat(request, doc, login, telechat_date)
         email_ballot_deferred(request, doc, login.plain_name(), telechat_date)
@@ -458,10 +463,6 @@ def lastcalltext(request, name):
                     doc.time = (e and e.time) or datetime.datetime.now()
                     doc.save()
 
-                    if e:
-                        email_state_changed(request, doc, e.desc)
-                        email_ad(request, doc, doc.ad, login, e.desc)
-
                     request_last_call(request, doc)
                     
                     return render_to_response('doc/draft/last_call_requested.html',
@@ -538,12 +539,24 @@ def ballot_writeupnotes(request, name):
                     pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
                     pos.save()
 
+                    # Consider mailing this position to 'ballot_saved'
+
                 approval = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
                 if not approval:
                     approval = generate_approval_mail(request, doc)
 
                 msg = generate_issue_ballot_mail(request, doc, ballot)
-                send_mail_preformatted(request, msg)
+
+                addrs = gather_address_lists('ballot_issued',doc=doc).as_strings()
+                override = {'To':addrs.to}
+                if addrs.cc:
+                    override['CC'] = addrs.cc
+                send_mail_preformatted(request, msg, override=override)
+
+                addrs = gather_address_lists('ballot_issued_iana',doc=doc).as_strings()
+                override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "Bcc": None , "Reply-To": None}
+                if addrs.cc:
+                    override['CC'] = addrs.cc
                 send_mail_preformatted(request, msg, extra=extra_automation_headers(doc),
                                        override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "CC": None, "Bcc": None , "Reply-To": None})
 
@@ -696,23 +709,19 @@ def approve_ballot(request, name):
 
         e.save()
         
-        change_description = e.desc + " and state has been changed to %s" % doc.get_state("draft-iesg").name
-        
         e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
 
         doc.time = (e and e.time) or datetime.datetime.now()
         doc.save()
-
-        email_state_changed(request, doc, change_description)
-        email_ad(request, doc, doc.ad, login, change_description)
 
         # send announcement
 
         send_mail_preformatted(request, announcement)
 
         if action == "to_announcement_list":
+            addrs = gather_address_lists('ballot_approved_ietf_stream_iana').as_strings(compact=False)
             send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                   override={ "To": "IANA <%s>"%settings.IANA_APPROVE_EMAIL, "CC": None, "Bcc": None, "Reply-To": None})
+                                   override={ "To": addrs.to, "CC": addrs.cc, "Bcc": None, "Reply-To": None})
 
         msg = infer_message(announcement)
         msg.by = login
@@ -753,8 +762,9 @@ def make_last_call(request, name):
         if form.is_valid():
             send_mail_preformatted(request, announcement)
             if doc.type.slug == 'draft':
+                addrs = gather_address_lists('last_call_issued_iana',doc=doc).as_strings(compact=False)
                 send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                       override={ "To": "IANA <drafts-lastcall@icann.org>", "CC": None, "Bcc": None, "Reply-To": None})
+                                       override={ "To": addrs.to, "CC": addrs.cc, "Bcc": None, "Reply-To": None})
 
             msg = infer_message(announcement)
             msg.by = login
@@ -782,11 +792,6 @@ def make_last_call(request, name):
             doc.time = (e and e.time) or datetime.datetime.now()
             doc.save()
 
-            change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, new_state.name)
-
-            email_state_changed(request, doc, change_description)
-            email_ad(request, doc, doc.ad, login, change_description)
-            
             e = LastCallDocEvent(doc=doc, by=login)
             e.type = "sent_last_call"
             e.desc = "The following Last Call announcement was sent out:<br><br>"

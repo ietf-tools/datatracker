@@ -1,5 +1,6 @@
 # generation of mails 
 
+import os
 import textwrap, datetime
 
 from django.template.loader import render_to_string
@@ -9,14 +10,14 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
-from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent, DocTagName
-from ietf.doc.utils import needed_ballot_positions
-from ietf.person.models import Person
-from ietf.group.models import Group, Role
+from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
+from ietf.doc.utils import needed_ballot_positions, get_document_content
+from ietf.group.models import Role
 from ietf.doc.models import Document
+from ietf.mailtrigger.utils import gather_address_lists
 
-def email_state_changed(request, doc, text):
-    to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
+def email_state_changed(request, doc, text, mailtrigger_id=None):
+    (to,cc) = gather_address_lists(mailtrigger_id or 'doc_state_edited',doc=doc)
     if not to:
         return
     
@@ -25,17 +26,17 @@ def email_state_changed(request, doc, text):
               "ID Tracker State Update Notice: %s" % doc.file_tag(),
               "doc/mail/state_changed_email.txt",
               dict(text=text,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=cc)
 
 def email_stream_changed(request, doc, old_stream, new_stream, text=""):
     """Email the change text to the notify group and to the stream chairs"""
-    to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
-
-    # These use comprehension to deal with conditions when there might be more than one chair listed for a stream
+    streams = []
     if old_stream:
-        to.extend([r.formatted_email() for r in Role.objects.filter(group__acronym=old_stream.slug, name='chair')])
+        streams.append(old_stream.slug)
     if new_stream:
-        to.extend([r.formatted_email() for r in Role.objects.filter(group__acronym=new_stream.slug, name='chair')])
+        streams.append(new_stream.slug)
+    (to,cc) = gather_address_lists('doc_stream_changed',doc=doc,streams=streams)
 
     if not to:
         return
@@ -48,12 +49,14 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
               "ID Tracker Stream Change Notice: %s" % doc.file_tag(),
               "doc/mail/stream_changed_email.txt",
               dict(text=text,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=cc)
 
 def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
     extra=extra_automation_headers(doc)
-    extra['Cc'] = 'iesg-secretary@ietf.org'
-    send_mail(request, ["IANA <iana@iana.org>", "RFC Editor <rfc-editor@rfc-editor.org>"], None,
+    addrs = gather_address_lists('doc_pulled_from_rfc_queue',doc=doc)
+    extra['Cc'] = addrs.as_strings().cc
+    send_mail(request, addrs.to , None,
               "%s changed state from %s to %s" % (doc.name, prev_state.name, next_state.name),
               "doc/mail/pulled_from_rfc_queue_email.txt",
               dict(doc=doc,
@@ -63,31 +66,18 @@ def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               extra=extra)
 
-
-def email_authors(request, doc, subject, text):
-    to = [x.strip() for x in doc.author_list().split(',')]
-    if not to:
-        return
-    
-    send_mail_text(request, to, None, subject, text)
+def email_iesg_processing_document(request, doc, changes):
+    addrs = gather_address_lists('doc_iesg_processing_started',doc=doc)
+    send_mail(request, addrs.to, None,
+              'IESG processing details changed for %s' % doc.name,
+              'doc/mail/email_iesg_processing.txt', 
+              dict(doc=doc,
+                   changes=changes),
+              cc=addrs.cc)
 
 def html_to_text(html):
     return strip_tags(html.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("<br>", "\n"))
     
-def email_ad(request, doc, ad, changed_by, text, subject=None):
-    if not ad or not changed_by or ad == changed_by:
-        return
-
-    to = ad.role_email("ad").formatted_email()
-    send_mail(request, to,
-              "DraftTracker Mail System <iesg-secretary@ietf.org>",
-              "%s updated by %s" % (doc.file_tag(), changed_by.plain_name()),
-              "doc/mail/change_notice.txt",
-              dict(text=html_to_text(text),
-                   doc=doc,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
-
-
 def generate_ballot_writeup(request, doc):
     e = doc.latest_event(type="iana_review")
     iana = e.desc if e else ""
@@ -104,14 +94,11 @@ def generate_ballot_writeup(request, doc):
     
 def generate_last_call_announcement(request, doc):
     expiration_date = datetime.date.today() + datetime.timedelta(days=14)
-    cc = []
     if doc.group.type_id in ("individ", "area"):
         group = "an individual submitter"
         expiration_date += datetime.timedelta(days=14)
     else:
         group = "the %s WG (%s)" % (doc.group.name, doc.group.acronym)
-        if doc.group.list_email:
-            cc.append(doc.group.list_email)
 
     doc.filled_title = textwrap.fill(doc.title, width=70, subsequent_indent=" " * 3)
     
@@ -122,11 +109,14 @@ def generate_last_call_announcement(request, doc):
     else:
         ipr_links = None
 
+
+    addrs = gather_address_lists('last_call_issued',doc=doc).as_strings()
     mail = render_to_string("doc/mail/last_call_announcement.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url() + "ballot/",
                                  expiration_date=expiration_date.strftime("%Y-%m-%d"), #.strftime("%B %-d, %Y"),
-                                 cc=", ".join("<%s>" % e for e in cc),
+                                 to=addrs.to,
+                                 cc=addrs.cc,
                                  group=group,
                                  docs=[ doc ],
                                  urls=[ settings.IDTRACKER_BASE_URL + doc.get_absolute_url() ],
@@ -170,16 +160,10 @@ def generate_approval_mail_approved(request, doc):
     else:
         action_type = "Document"
 
-    cc = []
-    cc.extend(settings.DOC_APPROVAL_EMAIL_CC)
-
     # the second check catches some area working groups (like
     # Transport Area Working Group)
     if doc.group.type_id not in ("area", "individ", "ag") and not doc.group.name.endswith("Working Group"):
         doc.group.name_with_wg = doc.group.name + " Working Group"
-        if doc.group.list_email:
-            cc.append("%s mailing list <%s>" % (doc.group.acronym, doc.group.list_email))
-        cc.append("%s chair <%s-chairs@ietf.org>" % (doc.group.acronym, doc.group.acronym))
     else:
         doc.group.name_with_wg = doc.group.name
 
@@ -202,11 +186,13 @@ def generate_approval_mail_approved(request, doc):
 
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
         
+    addrs = gather_address_lists('ballot_approved_ietf_stream',doc=doc).as_strings()
     return render_to_string("doc/mail/approval_mail.txt",
                             dict(doc=doc,
                                  docs=[doc],
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
-                                 cc=",\n    ".join(cc),
+                                 to = addrs.to, 
+                                 cc = addrs.cc,
                                  doc_type=doc_type,
                                  made_by=made_by,
                                  contacts=contacts,
@@ -215,30 +201,19 @@ def generate_approval_mail_approved(request, doc):
                             )
 
 def generate_approval_mail_rfc_editor(request, doc):
+    # This is essentially dead code - it is only exercised if the IESG ballots on some other stream's document,
+    # which does not happen now that we have conflict reviews.
     disapproved = doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
-
-    to = []
-    if doc.group.type_id != "individ":
-        for r in doc.group.role_set.filter(name="chair").select_related():
-            to.append(r.formatted_email())
-
-    if doc.stream_id in ("ise", "irtf"):
-        # include ISE/IRTF chairs
-        g = Group.objects.get(acronym=doc.stream_id)
-        for r in g.role_set.filter(name="chair").select_related():
-            to.append(r.formatted_email())
-
-    if doc.stream_id == "irtf":
-        # include IRSG
-        to.append('"Internet Research Steering Group" <irsg@irtf.org>')
+    addrs = gather_address_lists('ballot_approved_conflrev', doc=doc).as_strings()
 
     return render_to_string("doc/mail/approval_mail_rfc_editor.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  doc_type=doc_type,
                                  disapproved=disapproved,
-                                 to=", ".join(to),
+                                 to = addrs.to,
+                                 cc = addrs.cc,
                                  )
                             )
 
@@ -268,17 +243,19 @@ def generate_publication_request(request, doc):
                             )
 
 def send_last_call_request(request, doc):
-    to = "iesg-secretary@ietf.org"
+    (to, cc) = gather_address_lists('last_call_requested',doc=doc)
     frm = '"DraftTracker Mail System" <iesg-secretary@ietf.org>'
     
     send_mail(request, to, frm,
               "Last Call: %s" % doc.file_tag(),
               "doc/mail/last_call_request.txt",
               dict(docs=[doc],
-                   doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+                   doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                  ),
+              cc=cc)
 
 def email_resurrect_requested(request, doc, by):
-    to = "I-D Administrator <internet-drafts@ietf.org>"
+    (to, cc) = gather_address_lists('resurrection_requested',doc=doc)
 
     if by.role_set.filter(name="secr", group__acronym="secretariat"):
         e = by.role_email("secr", group="secretariat")
@@ -291,25 +268,22 @@ def email_resurrect_requested(request, doc, by):
               "doc/mail/resurrect_request_email.txt",
               dict(doc=doc,
                    by=frm,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=cc)
 
 def email_resurrection_completed(request, doc, requester):
-    if requester.role_set.filter(name="secr", group__acronym="secretariat"):
-        e = requester.role_email("secr", group="secretariat")
-    else:
-        e = requester.role_email("ad")
-
-    to = e.formatted_email()
+    (to, cc) = gather_address_lists('resurrection_completed',doc=doc)
     frm = "I-D Administrator <internet-drafts-reply@ietf.org>"
     send_mail(request, to, frm,
               "I-D Resurrection Completed - %s" % doc.file_tag(),
               "doc/mail/resurrect_completed_email.txt",
               dict(doc=doc,
                    by=frm,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=cc)
 
 def email_ballot_deferred(request, doc, by, telechat_date):
-    to = "iesg@ietf.org"
+    (to, cc) = gather_address_lists('ballot_deferred',doc=doc)
     frm = "DraftTracker Mail System <iesg-secretary@ietf.org>"
     send_mail(request, to, frm,
               "IESG Deferred Ballot notification: %s" % doc.file_tag(),
@@ -317,10 +291,11 @@ def email_ballot_deferred(request, doc, by, telechat_date):
               dict(doc=doc,
                    by=by,
                    action='deferred',
-                   telechat_date=telechat_date))
+                   telechat_date=telechat_date),
+              cc=cc)
 
 def email_ballot_undeferred(request, doc, by, telechat_date):
-    to = "iesg@ietf.org"
+    (to, cc)  = gather_address_lists('ballot_deferred',doc=doc)
     frm = "DraftTracker Mail System <iesg-secretary@ietf.org>"
     send_mail(request, to, frm,
               "IESG Undeferred Ballot notification: %s" % doc.file_tag(),
@@ -328,69 +303,18 @@ def email_ballot_undeferred(request, doc, by, telechat_date):
               dict(doc=doc,
                    by=by,
                    action='undeferred',
-                   telechat_date=telechat_date))
+                   telechat_date=telechat_date),
+              cc=cc)
 
 def generate_issue_ballot_mail(request, doc, ballot):
-    active_ads = Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area").distinct()
     
-    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ballot=ballot).order_by("-time", '-id').select_related('ad')
-
-    # format positions and setup discusses and comments
-    ad_feedback = []
-    seen = set()
-    active_ad_positions = []
-    inactive_ad_positions = []
-    for p in positions:
-        if p.ad in seen:
-            continue
-
-        seen.add(p.ad)
-        
-        def formatted(val):
-            if val:
-                return "[ X ]"
-            else:
-                return "[   ]"
-
-        fmt = u"%-21s%-10s%-11s%-9s%-10s" % (
-            p.ad.plain_name()[:21],
-            formatted(p.pos_id == "yes"),
-            formatted(p.pos_id == "noobj"),
-            formatted(p.pos_id == "discuss"),
-            "[ R ]" if p.pos_id == "recuse" else formatted(p.pos_id == "abstain"),
-            )
-
-        if p.ad in active_ads:
-            active_ad_positions.append(fmt)
-            if not p.pos_id == "discuss":
-                p.discuss = ""
-            if p.comment or p.discuss:
-                ad_feedback.append(p)
-        else:
-            inactive_ad_positions.append(fmt)
-        
-    active_ad_positions.sort()
-    inactive_ad_positions.sort()
-    ad_feedback.sort(key=lambda p: p.ad.plain_name())
-
     e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
     last_call_expires = e.expires if e else None
-
-    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
-    approval_text = e.text if e else ""
-
-    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
-    ballot_writeup = e.text if e else ""
 
     return render_to_string("doc/mail/issue_ballot_mail.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
-                                 active_ad_positions=active_ad_positions,
-                                 inactive_ad_positions=inactive_ad_positions,
-                                 ad_feedback=ad_feedback,
                                  last_call_expires=last_call_expires,
-                                 approval_text=approval_text,
-                                 ballot_writeup=ballot_writeup,
                                  needed_ballot_positions=
                                    needed_ballot_positions(doc,
                                      doc.active_ballot().active_ad_positions().values()
@@ -398,7 +322,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
                                  )
                             )
 
-def email_iana(request, doc, to, msg):
+def email_iana(request, doc, to, msg, cc=None):
     # fix up message and send it with extra info on doc in headers
     import email
     parsed_msg = email.message_from_string(msg.encode("utf-8"))
@@ -411,7 +335,8 @@ def email_iana(request, doc, to, msg):
     send_mail_text(request, "IANA <%s>" % to,
                    parsed_msg["From"], parsed_msg["Subject"],
                    parsed_msg.get_payload(),
-                   extra=extra)
+                   extra=extra,
+                   cc=cc)
 
 def extra_automation_headers(doc):
     extra = {}
@@ -422,45 +347,70 @@ def extra_automation_headers(doc):
 
 def email_last_call_expired(doc):
     text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.get_state("draft-iesg").name
+    addrs = gather_address_lists('last_call_expired',doc=doc)
     
-    to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
-    to.insert(0, "iesg@ietf.org")
-
     send_mail(None,
-              to,
+              addrs.to,
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
               "Last Call Expired: %s" % doc.file_tag(),
               "doc/mail/change_notice.txt",
               dict(text=text,
                    doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
-              cc="iesg-secretary@ietf.org")
+              cc = addrs.cc)
 
-def stream_state_email_recipients(doc, extra_recipients=[]):
-    persons = set()
-    res = []
-    for r in Role.objects.filter(group=doc.group, name__in=("chair", "delegate")).select_related("person", "email"):
-        res.append(r.formatted_email())
-        persons.add(r.person)
+def email_intended_status_changed(request, doc, text):
+    (to,cc) = gather_address_lists('doc_intended_status_changed',doc=doc)
 
-    for email in doc.authors.all():
-        if email.person not in persons:
-            res.append(email.formatted_email())
-            persons.add(email.person)
+    if not to:
+        return
+    
+    text = strip_tags(text)
+    send_mail(request, to, None,
+              "Intended Status for %s changed to %s" % (doc.file_tag(),doc.intended_std_level),
+              "doc/mail/intended_status_changed_email.txt",
+              dict(text=text,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=cc)
 
-    for e in extra_recipients:
-        if e.person not in persons:
-            res.append(e.formatted_email())
-            persons.add(e.person)
+def email_comment(request, doc, comment):
+    (to, cc) = gather_address_lists('doc_added_comment',doc=doc)
 
-    return res
+    send_mail(request, to, None, "Comment added to %s history"%doc.name,
+              "doc/mail/comment_added_email.txt",
+              dict(
+                comment=comment,
+                doc=doc,
+                by=request.user.person,
+                url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+              ),
+              cc = cc)
 
-def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=""):
-    recipients = stream_state_email_recipients(doc)
+
+def email_adopted(request, doc, prev_state, new_state, by, comment=""):
+    (to, cc) = gather_address_lists('doc_adopted_by_group',doc=doc)
 
     state_type = (prev_state or new_state).type
 
-    send_mail(request, recipients, settings.DEFAULT_FROM_EMAIL,
+    send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
+              u"The %s %s has adopted %s" % 
+                  (doc.group.acronym.upper(),doc.group.type_id.upper(), doc.name),
+              'doc/mail/doc_adopted_email.txt',
+              dict(doc=doc,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                   state_type=state_type,
+                   prev_state=prev_state,
+                   new_state=new_state,
+                   by=by,
+                   comment=comment),
+              cc=cc)
+
+def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=""):
+    (to, cc)= gather_address_lists('doc_stream_state_edited',doc=doc)
+
+    state_type = (prev_state or new_state).type
+
+    send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
               u"%s changed for %s" % (state_type.label, doc.name),
               'doc/mail/stream_state_changed_email.txt',
               dict(doc=doc,
@@ -469,17 +419,14 @@ def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=
                    prev_state=prev_state,
                    new_state=new_state,
                    by=by,
-                   comment=comment))
+                   comment=comment),
+              cc=cc)
 
 def email_stream_tags_changed(request, doc, added_tags, removed_tags, by, comment=""):
-    extra_recipients = []
 
-    if DocTagName.objects.get(slug="sheph-u") in added_tags and doc.shepherd:
-        extra_recipients.append(doc.shepherd)
+    (to, cc) = gather_address_lists('doc_stream_state_edited',doc=doc)
 
-    recipients = stream_state_email_recipients(doc, extra_recipients)
-
-    send_mail(request, recipients, settings.DEFAULT_FROM_EMAIL,
+    send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
               u"Tags changed for %s" % doc.name,
               'doc/mail/stream_tags_changed_email.txt',
               dict(doc=doc,
@@ -487,32 +434,46 @@ def email_stream_tags_changed(request, doc, added_tags, removed_tags, by, commen
                    added=added_tags,
                    removed=removed_tags,
                    by=by,
-                   comment=comment))
+                   comment=comment),
+              cc=cc)
 
 def send_review_possibly_replaces_request(request, doc):
-    to_email = []
-
-    if doc.stream_id == "ietf":
-        to_email.extend(r.formatted_email() for r in Role.objects.filter(group=doc.group, name="chair").select_related("email", "person"))
-    elif doc.stream_id == "iab":
-        to_email.append("IAB Stream <iab-stream@iab.org>")
-    elif doc.stream_id == "ise":
-        to_email.append("Independent Submission Editor <rfc-ise@rfc-editor.org>")
-    elif doc.stream_id == "irtf":
-        to_email.append("IRSG <irsg@irtf.org>")
+    addrs = gather_address_lists('doc_replacement_suggested',doc=doc)
+    to = set(addrs.to)
+    cc = set(addrs.cc)
 
     possibly_replaces = Document.objects.filter(name__in=[alias.name for alias in doc.related_that_doc("possibly-replaces")])
-    other_chairs = Role.objects.filter(group__in=[other.group for other in possibly_replaces], name="chair").select_related("email", "person")
-    to_email.extend(r.formatted_email() for r in other_chairs)
+    for other_doc in possibly_replaces:
+        (other_to, other_cc) = gather_address_lists('doc_replacement_suggested',doc=other_doc)
+        to.update(other_to)
+        cc.update(other_cc)
 
-    if not to_email:
-        to_email.append("internet-drafts@ietf.org")
+    send_mail(request, list(to), settings.DEFAULT_FROM_EMAIL,
+              'Review of suggested possible replacements for %s-%s needed' % (doc.name, doc.rev),
+              'doc/mail/review_possibly_replaces_request.txt', 
+              dict(doc= doc,
+                   possibly_replaces=doc.related_that_doc("possibly-replaces"),
+                   review_url=settings.IDTRACKER_BASE_URL + urlreverse("doc_review_possibly_replaces", kwargs={ "name": doc.name })),
+              cc=list(cc),)
 
-    if to_email:
-        send_mail(request, list(set(to_email)), settings.DEFAULT_FROM_EMAIL,
-                  'Review of suggested possible replacements for %s-%s needed' % (doc.name, doc.rev),
-                  'doc/mail/review_possibly_replaces_request.txt', {
-                      'doc': doc,
-                      'possibly_replaces': doc.related_that_doc("possibly-replaces"),
-                      'review_url': settings.IDTRACKER_BASE_URL + urlreverse("doc_review_possibly_replaces", kwargs={ "name": doc.name }),
-                  })
+def email_charter_internal_review(request, charter):
+    addrs = gather_address_lists('charter_internal_review',doc=charter,group=charter.group)
+    filename = '%s-%s.txt' % (charter.canonical_name(),charter.rev)
+    charter_text = get_document_content(
+                        filename,
+                        os.path.join(settings.CHARTER_PATH,filename),
+                        split=False,
+                        markup=False,
+                   )
+    send_mail(request, addrs.to, settings.DEFAULT_FROM_EMAIL,
+              'Internal WG Review: %s (%s)'%(charter.group.name,charter.group.acronym),
+              'doc/mail/charter_internal_review.txt',
+              dict(charter=charter,
+                   chairs=charter.group.role_set.filter(name='chair').values_list('person__name',flat=True),
+                   ads=charter.group.role_set.filter(name='ad').values_list('person__name',flat=True),
+                   charter_text=charter_text,
+                   milestones=charter.group.groupmilestone_set.filter(state="charter"),
+              ),
+              cc=addrs.cc,
+              extra={'Reply-To':"iesg@ietf.org"},
+             )

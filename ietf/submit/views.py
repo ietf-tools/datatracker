@@ -16,7 +16,7 @@ from ietf.doc.utils import prettify_std_name
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.submit.forms import SubmissionUploadForm, NameEmailForm, EditSubmissionForm, PreapprovalForm, ReplacesForm
-from ietf.submit.mail import send_full_url, send_approval_request_to_group, send_submission_confirmation, submission_confirmation_email_list, send_manual_post_request
+from ietf.submit.mail import send_full_url, send_approval_request_to_group, send_submission_confirmation, send_manual_post_request
 from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName
 from ietf.submit.utils import approvable_submissions_for_user, preapprovals_for_user, recently_approved_by_user
 from ietf.submit.utils import check_idnits, found_idnits, validate_submission, create_submission_event
@@ -24,6 +24,7 @@ from ietf.submit.utils import post_submission, cancel_submission, rename_submiss
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 from ietf.utils.draft import Draft
 from ietf.utils.log import log
+from ietf.mailtrigger.utils import gather_address_lists
 
 
 def upload_submission(request):
@@ -185,7 +186,9 @@ def submission_status(request, submission_id, access_token=None):
     can_force_post = is_secretariat and submission.state.next_states.filter(slug="posted")
     show_send_full_url = not key_matched and not is_secretariat and submission.state_id not in ("cancel", "posted")
 
-    confirmation_list = submission_confirmation_email_list(submission)
+    addrs = gather_address_lists('sub_confirmation_requested',submission=submission)
+    confirmation_list = addrs.to
+    confirmation_list.extend(addrs.cc)
 
     requires_group_approval = (submission.rev == '00' and submission.group and submission.group.type_id in ("wg", "rg", "ietf", "irtf", "iab", "iana", "rfcedtyp") and not Preapproval.objects.filter(name=submission.name).exists())
 
@@ -210,7 +213,7 @@ def submission_status(request, submission_id, access_token=None):
         action = request.POST.get('action')
         if action == "autopost" and submission.state_id == "uploaded":
             if not can_edit:
-                return HttpResponseForbidden("You do not have permission to perfom this action")
+                return HttpResponseForbidden("You do not have permission to perform this action")
 
             submitter_form = NameEmailForm(request.POST, prefix="submitter")
             replaces_form = ReplacesForm(request.POST, name=submission.name)

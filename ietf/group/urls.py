@@ -15,4 +15,3 @@ urlpatterns = patterns('',
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/', include('ietf.group.urls_info_details')),
 )
 
-

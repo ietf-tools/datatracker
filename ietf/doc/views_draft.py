@@ -18,10 +18,11 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocAlias, RelatedDocument, State,
     StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS,
     save_document_in_history )
-from ietf.doc.mails import ( email_ad, email_pulled_from_rfc_queue, email_resurrect_requested,
+from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_requested,
     email_resurrection_completed, email_state_changed, email_stream_changed,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
-    generate_publication_request  )
+    generate_publication_request, email_adopted, email_intended_status_changed,
+    email_iesg_processing_document )
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
@@ -39,6 +40,7 @@ from ietf.person.models import Person, Email
 from ietf.secr.lib.template import jsonapi
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.mailtrigger.utils import gather_address_lists
 
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
@@ -111,8 +113,7 @@ def change_state(request, name):
                 doc.time = e.time
                 doc.save()
 
-                email_state_changed(request, doc, msg)
-                email_ad(request, doc, doc.ad, login, msg)
+                email_state_changed(request, doc, msg,'doc_state_edited')
 
 
                 if prev_state and prev_state.slug in ("ann", "rfcqueue") and new_state.slug not in ("rfcqueue", "pub"):
@@ -451,7 +452,7 @@ def change_intention(request, name):
                 doc.time = e.time
                 doc.save()
 
-                email_ad(request, doc, doc.ad, login, email_desc)
+                email_intended_status_changed(request, doc, email_desc)
 
             return HttpResponseRedirect(doc.get_absolute_url())
 
@@ -583,10 +584,11 @@ def to_iesg(request,name):
 
             doc.save()
 
+            addrs= gather_address_lists('pubreq_iesg',doc=doc)
             extra = {}
-            extra['Cc'] = "%s-chairs@ietf.org, iesg-secretary@ietf.org, %s" % (doc.group.acronym,doc.notify)
+            extra['Cc'] = addrs.as_strings().cc
             send_mail(request=request,
-                      to = doc.ad.email_address(),
+                      to = addrs.to,
                       frm = login.formatted_email(),
                       subject = "Publication has been requested for %s-%s" % (doc.name,doc.rev),
                       template = "doc/submit_to_iesg_email.txt",
@@ -670,8 +672,6 @@ def edit_info(request, name):
                 e.desc = "IESG process started in state <b>%s</b>" % doc.get_state("draft-iesg").name
                 e.save()
                     
-            orig_ad = doc.ad
-
             changes = []
 
             def desc(attr, new, old):
@@ -721,13 +721,14 @@ def edit_info(request, name):
                 e.type = "changed_document"
                 e.save()
 
+            # Todo - chase this
             update_telechat(request, doc, login,
                             r['telechat_date'], r['returning_item'])
 
             doc.time = datetime.datetime.now()
 
-            if changes and not new_document:
-                email_ad(request, doc, orig_ad, login, "\n".join(changes))
+            if changes:
+                email_iesg_processing_document(request, doc, changes)
                 
             doc.save()
             return HttpResponseRedirect(doc.get_absolute_url())
@@ -1134,7 +1135,7 @@ def request_publication(request, name):
 
     m = Message()
     m.frm = request.user.person.formatted_email()
-    m.to = "RFC Editor <rfc-editor@rfc-editor.org>"
+    (m.to, m.cc) = gather_address_lists('pubreq_rfced',doc=doc)
     m.by = request.user.person
 
     next_state = State.objects.get(used=True, type="draft-stream-%s" % doc.stream.slug, slug="rfc-edit")
@@ -1164,7 +1165,7 @@ def request_publication(request, name):
             send_mail_message(request, m)
 
             # IANA copy
-            m.to = settings.IANA_APPROVE_EMAIL
+            (m.to, m.cc) = gather_address_lists('pubreq_rfced_iana',doc=doc)
             send_mail_message(request, m, extra=extra_automation_headers(doc))
 
             e = DocEvent(doc=doc, type="requested_publication", by=request.user.person)
@@ -1300,7 +1301,7 @@ def adopt_draft(request, name):
 
                 update_reminder(doc, "stream-s", e, due_date)
 
-                email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
+                email_adopted(request, doc, prev_state, new_state, by, comment)
 
             # comment
             if comment:

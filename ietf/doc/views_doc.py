@@ -51,7 +51,6 @@ from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_wi
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event )
 from ietf.community.models import CommunityList
-from ietf.doc.mails import email_ad
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group_type, can_manage_materials
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, role_required
@@ -59,6 +58,8 @@ from ietf.name.models import StreamName, BallotPositionName
 from ietf.person.models import Email
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
+from ietf.doc.mails import email_comment 
+from ietf.mailtrigger.utils import gather_relevant_expansions
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -73,6 +74,7 @@ def render_document_top(request, doc, tab, name):
     if doc.type_id == "draft" or (doc.type_id == "charter" and doc.group.type_id == "wg"):
         tabs.append(("IESG Writeups", "writeup", urlreverse("doc_writeup", kwargs=dict(name=name)), True))
 
+    tabs.append(("Email expansions","email",urlreverse("doc_email", kwargs=dict(name=name)), True))
     tabs.append(("History", "history", urlreverse("doc_history", kwargs=dict(name=name)), True))
 
     if name.startswith("rfc"):
@@ -569,9 +571,36 @@ def document_main(request, name, rev=None):
     raise Http404
 
 
+def get_email_aliases(name):
+    if name:
+        pattern = re.compile('^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
+    else:
+        pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
+    aliases = []
+    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+        for line in virtual_file.readlines():
+            m = pattern.match(line)
+            if m:
+                aliases.append({'doc_name':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
+    return aliases
 
 
+def document_email(request,name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "email", name)
 
+    aliases = get_email_aliases(name) if doc.type_id=='draft' else None
+
+    expansions = gather_relevant_expansions(doc=doc)
+    
+    return render(request, "doc/document_email.html",
+                            dict(doc=doc,
+                                 top=top,
+                                 aliases=aliases,
+                                 expansions=expansions,
+                                 ietf_domain=settings.IETF_DOMAIN,
+                                )
+                 )
 
 
 def document_history(request, name):
@@ -658,14 +687,14 @@ def document_writeup(request, name):
                          "",
                          [("WG Review Announcement",
                            text_from_writeup("changed_review_announcement"),
-                           urlreverse("ietf.doc.views_charter.announcement_text", kwargs=dict(name=doc.name, ann="review")))]
+                           urlreverse("ietf.doc.views_charter.review_announcement_text", kwargs=dict(name=doc.name)))]
                          ))
 
         sections.append(("WG Action Announcement",
                          "",
                          [("WG Action Announcement",
                            text_from_writeup("changed_action_announcement"),
-                           urlreverse("ietf.doc.views_charter.announcement_text", kwargs=dict(name=doc.name, ann="action")))]
+                           urlreverse("ietf.doc.views_charter.action_announcement_text", kwargs=dict(name=doc.name)))]
                          ))
 
         if doc.latest_event(BallotDocEvent, type="created_ballot"):
@@ -877,9 +906,8 @@ def add_comment(request, name):
             e.desc = c
             e.save()
 
-            if doc.type_id == "draft":
-                email_ad(request, doc, doc.ad, login,
-                            "A new comment added by %s" % login.name)
+            email_comment(request, doc, e)
+
             return redirect("doc_history", name=doc.name)
     else:
         form = AddCommentForm()
@@ -984,20 +1012,12 @@ def edit_notify(request, name):
 
 def email_aliases(request,name=''):
     doc = get_object_or_404(Document, name=name) if name else None
-    if name:
-        pattern = re.compile('^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
-    else:
+    if not name:
         # require login for the overview page, but not for the
-        # document-specific pages handled above
+        # document-specific pages 
         if not request.user.is_authenticated():
                 return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
-        pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
-    aliases = []
-    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            if m:
-                aliases.append({'doc_name':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
+    aliases = get_email_aliases(name)
 
     return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
 

@@ -1,0 +1,28 @@
+{% autoescape off %}{% filter wordwrap:73 %}
+
+A new IETF working group is being considered in the {{charter.group.parent.name}}. The draft charter for this working group is provided below for your review and comment.                
+
+Review time is one week.               
+
+The IETF Secretariat                
+
+{{charter.group.name}} ({{ charter.group.acronym }})               
+--------------------------------------------------                   
+Current Status: {{ charter.group.state.name }} {% if charter.group.state_id != 'bof' %}Working Group{% endif %}
+
+Chairs :        {{ chairs|join:', '|default:'TBD' }}
+
+Area Director: 	{{ ads|join:', '|default:'TBD' }}
+
+Mailing List: 	{{ charter.group.list_email|default:'TBD' }}
+
+{{ charter.name }}-{{ charter.rev }}
+
+{{ charter_text }}
+
+Proposed milestones
+
+{%if milestones %}{% for milestone in milestones reversed %}{{ milestone.due|date:"M Y" }} {{ milestone.desc }}
+{% endfor %}{% else %}TBD{% endif %}
+
+{% endfilter %}{% endautoescape%}

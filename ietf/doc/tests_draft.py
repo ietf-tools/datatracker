@@ -20,7 +20,7 @@ from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import TestCase
 
 
@@ -72,10 +72,11 @@ class ChangeStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count(), events_before + 2)
         self.assertTrue("Test comment" in draft.docevent_set.all()[0].desc)
         self.assertTrue("IESG state changed" in draft.docevent_set.all()[1].desc)
-        self.assertEqual(len(outbox), mailbox_before + 2)
-        self.assertTrue("State Update Notice" in outbox[-2]['Subject'])
-        self.assertTrue(draft.name in outbox[-1]['Subject'])
-
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("State Update Notice" in outbox[-1]['Subject'])
+        self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To'])
+        self.assertTrue('mars-chairs@' in outbox[-1]['To'])
+        self.assertTrue('aread@' in outbox[-1]['To'])
         
         # check that we got a previous state now
         r = self.client.get(url)
@@ -101,11 +102,19 @@ class ChangeStateTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "review-e")
-        self.assertEqual(len(outbox), mailbox_before + 2 + 1)
+
+        self.assertEqual(len(outbox), mailbox_before + 2)
+
         self.assertTrue(draft.name in outbox[-1]['Subject'])
         self.assertTrue("changed state" in outbox[-1]['Subject'])
         self.assertTrue("is no longer" in str(outbox[-1]))
         self.assertTrue("Test comment" in str(outbox[-1]))
+        self.assertTrue("rfc-editor@" in outbox[-1]['To'])
+        self.assertTrue("iana@" in outbox[-1]['To'])
+
+        self.assertTrue("ID Tracker State Update Notice:" in outbox[-2]['Subject'])
+        self.assertTrue("aread@" in outbox[-2]['To'])
+        
 
     def test_change_iana_state(self):
         draft = make_test_data()
@@ -145,8 +154,8 @@ class ChangeStateTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         url = urlreverse('doc_change_state', kwargs=dict(name=draft.name))
 
-        mailbox_before = len(outbox)
-        
+        empty_outbox()
+
         self.assertTrue(not draft.latest_event(type="changed_ballot_writeup_text"))
         r = self.client.post(url, dict(state=State.objects.get(used=True, type="draft-iesg", slug="lc-req").pk))
         self.assertTrue("Your request to issue" in r.content)
@@ -171,8 +180,14 @@ class ChangeStateTests(TestCase):
         self.assertTrue("Technical Summary" in e.text)
 
         # mail notice
-        self.assertTrue(len(outbox) > mailbox_before)
-        self.assertTrue("Last Call:" in outbox[-1]['Subject'])
+        self.assertEqual(len(outbox), 2) 
+
+        self.assertTrue("ID Tracker State Update" in outbox[0]['Subject'])
+        self.assertTrue("aread@" in outbox[0]['To'])
+
+        self.assertTrue("Last Call:" in outbox[1]['Subject'])
+        self.assertTrue('iesg-secretary@' in outbox[1]['To'])
+        self.assertTrue('aread@' in outbox[1]['Cc'])
 
         # comment
         self.assertTrue("Last call was requested" in draft.latest_event().desc)
@@ -252,6 +267,8 @@ class EditInfoTests(TestCase):
         self.assertEqual(draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date, TelechatDate.objects.active()[0].date)
         self.assertEqual(len(outbox),mailbox_before+1)
         self.assertTrue("Telechat update" in outbox[-1]['Subject'])
+        self.assertTrue('iesg@' in outbox[-1]['To'])
+        self.assertTrue('iesg-secretary@' in outbox[-1]['To'])
 
         # change telechat
         mailbox_before=len(outbox)
@@ -330,7 +347,7 @@ class EditInfoTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form select[name=intended_std_level]')), 1)
-        self.assertTrue('@' in q('form input[name=notify]')[0].get('value'))
+        self.assertEqual(None,q('form input[name=notify]')[0].value)
 
         # add
         events_before = draft.docevent_set.count()
@@ -356,7 +373,9 @@ class EditInfoTests(TestCase):
         self.assertEqual(draft.docevent_set.count(), events_before + 3)
         events = list(draft.docevent_set.order_by('time', 'id'))
         self.assertEqual(events[-3].type, "started_iesg_process")
-        self.assertEqual(len(outbox), mailbox_before)
+        self.assertEqual(len(outbox), mailbox_before+1)
+        self.assertTrue('IESG processing' in outbox[-1]['Subject'])
+        self.assertTrue('draft-ietf-mars-test2@' in outbox[-1]['To']) 
 
         # Redo, starting in publication requested to make sure WG state is also set
         draft.unset_state('draft-iesg')
@@ -431,6 +450,7 @@ class ResurrectTests(TestCase):
         self.assertTrue("Resurrection" in e.desc)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Resurrection" in outbox[-1]['Subject'])
+        self.assertTrue('internet-drafts@' in outbox[-1]['To'])
 
     def test_resurrect(self):
         draft = make_test_data()
@@ -463,6 +483,9 @@ class ResurrectTests(TestCase):
         self.assertEqual(draft.get_state_slug(), "active")
         self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
         self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue('Resurrection Completed' in outbox[-1]['Subject'])
+        self.assertTrue('iesg-secretary' in outbox[-1]['To'])
+        self.assertTrue('aread' in outbox[-1]['To'])
 
 
 class ExpireIDsTests(TestCase):
@@ -524,8 +547,9 @@ class ExpireIDsTests(TestCase):
         send_expire_warning_for_draft(draft)
 
         self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue("aread@ietf.org" in str(outbox[-1])) # author
-        self.assertTrue("marschairman@ietf.org" in str(outbox[-1]))
+        self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To']) # Gets the authors
+        self.assertTrue('mars-chairs@ietf.org' in outbox[-1]['Cc'])
+        self.assertTrue('aread@' in outbox[-1]['Cc'])
         
     def test_expire_drafts(self):
         from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
@@ -556,6 +580,9 @@ class ExpireIDsTests(TestCase):
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("expired" in outbox[-1]["Subject"])
+        self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To']) # gets authors
+        self.assertTrue('mars-chairs@ietf.org' in outbox[-1]['Cc'])
+        self.assertTrue('aread@' in outbox[-1]['Cc'])
 
         # test expiry
         txt = "%s-%s.txt" % (draft.name, draft.rev)
@@ -680,7 +707,9 @@ class ExpireLastCallTests(TestCase):
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call Expired" in outbox[-1]["Subject"])
-
+        self.assertTrue('iesg-secretary@' in outbox[-1]['Cc'])
+        self.assertTrue('aread@' in outbox[-1]['To'])
+        self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To'])
 
 class IndividualInfoFormsTests(TestCase):
     def test_doc_change_stream(self):
@@ -694,22 +723,25 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(len(q('[type=submit]:contains("Save")')), 1)
 
         # shift to ISE stream
-        messages_before = len(outbox)
+        empty_outbox()
         r = self.client.post(url,dict(stream="ise",comment="7gRMTjBM"))
         self.assertEqual(r.status_code,302)
         self.doc = Document.objects.get(name=self.docname)
         self.assertEqual(self.doc.stream_id,'ise')
-        self.assertEqual(len(outbox),messages_before+1)
-        self.assertTrue('Stream Change Notice' in outbox[-1]['Subject'])
-        self.assertTrue('7gRMTjBM' in str(outbox[-1]))
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('Stream Change Notice' in outbox[0]['Subject'])
+        self.assertTrue('rfc-ise@' in outbox[0]['To'])
+        self.assertTrue('iesg@' in outbox[0]['To'])
+        self.assertTrue('7gRMTjBM' in str(outbox[0]))
         self.assertTrue('7gRMTjBM' in self.doc.latest_event(DocEvent,type='added_comment').desc)
-        # Would be nice to test that the stream managers were in the To header...
 
         # shift to an unknown stream (it must be possible to throw a document out of any stream)
+        empty_outbox()
         r = self.client.post(url,dict(stream=""))
         self.assertEqual(r.status_code,302)
         self.doc = Document.objects.get(name=self.docname)
         self.assertEqual(self.doc.stream,None)
+        self.assertTrue('rfc-ise@' in outbox[0]['To'])
 
     def test_doc_change_notify(self):
         url = urlreverse('doc_change_notify', kwargs=dict(name=self.docname))
@@ -734,7 +766,7 @@ class IndividualInfoFormsTests(TestCase):
         # Regenerate does not save!
         self.assertEqual(self.doc.notify,'TJ2APh2P@ietf.org')
         q = PyQuery(r.content)
-        self.assertTrue('TJ2Aph2P' not in q('form input[name=notify]')[0].value)
+        self.assertEqual(None,q('form input[name=notify]')[0].value)
 
     def test_doc_change_intended_status(self):
         url = urlreverse('doc_change_intended_status', kwargs=dict(name=self.docname))
@@ -759,7 +791,10 @@ class IndividualInfoFormsTests(TestCase):
         self.doc = Document.objects.get(name=self.docname)
         self.assertEqual(self.doc.intended_std_level_id,'bcp')
         self.assertEqual(len(outbox),messages_before+1)
+        self.assertTrue('Intended Status ' in outbox[-1]['Subject'])
+        self.assertTrue('mars-chairs@' in outbox[-1]['To'])
         self.assertTrue('ZpyQFGmA' in str(outbox[-1]))
+
         self.assertTrue('ZpyQFGmA' in self.doc.latest_event(DocEvent,type='added_comment').desc)
        
     def test_doc_change_telechat_date(self):
@@ -773,12 +808,17 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(len(q('[type=submit]:contains("Save")')), 1)
 
         # set a date
+        empty_outbox()
         self.assertFalse(self.doc.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
         telechat_date = TelechatDate.objects.active().order_by('date')[0].date
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
         self.assertEqual(r.status_code,302)
         self.doc = Document.objects.get(name=self.docname)
         self.assertEqual(self.doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,telechat_date)
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('Telechat update notice' in outbox[0]['Subject'])
+        self.assertTrue('iesg@' in outbox[0]['To'])
+        self.assertTrue('iesg-secretary@' in outbox[0]['To'])
 
         # Take the doc back off any telechat
         r = self.client.post(url,dict(telechat_date=""))
@@ -964,7 +1004,7 @@ class IndividualInfoFormsTests(TestCase):
         
 
 class SubmitToIesgTests(TestCase):
-    def verify_permissions(self):
+    def test_verify_permissions(self):
 
         def verify_fail(username):
             if username:
@@ -987,7 +1027,7 @@ class SubmitToIesgTests(TestCase):
         for username in ['marschairman','secretary','ad']:
             verify_can_see(username)
         
-    def cancel_submission(self):
+    def test_cancel_submission(self):
         url = urlreverse('doc_to_iesg', kwargs=dict(name=self.docname))
         self.client.login(username="marschairman", password="marschairman+password")
 
@@ -997,7 +1037,7 @@ class SubmitToIesgTests(TestCase):
         doc = Document.objects.get(pk=self.doc.pk)
         self.assertTrue(doc.get_state('draft-iesg')==None)
 
-    def confirm_submission(self):
+    def test_confirm_submission(self):
         url = urlreverse('doc_to_iesg', kwargs=dict(name=self.docname))
         self.client.login(username="marschairman", password="marschairman+password")
 
@@ -1014,6 +1054,8 @@ class SubmitToIesgTests(TestCase):
         self.assertTrue(doc.docevent_set.count() != docevent_count_pre)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Publication has been requested" in outbox[-1]['Subject'])
+        self.assertTrue("aread@" in outbox[-1]['To'])
+        self.assertTrue("iesg-secretary@" in outbox[-1]['Cc'])
 
     def setUp(self):
         make_test_data()
@@ -1052,12 +1094,16 @@ class RequestPublicationTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-stream-iab"), "rfc-edit")
+
         self.assertEqual(len(outbox), mailbox_before + 2)
+
         self.assertTrue("Document Action" in outbox[-2]['Subject'])
-        self.assertTrue("Document Action" in draft.message_set.order_by("-time")[0].subject)
-        # the IANA copy
+        self.assertTrue("rfc-editor@" in outbox[-2]['To'])
+
         self.assertTrue("Document Action" in outbox[-1]['Subject'])
-        self.assertTrue(not outbox[-1]['CC'])
+        self.assertTrue("drafts-approval@icann.org" in outbox[-1]['To'])
+
+        self.assertTrue("Document Action" in draft.message_set.order_by("-time")[0].subject)
 
 class AdoptDraftTests(TestCase):
     def test_adopt_document(self):
@@ -1092,13 +1138,12 @@ class AdoptDraftTests(TestCase):
         self.assertEqual(draft.group.acronym, "mars")
         self.assertEqual(draft.stream_id, "ietf")
         self.assertEqual(draft.docevent_set.count() - events_before, 5)
-        self.assertTrue('draft-ietf-mars-test@ietf.org' in draft.notify)
-        self.assertTrue('draft-ietf-mars-test.ad@ietf.org' in draft.notify)
-        self.assertTrue('draft-ietf-mars-test.shepherd@ietf.org' in draft.notify)
+        self.assertEqual(draft.notify,"aliens@example.mars")
         self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
-        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("has adopted" in outbox[-1]["Subject"].lower())
+        self.assertTrue("mars-chairs@ietf.org" in outbox[-1]['To'])
+        self.assertTrue("draft-ietf-mars-test@" in outbox[-1]['To'])
+        self.assertTrue("mars-wg@" in outbox[-1]['To'])
 
         self.assertFalse(mars.list_email in draft.notify)
 
@@ -1139,7 +1184,7 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 2)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("tags changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("plain@example.com" in unicode(outbox[-1]))
 
@@ -1163,7 +1208,7 @@ class ChangeStreamStateTests(TestCase):
         old_state = draft.get_state("draft-stream-%s" % draft.stream_id )
         new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="parked")
         self.assertNotEqual(old_state, new_state)
-        mailbox_before = len(outbox)
+        empty_outbox()
         events_before = draft.docevent_set.count()
 
         r = self.client.post(url,
@@ -1181,10 +1226,10 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(len(reminder), 1)
         due = datetime.datetime.now() + datetime.timedelta(weeks=10)
         self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
-        self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("marschairman@ietf.org" in unicode(outbox[-1]))
-        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue("state changed" in outbox[0]["Subject"].lower())
+        self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[0]))
+        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[0]))
 
 class ChangeReplacesTests(TestCase):
     def setUp(self):
@@ -1255,6 +1300,7 @@ class ChangeReplacesTests(TestCase):
         self.assertEqual(len(q('[type=submit]:contains("Save")')), 1)
         
         # Post that says replacea replaces base a
+        empty_outbox()
         RelatedDocument.objects.create(source=self.replacea, target=self.basea.docalias_set.first(),
                                        relationship=DocRelationshipName.objects.get(slug="possibly-replaces"))
         self.assertEqual(self.basea.get_state().slug,'active')
@@ -1263,7 +1309,12 @@ class ChangeReplacesTests(TestCase):
         self.assertEqual(RelatedDocument.objects.filter(relationship__slug='replaces',source=self.replacea).count(),1) 
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
         self.assertTrue(not RelatedDocument.objects.filter(relationship='possibly-replaces', source=self.replacea))
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('replacement status updated' in outbox[-1]['Subject'])
+        self.assertTrue('base-a@' in outbox[-1]['To'])
+        self.assertTrue('replace-a@' in outbox[-1]['To'])
 
+        empty_outbox()
         # Post that says replaceboth replaces both base a and base b
         url = urlreverse('doc_change_replaces', kwargs=dict(name=self.replaceboth.name))
         self.assertEqual(self.baseb.get_state().slug,'expired')
@@ -1271,18 +1322,31 @@ class ChangeReplacesTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'repl')
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('base-a@' in outbox[-1]['To'])
+        self.assertTrue('base-b@' in outbox[-1]['To'])
+        self.assertTrue('replace-both@' in outbox[-1]['To'])
 
         # Post that undoes replaceboth
+        empty_outbox()
         r = self.client.post(url, dict(replaces=""))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl') # Because A is still also replaced by replacea
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'expired')
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue('base-a@' in outbox[-1]['To'])
+        self.assertTrue('base-b@' in outbox[-1]['To'])
+        self.assertTrue('replace-both@' in outbox[-1]['To'])
 
         # Post that undoes replacea
+        empty_outbox()
         url = urlreverse('doc_change_replaces', kwargs=dict(name=self.replacea.name))
         r = self.client.post(url, dict(replaces=""))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'active')
+        self.assertTrue('base-a@' in outbox[-1]['To'])
+        self.assertTrue('replace-a@' in outbox[-1]['To'])
+
 
     def test_review_possibly_replaces(self):
         replaced = self.basea.docalias_set.first()

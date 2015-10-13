@@ -16,8 +16,7 @@ from django.template.loader import render_to_string
 from ietf.doc.models import DocAlias
 from ietf.group.models import Role, Group
 from ietf.ietfauth.utils import role_required, has_role
-from ietf.ipr.mail import (message_from_message, get_reply_to, get_update_submitter_emails,
-    get_update_cc_addrs)
+from ietf.ipr.mail import (message_from_message, get_reply_to, get_update_submitter_emails)
 from ietf.ipr.fields import select2_id_ipr_title_json
 from ietf.ipr.forms import (HolderIprDisclosureForm, GenericDisclosureForm,
     ThirdPartyIprDisclosureForm, DraftForm, SearchForm, MessageModelForm,
@@ -35,6 +34,7 @@ from ietf.person.models import Person
 from ietf.secr.utils.document import get_rfc_num, is_draft
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message
+from ietf.mailtrigger.utils import gather_address_lists
 
 # ----------------------------------------------------------------
 # Globals
@@ -79,13 +79,12 @@ def get_document_emails(ipr):
         else:
             cc_list = get_wg_email_list(doc.group)
 
-        author_emails = ','.join([a.address for a in authors])
+        (to_list,cc_list) = gather_address_lists('ipr_posted_on_doc',doc=doc)
         author_names = ', '.join([a.person.name for a in authors])
-        cc_list += ", ipr-announce@ietf.org"
     
         context = dict(
             doc_info=doc_info,
-            to_email=author_emails,
+            to_email=to_list,
             to_name=author_names,
             cc_email=cc_list,
             ipr=ipr)
@@ -98,16 +97,15 @@ def get_posted_emails(ipr):
     """Return a list of messages suitable to initialize a NotifyFormset for
     the notify view when a new disclosure is posted"""
     messages = []
-    # NOTE 1000+ legacy iprs have no submitter_email
-    # add submitter message
-    if True:
-        context = dict(
-            to_email=ipr.submitter_email,
-            to_name=ipr.submitter_name,
-            cc_email=get_update_cc_addrs(ipr),
-            ipr=ipr)
-        text = render_to_string('ipr/posted_submitter_email.txt',context)
-        messages.append(text)
+
+    addrs = gather_address_lists('ipr_posting_confirmation',ipr=ipr).as_strings(compact=False)
+    context = dict(
+        to_email=addrs.to,
+        to_name=ipr.submitter_name,
+        cc_email=addrs.cc,
+        ipr=ipr)
+    text = render_to_string('ipr/posted_submitter_email.txt',context)
+    messages.append(text)
     
     # add email to related document authors / parties
     if ipr.iprdocrel_set.all():
@@ -377,9 +375,11 @@ def email(request, id):
     
     else:
         reply_to = get_reply_to()
+        addrs = gather_address_lists('ipr_disclosure_followup',ipr=ipr).as_strings(compact=False)
         initial = { 
-            'to': ipr.submitter_email,
-            'frm': settings.IPR_EMAIL_TO,
+            'to': addrs.to,
+            'cc': addrs.cc,
+            'frm': settings.IPR_EMAIL_FROM,
             'subject': 'Regarding {}'.format(ipr.title),
             'reply_to': reply_to,
         }
@@ -474,10 +474,12 @@ def new(request, type, updates=None):
                 desc="Disclosure Submitted")
 
             # send email notification
-            send_mail(request, settings.IPR_EMAIL_TO, ('IPR Submitter App', 'ietf-ipr@ietf.org'),
+            (to, cc) = gather_address_lists('ipr_disclosure_submitted')
+            send_mail(request, to, ('IPR Submitter App', 'ietf-ipr@ietf.org'),
                 'New IPR Submission Notification',
                 "ipr/new_update_email.txt",
-                {"ipr": disclosure,})
+                {"ipr": disclosure,},
+                cc=cc)
             
             return render(request, "ipr/submitted.html")
 

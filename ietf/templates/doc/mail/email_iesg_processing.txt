@@ -1,0 +1,15 @@
+{% autoescape off %}
+Please DO NOT reply to this email.
+
+The IESG is processing {{doc.name}}.
+
+The following changes have been made:
+
+{% for change in changes %}{{change}}
+{% endfor %}
+
+The document can be found here:
+I-D: {{ doc.file_tag|safe }}
+ID Tracker URL: {{ url }}
+
+{% endautoescape%}

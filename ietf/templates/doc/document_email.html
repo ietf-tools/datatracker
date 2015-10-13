@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+{% load future %}
+
+{% block title %}Email expansions for {{ doc.name }}-{{ doc.rev }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  {{ top|safe }}
+
+  {% if aliases %}
+  <h2>Email Aliases</h2>
+  
+  <table class="table table-condensed table-striped ietf">
+    <tbody>
+      {% for alias in aliases %}
+        <tr>
+          <td>{{ doc.name }}{{ alias.alias_type|default:''}}@{{ietf_domain}}</td>
+          <td>{{ alias.expansion }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h2>Recipient Expansions</h2>
+
+  <table class="table table-condensed table-striped ietf">
+    <thead>
+      <tr>
+        <th>Mail Trigger</th>
+        <th>To</th>
+        <th>Cc</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for trigger,desc,to,cc in expansions %}
+        <tr>
+          <td><a href="{% url 'ietf.mailtrigger.views.show_triggers' trigger %}"
+                 title="{{desc}}">{{trigger}}</a></td>
+          <td> {{to|join:', '}}</td>
+          <td> {{cc|join:', '}}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock content %}

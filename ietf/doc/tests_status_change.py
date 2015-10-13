@@ -111,7 +111,6 @@ class StatusChangeTests(TestCase):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEquals(doc.get_state('statchg').slug,'lc-req')
         self.assertEquals(len(outbox), messages_before + 1)
-        self.assertTrue('iesg-secretary' in outbox[-1]['To'])
         self.assertTrue('Last Call:' in outbox[-1]['Subject'])
 
         # successful change to IESG Evaluation 
@@ -157,9 +156,7 @@ class StatusChangeTests(TestCase):
         self.assertEqual(doc.notify,newlist)
         q = PyQuery(r.content)
         formlist = q('form input[name=notify]')[0].value
-        self.assertTrue('draft-ietf-random-thing@ietf.org' in formlist)
-        self.assertTrue('draft-ietf-random-otherthing@ietf.org' in formlist)
-        self.assertFalse('foo@bar.baz.com' in formlist)
+        self.assertEqual(None,formlist)
 
     def test_edit_title(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
@@ -285,7 +282,6 @@ class StatusChangeTests(TestCase):
         self.assertEqual(r.status_code,200)
         self.assertTrue( 'Last call requested' in ''.join(wrap(r.content,2**16)))
         self.assertEqual(len(outbox), messages_before + 1)
-        self.assertTrue('iesg-secretary' in outbox[-1]['To'])
         self.assertTrue('Last Call:' in outbox[-1]['Subject'])
         self.assertTrue('Last Call Request has been submitted' in ''.join(wrap(unicode(outbox[-1]),2**16)))
 
@@ -326,8 +322,10 @@ class StatusChangeTests(TestCase):
         
         self.assertEqual(len(outbox), messages_before + 2)
         self.assertTrue('Action:' in outbox[-1]['Subject'])
-        self.assertTrue('(rfc9999) to Internet Standard' in ''.join(wrap(unicode(outbox[-1])+unicode(outbox[-2]),2**16)))
+        self.assertTrue('ietf-announce' in outbox[-1]['To'])
+        self.assertTrue('rfc-editor' in outbox[-1]['Cc'])
         self.assertTrue('(rfc9998) to Historic' in ''.join(wrap(unicode(outbox[-1])+unicode(outbox[-2]),2**16)))
+        self.assertTrue('(rfc9999) to Internet Standard' in ''.join(wrap(unicode(outbox[-1])+unicode(outbox[-2]),2**16)))
 
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('The following approval message was sent'))       
 
