@@ -482,7 +482,7 @@ def group_about(request, acronym, group_type=None):
                       "can_manage": can_manage,
                   }))
 
-def get_email_aliases(acronym, group_type):
+def get_group_email_aliases(acronym, group_type):
     if acronym:
         pattern = re.compile('expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
     else:
@@ -500,7 +500,7 @@ def get_email_aliases(acronym, group_type):
 def email(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
 
-    aliases = get_email_aliases(acronym, group_type)
+    aliases = get_group_email_aliases(acronym, group_type)
     expansions = gather_relevant_expansions(group=group)
 
     return render(request, 'group/email.html',
@@ -710,7 +710,7 @@ def email_aliases(request, acronym=None, group_type=None):
         if not request.user.is_authenticated():
                 return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
-    aliases = get_email_aliases(acronym, group_type)
+    aliases = get_group_email_aliases(acronym, group_type)
 
     return render(request,'group/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'group':group})
 

@@ -571,7 +571,7 @@ def document_main(request, name, rev=None):
     raise Http404
 
 
-def get_email_aliases(name):
+def get_draft_email_aliases(name):
     if name:
         pattern = re.compile('^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
     else:
@@ -589,7 +589,7 @@ def document_email(request,name):
     doc = get_object_or_404(Document, docalias__name=name)
     top = render_document_top(request, doc, "email", name)
 
-    aliases = get_email_aliases(name) if doc.type_id=='draft' else None
+    aliases = get_draft_email_aliases(name) if doc.type_id=='draft' else None
 
     expansions = gather_relevant_expansions(doc=doc)
     
@@ -1017,7 +1017,7 @@ def email_aliases(request,name=''):
         # document-specific pages 
         if not request.user.is_authenticated():
                 return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
-    aliases = get_email_aliases(name)
+    aliases = get_draft_email_aliases(name)
 
     return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
 
