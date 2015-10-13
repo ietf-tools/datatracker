@@ -1,5 +1,8 @@
 ietfdb (6.5.1) ietf; urgency=low
 
+  This is a minor bugfix release to clear the way for the coming email
+  triggers release:
+
   * Merged in [10159] from rcross@amsl.com:
     Improve secretariat rolodex roles section, sort and identify concluded 
     groups.   
@@ -14,7 +17,7 @@ ietfdb (6.5.1) ietf; urgency=low
 
   * Tweaked the mkrelease verbose output.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  10 Oct 2015 04:46:30 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Oct 2015 16:53:54 +0000
 
 ietfdb (6.5.0) ietf; urgency=medium
 
