@@ -740,7 +740,6 @@ class TemplateTagTest(unittest.TestCase):
         self.assertEqual(failures, 0)
 
 class ReferencesTest(TestCase):
-    perma_fixtures = ['names']
 
     def test_references(self):
         make_test_data()
@@ -783,9 +782,11 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
 
 """)
         self.doc_alias_file.close()
+        self.saved_draft_virtual_path = settings.DRAFT_VIRTUAL_PATH
         settings.DRAFT_VIRTUAL_PATH = self.doc_alias_file.name
 
     def tearDown(self):
+        settings.DRAFT_VIRTUAL_PATH = self.saved_draft_virtual_path
         os.unlink(self.doc_alias_file.name)
 
     def testAliases(self):
