@@ -42,6 +42,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", args.settings or "ietf.settings_
 
 import django
 import django.test
+import django.core.checks
 
 django.setup()
 
@@ -269,6 +270,14 @@ if __name__ == "__main__":
                 (args.user, response.status_code))
             sys.exit(1)
 
+    # Run django system checks and checks from ietf.checks:
+    error_list = django.core.checks.run_checks()
+    if error_list:
+        print("")
+        for entry in error_list:
+            print(entry)
+        sys.exit(1)
+        
     while urls:
         if args.random:
             # popitem() is documented to be random, but really isn't
