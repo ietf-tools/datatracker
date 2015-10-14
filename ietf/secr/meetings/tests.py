@@ -7,7 +7,6 @@ from StringIO import StringIO
 from django.conf import settings
 from django.core.urlresolvers import reverse
 
-from ietf.doc.models import Document
 from ietf.group.models import Group, GroupEvent
 from ietf.meeting.models import Meeting, Room, TimeSlot, ScheduledSession
 from ietf.meeting.test_data import make_meeting_test_data
