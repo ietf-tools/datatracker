@@ -1,3 +1,22 @@
+ietfdb (6.6.0) ietf; urgency=low
+
+  **Mail Sending Triggers**
+
+  This release improves visibility into where and when the datatracker
+  sends email. It makes where the datatracker sends email for a given
+  action data driven, and it shows where email will be sent for actions
+  on documents and groups by adding an 'Email Expansions' tab to group
+  and document pages, which shows which email sending triggers exist.
+
+  * Merged in [10186] from rjsparks@nostrum.com:
+    This release improves visibility into where and when the datatracker
+    sends email. It makes where the datatracker sends email for a given
+    action data driven, and it shows where email will be sent for actions
+    on documents and groups.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Oct 2015 19:09:29 +0000
+
+
 ietfdb (6.5.1) ietf; urgency=low
 
   This is a minor bugfix release to clear the way for the coming email
