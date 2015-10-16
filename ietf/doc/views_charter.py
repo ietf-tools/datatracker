@@ -19,7 +19,8 @@ from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, get_chartering_type )
 from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     approved_revision, default_review_text, default_action_text,
-    generate_ballot_writeup, generate_issue_ballot_mail, next_approved_revision, next_revision )
+    generate_ballot_writeup, generate_issue_ballot_mail, next_approved_revision, next_revision,
+    derive_new_work_text )
 from ietf.doc.mails import email_state_changed, email_charter_internal_review
 from ietf.group.models import ChangeStateGroupEvent, MilestoneGroupEvent
 from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_group_type
@@ -458,6 +459,15 @@ def review_announcement_text(request, name):
 
     if not existing:
         raise Http404
+
+    if not existing_new_work:
+        existing_new_work = WriteupDocEvent(doc=charter, by=login)
+        existing_new_work.by = login 
+        existing_new_work.type = "changed_new_work_text"
+        existing_new_work.desc = "%s review text was changed" % group.type.name
+        existing_new_work.text = derive_new_work_text(existing.text,group)
+        existing_new_work.time = datetime.datetime.now()
+        existing_new_work.save()
 
     new_work_text = existing_new_work.text
 
