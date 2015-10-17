@@ -21,7 +21,3 @@ CACHES = {
     }
 }
 
-DRAFT_ALIASES_PATH = "/tmp/draft-aliases"
-DRAFT_VIRTUAL_PATH = "/tmp/draft-virtual"
-GROUP_ALIASES_PATH = "/tmp/group-aliases"
-GROUP_VIRTUAL_PATH = "/tmp/group-virtual"
