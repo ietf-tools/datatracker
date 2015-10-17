@@ -1,21 +1,28 @@
-from django.conf import settings
-from django.core.urlresolvers import reverse
-from ietf.utils.test_utils import TestCase
-
-from ietf.person.models import Person
-from ietf.group.models import Group, GroupEvent
-from ietf.meeting.models import Meeting, Room, TimeSlot, ScheduledSession
-from ietf.utils.mail import outbox
-from ietf.meeting.test_data import make_meeting_test_data
-
-from pyquery import PyQuery
-
 import datetime
 import os
 import shutil
+from pyquery import PyQuery
+from StringIO import StringIO
+
+from django.conf import settings
+from django.core.urlresolvers import reverse
+
+from ietf.group.models import Group, GroupEvent
+from ietf.meeting.models import Meeting, Room, TimeSlot, ScheduledSession
+from ietf.meeting.test_data import make_meeting_test_data
+from ietf.person.models import Person
+from ietf.utils.mail import outbox
+from ietf.utils.test_utils import TestCase
+
 
 class MainTestCase(TestCase):
     def setUp(self):
+        self.proceedings_dir = os.path.abspath("tmp-proceedings-dir")
+        if not os.path.exists(self.proceedings_dir):
+            os.mkdir(self.proceedings_dir)
+        settings.SECR_PROCEEDINGS_DIR = self.proceedings_dir
+        settings.AGENDA_PATH = self.proceedings_dir
+        
         self.bluesheet_dir = os.path.abspath(settings.TEST_BLUESHEET_DIR)
         self.bluesheet_path = os.path.join(self.bluesheet_dir,'blue_sheet.rtf')
         if not os.path.exists(self.bluesheet_dir):
@@ -27,6 +34,7 @@ class MainTestCase(TestCase):
             os.mkdir(self.materials_dir)
         
     def tearDown(self):
+        shutil.rmtree(self.proceedings_dir)
         shutil.rmtree(self.bluesheet_dir)
         shutil.rmtree(self.materials_dir)
 
@@ -85,14 +93,28 @@ class MainTestCase(TestCase):
         meeting = Meeting.objects.get(number=1)
         self.assertEqual(meeting.city,'Toronto')
 
-    def test_blue_sheets(self):
+    def test_blue_sheets_upload(self):
         "Test Bluesheets"
         meeting = make_meeting_test_data()
+        os.makedirs(os.path.join(self.proceedings_dir,str(meeting.number),'bluesheets'))
+        
         url = reverse('meetings_blue_sheet',kwargs={'meeting_id':meeting.number})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        
+        # test upload
+        group = Group.objects.filter(type='wg',state='active').first()
+        file = StringIO('dummy bluesheet')
+        file.name = "bluesheets-%s-%s.pdf" % (meeting.number,group.acronym)
+        files = {'file':file}
+        response = self.client.post(url, files)
+        self.assertEqual(response.status_code, 302)
+        path = os.path.join(settings.SECR_PROCEEDINGS_DIR,str(meeting.number),'bluesheets')
+        self.assertEqual(len(os.listdir(path)),1)
 
+    def test_blue_sheets_generate(self):
+        meeting = make_meeting_test_data()
         url = reverse('meetings_blue_sheet_generate',kwargs={'meeting_id':meeting.number})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)

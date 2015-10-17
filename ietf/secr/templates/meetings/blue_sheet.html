@@ -16,13 +16,27 @@
 {% block content %}
 
 <div  class="module">
-  <h2>Blue Sheet</h2>
-  <h1> Meeting {{ meeting.number }}</h1>
+  <h2>IETF {{ meeting.number }} - Blue Sheet</h2>
   
-  <p>
-  <a href="{% url "meetings_blue_sheet_generate" meeting_id=meeting.number%}">Generate Blue Sheets</a><br />
-  <a href="{{ url }}">Download</a> latest Blue Sheets.
-  </p>
+  <p>Use this to generate blue sheets for meeting sessions.</p>
+  <ul class="none">
+    <li>
+      <button onclick="window.location='{% url "meetings_blue_sheet_generate" meeting_id=meeting.number%}'">Generate Blue Sheets</button>
+      &nbsp;&nbsp;Last run: 
+      {% if last_run %}
+        {{ last_run }}
+      {% else %}
+        Never
+      {% endif %}
+    </li>
+  </ul>
+  <p>Use this to download the blue sheets from the server.</p>
+  <ul class="none">
+    <li>
+      <button onclick="window.location='{{ url }}'">Download Blue Sheets</button>
+    </li>
+  </ul>
+
   <hr />
   <p>
   Use the form below to upload individual scanned blue sheet documents.
@@ -32,16 +46,41 @@
       <col width="200">
       {{ form.as_table }}
     </table>
-    <input type="submit" value="Submit" />
-  </form>
   
     <div class="button-group">
       <ul>
-        <li><button onclick="window.location='../'">Back</button></li>
+        <li><button type="submit" name="submit" value="Submit">Submit</button></li>
+        <li><button type="button" onclick="window.location='../'">Back</button></li>
       </ul>
     </div> <!-- button-group -->
 
+    </form>
 </div> <!-- module -->
+
+{% if uploaded_files %}
+  <br>
+  <div class="module interim-container">
+    <h2>Uploaded Files</h2>
+    <div class="inline-related last-related">
+    <table class="full-width">
+      <thead>
+        <tr> 
+          <th>Filename</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for file in uploaded_files %}
+           <tr class="{% cycle 'row1' 'row2' %}">
+             <td>{{ file }}</td>
+           </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div> <!-- inline-related -->
+  </div> <!-- module -->
+  
+{% endif %}
+
 
 {% endblock %}
 

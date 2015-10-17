@@ -1,5 +1,7 @@
 import datetime
 import json
+import os
+import time
 
 from django.conf import settings
 from django.contrib import messages
@@ -332,9 +334,15 @@ def blue_sheet(request, meeting_id):
     Blue Sheet view.  The user can generate blue sheets or upload scanned bluesheets
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
-
     url = settings.SECR_BLUE_SHEET_URL
-
+    blank_sheets_path = settings.SECR_BLUE_SHEET_PATH
+    try:
+        last_run = time.ctime(os.stat(blank_sheets_path).st_ctime)
+    except OSError:
+        last_run = None
+    uploaded_sheets_path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'bluesheets')
+    uploaded_files = sorted(os.listdir(uploaded_sheets_path))
+    
     if request.method == 'POST':
         form = UploadBlueSheetForm(request.POST,request.FILES)
         if form.is_valid():
@@ -348,7 +356,9 @@ def blue_sheet(request, meeting_id):
     return render_to_response('meetings/blue_sheet.html', {
         'meeting': meeting,
         'url': url,
-        'form': form},
+        'form': form,
+        'last_run': last_run,
+        'uploaded_files': uploaded_files},
         RequestContext(request, {}),
     )
 
