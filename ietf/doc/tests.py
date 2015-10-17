@@ -783,10 +783,12 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
 """)
         self.doc_alias_file.close()
         self.saved_draft_virtual_path = settings.DRAFT_VIRTUAL_PATH
+        print("      Saved DRAFT_VIRTUAL_PATH=%s" % self.saved_draft_virtual_path)
         settings.DRAFT_VIRTUAL_PATH = self.doc_alias_file.name
 
     def tearDown(self):
         settings.DRAFT_VIRTUAL_PATH = self.saved_draft_virtual_path
+        print("      Restored DRAFT_VIRTUAL_PATH=%s" % settings.DRAFT_VIRTUAL_PATH)
         os.unlink(self.doc_alias_file.name)
 
     def testAliases(self):
