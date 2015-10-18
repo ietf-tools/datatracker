@@ -1,5 +1,27 @@
 ietfdb (6.6.0) ietf; urgency=low
 
+  * Merged in [10220] from rjsparks@nostrum.com:
+    Preserve linefeeds (using class pasted) when viewing nomcom feedback
+    messages.  
+
+  * Merged in [10219] from rjsparks@nostrum.com:
+    Recognize and remove duplicate addresses while gathering. Fixes bug 
+    #1815.  
+
+  * Removed support for perma_fixtures, using the global test fixtures 
+    instead.
+
+  * Merged in [10218] from rjsparks@nostrum.com:
+    Fixed an initialization problem for the new work message for recharters.  
+
+  * Merged in [10206] from rcross@amsl.com:
+    Cleaned up bluesheets upload page.  Add display of uploaded files.   
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Oct 2015 04:50:29 -0700
+
+
+ietfdb (6.6.0) ietf; urgency=low
+
   **Mail Sending Triggers**
 
   This release improves visibility into where and when the datatracker
