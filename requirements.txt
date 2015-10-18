@@ -1,7 +1,7 @@
 # -*- conf-mode -*-
 setuptools>=1.2			# Require this first, to prevent later errors
 #
-coverage>=3.7.1,<4.0
+coverage>=4.0.1
 #cssselect>=0.6.1               # for PyQuery
 decorator>=3.4.0
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency

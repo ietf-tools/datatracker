@@ -352,9 +352,7 @@ TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 TEST_CODE_COVERAGE_CHECKER = None
 if SERVER_MODE != 'production':
     import coverage
-    TEST_CODE_COVERAGE_CHECKER = coverage.coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE)
-    if len(TEST_CODE_COVERAGE_CHECKER.collector._collectors) == 0:
-        TEST_CODE_COVERAGE_CHECKER.start()
+    TEST_CODE_COVERAGE_CHECKER = coverage.Coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE)
 
 TEST_CODE_COVERAGE_REPORT_PATH = "coverage/"
 TEST_CODE_COVERAGE_REPORT_URL = os.path.join(STATIC_URL, TEST_CODE_COVERAGE_REPORT_PATH, "index.html")

@@ -177,15 +177,15 @@ def save_test_results(failures, test_labels):
 
 class CoverageReporter(Reporter):
     def report(self):
-        self.find_code_units(None)
+        self.find_file_reporters(None)
 
         total = Numbers()
         result = {"coverage": 0.0, "covered": {}, "format": 2, }
-        for cu in self.code_units:
+        for fr in self.file_reporters:
             try:
-                analysis = self.coverage._analyze(cu)
+                analysis = self.coverage._analyze(fr)
                 nums = analysis.numbers
-                result["covered"][cu.name] = (nums.n_statements, nums.pc_covered/100.0)
+                result["covered"][fr.relative_filename()] = (nums.n_statements, nums.pc_covered/100.0)
                 total += nums
             except KeyboardInterrupt:                   # pragma: not covered
                 raise
@@ -193,7 +193,7 @@ class CoverageReporter(Reporter):
                 report_it = not self.config.ignore_errors
                 if report_it:
                     typ, msg = sys.exc_info()[:2]
-                    if typ is NotPython and not cu.should_be_python():
+                    if typ is NotPython and not fr.should_be_python():
                         report_it = False
                 if report_it:
                     raise
@@ -355,6 +355,11 @@ class IetfTestRunner(DiscoverRunner):
             settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
 
             self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
+            if not self.code_coverage_checker._started:
+                sys.stderr.write(" **  Warning: In %s: Expected the coverage checker to have\n"
+                                 "       been started already, but it wasn't. Doing so now.  Coverage numbers\n"
+                                 "       will be off, though.\n" % __name__)
+                self.code_coverage_checker.start()
 
         if settings.SITE_ID != 1:
             print "     Changing SITE_ID to '1' during testing."
@@ -397,7 +402,7 @@ class IetfTestRunner(DiscoverRunner):
                 self.coverage_master[self.save_version_coverage] = self.coverage_data
                 if self.coverage_file.endswith('.gz'):
                     with gzip.open(self.coverage_file, "wb") as file:
-                        json.dump(self.coverage_master, file, indent=2, sort_keys=True)
+                        json.dump(self.coverage_master, file, sort_keys=True)
                 else:
                     with codecs.open(self.coverage_file, "w", encoding="utf-8") as file:
                         json.dump(self.coverage_master, file, indent=2, sort_keys=True)
@@ -436,7 +441,7 @@ class IetfTestRunner(DiscoverRunner):
         test_paths = [ os.path.join(*app.split('.')) for app in test_apps ]
         return test_apps, test_paths
 
-    def run_tests(self, test_labels, extra_tests=None, **kwargs):
+    def run_tests(self, test_labels, extra_tests=[], **kwargs):
         # Tests that involve switching back and forth between the real
         # database and the test database are way too dangerous to run
         # against the production database
@@ -457,13 +462,14 @@ class IetfTestRunner(DiscoverRunner):
 
         self.test_apps, self.test_paths = self.get_test_paths(test_labels)
 
-        extra_tests = [
-            CoverageTest(test_runner=self, methodName='url_coverage_test'),
-            CoverageTest(test_runner=self, methodName='template_coverage_test'),
-            CoverageTest(test_runner=self, methodName='code_coverage_test'),
-        ]
+        if self.check_coverage:
+            extra_tests += [
+                CoverageTest(test_runner=self, methodName='url_coverage_test'),
+                CoverageTest(test_runner=self, methodName='template_coverage_test'),
+                CoverageTest(test_runner=self, methodName='code_coverage_test'),
+            ]
 
-        self.reorder_by += (CoverageTest, ) # see to it that the coverage tests come last
+            self.reorder_by += (CoverageTest, ) # see to it that the coverage tests come last
 
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 

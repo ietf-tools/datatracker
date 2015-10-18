@@ -284,3 +284,5 @@ class TestCase(django.test.TestCase):
         self.assertHttpOK(resp)
         self.assertTrue(resp['Content-Type'].startswith('text/html'))
         self.assertValidHTML(resp.content)
+
+        

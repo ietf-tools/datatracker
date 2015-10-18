@@ -36,3 +36,6 @@ DATABASES = {
         },
     }
 
+if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started:
+    TEST_CODE_COVERAGE_CHECKER.start()
+    

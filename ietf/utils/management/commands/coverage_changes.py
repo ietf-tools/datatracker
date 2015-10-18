@@ -67,13 +67,19 @@ class Command(BaseCommand):
             header_written = False
 
             for key in keys:
-                if not key in mcoverage:
+                mkey = key
+                if not mkey in mcoverage:
+                    if mkey.endswith(".py"):
+                        mkey = mkey[:-3]
+                    else:
+                        mkey = mkey + ".py"
+                if not mkey in mcoverage:
                     mlines, mcov = None, None
                 else:
                     if   mformat == 1:
-                        mlines, mcov = None, mcoverage[key]
+                        mlines, mcov = None, mcoverage[mkey]
                     elif mformat == 2:
-                        mlines, mcov = mcoverage[key]
+                        mlines, mcov = mcoverage[mkey]
                     else:
                         raise CommandError("The release coverage data has an unknown format ('%s'), quitting." % mformat)
                 if   lformat == 1:
