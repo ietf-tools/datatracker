@@ -41,8 +41,6 @@ def get_cert_files():
 
 class NomcomViewsTest(TestCase):
     """Tests to create a new nomcom"""
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['nomcom_templates']
 
     def check_url_status(self, url, status):
         response = self.client.get(url)
@@ -745,8 +743,6 @@ class NomcomViewsTest(TestCase):
 
 class NomineePositionStateSaveTest(TestCase):
     """Tests for the NomineePosition save override method"""
-    # See ietf.utils.test_utils.TestCase for the use of perma_fixtures vs. fixtures
-    perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
@@ -786,7 +782,6 @@ class NomineePositionStateSaveTest(TestCase):
 
 
 class FeedbackTest(TestCase):
-    perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
@@ -823,7 +818,6 @@ class FeedbackTest(TestCase):
         self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
 
 class ReminderTest(TestCase):
-    perma_fixtures = ['nomcom_templates']
 
     def setUp(self):
         self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")

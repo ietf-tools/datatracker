@@ -269,57 +269,12 @@ class ReverseLazyTest(django.test.TestCase):
         response = self.client.get('/ipr/update/')
         self.assertRedirects(response, "/ipr/", status_code=301)
 
-loaded_fixtures = []
-
 class TestCase(django.test.TestCase):
     """
-    Does basically the same as django.test.TestCase, but if the test database has
-    support for transactions, it loads perma_fixtures before the transaction which
-    surrounds every test.  This causes the perma_fixtures to stay in the database
-    after the transaction which surrounds each test is rolled back, which lets us
-    load each preload_fixture only once.  However, it requires that all the
-    perma_fixtures are consistent with each other and with all regular fixtures
-    across all applications.  You could view the perma_fixtures as on_the_fly
-    initial_data for tests.
-
-    Regular fixtures are re-loaded for each TestCase, as usual.
-
-    We don't flush the database, as that triggers a re-load of initial_data.
+    Does basically the same as django.test.TestCase, but adds asserts for html5 validation.
     """
 
     parser = html5lib.HTMLParser(strict=True)
-
-    def _fixture_setup(self):
-        global loaded_fixtures
-
-        if not connections_support_transactions():
-            if hasattr(self, 'perma_fixtures'):
-                if not hasattr(self, 'fixtures'):
-                    self.fixtures = self.perma_fixtures
-                else:
-                    self.fixtures += self.perma_fixtures
-            return super(TestCase, self)._fixture_setup()
-
-        # If the test case has a multi_db=True flag, setup all databases.
-        # Otherwise, just use default.
-        if getattr(self, 'multi_db', False):
-            databases = connections
-        else:
-            databases = [DEFAULT_DB_ALIAS]
-
-        for db in databases:
-            if hasattr(self, 'perma_fixtures'):
-                fixtures = [ fixture for fixture in self.perma_fixtures if not fixture in loaded_fixtures ]
-                if fixtures:
-                    call_command('loaddata', *fixtures, **{
-                                                            'verbosity': 0,
-                                                            'commit': False,
-                                                            'database': db
-                                                            })
-                loaded_fixtures += fixtures
-
-        super(TestCase, self)._fixture_setup()
-
 
     def assertValidHTML(self, data):
         try:
