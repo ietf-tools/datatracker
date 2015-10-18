@@ -1,6 +1,7 @@
 
 import json
 import codecs
+import gzip
 from optparse import make_option
 
 from django.conf import settings
@@ -25,7 +26,10 @@ class Command(BaseCommand):
     def read_coverage(self, filename, version=None):
         if isinstance(filename, string_types):
             try:
-                file = codecs.open(filename, "r", encoding="utf-8")
+                if filename.endswith(".gz"):
+                    file = gzip.open(filename, "rb")
+                else:
+                    file = codecs.open(filename, "r", encoding="utf-8")
             except IOError as e:
                 self.stderr.write(u"%s" % e)
                 exit(1)

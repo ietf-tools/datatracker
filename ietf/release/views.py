@@ -2,6 +2,7 @@ import os
 import re
 import json
 import datetime
+import gzip
 
 from django.template import RequestContext
 from django.shortcuts import render_to_response
@@ -43,8 +44,12 @@ def release(request, version=None):
 
     coverage = {}
     if os.path.exists(settings.TEST_COVERAGE_MASTER_FILE):
-        with open(settings.TEST_COVERAGE_MASTER_FILE) as file:
-            coverage_data = json.load(file)
+        if settings.TEST_COVERAGE_MASTER_FILE.endswith(".gz"):
+            with gzip.open(settings.TEST_COVERAGE_MASTER_FILE, "rb") as file:
+                coverage_data = json.load(file)
+        else:
+            with open(settings.TEST_COVERAGE_MASTER_FILE) as file:
+                coverage_data = json.load(file)
         if version in coverage_data:
             coverage = coverage_data[version]
             for key in coverage:

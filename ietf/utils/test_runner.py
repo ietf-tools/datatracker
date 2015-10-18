@@ -44,6 +44,8 @@ import socket
 import warnings
 import datetime
 import codecs
+import gzip
+
 from coverage.report import Reporter
 from coverage.results import Numbers
 from coverage.misc import NotPython
@@ -285,7 +287,7 @@ class CoverageTest(TestCase):
             checker.stop()
             # Save to the .coverage file
             checker.save()
-            # Apply the confirured and requested omit and include data 
+            # Apply the configured and requested omit and include data 
             checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE,
                 include=include, file=None)
             # Maybe output a html report
@@ -324,8 +326,12 @@ class IetfTestRunner(DiscoverRunner):
         ietf.utils.mail.SMTP_ADDR['port'] = 2025
         #
         if self.check_coverage:
-            with codecs.open(self.coverage_file, encoding='utf-8') as file:
-                self.coverage_master = json.load(file)
+            if self.coverage_file.endswith('.gz'):
+                with gzip.open(self.coverage_file, "rb") as file:
+                    self.coverage_master = json.load(file)
+            else:
+                with codecs.open(self.coverage_file, encoding='utf-8') as file:
+                    self.coverage_master = json.load(file)
             self.coverage_data = {
                 "time": datetime.datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "template": {
@@ -381,16 +387,20 @@ class IetfTestRunner(DiscoverRunner):
         self.smtpd_driver.stop()
         if self.check_coverage:
             latest_coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_LATEST_FILE)
+            coverage_latest = {}
+            coverage_latest["version"] = "latest"
+            coverage_latest["latest"] = self.coverage_data
             with codecs.open(latest_coverage_file, "w", encoding='utf-8') as file:
-                coverage_latest = {}
-                coverage_latest["version"] = "latest"
-                coverage_latest["latest"] = self.coverage_data
                 json.dump(coverage_latest, file, indent=2, sort_keys=True)
             if self.save_version_coverage:
-                with codecs.open(self.coverage_file, "w", encoding="utf-8") as file:
-                    self.coverage_master["version"] = self.save_version_coverage
-                    self.coverage_master[self.save_version_coverage] = self.coverage_data
-                    json.dump(self.coverage_master, file, indent=2, sort_keys=True)
+                self.coverage_master["version"] = self.save_version_coverage
+                self.coverage_master[self.save_version_coverage] = self.coverage_data
+                if self.coverage_file.endswith('.gz'):
+                    with gzip.open(self.coverage_file, "wb") as file:
+                        json.dump(self.coverage_master, file, indent=2, sort_keys=True)
+                else:
+                    with codecs.open(self.coverage_file, "w", encoding="utf-8") as file:
+                        json.dump(self.coverage_master, file, indent=2, sort_keys=True)
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
     def get_test_paths(self, test_labels):
