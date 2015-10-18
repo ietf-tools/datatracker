@@ -1,5 +1,19 @@
 ietfdb (6.6.0) ietf; urgency=low
 
+  * Updated the code to use version 4.0.1 of coverage.py for code coverage
+    measurements.  Moved the code which starts coverage measurements to
+    settings_sqlitetest.py to avoid coverage measurements running when not
+    doing tests. Did some additional coveage measurement refactoring.
+
+  * Replaced the plain release-coverage file with the gzipped version in 
+    the repository.
+
+  * Changed to use a gzipped release coverage JSON file, instead of a plain 
+    JSON file, if the name given in settings.py ends in .gz.  Reduces the 
+    current release coverage file size from ~1.6MB to ~200kB.  This is a 
+    preparation for saving more information in the release coverage file than 
+    we currently do.
+
   * Merged in [10220] from rjsparks@nostrum.com:
     Preserve linefeeds (using class pasted) when viewing nomcom feedback
     messages.  
