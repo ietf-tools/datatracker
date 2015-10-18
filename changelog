@@ -1,4 +1,4 @@
-ietfdb (6.6.0) ietf; urgency=low
+ietfdb (6.6.1) ietf; urgency=low
 
   * Updated the code to use version 4.0.1 of coverage.py for code coverage
     measurements.  Moved the code which starts coverage measurements to
