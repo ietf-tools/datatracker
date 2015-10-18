@@ -43,7 +43,7 @@
             <dt>Positions</dt>
             <dd>{{ feedback.positions.all|join:"," }}</dd>
             <dt>Body</dt>
-            <dd>{% decrypt feedback.comments request year 1 %}</dd>
+            <dd class="pasted">{% decrypt feedback.comments request year 1 %}</dd>
           </dl>
         {% endfor %}
       </div>
