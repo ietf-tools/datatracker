@@ -3,21 +3,7 @@
 from django.db import models
 from django.template import Template, Context
 
-from email.utils import parseaddr
-
 from ietf.group.models import Role
-
-def clean_duplicates(addrlist):
-    retval = set()
-    for a in addrlist:
-        (name,addr) = parseaddr(a)
-        if (name,addr)==('',''):
-            retval.add(a)
-        elif name:
-            retval.add('"%s" <%s>'%(name,addr))
-        else:
-            retval.add(addr)
-    return list(retval) 
 
 class MailTrigger(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
@@ -51,7 +37,8 @@ class Recipient(models.Model):
             if rendering:
                 retval.extend([x.strip() for x in rendering.split(',')])
 
-        return clean_duplicates(retval)
+        retval = list(set(retval))
+        return retval
 
     def gather_doc_group_chairs(self, **kwargs):
         addrs = []

@@ -41,9 +41,11 @@ import urllib2 as urllib
 from difflib import unified_diff
 
 import django.test
-from django.db import connection
+from django.db import connection, connections, DEFAULT_DB_ALIAS
+from django.test.testcases import connections_support_transactions
 from django.test.client import Client
 from django.conf import settings
+from django.core.management import call_command
 
 import debug                            # pyflakes:ignore
 
