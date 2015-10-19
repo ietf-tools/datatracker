@@ -191,7 +191,7 @@ note "Running the tests suite and writing release coverage data ..."
 $do ietf/manage.py test --settings=ietf.settings_releasetest --save-version-coverage=$VER
 
 note "Committing the release coverage data ..."
-$do svn commit release-coverage.json -m "Code coverage data for release $VER"
+$do svn commit release-coverage.json.gz -m "Code coverage data for release $VER"
 
 contributors=$(echo "$changes" | sed 's/\.[ \t\n]/ /'| tr -c "a-z0-9.@-" "\n" | sort | uniq | grep '@' | sed -r -e 's/^\.+//' -e 's/\.+$//' -e 's/^/-c /' || true)
 
