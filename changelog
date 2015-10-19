@@ -1,12 +1,11 @@
 ietfdb (6.6.1) ietf; urgency=low
 
+  This is a combined bugfix and feature maintenance release:
+
   * Updated the code to use version 4.0.1 of coverage.py for code coverage
     measurements.  Moved the code which starts coverage measurements to
     settings_sqlitetest.py to avoid coverage measurements running when not
     doing tests. Did some additional coveage measurement refactoring.
-
-  * Replaced the plain release-coverage file with the gzipped version in 
-    the repository.
 
   * Changed to use a gzipped release coverage JSON file, instead of a plain 
     JSON file, if the name given in settings.py ends in .gz.  Reduces the 
@@ -29,7 +28,7 @@ ietfdb (6.6.1) ietf; urgency=low
     Fixed an initialization problem for the new work message for recharters.  
 
   * Merged in [10206] from rcross@amsl.com:
-    Cleaned up bluesheets upload page.  Add display of uploaded files.   
+    Cleaned up bluesheets upload page.  Added display of uploaded files.   
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  18 Oct 2015 04:50:29 -0700
 
