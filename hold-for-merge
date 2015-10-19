@@ -1,8 +1,5 @@
 # -*- conf-mode -*-
 
-branch/iola/automatic-doc-name-search-r10126 @ 10158
-branch/iola/docalias-primary-key-r10101 @ 10111
-
 branch/amsl/liaisons@10160		# Merged as branch/amsl/liaisons/6.4.1 @ 10160
 personal/lars/6.2.1.dev0@9970		# Requires the timeline work
 personal/lars/6.0.5.dev0@9734		# Obsoleted - don't use 'bleach'
