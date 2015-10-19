@@ -30,7 +30,7 @@ ietfdb (6.6.1) ietf; urgency=low
   * Merged in [10206] from rcross@amsl.com:
     Cleaned up bluesheets upload page.  Added display of uploaded files.   
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  19 Oct 2015 16:02:25 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Oct 2015 16:26:34 +0000
 
 
 ietfdb (6.6.0) ietf; urgency=low
