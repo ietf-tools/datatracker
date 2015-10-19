@@ -367,7 +367,6 @@ class DocumentAuthor(models.Model):
     
 class Document(DocumentInfo):
     name = models.CharField(max_length=255, primary_key=True)           # immutable
-    #related = models.ManyToManyField('DocAlias', through=RelatedDocument, blank=True, related_name="reversely_related_document_set")
     authors = models.ManyToManyField(Email, through=DocumentAuthor, blank=True)
 
     def __unicode__(self):
@@ -540,7 +539,6 @@ class DocHistory(DocumentInfo):
     # canonical_name and replace the function on Document with a
     # property
     name = models.CharField(max_length=255)
-    related = models.ManyToManyField('DocAlias', through=RelatedDocHistory, blank=True)
     authors = models.ManyToManyField(Email, through=DocHistoryAuthor, blank=True)
     def __unicode__(self):
         return unicode(self.doc.name)
@@ -620,8 +618,8 @@ class DocAlias(models.Model):
     same immutable Document.name, in the tables, but will be referred
     to by RFC number, primarily, after achieving RFC status.
     """
+    name = models.CharField(max_length=255, primary_key=True)
     document = models.ForeignKey(Document)
-    name = models.CharField(max_length=255, db_index=True)
     def __unicode__(self):
         return "%s-->%s" % (self.name, self.document.name)
     document_link = admin_link("document")

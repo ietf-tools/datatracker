@@ -105,7 +105,7 @@ class DocHistoryAdmin(admin.ModelAdmin):
     list_display = ['doc', 'rev', 'state', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
     search_fields = ['doc__name']
     ordering = ['time', 'doc', 'rev']
-    raw_id_fields = ['doc', 'authors', 'related', 'group', 'shepherd', 'ad']
+    raw_id_fields = ['doc', 'authors', 'group', 'shepherd', 'ad']
 
     def state(self, instance):
         return instance.get_state()
