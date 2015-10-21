@@ -122,6 +122,42 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name)))
 
+        # non-prefix match
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(draft.name.split("-")[1:]))))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name)))
+
+        # other doctypes than drafts
+        doc = Document.objects.get(name='charter-ietf-mars')
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name='charter-ietf-ma')))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+
+        doc = Document.objects.filter(name__startswith='conflict-review-').first()
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+
+        doc = Document.objects.filter(name__startswith='status-change-').first()
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+
+        doc = Document.objects.filter(name__startswith='agenda-').first()
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+
+        doc = Document.objects.filter(name__startswith='minutes-').first()
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+
+        doc = Document.objects.filter(name__startswith='slides-').first()
+        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+
         # match with revision
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name + "-" + prev_rev)))
         self.assertEqual(r.status_code, 302)

@@ -401,6 +401,11 @@ def search_for_name(request, name):
         aliases = DocAlias.objects.filter(name__startswith=n)[:2]
         if len(aliases) == 1:
             return aliases[0].name
+
+        aliases = DocAlias.objects.filter(name__contains=n)[:2]
+        if len(aliases) == 1:
+            return aliases[0].name
+
         return None
 
     n = name
@@ -427,7 +432,22 @@ def search_for_name(request, name):
                 else:
                     return HttpResponseRedirect(urlreverse("doc_view", kwargs={ "name": redirect_to }))
 
-    return HttpResponseRedirect(urlreverse("doc_search") + "?name=%s&rfcs=on&activedrafts=on" % n)
+    # build appropriate flags based on string prefix
+    doctypenames = DocTypeName.objects.filter(used=True)
+    # This would have been more straightforward if document prefixes couldn't
+    # contain a dash.  Probably, document prefixes shouldn't contain a dash ...
+    search_args = "?name=%s" % n
+    if   n.startswith("draft"):
+        search_args += "&rfcs=on&activedrafts=on&olddrafts=on"
+    else:
+        for t in doctypenames:
+            if n.startswith(t.prefix):
+                search_args += "&include-%s=on" % t.slug
+                break
+        else:
+            search_args += "&rfcs=on&activedrafts=on&olddrafts=on"
+
+    return HttpResponseRedirect(urlreverse("doc_search") + search_args)
 
 def ad_dashboard_group(doc):
 
