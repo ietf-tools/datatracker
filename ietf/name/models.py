@@ -35,6 +35,7 @@ class DocRelationshipName(NameModel):
 class DocTypeName(NameModel):
     """Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email,
     Review, Issue, Wiki"""
+    prefix =  models.CharField(max_length=16, default="")
 class DocTagName(NameModel):
     """Waiting for Reference, IANA Coordination, Revised ID Needed,
     External Party, AD Followup, Point Raised - Writeup Needed, ..."""
