@@ -18,45 +18,50 @@ General Instructions for Deployment of a New Release
 
       cp $oldreleasenumber/ietf/settings_local.py $releasenumber/ietf/
 
- 3. Change into the directory of the new release: and run migrations::
+ 3. Change into the directory of the new release, and optionally set up a
+    Python virtual environment
 
       cd $releasenumber
-
-
- 3.5 Optionally, set up a Python virtual environment:
-
-      virtualenv .
-      source bin/activate
+      virtualenv .		# optional
+      source bin/activate	# optional
 
  4. Install requirements (make sure your pip is reasonably fresh first).
     The following will install required python modules locally if you
-    are using a virtualenv, or globally if you are not:
+    are using a virtualenv, or globally if you are not::
 
       pip install -r requirements.txt
 
- 5. Run migrations:
+ 5. Run migrations::
 
       ietf/manage.py migrate
 
- 6. Back out one directory level, then re-point the 'web' symlink::
+ 6. Move static files to the appropriate direcrory for serving via CDN::
+
+      ietf/manage.py collectstatic
+
+ 7. Run some basic datatracker system checks::
+
+      ietf/manage.py check
+
+ 8. Back out one directory level, then re-point the 'web' symlink::
 
       cd ..
       rm ./web; ln -s $releasenumber web
 
- 7. Restart apache::
+ 9. Restart apache::
 
       sudo /etc/init.d/apache2 restart
 
- 8. It's now also a good idea to go to the datatracker front page:
+ 10. It's now also a good idea to go to the datatracker front page::
 
       http://datatracker.ietf.org/
 
-    to check that it's alive and kicking, and displaying the new release
-    number at the bottom of the left-side menubar :-)
+     to check that it's alive and kicking, and displaying the new release
+     number at the bottom of the left-side menubar :-)
 
- 9. If things **aren't** cool, revert the symlink step, re-pointing the
-    symlink to the release that was running before the new release, and restart
-    apache again to roll back to that.
+ 11. If things **aren't** cool, revert the symlink step, re-pointing the
+     symlink to the release that was running before the new release, and restart
+     apache again to roll back to that.
 
 
 Installing from Scratch
@@ -105,7 +110,7 @@ process should be used:
     out why.
 
  6. Edit ``.../ietf/__init__.py`` in the new patched release to indicate the patch
-    version in the ``__version__`` string and current date and time in the ``__date__``
+    version in the ``__patch__`` string and current date and time in the ``__date__``
     string.
 
  7. Change the 'web' symlink, reload etc. as described in
