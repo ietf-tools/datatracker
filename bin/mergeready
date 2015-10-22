@@ -270,8 +270,15 @@ for entry in ready:
         if 'M' in type or 'A' in type or 'D' in type:
             break
     # Get the test status
-    cmd = 'svn propget --revprop -r %s "test:unittest"' % rev
-    unittest = pipe(cmd).strip()
+    try:
+        cmd = 'svn propget --revprop -r %s "test:unittest"' % rev
+        unittest = pipe(cmd).strip()
+    except OSError as e:
+        if "E200017" in str(e):
+            unittestt = ""
+            pass
+        else:
+            raise
     # 
     merge_path = os.path.join(*path.split(os.path.sep)[:4])
     if not (rev, repo, merge_path) in hold:
