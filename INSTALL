@@ -1,11 +1,15 @@
-=====================================
-Datatracker Installation Instructions
-=====================================
+==============================================================================
+			       IETF Datatracker
+==============================================================================
+
+------------------------------------------------------------------------------
+     Installation Instructions
+------------------------------------------------------------------------------
+
 
 
 General Instructions for Deployment of a New Release
 ====================================================
-
 
  1. In order to fetch a new release of the django datatracker code, simply
     check out the appropriate tag from svn::
@@ -18,10 +22,12 @@ General Instructions for Deployment of a New Release
 
       cp $oldreleasenumber/ietf/settings_local.py $releasenumber/ietf/
 
- 3. Change into the directory of the new release, and optionally set up a
-    Python virtual environment
+ 3. Change into the directory of the new release::
 
       cd $releasenumber
+
+    Optionally set up a Python virtual environment::
+
       virtualenv .		# optional
       source bin/activate	# optional
 
@@ -46,7 +52,8 @@ General Instructions for Deployment of a New Release
  8. Back out one directory level, then re-point the 'web' symlink::
 
       cd ..
-      rm ./web; ln -s $releasenumber web
+      rm ./web
+      ln -s $releasenumber web
 
  9. Restart apache::
 
@@ -56,7 +63,7 @@ General Instructions for Deployment of a New Release
 
       http://datatracker.ietf.org/
 
-     to check that it's alive and kicking, and displaying the new release
+     and then check that it's alive and kicking, and displaying the new release
      number at the bottom of the left-side menubar :-)
 
  11. If things **aren't** cool, revert the symlink step, re-pointing the
