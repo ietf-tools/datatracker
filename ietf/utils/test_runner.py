@@ -309,6 +309,10 @@ class IetfTestRunner(DiscoverRunner):
         make_option('--save-version-coverage',
             action='store', dest='save_version_coverage', default=False,
             help='Save test coverage data under the given version label'),
+
+        make_option('--save-testresult',
+            action='store_true', dest='save_testresult', default=False,
+            help='Save short test result data in %s/testresult' % os.path.dirname(os.path.dirname(settings.BASE_DIR))),
     )
 
     def __init__(self, skip_coverage=False, save_version_coverage=None, **kwargs):
