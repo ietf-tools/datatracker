@@ -1,3 +1,50 @@
+ietfdb (6.7.0) ietf; urgency=low
+
+  **Smart Document URLs**
+
+  This release introduces smart document URLs, which lets you type in partial
+  (but unique) document names in the browser url fields, and be taken directly
+  to the matching datatracker document page.  As an example, you can type
+  https://datatracker.ietf.org/doc/draft-ietf-core-links and be taken to the
+  draft-ietf-core-links-json page.  For drafts, you can snip off the document
+  type prefix, too:  https://datatracker.ietf.org/doc/ietf-core-links.
+
+  If the partial string supplied matches more than one document, you'll instead
+  get a search page for that name string.
+
+  This works for other document types than drafts, too, but then you need to
+  have a match at the start of the document name:
+  https://datatracker.ietf.org/doc/conflict-review-cheshire does what you'd
+  expect, and so does https://datatracker.ietf.org/doc/status-change- .
+
+  Extensions are split off if supplied, and revisions redirect to the
+  appropriate historic page.
+
+  Details from the commit-log:
+
+  * Enhanced the partial-match URL feature introduced in [10158], merged in
+    [10253], so that it now handles other document types than drafts/rfcs if
+    the partial string has the proper prefix, and also handles partial strings
+    which don't match at the start of the document name.
+
+  * Added a new field 'prefix' to DocTypeName -- unfortunate, but necessary 
+    since the slugs don't match the document prefixes :-(
+
+  * Merged in [10158] from olau@iola.dk:
+    Add a view for /doc/foo-bar-baz that tries to redirect helpfully instead
+    of just throwing a 404 in case in an inexact match.  Right now, it knows
+    how to do prefix matches and handles revisions and extensions. If it can't
+    find a unique match, it redirects to the search page.  Branch 
+
+  * Merged in [10111] from olau@iola.dk:
+    This fixes Javascript widgets working with DocAliases, such as the
+    replaces field in draft submission, to work better with Javascript
+    disabled. It also makes sense from a modelling perspective as the name
+    really is a unique key for the alias.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Oct 2015 14:50:25 +0000
+
+
 ietfdb (6.6.1) ietf; urgency=low
 
   This is a combined bugfix and feature maintenance release:
