@@ -135,7 +135,7 @@ class SubmitTests(TestCase):
     def submit_new_wg(self, formats):
         # submit new -> supply submitter info -> approve
         draft = make_test_data()
-
+        
         # prepare draft to suggest replace
         sug_replaced_draft = Document.objects.create(
             name="draft-ietf-ames-sug-replaced",
@@ -400,6 +400,7 @@ class SubmitTests(TestCase):
 
     def test_submit_update_individual(self):
         draft = make_test_data()
+        replaces_count = draft.relateddocument_set.filter(relationship_id='replaces').count()
         name = draft.name
         rev = '%02d'%(int(draft.rev)+1)
         status_url = self.do_submission(name,rev)
@@ -428,7 +429,7 @@ class SubmitTests(TestCase):
         self.assertEqual(r.status_code, 302)
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
-        self.assertEqual(draft.relateddocument_set.filter(relationship_id='replaces').count(),0)
+        self.assertEqual(draft.relateddocument_set.filter(relationship_id='replaces').count(), replaces_count)
 
     def test_submit_new_wg_with_dash(self):
         make_test_data()

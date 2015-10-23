@@ -48,9 +48,13 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("no documents match" in r.content.lower())
 
-        r = self.client.get(base_url + "?olddrafts=on&name=")
+        r = self.client.get(base_url + "?olddrafts=on&name=bar")
         self.assertEqual(r.status_code, 200)
         self.assertTrue("no documents match" in r.content.lower())
+
+        r = self.client.get(base_url + "?olddrafts=on&name=foo")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("draft-foo-mars-test" in r.content.lower())
 
         # find by rfc/active/inactive
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
