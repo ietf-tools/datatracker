@@ -5,6 +5,8 @@ from pyquery import PyQuery
 
 from django.core.urlresolvers import reverse as urlreverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import DocAlias
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
     get_pseudo_submitter, get_holders, get_update_cc_addrs)
@@ -149,9 +151,20 @@ class IprTests(TestCase):
     def test_iprs_for_drafts(self):
         draft = make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
-        r = self.client.get(urlreverse("ietf.ipr.views.iprs_for_drafts_txt"))
+        r = self.client.get(urlreverse("ietf.ipr.views.by_draft_txt"))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.name in r.content)
+        self.assertTrue(str(ipr.pk) in r.content)
+
+    def test_iprs_for_drafts_recursive(self):
+        draft = make_test_data()
+        replaced = draft.all_related_that_doc(['replaces'])
+        ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
+        r = self.client.get(urlreverse("ietf.ipr.views.by_draft_recursive_txt"))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(draft.name in r.content)
+        for alias in replaced:
+            self.assertTrue(alias.name in r.content)
         self.assertTrue(str(ipr.pk) in r.content)
 
     def test_about(self):

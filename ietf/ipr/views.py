@@ -13,6 +13,8 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import DocAlias
 from ietf.group.models import Role, Group
 from ietf.ietfauth.utils import role_required, has_role
@@ -404,7 +406,7 @@ def history(request, id):
         'selected_tab_entry':'history'
     })
 
-def iprs_for_drafts_txt(request):
+def by_draft_txt(request):
     docipr = {}
 
     for o in IprDocRel.objects.filter(disclosure__state='posted').select_related('document'):
@@ -422,6 +424,29 @@ def iprs_for_drafts_txt(request):
         lines.append(name + "\t" + "\t".join(unicode(ipr_id) for ipr_id in sorted(iprs)))
 
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+
+def by_draft_recursive_txt(request):
+    docipr = {}
+
+    for o in IprDocRel.objects.filter(disclosure__state='posted').select_related('document'):
+        alias = o.document
+        document = alias.document
+        name = alias.name
+        related = set(document.docalias_set.all()) | set(document.all_related_that_doc(['obs', 'replaces']))
+        for alias in related:
+            name = alias.name
+            if name.startswith("rfc"):
+                name = name.upper()
+            if not name in docipr:
+                docipr[name] = []
+            docipr[name].append(o.disclosure_id)
+
+    lines = [ u"# Machine-readable list of IPR disclosures by draft name" ]
+    for name, iprs in docipr.iteritems():
+        lines.append(name + "\t" + "\t".join(unicode(ipr_id) for ipr_id in sorted(iprs)))
+
+    return HttpResponse("\n".join(lines), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+
 
 def new(request, type, updates=None):
     """Submit a new IPR Disclosure.  If the updates field != None, this disclosure

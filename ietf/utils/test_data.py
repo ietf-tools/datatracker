@@ -5,12 +5,12 @@ from django.contrib.auth.models import User
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent
+from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent, RelatedDocument
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
 from ietf.meeting.models import Meeting
-from ietf.name.models import StreamName
+from ietf.name.models import StreamName, DocRelationshipName
 from ietf.person.models import Person, Email
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None):
@@ -183,6 +183,21 @@ def make_test_data():
     ames_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     ames_wg.save()
 
+    # old draft
+    old_draft = Document.objects.create(
+        name="draft-foo-mars-test",
+        time=datetime.datetime.now() - datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+        type_id="draft",
+        title="Optimizing Martian Network Topologies",
+        stream_id="ietf",
+        abstract="Techniques for achieving near-optimal Martian networks.",
+        rev="00",
+        pages=2,
+        expires=datetime.datetime.now(),
+        )
+    old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
+    old_alias = DocAlias.objects.create(document=old_draft, name=old_draft.name)
+
     # draft
     draft = Document.objects.create(
         name="draft-ietf-mars-test",
@@ -210,6 +225,9 @@ def make_test_data():
         document=draft,
         name=draft.name,
         )
+
+    RelatedDocument.objects.create(source=draft, target=old_alias, relationship=DocRelationshipName.objects.get(slug='replaces'))
+    old_draft.set_state(State.objects.get(type='draft', slug='repl'))
 
     DocumentAuthor.objects.create(
         document=draft,
