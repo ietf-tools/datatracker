@@ -69,26 +69,15 @@ def get_document_emails(ipr):
             doc_info = 'Internet-Draft entitled "{}" ({})'.format(doc.title,doc.name)
         else:
             doc_info = 'RFC entitled "{}" (RFC{})'.format(doc.title,get_rfc_num(doc))
-            
-        # build cc list
-        if doc.group.acronym == 'none':
-            if doc.ad and is_draft(doc):
-                cc_list = doc.ad.role_email('ad').address
-            else:
-                role = Role.objects.filter(group__acronym='gen',name='ad')[0]
-                cc_list = role.email.address
 
-        else:
-            cc_list = get_wg_email_list(doc.group)
-
-        (to_list,cc_list) = gather_address_lists('ipr_posted_on_doc',doc=doc)
+        addrs = gather_address_lists('ipr_posted_on_doc',doc=doc).as_strings(compact=False)
         author_names = ', '.join([a.person.name for a in authors])
     
         context = dict(
             doc_info=doc_info,
-            to_email=to_list,
+            to_email=addrs.to,
             to_name=author_names,
-            cc_email=cc_list,
+            cc_email=addrs.cc,
             ipr=ipr)
         text = render_to_string('ipr/posted_document_email.txt',context)
         messages.append(text)
@@ -124,20 +113,6 @@ def get_posted_emails(ipr):
         messages.append(text)
         
     return messages
-
-def get_wg_email_list(group):
-    """Returns a string of comman separated email addresses for the Area Directors and WG Chairs
-    """
-    result = []
-    roles = itertools.chain(Role.objects.filter(group=group.parent,name='ad'),
-                            Role.objects.filter(group=group,name='chair'))
-    for role in roles:
-        result.append(role.email.address)
-
-    if group.list_email:
-        result.append(group.list_email)
-
-    return ', '.join(result)
 
 def set_disclosure_title(disclosure):
     """Set the title of the disclosure"""
