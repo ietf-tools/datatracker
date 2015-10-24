@@ -1,7 +1,13 @@
 ietfdb (6.7.1) ietf; urgency=medium
 
+  This is a small maintenance release with some bug-fixes and one enhancement,
+  a new machine-readable list of IPR declarations per draft, recursively.
+
+  Here are details from the commit log:
+
   * Merged in [10265] from rcross@amsl.com:
     Fixed IPR notice addresses formatting.   
+
   * Added a new machine-readable list of IPR declarations per draft, which 
     also searches through related documents.  Extended make_test_data() with a 
     replaced document for the test draft.
@@ -12,7 +18,7 @@ ietfdb (6.7.1) ietf; urgency=medium
   * Updated the INSTALL instructions to reflect the new way patch numbers 
     are handled in ietf/__init__.py from the 6.0.0 release.
 
-  * Updated mergeready to work with svn 1.9, which seems to return an error 
+  * Updated bin/mergeready to work with svn 1.9, which seems to return an error 
     for properties which aren't found.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  23 Oct 2015 12:33:20 -0700
