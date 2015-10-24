@@ -5,6 +5,11 @@ ietfdb (6.7.1) ietf; urgency=medium
 
   Here are details from the commit log:
 
+  * Changed nomcom.models.Nomcom() to use a FileSystemStorage which doesn't
+    record the file system location in the migration, in order to avoid having
+    model changes detected when switching from one development path to
+    another.
+
   * Merged in [10265] from rcross@amsl.com:
     Fixed IPR notice addresses formatting.   
 
