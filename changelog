@@ -26,7 +26,7 @@ ietfdb (6.7.1) ietf; urgency=medium
   * Updated bin/mergeready to work with svn 1.9, which seems to return an error 
     for properties which aren't found.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  23 Oct 2015 12:33:20 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Oct 2015 20:29:34 +0000
 
 
 ietfdb (6.7.0) ietf; urgency=low
