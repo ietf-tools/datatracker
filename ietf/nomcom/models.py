@@ -31,8 +31,16 @@ class ReminderDates(models.Model):
     nomcom = models.ForeignKey('NomCom')
 
 
+class NoLocationMigrationFileSystemStorage(FileSystemStorage):
+
+    def deconstruct(obj):
+        path, args, kwargs = FileSystemStorage.deconstruct(obj)
+        kwargs["location"] = None
+        return (path, args, kwargs)
+    
+
 class NomCom(models.Model):
-    public_key = models.FileField(storage=FileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR),
+    public_key = models.FileField(storage=NoLocationMigrationFileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR),
                                   upload_to=upload_path_handler, blank=True, null=True)
 
     group = models.ForeignKey(Group)
