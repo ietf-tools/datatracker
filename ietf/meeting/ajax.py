@@ -575,7 +575,7 @@ def constraint_json(request, num, constraintid):
                             status = 404,
                             content_type="application/json")
 
-    json1 = constraint.json_dict(request)
+    json1 = constraint.json_dict(request.build_absolute_uri('/'))
     return HttpResponse(json.dumps(json1, sort_keys=True, indent=2),
                         content_type="application/json")
 
