@@ -26,7 +26,7 @@ from ietf.secr.utils.meeting import get_upload_root, get_materials, get_timeslot
 from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
-from ietf.meeting.models import Meeting, Session, TimeSlot, ScheduledSession
+from ietf.meeting.models import Meeting, Session, TimeSlot, SchedTimeSessAssignment
 from ietf.secr.proceedings.forms import EditSlideForm, InterimMeetingForm, RecordingForm, RecordingEditForm, ReplaceSlideForm, UnifiedUploadForm
 from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas,
     gen_attendees, gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries,
@@ -279,10 +279,10 @@ def ajax_get_sessions(request, meeting_num, acronym):
     sessions = Session.objects.filter(meeting=meeting,group=group,status='sched')
     
     # order by time scheduled
-    sessions = sorted(sessions,key = lambda x: x.official_scheduledsession().timeslot.time)
+    sessions = sorted(sessions,key = lambda x: x.official_timeslotassignment().timeslot.time)
     
     for n,session in enumerate(sessions,start=1):
-        timeslot = session.official_scheduledsession().timeslot
+        timeslot = session.official_timeslotassignment().timeslot
         val = '{}: {} {}'.format(n,timeslot.time.strftime('%m-%d %H:%M'),timeslot.location.name)
         d = {'id':session.id, 'value': val}
         results.append(d)
@@ -793,7 +793,7 @@ def select(request, meeting_num):
 
     # iniialize plenary form
     if has_role(user,['Secretariat','IETF Chair','IAB Chair']):
-        ss = ScheduledSession.objects.filter(schedule=meeting.agenda,timeslot__type='plenary')
+        ss = SchedTimeSessAssignment.objects.filter(schedule=meeting.agenda,timeslot__type='plenary')
         choices = [ (i.session.id, i.session.name) for i in sorted(ss,key=lambda x: x.session.name) ]
         plenary_form = GroupSelectForm(choices=choices)
     else:

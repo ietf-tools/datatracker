@@ -61,8 +61,8 @@ def get_areas():
                                 Q(state="active", type="area")).order_by('acronym')
 
 # get list of areas that are referenced.
-def get_area_list_from_sessions(scheduledsessions, num):
-    return scheduledsessions.filter(timeslot__type = 'Session',
+def get_area_list_from_sessions(assignments, num):
+    return assignments.filter(timeslot__type = 'Session',
                                     session__group__parent__isnull = False).order_by(
         'session__group__parent__acronym').distinct().values_list(
         'session__group__parent__acronym',flat=True)
@@ -85,25 +85,25 @@ def build_all_agenda_slices(meeting):
     time_slices.sort()
     return time_slices,date_slices
 
-def get_all_scheduledsessions_from_schedule(schedule):
-   ss = schedule.scheduledsession_set.filter(timeslot__location__isnull = False)
+def get_all_assignments_from_schedule(schedule):
+   ss = schedule.assignments.filter(timeslot__location__isnull = False)
    ss = ss.filter(session__type__slug='session')
    ss = ss.order_by('timeslot__time','timeslot__name')
 
    return ss
 
-def get_modified_from_scheduledsessions(scheduledsessions):
-    return scheduledsessions.aggregate(Max('timeslot__modified'))['timeslot__modified__max']
+def get_modified_from_assignments(assignments):
+    return assignments.aggregate(Max('timeslot__modified'))['timeslot__modified__max']
 
-def get_wg_name_list(scheduledsessions):
-    return scheduledsessions.filter(timeslot__type = 'Session',
+def get_wg_name_list(assignments):
+    return assignments.filter(timeslot__type = 'Session',
                                     session__group__isnull = False,
                                     session__group__parent__isnull = False).order_by(
         'session__group__acronym').distinct().values_list(
         'session__group__acronym',flat=True)
 
-def get_wg_list(scheduledsessions):
-    wg_name_list = get_wg_name_list(scheduledsessions)
+def get_wg_list(assignments):
+    wg_name_list = get_wg_name_list(assignments)
     return Group.objects.filter(acronym__in = set(wg_name_list)).order_by('parent__acronym','acronym')
 
 

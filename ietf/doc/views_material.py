@@ -197,18 +197,18 @@ def get_upcoming_manageable_sessions(user, doc, acronym=None, date=None, seq=Non
     if date:
         if len(date)==15:
             start = datetime.datetime.strptime(date,"%Y-%m-%d-%H%M")
-            refined_candidates = [ sess for sess in refined_candidates if sess.scheduledsession_set.filter(schedule=sess.meeting.agenda,timeslot__time=start) ]
+            refined_candidates = [ sess for sess in refined_candidates if sess.timeslotassignments.filter(schedule=sess.meeting.agenda,timeslot__time=start) ]
         else:
             start = datetime.datetime.strptime(date,"%Y-%m-%d").date()
             end = start+datetime.timedelta(days=1)
-            refined_candidates = [ sess for sess in refined_candidates if sess.scheduledsession_set.filter(schedule=sess.meeting.agenda,timeslot__time__range=(start,end)) ]
+            refined_candidates = [ sess for sess in refined_candidates if sess.timeslotassignments.filter(schedule=sess.meeting.agenda,timeslot__time__range=(start,end)) ]
 
     if week_day:
         try:
             dow = ['sun','mon','tue','wed','thu','fri','sat'].index(week_day.lower()[:3]) + 1
         except ValueError:
             raise Http404
-        refined_candidates = [ sess for sess in refined_candidates if sess.scheduledsession_set.filter(schedule=sess.meeting.agenda,timeslot__time__week_day=dow) ]
+        refined_candidates = [ sess for sess in refined_candidates if sess.timeslotassignments.filter(schedule=sess.meeting.agenda,timeslot__time__week_day=dow) ]
 
     changeable_sessions = [ sess for sess in refined_candidates if can_manage_materials(user, sess.group) ]
 
@@ -226,7 +226,7 @@ def get_upcoming_manageable_sessions(user, doc, acronym=None, date=None, seq=Non
     # scheduled).
     
     def time_sort_key(session):
-        official_sessions = session.scheduledsession_set.filter(schedule=session.meeting.agenda)
+        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
         if official_sessions:
             return official_sessions.first().timeslot.time
         else:

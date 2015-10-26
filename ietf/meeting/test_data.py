@@ -2,7 +2,7 @@ import datetime
 
 from ietf.doc.models import Document, State
 from ietf.group.models import Group
-from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, ScheduledSession, ResourceAssociation, SessionPresentation
+from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, SchedTimeSessAssignment, ResourceAssociation, SessionPresentation
 from ietf.name.models import RoomResourceName
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
@@ -34,7 +34,7 @@ def make_meeting_test_data():
                                           requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now(),type_id="session")
     mars_session.resources = [projector]
-    ScheduledSession.objects.create(timeslot=slot, session=mars_session, schedule=schedule)
+    SchedTimeSessAssignment.objects.create(timeslot=slot, session=mars_session, schedule=schedule)
 
     # ames WG
     slot = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=30 * 60, location=room,
@@ -43,7 +43,7 @@ def make_meeting_test_data():
                                           attendees=10, requested_by=system_person,
                                           requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now(),type_id="session")
-    ScheduledSession.objects.create(timeslot=slot, session=ames_session, schedule=schedule)
+    SchedTimeSessAssignment.objects.create(timeslot=slot, session=ames_session, schedule=schedule)
 
     # IESG breakfast
     breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", duration=90 * 60,
@@ -54,7 +54,7 @@ def make_meeting_test_data():
                                           attendees=25, requested_by=system_person,
                                           requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now(),type_id="lead")
-    ScheduledSession.objects.create(timeslot=breakfast_slot, session=iesg_session, schedule=schedule)
+    SchedTimeSessAssignment.objects.create(timeslot=breakfast_slot, session=iesg_session, schedule=schedule)
 
     meeting.agenda = schedule
     meeting.save()

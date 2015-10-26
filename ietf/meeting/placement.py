@@ -16,8 +16,8 @@ from datetime            import datetime
 
 from django.db           import models
 #from settings import BADNESS_UNPLACED, BADNESS_TOOSMALL_50, BADNESS_TOOSMALL_100, BADNESS_TOOBIG, BADNESS_MUCHTOOBIG
-#from ietf.meeting.models import Schedule, ScheduledSession,TimeSlot,Room
-from ietf.meeting.models import ScheduledSession
+#from ietf.meeting.models import Schedule, SchedTimeSessAssignment,TimeSlot,Room
+from ietf.meeting.models import SchedTimeSessAssignment
 from django.template.defaultfilters import slugify, date as date_format, time as time_format
 
 def do_prompt():
@@ -36,14 +36,14 @@ class ScheduleSlot(object):
         self.badness = None
         self.slotgroups = {}
 
-    # this is a partial copy of ScheduledSession's methods. Prune later.
+    # this is a partial copy of SchedTimeSessAssignment's methods. Prune later.
     #def __unicode__(self):
     #    return u"%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
     #
     #def __str__(self):
     #    return self.__unicode__()
 
-    def add_scheduledsession(self,fs):
+    def add_assignment(self,fs):
         self.slotgroups[fs] = fs
 
     def scheduled_session_pk(self, assignments):
@@ -113,8 +113,8 @@ class UnplacedScheduleSlot(ScheduleSlot):
     def count(self):
         return len(self.unplaced_slot_numbers)
 
-    def add_scheduledsession(self,fs):
-        super(UnplacedScheduleSlot, self).add_scheduledsession(fs)
+    def add_assignment(self,fs):
+        super(UnplacedScheduleSlot, self).add_assignment(fs)
         #print "unplaced add: %s" % (fs.available_slot)
         self.unplaced_slot_numbers.append(fs.available_slot)
 
@@ -126,7 +126,7 @@ class UnplacedScheduleSlot(ScheduleSlot):
         del self.unplaced_slot_numbers[0]
 
 
-class FakeScheduledSession(object):
+class FakeSchedTimeSessAssignment(object):
     """
     This model provides a fake (not-backed by database) N:M relationship between
     Session and TimeSlot, but in this case TimeSlot is always None, because the
@@ -147,7 +147,7 @@ class FakeScheduledSession(object):
         self.pinned   = False
         self.scheduleslot = None
 
-    def fromScheduledSession(self, ss):  # or from another FakeScheduledSession
+    def fromSchedTimeSessAssignment(self, ss):  # or from another FakeSchedTimeSessAssignment
         self.session   = ss.session
         self.schedule  = ss.schedule
         self.timeslot  = ss.timeslot
@@ -158,7 +158,7 @@ class FakeScheduledSession(object):
     def save(self):
         pass
 
-    # this is a partial copy of ScheduledSession's methods. Prune later.
+    # this is a partial copy of SchedTimeSessAssignment's methods. Prune later.
     def __unicode__(self):
         return u"%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
 
@@ -254,7 +254,7 @@ class FakeScheduledSession(object):
 
     def json_dict(self, selfurl):
         ss = dict()
-        ss['scheduledsession_id'] = self.id
+        ss['assignment_id'] = self.id
         #ss['href']          = self.url(sitefqdn)
         ss['empty'] =  self.empty_str
         ss['timeslot_id'] = self.timeslot.id
@@ -324,13 +324,13 @@ class CurrentScheduleState:
 
         if time_column is not None:
             # needs available_slot to be filled in
-            time_column.add_scheduledsession(fs)
+            time_column.add_assignment(fs)
         #print "adding item: %u to unplaced slots (pinned: %s)" % (fs.available_slot, fs.pinned)
 
     def __init__(self, schedule, seed=None):
         # initialize available_slots with the places that a session can go based upon the
-        # scheduledsession objects of the provided schedule.
-        # for each session which is not initially scheduled, also create a scheduledsession
+        # schedtimesessassignment objects of the provided schedule.
+        # for each session which is not initially scheduled, also create a schedtimesessassignment
         # that has a session, but no timeslot.
 
         self.recordsteps         = True
@@ -339,7 +339,7 @@ class CurrentScheduleState:
         self.lastSaveStep        = 0
         self.verbose             = False
 
-        # this maps a *group* to a list of (session,location) pairs, using FakeScheduledSession
+        # this maps a *group* to a list of (session,location) pairs, using FakeSchedTimeSessAssignment
         self.current_assignments = {}
         self.tempdict            = {}   # used when calculating badness.
 
@@ -368,14 +368,14 @@ class CurrentScheduleState:
         for timeslot in schedule.meeting.timeslot_set.filter(type = "session").all():
             if not timeslot.time in self.timeslots:
                 self.timeslots[timeslot.time] = ScheduleSlot(timeslot.time)
-            fs = FakeScheduledSession(self.schedule)
+            fs = FakeSchedTimeSessAssignment(self.schedule)
             fs.timeslot = timeslot
             self.add_to_available_slot(fs)
         self.timeslots[None] = self.unplaced_scheduledslots
 
         # make list of things that need placement.
         for sess in self.meeting.sessions_that_can_be_placed().all():
-            fs = FakeScheduledSession(self.schedule)
+            fs = FakeSchedTimeSessAssignment(self.schedule)
             fs.session     = sess
             self.sessions[sess] = fs
             self.current_assignments[sess.group] = []
@@ -383,16 +383,16 @@ class CurrentScheduleState:
         #print "Then had %u" % (self.total_slots)
         # now find slots that are not empty.
         # loop here and the one for useableslots could be merged into one loop
-        allschedsessions = self.schedule.qs_scheduledsessions_with_assignments.filter(timeslot__type = "session").all()
+        allschedsessions = self.schedule.qs_assignments_with_sessions.filter(timeslot__type = "session").all()
         for ss in allschedsessions:
             # do not need to check for ss.session is not none, because filter above only returns those ones.
             sess = ss.session
             if not (sess in self.sessions):
                 #print "Had to create sess for %s" % (sess)
-                self.sessions[sess] = FakeScheduledSession(self.schedule)
+                self.sessions[sess] = FakeSchedTimeSessAssignment(self.schedule)
             fs = self.sessions[sess]
             #print "Updating %s from %s(%s)" % (fs.session.group.acronym, ss.timeslot.location.name, ss.timeslot.time)
-            fs.fromScheduledSession(ss)
+            fs.fromSchedTimeSessAssignment(ss)
 
             # if pinned, then do not consider it when selecting, but it needs to be in
             # current_assignments so that conflicts are calculated.
@@ -406,7 +406,7 @@ class CurrentScheduleState:
 
         # need to remove any sessions that might have gotten through above, but are in non-session
         # places, otherwise these could otherwise appear to be unplaced.
-        allspecialsessions = self.schedule.qs_scheduledsessions_with_assignments.exclude(timeslot__type = "session").all()
+        allspecialsessions = self.schedule.qs_assignments_with_sessions.exclude(timeslot__type = "session").all()
         for ss in allspecialsessions:
             sess = ss.session
             if sess is None:
@@ -693,7 +693,7 @@ class CurrentScheduleState:
         self.lastSaveStep = self.stepnum
 
         # first, remove all assignments in the schedule.
-        for ss in targetSchedule.scheduledsession_set.all():
+        for ss in targetSchedule.assignments.all():
             if ss.pinned:
                 continue
             ss.delete()
@@ -702,7 +702,7 @@ class CurrentScheduleState:
         for fs in self.available_slots:
             if fs is None:
                 continue
-            ss = ScheduledSession(timeslot = fs.timeslot,
+            ss = SchedTimeSessAssignment(timeslot = fs.timeslot,
                                   schedule = targetSchedule,
                                   session = fs.session)
             ss.save()
@@ -733,7 +733,7 @@ if False:
     class AutomaticScheduleStep(models.Model):
         schedule   = models.ForeignKey('Schedule', null=False, blank=False, help_text=u"Who made this agenda.")
         session    = models.ForeignKey('Session', null=True, default=None, help_text=u"Scheduled session involved.")
-        moved_from = models.ForeignKey('ScheduledSession', related_name="+", null=True, default=None, help_text=u"Where session was.")
-        moved_to   = models.ForeignKey('ScheduledSession', related_name="+", null=True, default=None, help_text=u"Where session went.")
+        moved_from = models.ForeignKey('SchedTimeSessAssignment', related_name="+", null=True, default=None, help_text=u"Where session was.")
+        moved_to   = models.ForeignKey('SchedTimeSessAssignment', related_name="+", null=True, default=None, help_text=u"Where session went.")
         stepnum    = models.IntegerField(default=0, blank=True, null=True)
 

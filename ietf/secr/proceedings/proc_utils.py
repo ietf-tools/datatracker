@@ -16,7 +16,7 @@ from ietf.doc.models import Document, RelatedDocument, DocEvent, NewRevisionDocE
 from ietf.group.models import Group, Role
 from ietf.group.utils import get_charter_text
 from ietf.meeting.helpers import get_schedule
-from ietf.meeting.models import Session, Meeting, ScheduledSession, SessionPresentation
+from ietf.meeting.models import Session, Meeting, SchedTimeSessAssignment, SessionPresentation
 from ietf.person.models import Person
 from ietf.secr.proceedings.models import InterimMeeting    # proxy model
 from ietf.secr.proceedings.models import Registration
@@ -38,7 +38,7 @@ def check_audio_files(group,meeting):
     '''
     for session in Session.objects.filter(group=group,meeting=meeting,status__in=('sched','schedw')):
         try:
-            timeslot = session.official_scheduledsession().timeslot
+            timeslot = session.official_timeslotassignment().timeslot
         except IndexError:
             continue
         if not (timeslot.location and timeslot.time):
@@ -63,7 +63,7 @@ def create_recording(session,meeting,group,url):
     '''
     sequence = get_next_sequence(group,meeting,'recording')
     name = 'recording-{}-{}-{}'.format(meeting.number,group.acronym,sequence)
-    time = session.official_scheduledsession().timeslot.time.strftime('%Y-%m-%d %H:%M')
+    time = session.official_timeslotassignment().timeslot.time.strftime('%Y-%m-%d %H:%M')
     if url.endswith('mp3'):
         title = 'Audio recording for {}'.format(time)
     else:
@@ -434,11 +434,11 @@ def gen_acknowledgement(context):
 def gen_agenda(context):
     meeting = context['meeting']
     schedule = get_schedule(meeting)
-    scheduledsessions = ScheduledSession.objects.filter(schedule=schedule).exclude(session__isnull=True)
+    schedtimesessassignments = SchedTimeSessAssignment.objects.filter(schedule=schedule).exclude(session__isnull=True)
 
     html = render_to_response('proceedings/agenda.html',{
         'meeting': meeting,
-        'scheduledsessions': scheduledsessions}
+        'schedtimesessassignments': schedtimesessassignments}
     )
 
     path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'agenda.html')

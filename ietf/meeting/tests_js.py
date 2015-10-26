@@ -5,9 +5,11 @@ from unittest import skipIf
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.urlresolvers import reverse as urlreverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.group import colors
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.meeting.models import ScheduledSession
+from ietf.meeting.models import SchedTimeSessAssignment
 from ietf import settings
 
 skip_selenium = getattr(settings,'SKIP_SELENIUM',None)
@@ -52,7 +54,7 @@ class ScheduleEditTests(StaticLiveServerTestCase):
     
     def testUnschedule(self):
         
-        self.assertEqual(ScheduledSession.objects.filter(session__meeting__number=42,session__group__acronym='mars').count(),1)
+        self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=42,session__group__acronym='mars').count(),1)
 
         self.login()
         url = self.absreverse('ietf.meeting.views.edit_agenda',kwargs=dict(num='42',name='test-agenda',owner='plain@example.com'))
@@ -69,7 +71,7 @@ class ScheduleEditTests(StaticLiveServerTestCase):
         self.assertTrue(len(q('#sortable-list #session_1'))>0)
 
         time.sleep(0.1) # The API that modifies the database runs async
-        self.assertEqual(ScheduledSession.objects.filter(session__meeting__number=42,session__group__acronym='mars').count(),0)
+        self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=42,session__group__acronym='mars').count(),0)
 
 # The following are useful debugging tools
 

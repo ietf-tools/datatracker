@@ -17,7 +17,7 @@ from django.utils.functional import curry
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
 from ietf.meeting.helpers import get_meeting
-from ietf.meeting.models import Meeting, Session, Room, TimeSlot, ScheduledSession, Schedule
+from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
@@ -41,7 +41,7 @@ def assign(session,timeslot,meeting,schedule=None):
     '''
     if schedule == None:
         schedule = meeting.agenda
-    ScheduledSession.objects.create(schedule=schedule,
+    SchedTimeSessAssignment.objects.create(schedule=schedule,
                                     session=session,
                                     timeslot=timeslot)
     session.status_id = 'sched'
@@ -132,11 +132,11 @@ def build_nonsession(meeting,schedule):
                                 duration=slot.duration,
                                 show_location=slot.show_location)
         if session:
-            ScheduledSession.objects.create(schedule=schedule,session=session,timeslot=ts)
+            SchedTimeSessAssignment.objects.create(schedule=schedule,session=session,timeslot=ts)
 
 def check_nonsession(meeting,schedule):
     '''
-    Ensure non-session timeslots exist and have appropriate ScheduledSession objects
+    Ensure non-session timeslots exist and have appropriate SchedTimeSessAssignment objects
     for the specified schedule.
     '''
     slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary','lead','offagenda'))
@@ -146,18 +146,18 @@ def check_nonsession(meeting,schedule):
 
     plenary = slots.filter(type='plenary').first()
     if plenary:
-        scheduledsessions = plenary.scheduledsession_set.all()
-        if not scheduledsessions.filter(schedule=schedule):
-            source = scheduledsessions.first().schedule
-            copy_scheduledsessions(slots,source,schedule)
+        assignments = plenary.sessionassignments.all()
+        if not assignments.filter(schedule=schedule):
+            source = assignments.first().schedule
+            copy_assignments(slots,source,schedule)
 
-def copy_scheduledsessions(slots,source,target):
+def copy_assignments(slots,source,target):
     '''
-    Copy scheduledsession objects from source schedule to target schedule.  Slots is
+    Copy SchedTimeSessAssignment objects from source schedule to target schedule.  Slots is
     a queryset of slots
     '''
-    for ss in ScheduledSession.objects.filter(schedule=source,timeslot__in=slots):
-        ScheduledSession.objects.create(schedule=target,session=ss.session,timeslot=ss.timeslot)
+    for ss in SchedTimeSessAssignment.objects.filter(schedule=source,timeslot__in=slots):
+        SchedTimeSessAssignment.objects.create(schedule=target,session=ss.session,timeslot=ss.timeslot)
 
 def get_last_meeting(meeting):
     last_number = int(meeting.number) - 1
@@ -172,7 +172,7 @@ def is_combined(session,meeting,schedule=None):
     '''
     if schedule == None:
         schedule = meeting.agenda
-    if session.scheduledsession_set.filter(schedule=schedule).count() > 1:
+    if session.timeslotassignments.filter(schedule=schedule).count() > 1:
         return True
     else:
         return False
@@ -248,7 +248,7 @@ def sort_groups(meeting,schedule=None):
     groups_with_sessions = [ s.group for s in sessions ]
     gset = set(groups_with_sessions)
     sorted_groups_with_sessions = sorted(gset, key = lambda instance: instance.acronym)
-    scheduled_sessions = ScheduledSession.objects.filter(schedule=schedule,session__isnull=False)
+    scheduled_sessions = SchedTimeSessAssignment.objects.filter(schedule=schedule,session__isnull=False)
     groups_with_timeslots = [ x.session.group for x in scheduled_sessions ]
     for group in sorted_groups_with_sessions:
         if group in groups_with_timeslots:
@@ -492,7 +492,7 @@ def non_session(request, meeting_id, schedule_name):
             session.save()
             
             # create association
-            ScheduledSession.objects.create(timeslot=timeslot,
+            SchedTimeSessAssignment.objects.create(timeslot=timeslot,
                                             session=session,
                                             schedule=schedule)
 
@@ -517,14 +517,14 @@ def non_session_delete(request, meeting_id, schedule_name, slot_id):
     '''
     This function deletes the non-session TimeSlot.  For "other" and "plenary" timeslot
     types we need to delete the corresponding Session object as well.  Check for uploaded
-    material first.  ScheduledSession objects get deleted as well.
+    material first.  SchedTimeSessAssignment objects get deleted as well.
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     # schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     slot = get_object_or_404(TimeSlot, id=slot_id)
     if slot.type_id in ('other','plenary','lead'):
-        scheduledsessions = slot.scheduledsession_set.filter(schedule__meeting=meeting)
-        session_objects = [ x.session for x in scheduledsessions ]
+        assignments = slot.sessionassignments.filter(schedule__meeting=meeting)
+        session_objects = [ x.session for x in assignments ]
         for session in session_objects:
             if session.materials.exclude(states__slug='deleted'):
                 messages.error(request, 'Materials have already been uploaded for "%s".  You must delete those before deleting the timeslot.' % slot.name)
@@ -595,7 +595,7 @@ def notifications(request, meeting_id):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     last_notice = GroupEvent.objects.filter(type='sent_notification').first()
     groups = set()
-    for ss in meeting.agenda.scheduledsession_set.filter(timeslot__type='session'):
+    for ss in meeting.agenda.assignments.filter(timeslot__type='session'):
         last_notice = ss.session.group.latest_event(type='sent_notification')
         if last_notice and ss.modified > last_notice.time:
             groups.add(ss.session.group)
@@ -604,7 +604,7 @@ def notifications(request, meeting_id):
 
     if request.method == "POST":
         # ensure session state is scheduled
-        for ss in meeting.agenda.scheduledsession_set.all():
+        for ss in meeting.agenda.assignments.all():
             session = ss.session
             if session.status.slug == "schedw":
                 session.status_id = "sched"
@@ -635,7 +635,7 @@ def remove_session(request, meeting_id, acronym):
     now = datetime.datetime.now()
 
     for session in sessions:
-        ss = session.official_scheduledsession()
+        ss = session.official_timeslotassignment()
         ss.session = None
         ss.modified = now
         ss.save()
@@ -756,15 +756,15 @@ def schedule(request, meeting_id, schedule_name, acronym):
                     # COMBINE SECTION - BEFORE --------------
                     if 'combine' in form.changed_data and not combine:
                         next_slot = get_next_slot(initial_timeslot)
-                        for ss in next_slot.scheduledsession_set.filter(schedule=schedule,session=session):
+                        for ss in next_slot.sessionassignments.filter(schedule=schedule,session=session):
                             ss.session = None
                             ss.save()
                     # ---------------------------------------
                     if any(x in form.changed_data for x in ('day','time','room')):
                         # clear the old association
                         if initial_timeslot:
-                            # delete scheduledsession records to unschedule
-                            session.scheduledsession_set.filter(schedule=schedule).delete()
+                            # delete schedtimesessassignment records to unschedule
+                            session.timeslotassignments.filter(schedule=schedule).delete()
 
                         if timeslot:
                             assign(session,timeslot,meeting,schedule=schedule)
@@ -1009,7 +1009,7 @@ def unschedule(request, meeting_id, schedule_name, session_id):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     session = get_object_or_404(Session, id=session_id)
 
-    session.scheduledsession_set.filter(schedule=meeting.agenda).delete()
+    session.timeslotassignments.filter(schedule=meeting.agenda).delete()
 
     # TODO: change session state?
 

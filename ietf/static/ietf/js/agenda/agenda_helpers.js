@@ -123,7 +123,7 @@ function load_events(){
             if(ssid.extendedfrom_id != false) {
                 other = agenda_globals.slot_objs[ssid.extendedfrom_id];
                 if(__debug_load_events) {
-                    console.log("slot:",ssid.scheduledsession_id, "extended from: ",key,ssid.extendedfrom_id); // ," is: ", other);
+                    console.log("slot:",ssid.assignment_id, "extended from: ",key,ssid.extendedfrom_id); // ," is: ", other);
                 }
                 if(other != undefined) {
                     ssid.extendedfrom = other;

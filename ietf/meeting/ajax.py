@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_person_by_email, get_schedule_by_name
-from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint, ScheduledSession, ResourceAssociation
+from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint, SchedTimeSessAssignment, ResourceAssociation
 from ietf.meeting.views   import edit_timeslots, edit_agenda
 
 import debug                            # pyflakes:ignore
@@ -151,7 +151,7 @@ def timeslot_roomurl(request, num=None, roomid=None):
 
 #############################################################################
 ## DAY/SLOT API
-##  -- this creates groups of timeslots, and associated scheduledsessions.
+##  -- this creates groups of timeslots, and associated schedtimesessassignments.
 #############################################################################
 AddSlotForm = modelform_factory(TimeSlot, exclude=('meeting','name','location','sessions', 'modified'))
 
@@ -319,7 +319,7 @@ def agenda_update(request, meeting, schedule):
 
 @role_required('Secretariat')
 def agenda_del(request, meeting, schedule):
-    schedule.delete_scheduledsessions()
+    schedule.delete_assignments()
     #debug.log("deleting meeting: %s agenda: %s" % (meeting, meeting.agenda))
     if meeting.agenda == schedule:
         meeting.agenda = None
@@ -431,8 +431,8 @@ def sessions_json(request, num):
 ## Scheduledsesion
 #############################################################################
 
-# this creates an entirely *NEW* scheduledsession
-def scheduledsessions_post(request, meeting, schedule):
+# this creates an entirely *NEW* schedtimesessassignment
+def assignments_post(request, meeting, schedule):
     cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
     if not canedit:
         return HttpResponse(json.dumps({'error':'no permission to modify this agenda'}),
@@ -446,15 +446,15 @@ def scheduledsessions_post(request, meeting, schedule):
                             status = 406,
                             content_type="application/json")
 
-    ss1 = ScheduledSession(schedule = schedule,
+    ss1 = SchedTimeSessAssignment(schedule = schedule,
                            session_id  = newvalues["session_id"],
                            timeslot_id = newvalues["timeslot_id"])
     if("extendedfrom_id" in newvalues):
         val = int(newvalues["extendedfrom_id"])
         try:
-            ss2 = schedule.scheduledsession_set.get(pk = val)
+            ss2 = schedule.assignments.get(pk = val)
             ss1.extendedfrom = ss2
-        except ScheduledSession.DoesNotExist:
+        except SchedTimeSessAssignment.DoesNotExist:
             return HttpResponse(json.dumps({'error':'invalid extendedfrom value: %u' % val}),
                                 status = 406,
                                 content_type="application/json")
@@ -467,28 +467,28 @@ def scheduledsessions_post(request, meeting, schedule):
     response['Location'] = ss1_dict["href"],
     return response
 
-def scheduledsessions_get(request, num, schedule):
-    scheduledsessions = schedule.scheduledsession_set.all()
+def assignments_get(request, num, schedule):
+    assignments = schedule.assignments.all()
 
-    sess1_dict = [ x.json_dict(request.build_absolute_uri('/')) for x in scheduledsessions ]
+    sess1_dict = [ x.json_dict(request.build_absolute_uri('/')) for x in assignments ]
     return HttpResponse(json.dumps(sess1_dict, sort_keys=True, indent=2),
                         content_type="application/json")
 
 # this returns the list of scheduled sessions for the given named agenda
-def scheduledsessions_json(request, num, owner, name):
+def assignments_json(request, num, owner, name):
     meeting, person, schedule = get_meeting_schedule(num, owner, name)
 
     if request.method == 'GET':
-        return scheduledsessions_get(request, meeting, schedule)
+        return assignments_get(request, meeting, schedule)
     elif request.method == 'POST':
-        return scheduledsessions_post(request, meeting, schedule)
+        return assignments_post(request, meeting, schedule)
     else:
         return HttpResponse(json.dumps({'error':'inappropriate action: %s' % (request.method)}),
                             status = 406,
                             content_type="application/json")
 
 # accepts both POST and PUT in order to implement Postel Doctrine.
-def scheduledsession_update(request, meeting, schedule, ss):
+def assignment_update(request, meeting, schedule, ss):
     cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
     if not canedit:
         return HttpResponse(json.dumps({'error':'no permission to update this agenda'}),
@@ -506,7 +506,7 @@ def scheduledsession_update(request, meeting, schedule, ss):
     return HttpResponse(json.dumps({'message':'valid'}),
                         content_type="application/json")
 
-def scheduledsession_delete(request, meeting, schedule, ss):
+def assignment_delete(request, meeting, schedule, ss):
     cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
     if not canedit:
         return HttpResponse(json.dumps({'error':'no permission to update this agenda'}),
@@ -514,13 +514,13 @@ def scheduledsession_delete(request, meeting, schedule, ss):
                             content_type="application/json")
 
     # in case there is, somehow, more than one item with the same pk.. XXX
-    scheduledsessions = schedule.scheduledsession_set.filter(pk = ss.pk)
-    if len(scheduledsessions) == 0:
+    assignments = schedule.assignments.filter(pk = ss.pk)
+    if len(assignments) == 0:
         return HttpResponse(json.dumps({'error':'no such object'}),
                             status = 404,
                             content_type="application/json")
     count=0
-    for ss in scheduledsessions:
+    for ss in assignments:
         ss.delete()
         count += 1
 
@@ -528,7 +528,7 @@ def scheduledsession_delete(request, meeting, schedule, ss):
                         status = 200,
                         content_type="application/json")
 
-def scheduledsession_get(request, meeting, schedule, ss):
+def assignment_get(request, meeting, schedule, ss):
     cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
 
     if not cansee:
@@ -541,22 +541,22 @@ def scheduledsession_get(request, meeting, schedule, ss):
                         content_type="application/json")
 
 # this return a specific session, updates a session or deletes a SPECIFIC scheduled session
-def scheduledsession_json(request, num, owner, name, scheduledsession_id):
+def assignment_json(request, num, owner, name, assignment_id):
     meeting, person, schedule = get_meeting_schedule(num, owner, name)
 
-    scheduledsessions = schedule.scheduledsession_set.filter(pk = scheduledsession_id)
-    if len(scheduledsessions) == 0:
-        return HttpResponse(json.dumps({'error' : 'invalid scheduledsession'}),
+    assignments = schedule.assignments.filter(pk = assignment_id)
+    if len(assignments) == 0:
+        return HttpResponse(json.dumps({'error' : 'invalid assignment'}),
                             content_type="application/json",
                             status=404);
-    ss = scheduledsessions[0]
+    ss = assignments[0]
 
     if request.method == 'GET':
-        return scheduledsession_get(request, meeting, schedule, ss)
+        return assignment_get(request, meeting, schedule, ss)
     elif request.method == 'PUT' or request.method=='POST':
-        return scheduledsession_update(request, meeting, schedule, ss)
+        return assignment_update(request, meeting, schedule, ss)
     elif request.method == 'DELETE':
-        return scheduledsession_delete(request, meeting, schedule, ss)
+        return assignment_delete(request, meeting, schedule, ss)
 
 #############################################################################
 ## Constraints API

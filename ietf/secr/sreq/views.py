@@ -204,7 +204,7 @@ def cancel(request, acronym):
         session_save(session)
 
         # clear schedule assignments if already scheduled
-        session.scheduledsession_set.all().delete()
+        session.timeslotassignments.all().delete()
 
     # send notifitcation
     (to_email, cc_list) = gather_address_lists('session_request_cancelled',group=group,person=login)

@@ -6,7 +6,7 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 from ietf import api
 
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
-                                TimeSlot, ScheduledSession, SessionPresentation )
+                                TimeSlot, SchedTimeSessAssignment, SessionPresentation )
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -179,15 +179,15 @@ class TimeSlotResource(ModelResource):
         }
 api.meeting.register(TimeSlotResource())
 
-class ScheduledSessionResource(ModelResource):
+class SchedTimeSessAssignmentResource(ModelResource):
     timeslot = ToOneField(TimeSlotResource, 'timeslot')
     session = ToOneField(SessionResource, 'session', null=True)
     schedule = ToOneField(ScheduleResource, 'schedule')
-    extendedfrom = ToOneField('ietf.meeting.resources.ScheduledSessionResource', 'extendedfrom', null=True)
+    extendedfrom = ToOneField('ietf.meeting.resources.SchedTimeSessAssignmentResource', 'extendedfrom', null=True)
     class Meta:
-        queryset = ScheduledSession.objects.all()
+        queryset = SchedTimeSessAssignment.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'scheduledsession'
+        #resource_name = 'schedtimesessassignment'
         filtering = { 
             "id": ALL,
             "modified": ALL,
@@ -199,7 +199,7 @@ class ScheduledSessionResource(ModelResource):
             "schedule": ALL_WITH_RELATIONS,
             "extendedfrom": ALL_WITH_RELATIONS,
         }
-api.meeting.register(ScheduledSessionResource())
+api.meeting.register(SchedTimeSessAssignmentResource())
 
 
 
