@@ -849,7 +849,9 @@ class Constraint(models.Model):
     def json_url(self):
         return "/meeting/%s/constraint/%s.json" % (self.meeting.number, self.id)
 
-    def json_dict(self, host_scheme):
+    def json_dict(self, request):
+        proto = 'https' if request.is_secure() else 'http'
+        host_scheme = "%s://%s" % (proto, request.get_host())
         ct1 = dict()
         ct1['constraint_id'] = self.id
         ct1['href']          = urljoin(host_scheme, self.json_url())
