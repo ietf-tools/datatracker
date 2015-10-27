@@ -1,3 +1,18 @@
+ietfdb (6.7.2) ietf; urgency=medium
+
+  This is a maintenance release which does a longtime pending model rename,
+  and fixes a small javascript/json related bug:
+
+  * Merged in personal/henrik/6.7.2.dev0-schemafix [10297] from
+    henrik@levkowetz.com:  Renamed class ScheduledSession to the more correct
+    (but unfortunately also cumbersome) SchedTimeSessAssignment, and renamed
+    reverse relationships involving this class appropriately.  Accompanying
+    changes in javascript and templates.  Migrations to match.
+
+  * Fixed a bug in meeting.ajax.constraint_json().
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Oct 2015 08:23:15 -0700
+
 ietfdb (6.7.1) ietf; urgency=medium
 
   This is a small maintenance release with some bug-fixes and one enhancement,
