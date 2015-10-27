@@ -1,7 +1,7 @@
 ietfdb (6.7.2) ietf; urgency=medium
 
   This is a maintenance release which does a longtime pending model rename,
-  and fixes a small javascript/json related bug:
+  and fixes some other small issues:
 
   * Merged in personal/henrik/6.7.2.dev0-schemafix [10297] from
     henrik@levkowetz.com:  Renamed class ScheduledSession to the more correct
@@ -9,9 +9,13 @@ ietfdb (6.7.2) ietf; urgency=medium
     reverse relationships involving this class appropriately.  Accompanying
     changes in javascript and templates.  Migrations to match.
 
+  * Changed a field in the nomcom models to not care about the value of
+    NOMCOM_PUBLIC_KEYS_DIR in the settings, as this may change between
+    developers, and will cause warnings when running migrations otherwise.
+
   * Fixed a bug in meeting.ajax.constraint_json().
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  27 Oct 2015 08:23:15 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Oct 2015 15:48:14 +0000
 
 ietfdb (6.7.1) ietf; urgency=medium
 
