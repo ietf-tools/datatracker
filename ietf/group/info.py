@@ -50,6 +50,7 @@ from django.utils.safestring import mark_safe
 from ietf.doc.views_search import SearchForm, retrieve_search_results, get_doc_is_tracked
 from ietf.doc.models import Document, State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
+from ietf.doc.utils_charter import charter_name_for_group
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
@@ -473,6 +474,9 @@ def group_about(request, acronym, group_type=None):
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
 
     can_manage = can_manage_group_type(request.user, group.type_id)
+    charter_submit_url = ""
+    if group.features.has_chartering_process:
+        charter_submit_url = urlreverse("charter_submit", kwargs={ "name": charter_name_for_group(group) })
 
     return render(request, 'group/group_about.html',
                   construct_group_menu_context(request, group, "charter" if group.features.has_chartering_process else "about", group_type, {
@@ -480,6 +484,7 @@ def group_about(request, acronym, group_type=None):
                       "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
                       "requested_close": requested_close,
                       "can_manage": can_manage,
+                      "charter_submit_url": charter_submit_url
                   }))
 
 def get_group_email_aliases(acronym, group_type):

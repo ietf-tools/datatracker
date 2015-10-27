@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 
 from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocAlias, DocEvent,
-    Document, NewRevisionDocEvent, State, save_document_in_history )
+    Document, NewRevisionDocEvent, State )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, get_document_content, update_telechat )
 from ietf.doc.mails import email_iana
@@ -48,13 +48,12 @@ def change_state(request, name, option=None):
 
             prev_state = review.get_state()
             if new_state != prev_state:
-                save_document_in_history(review)
+                events = []
 
                 review.set_state(new_state)
-                add_state_change_event(review, login, prev_state, new_state)
+                events.append(add_state_change_event(review, login, prev_state, new_state))
 
-                review.time = datetime.datetime.now()
-                review.save()
+                review.save_with_history(events)
 
                 if new_state.slug == "iesgeval":
                     create_ballot_if_not_open(review, login, "conflrev")
@@ -165,20 +164,19 @@ def submit(request, name):
         if "submit_response" in request.POST:
             form = UploadForm(request.POST, request.FILES)
             if form.is_valid():
-                save_document_in_history(review)
-
                 review.rev = next_rev
 
+                events = []
                 e = NewRevisionDocEvent(doc=review, by=login, type="new_revision")
                 e.desc = "New version available: <b>%s-%s.txt</b>" % (review.canonical_name(), review.rev)
                 e.rev = review.rev
                 e.save()
+                events.append(e)
             
                 # Save file on disk
                 form.save(review)
 
-                review.time = datetime.datetime.now()
-                review.save()
+                review.save_with_history(events)
 
                 return redirect('doc_view', name=review.name)
 
@@ -228,14 +226,13 @@ def edit_ad(request, name):
     if request.method == 'POST':
         form = AdForm(request.POST)
         if form.is_valid():
-
             review.ad = form.cleaned_data['ad']
-            review.save()
-    
-            login = request.user.person
-            c = DocEvent(type="added_comment", doc=review, by=login)
+
+            c = DocEvent(type="added_comment", doc=review, by=request.user.person)
             c.desc = "Shepherding AD changed to "+review.ad.name
             c.save()
+
+            review.save_with_history([c])
 
             return redirect('doc_view', name=review.name)
 
@@ -300,13 +297,14 @@ def approve(request, name):
 
         if form.is_valid():
             prev_state = review.get_state()
+            events = []
 
             new_state_slug = 'appr-reqnopub-sent' if prev_state.slug == 'appr-reqnopub-pend' else 'appr-noprob-sent'
             new_state = State.objects.get(used=True, type="conflrev", slug=new_state_slug)
-            save_document_in_history(review)
 
             review.set_state(new_state)
-            add_state_change_event(review, login, prev_state, new_state)
+            e = add_state_change_event(review, login, prev_state, new_state)
+            events.append(e)
 
             close_open_ballots(review, login)
 
@@ -314,9 +312,9 @@ def approve(request, name):
             e.type = "iesg_approved"
             e.desc = "IESG has approved the conflict review response"
             e.save()
+            events.append(e)
 
-            review.time = e.time
-            review.save()
+            review.save_with_history(events)
 
             # send announcement
             send_mail_preformatted(request, form.cleaned_data['announcement_text'])
@@ -396,16 +394,16 @@ def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_s
 
     iesg_group = Group.objects.get(acronym='iesg')
 
-    conflict_review=Document( type_id = "conflrev",
-                              title = "IETF conflict review for %s" % doc_to_review.name,
-                              name = review_name,
-                              rev = "00",
-                              ad = ad,
-                              notify = notify,
-		              stream_id = 'ietf',
-                              group = iesg_group,
-                            )
-    conflict_review.save()
+    conflict_review = Document.objects.create(
+        type_id="conflrev",
+        title="IETF conflict review for %s" % doc_to_review.name,
+        name=review_name,
+        rev="00",
+        ad=ad,
+        notify=notify,
+        stream_id='ietf',
+        group=iesg_group,
+    )
     conflict_review.set_state(create_in_state)
 
     DocAlias.objects.create( name=review_name , document=conflict_review )

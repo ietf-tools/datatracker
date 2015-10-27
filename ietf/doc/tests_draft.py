@@ -370,9 +370,9 @@ class EditInfoTests(TestCase):
         self.assertEqual(draft.ad, ad)
         self.assertEqual(draft.note, "This is a note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
-        self.assertEqual(draft.docevent_set.count(), events_before + 3)
+        self.assertEqual(draft.docevent_set.count(), events_before + 4)
         events = list(draft.docevent_set.order_by('time', 'id'))
-        self.assertEqual(events[-3].type, "started_iesg_process")
+        self.assertEqual(events[-4].type, "started_iesg_process")
         self.assertEqual(len(outbox), mailbox_before+1)
         self.assertTrue('IESG processing' in outbox[-1]['Subject'])
         self.assertTrue('draft-ietf-mars-test2@' in outbox[-1]['To']) 
@@ -381,7 +381,7 @@ class EditInfoTests(TestCase):
         draft.unset_state('draft-iesg')
         draft.set_state(State.objects.get(type='draft-stream-ietf',slug='writeupw'))
         draft.stream = StreamName.objects.get(slug='ietf')
-        draft.save()
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level_id),
                                   ad=ad.pk,
@@ -537,7 +537,7 @@ class ExpireIDsTests(TestCase):
         # hack into expirable state
         draft.unset_state("draft-iesg")
         draft.expires = datetime.datetime.now() + datetime.timedelta(days=10)
-        draft.save()
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         self.assertEqual(len(list(get_soon_to_expire_drafts(14))), 1)
         
@@ -561,7 +561,7 @@ class ExpireIDsTests(TestCase):
         # hack into expirable state
         draft.unset_state("draft-iesg")
         draft.expires = datetime.datetime.now()
-        draft.save()
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         self.assertEqual(len(list(get_expired_drafts())), 1)
 
@@ -624,7 +624,6 @@ class ExpireIDsTests(TestCase):
         
         # RFC draft
         draft.set_state(State.objects.get(used=True, type="draft", slug="rfc"))
-        draft.save()
 
         txt = "%s-%s.txt" % (draft.name, draft.rev)
         self.write_draft_file(txt, 5000)
@@ -642,7 +641,7 @@ class ExpireIDsTests(TestCase):
         # expire draft
         draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
         draft.expires = datetime.datetime.now() - datetime.timedelta(days=1)
-        draft.save()
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         e = DocEvent()
         e.doc = draft
@@ -862,7 +861,7 @@ class IndividualInfoFormsTests(TestCase):
 
     def test_doc_change_shepherd(self):
         self.doc.shepherd = None
-        self.doc.save()
+        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         url = urlreverse('doc_edit_shepherd',kwargs=dict(name=self.docname))
         
@@ -914,19 +913,19 @@ class IndividualInfoFormsTests(TestCase):
 
     def test_doc_change_shepherd_email(self):
         self.doc.shepherd = None
-        self.doc.save()
+        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         url = urlreverse('doc_change_shepherd_email',kwargs=dict(name=self.docname))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
         self.doc.shepherd = Email.objects.get(person__user__username="ad1")
-        self.doc.save()
+        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         login_testing_unauthorized(self, "plain", url)
 
         self.doc.shepherd = Email.objects.get(person__user__username="plain")
-        self.doc.save()
+        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         new_email = Email.objects.create(address="anotheremail@example.com", person=self.doc.shepherd.person)
 
@@ -961,7 +960,7 @@ class IndividualInfoFormsTests(TestCase):
         # Try again when no longer a shepherd.
 
         self.doc.shepherd = None
-        self.doc.save()
+        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
@@ -1070,7 +1069,7 @@ class RequestPublicationTests(TestCase):
         draft.stream = StreamName.objects.get(slug="iab")
         draft.group = Group.objects.get(acronym="iab")
         draft.intended_std_level = IntendedStdLevelName.objects.get(slug="inf")
-        draft.save()
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
         draft.set_state(State.objects.get(used=True, type="draft-stream-iab", slug="approved"))
 
         url = urlreverse('doc_request_publication', kwargs=dict(name=draft.name))
@@ -1110,8 +1109,8 @@ class AdoptDraftTests(TestCase):
         draft = make_test_data()
         draft.stream = None
         draft.group = Group.objects.get(type="individ")
-        draft.save()
         draft.unset_state("draft-stream-ietf")
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         url = urlreverse('doc_adopt_draft', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "marschairman", url)

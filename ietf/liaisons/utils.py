@@ -28,6 +28,8 @@ def approvable_liaison_statements(user):
 
 def can_edit_liaison(user, liaison):
     '''Return True if user is Secretariat or Liaison Manager of all SDO groups involved'''
+    if not user.is_authenticated():
+        return False
     if has_role(user, "Secretariat"):
         return True
     if has_role(user, "Liaison Manager"):

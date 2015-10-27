@@ -57,7 +57,7 @@
           {% else %}
             (None)
             {% if user|has_role:"Area Director,Secretariat" %}
-              <a class="btn btn-warning btn-xs" href="{% url "ietf.group.edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit charter</a>
+              <a class="btn btn-warning btn-xs" href="{{ charter_submit_url }}">Submit charter</a>
             {% endif %}
           {% endif %}
         </td>

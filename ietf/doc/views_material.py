@@ -13,7 +13,7 @@ from django.core.urlresolvers import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, DocTypeName, DocEvent, State
-from ietf.doc.models import NewRevisionDocEvent, save_document_in_history
+from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
@@ -104,15 +104,17 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
         form = UploadMaterialForm(document_type, action, group, doc, request.POST, request.FILES)
 
         if form.is_valid():
+            events = []
+
             if action == "new":
-                doc = Document()
-                doc.type = document_type
-                doc.group = group
-                doc.rev = "00"
-                doc.name = form.cleaned_data["name"]
+                doc = Document.objects.create(
+                    type=document_type,
+                    group=group,
+                    rev="00",
+                    name=form.cleaned_data["name"])
+
                 prev_rev = None
             else:
-                save_document_in_history(doc)
                 prev_rev = doc.rev
 
             prev_title = doc.title
@@ -123,8 +125,6 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
             if "abstract" in form.cleaned_data:
                 doc.abstract = form.cleaned_data["abstract"]
-
-            doc.time = datetime.datetime.now()
 
             if "material" in form.fields:
                 if action != "new":
@@ -137,8 +137,6 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                     for chunk in f.chunks():
                         dest.write(chunk)
 
-            doc.save()
-
             if action == "new":
                 DocAlias.objects.get_or_create(name=doc.name, document=doc)
 
@@ -148,7 +146,8 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 e.by = request.user.person
                 e.desc = "New version available: <b>%s-%s</b>" % (doc.name, doc.rev)
                 e.save()
-                
+                events.append(e)
+
             if prev_title != doc.title:
                 e = DocEvent(doc=doc, by=request.user.person, type='changed_document')
                 e.desc = u"Changed title to <b>%s</b>" % doc.title
@@ -156,10 +155,15 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                     e.desc += u" from %s" % prev_title
                 e.time = doc.time
                 e.save()
+                events.append(e)
 
             if "state" in form.cleaned_data and form.cleaned_data["state"] != prev_state:
                 doc.set_state(form.cleaned_data["state"])
-                add_state_change_event(doc, request.user.person, prev_state, form.cleaned_data["state"])
+                e = add_state_change_event(doc, request.user.person, prev_state, form.cleaned_data["state"])
+                events.append(e)
+
+            if events:
+                doc.save_with_history(events)
 
             return redirect("doc_view", name=doc.name)
     else:

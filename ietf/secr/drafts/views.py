@@ -14,7 +14,7 @@ from django.template.loader import render_to_string
 #from email import *
 from ietf.doc.models import Document, DocumentAuthor, DocAlias, DocRelationshipName, RelatedDocument, State
 from ietf.doc.models import DocEvent, NewRevisionDocEvent
-from ietf.doc.models import save_document_in_history
+from ietf.doc.utils import add_state_change_event
 from ietf.ietfauth.utils import role_required
 from ietf.meeting.models import Meeting
 from ietf.meeting.helpers import get_meeting
@@ -176,18 +176,17 @@ def do_extend(draft, request):
     - update revision_date
     - set extension_date
     '''
-    save_document_in_history(draft)
 
+    e = DocEvent.objects.create(
+        type='changed_document',
+        by=request.user.person,
+        doc=draft,
+        time=draft.time,
+        desc='Extended expiry',
+    )
     draft.expires = request.session['data']['expiration_date']
-    draft.time = datetime.datetime.now()
-    draft.save()
-    
-    DocEvent.objects.create(type='changed_document',
-                            by=request.user.person,
-                            doc=draft,
-                            time=draft.time,
-                            desc='extend_expiry')
-                            
+    draft.save_with_history([e])
+
     # save scheduled announcement
     announcement_from_form(request.session['email'],by=request.user.person)
     
@@ -196,24 +195,28 @@ def do_extend(draft, request):
 def do_replace(draft, request):
     'Perform document replace'
     
-    save_document_in_history(draft)
-
     replaced = request.session['data']['replaced']          # a DocAlias
     replaced_by = request.session['data']['replaced_by']    # a Document
-
-    # change state and update last modified
-    draft.set_state(State.objects.get(type="draft", slug="repl"))
-    draft.time = datetime.datetime.now()
-    draft.save()
 
     # create relationship
     RelatedDocument.objects.create(source=replaced_by,
                                    target=replaced,
                                    relationship=DocRelationshipName.objects.get(slug='replaces'))
 
-    # create DocEvent
-    # no replace DocEvent at this time, Jan 2012
-    
+
+
+    draft.set_state(State.objects.get(type="draft", slug="repl"))
+
+    e = DocEvent.objects.create(
+        type='changed_document',
+        by=request.user.person,
+        doc=replaced_by,
+        time=draft.time,
+        desc='This document now replaces <b>%s</b>' % request.session['data']['replaced'],
+    )
+
+    draft.save_with_history([e])
+
     # move replaced document to archive
     archive_draft_files(replaced.document.name + '-' + replaced.document.rev)
 
@@ -243,16 +246,16 @@ def do_resurrect(draft, request):
     
     # set expires
     draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
-    draft.time = datetime.datetime.now()
-    draft.save()
 
     # create DocEvent
-    NewRevisionDocEvent.objects.create(type='completed_resurrect',
-                                       by=request.user.person,
-                                       doc=draft,
-                                       rev=draft.rev,
-                                       time=draft.time)
+    e = NewRevisionDocEvent.objects.create(type='completed_resurrect',
+                                           by=request.user.person,
+                                           doc=draft,
+                                           rev=draft.rev,
+                                           time=draft.time)
     
+    draft.save_with_history([e])
+
     # send announcement
     announcement_from_form(request.session['email'],by=request.user.person)
     
@@ -278,12 +281,10 @@ def do_revision(draft, request):
     # TODO this behavior may change with archive strategy
     archive_draft_files(draft.name + '-' + draft.rev)
     
-    save_document_in_history(draft)
-
     # save form data
     form = BaseRevisionModelForm(request.session['data'],instance=draft)
     if form.is_valid():
-        new_draft = form.save()
+        new_draft = form.save(commit=False)
     else:
         raise Exception(form.errors)
         raise Exception('Problem with input data %s' % form.data)
@@ -291,16 +292,16 @@ def do_revision(draft, request):
     # set revision and expires
     new_draft.rev = request.session['filename'][-2:]
     new_draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
-    new_draft.time = datetime.datetime.now()
-    new_draft.save()
-    
+
     # create DocEvent
-    NewRevisionDocEvent.objects.create(type='new_revision',
-                                       by=request.user.person,
-                                       doc=draft,
-                                       rev=new_draft.rev,
-                                       desc='New revision available',
-                                       time=draft.time)
+    e = NewRevisionDocEvent.objects.create(type='new_revision',
+                                           by=request.user.person,
+                                           doc=draft,
+                                           rev=new_draft.rev,
+                                           desc='New revision available',
+                                           time=draft.time)
+
+    new_draft.save_with_history([e])
 
     handle_substate(new_draft)
     
@@ -325,12 +326,10 @@ def do_update(draft,request):
     - do substate check
     - change state to Active
     '''
-    save_document_in_history(draft)
-    
     # save form data
     form = BaseRevisionModelForm(request.session['data'],instance=draft)
     if form.is_valid():
-        new_draft = form.save()
+        new_draft = form.save(commit=False)
     else:
         raise Exception('Problem with input data %s' % form.data)
 
@@ -339,19 +338,19 @@ def do_update(draft,request):
     # update draft record
     new_draft.rev = os.path.splitext(request.session['data']['filename'])[0][-2:]
     new_draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
-    new_draft.time = datetime.datetime.now()
-    new_draft.save()
-    
+
     new_draft.set_state(State.objects.get(type="draft", slug="active"))
     
     # create DocEvent
-    NewRevisionDocEvent.objects.create(type='new_revision',
-                                       by=request.user.person,
-                                       doc=new_draft,
-                                       rev=new_draft.rev,
-                                       desc='New revision available',
-                                       time=new_draft.time)
+    e = NewRevisionDocEvent.objects.create(type='new_revision',
+                                           by=request.user.person,
+                                           doc=new_draft,
+                                           rev=new_draft.rev,
+                                           desc='New revision available',
+                                           time=new_draft.time)
     
+    new_draft.save_with_history([e])
+
     # move uploaded files to production directory
     promote_files(new_draft, request.session['file_type'])
     
@@ -370,15 +369,22 @@ def do_withdraw(draft,request):
     - TODO move file to archive
     '''
     withdraw_type = request.session['data']['type']
+
+    prev_state = draft.get_state("draft")
+    new_state = None
     if withdraw_type == 'ietf':
-        draft.set_state(State.objects.get(type="draft", slug="ietf-rm"))
+        new_state = State.objects.get(type="draft", slug="ietf-rm")
     elif withdraw_type == 'author':
-        draft.set_state(State.objects.get(type="draft", slug="auth-rm"))
-    
-    draft.time = datetime.datetime.now()
-    draft.save()
-    
-    # no DocEvent ?
+        new_state = State.objects.get(type="draft", slug="auth-rm")
+
+    if not new_state:
+        return
+
+    draft.set_state(new_state)
+
+    e = add_state_change_event(draft, request.user.person, prev_state, new_state)
+    if e:
+        draft.save_with_history([e])
 
     # send announcement
     announcement_from_form(request.session['email'],by=request.user.person)
@@ -538,8 +544,7 @@ def add(request):
             draft.rev = revision
             draft.name = name
             draft.type_id = 'draft'
-            draft.time = datetime.datetime.now()
-            
+
             # set stream based on document name
             if not draft.stream:
                 stream_slug = None
@@ -556,7 +561,7 @@ def add(request):
             # set expires
             draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
 
-            draft.save()
+            draft.save(force_insert=True)
             
             # set state
             draft.set_state(State.objects.get(type="draft", slug="active"))
@@ -792,13 +797,13 @@ def edit(request, id):
         form = EditModelForm(request.POST, instance=draft)
         if form.is_valid():
             if form.changed_data:
-                save_document_in_history(draft)
-                DocEvent.objects.create(type='changed_document',
-                                        by=request.user.person,
-                                        doc=draft,
-                                        desc='Changed field(s): %s' % ','.join(form.changed_data))
+                e = DocEvent.objects.create(type='changed_document',
+                                            by=request.user.person,
+                                            doc=draft,
+                                            desc='Changed field(s): %s' % ','.join(form.changed_data))
                 # see EditModelForm.save() for detailed logic
-                form.save()
+                form.save(commit=False)
+                draft.save_with_history([e])
                 
                 messages.success(request, 'Draft modified successfully!')
             
@@ -924,16 +929,16 @@ def makerfc(request, id):
         if form.is_valid() and obs_formset.is_valid():
 
             # TODO
-            save_document_in_history(draft)
             archive_draft_files(draft.name + '-' + draft.rev)
             
-            rfc = form.save()
+            rfc = form.save(commit=False)
             
             # create DocEvent
-            DocEvent.objects.create(type='published_rfc',
-                                    by=request.user.person,
-                                    doc=rfc)
-            
+            e = DocEvent.objects.create(type='published_rfc',
+                                        by=request.user.person,
+                                        doc=rfc,
+                                        desc="Published RFC")
+
             # change state
             draft.set_state(State.objects.get(type="draft", slug="rfc"))
             
@@ -950,7 +955,9 @@ def makerfc(request, id):
                         RelatedDocument.objects.create(source=draft,
                                                        target=target,
                                                        relationship=DocRelationshipName.objects.get(slug=relation))
-            
+
+            rfc.save_with_history([e])
+
             messages.success(request, 'RFC created successfully!')
             return redirect('drafts_view', id=id)
         else:

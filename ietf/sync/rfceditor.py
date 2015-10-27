@@ -9,9 +9,9 @@ from xml.dom import pulldom, Node
 from django.conf import settings
 
 from ietf.doc.models import ( Document, DocAlias, State, StateType, DocEvent, DocRelationshipName,
-    DocTagName, DocTypeName, RelatedDocument, save_document_in_history )
+    DocTagName, DocTypeName, RelatedDocument )
 from ietf.doc.expire import move_draft_files_to_archive
-from ietf.doc.utils import add_state_change_event
+from ietf.doc.utils import add_state_change_event, prettify_std_name
 from ietf.group.models import Group
 from ietf.name.models import StdLevelName, StreamName
 from ietf.person.models import Person
@@ -37,6 +37,8 @@ def fetch_queue_xml(url):
     return urllib2.urlopen(url)
 
 def parse_queue(response):
+    """Parse RFC Editor queue XML into a bunch of tuples + warnings."""
+
     events = pulldom.parse(response)
     drafts = []
     warnings = []
@@ -108,6 +110,9 @@ def parse_queue(response):
     return drafts, warnings
 
 def update_drafts_from_queue(drafts):
+    """Given a list of parsed drafts from the RFC Editor queue, update the
+    documents in the database. Return those that were changed."""
+
     tag_mapping = {
         'IANA': DocTagName.objects.get(slug='iana'),
         'REF':  DocTagName.objects.get(slug='ref')
@@ -154,6 +159,7 @@ def update_drafts_from_queue(drafts):
 
         prev_state = d.get_state("draft-rfceditor")
         next_state = state_mapping[state]
+        events = []
 
         # check if we've noted it's been received
         if d.get_state_slug("draft-iesg") == "ann" and not prev_state and not d.latest_event(DocEvent, type="rfc_editor_received_announcement"):
@@ -166,15 +172,15 @@ def update_drafts_from_queue(drafts):
             # change draft-iesg state to RFC Ed Queue
             prev_iesg_state = State.objects.get(used=True, type="draft-iesg", slug="ann")
             next_iesg_state = State.objects.get(used=True, type="draft-iesg", slug="rfcqueue")
-            save_document_in_history(d)
+
             d.set_state(next_iesg_state)
-            add_state_change_event(d, system, prev_iesg_state, next_iesg_state)
+            e = add_state_change_event(d, system, prev_iesg_state, next_iesg_state)
+            if e:
+                events.append(e)
             changed.add(name)
             
         # check draft-rfceditor state
         if prev_state != next_state:
-            save_document_in_history(d)
-
             d.set_state(next_state)
 
             e = add_state_change_event(d, system, prev_state, next_state)
@@ -183,12 +189,18 @@ def update_drafts_from_queue(drafts):
                 e.desc = re.sub(r"(<b>.*</b>)", "<a href=\"%s\">\\1</a>" % auth48, e.desc)
                 e.save()
 
+            if e:
+                events.append(e)
+
             changed.add(name)
 
         t = DocTagName.objects.filter(slug__in=tags)
         if set(t) != set(d.tags.all()):
             d.tags = t
             changed.add(name)
+
+        if events:
+            d.save_with_history(events)
 
 
     # remove tags and states for those not in the queue anymore
@@ -207,6 +219,8 @@ def fetch_index_xml(url):
     return urllib2.urlopen(url)
 
 def parse_index(response):
+    """Parse RFC Editor index XML into a bunch of tuples."""
+
     def normalize_std_name(std_name):
         # remove zero padding
         prefix = std_name[:3]
@@ -297,6 +311,10 @@ def parse_index(response):
 
 
 def update_docs_from_rfc_index(data, skip_older_than_date=None):
+    """Given parsed data from the RFC Editor index, update the documents
+    in the database. Yields a list of change descriptions for each
+    document, if any."""
+
     std_level_mapping = {
         "Standard": StdLevelName.objects.get(slug="std"),
         "Internet Standard": StdLevelName.objects.get(slug="std"),
@@ -323,9 +341,6 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
 
     system = Person.objects.get(name="(System)")
 
-    results = []
-    new_rfcs = []
-
     for rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract in data:
 
         if skip_older_than_date and rfc_published_date < skip_older_than_date:
@@ -335,6 +350,9 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
         # we assume two things can happen: we get a new RFC, or an
         # attribute has been updated at the RFC Editor (RFC Editor
         # attributes take precedence over our local attributes)
+        events = []
+        changes = []
+        rfc_published = False
 
         # make sure we got the document and alias
         doc = None
@@ -350,42 +368,45 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
                     pass
 
             if not doc:
-                results.append("created document %s" % name)
+                changes.append("created document %s" % prettify_std_name(name))
                 doc = Document.objects.create(name=name, type=DocTypeName.objects.get(slug="draft"))
 
             # add alias
             DocAlias.objects.get_or_create(name=name, document=doc)
-            results.append("created alias %s to %s" % (name, doc.name))
+            changes.append("created alias %s" % prettify_std_name(name))
 
         # check attributes
-        changed_attributes = {}
-        changed_states = []
-        created_relations = []
-        other_changes = False
         if title != doc.title:
-            changed_attributes["title"] = title
+            doc.title = title
+            changes.append("changed title to '%s'" % doc.title)
 
         if abstract and abstract != doc.abstract:
-            changed_attributes["abstract"] = abstract
+            doc.abstract = abstract
+            changes.append("changed abstract to '%s'" % doc.abstract)
 
         if pages and int(pages) != doc.pages:
-            changed_attributes["pages"] = int(pages)
+            doc.pages = int(pages)
+            changes.append("changed pages to %s" % doc.pages)
 
         if std_level_mapping[current_status] != doc.std_level:
-            changed_attributes["std_level"] = std_level_mapping[current_status]
+            doc.std_level = std_level_mapping[current_status]
+            changes.append("changed standardization level to %s" % doc.std_level)
 
         if doc.get_state_slug() != "rfc":
-            changed_states.append(State.objects.get(used=True, type="draft", slug="rfc"))
+            doc.set_state(State.objects.get(used=True, type="draft", slug="rfc"))
             move_draft_files_to_archive(doc, doc.rev)
+            changes.append("changed state to %s" % doc.get_state())
 
         if doc.stream != stream_mapping[stream]:
-            changed_attributes["stream"] = stream_mapping[stream]
+            doc.stream = stream_mapping[stream]
+            changes.append("changed stream to %s" % doc.stream)
 
         if not doc.group: # if we have no group assigned, check if RFC Editor has a suggestion
             if wg:
-                changed_attributes["group"] = Group.objects.get(acronym=wg)
+                doc.group = Group.objects.get(acronym=wg)
+                changes.append("set group to %s" % doc.group)
             else:
-                changed_attributes["group"] = Group.objects.get(type="individ")
+                doc.group = Group.objects.get(type="individ") # fallback for newly created doc
 
         if not doc.latest_event(type="published_rfc"):
             e = DocEvent(doc=doc, type="published_rfc")
@@ -404,15 +425,17 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
             e.by = system
             e.desc = "RFC published"
             e.save()
-            other_changes = True
+            events.append(e)
 
-            results.append("Added RFC published event: %s" % e.time.strftime("%Y-%m-%d"))
-            new_rfcs.append(doc)
+            changes.append("added RFC published event at %s" % e.time.strftime("%Y-%m-%d"))
+            rfc_published = True
 
         for t in ("draft-iesg", "draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"):
             slug = doc.get_state_slug(t)
             if slug and slug != "pub":
-                changed_states.append(State.objects.get(used=True, type=t, slug="pub"))
+                new_state = State.objects.select_related("type").get(used=True, type=t, slug="pub")
+                doc.set_state(new_state)
+                changes.append("changed %s to %s" % (new_state.type.label, new_state))
 
         def parse_relation_list(l):
             res = []
@@ -431,46 +454,42 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
 
         for x in parse_relation_list(obsoletes):
             if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_obsoletes):
-                created_relations.append(RelatedDocument(source=doc, target=x, relationship=relationship_obsoletes))
+                r = RelatedDocument.objects.create(RelatedDocument(source=doc, target=x, relationship=relationship_obsoletes))
+                changes.append("created %s relation between %s and %s" % (r.relationship.name.lower(), prettify_std_name(r.source.name), prettify_std_name(r.target.name)))
 
         for x in parse_relation_list(updates):
             if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_updates):
-                created_relations.append(RelatedDocument(source=doc, target=x, relationship=relationship_updates))
+                r = RelatedDocument.objects.create(source=doc, target=x, relationship=relationship_updates)
+                changes.append("created %s relation between %s and %s" % (r.relationship.name.lower(), prettify_std_name(r.source.name), prettify_std_name(r.target.name)))
 
         if also:
             for a in also:
                 a = a.lower()
                 if not DocAlias.objects.filter(name=a):
                     DocAlias.objects.create(name=a, document=doc)
-                    other_changes = True
-                    results.append("Created alias %s to %s" % (a, doc.name))
+                    changes.append("created alias %s" % prettify_std_name(a))
 
         if has_errata:
             if not doc.tags.filter(pk=tag_has_errata.pk):
-                changed_attributes["tags"] = list(doc.tags.all()) + [tag_has_errata]
+                doc.tags.add(tag_has_errata)
+                changes.append("added Errata tag")
         else:
             if doc.tags.filter(pk=tag_has_errata.pk):
-                changed_attributes["tags"] = set(doc.tags.all()) - set([tag_has_errata])
+                doc.tags.remove(tag_has_errata)
+                changes.append("removed Errata tag")
 
-        if changed_attributes or changed_states or created_relations or other_changes:
-            # apply changes
-            save_document_in_history(doc)
-            for k, v in changed_attributes.iteritems():
-                setattr(doc, k, v)
-                results.append("Changed %s to %s on %s" % (k, v, doc.name))
+        if changes:
+            events.append(DocEvent.objects.create(
+                doc=doc,
+                by=system,
+                type="sync_from_rfc_editor",
+                desc=u"Received changes through RFC Editor sync (%s)" % u", ".join(changes),
+            ))
 
-            for s in changed_states:
-                doc.set_state(s)
-                results.append("Set state %s on %s" % (s, doc.name))
+            doc.save_with_history(events)
 
-            for o in created_relations:
-                o.save()
-                results.append("Created %s" % o)
-
-            doc.time = datetime.datetime.now()
-            doc.save()
-
-    return results, new_rfcs
+        if changes:
+            yield changes, doc, rfc_published
 
 
 def post_approved_draft(url, name):

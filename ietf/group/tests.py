@@ -6,7 +6,9 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.db.models import Q
 from django.test import Client
 
+from ietf.doc.models import DocEvent
 from ietf.group.models import Role, Group
+from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 
@@ -33,7 +35,7 @@ class StreamTests(TestCase):
     def test_stream_documents(self):
         draft = make_test_data()
         draft.stream_id = "iab"
-        draft.save()
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         r = self.client.get(urlreverse("ietf.group.views_stream.stream_documents", kwargs=dict(acronym="iab")))
         self.assertEqual(r.status_code, 200)
