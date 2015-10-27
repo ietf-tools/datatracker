@@ -237,11 +237,11 @@ class Meeting(models.Model):
 #        alltimeslots = self.timeslot_set.all()
 #        for sched in self.schedule_set.all():
 #            ts_hash = {}
-#            for ss in sched.scheduledsession_set.all():
+#            for ss in sched.assignments.all():
 #                ts_hash[ss.timeslot] = ss
 #            for ts in alltimeslots:
 #                if not (ts in ts_hash):
-#                    ScheduledSession.objects.create(schedule = sched,
+#                    SchedTimeSessAssignment.objects.create(schedule = sched,
 #                                                    timeslot = ts)
 
     def vtimezone(self):
@@ -297,7 +297,7 @@ class Room(models.Model):
 
     def delete_timeslots(self):
         for ts in self.timeslot_set.all():
-            ts.scheduledsession_set.all().delete()
+            ts.sessionassignments.all().delete()
             ts.delete()
 
     def create_timeslots(self):
@@ -339,14 +339,14 @@ class TimeSlot(models.Model):
     duration = TimedeltaField()
     location = models.ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
-    sessions = models.ManyToManyField('Session', related_name='slots', through='ScheduledSession', null=True, blank=True, help_text=u"Scheduled session, if any.")
+    sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', null=True, blank=True, help_text=u"Scheduled session, if any.")
     modified = models.DateTimeField(default=datetime.datetime.now)
     #
 
     @property
     def session(self):
         if not hasattr(self, "_session_cache"):
-            self._session_cache = self.sessions.filter(scheduledsession__schedule=self.meeting.agenda).first()
+            self._session_cache = self.sessions.filter(timeslotassignments__schedule=self.meeting.agenda).first()
         return self._session_cache
 
     @property
@@ -486,7 +486,7 @@ class TimeSlot(models.Model):
 
             # now remove any schedule that might have been made to this
             # timeslot.
-            ts.scheduledsession_set.all().delete()
+            ts.sessionassignments.all().delete()
             ts.delete()
 
     """
@@ -527,11 +527,11 @@ class Schedule(models.Model):
     def base_url(self):
         return "/meeting/%s/agenda/%s/%s" % (self.meeting.number, self.owner_email(), self.name)
 
-    # temporary property to pacify the places where Schedule.scheduledsession_set is used
-    @property
-    def scheduledsession_set(self):
-        return self.assignments
-
+    # temporary property to pacify the places where Schedule.assignments is used
+#    @property
+#    def schedtimesessassignment_set(self):
+#        return self.assignments
+# 
 #     def url_edit(self):
 #         return "/meeting/%s/agenda/%s/edit" % (self.meeting.number, self.name)
 #
@@ -571,7 +571,7 @@ class Schedule(models.Model):
         else:
             return "agenda_unofficial"
 
-    # returns a dictionary {group -> [scheduledsession+]}
+    # returns a dictionary {group -> [schedtimesessassignment+]}
     # and it has [] if the session is not placed.
     # if there is more than one session for that group,
     # then a list of them is returned (always a list)
@@ -582,8 +582,8 @@ class Schedule(models.Model):
         else:
             return "unofficial"
 
-    def delete_scheduledsessions(self):
-        self.scheduledsession_set.all().delete()
+    def delete_assignments(self):
+        self.assignments.all().delete()
 
     def json_url(self):
         return "%s.json" % self.base_url()
@@ -601,12 +601,12 @@ class Schedule(models.Model):
         else:
             sch['public']   = "private"
         sch['owner']       = urljoin(host_scheme, self.owner.json_url())
-        # should include href to list of scheduledsessions, but they have no direct API yet.
+        # should include href to list of assignments, but they have no direct API yet.
         return sch
 
     @property
-    def qs_scheduledsessions_with_assignments(self):
-        return self.scheduledsession_set.filter(session__isnull=False)
+    def qs_assignments_with_sessions(self):
+        return self.assignments.filter(session__isnull=False)
 
     @property
     def group_mapping(self):
@@ -619,7 +619,7 @@ class Schedule(models.Model):
         sessions    = dict()
         total       = 0
         scheduled   = 0
-        allschedsessions = self.qs_scheduledsessions_with_assignments.filter(timeslot__type = "session").all()
+        allschedsessions = self.qs_assignments_with_sessions.filter(timeslot__type = "session").all()
         for sess in self.meeting.sessions_that_can_meet.all():
             assignments[sess.group] = []
             sessions[sess] = None
@@ -653,20 +653,20 @@ class Schedule(models.Model):
         return badness
 
     def delete_schedule(self):
-        self.scheduledsession_set.all().delete()
+        self.assignments.all().delete()
         self.delete()
 
-# to be renamed ScheduleTimeslotSessionAssignments (stsa)
-class ScheduledSession(models.Model):
+# to be renamed SchedTimeSessAssignments (stsa)
+class SchedTimeSessAssignment(models.Model):
     """
     This model provides an N:M relationship between Session and TimeSlot.
     Each relationship is attached to the named agenda, which is owned by
     a specific person/user.
     """
-    timeslot = models.ForeignKey('TimeSlot', null=False, blank=False)
-    session  = models.ForeignKey('Session', null=True, default=None, help_text=u"Scheduled session.")
+    timeslot = models.ForeignKey('TimeSlot', null=False, blank=False, related_name='sessionassignments')
+    session  = models.ForeignKey('Session', null=True, default=None, related_name='timeslotassignments', help_text=u"Scheduled session.")
     schedule = models.ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
-    extendedfrom = models.ForeignKey('ScheduledSession', null=True, default=None, help_text=u"Timeslot this session is an extension of.")
+    extendedfrom = models.ForeignKey('self', null=True, default=None, help_text=u"Timeslot this session is an extension of.")
     modified = models.DateTimeField(default=datetime.datetime.now)
     notes    = models.TextField(blank=True)
     badness  = models.IntegerField(default=0, blank=True, null=True)
@@ -675,7 +675,7 @@ class ScheduledSession(models.Model):
     class Meta:
         ordering = ["timeslot__time", "timeslot__type__slug", "session__group__parent__name", "session__group__acronym", "session__name", ]
 
-    # use to distinguish this from FakeScheduledSession in placement.py
+    # use to distinguish this from FakeSchedTimeSessAssignment in placement.py
     faked   = "real"
 
     def __unicode__(self):
@@ -694,7 +694,7 @@ class ScheduledSession(models.Model):
     def slot_to_the_right(self):
         s = self.timeslot.slot_to_the_right
         if s:
-            return self.schedule.scheduledsession_set.filter(timeslot=s).first()
+            return self.schedule.assignments.filter(timeslot=s).first()
         else:
             return None
 
@@ -736,11 +736,11 @@ class ScheduledSession(models.Model):
 
     def json_dict(self, host_scheme):
         ss = dict()
-        ss['scheduledsession_id'] = self.id
+        ss['assignment_id'] = self.id
         ss['href']          = urljoin(host_scheme, self.json_url())
         ss['timeslot_id'] = self.timeslot.id
 
-        efset = self.session.scheduledsession_set.filter(schedule=self.schedule).order_by("timeslot__time")
+        efset = self.session.timeslotassignments.filter(schedule=self.schedule).order_by("timeslot__time")
         if efset.count() > 1:
             # now we know that there is some work to do finding the extendedfrom_id.
             # loop through the list of items
@@ -939,7 +939,7 @@ class Session(models.Model):
             ss0name = "(%s)" % self.status.name
         else:
             ss0name = "(unscheduled)"
-            ss = self.scheduledsession_set.filter(schedule=self.meeting.agenda).order_by('timeslot__time')
+            ss = self.timeslotassignments.filter(schedule=self.meeting.agenda).order_by('timeslot__time')
             if ss:
                 ss0name = ','.join([x.timeslot.time.strftime("%a-%H%M") for x in ss])
         return u"%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
@@ -967,11 +967,11 @@ class Session(models.Model):
     def reverse_constraints(self):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
 
-    def scheduledsession_for_agenda(self, schedule):
-        return self.scheduledsession_set.filter(schedule=schedule)[0]
+    def timeslotassignment_for_agenda(self, schedule):
+        return self.timeslotassignments.filter(schedule=schedule)[0]
 
-    def official_scheduledsession(self):
-        return self.scheduledsession_for_agenda(self.meeting.agenda)
+    def official_timeslotassignment(self):
+        return self.timeslotassignment_for_agenda(self.meeting.agenda)
 
     def unique_constraints(self):
         global constraint_cache_uses, constraint_cache_initials

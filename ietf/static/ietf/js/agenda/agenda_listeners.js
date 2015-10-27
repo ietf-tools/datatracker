@@ -290,7 +290,7 @@ function extend_slot(event) {
 
     session  = last_session;
 
-    console.log("session", session.title, "sslot:", current_scheduledslot.scheduledsession_id);
+    console.log("session", session.title, "sslot:", current_scheduledslot.assignment_id);
 
     /* bind current_timeslot into this function and continuations */
     var slot = current_timeslot;
@@ -305,10 +305,10 @@ function extend_slot(event) {
 	    buttons: {
                 "Yes": {
                     click: function() {
-                        // need to create new scheduledsession
+                        // need to create new assignment
                         var new_ss = make_ss({ "session_id" : session.session_id,
                                                "timeslot_id": slot.following_timeslot.timeslot_id,
-                                               "extendedfrom_id" : current_scheduledslot.scheduledsession_id});
+                                               "extendedfrom_id" : current_scheduledslot.assignment_id});
                         // make_ss also adds to slot_status.
                         new_ss.saveit();
 
@@ -571,7 +571,7 @@ function select_session(session) {
     if(current_timeslot) {
         current_timeslot_id   = current_timeslot.timeslot_id;
     }
-    current_scheduledslot = session.scheduledsession;
+    current_scheduledslot = session.assignment;
     if(__debug_meeting_click) {
         console.log("2 meeting_click:", current_timeslot, session);
     }
@@ -698,13 +698,13 @@ function info_name_select_change(){
     console.log("selecting new item:", last_session.title);
 }
 
-function set_pin_session_button(scheduledsession) {
+function set_pin_session_button(assignment) {
     $("#pin_slot").unbind('click');
-    if(scheduledsession == undefined) {
-        console.log("pin not set, scheduledsession undefined");
+    if(assignment == undefined) {
+        console.log("pin not set, assignment undefined");
         return;
     }
-    state = scheduledsession.pinned;
+    state = assignment.pinned;
     //console.log("button set to: ",state);
     $("#pin_slot").attr('disabled',false);
     if(state) {
@@ -712,24 +712,24 @@ function set_pin_session_button(scheduledsession) {
         $("#agenda_pin_slot").addClass("button_down");
         $("#agenda_pin_slot").removeClass("button_up");
         $("#pin_slot").click(function(event) {
-            update_pin_session(scheduledsession, false);
+            update_pin_session(assignment, false);
         });
     } else {
         $("#pin_slot").html(" Pin ");
         $("#agenda_pin_slot").addClass("button_up");
         $("#agenda_pin_slot").removeClass("button_down");
         $("#pin_slot").click(function(event) {
-            update_pin_session(scheduledsession, true);
+            update_pin_session(assignment, true);
         });
     }
 }
 
-function update_pin_session(scheduledsession, state) {
+function update_pin_session(assignment, state) {
     start_spin();
-    scheduledsession.set_pinned(state, function(schedulesession) {
+    assignment.set_pinned(state, function(assignment) {
         stop_spin();
-        session.repopulate_event(scheduledsession.domid());
-        set_pin_session_button(scheduledsession);
+        session.repopulate_event(assignment.domid());
+        set_pin_session_button(assignment);
     });
 }
 
@@ -774,7 +774,7 @@ function fill_in_session_info(session, success, extra) {
 
         $("#agenda_pin_slot").removeClass("button_disabled");
         $("#agenda_pin_slot").addClass("button_enabled");
-        set_pin_session_button(session.scheduledsession);
+        set_pin_session_button(session.assignment);
     } else {
         $("#pin_slot").unbind('click');
     }
@@ -977,7 +977,7 @@ function update_to_slot(session_id, to_slot_id, force){
 
     var to_timeslot = agenda_globals.timeslot_bydomid[to_slot_id];
     if(to_timeslot != undefined && (to_timeslot.empty == true || force)) {
-	// add a new scheduledsession for this, save it.
+	// add a new assignment for this, save it.
         var new_ss = make_ss({ "session_id" : session_id,
                                "timeslot_id": to_timeslot.timeslot_id});
         // make_ss also adds to slot_status.
@@ -1001,7 +1001,7 @@ function update_from_slot(session_id, from_slot_id)
 {
     var from_timeslot      = agenda_globals.timeslot_bydomid[from_slot_id];
 
-    /* this is a list of scheduledsessions */
+    /* this is a list of schedule-timeslot-session-assignments */
     var from_scheduledslots = agenda_globals.slot_status[from_slot_id];
     var delete_promises = [];
 

@@ -26,7 +26,7 @@ li.daylistentry { margin-left:2em; font-weight: 400; }
 
 {% block content %}
 <h1>Agenda for {{meeting}} by Session Type</h1>
-{% regroup scheduledsessions by session.type.slug as type_list %}
+{% regroup assignments by session.type.slug as type_list %}
 <ul class="typelist">
 {% for type in type_list %}
   <li class="typelistentry {% cycle 'even' 'odd' %}">

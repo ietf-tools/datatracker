@@ -188,7 +188,7 @@ class GroupMaterialTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        when = meeting.agenda.scheduledsession_set.filter(session__group__acronym='testteam').first().timeslot.time
+        when = meeting.agenda.assignments.filter(session__group__acronym='testteam').first().timeslot.time
         mdw = when.date().isoformat()
         dow = ['mon','tue','wed','thu','fri','sat','sun'][when.weekday()]
 
@@ -212,7 +212,7 @@ class GroupMaterialTests(TestCase):
         meeting = make_meeting_test_data()
         meeting.session_set.filter(group__acronym='mars').update(group=doc.group)
 
-        session = meeting.agenda.scheduledsession_set.filter(session__group__acronym='testteam').first().session
+        session = meeting.agenda.assignments.filter(session__group__acronym='testteam').first().session
 
         url = urlreverse(edit_material_presentations,kwargs=dict(name=doc.name,acronym='testteam',seq=1))
         login_testing_unauthorized(self, "secretary", url)

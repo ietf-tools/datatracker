@@ -60,7 +60,7 @@ var schedule_name  = "{{ schedule.name }}";
 var meeting_base_url = "{{ meeting_base_url }}";
 var schedule_owner_email = "{{ schedule.owner_email }}";
 var site_base_url = "{{ site_base_url }}";
-var scheduledsession_post_href = "{% url "ietf.meeting.ajax.scheduledsessions_json" meeting.number schedule.owner_email schedule.name %}";
+var assignments_post_href = "{% url "ietf.meeting.ajax.assignments_json" meeting.number schedule.owner_email schedule.name %}";
 var total_days = {{time_slices|length}};
 var total_rooms = {{rooms|length}};
 
@@ -81,7 +81,7 @@ var sess_promise = load_sessions("{% url "ietf.meeting.ajax.sessions_json" meeti
 promiselist.push(ts_promise);
 promiselist.push(sess_promise);
 
-var ss_promise = load_scheduledsessions(ts_promise, sess_promise, scheduledsession_post_href);
+var ss_promise = load_assignments(ts_promise, sess_promise, assignments_post_href);
 promiselist.push(ss_promise);
 
    console.log("setup_slots run");

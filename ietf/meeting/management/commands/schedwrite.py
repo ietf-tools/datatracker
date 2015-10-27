@@ -27,7 +27,7 @@ class Command(BaseCommand):
         meeting = get_meeting(meetingname)
         schedule = get_schedule(meeting, schedname)
 
-        scheduledsessions = schedule.scheduledsession_set.all()
+        assignments = schedule.assignments.all()
 
         # cribbed from django/core/management/commands/dumpdata.py
         # Check that the serialization format exists; this is a shortcut to
@@ -35,7 +35,7 @@ class Command(BaseCommand):
         if format not in serializers.get_public_serializer_formats():
             raise CommandError("Unknown serialization format: %s" % format)
 
-        return serializers.serialize(format, scheduledsessions, indent=indent,
+        return serializers.serialize(format, assignments, indent=indent,
                                      use_natural_keys=True)
 
 

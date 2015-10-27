@@ -21,7 +21,7 @@
        items.push({room_index:room_names.indexOf("{{slot.get_hidden_location}}"),day:{{slot.day}}, delta_from_beginning:{{slot.delta_from_beginning}},time:"{{slot.time|date:"Hi"}}-{{slot.end_time|date:"Hi"}}", verbose_time:"{{slot.time|date:"D M d Hi"}}-{{slot.end_time|date:"Hi"}}",duration:{{slot.duration.total_seconds}}, type:"{{slot.type}}", name:"Unavailable", dayname:"{{ slot.time|date:"l"|upper }}, {{ slot.time|date:"F j, Y" }}" });
      }
   {% endfor %}
-  {% for ss in scheduledsessions %}
+  {% for ss in assignments %}
      if (room_names.indexOf("{{ss.timeslot.get_hidden_location}}") >= 0 )
      {
        items.push({room_index:room_names.indexOf("{{ss.timeslot.get_hidden_location}}"),day:{{ss.day}}, delta_from_beginning:{{ss.delta_from_beginning}},time:"{{ss.timeslot.time|date:"Hi"}}-{{ss.timeslot.end_time|date:"Hi"}}", verbose_time:"{{ss.timeslot.time|date:"D M d Hi"}}-{{ss.timeslot.end_time|date:"Hi"}}",duration:{{ss.timeslot.duration.total_seconds}}, type:"{{ss.timeslot.type}}", {% if ss.session.name %}name:"{{ss.session.name|escapejs}}",{% if ss.session.group.acronym %} wg:"{{ss.session.group.acronym}}",{%endif%}{% else %}{% if ss.timeslot.type.name == "Break" %}name:"{{ss.timeslot.name|escapejs}}", area:"break", wg:"break",{% elif ss.timeslot.type.slug == "unavail" %}name:"Unavailable",{% else %}name:"{{ss.session.group.name|escapejs}}{%if ss.session.group.state.name = "BOF"%} BOF{%endif%}",wg:"{{ss.session.group.acronym}}",state:"{{ss.session.group.state}}",area:"{{ss.session.group.parent.acronym}}",{% endif %}{% endif %} dayname:"{{ ss.timeslot.time|date:"l"|upper }}, {{ ss.timeslot.time|date:"F j, Y" }}"{% if ss.session.agenda %}, agenda:"{{ss.session.agenda.get_absolute_url}}"{% endif %} });

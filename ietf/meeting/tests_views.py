@@ -50,7 +50,7 @@ class MeetingTests(TestCase):
     def test_agenda(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
-        slot = TimeSlot.objects.get(scheduledsession__session=session)
+        slot = TimeSlot.objects.get(sessionassignments__session=session)
 
         self.write_materials_files(meeting, session)
 
@@ -215,7 +215,7 @@ class EditTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("load_scheduledsessions" in r.content)
+        self.assertTrue("load_assignments" in r.content)
 
     def test_save_agenda_as_and_read_permissions(self):
         meeting = make_meeting_test_data()
@@ -316,12 +316,12 @@ class EditTests(TestCase):
     def test_slot_to_the_right(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
-        mars_scheduled = session.scheduledsession_set.get()
-        mars_slot = TimeSlot.objects.get(scheduledsession__session=session)
+        mars_scheduled = session.timeslotassignments.get()
+        mars_slot = TimeSlot.objects.get(sessionassignments__session=session)
         mars_ends = mars_slot.time + mars_slot.duration
 
         session = Session.objects.filter(meeting=meeting, group__acronym="ames").first()
-        ames_slot_qs = TimeSlot.objects.filter(scheduledsession__session=session)
+        ames_slot_qs = TimeSlot.objects.filter(sessionassignments__session=session)
 
         ames_slot_qs.update(time=mars_ends + datetime.timedelta(seconds=11 * 60))
         self.assertTrue(not mars_slot.slot_to_the_right)

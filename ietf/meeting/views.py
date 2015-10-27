@@ -29,8 +29,8 @@ from ietf.ietfauth.utils import role_required, has_role
 from ietf.meeting.models import Meeting, Session, Schedule, Room
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
-from ietf.meeting.helpers import get_all_scheduledsessions_from_schedule
-from ietf.meeting.helpers import get_modified_from_scheduledsessions
+from ietf.meeting.helpers import get_all_assignments_from_schedule
+from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, meeting_updated
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
@@ -57,7 +57,7 @@ def materials(request, meeting_num=None):
 
     #sessions  = Session.objects.filter(meeting__number=meeting_num, timeslot__isnull=False)
     schedule = get_schedule(meeting, None)
-    sessions  = Session.objects.filter(meeting__number=meeting_num, scheduledsession__schedule=schedule).select_related()
+    sessions  = Session.objects.filter(meeting__number=meeting_num, timeslotassignments__schedule=schedule).select_related()
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
@@ -111,7 +111,7 @@ def agenda_create(request, num=None, owner=None, name=None):
         messages.info(request, "This name contains illegal characters. Please choose another one.")
         return redirect(edit_agenda, num=num, owner=owner, name=name)
 
-    # create the new schedule, and copy the scheduledsessions
+    # create the new schedule, and copy the assignments
     try:
         sched = meeting.schedule_set.get(name=savedname, owner=request.user.person)
         if sched:
@@ -136,7 +136,7 @@ def agenda_create(request, num=None, owner=None, name=None):
 
     # keep a mapping so that extendedfrom references can be chased.
     mapping = {};
-    for ss in schedule.scheduledsession_set.all():
+    for ss in schedule.assignments.all():
         # hack to copy the object, creating a new one
         # just reset the key, and save it again.
         oldid = ss.pk
@@ -147,12 +147,12 @@ def agenda_create(request, num=None, owner=None, name=None):
         #print "Copying %u to %u" % (oldid, ss.pk)
 
     # now fix up any extendedfrom references to new set.
-    for ss in newschedule.scheduledsession_set.all():
+    for ss in newschedule.assignments.all():
         if ss.extendedfrom is not None:
             oldid = ss.extendedfrom.id
             newid = mapping[oldid]
             #print "Fixing %u to %u" % (oldid, newid)
-            ss.extendedfrom = newschedule.scheduledsession_set.get(pk = newid)
+            ss.extendedfrom = newschedule.assignments.get(pk = newid)
             ss.save()
 
 
@@ -265,13 +265,13 @@ def edit_agenda(request, num=None, owner=None, name=None):
                                               "hide_menu": True
                                           }, status=403, content_type="text/html")
 
-    scheduledsessions = get_all_scheduledsessions_from_schedule(schedule)
+    assignments = get_all_assignments_from_schedule(schedule)
 
     # get_modified_from needs the query set, not the list
-    modified = get_modified_from_scheduledsessions(scheduledsessions)
+    modified = get_modified_from_assignments(assignments)
 
     area_list = get_areas()
-    wg_name_list = get_wg_name_list(scheduledsessions)
+    wg_name_list = get_wg_name_list(assignments)
     wg_list = get_wg_list(wg_name_list)
     ads = find_ads_for_meeting(meeting)
     for ad in ads:
@@ -295,7 +295,7 @@ def edit_agenda(request, num=None, owner=None, name=None):
                                           "area_list": area_list,
                                           "area_directors" : ads,
                                           "wg_list": wg_list ,
-                                          "scheduledsessions": scheduledsessions,
+                                          "assignments": assignments,
                                           "show_inline": set(["txt","htm","html"]),
                                           "hide_menu": True,
                                       })
@@ -494,9 +494,9 @@ def agenda_by_room(request,num=None):
     meeting = get_meeting(num) 
     schedule = get_schedule(meeting)
     ss_by_day = OrderedDict()
-    for day in schedule.scheduledsession_set.dates('timeslot__time','day'):
+    for day in schedule.assignments.dates('timeslot__time','day'):
         ss_by_day[day]=[]
-    for ss in schedule.scheduledsession_set.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
+    for ss in schedule.assignments.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
         day = ss.timeslot.time.date()
         ss_by_day[day].append(ss)
     return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"ss_by_day":ss_by_day})
@@ -505,20 +505,20 @@ def agenda_by_room(request,num=None):
 def agenda_by_type(request,num=None,type=None):
     meeting = get_meeting(num) 
     schedule = get_schedule(meeting)
-    scheduledsessions = schedule.scheduledsession_set.order_by('session__type__slug','timeslot__time')
+    assignments = schedule.assignments.order_by('session__type__slug','timeslot__time')
     if type:
-        scheduledsessions = scheduledsessions.filter(session__type__slug=type)
-    return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"scheduledsessions":scheduledsessions})
+        assignments = assignments.filter(session__type__slug=type)
+    return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"assignments":assignments})
 
 @role_required('Area Director','Secretariat','IAB')
 def agenda_by_type_ics(request,num=None,type=None):
     meeting = get_meeting(num) 
     schedule = get_schedule(meeting)
-    scheduledsessions = schedule.scheduledsession_set.order_by('session__type__slug','timeslot__time')
+    assignments = schedule.assignments.order_by('session__type__slug','timeslot__time')
     if type:
-        scheduledsessions = scheduledsessions.filter(session__type__slug=type)
+        assignments = assignments.filter(session__type__slug=type)
     updated = meeting_updated(meeting)
-    return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":scheduledsessions},content_type="text/calendar")
+    return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
 
 def session_agenda(request, num, session):
     d = Document.objects.filter(type="agenda", session__meeting__number=num)
@@ -712,17 +712,17 @@ def room_view(request, num=None):
     if rooms.count() == 0:
         raise Http404
 
-    scheduledsessions = meeting.agenda.scheduledsession_set.all()
+    assignments = meeting.agenda.assignments.all()
     unavailable = meeting.timeslot_set.filter(type__slug='unavail')
-    if (unavailable.count() + scheduledsessions.count()) == 0 :
+    if (unavailable.count() + assignments.count()) == 0 :
         raise Http404
 
     earliest = None
     latest = None
 
-    if scheduledsessions:
-        earliest = scheduledsessions.aggregate(Min('timeslot__time'))['timeslot__time__min']
-        latest =  scheduledsessions.aggregate(Max('timeslot__time'))['timeslot__time__max']
+    if assignments:
+        earliest = assignments.aggregate(Min('timeslot__time'))['timeslot__time__min']
+        latest =  assignments.aggregate(Max('timeslot__time'))['timeslot__time__max']
         
     if unavailable:
         earliest_unavailable = unavailable.aggregate(Min('time'))['time__min']
@@ -749,13 +749,13 @@ def room_view(request, num=None):
         t.delta_from_beginning = (t.time - base_time).total_seconds()
         t.day = (t.time-base_day).days
 
-    scheduledsessions = list(scheduledsessions)
-    for ss in scheduledsessions:
+    assignments = list(assignments)
+    for ss in assignments:
         ss.delta_from_beginning = (ss.timeslot.time - base_time).total_seconds()
         ss.day = (ss.timeslot.time-base_day).days
 
     template = "meeting/room-view.html"
-    return render(request, template,{"meeting":meeting,"unavailable":unavailable,"scheduledsessions":scheduledsessions,"rooms":rooms,"days":days})
+    return render(request, template,{"meeting":meeting,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
 
 def ical_agenda(request, num=None, name=None, ext=None):
     meeting = get_meeting(num)
@@ -823,22 +823,22 @@ def session_details(request, num, acronym, date=None, week_day=None, seq=None):
     if date:
         if len(date)==15:
             start = datetime.datetime.strptime(date,"%Y-%m-%d-%H%M")
-            sessions = sessions.filter(scheduledsession__schedule=meeting.agenda,scheduledsession__timeslot__time=start)
+            sessions = sessions.filter(timeslotassignments__schedule=meeting.agenda,timeslotassignments__timeslot__time=start)
         else:
             start = datetime.datetime.strptime(date,"%Y-%m-%d").date()
             end = start+datetime.timedelta(days=1)
-            sessions = sessions.filter(scheduledsession__schedule=meeting.agenda,scheduledsession__timeslot__time__range=(start,end))
+            sessions = sessions.filter(timeslotassignments__schedule=meeting.agenda,timeslotassignments__timeslot__time__range=(start,end))
 
     if week_day:
         try:
             dow = ['sun','mon','tue','wed','thu','fri','sat'].index(week_day.lower()[:3]) + 1
         except ValueError:
             raise Http404
-        sessions = sessions.filter(scheduledsession__schedule=meeting.agenda,scheduledsession__timeslot__time__week_day=dow)
+        sessions = sessions.filter(timeslotassignments__schedule=meeting.agenda,timeslotassignments__timeslot__time__week_day=dow)
         
 
     def sort_key(session):
-        official_sessions = session.scheduledsession_set.filter(schedule=session.meeting.agenda)
+        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
         if official_sessions:
             return official_sessions.first().timeslot.time
         else:
@@ -859,7 +859,7 @@ def session_details(request, num, acronym, date=None, week_day=None, seq=None):
     if len(sessions)==1:
         session = sessions[0]
         scheduled_time = "Not yet scheduled"
-        ss = session.scheduledsession_set.filter(schedule=meeting.agenda).order_by('timeslot__time')
+        ss = session.timeslotassignments.filter(schedule=meeting.agenda).order_by('timeslot__time')
         if ss:
             scheduled_time = ','.join(x.timeslot.time.strftime("%A %b-%d %H%M") for x in ss)
         # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set

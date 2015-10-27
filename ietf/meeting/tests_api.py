@@ -5,7 +5,7 @@ from urlparse import urlsplit
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.group.models import Group
-from ietf.meeting.models import Schedule, TimeSlot, Session, ScheduledSession, Meeting, Constraint
+from ietf.meeting.models import Schedule, TimeSlot, Session, SchedTimeSessAssignment, Meeting, Constraint
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
@@ -19,35 +19,35 @@ class ApiTests(TestCase):
         mars_session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         ames_session = Session.objects.filter(meeting=meeting, group__acronym="ames").first()
     
-        mars_scheduled = ScheduledSession.objects.get(session=mars_session)
+        mars_scheduled = SchedTimeSessAssignment.objects.get(session=mars_session)
         mars_slot = mars_scheduled.timeslot 
 
-        ames_scheduled = ScheduledSession.objects.get(session=ames_session)
+        ames_scheduled = SchedTimeSessAssignment.objects.get(session=ames_session)
         ames_slot = ames_scheduled.timeslot 
 
-        def do_unschedule(scheduledsession):
-            url = urlreverse("ietf.meeting.ajax.scheduledsession_json", 
-                             kwargs=dict(num=scheduledsession.session.meeting.number, 
-                                         owner=scheduledsession.schedule.owner_email(),
-                                         name=scheduledsession.schedule.name,
-                                         scheduledsession_id=scheduledsession.pk,))
+        def do_unschedule(assignment):
+            url = urlreverse("ietf.meeting.ajax.assignment_json", 
+                             kwargs=dict(num=assignment.session.meeting.number, 
+                                         owner=assignment.schedule.owner_email(),
+                                         name=assignment.schedule.name,
+                                         assignment_id=assignment.pk,))
             return self.client.delete(url)
 
         def do_schedule(schedule,session,timeslot):
-            url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",
+            url = urlreverse("ietf.meeting.ajax.assignments_json",
                               kwargs=dict(num=session.meeting.number,
                                           owner=schedule.owner_email(),
                                           name=schedule.name,))
             post_data = '{ "session_id": "%s", "timeslot_id": "%s" }'%(session.pk,timeslot.pk)
             return self.client.post(url,post_data,content_type='application/x-www-form-urlencoded')
 
-        def do_extend(schedule,scheduledsession):
-            session = scheduledsession.session
-            url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",
+        def do_extend(schedule, assignment):
+            session = assignment.session
+            url = urlreverse("ietf.meeting.ajax.assignments_json",
                               kwargs=dict(num=session.meeting.number,
                                           owner=schedule.owner_email(),
                                           name=schedule.name,))
-            post_data = '{ "session_id": "%s", "timeslot_id": "%s", "extendedfrom_id": "%s" }'%(session.pk,scheduledsession.timeslot.slot_to_the_right.pk,scheduledsession.pk)
+            post_data = '{ "session_id": "%s", "timeslot_id": "%s", "extendedfrom_id": "%s" }'%(session.pk,assignment.timeslot.slot_to_the_right.pk,assignment.pk)
 
 
             return self.client.post(url,post_data,content_type='application/x-www-form-urlencoded')
@@ -56,7 +56,7 @@ class ApiTests(TestCase):
         # faulty delete 
         r = do_unschedule(mars_scheduled)
         self.assertEqual(r.status_code, 403)
-        self.assertEqual(ScheduledSession.objects.get(pk=mars_scheduled.pk).session, mars_session)
+        self.assertEqual(SchedTimeSessAssignment.objects.get(pk=mars_scheduled.pk).session, mars_session)
         # faulty post
         r = do_schedule(schedule,ames_session,mars_slot)
         self.assertEqual(r.status_code, 403)
@@ -88,16 +88,16 @@ class ApiTests(TestCase):
         r = do_extend(schedule,mars_scheduled)
         self.assertEqual(r.status_code, 201)
         self.assertTrue("error" not in json.loads(r.content))
-        self.assertEqual(mars_session.scheduledsession_set.count(),2)
+        self.assertEqual(mars_session.timeslotassignments.count(),2)
 
         # Unschedule mars 
         r = do_unschedule(mars_scheduled)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("error" not in json.loads(r.content))
         # Make sure it got both the original and extended session
-        self.assertEqual(mars_session.scheduledsession_set.count(),0)
+        self.assertEqual(mars_session.timeslotassignments.count(),0)
 
-        self.assertEqual(ScheduledSession.objects.get(session=ames_session).timeslot, mars_slot)
+        self.assertEqual(SchedTimeSessAssignment.objects.get(session=ames_session).timeslot, mars_slot)
 
 
     def test_constraints_json(self):
@@ -204,15 +204,15 @@ class ApiTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         info = json.loads(r.content)
-        self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.agenda.scheduledsession_set.filter(session__type_id='session')]))
+        self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.agenda.assignments.filter(session__type_id='session')]))
 
         schedule = meeting.agenda
-        url = urlreverse("ietf.meeting.ajax.scheduledsessions_json",
+        url = urlreverse("ietf.meeting.ajax.assignments_json",
                          kwargs=dict(num=meeting.number,owner=schedule.owner_email(),name=schedule.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         info = json.loads(r.content)
-        self.assertEqual(len(info),schedule.scheduledsession_set.count())
+        self.assertEqual(len(info),schedule.assignments.count())
 
 
     def test_slot_json(self):
@@ -423,7 +423,7 @@ class ApiTests(TestCase):
 
     def test_update_timeslot_pinned(self):
         meeting = make_meeting_test_data()
-        scheduled = ScheduledSession.objects.filter(
+        scheduled = SchedTimeSessAssignment.objects.filter(
             session__meeting=meeting, session__group__acronym="mars").first()
 
         url = '/meeting/%s/agenda/%s/%s/session/%u.json' % (meeting.number, meeting.agenda.owner_email(), meeting.agenda.name, scheduled.pk)
@@ -437,7 +437,7 @@ class ApiTests(TestCase):
         self.assertEqual(r.status_code, 403,
                          "post to %s should have failed, no permission, got: %u/%s" %
                          (url, r.status_code, r.content))
-        self.assertTrue(not ScheduledSession.objects.get(pk=scheduled.pk).pinned)
+        self.assertTrue(not SchedTimeSessAssignment.objects.get(pk=scheduled.pk).pinned)
 
         # set pinned
         meeting.agenda.owner = Person.objects.get(user__username="secretary")
@@ -451,7 +451,7 @@ class ApiTests(TestCase):
         self.assertEqual(r.status_code, 200,
                          "post to %s should have worked, but got: %u/%s" %
                          (url, r.status_code, r.content))
-        self.assertTrue(ScheduledSession.objects.get(pk=scheduled.pk).pinned)
+        self.assertTrue(SchedTimeSessAssignment.objects.get(pk=scheduled.pk).pinned)
 
 class TimeSlotEditingApiTests(TestCase):
 

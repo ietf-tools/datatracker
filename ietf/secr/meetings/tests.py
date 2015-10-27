@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 
 from ietf.group.models import Group, GroupEvent
-from ietf.meeting.models import Meeting, Room, TimeSlot, ScheduledSession
+from ietf.meeting.models import Meeting, Room, TimeSlot, SchedTimeSessAssignment
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.person.models import Person
 from ietf.utils.mail import outbox
@@ -139,7 +139,7 @@ class MainTestCase(TestCase):
         person = Person.objects.get(name="(System)")
         GroupEvent.objects.create(group=mars_group,time=now,type='sent_notification',
                                   by=person,desc='sent scheduled notification for %s' % meeting)
-        ss = meeting.agenda.scheduledsession_set.get(session__group=ames_group)
+        ss = meeting.agenda.assignments.get(session__group=ames_group)
         ss.modified = then
         ss.save()
         self.client.login(username="secretary", password="secretary+password")
@@ -173,7 +173,7 @@ class MainTestCase(TestCase):
         
         # test delete
         # first unschedule sessions so we can delete
-        ScheduledSession.objects.filter(schedule=meeting.agenda).delete()
+        SchedTimeSessAssignment.objects.filter(schedule=meeting.agenda).delete()
         self.client.login(username="secretary", password="secretary+password")
         post_dict = {
             'room-TOTAL_FORMS':  q('input[name="room-TOTAL_FORMS"]').val(),

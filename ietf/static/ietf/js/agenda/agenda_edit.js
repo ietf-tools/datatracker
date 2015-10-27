@@ -24,7 +24,7 @@
 //var schedule_id    = 0;   // what is the schedule we are editing.
 //var schedule_name;        // what is the schedule we are editing.
 //var schedule_owner_href = '';  // who owns this schedule
-//var scheduledsession_post_href;
+//var assignments_post_href;
 //var meeting_base_url;
 //var site_base_url;
 //var total_rooms = 0; // the number of rooms
@@ -88,7 +88,7 @@ function initStuff(){
 
     $.when.apply($,directorpromises).done(function() {
         /* can not load events until area director info,
-           timeslots, sessions, and scheduledsessions
+           timeslots, sessions, and assignments
            have been loaded
         */
         log("loading/linking objects");
@@ -173,9 +173,6 @@ function read_only_check() {
 
 function print_all_ss(objs){
     console.log(objs)
-}
-function get_ss(){
-    Dajaxice.ietf.meeting.get_scheduledsessions(print_all_ss);
 }
 
 

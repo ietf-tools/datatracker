@@ -52,7 +52,7 @@ def get_session(timeslot, schedule=None):
     # todo, doesn't account for shared timeslot
     if not schedule:
         schedule = timeslot.meeting.agenda
-    qs = timeslot.sessions.filter(scheduledsession__schedule=schedule)  #.exclude(states__slug='deleted')
+    qs = timeslot.sessions.filter(timeslotassignments__schedule=schedule)  #.exclude(states__slug='deleted')
     if qs:
         return qs[0]
     else:
@@ -66,7 +66,7 @@ def get_timeslot(session, schedule=None):
     '''
     if not schedule:
         schedule = session.meeting.agenda
-    ss = session.scheduledsession_set.filter(schedule=schedule)
+    ss = session.timeslotassignments.filter(schedule=schedule)
     if ss:
         return ss[0].timeslot
     else:

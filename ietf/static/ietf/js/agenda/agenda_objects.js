@@ -28,7 +28,7 @@ function AgendaGlobals() {
     this.sessions_objs = {};
     this.timeslot_bydomid = {};
     this.timeslot_byid    = {};
-    this.scheduledsession_promise = undefined;
+    this.assignment_promise = undefined;
     this.timeslot_promise = undefined;
     this.__debug_session_move = false;
 }
@@ -318,7 +318,7 @@ function TimeSlot(){
     this.date         = undefined;
     this.domid        = undefined;
     this.empty        = true;
-    this.scheduledsessions = [];
+    this.assignments = [];
     this.following_timeslot_id = undefined;
     this.unscheduled_box = false;
 }
@@ -420,13 +420,13 @@ function load_timeslots(href) {
 
 // ++++++++++++++++++
 // ScheduledSlot Object
-// ScheduledSession is DJANGO name for this object, but needs to be renamed.
+// SchedTimeSessAssignment is the DJANGO name for this object
 // It represents a TimeSlot that can be assigned in this schedule.
-//   { "scheduledsession_id": "{{s.id}}",
+//   { "assignment_id": "{{s.id}}",
 //     "href:        "{{s.href}}",
 //     "timeslot_id":"{{s.timeslot.id}}",
 //     "session_id" :"{{s.session.id}}",
-//     "extendedfrom_id"    :refers to another scheduledsession by ss.id
+//     "extendedfrom_id"    :refers to another schedtimesessassignment by ss.id
 function ScheduledSlot(){
     this.extendedfrom = undefined;
     this.extendedto   = undefined;
@@ -469,7 +469,7 @@ ScheduledSlot.prototype.saveit = function() {
 
     var stuff = JSON.stringify(stuffjson, null, '\t');
 
-    var saveit = $.ajax(scheduledsession_post_href,{
+    var saveit = $.ajax(assignments_post_href,{
         "content-type": "text/json",
         "type": "POST",
         "data": stuff,
@@ -518,7 +518,7 @@ function remove_from_slot_status(domid, ss_id) {
             if(agenda_globals.__debug_session_move) {
                 console.log("  checking", index, value, ss_id);
             }
-            if(value.scheduledsession_id == ss_id) {
+            if(value.assignment_id == ss_id) {
                 found_at = index;
                 return;
             }
@@ -539,8 +539,8 @@ ScheduledSlot.prototype.deleteit = function() {
     });
     // now nuke self!
     var me = this;
-    delete agenda_globals.slot_objs[this.scheduledsession_id];
-    remove_from_slot_status(this.domid(), this.scheduledsession_id);
+    delete agenda_globals.slot_objs[this.assignment_id];
+    remove_from_slot_status(this.domid(), this.assignment_id);
     return deleteit;
 };
 
@@ -553,7 +553,7 @@ function update_if_not_undefined(old, newval) {
 }
 
 ScheduledSlot.prototype.make_unassigned = function() {
-    this.scheduledsession_id = 0;
+    this.assignment_id	     = 0;
     this.empty               = true;
     this.session_id          = null;
     this.room                = "unassigned";
@@ -567,13 +567,13 @@ ScheduledSlot.prototype.make_unassigned = function() {
 
     agenda_globals.slot_status[this.domid()]=[];
     agenda_globals.slot_status[this.domid()].push(this);
-    agenda_globals.slot_objs[this.scheduledsession_id] = this;
+    agenda_globals.slot_objs[this.assignment_id] = this;
 };
 
 ScheduledSlot.prototype.real_initialize = function(json, extra) {
     /* do not copy everything over */
     this.pinned              = update_if_not_undefined(this.pinned, json.pinned);
-    this.scheduledsession_id = update_if_not_undefined(this.scheduledsession_id, json.scheduledsession_id);
+    this.assignment_id	     = update_if_not_undefined(this.assignment_id, json.assignment_id);
     this.session_id          = update_if_not_undefined(this.session_id, json.session_id);
     this.timeslot_id         = update_if_not_undefined(this.timeslot_id, json.timeslot_id);
     this.href                = update_if_not_undefined(this.href, json.href);
@@ -605,23 +605,23 @@ ScheduledSlot.prototype.real_initialize = function(json, extra) {
         }
         if(this.session_id != undefined) {
             // remove any old duplicate that might exist.
-            remove_from_slot_status(this.domid(), this.scheduledsession_id);
+            remove_from_slot_status(this.domid(), this.assignment_id);
             if(agenda_globals.__debug_session_move) {
                 console.log(extra, "adding to slot_status", this.domid());
             }
 
             agenda_globals.slot_status[this.domid()].push(this);
-            //console.log("filling slot_objs", this.scheduledsession_id);
+            //console.log("filling slot_objs", this.assignment_id);
         }
     }
 
-    agenda_globals.slot_objs[this.scheduledsession_id] = this;
+    agenda_globals.slot_objs[this.assignment_id] = this;
 };
 ScheduledSlot.prototype.initialize = ScheduledSlot.prototype.real_initialize;
 
-function load_scheduledsessions(ts_promise, session_promise, href) {
-    if(agenda_globals.scheduledsession_promise == undefined) {
-        agenda_globals.scheduledsession_promise = $.Deferred();
+function load_assignments(ts_promise, session_promise, href) {
+    if(agenda_globals.assignment_promise == undefined) {
+        agenda_globals.assignment_promise = $.Deferred();
 
         var ss = $.ajax(href);
         var ss_loaded = $.when(ss,ts_promise,session_promise);
@@ -635,10 +635,10 @@ function load_scheduledsessions(ts_promise, session_promise, href) {
                 //console.log("ss has:", one);
                 make_ss(one);
             });
-            agenda_globals.scheduledsession_promise.resolve(newobj);
+            agenda_globals.assignment_promise.resolve(newobj);
         });
     }
-    return agenda_globals.scheduledsession_promise;
+    return agenda_globals.assignment_promise;
 }
 
 ScheduledSlot.prototype.connect_to_timeslot_session = function() {
@@ -658,12 +658,12 @@ ScheduledSlot.prototype.session = function() {
     if(this.session_id != undefined) {
        return agenda_globals.meeting_objs[this.session_id];
     } else {
-        console.log("ss id:", this.scheduledsession_id, "timeslot:", this.timeslot_id, this.timeslot.title(), "has null session");
+        console.log("ss id:", this.assignment_id, "timeslot:", this.timeslot_id, this.timeslot.title(), "has null session");
         return undefined;
     }
 };
 ScheduledSlot.prototype.slot_title = function() {
-    return "id#"+this.scheduledsession_id+" dom:"+this.domid();
+    return "id#"+this.assignment_id+" dom:"+this.domid();
 };
 
 function make_ss(json) {
@@ -864,14 +864,14 @@ Session.prototype.on_bucket_list = function() {
     this.column_class_list = [];
     this.element().parent("div").addClass("meeting_box_bucket_list");
 };
-Session.prototype.placed = function(where, forceslot, scheduledsession) {
+Session.prototype.placed = function(where, forceslot, assignment) {
     this.is_placed = true;
 
     // forceslot is set on a move, but unset on initial placement,
     // as placed might be called more than once for a double slot session.
     if(forceslot || this.slot==undefined) {
         this.slot      = where;
-        this.scheduledsession = scheduledsession;
+        this.assignment = assignment;
 
         /* we can not mark old slot as empty, because it
            might have multiple sessions in it.
@@ -1232,7 +1232,7 @@ Session.prototype.generate_info_table = function() {
     if(this.slot != undefined) {
         ss = this.slot;
         if(ss.timeslot_id == null){
-            $("#info_location_select").val(agenda_globals.meeting_objs[ss.scheduledsession_id]);
+            $("#info_location_select").val(agenda_globals.meeting_objs[ss.assignment_id]);
         }else{
             $("#info_location_select").val(ss.timeslot_id); // ***
         }
