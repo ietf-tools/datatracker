@@ -9,7 +9,7 @@ syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 import django
 django.setup()
 
-from ietf.utils.mail import smtp_error_logging
+from ietf.utils.mail import log_smtp_exception, send_error_email
 from smtplib import SMTPException
 
 
@@ -31,6 +31,9 @@ if mode == "specific":
     needs_sending = needs_sending.exclude(send_at=None).filter(send_at__lte=now)
 
 for s in needs_sending:
-    with smtp_error_logging(send_scheduled_message_from_send_queue) as send: 
-        send(s)
+    try:
+        send_scheduled_message_from_send_queue(s)
         syslog.syslog(u'Sent scheduled message %s "%s"' % (s.id, s.message.subject))
+    except SMTPException as e:
+        log_smtp_exception(e)
+        send_error_email(e)
