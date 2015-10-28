@@ -58,21 +58,21 @@ def fix_empty_rrg_charter(apps, schema_editor):
         charter.time = datetime.datetime.now()
         charter.save()
 
-        NewRevisionDocEvent.objects.get_or_create(
+        NewRevisionDocEvent.objects.create(
             rev=charter.rev,
             doc=charter,
             type="new_revision",
             by=system,
             desc="New version available: <b>%s-%s.txt</b>" % (charter.name, charter.rev),
-            defaults=dict(time=charter.time)
+            time=charter.time,
         )
 
-        DocEvent.objects.get_or_create(
+        DocEvent.objects.create(
             doc=charter,
             type="added_comment",
             by=system,
             desc="Added existing charter",
-            defaults=dict(time=charter.time)
+            time=charter.time,
         )
 
         approved = State.objects.get(type="charter", slug="approved")

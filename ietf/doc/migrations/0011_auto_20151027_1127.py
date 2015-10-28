@@ -83,6 +83,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('doc', '0010_auto_20150930_0251'),
+        ('group', '0007_auto_20150930_0758'),
     ]
 
     operations = [
