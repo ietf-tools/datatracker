@@ -334,9 +334,10 @@ def liaison_history(request, object_id):
 def liaison_delete_attachment(request, object_id, attach_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
     attach = get_object_or_404(LiaisonStatementAttachment, pk=attach_id)
-    if not ( request.user.is_authenticated() and can_edit_liaison(request.user, liaison) ):
+    if not can_edit_liaison(request.user, liaison):
         return HttpResponseForbidden("You are not authorized for this action")
 
+    # FIXME: this view should use POST instead of GET when deleting
     attach.removed = True
     attach.save()
 
@@ -352,7 +353,7 @@ def liaison_delete_attachment(request, object_id, attach_id):
 
 def liaison_detail(request, object_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
-    can_edit = request.user.is_authenticated() and can_edit_liaison(request.user, liaison)
+    can_edit = can_edit_liaison(request.user, liaison)
     can_take_care = _can_take_care(liaison, request.user)
     can_reply = _can_reply(liaison, request.user)
     person = get_person_for_user(request.user)
@@ -391,7 +392,7 @@ def liaison_detail(request, object_id):
 
 def liaison_edit(request, object_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
-    if not (request.user.is_authenticated() and can_edit_liaison(request.user, liaison)):
+    if not can_edit_liaison(request.user, liaison):
         return HttpResponseForbidden('You do not have permission to edit this liaison statement')
     return liaison_add(request, instance=liaison)
 
@@ -399,7 +400,7 @@ def liaison_edit_attachment(request, object_id, doc_id):
     '''Edit the Liaison Statement attachment title'''
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
     doc = get_object_or_404(Document, pk=doc_id)
-    if not ( request.user.is_authenticated() and can_edit_liaison(request.user, liaison) ):
+    if not can_edit_liaison(request.user, liaison):
         return HttpResponseForbidden("You are not authorized for this action")
 
     if request.method == 'POST':
