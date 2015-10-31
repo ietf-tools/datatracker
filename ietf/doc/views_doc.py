@@ -905,6 +905,18 @@ def add_comment(request, name):
 
     login = request.user.person
 
+    if doc.type_id == "draft" and doc.group != None:
+        can_add_comment = bool(has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "IANA", "RFC Editor")) or (
+            request.user.is_authenticated() and
+            Role.objects.filter(name__in=("chair", "secr"),
+                group__acronym=doc.group.acronym,
+                person__user=request.user)))
+    else:
+        can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair"))
+    if not can_add_comment:
+        # The user is a chair or secretary, but not for this WG or RG
+        return HttpResponseForbidden("You need to be a chair or secretary of this group to add a comment.")
+
     if request.method == 'POST':
         form = AddCommentForm(request.POST)
         if form.is_valid():
