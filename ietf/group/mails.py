@@ -32,7 +32,7 @@ def email_personnel_change(request, group, text, changed_personnel):
     send_mail_text(request, to, None, full_subject, text, cc=cc)
 
 
-def email_milestones_changed(request, group, changes):
+def email_milestones_changed(request, group, changes, states):
     def wrap_up_email(addrs, text):
 
         subject = u"Milestones changed for %s %s" % (group.acronym, group.type.name)
@@ -52,9 +52,8 @@ def email_milestones_changed(request, group, changes):
 
     # then send only the approved milestones to those who shouldn't be 
     # bothered with milestones pending approval 
-    review_re = re.compile("Added .* for review, due")
     addrs = gather_address_lists('group_approved_milestones_edited',group=group)
-    msg = u"\n\n".join(c + "." for c in changes if not review_re.match(c))
+    msg = u"\n\n".join(c + "." for c,s in zip(changes,states) if not s == "review")
     if (addrs.to or addrs.cc) and msg:
         wrap_up_email(addrs, msg)
 
