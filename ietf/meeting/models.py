@@ -928,6 +928,9 @@ class Session(models.Model):
     def minutes(self):
         return self.get_material("minutes", only_one=True)
 
+    def recordings(self):
+        return list(self.get_material("recording", only_one=False))
+
     def slides(self):
         return list(self.get_material("slides", only_one=False))
 

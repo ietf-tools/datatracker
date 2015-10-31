@@ -43,9 +43,9 @@
         </div> <!-- button-group -->
  
        </form>
+     
      <div class="inline-related">
-           <h2>{{ meeting }} - Recordings
-    </h2>
+       <h2>{{ meeting }} - Recordings</h2>
        <table class="center">
          <thead>
            <tr>
@@ -57,27 +57,47 @@
            </tr>
          </thead>
          <tbody>
-         {% for record in recordings %}
+         {% for session in sessions %}
          <tr>
-           <td>{{ record.group.acronym }}</td>
-           <td>{{ record.session_set.first.official_scheduledsession.timeslot.time|date:"m-d H:i" }}</td>
-           <td>{{ record.name }}</td>
-           <td><a href="{{ record.href }}">{{ record.href }}</a></td>
-           <td><a href="{% url "proceedings_recording_edit" meeting_num=meeting.number name=record.name %}">Edit</a></td>
+           <td>{{ session.group.acronym }}</td>
+           <td>{{ session.official_timeslotassignment.timeslot.time|date:"m-d H:i" }}</td>
+           {% if session.recordings %}
+             <td class="document-name" >{{ session.recordings.0.name }}</td>
+             <td><a href="{{ session.recordings.first.href }}">{{ session.recordings.0.href }}</a></td>
+             <td><a href="{% url "proceedings_recording_edit" meeting_num=meeting.number name=session.recordings.0.name %}">Edit</a></td>
+           {% else %}
+             <td></td>
+             <td></td>
+             <td></td>
+           {% endif %}
          </tr>
          {% endfor %}
          </tbody>
        </table>
-     
      </div> <!-- inline-group -->
+     
+     {% if unmatched_recordings %}
+     <div class="inline-related">
+       <h2>Unmatched Recording Files</h2>
+       <table class="center">
+         <thead>
+           <tr>
+             <th>Filename</th>
+           </tr>
+         </thead>
+         <tbody>
+         {% for file in unmatched_recordings %}
+           <tr>
+             <td>{{ file }}</td>
+           </tr>
+         {% endfor %}
+         </tbody>
+       </table>
+     </div> <!-- inline-group -->
+     {% endif %}
+     
 </div> <!-- module -->
 
-{% if docevents %}
-  <br>
-  <div class="module interim-container">
-    {% include "includes/docevents.html" %}
-  </div>
-{% endif %}
 
 {% endblock %}
 

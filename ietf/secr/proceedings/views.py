@@ -75,6 +75,21 @@ def get_doc_filename(doc):
         # TODO we might want to choose from among multiple files using some logic
         return files[0]
 
+def get_unmatched_recordings(meeting):
+    '''
+    Returns a list of recording filenames that haven't been matched to a session
+    '''
+    unmatched_recordings = []
+    path = os.path.join(settings.MEETING_RECORDINGS_DIR,'ietf{}'.format(meeting.number))
+    try:
+        files = os.listdir(path)
+    except OSError:
+        files = []
+    for file in files:
+        if not Document.objects.filter(external_url__endswith=file).exists():
+            unmatched_recordings.append(file)
+    return unmatched_recordings
+
 def get_extras(meeting):
     '''
     Gather "extras" which are one off groups. ie iab-wcit(86)
@@ -608,10 +623,13 @@ def progress_report(request, meeting_num):
 @role_required('Secretariat')
 def recording(request, meeting_num):
     '''
-    Enter Session recording info.  Creates Document and associates it with Session
+    Enter Session recording info.  Creates Document and associates it with Session.
+    For auditing purposes, lists all scheduled sessions and associated recordings, if
+    any.  Also lists those audio recording files which haven't been matched to a
+    session.
     '''
     meeting = get_object_or_404(Meeting, number=meeting_num)
-    recordings = Document.objects.filter(name__startswith='recording-{}'.format(meeting.number),states__slug='active').order_by('group__acronym')
+    sessions = meeting.session_set.filter(type='session',status='sched').order_by('group__acronym')
     
     if request.method == 'POST':
         form = RecordingForm(request.POST)
@@ -638,7 +656,8 @@ def recording(request, meeting_num):
     return render_to_response('proceedings/recording.html',{
         'meeting':meeting,
         'form':form,
-        'recordings':recordings},
+        'sessions':sessions,
+        'unmatched_recordings': get_unmatched_recordings(meeting)},
         RequestContext(request, {}),
     )
 
