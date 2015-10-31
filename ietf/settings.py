@@ -47,6 +47,9 @@ ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", ]
 
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
+TOOLS_SERVER_URL = 'https://' + TOOLS_SERVER
+TOOLS_ID_PDF_URL = TOOLS_SERVER_URL + '/pdf/'
+TOOLS_ID_HTML_URL = TOOLS_SERVER_URL + '/html/'
 
 # Override this in the settings_local.py file:
 SERVER_EMAIL = 'Django Server <django-project@' + TOOLS_SERVER + '>'
@@ -97,6 +100,9 @@ USE_I18N = False
 USE_TZ = False
 
 MEDIA_URL = 'https://www.ietf.org/'
+IETF_ID_URL = MEDIA_URL + 'id/'
+IETF_ID_ARCHIVE_URL = MEDIA_URL + 'archive/id/'
+
 
 # Absolute path to the directory static files should be collected to.
 # Example: "/var/www/example.com/static/"

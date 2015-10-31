@@ -158,7 +158,7 @@ def document_main(request, name, rev=None):
                                     person__user=request.user)))
         can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
 
-        can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
+        can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
 
         is_author = unicode(request.user) in set([email.address for email in doc.authors.all()])
         can_view_possibly_replaces = can_edit_replaces or is_author
@@ -197,7 +197,7 @@ def document_main(request, name, rev=None):
                 file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
 
             if "txt" in found_types:
-                file_urls.append(("html", "https://tools.ietf.org/html/" + name))
+                file_urls.append(("html", settings.TOOLS_ID_HTML_URL + name))
 
             if not found_types:
                 content = "This RFC is not currently available online."
@@ -216,12 +216,10 @@ def document_main(request, name, rev=None):
             possible_types = ["pdf", "xml", "ps"]
             found_types = ["txt"] + [t for t in possible_types if os.path.exists(base_path + t)]
 
-            tools_base = "https://tools.ietf.org/"
-
             if doc.get_state_slug() == "active":
-                base = "https://www.ietf.org/id/"
+                base = settings.IETF_ID_URL
             else:
-                base = tools_base + "id/"
+                base = settings.IETF_ID_ARCHIVE_URL
 
             file_urls = []
             for t in found_types:
@@ -229,8 +227,8 @@ def document_main(request, name, rev=None):
                 file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
 
             if "pdf" not in found_types:
-                file_urls.append(("pdf", tools_base + "pdf/" + doc.name + "-" + doc.rev + ".pdf"))
-            file_urls.append(("html", tools_base + "html/" + doc.name + "-" + doc.rev))
+                file_urls.append(("pdf", settings.TOOLS_ID_PDF_URL + doc.name + "-" + doc.rev + ".pdf"))
+            file_urls.append(("html", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
 
             # latest revision
             latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
@@ -648,11 +646,22 @@ def document_history(request, name):
     augment_events_with_revision(doc, events)
     add_links_in_new_revision_events(doc, events, diff_revisions)
 
+    # figure out if the current user can add a comment to the history
+    if doc.type_id == "draft" and doc.group != None:
+        can_add_comment = bool(has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "IANA", "RFC Editor")) or (
+            request.user.is_authenticated() and
+            Role.objects.filter(name__in=("chair", "secr"),
+                group__acronym=doc.group.acronym,
+                person__user=request.user)))
+    else:
+        can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair"))
+
     return render_to_response("doc/document_history.html",
                               dict(doc=doc,
                                    top=top,
                                    diff_revisions=diff_revisions,
                                    events=events,
+                                   can_add_comment=can_add_comment,
                                    ),
                               context_instance=RequestContext(request))
 
@@ -889,7 +898,7 @@ def document_json(request, name):
 class AddCommentForm(forms.Form):
     comment = forms.CharField(required=True, widget=forms.Textarea)
 
-@role_required('Area Director', 'Secretariat', 'IANA', 'RFC Editor')
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair', 'WG Secretary', 'RG Secretary', 'IANA', 'RFC Editor')
 def add_comment(request, name):
     """Add comment to history of document."""
     doc = get_object_or_404(Document, docalias__name=name)
