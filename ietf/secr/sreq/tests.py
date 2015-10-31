@@ -44,23 +44,30 @@ class SubmitRequestCase(TestCase):
         make_test_data()
         acronym = Group.objects.all()[0].acronym
         url = reverse('sessions_new',kwargs={'acronym':acronym})
-        post_data = {'id_num_session':'1',
-                     'id_length_session1':'3600',
-                     'id_attendees':'10',
-                     'id_conflict1':'',
-                     'id_comments':'need projector'}
+        post_data = {'num_session':'1',
+                     'length_session1':'3600',
+                     'attendees':'10',
+                     'conflict1':'',
+                     'comments':'need projector'}
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.post(url,post_data)
+        self.assertEqual(r.status_code, 302)
+
+    def test_submit_request_invalid(self):
+        make_test_data()
+        group = Group.objects.filter(type='wg').first()
+        url = reverse('sessions_new',kwargs={'acronym':group.acronym})
+        post_data = {'num_session':'2',
+                     'length_session1':'3600',
+                     'attendees':'10',
+                     'conflict1':'',
+                     'comments':'need projector'}
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
-"""
-        #assert False, self.client.session..__dict__
-        
-        url = reverse('sessions_confirm',kwargs={'acronym':acronym})
-        #s = self.client.session
-        #s['session_form'] = post_data
-        r = self.client.get(url)
-        assert False, r.content
-"""
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#session-request-form')),1)
+        self.assertTrue('You must enter a length for all sessions' in r.content)
 
 class LockAppTestCase(TestCase):
     def test_edit_request(self):

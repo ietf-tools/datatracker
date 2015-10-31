@@ -121,13 +121,13 @@ class SessionForm(forms.Form):
         
         # verify session_length and num_session correspond
         # if default (empty) option is selected, cleaned_data won't include num_session key
-        if data.get('num_session','') == 2:
+        if data.get('num_session','') == '2':
             if not data['length_session2']:
-                raise forms.ValidationError('You must enter a length for session 2')
+                raise forms.ValidationError('You must enter a length for all sessions')
         
         if data.get('third_session',False):
-            if not data.get('length_session3',None):
-                raise forms.ValidationError('Length of third session not selected')
+            if not data['length_session2'] or not data.get('length_session3',None):
+                raise forms.ValidationError('You must enter a length for all sessions')
         
         return data
         
