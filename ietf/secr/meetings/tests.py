@@ -11,6 +11,7 @@ from ietf.group.models import Group, GroupEvent
 from ietf.meeting.models import Meeting, Room, TimeSlot, SchedTimeSessAssignment
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.person.models import Person
+from ietf.secr.meetings.forms import get_times
 from ietf.utils.mail import outbox
 from ietf.utils.test_utils import TestCase
 
@@ -244,6 +245,15 @@ class MainTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertEqual(len(q("#id_scheduled_sessions")),1)
-    
-    # def test_meetings_schedule():
-    
+
+    # ----------------------
+    # Unit Tests
+    # -----------------------
+    def test_get_times(self):
+        meeting = make_meeting_test_data()
+        timeslot = meeting.timeslot_set.filter(type='session').first()
+        day = timeslot.time.weekday() + 2   # add 2 to match django __week_day filter
+        times = get_times(meeting,day)
+        values = [ x[0] for x in times ]
+        self.assertTrue(times)
+        self.assertTrue(timeslot.time.strftime('%H%M') in values)
