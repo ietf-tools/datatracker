@@ -93,9 +93,20 @@ class LockAppTestCase(TestCase):
         meeting.save()
         group = Group.objects.get(acronym='mars')
         url = reverse('sessions_new',kwargs={'acronym':group.acronym})
+        
+        # try as WG Chair
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get(url,follow=True)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#session-request-form')),0)
+        
+        # try as Secretariat
         self.client.login(username="secretary", password="secretary+password")
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 302)
+        r = self.client.get(url,follow=True)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#session-request-form')),1)
         
 class EditRequestCase(TestCase):
     pass
