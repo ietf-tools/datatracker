@@ -46,7 +46,7 @@ def get_times(meeting,day):
     The label is [start_time]-[end_time].
     '''
     # pick a random room
-    rooms = Room.objects.filter(meeting=meeting)
+    rooms = Room.objects.filter(meeting=meeting,session_types='session')
     if rooms:
         room = rooms[0]
     else:
