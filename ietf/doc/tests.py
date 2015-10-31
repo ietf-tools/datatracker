@@ -756,6 +756,11 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(doc.name in r.content)
 
+    def test_rfc_feed(self):
+        make_test_data()
+        r = self.client.get("/feed/rfc/")
+        self.assertTrue(r.status_code, 200)
+
     def test_state_help(self):
         url = urlreverse('state_help', kwargs=dict(type="draft-iesg"))
         r = self.client.get(url)

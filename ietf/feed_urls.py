@@ -1,7 +1,7 @@
 from django.conf.urls import patterns
 from django.views.generic import RedirectView
 
-from ietf.doc.feeds import DocumentChangesFeed, InLastCallFeed
+from ietf.doc.feeds import DocumentChangesFeed, InLastCallFeed, RfcFeed
 from ietf.group.feeds import GroupChangesFeed
 from ietf.iesg.feeds import IESGAgendaFeed
 from ietf.ipr.feeds import LatestIprDisclosuresFeed
@@ -18,4 +18,5 @@ urlpatterns = patterns(
     (r'^ipr/$', LatestIprDisclosuresFeed()),
     (r'^liaison/(?P<kind>recent|from|to|subject)/(?:(?P<search>[^/]+)/)?$', LiaisonStatementsFeed()),
     (r'^wg-proceedings/$', LatestMeetingMaterialFeed()),
+    (r'^rfc/$', RfcFeed())
 )
