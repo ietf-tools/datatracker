@@ -543,7 +543,7 @@ def new(request, acronym):
 
     # check if app is locked
     is_locked = check_app_locked()
-    if is_locked:
+    if is_locked and not has_role(request.user,'Secretariat'):
         messages.warning(request, "The Session Request Tool is closed")
         return redirect('sessions')
     
