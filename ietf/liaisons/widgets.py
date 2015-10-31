@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from django.db.models.query import QuerySet
 from django.forms.widgets import Widget
@@ -33,7 +32,7 @@ class ShowAttachmentsWidget(Widget):
         html += u'<div class="attachedFiles form-control widget">'
         if value and isinstance(value, QuerySet):
             for attachment in value:
-                html += u'<a class="initialAttach" href="%s%s">%s</a>&nbsp' % (settings.LIAISON_ATTACH_URL, conditional_escape(attachment.document.external_url), conditional_escape(attachment.document.title))
+                html += u'<a class="initialAttach" href="%s">%s</a>&nbsp' % (conditional_escape(attachment.document.href()), conditional_escape(attachment.document.title))
                 html += u'<a class="btn btn-default btn-xs" href="{}">Edit</a>&nbsp'.format(urlreverse("ietf.liaisons.views.liaison_edit_attachment", kwargs={'object_id':attachment.statement.pk,'doc_id':attachment.document.pk}))
                 html += u'<a class="btn btn-default btn-xs" href="{}">Delete</a>&nbsp'.format(urlreverse("ietf.liaisons.views.liaison_delete_attachment", kwargs={'object_id':attachment.statement.pk,'attach_id':attachment.pk}))
                 html += u'<br />'
