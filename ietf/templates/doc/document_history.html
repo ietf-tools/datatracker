@@ -82,8 +82,8 @@
   {% endif %}
 
   <h2>Document history</h2>
-  {% if user|has_role:"Area Director,Secretariat,IANA,RFC Editor" %}
-    <div class="buttonlist">
+  {% if can_add_comment %} 
+   <div class="buttonlist">
       <a class="btn btn-default" href="{% url "doc_add_comment" name=doc.name %}"><span class="fa fa-plus"></span> Add comment</a>
     </div>
   {% endif %}
