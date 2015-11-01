@@ -32,7 +32,7 @@ from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
 from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
-from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, meeting_updated
+from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, meeting_updated, get_meetings
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
 from ietf.meeting.helpers import convert_draft_to_pdf
 from ietf.utils.pipe import pipe
@@ -364,17 +364,17 @@ def agenda(request, num=None, name=None, base=None, ext=None):
         ".csv": "text/csv; charset=%s"%settings.DEFAULT_CHARSET,
     }
 
-    meeting_query = Meeting.objects.filter(number=num)    
+    meetings = get_meetings(num)
 
     # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
     # So that we're not producing misleading pages...
-    if not meeting_query.exists() or not meeting_query.first().agenda.assignments.exists():
+    if not meetings.exists() or not meetings.first().agenda.assignments.exists():
         if ext == '.html':
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
         else:
             raise Http404
 
-    meeting = meeting_query.first()
+    meeting = meetings.first()
     schedule = get_schedule(meeting, name)
     if schedule == None:
         base = base.replace("-utc", "")

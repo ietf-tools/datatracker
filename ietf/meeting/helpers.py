@@ -6,7 +6,7 @@ import os
 import re
 from tempfile import mkstemp
 
-from django.http import HttpRequest
+from django.http import HttpRequest, Http404
 from django.db.models import Max, Q, Prefetch, F
 from django.conf import settings
 from django.core.cache import cache
@@ -107,12 +107,19 @@ def get_wg_list(assignments):
     return Group.objects.filter(acronym__in = set(wg_name_list)).order_by('parent__acronym','acronym')
 
 
-def get_meeting(num=None):
+def get_meetings(num=None):
     if num == None:
-        meeting = Meeting.objects.filter(type="ietf").order_by("-date")[:1].get()
+        meetings = Meeting.objects.filter(type="ietf").order_by("-date")
     else:
-        meeting = get_object_or_404(Meeting, number=num)
-    return meeting
+        meetings = Meeting.objects.filter(type="ietf", number=num)
+    return meetings
+
+def get_meeting(num=None):
+    meetings = get_meetings(num)
+    if meetings.exists():
+        return meetings.first()
+    else:
+        raise Http404("No such meeting found: %s" % num)
 
 def get_schedule(meeting, name=None):
     if name is None:
