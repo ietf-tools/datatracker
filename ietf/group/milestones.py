@@ -276,6 +276,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                     set_attributes_from_form(f, f.milestone)
         elif action == "save" and not form_errors:
             changes = []
+            states = []
             for f in forms:
                 change = save_milestone_form(f)
 
@@ -290,9 +291,11 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                                                        by=request.user.person, desc=change, milestone=f.milestone)
 
                 changes.append(change)
+                states.append(f.milestone.state_id)
+
 
             if milestone_set == "current":
-                email_milestones_changed(request, group, changes)
+                email_milestones_changed(request, group, changes, states)
 
             if milestone_set == "charter":
                 return redirect('doc_view', name=group.charter.canonical_name())
