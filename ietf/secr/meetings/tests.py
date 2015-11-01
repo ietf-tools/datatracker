@@ -252,8 +252,9 @@ class MainTestCase(TestCase):
     def test_get_times(self):
         meeting = make_meeting_test_data()
         timeslot = meeting.timeslot_set.filter(type='session').first()
-        day = timeslot.time.weekday() + 2   # add 2 to match django __week_day filter
+        day = (timeslot.time.weekday() + 1) % 7 + 1  # fix up to match django __week_day filter
         times = get_times(meeting,day)
         values = [ x[0] for x in times ]
         self.assertTrue(times)
         self.assertTrue(timeslot.time.strftime('%H%M') in values)
+        
