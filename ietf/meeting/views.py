@@ -363,7 +363,18 @@ def agenda(request, num=None, name=None, base=None, ext=None):
         ".txt": "text/plain; charset=%s"%settings.DEFAULT_CHARSET,
         ".csv": "text/csv; charset=%s"%settings.DEFAULT_CHARSET,
     }
-    meeting = get_meeting(num)
+
+    meeting_query = Meeting.objects.filter(number=num)    
+
+    # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
+    # So that we're not producing misleading pages...
+    if not meeting_query.exists() or not meeting_query.first().agenda.assignments.exists():
+        if ext == '.html':
+            return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
+        else:
+            raise Http404
+
+    meeting = meeting_query.first()
     schedule = get_schedule(meeting, name)
     if schedule == None:
         base = base.replace("-utc", "")
