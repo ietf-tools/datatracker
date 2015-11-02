@@ -14,11 +14,11 @@
     <ul class="dropdown-menu" role="menu">
   {% endif %}
 
-<li><a href="{% url "ietf.group.info.active_groups" group_type="wg" %}">Active WGs</a></li>
-<li><a href="{% url "ietf.group.info.active_groups" group_type="rg" %}">Active RGs</a></li>
-<li class="dropdown-submenu group-menu"><a href="{% url "ietf.group.info.active_groups" %}">Other</a>{% active_groups_menu %} </li>
+  <li><a href="{% url "ietf.group.info.active_groups" group_type="wg" %}">Active WGs</a></li>
+  <li><a href="{% url "ietf.group.info.active_groups" group_type="rg" %}">Active RGs</a></li>
+  <li class="dropdown-submenu group-menu"><a href="{% url "ietf.group.info.active_groups" %}">Other</a>{% active_groups_menu %} </li>
 
-  {% if flavor == "top" %}<li class="divider visible-lg-block"></li>{% endif %}
+  {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
   <li {%if flavor == "top" %}class="dropdown-header visible-lg-block"{% else %}class="nav-header hidden-nojs"{% endif %}>By area/parent</li>
         {% wg_menu %}
         {# <li class="hidden-lg hidden-nojs"><a href="#" data-toggle="modal" data-target="#navmodal">Jump to group</a></li> #}
@@ -102,6 +102,8 @@
   <li><a href="/ipr/">IPR disclosures</a></li>
   <li><a href="/liaison/">Liaison statements</a></li>
   <li><a href="/iesg/agenda/">IESG agenda</a></li>
+  <li><a href="/group/edu/materials/">Tutorials</a></li>
+  {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
   <li><a href="https://tools.ietf.org/tools/ietfdb/newticket"><span class="fa fa-bug llarge"></span> Report a bug</a></li>
 {% if flavor == "top" %}</ul>{% endif %}
 
