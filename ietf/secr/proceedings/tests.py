@@ -14,6 +14,7 @@ from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import TestCase
 
+from ietf.name.models import SessionStatusName
 from ietf.secr.utils.meeting import get_proceedings_path
 
 SECR_USER='secretary'
@@ -27,19 +28,23 @@ class MainTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
+
 class RecordingTestCase(TestCase):
     def test_page(self):
-        make_test_data()
-        meeting = Meeting.objects.first()
+        meeting = make_meeting_test_data()
         url = reverse('proceedings_recording', kwargs={'meeting_num':meeting.number})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
     def test_post(self):
-        make_meeting_test_data()
-        meeting = Meeting.objects.first()
+        meeting = make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        session = Session.objects.filter(meeting=meeting,group=group,status__in=('sched','schedw')).first()
+        session = Session.objects.filter(meeting=meeting,group=group).first()
+        # explicitly set to scheduled for this test
+        status = SessionStatusName.objects.get(slug='sched')
+        session.status = status
+        session.save()
         url = reverse('proceedings_recording', kwargs={'meeting_num':meeting.number})
         data = dict(group=group.acronym,external_url='http://youtube.com/xyz',session=session.pk)
         self.client.login(username="secretary", password="secretary+password")
@@ -54,7 +59,8 @@ class RecordingTestCase(TestCase):
         response = self.client.post(url,dict(external_url=external_url),follow=True)
         self.assertEqual(response.status_code, 200)
         self.failUnless(external_url in response.content)
-        
+
+
 class BluesheetTestCase(TestCase):
     def setUp(self):
         self.proceedings_dir = os.path.abspath("tmp-proceedings-dir")
