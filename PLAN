@@ -1,0 +1,20 @@
+Datatracker PLAN
+
+Updated: 01 Nov 2015 18:33:44
+
+Planned work in rough order
+
+* Merge in the refactoring of saving document state
+
+* Glue code for WG issue trackers and wiki:
+  - create new trackers on group creation
+  - update access lists on group chair/secretary changes
+  - update components on new group documents
+
+* Transition to PostgreSQL
+
+* Performance analysis of database table and index setup
+
+* Add mysql lookup for draft aliases
+
+* Schema Changes: floorplan, and document tags
