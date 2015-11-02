@@ -1,8 +1,11 @@
+================
 Datatracker PLAN
+================
 
 Updated: 01 Nov 2015 18:33:44
 
 Planned work in rough order
+===========================
 
 * Merge in the refactoring of saving document state
 
@@ -18,3 +21,4 @@ Planned work in rough order
 * Add mysql lookup for draft aliases
 
 * Schema Changes: floorplan, and document tags
+
