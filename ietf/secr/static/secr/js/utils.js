@@ -127,7 +127,7 @@ function init_proceedings_upload() {
   // handle slide sorting
   $('#slides.sortable tbody').sortable({
      axis:'y',
-     containment:'parent',
+     //containment:'parent',
      update: function(event, ui){  
          var data = $(this).sortable("toArray");
          var element_id = ui.item.attr("id");
