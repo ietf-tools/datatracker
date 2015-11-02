@@ -332,7 +332,7 @@ def email_iana(request, doc, to, msg, cc=None):
     extra["X-IETF-Draft-string"] = doc.name
     extra["X-IETF-Draft-revision"] = doc.rev
     
-    send_mail_text(request, "IANA <%s>" % to,
+    send_mail_text(request, to,
                    parsed_msg["From"], parsed_msg["Subject"],
                    parsed_msg.get_payload(),
                    extra=extra,
