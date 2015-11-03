@@ -38,7 +38,7 @@ COPYRIGHT
 """
 from __future__ import print_function
 
-import sys, os.path, getopt, re
+import sys, os.path, getopt, re, tzparse, pytz
 import debug
 
 version = "0.20"
@@ -130,7 +130,9 @@ def split_loginfo(line):
     who = parts[2]
     date = parts[4]
     time = parts[5]
-    when = "%s_%s" % (date, time)
+    tz   = parts[6]
+    when = tzparse.tzparse(" ".join(parts[4:7]), "%Y-%m-%d %H:%M:%S %Z")
+    when = when.astimezone(pytz.utc)
     return rev, who, when
 
 # ----------------------------------------------------------------------
@@ -235,7 +237,7 @@ def get_ready_commits(repo, tree):
             branch = '/'.join(path.split('/')[1:4])
         elif re.search("(?i)((commit|branch) ready (for|to) merge)", line):
             if not (rev in merged_revs and branch == merged_revs[rev]):
-                note("   %s  %s: %s@%s" % (when, who, branch, rev))
+                note("   %s  %s: %s@%s" % (when.strftime("%Y-%m-%d %H:%MZ"), who, branch, rev))
                 list += [(rev, repo, branch),]
             elif rev in merged_revs and not branch == merged_revs[rev]:
                 sys.stderr.write('Rev %s: %s != %s' % (rev, branch, merged_revs[rev]))                
@@ -282,7 +284,7 @@ for entry in ready:
     # 
     merge_path = os.path.join(*path.split(os.path.sep)[:4])
     if not (rev, repo, merge_path) in hold:
-        output_line = "%s  %-24s %s@%s" % (when, who+":", merge_path, rev)
+        output_line = "%s  %-24s %s@%s" % (when.strftime("%Y-%m-%d_%H:%MZ"), who+":", merge_path, rev)
         if unittest == 'passed':
             ready_commits[when] = output_line
         else:
