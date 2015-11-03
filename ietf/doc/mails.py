@@ -473,6 +473,7 @@ def email_charter_internal_review(request, charter):
                    ads=charter.group.role_set.filter(name='ad').values_list('person__name',flat=True),
                    charter_text=charter_text,
                    milestones=charter.group.groupmilestone_set.filter(state="charter"),
+                   review_type = "new" if charter.group.state_id == "proposed" else "recharter",
               ),
               cc=addrs.cc,
               extra={'Reply-To':"iesg@ietf.org"},
