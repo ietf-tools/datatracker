@@ -279,6 +279,7 @@ var searchForm = {
     init : function() {
         searchForm.form = $(this);
         searchForm.form.find(".search_field input,select").change(searchForm.toggleSubmit).click(searchForm.toggleSubmit).keyup(searchForm.toggleSubmit);
+        $("#search-clear-btn").bind("click", searchForm.clearForm);
     },
 
     anyAdvancedActive : function() {
@@ -298,6 +299,11 @@ var searchForm = {
     toggleSubmit : function() {
         var textSearch = $.trim($("#id_text").val());
         searchForm.form.find("button[type=submit]").get(0).disabled = !textSearch && !searchForm.anyAdvancedActive();
+    },
+    
+    clearForm : function() {
+        var form = $(this).parents("form");
+        form.find("input").val("");
     }
 }
 

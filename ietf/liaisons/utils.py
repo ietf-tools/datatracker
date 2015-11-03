@@ -11,7 +11,7 @@ can_submit_liaison_required = passes_test_decorator(
 def approvable_liaison_statements(user):
     '''Returns a queryset of Liaison Statements in pending state that user has authority
     to approve'''
-    liaisons = LiaisonStatement.objects.filter(state__slug='pending')
+    liaisons = LiaisonStatement.objects.filter(state__slug__in=('pending','dead'))
     person = get_person_for_user(user)
     if has_role(user, "Secretariat"):
         return liaisons
@@ -27,9 +27,19 @@ def approvable_liaison_statements(user):
     return liaisons.filter(id__in=approvable_liaisons)
 
 def can_edit_liaison(user, liaison):
-    '''Return True if user is Secretariat or Liaison Manager of all SDO groups involved'''
+    '''Returns True if user has edit / approval authority.
+    
+    True if:
+    - user is Secretariat
+    - liaison is outgoing and user has approval authority
+    - user is liaison manager of all SDOs involved
+    '''
     if has_role(user, "Secretariat"):
         return True
+
+    if liaison.is_outgoing() and liaison in approvable_liaison_statements(user):
+        return True
+
     if has_role(user, "Liaison Manager"):
         person = get_person_for_user(user)
         for group in chain(liaison.from_groups.filter(type_id='sdo'),liaison.to_groups.filter(type_id='sdo')):

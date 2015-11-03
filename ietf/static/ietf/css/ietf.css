@@ -320,6 +320,10 @@ ampersand you get is dependent on which fonts are available in the browser.  Hac
 
 /* misc pages */
 
+.liaison-group-col {
+    min-width: 10em;
+}
+
 #reset-charter-milestones .date {
   display: inline-block;
   min-width: 5em;

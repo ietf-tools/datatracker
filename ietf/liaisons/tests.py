@@ -889,6 +889,7 @@ class LiaisonManagementTests(TestCase):
             from_groups = ','.join([ str(x.pk) for x in liaison.from_groups.all() ]),
             from_contact = liaison.from_contact.address,
             to_groups = ','.join([ str(x.pk) for x in liaison.to_groups.all() ]),
+            to_contacts = 'to_contacts@example.com',
             purpose = liaison.purpose.slug,
             deadline = liaison.deadline,
             title = liaison.title,

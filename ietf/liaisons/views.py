@@ -5,7 +5,7 @@ from email.utils import parseaddr
 from django.contrib import messages
 from django.core.urlresolvers import reverse as urlreverse
 from django.core.validators import validate_email, ValidationError
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
@@ -21,6 +21,7 @@ from ietf.liaisons.utils import (get_person_for_user, can_add_outgoing_liaison,
 from ietf.liaisons.forms import liaison_form_factory, SearchLiaisonForm, EditAttachmentForm
 from ietf.liaisons.mails import notify_pending_by_email, send_liaison_by_email
 from ietf.liaisons.fields import select2_id_liaison_json
+from ietf.name.models import LiaisonStatementTagName
 
 EMAIL_ALIASES = {
     'IETFCHAIR':'The IETF Chair <chair@ietf.org>',
@@ -303,7 +304,10 @@ def liaison_add(request, type=None, **kwargs):
             liaison = form.save()
 
             # notifications
-            if 'send' in request.POST and liaison.state.slug == 'posted':
+            if 'save' in request.POST:
+                # the result of an edit, no notifications necessary
+                messages.success(request, 'The statement has been updated')
+            elif 'send' in request.POST and liaison.state.slug == 'posted':
                 send_liaison_by_email(request, liaison)
                 messages.success(request, 'The statement has been sent and posted')
             elif liaison.state.slug == 'pending':
@@ -434,8 +438,14 @@ def liaison_edit_attachment(request, object_id, doc_id):
 
 def liaison_list(request, state='posted'):
     """A generic list view with tabs for different states: posted, pending, dead"""
-    liaisons = LiaisonStatement.objects.filter(state=state)
-
+    # use prefetch to speed up main liaison page load
+    liaisons = LiaisonStatement.objects.filter(state=state).prefetch_related(
+        Prefetch('from_groups',queryset=Group.objects.order_by('acronym').select_related('type'),to_attr='prefetched_from_groups'),
+        Prefetch('to_groups',queryset=Group.objects.order_by('acronym').select_related('type'),to_attr='prefetched_to_groups'),
+        Prefetch('tags',queryset=LiaisonStatementTagName.objects.filter(slug='taken'),to_attr='prefetched_tags'),
+        Prefetch('liaisonstatementevent_set',queryset=LiaisonStatementEvent.objects.filter(type='posted'),to_attr='prefetched_posted_events')
+        )
+    
     # check authorization for pending and dead tabs
     if state in ('pending','dead') and not can_add_liaison(request.user):
         msg = "Restricted to participants who are authorized to submit liaison statements on behalf of the various IETF entities"
@@ -443,23 +453,26 @@ def liaison_list(request, state='posted'):
 
     # perform search / filter
     if 'text' in request.GET:
-        form = SearchLiaisonForm(data=request.GET)
+        form = SearchLiaisonForm(data=request.GET,state=state)
         search_conducted = True
         if form.is_valid():
             results = form.get_results()
             liaisons = results
     else:
-        form = SearchLiaisonForm()
+        form = SearchLiaisonForm(state=state)
         search_conducted = False
 
     # perform sort
     sort, order_by = normalize_sort(request)
     if sort == 'date':
         liaisons = sorted(liaisons, key=lambda a: a.sort_date, reverse=True)
+
     if sort == 'from_groups':
-        liaisons = sorted(liaisons, key=lambda a: a.from_groups_display)
+        liaisons = sorted(liaisons, key=lambda a: a.sort_date, reverse=True)
+        liaisons = sorted(liaisons, key=lambda a: a.from_groups_display.lower())
     if sort == 'to_groups':
-        liaisons = sorted(liaisons, key=lambda a: a.to_groups_display)
+        liaisons = sorted(liaisons, key=lambda a: a.sort_date, reverse=True)
+        liaisons = sorted(liaisons, key=lambda a: a.to_groups_display.lower())
     if sort == 'deadline':
         liaisons = liaisons.order_by('-deadline')
     if sort == 'title':
@@ -501,6 +514,7 @@ def liaison_reply(request,object_id):
     initial = dict(
         to_groups=[ x.pk for x in liaison.from_groups.all() ],
         from_groups=[ x.pk for x in liaison.to_groups.all() ],
+        to_contacts=liaison.response_contacts,
         related_to=str(liaison.pk))
 
     return liaison_add(request,type=reply_type,initial=initial)

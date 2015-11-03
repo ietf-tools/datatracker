@@ -21,12 +21,21 @@
   <td>{{ liaison.state }}</td>
 </tr>
 <tr>
-  <th class="text-nowrap">Submission Date</th>
-  <td>{{ liaison.submitted|date:"Y-m-d" }}</td></tr>
+  {% if liaison.state.slug == "posted" %}
+    <th class="text-nowrap">Posted Date</th>
+    <td>{{ liaison.posted|date:"Y-m-d" }}</td></tr>
+  {% else %}
+    <th class="text-nowrap">Submitted Date</th>
+    <td>{{ liaison.submitted|date:"Y-m-d" }}</td></tr>
+  {% endif %}
+<tr>
+  <th class="text-nowrap">From Group{{ liaison.from_groups.all|pluralize }}</th>
+  <td>{{ liaison.from_groups_display }}</td>
+</tr>
 
 {% if liaison.from_contact %}
 <tr>
-  <th class="text-nowrap">Sender</th>
+  <th class="text-nowrap">From Contact</th>
   <td>
     <a href="mailto:{{ liaison.from_contact.address }}">{{ liaison.from_contact.person }}</a>
   </td>
@@ -34,14 +43,18 @@
 {% endif %}
 
 <tr>
-  <th class="text-nowrap">From</th>
-  <td>{{ liaison.from_groups_display }}</td>
-</tr>
-
-<tr>
-  <th class="text-nowrap">To</th>
+  <th class="text-nowrap">To Group{{ liaison.to_groups.all|pluralize }}</th>
   <td>{{ liaison.to_groups_display }}</td>
 </tr>
+
+{% if liaison.to_contacts %}
+<tr>
+  <th class="text-nowrap">To Contacts</th>
+  <td>
+    {{ liaison.to_contacts|parse_email_list|make_one_per_line|safe|linebreaksbr }}
+  </td>
+</tr>
+{% endif %}
 
 {% if liaison.cc_contacts %}
   <tr>
@@ -177,7 +190,9 @@
 
 <form method="post">
   {% csrf_token %}
-  {% if liaison.state.slug != 'dead' and can_edit %}
+  {% if liaison.state.slug == 'pending' and can_edit %}
+    <a class="btn btn-default" href="{% url "ietf.liaisons.views.liaison_edit" object_id=liaison.pk %}">Edit liaison</a>
+  {% elif liaison.state.slug == 'posted' and  user|has_role:"Secretariat" %}
     <a class="btn btn-default" href="{% url "ietf.liaisons.views.liaison_edit" object_id=liaison.pk %}">Edit liaison</a>
   {% endif %}
   {% if liaison.state.slug != 'dead' and can_reply %}

@@ -46,6 +46,13 @@ with the IAB).
 def liaison_manager_sdos(person):
     return Group.objects.filter(type="sdo", state="active", role__person=person, role__name="liaiman").distinct()
 
+def flatten_choices(choices):
+    '''Returns a flat choice list given one with option groups defined'''
+    flat = []
+    for optgroup,options in choices:
+        flat.extend(options)
+    return flat
+    
 def get_internal_choices(user):
     '''Returns the set of internal IETF groups the user has permissions for, as a list
     of choices suitable for use in a select widget.  If user == None, all active internal
@@ -75,7 +82,8 @@ def get_groups_for_person(person):
         queries = [Q(role__person=person,role__name='chair',acronym='ietf'),
                    Q(role__person=person,role__name__in=('chair','execdir'),acronym='iab'),
                    Q(role__person=person,role__name='ad',type='area',state='active'),
-                   Q(role__person=person,role__name__in=('chair','secretary'),type='wg',state='active')]
+                   Q(role__person=person,role__name__in=('chair','secretary'),type='wg',state='active'),
+                   Q(parent__role__person=person,parent__role__name='ad',type='wg',state='active')]
     return Group.objects.filter(reduce(operator.or_,queries)).order_by('acronym').distinct()
 
 def liaison_form_factory(request, type=None, **kwargs):
@@ -126,15 +134,25 @@ class SearchLiaisonForm(forms.Form):
     start_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Start date', required=False)
     end_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='End date', required=False)
 
+    def __init__(self, *args, **kwargs):
+        self.state = kwargs.pop('state')
+        super(SearchLiaisonForm, self).__init__(*args, **kwargs)
+
     def get_results(self):
-        results = LiaisonStatement.objects.filter(state__slug='posted')
+        results = LiaisonStatement.objects.filter(state=self.state)
         if self.is_bound:
             query = self.cleaned_data.get('text')
             if query:
-                q = (Q(title__icontains=query) | Q(other_identifiers__icontains=query) | Q(body__icontains=query) |
-                         Q(attachments__title__icontains=query,liaisonstatementattachment__removed=False) |
-                         Q(technical_contacts__icontains=query) | Q(action_holder_contacts__icontains=query) |
-                         Q(cc_contacts=query) | Q(response_contacts__icontains=query))
+                q = (Q(title__icontains=query) |
+                    Q(from_contact__address__icontains=query) |
+                    Q(to_contacts__icontains=query) |
+                    Q(other_identifiers__icontains=query) |
+                    Q(body__icontains=query) |
+                    Q(attachments__title__icontains=query,liaisonstatementattachment__removed=False) |
+                    Q(technical_contacts__icontains=query) | 
+                    Q(action_holder_contacts__icontains=query) |
+                    Q(cc_contacts=query) |
+                    Q(response_contacts__icontains=query))
                 results = results.filter(q)
 
             source = self.cleaned_data.get('source')
@@ -209,7 +227,8 @@ class LiaisonModelForm(BetterModelForm):
         self.fields["from_groups"].widget.attrs["placeholder"] = "Type in name to search for group"
         self.fields["to_groups"].widget.attrs["placeholder"] = "Type in name to search for group"
         self.fields["to_contacts"].label = 'Contacts'
-
+        self.fields["other_identifiers"].widget.attrs["rows"] = 2
+        
         # add email validators
         for field in ['from_contact','to_contacts','technical_contacts','action_holder_contacts','cc_contacts']:
             if field in self.fields:
@@ -408,7 +427,14 @@ class OutgoingLiaisonForm(LiaisonModelForm):
     def set_from_fields(self):
         '''Set from_groups and from_contact options and initial value based on user
         accessing the form'''
-        self.fields['from_groups'].choices = get_internal_choices(self.user)
+        choices = get_internal_choices(self.user)
+        self.fields['from_groups'].choices = choices
+        
+        # set initial value if only one entry 
+        flat_choices = flatten_choices(choices)
+        if len(flat_choices) == 1:
+            self.fields['from_groups'].initial = [flat_choices[0][0]]
+        
         if has_role(self.user, "Secretariat"):
             return
 
