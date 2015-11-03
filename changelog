@@ -1,3 +1,88 @@
+ietfdb (6.8.0) ietf; urgency=medium
+
+  **IETF 94 Code Sprint**
+
+  This release contains the datatracker bugfixes and enhancements from the
+  IETF-94 Code Sprint.  This brings many small but useful bugfixes and
+  enhancements, as described below. Many thanks to everyone who contributed!
+
+  This release also brings a change which is not a code change, but rather a
+  packaging change which has made the question of what the licence is for the
+  datatracker code more difficult than need be.  Starting with this release,
+  we don't handle version control of the Django framework by including it in
+  the repository; we instead version control it throug the requirements.txt
+  file.  This lets us be very simple and clear in the LICENSE file which
+  covers the datatracker code.
+
+  There are additional code sprint changes expected during the week; they will
+  get their own release later in the week.
+
+  Here are details about the changes, extracted from the commit log:
+
+  * Added a direct menu link to tutorials under Other.  Tweaked a divider 
+    visibility.
+
+  * Merged in [10363] from rjsparks@nostrum.com:
+    email_iana needs to leave address generation to mailtrigger and not try 
+    to rewrap the address.  This should be patched into production. 
+
+  * Merged in [10349] from rcross@amsl.com:
+    Fixes Ticket #1834.  Sorting slides difficult when there are only two 
+    of them.   
+
+  * Merged in [10348] from rcross@amsl.com:
+    Add more information to Secretariat session recordings view.   
+
+  * Merged in [10347] from rjsparks@nostrum.com:
+    Allow entering more than one email address in addtional cc on the send 
+    ballot comments form. Fixes #1811.  
+
+  * Merged in [10346] from suresh.krishnan@ericsson.com:
+    Changes to unapproved milestones (e.g. attaching a draft) will not 
+    trigger a mail to the WG. Fixes #1818.  
+
+  * Fixed an issue with [10344], where the numberless /meeting/agenda/ 
+    would redirect to a non-existing proceedings URL.
+
+  * Fixed a weekday numbering problem in a test.
+
+  * Merged in [10345] from rjsparks@nostrum.com:
+    Added an RSS feed for RFCs for use with the digital preservation 
+    project.
+
+  * Merged in [10344] from rjsparks@nostrum.com:
+    Return more sensible results for agendas for old meetings. Fixes #1062.
+
+  * Merged in [10343] from housley@vigilsec.com:
+    Add check to addcomment for WG/RG chair or secretary.
+
+  * Merged in [10342] from rcross@amsl.com:
+    The session request form validation needs to check that durations have
+    been entered for each requested session.  Fixes issue #1794.
+
+  * Merged in [10341] from housley@vigilsec.com:
+    WG/RG chairs and secretaries can add comments to document history; get
+    non-active I-Ds from www.ietf.org instead of tools.ietf.org. Fixes issues
+    #1702, #1801, #1831.
+
+  * Merged in [10340] from rcross@amsl.com:
+    Change liaisons ShowAttachmentsWidget to use href().  Fixes issue #1805.  
+
+  * Merged in [10339] from rcross@amsl.com:
+    Secretariat locked out of Session Request Tool.  Fixes Ticket #1791.  
+
+  * Merged in [10338] from rcross@amsl.com:
+    Legacy session scheduling view broken.  Fixes Ticket #1806.  
+
+  * Removed our local copy of Django, and added it to the requirements 
+    instead.  Updated the LICENSE to match, as we're not carrying along 
+    external components in the repository any more.
+
+  * Replaced a remaining use of removed function smtp_error_logging().
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Nov 2015 03:15:47 +0000
+
+
 ietfdb (6.7.2) ietf; urgency=medium
 
   This is a maintenance release which does a longtime pending model rename,
