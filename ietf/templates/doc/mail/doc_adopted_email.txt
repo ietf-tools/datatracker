@@ -1,5 +1,6 @@
 {% autoescape off %}{% filter wordwrap:73 %}
-The {{ doc.group.acronym|upper }} {{ doc.group.type_id|upper }} has adopted {{ doc }} (entered by {{by}})
+The {{ doc.group.acronym|upper }} {{ doc.group.type_id|upper }} has placed {{ doc }} in state 
+{{ new_state|default:'"None"'}} (entered by {{by}})
 
 {% if prev_state %}The document was previously in state {{prev_state.name}}
 

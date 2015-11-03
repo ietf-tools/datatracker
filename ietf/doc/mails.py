@@ -393,8 +393,8 @@ def email_adopted(request, doc, prev_state, new_state, by, comment=""):
     state_type = (prev_state or new_state).type
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
-              u"The %s %s has adopted %s" % 
-                  (doc.group.acronym.upper(),doc.group.type_id.upper(), doc.name),
+              u'The %s %s has placed %s in state "%s"' % 
+                  (doc.group.acronym.upper(),doc.group.type_id.upper(), doc.name, new_state or "None"),
               'doc/mail/doc_adopted_email.txt',
               dict(doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
