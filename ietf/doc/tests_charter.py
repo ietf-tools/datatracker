@@ -102,12 +102,22 @@ class EditCharterTests(TestCase):
             if slug=="intrev":
                 self.assertTrue("Internal WG Review" in outbox[-3]['Subject'])
                 self.assertTrue(all([x in outbox[-3]['To'] for x in ['iab@','iesg@']]))
+                self.assertTrue("A new IETF working" in unicode(outbox[-3]))
 
             self.assertTrue("state changed" in outbox[-2]['Subject'].lower())
             self.assertTrue("iesg-secretary@" in outbox[-2]['To'])
 
             self.assertTrue("State Update Notice" in outbox[-1]['Subject'])
             self.assertTrue("ames-chairs@" in outbox[-1]['To'])
+
+        # Exercise internal review of a recharter
+        group = Group.objects.get(acronym="mars")
+        charter = group.charter
+        url = urlreverse('charter_change_state', kwargs=dict(name=charter.name))
+        empty_outbox()
+        r = self.client.post(url, dict(charter_state=str(State.objects.get(used=True,type="charter",slug="intrev").pk), message="test"))
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue("A new charter" in unicode(outbox[-3]))
                     
     def test_edit_telechat_date(self):
         make_test_data()

@@ -1,6 +1,6 @@
 {% autoescape off %}{% filter wordwrap:73 %}
 
-A new IETF working group is being considered in the {{charter.group.parent.name}}. The draft charter for this working group is provided below for your review and comment.                
+{% if review_type == "new" %}A new IETF working group is being considered in the {{ charter.group.parent.name }}.{% endif %}{% if review_type == "recharter" %}A new charter for the {{ charter.group.name }} ({{charter.group.acronym}}) working group in the {{ charter.group.parent.name }} of the IETF is being considered. {% endif %} The draft charter for this working group is provided below for your review and comment.                
 
 Review time is one week.               
 
