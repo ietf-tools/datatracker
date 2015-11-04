@@ -11,7 +11,7 @@ from pyquery import PyQuery
 from ietf.doc.models import Document
 from ietf.meeting.models import Session, TimeSlot
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 
 class MeetingTests(TestCase):
     def setUp(self):
@@ -97,9 +97,9 @@ class MeetingTests(TestCase):
         self.assertTrue(session.group.parent.acronym.upper() in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
 
-        self.assertTrue(session.materials.get(type='agenda').external_url in r.content)
-        self.assertTrue(session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().external_url in r.content)
-        self.assertFalse(session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().external_url in r.content)
+        self.assertTrue(session.materials.get(type='agenda').external_url in unicontent(r))
+        self.assertTrue(session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().external_url in unicontent(r))
+        self.assertFalse(session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().external_url in unicontent(r))
 
         # iCal
         r = self.client.get(urlreverse("ietf.meeting.views.ical_agenda", kwargs=dict(num=meeting.number))
@@ -112,10 +112,10 @@ class MeetingTests(TestCase):
         self.assertTrue("BEGIN:VTIMEZONE" in agenda_content)
         self.assertTrue("END:VTIMEZONE" in agenda_content)        
 
-        self.assertTrue(session.agenda().get_absolute_url() in r.content)
-        self.assertTrue(session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().get_absolute_url() in r.content)
+        self.assertTrue(session.agenda().get_absolute_url() in unicontent(r))
+        self.assertTrue(session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().get_absolute_url() in unicontent(r))
         # TODO - the ics view uses .all on a queryset in a view so it's showing the deleted slides.
-        #self.assertFalse(session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().get_absolute_url() in r.content)
+        #self.assertFalse(session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().get_absolute_url() in unicontent(r))
 
         # week view
         r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))
@@ -129,7 +129,7 @@ class MeetingTests(TestCase):
         url = urlreverse("ietf.meeting.views.agenda_by_room",kwargs=dict(num=meeting.number))
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertTrue(all([x in r.content for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
+        self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
 
     def test_agenda_by_type(self):
         meeting = make_meeting_test_data()
@@ -137,31 +137,31 @@ class MeetingTests(TestCase):
         url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number))
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertTrue(all([x in r.content for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
+        self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
 
         url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,type='session'))
         r = self.client.get(url)
-        self.assertTrue(all([x in r.content for x in ['mars','Test Room']]))
-        self.assertFalse(any([x in r.content for x in ['IESG Breakfast','Breakfast Room']]))
+        self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room']]))
+        self.assertFalse(any([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
 
         url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,type='lead'))
         r = self.client.get(url)
-        self.assertFalse(any([x in r.content for x in ['mars','Test Room']]))
-        self.assertTrue(all([x in r.content for x in ['IESG Breakfast','Breakfast Room']]))
+        self.assertFalse(any([x in unicontent(r) for x in ['mars','Test Room']]))
+        self.assertTrue(all([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
 
     def test_agenda_room_view(self):
         meeting = make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number))
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertTrue(all([x in r.content for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
+        self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
 
     def test_session_details(self):
         meeting = make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=meeting.number, acronym="mars"))
         r = self.client.get(url)
-        self.assertTrue(all([x in r.content for x in ('slides','agenda','minutes')]))
-        self.assertFalse('deleted' in r.content)
+        self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes')]))
+        self.assertFalse('deleted' in unicontent(r))
 
     def test_materials(self):
         meeting = make_meeting_test_data()
@@ -173,7 +173,7 @@ class MeetingTests(TestCase):
         r = self.client.get(urlreverse("ietf.meeting.views.session_agenda",
                                        kwargs=dict(num=meeting.number, session=session.group.acronym)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("1. WG status" in r.content)
+        self.assertTrue("1. WG status" in unicontent(r))
 
         # early materials page
         r = self.client.get(urlreverse("ietf.meeting.views.current_materials"))
@@ -198,8 +198,8 @@ class MeetingTests(TestCase):
 
         r = self.client.get("/feed/wg-proceedings/")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("agenda" in r.content)
-        self.assertTrue(session.group.acronym in r.content)
+        self.assertTrue("agenda" in unicontent(r))
+        self.assertTrue(session.group.acronym in unicontent(r))
 
 class EditTests(TestCase):
     def setUp(self):
@@ -215,7 +215,7 @@ class EditTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("load_assignments" in r.content)
+        self.assertTrue("load_assignments" in unicontent(r))
 
     def test_save_agenda_as_and_read_permissions(self):
         meeting = make_meeting_test_data()
@@ -311,7 +311,7 @@ class EditTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_timeslots", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(meeting.room_set.all().first().name in r.content)
+        self.assertTrue(meeting.room_set.all().first().name in unicontent(r))
 
     def test_slot_to_the_right(self):
         meeting = make_meeting_test_data()

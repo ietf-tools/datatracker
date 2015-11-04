@@ -15,7 +15,7 @@ from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data
 
 from ietf.meeting.test_data import make_meeting_test_data
@@ -59,7 +59,7 @@ class GroupMaterialTests(TestCase):
         # normal get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Slides" in r.content)
+        self.assertTrue("Slides" in unicontent(r))
 
         url = urlreverse('ietf.doc.views_material.choose_material_type', kwargs=dict(acronym='mars'))
         r = self.client.get(url)

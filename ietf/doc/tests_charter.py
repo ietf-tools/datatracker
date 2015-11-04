@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2011, All Rights Reserved
 
 import os, shutil, datetime
@@ -13,7 +14,7 @@ from ietf.doc.utils_charter import next_revision, default_review_text, default_a
 from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
@@ -102,7 +103,7 @@ class EditCharterTests(TestCase):
             if slug=="intrev":
                 self.assertTrue("Internal WG Review" in outbox[-3]['Subject'])
                 self.assertTrue(all([x in outbox[-3]['To'] for x in ['iab@','iesg@']]))
-                self.assertTrue("A new IETF working" in unicode(outbox[-3]))
+                self.assertTrue("A new IETF working" in outbox[-3].get_payload())
 
             self.assertTrue("state changed" in outbox[-2]['Subject'].lower())
             self.assertTrue("iesg-secretary@" in outbox[-2]['To'])
@@ -117,7 +118,7 @@ class EditCharterTests(TestCase):
         empty_outbox()
         r = self.client.post(url, dict(charter_state=str(State.objects.get(used=True,type="charter",slug="intrev").pk), message="test"))
         self.assertEqual(r.status_code, 302)
-        self.assertTrue("A new charter" in unicode(outbox[-3]))
+        self.assertTrue("A new charter" in outbox[-3].get_payload())
                     
     def test_edit_telechat_date(self):
         make_test_data()
@@ -262,7 +263,7 @@ class EditCharterTests(TestCase):
 
         r = self.client.post(url, dict(txt=test_file))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("does not appear to be a text file" in r.content)
+        self.assertTrue("does not appear to be a text file" in unicontent(r))
 
         # post
         prev_rev = charter.rev
@@ -430,7 +431,7 @@ class EditCharterTests(TestCase):
         with open(os.path.join(self.charter_dir, "%s-%s.txt" % (charter.canonical_name(), charter.rev)), "w") as f:
             f.write("This is a charter.")
 
-        p = Person.objects.get(name="Aread Irector")
+        p = Person.objects.get(name="Areað Irector")
 
         BallotDocEvent.objects.create(
             type="created_ballot",
@@ -514,4 +515,4 @@ class EditCharterTests(TestCase):
         url = urlreverse('charter_with_milestones_txt', kwargs=dict(name=charter.name, rev=charter.rev))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(m.desc in r.content)
+        self.assertTrue(m.desc in unicontent(r))

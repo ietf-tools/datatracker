@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import shutil
 import datetime
@@ -18,7 +19,7 @@ from ietf.group.models import Group
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
-from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import TestCase
@@ -158,7 +159,7 @@ class ChangeStateTests(TestCase):
 
         self.assertTrue(not draft.latest_event(type="changed_ballot_writeup_text"))
         r = self.client.post(url, dict(state=State.objects.get(used=True, type="draft-iesg", slug="lc-req").pk))
-        self.assertTrue("Your request to issue" in r.content)
+        self.assertTrue("Your request to issue" in unicontent(r))
 
         # last call text
         e = draft.latest_event(WriteupDocEvent, type="changed_last_call_text")
@@ -353,7 +354,7 @@ class EditInfoTests(TestCase):
         events_before = draft.docevent_set.count()
         mailbox_before = len(outbox)
 
-        ad = Person.objects.get(name="Aread Irector")
+        ad = Person.objects.get(name="Areað Irector")
 
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level_id),
@@ -446,7 +447,7 @@ class ResurrectTests(TestCase):
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
         e = draft.latest_event(type="requested_resurrect")
         self.assertTrue(e)
-        self.assertEqual(e.by, Person.objects.get(name="Aread Irector"))
+        self.assertEqual(e.by, Person.objects.get(name="Areað Irector"))
         self.assertTrue("Resurrection" in e.desc)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Resurrection" in outbox[-1]['Subject'])
@@ -458,7 +459,7 @@ class ResurrectTests(TestCase):
 
         DocEvent.objects.create(doc=draft,
                              type="requested_resurrect",
-                             by=Person.objects.get(name="Aread Irector"))
+                             by=Person.objects.get(name="Areað Irector"))
 
         url = urlreverse('doc_resurrect', kwargs=dict(name=draft.name))
         
@@ -905,7 +906,7 @@ class IndividualInfoFormsTests(TestCase):
         self.assertTrue(any(['Document shepherd changed to (None)' in x.desc for x in self.doc.docevent_set.filter(time=self.doc.time,type='added_comment')]))
         
         # test buggy change
-        ad = Person.objects.get(name='Aread Irector')
+        ad = Person.objects.get(name='Areað Irector')
         two_answers = "%s,%s" % (plain_email, ad.email_set.all()[0])
         r = self.client.post(url, dict(shepherd=two_answers))
         self.assertEqual(r.status_code, 200)

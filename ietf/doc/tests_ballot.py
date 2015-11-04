@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import datetime
 from pyquery import PyQuery
 
@@ -11,7 +12,7 @@ from ietf.group.models import Group, Role
 from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
@@ -24,7 +25,7 @@ class EditPositionTests(TestCase):
                                                           ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
         login_testing_unauthorized(self, "ad", url)
 
-        ad = Person.objects.get(name="Aread Irector")
+        ad = Person.objects.get(name="Areað Irector")
         
         # normal get
         r = self.client.get(url)
@@ -84,7 +85,7 @@ class EditPositionTests(TestCase):
         draft = make_test_data()
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name,
                                                           ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
-        ad = Person.objects.get(name="Aread Irector")
+        ad = Person.objects.get(name="Areað Irector")
         url += "?ad=%s" % ad.pk
         login_testing_unauthorized(self, "secretary", url)
 
@@ -127,7 +128,7 @@ class EditPositionTests(TestCase):
         draft.notify = "somebody@example.com"
         draft.save()
 
-        ad = Person.objects.get(name="Aread Irector")
+        ad = Person.objects.get(name="Areað Irector")
 
         ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
 
@@ -263,7 +264,7 @@ class BallotWriteupsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
         self.assertTrue(q('[type=submit]:contains("Save")'))
-        self.assertTrue("IANA does not" in r.content)
+        self.assertTrue("IANA does not" in unicontent(r))
 
         # save
         r = self.client.post(url, dict(
@@ -455,7 +456,7 @@ class DeferUndeferTestCase(TestCase):
 
         e = TelechatDocEvent(type="scheduled_for_telechat",
                              doc = doc,
-                             by = Person.objects.get(name="Aread Irector"),
+                             by = Person.objects.get(name="Areað Irector"),
                              telechat_date = first_date,
                              returning_item = False, 
                             )
@@ -511,7 +512,7 @@ class DeferUndeferTestCase(TestCase):
 
         e = TelechatDocEvent(type="scheduled_for_telechat",
                              doc = doc,
-                             by = Person.objects.get(name="Aread Irector"),
+                             by = Person.objects.get(name="Areað Irector"),
                              telechat_date = second_date,
                              returning_item = True, 
                             )

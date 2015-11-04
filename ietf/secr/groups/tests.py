@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.core.urlresolvers import reverse
 from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
@@ -89,7 +90,7 @@ class GroupsTest(TestCase):
         make_test_data()
         group = Group.objects.filter(acronym='mars')[0]
         area = Group.objects.filter(acronym='farfut')[0]
-        ad = Person.objects.get(name='Aread Irector')        
+        ad = Person.objects.get(name='Areað Irector')        
         url = reverse('groups_edit', kwargs={'acronym':group.acronym})
         target = reverse('groups_view', kwargs={'acronym':group.acronym})
         post_data = {'acronym':group.acronym,
@@ -120,7 +121,7 @@ class GroupsTest(TestCase):
 
     def test_people_add(self):
         make_test_data()
-        person = Person.objects.get(name='Aread Irector')
+        person = Person.objects.get(name='Areað Irector')
         group = Group.objects.filter(acronym='mars')[0]
         url = reverse('groups_people', kwargs={'acronym':group.acronym})
         post_data = {'name':'chair',

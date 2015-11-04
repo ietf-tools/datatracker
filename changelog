@@ -1,5 +1,37 @@
 ietfdb (6.8.0) ietf; urgency=medium
 
+  * Merged in [10414] from rjsparks@nostrum.com:
+    Put possibly replaces sections in the right columns. Fixes #1802.  
+
+  * Keep draft aliases for 2 years rather than 1 year from posting.
+
+  * Merged in [10405] from rjsparks@nostrum.com:
+    Addresses an issue where the WG document page would show the same document
+    in more than one section. Fixes #1827.  
+
+  * Merged in [10384] from rjsparks@nostrum.com:
+    When a group gives a document a new group state (particularly for the
+    first time), send a message that says what happened instead of simply
+    \'Adopted\'. Fixes #1830.  
+
+  * Merged in [10383] and [10413] from rcross@amsl.com:
+    Updated proceedings permissions.   
+
+  * Merged in [10379] from rjsparks@nostrum.com:
+    Change the acronym link on the html agenda page to go to the group's 
+    charter page rather than the charter's document page.  
+
+  * Merged in [10378] from rjsparks@nostrum.com:
+    Make the internal review message reflect whether this is a new chartering
+    effort or a recharter. Fixes #1814.  
+
+  * Fixed a unicode issue with rendering of contact names.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Nov 2015 23:44:55 -0800
+
+
+ietfdb (6.8.0) ietf; urgency=medium
+
   **IETF 94 Code Sprint**
 
   This release contains the datatracker bugfixes and enhancements from the

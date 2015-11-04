@@ -2,7 +2,7 @@ import datetime
 
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 
@@ -28,10 +28,10 @@ class MessageTests(TestCase):
 
         r = self.client.get(urlreverse("nomcom_announcement", kwargs=dict(message_id=msg.id)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(msg.subject in r.content)
-        self.assertTrue(msg.to in r.content)
-        self.assertTrue(msg.frm in r.content)
-        self.assertTrue("Hello World!" in r.content)
+        self.assertTrue(msg.subject in unicontent(r))
+        self.assertTrue(msg.to in unicontent(r))
+        self.assertTrue(msg.frm in unicontent(r))
+        self.assertTrue("Hello World!" in unicontent(r))
 
 
 class SendScheduledAnnouncementsTests(TestCase):

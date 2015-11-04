@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
 
 from ietf.person.models import Email, Person
@@ -449,9 +449,9 @@ class NomcomViewsTest(TestCase):
         
         r = self.client.get(reverse('ietf.nomcom.views.announcements'))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(("Messages from %s" % nomcom.time.year) in r.content)
-        self.assertTrue(nomcom.role_set.filter(name="chair")[0].person.email_address() in r.content)
-        self.assertTrue(msg.subject in r.content)
+        self.assertTrue(("Messages from %s" % nomcom.time.year) in unicontent(r))
+        self.assertTrue(nomcom.role_set.filter(name="chair")[0].person.email_address() in unicontent(r))
+        self.assertTrue(msg.subject in unicontent(r))
 
 
     def test_requirements_view(self):

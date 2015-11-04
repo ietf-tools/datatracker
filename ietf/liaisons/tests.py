@@ -8,7 +8,7 @@ from django.db.models import Q
 from StringIO import StringIO
 from pyquery import PyQuery
 
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data, create_person
 from ietf.utils.mail import outbox
 
@@ -113,7 +113,7 @@ class LiaisonTests(TestCase):
 
         r = self.client.get(urlreverse('ietf.liaisons.views.liaison_list'))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in r.content)
+        self.assertTrue(liaison.title in unicontent(r))
 
     def test_details(self):
         make_test_data()
@@ -121,7 +121,7 @@ class LiaisonTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ 'object_id': liaison.pk }))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in r.content)
+        self.assertTrue(liaison.title in unicontent(r))
 
     def test_feeds(self):
         make_test_data()
@@ -129,19 +129,19 @@ class LiaisonTests(TestCase):
 
         r = self.client.get('/feed/liaison/recent/')
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in r.content)
+        self.assertTrue(liaison.title in unicontent(r))
 
         r = self.client.get('/feed/liaison/from/%s/' % liaison.from_groups.first().acronym)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in r.content)
+        self.assertTrue(liaison.title in unicontent(r))
 
         r = self.client.get('/feed/liaison/to/%s/' % liaison.to_groups.first().acronym)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in r.content)
+        self.assertTrue(liaison.title in unicontent(r))
 
         r = self.client.get('/feed/liaison/subject/marsmen/')
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in r.content)
+        self.assertTrue(liaison.title in unicontent(r))
 
     def test_sitemap(self):
         make_test_data()
@@ -149,7 +149,7 @@ class LiaisonTests(TestCase):
 
         r = self.client.get('/sitemap-liaison.xml')
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ 'object_id': liaison.pk }) in r.content)
+        self.assertTrue(urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ 'object_id': liaison.pk }) in unicontent(r))
 
     def test_help_pages(self):
         self.assertEqual(self.client.get('/liaison/help/').status_code, 200)
@@ -381,14 +381,14 @@ class LiaisonManagementTests(TestCase):
         login_testing_unauthorized(self, "ad", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in r.content)
+        self.assertTrue(liaison.title in unicontent(r))
 
         # check the detail page / unauthorized
         url = urlreverse('ietf.liaisons.views.liaison_detail', kwargs=dict(object_id=liaison.pk))
         self.client.logout()
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in r.content)
+        self.assertTrue(liaison.title in unicontent(r))
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=approved]')), 0)
 
@@ -396,7 +396,7 @@ class LiaisonManagementTests(TestCase):
         self.client.login(username="ulm-liaiman", password="ulm-liaiman+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in r.content)
+        self.assertTrue(liaison.title in unicontent(r))
         q = PyQuery(r.content)
         from ietf.liaisons.utils import can_edit_liaison
         user = User.objects.get(username='ulm-liaiman')
@@ -1107,7 +1107,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.post(url,get_liaison_post_data(),follow=True)
 
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('As an IETF Liaison Manager you can not send incoming liaison statements' in r.content)
+        self.assertTrue('As an IETF Liaison Manager you can not send incoming liaison statements' in unicontent(r))
 
     def test_deadline_field(self):
         '''Required for action, comment, not info, response'''
@@ -1147,7 +1147,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.post(url,post_data,follow=True)
 
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('You must provide a body or attachment files' in r.content)
+        self.assertTrue('You must provide a body or attachment files' in unicontent(r))
 
     def test_send_sdo_reminder(self):
         make_test_data()

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import shutil
 
@@ -14,7 +15,7 @@ from ietf.doc.views_conflict_review import default_approval_text
 from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data  import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
@@ -55,14 +56,14 @@ class ConflictReviewTests(TestCase):
         self.assertEqual(Document.objects.filter(name='conflict-review-imaginary-independent-submission').count() , 0)
       
         # successful review start
-        ad_strpk = str(Person.objects.get(name='Aread Irector').pk)
+        ad_strpk = str(Person.objects.get(name='Areað Irector').pk)
         state_strpk = str(State.objects.get(used=True, slug='needshep',type__slug='conflrev').pk)        
         r = self.client.post(url,dict(ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 302)
         review_doc = Document.objects.get(name='conflict-review-imaginary-independent-submission')
         self.assertEqual(review_doc.get_state('conflrev').slug,'needshep')
         self.assertEqual(review_doc.rev,u'00')
-        self.assertEqual(review_doc.ad.name,u'Aread Irector')
+        self.assertEqual(review_doc.ad.name,u'Areað Irector')
         self.assertEqual(review_doc.notify,u'ipu@ietf.org')
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
         self.assertTrue(doc in [x.target.document for x in review_doc.relateddocument_set.filter(relationship__slug='conflrev')])
@@ -72,7 +73,7 @@ class ConflictReviewTests(TestCase):
         self.assertTrue('Conflict Review requested' in outbox[-1]['Subject'])
         
         # verify you can't start a review when a review is already in progress
-        r = self.client.post(url,dict(ad="Aread Irector",create_in_state="Needs Shepherd",notify='ipu@ietf.org'))
+        r = self.client.post(url,dict(ad="Areað Irector",create_in_state="Needs Shepherd",notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 404)
 
 
@@ -365,7 +366,7 @@ class ConflictReviewSubmitTests(TestCase):
         test_file.name = "unnamed"
         r = self.client.post(url, dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("does not appear to be a text file" in r.content)
+        self.assertTrue("does not appear to be a text file" in unicontent(r))
 
         # sane post uploading a file
         test_file = StringIO("This is a new proposal.")

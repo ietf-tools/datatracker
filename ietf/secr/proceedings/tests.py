@@ -12,7 +12,7 @@ from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Session
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 
 from ietf.name.models import SessionStatusName
 from ietf.secr.utils.meeting import get_proceedings_path
@@ -90,12 +90,12 @@ class BluesheetTestCase(TestCase):
             dict(acronym='mars',meeting_id=meeting.id,material_type='bluesheets',file=upfile),follow=True)
         self.assertEqual(r.status_code, 200)
         doc = Document.objects.get(type='bluesheets')
-        self.failUnless(doc.external_url in r.content)
+        self.failUnless(doc.external_url in unicontent(r))
         self.failUnless(os.path.exists(os.path.join(doc.get_file_path(),doc.external_url)))
         # test that proceedings has bluesheets on it
         path = get_proceedings_path(meeting,group)
         self.failUnless(os.path.exists(path))
         with open(path) as f:
             data = f.read()
-        self.failUnless(doc.external_url in data)
+        self.failUnless(doc.external_url.encode('utf-8') in data)
         

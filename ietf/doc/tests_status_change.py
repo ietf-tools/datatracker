@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import shutil
 
@@ -14,7 +15,7 @@ from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_status_change import default_approval_text
 from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox
 from ietf.utils.test_data  import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
@@ -32,7 +33,7 @@ class StatusChangeTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('form select[name=create_in_state]')),1)
 
-        ad_strpk = str(Person.objects.get(name='Aread Irector').pk)
+        ad_strpk = str(Person.objects.get(name='Areað Irector').pk)
         state_strpk = str(State.objects.get(slug='adrev',type__slug='statchg').pk)        
 
         # faulty posts
@@ -69,7 +70,7 @@ class StatusChangeTests(TestCase):
         status_change = Document.objects.get(name='status-change-imaginary-new')        
         self.assertEqual(status_change.get_state('statchg').slug,'adrev')
         self.assertEqual(status_change.rev,u'00')
-        self.assertEqual(status_change.ad.name,u'Aread Irector')
+        self.assertEqual(status_change.ad.name,u'Areað Irector')
         self.assertEqual(status_change.notify,u'ipu@ietf.org')
         self.assertTrue(status_change.relateddocument_set.filter(relationship__slug='tois',target__document__name='draft-ietf-random-thing'))
 
@@ -451,7 +452,7 @@ class StatusChangeSubmitTests(TestCase):
         test_file.name = "unnamed"
         r = self.client.post(url, dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("does not appear to be a text file" in r.content)
+        self.assertTrue("does not appear to be a text file" in unicontent(r))
 
         # sane post uploading a file
         test_file = StringIO("This is a new proposal.")
@@ -476,7 +477,7 @@ class StatusChangeSubmitTests(TestCase):
         url = urlreverse('doc_view',kwargs=dict(name=doc.name,rev='00'))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertTrue("This is the old proposal." in r.content)
+        self.assertTrue("This is the old proposal." in unicontent(r))
 
     def setUp(self):
         make_test_data()

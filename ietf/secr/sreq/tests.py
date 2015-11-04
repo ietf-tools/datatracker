@@ -1,6 +1,6 @@
 from django.core.urlresolvers import reverse
 
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.group.models import Group
 #from ietf.meeting.models import Session
 #from ietf.utils.test_data import make_test_data
@@ -67,7 +67,7 @@ class SubmitRequestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#session-request-form')),1)
-        self.assertTrue('You must enter a length for all sessions' in r.content)
+        self.assertTrue('You must enter a length for all sessions' in unicontent(r))
 
 class LockAppTestCase(TestCase):
     def test_edit_request(self):
@@ -136,11 +136,11 @@ class NotMeetingCase(TestCase):
 
         # This is a sign of a problem - a get shouldn't have a side-effect like this one does
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('A message was sent to notify not having a session' in r.content)
+        self.assertTrue('A message was sent to notify not having a session' in unicontent(r))
 
         r = self.client.get(url,follow=True)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('is already marked as not meeting' in r.content)
+        self.assertTrue('is already marked as not meeting' in unicontent(r))
 
         self.assertEqual(len(outbox),1)
         self.assertTrue('Not having a session' in outbox[0]['Subject'])

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import datetime
 
 from django.conf import settings
@@ -75,7 +76,7 @@ def make_immutable_base_data():
     create_person(iepg, "chair")
     
     iana = create_group(name="IANA", acronym="iana", type_id="ietf")
-    create_person(iana, "auth", name="Ina Iana", username="iana", email_address="iana@ia.na")
+    create_person(iana, "auth", name="Iña Iana", username="iana", email_address="iana@ia.na")
 
     rfc_editor = create_group(name="RFC Editor", acronym="rfceditor", type_id="rfcedtyp")
     create_person(rfc_editor, "auth", name="Rfc Editor", username="rfc", email_address="rfc@edit.or")
@@ -86,7 +87,7 @@ def make_immutable_base_data():
 
     # one area
     area = create_group(name="Far Future", acronym="farfut", type_id="area", parent=ietf)
-    create_person(area, "ad", name="Aread Irector", username="ad", email_address="aread@ietf.org")
+    create_person(area, "ad", name="Areað Irector", username="ad", email_address="aread@ietf.org")
 
     # create a bunch of ads for swarm tests
     for i in range(1, 10):
@@ -173,13 +174,13 @@ def make_test_data():
     email = Email.objects.create(address="plain@example.com", person=plainman)
 
     # group personnel
-    create_person(mars_wg, "chair", name="WG Chair Man", username="marschairman")
-    create_person(mars_wg, "delegate", name="WG Delegate", username="marsdelegate")
+    create_person(mars_wg, "chair", name="WG Cháir Man", username="marschairman")
+    create_person(mars_wg, "delegate", name="WG Dèlegate", username="marsdelegate")
     mars_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     mars_wg.save()
 
-    create_person(ames_wg, "chair", name="WG Chair Man", username="ameschairman")
-    create_person(ames_wg, "delegate", name="WG Delegate", username="amesdelegate")
+    create_person(ames_wg, "chair", name="WG Cháir Man", username="ameschairman")
+    create_person(ames_wg, "delegate", name="WG Dèlegate", username="amesdelegate")
     ames_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     ames_wg.save()
 
