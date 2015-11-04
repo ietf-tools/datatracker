@@ -1,12 +1,14 @@
 {% autoescape off %}
-{{ doc }} is suggested to replace:
 
+{{ submitter_info }} is suggesting to replace the following document{{ possibly_replaces|length|pluralize }}:
 {% for d in possibly_replaces %}  {{ d.name }}
 {% endfor %}
+with document:
+  {{ doc }}
 
 Please visit
 
   {{ review_url }}
 
-and either accept or decline the suggestion{{ suggested_replaces|pluralize:"s" }}.
+and either accept or decline the suggestion.
 {% endautoescape %}

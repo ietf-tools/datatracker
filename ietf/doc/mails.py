@@ -437,7 +437,7 @@ def email_stream_tags_changed(request, doc, added_tags, removed_tags, by, commen
                    comment=comment),
               cc=cc)
 
-def send_review_possibly_replaces_request(request, doc):
+def send_review_possibly_replaces_request(request, doc, submitter_info):
     addrs = gather_address_lists('doc_replacement_suggested',doc=doc)
     to = set(addrs.to)
     cc = set(addrs.cc)
@@ -452,9 +452,11 @@ def send_review_possibly_replaces_request(request, doc):
               'Review of suggested possible replacements for %s-%s needed' % (doc.name, doc.rev),
               'doc/mail/review_possibly_replaces_request.txt', 
               dict(doc= doc,
+                   submitter_info=submitter_info,
                    possibly_replaces=doc.related_that_doc("possibly-replaces"),
                    review_url=settings.IDTRACKER_BASE_URL + urlreverse("doc_review_possibly_replaces", kwargs={ "name": doc.name })),
-              cc=list(cc),)
+                   cc=list(cc),
+                   )
 
 def email_charter_internal_review(request, charter):
     addrs = gather_address_lists('charter_internal_review',doc=charter,group=charter.group)

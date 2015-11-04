@@ -168,14 +168,16 @@ def post_submission(request, submission):
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
         submitter = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"]).person
+        submitter_info='%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
     else:
         submitter = system
+        submitter_info=submitter_parsed["name"]
 
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
     DocAlias.objects.get_or_create(name=submission.name, document=draft)
 
     update_authors(draft, submission)
-
+    
     trouble = rebuild_reference_relations(draft, filename=os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev)))
     if trouble:
         log('Rebuild_reference_relations trouble: %s'%trouble)
@@ -226,7 +228,7 @@ def post_submission(request, submission):
     announce_to_authors(request, submission)
 
     if new_possibly_replaces:
-        send_review_possibly_replaces_request(request, draft)
+        send_review_possibly_replaces_request(request, draft, submitter_info)
 
     submission.save()
 
