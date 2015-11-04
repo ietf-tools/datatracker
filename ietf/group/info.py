@@ -390,7 +390,7 @@ def search_for_group_documents(group):
     for d in raw_docs_related:
         parts = d.name.split("-", 2);
         # canonical form draft-<name|ietf|irtf>-wg-etc
-        if len(parts) >= 3 and parts[1] not in ("ietf", "irtf") and parts[2].startswith(group.acronym + "-"):
+        if len(parts) >= 3 and parts[1] not in ("ietf", "irtf") and parts[2].startswith(group.acronym + "-") and d not in docs:
             d.search_heading = "Related Internet-Draft"
             docs_related.append(d)
 

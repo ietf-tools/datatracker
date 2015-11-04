@@ -37,7 +37,7 @@ from ietf.utils.log import log
 # -------------------------------------------------
 # Globals 
 # -------------------------------------------------
-AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','AG Secretary','IRTF Chair','IAB Group Chair','Area Director','Secretariat','Team Chair')
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','AG Secretary','IRTF Chair','IETF Trust Chair','IAB Group Chair','IAOC Chair','IAD','Area Director','Secretariat','Team Chair')
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
@@ -811,7 +811,7 @@ def select(request, meeting_num):
         training_form = None
 
     # iniialize plenary form
-    if has_role(user,['Secretariat','IETF Chair','IAB Chair']):
+    if has_role(user,['Secretariat','IETF Chair','IETF Trust Chair','IAB Chair','IAOC Chair','IAD']):
         ss = SchedTimeSessAssignment.objects.filter(schedule=meeting.agenda,timeslot__type='plenary')
         choices = [ (i.session.id, i.session.name) for i in sorted(ss,key=lambda x: x.session.name) ]
         plenary_form = GroupSelectForm(choices=choices)

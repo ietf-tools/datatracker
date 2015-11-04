@@ -106,7 +106,7 @@ if __name__ == '__main__':
     import time
 
     # Year ago?
-    show_since = datetime.datetime.now() - datetime.timedelta(365)
+    show_since = datetime.datetime.now() - datetime.timedelta(2*365)
     # 10 years ago?
     #show_since = datetime.datetime.now() - datetime.timedelta(10 * 365)
 

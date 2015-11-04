@@ -37,13 +37,13 @@ General Instructions for Deployment of a New Release
 
       pip install -r requirements.txt
 
- 5. Run migrations::
-
-      ietf/manage.py migrate
-
- 6. Move static files to the appropriate direcrory for serving via CDN::
+ 5. Move static files to the appropriate direcrory for serving via CDN::
 
       ietf/manage.py collectstatic
+
+ 6. Run migrations::
+
+      ietf/manage.py migrate
 
  7. Run some basic datatracker system checks::
 

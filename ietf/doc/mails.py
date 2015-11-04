@@ -393,8 +393,8 @@ def email_adopted(request, doc, prev_state, new_state, by, comment=""):
     state_type = (prev_state or new_state).type
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
-              u"The %s %s has adopted %s" % 
-                  (doc.group.acronym.upper(),doc.group.type_id.upper(), doc.name),
+              u'The %s %s has placed %s in state "%s"' % 
+                  (doc.group.acronym.upper(),doc.group.type_id.upper(), doc.name, new_state or "None"),
               'doc/mail/doc_adopted_email.txt',
               dict(doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
@@ -473,6 +473,7 @@ def email_charter_internal_review(request, charter):
                    ads=charter.group.role_set.filter(name='ad').values_list('person__name',flat=True),
                    charter_text=charter_text,
                    milestones=charter.group.groupmilestone_set.filter(state="charter"),
+                   review_type = "new" if charter.group.state_id == "proposed" else "recharter",
               ),
               cc=addrs.cc,
               extra={'Reply-To':"iesg@ietf.org"},

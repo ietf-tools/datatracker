@@ -242,7 +242,7 @@
 
                     <td>
                       {% if item.session.historic_group.charter %}
-                        <a href="{{item.session.historic_group.charter.get_absolute_url}}">{{item.session.historic_group.acronym}}</a>
+                        <a href="{% url 'group_charter' acronym=item.session.historic_group.acronym %}">{{item.session.historic_group.acronym}}</a>
                       {% else %}
                         {{item.session.historic_group.acronym}}
                       {% endif %}

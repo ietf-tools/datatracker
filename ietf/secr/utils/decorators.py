@@ -80,7 +80,9 @@ def check_permissions(func):
 
         # if session is plenary allow ietf/iab chairs
         if session and get_timeslot(session).type.slug=='plenary':
-            if login.role_set.filter(name='chair',group__acronym__in=('iesg','iab')):
+            chair = login.role_set.filter(name='chair',group__acronym__in=('iesg','iab','ietf-trust','iaoc'))
+            admdir = login.role_set.filter(name='admdir',group__acronym='ietf')
+            if chair or admdir:
                 return func(request, *args, **kwargs)
 
         # if we get here access is denied
