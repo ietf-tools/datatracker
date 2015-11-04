@@ -8,7 +8,7 @@ from django.test import Client
 
 from ietf.group.models import Role, Group
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
 if   getattr(settings,'SKIP_DOT_TO_PDF', False):
     skip_dot_to_pdf = True
@@ -28,7 +28,7 @@ class StreamTests(TestCase):
         make_test_data()
         r = self.client.get(urlreverse("ietf.group.views_stream.streams"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Independent Submission Editor" in r.content)
+        self.assertTrue("Independent Submission Editor" in unicontent(r))
 
     def test_stream_documents(self):
         draft = make_test_data()
@@ -37,7 +37,7 @@ class StreamTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.group.views_stream.stream_documents", kwargs=dict(acronym="iab")))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in r.content)
+        self.assertTrue(draft.name in unicontent(r))
 
     def test_stream_edit(self):
         make_test_data()

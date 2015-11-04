@@ -262,6 +262,16 @@ def login_testing_unauthorized(test_case, username, url, password=None):
         password = username + "+password"
     return test_case.client.login(username=username, password=password)
 
+def unicontent(r):
+    "Return a HttpResponse object's content as unicode"
+    content_type = r._headers.get("content-type", "text/html; charset=utf-8")
+    if 'charset=' in content_type:
+        mediatype, charset = content_type.split(';')
+        encoding = charset.split('=')[1].strip()
+    else:
+        encoding = 'utf-8'
+    return r.content.decode(encoding)
+
 class ReverseLazyTest(django.test.TestCase):
     def test_redirect_with_lazy_reverse(self):
         response = self.client.get('/ipr/update/')

@@ -84,7 +84,7 @@ def _find_person_in_emails(liaison, person):
 
 def contacts_from_roles(roles):
     '''Returns contact string for given roles'''
-    emails = [ '{} <{}>'.format(r.person.plain_name(),r.email.address) for r in roles ]
+    emails = [ u'{} <{}>'.format(r.person.plain_name(),r.email.address) for r in roles ]
     return ','.join(emails)
 
 def get_cc(group):
@@ -104,17 +104,17 @@ def get_cc(group):
     elif group.type_id == 'area':
         emails.append(EMAIL_ALIASES['IETFCHAIR'])
         ad_roles = group.role_set.filter(name='ad')
-        emails.extend([ '{} <{}>'.format(r.person.plain_name(),r.email.address) for r in ad_roles ])
+        emails.extend([ u'{} <{}>'.format(r.person.plain_name(),r.email.address) for r in ad_roles ])
     elif group.type_id == 'wg':
         ad_roles = group.parent.role_set.filter(name='ad')
-        emails.extend([ '{} <{}>'.format(r.person.plain_name(),r.email.address) for r in ad_roles ])
+        emails.extend([ u'{} <{}>'.format(r.person.plain_name(),r.email.address) for r in ad_roles ])
         chair_roles = group.role_set.filter(name='chair')
-        emails.extend([ '{} <{}>'.format(r.person.plain_name(),r.email.address) for r in chair_roles ])
+        emails.extend([ u'{} <{}>'.format(r.person.plain_name(),r.email.address) for r in chair_roles ])
         if group.list_email:
-            emails.append('{} Discussion List <{}>'.format(group.name,group.list_email))
+            emails.append(u'{} Discussion List <{}>'.format(group.name,group.list_email))
     elif group.type_id == 'sdo':
         liaiman_roles = group.role_set.filter(name='liaiman')
-        emails.extend([ '{} <{}>'.format(r.person.plain_name(),r.email.address) for r in liaiman_roles ])
+        emails.extend([ u'{} <{}>'.format(r.person.plain_name(),r.email.address) for r in liaiman_roles ])
 
     # explicit CCs
     if group.liaisonstatementgroupcontacts_set.exists() and group.liaisonstatementgroupcontacts_set.first().cc_contacts:

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.core.urlresolvers import reverse
 from ietf.utils.test_utils import TestCase
 
@@ -37,7 +38,7 @@ class MainTestCase(TestCase):
     def test_roles_add(self):
         make_test_data()
         augment_data()
-        person = Person.objects.get(name='Aread Irector')
+        person = Person.objects.get(name='Areað Irector')
         group = Group.objects.filter(acronym='mars')[0]
         url = reverse('roles')
         target = reverse('roles') + '?group=%s' % group.acronym

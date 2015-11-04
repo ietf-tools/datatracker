@@ -11,7 +11,7 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 from ietf.utils.test_utils import TestCase
@@ -279,7 +279,7 @@ class SubmitTests(TestCase):
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("The submission is pending approval by the authors" in r.content)
+        self.assertTrue("The submission is pending approval by the authors" in unicontent(r))
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_email = outbox[-1]
@@ -361,7 +361,7 @@ class SubmitTests(TestCase):
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("The submission is pending email authentication" in r.content)
+        self.assertTrue("The submission is pending email authentication" in unicontent(r))
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_email = outbox[-1]
@@ -408,16 +408,16 @@ class SubmitTests(TestCase):
         replaced_alias = draft.docalias_set.first()
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('cannot replace itself' in r.content)
+        self.assertTrue('cannot replace itself' in unicontent(r))
         replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('cannot replace an RFC' in r.content)
+        self.assertTrue('cannot replace an RFC' in unicontent(r))
         replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
         replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('approved by the IESG and cannot' in r.content)
+        self.assertTrue('approved by the IESG and cannot' in unicontent(r))
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
@@ -587,7 +587,7 @@ class SubmitTests(TestCase):
         # search status page
         r = self.client.get(urlreverse("submit_search_submission"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("submission status" in r.content)
+        self.assertTrue("submission status" in unicontent(r))
 
         # search
         r = self.client.post(urlreverse("submit_search_submission"), dict(name=name))
@@ -597,7 +597,7 @@ class SubmitTests(TestCase):
         # status page as unpriviliged => no edit button
         r = self.client.get(unprivileged_status_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(("submission status of %s" % name) in r.content.lower())
+        self.assertTrue(("submission status of %s" % name) in unicontent(r).lower())
         q = PyQuery(r.content)
         adjust_button = q('[type=submit]:contains("Adjust")')
         self.assertEqual(len(adjust_button), 0)

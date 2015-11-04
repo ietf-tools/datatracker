@@ -190,6 +190,7 @@ def info(name):
     if debug:
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
+        vtype = eval("type(%s)"%name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("%s%s: %s %s\n" % (indent, name, value, type(value)))
+        sys.stderr.write("%s%s: '%s' (%s)\n" % (indent, name, value, vtype))
 

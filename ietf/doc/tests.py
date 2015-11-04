@@ -26,7 +26,7 @@ from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 
 class SearchTests(TestCase):
@@ -46,68 +46,68 @@ class SearchTests(TestCase):
 
         r = self.client.get(base_url + "?rfcs=on&name=xyzzy")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("no documents match" in r.content.lower())
+        self.assertTrue("no documents match" in unicontent(r).lower())
 
         r = self.client.get(base_url + "?olddrafts=on&name=bar")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("no documents match" in r.content.lower())
+        self.assertTrue("no documents match" in unicontent(r).lower())
 
         r = self.client.get(base_url + "?olddrafts=on&name=foo")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("draft-foo-mars-test" in r.content.lower())
+        self.assertTrue("draft-foo-mars-test" in unicontent(r).lower())
 
         # find by rfc/active/inactive
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
         r = self.client.get(base_url + "?rfcs=on&name=%s" % draft.name)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
         draft.set_state(State.objects.get(type="draft", slug="active"))
         r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.name)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
         draft.set_state(State.objects.get(type="draft", slug="expired"))
         r = self.client.get(base_url + "?olddrafts=on&name=%s" % draft.name)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
         
         draft.set_state(State.objects.get(type="draft", slug="active"))
 
         # find by title
         r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.title.split()[0])
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
         # find by author
         r = self.client.get(base_url + "?activedrafts=on&by=author&author=%s" % draft.authors.all()[0].person.name_parts()[1])
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
         # find by group
         r = self.client.get(base_url + "?activedrafts=on&by=group&group=%s" % draft.group.acronym)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
         # find by area
         r = self.client.get(base_url + "?activedrafts=on&by=area&area=%s" % draft.group.parent_id)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
         # find by area
         r = self.client.get(base_url + "?activedrafts=on&by=area&area=%s" % draft.group.parent_id)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
         # find by AD
         r = self.client.get(base_url + "?activedrafts=on&by=ad&ad=%s" % draft.ad_id)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
         # find by IESG state
         r = self.client.get(base_url + "?activedrafts=on&by=state&state=%s&substate=" % draft.get_state("draft-iesg").pk)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
     def test_search_for_name(self):
         draft = make_test_data()
@@ -189,30 +189,30 @@ class SearchTests(TestCase):
         make_test_data()
         r = self.client.get("/")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Document Search" in r.content)
+        self.assertTrue("Document Search" in unicontent(r))
 
     def test_drafts_pages(self):
         draft = make_test_data()
 
         r = self.client.get(urlreverse("docs_for_ad", kwargs=dict(name=draft.ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
         draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
         r = self.client.get(urlreverse("drafts_in_last_call"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
         
     def test_indexes(self):
         draft = make_test_data()
 
         r = self.client.get(urlreverse("index_all_drafts"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in r.content)
+        self.assertTrue(draft.name in unicontent(r))
 
         r = self.client.get(urlreverse("index_active_drafts"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in r.content)
+        self.assertTrue(draft.title in unicontent(r))
 
     def test_ajax_search_docs(self):
         draft = make_test_data()
@@ -437,55 +437,55 @@ Man                    Expires September 22, 2015               [Page 3]
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertTrue("Show full document text" in r.content)
-        self.assertFalse("Deimos street" in r.content)
+        self.assertTrue("Active Internet-Draft" in unicontent(r))
+        self.assertTrue("Show full document text" in unicontent(r))
+        self.assertFalse("Deimos street" in unicontent(r))
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=0")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertFalse("Show full document text" in r.content)
-        self.assertTrue("Deimos street" in r.content)
+        self.assertTrue("Active Internet-Draft" in unicontent(r))
+        self.assertFalse("Show full document text" in unicontent(r))
+        self.assertTrue("Deimos street" in unicontent(r))
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=foo")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertFalse("Show full document text" in r.content)
-        self.assertTrue("Deimos street" in r.content)
+        self.assertTrue("Active Internet-Draft" in unicontent(r))
+        self.assertFalse("Show full document text" in unicontent(r))
+        self.assertTrue("Deimos street" in unicontent(r))
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=1")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertFalse("Show full document text" in r.content)
-        self.assertTrue("Deimos street" in r.content)
+        self.assertTrue("Active Internet-Draft" in unicontent(r))
+        self.assertFalse("Show full document text" in unicontent(r))
+        self.assertTrue("Deimos street" in unicontent(r))
 
         self.client.cookies = SimpleCookie({'full_draft': 'on'})
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertFalse("Show full document text" in r.content)
-        self.assertTrue("Deimos street" in r.content)
+        self.assertTrue("Active Internet-Draft" in unicontent(r))
+        self.assertFalse("Show full document text" in unicontent(r))
+        self.assertTrue("Deimos street" in unicontent(r))
 
         self.client.cookies = SimpleCookie({'full_draft': 'off'})
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertTrue("Show full document text" in r.content)
-        self.assertFalse("Deimos street" in r.content)
+        self.assertTrue("Active Internet-Draft" in unicontent(r))
+        self.assertTrue("Show full document text" in unicontent(r))
+        self.assertFalse("Deimos street" in unicontent(r))
 
         self.client.cookies = SimpleCookie({'full_draft': 'foo'})
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active Internet-Draft" in r.content)
-        self.assertTrue("Show full document text" in r.content)
-        self.assertFalse("Deimos street" in r.content)
+        self.assertTrue("Active Internet-Draft" in unicontent(r))
+        self.assertTrue("Show full document text" in unicontent(r))
+        self.assertFalse("Deimos street" in unicontent(r))
 
         # expired draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Expired Internet-Draft" in r.content)
+        self.assertTrue("Expired Internet-Draft" in unicontent(r))
 
         # replaced draft
         draft.set_state(State.objects.get(type="draft", slug="repl"))
@@ -506,8 +506,8 @@ Man                    Expires September 22, 2015               [Page 3]
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Replaced Internet-Draft" in r.content)
-        self.assertTrue(replacement.name in r.content)
+        self.assertTrue("Replaced Internet-Draft" in unicontent(r))
+        self.assertTrue(replacement.name in unicontent(r))
         rel.delete()
 
         # draft published as RFC
@@ -527,8 +527,8 @@ Man                    Expires September 22, 2015               [Page 3]
 
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=rfc_alias.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("RFC 123456" in r.content)
-        self.assertTrue(draft.name in r.content)
+        self.assertTrue("RFC 123456" in unicontent(r))
+        self.assertTrue(draft.name in unicontent(r))
 
         # naked RFC
         rfc = Document.objects.create(
@@ -541,7 +541,7 @@ Man                    Expires September 22, 2015               [Page 3]
         DocAlias.objects.create(name=rfc.name, document=rfc)
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=rfc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("RFC 1234567" in r.content)
+        self.assertTrue("RFC 1234567" in unicontent(r))
 
         # unknown draft
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name="draft-xyz123")))
@@ -567,14 +567,14 @@ Man                    Expires September 22, 2015               [Page 3]
 
             r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
             self.assertEqual(r.status_code, 200)
-            self.assertTrue("%s-01"%docname in r.content)
+            self.assertTrue("%s-01"%docname in unicontent(r))
     
             r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name,rev="01")))
             self.assertEqual(r.status_code, 302)
      
             r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name,rev="00")))
             self.assertEqual(r.status_code, 200)
-            self.assertTrue("%s-00"%docname in r.content)
+            self.assertTrue("%s-00"%docname in unicontent(r))
 
 class DocTestCase(TestCase):
     def test_document_charter(self):
@@ -634,12 +634,12 @@ class DocTestCase(TestCase):
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(pos.comment in r.content)
+        self.assertTrue(pos.comment in unicontent(r))
 
         # test with ballot_id
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(pos.comment in r.content)
+        self.assertTrue(pos.comment in unicontent(r))
 
         # test popup too while we're at it
         r = self.client.get(urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
@@ -653,7 +653,7 @@ class DocTestCase(TestCase):
         doc.save()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue( '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev) in r.content)
+        self.assertTrue( '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev) in unicontent(r))
         
     def test_document_ballot_needed_positions(self):
         make_test_data()
@@ -661,10 +661,10 @@ class DocTestCase(TestCase):
         # draft
         doc = Document.objects.get(name='draft-ietf-mars-test')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
-        self.assertTrue('more YES or NO' in r.content)
+        self.assertTrue('more YES or NO' in unicontent(r))
         Document.objects.filter(pk=doc.pk).update(intended_std_level='inf')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
-        self.assertFalse('more YES or NO' in r.content)
+        self.assertFalse('more YES or NO' in unicontent(r))
 
         # status change
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
@@ -673,16 +673,16 @@ class DocTestCase(TestCase):
         r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))
         self.assertEqual(r.status_code, 302)
         r = self.client.get(r._headers["location"][1])
-        self.assertTrue(">IESG Evaluation<" in r.content)
+        self.assertTrue(">IESG Evaluation<" in unicontent(r))
 
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
-        self.assertFalse('Needs a YES' in r.content)
-        self.assertFalse('more YES or NO' in r.content)
+        self.assertFalse('Needs a YES' in unicontent(r))
+        self.assertFalse('more YES or NO' in unicontent(r))
 
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
-        self.assertTrue('more YES or NO' in r.content)
+        self.assertTrue('more YES or NO' in unicontent(r))
 
     def test_document_json(self):
         doc = make_test_data()
@@ -710,8 +710,8 @@ class DocTestCase(TestCase):
         url = urlreverse('doc_writeup', kwargs=dict(name=doc.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(appr.text in r.content)
-        self.assertTrue(notes.text in r.content)
+        self.assertTrue(appr.text in unicontent(r))
+        self.assertTrue(notes.text in unicontent(r))
 
     def test_history(self):
         doc = make_test_data()
@@ -725,7 +725,7 @@ class DocTestCase(TestCase):
         url = urlreverse('doc_history', kwargs=dict(name=doc.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(e.desc in r.content)
+        self.assertTrue(e.desc in unicontent(r))
         
     def test_document_feed(self):
         doc = make_test_data()
@@ -738,7 +738,7 @@ class DocTestCase(TestCase):
 
         r = self.client.get("/feed/document-changes/%s/" % doc.name)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(e.desc in r.content)
+        self.assertTrue(e.desc in unicontent(r))
 
     def test_last_call_feed(self):
         doc = make_test_data()
@@ -754,7 +754,7 @@ class DocTestCase(TestCase):
 
         r = self.client.get("/feed/last-call/")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(doc.name in r.content)
+        self.assertTrue(doc.name in unicontent(r))
 
     def test_rfc_feed(self):
         make_test_data()
@@ -765,7 +765,7 @@ class DocTestCase(TestCase):
         url = urlreverse('state_help', kwargs=dict(type="draft-iesg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(State.objects.get(type="draft-iesg", slug="lc").name in r.content)
+        self.assertTrue(State.objects.get(type="draft-iesg", slug="lc").name in unicontent(r))
 
     def test_document_nonietf_pubreq_button(self):
         doc = make_test_data()
@@ -773,12 +773,12 @@ class DocTestCase(TestCase):
         self.client.login(username='iab-chair', password='iab-chair+password')
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Request publication" not in r.content)
+        self.assertTrue("Request publication" not in unicontent(r))
 
         Document.objects.filter(pk=doc.pk).update(stream='iab')
         r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Request publication" in r.content)
+        self.assertTrue("Request publication" in unicontent(r))
 
 
 class AddCommentTestCase(TestCase):
@@ -835,11 +835,11 @@ class ReferencesTest(TestCase):
         url = urlreverse('doc_references', kwargs=dict(name=doc1.name))
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
-        self.assertTrue(doc2.name in r.content)
+        self.assertTrue(doc2.name in unicontent(r))
         url = urlreverse('doc_referenced_by', kwargs=dict(name=doc2.name))
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
-        self.assertTrue(doc1.name in r.content)
+        self.assertTrue(doc1.name in unicontent(r))
        
 
 class EmailAliasesTests(TestCase):
@@ -884,12 +884,12 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
         login_testing_unauthorized(self, "plain", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(all([x in r.content for x in ['mars-test@','mars-test.authors@','mars-test.chairs@']]))
-        self.assertTrue(all([x in r.content for x in ['ames-test@','ames-test.authors@','ames-test.chairs@']]))
+        self.assertTrue(all([x in unicontent(r) for x in ['mars-test@','mars-test.authors@','mars-test.chairs@']]))
+        self.assertTrue(all([x in unicontent(r) for x in ['ames-test@','ames-test.authors@','ames-test.chairs@']]))
 
     def testExpansions(self):
         url = urlreverse('ietf.doc.views_doc.document_email', kwargs=dict(name="draft-ietf-mars-test"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('draft-ietf-mars-test.all@ietf.org' in r.content)
-        self.assertTrue('ballot_saved' in r.content)
+        self.assertTrue('draft-ietf-mars-test.all@ietf.org' in unicontent(r))
+        self.assertTrue('ballot_saved' in unicontent(r))

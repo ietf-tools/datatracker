@@ -34,7 +34,7 @@ from urlparse import urlsplit
 
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data
 
 class IetfAuthTests(TestCase):
@@ -75,7 +75,7 @@ class IetfAuthTests(TestCase):
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("plain" in r.content)
+        self.assertTrue("plain" in unicontent(r))
 
         # post
         # ... fill in
