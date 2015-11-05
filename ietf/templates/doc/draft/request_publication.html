@@ -41,8 +41,15 @@ href="https://www.rfc-editor.org/indsubs.html">guidelines</a>.
 
     <div class="form-group">
       <label>To</label>
-      <input class="form-control" type="text" placeholder="{{ message.to }}" disabled>
+      <input class="form-control" type="text" placeholder="{{ message.to|join:', ' }}" disabled>
     </div>
+
+    {% if message.cc %}
+     <div class="form-group">
+       <label>Cc</label>
+       <input class="form-control" type="text" placeholder="{{ message.cc|join:', ' }}" disabled>
+     </div>
+   {% endif %}
 
     {% bootstrap_form form %}
 
