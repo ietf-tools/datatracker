@@ -28,7 +28,7 @@ def email_admin_re_charter(request, group, subject, text, mailtrigger):
 
 def email_personnel_change(request, group, text, changed_personnel):
     (to, cc) = gather_address_lists('group_personnel_change',group=group,changed_personnel=changed_personnel)
-    full_subject = u"Personnel change for %s working group" % (group.acronym)
+    full_subject = u"Personnel change for %s %s" % (group.acronym,group.type.name)
     send_mail_text(request, to, None, full_subject, text, cc=cc)
 
 
