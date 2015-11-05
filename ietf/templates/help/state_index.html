@@ -23,10 +23,10 @@
       {% for type in types %}
         {% if type.stategroups != None %}
           <tr>
-            <td><a href='{{ type.slug }}/'>{{type.slug}}</a></td>
+            <td><a href="{% url 'ietf.help.views.state' doc=type.slug %}">{{type.slug}}</a></td>
             <td>
 	      {% for group in type.stategroups %}
-	        <a href='{{ type.slug }}/{{ group }}'>{{ group }}</a>{% if not forloop.last %}, {% endif %}
+	        <a href="{% url 'ietf.help.views.state' doc=type.slug type=group %}">{{ group }}</a>{% if not forloop.last %}, {% endif %}
 	      {% endfor %}
             </td>
           </tr>
