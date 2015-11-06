@@ -1320,7 +1320,7 @@ def adopt_draft(request, name):
                               context_instance=RequestContext(request))
 
 class ChangeStreamStateForm(forms.Form):
-    new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State', help_text=u"Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication.")
+    new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State' )
     weeks = forms.IntegerField(label='Expected weeks in state',required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history.")
     tags = forms.ModelMultipleChoiceField(queryset=DocTagName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
@@ -1328,6 +1328,8 @@ class ChangeStreamStateForm(forms.Form):
     def __init__(self, *args, **kwargs):
         doc = kwargs.pop("doc")
         state_type = kwargs.pop("state_type")
+        self.can_set_sub_pub = kwargs.pop("can_set_sub_pub")
+        self.stream = kwargs.pop("stream")
         super(ChangeStreamStateForm, self).__init__(*args, **kwargs)
 
         f = self.fields["new_state"]
@@ -1336,12 +1338,24 @@ class ChangeStreamStateForm(forms.Form):
             unused_states = doc.group.unused_states.values_list("pk", flat=True)
             f.queryset = f.queryset.exclude(pk__in=unused_states)
         f.label = state_type.label
+        if self.stream.slug == 'ietf':
+            if self.can_set_sub_pub:
+                f.help_text = u"Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication."
+            else:
+                f.help_text = u"You may not set the 'Submitted to IESG for Publication' using this form - Use the document's main page to request publication."
 
         f = self.fields['tags']
         f.queryset = f.queryset.filter(slug__in=get_tags_for_stream_id(doc.stream_id))
         if doc.group:
             unused_tags = doc.group.unused_tags.values_list("pk", flat=True)
             f.queryset = f.queryset.exclude(pk__in=unused_tags)
+
+    def clean_new_state(self):
+        new_state = self.cleaned_data.get('new_state')
+        if new_state.slug=='sub-pub' and not self.can_set_sub_pub:
+            raise forms.ValidationError('You may not set the %s state using this form. Use the "Submit to IESG for publication" button on the document\'s main page instead. If that button does not appear, the document may already have IESG state. Ask your Area Director or the Secretariat for help.'%new_state.name)
+        return new_state
+         
 
 def next_states_for_stream_state(doc, state_type, current_state):
     # find next states
@@ -1379,8 +1393,10 @@ def change_stream_state(request, name, state_type):
     prev_state = doc.get_state(state_type.slug)
     next_states = next_states_for_stream_state(doc, state_type, prev_state)
 
+    can_set_sub_pub = has_role(request.user,('Secretariat','Area Director')) or prev_state.slug=='sub-pub'
+
     if request.method == 'POST':
-        form = ChangeStreamStateForm(request.POST, doc=doc, state_type=state_type)
+        form = ChangeStreamStateForm(request.POST, doc=doc, state_type=state_type,can_set_sub_pub=can_set_sub_pub,stream=doc.stream)
         if form.is_valid():
             by = request.user.person
 
@@ -1432,7 +1448,7 @@ def change_stream_state(request, name, state_type):
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
         form = ChangeStreamStateForm(initial=dict(new_state=prev_state.pk if prev_state else None, tags= doc.tags.all()),
-                                     doc=doc, state_type=state_type)
+                                     doc=doc, state_type=state_type, can_set_sub_pub = can_set_sub_pub,stream = doc.stream)
 
     milestones = doc.groupmilestone_set.all()
 
