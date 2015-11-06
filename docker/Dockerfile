@@ -27,18 +27,17 @@ RUN echo "deb http://http.debian.net/debian wheezy-backports main contrib non-fr
 # Run apt-get noninteractive
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Some basics
-RUN apt-get update
-RUN apt-get install -qy apt-utils wget less python procps ca-certificates
+# Some basic packages we'll need
+RUN apt-get update && apt-get install -qy apt-utils wget less python procps ca-certificates awk
 
 # MySQL
-RUN apt-get install -qy mysql-server
+RUN apt-get update && apt-get install -qy mysql-server
 
 # Subversion
-RUN apt-get install -qy subversion/wheezy-backports libsvn1/wheezy-backports
+RUN apt-get update && apt-get install -qy subversion/wheezy-backports libsvn1/wheezy-backports
 
-# Some things needed to compile requirements
-RUN apt-get install -qy libmysqlclient-dev python-dev libxml2-dev libxslt-dev
+# Some packages needed to compile requirements
+RUN apt-get update && apt-get install -qy libmysqlclient-dev python-dev libxml2-dev libxslt-dev
 
 # Pip
 ENV PYTHONWARNINGS="ignore:a true SSLContext object"
@@ -49,7 +48,6 @@ RUN pip --version
 RUN pip install virtualenv
 
 # idnits and dependencies
-RUN apt-get install -qy gawk
 RUN wget -q -P /usr/local/bin/ https://tools.ietf.org/tools/idnits/idnits
 RUN chmod +x /usr/local/bin/idnits
 
