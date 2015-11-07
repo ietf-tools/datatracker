@@ -168,8 +168,10 @@ def post_submission(request, submission):
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
         submitter = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"]).person
+        submitter_info = u'%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
     else:
         submitter = system
+        submitter_info = system.name
 
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
     DocAlias.objects.get_or_create(name=submission.name, document=draft)
@@ -226,7 +228,7 @@ def post_submission(request, submission):
     announce_to_authors(request, submission)
 
     if new_possibly_replaces:
-        send_review_possibly_replaces_request(request, draft)
+        send_review_possibly_replaces_request(request, draft, submitter_info)
 
     submission.save()
 

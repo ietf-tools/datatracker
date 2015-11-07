@@ -1,4 +1,6 @@
 {% autoescape off %}
+{{ submitter_info }} has suggested new replaced-by information:
+
 {{ doc }} is suggested to replace:
 
 {% for d in possibly_replaces %}  {{ d.name }}
@@ -8,5 +10,5 @@ Please visit
 
   {{ review_url }}
 
-and either accept or decline the suggestion{{ suggested_replaces|pluralize:"s" }}.
+and either accept or decline the suggestion.
 {% endautoescape %}
