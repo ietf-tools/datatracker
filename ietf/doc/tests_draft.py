@@ -1232,6 +1232,26 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[0]))
         self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[0]))
 
+    def test_pubreq_validation(self):
+        draft = make_test_data()
+
+        url = urlreverse('doc_change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))
+        login_testing_unauthorized(self, "marschairman", url)
+        
+        old_state = draft.get_state("draft-stream-%s" % draft.stream_id )
+        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="sub-pub")
+        self.assertNotEqual(old_state, new_state)
+
+        r = self.client.post(url,
+                             dict(new_state=new_state.pk,
+                                  comment="some comment",
+                                  weeks="10",
+                                  tags=[t.pk for t in draft.tags.filter(slug__in=get_tags_for_stream_id(draft.stream_id))],
+                                  ))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form .has-error')) > 0)
+
 class ChangeReplacesTests(TestCase):
     def setUp(self):
 
