@@ -121,7 +121,7 @@ to the database files at a time.  Quitting."
 if [ -n "$DOWNLOAD" ]; then
     (
 	cd $(dirname $MYSQLDIR)
-	wget -N https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2 && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
+	wget -N $URL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
     )
     [ -d "$MYSQLDIR" ] || die "The download seems to have failed; still no $MYSQLDIR.  Giving up."
 else
@@ -129,6 +129,11 @@ else
 fi
 
 docker run -ti -p 8000:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data levkowetz/datatracker:latest
-latest=$(docker ps -lq)
+
 echo "Committing changes in the container to an image:"
+latest=$(docker ps -lq)
 docker commit $latest levkowetz/datatracker:latest
+
+echo "Cleaning up containers and images"
+docker rmi $(docker images -f dangling=true -q)
+docker rm $latest
