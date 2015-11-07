@@ -21,23 +21,37 @@
 FROM debian:wheezy
 MAINTAINER Henrik Levkowetz <henrik@levkowetz.com>
 
+# Default django runserver port
+EXPOSE	8000
+
 # Use backports
 RUN echo "deb http://http.debian.net/debian wheezy-backports main contrib non-free" >> /etc/apt/sources.list
 
 # Run apt-get noninteractive
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Some basic packages we'll need
-RUN apt-get update && apt-get install -qy apt-utils wget less python procps ca-certificates awk
+# Install needed packages
+RUN apt-get update && apt-get install -qy \
+	apt-utils \
+	ca-certificates \
+	gawk \
+	less \
+	libmysqlclient-dev \
+	libsvn1/wheezy-backports \
+	libxml2-dev \
+	libxslt-dev \
+	mysql-server \
+	procps \
+	pv \
+	python \
+	python-dev \
+	subversion/wheezy-backports \
+	wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # MySQL
-RUN apt-get update && apt-get install -qy mysql-server
-
-# Subversion
-RUN apt-get update && apt-get install -qy subversion/wheezy-backports libsvn1/wheezy-backports
-
-# Some packages needed to compile requirements
-RUN apt-get update && apt-get install -qy libmysqlclient-dev python-dev libxml2-dev libxslt-dev
+VOLUME /var/lib/mysql
 
 # Pip
 ENV PYTHONWARNINGS="ignore:a true SSLContext object"
@@ -52,7 +66,7 @@ RUN wget -q -P /usr/local/bin/ https://tools.ietf.org/tools/idnits/idnits
 RUN chmod +x /usr/local/bin/idnits
 
 # A default user
-RUN useradd -ms /bin/bash django
+RUN useradd -m -s /bin/bash -u 500 django
 USER django
 WORKDIR /home/django
 
@@ -68,4 +82,10 @@ RUN . bin/activate; pip install -r requirements.txt
 COPY settings_local.py ./settings_local.py
 RUN . bin/activate; ietf/manage.py test --settings=settings_sqlitetest
 
-WORKDIR /home
+USER root
+WORKDIR /
+
+COPY docker-init.sh /docker-init.sh
+ENTRYPOINT ["/docker-init.sh"]
+
+CMD	/bin/bash

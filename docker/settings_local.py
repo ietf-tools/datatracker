@@ -2,10 +2,10 @@ SECRET_KEY = 'jzv$o93h_lzw4a0%0oz-5t5lk+ai=3f8x@uo*9ahu8w4i300o6'
 
 DATABASES = {
     'default': {
-        'NAME': 'dev_ietf_utf8',
+        'NAME': 'ietf_utf8',
         'ENGINE': 'django.db.backends.mysql',
-        'USER': 'django_dev',
-        'PASSWORD': 'mJM+#@Fgec',
+        'USER': 'django',
+        'PASSWORD': 'RkTkDPFnKpko',
         },
     }
 

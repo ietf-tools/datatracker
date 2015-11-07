@@ -1,0 +1,134 @@
+#!/bin/bash
+
+version=0.10
+program=${0##*/}
+progdir=${0%/*}
+if [ "$progdir" = "$program" ]; then progdir="."; fi
+if [ "$progdir" = "." ]; then progdir="$PWD"; fi
+parent=$(dirname $progdir)
+
+# ----------------------------------------------------------------------
+function usage() {
+    cat <<EOF
+NAME
+	$program - Run a docker datatracker container with suitable settings
+
+SYNOPSIS
+	$program [OPTIONS] ARGS
+
+DESCRIPTION
+
+	This is a wrapper which runs docker with suitable arguments on a
+	debian-based docker image which has been set up with the dependencies
+	needed to easily run the IETF datatracker in development mode.  By
+	default, it expects to find MySWL database files at
+	$parent/data/mysql, which is mapped inside the
+	container to /var/lib/mysql, and it will set up a home directory for
+	the current user ($USER) and map it to $HOME.
+
+EOF
+    echo -e "OPTIONS"
+    if   [ "$(uname)" = "Linux" ]; then
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
+    else
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
+    fi
+    cat <<EOF
+
+FILES
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@levkowetz.com>
+
+COPYRIGHT
+
+	Copyright (c) 2015 IETF Trust and the persons identified as authors of
+	the code. All rights reserved.  License 'Simplified BSD', as specified
+	in http://opensource.org/licenses/BSD-3-Clause.
+	
+EOF
+
+}
+
+# ----------------------------------------------------------------------
+function die() {
+    echo -e "\n$program: error: $*" > /dev/stderr
+    exit 1
+}
+
+function note() { 
+	if [ -n "$VERBOSE" ]; then echo -e "$*"; fi
+}
+
+# ----------------------------------------------------------------------
+function version() {
+	echo -e "$program $version"
+}
+
+# ----------------------------------------------------------------------
+trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
+
+
+# ----------------------------------------------------------------------
+# Option parsing
+
+# Options
+shortopts=dhi:vVu:m:
+longopts=download-data,help,ietfdb-url=,verbose,version,user=,mysqldata=,
+
+# Default values
+
+if   [ "$(uname)" = "Linux" ]; then
+    args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    eval set -- "$args"
+    sed="sed -r"
+else
+    # Darwin, BSDs
+    args=$(getopt -o$shortopts $SV $*)
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    set -- $args
+    sed="sed -E"
+fi
+
+while true ; do
+    case "$1" in
+	-d| --download-data) DOWNLOAD=1;;	# Download and set up the database files
+	-h| --help)	usage; exit;;		# Show this help, then exit
+	-i| --ietfdb-url) URL=$2; shift;;	# Use an alternative database tarball URL
+	-m| --mysqldir)	MYSQLDIR=$2; shift;;	# Set the desired location for MySQL's database files
+	-u| --user)	WHO=$2; shift;;		# Run container as someone else than $USER
+	-v| --verbose)	VERBOSE=1;;		# Be more talkative
+	-V| --version)	version; exit;;		# Show program version, then exit
+	--)		shift; break;;
+	*) die "Internal error, inconsistent option specification: '$1'";;
+    esac
+    shift
+done
+
+# ----------------------------------------------------------------------
+# The program itself
+
+docker ps | grep -q levkowetz/datatracker:latest && die \
+"It seems that another docker container is already running the
+image 'levkowetz/datatracker:latest' -- but only one MySQL instance can bind
+to the database files at a time.  Quitting."
+
+[ -n "$WHO" ]		|| WHO=$(whoami)
+[ -n "$MYSQLDIR" ]	|| MYSQLDIR=$parent/data/mysql
+[ -n "$URL"]		|| URL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
+
+if [ -n "$DOWNLOAD" ]; then
+    (
+	cd $(dirname $MYSQLDIR)
+	wget -N https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2 && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
+    )
+    [ -d "$MYSQLDIR" ] || die "The download seems to have failed; still no $MYSQLDIR.  Giving up."
+else
+    [ -d "$MYSQLDIR" ] || die "Expected $MYSQLDIR to exist, but it\ndidn't.  Use '$program -d' to download and unpack the database."
+fi
+
+docker run -ti -p 8000:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data levkowetz/datatracker:latest
+latest=$(docker ps -lq)
+echo "Committing changes in the container to an image:"
+docker commit $latest levkowetz/datatracker:latest
