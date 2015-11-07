@@ -135,5 +135,6 @@ latest=$(docker ps -lq)
 docker commit $latest levkowetz/datatracker:latest
 
 echo "Cleaning up containers and images"
-docker rmi $(docker images -f dangling=true -q)
 docker rm $latest
+docker rmi -f $(docker images -f dangling=true -q)
+
