@@ -330,6 +330,7 @@ class IetfTestRunner(DiscoverRunner):
         ietf.utils.mail.SMTP_ADDR['port'] = 2025
         # switch to a much faster hasher
         settings.PASSWORD_HASHERS = ( 'django.contrib.auth.hashers.MD5PasswordHasher', )
+        settings.SERVER_MODE = 'test'
         #
         if self.check_coverage:
             if self.coverage_file.endswith('.gz'):
