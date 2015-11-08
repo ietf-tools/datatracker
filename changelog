@@ -1,4 +1,43 @@
-ietfdb (6.8.0) ietf; urgency=medium
+ietfdb (6.9.0) ietf; urgency=medium
+
+  **More IETF-94 Code**
+
+  The release contains additional code from IETF-94 -- I think this is the
+  first time we have done two substantial releases based on IETF week
+  contributions.  This introduces enhancements and bug-fixes in a number of
+  areas, reducing confusion in draft publication-request handling and on
+  several web pages, clarifying a number of email notifications, making
+  unicode names work in more places, and giving improved secretariat pages:
+
+  * Added a first version of docker image support, with Dockerfile, docker
+    init scripts, a 'docker run' wrapper, and database image generation.
+
+  * Merged in [10431] from rjsparks@nostrum.com:
+    Reduce confusion around how to send a document from a WG to the IESG
+    through additional, restrictive, validation on the stream state editing
+    form. Fixes bug #1418.  
+
+  * Merged in [10430] from rjsparks@nostrum.com:
+    Reflect the right group type in personnel change messages. Fixes #1746. 
+
+  * Merged in [10429] from rjsparks@nostrum.com:
+    Display the To and (if it exists) Cc correctly on the publication request
+    form. Fixes #1819.  
+
+  * Merged in [10426] from rjsparks@nostrum.com:
+    Fix the links on the state help index page. Fixes #1775.  
+
+  * Merged in [10425] from bartosz.balazinski@interdigital.com:
+    Provide information about who has suggested document replaced-by 
+    information in the notification email.  Fixes bug #1817.
+
+  * Added some default aliases files to the repository, and updated the 
+    aliases settings accordingly.  Appropriate production settings have been 
+    added to setting_locals in production.
+
+  * Merged in [10418] from henrik@levkowetz.com:
+    Modified the test data to use some AD and WG chair names that contain 
+    non-ascii characters, and fixed test issues found.
 
   * Merged in [10414] from rjsparks@nostrum.com:
     Put possibly replaces sections in the right columns. Fixes #1802.  
@@ -12,7 +51,7 @@ ietfdb (6.8.0) ietf; urgency=medium
   * Merged in [10384] from rjsparks@nostrum.com:
     When a group gives a document a new group state (particularly for the
     first time), send a message that says what happened instead of simply
-    \'Adopted\'. Fixes #1830.  
+    'Adopted'. Fixes #1830.  
 
   * Merged in [10383] and [10413] from rcross@amsl.com:
     Updated proceedings permissions.   
@@ -25,9 +64,10 @@ ietfdb (6.8.0) ietf; urgency=medium
     Make the internal review message reflect whether this is a new chartering
     effort or a recharter. Fixes #1814.  
 
-  * Fixed a unicode issue with rendering of contact names.
+  * Added testing of non-ascii unicode names of chairs and area directors.
+    Fixed a series of issues with rendering of non-ascii names.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  03 Nov 2015 23:44:55 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Nov 2015 09:20:24 +0000
 
 
 ietfdb (6.8.0) ietf; urgency=medium
