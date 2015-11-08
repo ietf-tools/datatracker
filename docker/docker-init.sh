@@ -41,7 +41,7 @@ fi
 
 if ! id -u "$USER" &> /dev/null; then
     echo "Creating user '$USER' ..."
-    useradd -ms /bin/bash $USER
+    useradd -s /bin/bash -G staff $USER
 fi
 
 if [ ! -d /opt/home/$USER ]; then
@@ -49,45 +49,27 @@ if [ ! -d /opt/home/$USER ]; then
     mkdir -p /opt/home/$USER
     chown $USER /opt/home/$USER
     mkdir /opt/home/$USER/datatracker
-    virtualenv /opt/home/$USER/datatracker
+    virtualenv --system-site-packages /opt/home/$USER/datatracker
 fi
 
-echo "Activating virtual python environment"
+echo "Activating a virtual python environment ..."
 cat /opt/home/$USER/datatracker/bin/activate >> /etc/bash.bashrc
 . /opt/home/$USER/datatracker/bin/activate
 
-
-if [ ! -d /opt/home/$USER/datatracker/lib/python2.7/site-packages/django ]; then
-    echo "Installing requirements (based on trunk)"
-    pip install -r /home/django/src/trunk/requirements.txt
+if ! python -c "import django"; then
+    echo "Installing requirements ..."
+    pip install -r /usr/local/share/datatracker/requirements.txt
 fi
 
 if [ ! -f /opt/home/$USER/datatracker/lib/site-python/settings_local.py ]; then
-    echo "Setting up a default settings_local.py"
+    echo "Setting up a default settings_local.py ..."
     mkdir -p /opt/home/$USER/datatracker/lib/site-python/
-    cp /home/django/src/trunk/settings_local.py /opt/home/$USER/datatracker/lib/site-python/
-fi
-
-echo "Done."
-
-FLAG1=/opt/home/$USER/.docker-init-flag-1
-if [ ! -f $FLAG1 ]; then
-    touch $FLAG1
-    cat <<-EOT
-
-	******************************************************************************
-
-	You should now cd to your svn working directory and update the datatracker
-	prerequisites according to the requirements given in 'requirements.txt':
-
-	        $ pip install -r requirements.txt
-
-	Happy coding!
-
-	******************************************************************************
-EOT
+    cp /usr/local/share/datatracker/settings_local.py /opt/home/$USER/datatracker/lib/site-python/
 fi
 
 chown -R $USER /opt/home/$USER
 cd /home/$USER
+
+echo "Done!"
+
 su $USER

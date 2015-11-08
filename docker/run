@@ -136,5 +136,5 @@ docker commit $latest levkowetz/datatracker:latest
 
 echo "Cleaning up containers and images"
 docker rm $latest
-docker rmi -f $(docker images -f dangling=true -q)
+docker images -f dangling=true -q | xargs docker rmi -f
 
