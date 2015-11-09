@@ -6,6 +6,7 @@ progdir=${0%/*}
 if [ "$progdir" = "$program" ]; then progdir="."; fi
 if [ "$progdir" = "." ]; then progdir="$PWD"; fi
 parent=$(dirname $progdir)
+if [ "$parent" = "." ]; then parent="$PWD"; fi
 
 # ----------------------------------------------------------------------
 function usage() {
@@ -73,10 +74,12 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=dhi:vVu:m:
-longopts=download-data,help,ietfdb-url=,verbose,version,user=,mysqldata=,
+shortopts=dhi:m:r:t:vVu:
+longopts=download-data,help,ietfdb-url=,mysqldata=,docker-repo=,tag=,verbose,version,user=,
 
 # Default values
+TAG=$(basename $(svn info --show-item url $parent))
+REPO="levkowetz/datatracker"
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
@@ -95,9 +98,11 @@ while true ; do
     case "$1" in
 	-d| --download-data) DOWNLOAD=1;;	# Download and set up the database files
 	-h| --help)	usage; exit;;		# Show this help, then exit
-	-i| --ietfdb-url) URL=$2; shift;;	# Use an alternative database tarball URL
+	-i| --ietfdb-url)	URL=$2; shift;;	# Use an alternative database tarball URL
 	-m| --mysqldir)	MYSQLDIR=$2; shift;;	# Set the desired location for MySQL's database files
-	-u| --user)	WHO=$2; shift;;		# Run container as someone else than $USER
+	-r| --docker-repo)	REPO=$2; shift;;	# Use the given docker repository, instead of the default
+	-t| --tag)	TAG=$2; shift;;		# Use this docker image tag, instead of the svn branch name
+	-u| --user)	WHO=$2; shift;;		# Run the container as the specified user
 	-v| --verbose)	VERBOSE=1;;		# Be more talkative
 	-V| --version)	version; exit;;		# Show program version, then exit
 	--)		shift; break;;
@@ -109,9 +114,39 @@ done
 # ----------------------------------------------------------------------
 # The program itself
 
-docker ps | grep -q levkowetz/datatracker:latest && die \
+
+if [ "$(uname)" != "Linux" ]; then
+    if   [ -n "$(type -p boot2docker)" ]; then
+	machine=$(type -p boot2docker)
+	up=up
+	env=shellinit
+    elif [ -n "$(type -p docker-machine)" ]; then
+	machine=$(type -p docker-machine)
+	up=start
+	env="env default"
+    else
+	die "Could not find boot2docker or docker-machine -- you need to set one of those before running this script."
+    fi
+fi
+
+if [ $($machine status) != "running" ]; then
+    echo "The docker VM doesn't seem to be running; will attempt to start it by doing '$$ $machine $up':"
+    $machine $up || die "Failed taking up the Docker VM"
+fi
+
+
+if [ ! -f ~/.docker-info ]; then
+    $machine $env 2>/dev/null | grep DOCKER_ > ~/.docker-info
+fi
+. ~/.docker-info
+
+
+echo ""
+echo "Starting a docker container for '$TAG' ..."
+
+docker ps | grep -q $REPO:$TAG && die \
 "It seems that another docker container is already running the
-image 'levkowetz/datatracker:latest' -- but only one MySQL instance can bind
+image '$REPO:$TAG' -- but only one MySQL instance can bind
 to the database files at a time.  Quitting."
 
 [ -n "$WHO" ]		|| WHO=$(whoami)
@@ -128,12 +163,24 @@ else
     [ -d "$MYSQLDIR" ] || die "Expected $MYSQLDIR to exist, but it\ndidn't.  Use '$program -d' to download and unpack the database."
 fi
 
-docker run -ti -p 8000:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data levkowetz/datatracker:latest
+if ! docker images $REPO | grep -q $TAG; then
+    echo "Fetching a docker image for your docker container ..."
+    if ! docker pull $REPO:$TAG; then
+	docker pull $REPO:latest || die "Failed to pull down the '$REPO:latest' docker image"
+	id=$(docker images $REPO | grep latest  | awk '{print $3}')
+	echo "Tagging $REPO:latest as $REPO:$TAG for use as environment for this branch."
+	docker tag $id $REPO:$TAG
+    fi
+fi
 
+docker run -ti -p 8000:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} $REPO:$TAG
+
+echo ""
 echo "Committing changes in the container to an image:"
 latest=$(docker ps -lq)
-docker commit $latest levkowetz/datatracker:latest
+docker commit $latest $REPO:$TAG
 
+echo ""
 echo "Cleaning up containers and images"
 docker rm $latest
 docker images -f dangling=true -q | xargs docker rmi -f
