@@ -77,8 +77,8 @@ if [ ! -f /opt/home/$USER/datatracker/lib/site-python/settings_local.py ]; then
 fi
 
 chown -R $USER /opt/home/$USER
-cd /home/$USER/
-cd /home/$USER/$CWD
+
+cd /home/$USER/$CWD || cd /home/$USER/
 
 echo "Done!"
 
