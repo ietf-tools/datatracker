@@ -184,6 +184,9 @@ changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
 [ "$changes" ] || die "No changelog information for $VER found"
 #note "$changes"
 
+note "Upgrading the python library modules before checking migrations and running tests ..."
+pip install --upgrade -r requirements.txt
+
 note "Checking that we don't have any model changes that haven't been captured in migrations ..."
 ietf/manage.py makemigrations | tee /dev/stderr | grep -q "^No changes detected$" || die "Model changes without migrations found."
 
